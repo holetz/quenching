@@ -117,7 +117,33 @@ print(p.get("installedPath") or home / "plugins/cache" / p["marketplaceName"] / 
 cq specs record "<id>" merge --set strategy=<strategy> --set subject=<the merge commit's subject, or "none — <why>" under fast-forward/rebase>
 ```
 Write-once — a record already present is read, never overwritten. No ID → nothing to stamp.
-**Done when:** the record is stamped (with an ID) or explicitly skipped (without one).
+A local merge is not a sync point of the git spec store, so the stamp stays in the clone's pending
+commit; send it, with every other pending write, in the same call:
+```bash
+cq() {
+  local plugin_root="${CODEX_PLUGIN_ROOT:-${PLUGIN_ROOT:-}}"
+  if [ -z "$plugin_root" ]; then
+    plugin_root="$(set -o pipefail
+codex plugin list --json | python3 -c '
+import json, os, sys
+from pathlib import Path
+plugins = [p for p in json.load(sys.stdin)["installed"] if p.get("name") == "quenching-codex" and p.get("enabled")]
+if len(plugins) != 1:
+    sys.exit("quenching-codex: enable exactly one installation, or provide its plugin root")
+p = plugins[0]
+home = Path(os.environ.get("CODEX_HOME", str(Path.home() / ".codex")))
+print(p.get("installedPath") or home / "plugins/cache" / p["marketplaceName"] / p["name"] / p["version"])
+')" || return 2
+  fi
+  if [ -z "$plugin_root" ] || [ ! -f "$plugin_root/scripts/cq" ]; then
+    echo "quenching-codex: installed plugin root not found; enable the plugin first" >&2
+    return 2
+  fi
+  python3 "$plugin_root/scripts/cq" "$@"
+}
+cq specs push
+```
+**Done when:** the record is stamped and pushed (with an ID) or explicitly skipped (without one).
 
 ### 5. Remove the worktree, only after a verified merge
 Only when step 1's worktree list held a **separate** worktree for the merged branch (not the base's

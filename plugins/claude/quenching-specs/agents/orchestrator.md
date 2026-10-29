@@ -69,6 +69,9 @@ An epic id or a list of spec ids, plus an optional `autonomous` flag from the co
    **Then measure yourself, once, before admitting the next wave.** Run `cq components session context --self orchestrator-<epic id, or the first spec id> --json`. Exit 1 (over the conductor budget of `context-discipline.md` §Measured context budgets) admits nothing more: let the workers already in flight finish and be accepted (a stop is never mid-wave), then return one block per spec not yet launched with `STATE: continue`, `SHA: -`, `PR: -`, `VERIFIER: not-run`, `TOKENS: 0` and `NOTE: budget: <peak>/<budget> before wave <N>`, so the conductor relaunches a fresh orchestrator on the same epic. Exit 0 admits the wave; exit 2 (not measured) never stops the run, and the totals line says so.
 7. **Parallelism.** At most `maxWorkers` workers at once (3 by default), each in its own worktree. On the GitHub backend,
    serialize every spec-store write made through `cq`: one writer at a time, never two in flight. Reads may overlap.
+   On the git store the workers' worktrees share ONE pending ref in the common `.git`: each write is a local
+   compare-and-swap that retries on its own, and the steward's `publish` (its code push and its PR creation are sync
+   points) sends every worker's pending writes in one push.
 8. **Telemetry.** Record tokens per worker from each result, with the worker's model tier beside
    it, and stop when the run's budget is hit. Tokens of different tiers are never added into one
    number: report them per model, and take the cost by agent type, model and window from

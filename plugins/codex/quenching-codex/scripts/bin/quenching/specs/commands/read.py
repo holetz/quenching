@@ -196,6 +196,7 @@ def cmd_status(args, root: str, out: Emitter) -> int:
                               for t in info["tasks"] if t["commit"]]},
         "promote": gates,
         "path": display_locator(info["path"], root),
+        "pending": _pending(backend),
     }
     if args.json:
         print(json.dumps(out.announced(obj), indent=2, ensure_ascii=False))
@@ -226,6 +227,9 @@ def cmd_status(args, root: str, out: Emitter) -> int:
             if isinstance(v, dict):
                 v = ", ".join(f"{kk}: {vv}" for kk, vv in v.items())
             print(f"    {k + ':':<10} {v}")
+    if obj["pending"]:
+        print(f"  pending: {len(obj['pending']['specs'])} spec(s) with unsent local writes since "
+              f"{obj['pending']['since']} — `cq specs push` sends them")
     if obj["tasks"]["subjects"]:
         print(f"  subjects: {len(obj['tasks']['subjects'])} task(s) carry one")
     if obj["tasks"]["commits"]:
@@ -242,6 +246,13 @@ def cmd_status(args, root: str, out: Emitter) -> int:
                 print(f"  promote → {dest}/: {len(gates['openTasks'])} of {total} tasks still "
                       f"open — `--outcome done` refuses, `--outcome abandoned` does not")
     return 0
+
+
+def _pending(backend) -> dict | None:
+    """The git store's unsent local writes, `{specs, since}`, or None (nothing pending, or a
+    tracker backend)."""
+    state = getattr(backend, "pending_state", lambda: None)()
+    return {"specs": state["specs"], "since": state["since"]} if state else None
 
 
 def cmd_export(args, root: str, out: Emitter) -> int:

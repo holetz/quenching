@@ -584,8 +584,15 @@ if want 3; then
 echo "3. a spoken trigger routes with no / typed"
 
 # The probes never write, but the proof that no spec leaked is cheap and local: the store branch
-# tips of the repository under test must be the same after the probes as before them.
-store_tips () { git -C "$REPO" rev-parse -q --verify refs/heads/quenching refs/remotes/origin/quenching 2>/dev/null || true; }
+# tips of the repository under test must be the same after the probes as before them. The pending
+# ref counts too: a store write stays local until a sync, so a probe that wrote moves only that
+# ref. One ref per call, because `rev-parse --verify` takes exactly one and fails on two.
+store_tips () {
+  local ref
+  for ref in refs/heads/quenching refs/remotes/origin/quenching refs/quenching/pending/quenching; do
+    echo "$ref $(git -C "$REPO" rev-parse -q --verify "$ref" 2>/dev/null || echo absent)"
+  done
+}
 TIPS_BEFORE="$(store_tips)"
 
 # --max-turns is 14, not 4. A probe whose phrase needs any orientation first (a Glob, a Read)

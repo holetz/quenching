@@ -7,6 +7,7 @@ Unlike `az repos pr update`, it never re-reads and silently substitutes a newer 
 from __future__ import annotations
 
 import json
+import os
 from pathlib import Path
 import re
 import sys
@@ -16,6 +17,9 @@ from urllib.parse import unquote
 
 from quenching.common.output import FINDINGS, OK, emit
 from quenching.git.pull import POLL_S, _az
+from quenching.git.push import _specs_note
+from quenching.specs.commands.push import sync_store
+from quenching.specs.config import find_repo_root
 
 
 AZURE_PR_URL = re.compile(
@@ -103,8 +107,9 @@ def merge_azure(args, match: re.Match) -> int:
                 payload["message"] = message
         else:
             payload["ok"] = True
+            payload["specs"] = sync_store(find_repo_root(os.getcwd()))
         emit(args.json, payload, f"not merged: {reason} {message}".rstrip() if reason
-             else f"merged {args.url} (noFastForward)")
+             else f"merged {args.url} (noFastForward)" + _specs_note(payload["specs"]))
         return FINDINGS if reason else OK
 
     pr, message = _read(route + ["--http-method=GET"], dict)

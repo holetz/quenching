@@ -186,6 +186,7 @@
       "decisions/0013-plugin-module-split.md",
       "decisions/0014-tier-pequeno-em-tarefa-testavel.md",
       "decisions/0015-deploy-mode.md",
+      "decisions/0016-spec-store-writes-accumulate-locally.md",
     ] },
     "glossary.md",
   ]

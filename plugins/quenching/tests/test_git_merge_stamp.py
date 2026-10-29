@@ -20,14 +20,22 @@ SPEC = "---\ntitle: S\ndate: 2026-10-25\n---\n## Problem\nx\n"
 
 
 
+_SYNC_STUBS = [mock.patch(target, return_value={"ok": True, "skipped": "test"})
+               for target in ("quenching.git.pull.sync_store",
+                              "quenching.git.azure_pull.sync_store",
+                              "quenching.specs.commands.push.sync_store")]
+
+
 def setUpModule():
     """The code-side sync points would send this checkout's own pending store writes; every
     test here stubs them (`test_specs_push.py` proves the sync itself on a fixture remote)."""
-    for target in ("quenching.git.pull.sync_store", "quenching.git.azure_pull.sync_store",
-                   "quenching.specs.commands.push.sync_store"):
-        patcher = mock.patch(target, return_value={"ok": True, "skipped": "test"})
+    for patcher in _SYNC_STUBS:
         patcher.start()
-        unittest.addModuleCleanup(patcher.stop)
+
+
+def tearDownModule():
+    for patcher in _SYNC_STUBS:
+        patcher.stop()
 
 
 class MergeStamp(unittest.TestCase):
