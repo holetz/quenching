@@ -6,7 +6,7 @@ front as the first argument. The fronts are `specs`, `git`, `knowledge`, `compon
 
 ## Resolving the tool
 
-**One form: bare `cq …`.** Claude Code appends `<pluginRoot>/bin` to `PATH` for every enabled
+**Plugin mode: bare `cq …`.** Claude Code appends `<pluginRoot>/bin` to `PATH` for every enabled
 plugin, and the plugin ships an executable `bin/cq` there (a shim that re-executes
 `assets/bin/cq`). Every command body and reference writes `cq specs …`, never a path and never
 `python3 …/cq`.
@@ -23,6 +23,16 @@ merge anything into a target's `.claude/settings.json` to make a tool resolve.
 
 Branch on the **exit code** (0 ok · 1 findings · 2 refusal) and the `--json` payload, never on
 prose.
+
+### Deploy mode: the target-local payload
+
+A repository installed with `cq deploy` carries the tool at `.agents/quenching/bin/cq` and has no
+plugin `bin/cq` on `PATH`. Its command bodies call that literal target-local path; the generated
+grant is `Bash(.agents/quenching/bin/cq:*)`. This is a **generated** copy owned by
+`.agents/.quenching-deploy.json`, never a hand-installed third rung: upgrade it with
+`cq deploy --write` from a new release, and never copy a `cq` into `.claude/hooks/` or edit the
+user's `PATH`. The reference `cq components read` remains the same; the local payload carries the
+references under `.agents/quenching/assets/references/`.
 
 ### Modules: one `cq`, the fronts of the enabled modules
 

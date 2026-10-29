@@ -42,7 +42,7 @@ is the dedupe baseline every slice's candidates get checked against.
 
 ### 2. List the bundle, bounded
 List every doc path under `/docs/` with `Glob`, paths only — never read bodies here,
-excluding `index.md`, `log.md`, and harness files (`AGENTS.md`/`AGENTS.md`). `catalog/**` and
+excluding `index.md`, `log.md`, and harness files (`AGENTS.md`; legacy `AGENTS.md`). `catalog/**` and
   `external/repositories/**` are listed but **not** body-scanned by default — note them as
   excluded from the sweep. If `$ARGUMENTS` names a home or slice, restrict the candidate set to
   that subtree and report the omitted homes; otherwise scan the whole bundle. **Done when:** the

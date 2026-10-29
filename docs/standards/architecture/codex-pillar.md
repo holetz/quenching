@@ -2,7 +2,7 @@
 type: standard
 title: Codex pillar
 description: A pillar that reads the Codex quota, runs the Codex CLI as an independent reviewer that must change nothing, and lets it write one eligible spec task inside a worktree — app-server quota first, exit 0/1/2 failing closed, Codex's native sandbox never asked for, both runs under the bypass bounded by a git guard (the review's proves the tree unchanged, the executor's proves its diff inside `files:`), a stop-loss, and argv that never inherits the user's Codex configuration
-resource: plugins/quenching/assets/bin/quenching/codex/**, plugins/quenching/tests/test_codex_probe.py, plugins/quenching/tests/test_codex_review.py, plugins/quenching/tests/test_codex_eligible.py, plugins/quenching/tests/test_codex_implement.py, plugins/quenching/tests/fixtures/codex/**, .agents/quenching.json
+resource: plugins/quenching/assets/bin/quenching/codex/**, plugins/quenching/tests/test_codex_probe.py, plugins/quenching/tests/test_codex_review.py, plugins/quenching/tests/test_codex_eligible.py, plugins/quenching/tests/test_codex_implement.py, plugins/quenching/tests/fixtures/codex/**, .claude/quenching.json
 tags: [architecture, codex, pillar, git-guard, quota, review, executor]
 timestamp: 2026-10-18
 audience: both

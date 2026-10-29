@@ -105,6 +105,22 @@ current list — one file per entry point — is the
 Or add this marketplace and enable the plugin the usual way (see the
 [plugin README](plugins/quenching/README.md)).
 
+### Deploy mode (no harness plugin)
+
+A target can carry the selected surface itself, in the generic layer. The official channel is
+`uvx`; the target needs Python 3.11+ and does not need Node:
+
+```bash
+uvx --from "git+https://github.com/holetz/quenching@<tag>#subdirectory=plugins/quenching" \
+  cq deploy --target . --modules core --write
+```
+
+This writes `AGENTS.md`, `.agents/skills/`, `.agents/quenching/` (the vendored runtime), and the
+generated `.claude/skills/` bridge. It does not create `CLAUDE.md` and does not run alignment; the
+target's own `quenching-knowledge-align` skill installs `/docs/` and converges the fronts. `cq deploy --check`
+reports drift, and `--runtime uvx` writes a pinned shim instead of vendoring the runtime. The full
+contract is [deploy-mode.md](docs/standards/architecture/deploy-mode.md).
+
 > **Succession note.** This plugin reuses the marketplace/plugin **name**
 > `quenching` as the lean, OKF-centric successor of the 15-dimension
 > audit plugin. **Do not enable both at once** (name collision) — this one

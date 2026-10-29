@@ -16,7 +16,7 @@ maintainer: quenching
 <!-- rules -->
 
 Every module `tests/` covers is exercised by `python3 -m unittest discover -s tests`, which
-CLAUDE.md's verification block leans on. A test is the cheapest verification the repo has — and
+AGENTS.md's verification block leans on. A test is the cheapest verification the repo has — and
 the easiest to write so that it can never fail.
 
 **A test that passed the first time it was run has proved nothing yet.** It has demonstrated that
@@ -68,7 +68,7 @@ reported something it had not measured:
 human arm has two code paths, and a pass that exercises one grades one. Measured on
 the pre-refactor components tool's `--sections` ladder (2026-08-05, three mutations): the new case shadowed an outer
 variable inside `cmd_selftest`, and `selftest --json` exited **0** while plain `selftest` — the form
-this repo's own `CLAUDE.md` verification block runs — raised `TypeError` after printing its case
+this repo's own `AGENTS.md` verification block runs — raised `TypeError` after printing its case
 count. Only the mutation pass, run in both modes, separated them. The same shape governs any
 `verify:` line: one written solely over `--json` cannot observe the branch a human reads.
 

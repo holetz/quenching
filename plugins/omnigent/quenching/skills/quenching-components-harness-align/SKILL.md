@@ -1,6 +1,6 @@
 ---
 name: quenching-components-harness-align
-description: "Refactor AGENTS.md into thin pointers over the /docs/ bundle, AGENTS.md as @AGENTS.md. Use for \"slim down AGENTS.md\", \"move AGENTS.md content into docs\". Not for: command bodies → quenching-components-command-new."
+description: "Refactor AGENTS.md into thin pointers over the /docs/ bundle, with no AGENTS.md. Use for \"slim down AGENTS.md\", \"move AGENTS.md content into docs\". Not for: command bodies → quenching-components-command-new."
 allowed-tools: "Bash(cq:*), Read, Grep, Glob, Bash(find:*), Bash(git grep:*), Bash(git check-ignore:*), Bash(grep:*), Bash(python3:*), Bash(py:*), Write, Edit, Task, AskUserQuestion"
 ---
 
@@ -34,8 +34,8 @@ molds live at `~/.omnigent/quenching/templates/harness/`.
 
 ## Doctrine
 
-- **`AGENTS.md` is the source; the root `AGENTS.md` is the one line `@AGENTS.md`** — Omnigent
-  2.1.312 does not load `AGENTS.md` alone (routing §7 has the verified fact).
+- **`AGENTS.md` is the source; there is no root `AGENTS.md`** — Omnigent 2.1.277+ reads
+  `AGENTS.md` directly when no `AGENTS.md`/`CLAUDE.local.md` exists (routing §7 has the verified fact).
 - **Commands and etiquette stay; knowledge moves.** The one test: would the agent need this on
   **EVERY** task under this file's folder (keep) — or only when working on **that subject** (move +
   pointer)?
@@ -67,10 +67,10 @@ Resolve `cq` per
 ## Workflow
 
 ### 1. Inventory the harness surface (read-only)
-`Glob` `**/AGENTS.md`, `**/AGENTS.md`, and `CLAUDE.local.md`; add a `grep --no-ignore` sweep to
+`Glob` `**/AGENTS.md`, `**/AGENTS.md` (legacy), and `CLAUDE.local.md`; add a `grep --no-ignore` sweep to
 catch gitignored ones. Confirm `/docs/index.md` carries `okf_version` — if there is no OKF bundle,
 **stop** and offer `quenching-knowledge-align` first. List every harness file found, and
-the **root pair's state** — conformant (`AGENTS.md` is `@AGENTS.md`), legacy or doubled
+the **root harness state** — conformant (`AGENTS.md` only), legacy (`AGENTS.md` content or pointer), or doubled
 (routing §7).
 
 Then **discover greenfield candidates** (read-only), swept **repo-wide from the repository
@@ -146,9 +146,9 @@ cover it.
 **Done when:** every approved MOVE is indexed and self-checked before it is cut.
 
 ### 7. Rewrite each harness file
-Root `AGENTS.md` from `~/.omnigent/quenching/templates/harness/claude-root.md` (root
-`AGENTS.md` = `@AGENTS.md`), a subfolder from
-`.../harness/claude-subfolder.md`. Structure and links are canonical English; prose may follow the
+Root `AGENTS.md` from `~/.omnigent/quenching/templates/harness/agents-root.md`, a subfolder from
+`.../harness/agents-subfolder.md`. A legacy `AGENTS.md` that holds only `@AGENTS.md` is removed;
+content-bearing legacy files are consolidated first. Structure and links are canonical English; prose may follow the
 repo's language. The root file's language declaration line is carried through **verbatim**. UNROUTABLE and
 FLAG-pending units stay under a clearly marked residue section. **No frontmatter, ever.**
 **Done when:** every planned harness rewrite is on disk with residue preserved.
@@ -175,3 +175,4 @@ is still restated inline; run `cq knowledge validate` over `/docs/` → 0 errors
   cycle-authorized run (convergence.md §The cycle-authorization contract) replaces the batch gate with narration — never the
   product-code item's own OK — and a pre-collected table is delta-rechecked before any write.
 - Never blanket-create subfolder `AGENTS.md`s — creation is evidence-gated per harness-routing.md §6.
+- Never recreate the pointer-only `AGENTS.md`; Omnigent 2.1.277+ reads `AGENTS.md`.

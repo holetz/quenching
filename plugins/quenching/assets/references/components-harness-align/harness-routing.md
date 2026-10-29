@@ -1,4 +1,4 @@
-# Harness routing — from an AGENTS.md/CLAUDE.md unit to its OKF home
+# Harness routing — from an AGENTS.md unit to its OKF home
 
 How `/quenching-align:components:harness:align` decides, for each unit of a harness file, whether it **stays** (harness-
 operational) or **moves** into an OKF home (durable knowledge). Once a unit is routed to a home it
@@ -15,17 +15,18 @@ home boundaries.
 ## 1. What a harness file is
 
 <!-- rules -->
-`AGENTS.md` and `CLAUDE.md` are **navigation pointers** the agent harnesses auto-load — the root
-`AGENTS.md` repo-wide (reached by Claude Code through the root `CLAUDE.md` = `@AGENTS.md`, §7), a
-subfolder `CLAUDE.md` only when working under its folder.
+`AGENTS.md` is the navigation pointer every harness auto-loads — the root `AGENTS.md`
+repo-wide, a subfolder `AGENTS.md` only when working under its folder. Claude Code 2.1.277+
+reads `AGENTS.md` directly; `CLAUDE.md` is the legacy fallback of older hosts and is removed by
+the migration, never created.
 OKF-strict point 7 ([knowledge-align/okf-spec.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-align/okf-spec.md))
 says they are **not** OKF concepts, and the validator (`cq knowledge validate`) **skips them entirely**
 — including link checks (`index-broken-link` runs only on `index.md`). The target shape is the
-shipped exemplar [docs/standards/CLAUDE.md](${CLAUDE_PLUGIN_ROOT}/assets/knowledge/standards/CLAUDE.md)
+shipped exemplar [docs/standards/AGENTS.md](${CLAUDE_PLUGIN_ROOT}/assets/knowledge/standards/AGENTS.md)
 ("thin pointer, never a copy").
 
 <!-- rationale -->
-So a CLAUDE.md that inlines a rule or lies about a link is **machine-invisible**: it escapes
+So an AGENTS.md that inlines a rule or lies about a link is **machine-invisible**: it escapes
 validation, is invisible to anyone browsing `knowledge/`, and drifts from the real doc.
 
 ## 2. Content units
@@ -64,7 +65,7 @@ units.
 | schema / table descriptions | **MOVE** | `catalog/…` (`schema` / `table`) |
 | restates a fact an existing doc already holds | **DEDUPE** | cite the existing doc; cut + leave a pointer |
 | contradicts an existing doc | **FLAG** | per-item: fix the doc, fix the file, or both — resolve, never auto-pick |
-| secrets / credentials / personal notes / `CLAUDE.local.md` | **UNROUTABLE** | stays + reported; secrets urged out-of-band, NEVER into shared `knowledge/` |
+| secrets / credentials / personal notes / `CLAUDE.local.md` (legacy) | **UNROUTABLE** | stays + reported; secrets urged out-of-band, NEVER into shared `knowledge/` |
 | no documentary home | **UNROUTABLE** | stays + reported |
 
 **The ephemeral-writes declaration line is always KEEP.** Its membership test is a root-harness
@@ -91,9 +92,9 @@ The validator won't check harness files, so this skill does:
 
 ## 6. Nesting rules
 
-- **Root `AGENTS.md`** = repo-wide operations + the `knowledge/` home map, loaded on every turn;
-  the root `CLAUDE.md` is only `@AGENTS.md` (§7).
-- **Subfolder `CLAUDE.md`** = nearest-file navigation (auto-loads only under that folder): the
+- **Root `AGENTS.md`** = repo-wide operations + the `knowledge/` home map, loaded on every turn.
+  There is no root `CLAUDE.md` in a conformant target (§7).
+- **Subfolder `AGENTS.md`** = nearest-file navigation (auto-loads only under that folder): the
   folder's local commands/quirks + a pointer to the home that **covers** it. **Never duplicate the
   root.**
 - **Creation is evidence-gated.** Propose a new subfolder pointer **only** where the evidence is
@@ -101,36 +102,36 @@ The validator won't check harness files, so this skill does:
   1. **A unit scoped to a folder** — a harness file being refactored holds a KEEP-class unit (local
      commands/quirks) that clearly belongs under a subfolder; the pointer lands there.
   2. **A greenfield folder** (step 1's discovery pass, swept **repo-wide from the root** — never
-     scoped to the folders that already have a `CLAUDE.md`, since those are precisely the ones a
+     scoped to the folders that already have an `AGENTS.md`, since those are precisely the ones a
      hand-picked list would over-represent) — a folder with a **local operational surface** but
-     **no** `CLAUDE.md`: a `*.sh` / `Makefile` / `justfile` / `package.json`-script, a distinct
-     toolchain, or a `README` whose fenced blocks are run-commands. It earns a `CLAUDE.md`
+     **no** `AGENTS.md`: a `*.sh` / `Makefile` / `justfile` / `package.json`-script, a distinct
+     toolchain, or a `README` whose fenced blocks are run-commands. It earns an `AGENTS.md`
      **only** if it passes the §3 decision rule: the agent would need those commands on **every**
      task under that folder and they **don't derive from the root**. Fill the thin
-     `claude-subfolder.md` mold — the local commands (KEEP) + a pointer to the home that covers the
-     folder; the folder's `README` stays the deep map, the `CLAUDE.md` just points to it.
+     `agents-subfolder.md` mold — the local commands (KEEP) + a pointer to the home that covers the
+     folder; the folder's `README` stays the deep map, the `AGENTS.md` just points to it.
 - **Exclude from discovery** generated-output, asset, and vendored dirs — `.build/`, `dist/`,
   `build/`, `target/`, `node_modules/`, `**/__pycache__/`, `fonts/`, `assets/`, `.venv/`, nested
   `site-packages`/vendored dependency trees, and anything gitignored as a build artifact (verify
   with `git check-ignore`). A folder that only holds data or
   output earns no harness.
-- `/quenching-align:knowledge:align`'s skeleton already owns `docs/standards/CLAUDE.md`.
+- `/quenching-align:knowledge:align`'s skeleton already owns `docs/standards/AGENTS.md`.
 
-## 7. AGENTS.md is the root source; CLAUDE.md imports it
+## 7. AGENTS.md is the root source; CLAUDE.md is legacy
 
 <!-- rules -->
-The root `AGENTS.md` carries the repo-wide KEEP residue and pointers; the root `CLAUDE.md` is
-exactly one line, `@AGENTS.md`. The pipeline runs on `AGENTS.md`. A root `CLAUDE.md` that
-carries its own instructions is consolidated into `AGENTS.md` — moved with `git mv` when
-`AGENTS.md` is absent, unit by unit when both exist, with a fact present in both a **FLAG** — and
-then reduced to the import.
+The root `AGENTS.md` carries the repo-wide KEEP residue and pointers, and every harness reads it.
+A root `CLAUDE.md` that carries its own instructions is consolidated into `AGENTS.md` — moved with
+`git mv` when `AGENTS.md` is absent, unit by unit when both exist, with a fact present in both a
+**FLAG** — and the pointer-only residue (`@AGENTS.md`) is **removed**, never recreated.
 
-**Fact, and the version it was verified on.** Claude Code 2.1.312 (2026-10-28), in real sessions
-with a positive control: `AGENTS.md` alone is not loaded as project instructions; with
-`CLAUDE.md` and `AGENTS.md` side by side, only `CLAUDE.md` is. OpenCode 1.18.35 and Codex read
-`AGENTS.md`. A later Claude Code that loads `AGENTS.md` itself makes the import redundant, never
-wrong; re-verify before dropping it.
+**Fact, and the version it was verified on.** Claude Code 2.1.312 (2026-10-28) reads `AGENTS.md`
+directly when there is no `CLAUDE.md`/`CLAUDE.local.md` in the working directory or above it
+(default `claude-md-or-agents-md`, added in 2.1.277). With both files side by side, only
+`CLAUDE.md` loads unless the setting is `claude-md-and-agents-md`. OpenCode 1.18.35 and Codex read
+`AGENTS.md`. A host before 2.1.277 still needs the one-line `CLAUDE.md` import; that is a legacy
+fallback, not the conformant layout.
 
 <!-- rationale -->
-One editable file read by every harness keeps one fact in one place; the import is the cheapest
-interface Claude needs, and it holds on Windows, where a link would need administrator rights.
+One editable file read by every harness keeps one fact in one place; the generated Claude bridge
+stays under `.claude/skills/` only because Claude does not discover `.agents/skills/`.

@@ -48,6 +48,19 @@ claude --plugin-dir ../claude-quenching/plugins/quenching
 The `--plugin-dir` form is a development path; marketplace installation is the normal adoption
 and upgrade path.
 
+**Alternative — deploy the surface into the target.** A repository that must operate without a
+harness plugin can carry the generic layer itself:
+
+```bash
+uvx --from "git+https://github.com/holetz/quenching@<tag>#subdirectory=plugins/quenching" \
+  cq deploy --target . --modules core --write
+```
+
+This writes `AGENTS.md`, `.agents/skills/`, the vendored runtime under `.agents/quenching/` and
+the generated `.claude/skills/` bridge. It never creates `CLAUDE.md`; Claude Code 2.1.277+ reads
+`AGENTS.md` directly. Deploy does not install `/docs/` — run the target's `quenching-knowledge-align` skill next. The contract
+is [deploy-mode.md](../standards/architecture/deploy-mode.md).
+
 Claude Code appends the plugin's `bin/` to the session PATH, which is what lets every command —
 and you — call `cq` bare.
 

@@ -71,9 +71,11 @@ version it does not have.
 **Artifact 3 is the marketplace listing.** It must agree with the two Claude upgrade surfaces so the
 published plugin advertises the version it actually contains.
 
-**Artifact 4 is the *tool identity*, now held once.** Nothing installs a tool standalone any more —
-every command invokes the plugin's own `cq`, bare through the `bin/` shim on `PATH` or at
-`${CLAUDE_PLUGIN_ROOT}/assets/bin/cq`, with no third rung
+**Artifact 4 is the *tool identity*, now held once.** Plugin mode installs no tool standalone: every
+command invokes the plugin's own `cq`, bare through the `bin/` shim on `PATH` or at
+`${CLAUDE_PLUGIN_ROOT}/assets/bin/cq`, with no third rung. Deploy mode is the one generated
+exception: the target carries a manifest-owned copy under `.agents/quenching/bin/cq`, upgraded only
+by `cq deploy --write` from a new release ([deploy-mode.md](../architecture/deploy-mode.md)).
 (`plugins/quenching/assets/references/align/tool-resolution.md`
 §Resolving the tool) — so a bump no longer *delivers* anything. What the one constant still does is
 answer `--version` for every pillar alike. Four scripts each carrying their own copy of this
@@ -175,16 +177,18 @@ everywhere else in this front.
 
 ## What a bump does not need to do any more
 
-Resolution is **plugin-first with no third rung**, so a bump reaches every repo the moment the
-plugin upgrades — nothing installs a tool standalone, and the two doors that do exist (`bin/cq` on
-`PATH`, the plugin path) are the same file inside the plugin, so there is no installed copy left
-running an old version for a bump to miss. Earlier plugin generations shipped as separate
-scripts an align could copy into a target's `.claude/hooks/`, which meant a bump could leave a
-stale, still-executing copy behind; a dedicated detector (`cq components drift`) existed for
-exactly that gap. Neither the copying nor the gap exists any more — a target repository holds
-nothing this plugin ships beyond the command bodies Claude Code itself loads — so the detector was
-retired with the four scripts it used to compare an installed copy against
-(`modularizar-specs-knowledge-components` spec, task 10.3).
+Resolution is **plugin-first with no third rung**, so a bump reaches every plugin-installed repo
+the moment the plugin upgrades — nothing installs a global tool, and the two doors that do exist
+(`bin/cq` on `PATH`, the plugin path) are the same file inside the plugin. A deploy-mode target is
+the generated exception: its `.agents/quenching/` copy carries the version in
+`.agents/.quenching-deploy.json` and moves only when `cq deploy --write` runs from the new release,
+which is an explicit target action rather than an upgrade the marketplace can miss. Earlier plugin
+generations shipped separate scripts an align could copy into a target's `.claude/hooks/`, which
+meant a bump could leave a stale, still-executing copy behind; a dedicated detector
+(`cq components drift`) existed for exactly that gap. Neither that copying nor its gap exists any
+more — a plugin-installed target repository holds nothing this plugin ships beyond the command
+bodies Claude Code itself loads — so the detector was retired with the four scripts it used to
+compare an installed copy against (`modularizar-specs-knowledge-components` spec, task 10.3).
 
 ## Verifying
 

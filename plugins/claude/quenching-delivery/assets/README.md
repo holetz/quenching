@@ -64,12 +64,14 @@ copy of the same standard legitimately differ in wording.
 | --- | --- | --- |
 | `bin/cq` | every pillar's deterministic rails — `specs`, `knowledge` (the OKF v0.1 conformance checker, CLI **and** hook) and `components` (the `.claude/` front's `doctor` / `lint` / `drift`), plus `components session`, which reads a session transcript as evidence for `/quenching-align:components:command:retro` and, with `cost`, a session's subagent spend per agent type, model and window; `context [transcript-or-session-id] --agent ID --json` reports recorded executor-window peak, request turns, exposure integral and role budget distance (default selector: `CLAUDE_CODE_SESSION_ID`). Missing iteration coverage yields a null peak and exit 2, with request exposure upper bound separate; the in-flight request is excluded, and native Codex usage without compatible telemetry is unmeasured | **no** — the plugin's own `hooks/hooks.json` and every command body invoke it by `${CLAUDE_PLUGIN_ROOT}` |
 
-**`cq` is not installed anywhere.** Resolution is plugin-first with **no third rung**
-([references/align/tool-resolution.md](references/align/tool-resolution.md)): bare, through the
-`bin/cq` shim Claude Code puts on `PATH`, or at the plugin path — two doors onto one file inside the
-plugin, never a third installation. A copy under a target's `.claude/hooks/` is legacy debris from
-before that change — reported by `cq components drift` and offered for removal by the matching
-align, never overwritten.
+**`cq` is not installed anywhere in plugin mode.** Resolution is plugin-first with **no third
+rung** ([references/align/tool-resolution.md](references/align/tool-resolution.md)): bare, through
+the `bin/cq` shim Claude Code puts on `PATH`, or at the plugin path — two doors onto one file inside
+the plugin, never a third installation. Deploy mode is the generated exception: the target carries
+the payload at `.agents/quenching/`, with `.agents/quenching/bin/cq` owned by
+`.agents/.quenching-deploy.json` and upgraded only by `cq deploy`. A copy under a target's
+`.claude/hooks/` is legacy debris — reported by `cq components drift` and offered for removal by
+the matching align, never overwritten.
 
 **One entry point now serves every event.** A hook event and a command body both shell out to
 `bin/cq`; `hooks/hooks.json` names `cq knowledge hook` at `PostToolUse` and `Stop`, and every

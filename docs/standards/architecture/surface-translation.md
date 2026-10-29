@@ -1,13 +1,13 @@
 ---
 type: standard
 title: Surface translation — Claude, Codex, OpenCode and Omnigent
-description: A target repository keeps its surface in .agents/ and AGENTS.md with a generated Claude bridge; the packaged plugin keeps Claude as source and translates it deterministically to Codex, OpenCode and Omnigent
+description: A target repository keeps its surface in .agents/ and AGENTS.md, reads AGENTS.md natively on Claude Code 2.1.277 and later, and gets only the Claude-only generated bridge under .claude; the packaged plugin keeps Claude as source and translates it deterministically to Codex, OpenCode and Omnigent
 resource: plugins/quenching/assets/bin/quenching/components/commands/translate.py, plugins/quenching/assets/bin/quenching/components/commands/bridge.py, plugins/quenching/assets/bin/quenching/components/commands/migrate.py, plugins/quenching/assets/translation/codex-adaptation.json, .agents/plugins/marketplace.json, scripts/sync_opencode_plugin.py, plugins/opencode/**, scripts/sync_omnigent_plugin.py, plugins/omnigent/**, docs/project/model-compat.md, plugins/quenching/assets/translation/omnigent-model-compat.json
 tags: [architecture, claude-code, codex, opencode, omnigent, translation, surfaces]
 timestamp: 2026-10-28
 audience: both
 authority: current
-source: alinhar-plugin-a-agents-md spec, tasks 2.1–2.4 (2026-08-18); spec 2115 (layout per harness, Omnigent operator agent, 2026-10-28); spec 2118 (target surface in .agents/ with a generated Claude bridge, 2026-10-28)
+source: alinhar-plugin-a-agents-md spec, tasks 2.1–2.4 (2026-08-18); spec 2115 (layout per harness, Omnigent operator agent, 2026-10-28); spec 2118 (target surface in .agents/ with a generated Claude bridge, 2026-10-28); AGENTS.md native-fallback re-measured on Claude Code 2.1.312 (2026-10-28)
 maintainer: quenching
 ---
 
@@ -19,8 +19,8 @@ Two directions exist, and they never mix. **The packaged plugin** keeps Claude a
 this marketplace repository publishes and checks its generated Codex plugin under
 `plugins/codex/quenching-codex/`, registered in `.agents/plugins/marketplace.json`, regenerated with
 `python3 scripts/sync_codex_plugin.py --write`. **A target repository** keeps its surface in the
-generic layer — `.agents/` and `AGENTS.md` — and gets only a generated Claude bridge
-(§Target repositories). Translating a target's `.claude/` into `.agents/` is the legacy layout, which
+generic layer — `.agents/` and `AGENTS.md` — and gets only the Claude-only generated
+bridge under `.claude/` (§Target repositories). Translating a target's `.claude/` into `.agents/` is the legacy layout, which
 `cq components migrate` converts.
 
 The package's platform, identity, manifest and catalog are declared in `assets/modules.json` under
@@ -37,13 +37,16 @@ A target repository's single editable source is the generic layer. Each artifact
 | skill | `.agents/skills/<name>/SKILL.md`, sibling files in the same folder | read by Codex and OpenCode; the name is one segment ([command-surface.md](../naming/command-surface.md)) |
 | reference | `.agents/references/**` | cited by the skills beside them |
 | eval | `.agents/evals/<name>/` | beside the skill it scores |
-| instructions | `AGENTS.md` at the root | read by Codex and OpenCode |
+| instructions | `AGENTS.md` at the root; subfolder `AGENTS.md` loads with that folder | read natively by Claude Code 2.1.277+, Codex and OpenCode |
 | configuration | `.agents/quenching.json`, `.claude/quenching.json` read as legacy ([plugin-configuration.md](../workflows/plugin-configuration.md)) | one editable file |
 
-The Claude interface carries only what the facts below require: `CLAUDE.md` holding exactly
-`@AGENTS.md`; `.claude/skills/<name>/` as a **generated copy** of `.agents/skills/<name>/`; and
-`.claude/agents/`, `.claude/hooks/`, `.claude/settings*.json`, which have no generic home Claude Code
-reads. `.claude/commands/` and `.claude/references/` do not exist in a conformant target.
+There is no root `CLAUDE.md` in a conformant target: Claude Code reads `AGENTS.md` itself when
+no `CLAUDE.md`/`CLAUDE.local.md` exists in the working directory or above it. The Claude interface
+carries only what the facts below require: `.claude/skills/<name>/` as a **generated copy** of
+`.agents/skills/<name>/`; and `.claude/agents/`, `.claude/hooks/`, `.claude/settings*.json`, which
+have no generic home Claude Code reads. `.claude/commands/`, `.claude/references/` and
+`.claude/CLAUDE.md` do not exist in a conformant target. A pointer-only `CLAUDE.md` (`@AGENTS.md`)
+is legacy, kept only for hosts before Claude Code 2.1.277, and `cq components migrate` removes it.
 
 ### Verified facts
 
@@ -54,7 +57,7 @@ throwaway repositories against a positive control, and by reading the installed 
 | --- | --- |
 | Does Claude Code discover a skill only under `.agents/skills/<n>/SKILL.md`? | **No.** `.agents/skills` appears only in its Cursor importer, which copies into `.claude/skills/` |
 | Does it discover a nested `.claude/skills/<a>/<b>/SKILL.md`? | **No**; only the flat sibling skill is listed |
-| Does it load `AGENTS.md` alone as project instructions? | **No** (default configuration); with both files only `CLAUDE.md` loads |
+| Does it load `AGENTS.md` alone as project instructions? | **Yes**, by default since 2.1.277 (`claude-md-or-agents-md`): with no `CLAUDE.md`/`CLAUDE.local.md` in the working directory or above it, every `AGENTS.md` and `.claude/AGENTS.md` in that path loads. With both files, only `CLAUDE.md` loads unless the setting is `claude-md-and-agents-md`. Nothing under `.agents/` is read as instructions. |
 | Does it read a subagent under `.agents/agents/`? | **No** |
 | Does OpenCode read `.claude/skills` and `.agents/skills`? | **Yes, both**, in that order; a repeated name logs `duplicate skill name` and the `.agents` copy wins, so the listing does not duplicate |
 
@@ -79,7 +82,8 @@ applies it with `git mv`/`git rm`, preserving history: `.claude/commands/<a>/<b>
 `.agents/skills/<a>-<b>/SKILL.md` (replacing a generated Codex translation of the same command),
 `.claude/references/**` becomes `.agents/references/**`, a hand-written `.claude/skills/<n>/` moves
 to `.agents/skills/<n>/`, the old translation manifests are removed, `.claude/quenching.json` moves to
-`.agents/quenching.json`, and `CLAUDE.md` content moves to `AGENTS.md`. Moved bodies have `/a:b`
+`.agents/quenching.json`, and `CLAUDE.md` content moves to `AGENTS.md`. A pointer-only `CLAUDE.md`
+(`@AGENTS.md`) is removed, never recreated: Claude Code 2.1.277+ reads `AGENTS.md` directly. Moved bodies have `/a:b`
 invocations rewritten to `/a-b` and `.claude/references/` citations to `.agents/references/`. A
 conflict (two divergent configurations, two harness files with their own content) is reported in
 the plan (exit 1), and `--write` refuses it (exit 2, `ct-migrate-conflict`) and writes nothing. A target is **conformant** when `migrate` reports an empty plan
@@ -95,7 +99,7 @@ not migrated yet. `cq components translate --source <repo> --target <repo>` maps
 `.claude/commands/<path>.md` to `.agents/skills/<path>/SKILL.md`, preserving the command body
 while adapting platform vocabulary and retaining only frontmatter Codex can use. It also copies
 and adapts `.claude/references/**` to `.agents/references/**`, so translated skills retain valid
-local citations, and maps the root `CLAUDE.md` harness to `.agents/AGENTS.md` when it exists.
+local citations, and maps a root `CLAUDE.md` harness to `.agents/AGENTS.md` when it exists (a pointer-only file contributes nothing).
 
 The translator owns only those generated artifacts. Existing Codex configuration, including
 `.agents/plugins/marketplace.json`, stays in place and is excluded from translation-drift checks.

@@ -33,7 +33,7 @@ of a behaviour and editing a generated copy of it.
 | `.claude/` | this repository's own local command surface | `/quenching-align:components:*` |
 | `scripts/` | thin launchers CI calls | the owning spec |
 | `zensical.toml` | the site layer — outside the bundle, on purpose | `/quenching-align:knowledge:documentation:build` |
-| `CLAUDE.md`, `AGENTS.md` | harness pointers, kept thin over this bundle | `/quenching-align:components:harness:align` |
+| `AGENTS.md` (legacy `CLAUDE.md`) | the harness pointer, kept thin over this bundle | `/quenching-align:components:harness:align` |
 
 Every generated tree under `plugins/<harness>/` is the trap: it is **regenerated wholesale**, so editing it by
 hand produces a change that survives until the next sync and then vanishes without a diff to

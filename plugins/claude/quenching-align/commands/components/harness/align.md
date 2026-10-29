@@ -1,6 +1,6 @@
 ---
 description: >-
-  Refactor AGENTS.md into thin pointers over the /docs/ bundle, CLAUDE.md as @AGENTS.md. Use for "slim down CLAUDE.md", "move CLAUDE.md content into docs". Not for: command bodies → /quenching-align:components:command:new.
+  Refactor AGENTS.md into thin pointers over the /docs/ bundle, with no CLAUDE.md. Use for "slim down AGENTS.md", "move AGENTS.md content into docs". Not for: command bodies → /quenching-align:components:command:new.
 argument-hint: [optional-harness-file]
 allowed-tools: Bash(cq:*), Read, Grep, Glob, Bash(find:*), Bash(git grep:*), Bash(git check-ignore:*), Bash(grep:*), Bash(python3:*), Bash(py:*), Write, Edit, Task, AskUserQuestion
 ---
@@ -9,10 +9,10 @@ allowed-tools: Bash(cq:*), Read, Grep, Glob, Bash(find:*), Bash(git grep:*), Bas
 
 **Input**: `$ARGUMENTS` (an optional specific harness file; omit to sweep every CLAUDE.md/AGENTS.md).
 
-Refactors a repo's **harness files** (the root `AGENTS.md`, every subfolder `CLAUDE.md`) into thin
+Refactors a repo's **harness files** (the root `AGENTS.md`, every subfolder `AGENTS.md`) into thin
 navigation pointers over the OKF `/docs/` bundle: operational rules stay;
 durable knowledge is **moved** into its `/docs/` home and cited. Assumes the bundle already exists (run
-`/quenching-align:knowledge:align` first if not). It also **creates** a thin subfolder `CLAUDE.md` where discovery
+`/quenching-align:knowledge:align` first if not). It also **creates** a thin subfolder `AGENTS.md` where discovery
 finds a folder with a local operational surface but no harness — evidence-gated, never one per
 directory (routing §6). The unit → verdict → home routing and the pointer-honesty gate are
 in [components-harness-align/harness-routing.md](${CLAUDE_PLUGIN_ROOT}/assets/references/components-harness-align/harness-routing.md); the home boundaries, `type`
@@ -25,13 +25,13 @@ molds live at `${CLAUDE_PLUGIN_ROOT}/assets/templates/harness/`.
 
 ## Doctrine
 
-- **`AGENTS.md` is the source; the root `CLAUDE.md` is the one line `@AGENTS.md`** — Claude Code
-  2.1.312 does not load `AGENTS.md` alone (routing §7 has the verified fact).
+- **`AGENTS.md` is the source; there is no root `CLAUDE.md`** — Claude Code 2.1.277+ reads
+  `AGENTS.md` directly when no `CLAUDE.md`/`CLAUDE.local.md` exists (routing §7 has the verified fact).
 - **Commands and etiquette stay; knowledge moves.** The one test: would the agent need this on
   **EVERY** task under this file's folder (keep) — or only when working on **that subject** (move +
   pointer)?
 - **A folder earns a harness; a harness is never assumed.** Beyond slimming the files that exist,
-  the skill **creates** a thin subfolder `CLAUDE.md` where a folder has local operational commands
+  the skill **creates** a thin subfolder `AGENTS.md` where a folder has local operational commands
   but none (routing §6); data, output, and asset folders earn nothing.
 - **Move, never copy.** After the run each fact lives in exactly **ONE** place — its concept doc.
   The pointer **cites** the doc, never paraphrases it.
@@ -58,23 +58,23 @@ Resolve `cq` per
 ## Workflow
 
 ### 1. Inventory the harness surface (read-only)
-`Glob` `**/CLAUDE.md`, `**/AGENTS.md`, and `CLAUDE.local.md`; add a `grep --no-ignore` sweep to
+`Glob` `**/AGENTS.md`, `**/CLAUDE.md` (legacy), and `CLAUDE.local.md`; add a `grep --no-ignore` sweep to
 catch gitignored ones. Confirm `/docs/index.md` carries `okf_version` — if there is no OKF bundle,
 **stop** and offer `/quenching-align:knowledge:align` first. List every harness file found, and
-the **root pair's state** — conformant (`CLAUDE.md` is `@AGENTS.md`), legacy or doubled
+the **root harness state** — conformant (`AGENTS.md` only), legacy (`CLAUDE.md` content or pointer), or doubled
 (routing §7).
 
 Then **discover greenfield candidates** (read-only), swept **repo-wide from the repository
 root** in one pass, e.g. `find . -type f \( -name '*.sh' -o -name Makefile
 -o -name package.json -o -name justfile \)`.
-Folders that have a **local operational surface** but **no** `CLAUDE.md` qualify only if they
+Folders that have a **local operational surface** but **no** `AGENTS.md` qualify only if they
 carry commands the agent would need on **every** task under them that **don't derive from the
 root** — a `*.sh` / `Makefile` / `justfile` / `package.json`-script, a distinct toolchain, or a
 `README` whose fenced blocks are run-commands. **Exclude** generated-output, asset, and vendored
 dirs (`.build/`, `dist/`, `build/`, `target/`, `node_modules/`, `**/__pycache__/`, `fonts/`,
 `assets/`, `.venv/`, any nested `site-packages`/vendored dependency tree) and anything gitignored
 as a build artifact — check each hit with `git check-ignore`.
-Each survivor is a **proposed** subfolder `CLAUDE.md`, carried into the plan (step 5) as its own
+Each survivor is a **proposed** subfolder `AGENTS.md`, carried into the plan (step 5) as its own
 gated item — never auto-created. See [components-harness-align/harness-routing.md](${CLAUDE_PLUGIN_ROOT}/assets/references/components-harness-align/harness-routing.md) §6.
 
 On a large repo, delegate this repo-wide `find`/`grep` sweep to **one read-only `Task`
@@ -117,7 +117,7 @@ confirmation item.
 ### 5. Present ONE refactor plan → gate on one OK
 Show the table (`file → unit → verdict → destination`) plus, per rewritten file, its **target
 shape** (which mold, which KEEP residue), and the root pair's consolidation (routing §7).
-Include evidence-gated subfolder-`CLAUDE.md` creations —
+Include evidence-gated subfolder-`AGENTS.md` creations —
 both units scoped to a folder and greenfield-discovered folders (step 1 / routing §6), each its own
 item — FLAG items, and code-coupled items awaiting their **own** OK. **Wait for a single
 confirmation** before writing anything.
@@ -137,9 +137,9 @@ cover it.
 **Done when:** every approved MOVE is indexed and self-checked before it is cut.
 
 ### 7. Rewrite each harness file
-Root `AGENTS.md` from `${CLAUDE_PLUGIN_ROOT}/assets/templates/harness/claude-root.md` (root
-`CLAUDE.md` = `@AGENTS.md`), a subfolder from
-`.../harness/claude-subfolder.md`. Structure and links are canonical English; prose may follow the
+Root `AGENTS.md` from `${CLAUDE_PLUGIN_ROOT}/assets/templates/harness/agents-root.md`, a subfolder from
+`.../harness/agents-subfolder.md`. A legacy `CLAUDE.md` that holds only `@AGENTS.md` is removed;
+content-bearing legacy files are consolidated first. Structure and links are canonical English; prose may follow the
 repo's language. The root file's language declaration line is carried through **verbatim**. UNROUTABLE and
 FLAG-pending units stay under a clearly marked residue section. **No frontmatter, ever.**
 **Done when:** every planned harness rewrite is on disk with residue preserved.
@@ -165,4 +165,5 @@ is still restated inline; run `cq knowledge validate` over `/docs/` → 0 errors
 - Never skip the single up-front plan + confirmation; a product-code edit confirms on its own. A
   cycle-authorized run (convergence.md §The cycle-authorization contract) replaces the batch gate with narration — never the
   product-code item's own OK — and a pre-collected table is delta-rechecked before any write.
-- Never blanket-create subfolder `CLAUDE.md`s — creation is evidence-gated per harness-routing.md §6.
+- Never blanket-create subfolder `AGENTS.md`s — creation is evidence-gated per harness-routing.md §6.
+- Never recreate the pointer-only `CLAUDE.md`; Claude Code 2.1.277+ reads `AGENTS.md`.

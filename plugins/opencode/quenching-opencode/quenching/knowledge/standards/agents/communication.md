@@ -23,7 +23,7 @@ One is a variable, the other a constant — see [Why conduct is not declared](#w
 ### Declaring it
 
 A repo declares its **conversation** language as **one BCP-47 tag**, on a single line of its **root** harness file
-(`AGENTS.md` / `AGENTS.md`):
+(`AGENTS.md`; `AGENTS.md` is legacy):
 
 ```
 Language: pt-BR — the contract is /docs/standards/agents/communication.md

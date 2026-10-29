@@ -19,8 +19,8 @@ the file itself does not.
 | `vision/area.md` | `vision/<area>.md` | `vision` |
 | `sidecar.md` | `external/regulations/**` extract | `sidecar` |
 | `index.md.tmpl` | a folder's reserved `index.md` listing (no frontmatter; root carries only `okf_version`) | *(reserved)* |
-| `harness/claude-root.md` | a repo-root `CLAUDE.md` thin pointer over the bundle | *(harness — exempt)* |
-| `harness/claude-subfolder.md` | a subfolder `CLAUDE.md` nearest-file pointer | *(harness — exempt)* |
+| `harness/agents-root.md` | a repo-root `AGENTS.md` thin pointer over the bundle | *(harness — exempt)* |
+| `harness/agents-subfolder.md` | a subfolder `AGENTS.md` nearest-file pointer | *(harness — exempt)* |
 | `automation/command.md` | `.claude/commands/<folder-path>/<verb>.md` — the whole entry point (**outside** the OKF bundle) | *(not an OKF concept)* |
 | `automation/agent.md` | `.claude/agents/<name>.md` — a subagent definition (**outside** the bundle) | *(not an OKF concept)* |
 | `automation/hook.md` | a hook **wiring** — prose mold carrying the three shapes, narrowest first; the chosen one lands in `.claude/settings.json`, command frontmatter, or `.claude/hooks/` | *(not an OKF concept)* |
@@ -29,7 +29,7 @@ the file itself does not.
 | `automation/agents-standard.md` | `standards/automation/agents.md` (subagent authoring, born `authority: background`) | `standard` |
 | `automation/hooks-standard.md` | `standards/automation/hooks.md` (the hook scope ladder and policy defaults, born `authority: background`) | `standard` |
 
-The **harness molds** (`harness/`) produce **exempt** files — `CLAUDE.md`/`AGENTS.md` carry **no
+The **harness molds** (`harness/`) produce **exempt** files — `AGENTS.md` carries **no
 frontmatter and no `type`** (harness pointers, not OKF concepts — okf-spec strict-7; the validator
 skips them). `/quenching-align:components:harness:align` applies them when it refactors a repo's harness files into thin
 pointers over the bundle.

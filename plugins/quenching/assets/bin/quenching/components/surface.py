@@ -32,6 +32,7 @@ import json
 import os
 import re
 
+from quenching.common.deploy import generated_for_skills_dir
 from quenching.common.frontmatter import frontmatter_anomalies, parse_frontmatter
 from quenching.common.io import read_text
 from quenching.components.hooks import parse_frontmatter_hooks
@@ -194,9 +195,10 @@ def discover_skills(skills_dir: str) -> list[dict]:
     if not os.path.isdir(skills_dir):
         return []
     out = []
+    generated = generated_for_skills_dir(skills_dir)
     for name in sorted(os.listdir(skills_dir)):
         path = os.path.join(skills_dir, name, SKILL_FILE)
-        if not os.path.isfile(path):
+        if not os.path.isfile(path) or name in generated:
             continue
         text = read_text(path) or ""
         body = body_after_frontmatter(text)
@@ -232,10 +234,14 @@ def discover_entry_points(root: str) -> list[dict]:
 
 
 def load_surface(root: str) -> dict:
+    entry = entry_points_dir(root)
+    commands = discover_entry_points(root)
+    generated = sorted(generated_for_skills_dir(entry)) if os.path.basename(entry) == SKILLS_DIR else []
     return {
         "root": root,
-        "commandsDir": entry_points_dir(root),
-        "commands": discover_entry_points(root),
+        "commandsDir": entry,
+        "commands": commands,
+        "generated": generated,
     }
 
 

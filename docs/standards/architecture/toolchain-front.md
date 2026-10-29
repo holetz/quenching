@@ -2,7 +2,7 @@
 type: standard
 title: Toolchain front
 description: The target repository's toolchain surface — manifests, locks, language pins and tool configuration, with explicit ownership boundaries and stable tc-* findings
-resource: .agents/quenching.json, pyproject.toml, uv.lock, CLAUDE.md, .github/workflows/**, plugins/quenching/assets/zensical/ci-github-pages.yml
+resource: .claude/quenching.json, pyproject.toml, uv.lock, AGENTS.md, .github/workflows/**, plugins/quenching/assets/zensical/ci-github-pages.yml
 tags: [architecture, toolchain, dependencies, build, configuration]
 timestamp: 2026-08-31
 audience: both
@@ -29,7 +29,7 @@ future implementation:
   `plugins/quenching/assets/zensical/ci-github-pages.yml` uses the open-ended `3.x` runtime; no
   `.python-version` is present.
 - The development dependency group declares `pytest>=8.0`, while the repository harness in
-  `CLAUDE.md` runs `unittest` discovery.
+  `AGENTS.md` runs `unittest` discovery.
 - `pyproject.toml` is read by the `ops` and `proof` fronts, including `[project.scripts]`,
   `tool.coverage` and `tool.pytest`, but ownership is declared by the shared arbiter rather than
   by the toolchain front.

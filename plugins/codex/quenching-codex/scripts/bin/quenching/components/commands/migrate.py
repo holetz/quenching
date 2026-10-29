@@ -3,7 +3,7 @@
 The plan turns the legacy layout, where `.agents/` was the source and `.agents/` a Codex
 translation of it, into the generic one: skills in `.agents/skills/<name>/SKILL.md`, references
 in `.agents/references/**`, instructions in `AGENTS.md`, configuration in `.agents/quenching.json`,
-and `AGENTS.md` reduced to `@AGENTS.md`. A nested `.agents/skills/<a>/<b>.md` becomes the flat
+and a pointer-only `AGENTS.md` removed (Codex 2.1.277+ reads `AGENTS.md`). A nested `.agents/skills/<a>/<b>.md` becomes the flat
 skill `<a>-<b>`, and a nested `.agents/skills/<a>/<b>/` folder becomes `<a>-<b>/` whole, its
 sibling files with it.
 
@@ -260,11 +260,15 @@ def build_plan(repo: Path) -> Plan:
         else:
             plan.move(legacy, home)
     claude_md, agents_md = repo / "AGENTS.md", repo / "AGENTS.md"
-    if agents_md.is_file() and not claude_md.exists():
-        plan.ops.append({"op": "pointer", "path": "AGENTS.md"})
-    if claude_md.is_file() and claude_md.read_text(encoding="utf-8").strip() != POINTER.strip():
+    pointer_only = claude_md.is_file() and claude_md.read_text(
+        encoding="utf-8").strip() == POINTER.strip()
+    if claude_md.is_file() and pointer_only:
+        # Codex 2.1.277+ reads AGENTS.md directly; the import is legacy residue.
+        if "AGENTS.md" in plan.tracked:
+            plan.remove("AGENTS.md", "legacy @AGENTS.md pointer; AGENTS.md is read directly")
+    elif claude_md.is_file():
         if agents_md.is_file() and agents_md.read_bytes() == claude_md.read_bytes():
-            plan.ops.append({"op": "pointer", "path": "AGENTS.md"})
+            plan.remove("AGENTS.md", "duplicate of AGENTS.md; one source remains")
         elif agents_md.is_file():
             plan.conflicts.append({"path": "AGENTS.md", "with": "AGENTS.md",
                                    "why": "both carry their own instructions"})
@@ -273,7 +277,6 @@ def build_plan(repo: Path) -> Plan:
                                    "why": "AGENTS.md is not tracked, so git mv cannot move it"})
         else:
             plan.ops.append({"op": "move", "from": "AGENTS.md", "to": "AGENTS.md"})
-            plan.ops.append({"op": "pointer", "path": "AGENTS.md"})
     return plan
 
 
@@ -330,9 +333,6 @@ def apply(plan: Plan) -> None:
         elif op["op"] == "move":
             (repo / op["to"]).parent.mkdir(parents=True, exist_ok=True)
             _git(repo, "mv", "--", op["from"], op["to"])
-        elif op["op"] == "pointer":
-            (repo / op["path"]).write_text(POINTER, encoding="utf-8")
-            _git(repo, "add", "--", op["path"])
     for op in plan.ops:
         parent = (repo / op.get("from", op.get("path", ""))).parent
         while parent != repo and parent.is_dir() and not any(parent.iterdir()):

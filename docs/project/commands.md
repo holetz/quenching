@@ -31,6 +31,7 @@ cq specs …       # the provider-owned specs front
 cq components …  # the .claude/ surface: doctor, lint, registry, translate
 cq proof …       # the target-declared verification surface: inventory, doctor, status, ratchet
 cq git …         # the git pillar's deterministic queries
+cq deploy …      # install the surface in a target repository (top-level, not a front)
 ```
 
 | Exit code | Meaning |
@@ -108,7 +109,7 @@ Acts on the target repository's `.claude/` automation surface.
 | `/quenching-align:components:command:retro` | Mines ONE session for what it evidences about ONE command that ran in it — cost, redundancy, bugs. |
 | `/quenching-align:components:agent:new` | Mints or edits ONE subagent definition, scoping tools to the narrowest set and pricing its always-on cost. |
 | `/quenching-align:components:hook:new` | Wires ONE scoped hook — narrowest scope, cheapest handler. Warns by default; blocks only on the human's word. |
-| `/quenching-align:components:harness:align` | Refactors `CLAUDE.md`/`AGENTS.md` into thin pointers over the bundle, so doctrine lives once. |
+| `/quenching-align:components:harness:align` | Refactors `AGENTS.md` into a thin pointer over the bundle, so doctrine lives once; legacy `CLAUDE.md` is removed. |
 
 ## The ops front
 

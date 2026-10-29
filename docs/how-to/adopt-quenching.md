@@ -40,6 +40,17 @@ claude --plugin-dir ./plugins/quenching
 Do not use `--plugin-dir` as the normal installation or upgrade path; the marketplace installation
 lets Claude Code manage the published copy.
 
+A target that must operate without a harness plugin can use deploy mode instead:
+
+```bash
+uvx --from "git+https://github.com/holetz/quenching@<tag>#subdirectory=plugins/quenching" \
+  cq deploy --target . --modules core --write
+```
+
+The target then keeps `AGENTS.md` and `.agents/` as its source; `.agents/quenching/` and
+`.claude/skills/` are generated. Deploy is installation, not alignment: run the target's
+`quenching-knowledge-align` skill after it. See [deploy-mode.md](../standards/architecture/deploy-mode.md).
+
 ## Uninstall or reverse
 
 To stop using the plugin but keep the marketplace configured, run:
@@ -107,7 +118,7 @@ flowchart LR
    offers the declaration path without inventing a plan.
 3. Read the ONE plan per drifted front. It names every move: which stray docs fold into which
    `/docs/` home, which `.claude/` files collapse onto one entry point, what
-   `CLAUDE.md` keeps versus what moves into the bundle.
+   `AGENTS.md` keeps versus what moves into the bundle.
 4. Give (or decline) the OK. Anything whose blast radius reaches **product code** confirms on
    its own even inside the conducted run — one blanket OK never covers a code-coupled rename.
 
@@ -134,7 +145,7 @@ front is **conformant**; a front excluded by scope or blocked by an earlier hard
 
 The `docs` front is the one align with a real internal loop. After the structural pass it
 offers, each on its own evidence: draining the project's Claude Code memory into the bundle,
-thinning `CLAUDE.md` into a thin pointer over `/docs/`, and backfilling the glossary —
+thinning `AGENTS.md` into a thin pointer over `/docs/`, and backfilling the glossary —
 looping to a fixpoint until a pass changes nothing.
 
 ??? note "What 'converged' looks like on disk"

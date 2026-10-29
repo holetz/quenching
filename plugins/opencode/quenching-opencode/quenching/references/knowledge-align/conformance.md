@@ -13,7 +13,7 @@ steps **cite this file** rather than restating the rules. Severities: **ERROR** 
 | --- | --- | --- |
 | `index.md` | reserved listing | `check_index` |
 | `log.md` | reserved, **retired** | nothing — recognized, never judged (see below) |
-| `AGENTS.md`, `AGENTS.md` | harness pointer | **exempt** (skipped; honesty checked by `quenching-components-harness-align`, not the validator) |
+| `AGENTS.md` (legacy `AGENTS.md`) | harness pointer | **exempt** (skipped; honesty checked by `quenching-components-harness-align`, not the validator) |
 | `README.md` | migration nudge | WARN "convert to index.md" |
 | any other `*.md` | concept doc | `check_concept` |
 

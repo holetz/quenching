@@ -15,7 +15,7 @@ the standard links it.
 Keep only the subtopics that apply to the repo; within each, break standards **one
 concept per file** by considering the candidate sub-standards catalog (a
 **consideration** checklist, evidence-gated generation, recorded deferral — not a blind
-generate list). The **agent-facing pointer** for this home is [CLAUDE.md](CLAUDE.md)
+generate list). The **agent-facing pointer** for this home is [AGENTS.md](AGENTS.md)
 (auto-loaded).
 
 ## Subtopics
@@ -76,11 +76,12 @@ generate list). The **agent-facing pointer** for this home is [CLAUDE.md](CLAUDE
 | [specs-reader-plugin.md](architecture/specs-reader-plugin.md) | A target that only reads another project's specs enables quenching-specs-reader alone — one command, one read-only entry point that refuses write verbs at the argument boundary and disables every backend write path at runtime, and a payload and version generated from plugins/quenching and held in lockstep by the repository gate |
 | [specs-portal.md](architecture/specs-portal.md) | The local spec portal (cq specs serve) reads only the specs store open_backend reads, exposes a fixed set of GET and POST routes plus, under --chat, a read-only claude -p chat polled by job, keeps its loopback, token, Host/Origin and CSP guarantees, builds every node with textContent, reuses cockpit UX patterns but never its code, shows the spec-runner's run record on the card, and regenerates the reader copy and the Codex mirror with every change |
 | [toolchain-front.md](architecture/toolchain-front.md) | The target repository's toolchain surface — manifests, locks, language pins and tool configuration, with explicit ownership boundaries and stable tc-* findings |
-| [surface-translation.md](architecture/surface-translation.md) | A target repository keeps its surface in .agents/ and AGENTS.md with a generated Claude bridge; the packaged plugin keeps Claude as source and translates it deterministically to Codex, OpenCode and Omnigent |
+| [surface-translation.md](architecture/surface-translation.md) | A target repository keeps its surface in .agents/ and AGENTS.md, reads AGENTS.md natively on Claude Code 2.1.277 and later, and gets only the Claude-only generated bridge under .claude; the packaged plugin keeps Claude as source and translates it deterministically to Codex, OpenCode and Omnigent |
 | [type-follows-home.md](architecture/type-follows-home.md) | Every home in the canonical tree owns exactly one `type:` value (`standards/` → `standard`, `concepts/` → `concept`, and so on) — a home that renames without restamping every doc's `type:` recreates the naming complaint one level down, in the most greppable field of the bundle, and nothing today checks for the mismatch |
 | [codex-pillar.md](architecture/codex-pillar.md) | A pillar that reads the Codex quota, runs the Codex CLI as an independent reviewer that must change nothing, and lets it write one eligible spec task inside a worktree — app-server quota first, exit 0/1/2 failing closed, Codex's native sandbox never asked for, both runs under the bypass bounded by a git guard (the review's proves the tree unchanged, the executor's proves its diff inside `files:`), a stop-loss, and argv that never inherits the user's Codex configuration |
 | [opensource-front.md](architecture/opensource-front.md) | The target repository's license, community and governance artifacts, written only from pinned templates through cq opensource apply, and the read-only aggregate of every owner's open source catalog answers into a conservative baseline level with stable os-* findings |
 | [mcp-server.md](architecture/mcp-server.md) | A closed parser-derived tool catalog over the cq core, three tool classes, bounded reference resources and a stdio launcher packaged with the plugin layout intact |
+| [deploy-mode.md](architecture/deploy-mode.md) | `cq deploy` materializes the selected quenching modules in a target's generic layer — AGENTS.md, .agents/skills and a vendored runtime — while Claude Code receives only a generated bridge under .claude; install is not alignment and never calls a model. |
 
 ### automation/
 
