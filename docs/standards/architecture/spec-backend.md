@@ -210,6 +210,9 @@ and the GitHub and Azure Boards backends keep working unchanged beside it.
   pushed commit changed such a spec under that write, the new pending commit's parent keeps the
   document the write read, so the next sync refuses it as a conflict instead of overwriting the
   remote.
+  Known limit: if a second sync from the same clone, or a fetch followed by a write, rebases a late
+  write onto the pushed commit before the first sync's close runs, a late write back to the base
+  text reads as remote drift and is lost. It takes three overlapping processes within milliseconds.
 - **Visibility.** `cq specs status` reports how many specs hold unsent local writes, and since
   when. Other clones and the board see a change only at the next sync point.
 - **Identity.** Without a tracker, the store owns identity: the counter is read and incremented
