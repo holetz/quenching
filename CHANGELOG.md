@@ -13,6 +13,21 @@ owner: [`ci-cd/versioning-release.md`](docs/standards/ci-cd/versioning-release.m
 short version for a consumer: the version is published once, deliberately, as a release — never at a
 spec's own conclude — and `cq --version` is what answers which one you are running.
 
+## 6.11.0
+
+**Deploy selected quenching modules directly into a target repository.** `cq deploy` creates
+  the generic `.agents/skills/` surface, a manifest-owned payload under `.agents/quenching/`,
+  and the generated Claude skills bridge. The default runtime is vendored and offline;
+  `--runtime uvx` uses a shim pinned to the release tag. Module selection, drift checks and
+  ownership conflicts are deterministic. Existing target instructions, configuration and
+  authored skills are preserved, and installation does not run alignment or choose a backend.
+
+**`AGENTS.md` is the native instructions source.** Harness templates, migration, the shipped
+  knowledge skeleton and documentation use `AGENTS.md` directly for Claude Code 2.1.277+.
+  Migration removes redundant legacy pointers instead of creating them. Generated deploy skills
+  are reported separately from the target's authored components. Claude, Codex and OpenCode
+  distributions carry the regenerated runtime and instructions.
+
 ## 6.10.1
 
 **The shipped prose cites the generic `.agents/` layer, Omnigent reads references as MCP
