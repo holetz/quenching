@@ -82,8 +82,9 @@ def _read(path: str) -> str | None:
 def enabled_module_paths(path_value: str) -> list[str]:
     """`assets/bin` of every enabled `quenching-*` module the host put on PATH, same version only.
 
-    The host appends `<pluginRoot>/bin` for every enabled plugin, whether or not the directory
-    exists, so PATH is the one list of enabled modules this process can see. `quenching` is a
+    The host appends `<pluginRoot>/bin` for every enabled plugin whose `bin/` exists, so every
+    module ships one (`quenching-specs` with the `cq` shim, the others with a non-executable
+    marker), and PATH is the one list of enabled modules this process can see. `quenching` is a
     namespace package: an entry appended to `sys.path` contributes its subpackages after this
     router's own, so a package this plugin ships always wins over another module's copy.
     """
