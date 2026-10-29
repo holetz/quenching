@@ -414,6 +414,44 @@ class PendingWrites(GitStoreFixture):
         self.assertTrue(self.remote_file("specs/2.md").endswith("late-write\n"))
         self.assertEqual(1, len(self.remote_log()))
 
+    def _sync_with_a_late_revert(self, *others: int) -> tuple[GitBackend, str]:
+        """Spec 1 (and `others`) pending, then `push()`, with a second instance of the same clone
+        writing spec 1 back to its remote text after the sync read the pending ref and before
+        its push and close, while the tracking ref still holds the sync's base."""
+        path, backend = self._seeded()
+        original = backend.read_spec(1)[0]["text"]
+        self._append(backend, 1, "sent")
+        for spec_id in others:
+            self._append(backend, spec_id, "sent too")
+        late = GitBackend(path)
+        real_push = GitBackend._push
+        done = []
+
+        def revert_then_push(this, lease, commit):
+            if this is backend and not done:
+                done.append(True)
+                info, _ = late.read_spec(1)
+                late.write_spec(info, original)
+            return real_push(this, lease, commit)
+        with mock.patch.object(GitBackend, "_push", revert_then_push):
+            backend.push()
+        return backend, original
+
+    def test_a_late_write_back_to_the_base_of_the_only_sent_spec_survives(self):
+        backend, original = self._sync_with_a_late_revert()
+        self.assertTrue(self.remote_file("specs/1.md").endswith("sent\n"))
+        self.assertEqual([1], backend.pending_state()["specs"])
+        self.assertEqual(original, GitBackend(backend.repo_root).read_spec(1)[0]["text"])
+        backend.push()
+        self.assertEqual(original, self.remote_file("specs/1.md"))
+
+    def test_a_late_write_back_to_the_base_of_one_of_several_sent_specs_survives(self):
+        backend, original = self._sync_with_a_late_revert(2)
+        self.assertEqual([1], backend.pending_state()["specs"])   # spec 2 left with the sync
+        backend.push()
+        self.assertEqual(original, self.remote_file("specs/1.md"))
+        self.assertTrue(self.remote_file("specs/2.md").endswith("sent too\n"))
+
     def _drifted(self) -> tuple[str, GitBackend, GitBackend, str]:
         """Clone `a` holds a pending write on spec 1 based on T0; another clone then moves the
         remote twice (T1, T2). Returns the path, the syncing instance, the other clone and T1,
@@ -542,15 +580,34 @@ class PendingWrites(GitStoreFixture):
         self.assertNotIn("fetch", calls)
         self.assertEqual([1], backend.pending_state()["specs"])
 
-    def test_writing_a_spec_back_to_its_remote_text_retires_the_pending_ref(self):
+    def test_writing_a_spec_back_to_its_remote_text_leaves_nothing_to_send(self):
         _, backend = self._seeded()
         info, _ = backend.read_spec(1)
         original = info["text"]
         backend.write_spec(info, original + "\nedit\n")
         info, _ = backend.read_spec(1)
         backend.write_spec(info, original)
-        self.assertIsNone(backend._pending())
-        self.assertIsNone(backend.pending_state())
+        self.assertIsNone(backend.pending_state())          # `status`: nothing pending
+        before = self.remote_tip()
+        self.assertIsNone(backend.push()["commit"])         # the sync pushes nothing
+        self.assertEqual(before, self.remote_tip())
+        self.assertIsNone(backend._pending())               # and retires the empty commit
+
+    def test_a_write_after_every_change_went_back_starts_its_own_operations_and_date(self):
+        _, backend = self._seeded()
+        info, _ = backend.read_spec(1)
+        original = info["text"]
+        with mock.patch.dict(os.environ, {"GIT_AUTHOR_DATE": "2026-01-02T03:04:05+00:00",
+                                          "GIT_COMMITTER_DATE": "2026-01-02T03:04:05+00:00"}):
+            backend.write_spec(info, original + "\nedit\n")
+            info, _ = backend.read_spec(1)
+            backend.write_spec(info, original)
+        self._append(backend, 2, "next")
+        state = backend.pending_state()
+        self.assertEqual([2], state["specs"])
+        self.assertNotEqual("2026-01-02T03:04:05+00:00", state["since"])
+        self.assertEqual("[skip ci] specs: write 2",
+                         _sh(backend.repo_root, "log", "-1", "--format=%s", state["commit"]).strip())
 
     def _race(self, backend: GitBackend, rival: GitBackend, times: int):
         """Patch `backend._commit` so `rival` (another process of the same clone) moves the

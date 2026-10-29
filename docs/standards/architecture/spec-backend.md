@@ -167,9 +167,9 @@ and the GitHub and Azure Boards backends keep working unchanged beside it.
   (`[skip ci] specs: write 12; archive 12`); each write replaces it, so the ref never grows a
   history either. A write never fetches: it builds on the remote-tracking ref as the last fetch
   left it, so a long-lived process writes offline. A write that brings every local change back to
-  its base text deletes the pending ref instead of keeping an empty commit. The leak guard and the
-  identity check run before that commit, and `_store` stays the one path that moves the pending
-  ref or the branch.
+  its base text leaves an empty pending commit, which `status` reports as nothing pending and the
+  next sync retires without pushing. The leak guard and the identity check run before that commit,
+  and `_store` stays the one path that moves the pending ref or the branch.
 - **Reads see their own writes.** A read lays the pending commit over the remote tip, also under
   `QUENCHING_SPECS_NO_FETCH`. When a fetch brought a new tip, the read replays the pending changes
   onto it **in memory** and never moves the ref; only a write persists the replay. A conflict is
@@ -205,9 +205,11 @@ and the GitHub and Azure Boards backends keep working unchanged beside it.
   deleted by compare-and-swap against the pending commit the sync sent. A write that replaced it
   meanwhile is carried onto the pushed commit instead, so it survives to the next sync: only the
   specs that write changed against its own parent and that differ from what was sent, never the
-  remote's drift between the two bases. When the pushed commit changed such a spec under that
-  write, the new pending commit's parent keeps the document the write read, so the next sync
-  refuses it as a conflict instead of overwriting the remote.
+  remote's drift between the two bases. A sent spec that write put back to its base text counts
+  too, since only a sync deletes the pending ref and a write keeps it even when empty. When the
+  pushed commit changed such a spec under that write, the new pending commit's parent keeps the
+  document the write read, so the next sync refuses it as a conflict instead of overwriting the
+  remote.
 - **Visibility.** `cq specs status` reports how many specs hold unsent local writes, and since
   when. Other clones and the board see a change only at the next sync point.
 - **Identity.** Without a tracker, the store owns identity: the counter is read and incremented
@@ -245,10 +247,10 @@ and discuss under. The spec on the branch stays the source of truth.
   `az rest`. `azurePlacement` (area, iteration, board column, declared state) is applied at
   create and at transitions only, so a tick never undoes a move on the board.
 - **A card failure never rolls back the spec.** The spec is synced first (the card first only
-  at creation, where there is no spec yet). A card write that fails after the push landed is
-  reported beside the successful result, as `cardFailures` entries (`sp-card-failed`, naming the
-  spec) and a warning line, and never turns the sync into a failure; the next transition
-  refreshes the card.
+  at creation, where there is no spec yet). A card write that fails after the push landed, or a
+  card provider the sync cannot resolve, is reported beside the successful result, as
+  `cardFailures` entries (`sp-card-failed`, naming the spec) and a warning line, and never turns
+  the sync into a failure; the next transition refreshes the card.
 - **Migration.** `cq specs migrate --to git` is a dry run unless `--write`. It writes every spec
   under its own ID in one commit (open in `specs/`, closed in `specs/archive/`), copies the
   specs-axis keys into the branch `quenching.json`, and prints the `.agents/quenching.json`

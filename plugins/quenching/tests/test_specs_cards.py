@@ -267,6 +267,25 @@ class CardTransitions(GitStoreFixture):
         self.assertEqual(approved, self.remote_file("specs/10.md"))
         self.assertIsNone(backend._pending())
 
+    def test_a_card_client_that_cannot_be_resolved_after_the_push_is_a_card_failure(self):
+        backend, _ = self._spec()
+        info, _ = backend.read_spec(10)
+        approved = set_frontmatter_record(info["text"], "approved",
+                                          {"by": "human", "date": "2026-01-02"})
+        backend.write_spec(info, approved)
+        syncing = GitBackend(backend.repo_root)     # resolves its card client only at the sync
+        unresolved = BackendRefusal({"code": "sp-az-no-project", "exit": 2,
+                                     "message": "no Azure DevOps project is configured"})
+        with mock.patch.object(cards, "resolve_card_client", side_effect=unresolved):
+            result = syncing.push()  # the push landed: an unresolvable client never raises
+        self.assertEqual("collapsed", result["history"])
+        (failure,) = result["cardFailures"]
+        self.assertEqual(("sp-card-failed", 10, "sp-az-no-project"),
+                         (failure["code"], failure["id"], failure["cause"]))
+        self.assertIn("no Azure DevOps project is configured", failure["message"])
+        self.assertEqual(approved, self.remote_file("specs/10.md"))
+        self.assertIsNone(syncing._pending())
+
     def test_a_create_whose_sync_carries_a_failed_card_still_returns_its_spec(self):
         backend, fake = self._spec()
         info, _ = backend.read_spec(10)
