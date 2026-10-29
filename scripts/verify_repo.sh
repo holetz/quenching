@@ -21,16 +21,32 @@ run_check() {
   fi
 }
 
-# Coverage is measured around the unit suite when the `coverage` package is importable (the uv dev
-# group installs it). Without it the suite still runs, uncovered, and the skip is stated loudly: a
-# local gate must not demand an install, but CI always runs with it. `.coverage-floor.json` is the
-# floor, enforced by `cq proof ratchet --check`.
+# The suite runs ONCE per gate. `pytest-randomly` supplies the order evidence the proof contract
+# requires, `pytest-xdist` keeps the deploy loop short, and `pytest-cov` combines the worker data
+# (`coverage run -m pytest` would measure only the controller once tests move to workers). The JSON
+# artifact is the coverage.py schema `cq proof ratchet` already reads. Without the dev group the
+# gate falls back to the serial `coverage`/`unittest` path and states the skip loudly: a local gate
+# must not demand an install, but CI and `/release` always run the measured, randomized path.
+# `PYTEST_RANDOMLY_SEED` pins the order when a run must be reproducible (CI uses the run id);
+# `.coverage-floor.json` is the floor, enforced by `cq proof ratchet --check`.
 COVERAGE_DIR=".quenching/coverage"
 COVERAGE_JSON="$COVERAGE_DIR/coverage.json"
-if python3 -c "import coverage" >/dev/null 2>&1; then
-  mkdir -p "$COVERAGE_DIR"
-  export COVERAGE_FILE="$ROOT/$COVERAGE_DIR/.coverage"
-  run_check "unit tests (measured)" \
+mkdir -p "$COVERAGE_DIR"
+export COVERAGE_FILE="$ROOT/$COVERAGE_DIR/.coverage"
+pytest_args=(plugins/quenching/tests -q -p randomly -n auto
+             --cov=plugins/quenching/assets/bin/quenching
+             --cov-report="json:$COVERAGE_JSON")
+if [ -n "${PYTEST_RANDOMLY_SEED:-}" ]; then
+  pytest_args+=("--randomly-seed=$PYTEST_RANDOMLY_SEED")
+fi
+if uv run python -c "import pytest, pytest_randomly, xdist, pytest_cov" >/dev/null 2>&1; then
+  run_check "unit tests (randomized order, parallel, measured)" \
+    uv run python -m pytest "${pytest_args[@]}"
+  run_check "coverage floor" \
+    python3 plugins/quenching/assets/bin/cq proof ratchet --check --artifact "$COVERAGE_JSON"
+elif python3 -c "import coverage" >/dev/null 2>&1; then
+  printf '\n==> unit tests\nSKIPPED: pytest-xdist/pytest-cov are not installed (run `uv sync --all-groups`); the suite runs serially under coverage, without the randomized-order evidence.\n'
+  run_check "unit tests (measured, serial fallback)" \
     python3 -m coverage run -m unittest discover -s plugins/quenching/tests
   run_check "coverage report" \
     python3 -m coverage json -q -o "$COVERAGE_JSON"

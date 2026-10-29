@@ -35,10 +35,18 @@ jobs:
           enable-cache: true
       - name: Install locked dependencies
         run: uv sync --frozen --all-groups
-      - name: Run repository gate (unit tests under coverage, floor, doctors, builds)
+      # One suite execution per cell: the gate runs it once, randomized and parallel, under
+      # pytest-randomly/pytest-xdist/pytest-cov, and the floor reads that same artifact. The
+      # deterministic checks (doctors, generated trees, docs build) read the same checkout
+      # whatever the interpreter, so the newest Python only adds the compatibility run.
+      - name: Full repository gate on the floor Python (unit tests under pytest-randomly, floor, doctors, builds)
+        if: matrix.python-version == '3.11'
+        env:
+          PYTEST_RANDOMLY_SEED: ${{ github.run_id }}
         run: uv run bash scripts/verify_repo.sh
-      - name: Proof gate in randomized order
-        run: uv run pytest plugins/quenching/tests -q -p randomly --randomly-seed=${{ github.run_id }}
+      - name: Unit suite on the newest supported Python
+        if: matrix.python-version != '3.11'
+        run: uv run pytest plugins/quenching/tests -q -p randomly -n auto --randomly-seed=${{ github.run_id }}
 
   windows:
     name: Windows (focused tests, no administrator rights)
