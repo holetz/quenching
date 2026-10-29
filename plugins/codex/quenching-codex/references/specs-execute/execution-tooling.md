@@ -20,9 +20,10 @@ scoped to `python3`/`py` because they only ever talk to `cq specs`.
 When `cq` does not resolve, the body falls back to `Read`ing the cited file whole and says so in
 the report — because that is the run's context cost changing, not a cosmetic difference.
 
-The only supported route above that fallback is the plugin's own per-call `cq` wrapper; it resolves
-the installed plugin copy and nothing else. This sentence used to name a rung outside the
-plugin, "the target's `.agents/hooks/cq`", which
+Every rung above that fallback is the plugin's own file — bare `cq` through the `bin/` shim on
+`PATH`, or the plugin path — and nothing else is one. A deployed target is the generated
+exception: its body calls the manifest-owned `.agents/quenching/bin/cq`, not a hand-installed
+copy. This sentence used to name a rung outside the plugin, "the target's `.agents/hooks/cq`", which
 [align/tool-resolution.md](../align/tool-resolution.md) §Resolving the tool forbids outright:
 *there is no third rung*, never a copy under a target's `.agents/hooks/`. A copy that lives there is
 never executed by anything the plugin runs, so a body that reached for it would have been reaching

@@ -185,7 +185,7 @@ on the same artifact (a command), so they share the `command/` context rather th
 piece of the front root the way the old front's `new`/`eval` verbs used to.
 
 `/quenching-align:components:harness:align` is the one entry that **changed front**, not merely name:
-`CLAUDE.md` and `AGENTS.md` are files Claude Code reads as instruction, which makes the harness an
+`AGENTS.md` is the file Claude Code and the other harnesses read as instruction; `CLAUDE.md` is legacy, which makes the harness an
 artifact of `components` — the front that owns everything Claude Code loads as automation — never
 a `knowledge` document, even though refactoring them moves durable knowledge *into* the bundle as a
 side effect. The move is the front boundary stated correctly, not an exception to it.

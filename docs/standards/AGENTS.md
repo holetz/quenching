@@ -1,4 +1,4 @@
-# CLAUDE.md — /docs/standards/
+# AGENTS.md — /docs/standards/
 
 Current/active **contracts and conventions** of this repo — one standard per file,
 organized in subject subfolders. This is the detail the root pointer cites on demand.

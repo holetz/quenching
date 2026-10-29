@@ -45,7 +45,7 @@ never builds anything; building is `quenching-specs-orchestrate` or `quenching-s
 
 ### 1. Frame
 Resolve `cq` per [align/tool-resolution.md](../../references/align/tool-resolution.md)
-§Resolving the tool. Read the root harness (`AGENTS.md`/`AGENTS.md`), the `/docs/` index if
+§Resolving the tool. Read the root harness (`AGENTS.md`; legacy `AGENTS.md`), the `/docs/` index if
 present, `cq specs config` and `cq specs list --lean --json` (open specs, to avoid duplicates), and
 `git log --since=90.days --format=%s | wc -l`. Probe each installed front with its read-only verb
 (`cq <front> doctor --json` or `status --json`); a finding there is evidence, an exit 2 is

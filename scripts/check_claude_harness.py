@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Validate the repository harness: AGENTS.md is the source, CLAUDE.md imports it.
+"""Validate the repository harness: AGENTS.md is the source; CLAUDE.md is legacy, not required.
 
 Checks meaning, not size: the import exists, the `Language:` and `Ephemeral writes:` lines exist,
 the single gate and both safety rules are stated, the scoped rules exist with `paths:`, and every
@@ -44,10 +44,11 @@ def check() -> list[str]:
     if not AGENTS_MD.is_file():
         return ["AGENTS.md is missing"]
     agents = AGENTS_MD.read_text(encoding="utf-8")
-    if not CLAUDE_MD.is_file():
-        errors.append("CLAUDE.md is missing")
-    elif not re.search(r"(?m)^@AGENTS\.md\s*$", CLAUDE_MD.read_text(encoding="utf-8")):
-        errors.append("CLAUDE.md does not import @AGENTS.md")
+    if CLAUDE_MD.is_file():
+        # A pointer-only file is legacy residue, not the conformant layout; a content-bearing
+        # file left on purpose is reported so it does not silently shadow AGENTS.md.
+        if not re.search(r"(?m)^@AGENTS\.md\s*$", CLAUDE_MD.read_text(encoding="utf-8")):
+            errors.append("CLAUDE.md is legacy and does not import @AGENTS.md; remove it or make it the pointer")
     for name, pattern in REQUIRED_AGENTS.items():
         if not re.search(pattern, agents):
             errors.append(f"AGENTS.md is missing: {name}")

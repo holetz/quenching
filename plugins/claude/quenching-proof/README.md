@@ -4,7 +4,7 @@ A team tool for the Claude Code surface of a
 repository: **specs, git, knowledge and components** are its core. It carries one canonical **Open Knowledge Format (OKF v0.1)** bundle
 of `/docs/` and the tools used to inspect it, force an existing base into conformance,
 insert new knowledge, capture terms into a fixed glossary, drain the project's Claude
-Code memory into it, import external sources into it, keep the repo's `CLAUDE.md` a thin pointer over it, and organize
+Code memory into it, import external sources into it, keep the repo's `AGENTS.md` a thin pointer over it, and organize
 the repo's own **automation surface** (`.claude/commands/`) under one
 taxonomy — so every repository that adopts the plugin looks the **same**. It also carries the repo's
 **spec-driven plan lifecycle**: the ten `/quenching-specs:specs:*` commands over a specs
@@ -142,7 +142,7 @@ motion, shadows, breakpoints, and snippets remain in the source and sidecar.
 | `/quenching-align:components:command:retro` | Mines ONE session for what it evidences about ONE command that ran in it — cost, redundancy, bugs, and what the human had to fix by hand. |
 | `/quenching-align:components:agent:new` | Mints or edits ONE subagent definition, scoping its tools to the narrowest set and pricing its always-on cost. |
 | `/quenching-align:components:hook:new` | Wires ONE scoped hook — the narrowest scope and cheapest handler that still catch what they must. Warns by default; blocks only on the human's word. |
-| `/quenching-align:components:harness:align` | Refactors `CLAUDE.md`/`AGENTS.md` into thin pointers over the bundle, so doctrine lives once. |
+| `/quenching-align:components:harness:align` | Refactors `AGENTS.md` into a thin pointer over the bundle, so doctrine lives once; legacy `CLAUDE.md` is removed. |
 
 ### The ops front — the target's declared operations surface
 
@@ -599,6 +599,24 @@ one `cq` ignores a module whose version differs from its own.
 
 Run `/reload-plugins` after installation when the session was already open.
 
+### Deploy mode — the target carries the generic surface
+
+A target can operate without a marketplace install. `cq deploy` writes the selected modules into
+the standard generic layer and generates the Claude bridge; `CLAUDE.md` is not created.
+
+```bash
+uvx --from "git+https://github.com/holetz/quenching@<tag>#subdirectory=plugins/quenching" \
+  cq deploy --target . --modules core --write
+```
+
+`core` is `quenching-specs` plus `quenching-align` (specs, git, knowledge, components).
+`--modules all` selects every principal module; `--profiles` controls
+`shared.profiles.installed`. `--runtime vendor` (default) is offline; `--runtime uvx` writes a
+pinned shim. The target keeps `AGENTS.md` and `.agents/` as its editable source, while
+`.agents/quenching/` and `.claude/skills/` are generated. Deploy installs the surface only: the
+target's `quenching-knowledge-align` skill installs `/docs/` and converges the fronts. See
+[deploy-mode.md](../../docs/standards/architecture/deploy-mode.md).
+
 Local development only — load the generated module trees, never the `plugins/quenching` source,
 which registers names the bodies do not cite:
 
@@ -625,7 +643,7 @@ installed target migrates once:
    `enabledPlugins` with one `"quenching-<module>@quenching": true` entry per installed module,
    so every collaborator gets the same set.
 4. Rename every typed or cited command in the target's own files — its `.claude/commands/**`,
-   `CLAUDE.md`/`AGENTS.md`, hooks and scripts. Replace the old plugin prefix `quenching` with the
+   `AGENTS.md` (legacy `CLAUDE.md`), hooks and scripts. Replace the old plugin prefix `quenching` with the
    module that owns the command and keep the rest of the name: the `specs` and `git` fronts and
    `handoff` move to `quenching-specs` (`/quenching-specs:specs:create`,
    `/quenching-specs:handoff`); `align`, `knowledge` and `components` move to `quenching-align`

@@ -83,8 +83,8 @@ else:
 cq knowledge validate docs --json          # structure: exit 0 = conformant
 ls ~/.claude/projects/<cwd>/memory/    # out-of-band store 1: any undrained memory?
 ```
-plus one `Read` of each harness file that exists (`AGENTS.md`, and a root `CLAUDE.md` that is more
-than `@AGENTS.md`) — a fat one inlines
+plus one `Read` of each harness file that exists (`AGENTS.md`, and a legacy root `CLAUDE.md` that
+carries more than `@AGENTS.md`) — a fat one inlines
 durable knowledge; a thin one points. The glossary is **not** probed: it has no cheap signal, so
 it is proxied in step 7 instead.
 
@@ -258,7 +258,7 @@ is [sweep-doctrine.md](${CLAUDE_PLUGIN_ROOT}/assets/references/align/sweep-doctr
 
 1. `quenching-align:knowledge:import-memory` — drain the project's memory dir into its homes, clearing each
    memory once its doc lands and passes conformance.
-2. `quenching-align:components:harness:align` — thin `AGENTS.md` (root `CLAUDE.md` = `@AGENTS.md`), MOVEing durable knowledge into homes.
+2. `quenching-align:components:harness:align` — thin `AGENTS.md` (legacy pointer-only `CLAUDE.md` removed), MOVEing durable knowledge into homes.
 
 The order is
 [knowledge-align/cycle.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-align/cycle.md) §The stage

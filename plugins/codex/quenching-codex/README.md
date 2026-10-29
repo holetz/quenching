@@ -153,7 +153,7 @@ motion, shadows, breakpoints, and snippets remain in the source and sidecar.
 | `quenching-components-command-retro` | Mines ONE session for what it evidences about ONE command that ran in it — cost, redundancy, bugs, and what the human had to fix by hand. |
 | `quenching-components-agent-new` | Mints or edits ONE subagent definition, scoping its tools to the narrowest set and pricing its always-on cost. |
 | `quenching-components-hook-new` | Wires ONE scoped hook — the narrowest scope and cheapest handler that still catch what they must. Warns by default; blocks only on the human's word. |
-| `quenching-components-harness-align` | Refactors `AGENTS.md`/`AGENTS.md` into thin pointers over the bundle, so doctrine lives once. |
+| `quenching-components-harness-align` | Refactors `AGENTS.md` into a thin pointer over the bundle, so doctrine lives once; legacy `AGENTS.md` is removed. |
 
 ### The ops front — the target's declared operations surface
 

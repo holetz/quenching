@@ -25,7 +25,7 @@ One is a variable, the other a constant — see [Why conduct is not declared](#w
 ### Declaring it
 
 A repo declares its **conversation** language as **one BCP-47 tag**, on a single line of its
-**root** harness file (`CLAUDE.md` / `AGENTS.md`):
+**root** harness file (`AGENTS.md`; `CLAUDE.md` is kept only as legacy for hosts before Claude Code 2.1.277):
 
 ```
 Language: pt-BR — the contract is /docs/standards/agents/communication.md
@@ -43,7 +43,7 @@ Three properties earn this form:
 - it is one line, so there is nothing to keep in sync.
 
 **Only the root harness carries the declaration.** A nested harness file
-([../CLAUDE.md](../CLAUDE.md), for instance) loads when that folder is touched, not at session
+([../AGENTS.md](../AGENTS.md), for instance) loads when that folder is touched, not at session
 start, so it would give up the zero-cost property this form was chosen for. A tag found in a nested
 harness file is a mistake to report, never a second place to look.
 

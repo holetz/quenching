@@ -16,7 +16,7 @@ knowledge/                     # OKF bundle root
   glossary.md                  # the repo's A–Z term lookup — bundle-root file, not inside a home
   standards/                   # "how WE do it" (current) — a conformant sub-bundle
     index.md                   # reserved listing + DERIVED "Current docs" tables (BEGIN/END GENERATED)
-    CLAUDE.md                  # thin agent-facing pointer (auto-loaded; harness file, not a concept)
+    AGENTS.md                  # thin agent-facing pointer (auto-loaded; harness file, not a concept)
     agents/ architecture/ code/ naming/ data-modeling/ ci-cd/ workflows/ mlops/ quality/ platform/
                                #   each: index.md + one standard per file (type: standard)
                                #   agents/ = how we INSTRUCT agents, not agent definitions
@@ -49,7 +49,7 @@ knowledge/                     # OKF bundle root
 | `external/` | `external` | `tools/`·`libraries/`·`regulations/` |
 | `external/regulations/` (extracts) | `sidecar` | one per binary |
 
-Reserved `index.md` carries **no** `type`; `AGENTS.md`/`CLAUDE.md` are exempt. `log.md` is
+Reserved `index.md` carries **no** `type`; `AGENTS.md` (and legacy `CLAUDE.md`) is exempt. `log.md` is
 reserved too but **retired** — the tree above no longer grows one, and nothing checks one that
 survived an earlier alignment.
 

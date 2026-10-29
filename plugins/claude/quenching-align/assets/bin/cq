@@ -257,7 +257,9 @@ def build_parser() -> argparse.ArgumentParser:
         epilog="pillars:\n"
                + "\n".join(f"  {name:<11} {pillar.help}{absent_note(name)}"
                            for name, pillar in PILLARS.items())
+               + "\n\n  deploy      install the quenching surface in a target repository"
                + "\n\n`cq doctor --help` prints the top-level prerequisite check; "
+                 "`cq deploy --help` prints the deployment contract; "
                  "`cq <pillar> --help` prints that pillar's own subcommands.")
     p.add_argument("--root",
                     help="forwarded to the pillar as its own --root; design, specs, "
@@ -332,11 +334,23 @@ def _provider_refusal() -> int | None:
     return refusal["exit"]
 
 
+def _run_top_deploy(argv: list[str], command_index: int) -> int:
+    try:
+        from quenching.deploy.cli import main as deploy_main
+    except ImportError:
+        print("cq: deploy belongs to module quenching-specs, which is not enabled; "
+              "enable it beside this module", file=sys.stderr)
+        return 2
+    return deploy_main(argv[:command_index] + argv[command_index + 1:])
+
+
 def main(argv: list[str]) -> int:
     command, command_index = _top_level_command(argv)
     if command == "doctor" and command_index is not None:
         refused = _provider_refusal()
         return refused if refused is not None else _run_top_doctor(argv, command_index)
+    if command == "deploy" and command_index is not None:
+        return _run_top_deploy(argv, command_index)
     if command == "modules" and command_index == 0:
         return run_modules(argv[1:])
     parser = build_parser()

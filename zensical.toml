@@ -53,6 +53,7 @@
         "standards/architecture/codex-pillar.md",
         "standards/architecture/configuration-arbitration.md",
         "standards/architecture/delivery-front.md",
+        "standards/architecture/deploy-mode.md",
         "standards/architecture/design-front.md",
         "standards/architecture/front-mold.md",
         "standards/architecture/generated-listings.md",
@@ -184,6 +185,7 @@
       "decisions/0012-lista-agent-do-orchestrator-e-documental.md",
       "decisions/0013-plugin-module-split.md",
       "decisions/0014-tier-pequeno-em-tarefa-testavel.md",
+      "decisions/0015-deploy-mode.md",
     ] },
     "glossary.md",
   ]

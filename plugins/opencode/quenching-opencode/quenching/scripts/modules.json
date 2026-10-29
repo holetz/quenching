@@ -83,7 +83,8 @@
           "codex",
           "portal",
           "config",
-          "mcp"
+          "mcp",
+          "deploy"
         ],
         "agents": true
       },

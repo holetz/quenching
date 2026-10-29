@@ -2,7 +2,7 @@
 type: standard
 title: Agent ephemeral writes
 description: Where an agent puts a file it creates — the three destinations, the one question that sorts them, and the session-start declaration that makes the durable-ignored path present before the first write
-resource: AGENTS.md, AGENTS.md, /docs/standards/agents/ephemeral-writes.md
+resource: AGENTS.md, /docs/standards/agents/ephemeral-writes.md
 tags: [agents, files, ephemeral, scratchpad, harness]
 timestamp: 2026-08-31
 audience: both
@@ -36,7 +36,7 @@ versioned tree when it must travel with the repository or be reviewed there.
 
 ## Declaring the durable-ignored area
 
-The root harness (`AGENTS.md` / `AGENTS.md`) may carry one line:
+The root harness (`AGENTS.md`; `AGENTS.md` is legacy) may carry one line:
 
 ```
 Ephemeral writes: <path> — the contract is /docs/standards/agents/ephemeral-writes.md

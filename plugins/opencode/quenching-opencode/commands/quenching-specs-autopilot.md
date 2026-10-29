@@ -30,7 +30,7 @@ never builds: reading, mapping, decomposing, building and reviewing are agents
 `~/.opencode/quenching/agents/orchestrator.md`; do not restate it.
 
 **Why `Bash` is unrestricted here.** Step 1 and step 7 run the gate the target's root harness
-declares in its operating section (`AGENTS.md` or `AGENTS.md`), whose command no fixed grant can name. No other
+declares in its operating section (`AGENTS.md`; legacy `AGENTS.md`), whose command no fixed grant can name. No other
 non-`cq`, non-`git` command is run.
 
 ## Invariants

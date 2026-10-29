@@ -1,4 +1,4 @@
-# CLAUDE.md — <folder>/
+# AGENTS.md — <folder>/
 
 <1-2 lines: what this folder is, and what an agent working HERE needs to know.
 Auto-loads only under this folder — nearest-file navigation, not a second root.>
@@ -11,14 +11,14 @@ Auto-loads only under this folder — nearest-file navigation, not a second root
   one, `quenching-align:knowledge:align` to migrate/normalize, `quenching-align:components:harness:align` to keep pointers thin).
 - **Boundary:** only <this folder's> concern lives here — <neighbor concern> → <its home>.
 
-<!-- Auto-loaded by Claude Code when working under <folder>/. Keep it a thin pointer
+<!-- Auto-loaded by every supported harness when working under <folder>/. Keep it a thin pointer
      (nearest-file navigation), never a copy of the knowledge it points to, and never a
-     duplicate of the root CLAUDE.md. Installed by the quenching plugin; this file is a
+     duplicate of the root AGENTS.md. Installed by the quenching plugin; this file is a
      harness pointer, not an OKF concept. -->
 
 <!-- MOLD (quenching · subfolder harness pointer — do NOT copy this note into the produced file):
-     Produces a subfolder CLAUDE.md as a THIN, NEAREST-FILE navigation pointer. Modeled on the
-     shipped exemplar assets/knowledge/standards/CLAUDE.md (18 lines).
+     Produces a subfolder AGENTS.md as a THIN, NEAREST-FILE navigation pointer. Modeled on the
+     shipped exemplar assets/knowledge/standards/AGENTS.md (18 lines).
      • NO frontmatter, NO `type` — EXEMPT from OKF (okf-spec §strict-7); the validator skips it.
        EVERY link MUST resolve (checked by quenching-align:components:harness:align, not the validator).
      • It auto-loads ONLY when the agent works under this folder: put the LOCAL commands/quirks
@@ -27,6 +27,6 @@ Auto-loads only under this folder — nearest-file navigation, not a second root
      • CREATION IS EVIDENCE-GATED: propose a new subfolder pointer only where the evidence is concrete —
        either a harness unit clearly scoped to this folder, or a greenfield folder with a local
        operational surface (build/run script, distinct toolchain, README of run-commands) and no
-       CLAUDE.md. Never one per directory; data/output/asset folders earn nothing.
-       `quenching-align:knowledge:align`'s skeleton already ships /docs/standards/CLAUDE.md.
+       AGENTS.md. Never one per directory; data/output/asset folders earn nothing.
+       `quenching-align:knowledge:align`'s skeleton already ships /docs/standards/AGENTS.md.
      • Size budget: aim ≤ ~20 lines. Structure/links canonical English; prose MAY follow the repo's language. -->

@@ -112,7 +112,7 @@ OKF-valid — additive keys, descriptive types, reserved-file structures):
    stays self-contained deliberately: a format spec is what other implementers read to build
    against, and one that defers to a doc living inside a particular repo's bundle stops being
    self-describing.)*
-7. **Harness files** `AGENTS.md`/`AGENTS.md` (the root `AGENTS.md` = `@AGENTS.md`) are navigation
+7. **Harness files** `AGENTS.md` (a legacy root `AGENTS.md` is its fallback) are navigation
    pointers, **not** OKF concepts —
    exempt from the `type` requirement. The validator skips them entirely; the `quenching-components-harness-align`
    skill keeps them thin and honest.

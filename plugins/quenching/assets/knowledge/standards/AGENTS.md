@@ -1,4 +1,4 @@
-# CLAUDE.md — /docs/standards/
+# AGENTS.md — /docs/standards/
 
 Current/active **contracts and conventions** of this repo — one standard per file,
 organized in subject subfolders. This is the detail the root pointer cites on demand.
@@ -17,6 +17,6 @@ organized in subject subfolders. This is the detail the root pointer cites on de
 - **OKF:** every standard carries `type: standard` + a derived `resource:` (the repo
   scope it governs, from the doc's `file:line` anchors — never invented).
 
-<!-- Auto-loaded by Claude Code when working under /docs/standards/. Keep it a thin
+<!-- Auto-loaded by every supported harness when working under /docs/standards/. Keep it a thin
      pointer (nearest-file navigation), never a copy of the standards. Installed by the
      quenching plugin; this file is a harness pointer, not an OKF concept. -->

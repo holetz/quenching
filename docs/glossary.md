@@ -43,7 +43,7 @@ Fifteen terms to read first; each has its full entry under *Terms*.
 - **OKF** — the fixed-shape `/docs/` knowledge bundle this plugin ships and validates.
 - **home** — a top-level folder of the bundle with one fixed purpose (`standards/`, `decisions/`, ...).
 - **mold** — the fixed shape a kind of file is minted from.
-- **harness** — `CLAUDE.md` / `AGENTS.md`: thin pointers into `/docs/`.
+- **harness** — `AGENTS.md` (legacy `CLAUDE.md`): a thin pointer into `/docs/`.
 - **moment** — the point on a spec's timeline a section is read at: decision, build or close.
 - **handoff** — a spec's `## Handoff` section, refreshed on four events so the next run resumes.
 - **sediment** — text that outlived the mechanism it described.
@@ -86,6 +86,7 @@ Fifteen terms to read first; each has its full entry under *Terms*.
   whatever language the repo declared), as opposed to a restatement, which repeats a fact the citing
   place neither owns nor can change.
 - [**Branch record**](standards/workflows/plan-git-record.md) — the `branch: {base, work}`
+- **Bridge** — the generated `.claude/skills/` copy of a target's `.agents/skills/`; Claude Code does not discover the generic directory itself.
   frontmatter entry stamped by `/quenching-specs:specs:execute` once the work ref is resolved, write-once
   — for **any** branch that is not the repo's base (the one it cut and the one a human already had
   open alike), and for work done in place, where `work` equals `base`.
@@ -147,6 +148,7 @@ Fifteen terms to read first; each has its full entry under *Terms*.
   `/quenching-specs:specs:develop` runs **before** the bank asks, so the right question has something to
   be answered with; it fires on selecting the *shape* bank, and on the first entry into the
   *adversarial* bank for a spec that was born `proposed` and never swept.
+- **Deploy mode** — installing the quenching surface in a target's generic layer with `cq deploy`; `AGENTS.md` and `.agents/` stay editable, while the runtime and the Claude bridge are generated.
 - [**Derived marker**](standards/architecture/proof-front.md) — a test-runner marker projected from
   the test's layer directory by collection, never a hand-applied second declaration of the layer.
 - [**Derived stage**](standards/workflows/plan-lifecycle.md) — a spec's position in its life
@@ -186,7 +188,7 @@ Fifteen terms to read first; each has its full entry under *Terms*.
   cannot express the check.
 - [**Handoff**](standards/workflows/task-execution.md) — the `## Handoff` section of a spec,
   refreshed on four events so the next run picks up where the last stopped.
-- **Harness** — the agent-facing instruction files of a repository (`CLAUDE.md`, `AGENTS.md`) that
+- **Harness** — the agent-facing instruction file of a repository (`AGENTS.md`, with legacy `CLAUDE.md`) that
   point into `/docs/` instead of duplicating it.
 - [**Impeccable**](standards/architecture/design-front.md) — optional screen-craft consumer that
   reads generated `PRODUCT.md`, `DESIGN.md`, and `.impeccable/design.json` artifacts.

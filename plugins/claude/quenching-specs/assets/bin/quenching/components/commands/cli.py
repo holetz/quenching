@@ -144,6 +144,7 @@ def cmd_status(args, root: str) -> int:
             "applicable": True,
             "state": "conformant" if not findings else "findings",
             "commands": len(surface["commands"]),
+            "generated": len(surface.get("generated", [])),
             "fronts": dict(sorted(fronts.items())),
             "findings": codes,
             "errors": sum(item.get("severity") == "error" for item in findings),
@@ -152,7 +153,8 @@ def cmd_status(args, root: str) -> int:
         }
     human = (f"components status — {root}\n"
              f"  commands: {payload['commands']}\n"
-             f"  state: {payload['state']}\n"
+             + (f"  generated: {payload['generated']}\n" if payload.get("generated") else "")
+             + f"  state: {payload['state']}\n"
              f"  findings: {', '.join(f'{key}={value}' for key, value in payload['findings'].items()) or '(none)'}")
     emit(args.json, payload, human)
     return 0 if payload["ok"] else 1

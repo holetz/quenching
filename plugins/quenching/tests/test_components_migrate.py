@@ -90,7 +90,7 @@ class Migrate(unittest.TestCase):
         self.assertEqual('{"backend": "github"}\n',
                          (self.repo / ".agents/quenching.json").read_text())
         self.assertEqual("# Instructions\n", (self.repo / "AGENTS.md").read_text())
-        self.assertEqual("@AGENTS.md\n", (self.repo / "CLAUDE.md").read_text())
+        self.assertFalse((self.repo / "CLAUDE.md").exists())
         self.assertTrue((self.repo / ".claude/agents/runner.md").is_file())
         status = self.git("status", "--porcelain")
         self.assertIn("R  .claude/commands/bundle/tabela/criar.md -> "
@@ -124,21 +124,37 @@ class Migrate(unittest.TestCase):
         self.assertEqual(1, code)
         self.assertEqual("AGENTS.md", payload["conflicts"][0]["path"])
 
-    def test_an_agents_md_equal_to_claude_md_only_turns_claude_md_into_the_pointer(self):
+    def test_an_agents_md_equal_to_claude_md_removes_the_duplicate(self):
         self.write("AGENTS.md", "# Instructions\n")
         self.git("add", "-A")
         code, payload = self.run_cli()
         self.assertEqual(1, code)
         self.assertEqual([], payload["conflicts"])
-        self.assertIn({"op": "pointer", "path": "CLAUDE.md"}, payload["operations"])
+        self.assertIn({"op": "remove", "path": "CLAUDE.md",
+                       "why": "duplicate of AGENTS.md; one source remains"}, payload["operations"])
+        self.assertEqual(0, self.run_cli("--write")[0])
+        self.assertFalse((self.repo / "CLAUDE.md").exists())
 
-    def test_an_agents_md_without_claude_md_gets_the_pointer(self):
+    def test_agents_md_without_claude_md_adds_no_pointer(self):
         self.git("mv", "CLAUDE.md", "AGENTS.md")
         code, payload = self.run_cli()
         self.assertEqual(1, code)
-        self.assertIn({"op": "pointer", "path": "CLAUDE.md"}, payload["operations"])
+        self.assertNotIn("CLAUDE.md", [op.get("path") for op in payload["operations"]])
+        self.assertEqual([], payload["conflicts"])
         self.assertEqual(0, self.run_cli("--write")[0])
-        self.assertEqual("@AGENTS.md\n", (self.repo / "CLAUDE.md").read_text())
+        self.assertFalse((self.repo / "CLAUDE.md").exists())
+
+    def test_a_pointer_only_claude_md_is_removed(self):
+        self.write("AGENTS.md", "# Instructions\n")
+        self.write("CLAUDE.md", "@AGENTS.md\n")
+        self.commit()
+        code, payload = self.run_cli()
+        self.assertEqual(1, code)
+        self.assertIn({"op": "remove", "path": "CLAUDE.md",
+                       "why": "legacy @AGENTS.md pointer; AGENTS.md is read directly"},
+                      payload["operations"])
+        self.assertEqual(0, self.run_cli("--write")[0])
+        self.assertFalse((self.repo / "CLAUDE.md").exists())
 
     def test_a_manual_skill_with_the_translation_name_is_a_conflict_and_nothing_is_written(self):
         self.write(".agents/skills/bundle/tabela/criar/SKILL.md",

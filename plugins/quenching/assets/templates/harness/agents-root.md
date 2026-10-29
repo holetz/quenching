@@ -1,4 +1,4 @@
-# CLAUDE.md — <repo-name>
+# AGENTS.md — <repo-name>
 
 <one line: what this repo is. The harness auto-loads this file on EVERY turn — it earns each line.>
 
@@ -49,13 +49,13 @@ term, `quenching-align:knowledge:align` to migrate/normalize, `quenching-align:c
 <Harness-operational rules only — how to behave in this repo, not what the domain is.
 Anything that is durable knowledge belongs in a /docs/ home above, cited here, never inlined.>
 
-<!-- Root harness pointer, auto-loaded by Claude Code on every turn. Keep it a thin pointer:
+<!-- Root harness pointer, auto-loaded by every supported harness on every turn. Keep it a thin pointer:
      repo-wide operations + the /docs/ home map. Knowledge is MOVED into /docs/, never copied here.
      Installed/maintained by the quenching plugin; this file is a harness pointer, not an
      OKF concept. -->
 
 <!-- MOLD (quenching · root harness pointer — do NOT copy this note into the produced file):
-     Produces the repo-root CLAUDE.md as a THIN, HONEST navigation pointer over the OKF bundle.
+     Produces the repo-root AGENTS.md as a THIN, HONEST navigation pointer over the OKF bundle.
      • NO frontmatter, NO `type` — a harness file is EXEMPT from OKF (okf-spec §strict-7); the
        validator skips it. Pointer honesty is verified by the `quenching-align:components:harness:align` skill, not the
        validator: EVERY link here MUST resolve before the run ends.
