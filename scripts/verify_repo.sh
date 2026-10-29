@@ -100,6 +100,15 @@ run_check "Claude/OpenCode distribution" \
   python3 scripts/sync_opencode_plugin.py --check --json
 run_check "Claude/Omnigent distribution" \
   python3 scripts/sync_omnigent_plugin.py --check --json
+# A checkout that installed the surface with `cq deploy` keeps it in lockstep with this source;
+# `--check` with no flags reuses the manifest's recorded selection. A checkout that never adopted
+# deploy mode has nothing to compare, and says so instead of reporting a green it did not measure.
+if [ -f .agents/.quenching-deploy.json ]; then
+  run_check "deployed surface lockstep" \
+    python3 plugins/quenching/assets/bin/cq deploy --target . --check --json
+else
+  printf '\n==> deployed surface lockstep\nSKIPPED: this checkout does not use deploy mode (no .agents/.quenching-deploy.json).\n'
+fi
 printf '\n==> Codex marketplace upgrade\n'
 if [ "${QUENCHING_DISTRIBUTION:-}" != "1" ]; then
   printf 'SKIPPED: set QUENCHING_DISTRIBUTION=1 to exercise a real Codex marketplace upgrade (required by /release).\n'
