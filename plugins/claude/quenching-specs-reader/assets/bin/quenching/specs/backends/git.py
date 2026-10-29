@@ -27,6 +27,7 @@ import shutil
 import subprocess
 import tempfile
 import time
+from datetime import datetime
 
 from quenching.common.config import find_repo_root
 from quenching.common.leak import guard_store_write, patterns, scan_text, store_refusal
@@ -1009,6 +1010,8 @@ class GitBackend(SpecBackend):
             return None
         oldest = self._git_ok("reading the pending date", "show", "-s", "--format=%aI",
                               pending).decode().strip()
+        # git 2.45+ prints UTC as `Z` and older releases as `+00:00`: one form for every caller.
+        oldest = datetime.fromisoformat(oldest).isoformat()
         return {"specs": specs, "since": oldest, "commit": pending}
 
     def _guard_identity(self) -> None:
