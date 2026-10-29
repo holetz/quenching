@@ -448,10 +448,10 @@
     "templates/vision/area.md"
   ],
   "sha256": {
-    ".codex-plugin/plugin.json": "f9a3fe4d20458bf04038c3f560c78ea261ac2966b5f916daa491bebbeb92b954",
+    ".codex-plugin/plugin.json": "7a87aaccedbeb0c4a65009340152991ddf09d71c2fbfe96598914f9a7f8c73fa",
     ".generated-from.json": "7eec9a6572cd3d3dfb37585685d027007776cffe93baabae3f1ce6082dee449c",
     "README.md": "e9117ec3bcd690351fa7b63b2d80be407a1e28f7938edc8ea0d7e76c79a90b50",
-    "VERSION": "e4fb8bbf9a4eb23f6322728b43204642a97ae6827988224b3badd50a0dbb283e",
+    "VERSION": "26ca10c15d00d68ad63bbf62a819e2262a552ea6ebb39461e44659e46a0bafb4",
     "agents/git-steward.md": "06413c254f6243ff405e057cb5e136e3a7ec18e603108fe029c1c49840d29bd5",
     "agents/orchestrator.md": "9d39a81d60e16f5611b8fdf690b0aef76c12c0da1b70b24656f4be8b95f4a31e",
     "agents/reviewer.md": "e999e1942e4a53173882c580bc8750983766817776c698571622831b1d7cf09e",
@@ -611,7 +611,7 @@
     "scripts/bin/quenching/common/output.py": "0abfe596c2c7294536053e458222ab16c566cab2bc2eac396b2157371326fb16",
     "scripts/bin/quenching/common/remote.py": "87bf5efd0384cfa8a1fec9c6f90bf7ae4591cc2e8267bde3eca9df4d81a450ec",
     "scripts/bin/quenching/common/text.py": "9413f35123d304aa08c1647ce811fdb111ff44612054469591b696394f39fc4c",
-    "scripts/bin/quenching/common/version.py": "f99a7edafa511d23451cc59f291a83e51bc4cf8927094299de8290fccdca0edb",
+    "scripts/bin/quenching/common/version.py": "2b06b474675160358cc005002c5b2568edbf97fbf7369f6fbf7d22fff63ce74f",
     "scripts/bin/quenching/components/commands/bridge.py": "baa92453961ede2e2c69d723d462744be0b8734996783ffd444370d45029a36a",
     "scripts/bin/quenching/components/commands/cli.py": "46fcb2698e8b452173decd944cc209ead9cb88468f52a09936300ac612caaff3",
     "scripts/bin/quenching/components/commands/cost.py": "d9f4589128a467f0f1bb8c57bad745db15ef3fc5a1fe8738d11b2ba145560caf",

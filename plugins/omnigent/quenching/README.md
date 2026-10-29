@@ -4,7 +4,7 @@ This Omnigent operator agent is generated from `plugins/quenching/`, the only ed
 `python3 scripts/sync_omnigent_plugin.py --write` to refresh it; never edit it by hand.
 
 One bundle, no payload: 61 skills (`skills/`), 7 sub-agents (`agents/`), and the
-`quenching` MCP server launched by `uvx` from the tag `6.11.0`. Built against Omnigent
+`quenching` MCP server launched by `uvx` from the tag `6.12.0`. Built against Omnigent
 `v0.19.1` (server image `omnigent-server:v0.19.1`). The bundle pins no model:
 the server's policy chooses it. `skills: none` binds the Claude SDK harness only: under OpenCode the
 `skill` tool still lists the host skills in `~/.claude/skills/` and `~/.agents/skills/` (only

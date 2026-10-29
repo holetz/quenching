@@ -13,6 +13,33 @@ owner: [`ci-cd/versioning-release.md`](docs/standards/ci-cd/versioning-release.m
 short version for a consumer: the version is published once, deliberately, as a release — never at a
 spec's own conclude — and `cq --version` is what answers which one you are running.
 
+## 6.12.0
+
+**Spec store writes accumulate locally, and the store branch keeps one commit.** A write to the
+  git-backed store lands in the local ref `refs/quenching/pending/<branch>` instead of pushing. That
+  ref holds one commit, replaced on each write, and reads see it. The pending change reaches the
+  remote only at a sync point:
+  - create, archive or restore, import, and `write_config`;
+  - the new `cq specs push [--drop <id>…]`;
+  - the end of `cq git push`, `pr create` and `pr merge`.
+
+  A sync sends one parentless commit under `--force-with-lease`. It falls back to a fast-forward
+  when the remote refuses rewrites. Conflicts are judged per spec id at the sync. Card transitions
+  fire once per sync, and `cq specs status` reports unsent local writes. ADR 0016 records the
+  decision.
+
+**Every module is visible to the router again.** Claude Code 2.1.312 puts a plugin's `bin/` on
+  `PATH` only when the directory exists. Every principal module except `quenching-specs` now ships a
+  non-executable `bin/README` marker, so the router discovers its siblings. Without it, a bare
+  `cq knowledge …` refused with "module not enabled".
+
+**One suite run per gate.** `scripts/verify_repo.sh` runs the randomized suite in parallel under
+  coverage, once. CI drops the duplicate suite step.
+
+**Deploy completes its own surface.** An upgrade with `cq deploy --write` reuses the module
+  selection recorded in the manifest. The `opencode` harness writes OpenCode subagents. The gate
+  checks the repository's installed surface against its source.
+
 ## 6.11.0
 
 **Deploy selected quenching modules directly into a target repository.** `cq deploy` creates
