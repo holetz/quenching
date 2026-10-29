@@ -2,7 +2,7 @@
 type: standard
 title: Extension points contract
 description: The extension point — an event a command declares for the repository that installed the plugin to attach its own work; the three-part contract (the declaration lives in config the core reads and never interprets; the body announces name, command and prompt and moves on; `condition` is never evaluated by whoever announces); the declared shape; and why the extension lives in config rather than in a command
-resource: .agents/quenching.json, plugins/quenching/commands/specs/execute.md, plugins/quenching/assets/bin/quenching/specs/**
+resource: .claude/quenching.json, plugins/quenching/commands/specs/execute.md, plugins/quenching/assets/bin/quenching/specs/**
 tags: [automation, extension, configuration, plugin]
 timestamp: 2026-08-11
 audience: both
