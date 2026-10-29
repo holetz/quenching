@@ -75,6 +75,17 @@ def _cq_json(cwd: str, *argv: str) -> dict:
     return json.loads(proc.stdout)
 
 
+
+def setUpModule():
+    """The code-side sync points would send this checkout's own pending store writes; every
+    test here stubs them (`test_specs_push.py` proves the sync itself on a fixture remote)."""
+    for target in ("quenching.git.pull.sync_store", "quenching.git.azure_pull.sync_store",
+                   "quenching.specs.commands.push.sync_store"):
+        patcher = mock.patch(target, return_value={"ok": True, "skipped": "test"})
+        patcher.start()
+        unittest.addModuleCleanup(patcher.stop)
+
+
 class RepoCase(unittest.TestCase):
     def setUp(self):
         # Restored via addCleanup, in LIFO order — BEFORE the tempdir cleanup below runs, so a

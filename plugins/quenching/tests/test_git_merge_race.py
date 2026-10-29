@@ -38,6 +38,17 @@ def run_github(*, view, merge_code=0, merged_after):
 CLEAN = {"headRefOid": "abc", "mergeStateStatus": "CLEAN"}
 
 
+
+def setUpModule():
+    """The code-side sync points would send this checkout's own pending store writes; every
+    test here stubs them (`test_specs_push.py` proves the sync itself on a fixture remote)."""
+    for target in ("quenching.git.pull.sync_store", "quenching.git.azure_pull.sync_store",
+                   "quenching.specs.commands.push.sync_store"):
+        patcher = mock.patch(target, return_value={"ok": True, "skipped": "test"})
+        patcher.start()
+        unittest.addModuleCleanup(patcher.stop)
+
+
 class GithubRaceTests(unittest.TestCase):
     def test_merge_refused_after_a_concurrent_merge_is_already_merged(self):
         code, result = run_github(view=[CLEAN, CLEAN], merge_code=1,

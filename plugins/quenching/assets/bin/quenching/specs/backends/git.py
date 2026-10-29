@@ -833,10 +833,11 @@ class GitBackend(SpecBackend):
                                       new[new_path][1])))
         self._card_transitions(pairs)
 
-    def push(self, drop: tuple = ()) -> dict:
-        """`cq specs push`: send every pending write of the clone, collapsing the branch to one
-        commit even when nothing is pending; `drop` discards those specs' local writes first."""
-        self._store(None, "", drop=tuple(int(d) for d in drop), collapse=True)
+    def push(self, drop: tuple = (), collapse: bool = True) -> dict:
+        """Send every pending write of the clone; `drop` discards those specs' local writes
+        first. `collapse` also rewrites a branch that holds more than one commit when nothing
+        is pending (`cq specs push`); the code-side sync points pass False."""
+        self._store(None, "", drop=tuple(int(d) for d in drop), collapse=collapse)
         return self.last_sync or {"commit": None, "history": "unchanged"}
 
     def pending_state(self) -> dict | None:

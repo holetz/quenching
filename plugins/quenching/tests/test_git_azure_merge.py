@@ -25,6 +25,17 @@ BUILD = {"configuration": {"id": 1, "isEnabled": True, "isBlocking": True,
          "status": "approved"}
 
 
+
+def setUpModule():
+    """The code-side sync points would send this checkout's own pending store writes; every
+    test here stubs them (`test_specs_push.py` proves the sync itself on a fixture remote)."""
+    for target in ("quenching.git.pull.sync_store", "quenching.git.azure_pull.sync_store",
+                   "quenching.specs.commands.push.sync_store"):
+        patcher = mock.patch(target, return_value={"ok": True, "skipped": "test"})
+        patcher.start()
+        unittest.addModuleCleanup(patcher.stop)
+
+
 class AzureMergeTests(unittest.TestCase):
     def run_merge(self, *, prs=None, policies=None, policy_code=0, patch_code=0,
                   url=URL, wait=0, unreadable=False):

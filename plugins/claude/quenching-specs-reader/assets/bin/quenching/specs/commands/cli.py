@@ -34,6 +34,7 @@ from quenching.specs.commands.next import cmd_next
 from quenching.specs.commands.output import Emitter
 from quenching.specs.commands.parallel import cmd_parallel
 from quenching.specs.commands.promote import cmd_promote
+from quenching.specs.commands.push import cmd_push
 from quenching.specs.commands.read import cmd_export, cmd_list, cmd_status
 from quenching.specs.commands.release import cmd_release
 from quenching.specs.commands.scrub import cmd_scrub
@@ -267,6 +268,11 @@ def _add_inspection(sub) -> None:
                                      "against each task's recorded `subject:`")
     sp.add_argument("--pr", help="a PR number or URL, matched against `pr`/`merge.pr`")
 
+    sp = add_json(sub.add_parser("push", help="send the git store's pending local writes in "
+                                              "one push; the store branch keeps one commit"))
+    sp.add_argument("--drop", action="append", type=int, metavar="ID",
+                    help="discard this spec's pending local writes before the push (repeatable)")
+
     sp = add_json(sub.add_parser("discover", help="append a line to ## Discoveries"))
     sp.add_argument("spec")
     sp.add_argument("text")
@@ -399,6 +405,7 @@ DISPATCH: dict = {
     "parallel": cmd_parallel,
     "find": cmd_find,
     "discover": cmd_discover,
+    "push": cmd_push,
     "epic": cmd_epic,
     "validate": cmd_validate,
     "config": cmd_config,

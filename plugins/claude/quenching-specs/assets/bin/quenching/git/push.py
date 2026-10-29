@@ -3,7 +3,9 @@
 The argv is fixed here: the branch must be a local ref and the remote a configured one, both
 checked before git sees them, and the refspec is spelled out (`refs/heads/<b>:refs/heads/<b>`)
 so neither can be read as an option or a force. Runs with `audit.SAFE`. Never `--force`, never
-`--delete`, never a refspec the caller wrote.
+`--delete`, never a refspec the caller wrote. A pushed branch is a sync point of the git spec
+store: the clone's pending store writes follow, reported under `specs` and never undoing the
+code push.
 
 Exit 0 pushed · 1 git refused the push (non-fast-forward, auth) · 2 refusal."""
 from __future__ import annotations
@@ -50,6 +52,19 @@ def cmd_push(args) -> int:
         emit(args.json, {"ok": False, "remote": args.remote, "branch": args.branch,
                          "message": err.strip()}, f"push refused: {err.strip()}")
         return FINDINGS
-    emit(args.json, {"ok": True, "remote": args.remote, "branch": args.branch, "sha": sha},
-         f"pushed {args.branch} ({sha[:12]}) to {args.remote}")
+    from quenching.specs.commands.push import sync_store   # deferred: the store loads on success only
+    from quenching.specs.config import find_repo_root
+    specs = sync_store(find_repo_root(cwd))
+    emit(args.json, {"ok": True, "remote": args.remote, "branch": args.branch, "sha": sha,
+                     "specs": specs},
+         f"pushed {args.branch} ({sha[:12]}) to {args.remote}" + _specs_note(specs))
     return OK
+
+
+def _specs_note(specs: dict) -> str:
+    """The human tail a sync point adds: what the store sync sent, or why it did not."""
+    if not specs.get("ok"):
+        return f"; spec store not synced: {specs.get('message', '')}"
+    if specs.get("commit"):
+        return f"; spec store synced ({len(specs.get('sent', []))} spec(s) sent)"
+    return ""
