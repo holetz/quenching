@@ -64,6 +64,11 @@ class GitStoreFixture(unittest.TestCase):
     def remote_log(self) -> list[str]:
         return _sh(self.remote, "log", "--format=%s", "quenching").splitlines()
 
+    def remote_tip(self) -> str:
+        run = subprocess.run(["git", "rev-parse", "--verify", "--quiet", "quenching"],
+                             cwd=self.remote, capture_output=True, text=True)
+        return run.stdout.strip()
+
     def remote_file(self, path: str) -> str:
         run = subprocess.run(["git", "cat-file", "blob", f"quenching:{path}"], cwd=self.remote,
                              capture_output=True, check=True)
@@ -133,24 +138,26 @@ class Layout(GitStoreFixture):
         self.assertEqual(canonical._case_doc(), self.remote_file("specs/archive/1.md"))
         self.assertEqual([("archive", "closed")],
                          [(r["phase"], r["state"]) for r in backend.list_specs(lean=True)])
-        self.assertEqual("[skip ci] specs: archive 1", self.remote_log()[0])
+        self.assertEqual(["[skip ci] specs: archive 1"], self.remote_log())
 
-    def test_a_batch_writes_n_specs_in_one_commit(self):
+    def test_a_batch_writes_n_specs_in_one_pending_commit_sent_by_one_push(self):
         backend = GitBackend(self.clone("a"))
         for _ in range(3):
             backend.create_spec("plans", canonical._case_doc())
         infos = [backend.read_spec(n)[0] for n in (1, 2, 3)]
         backend.write_specs([(info, info["text"] + f"\n<!-- {info['id']} -->\n")
                              for info in infos])
-        self.assertEqual("[skip ci] specs: write 1 2 3", self.remote_log()[0])
-        self.assertEqual(4, len(self.remote_log()))
+        self.assertEqual(["[skip ci] specs: create 3"], self.remote_log())
+        self.assertEqual("collapsed", backend.push()["history"])
+        self.assertEqual(["[skip ci] specs: write 1 2 3"], self.remote_log())
         self.assertTrue(self.remote_file("specs/3.md").endswith("<!-- 3 -->\n"))
 
-    def test_an_unchanged_write_makes_no_commit(self):
+    def test_an_unchanged_write_leaves_no_pending_commit(self):
         backend = GitBackend(self.clone("a"))
         backend.create_spec("plans", canonical._case_doc())
         info, _ = backend.read_spec(1)
         backend.write_spec(info, info["text"])
+        self.assertIsNone(backend._pending())
         self.assertEqual(1, len(self.remote_log()))
 
 
@@ -166,20 +173,36 @@ class CompareAndSwap(GitStoreFixture):
         info_a, _ = a.read_spec(1)
         info_b, _ = b.read_spec(2)
         a.write_spec(info_a, info_a["text"] + "\nfrom a\n")
-        b.write_spec(info_b, info_b["text"] + "\nfrom b\n")   # stale tip: rejected, re-applied
+        b.write_spec(info_b, info_b["text"] + "\nfrom b\n")
+        a.push()
+        self.assertEqual(2, b.push()["attempts"])   # stale lease: fetched, replayed, retried
         self.assertTrue(self.remote_file("specs/1.md").endswith("from a\n"))
         self.assertTrue(self.remote_file("specs/2.md").endswith("from b\n"))
-        self.assertEqual(["[skip ci] specs: write 2", "[skip ci] specs: write 1"],
-                         self.remote_log()[:2])
+        self.assertEqual(["[skip ci] specs: write 2"], self.remote_log())
 
-    def test_the_same_spec_written_concurrently_refuses_the_second_writer(self):
+    def test_the_same_spec_written_concurrently_refuses_at_the_sync(self):
         a, b = self._two_writers()
         info_a, _ = a.read_spec(1)
         info_b, _ = b.read_spec(1)
         a.write_spec(info_a, info_a["text"] + "\nfrom a\n")
-        with self.assertRaises(BackendRefusal) as caught:
-            b.write_spec(info_b, info_b["text"] + "\nfrom b\n")
-        self.assertEqual("sp-git-stale-write", caught.exception.err["code"])
+        b.write_spec(info_b, info_b["text"] + "\nfrom b\n")   # local: nothing to collide with
+        a.push()
+        pending = b._pending()
+        with mock.patch.object(git_mod, "FETCH_TTL_S", 0):
+            with self.assertRaises(BackendRefusal) as caught:
+                b.push()
+        err = caught.exception.err
+        self.assertEqual("sp-git-stale-write", err["code"])
+        self.assertEqual([1], err["ids"])
+        local_blob, remote_blob = err["conflicts"][0]["localBlob"], err["conflicts"][0]["remoteBlob"]
+        self.assertIn(local_blob[:12], err["message"])
+        self.assertIn(remote_blob[:12], err["message"])
+        self.assertEqual(pending, b._pending())    # the local side is kept for recovery
+        self.assertTrue(_sh(self.tmp, "--git-dir", os.path.join(b.repo_root, ".git"), "cat-file",
+                            "-p", local_blob).endswith("from b\n"))
+        self.assertTrue(b.read_spec(1)[0]["text"].endswith("from b\n"))   # reads keep local
+        b.push(drop=(1,))
+        self.assertIsNone(b._pending())
         self.assertTrue(self.remote_file("specs/1.md").endswith("from a\n"))
 
     def test_a_writer_that_rereads_after_its_own_write_is_not_stale(self):
@@ -187,6 +210,7 @@ class CompareAndSwap(GitStoreFixture):
         info, _ = a.read_spec(1)
         a.write_spec(info, info["text"] + "\nfirst\n")
         a.write_spec(info, info["text"] + "\nfirst\nsecond\n")
+        a.push()
         self.assertTrue(self.remote_file("specs/1.md").endswith("second\n"))
 
     def test_concurrent_creates_from_two_clones_never_share_an_id(self):
@@ -248,9 +272,11 @@ class Reading(GitStoreFixture):
             etag = hdrs["ETag"]
             self.assertEqual(304, portal.handle("GET", "/api/specs",
                                                 {**headers, "If-None-Match": etag})[0])
-            info, _ = GitBackend(writer).read_spec(1)
-            GitBackend(writer).write_spec(info, info["text"].replace(
+            outside = GitBackend(writer)
+            info, _ = outside.read_spec(1)
+            outside.write_spec(info, info["text"].replace(
                 "title: Alpha", "title: Renamed outside the portal", 1))
+            outside.push()
             _sh(a_path, "fetch", "--quiet", "origin", "+quenching:refs/remotes/origin/quenching")
             status, hdrs, _ = portal.handle("GET", "/api/specs",
                                             {**headers, "If-None-Match": etag})
@@ -276,6 +302,139 @@ class Reading(GitStoreFixture):
         info, err = backend.read_spec(7)
         self.assertIsNone(info)
         self.assertEqual("sp-unknown-id", err["code"])
+
+
+class PendingWrites(GitStoreFixture):
+    """Writes accumulate in one local pending commit; only a sync reaches the remote, and the
+    branch it leaves always holds one parentless commit."""
+
+    def _seeded(self, count: int = 2) -> tuple[str, GitBackend]:
+        path = self.clone("a")
+        backend = GitBackend(path)
+        for n in range(count):
+            backend.create_spec("plans", canonical._case_doc(f"Spec {n + 1}"))
+        return path, backend
+
+    def _append(self, backend: GitBackend, spec_id: int, line: str) -> None:
+        info, _ = backend.read_spec(spec_id)
+        backend.write_spec(info, info["text"] + f"\n{line}\n")
+
+    def test_a_deferred_write_leaves_the_remote_untouched(self):
+        _, backend = self._seeded()
+        before = self.remote_tip()
+        self._append(backend, 1, "local")
+        self._append(backend, 2, "local too")
+        self.assertEqual(before, self.remote_tip())
+        pending = backend._pending()
+        self.assertEqual(before, backend._parent(pending))   # one commit on the remote tip
+        self.assertEqual("[skip ci] specs: write 1; write 2",
+                         _sh(backend.repo_root, "log", "-1", "--format=%s", pending).strip())
+
+    def test_reads_see_their_own_writes_across_instances_and_without_a_fetch(self):
+        path, backend = self._seeded()
+        self._append(backend, 1, "local")
+        self.assertTrue(GitBackend(path).read_spec(1)[0]["text"].endswith("local\n"))
+        with mock.patch.dict(os.environ, {git_mod.NO_FETCH_ENV: "1"}):
+            self.assertTrue(GitBackend(path).read_spec(1)[0]["text"].endswith("local\n"))
+            self.assertTrue(GitBackend(path).has_local_ref())
+
+    def test_a_read_after_a_remote_move_replays_in_memory_and_never_moves_the_pending_ref(self):
+        path, backend = self._seeded()
+        self._append(backend, 1, "local")
+        pending = backend._pending()
+        other = GitBackend(self.clone("b"))
+        self._append(other, 2, "remote")
+        other.push()
+        with mock.patch.object(git_mod, "FETCH_TTL_S", 0):
+            fresh = GitBackend(path)
+            self.assertTrue(fresh.read_spec(1)[0]["text"].endswith("local\n"))
+            self.assertTrue(fresh.read_spec(2)[0]["text"].endswith("remote\n"))
+        self.assertEqual(pending, backend._pending())
+
+    def test_a_write_after_a_fetch_persists_the_replay_on_the_new_tip(self):
+        path, backend = self._seeded()
+        self._append(backend, 1, "local")
+        other = GitBackend(self.clone("b"))
+        self._append(other, 2, "remote")
+        other.push()
+        with mock.patch.object(git_mod, "FETCH_TTL_S", 0):
+            fresh = GitBackend(path)
+            self._append(fresh, 1, "again")
+        self.assertEqual(self.remote_tip(), fresh._parent(fresh._pending()))
+        self.assertEqual({"specs": [1], "commit": fresh._pending()},
+                         {k: v for k, v in fresh.pending_state().items() if k != "since"})
+
+    def test_a_sync_is_one_parentless_commit_with_every_pending_change(self):
+        _, backend = self._seeded()
+        self._append(backend, 1, "one")
+        self._append(backend, 2, "two")
+        backend.create_spec("plans", canonical._case_doc("Three"))
+        self.assertEqual(["[skip ci] specs: write 1; write 2; create 3"], self.remote_log())
+        self.assertEqual("", _sh(self.remote, "log", "--format=%P", "quenching").strip())
+        self.assertTrue(self.remote_file("specs/1.md").endswith("one\n"))
+        self.assertTrue(self.remote_file("specs/2.md").endswith("two\n"))
+        self.assertIsNone(backend._pending())
+        self.assertIsNone(backend.pending_state())
+
+    def test_archive_syncs_and_carries_the_pending_writes(self):
+        _, backend = self._seeded()
+        self._append(backend, 2, "pending")
+        info, _ = backend.read_spec(1)
+        backend.move_spec(info, "archive")
+        self.assertEqual(["[skip ci] specs: write 2; archive 1"], self.remote_log())
+        self.assertTrue(self.remote_file("specs/2.md").endswith("pending\n"))
+
+    def test_a_write_landing_between_the_push_and_the_close_survives(self):
+        path, backend = self._seeded()
+        self._append(backend, 1, "sent")
+        late = GitBackend(path)
+        real_push = GitBackend._push
+
+        def push_then_write(this, lease, commit):
+            result = real_push(this, lease, commit)
+            self._append(late, 2, "late-write")
+            return result
+        with mock.patch.object(GitBackend, "_push", push_then_write):
+            backend.push()
+        self.assertTrue(self.remote_file("specs/1.md").endswith("sent\n"))
+        self.assertNotIn("late-write", self.remote_file("specs/2.md"))
+        pending = backend._pending()
+        self.assertEqual(self.remote_tip(), backend._parent(pending))
+        self.assertTrue(GitBackend(path).read_spec(2)[0]["text"].endswith("late-write\n"))
+        backend.push()
+        self.assertTrue(self.remote_file("specs/2.md").endswith("late-write\n"))
+        self.assertEqual(1, len(self.remote_log()))
+
+    def test_a_plain_fast_forward_from_an_old_runtime_is_collapsed_by_the_next_sync(self):
+        _, backend = self._seeded()
+        old = self.clone("old")
+        _sh(old, "fetch", "--quiet", "origin", "quenching")
+        tree = _sh(old, "rev-parse", "FETCH_HEAD^{tree}").strip()
+        child = _sh(old, "commit-tree", tree, "-p", "FETCH_HEAD", "-m", "old runtime").strip()
+        _sh(old, "push", "--quiet", "origin", f"{child}:refs/heads/quenching")
+        self.assertEqual(2, len(self.remote_log()))
+        with mock.patch.object(git_mod, "FETCH_TTL_S", 0):
+            self.assertEqual("collapsed", GitBackend(backend.repo_root).push()["history"])
+        self.assertEqual(1, len(self.remote_log()))
+
+    def test_a_remote_that_refuses_the_rewrite_receives_a_fast_forward(self):
+        _, backend = self._seeded()
+        _sh(self.remote, "config", "receive.denyNonFastForwards", "true")
+        self._append(backend, 1, "appended")
+        result = backend.push()
+        self.assertEqual("appended", result["history"])
+        self.assertEqual(2, len(self.remote_log()))
+        self.assertTrue(self.remote_file("specs/1.md").endswith("appended\n"))
+        self.assertIsNone(backend._pending())
+        _sh(self.remote, "config", "receive.denyNonFastForwards", "false")
+        self.assertEqual("collapsed", backend.push()["history"])
+        self.assertEqual(1, len(self.remote_log()))
+
+    def test_a_mirror_ignores_the_pending_ref(self):
+        path, backend = self._seeded(1)
+        self._append(backend, 1, "local")
+        mirror = GitBackend(path, mirror_dir=os.path.join(self.tmp, "data", "mirror.git"))
+        self.assertNotIn("local", mirror.read_spec(1)[0]["text"])
 
 
 class Configuration(GitStoreFixture):

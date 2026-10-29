@@ -144,6 +144,9 @@ class CardCreation(GitStoreFixture):
 
 
 class CardTransitions(GitStoreFixture):
+    """Card transitions run at the sync: one request per spec whose lifecycle facts changed
+    between the remote tip and the pushed commit, never one per local write."""
+
     def _spec(self):
         fake = FakeCard(next_number=10)
         backend = GitBackend(self.clone("a"), card=fake)
@@ -157,6 +160,8 @@ class CardTransitions(GitStoreFixture):
         # The FIRST tick moves the derived stage to `executing` (`spec:built`): the start of
         # construction is a lifecycle transition, so it costs exactly one request.
         backend.write_spec(info, info["text"].replace("- [ ] 1.1 first", "- [x] 1.1 first"))
+        self.assertEqual([], fake.calls)      # a local write never reaches the tracker
+        backend.push()
         self.assertEqual(["update"], fake.verbs())
         self.assertEqual(["spec:built"], fake.calls[0][2]["labels"])
         fake.calls.clear()
@@ -165,8 +170,21 @@ class CardTransitions(GitStoreFixture):
         info, _ = backend.read_spec(10)
         edited, _ = upsert_section(info, "Problem", "## Problem\n\nRewritten entirely.\n")
         backend.write_spec(info, edited)
+        backend.push()
         self.assertEqual([], fake.calls)
-        self.assertEqual(3, len([c for c in self.remote_log() if "write 10" in c]))
+        self.assertEqual(["[skip ci] specs: write 10"], self.remote_log())
+
+    def test_two_transitions_between_syncs_cost_one_request(self):
+        backend, fake = self._spec()
+        info, _ = backend.read_spec(10)
+        backend.write_spec(info, info["text"].replace("title: Alpha", "title: Beta"))
+        info, _ = backend.read_spec(10)
+        backend.write_spec(info, set_frontmatter_record(info["text"], "approved",
+                                                        {"by": "human", "date": "2026-01-02"}))
+        backend.push()
+        self.assertEqual(["update"], fake.verbs())
+        self.assertEqual("Beta", fake.calls[0][2]["title"])
+        self.assertIn("spec:approved", fake.calls[0][2]["labels"])
 
     def test_a_record_is_one_card_request_carrying_the_label_and_progress(self):
         backend, fake = self._spec()
@@ -174,6 +192,7 @@ class CardTransitions(GitStoreFixture):
         approved = set_frontmatter_record(info["text"], "approved",
                                           {"by": "human", "date": "2026-01-02"})
         backend.write_spec(info, approved)
+        backend.push()
         self.assertEqual(["update"], fake.verbs())
         state = fake.calls[0][2]
         self.assertIn("spec:approved", state["labels"])
@@ -197,6 +216,7 @@ class CardTransitions(GitStoreFixture):
         backend, fake = self._spec()
         info, _ = backend.read_spec(10)
         backend.write_spec(info, info["text"].replace("title: Alpha", "title: Beta"))
+        backend.push()
         self.assertEqual(["update"], fake.verbs())
         self.assertEqual("Beta", fake.calls[0][2]["title"])
 
@@ -206,8 +226,9 @@ class CardTransitions(GitStoreFixture):
         info, _ = backend.read_spec(10)
         approved = set_frontmatter_record(info["text"], "approved",
                                           {"by": "human", "date": "2026-01-02"})
+        backend.write_spec(info, approved)
         with self.assertRaises(BackendRefusal) as caught:
-            backend.write_spec(info, approved)
+            backend.push()
         self.assertEqual("sp-card-failed", caught.exception.err["code"])
         self.assertIn("not rolled back", caught.exception.err["message"])
         self.assertEqual(approved, self.remote_file("specs/10.md"))
@@ -223,8 +244,9 @@ class CardTransitions(GitStoreFixture):
             (infos[0], set_frontmatter_record(infos[0]["text"], "priority", {"level": "high"})),
             (infos[1], infos[1]["text"] + "\n<!-- note -->\n"),
             (infos[2], set_frontmatter_record(infos[2]["text"], "priority", {"level": "low"}))])
+        backend.push()
         self.assertEqual([20, 22], [c[1] for c in fake.calls])
-        self.assertEqual(1, len([c for c in self.remote_log() if c.endswith("write 20 21 22")]))
+        self.assertEqual(["[skip ci] specs: write 20 21 22"], self.remote_log())
 
 
 class CardConfiguration(GitStoreFixture):
