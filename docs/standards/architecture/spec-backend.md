@@ -165,8 +165,11 @@ and the GitHub and Azure Boards backends keep working unchanged beside it.
   common `.git`, so every worktree of a clone shares it, and it is never pushed. Its parent is the
   remote tip it is based on and its message accumulates the operations
   (`[skip ci] specs: write 12; archive 12`); each write replaces it, so the ref never grows a
-  history either. The leak guard and the identity check run before that commit, and `_store` stays
-  the one path that moves the pending ref or the branch.
+  history either. A write never fetches: it builds on the remote-tracking ref as the last fetch
+  left it, so a long-lived process writes offline. A write that brings every local change back to
+  its base text deletes the pending ref instead of keeping an empty commit. The leak guard and the
+  identity check run before that commit, and `_store` stays the one path that moves the pending
+  ref or the branch.
 - **Reads see their own writes.** A read lays the pending commit over the remote tip, also under
   `QUENCHING_SPECS_NO_FETCH`. When a fetch brought a new tip, the read replays the pending changes
   onto it **in memory** and never moves the ref; only a write persists the replay. A conflict is
@@ -180,20 +183,31 @@ and the GitHub and Azure Boards backends keep working unchanged beside it.
   with `--force-with-lease=refs/heads/<branch>:<T>` (an empty lease when the branch does not exist
   yet). The branch therefore always holds a single commit, and the lease is the compare-and-swap.
   A sync carries every pending change of the clone, not only the spec that triggered it. A stale
-  lease fetches and retries, five attempts at most, then refuses with `sp-git-cas-exhausted`.
+  lease fetches and retries, five attempts at most, then refuses with `sp-git-cas-exhausted`. A
+  sync that would leave the remote tree unchanged pushes nothing, unless `cq specs push` collapses
+  a branch holding more than one commit.
 - **A remote that refuses the rewrite receives a fast-forward.** On `[remote rejected]` (no
   force-push right, a protected branch) the same tree is pushed as a child of T, and the result
-  says `history: appended`. The next sync by a writer allowed to rewrite collapses the branch
+  says `history: appended`; a tree equal to T's is never appended, so a refused collapse with
+  nothing pending is a no-op. The next sync by a writer allowed to rewrite collapses the branch
   again, as it does a plain fast-forward pushed by an older runtime.
 - **A conflict refuses at the sync, never at the write.** A spec changed both locally and on the
   remote since the pending base refuses with `sp-git-stale-write`, naming each spec with its local
   and remote blob, and keeps the pending ref: the local text is recoverable with
-  `git cat-file -p <local blob>`, and `cq specs push --drop <id>` then discards it. A document
-  whose blob differs from the one the caller read refuses the write the same way, and nothing is
-  written. Writes to different specs from two clones therefore both land.
-- **Closing a sync.** The tracking ref moves to the pushed commit and the pending ref is deleted by
-  compare-and-swap against the pending commit the sync sent. A write that replaced it meanwhile is
-  replayed onto the pushed commit instead, so it survives to the next sync.
+  `git cat-file -p <local blob>`, and `cq specs push --drop <id>` then discards it. A conflict
+  seen on a cached tip is judged again on a fresh fetch, once, before the sync refuses. While a
+  conflict holds the pending commit on its old base, a local write to a spec the remote changed
+  refuses naming that spec and the conflicting ones. A document whose blob differs from the one
+  the caller read refuses the write the same way, and nothing is written. Writes to different
+  specs from two clones therefore both land.
+- **Closing a sync.** The tracking ref moves from the tip the sync read to the pushed commit by
+  compare-and-swap, so a newer tip another process fetched meanwhile stays. The pending ref is
+  deleted by compare-and-swap against the pending commit the sync sent. A write that replaced it
+  meanwhile is carried onto the pushed commit instead, so it survives to the next sync: only the
+  specs that write changed against its own parent and that differ from what was sent, never the
+  remote's drift between the two bases. When the pushed commit changed such a spec under that
+  write, the new pending commit's parent keeps the document the write read, so the next sync
+  refuses it as a conflict instead of overwriting the remote.
 - **Visibility.** `cq specs status` reports how many specs hold unsent local writes, and since
   when. Other clones and the board see a change only at the next sync point.
 - **Identity.** Without a tracker, the store owns identity: the counter is read and incremented
@@ -212,7 +226,8 @@ and discuss under. The spec on the branch stays the source of truth.
   on the branch or in `.agents/quenching.json`. An absent provider is `github` when the remote is
   GitHub and `none` otherwise.
 - **Identity.** With a provider, the card is created first, in one request, and its native number
-  is the spec ID. `cq specs new --card <n>` adopts an existing issue or work item instead: its
+  is the spec ID. A pending spec that conflicts with the remote refuses the creation before the
+  card exists; any refusal after the card was created names it as an orphan to close by hand. `cq specs new --card <n>` adopts an existing issue or work item instead: its
   text becomes `## Problem` when the spec has none, `<n>` is the ID, and the item is rewritten to
   the thin card after the spec is written. A tracker backend refuses `--card`.
 - **Body.** A `<!-- quenching-card -->` marker (never the tracker backends' spec marker), the
@@ -230,8 +245,10 @@ and discuss under. The spec on the branch stays the source of truth.
   `az rest`. `azurePlacement` (area, iteration, board column, declared state) is applied at
   create and at transitions only, so a tick never undoes a move on the board.
 - **A card failure never rolls back the spec.** The spec is synced first (the card first only
-  at creation, where there is no spec yet). A failed card write after it raises `sp-card-failed`
-  naming the spec, and the next transition refreshes the card.
+  at creation, where there is no spec yet). A card write that fails after the push landed is
+  reported beside the successful result, as `cardFailures` entries (`sp-card-failed`, naming the
+  spec) and a warning line, and never turns the sync into a failure; the next transition
+  refreshes the card.
 - **Migration.** `cq specs migrate --to git` is a dry run unless `--write`. It writes every spec
   under its own ID in one commit (open in `specs/`, closed in `specs/archive/`), copies the
   specs-axis keys into the branch `quenching.json`, and prints the `.agents/quenching.json`

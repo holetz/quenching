@@ -2,10 +2,12 @@
 
 The argv is fixed here: the branch must be a local ref and the remote a configured one, both
 checked before git sees them, and the refspec is spelled out (`refs/heads/<b>:refs/heads/<b>`)
-so neither can be read as an option or a force. Runs with `audit.SAFE`. Never `--force`, never
-`--delete`, never a refspec the caller wrote. A pushed branch is a sync point of the git spec
-store: the clone's pending store writes follow, reported under `specs` and never undoing the
-code push.
+so neither can be read as an option or a force. Runs with `audit.SAFE`. The code branch is never
+forced: never `--force`, never `--delete`, never a refspec the caller wrote. A pushed branch is a
+sync point of the git spec store: the clone's pending store writes follow, reported under `specs`
+and never undoing the code push. That sync rewrites only the store branch, as one parentless
+commit under `--force-with-lease` against the tip it read (a fast-forward where the remote
+refuses the rewrite).
 
 Exit 0 pushed · 1 git refused the push (non-fast-forward, auth) · 2 refusal."""
 from __future__ import annotations
@@ -65,6 +67,7 @@ def _specs_note(specs: dict) -> str:
     """The human tail a sync point adds: what the store sync sent, or why it did not."""
     if not specs.get("ok"):
         return f"; spec store not synced: {specs.get('message', '')}"
-    if specs.get("commit"):
-        return f"; spec store synced ({len(specs.get('sent', []))} spec(s) sent)"
-    return ""
+    note = (f"; spec store synced ({len(specs.get('sent', []))} spec(s) sent)"
+            if specs.get("commit") else "")
+    return note + "".join(f"; warning: {failure.get('message', '')}"
+                          for failure in specs.get("cardFailures") or [])

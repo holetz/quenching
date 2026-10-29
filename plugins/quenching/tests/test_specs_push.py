@@ -12,9 +12,11 @@ from unittest import mock
 
 import _paths  # noqa: F401
 import test_specs_backends as canonical
+from test_specs_cards import FakeCard
 from test_specs_git_backend import GitStoreFixture, _sh
 from quenching.git import push as git_push
 from quenching.git import pull
+from quenching.specs.backends import git as git_mod
 from quenching.specs.backends.git import GitBackend
 from quenching.specs.commands import push as push_mod
 from quenching.specs.commands import read as read_mod
@@ -121,6 +123,74 @@ class PushVerb(GitStoreFixture):
         got = push_mod.sync_store(self.path)
         self.assertEqual(([1], "collapsed"), (got["sent"], got["history"]))
         self.assertTrue(self.remote_file("specs/1.md").endswith("synced\n"))
+
+    def _failing_card(self) -> FakeCard:
+        """Spec 1's title changes locally while its tracker refuses every update."""
+        fake = FakeCard()
+        fake.fail_updates = True
+        self.backend._card_client = fake
+        info, _ = self.backend.read_spec(1)
+        self.backend.write_spec(info, info["text"].replace("title: One", "title: Renamed"))
+        return fake
+
+    def test_a_card_failure_after_the_code_side_sync_is_a_warning_not_a_failed_sync(self):
+        fake = self._failing_card()
+        got = push_mod.sync_store(self.path)
+        self.assertTrue(got["ok"], got)
+        self.assertEqual([1], got["sent"])
+        self.assertEqual([1], [f["id"] for f in got["cardFailures"]])
+        self.assertEqual(["update"], fake.verbs())
+        note = git_push._specs_note(got)
+        self.assertIn("spec store synced (1 spec(s) sent)", note)
+        self.assertIn("warning: spec 1 is written, but its card could not be updated", note)
+        self.assertNotIn("not synced", note)
+
+    def test_the_push_verb_reports_a_card_failure_beside_the_push(self):
+        self._failing_card()
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf):
+            code = push_mod.cmd_push(argparse.Namespace(json=False, drop=None), self.path,
+                                     Emitter())
+        self.assertEqual(0, code, buf.getvalue())
+        self.assertIn("pushed 1 spec(s)", buf.getvalue())
+        self.assertIn("warning: spec 1 is written, but its card could not be updated",
+                      buf.getvalue())
+        self.assertIsNone(self.backend._pending())
+
+    def test_a_sync_point_under_no_fetch_still_reaches_the_remote(self):
+        other = GitBackend(self.clone("b"))
+        info, _ = other.read_spec(2)
+        other.write_spec(info, info["text"] + "\nfrom b\n")
+        other.push()
+        with mock.patch.dict(os.environ, {git_mod.NO_FETCH_ENV: "1"}), \
+                mock.patch.object(git_mod, "FETCH_TTL_S", 0):
+            self.write(1, "offline read, online sync")
+            got = push_mod.sync_store(self.path)
+        self.assertTrue(got["ok"], got)
+        self.assertEqual(([1], 2), (got["sent"], got["attempts"]))   # stale lease, then fetch
+        self.assertTrue(self.remote_file("specs/1.md").endswith("offline read, online sync\n"))
+        self.assertTrue(self.remote_file("specs/2.md").endswith("from b\n"))
+        self.assertIsNone(self.backend._pending())
+
+    def test_a_pr_create_syncs_the_store_after_opening_the_pr(self):
+        self.write(2, "with the pr")
+
+        def gh(*argv, stdin=None):
+            return 0, "https://github.com/o/r/pull/7\n", ""
+        with mock.patch("os.getcwd", return_value=self.path), \
+                mock.patch.object(pull, "_provider", return_value="github"), \
+                mock.patch.object(pull, "_gh", side_effect=gh), \
+                mock.patch.object(pull, "_branch_ok", return_value=True), \
+                contextlib.redirect_stdout(io.StringIO()) as out:
+            code = pull.cmd_pr(SimpleNamespace(
+                action="create", base="main", head="plan/2-x", title="t", body="b", spec=None,
+                json=True, work_item=None, transition_work_items=False,
+                delete_source_branch=False))
+        payload = json.loads(out.getvalue())
+        self.assertEqual(0, code, payload)
+        self.assertEqual((7, [2]), (payload["number"], payload["specs"]["sent"]))
+        self.assertTrue(self.remote_file("specs/2.md").endswith("with the pr\n"))
+        self.assertIsNone(self.backend._pending())
 
     def test_a_code_push_syncs_the_store_after_the_branch(self):
         self.write(2, "with the code")

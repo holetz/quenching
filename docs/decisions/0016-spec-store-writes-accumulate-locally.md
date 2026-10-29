@@ -41,7 +41,8 @@ commit counts and subjects.
   the lease stays the compare-and-swap. A remote that refuses the rewrite receives the same tree as
   a fast-forward child; the next writer allowed to rewrite collapses it again.
 - Card transitions move to the sync: one request per spec whose lifecycle facts changed between the
-  remote tip and the pushed commit.
+  remote tip and the pushed commit. A card that fails after the push landed is a warning beside the
+  result, never a failed sync.
 
 A lifecycle drops from about 19 pushes to about 4 (create, PR, archive, merge).
 

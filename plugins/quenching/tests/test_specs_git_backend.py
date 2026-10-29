@@ -414,6 +414,195 @@ class PendingWrites(GitStoreFixture):
         self.assertTrue(self.remote_file("specs/2.md").endswith("late-write\n"))
         self.assertEqual(1, len(self.remote_log()))
 
+    def _drifted(self) -> tuple[str, GitBackend, GitBackend, str]:
+        """Clone `a` holds a pending write on spec 1 based on T0; another clone then moves the
+        remote twice (T1, T2). Returns the path, the syncing instance, the other clone and T1,
+        the tip a late writer in clone `a` read before the sync fetched T2."""
+        path, backend = self._seeded(3)
+        self._append(backend, 1, "sent")
+        other = GitBackend(self.clone("b"))
+        self._append(other, 3, "x1")
+        other.push()
+        _sh(path, "fetch", "--quiet", "origin", "+quenching:refs/remotes/origin/quenching")
+        return path, backend, other, self.remote_tip()
+
+    def _sync_with_late_write(self, backend: GitBackend, path: str, late_tip: str,
+                              spec_id: int, line: str) -> None:
+        """`backend.push()`, with a second instance of the same clone writing `spec_id` between
+        the push and the close, on the tracking tip it read before the sync's fetch."""
+        late = GitBackend(path)
+        real_push = GitBackend._push
+
+        def push_then_write(this, lease, commit):
+            result = real_push(this, lease, commit)
+            if result[0] == 0 and this is backend:
+                with mock.patch.object(late, "_local_tip", return_value=late_tip):
+                    self._append(late, spec_id, line)
+            return result
+        with mock.patch.object(git_mod, "FETCH_TTL_S", 0), \
+                mock.patch.object(GitBackend, "_push", push_then_write):
+            backend.push()
+
+    def test_a_late_write_on_an_older_tip_never_reverts_the_remote(self):
+        path, backend, other, t1 = self._drifted()
+        self._append(other, 3, "x2")
+        other.push()
+        self._sync_with_late_write(backend, path, t1, 2, "late-2")
+        self.assertTrue(self.remote_file("specs/3.md").endswith("x2\n"))
+        self.assertEqual([2], backend.pending_state()["specs"])   # only the late write's intent
+        with mock.patch.object(git_mod, "FETCH_TTL_S", 0):
+            GitBackend(path).push()
+        self.assertTrue(self.remote_file("specs/3.md").endswith("x2\n"))
+        self.assertTrue(self.remote_file("specs/2.md").endswith("late-2\n"))
+        self.assertTrue(self.remote_file("specs/1.md").endswith("sent\n"))
+
+    def test_a_late_write_on_an_older_tip_never_resurrects_an_archived_spec(self):
+        path, backend, other, t1 = self._drifted()
+        info, _ = other.read_spec(3)
+        other.move_spec(info, "archive")
+        self._sync_with_late_write(backend, path, t1, 2, "late-2")
+        with mock.patch.object(git_mod, "FETCH_TTL_S", 0):
+            GitBackend(path).push()
+        names = _sh(self.remote, "ls-tree", "-r", "--name-only", "quenching").split()
+        self.assertIn("specs/archive/3.md", names)
+        self.assertNotIn("specs/3.md", names)
+        self.assertTrue(self.remote_file("specs/2.md").endswith("late-2\n"))
+
+    def test_a_late_write_to_a_spec_the_sync_moved_refuses_at_the_next_sync(self):
+        path, backend, other, t1 = self._drifted()
+        self._append(other, 3, "x2")
+        other.push()
+        self._sync_with_late_write(backend, path, t1, 3, "late-3")
+        with mock.patch.object(git_mod, "FETCH_TTL_S", 0):
+            with self.assertRaises(BackendRefusal) as caught:
+                GitBackend(path).push()
+        self.assertEqual([3], caught.exception.err["ids"])
+        self.assertTrue(self.remote_file("specs/3.md").endswith("x2\n"))
+
+    def test_the_close_never_moves_the_tracking_ref_backward(self):
+        path, backend = self._seeded()
+        self._append(backend, 1, "sent")
+        other = GitBackend(self.clone("b"))
+        real_push = GitBackend._push
+
+        def push_then_newer_tip(this, lease, commit):
+            result = real_push(this, lease, commit)
+            if result[0] == 0 and this is backend:
+                with mock.patch.object(git_mod, "FETCH_TTL_S", 0):
+                    self._append(other, 2, "newer")
+                    other.push()
+                _sh(path, "fetch", "--quiet", "origin",
+                    "+quenching:refs/remotes/origin/quenching")
+            return result
+        with mock.patch.object(GitBackend, "_push", push_then_newer_tip):
+            backend.push()
+        self.assertEqual(self.remote_tip(), backend._local_tip())
+
+    def test_a_conflict_on_a_stale_cached_tip_is_judged_again_on_a_fresh_fetch(self):
+        path, backend = self._seeded()
+        t0 = self.remote_tip()
+        other = GitBackend(self.clone("b"))
+        self._append(other, 1, "remote")
+        other.push()
+        with mock.patch.object(git_mod, "FETCH_TTL_S", 0):
+            self._append(GitBackend(path), 1, "local on the new tip")
+        _sh(path, "update-ref", "refs/remotes/origin/quenching", t0)   # a stale tracking ref
+        result = GitBackend(path).push()                               # the cache is fresh
+        self.assertEqual("collapsed", result["history"])
+        self.assertTrue(self.remote_file("specs/1.md").endswith("local on the new tip\n"))
+
+    def test_a_write_blocked_by_another_conflict_names_the_written_spec(self):
+        path, backend = self._seeded()
+        self._append(backend, 1, "local")
+        other = GitBackend(self.clone("b"))
+        self._append(other, 1, "remote")
+        self._append(other, 2, "remote")
+        other.push()
+        with mock.patch.object(git_mod, "FETCH_TTL_S", 0):
+            fresh = GitBackend(path)
+            info, _ = fresh.read_spec(2)
+        with self.assertRaises(BackendRefusal) as caught:
+            fresh.write_spec(info, info["text"] + "\nmine\n")
+        err = caught.exception.err
+        self.assertEqual(([2], [1]), (err["ids"], err["blockedBy"]))
+        self.assertIn("spec(s) 2 changed", err["message"])
+
+    def test_a_local_write_never_fetches(self):
+        _, backend = self._seeded()
+        info, _ = backend.read_spec(1)
+        calls = []
+        real = GitBackend._git
+
+        def spy(this, *argv, **kwargs):
+            calls.append(argv[0])
+            return real(this, *argv, **kwargs)
+        with mock.patch.object(git_mod, "FETCH_TTL_S", 0), \
+                mock.patch.object(GitBackend, "_git", spy):
+            backend.write_spec(info, info["text"] + "\noffline\n")
+        self.assertNotIn("fetch", calls)
+        self.assertEqual([1], backend.pending_state()["specs"])
+
+    def test_writing_a_spec_back_to_its_remote_text_retires_the_pending_ref(self):
+        _, backend = self._seeded()
+        info, _ = backend.read_spec(1)
+        original = info["text"]
+        backend.write_spec(info, original + "\nedit\n")
+        info, _ = backend.read_spec(1)
+        backend.write_spec(info, original)
+        self.assertIsNone(backend._pending())
+        self.assertIsNone(backend.pending_state())
+
+    def _race(self, backend: GitBackend, rival: GitBackend, times: int):
+        """Patch `backend._commit` so `rival` (another process of the same clone) moves the
+        pending ref between `backend`'s read of it and its compare-and-swap, `times` times."""
+        lost = [0]
+        real = GitBackend._commit
+
+        def commit_then_rival_writes(*args, **kwargs):
+            result = real(backend, *args, **kwargs)
+            if lost[0] < times:
+                lost[0] += 1
+                self._append(rival, 2, f"rival {lost[0]}")
+            return result
+        return mock.patch.object(backend, "_commit", side_effect=commit_then_rival_writes), lost
+
+    def test_two_processes_racing_the_pending_ref_retry_and_both_land(self):
+        path, backend = self._seeded()
+        rival = GitBackend(path)
+        info, _ = backend.read_spec(1)
+        patcher, lost = self._race(backend, rival, 1)
+        with patcher:
+            backend.write_spec(info, info["text"] + "\nmine\n")
+        self.assertEqual(1, lost[0])
+        self.assertEqual([1, 2], backend.pending_state()["specs"])
+        fresh = GitBackend(path)
+        self.assertTrue(fresh.read_spec(1)[0]["text"].endswith("mine\n"))
+        self.assertTrue(fresh.read_spec(2)[0]["text"].endswith("rival 1\n"))
+
+    def test_a_pending_ref_that_keeps_moving_refuses_and_writes_nothing(self):
+        path, backend = self._seeded()
+        rival = GitBackend(path)
+        info, _ = backend.read_spec(1)
+        patcher, lost = self._race(backend, rival, git_mod.MAX_ATTEMPTS)
+        with patcher, self.assertRaises(BackendRefusal) as caught:
+            backend.write_spec(info, info["text"] + "\nmine\n")
+        self.assertEqual("sp-git-cas-exhausted", caught.exception.err["code"])
+        self.assertEqual(git_mod.MAX_ATTEMPTS, lost[0])
+        self.assertEqual([2], backend.pending_state()["specs"])
+        self.assertNotIn("mine", GitBackend(path).read_spec(1)[0]["text"])
+
+    def test_a_refused_collapse_with_nothing_pending_appends_nothing(self):
+        _, backend = self._seeded()
+        _sh(self.remote, "config", "receive.denyNonFastForwards", "true")
+        self._append(backend, 1, "appended")
+        self.assertEqual("appended", backend.push()["history"])
+        tip = self.remote_tip()
+        for _ in range(2):
+            result = backend.push()
+            self.assertEqual((None, True), (result["commit"], result["collapseRefused"]))
+        self.assertEqual(tip, self.remote_tip())
+        self.assertEqual(2, len(self.remote_log()))
+
     def test_a_plain_fast_forward_from_an_old_runtime_is_collapsed_by_the_next_sync(self):
         _, backend = self._seeded()
         old = self.clone("old")

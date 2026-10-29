@@ -3,7 +3,8 @@
 The git store keeps every write in ONE local pending commit and reaches the remote only at a
 sync point. This verb is the explicit one; `sync_store` is the same sync run at the end of
 `cq git push`, `cq git pr create` and `cq git pr merge`, where a store failure is reported
-beside the code result instead of undoing it."""
+beside the code result instead of undoing it. A card that could not follow a push that landed
+is a warning beside the result (`cardFailures`), never a failed sync."""
 from __future__ import annotations
 
 from quenching.common.config import repository_document
@@ -42,6 +43,17 @@ def sync_store(root: str) -> dict:
     return {"ok": True, "sent": pending["specs"], **result}
 
 
+def card_failures(backend) -> list[dict]:
+    """The cards the backend's last sync could not update (`sp-card-failed` entries); [] for a
+    backend with no sync or when every card followed."""
+    return list(((getattr(backend, "last_sync", None) or {}).get("cardFailures")) or [])
+
+
+def card_warnings(failures: list[dict]) -> str:
+    """The human lines for card failures: one `warning:` line per spec."""
+    return "".join(f"\n  warning: {failure.get('message', '')}" for failure in failures)
+
+
 def cmd_push(args, root: str, out: Emitter) -> int:
     """Send every pending write of the clone in one push that leaves the store branch a single
     parentless commit; `--drop <id>` discards that spec's local writes first."""
@@ -61,7 +73,10 @@ def cmd_push(args, root: str, out: Emitter) -> int:
     if result.get("commit"):
         human = (f"pushed {len(sent)} spec(s) in {result['commit'][:12]} "
                  f"(history {result['history']})")
+    elif result.get("collapseRefused"):
+        human = ("nothing pending; the remote refuses to rewrite the store branch, so it keeps "
+                 "its history until a writer allowed to force-push syncs")
     else:
         human = "nothing pending; the store branch is already one commit"
-    out.emit(args.json, obj, human)
+    out.emit(args.json, obj, human + card_warnings(result.get("cardFailures") or []))
     return OK

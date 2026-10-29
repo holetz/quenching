@@ -97,6 +97,38 @@ class CardCreation(GitStoreFixture):
             backend.create_spec("plans", _doc_with_tasks("Beta"))
         self.assertIn("orphan", caught.exception.err["message"])
 
+    def test_a_pending_conflict_refuses_the_creation_before_the_card(self):
+        fake = FakeCard(next_number=10)
+        path = self.clone("a")
+        backend = GitBackend(path, card=fake)
+        backend.create_spec("plans", _doc_with_tasks())
+        info, _ = backend.read_spec(10)
+        backend.write_spec(info, info["text"] + "\nlocal\n")
+        other = GitBackend(self.clone("b"), card=None)
+        info, _ = other.read_spec(10)
+        other.write_spec(info, info["text"] + "\nremote\n")
+        other.push()
+        fake.calls.clear()
+        for _ in range(2):          # a retry orphans nothing either
+            with mock.patch("quenching.specs.backends.git.FETCH_TTL_S", 0):
+                with self.assertRaises(BackendRefusal) as caught:
+                    GitBackend(path, card=fake).create_spec("plans", _doc_with_tasks("Beta"))
+            self.assertEqual(("sp-git-stale-write", [10]),
+                             (caught.exception.err["code"], caught.exception.err["ids"]))
+            self.assertIn("no card and no spec were created", caught.exception.err["message"])
+        self.assertEqual([], fake.verbs())
+
+    def test_any_refusal_after_the_card_names_the_orphan(self):
+        fake = FakeCard(next_number=10)
+        backend = GitBackend(self.clone("a"), card=fake)
+        with mock.patch.object(GitBackend, "_push",
+                               return_value=(128, "fatal: unable to access the remote")):
+            with self.assertRaises(BackendRefusal) as caught:
+                backend.create_spec("plans", _doc_with_tasks())
+        err = caught.exception.err
+        self.assertEqual(("sp-git-push-failed", 10), (err["code"], err["orphanCard"]))
+        self.assertIn("card #10 was already created and is now an orphan", err["message"])
+
     def test_without_a_provider_the_counter_allocates_and_no_card_exists(self):
         backend = GitBackend(self.clone("a"), card=None)
         self.assertEqual("quenching:specs/1.md", backend.create_spec("plans", _doc_with_tasks()))
@@ -220,18 +252,40 @@ class CardTransitions(GitStoreFixture):
         self.assertEqual(["update"], fake.verbs())
         self.assertEqual("Beta", fake.calls[0][2]["title"])
 
-    def test_a_card_failure_is_loud_and_never_rolls_the_spec_back(self):
+    def test_a_card_failure_is_reported_beside_the_push_and_never_rolls_the_spec_back(self):
         backend, fake = self._spec()
         fake.fail_updates = True
         info, _ = backend.read_spec(10)
         approved = set_frontmatter_record(info["text"], "approved",
                                           {"by": "human", "date": "2026-01-02"})
         backend.write_spec(info, approved)
-        with self.assertRaises(BackendRefusal) as caught:
-            backend.push()
-        self.assertEqual("sp-card-failed", caught.exception.err["code"])
-        self.assertIn("not rolled back", caught.exception.err["message"])
+        result = backend.push()      # the push landed: a card that did not follow never raises
+        self.assertEqual("collapsed", result["history"])
+        (failure,) = result["cardFailures"]
+        self.assertEqual(("sp-card-failed", 10), (failure["code"], failure["id"]))
+        self.assertIn("not rolled back", failure["message"])
         self.assertEqual(approved, self.remote_file("specs/10.md"))
+        self.assertIsNone(backend._pending())
+
+    def test_a_create_whose_sync_carries_a_failed_card_still_returns_its_spec(self):
+        backend, fake = self._spec()
+        info, _ = backend.read_spec(10)
+        backend.write_spec(info, info["text"].replace("- [ ] 1.1 first", "- [x] 1.1 first"))
+        fake.fail_updates = True
+        buf = io.StringIO()
+        args = argparse.Namespace(name="Eleven", title=None, verification=None, subject=None,
+                                  type=None, tags=None, complexity=None, card=None, json=True)
+        with mock.patch.object(create_mod, "open_backend", lambda _r: (backend, {})), \
+                mock.patch.object(create_mod.sys, "stdin", io.StringIO("")), \
+                contextlib.redirect_stdout(buf):
+            code = create_mod.cmd_new(args, backend.repo_root, Emitter())
+        got = json.loads(buf.getvalue())
+        self.assertEqual(0, code, got)
+        self.assertEqual(11, got["id"])                  # the new spec and its card exist once
+        self.assertEqual([11], [c[1] for c in fake.calls if c[0] == "create"])
+        self.assertEqual([10], [f["id"] for f in got["cardFailures"]])
+        self.assertIn("specs/11.md", _sh(self.remote, "ls-tree", "-r", "--name-only",
+                                         "quenching"))
 
     def test_a_batch_costs_one_request_per_changed_spec(self):
         fake = FakeCard(next_number=20)

@@ -112,7 +112,7 @@ def build_parser() -> argparse.ArgumentParser:
     sp.add_argument("--json", action="store_true", help="machine-readable output")
 
     sp = sub.add_parser("push", help="push one local branch to one remote under its own name, "
-                                      "with upstream — never force")
+                                      "with upstream, never forced; the spec store syncs after it")
     sp.add_argument("--branch", required=True, metavar="BRANCH", help="the local branch to push")
     sp.add_argument("--remote", default="origin", metavar="REMOTE",
                     help="a configured remote (default: origin)")

@@ -10,8 +10,8 @@ The branch (`quenching` by default) holds one canonical document per spec and no
 Nothing is ever checked out. Reads are `git ls-tree` plus one `git cat-file --batch` over the
 remote-tracking ref, with the clone's unsent writes laid over it. A write builds ONE local pending
 commit (`refs/quenching/pending/<branch>`, shared by every worktree of the clone, never pushed)
-with a throwaway index and moves that ref by compare-and-swap (`update-ref <new> <old>`); the
-remote sees it only at a sync. A lost compare-and-swap re-applies the SAME semantic operation,
+with a throwaway index and moves that ref by compare-and-swap (`update-ref <new> <old>`), with no
+fetch; the remote sees it only at a sync. A lost compare-and-swap re-applies the SAME semantic operation,
 never a text merge, and a document that changed under the caller refuses as a stale write
 instead of being overwritten.
 
@@ -82,6 +82,21 @@ def conflict_refusal(conflicts: list[dict]) -> BackendRefusal:
         "and reapply the change on the remote document",
         conflicts=conflicts, ids=[c["id"] for c in conflicts],
         remedy="recover the local text, then `cq specs push --drop <id>`")
+
+
+def blocked_write_refusal(ids: list[int], conflicts: list[dict]) -> BackendRefusal:
+    """A local write to specs the remote changed, while the pending writes cannot move onto the
+    new tip because OTHER specs conflict: the written specs are named, the blockers beside them."""
+    blocking = [c["id"] for c in conflicts]
+    return _refusal(
+        "sp-git-stale-write",
+        f"spec(s) {', '.join(map(str, ids))} changed on branch '{STORE_BRANCH}' since the unsent "
+        "local writes were based, and those writes cannot move onto the new tip while spec(s) "
+        f"{', '.join(map(str, blocking))} conflict — nothing was written; resolve that conflict "
+        "first (`git cat-file -p <local blob>`, then `cq specs push --drop <id>`), then reapply "
+        "this change",
+        ids=ids, blockedBy=blocking, conflicts=conflicts,
+        remedy="resolve the conflicting specs with `cq specs push --drop <id>`, then reapply")
 
 
 def _spec_id(path: str) -> int | None:
@@ -158,23 +173,23 @@ class GitBackend(SpecBackend):
                            "issue or work item to adopt; set `card` in the branch config")
         return client.read(int(number))
 
-    def _card_transitions(self, pairs: list[tuple[dict, dict]]) -> None:
-        """One request per spec whose lifecycle facts changed — after the spec is written, so
-        a tracker failure is raised loudly and never undoes the document."""
+    def _card_transitions(self, pairs: list[tuple[dict, dict]]) -> list[dict]:
+        """One request per spec whose lifecycle facts changed — after the store was pushed, so
+        a tracker failure never undoes the document and never turns the push into a failure: it
+        is returned, one `sp-card-failed` entry per spec, for the caller to report beside it."""
         from quenching.specs import cards
         client = self.card()
         if client is None:
-            return
-        failure = None
+            return []
+        failures = []
         for old, new in pairs:
             if cards.lifecycle_key(old) == cards.lifecycle_key(new):
                 continue
             try:
                 client.update(int(new["id"]), cards.card_state(new))
             except BackendRefusal as exc:
-                failure = failure or cards.card_refusal(new["id"], "updated", exc.err)
-        if failure:
-            raise failure
+                failures.append(cards.card_refusal(new["id"], "updated", exc.err).err)
+        return failures
 
     # -- transport ------------------------------------------------------------ #
     def _base(self) -> list[str]:
@@ -521,14 +536,24 @@ class GitBackend(SpecBackend):
                 raise _refusal("sp-card-none", "--card needs a card provider; none is configured")
             spec_id = int(card)
         elif spec_id is None and client is not None:
-            self._guard_identity()  # before the card: a refused identity must leave no orphan
+            # Before the card: a refused identity or a sync that would refuse on an unrelated
+            # pending conflict must leave no orphan card behind.
+            self._guard_identity()
+            self._guard_pending_conflicts()
             try:
                 spec_id = client.create(cards.card_state(fresh))
             except BackendRefusal as exc:
                 exc.err["message"] += " — the card is created first, so no spec was written"
                 raise
             created_card = True
-        locator = self._create(phase, text, spec_id, orphan_card=created_card)
+        try:
+            locator = self._create(phase, text, spec_id)
+        except BackendRefusal as exc:
+            if created_card:
+                exc.err["message"] = (f"{exc.err.get('message', '')}; the card #{spec_id} was "
+                                      "already created and is now an orphan to close by hand")
+                exc.err["orphanCard"] = int(spec_id)
+            raise
         if adopting:
             adopted = derive_info({"id": int(spec_id), "phase": phase}, text)
             try:
@@ -537,8 +562,7 @@ class GitBackend(SpecBackend):
                 raise cards.card_refusal(spec_id, "rewritten as a thin card", exc.err)
         return locator
 
-    def _create(self, phase: str, text: str, spec_id: int | str | None,
-                orphan_card: bool = False) -> str:
+    def _create(self, phase: str, text: str, spec_id: int | str | None) -> str:
         allocated: dict[str, int] = {}
 
         def apply(snapshot):
@@ -553,10 +577,8 @@ class GitBackend(SpecBackend):
             else:
                 new_id = int(spec_id)
                 if new_id in ids:
-                    extra = (f"; the card #{new_id} was already created and is now an orphan "
-                             "to close by hand" if orphan_card else "")
                     raise _refusal("sp-git-id-taken", f"spec {new_id} already exists on branch "
-                                   f"'{self.branch}'; nothing was written{extra}", id=new_id)
+                                   f"'{self.branch}'; nothing was written", id=new_id)
             allocated["id"] = new_id
             return {self._path(phase, new_id): text,
                     COUNTER_PATH: f"{max(counter, new_id + 1)}\n"}, None
@@ -671,12 +693,14 @@ class GitBackend(SpecBackend):
 
     def _store_local(self, apply, message) -> dict[str, str]:
         """Apply `apply(view) -> (changes, _)` and replace the pending commit by a local
-        compare-and-swap; nothing reaches the remote.
+        compare-and-swap; nothing reaches the remote, and nothing is fetched either: the write
+        builds on the tracking ref as the last fetch left it.
 
         The pending commit's parent is the remote tip it is based on: a write after a fetch
         persists the replay onto the new tip, unless a spec conflicts — then the pending commit
         keeps its base, so the sync can still name the conflict, and a write to a spec the
-        remote changed meanwhile refuses."""
+        remote changed meanwhile refuses. A write that leaves the tree equal to its parent's
+        retires the pending ref instead of keeping an empty commit."""
         if self.read_only:
             raise _refusal("sp-git-read-only", f"the store mirror at {self.mirror_dir} is "
                            "read-only; nothing was written")
@@ -684,18 +708,17 @@ class GitBackend(SpecBackend):
         for attempt in range(MAX_ATTEMPTS):
             if attempt:
                 time.sleep(random.uniform(0, 0.01 * 2 ** attempt))
-                self._tip_memo = None
-            tip, pending = self._heads()
+            tip, pending = self._local_tip(), self._pending()
             replay = self._replay(pending, tip) if pending else \
                 {"view": self._snapshot(tip).blobs, "changes": {}, "conflicts": [], "remote": set()}
             changes, _ = apply(_Tree(self, replay["view"]))
             if not changes:
                 return {}
             if replay["conflicts"]:
-                stale = ({_spec_id(p) for p in changes} & replay["remote"]) \
-                    - {c["id"] for c in replay["conflicts"]}
+                stale = sorted(({_spec_id(p) for p in changes} & replay["remote"])
+                               - {c["id"] for c in replay["conflicts"]} - {None})
                 if stale:
-                    raise conflict_refusal(replay["conflicts"])
+                    raise blocked_write_refusal(stale, replay["conflicts"])
                 base, parent = pending, self._parent(pending)
             else:
                 base, parent, changes = tip, tip, {**replay["changes"], **changes}
@@ -707,14 +730,56 @@ class GitBackend(SpecBackend):
                                  pending).decode().strip() if pending else None
             commit, blobs = self._commit(base, changes, f"{COMMIT_PREFIX} {'; '.join(ops)}",
                                          [parent] if parent else [], author_date=since)
-            code, _, _ = self._git("update-ref", "-m", "quenching: pending write",
-                                   self.pending_ref, commit, pending or "")
+            if parent and self._tree(commit) == self._tree(parent):
+                # Every local change is back to its base text: nothing is left to send.
+                code = 0 if pending is None else \
+                    self._git("update-ref", "-d", self.pending_ref, pending)[0]
+            else:
+                code = self._git("update-ref", "-m", "quenching: pending write",
+                                 self.pending_ref, commit, pending or "")[0]
             if code == 0:
                 return blobs
         raise _refusal("sp-git-cas-exhausted",
                        f"the pending ref '{self.pending_ref}' kept moving — {MAX_ATTEMPTS} local "
                        "writes lost the compare-and-swap; nothing was written",
                        attempts=MAX_ATTEMPTS)
+
+    def _tree(self, commit: str) -> str:
+        return self._git_ok("reading a store tree", "rev-parse", "--verify",
+                            f"{commit}^{{tree}}").decode().strip()
+
+    def _sync_replay(self, tip: str | None, fetched: bool,
+                     drop: tuple = ()) -> tuple[str | None, str | None, dict]:
+        """`(tip, pending, replay)` for a sync. A conflict seen on a tip this sync did not fetch
+        (a cached tracking ref may be stale) is judged again on a fresh fetch, once, before the
+        caller refuses on it."""
+        for _ in range(2):
+            pending = self._pending()
+            replay = self._replay(pending, tip, drop) if pending else \
+                {"view": self._snapshot(tip).blobs, "changes": {}, "conflicts": []}
+            if not replay["conflicts"] or fetched:
+                break
+            tip, fetched = self._fetch(), True
+        return tip, pending, replay
+
+    def _sync_tip(self) -> tuple[str | None, bool]:
+        """The tip a sync starts from, and whether reading it fetched."""
+        self._tip_memo = None
+        before = self._fetched_at
+        tip = self._tip()
+        return tip, self._fetched_at != before
+
+    def _guard_pending_conflicts(self) -> None:
+        """Refuse NOW what the sync would refuse: a pending spec that conflicts with the remote.
+        A creation calls it before its card exists, so a refusal leaves nothing behind."""
+        if self.read_only or self._pending() is None:
+            return
+        _, _, replay = self._sync_replay(*self._sync_tip())
+        if replay["conflicts"]:
+            refusal = conflict_refusal(replay["conflicts"])
+            refusal.err["message"] += " — checked before the card was created, so no card and " \
+                                      "no spec were created"
+            raise refusal
 
     def _store_sync(self, apply, message, drop: tuple = (),
                     collapse: bool = False) -> dict[str, str]:
@@ -724,52 +789,63 @@ class GitBackend(SpecBackend):
 
         Every attempt re-reads the pending ref; a stale lease fetches and retries up to
         `MAX_ATTEMPTS`; a remote that refuses the rewrite receives the same tree as a
-        fast-forward child of T (`history: appended`). A spec changed on both sides refuses
-        with both blobs and keeps the pending ref. Returns `path -> blob` for every text
-        `apply` wrote; `self.last_sync` describes the push."""
+        fast-forward child of T (`history: appended`), unless that tree is T's own. A sync that
+        would leave the remote tree as it is pushes nothing, except a collapse `collapse` asks
+        for. A spec changed on both sides refuses with both blobs and keeps the pending ref.
+        Returns `path -> blob` for every text `apply` wrote; `self.last_sync` describes the
+        push, with `cardFailures` when a card could not follow it."""
         if self.read_only:
             raise _refusal("sp-git-read-only", f"the store mirror at {self.mirror_dir} is "
                            "read-only; nothing was written")
         self._guard_identity()
         self.last_sync = None
-        tip = self._tip()
+        tip, fetched = self._sync_tip()
         for attempt in range(MAX_ATTEMPTS):
             if attempt:
                 # Full jitter, doubling: writers that collided once must not collide again.
                 time.sleep(random.uniform(0, 0.1 * 2 ** attempt))
-                tip = self._fetch()
-            pending = self._pending()
-            replay = self._replay(pending, tip, drop) if pending else \
-                {"view": self._snapshot(tip).blobs, "changes": {}, "conflicts": []}
+                tip, fetched = self._fetch(), True
+            tip, pending, replay = self._sync_replay(tip, fetched, drop)
             if replay["conflicts"]:
                 raise conflict_refusal(replay["conflicts"])
             changes = apply(_Tree(self, replay["view"]))[0] if apply else {}
             changes = {**replay["changes"], **changes}
-            if not changes and not (collapse and tip and self._parent(tip)):
-                if pending:
-                    self._close(pending, tip)
+            collapsible = bool(collapse and tip and self._parent(tip))
+            if not changes and not collapsible:
+                self._close(pending, tip, tip)
                 return {}
             subject = message() if callable(message) else message
             ops = self._ops(pending) + [f"drop {spec_id}" for spec_id in drop]
             ops += [subject] if subject and subject not in ops else []
             text = f"{COMMIT_PREFIX} {'; '.join(ops) or 'push'}"
             commit, blobs = self._commit(tip, changes, text, [])
+            tree = self._tree(commit)
+            same = tip is not None and tree == self._tree(tip)
+            if same and not collapsible:
+                self._close(pending, tip, tip)
+                return blobs
             lease = f"--force-with-lease=refs/heads/{self.branch}:{tip or ''}"
             code, said = self._push(lease, commit)
             history = "collapsed"
             if code != 0 and "[remote rejected]" in said:
-                # No right to rewrite (no force push, a protected branch): append the same tree.
-                tree = self._git_ok("reading the sync tree", "rev-parse",
-                                    f"{commit}^{{tree}}").decode().strip()
+                # No right to rewrite (no force push, a protected branch): append the same tree,
+                # or nothing at all when the rewrite was only a collapse of T's own tree.
+                if same:
+                    self._close(pending, tip, tip)
+                    self.last_sync = {"commit": None, "previous": tip, "history": "unchanged",
+                                      "collapseRefused": True, "attempts": attempt + 1}
+                    return blobs
                 commit = self._git_ok("creating the commit", "commit-tree", tree,
                                       *(["-p", tip] if tip else []), "-m", text).decode().strip()
                 code, said = self._push(None, commit)
                 history = "appended"
             if code == 0:
-                self._close(pending, commit)
+                self._close(pending, commit, tip)
                 self.last_sync = {"commit": commit, "previous": tip, "history": history,
                                   "attempts": attempt + 1}
-                self._sync_cards(tip, commit)
+                failures = self._sync_cards(tip, commit)
+                if failures:
+                    self.last_sync["cardFailures"] = failures
                 return blobs
             if "[remote rejected]" in said or \
                     not any(marker in said for marker in _REJECTED_MARKERS):
@@ -787,14 +863,20 @@ class GitBackend(SpecBackend):
                                    f"{commit}:refs/heads/{self.branch}")
         return code, out.decode("utf-8", "replace") + err
 
-    def _close(self, sent: str | None, pushed: str | None) -> None:
-        """Move the tracking ref to `pushed` and retire the pending commit that was `sent`, by
-        compare-and-swap: a write that replaced it during the sync is replayed onto `pushed`
-        instead of being dropped."""
-        if pushed and pushed != self._local_tip():
-            self._git("update-ref", self.tracking_ref, pushed)
-            self._fetched_at = time.monotonic()
-            self._touch_cache()
+    def _close(self, sent: str | None, pushed: str | None, observed: str | None) -> None:
+        """Move the tracking ref from `observed` (the tip the sync read) to `pushed`, and retire
+        the pending commit that was `sent`, both by compare-and-swap.
+
+        A tracking ref another process already moved past `observed` stays where it is. A write
+        that replaced the pending commit during the sync is carried onto `pushed` instead of
+        being dropped — only that write's own changes (`_late`), never the remote's drift
+        between the two bases."""
+        if pushed and pushed != observed:
+            code, _, _ = self._git("update-ref", "-m", "quenching: sync", self.tracking_ref,
+                                   pushed, observed or "")
+            if code == 0:
+                self._fetched_at = time.monotonic()
+                self._touch_cache()
         if sent is None:
             return
         for _ in range(MAX_ATTEMPTS):
@@ -804,23 +886,60 @@ class GitBackend(SpecBackend):
             current = self._pending()
             if current is None:
                 return
-            mine, theirs = self._snapshot(sent).blobs, self._snapshot(current).blobs
-            late = {p: (_Blob(theirs[p]) if p in theirs else None)
-                    for p in set(mine) | set(theirs) if mine.get(p) != theirs.get(p)}
-            ops = [op for op in self._ops(current) if op not in self._ops(sent)]
-            commit, _ = self._commit(pushed, late, f"{COMMIT_PREFIX} {'; '.join(ops) or 'write'}",
-                                     [pushed] if pushed else [])
-            code, _, _ = self._git("update-ref", "-m", "quenching: pending write",
-                                   self.pending_ref, commit, current)
+            late, held = self._late(sent, current, pushed)
+            if not late:
+                code, _, _ = self._git("update-ref", "-d", self.pending_ref, current)
+            else:
+                parent = pushed
+                if held:
+                    # The pushed commit moved a spec under the late write: the parent keeps the
+                    # document that write was based on, so the next sync judges the conflict.
+                    parent, _ = self._commit(pushed, held, f"{COMMIT_PREFIX} late base",
+                                             [pushed] if pushed else [])
+                ops = [op for op in self._ops(current) if op not in self._ops(sent)]
+                commit, _ = self._commit(pushed, late,
+                                         f"{COMMIT_PREFIX} {'; '.join(ops) or 'write'}",
+                                         [parent] if parent else [])
+                code, _, _ = self._git("update-ref", "-m", "quenching: pending write",
+                                       self.pending_ref, commit, current)
             if code == 0:
                 return
-            sent = current
 
-    def _sync_cards(self, before: str | None, after: str) -> None:
+    def _late(self, sent: str, current: str, pushed: str | None) -> tuple[dict, dict]:
+        """What a write that landed during the sync adds on top of the pushed commit.
+
+        `current` replaced `sent` while the sync ran, possibly re-based on a newer tracking tip.
+        Only the specs it changed against its OWN parent and that differ from what was sent are
+        its intent; anything else in `sent → current` is the remote's drift between the bases,
+        which the pushed commit already holds newer. Returns `(changes onto pushed, held)`:
+        `held` is the base document of each late spec the pushed commit changed under it."""
+        sent_base, sent_tree = (self._snapshot(self._parent(sent)).blobs,
+                                self._snapshot(sent).blobs)
+        base, local = self._snapshot(self._parent(current)).blobs, self._snapshot(current).blobs
+        pushed_tree = self._snapshot(pushed).blobs
+        sent_ids = {_spec_id(p) for p in set(sent_base) | set(sent_tree)
+                    if sent_base.get(p) != sent_tree.get(p)}
+        late_ids = {_spec_id(p) for p in set(base) | set(local)
+                    if base.get(p) != local.get(p) and local.get(p) != sent_tree.get(p)} - {None}
+        changes: dict[str, str | None] = {}
+        held: dict[str, str | None] = {}
+        for spec_id in sorted(late_ids):
+            paths = _spec_paths(spec_id)
+            # What the late write read: the sent document when the sync carried this spec,
+            # otherwise its own base.
+            read = sent_tree if spec_id in sent_ids else base
+            if any(read.get(p) != pushed_tree.get(p) for p in paths):
+                held.update({p: _Blob(read[p]) if p in read else None for p in paths})
+            for path in paths:
+                if local.get(path) != pushed_tree.get(path):
+                    changes[path] = _Blob(local[path]) if path in local else None
+        return changes, held
+
+    def _sync_cards(self, before: str | None, after: str) -> list[dict]:
         """One card request per spec whose lifecycle facts changed between the two tips; a
-        spec the sync created already has its card."""
+        spec the sync created already has its card. Returns the card failures."""
         if self.card() is None:
-            return
+            return []
         old, new = self._snapshot(before), self._snapshot(after)
         changed = {_spec_id(p) for p in set(old.blobs) | set(new.blobs)
                    if old.blobs.get(p) != new.blobs.get(p)} - {None}
@@ -834,7 +953,7 @@ class GitBackend(SpecBackend):
                                       old[old_path][1]),
                           derive_info(self._descriptor(spec_id, new_phase, new_path),
                                       new[new_path][1])))
-        self._card_transitions(pairs)
+        return self._card_transitions(pairs)
 
     def push(self, drop: tuple = (), collapse: bool = True) -> dict:
         """Send every pending write of the clone; `drop` discards those specs' local writes

@@ -4,6 +4,7 @@ from __future__ import annotations
 from quenching.specs.backends import open_backend
 from quenching.specs.backends.base import BackendRefusal
 from quenching.specs.commands.output import Emitter, read_one
+from quenching.specs.commands.push import card_failures, card_warnings
 from quenching.specs.commands.read import _next_phase
 from quenching.specs.parse import PHASES
 from quenching.specs.commands.epic import pr_states
@@ -156,10 +157,13 @@ def cmd_promote(args, root: str, out: Emitter) -> int:
                                       f"outcome '{outcome}' was ALREADY written to "
                                       f"'{info['id']}' and the spec did not move; re-run promote")
         raise
+    failures = card_failures(backend)
     out.emit(args.json,
              {"ok": True, "id": info["id"], "from": info["folder"], "to": dest,
-              "outcome": outcome, "warn": gates["warn"]},
+              "outcome": outcome, "warn": gates["warn"],
+              **({"cardFailures": failures} if failures else {})},
              f"promoted {info['id']}: {info['folder']} → {dest}" +
              (f"  (outcome: {outcome})" if outcome else "") +
-             ("".join(f"\n  warning: ## {h} is empty" for h in gates["warn"])))
+             ("".join(f"\n  warning: ## {h} is empty" for h in gates["warn"])) +
+             card_warnings(failures))
     return 0
