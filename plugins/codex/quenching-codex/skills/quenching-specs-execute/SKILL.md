@@ -168,8 +168,8 @@ name.
 **On the base with the work ref alive and unclaimed → offer to take it, never to cut a second
 one.** Two forms, worktree first as always: `git worktree add ../<repo>-<id> <work ref>` beside
 this checkout, or `git checkout <work ref>` in it. **Nothing is stamped** — a `branch` record, where
-one exists, is write-once and already true. Declining leaves the run on the base; say plainly that
-the commits will land there.
+one exists, is write-once and already true. Declining stops the run before the first task: the loop
+never commits onto the base, so say plainly that nothing was built and why.
 
 **On the base branch, with nothing to check out → hand off to `quenching-git-branch`**, which owns
 the offer (worktree leading with its cost stated, `worktreeSetup`, the `branch:` record and the
@@ -209,14 +209,14 @@ print(p.get("installedPath") or home / "plugins/cache" / p["marketplaceName"] / 
 cq specs status --spec "<id>" --json
 ```
 
-`branch.work` now set → the chosen form was taken, or **In place** was chosen and stamped `work`
-equal to `base`; continue the loop from the returned worktree checkout when Worktree was chosen,
+`branch.work` now set → the chosen form was taken; continue the loop from the returned worktree checkout when Worktree was chosen,
 never from the base checkout — and carry that path on every command of the loop (`cd <worktree> &&
 …` in the same call, `git -C <worktree>`, `cq --root <worktree>`), because the harness may return
 the shell cwd to the base checkout after each command and a cwd-dependent command would then
 measure or write the wrong tree. **`cq git …` takes no `--root` on its write verbs** (a usage error there): run it as `cd <worktree> && cq git …`, in the same call as the `git add` it commits. No record at all → the
 git command it ran failed (a name already taken, a dirty path, a locked worktree) and nothing was
-stamped — report it verbatim and stop.
+stamped — report it verbatim and stop; the same holds when the human declined the offer, which
+leaves no record because the loop never builds on the base.
 
 Not a git repo → stop before writing: this command's task/commit contract requires Git. Never force
 isolation, never `git init` on the human's behalf, and never rewrite history.

@@ -6,7 +6,7 @@ resource: plugins/quenching/README.md
 tags:
   - reference
   - commands
-timestamp: 2026-08-28
+timestamp: 2026-10-29
 audience: both
 authority: current
 source: plugins/quenching/README.md §The 61 commands (long rows condensed); command set held in lockstep by test_commands_catalog.py
@@ -175,7 +175,7 @@ align. The specs front hands off to it rather than executing git itself.
 
 | Command | Does |
 | --- | --- |
-| `/quenching-specs:git:branch` | Takes isolation for a build — worktree, branch, or in place — stating the cost and stamping the `branch:` record. |
+| `/quenching-specs:git:branch` | Takes isolation for a build — worktree or branch, never on the base — stating the cost and stamping the `branch:` record. |
 | `/quenching-specs:git:commit` | Commits what is already staged, under the target's own convention when one is declared. Never `git add -A`. |
 | `/quenching-specs:git:commit-incremental` | Turns the current worktree's pending changes into cohesive commits with explicit paths and safe stop conditions. |
 | `/quenching-specs:git:push` | Publishes one branch to an exact remote and refspec after measuring preconditions and receiving confirmation, without force or PR side effects. |

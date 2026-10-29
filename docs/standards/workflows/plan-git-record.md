@@ -139,7 +139,8 @@ same admission test — a fact no derivation can reproduce:
   reads the record; a current branch that disagrees with `work` is a finding to report, never a
   value to correct.
 
-  **Work done in place stamps `work` equal to `base`**, where it once stamped nothing. The pair is
+  **Work done in place stamped `work` equal to `base`**, where it once stamped nothing; the offer no
+  longer has an in-place form, so the pair survives only in records written before that. The pair is
   not the empty statement that silence would be: an absent record and `work == base` are different
   claims — *nobody has decided yet* versus *a human declined isolation* — and only a spec that
   records the second can be told apart from one that was never started.
@@ -226,7 +227,7 @@ The exception was found when every in-place spec ranked first in `cq specs next`
 Beside `branch:`, `pr:` and `merge:` above, `/quenching-specs:specs:execute` writes one more signal that is
 **not** a frontmatter record: a recognizable line in the branch's own description —
 `quenching-specs: <id1>,<id2>` — rewritten, never duplicated, after every task's commit, and
-never written when the spec runs `In place`. The mechanism is
+never written on the base. The mechanism is
 `plugins/quenching/assets/references/git/isolation.md` §Marking the branch with
 the specs it built, owned by `execute`.
 

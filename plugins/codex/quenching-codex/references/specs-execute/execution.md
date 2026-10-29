@@ -73,8 +73,8 @@ Two things the loop still needs, regardless of form:
 
 - **A spec whose `plan/<id>-<handle>` ref is alive but checked out somewhere else is already being built
   there.** Starting a second run against it forks the work; say where it is and stop.
-- **Work done in place carries no `branch` record**, so there is nothing to merge later and the
-  report says so.
+- **The loop never commits onto the base.** A declined isolation offer stops the run before the
+  first task, so no work is ever built in place and the report says the run did not start.
 
 **Check before offering, every time.** A spec that is **already isolated** — its `plan/<id>-<handle>` ref
 alive, or the `branch` record already stamped — has nothing left to take, and offering again buys

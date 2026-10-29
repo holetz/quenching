@@ -23,11 +23,13 @@ session is standing on the repository's base branch:
 | **on** the spec's work ref | nothing — the spec is isolated, and the loop starts |
 | on any other non-base branch | **adopts it** as `work`, stamps `branch:`, and starts the loop |
 | on the base, work ref alive and unclaimed | offers to **take** it — worktree over it, or checkout — and stamps nothing |
-| on the base, no work ref | offers worktree · branch · in place, and stamps whichever was taken |
+| on the base, no work ref | offers worktree · branch, and stamps whichever was taken |
 
 Standing anywhere but the base means the human already answered the isolation question at checkout,
-so asking again buys nothing and costs the turns it takes. Isolation stays optional, is recommended
-before building, and is never imposed.
+so asking again buys nothing and costs the turns it takes. **Leaving the base is not optional; the
+form is.** No build commits onto the base: the offer carries no in-place answer, and a human who
+declines every form it does carry stops the run before the first task. Which form — worktree or
+plain branch — stays the human's choice, recommended and never imposed.
 
 **Isolated means "this checkout is on the work ref", never "the ref exists".** The two come apart in
 one ordinary case — the base checked out, `plan/<id>-<handle>` sitting one branch over from an earlier
@@ -109,7 +111,7 @@ git worktree add ../<repo>-<handle> -b plan/<id>-<handle>
 <!-- rules -->
 
 `/quenching-specs-execute`'s inline isolation offer leads with **Worktree and recommends it**, unconditionally — a
-plain branch and working in place stay available, in that order after it.
+plain branch stays available after it. Working in place on the base is not offered.
 
 **Unconditionally** means no heuristic sniffing the target for `package.json` or `.venv/`. What is
 offered instead is the **cost, stated in the offer itself**: a fresh checkout carries only what git
@@ -169,10 +171,11 @@ authorisation. A failing setup is reported and **never undoes the worktree**.
 not — **after the merge, git cannot say what the branch was cut from**, which is the whole reason
 the record exists and why it is captured while still true.
 
-**Every resolved work ref gets `branch:` stamped**, including a branch this plugin never cut and
-including the in-place case, where `work` equals `base`. That last one is not the silence it used
-to be: an absent record and a record reading `work == base` are different claims — nobody has
-decided yet, versus a human declined isolation — and only the second is a fact worth carrying.
+**Every resolved work ref gets `branch:` stamped**, including a branch this plugin never cut. A
+record reading `work == base` is no longer written — the offer has no in-place form — but records
+stamped before that, when declining isolation stamped `work` equal to `base`, still exist, and an
+absent record and `work == base` remain different claims: nobody has decided yet, versus a human
+declined isolation.
 
 **`work == base` means no isolation was taken, and every consumer must read it that way.** It is
 not a work ref that happens to be alive: the base is always alive, so anything ranking, diffing or
@@ -232,10 +235,9 @@ current with HEAD without a separate cleanup pass. The read-merge-write, run by
 .agents/quenching/bin/cq git specs <work> --add <id> --json
 ```
 
-**Never marked under `In place`.** The mark exists only when this command controls the branch it is
-building on — one adopted or cut by the isolation offer. Building in place, on a branch that was
-already checked out and possibly shared or someone else's, writes nothing here, exactly as it
-stamps no `branch:` record there.
+**Never marked on the base.** The mark exists only when this command controls the branch it is
+building on — one adopted or cut by the isolation offer. A legacy spec recorded with `work == base`
+carries no mark, because the base is shared and was never this command's to describe.
 
 The description is tied to the **ref**, not to a worktree's physical directory, so it reads back
 identically whether the isolation taken was **Worktree** or plain **Branch**.

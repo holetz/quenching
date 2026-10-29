@@ -1,6 +1,6 @@
 ---
 name: quenching-git-branch
-description: "Take isolation for a piece of work: worktree, plain branch or in place, stamped. Use for \"isolate this work\", \"cut a branch for this\", \"take a worktree\". Not for: pruning → /quenching-git-cleanup."
+description: "Take isolation for a piece of work: worktree or plain branch, never on the base, stamped. Use for \"isolate this work\", \"cut a branch for this\", \"take a worktree\". Not for: pruning → /quenching-git-cleanup."
 argument-hint: "[id-or-branch-name]"
 allowed-tools: Bash(.agents/quenching/bin/cq git base:*), Bash(.agents/quenching/bin/cq git conventions:*), Bash(.agents/quenching/bin/cq git specs:*), Bash(.agents/quenching/bin/cq git state:*), Bash(.agents/quenching/bin/cq git worktree add:*), Bash(.agents/quenching/bin/cq specs config:*), Bash(.agents/quenching/bin/cq specs status:*), Bash(.agents/quenching/bin/cq components read:*), Read, AskUserQuestion
 ---
@@ -61,7 +61,11 @@ an ambiguous reply is asked again, never filled in. `D1` is the isolation form:
 
 - **A (recommended) Worktree** — `.agents/quenching/bin/cq git worktree add --path ../<repo>-<name> --branch <branch> --base <base>`.
 - **B Branch** — `git checkout -b <branch>`, work continues in this checkout.
-- **C In place** — declines isolation; nothing is created.
+
+**There is no in-place form.** Standing on the base is exactly the case this offer exists for, so
+building there is never one of its answers. A reply that declines both forms stops the run: nothing
+is cut, nothing is stamped, and the report says the work did not start because it would have landed
+on the base.
 
 **With `autonomous` in the input**, ask nothing: the form is **Worktree**, the one this step
 recommends, and nothing else is granted. A non-null `worktreeSetup` is **not run**, because its
@@ -71,8 +75,8 @@ consent is the verbatim display this ask carries and no human sees it; step 5 re
 Worktree leads when the current checkout is the base. Its
 cost (no installed dependencies, no `.env`, no venv) is stated in the same block as the ask, which
 **is** the consent for the setup command shown beside it. **Done when:** the human has chosen one of
-the three (under `autonomous`, Worktree was taken unasked), or the run stops on a git error from
-the chosen form.
+the two (under `autonomous`, Worktree was taken unasked), or the run stops on a declined offer or on
+a git error from the chosen form.
 
 ### 4. Take it, run the setup, and stamp
 Run the one command for the chosen form; a failure (name taken, dirty path, locked worktree) is
@@ -103,11 +107,8 @@ change. `.agents/quenching/bin/cq git …` takes no `--root` on its write verbs
 .agents/quenching/bin/cq specs record "<id>" branch --set base=<base> --set work=<branch>   # Branch form only
 .agents/quenching/bin/cq git specs <branch> --add "<id>" --json
 ```
-**In place** stamps `work` equal to `base` instead of skipping the record — §Recording the isolation
-draws that distinction; nothing is marked on the branch description under **In place**, since this
-command controls no branch of its own in that case. **Done when:** the chosen form exists on disk
-(or **In place** was chosen), the setup ran and was reported (worktree only), and — with an ID —
-`branch:` and the `quenching-specs:` marking are stamped or explicitly skipped (**In place**).
+**Done when:** the chosen form exists on disk, the setup ran and was reported (worktree only), and
+— with an ID — `branch:` and the `quenching-specs:` marking are stamped.
 
 ### 5. Report
 State which form was taken (or declined), the branch name and **which layer governed it**, the
@@ -119,6 +120,8 @@ names every fact step 4 produced.
 - Never isolate over a dirty tree — refuse and name the paths.
 - Recommend Worktree; never impose it, and never choose it by sniffing the target repo — only the
   `autonomous` input word takes it unasked.
+- Never leave the work on the base — the offer has no in-place form, and a declined offer stops the
+  run instead of building there.
 - Stamp `branch:` only once per id — a record already present is read, never overwritten.
 - Never install `docs/standards/git/**` into the target, and never write `gitConventions` into its
   `.agents/quenching.json`; a repo's own conventions are read, never written, by this command.
