@@ -154,7 +154,7 @@
     ".agents/quenching/assets/bin/quenching/delivery/model.py": "53ab186511c90bde4539d2babbe9442b9c1928253dd0336eb17cb5ca77f258cc",
     ".agents/quenching/assets/bin/quenching/delivery/probe.py": "ba556969ef473dfd54bba7582b633ef12c9349b00dea158cc2bfcb65856f889f",
     ".agents/quenching/assets/bin/quenching/deploy/__init__.py": "d9efa3062ac0c40e82c0bfc4041b7485a60420e2576afef7e94a72277a8cc0ff",
-    ".agents/quenching/assets/bin/quenching/deploy/cli.py": "5f8ae16c4ad81a17261240901f8e455a10da86661b5649718020b758163c6385",
+    ".agents/quenching/assets/bin/quenching/deploy/cli.py": "98dba1f68d8b6149d02fd4b58917109b677f254de51097c78d2a32c0591d413f",
     ".agents/quenching/assets/bin/quenching/deploy/translate.py": "8554d72948f9b2b545da82a9735b371a92546c6ece23721d6a7040e8d66c5927",
     ".agents/quenching/assets/bin/quenching/deploy/tree.py": "3c814dfd8676caf81c554e0b50dff3dd6dcf518f3d2792f711fda86a9216c489",
     ".agents/quenching/assets/bin/quenching/design/align.py": "4807edd338e25108f0c5b11d32a2ded573a05bb3d0f59f89dd566094b29957f5",

@@ -79,6 +79,20 @@ class Deploy(unittest.TestCase):
                        "change": "update"}, payload["changes"])
         self.assertIn("local edit", skill.read_text(encoding="utf-8"))
 
+    def test_a_group_writable_surface_is_not_drift(self):
+        self.assertEqual(0, self.run_deploy("--modules", "core", "--write")[0])
+        skill = self.target / ".agents/skills/quenching-specs-create/SKILL.md"
+        skill.chmod(0o664)
+        code, payload = self.run_deploy("--modules", "core", "--check")
+        self.assertEqual((0, []), (code, payload["changes"]))
+
+    def test_a_non_executable_cq_is_still_drift(self):
+        self.assertEqual(0, self.run_deploy("--modules", "core", "--write")[0])
+        (self.target / ".agents/quenching/bin/cq").chmod(0o644)
+        code, payload = self.run_deploy("--modules", "core", "--check")
+        self.assertEqual(1, code)
+        self.assertIn({"path": ".agents/quenching/bin/cq", "change": "mode"}, payload["changes"])
+
     def test_an_unowned_generated_skill_refuses_and_writes_nothing(self):
         self.write(".agents/skills/quenching-specs-create/SKILL.md",
                    "---\ndescription: mine\n---\nkeep me\n")
