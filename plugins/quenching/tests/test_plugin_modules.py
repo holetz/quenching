@@ -380,6 +380,17 @@ class PrincipalPartition(unittest.TestCase):
         self.assertIn((package["path"] + "/" + package["pluginManifest"], "json"),
                       release_artifacts(manifest))
 
+    def test_every_cq_grant_carries_the_windows_launcher(self):
+        source = REPO / load_manifest(REPO)["source"] / "commands"
+        offenders = [path.relative_to(source).as_posix() for path in source.rglob("*.md")
+                     if "Bash(cq:*)" in path.read_text(encoding="utf-8")
+                     and "Bash(cq.cmd:*)" not in path.read_text(encoding="utf-8")]
+        self.assertEqual([], offenders)
+        published = REPO / "plugins/claude/quenching-specs/commands/specs/execute.md"
+        text = published.read_text(encoding="utf-8")
+        self.assertIn("Bash(cq:*)", text)
+        self.assertIn("Bash(cq.cmd:*)", text)
+
     def test_single_repository_gate_checks_the_general_distribution(self):
         gate = (REPO / "scripts/verify_repo.sh").read_text()
         self.assertIn("python3 scripts/generate_plugin_modules.py --check", gate)

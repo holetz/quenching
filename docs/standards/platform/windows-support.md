@@ -41,7 +41,10 @@ the official versioned ZIP under `%LOCALAPPDATA%`, without elevation.
   want of the privilege they create a directory junction with `mklink /J`, which needs none. A
   junction counts as a link wherever the code reads one (re-link, removal audit).
 - **The `cq` launcher.** `bin/cq.cmd` sits beside `bin/cq`, runs `assets\bin\cq` with `py -3`
-  (else `python`) and returns its exit code.
+  (else `python`) and returns its exit code. Every generated skill grants both
+  `Bash(<payload>/bin/cq:*)` and `Bash(<payload>/bin/cq.cmd:*)` and its body says which one to
+  call: `cq` on POSIX, `cq.cmd` on Windows. A skill that named only `cq` would be denied the
+  command on the platform this port exists for.
 
 **What it does not cover:** the whole `scripts/verify_repo.sh` gate (it needs bash and uv), the
 POSIX hook scripts and `scripts/githooks`, and `scripts/run_evals.py`.
