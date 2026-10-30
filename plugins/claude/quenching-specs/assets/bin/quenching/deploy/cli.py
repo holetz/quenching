@@ -97,7 +97,9 @@ def plan(target: Path, built: dict, previous: dict | None) -> dict:
             conflicts.append({"path": rel, "why": "exists but no deploy manifest owns it"})
         elif path.read_bytes() != data:
             changes.append(_change("update", rel))
-        elif path.stat().st_mode & 0o777 != _mode_:
+        elif bool(path.stat().st_mode & 0o111) != bool(_mode_ & 0o111):
+            # The executable bit is the only part of the mode git carries and a caller can
+            # observe; a checkout under umask 0002 creates every file 0o664, which is not drift.
             changes.append(_change("mode", rel))
     for rel in sorted(owned - set(tree)):
         if (target / rel).is_file():

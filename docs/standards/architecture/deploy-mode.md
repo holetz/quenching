@@ -4,10 +4,10 @@ title: Deploy mode — install the surface in a target repository
 description: "`cq deploy` materializes the selected quenching modules in a target's generic layer — AGENTS.md, .agents/skills and a vendored runtime — while Claude Code receives only a generated bridge under .claude; install is not alignment and never calls a model."
 resource: plugins/quenching/assets/bin/quenching/deploy/**, plugins/quenching/assets/bin/cq, plugins/quenching/assets/modules.json, plugins/quenching/pyproject.toml
 tags: [architecture, deploy, installation, agents, skills, bridge]
-timestamp: 2026-10-28
+timestamp: 2026-10-30
 audience: both
 authority: current
-source: deploy-mode implementation (2026-10-28); surface facts re-measured on Claude Code 2.1.312
+source: deploy-mode implementation (2026-10-28); surface facts re-measured on Claude Code 2.1.312; drift redefined as content plus the executable bit (spec 2126, 2026-10-30)
 maintainer: quenching
 ---
 
@@ -61,8 +61,10 @@ authority over the plan.
 The manifest is the authority for what deploy owns. A generated file must be listed before it may
 be overwritten; a file at a generated path that the manifest does not own is a conflict
 (`ct-deploy-unowned`, exit 2) and nothing is written. Generated files may be edited by hand only
-as drift: `--check` reports it and `--write` regenerates them. A target's own skills, references,
-`AGENTS.md` and configuration are never in the manifest's write set.
+as drift: `--check` reports it and `--write` regenerates them. Drift is content and the executable
+bit — the only part of the mode git carries — so a checkout that creates files group-writable
+(`umask 0002`) is clean. A target's own skills, references, `AGENTS.md` and configuration are never
+in the manifest's write set.
 
 ## Runtime
 
