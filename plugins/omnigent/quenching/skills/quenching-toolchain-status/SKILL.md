@@ -1,7 +1,7 @@
 ---
 name: quenching-toolchain-status
 description: "Report the toolchain front: manifests, locks, language pins, tool config and findings, read-only. Use for \"toolchain status\", \"check the toolchain surface\". Not for: converging → quenching-toolchain-align."
-allowed-tools: "Bash(cq:*), Read, Grep, Glob, Bash(python3:*)"
+allowed-tools: "Bash(cq:*), Bash(cq.cmd:*), Read, Grep, Glob, Bash(python3:*)"
 ---
 
 <!-- GENERATED FROM plugins/quenching/commands/toolchain/status.md -->

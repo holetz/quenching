@@ -2,7 +2,7 @@
 description: >-
   Capture ONE piece of generic knowledge into the bundle's concepts/ home. Use for "add this knowledge", "record what we learned". Not for: repo contracts → /quenching-align:knowledge:add; terms → /quenching-align:knowledge:define.
 argument-hint: [the-knowledge]
-allowed-tools: Bash(cq:*), Read, Grep, Glob, Write, Edit, AskUserQuestion
+allowed-tools: Bash(cq:*), Bash(cq.cmd:*), Read, Grep, Glob, Write, Edit, AskUserQuestion
 ---
 
 # /quenching-align:knowledge:learn — capture generic knowledge, OKF-conformant

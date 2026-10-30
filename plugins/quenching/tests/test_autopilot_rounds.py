@@ -40,7 +40,7 @@ class AutopilotRoundsTests(unittest.TestCase):
 
     def test_grants_are_unchanged(self):
         head = AUTOPILOT.read_text(encoding="utf-8").split("---")[1]
-        self.assertIn("allowed-tools: Bash(cq:*), Bash(git:*), Bash, Read, Grep, Glob, Agent, Task, TaskStop", head)
+        self.assertIn("allowed-tools: Bash(cq:*), Bash(cq.cmd:*), Bash(git:*), Bash, Read, Grep, Glob, Agent, Task, TaskStop", head)
 
 
 if __name__ == "__main__":

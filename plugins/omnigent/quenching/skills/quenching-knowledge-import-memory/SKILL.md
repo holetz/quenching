@@ -1,7 +1,7 @@
 ---
 name: quenching-knowledge-import-memory
 description: "Drain the project's Claude Code memory into the OKF bundle, then clear it. Use for \"convert the memory into docs\", \"flush the memory into docs\". Not for: external sources → quenching-knowledge-import."
-allowed-tools: "Bash(cq:*), Read, Grep, Glob, Bash(python3:*), Bash(py:*), Bash(rm:*), Write, Edit, Task, AskUserQuestion"
+allowed-tools: "Bash(cq:*), Bash(cq.cmd:*), Read, Grep, Glob, Bash(python3:*), Bash(py:*), Bash(rm:*), Write, Edit, Task, AskUserQuestion"
 ---
 
 <!-- GENERATED FROM plugins/quenching/commands/knowledge/import-memory.md -->

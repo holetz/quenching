@@ -1,7 +1,7 @@
 ---
 name: quenching-specs-conclude
 description: "Close ONE spec out: review the branch, write knowledge, archive, prove the gate, hand off to a PR or merge. Use for \"conclude this spec\", \"close it out\", \"abandon this spec\". Not for: building → quenching-specs-execute."
-allowed-tools: "Bash(cq:*), Bash, Read, Glob, Grep, Write, Edit, AskUserQuestion, Skill"
+allowed-tools: "Bash(cq:*), Bash(cq.cmd:*), Bash, Read, Glob, Grep, Write, Edit, AskUserQuestion, Skill"
 ---
 
 <!-- GENERATED FROM plugins/quenching/commands/specs/conclude.md -->

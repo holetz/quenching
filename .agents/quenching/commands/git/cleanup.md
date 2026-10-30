@@ -2,7 +2,7 @@
 description: "Prune merged or gone branches and orphan worktrees from `.agents/quenching/bin/cq git stale`. Use for \"clean up old branches\", \"prune stale branches\". Not for: isolation → /quenching-git-branch."
 disable-model-invocation: true
 argument-hint: "[remote:<name>]"
-allowed-tools: Bash(.agents/quenching/bin/cq:*), Bash(python3:*), Read, AskUserQuestion
+allowed-tools: Bash(.agents/quenching/bin/cq:*), Bash(.agents/quenching/bin/cq.cmd:*), Bash(python3:*), Read, AskUserQuestion
 ---
 
 # /quenching-git-cleanup — prune what `.agents/quenching/bin/cq git stale` already found

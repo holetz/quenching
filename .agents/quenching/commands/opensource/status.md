@@ -2,7 +2,7 @@
 description: "Report the open source front: every owner's catalog answers and the baseline level, read-only. Use for \"opensource status\", \"which baseline level do we reach\". Not for: writing artifacts → /quenching-opensource-align."
 disable-model-invocation: true
 argument-hint: "[optional-target-root]"
-allowed-tools: Bash(.agents/quenching/bin/cq:*), Read, Grep, Glob, Bash(python3:*)
+allowed-tools: Bash(.agents/quenching/bin/cq:*), Bash(.agents/quenching/bin/cq.cmd:*), Read, Grep, Glob, Bash(python3:*)
 ---
 
 # /quenching-opensource-status — read the open source front

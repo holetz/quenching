@@ -1,7 +1,7 @@
 ---
 name: quenching-knowledge-documentation-produce
 description: "Run the complete documentation pipeline: site setup, sourced pages, review, strict build. Use for \"produce the documentation\", \"generate the complete docs site\". Not for: one stage → its own command."
-allowed-tools: "Bash(cq:*), Read, Grep, Glob, Bash(python3:*), Bash(py:*), Skill"
+allowed-tools: "Bash(cq:*), Bash(cq.cmd:*), Read, Grep, Glob, Bash(python3:*), Bash(py:*), Skill"
 ---
 
 <!-- GENERATED FROM plugins/quenching/commands/knowledge/documentation/produce.md -->

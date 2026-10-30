@@ -1,7 +1,7 @@
 ---
 name: quenching-knowledge-import
 description: "Import an external source (files, folders, URLs) into the OKF bundle as many docs. Use for \"ingest a source into the base\", \"generate OKF docs from these files\". Not for: one item → quenching-knowledge-add."
-allowed-tools: "Bash(cq:*), Read, Grep, Glob, WebFetch, Bash(python3:*), Write, Edit, Task, AskUserQuestion"
+allowed-tools: "Bash(cq:*), Bash(cq.cmd:*), Read, Grep, Glob, WebFetch, Bash(python3:*), Write, Edit, Task, AskUserQuestion"
 ---
 
 <!-- GENERATED FROM plugins/quenching/commands/knowledge/import.md -->

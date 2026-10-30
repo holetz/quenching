@@ -3,7 +3,7 @@ description: >-
   Write the open source artifacts (license, contributing, conduct, governance, templates) from pinned molds. Use for "align the opensource front", "prepare this repo to be open sourced". Not for: read-only → /quenching-opensource:opensource:status.
 disable-model-invocation: true
 argument-hint: [optional-target-root]
-allowed-tools: Bash(cq:*), Read, Grep, Glob, Bash(python3:*), AskUserQuestion, Write, Edit
+allowed-tools: Bash(cq:*), Bash(cq.cmd:*), Read, Grep, Glob, Bash(python3:*), AskUserQuestion, Write, Edit
 ---
 
 # /quenching-opensource:opensource:align — converge the open source front

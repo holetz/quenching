@@ -1,7 +1,7 @@
 ---
 name: quenching-specs-improve
 description: "Map a repository's relevant improvement opportunities, settle the owner's decisions, turn the plan into an epic. Use for \"map what to improve\", \"improvement plan\". Not for: ONE spec → quenching-specs-create; rounds → quenching-specs-autopilot."
-allowed-tools: "Bash(cq:*), Bash(git:*), Bash(wc:*), Bash(mkdir:*), Read, Grep, Glob, Write, Agent, Task, AskUserQuestion"
+allowed-tools: "Bash(cq:*), Bash(cq.cmd:*), Bash(git:*), Bash(wc:*), Bash(mkdir:*), Read, Grep, Glob, Write, Agent, Task, AskUserQuestion"
 ---
 
 <!-- GENERATED FROM plugins/quenching/commands/specs/improve.md -->

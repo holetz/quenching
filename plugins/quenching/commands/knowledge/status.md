@@ -2,7 +2,7 @@
 description: >-
   Report where the OKF bundle stands in /docs/, read-only. Use for "status of the docs", "is the bundle conformant". Not for: repairs → /quenching-align:knowledge:align; additions → /quenching-align:knowledge:add.
 argument-hint: [optional-home-or-path]
-allowed-tools: Bash(cq:*), Read, Grep, Glob, Bash(python3:*), Bash(py:*)
+allowed-tools: Bash(cq:*), Bash(cq.cmd:*), Read, Grep, Glob, Bash(python3:*), Bash(py:*)
 ---
 
 # /quenching-align:knowledge:status — read the bundle, change nothing

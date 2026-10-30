@@ -1,7 +1,7 @@
 ---
 name: quenching-knowledge-glossary-backfill
 description: "Sweep the whole bundle to backfill glossary.md with missing terms. Use for \"backfill the glossary\", \"find terms we never added\". Not for: one term → quenching-knowledge-define."
-allowed-tools: "Bash(cq:*), Read, Grep, Glob, Bash(python3:*), Bash(py:*), Write, Edit, Task, AskUserQuestion"
+allowed-tools: "Bash(cq:*), Bash(cq.cmd:*), Read, Grep, Glob, Bash(python3:*), Bash(py:*), Write, Edit, Task, AskUserQuestion"
 ---
 
 <!-- GENERATED FROM plugins/quenching/commands/knowledge/glossary-backfill.md -->

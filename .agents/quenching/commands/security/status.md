@@ -2,7 +2,7 @@
 description: "Report workflow permissions, secret and ignore coverage, advisory dependency config and access ownership, read-only. Use for \"security status\", \"security audit\". Not for: changing policy."
 disable-model-invocation: true
 argument-hint: "[optional-target-root]"
-allowed-tools: Bash(.agents/quenching/bin/cq:*), Read, Grep, Glob, Bash(python3:*)
+allowed-tools: Bash(.agents/quenching/bin/cq:*), Bash(.agents/quenching/bin/cq.cmd:*), Read, Grep, Glob, Bash(python3:*)
 ---
 
 # /quenching-security-status — read the security pillar

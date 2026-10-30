@@ -1,7 +1,7 @@
 ---
 name: quenching-design-genre-new
 description: "Mint ONE editorial genre under /.design/genres/ with fields, register and medium templates. Use for \"create a design genre\", \"define a deck contract\". Not for: whole front → quenching-design-align."
-allowed-tools: "Bash(cq:*), Read, Grep, Glob, Bash(python3:*), AskUserQuestion"
+allowed-tools: "Bash(cq:*), Bash(cq.cmd:*), Read, Grep, Glob, Bash(python3:*), AskUserQuestion"
 ---
 
 <!-- GENERATED FROM plugins/quenching/commands/design/genre/new.md -->

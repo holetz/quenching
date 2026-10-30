@@ -1,7 +1,7 @@
 ---
 description: "Close ONE spec out: review the branch, write knowledge, archive, prove the gate, hand off to a PR or merge. Use for \"conclude this spec\", \"close it out\", \"abandon this spec\". Not for: building → /quenching-specs-execute."
 argument-hint: "[id] [--outcome done|abandoned]"
-allowed-tools: Bash(.agents/quenching/bin/cq:*), Bash, Read, Glob, Grep, Write, Edit, AskUserQuestion, Skill
+allowed-tools: Bash(.agents/quenching/bin/cq:*), Bash(.agents/quenching/bin/cq.cmd:*), Bash, Read, Glob, Grep, Write, Edit, AskUserQuestion, Skill
 model: opus
 ---
 

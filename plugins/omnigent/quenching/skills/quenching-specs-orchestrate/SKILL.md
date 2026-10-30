@@ -1,7 +1,7 @@
 ---
 name: quenching-specs-orchestrate
 description: "Run an epic or a list of specs through the orchestrator agent. Use for \"orchestrate this epic\", \"run these specs in waves\". Not for: ONE spec → quenching-specs-execute; ranking → quenching-specs-triage; rounds → quenching-specs-autopilot."
-allowed-tools: "Bash(cq:*), Read, Agent, Task"
+allowed-tools: "Bash(cq:*), Bash(cq.cmd:*), Read, Agent, Task"
 ---
 
 <!-- GENERATED FROM plugins/quenching/commands/specs/orchestrate.md -->

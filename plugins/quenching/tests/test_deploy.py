@@ -69,6 +69,16 @@ class Deploy(unittest.TestCase):
         self.assertEqual(0, local.returncode, local.stdout + local.stderr)
         self.assertEqual([], json.loads(local.stdout)["changes"])
 
+    def test_generated_skill_grants_both_launchers_and_names_the_platform(self):
+        self.assertEqual(0, self.run_deploy("--modules", "core", "--write")[0])
+        skill = (self.target / ".agents/skills/quenching-specs-execute/SKILL.md").read_text()
+        self.assertIn("Bash(.agents/quenching/bin/cq:*)", skill)
+        self.assertIn("Bash(.agents/quenching/bin/cq.cmd:*)", skill)
+        self.assertIn("on Windows it calls `cq.cmd`", skill)
+        self.assertEqual(1, skill.count("**Launcher.**"))
+        agent = (self.target / ".agents/quenching/agents/spec-runner.md").read_text()
+        self.assertNotIn("**Launcher.**", agent)
+
     def test_check_reports_drift_without_writing(self):
         self.assertEqual(0, self.run_deploy("--modules", "core", "--write")[0])
         skill = self.target / ".agents/skills/quenching-specs-create/SKILL.md"

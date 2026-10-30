@@ -1,7 +1,7 @@
 ---
 name: quenching-ops-status
 description: "Report the operations front: root, router, entry points, lifecycle and findings, read-only. Use for \"ops status\", \"report operations drift\". Not for: converging → quenching-ops-align."
-allowed-tools: "Bash(cq:*), Read, Grep, Glob, Bash(python3:*)"
+allowed-tools: "Bash(cq:*), Bash(cq.cmd:*), Read, Grep, Glob, Bash(python3:*)"
 ---
 
 <!-- GENERATED FROM plugins/quenching/commands/ops/status.md -->

@@ -1,7 +1,7 @@
 ---
 name: quenching-opensource-status
 description: "Report the open source front: every owner's catalog answers and the baseline level, read-only. Use for \"opensource status\", \"which baseline level do we reach\". Not for: writing artifacts → quenching-opensource-align."
-allowed-tools: "Bash(cq:*), Read, Grep, Glob, Bash(python3:*)"
+allowed-tools: "Bash(cq:*), Bash(cq.cmd:*), Read, Grep, Glob, Bash(python3:*)"
 ---
 
 <!-- GENERATED FROM plugins/quenching/commands/opensource/status.md -->

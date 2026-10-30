@@ -1,7 +1,7 @@
 ---
 name: quenching-knowledge-status
 description: "Report where the OKF bundle stands in /docs/, read-only. Use for \"status of the docs\", \"is the bundle conformant\". Not for: repairs → quenching-knowledge-align; additions → quenching-knowledge-add."
-allowed-tools: "Bash(cq:*), Read, Grep, Glob, Bash(python3:*), Bash(py:*)"
+allowed-tools: "Bash(cq:*), Bash(cq.cmd:*), Read, Grep, Glob, Bash(python3:*), Bash(py:*)"
 ---
 
 <!-- GENERATED FROM plugins/quenching/commands/knowledge/status.md -->

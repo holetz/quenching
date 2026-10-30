@@ -2,7 +2,7 @@
 description: >-
   Force /docs/ into the canonical OKF v0.2 bundle and absorb out-of-band content until stable. Use for "align the docs", "set up /docs/", "converge the knowledge base". Not for: one item → /quenching-align:knowledge:add.
 argument-hint: [optional-docs-path]
-allowed-tools: Bash(cq:*), Read, Grep, Glob, Bash, Write, Edit, Task, Skill, AskUserQuestion
+allowed-tools: Bash(cq:*), Bash(cq.cmd:*), Read, Grep, Glob, Bash, Write, Edit, Task, Skill, AskUserQuestion
 ---
 
 # /quenching-align:knowledge:align — force the knowledge base into OKF shape, and keep filling it

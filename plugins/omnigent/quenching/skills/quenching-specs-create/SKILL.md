@@ -1,7 +1,7 @@
 ---
 name: quenching-specs-create
 description: "Capture or create a spec. Use for \"convert to a spec\", \"add to the backlog\", \"create a spec\". Not for: refining → quenching-specs-develop; executing → quenching-specs-execute."
-allowed-tools: "Bash(cq:*), Read, Grep, Glob, Bash(python3:*), Bash(py:*), AskUserQuestion, Skill"
+allowed-tools: "Bash(cq:*), Bash(cq.cmd:*), Read, Grep, Glob, Bash(python3:*), Bash(py:*), AskUserQuestion, Skill"
 ---
 
 <!-- GENERATED FROM plugins/quenching/commands/specs/create.md -->

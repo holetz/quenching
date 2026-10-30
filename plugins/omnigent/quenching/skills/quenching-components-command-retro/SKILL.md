@@ -1,7 +1,7 @@
 ---
 name: quenching-components-command-retro
 description: "Mine ONE session for what it shows about the command that ran in it: cost, redundancy, bugs, manual fixes. Use for \"retro this session\", \"what did this command cost\". Reads transcripts; applies nothing."
-allowed-tools: "Bash(cq:*), Read, AskUserQuestion, Bash(python3:*), Bash(py:*)"
+allowed-tools: "Bash(cq:*), Bash(cq.cmd:*), Read, AskUserQuestion, Bash(python3:*), Bash(py:*)"
 ---
 
 <!-- GENERATED FROM plugins/quenching/commands/components/command/retro.md -->

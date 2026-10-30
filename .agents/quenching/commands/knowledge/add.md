@@ -1,7 +1,7 @@
 ---
 description: "Insert ONE new concept doc into the OKF bundle with the right home, type and stamp. Use for \"add a standard/table/announcement\". Not for: glossary terms → /quenching-knowledge-define; batches → /quenching-knowledge-import."
 argument-hint: "[the-knowledge-to-add]"
-allowed-tools: Bash(.agents/quenching/bin/cq:*), Read, Grep, Glob, Write, Edit, AskUserQuestion
+allowed-tools: Bash(.agents/quenching/bin/cq:*), Bash(.agents/quenching/bin/cq.cmd:*), Read, Grep, Glob, Write, Edit, AskUserQuestion
 ---
 
 # /quenching-knowledge-add — add new knowledge, OKF-conformant

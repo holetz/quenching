@@ -9,6 +9,8 @@ allowed-tools: Bash(.agents/quenching/bin/cq git commit:*), Bash(.agents/quenchi
 
 # /quenching-git-commit — commit what is staged, under the target's own convention
 
+**Launcher.** On POSIX the skill calls `cq`; on Windows it calls `cq.cmd`, the sibling the deploy installs beside `bin/cq`.
+
 This command is the single commit boundary for standalone commits. `/quenching-specs-execute` does
 not delegate here per task: it commits each task through `.agents/quenching/bin/cq git commit --subject`. This command
 resolves the subject, commits the existing index and reports the subject actually written. It never receives a request to stage an unrelated path.

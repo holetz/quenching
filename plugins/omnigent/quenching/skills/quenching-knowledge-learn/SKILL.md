@@ -1,7 +1,7 @@
 ---
 name: quenching-knowledge-learn
 description: "Capture ONE piece of generic knowledge into the bundle's concepts/ home. Use for \"add this knowledge\", \"record what we learned\". Not for: repo contracts → quenching-knowledge-add; terms → quenching-knowledge-define."
-allowed-tools: "Bash(cq:*), Read, Grep, Glob, Write, Edit, AskUserQuestion"
+allowed-tools: "Bash(cq:*), Bash(cq.cmd:*), Read, Grep, Glob, Write, Edit, AskUserQuestion"
 ---
 
 <!-- GENERATED FROM plugins/quenching/commands/knowledge/learn.md -->

@@ -1,7 +1,7 @@
 ---
 name: quenching-specs-board
 description: "Open the local spec portal: board, ranking and detail in the browser over the same backend. Use for \"open the spec board\", \"show the specs visually\". Not for: ranking by chat → quenching-specs-triage; reading → quenching-specs-status."
-allowed-tools: "Bash(cq:*)"
+allowed-tools: "Bash(cq:*), Bash(cq.cmd:*)"
 ---
 
 <!-- GENERATED FROM plugins/quenching/commands/specs/board.md -->

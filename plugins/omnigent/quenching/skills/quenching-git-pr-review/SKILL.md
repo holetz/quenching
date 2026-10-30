@@ -1,7 +1,7 @@
 ---
 name: quenching-git-pr-review
 description: "Fetch a PR's unresolved review threads and address each on the human's confirmation. Use for \"resolve PR comments\", \"address the review feedback\". Not for: opening a PR → quenching-git-pr-create."
-allowed-tools: "Bash(cq:*), Bash(gh pr view:*), Bash(gh repo view:*), Bash(gh api graphql:*), Bash(az repos pr:*), Bash(az devops invoke:*), Bash(az rest:*), Bash(git branch:*), Bash(git remote get-url:*), Bash(git add:*), Bash(python3:*), Read, Edit, AskUserQuestion, Skill"
+allowed-tools: "Bash(cq:*), Bash(cq.cmd:*), Bash(gh pr view:*), Bash(gh repo view:*), Bash(gh api graphql:*), Bash(az repos pr:*), Bash(az devops invoke:*), Bash(az rest:*), Bash(git branch:*), Bash(git remote get-url:*), Bash(git add:*), Bash(python3:*), Read, Edit, AskUserQuestion, Skill"
 ---
 
 <!-- GENERATED FROM plugins/quenching/commands/git/pr/review.md -->

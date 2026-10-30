@@ -9,6 +9,8 @@ allowed-tools: Bash(.agents/quenching/bin/cq git base:*), Bash(.agents/quenching
 
 # /quenching-git-branch — take isolation before writing code
 
+**Launcher.** On POSIX the skill calls `cq`; on Windows it calls `cq.cmd`, the sibling the deploy installs beside `bin/cq`.
+
 **Input**: `$ARGUMENTS` — optionally a spec id (stamps that spec's `branch:` record and its
 `quenching-specs:` marking) or a short name for standalone work with no spec behind it. Omitted →
 ask what the isolation is for.

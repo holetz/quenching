@@ -2,7 +2,7 @@
 description: "Converge a repository's proof surface from its test gate with bounded structural repairs. Use for \"align the proof front\", \"fix proof drift\". Not for: read-only → /quenching-proof-status."
 disable-model-invocation: true
 argument-hint: "[optional-target-root]"
-allowed-tools: Bash(.agents/quenching/bin/cq:*), Read, Grep, Glob, Bash(python3:*), AskUserQuestion, Write, Edit
+allowed-tools: Bash(.agents/quenching/bin/cq:*), Bash(.agents/quenching/bin/cq.cmd:*), Read, Grep, Glob, Bash(python3:*), AskUserQuestion, Write, Edit
 ---
 
 # /quenching-proof-align — converge the verification surface

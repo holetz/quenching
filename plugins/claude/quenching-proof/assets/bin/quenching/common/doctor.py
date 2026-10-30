@@ -106,6 +106,8 @@ def inspect_environment(root: str, *, which: Callable[[str], str | None] | None 
                         config: dict | None = None) -> dict:
     """Collect a side-effect-free environment report."""
     root = os.path.abspath(root)
+    # `which` finds `az.cmd` on Windows; the actual spawn resolves that launcher past
+    # `cmd.exe` (`common.tools.spawn_argv`), so both agree on whether `az` is available.
     which = which or shutil.which
     major, minor, version = _version_info()
     backend, profile, requirements = required_tools(root, config)

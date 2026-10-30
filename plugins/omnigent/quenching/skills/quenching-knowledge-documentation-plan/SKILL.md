@@ -1,7 +1,7 @@
 ---
 name: quenching-knowledge-documentation-plan
 description: "Build a sourced documentation plan for the OKF bundle with reader journeys. Use for \"plan the documentation\", \"design the documentation architecture\". Not for: pages → quenching-knowledge-documentation-write."
-allowed-tools: "Bash(cq:*), Read, Grep, Glob, Bash(python3:*), Bash(py:*), Bash(rg:*), Write, AskUserQuestion"
+allowed-tools: "Bash(cq:*), Bash(cq.cmd:*), Read, Grep, Glob, Bash(python3:*), Bash(py:*), Bash(rg:*), Write, AskUserQuestion"
 ---
 
 <!-- GENERATED FROM plugins/quenching/commands/knowledge/documentation/plan.md -->

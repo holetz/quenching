@@ -1,7 +1,7 @@
 ---
 name: quenching-proof-layer-new
 description: "Mint one named proof test layer: marker, reach, budget, fixtures, README. Use for \"create a proof layer\", \"add a test layer\". Not for: existing drift → quenching-proof-align."
-allowed-tools: "Bash(cq:*), Read, Grep, Glob, Bash(python3:*), Bash(mkdir:*), Bash(mv:*), AskUserQuestion, Write, Edit"
+allowed-tools: "Bash(cq:*), Bash(cq.cmd:*), Read, Grep, Glob, Bash(python3:*), Bash(mkdir:*), Bash(mv:*), AskUserQuestion, Write, Edit"
 ---
 
 <!-- GENERATED FROM plugins/quenching/commands/proof/layer/new.md -->

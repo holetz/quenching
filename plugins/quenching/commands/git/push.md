@@ -3,7 +3,7 @@ description: >-
   Publish a local branch to a named remote without opening a PR. Use for "push this branch", "push a checkpoint". Not for: PRs → /quenching-specs:git:pr:create; rebasing → /quenching-specs:git:sync.
 disable-model-invocation: true
 argument-hint: [branch|--remote remote branch]
-allowed-tools: Bash(cq:*), Bash(git status:*), Bash(git branch --show-current:*), Bash(git remote:*), Bash(git rev-parse:*), Bash(git rev-list:*), Bash(git log:*), Bash(git reflog:*), Bash(git ls-remote:*), Bash(git push:*), Bash(python3:*), Read, AskUserQuestion
+allowed-tools: Bash(cq:*), Bash(cq.cmd:*), Bash(git status:*), Bash(git branch --show-current:*), Bash(git remote:*), Bash(git rev-parse:*), Bash(git rev-list:*), Bash(git log:*), Bash(git reflog:*), Bash(git ls-remote:*), Bash(git push:*), Bash(python3:*), Read, AskUserQuestion
 ---
 
 # /quenching-specs:git:push — publish one branch, without opening a PR

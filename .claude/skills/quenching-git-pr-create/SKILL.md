@@ -10,6 +10,8 @@ allowed-tools: Bash(.agents/quenching/bin/cq git base:*), Bash(.agents/quenching
 
 # /quenching-git-pr-create — push and open the pull request
 
+**Launcher.** On POSIX the skill calls `cq`; on Windows it calls `cq.cmd`, the sibling the deploy installs beside `bin/cq`.
+
 **Input**: `$ARGUMENTS` — a spec id (derives title, body and the provider's issue/work-item
 link), or free text to use as the PR title. Append `remote:<name>` to select a remote; omitted
 → `origin`. Omitted title → ask. The word `autonomous` is the human's pre-answer to step 4's

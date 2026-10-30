@@ -2,7 +2,7 @@
 description: "Report the toolchain front: manifests, locks, language pins, tool config and findings, read-only. Use for \"toolchain status\", \"check the toolchain surface\". Not for: converging → /quenching-toolchain-align."
 disable-model-invocation: true
 argument-hint: "[optional-target-root]"
-allowed-tools: Bash(.agents/quenching/bin/cq:*), Read, Grep, Glob, Bash(python3:*)
+allowed-tools: Bash(.agents/quenching/bin/cq:*), Bash(.agents/quenching/bin/cq.cmd:*), Read, Grep, Glob, Bash(python3:*)
 ---
 
 # /quenching-toolchain-status — read the toolchain front

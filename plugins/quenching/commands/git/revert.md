@@ -3,7 +3,7 @@ description: >-
   Revert one known commit into a new commit, preserving history. Use for "revert this commit", "undo a task safely", "back out this change". Not for: rewriting history; publishing → /quenching-specs:git:push.
 disable-model-invocation: true
 argument-hint: "[commit:ref|spec:id task:id [mainline:n]]"
-allowed-tools: Bash(cq:*), Bash(git status:*), Bash(git branch --show-current:*), Bash(git rev-parse:*), Bash(git rev-list:*), Bash(git merge-base:*), Bash(git log:*), Bash(git show:*), Bash(git diff:*), Bash(git revert:*), Bash(python3:*), Read, AskUserQuestion
+allowed-tools: Bash(cq:*), Bash(cq.cmd:*), Bash(git status:*), Bash(git branch --show-current:*), Bash(git rev-parse:*), Bash(git rev-list:*), Bash(git merge-base:*), Bash(git log:*), Bash(git show:*), Bash(git diff:*), Bash(git revert:*), Bash(python3:*), Read, AskUserQuestion
 ---
 
 # /quenching-specs:git:revert — compensate one commit without rewriting history

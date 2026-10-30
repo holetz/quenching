@@ -1,7 +1,7 @@
 ---
 name: quenching-knowledge-add
 description: "Insert ONE new concept doc into the OKF bundle with the right home, type and stamp. Use for \"add a standard/table/announcement\". Not for: glossary terms → quenching-knowledge-define; batches → quenching-knowledge-import."
-allowed-tools: "Bash(cq:*), Read, Grep, Glob, Write, Edit, AskUserQuestion"
+allowed-tools: "Bash(cq:*), Bash(cq.cmd:*), Read, Grep, Glob, Write, Edit, AskUserQuestion"
 ---
 
 <!-- GENERATED FROM plugins/quenching/commands/knowledge/add.md -->

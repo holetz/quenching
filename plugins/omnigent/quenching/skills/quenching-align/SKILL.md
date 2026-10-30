@@ -1,7 +1,7 @@
 ---
 name: quenching-align
 description: "Align the whole repository (docs, design, .agents, ops, proof, toolchain, delivery, opensource) on one confirmation. Use for \"align the repo\", \"align everything\", \"set up quenching here\". Not for: one front → its /quenching-<module>:<front>:align."
-allowed-tools: "Bash(cq:*), Read, Grep, Glob, Bash(python3:*), Bash(py:*), Skill"
+allowed-tools: "Bash(cq:*), Bash(cq.cmd:*), Read, Grep, Glob, Bash(python3:*), Bash(py:*), Skill"
 ---
 
 <!-- GENERATED FROM plugins/quenching/commands/align.md -->
