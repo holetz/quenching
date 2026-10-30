@@ -55,29 +55,29 @@ Anything other than `none` → **report it before the first task**, name the hoo
 path, and let the human decide: fix the wiring, or build knowing every commit will trip it. Never
 route around it with `--no-verify`. No `.claude/settings.json`, or nothing wired → silent.
 
-## Isolation is offered inline, and only from the base
+## Isolation is taken inline, and only from the base
 
 <!-- rules -->
 
-Taking a branch or a worktree, naming it, and stamping `branch: {base, work}` all happen inline in
+Taking a worktree, naming it, and stamping `branch: {base, work}` all happen inline in
 the command body's own step 2 — not a separate command it dispatches to. The convention it applies
 lives in
 [git/isolation.md](~/.opencode/quenching/references/git/isolation.md)
 §Recording the isolation, cited rather than restated.
 
-**The offer fires only when `HEAD` is on the repository's base branch.** Anywhere else, the human
-already answered the question at checkout, and asking again is friction the loop does not need to
-pay.
+**The cut fires only when `HEAD` is on the repository's base branch, and its form is a worktree.**
+Anywhere else, the human already answered the question at checkout, and asking again is friction the
+loop does not need to pay.
 
-Two things the loop still needs, regardless of form:
+Two things the loop still needs, whatever brought it there:
 
 - **A spec whose `plan/<id>-<handle>` ref is alive but checked out somewhere else is already being built
   there.** Starting a second run against it forks the work; say where it is and stop.
-- **The loop never commits onto the base.** A declined isolation offer stops the run before the
-  first task, so no work is ever built in place and the report says the run did not start.
+- **The loop never commits onto the base.** A failed worktree cut stops the run before the first
+  task, rather than falling back to a branch or the base, and the report says the run did not start.
 
-**Check before offering, every time.** A spec that is **already isolated** — its `plan/<id>-<handle>` ref
-alive, or the `branch` record already stamped — has nothing left to take, and offering again buys
+**Check before cutting, every time.** A spec that is **already isolated** — its `plan/<id>-<handle>` ref
+alive, or the `branch` record already stamped — has nothing left to take, and cutting again buys
 nothing but the turns it costs. Checking is `git branch --list "plan/<id>-<handle>"` plus the `branch`
 record already inside the `status --json` the loop reads anyway, and it decides the question
 without moving anything.

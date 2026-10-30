@@ -55,18 +55,20 @@ your `tools:` does not grant is `STATE: blocked`, never worked around.
   raw git or gh is `STATE: blocked`, never worked around. Azure is no exception: a prefix over its PR commands admits a completion with `--bypass-policy true`, so the Azure route of `:pr:create` is `.agents/quenching/bin/cq git pr create` too.
 - Never `git stash`, `git checkout`, `git switch`, `git reset --hard`, `git clean` or force push.
   To set work aside, make a WIP commit.
-- For the `pr` and `branch` steps, pass `autonomous` to `/quenching-git-pr-create` or
-  `/quenching-git-branch` when, and only when, the caller's prompt carries that word; never decide to confirm or skip confirmation on your own,
+- For the `pr` step, pass `autonomous` to `/quenching-git-pr-create` when, and only when, the
+  caller's prompt carries that word; never decide to confirm or skip confirmation on your own,
   and never invent it. Without the word the command asks, and an unanswered ask is `STATE: blocked`.
-- Without `autonomous`, the decision sheet a command body says to put and end the turn on (`/quenching-git-branch`, `/quenching-git-pr-create`) goes inside one `AskUserQuestion` call, because you hold that grant and it is your only channel to the human (specs-develop/questions.md §1): each `Dn` a question, the recommended option first and marked "(Recommended)". Never end the turn on a prose sheet; no answer is `STATE: blocked`, `NOTE: needs-human:`.
+- Without `autonomous`, the decision sheet a command body says to put and end the turn on (`/quenching-git-pr-create`) goes inside one `AskUserQuestion` call, because you hold that grant and it is your only channel to the human (specs-develop/questions.md §1): each `Dn` a question, the recommended option first and marked "(Recommended)". Never end the turn on a prose sheet; no answer is `STATE: blocked`, `NOTE: needs-human:`.
 - When the caller's prompt names a worktree, run every command against it and never from the base
   checkout: `cd <worktree>` first for every `cq` verb (the git verbs of `cq` take no `--root`, and `--root` for the other verbs sits between `specs` and the verb, outside the grants); the PR is opened with an explicit
   `--head <branch>`. The spec's sections for the PR body are read with `.agents/quenching/bin/cq specs show --spec <id>
   --full`: `.agents/quenching/bin/cq specs section` carries `--write`, so it is not granted. A prompt that names no worktree for a `pr` step is `STATE: blocked`.
-- The `branch` step runs `/quenching-git-branch "<id>"` (plus `autonomous`, per the rule above)
-  from the base checkout; under `autonomous` it takes a worktree cut from `origin/<base>`, so a
-  dependency merged through `gh` is in it. The command's `.agents/quenching/bin/cq git worktree add --spec <id>` stamps the `branch:` record itself; the step returns the worktree's absolute
-  path in `WORKTREE:`.
+- The `branch` step runs `/quenching-git-branch "<id>"` from the base checkout. The isolation
+  is a **worktree by default and asks nothing**: the command cuts it from `origin/<base>` — so a
+  dependency merged through `gh` is in it — runs the declared `worktreeSetup`, and its
+  `.agents/quenching/bin/cq git worktree add --spec <id>` stamps the `branch:` record itself. The step returns the
+  worktree's absolute path in `WORKTREE:`. A plain branch only when the caller's prompt asked for
+  one in the human's own words; a failed worktree cut is `STATE: blocked`, never a fallback.
 - The grants hold no spec write (record, promote, section write): the steward never calls `.agents/quenching/bin/cq specs record`. In the `pr` step it passes `--spec <id>` to `.agents/quenching/bin/cq git pr create`, on GitHub and on Azure alike, and the verb stamps the `pr` record itself and the PR URL goes in `PR:`. `reason: stamp-failed` (the PR exists, the record does not) is `STATE: blocked` with the PR URL in `PR:` and its `message` in `NOTE:`; never open the PR again.
 - Never push or merge unless the caller's prompt explicitly names that step and its target.
 - The `merge` step of a pull request is the one step run without its command, because

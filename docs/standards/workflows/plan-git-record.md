@@ -132,15 +132,16 @@ pending commit and reaches the specs branch at the next sync point (`cq git push
 All three belong to the record vocabulary in [plan-lifecycle.md](plan-lifecycle.md) and pass the
 same admission test — a fact no derivation can reproduce:
 
-- **`branch: {base, work}`** — stamped by `/quenching-specs:specs:execute`'s inline isolation offer, write-once,
-  **once the work ref is resolved** — taken or declined. `work` is derivable while the branch is
-  checked out; `base` is not — **after the merge, git cannot say what the branch was cut from**,
+- **`branch: {base, work}`** — stamped by `/quenching-specs:specs:execute`'s inline worktree cut, write-once,
+  **once the work ref is resolved** — as a worktree, or as the explicit branch override. `work` is
+  derivable while the branch is checked out; `base` is not — **after the merge, git cannot say what the branch was cut from**,
   which is the whole reason the record exists and why it is captured while still true. A later run
   reads the record; a current branch that disagrees with `work` is a finding to report, never a
   value to correct.
 
-  **Work done in place stamped `work` equal to `base`**, where it once stamped nothing; the offer no
-  longer has an in-place form, so the pair survives only in records written before that. The pair is
+  **Work done in place stamped `work` equal to `base`**, where it once stamped nothing; no form of
+  the isolation leaves the build on the base now, so the pair survives only in records written
+  before that. The pair is
   not the empty statement that silence would be: an absent record and `work == base` are different
   claims — *nobody has decided yet* versus *a human declined isolation* — and only a spec that
   records the second can be told apart from one that was never started.

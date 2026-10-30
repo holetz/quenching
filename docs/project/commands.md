@@ -73,7 +73,7 @@ commands share is explained in [The spec lifecycle](../explanation/spec-lifecycl
 | `/quenching-specs:specs:status` | The front's only **read-only** view: specs by derived stage, the records as history, verifier and provider findings. |
 | `/quenching-specs:specs:create` | ONE spec, ONE call, ONE closing screen — a sentence becomes `## Problem` and `summary:`; a plan file becomes every section it actually supports. |
 | `/quenching-specs:specs:develop` | Compose + refine in one pass: takes the spec to a closed ready set, argues with it, ends at the approval close. Records `refined:`; never edits code. |
-| `/quenching-specs:specs:execute` | Builds `## Tasks` one verified commit at a time — clean tree, inline isolation offer, `verify:` under the spec's policy, code and tick in ONE commit. |
+| `/quenching-specs:specs:execute` | Builds `## Tasks` one verified commit at a time — clean tree, inline worktree cut from the base, `verify:` under the spec's policy, code and tick in ONE commit. |
 | `/quenching-specs:specs:conclude` | Closes a spec out, **merging last**: branch review, emergent `/docs/`, archive (`outcome:`), distillation, `merge:` stamp — then the merge, and nothing after it. |
 | `/quenching-specs:specs:improve` | Typed only. Maps relevant improvement opportunities with evidence, settles the owner's decisions, and turns the approved plan into an epic of member specs. |
 | `/quenching-specs:specs:orchestrate` | Launches the `orchestrator` agent over an epic or a list of specs: waves, at most 3 workers, accepted only on a verifier PASS. |
@@ -175,7 +175,7 @@ align. The specs front hands off to it rather than executing git itself.
 
 | Command | Does |
 | --- | --- |
-| `/quenching-specs:git:branch` | Takes isolation for a build — worktree or branch, never on the base — stating the cost and stamping the `branch:` record. |
+| `/quenching-specs:git:branch` | Takes isolation for a build: a worktree by default and unasked, a plain branch only when the human asks, stating the cost and stamping the `branch:` record. |
 | `/quenching-specs:git:commit` | Commits what is already staged, under the target's own convention when one is declared. Never `git add -A`. |
 | `/quenching-specs:git:commit-incremental` | Turns the current worktree's pending changes into cohesive commits with explicit paths and safe stop conditions. |
 | `/quenching-specs:git:push` | Publishes one branch to an exact remote and refspec after measuring preconditions and receiving confirmation, without force or PR side effects. |

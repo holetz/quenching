@@ -66,7 +66,7 @@ model before the tick. `smallTierEligible: false`, or no estimate → the sessio
 never descends, and `quenching-knowledge-import-memory`'s classifiers stay never-`gpt-6-luna`:
 they authorize a deletion and have no oracle.
 
-**The orchestrator keeps, without exception:** spec selection, the isolation offer, every
+**The orchestrator keeps, without exception:** spec selection, the isolation, every
 confirmation, every `cq specs task --check` flip, every `cq specs task --block` marker, every
 `docs/standards/` write, every `cq specs discover` line, the commit, and the decision to pause. The
 sub-agent writes code inside its declared files and reports back — it never talks to the human and
