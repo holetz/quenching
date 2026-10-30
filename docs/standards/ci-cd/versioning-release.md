@@ -4,10 +4,10 @@ title: Versioning and release — the version lockstep
 description: The version surfaces cq specs release bumps together — the unpublished source, every published module manifest (the eight principal modules, the specs reader and the HUD) and every marketplace entry
 resource: plugins/quenching/assets/modules.json, plugins/claude/quenching-*/VERSION, plugins/claude/quenching-*/.claude-plugin/plugin.json, plugins/codex/quenching-codex/VERSION, plugins/quenching/VERSION, plugins/quenching/.claude-plugin/plugin.json, .claude-plugin/marketplace.json, .agents/plugins/marketplace.json, plugins/quenching/assets/bin/quenching/common/version.py, scripts/generate_plugin_modules.py, scripts/check_codex_upgrade.py
 tags: [release, versioning, lockstep, plugin, distribution]
-timestamp: 2026-10-28
+timestamp: 2026-10-29
 audience: both
 authority: current
-source: modularizar-specs-knowledge-components, one-entry-point, notice-installed-tool-version-drift, 2026-08-03, enxugar-create-e-eliminar-o-rung-hooks, configurable-branch-strategy, spec 1634, spec 1635 (module extraction); Codex marketplace upgrade regression, 2026-10-22; lineage in ADR 0004 and ADR 0013
+source: modularizar-specs-knowledge-components, one-entry-point, notice-installed-tool-version-drift, 2026-08-03, enxugar-create-e-eliminar-o-rung-hooks, configurable-branch-strategy, spec 1634, spec 1635 (module extraction); Codex marketplace upgrade regression, 2026-10-22; spec 2125 (release redeploys the surface); lineage in ADR 0004 and ADR 0013
 maintainer: quenching
 ---
 
@@ -26,7 +26,10 @@ The release commit is self-contained: the verb refuses (exit 2, nothing written)
 has changes beyond `CHANGELOG.md`, bumps, **regenerates the copies**
 (`scripts/generate_plugin_modules.py`, `scripts/sync_codex_plugin.py`, `scripts/sync_opencode_plugin.py`
 and `scripts/sync_omnigent_plugin.py`, each `--write` and each when present; the Omnigent operator pins
-its MCP server to the version tag) and commits everything with the `CHANGELOG.md` entry, so `verify_repo.sh` is already green
+its MCP server to the version tag), then, last and only where `.agents/.quenching-deploy.json` exists,
+redeploys the repository's own installed surface with the bundled
+`plugins/quenching/assets/bin/cq deploy --target . --write`, so the gate's deployed surface lockstep
+holds at the new version, and commits everything with the `CHANGELOG.md` entry, so `verify_repo.sh` is already green
 on the tag. A failed regeneration leaves the bump uncommitted and makes no commit or tag.
 
 ## The published set

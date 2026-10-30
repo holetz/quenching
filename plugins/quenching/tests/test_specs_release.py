@@ -276,6 +276,29 @@ class CmdReleaseCommit(Lockstep):
         self.assertEqual(self.git("status", "--porcelain"), "")
         self.assertEqual(self.git("rev-list", "-n1", "9.10.0"), self.git("rev-parse", "HEAD"))
 
+    def install_deploy_stub(self, *, manifest):
+        """A bundled `cq` that records its argv; the deploy manifest only when asked for."""
+        write_text(os.path.join(self.tmp, "plugins/quenching/assets/bin/cq"),
+                   "import sys\nfrom pathlib import Path\n"
+                   "Path('deployed.txt').write_text(' '.join(sys.argv[1:]) + '\\n')\n")
+        if manifest:
+            write_text(os.path.join(self.tmp, ".agents/.quenching-deploy.json"), "{}\n")
+        self.git("add", "-A")
+        self.git("commit", "-q", "-m", "deploy stub")
+
+    def test_a_deployed_surface_is_redeployed_into_the_release_commit(self):
+        self.install_deploy_stub(manifest=True)
+        self.assertEqual(self.release(), 0)
+        self.assertEqual(read_text(os.path.join(self.tmp, "deployed.txt")),
+                         "deploy --target . --write\n")
+        files = set(self.git("show", "--name-only", "--format=", "HEAD").split())
+        self.assertIn("deployed.txt", files)
+
+    def test_without_a_deploy_manifest_the_deploy_step_is_skipped(self):
+        self.install_deploy_stub(manifest=False)
+        self.assertEqual(self.release(), 0)
+        self.assertFalse(os.path.exists(os.path.join(self.tmp, "deployed.txt")))
+
     def test_a_tree_dirty_beyond_the_changelog_is_refused_and_nothing_is_written(self):
         write_text(os.path.join(self.tmp, "stray.txt"), "x")
         head = self.git("rev-parse", "HEAD")

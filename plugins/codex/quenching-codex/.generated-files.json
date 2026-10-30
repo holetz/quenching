@@ -770,7 +770,7 @@
     "scripts/bin/quenching/specs/parse/tasks.py": "bffb1fc384a9ad81c55703275904bdbe07d860ab3e3bee37f62f3ec14327eed3",
     "scripts/bin/quenching/specs/parse/text.py": "8e0d0969a05d2764bdaae60d2afddbc6805aac585cb51ff347323a2adb658788",
     "scripts/bin/quenching/specs/portal.py": "a2a38013446b7ea27c613c3e54371bb29f04de70f21aa752c1ff54c2c318743c",
-    "scripts/bin/quenching/specs/release.py": "5c3398c48e529bde2453f305ac756c56301a3c6a5921096741868aec7386f11a",
+    "scripts/bin/quenching/specs/release.py": "41bfa98edd34622fc259cef392d7b0d0633dc39aa94698c8e11de2bde1e5beb2",
     "scripts/bin/quenching/specs/schema.py": "713fc6b6ad7572ff8d3ee47dc2a6f00e3083bf37721367d4a4fd3749d6ba1217",
     "scripts/bin/quenching/specs/store.py": "597cc53d1d219cdfb77216c92dadab2088aef5516bbda7e0bf05e1d1e795fe09",
     "scripts/bin/quenching/specs/sync.py": "1e0cc92c7fe9e501f0d01bca1fa30334b3ac3701a0360e3508304462e7392ff6",

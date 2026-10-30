@@ -120,6 +120,9 @@ _REGENERATE_STEPS = (
     ("sync_opencode_plugin", ("scripts/sync_opencode_plugin.py", "--write")),
     # The Omnigent operator pins its MCP server to the version tag, so a bump rewrites config.yaml.
     ("sync_omnigent_plugin", ("scripts/sync_omnigent_plugin.py", "--write")),
+    # Last, so it copies sources already at the new version; only where a surface was deployed.
+    ("deploy_surface", ("plugins/quenching/assets/bin/cq", "deploy", "--target", ".", "--write"),
+     ("plugins/quenching/assets/bin/cq", ".agents/.quenching-deploy.json")),
 )
 
 
@@ -134,9 +137,10 @@ def dirty_paths(repo: str) -> list[str]:
 
 
 def regenerate_copies(repo: str) -> str | None:
-    """Run each generator that exists in the repository; the failing step's name, else None."""
-    for name, argv in _REGENERATE_STEPS:
-        if not os.path.isfile(os.path.join(repo, argv[0])):
+    """Run each step whose guard paths all exist (by default its script); the failing step's
+    name, else None."""
+    for name, argv, *guard in _REGENERATE_STEPS:
+        if not all(os.path.isfile(os.path.join(repo, p)) for p in (guard[0] if guard else argv[:1])):
             continue
         proc = subprocess.run([sys.executable, *argv], cwd=repo, capture_output=True, text=True)
         if proc.returncode != 0:
