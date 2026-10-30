@@ -16,7 +16,7 @@ maintainer: Israel Holetz
 # The OKF bundle
 
 Open any repository that adopted quenching and you already know where everything is. That is
-the product's signature: one canonical **Open Knowledge Format (OKF v0.1)** bundle at
+the product's signature: one canonical **Open Knowledge Format (OKF v0.2)** bundle at
 `/docs/`, the same tree everywhere — adapted only by omission (a repo without data gets
 no `catalog/`), never by rearrangement.
 
@@ -24,7 +24,7 @@ no `catalog/`), never by rearrangement.
 
 ```text
 /docs/               # OKF bundle root
-  index.md                 # the ONLY index.md with frontmatter: okf_version: "0.1"
+  index.md                 # the ONLY index.md with frontmatter: okf_version: "0.2"
   glossary.md              # the fixed A–Z term lookup — bundle root, not inside a home
   standards/               # "how WE do it", current — architecture/ code/ naming/ quality/ …
   concepts/                # generic knowledge we hold
@@ -85,7 +85,7 @@ in every repository it ever visits. Cross-repo tooling becomes possible for the 
 ## TL;DR for agents
 
 !!! abstract "TL;DR for agents"
-    - Root: `/docs/index.md` with `okf_version: "0.1"`; term lookup at
+    - Root: `/docs/index.md` with `okf_version: "0.2"`; term lookup at
       `/docs/glossary.md`; homes: `standards/ concepts/ external/ documentation/
       catalog/ vision/`.
     - Contract: reserved frontmatter-free `index.md` listings; non-empty `type` per doc,

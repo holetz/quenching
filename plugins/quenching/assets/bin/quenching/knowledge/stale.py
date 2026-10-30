@@ -6,8 +6,9 @@ shape changed, from the `(fm, has_block, well_formed)` tuple to the bare dict
 `validate.py`, which records the retirement where the call used to be.
 
 **A FIGURE, NOT A VERDICT — and the difference is what this module exists to hold.** The
-measurement is honest: the doc's `timestamp` against the last commit touching each entry of its
-`resource:`. The verdict built on top of it was not. A `resource:` glob is deliberately wide
+measurement is honest: the doc's `generated.at` (OKF v0.2) — or the legacy `timestamp` — against
+the last commit touching each entry of its `resource:`. The verdict built on top of it was not.
+A `resource:` glob is deliberately wide
 (`assets/**`, three named scripts), so what the comparison detects is ACTIVITY IN THE RADIUS OF
 THE GLOB — never drift of the content the doc describes. Code moves under a rule that did not
 change, and the doc is then reported as possibly wrong for being correct about something stable.
@@ -34,7 +35,7 @@ from datetime import date
 from quenching.common.frontmatter import parse_frontmatter
 from quenching.knowledge.resource import (_is_bundle_aggregate, _project_root,
                                           _rel_to_project, parse_resource)
-from quenching.knowledge.schema import GIT_TIMEOUT_S, ISO_DATE, RESOLVABLE_KINDS, _nonempty
+from quenching.knowledge.schema import GIT_TIMEOUT_S, ISO_DATE, RESOLVABLE_KINDS, _nonempty, recency
 
 _GIT_CHECKOUT: dict[str, bool] = {}
 
@@ -107,11 +108,12 @@ def resource_activity(text: str, bundle_root: str) -> dict | None:
     state, never let silence read as a clean result.
     """
     fm = parse_frontmatter(text)
-    if not _nonempty(fm, "resource") or not _nonempty(fm, "timestamp"):
+    stamp = recency(fm)
+    if not _nonempty(fm, "resource") or stamp is None:
         return None
-    stamped = str(fm["timestamp"]).strip()[:10]
+    stamped = stamp[:10]
     if not ISO_DATE.match(stamped):
-        return None        # a non-ISO timestamp is `missing-timestamp`'s business, not ours
+        return None        # a non-ISO stamp is `missing-generated`'s business, not ours
     project_root = _project_root(bundle_root)
     if not _is_git_checkout(project_root):
         return None        # no history to compare against — measure nothing, report nothing
