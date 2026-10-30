@@ -4,10 +4,10 @@ title: Plugin configuration contract
 description: "`.agents/quenching.json` is the plugin's single configuration home, with `.claude/quenching.json` read as legacy; provider selection is derived from the repository remote, while placement, Azure mappings, lifecycle hooks, profiles, proposal catalogues and the `git` pillar's per-artifact writing directives remain explicit target settings"
 resource: .agents/quenching.json, plugins/quenching/assets/bin/quenching/common/config.py, plugins/quenching/assets/bin/quenching/specs/config.py, plugins/quenching/assets/bin/quenching/specs/store.py, plugins/quenching/assets/bin/quenching/ops/**, plugins/quenching/assets/bin/quenching/proof/**, plugins/quenching/assets/bin/quenching/git/base.py, plugins/quenching/assets/bin/quenching/git/conventions.py, plugins/quenching/assets/bin/quenching/config/**
 tags: [workflows, specs, configuration, provider, plugin]
-timestamp: 2026-10-28
+timestamp: 2026-10-30
 audience: both
 authority: current
-source: specs 1065, 1075, 1405, 1907, 1908, 1909, 1910, 1911, 1912, 2092, 2118 — lineage in decision 0004
+source: specs 1065, 1075, 1405, 1907, 1908, 1909, 1910, 1911, 1912, 2092, 2118, 1020213 — lineage in decision 0004
 maintainer: quenching
 ---
 
@@ -170,6 +170,23 @@ default and is named in the payload's warnings, and `cq config show --effective`
 `delivery.provider` is read by `delivery/config.py`; `specs.artifactLanguage`, `specs.card` and
 `specs.cardAt` by `specs/config.py` (the last three may also sit on the `quenching` branch).
 
+## The `shared.mcp` block
+
+`shared.mcp` is the target's opt-in for `cq deploy` to register the quenching MCP server in its
+harnesses. It is `{mount, command}`: `mount` is the mounted pillar (`specs` today, the default) and
+`command` is the non-empty list of strings that finds Python — for example
+`["uv", "run", "--no-project", "python"]`. Deploy appends the vendored entry point and the mount,
+so the generated argv is `<command...> .agents/quenching/assets/bin/cq <mount> mcp`. The command is
+declared because `uv` is common in bootstrap scripts but is not a quenching prerequisite.
+
+The key is read through `repository_document`, not through the merged envelope: the user layer
+(`_apply_user_layer`) would otherwise make a generated file vary by machine, and a generated file
+belongs to the repository. An absent key writes no MCP file; a key of the wrong shape, an unknown
+leaf or a mount outside `specs` refuses with `ct-deploy-mcp` before anything is written. The option
+requires `--runtime vendor`, because the `uvx` runtime does not carry the vendored entry point.
+`cq config seed` does not emit the key: absence is the default, and deploy only writes what the
+target declares. See [deploy-mode.md](../architecture/deploy-mode.md#mcp-registration).
+
 ## Settings read outside the file
 
 Three things configure the plugin without being keys of the configuration file, and none is a
@@ -215,6 +232,7 @@ explicit flag wins over the key.
 | `shared.contextBudgets` | `{main, worker, conductor}`, positive integers | `200000` / `100000` / `150000` | `cq session context` per role; `cq specs estimate --worker-budget` uses `worker` |
 | `shared.autonomy.maxLaunches` | integer ≥ 1 | `40` | `/quenching-specs:specs:autopilot` (see the autonomy block); the launch ceiling lives only there |
 | `shared.workHost` | `{target, dockerContext, runner, remoteRoot, syncFlags, syncExclude, pullBack, protectedPaths, minFreeGb}` | disabled | `cq config host --plan`; see [work-host.md](work-host.md) |
+| `shared.mcp` | `{mount: "specs", command: [strings]}` | absent; no MCP file is generated | `cq deploy`; read from the repository document only, never the merged envelope |
 | `specs.chat` | `{model: string, budgetUsd: number > 0, timeoutSeconds: number > 0}` | `sonnet`, `0.50`, `300` | the portal's `--chat`; `--chat-budget-usd` wins over `budgetUsd` |
 
 The internal timeouts of `git` and `gh` stay in code.

@@ -4,10 +4,10 @@ title: The specs portal reads one store and widens nothing without a decision
 description: The local spec portal (cq specs serve) reads only the specs store open_backend reads, exposes a fixed set of GET and POST routes plus, under --chat, a read-only claude -p chat polled by job, keeps its loopback, token, Host/Origin and CSP guarantees, builds every node with textContent, reuses cockpit UX patterns but never its code, shows the spec-runner's run record on the card, and regenerates the reader copy and the Codex mirror with every change
 resource: plugins/quenching/assets/bin/quenching/specs/portal.py, plugins/quenching/assets/bin/quenching/specs/chat.py, plugins/quenching/assets/portal/**, plugins/quenching/assets/bin/quenching/portal/**, plugins/quenching/assets/bin/quenching/common/lent.py, plugins/quenching/assets/bin/quenching/session/portal.py
 tags: [architecture, portal, specs, security, ux]
-timestamp: 2026-10-29
+timestamp: 2026-10-30
 audience: both
 authority: current
-source: specs 1769, 1812, 1814, 1815, 1816 and the owner decisions B-O1 to B-O4 of epics 1768 and 1810
+source: specs 1769, 1812, 1814, 1815, 1816, 1020213 and the owner decisions B-O1 to B-O4 of epics 1768 and 1810, plus D1 A of 2026-10-30
 maintainer: quenching
 ---
 
@@ -96,7 +96,8 @@ sees a 404 there and shows no project menu.
 GET: `/api/config`, `/api/specs`, `/api/specs/<id>`, `/api/search`, `/api/epics`, `/api/human`, `/api/schedule`; static assets
 under `/`. With `--sessions` only, also `GET /api/sessions`; without the flag it is a 404
 (`sp-portal-not-found`) like any unknown route, and `/api/config` reports `sessions: false`. POST: `/api/capture`, `/api/section`, `/api/approve`, `/api/reorder`,
-`/api/discovery`, each delegating to the CLI's own verb so CAS and refusals are the terminal's.
+`/api/discovery`, `/api/push`, each delegating to the CLI's own verb so CAS and refusals are the
+terminal's.
 
 - `GET /api/schedule` answers `{ok, fetchedAt, cycle, nodes, criticalPath}` as `cq specs schedule`
   derives it over the snapshot, each node carrying the portal's `stage`; the Gantt page (`#/gantt`)
@@ -115,9 +116,23 @@ under `/`. With `--sessions` only, also `GET /api/sessions`; without the flag it
   The page polls every 1.5 s; there is no streaming and no WebSocket.
 - Under `cq portal serve` only: `GET /api/projects`, and every route above under
   `/p/<project>/` (§Central server).
-- No new POST route enters without a human decision; `/api/chat` is the one epic 1810 decided. Reading more is a GET over the same store.
+- `POST /api/push` is the explicit publish gesture (decision D1 A, 30/10/2026): it delegates to
+  `cmd_push` with `drop: None`, so it sends every pending local write in one push of the store
+  branch, exactly like `cq specs push`, and never exposes `--drop`. It answers `{ok, sent, message}`
+  and is refused under `--read-only` like any store write. `GET /api/specs` carries `pending`
+  (`{count, specs, since, supported}`) from the backend's `pending_state()`, because the page
+  already polls that route; `supported` is false when the backend has no pending state (a tracker or
+  a read-only mirror) and the button is hidden. The page shows the count and the "Enviar" button,
+  disables it while the push runs, and reports failures as a visible notice (`cardFailures`
+  included) instead of failing silently.
+- A push holding writes that would overwrite a newer remote is refused whole with `409
+  sp-git-stale-write`, carrying the conflicting `ids` and the remedy text: run `cq specs push` in a
+  terminal to rebase, or `cq specs push --drop <id>` for the named specs. The portal never resolves a
+  stale write on its own and never offers `--drop`.
+- No new POST route enters without a human decision; `/api/chat` (epic 1810) and `/api/push`
+  (D1 A, 30/10/2026) are the two decided. Reading more is a GET over the same store.
 - A GET request starts no process beyond the read the store backend already makes (on the git backend, `git` reading the `quenching` branch), and never calls `gh`.
-- A POST request writes to the store through the CLI's own verb. On the git backend a write lands in the clone's local pending commit and reaches the remote only at the next sync point; a capture is one, so `/api/capture` pushes, and the other routes stay local until a code push, a PR, `cq specs push` or the next capture. Every write route goes through the backend's write path, and with a card provider configured (`card: {provider: github}`) that path reaches `gh`: it creates the card on capture (`cmd_new` → `resolve_card_client`) and, through `_card_transitions` in the git backend at the sync, updates it when the `lifecycle_key` changed between the remote tip and the pushed commit (title, board state, phase, labels or tags). Which routes trigger it follows from that mechanism, not from a list. This describes what exists; it grants nothing new.
+- A POST request writes to the store through the CLI's own verb. On the git backend a write lands in the clone's local pending commit and reaches the remote only at the next sync point; a capture is one, so `/api/capture` pushes, and the other routes stay local until a code push, a PR, `cq specs push`, `POST /api/push` or the next capture. `cmd_serve` starts with `GIT_TERMINAL_PROMPT=0`, so a push without usable credentials fails with an error instead of blocking the server on a prompt. Every write route goes through the backend's write path, and with a card provider configured (`card: {provider: github}`) that path reaches `gh`: it creates the card on capture (`cmd_new` → `resolve_card_client`) and, through `_card_transitions` in the git backend at the sync, updates it when the `lifecycle_key` changed between the remote tip and the pushed commit (title, board state, phase, labels or tags). Which routes trigger it follows from that mechanism, not from a list. This describes what exists; it grants nothing new.
 - The portal's reads see the clone's pending writes: the backend's one-second tip memo holds the pending ref beside the remote tip, so a write made by another process of the clone is read once that memo and the portal's own snapshot TTL expire.
 - `GET /api/specs` rows carry `run`: the spec's `run` record (`state`, `verifier`, `date`), rebuilt field by field, or null. The `quenching:spec-runner` writes it through `cq specs record` at the end of its step (spec 1774, decision A: the orchestrator holds no write grant); `NOTE` and `TOKENS` never reach the store or the page. The card shows it as a chip and the drawer's records timeline lists it. It is a read of the same store: no route, no process.
 - Static assets are read-only: any non-GET/HEAD method on them is a 405.

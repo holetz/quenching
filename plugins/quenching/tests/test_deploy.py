@@ -202,6 +202,105 @@ class Deploy(unittest.TestCase):
         self.assertFalse((self.target / ".agents/quenching/assets/bin/quenching").exists())
         self.assertFalse((self.target / ".agents/quenching/assets/bin/cq").exists())
 
+    def configure(self, document: dict):
+        self.write(".agents/quenching.json", json.dumps(document, indent=2) + "\n")
+
+    def mcp_config(self, command=None, mount="specs"):
+        option = {"command": command or ["uv", "run", "--no-project", "python"]}
+        if mount is not None:
+            option["mount"] = mount
+        return {"shared": {"mcp": option}}
+
+    def test_the_mcp_option_generates_one_file_per_harness(self):
+        self.configure(self.mcp_config())
+        code, payload = self.run_deploy("--modules", "specs", "--write")
+        self.assertEqual(0, code, payload)
+        claude = json.loads((self.target / ".mcp.json").read_text())
+        self.assertEqual({"command": "uv",
+                          "args": ["run", "--no-project", "python",
+                                   ".agents/quenching/assets/bin/cq", "specs", "mcp"]},
+                         claude["mcpServers"]["quenching"])
+        codex = (self.target / ".codex/config.toml").read_text()
+        self.assertIn("[mcp_servers.quenching]", codex)
+        self.assertIn('command = "uv"', codex)
+        self.assertIn('".agents/quenching/assets/bin/cq", "specs", "mcp"]', codex)
+        opencode = json.loads((self.target / "opencode.json").read_text())
+        self.assertEqual(["uv", "run", "--no-project", "python",
+                          ".agents/quenching/assets/bin/cq", "specs", "mcp"],
+                         opencode["mcp"]["quenching"]["command"])
+        self.assertTrue(opencode["mcp"]["quenching"]["enabled"])
+        for rel in (".mcp.json", ".codex/config.toml", "opencode.json"):
+            self.assertIn(rel, [c["path"] for c in payload["changes"]])
+        manifest = json.loads((self.target / ".agents/.quenching-deploy.json").read_text())
+        self.assertEqual({"mount": "specs",
+                          "command": ["uv", "run", "--no-project", "python"]}, manifest["mcp"])
+        self.assertEqual([], self.run_deploy("--check")[1]["changes"])
+
+    def test_without_the_option_no_mcp_file_is_generated(self):
+        self.configure({"shared": {"profiles": {"installed": ["specs"]}}})
+        self.assertEqual(0, self.run_deploy("--modules", "specs", "--write")[0])
+        for rel in (".mcp.json", ".codex/config.toml", "opencode.json"):
+            self.assertFalse((self.target / rel).exists(), rel)
+        manifest = json.loads((self.target / ".agents/.quenching-deploy.json").read_text())
+        self.assertNotIn("mcp", manifest)
+
+    def test_turning_the_option_off_deletes_the_generated_files(self):
+        self.configure(self.mcp_config())
+        self.assertEqual(0, self.run_deploy("--modules", "specs", "--write")[0])
+        self.configure({"shared": {"profiles": {"installed": ["specs"]}}})
+        code, payload = self.run_deploy("--modules", "specs", "--write")
+        self.assertEqual(0, code, payload)
+        for rel in (".mcp.json", ".codex/config.toml", "opencode.json"):
+            self.assertFalse((self.target / rel).exists(), rel)
+            self.assertIn({"path": rel, "change": "delete"}, payload["changes"])
+
+    def test_a_hand_written_mcp_file_is_unowned_and_refuses(self):
+        self.configure(self.mcp_config())
+        self.write(".mcp.json", '{"mcpServers": {"mine": {"command": "x"}}}\n')
+        code, payload = self.run_deploy("--modules", "specs", "--write")
+        self.assertEqual(2, code)
+        self.assertEqual("ct-deploy-unowned", payload["code"])
+        self.assertIn({"path": ".mcp.json", "why": "exists but no deploy manifest owns it"},
+                      payload["conflicts"])
+        self.assertEqual('{"mcpServers": {"mine": {"command": "x"}}}\n',
+                         (self.target / ".mcp.json").read_text())
+
+    def test_the_harness_filter_selects_which_mcp_file_is_written(self):
+        self.configure(self.mcp_config())
+        self.assertEqual(0, self.run_deploy("--modules", "specs", "--harness", "claude",
+                                            "--write")[0])
+        self.assertTrue((self.target / ".mcp.json").exists())
+        self.assertFalse((self.target / ".codex/config.toml").exists())
+        self.assertFalse((self.target / "opencode.json").exists())
+
+    def test_the_option_refuses_a_uvx_runtime_and_an_invalid_shape(self):
+        self.configure(self.mcp_config())
+        code, payload = self.run_deploy("--runtime", "uvx", "--write")
+        self.assertEqual(2, code)
+        self.assertEqual("ct-deploy-mcp", payload["code"])
+        self.assertFalse((self.target / ".mcp.json").exists())
+        for option in ({"shared": {"mcp": {"command": []}}},
+                       {"shared": {"mcp": {"command": "uv"}}},
+                       {"shared": {"mcp": {"mount": "chat", "command": ["uv"]}}},
+                       {"shared": {"mcp": {"command": ["uv"], "extra": True}}}):
+            self.configure(option)
+            code, payload = self.run_deploy("--modules", "specs", "--write")
+            self.assertEqual(2, code, option)
+            self.assertEqual("ct-deploy-mcp", payload["code"], option)
+
+    def test_the_mcp_file_outside_the_root_is_not_adopted(self):
+        parent = self.target
+        (parent / ".mcp.json").write_text('{"mcpServers": {"parent": {}}}\n', encoding="utf-8")
+        child = parent / "nested"
+        child.mkdir()
+        self.target = child
+        self.configure(self.mcp_config())
+        self.assertEqual(0, self.run_deploy("--modules", "specs", "--harness", "claude",
+                                            "--write")[0])
+        self.assertTrue((child / ".mcp.json").exists())
+        self.assertEqual('{"mcpServers": {"parent": {}}}\n',
+                         (parent / ".mcp.json").read_text())
+
 
 if __name__ == "__main__":
     unittest.main()
