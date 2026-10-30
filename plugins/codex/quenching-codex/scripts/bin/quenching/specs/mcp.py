@@ -291,6 +291,10 @@ def _w_discover(args: dict) -> list[str]:
     return ["discover", _id(args, "spec", True), text.strip()]
 
 
+def _w_push(args: dict) -> list[str]:
+    return ["push"]
+
+
 def _w_promote(args: dict) -> list[str]:
     argv = ["promote", _id(args, "spec", True)]
     to, outcome = _choice(args, "to", ("plans", "archive")), _choice(args, "outcome",
@@ -382,6 +386,10 @@ WRITES: dict[str, tuple] = {
         _schema({"spec": SPEC, "to": {"type": "string", "enum": ["plans", "archive"]},
                  "outcome": {"type": "string", "enum": ["done", "abandoned"]}}, ["spec"]),
         _w_promote, None, _gate_promote, _preflight_promote),
+    "specs_push": (
+        "Publish every pending local write of this clone in one push of the store branch, the "
+        "same as `cq specs push`. No confirmation gate: calling the tool is the publish.",
+        _schema({}, []), _w_push, None, None, None),
 }
 
 
@@ -780,4 +788,7 @@ def serve(root: str, stdin=None, stdout=None) -> int:
 
 
 def cmd_mcp(args, root: str, out) -> int:
+    # Same reason as `cmd_serve`: `specs_push` runs the git store's push in this process, and
+    # `_git` inherits the environment rather than taking one.
+    os.environ.setdefault("GIT_TERMINAL_PROMPT", "0")
     return server.run_stdio(root, SURFACE)

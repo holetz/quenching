@@ -6,6 +6,7 @@
   const state = { specs: [], stages: [], fetchedAt: 0, ttl: 5, writable: false, why: "",
                   filters: { subject: "", tag: "", type: "", assignee: "", complexity: "" },
                   epics: { supported: false, epics: [] }, human: null, busy: false,
+                  pending: { count: 0, specs: [], supported: false }, pushing: false,
                   sessionsOn: false, sessions: null, chatOn: false, chatBudget: null,
                   chat: { draft: "", worktree: "", job: null, status: "", events: [], next: 0, cost: null, error: "" },
                   projects: null, project: "", base: "" };
@@ -116,6 +117,8 @@
     const before = state.human ? state.human.count : null;
     const data = await api("specs" + (refresh ? "?refresh=1" : ""));
     state.specs = data.specs; state.stages = data.stages; state.ttl = data.ttlSeconds;
+    state.pending = data.pending || { count: 0, specs: [], supported: false };
+    paintPending();
     state.fetchedAt = Date.now();
     try {
       const ep = await api("epics");
@@ -146,6 +149,33 @@
     b.textContent = notifyOn() ? "Notifications: on" : "Notifications: off";
     b.setAttribute("aria-pressed", notifyOn() ? "true" : "false");
   }
+  /* The pending-write badge: only a writable portal over a store that has a pending state
+     shows it. Publishing is one explicit gesture, and the button says so while it runs. */
+  function paintPending() {
+    const b = $("#push"), n = (state.pending && state.pending.count) || 0;
+    if (!state.writable || !n) { b.hidden = true; return; }
+    b.hidden = false;
+    b.disabled = state.pushing;
+    b.setAttribute("aria-busy", state.pushing ? "true" : "false");
+    $("#push-label").textContent = state.pushing ? "Enviando…" : "Enviar";
+    $("#push-count").hidden = state.pushing;
+    $("#push-count").textContent = String(n);
+    b.setAttribute("aria-label", `${n} ${n === 1 ? "spec come escrita local" : "specs com escritas locais"} ainda não publicada${n === 1 ? "" : "s"}`);
+  }
+  async function pushNow() {
+    if (state.pushing || !state.pending || !state.pending.count) return;
+    state.pushing = true; paintPending();
+    try {
+      const r = await api("push", { body: {} });
+      const sent = (r.sent || []).length;
+      toast(sent ? `Enviado: ${sent} ${sent === 1 ? "spec" : "specs"} ao remoto.` : "Nada pendente.", true);
+      for (const warn of r.cardFailures || []) {
+        toast("Card não atualizado: " + (warn.id || warn.spec || JSON.stringify(warn)));
+      }
+      await load(true); await render();
+    } catch (e) { fail(e); }
+    finally { state.pushing = false; paintPending(); }
+  }
   async function toggleNotify() {
     if (notifyOn()) { localStorageSet("qnotify", "0"); paintNotify(); return; }
     const perm = Notification.permission === "granted" ? "granted" : await Notification.requestPermission();
@@ -161,6 +191,7 @@
     $("#nav-sessions").hidden = !state.sessionsOn;
     $("#nav-chat").hidden = !state.chatOn;
     $("#capture").disabled = !state.writable;
+    paintPending();
     const b = $("#banner");
     b.hidden = state.writable;
     b.textContent = state.writable ? "" : "Read-only: " + state.why + ". Write actions are disabled on the server.";
@@ -702,6 +733,7 @@
   /* ── boot ────────────────────────────────────────────────────────────────── */
   $("#refresh").addEventListener("click", () => refresh(true));
   $("#capture").addEventListener("click", captureDialog);
+  $("#push").addEventListener("click", pushNow);
   $("#search-form").addEventListener("submit", (e) => { e.preventDefault(); const q = $("#q").value.trim(); if (q) location.hash = "#/search/" + encodeURIComponent(q); });
   window.addEventListener("hashchange", () => { render().then(() => $("#main").focus()); });
   document.addEventListener("keydown", (e) => {
