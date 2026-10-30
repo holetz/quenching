@@ -1,13 +1,13 @@
 ---
 type: standard
 title: Worktree setup contract
-description: The `worktreeSetup` hook prepares a code-isolation worktree from `.agents/quenching.json`; its absence is normal, the execute offer displays and authorizes the command, and provider-owned specs never use this hook as persistent storage
+description: The `worktreeSetup` hook prepares a code-isolation worktree from `.agents/quenching.json`; its absence is normal, the declaration is displayed verbatim before it runs, and provider-owned specs never use this hook as persistent storage
 resource: plugins/quenching/assets/bin/quenching/specs/**, plugins/quenching/commands/specs/execute.md, plugins/quenching/commands/git/branch.md, plugins/quenching/assets/references/git/isolation.md
 tags: [workflows, specs, worktree, configuration, consent]
-timestamp: 2026-10-17
+timestamp: 2026-10-30
 audience: both
 authority: current
-source: prefer-worktree-isolation plan (task 4.2), revised by remover-backend-local-do-plugin (task 4.6); aligned to the loader by spec 1912 (namespaced example, real specs store)
+source: prefer-worktree-isolation plan (task 4.2), revised by remover-backend-local-do-plugin (task 4.6); aligned to the loader by spec 1912 (namespaced example, real specs store); consent rewritten when the worktree became the unasked default (2026-10-30)
 maintainer: quenching
 ---
 
@@ -17,7 +17,7 @@ maintainer: quenching
 
 A worktree is a fresh checkout: it carries what git tracks and nothing else — no `node_modules/`,
 no `.venv/`, no `.env`, no build output. In a repository with installed dependencies that makes the
-recommended isolation the one that breaks at the first `verify:`. This standard is the one hook
+default isolation the one that breaks at the first `verify:`. This standard is the one hook
 that closes that gap, and the bounds that keep a hook from becoming a configuration system.
 
 ## Where it is declared
@@ -52,8 +52,8 @@ other command still works. Neither it nor a truncated JSON file is ever raised a
 
 ## Who runs it, and where
 
-`/quenching-specs:specs:execute`'s inline isolation offer runs it — **once**, immediately after `git worktree add`,
-with **cwd inside the newly created worktree**. The cwd is the entire point: the tree that lacks
+The isolation cut runs it — **once**, immediately after `git worktree add`, with **cwd inside the newly
+created worktree**. The cwd is the entire point: the tree that lacks
 the dependencies is the tree that must install them.
 
 `cq specs` reads the value and never executes it. That split is not ceremony — whether the command
@@ -66,27 +66,27 @@ isolation. `/quenching-specs:specs:execute` reports the output and the exit code
 happened. A command whose first token does not resolve is reported as not run, for that reason,
 rather than executed and blamed on the shell.
 
-Only the inline offer runs it, and only on creation. Re-running setup over a worktree that already
+Only the isolation cut runs it, and only on creation. Re-running setup over a worktree that already
 exists is a second entry point for the same hook and is deliberately not offered.
 
 **This hook prepares only the code-isolation worktree.** Specs live on the `quenching` branch (or,
 deprecated, in the selected tracker), so no persistent specs worktree exists and this command is
 never used to host, archive, or migrate a spec document.
 
-## The consent is the isolation offer, not a prompt of its own
+## The consent is the declaration, displayed before it runs
 
 This hook executes **the target repository's code**, which no `/quenching-specs:specs:*` command did before it. The
 bound is not a new confirmation:
 
-- the command is displayed **verbatim** in `/quenching-specs:specs:execute`'s isolation-offer block — the same
-  block that already shows the spec, the base, the branch name and the worktree path;
-- choosing **Worktree** in that offer **is** the OK for the command shown;
+- the command is displayed **verbatim** in the block that reports the cut — the same block that
+  shows the spec, the base, the branch name and the worktree path;
+- running it is the default, and the declaration in the target's own tracked configuration is the
+  OK for it — under `autonomous` too, where no human reads the display;
 - there is no second prompt, and no remembered "this repository is authorised" state.
 
-The human judges the command on the same screen where they choose the form, which is the only
-screen on which judging it is possible — a prompt fired later, after the decision, asks about
-something already committed to. The invariant that carries it: **the command is never run without
-having been displayed first.**
+The human judges the command where it lives: a tracked line in the repository, reviewed in the same
+diff that carries every other change, instead of a question repeated on every build. The invariant
+that carries it: **the command is never run without having been displayed first.**
 
 ## Why this setting stays in the shared configuration
 
@@ -98,5 +98,5 @@ proposal catalogues; keeping `worktreeSetup` there gives every command one read 
 checker without making the code worktree part of the provider contract.
 
 The conclusion is deliberately narrow: one declarative command, displayed before execution, run
-once after a human chooses code isolation. It does not select a provider, name a specs root, or
+once when the worktree is cut. It does not select a provider, name a specs root, or
 create a persistent store.

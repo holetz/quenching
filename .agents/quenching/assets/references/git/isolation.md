@@ -1,7 +1,7 @@
 # Taking isolation, and recording it
 
 How a checkout gets onto its own branch or worktree before code is written, and what gets recorded
-once it has — the offer's shape, the default names, and the two records that survive it: the
+once it has — the default form, the names, and the two records that survive it: the
 `branch:` frontmatter record and the branch's own description line. Read
 [conventions.md](.agents/quenching/assets/references/git/conventions.md) first: the read-if-present
 rule and the two prohibitions bind here too.
@@ -15,30 +15,40 @@ rule and the two prohibitions bind here too.
 <!-- rules -->
 
 Isolation was a command of its own for one release, offered at any stage. It is now a **step inside**
-`/quenching-specs-execute`, taken once, before the first task is written — and offered only when the
+`/quenching-specs-execute`, taken once, before the first task is written — and taken only when the
 session is standing on the repository's base branch:
 
 | Where the session stands | What `execute` does |
 | --- | --- |
 | **on** the spec's work ref | nothing — the spec is isolated, and the loop starts |
 | on any other non-base branch | **adopts it** as `work`, stamps `branch:`, and starts the loop |
-| on the base, work ref alive and unclaimed | offers to **take** it — worktree over it, or checkout — and stamps nothing |
-| on the base, no work ref | offers worktree · branch · in place, and stamps whichever was taken |
+| on the base, work ref alive and unclaimed | cuts a **worktree** over it, unasked, and starts the loop |
+| on the base, no work ref | cuts a **worktree** from the remote base, stamps `branch:`, and starts the loop |
+
+**The build always runs in a worktree, and the worktree is the default.** Standing on the base is
+the only case this step exists for, and its answer is fixed: a worktree cut from the remote base,
+with no question in front of it. The question had one safe answer — every other form ends with the
+code in the main checkout — so asking it every build only cost the turn it took to answer it.
 
 Standing anywhere but the base means the human already answered the isolation question at checkout,
-so asking again buys nothing and costs the turns it takes. Isolation stays optional, is recommended
-before building, and is never imposed.
+so asking again buys nothing and costs the turns it takes.
+
+**A plain branch is an override, never an offer.** It stays reachable when the human asks for it in
+the run's own words — "no worktree", "use this checkout" — and for a build that already started on a
+branch someone checked out by hand. It is never offered beside the worktree, no default leads to it,
+and a failed `git worktree add` is a **stop**, never a fallback: a silent branch cut would leave the
+build in the main checkout, which is the outcome the default exists to prevent.
 
 **Isolated means "this checkout is on the work ref", never "the ref exists".** The two come apart in
 one ordinary case — the base checked out, `plan/<id>-<handle>` sitting one branch over from an earlier
 session, nobody holding it — and treating existence as the answer sends the loop to build and commit
-onto the base, which is precisely what the offer is for. The work ref itself is the `branch` record's
+onto the base, which is precisely what the isolation is for. The work ref itself is the `branch` record's
 `work` when one is stamped, else `plan/<id>-<handle>`; a live ref held by another worktree is a **stop**,
-not an offer, because two checkouts building one spec fork it.
+not a cut, because two checkouts building one spec fork it.
 
 `/quenching-specs-create` and `/quenching-specs-develop` take no branch at all — they write into
 `plans/` and stay wherever they were run. That is a narrowing from the retired command, and the
-trade is deliberate: the offer costs a confirmation, and the stage where it reliably pays is the one
+trade is deliberate: the isolation costs a worktree, and the stage where it reliably pays is the one
 about to write code.
 
 **Asking "am I isolated?" writes nothing and is answered elsewhere.** `.agents/quenching/bin/cq specs next --front`
@@ -60,10 +70,16 @@ second one cut beside it.
 **On putting the worktree beside the repo.** Inside the repo it lands in the tree the spec is about
 to change, and shows up in every `git status`, every glob, and every checker this plugin runs. A
 worktree leaves the main checkout untouched, which is what lets several specs be built at once and
-what keeps satisfying the clean tree the loop demands of itself. A recommendation that changes from
-repo to repo cannot be documented in one sentence, and guessing somebody else's build is how a
-recommended path becomes a silent trap. So choosing Branch is a decision the human read rather than
-a discovery at the first `verify:` that fails.
+what keeps satisfying the clean tree the loop demands of itself. A default that changes from repo
+to repo cannot be documented in one sentence, and guessing somebody else's build is how a default
+becomes a silent trap. So the form is fixed, and the override is what the human says rather than
+something the command discovers.
+
+**On asking nothing.** The offer was a question whose answers did not move the work: every form it
+carried ended with the code in a checkout of its own, and the one form that did not was removed for
+producing builds on the base. What the question still cost was real — a turn, a decision sheet, and
+a confirmation to read before any code moved — so the form the command recommends is now the form
+it takes, and choosing otherwise is an explicit instruction rather than an answer to a menu.
 
 **The configuration has a neutral home.** The target's `.agents/quenching.json` (or the legacy
 `.agents/quenching.json`) carries `worktreeSetup` alongside the provider placement settings, so the
@@ -87,14 +103,14 @@ delete.
 plan/<id>-<handle>
 ```
 
-The **suggested default** when the inline offer cuts a new branch or worktree. The **ID leads and
+The **default** when the isolation cuts the worktree. The **ID leads and
 is the whole identity** — `plan/974` resolves the spec on its own; the `<handle>`, kebab-case from
 the title, rides along so `git branch` reads as names rather than as numbers and is never parsed
 back. `.agents/quenching/bin/cq specs next --front` ranks on whether `plan/<id>-<handle>` is **alive**, so a branch named
 to the default is what tells that ranking this spec is already under way without a stamped `branch`
 record.
 
-**The name is a suggestion, never a contract.** When `/quenching-specs-execute` starts on a branch that is not
+**The name is a default, never a contract.** When `/quenching-specs-execute` starts on a branch that is not
 the repository's base — whatever it is named — that branch is **adopted** as `work` outright: no
 rename, no refusal, and no requirement that it match `plan/<id>-<handle>`.
 
@@ -104,16 +120,19 @@ A worktree goes beside the repo, never inside it:
 git worktree add ../<repo>-<handle> -b plan/<id>-<handle>
 ```
 
-### The worktree is the preferred form
+### The worktree is the form
 
 <!-- rules -->
 
-`/quenching-specs-execute`'s inline isolation offer leads with **Worktree and recommends it**, unconditionally — a
-plain branch and working in place stay available, in that order after it.
+`/quenching-specs-execute` takes a **worktree**, unconditionally and unasked, whenever the
+build starts from the base. No heuristic sniffs the target for `package.json` or `.venv/`: what the
+report states is the **cost** — a fresh checkout carries only what git tracks, no installed
+dependencies, no `.env`, no venv, no build output — and the `worktreeSetup` command that closes it
+where the target declares one.
 
-**Unconditionally** means no heuristic sniffing the target for `package.json` or `.venv/`. What is
-offered instead is the **cost, stated in the offer itself**: a fresh checkout carries only what git
-tracks — no installed dependencies, no `.env`, no venv, no build output.
+**A plain branch in the current checkout is taken only on an explicit human request**, in the run's
+own words. It runs `git checkout -b` in the checkout the session already has, stamps the same
+`branch:` record, and skips the setup: there is no new tree to prepare.
 
 ### A target may declare a setup command
 
@@ -132,17 +151,17 @@ The same file may declare repo-relative paths that must survive across checkouts
 {"sharedPaths": ["trabalho"]}
 ```
 
-The isolation offer displays the declared list verbatim. After `git worktree add`,
-`.agents/quenching/bin/cq git worktree link` materialises each path as a link to its sibling store before the setup
-command runs. A setup script must not re-create, replace or remove a path declared in
-`sharedPaths`; the link command owns that path for every checkout.
+The isolation displays the declared list **verbatim** before it links anything. After
+`git worktree add`, `.agents/quenching/bin/cq git worktree link` materialises each path as a link to its sibling store
+before the setup command runs. A setup script must not re-create, replace or remove a path declared
+in `sharedPaths`; the link command owns that path for every checkout.
 
 See
 [plugin-configuration.md](.agents/quenching/assets/references/specs-align/plugin-configuration.md)
 §The envelope and recognised namespaces.
 
 Read by `.agents/quenching/bin/cq specs config --json` (exit 0 whether or not anything is declared) and run **once** by
-the inline offer, immediately after `git worktree add`, with **cwd inside the new worktree** — the
+the isolation, immediately after the worktree is cut, with **cwd inside the new worktree** — the
 tree lacking the dependencies is the tree that must install them. `.agents/quenching/bin/cq specs` reads the value and
 never executes it.
 
@@ -152,9 +171,12 @@ reports only the two ways it can be *wrong*, both `warn`: `sp-config-unknown-key
 `sp-config-unparseable`. They exist for the one real failure mode of a machine-read config —
 `worktree_setup` written where `worktreeSetup` was expected, and silence afterwards.
 
-**Its consent is the isolation offer.** The command is displayed **verbatim** in `/quenching-specs-execute`'s
-isolation-offer block, and choosing Worktree is the OK for it: no second prompt, no remembered
-authorisation. A failing setup is reported and **never undoes the worktree**.
+**Its consent is the declaration, displayed verbatim before it runs.** The command sits in the
+target's own tracked configuration, and the isolation displays it **verbatim** in the block that
+reports the cut: running it is the default, under `autonomous` too, where no human reads the display
+and the declaration is the whole authorisation. No second prompt, no remembered
+"this repository is authorised" state. A failing setup is reported and **never undoes the
+worktree**.
 
 ## Recording the isolation
 
@@ -169,10 +191,11 @@ authorisation. A failing setup is reported and **never undoes the worktree**.
 not — **after the merge, git cannot say what the branch was cut from**, which is the whole reason
 the record exists and why it is captured while still true.
 
-**Every resolved work ref gets `branch:` stamped**, including a branch this plugin never cut and
-including the in-place case, where `work` equals `base`. That last one is not the silence it used
-to be: an absent record and a record reading `work == base` are different claims — nobody has
-decided yet, versus a human declined isolation — and only the second is a fact worth carrying.
+**Every resolved work ref gets `branch:` stamped**, including a branch this plugin never cut. A
+record reading `work == base` is no longer written — no form of the isolation leaves the build on
+the base — but records stamped before that, when declining isolation stamped `work` equal to
+`base`, still exist, and an absent record and `work == base` remain different claims: nobody has
+decided yet, versus a human declined isolation.
 
 **`work == base` means no isolation was taken, and every consumer must read it that way.** It is
 not a work ref that happens to be alive: the base is always alive, so anything ranking, diffing or
@@ -232,13 +255,12 @@ current with HEAD without a separate cleanup pass. The read-merge-write, run by
 .agents/quenching/bin/cq git specs <work> --add <id> --json
 ```
 
-**Never marked under `In place`.** The mark exists only when this command controls the branch it is
-building on — one adopted or cut by the isolation offer. Building in place, on a branch that was
-already checked out and possibly shared or someone else's, writes nothing here, exactly as it
-stamps no `branch:` record there.
+**Never marked on the base.** The mark exists only when this command controls the branch it is
+building on — one adopted or cut by the isolation. A legacy spec recorded with `work == base`
+carries no mark, because the base is shared and was never this command's to describe.
 
 The description is tied to the **ref**, not to a worktree's physical directory, so it reads back
-identically whether the isolation taken was **Worktree** or plain **Branch**.
+identically whether the isolation taken was **Worktree** or the explicit plain **Branch** override.
 
 `/quenching-specs-conclude`, without a `--spec` argument, reads this same line to resolve which spec(s)
 built the branch it is closing — the record git alone cannot reproduce once the branch is merged and

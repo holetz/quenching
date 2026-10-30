@@ -89,7 +89,7 @@ to the branches below.
 record, when one already exists; else `git symbolic-ref refs/remotes/origin/HEAD` (already read
 above); else `git config init.defaultBranch`, and then `main`.
 
-**Not on the base → adopt the current branch, and skip the offer.** `git branch --show-current`
+**Not on the base → adopt the current branch, and skip the cut.** `git branch --show-current`
 disagreeing with the resolved base means the human already answered the isolation question at
 checkout. Show the inference on the same line as the confirmation, before stamping —
 `base: main — inferred; this branch was not cut by this command` — and stamp:
@@ -102,38 +102,38 @@ cq specs record "<id>" branch --set base=<resolved base> --set work=<current bra
 Never derive `base` from `git merge-base` or `--fork-point`; they answer a commit, not a branch
 name.
 
-**On the base with the work ref alive and unclaimed → offer to take it, never to cut a second
-one.** Two forms, worktree first as always: `git worktree add ../<repo>-<id> <work ref>` beside
-this checkout, or `git checkout <work ref>` in it. **Nothing is stamped** — a `branch` record, where
-one exists, is write-once and already true. Declining leaves the run on the base; say plainly that
-the commits will land there.
+**On the base with the work ref alive and unclaimed → cut a worktree over it, unasked, never a
+second branch.** `git worktree add ../<repo>-<id> <work ref>` beside this checkout, then
+`cd <worktree> && cq git worktree link` to materialise the declared shared paths, and the declared
+`worktreeSetup` — displayed verbatim, as every cut does — run inside the new tree, exactly as a
+fresh cut would. **Nothing is stamped** — a `branch` record, where one exists, is write-once and
+already true.
 
-**On the base branch, with nothing to check out → hand off to `quenching-git-branch`**, which owns
-the offer (worktree leading with its cost stated, `worktreeSetup`, the `branch:` record and the
-branch's `quenching-specs:` marking):
+**On the base branch, with nothing to check out → hand off to `quenching-git-branch`**, which
+cuts the worktree from the remote base (its cost stated, `worktreeSetup`, the `branch:` record and
+the branch's `quenching-specs:` marking). It is a worktree by default and asks nothing about the
+form; a plain branch happens only when this run's input asked for one in the human's own words.
+It is a `Skill` call, never `context: fork`:
 
 ```
 Skill("quenching-specs:git:branch", "<id>")
 ```
 
-**When this run's input carried `autonomous`, pass it on** — `Skill("quenching-specs:git:branch", "<id> autonomous")`
-— so the command takes the worktree unasked, from the remote base, instead of stopping the run on
-its question. Otherwise it asks on its own decision sheet; it is a `Skill` call, never `context: fork`. When it returns,
-re-read the state it left:
+When it returns, re-read the state it left:
 
 ```bash
 cq() { python3 "${QUENCHING_OMNIGENT_ROOT:-$HOME/.omnigent/quenching}/scripts/cq" "$@"; }
 cq specs status --spec "<id>" --json
 ```
 
-`branch.work` now set → the chosen form was taken, or **In place** was chosen and stamped `work`
-equal to `base`; continue the loop from the returned worktree checkout when Worktree was chosen,
+`branch.work` now set → the worktree was cut; continue the loop from the returned worktree checkout,
 never from the base checkout — and carry that path on every command of the loop (`cd <worktree> &&
 …` in the same call, `git -C <worktree>`, `cq --root <worktree>`), because the harness may return
 the shell cwd to the base checkout after each command and a cwd-dependent command would then
 measure or write the wrong tree. **`cq git …` takes no `--root` on its write verbs** (a usage error there): run it as `cd <worktree> && cq git …`, in the same call as the `git add` it commits. No record at all → the
 git command it ran failed (a name already taken, a dirty path, a locked worktree) and nothing was
-stamped — report it verbatim and stop.
+stamped — report it verbatim and stop; never fall back to a branch or the base, which is the
+outcome the worktree default exists to prevent.
 
 Not a git repo → stop before writing: this command's task/commit contract requires Git. Never force
 isolation, never `git init` on the human's behalf, and never rewrite history.
@@ -150,8 +150,8 @@ builds in. Green → go on to step 3. Red → **stop**: report the task, the com
 write nothing and fix nothing; the regression belongs to the task that caused it, not to the
 conclude gate. Nothing checked yet → run nothing.
 
-**Done when:** the tree is clean, isolation has been taken,
-found already held, or declined, and any unresolved hook has been reported, and a resume's last checked task still
+**Done when:** the tree is clean, the worktree (or the requested branch) has been taken or found
+already held, any unresolved hook has been reported, and a resume's last checked task still
 verifies.
 
 ### 3. Settle the approval, off the state step 2 already read
@@ -484,9 +484,9 @@ each is absolute. The three whose failure is **silent and permanent**:
 ## Invariants to never violate
 
 - Require a clean tree before the first code change; **isolated means this checkout is ON the work
-  ref**, never that the ref exists somewhere — and where it is not, offer to take a live ref inline
-  or hand off to `quenching-git-branch` to cut one, recommending isolation either way and never
-  imposing it.
+  ref**, never that the ref exists somewhere — and where it is not, cut a worktree over a live ref
+  or hand off to `quenching-git-branch` to cut one. The worktree is the default and is taken
+  unasked; a plain branch only when the run's input asked for it.
 - Drive off `cq specs status` / `next` / `task` and their exit codes. Never assume a path, never
   choose the next task by reading `## Tasks`, and never hand-edit a `- [ ]` / `- [x]` character.
 - Verify per the spec's **declared** policy. Never decide mid-build when to test, and never ask the

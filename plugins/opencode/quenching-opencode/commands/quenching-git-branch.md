@@ -1,5 +1,5 @@
 ---
-description: "Take isolation for a piece of work: worktree, plain branch or in place, stamped. Use for \"isolate this work\", \"cut a branch for this\", \"take a worktree\". Not for: pruning → quenching-git-cleanup."
+description: "Take isolation for a piece of work: a worktree by default, unasked, stamped; a plain branch only when the human asks. Use for \"isolate this work\", \"cut a branch for this\", \"take a worktree\". Not for: pruning → quenching-git-cleanup."
 ---
 
 <!-- GENERATED FROM plugins/quenching/commands/git/branch.md -->
@@ -18,8 +18,9 @@ Delegate only through OpenCode's task tool, to the registered subagents named `q
 `quenching-specs:` marking) or a short name for standalone work with no spec behind it. Omitted →
 ask what the isolation is for.
 
-Cuts a worktree or branch **before the first line of code**. The mechanics — the offer's shape,
-the default names, `worktreeSetup`, and the two records a taken isolation leaves behind — are owned by
+Cuts a **worktree** before the first line of code — the form is the default and is taken unasked; a
+plain branch in the current checkout only when the human asks for it. The mechanics — the names,
+`worktreeSetup`, `sharedPaths` and the two records a taken isolation leaves behind — are owned by
 [git/isolation.md](~/.opencode/quenching/references/git/isolation.md), cited below rather
 than restated; this command is its standalone entry point for a caller with no build loop of its own.
 
@@ -47,41 +48,33 @@ tree carries whatever was already sitting there into the first commit on the new
 ### 2. Resolve the ID, when one was given
 `$ARGUMENTS` naming a spec → `cq specs status --spec "<id>" --json` and read its `records.branch`.
 Already stamped → report it (`base`, `work`) and **stop**; a second isolation for an already-isolated
-spec is a no-op, not a re-offer. No record → continue to the offer below, carrying the ID through
+spec is a no-op, not a fresh cut. No record → continue to the cut below, carrying the ID through
 to step 4. `$ARGUMENTS` naming no spec (or empty) → continue with no ID; nothing gets stamped in
-step 4, only the branch or worktree itself. The word `autonomous` beside the ID is a conductor's
-pre-answer to step 3's ask, given by a run launched with `--autonomous`: see step 3. **Done when:** the ID (or its absence) and any
+step 4, only the worktree itself. **Done when:** the ID (or its absence) and any
 existing `branch:` record are resolved.
 
-### 3. Offer isolation, worktree leading — only from the base
+### 3. Take the worktree — only from the base, and with nothing to ask
 If the current branch is already different from the resolved base, report that the checkout is
-already isolated and carry it forward; do not offer a second branch or worktree. If it is the base,
-continue with the offer below.
-State the base branch (from step 1), the branch name that would be cut — `config.branchName` from
-step 1 governs it where declared, else the target's docs, else `plan/<id>-<handle>` with an ID and a
-kebab-case name derived from `$ARGUMENTS` or asked for without one — the worktree path, and —
-`worktreeSetup` non-null — the setup command **verbatim**; `sharedPaths` non-empty — the declared
-paths **verbatim**. Then put ONE decision sheet ([specs-develop/questions.md](~/.opencode/quenching/references/specs-develop/questions.md) §1) and end the turn (a sub-agent that holds the AskUserQuestion grant, such as the `git-steward`, carries the sheet inside one `AskUserQuestion` call instead — §1 "A sub-agent without the `AskUserQuestion` grant never asks");
-an ambiguous reply is asked again, never filled in. `D1` is the isolation form:
+already isolated and carry it forward; do not cut a second branch or worktree. If it is the base,
+the form is **Worktree**, unasked. State the base branch (from step 1), the branch name that will be
+cut — `config.branchName` from step 1 governs it where declared, else the target's docs, else
+`plan/<id>-<handle>` with an ID and a kebab-case name derived from `$ARGUMENTS` or asked for without
+one — and the worktree path, with its cost in the same block: a fresh checkout carries only what
+git tracks — no installed dependencies, no `.env`, no venv, no build output. `worktreeSetup`
+non-null is displayed **verbatim** there and runs as part of the cut; `sharedPaths` non-empty is
+displayed verbatim too. There is no decision sheet on the form.
 
-- **A (recommended) Worktree** — `cq git worktree add --path ../<repo>-<name> --branch <branch> --base <base>`.
-- **B Branch** — `git checkout -b <branch>`, work continues in this checkout.
-- **C In place** — declines isolation; nothing is created.
+**A plain branch is the human's override, and only theirs.** When the request says so in its own
+words — "no worktree", "just a branch", "use this checkout" — run `git checkout -b <branch>` in this
+checkout instead, and skip the setup: there is no new tree to prepare. Never offer the two as a
+choice, never pick Branch because the target looks awkward, and never fall back to it after a
+`git worktree add` failure: a failed cut is reported verbatim and the run stops, because a silent
+branch would leave the build in the main checkout. **Done when:** the form is resolved — Worktree by
+default, Branch only on an explicit request — or the run stops on a git error.
 
-**With `autonomous` in the input**, ask nothing: the form is **Worktree**, the one this step
-recommends, and nothing else is granted. A non-null `worktreeSetup` is **not run**, because its
-consent is the verbatim display this ask carries and no human sees it; step 5 reports
-`setup: skipped (autonomous)`. Step 4 cuts the worktree from the remote base, never the local one.
-
-Worktree leads when the current checkout is the base. Its
-cost (no installed dependencies, no `.env`, no venv) is stated in the same block as the ask, which
-**is** the consent for the setup command shown beside it. **Done when:** the human has chosen one of
-the three (under `autonomous`, Worktree was taken unasked), or the run stops on a git error from
-the chosen form.
-
-### 4. Take it, run the setup, and stamp
-Run the one command for the chosen form; a failure (name taken, dirty path, locked worktree) is
-reported verbatim and nothing is stamped. **The Worktree cut starts from the remote base**, because
+### 4. Cut it, run the setup, and stamp
+Run the worktree cut; a failure (name taken, dirty path, locked worktree) is
+reported verbatim and nothing is stamped. **The cut starts from the remote base**, because
 a PR merged through `gh` moves no local ref and the local `<base>` may miss the dependency the run
 waited on:
 ```bash
@@ -110,22 +103,22 @@ cq() { python3 "${QUENCHING_OPENCODE_ROOT:-$HOME/.opencode/quenching}/scripts/cq
 cq specs record "<id>" branch --set base=<base> --set work=<branch>   # Branch form only
 cq git specs <branch> --add "<id>" --json
 ```
-**In place** stamps `work` equal to `base` instead of skipping the record — §Recording the isolation
-draws that distinction; nothing is marked on the branch description under **In place**, since this
-command controls no branch of its own in that case. **Done when:** the chosen form exists on disk
-(or **In place** was chosen), the setup ran and was reported (worktree only), and — with an ID —
-`branch:` and the `quenching-specs:` marking are stamped or explicitly skipped (**In place**).
+**Done when:** the worktree (or the requested branch) exists on disk, the setup ran and was reported
+(worktree only), and — with an ID — `branch:` and the `quenching-specs:` marking are stamped.
 
 ### 5. Report
-State which form was taken (or declined), the branch name and **which layer governed it**, the
-worktree path (if any), the setup's result (if run), and what was stamped. **Done when:** the summary
-names every fact step 4 produced.
+State the form taken, the branch name and **which layer governed it**, the worktree path, the setup's
+result (if run), and what was stamped. **Done when:** the summary names every fact step 4 produced.
 
 ## Invariants
 
 - Never isolate over a dirty tree — refuse and name the paths.
-- Recommend Worktree; never impose it, and never choose it by sniffing the target repo — only the
-  `autonomous` input word takes it unasked.
+- **Take a worktree by default, unasked.** No decision sheet on the form, no offer, and no sniffing
+  the target repo to pick something else; a plain branch only when the human asks for it in the
+  run's own words.
+- Never fall back to a branch or the base after a failed `git worktree add` — report the failure and
+  stop.
+- Never leave the work on the base — no form of the isolation commits there.
 - Stamp `branch:` only once per id — a record already present is read, never overwritten.
 - Never install `docs/standards/git/**` into the target, and never write `gitConventions` into its
   `.agents/quenching.json`; a repo's own conventions are read, never written, by this command.

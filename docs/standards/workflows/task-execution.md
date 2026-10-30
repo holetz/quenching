@@ -454,7 +454,7 @@ The rung lives per task, inside execute: the whole-spec route (the orchestrator'
 not change, and judgment — develop, triage, conclude, orchestrator, verifier, reviewer,
 spec-architect, every `/docs/standards/` write — never descends.
 
-The orchestrator keeps, without exception: spec selection, the isolation offer, every
+The orchestrator keeps, without exception: spec selection, the isolation, every
 confirmation, every `cq specs task --check` flip, every block marker, every `/docs/standards/`
 write, the commit, and the decision to pause.
 
