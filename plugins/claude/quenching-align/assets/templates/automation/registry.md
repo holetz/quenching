@@ -4,7 +4,7 @@ title: Automation registry
 description: The repo's local Claude Code automation surface — every command, derived from .claude/commands/
 resource: .claude/commands/
 tags: [automation, commands]
-timestamp: <ISO 8601 — e.g. 2026-07-20>
+generated: { by: human:<author>, at: <ISO 8601 UTC — e.g. 2026-07-06T00:00:00Z> }
 audience: both
 authority: current
 source: <who established the surface — e.g. quenching-align:components:align first run>

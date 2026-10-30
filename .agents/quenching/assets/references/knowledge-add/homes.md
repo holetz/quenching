@@ -78,7 +78,7 @@ title: <short name>
 description: <one sentence — the "Covers" cell an index renders>
 resource: <derived — never invented; standards a comma-separated GLOB SET of what the doc governs (`*`/`**` only, repo-root-relative), catalog/reference the asset URI>
 tags: [<...>]
-timestamp: <today, ISO 8601>
+generated: { by: human:<id>, at: <today, ISO 8601 UTC> }   # or process:/<producer>/<version>
 audience: both | agent | human       # canonical English enum
 authority: current | background      # unproven standard ⇒ background (anti-fabrication)
 source: <origin/author>
@@ -103,7 +103,8 @@ contract is [sources.md](.agents/quenching/assets/references/knowledge-import/so
   and `/quenching-knowledge-align` owns it).
 - **`standards/index.md`** has a DERIVED zone: rebuild only what is between
   `<!-- BEGIN GENERATED -->` / `<!-- END GENERATED -->` by scanning `standards/**/*.md`
-  (`title`/`description`/`timestamp`/`type`), grouped by subject subfolder. Never hand-edit
+  (`title`/`description`/`generated.at` or legacy `timestamp`/`type`), grouped by subject
+  subfolder. Never hand-edit
   inside the markers.
 
 ## Enriching the glossary (tail step, every capture)

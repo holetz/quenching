@@ -1,7 +1,7 @@
 # quenching (plugin)
 
 A team tool for the Claude Code surface of a
-repository: **specs, git, knowledge and components** are its core. It carries one canonical **Open Knowledge Format (OKF v0.1)** bundle
+repository: **specs, git, knowledge and components** are its core. It carries one canonical **Open Knowledge Format (OKF v0.2)** bundle
 of `/docs/` and the tools used to inspect it, force an existing base into conformance,
 insert new knowledge, capture terms into a fixed glossary, drain the project's Claude
 Code memory into it, import external sources into it, keep the repo's `AGENTS.md` a thin pointer over it, and organize
@@ -478,7 +478,7 @@ without data gets no `catalog/`):
 
 ```
 /docs/               # OKF bundle root
-  index.md               # the ONLY index.md with frontmatter: okf_version: "0.1" + home listing
+  index.md               # the ONLY index.md with frontmatter: okf_version: "0.2" + home listing
   glossary.md            # the fixed A–Z term lookup, bundle root — not inside a home
   standards/             # "how WE do it" (current) — architecture/ code/ naming/ data-modeling/
                          #   ci-cd/ workflows/ mlops/ quality/ platform/  (type: standard)
@@ -496,7 +496,7 @@ not through files checked into the target repository. An agreed-but-unproven dec
 **OKF-strict rules the plugin enforces:**
 
 - `index.md` is **reserved** — a listing, **no frontmatter** (the one exception is the
-  root `/docs/index.md`, which carries **only** `okf_version: "0.1"`).
+  root `/docs/index.md`, which carries **only** `okf_version: "0.2"`).
 - Every concept doc (non-`index.md`/`log.md`) carries **non-empty `type`** from the
   fixed vocabulary above, plus the OKF recommended fields and the method's extra keys.
 - `log.md` is **retired**: nothing creates one, appends to one, or checks one. The name

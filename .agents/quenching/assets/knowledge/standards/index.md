@@ -33,7 +33,7 @@ generate list). The **agent-facing pointer** for this home is [AGENTS.md](AGENTS
 ## Current docs
 
 <!-- BEGIN GENERATED: rebuilt from disk by `quenching-knowledge-align`/`quenching-knowledge-add` — DO NOT edit by hand.
-     Scans standards/**/*.md, reads title/description/timestamp/type, grouped by subject subfolder.
+     Scans standards/**/*.md, reads title/description/generated.at (or legacy timestamp)/type, grouped by subject subfolder.
      Row model per subfolder:
        ### code/
        | Doc | Covers |

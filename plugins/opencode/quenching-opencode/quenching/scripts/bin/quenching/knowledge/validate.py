@@ -65,7 +65,8 @@ def _validate_text(path: str, text: str, bundle_root: str) -> list[tuple[str, st
             raw += check_glossary(text)
         # `stale-doc` was emitted here until 2026-08-27. RETIRED, NOT DELETED — the same shape
         # `log.md` above carries: the code stays named and explained, and nothing emits it.
-        # It compared a doc's `timestamp` against the last commit touching its `resource:`, which
+        # It compared a doc's `generated.at` (then `timestamp`) against the last commit touching
+        # its `resource:`, which
         # measures ACTIVITY IN THE RADIUS OF THE GLOB and not drift of what the doc describes —
         # so a doc correct about a stable rule was reported as possibly wrong whenever anything
         # near it moved. Measured on this repo the day it was retired: 50 of 95 docs. The

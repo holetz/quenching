@@ -1,10 +1,10 @@
 ---
-okf_version: "0.1"
+okf_version: "0.2"
 ---
 
 # `/docs/` — OKF knowledge bundle
 
-The canonical knowledge tree of this repository, an **Open Knowledge Format (OKF v0.1)** bundle,
+The canonical knowledge tree of this repository, an **Open Knowledge Format (OKF v0.2)** bundle,
 and the source from which its bounded documentation input is staged. Each **home** has a fixed name and a single purpose;
 anyone moving between repositories that adopt this method finds the **same tree in the same
 place**. This `index.md` is the bundle's front door and the site's home page — a reserved listing,

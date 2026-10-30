@@ -13,6 +13,30 @@ owner: [`ci-cd/versioning-release.md`](docs/standards/ci-cd/versioning-release.m
 short version for a consumer: the version is published once, deliberately, as a release — never at a
 spec's own conclude — and `cq --version` is what answers which one you are running.
 
+## 6.13.0
+
+**The knowledge front reads and writes OKF v0.2.** A bundle may declare
+  `okf_version: "0.2"`; `0.1` is still read under the spec's fallbacks. The validator now
+  checks the optional v0.2 families when they are present — `generated` (`by` actor + `at`
+  ISO 8601 datetime), `verified`, `status`/`stale_after`, `sources`/`usage_window`, and the
+  `Attested Computation` type — and reports a malformed value without rejecting a bundle that
+  omits the family. The actor convention is `human:<id>`, `process:<id>` or
+  `<producer>/<version>`.
+
+**`generated.at` supersedes `timestamp`; the legacy key stays readable.** Templates, the
+  alignment molds and the capture commands now write `generated: { by, at }`. A doc that still
+  carries only `timestamp` is not a finding: it is the v0.2 fallback, and rewriting it without
+  an evidenced actor would fabricate provenance. `cq knowledge status` and `--activity` read
+  `generated.at` first and fall back to `timestamp`.
+
+**`generated: true` is the projection marker, not the family.** The generated-glossary marker
+  keeps its name; the validator only reads the v0.2 family when `generated` is a mapping.
+
+**The reference is the canonical v0.2 text.** `knowledge-align/okf-spec.md` now condenses
+  `GoogleCloudPlatform/open-knowledge-format/SPEC.md` (the old `knowledge-catalog/okf/` copy is
+  a frozen v0.1 snapshot), including the `Attested Computation` contract and the
+  `sources` footnote attribution.
+
 ## 6.12.0
 
 **Spec store writes accumulate locally, and the store branch keeps one commit.** A write to the

@@ -4,7 +4,7 @@ title: <short title of the standard>
 description: <one sentence — WHAT this standard covers; the "Covers" cell the derived index renders>
 resource: <repo scope this standard governs — path / glob / FQN of the code it describes, DERIVED from the doc's file:line anchors; never empty or self-pointing>
 tags: [<...>]
-timestamp: <ISO 8601 — e.g. 2026-07-06>
+generated: { by: human:<author>, at: <ISO 8601 UTC — e.g. 2026-07-06T00:00:00Z> }
 audience: both          # both (human+LLM) | agent (LLM-first norm) — standards are an agent-facing surface
 authority: current      # current (de-facto proven contract) | background (proposal/gap, not yet followed)
 source: <author/origin>

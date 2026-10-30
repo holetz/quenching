@@ -70,8 +70,14 @@ questions** — one written to be searched, one written to be read:
 it, and a doc with no external origin simply has no such key.
 
 The body keeps its attribution line when the source is a stable URL, and that line carries **the
-date the source was read**. `source_uri:` records *where*, and `timestamp:` already means
-something else entirely — the doc's own last change.
+date the source was read**. `source_uri:` records *where*, and `generated.at` (or a legacy
+`timestamp`) already means something else entirely — the doc's own last change.
+
+**OKF v0.2 provenance.** The spec's own provenance field is `sources:` — a list of
+`{ id, resource, title, ... }` entries, with a body footnote per claim keyed to `id`. An import
+SHOULD add one entry per source unit alongside `source_uri:`, and attribute claims with
+`[^<id>]`; the body `# Citations` list is the v0.1 form, still readable but no longer the target.
+`source_uri:` is the plugin's exact-match key for dedup, not a replacement for `sources`.
 
 Never present imported material as proven local practice: that is the `authority: background`
 rule.

@@ -4,7 +4,7 @@ title: Glossary
 description: The repo's single A–Z lookup of terms, acronyms, and domain vocabulary — one entry per term, each linking to its full concept doc when one exists.
 resource: /docs/**
 tags: [glossary, vocabulary, terminology]
-timestamp: 2026-07-25
+generated: { by: quenching/6.13.0, at: 2026-07-25T00:00:00Z }
 audience: both
 authority: current
 source: quenching skeleton
