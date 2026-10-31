@@ -1,7 +1,7 @@
 ---
 name: quenching-specs-triage
 description: "Rank the open specs front into ONE ordered list the human confirms. Use for \"triage the specs\", \"prioritize the front\", \"which of these first\". Not for: building → quenching-specs-execute."
-allowed-tools: "Bash(cq:*), Read, Grep, Glob, Bash(python3:*), Bash(py:*), AskUserQuestion"
+allowed-tools: "Bash(cq:*), Bash(cq.cmd:*), Read, Grep, Glob, Bash(python3:*), Bash(py:*), AskUserQuestion"
 ---
 
 <!-- GENERATED FROM plugins/quenching/commands/specs/triage.md -->

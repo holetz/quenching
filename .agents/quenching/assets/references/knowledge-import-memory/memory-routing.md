@@ -69,7 +69,8 @@ When promoting a memory to a concept doc:
   concerns, or the domain. A memory with no locatable asset gets a domain descriptor as
   `resource`, or `authority: background` if it is background understanding.
 - **`source`** = the memory's origin if recorded, else "project memory".
-- **`timestamp`** = today (memories store when written; if the body gives a date, keep it in the body).
+- **`generated`** = `{ by: human:<id>, at: <today, ISO 8601 UTC> }` (memories store when written;
+  if the body gives a date, keep it in the body). A legacy `timestamp` is the v0.2 fallback.
 - Keep the memory's `**Why:**`/`**How to apply:**` prose in the doc body.
 - Resolve `[[links]]` to the sibling memories' new doc paths when those are migrated in the same
   run; leave the human a note for any that stay in memory.

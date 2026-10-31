@@ -1,7 +1,7 @@
 ---
 description: "Capture or create a spec. Use for \"convert to a spec\", \"add to the backlog\", \"create a spec\". Not for: refining → /quenching-specs-develop; executing → /quenching-specs-execute."
 argument-hint: "[what to capture, a plan path, or a plan from this session]"
-allowed-tools: Bash(.agents/quenching/bin/cq:*), Read, Grep, Glob, Bash(python3:*), Bash(py:*), AskUserQuestion, Skill
+allowed-tools: Bash(.agents/quenching/bin/cq:*), Bash(.agents/quenching/bin/cq.cmd:*), Read, Grep, Glob, Bash(python3:*), Bash(py:*), AskUserQuestion, Skill
 model: sonnet
 ---
 

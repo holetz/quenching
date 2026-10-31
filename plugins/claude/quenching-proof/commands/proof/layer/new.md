@@ -3,7 +3,7 @@ description: >-
   Mint one named proof test layer: marker, reach, budget, fixtures, README. Use for "create a proof layer", "add a test layer". Not for: existing drift → /quenching-proof:proof:align.
 disable-model-invocation: true
 argument-hint: <layer-name> [optional-target-root]
-allowed-tools: Bash(cq:*), Read, Grep, Glob, Bash(python3:*), Bash(mkdir:*), Bash(mv:*), AskUserQuestion, Write, Edit
+allowed-tools: Bash(cq:*), Bash(cq.cmd:*), Read, Grep, Glob, Bash(python3:*), Bash(mkdir:*), Bash(mv:*), AskUserQuestion, Write, Edit
 ---
 
 # /quenching-proof:proof:layer:new — mint one proof layer

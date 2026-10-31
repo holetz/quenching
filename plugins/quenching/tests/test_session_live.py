@@ -14,6 +14,7 @@ from pathlib import Path
 
 import _paths  # noqa: F401  — must precede the `quenching` import; see its docstring
 from quenching.session.commands.live import cmd_live
+from quenching.session import live
 from quenching.session.live import read_live
 from quenching.session.transcript import encode_cwd
 
@@ -173,3 +174,41 @@ class LiveTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class AliveWindows(unittest.TestCase):
+    """`_alive_nt` sem tocar em kernel32: uma API falsa decide cada desfecho."""
+
+    class Api:
+        def __init__(self, handle=7, code=259, error=0):
+            self.handle, self.code, self.error = handle, code, error
+            self.closed = []
+
+        def open(self, pid):
+            return self.handle
+
+        def exit_code(self, handle):
+            return self.code
+
+        def close(self, handle):
+            self.closed.append(handle)
+
+        def last_error(self):
+            return self.error
+
+    def test_processo_vivo_quando_o_codigo_e_still_active(self):
+        api = self.Api(code=259)
+        self.assertTrue(live._alive_nt(123, api))  # noqa: SLF001
+        self.assertEqual(api.closed, [7])
+
+    def test_processo_morto_quando_o_codigo_ja_saiu(self):
+        self.assertFalse(live._alive_nt(123, self.Api(code=0)))  # noqa: SLF001
+
+    def test_acesso_negado_conta_como_vivo(self):
+        self.assertTrue(live._alive_nt(123, self.Api(handle=0, error=5)))  # noqa: SLF001
+
+    def test_outro_erro_ao_abrir_conta_como_morto(self):
+        self.assertFalse(live._alive_nt(123, self.Api(handle=0, error=87)))  # noqa: SLF001
+
+    def test_falha_ao_ler_o_codigo_conta_como_vivo(self):
+        self.assertTrue(live._alive_nt(123, self.Api(code=None)))  # noqa: SLF001

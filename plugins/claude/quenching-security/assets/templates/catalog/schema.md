@@ -3,7 +3,7 @@ type: schema            # OKF concept type — non-empty on every catalog concep
 title: <system>.<catalog>.<schema> — consolidated index
 description: consolidated one-row-per-table index of the <schema> schema
 resource: <URI/FQN — e.g. uc://<catalog>.<schema>>
-timestamp: <ISO 8601 — e.g. 2026-07-06>
+generated: { by: human:<author>, at: <ISO 8601 UTC — e.g. 2026-07-06T00:00:00Z> }
 audience: both
 authority: current
 source: <metadata origin — UC, origin dictionary, curation>

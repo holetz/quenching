@@ -1,7 +1,7 @@
 ---
 name: quenching-git-cleanup
 description: "Prune merged or gone branches and orphan worktrees from `cq git stale`. Use for \"clean up old branches\", \"prune stale branches\". Not for: isolation → quenching-git-branch."
-allowed-tools: "Bash(cq:*), Bash(python3:*), Read, AskUserQuestion"
+allowed-tools: "Bash(cq:*), Bash(cq.cmd:*), Bash(python3:*), Read, AskUserQuestion"
 ---
 
 <!-- GENERATED FROM plugins/quenching/commands/git/cleanup.md -->

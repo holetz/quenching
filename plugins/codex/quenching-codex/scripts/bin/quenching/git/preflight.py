@@ -18,6 +18,7 @@ import subprocess
 
 from quenching.common.config import find_repo_root
 from quenching.common.output import FINDINGS, OK, emit, refuse
+from quenching.common.tools import spawn_argv
 from quenching.git.base import resolve_base
 from quenching.git.push import remote_probe
 from quenching.specs.backends.git import STORE_BRANCH
@@ -29,7 +30,7 @@ BAD = {"fail", "unavailable"}
 
 def _tool(cwd: str, *argv: str) -> tuple[int, str, str]:
     try:
-        done = subprocess.run(list(argv), cwd=cwd, capture_output=True, text=True,
+        done = subprocess.run(spawn_argv(list(argv)), cwd=cwd, capture_output=True, text=True,
                               timeout=TIMEOUT_S, env={**os.environ, "LC_ALL": "C", "GIT_TERMINAL_PROMPT": "0"})
     except subprocess.TimeoutExpired:
         return 124, "", "timed out"

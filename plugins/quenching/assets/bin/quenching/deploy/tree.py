@@ -20,6 +20,7 @@ SKILLS = ".agents/skills"
 CLAUDE_SKILLS = ".claude/skills"
 CLAUDE_AGENTS = ".claude/agents"
 OPENCODE_AGENTS = ".opencode/agents"
+OPENCODE_CONFIG = "opencode.json"
 MODULE_SHORT = {
     "quenching-specs": "specs",
     "quenching-align": "align",
@@ -51,6 +52,7 @@ ASSETS_BY_MODULE = {
 MARKDOWN_DIRS = ("assets/references", "assets/templates", "assets/knowledge", "assets/zensical",
                  "assets/design", "assets/opensource", "assets/specs")
 IGNORE = {"__pycache__", "tests", "evals", "checks"}
+MCP_NAME = "quenching"
 
 
 class DeployError(ValueError):
@@ -236,8 +238,38 @@ def _bridge_tree(tree: dict, target: Path) -> None:
              (json.dumps(document, indent=2) + "\n").encode(), 0o644)
 
 
+def _mcp_argv(mcp: dict) -> list[str]:
+    """The declared Python prefix, the vendored entry point and the mounted pillar's `mcp`."""
+    return [*mcp["command"], PAYLOAD + "/assets/bin/cq", *mcp["mount"].split(), "mcp"]
+
+
+def _toml_string(value: str) -> str:
+    return json.dumps(value, ensure_ascii=False)
+
+
+def _mcp_tree(tree: dict, mcp: dict, harnesses: list[str]) -> None:
+    """One whole file per harness that reads a project MCP server. The file belongs to the
+    target and to the deploy manifest: a hand edit is drift, not a second owner."""
+    argv = _mcp_argv(mcp)
+    if "claude" in harnesses:
+        document = {"mcpServers": {MCP_NAME: {"command": argv[0], "args": argv[1:]}}}
+        _add(tree, ".mcp.json",
+             (json.dumps(document, indent=2, ensure_ascii=False) + "\n").encode())
+    if "codex" in harnesses:
+        lines = [f"[mcp_servers.{MCP_NAME}]",
+                 f"command = {_toml_string(argv[0])}",
+                 "args = [" + ", ".join(_toml_string(part) for part in argv[1:]) + "]"]
+        _add(tree, ".codex/config.toml", ("\n".join(lines) + "\n").encode())
+    if "opencode" in harnesses:
+        document = {"$schema": "https://opencode.ai/config.json",
+                    "mcp": {MCP_NAME: {"type": "local", "command": argv, "enabled": True}}}
+        _add(tree, OPENCODE_CONFIG,
+             (json.dumps(document, indent=2, ensure_ascii=False) + "\n").encode())
+
+
 def build_tree(source: Path, target: Path, modules: list[str], harnesses: list[str],
-               runtime: str = "vendor", profiles: list[str] | None = None) -> dict:
+               runtime: str = "vendor", profiles: list[str] | None = None,
+               mcp: dict | None = None) -> dict:
     manifest = load_modules(source)
     selected = _selected_modules(manifest, modules)
     if not selected:
@@ -281,6 +313,8 @@ def build_tree(source: Path, target: Path, modules: list[str], harnesses: list[s
         sh, cmd = _uvx_shim(VERSION)
         _add(tree, PAYLOAD + "/bin/cq", sh, 0o755)
         _add(tree, PAYLOAD + "/bin/cq.cmd", cmd, 0o644)
+    if mcp:
+        _mcp_tree(tree, mcp, harnesses)
 
     # Skills are generated only from the selected modules' commands.
     selected_commands: list[str] = []
@@ -328,4 +362,6 @@ def build_tree(source: Path, target: Path, modules: list[str], harnesses: list[s
         "skills": sorted(skill_names),
         "files": {rel: hashlib.sha256(data).hexdigest() for rel, (data, _mode_) in sorted(tree.items())},
     }
+    if mcp:
+        document["mcp"] = mcp
     return {"tree": tree, "seeds": seeds, "manifest": document}

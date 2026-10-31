@@ -1,7 +1,7 @@
 ---
 description: "Report where the OKF bundle stands in /docs/, read-only. Use for \"status of the docs\", \"is the bundle conformant\". Not for: repairs → /quenching-knowledge-align; additions → /quenching-knowledge-add."
 argument-hint: "[optional-home-or-path]"
-allowed-tools: Bash(.agents/quenching/bin/cq:*), Read, Grep, Glob, Bash(python3:*), Bash(py:*)
+allowed-tools: Bash(.agents/quenching/bin/cq:*), Bash(.agents/quenching/bin/cq.cmd:*), Read, Grep, Glob, Bash(python3:*), Bash(py:*)
 ---
 
 # /quenching-knowledge-status — read the bundle, change nothing
@@ -120,7 +120,7 @@ table, and give **no row a finding code**:
 | Glossary terms | entries under `## Terms` in `glossary.md`; note separately when the shipped **seed placeholder** is still the only one |
 | Unlinked glossary entries | terms with no concept doc yet — a **valid permanent state**, reported as a figure and never as a defect |
 | Standards subjects | subject subfolders under `standards/`, and how many hold at least one doc |
-| Last activity | the newest `timestamp:` across the bundle's concept docs |
+| Last activity | the newest `generated.at` (or legacy `timestamp`) across the bundle's concept docs |
 | Retired `log.md` | how many survive, and where — see below |
 
 **A surviving `log.md` is a figure, not a defect.** The artifact is retired: no command or

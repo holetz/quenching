@@ -1,7 +1,7 @@
 ---
 description: "Run the complete documentation pipeline: site setup, sourced pages, review, strict build. Use for \"produce the documentation\", \"generate the complete docs site\". Not for: one stage → its own command."
 argument-hint: "[optional-source-scope] [--desde <git-ref>]"
-allowed-tools: Bash(.agents/quenching/bin/cq:*), Read, Grep, Glob, Bash(python3:*), Bash(py:*), Skill
+allowed-tools: Bash(.agents/quenching/bin/cq:*), Bash(.agents/quenching/bin/cq.cmd:*), Read, Grep, Glob, Bash(python3:*), Bash(py:*), Skill
 ---
 
 # /quenching-knowledge-documentation-produce — conduct the documentation pipeline

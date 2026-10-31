@@ -2,7 +2,7 @@
 description: >-
   Import an external source (files, folders, URLs) into the OKF bundle as many docs. Use for "ingest a source into the base", "generate OKF docs from these files". Not for: one item → /quenching-align:knowledge:add.
 argument-hint: [source-paths-or-urls]
-allowed-tools: Bash(cq:*), Read, Grep, Glob, WebFetch, Bash(python3:*), Write, Edit, Task, AskUserQuestion
+allowed-tools: Bash(cq:*), Bash(cq.cmd:*), Read, Grep, Glob, WebFetch, Bash(python3:*), Write, Edit, Task, AskUserQuestion
 ---
 
 # /quenching-align:knowledge:import — import an external source into the OKF bundle

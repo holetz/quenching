@@ -3,7 +3,7 @@ description: >-
   Converge a repository's operations surface from its declared root and router under one plan. Use for "align the ops front", "fix operational drift". Not for: read-only → /quenching-ops:ops:status.
 disable-model-invocation: true
 argument-hint: [optional-target-root]
-allowed-tools: Bash(cq:*), Read, Grep, Glob, Bash(python3:*), AskUserQuestion, Write, Edit
+allowed-tools: Bash(cq:*), Bash(cq.cmd:*), Read, Grep, Glob, Bash(python3:*), AskUserQuestion, Write, Edit
 ---
 
 # /quenching-ops:ops:align — converge the operations surface

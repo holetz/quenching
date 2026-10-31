@@ -1,7 +1,7 @@
 ---
 name: quenching-knowledge-define
 description: "Add or refine ONE glossary.md entry. Use for \"add a term to the glossary\", \"define this term\". Not for: concept docs → quenching-knowledge-learn; bulk sweeps → quenching-knowledge-glossary-backfill."
-allowed-tools: "Bash(cq:*), Read, Grep, Glob, Bash(python3:*), Write, Edit, AskUserQuestion"
+allowed-tools: "Bash(cq:*), Bash(cq.cmd:*), Read, Grep, Glob, Bash(python3:*), Write, Edit, AskUserQuestion"
 ---
 
 <!-- GENERATED FROM plugins/quenching/commands/knowledge/define.md -->

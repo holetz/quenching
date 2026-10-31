@@ -1,7 +1,7 @@
 ---
 name: quenching-components-agent-new
 description: "Mint or edit ONE subagent definition in .omnigent/agents/. Use for \"create an agent\", \"add a subagent\", \"make a verifier agent\". Not for: commands → quenching-components-command-new; hooks → quenching-components-hook-new."
-allowed-tools: "Bash(cq:*), Bash(python3:*), Bash(py:*), Read, Grep, Glob, Write, Edit, AskUserQuestion"
+allowed-tools: "Bash(cq:*), Bash(cq.cmd:*), Bash(python3:*), Bash(py:*), Read, Grep, Glob, Write, Edit, AskUserQuestion"
 ---
 
 <!-- GENERATED FROM plugins/quenching/commands/components/agent/new.md -->

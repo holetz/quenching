@@ -1,7 +1,7 @@
 ---
 name: quenching-components-hook-new
 description: "Wire ONE scoped hook with the narrowest scope and cheapest handler. Use for \"create a hook\", \"check this after every edit\", \"block that command\". Not for: command bodies → quenching-components-command-new."
-allowed-tools: "Bash(cq:*), Bash(python3:*), Bash(py:*), Read, Grep, Glob, Write, Edit, AskUserQuestion"
+allowed-tools: "Bash(cq:*), Bash(cq.cmd:*), Bash(python3:*), Bash(py:*), Read, Grep, Glob, Write, Edit, AskUserQuestion"
 ---
 
 <!-- GENERATED FROM plugins/quenching/commands/components/hook/new.md -->

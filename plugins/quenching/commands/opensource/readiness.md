@@ -3,7 +3,7 @@ description: >-
   Assess whether a repository is ready to become public: secrets in tree and history, internal identifiers, attribution, license and consent evidence, read-only. Use for "can we open this repo", "pre-publication readiness", "scan before making it public". Not for: writing artifacts → /quenching-opensource:opensource:align; the baseline level → /quenching-opensource:opensource:status.
 disable-model-invocation: true
 argument-hint: [optional-target-root] [--evidence <path>]
-allowed-tools: Bash(cq:*), Read, Grep, Glob, Bash(python3:*)
+allowed-tools: Bash(cq:*), Bash(cq.cmd:*), Read, Grep, Glob, Bash(python3:*)
 ---
 
 # /quenching-opensource:opensource:readiness — assess a repository before it goes public

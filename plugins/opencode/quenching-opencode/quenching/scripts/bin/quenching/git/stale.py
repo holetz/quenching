@@ -13,6 +13,7 @@ import subprocess
 from quenching.common.config import detect_provider
 from quenching.common.git import _git, _git_run
 from quenching.common.output import emit
+from quenching.common.tools import spawn_argv
 from quenching.git.base import resolve_base
 from quenching.session.worktrees import worktree_branch as _worktree_branch
 from quenching.session.worktrees import worktree_gitdir as _worktree_gitdir
@@ -155,7 +156,7 @@ def _open_pr_heads(cwd: str) -> set[str] | None:
         argv = ["gh", "pr", "list", "--state", "open", "--limit", "500", "--json", "headRefName"]
         key = "headRefName"
     try:
-        done = subprocess.run(argv, cwd=cwd, capture_output=True, text=True, timeout=20)
+        done = subprocess.run(spawn_argv(argv), cwd=cwd, capture_output=True, text=True, timeout=20)
         if done.returncode != 0:
             return None
         return {row[key].removeprefix("refs/heads/") for row in json.loads(done.stdout)}

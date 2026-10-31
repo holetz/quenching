@@ -437,7 +437,7 @@ newbox () {
   printf '{}\n' > "$1/.claude/settings.json"
   printf 'CREATE TABLE accounts (\n  id BIGSERIAL PRIMARY KEY,\n  email TEXT NOT NULL\n);\n' \
     > "$1/db/migrations/0001_create_accounts.sql"
-  printf -- '---\nokf_version: "0.1"\n---\n\n# Documentation\n\n- [standards/](standards/index.md)\n' \
+  printf -- '---\nokf_version: "0.2"\n---\n\n# Documentation\n\n- [standards/](standards/index.md)\n' \
     > "$1/docs/index.md"
   printf '# Standards\n' > "$1/docs/standards/index.md"
   ( cd "$1" && git init -q . && printf '# scratch\n' > README.md && git add -A && git commit -qm init )

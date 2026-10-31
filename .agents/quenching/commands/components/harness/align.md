@@ -1,7 +1,7 @@
 ---
 description: "Refactor AGENTS.md into thin pointers over the /docs/ bundle, with no AGENTS.md. Use for \"slim down AGENTS.md\", \"move AGENTS.md content into docs\". Not for: command bodies → /quenching-components-command-new."
 argument-hint: "[optional-harness-file]"
-allowed-tools: Bash(.agents/quenching/bin/cq:*), Read, Grep, Glob, Bash(find:*), Bash(git grep:*), Bash(git check-ignore:*), Bash(grep:*), Bash(python3:*), Bash(py:*), Write, Edit, Task, AskUserQuestion
+allowed-tools: Bash(.agents/quenching/bin/cq:*), Bash(.agents/quenching/bin/cq.cmd:*), Read, Grep, Glob, Bash(find:*), Bash(git grep:*), Bash(git check-ignore:*), Bash(grep:*), Bash(python3:*), Bash(py:*), Write, Edit, Task, AskUserQuestion
 ---
 
 # /quenching-components-harness-align — make AGENTS.md a thin, honest pointer into the bundle

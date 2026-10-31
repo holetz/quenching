@@ -61,7 +61,8 @@ def _render_activity(rows: list[tuple[str, dict]], bundle_root: str) -> str:
     # None sorts last: an entry no commit ever touched has no interval to rank by.
     measurable.sort(key=lambda r: (r[0] is None, -(r[0] or 0)))
     if not measurable and not unmeasured:
-        lines.append("  nothing to measure — no doc carries both a `timestamp` and a `resource:`")
+        lines.append("  nothing to measure — no doc carries both a `generated.at` "
+                     "(or legacy `timestamp`) and a `resource:`")
         return "\n".join(lines)
     for days, rel, stamped, entry in measurable:
         interval = f"{days:>5}d" if days is not None else "    —"

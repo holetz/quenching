@@ -1,7 +1,7 @@
 ---
 description: "Mine ONE session for what it shows about the command that ran in it: cost, redundancy, bugs, manual fixes. Use for \"retro this session\", \"what did this command cost\". Reads transcripts; applies nothing."
 argument-hint: "[session id or transcript path — omit for this session; optionally a command name]"
-allowed-tools: Bash(.agents/quenching/bin/cq:*), Read, AskUserQuestion, Bash(python3:*), Bash(py:*)
+allowed-tools: Bash(.agents/quenching/bin/cq:*), Bash(.agents/quenching/bin/cq.cmd:*), Read, AskUserQuestion, Bash(python3:*), Bash(py:*)
 disable-model-invocation: true
 ---
 

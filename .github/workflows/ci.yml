@@ -59,6 +59,10 @@ jobs:
           python-version: '3.11'
       - name: Process group helper
         run: python -m unittest discover -s plugins/quenching/tests -p test_windows_process.py
+      - name: Tool spawn without cmd.exe
+        run: python -m unittest discover -s plugins/quenching/tests -p test_windows_tools.py
+      - name: Live session liveness
+        run: python -m unittest discover -s plugins/quenching/tests -p test_session_live.py
       - name: Junction fallback
         run: python -m unittest discover -s plugins/quenching/tests -p test_windows_links.py
 

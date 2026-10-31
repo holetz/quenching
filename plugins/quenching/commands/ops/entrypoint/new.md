@@ -3,7 +3,7 @@ description: >-
   Mint ONE Python ops entry point, register it in the router and regenerate the registry. Use for "mint an ops entry point", "add a command to the ops router". Not for: repairs → /quenching-ops:ops:align.
 disable-model-invocation: true
 argument-hint: <entry-point-name-or-purpose>
-allowed-tools: Bash(cq:*), Read, Grep, Glob, Bash(python3:*), AskUserQuestion, Write, Edit
+allowed-tools: Bash(cq:*), Bash(cq.cmd:*), Read, Grep, Glob, Bash(python3:*), AskUserQuestion, Write, Edit
 ---
 
 # /quenching-ops:ops:entrypoint:new — mint one operations entry point

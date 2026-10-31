@@ -201,7 +201,7 @@ auditável, não um sucesso implícito.
 ## Recorte incremental e handoff
 
 O recorte incremental é uma otimização, não uma nova fonte de verdade: `ref` deve resolver para um
-commit existente, `timestamp` deve ser UTC e cada fonte deve apontar para exatamente um destino.
+commit existente, `generated.at` (ou o legado `timestamp`) deve ser UTC e cada fonte deve apontar para exatamente um destino.
 Ref inválida, plano ausente, renome/remoção ou dependência sem mapeamento fazem fallback para revisão
 completa e entram no relatório como gap. Artefatos operacionais (planos, ledgers, scorecards e
 relatórios) ficam fora de `docs_dir` e terminam em handoff explícito para commit humano.

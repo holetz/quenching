@@ -59,6 +59,7 @@ from quenching.specs.commands.fields import cmd_record
 from quenching.specs.commands.granular import cmd_section
 from quenching.specs.commands.next import _priority_rank
 from quenching.specs.commands.output import Emitter
+from quenching.specs.commands.push import cmd_push
 from quenching.specs.commands.task import cmd_discover
 from quenching.specs.members import read_members
 from quenching.specs.parse.deps import schedule
@@ -299,7 +300,8 @@ class Portal:
             if route == "specs":
                 return _validated(headers, {
                     "ok": True, "fetchedAt": snap["at"], "ttlSeconds": TTL_SECONDS,
-                    "count": len(snap["rows"]), "specs": snap["rows"], "stages": STAGE_ORDER})
+                    "count": len(snap["rows"]), "specs": snap["rows"], "stages": STAGE_ORDER,
+                    "pending": self._pending()})
             if route.startswith("specs/"):
                 return self._detail(snap, route.split("/", 1)[1])
             if route == "search":
@@ -312,6 +314,24 @@ class Portal:
                 return _validated(headers, {"ok": True, "fetchedAt": snap["at"],
                                             **self._schedule(snap)})
         return _error(404, "sp-portal-not-found", f"no such route: /api/{route}")
+
+    def _pending(self) -> dict:
+        """The unsent local writes the header advertises, without reading the remote."""
+        backend, err = open_backend(self.root)
+        if err or backend is None:
+            return {"count": 0, "specs": [], "since": None, "supported": False}
+        pending = getattr(backend, "pending_state", None)
+        if pending is None:
+            return {"count": 0, "specs": [], "since": None, "supported": False}
+        try:
+            state = pending()
+        except BackendRefusal as e:
+            return {"count": 0, "specs": [], "since": None, "supported": True,
+                    "error": e.err.get("message") or e.err.get("code")}
+        if not state:
+            return {"count": 0, "specs": [], "since": None, "supported": True}
+        return {"count": len(state["specs"]), "specs": state["specs"],
+                "since": state["since"], "supported": True}
 
     def _snapshot(self, fresh: bool):
         now = time.time()
@@ -563,7 +583,7 @@ class Portal:
     # ── writes ───────────────────────────────────────────────────────────────────────────
     def _post(self, route: str, data: dict):
         handlers = {"capture": self._capture, "section": self._section, "approve": self._approve,
-                    "reorder": self._reorder, "discovery": self._discovery}
+                    "reorder": self._reorder, "discovery": self._discovery, "push": self._push}
         handler = handlers.get(route)
         if handler is None:
             return _error(404, "sp-portal-not-found", f"no such route: /api/{route}")
@@ -643,6 +663,11 @@ class Portal:
         if not spec:
             return _error(400, "sp-portal-bad-input", "`spec` is required")
         return self._verb(cmd_discover, {"spec": spec, "text": text})
+
+    def _push(self, data: dict):
+        """Publish every pending write in one gesture, the same verb the CLI runs. `--drop`
+        stays on the terminal: a stale write surfaces as a 409 instead of discarding work."""
+        return self._verb(cmd_push, {"drop": None})
 
     def _approve(self, data: dict):
         """A human clicked: stamp `approved: {by: human}` through the CLI's own `record` verb.
@@ -820,6 +845,9 @@ def chat_source(enabled: bool, budget: float | None,
 
 
 def cmd_serve(args, root: str, out: Emitter) -> int:
+    # The portal publishes on the human's click, and `_git` does not take an env: without this
+    # a credential prompt would wait behind the locks with the browser polling.
+    os.environ.setdefault("GIT_TERMINAL_PROMPT", "0")
     host = args.host
     if not is_loopback(host):
         return out.emit_err(args.json, {

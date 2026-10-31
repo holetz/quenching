@@ -1,7 +1,7 @@
 ---
 name: quenching-git-push
 description: "Publish a local branch to a named remote without opening a PR. Use for \"push this branch\", \"push a checkpoint\". Not for: PRs → quenching-git-pr-create; rebasing → quenching-git-sync."
-allowed-tools: "Bash(cq:*), Bash(git status:*), Bash(git branch --show-current:*), Bash(git remote:*), Bash(git rev-parse:*), Bash(git rev-list:*), Bash(git log:*), Bash(git reflog:*), Bash(git ls-remote:*), Bash(git push:*), Bash(python3:*), Read, AskUserQuestion"
+allowed-tools: "Bash(cq:*), Bash(cq.cmd:*), Bash(git status:*), Bash(git branch --show-current:*), Bash(git remote:*), Bash(git rev-parse:*), Bash(git rev-list:*), Bash(git log:*), Bash(git reflog:*), Bash(git ls-remote:*), Bash(git push:*), Bash(python3:*), Read, AskUserQuestion"
 ---
 
 <!-- GENERATED FROM plugins/quenching/commands/git/push.md -->

@@ -1,5 +1,5 @@
 ---
-description: "Force /docs/ into the canonical OKF v0.1 bundle and absorb out-of-band content until stable. Use for \"align the docs\", \"set up /docs/\", \"converge the knowledge base\". Not for: one item → quenching-knowledge-add."
+description: "Force /docs/ into the canonical OKF v0.2 bundle and absorb out-of-band content until stable. Use for \"align the docs\", \"set up /docs/\", \"converge the knowledge base\". Not for: one item → quenching-knowledge-add."
 ---
 
 <!-- GENERATED FROM plugins/quenching/commands/knowledge/align.md -->
@@ -16,14 +16,14 @@ Delegate only through OpenCode's task tool, to the registered subagents named `q
 
 **Input**: `$ARGUMENTS` (optionally a `/docs/` path or a scope; omit to align the whole bundle).
 
-The **`docs` front's one entry point**. It installs and enforces a single canonical OKF v0.1
+The **`docs` front's one entry point**. It installs and enforces a single canonical OKF v0.2
 bundle, pulls in the durable content outside it (project memory, a fat harness) and backfills the
 glossary, looping until a pass changes nothing.
 
 The payload (skeleton, molds, validator) lives at `~/.opencode/quenching/`; the contract at
 `~/.opencode/quenching/references/knowledge-align/`:
 
-- [knowledge-align/okf-spec.md](~/.opencode/quenching/references/knowledge-align/okf-spec.md) §Normative rules §Bundle & conformance — the normative OKF v0.1 rules (MUST/SHOULD/MAY).
+- [knowledge-align/okf-spec.md](~/.opencode/quenching/references/knowledge-align/okf-spec.md) §Normative rules §Bundle & conformance — the normative OKF v0.2 rules (MUST/SHOULD/MAY).
 - [knowledge-align/taxonomy.md](~/.opencode/quenching/references/knowledge-align/taxonomy.md) §The canonical tree (locked) §The `type` vocabulary §Boundary rules (memorable summary) §The homes, one by one — the canonical tree, homes, `type` vocabulary, boundaries.
 - [knowledge-align/migration.md](~/.opencode/quenching/references/knowledge-align/migration.md) §1. Map variant → canonical §3. Measure and SURFACE the blast radius BEFORE executing §4. Propose the migration; NEVER rename/delete without OK — variant→canonical map + blast-radius doctrine.
 - [knowledge-align/conformance.md](~/.opencode/quenching/references/knowledge-align/conformance.md) §Bundle level §Structural integrity (whole-tree — CLI + `Stop` only) §Resource integrity (per-doc — every mode) — the exact checks the validator applies.
@@ -151,7 +151,8 @@ the plan — enumerate:
     leave identifier-derived names (catalog tables, repo names) verbatim;
   - **(c)** misfiled docs to relocate (semantic placement, per item);
   - **(d)** frontmatter to stamp/normalize — add non-empty `type`, migrate `summary:`→
-    `description:` and `updated:`→`timestamp:`, normalize enums to canonical English;
+    `description:` and `updated:`→`generated.at` when the actor is known (otherwise keep the
+    legacy `timestamp` — never invent a `by`), normalize enums to canonical English;
   - **(e)** `index.md` files to (re)generate (reserved listings) — **one per directory that
     holds concept docs** (the `dir-no-index` set from the checker), plus any `index.md` that
     wrongly carries frontmatter, or `README.md` to convert to `index.md`;
@@ -203,7 +204,7 @@ plan was rejected and nothing was written.
   strip stray frontmatter; for `standards/index.md` rebuild only the
   `<!-- BEGIN/END GENERATED -->` zone with `cq knowledge listing --write`, then confirm it with
   `cq knowledge listing --check`.
-- **Write** `okf_version: "0.1"` into the root `/docs/index.md` frontmatter.
+- **Write** `okf_version: "0.2"` into the root `/docs/index.md` frontmatter.
 - **Never create a `log.md`, and never touch one that is already there.**
 
 **Done when:** every approved (a)–(f) item is on disk and no unapproved item was touched.

@@ -2,7 +2,7 @@
 description: >-
   Add or refine ONE glossary.md entry. Use for "add a term to the glossary", "define this term". Not for: concept docs → /quenching-align:knowledge:learn; bulk sweeps → /quenching-align:knowledge:glossary-backfill.
 argument-hint: [term]
-allowed-tools: Bash(cq:*), Read, Grep, Glob, Bash(python3:*), Write, Edit, AskUserQuestion
+allowed-tools: Bash(cq:*), Bash(cq.cmd:*), Read, Grep, Glob, Bash(python3:*), Write, Edit, AskUserQuestion
 ---
 
 # /quenching-align:knowledge:define — add/refine one glossary term

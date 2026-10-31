@@ -1,7 +1,7 @@
 ---
 description: "Align the whole repository (docs, design, .agents, ops, proof, toolchain, delivery, opensource) on one confirmation. Use for \"align the repo\", \"align everything\", \"set up quenching here\". Not for: one front → its /quenching-<module>:<front>:align."
 argument-hint: "[optional-scope]"
-allowed-tools: Bash(.agents/quenching/bin/cq:*), Read, Grep, Glob, Bash(python3:*), Bash(py:*), Skill
+allowed-tools: Bash(.agents/quenching/bin/cq:*), Bash(.agents/quenching/bin/cq.cmd:*), Read, Grep, Glob, Bash(python3:*), Bash(py:*), Skill
 ---
 
 # /align — one confirmation, the whole repository

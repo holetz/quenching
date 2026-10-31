@@ -1,7 +1,7 @@
 ---
 name: quenching-delivery-status
 description: "Report the delivery front (workflow inventory, pipeline findings), read-only. Use for \"delivery status\", \"check the delivery surface\". Not for: converging → quenching-delivery-align."
-allowed-tools: "Bash(cq:*), Read, Grep, Glob, Bash(python3:*)"
+allowed-tools: "Bash(cq:*), Bash(cq.cmd:*), Read, Grep, Glob, Bash(python3:*)"
 ---
 
 <!-- GENERATED FROM plugins/quenching/commands/delivery/status.md -->

@@ -1,7 +1,7 @@
 ---
 description: "Insert ONE new concept doc into the OKF bundle with the right home, type and stamp. Use for \"add a standard/table/announcement\". Not for: glossary terms → /quenching-knowledge-define; batches → /quenching-knowledge-import."
 argument-hint: "[the-knowledge-to-add]"
-allowed-tools: Bash(.agents/quenching/bin/cq:*), Read, Grep, Glob, Write, Edit, AskUserQuestion
+allowed-tools: Bash(.agents/quenching/bin/cq:*), Bash(.agents/quenching/bin/cq.cmd:*), Read, Grep, Glob, Write, Edit, AskUserQuestion
 ---
 
 # /quenching-knowledge-add — add new knowledge, OKF-conformant
@@ -58,7 +58,7 @@ homes with a fixed shape, follow it
 
 ### 3. Fill the mold
 Copy the matching mold from `.agents/quenching/assets/templates/` and complete the frontmatter:
-non-empty `type` + the OKF recommended fields (`title`/`description`/`resource`/`timestamp`) +
+non-empty `type` + the OKF recommended fields (`title`/`description`/`resource`/`generated`) +
 the method labels (`audience`/`authority`/`source`/`maintainer`). Derive `resource`; an
 unproven standard is `authority: background`. **Done when:** the stamp is complete and
 evidence-backed.
@@ -102,7 +102,7 @@ Verify every file you touched against
 
 - One requested knowledge item gets one canonical path and one owning home.
 - Existing frontmatter and authored content are merged; filled values are never clobbered.
-- `type`, `resource`, timestamp, authority and source remain evidence-backed and are never invented.
+- `type`, `resource`, `generated`, authority and source remain evidence-backed and are never invented.
 - Every new document is listed by its owning index, and introduced repository terms are handed to
   the glossary workflow.
 - The conformance core is the closing check; this command does not call a bulk align or import path.

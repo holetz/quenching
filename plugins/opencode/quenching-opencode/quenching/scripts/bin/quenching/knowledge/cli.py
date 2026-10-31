@@ -51,6 +51,7 @@ from quenching.knowledge.projection import (
     write_projection,
 )
 from quenching.knowledge.site_source import site_source_findings, stage_site_source
+from quenching.knowledge.schema import recency
 from quenching.knowledge.stale import resource_activity
 from quenching.knowledge.structure import regenerate_listing
 from quenching.knowledge.validate import _build_corpus, validate_tree
@@ -113,11 +114,11 @@ def _density(bundle_root: str) -> dict:
     timestamps = []
     for path in concept_docs:
         try:
-            timestamp = parse_frontmatter(path.read_text(encoding="utf-8")).get("timestamp")
+            timestamp = recency(parse_frontmatter(path.read_text(encoding="utf-8")))
         except (OSError, UnicodeDecodeError):
             timestamp = None
         if timestamp:
-            timestamps.append(str(timestamp))
+            timestamps.append(timestamp)
     logs = sorted(str(path.relative_to(root)) for path in docs if path.name == "log.md")
     return {
         "conceptDocs": {"total": len(concept_docs), "perHome": per_home},

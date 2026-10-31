@@ -3,7 +3,7 @@ description: >-
   Converge a repository's toolchain surface from manifests, locks, language pins and tool config, preserving build policy. Use for "align the toolchain front", "fix toolchain drift". Not for: read-only → /quenching-toolchain:toolchain:status.
 disable-model-invocation: true
 argument-hint: [optional-target-root]
-allowed-tools: Bash(cq:*), Read, Grep, Glob, Bash(python3:*), AskUserQuestion, Write, Edit
+allowed-tools: Bash(cq:*), Bash(cq.cmd:*), Read, Grep, Glob, Bash(python3:*), AskUserQuestion, Write, Edit
 ---
 
 # /quenching-toolchain:toolchain:align — converge the toolchain front

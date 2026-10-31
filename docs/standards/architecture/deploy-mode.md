@@ -38,6 +38,9 @@ for deployment; this verb installs the tool surface. It never invokes a model, n
 | `.claude/skills/<name>/` | Claude bridge, byte copy of every skill | generated |
 | `.claude/agents/quenching-<name>.md` | Claude subagents | generated when the `claude` harness is selected |
 | `.opencode/agents/quenching-<name>.md` | OpenCode subagents, `mode: subagent` | generated when the `opencode` harness is selected |
+| `.mcp.json` | Claude Code project MCP registration | generated when `shared.mcp` is declared and the `claude` harness is selected |
+| `.codex/config.toml` | Codex MCP registration | generated when `shared.mcp` is declared and the `codex` harness is selected |
+| `opencode.json` | OpenCode MCP registration | generated when `shared.mcp` is declared and the `opencode` harness is selected |
 | `CLAUDE.md` | legacy pointer to `AGENTS.md` | never created; removed only by `--prune-legacy` |
 | `.claude/commands/`, `.claude/references/` | legacy layout | refused; run `cq components migrate` first |
 
@@ -76,6 +79,23 @@ needs network and `uvx` at call time.
 Every deployed command body uses the target-local path `.agents/quenching/bin/cq`; the generated
 grant is `Bash(.agents/quenching/bin/cq:*)`. The plugin's bare-`cq` rule remains the rule for a
 plugin installation, not for a deployed target.
+
+## MCP registration
+
+A target that wants the quenching MCP server registered declares `shared.mcp` in
+`.agents/quenching.json` (`{mount: "specs", command: [...]}`, see
+[plugin-configuration.md](../workflows/plugin-configuration.md#the-sharedmcp-block)). Deploy then
+writes one whole file per selected harness — `.mcp.json` for `claude`, `.codex/config.toml` for
+`codex`, `opencode.json` for `opencode` — with the same argv:
+`<command...> .agents/quenching/assets/bin/cq <mount> mcp`.
+
+One whole file per harness, no merge: each file belongs to the target and to the manifest, so a
+hand edit is drift, not a second owner, and a file present at that path without a manifest entry is
+refused (`ct-deploy-unowned`). Turning the key off removes the files through the normal `delete`
+flow, and selecting fewer harnesses writes fewer files. The option requires `--runtime vendor`,
+because a `uvx` runtime omits the vendored entry point the generated command calls.
+`cq deploy` never edits `.claude/settings*.json`; approving a generated `.mcp.json` server
+(`enabledMcpjsonServers`) stays a human step in the harness.
 
 ## What deploy does not do
 

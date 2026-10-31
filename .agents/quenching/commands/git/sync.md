@@ -1,7 +1,7 @@
 ---
 description: "Rebase the work branch onto the latest base with `--update-refs`. Use for \"sync this branch with main\", \"rebase onto the base\", \"catch this branch up\". Not for: conflicts → the human."
 argument-hint: "[branch]"
-allowed-tools: Bash(.agents/quenching/bin/cq:*), Bash(git status:*), Bash(git remote get-url:*), Bash(git fetch:*), Bash(git rebase:*), Bash(git for-each-ref:*), Bash(python3:*), Read
+allowed-tools: Bash(.agents/quenching/bin/cq:*), Bash(.agents/quenching/bin/cq.cmd:*), Bash(git status:*), Bash(git remote get-url:*), Bash(git fetch:*), Bash(git rebase:*), Bash(git for-each-ref:*), Bash(python3:*), Read
 ---
 
 # /quenching-git-sync — rebase onto the latest base, refs and all

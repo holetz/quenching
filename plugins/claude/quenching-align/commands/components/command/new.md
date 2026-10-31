@@ -2,7 +2,7 @@
 description: >-
   Mint or edit ONE skill in .agents/skills, bridged to Claude. Use for "create a command", "mint a command for X". Not for: agents → /quenching-align:components:agent:new; hooks → /quenching-align:components:hook:new.
 argument-hint: [skill-name-or-description]
-allowed-tools: Bash(cq:*), Bash(python3:*), Bash(py:*), Read, Grep, Glob, Write, Edit, AskUserQuestion
+allowed-tools: Bash(cq:*), Bash(cq.cmd:*), Bash(python3:*), Bash(py:*), Read, Grep, Glob, Write, Edit, AskUserQuestion
 ---
 
 # /quenching-align:components:command:new — mint ONE conformant command, registry included

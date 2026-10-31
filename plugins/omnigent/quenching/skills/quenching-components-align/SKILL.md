@@ -1,7 +1,7 @@
 ---
 name: quenching-components-align
 description: "Converge the .agents/skills surface and its Omnigent bridge, and review descriptions. Use for \"align the skills\", \"audit the command bodies\", \"shorten the descriptions\". Not for: one command → quenching-components-command-new."
-allowed-tools: "Bash(cq:*), Bash(python3:*), Bash(py:*), Bash(git grep:*), Bash(grep:*), Bash(mkdir:*), Bash(mv:*), Bash(rm:*), Read, Grep, Glob, Write, Edit, Task, AskUserQuestion"
+allowed-tools: "Bash(cq:*), Bash(cq.cmd:*), Bash(python3:*), Bash(py:*), Bash(git grep:*), Bash(grep:*), Bash(mkdir:*), Bash(mv:*), Bash(rm:*), Read, Grep, Glob, Write, Edit, Task, AskUserQuestion"
 ---
 
 <!-- GENERATED FROM plugins/quenching/commands/components/align.md -->

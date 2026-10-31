@@ -1,7 +1,7 @@
 ---
 name: quenching-toolchain-align
 description: "Converge a repository's toolchain surface from manifests, locks, language pins and tool config, preserving build policy. Use for \"align the toolchain front\", \"fix toolchain drift\". Not for: read-only → quenching-toolchain-status."
-allowed-tools: "Bash(cq:*), Read, Grep, Glob, Bash(python3:*), AskUserQuestion, Write, Edit"
+allowed-tools: "Bash(cq:*), Bash(cq.cmd:*), Read, Grep, Glob, Bash(python3:*), AskUserQuestion, Write, Edit"
 ---
 
 <!-- GENERATED FROM plugins/quenching/commands/toolchain/align.md -->

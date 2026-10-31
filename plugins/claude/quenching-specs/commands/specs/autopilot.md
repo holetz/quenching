@@ -3,7 +3,7 @@ description: >-
   Run ONE improvement round (triage, map, epic, orchestrate, review, gate); `--until-dry` or `--until` repeat rounds until a dry queue or a deadline. Use for "run the autopilot until 7am". Not for: ONE epic → /quenching-specs:specs:orchestrate; owner-decided map → /quenching-specs:specs:improve.
 disable-model-invocation: true
 argument-hint: "[--until <ISO-8601 date-time with offset>] [--until-dry] [--max-launches <n>] [--max-tree-tokens <n>] [focus areas]"
-allowed-tools: Bash(cq:*), Bash(git:*), Bash, Read, Grep, Glob, Agent, Task, TaskStop
+allowed-tools: Bash(cq:*), Bash(cq.cmd:*), Bash(git:*), Bash, Read, Grep, Glob, Agent, Task, TaskStop
 ---
 
 # /quenching-specs:specs:autopilot — one round of improvement; more only on request

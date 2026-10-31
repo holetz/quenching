@@ -4,10 +4,10 @@ title: Deploy mode — a vendored surface in the target generic layer
 description: "Why quenching gained a deterministic deploy command instead of a second harness plugin: the target keeps AGENTS.md and .agents as its editable source, the payload is vendored or pinned by uvx, and Claude receives only a generated bridge because it does not discover .agents/skills."
 resource: plugins/quenching/assets/bin/quenching/deploy/**, docs/standards/architecture/deploy-mode.md
 tags: [decision, deploy, agents, skills, installation]
-timestamp: 2026-10-28
+timestamp: 2026-10-30
 audience: both
 authority: current
-source: deploy-mode implementation (2026-10-28)
+source: deploy-mode implementation (2026-10-28); MCP registration added by spec 1020213 (2026-10-30)
 maintainer: quenching
 ---
 
@@ -50,6 +50,12 @@ source.
 removed only on request. `.claude/skills/` and `.claude/agents/` are generated and versioned, so a
 clone works without a per-user setup step.
 
+A target may also declare `shared.mcp`, and deploy then registers the quenching MCP server for each
+selected harness as one whole generated file (`.mcp.json`, `.codex/config.toml`, `opencode.json`).
+The command comes from the declaration, the entry point is always the vendored `assets/bin/cq`, and
+the option requires the `vendor` runtime. These files are manifest-owned like any other generated
+file: no merge, no hand edit outside the drift flow.
+
 ## Consequences
 
 - A target gains a generated, read-only `.agents/quenching/` that must be upgraded with
@@ -63,6 +69,9 @@ clone works without a per-user setup step.
   layout.
 - The vendored payload adds roughly 3–4 MB to a target; `--runtime uvx` trades that size for a
   network/uvx dependency.
+- MCP registration is opt-in and all-or-nothing per harness. A target that hand-maintains its
+  `.mcp.json` cannot adopt the generated one without giving up that file to the manifest; the
+  remedy is to declare `shared.mcp` and let deploy own it, or to leave the key absent.
 
 ## Alternatives rejected
 

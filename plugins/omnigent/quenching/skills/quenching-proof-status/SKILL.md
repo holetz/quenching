@@ -1,7 +1,7 @@
 ---
 name: quenching-proof-status
 description: "Report the proof front: layers, fixtures, floors, CI evidence and findings, read-only. Use for \"proof status\", \"check the verification surface\". Not for: converging → quenching-proof-align."
-allowed-tools: "Bash(cq:*), Read, Grep, Glob, Bash(python3:*)"
+allowed-tools: "Bash(cq:*), Bash(cq.cmd:*), Read, Grep, Glob, Bash(python3:*)"
 ---
 
 <!-- GENERATED FROM plugins/quenching/commands/proof/status.md -->

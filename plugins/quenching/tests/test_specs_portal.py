@@ -668,6 +668,118 @@ class Sessions(PortalCase):
         self.assertNotRegex(source, r"(?m)^\s*(?:from|import) quenching\.session")
 
 
+class Publish(unittest.TestCase):
+    """`POST /api/push` over a real git store: the click publishes, and read-only refuses."""
+
+    def setUp(self):
+        import os
+        import shutil
+        import subprocess
+        self.tmp = tempfile.mkdtemp(prefix="quenching-publish-")
+        self.addCleanup(shutil.rmtree, self.tmp, True)
+        self.origin = os.path.join(self.tmp, "origin.git")
+        self.repo = os.path.join(self.tmp, "repo")
+        subprocess.run(["git", "init", "-q", "--bare", self.origin], check=True)
+        os.makedirs(self.repo)
+        subprocess.run(["git", "init", "-q", "-b", "main", self.repo], check=True)
+        for key, value in (("user.email", "test@example.com"), ("user.name", "Test")):
+            subprocess.run(["git", "-C", self.repo, "config", key, value], check=True)
+        subprocess.run(["git", "-C", self.repo, "remote", "add", "origin", self.origin],
+                       check=True)
+        pathlib.Path(self.repo, ".claude").mkdir()
+        pathlib.Path(self.repo, ".claude", "quenching.json").write_text(
+            '{"backend": "git"}', encoding="utf-8")
+        self.cq = str(pathlib.Path(__file__).resolve().parent.parent
+                      / "assets" / "bin" / "cq")
+        self.spec = str(self.cli("new", "fixture", "--json")["id"])
+        self.cli("section", self.spec, "Problem", "--write", "--json",
+                 stdin="## Problem\n\nSomething is wrong.\n")
+
+    def cli(self, *argv, cwd=None, stdin=""):
+        import subprocess
+        proc = subprocess.run([__import__("sys").executable, self.cq, "specs",
+                               "--root", cwd or self.repo, *argv],
+                              cwd=cwd or self.repo, capture_output=True, text=True,
+                              input=stdin, timeout=120)
+        self.assertEqual(0, proc.returncode, proc.stdout + proc.stderr)
+        return json.loads(proc.stdout)
+
+    def portal(self, read_only=False):
+        return portal_mod.Portal(self.repo, TOKEN, read_only, "127.0.0.1", PORT)
+
+    def call(self, portal, method, route, data=None):
+        import os
+        with mock.patch.dict(os.environ, {"QUENCHING_SPECS_NO_FETCH": "1"}):
+            if method == "GET":
+                status, _, body = portal.handle("GET", f"/api/{route}", AUTH)
+            else:
+                status, _, body = portal.handle("POST", f"/api/{route}", JSON,
+                                                json.dumps(data or {}).encode())
+        return status, json.loads(body)
+
+    def test_the_list_advertises_the_pending_write_and_the_click_publishes_it(self):
+        import subprocess
+        portal = self.portal()
+        status, body = self.call(portal, "GET", "specs")
+        self.assertEqual(200, status)
+        self.assertEqual([int(self.spec)], body["pending"]["specs"])
+        self.assertEqual(1, body["pending"]["count"])
+        status, body = self.call(portal, "POST", "push")
+        self.assertEqual(200, status, body)
+        self.assertEqual([int(self.spec)], body["sent"])
+        remote = subprocess.run(["git", "--git-dir", self.origin, "ls-tree", "-r",
+                                 "--name-only", "quenching"], capture_output=True, text=True)
+        self.assertIn(f"specs/{self.spec}.md", remote.stdout)
+        status, body = self.call(portal, "GET", "specs?refresh=1")
+        self.assertEqual(0, body["pending"]["count"])
+
+    def test_a_stale_write_blocks_the_push_with_ids_and_the_remedy(self):
+        import os
+        import subprocess
+        portal = self.portal()
+        self.call(portal, "POST", "push")
+        other = os.path.join(self.tmp, "other")
+        subprocess.run(["git", "clone", "-q", "-b", "quenching", self.origin, other], check=True,
+                       capture_output=True, text=True)
+        for key, value in (("user.email", "other@example.com"), ("user.name", "Other")):
+            subprocess.run(["git", "-C", other, "config", key, value], check=True)
+        pathlib.Path(other, ".claude").mkdir(exist_ok=True)
+        pathlib.Path(other, ".claude", "quenching.json").write_text('{"backend": "git"}',
+                                                                    encoding="utf-8")
+        spec_file = pathlib.Path(other, "specs", f"{self.spec}.md")
+        spec_file.write_text(spec_file.read_text(encoding="utf-8").replace(
+            "Something is wrong.", "Something else went wrong."), encoding="utf-8")
+        subprocess.run(["git", "-C", other, "add", "specs"], check=True)
+        subprocess.run(["git", "-C", other, "commit", "-q", "-m", "remote edit"], check=True)
+        subprocess.run(["git", "-C", other, "push", "-q", "origin", "HEAD:quenching"],
+                       check=True)
+        self.cli("section", self.spec, "Problem", "--write", "--json",
+                 stdin="## Problem\n\nThe local edit.\n")
+        status, body = self.call(portal, "POST", "push")
+        self.assertEqual(409, status, body)
+        self.assertEqual("sp-git-stale-write", body["code"])
+        self.assertEqual([int(self.spec)], body["ids"])
+        self.assertIn("--drop", body["remedy"])
+
+    def test_a_read_only_portal_refuses_the_push_and_leaves_the_local_write(self):
+        portal = self.portal(read_only=True)
+        status, body = self.call(portal, "POST", "push")
+        self.assertEqual((403, "sp-read-only"), (status, body["code"]))
+        self.assertNotEqual(None, self.call(self.portal(), "GET", "specs")[1]["pending"]["count"])
+
+    def test_the_client_code_carries_the_button_and_never_innerhtml(self):
+        assets = portal_mod.static_dir()
+        self.assertIsNotNone(assets)
+        source = (assets / "app.js").read_text(encoding="utf-8")
+        self.assertIn('api("push"', source)
+        self.assertIn("pushNow", source)
+        self.assertIn("state.pending", source)
+        self.assertNotIn("innerHTML", source)
+        html = (assets / "index.html").read_text(encoding="utf-8")
+        self.assertIn('id="push"', html)
+        self.assertIn('id="push-count"', html)
+
+
 class ReadOnly(PortalCase):
     read_only = True
 

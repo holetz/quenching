@@ -25,7 +25,31 @@ steps **cite this file** rather than restating the rules. Severities: **ERROR** 
 - **ERROR `broken-frontmatter`** — opens `---` but never closes.
 - **ERROR `missing-type`** — frontmatter has no non-empty `type`.
 - **WARN `missing-<field>`** — a recommended field is absent: `title`, `description`,
-  `resource`, `timestamp`.
+  `resource`, `generated`. A legacy `timestamp` satisfies the recency recommendation (OKF v0.2
+  fallback) and is never reported as missing.
+
+### OKF v0.2 optional families (`check_concept`)
+
+These fire only when the family is **present**; absence is not a finding. All are **WARN** —
+they narrow the spec's SHOULDs, they are not conformance errors.
+
+- **`generated`** — must be a mapping with a non-empty `by` (actor) and, when present, an `at`
+  that is an ISO 8601 datetime with an explicit UTC offset.
+  - `generated-malformed` — not a mapping, no `by`, or a `verified` entry without `by`/`at`.
+  - `generated-by-invalid` / `generated-at-invalid` — actor or datetime outside the convention.
+  - `generated: true` is the plugin's projection marker, not the family: it is ignored here.
+- **`verified`** — one `{ by, at }` mapping or a list of them; a bare mapping is a one-element
+  list.
+  - `verified-malformed`, `verified-by-invalid`, `verified-at-invalid`.
+- **`status`** — `draft` | `stable` | `deprecated` (`status-invalid`).
+- **`stale_after`** — ISO 8601 datetime (`stale-after-invalid`).
+- **`sources`** — a list of mappings, each with a non-empty `resource`; duplicate `id` warn;
+  `last_modified` must be an ISO 8601 datetime. `usage_window` must be a `{ from, to }` pair.
+  - `sources-malformed`, `source-missing-resource`, `source-id-duplicate`,
+    `source-last-modified-invalid`, `usage-window-invalid`.
+- **`Attested Computation`** — `runtime` is required for the type; `executor`/`attester`, when
+  present, are mappings with a non-empty `resource` (`attested-computation-no-runtime`,
+  `attested-computation-malformed`).
 
 ## `index.md` (`check_index`)
 
@@ -36,7 +60,8 @@ steps **cite this file** rather than restating the rules. Severities: **ERROR** 
   - **ERROR `index-has-frontmatter`** — carries **any** frontmatter (must be a bare listing).
 - **Root** `index.md` (at the bundle root):
   - **WARN `root-no-okf-version`** — does not declare `okf_version`.
-  - **WARN `root-okf-version-mismatch`** — declares a version other than `0.1`.
+  - **WARN `root-okf-version-mismatch`** — declares a version this plugin neither writes nor
+    reads (it writes `0.2` and still reads `0.1`).
   - **WARN `root-extra-keys`** — carries keys other than `okf_version`.
 
 ## `log.md` (retired — no checks)
@@ -149,9 +174,10 @@ A doc that is provably **lying about itself**. These join the structural set the
 <!-- rules -->
 
 - **`.agents/quenching/bin/cq knowledge validate <bundle> --activity`** prints, per doc and **per `resource:` entry**,
-  the stamped `timestamp`, the last commit touching that entry (`git log -1 --format=%cI` with
-  explicit **`:(glob)`** pathspec magic, so a single `*` does not cross a `/` here either) and the
-  interval between them, widest first. `--json` gives the same rows as data.
+  the stamped `generated.at` (or the legacy `timestamp`), the last commit touching that entry
+  (`git log -1 --format=%cI` with explicit **`:(glob)`** pathspec magic, so a single `*` does not
+  cross a `/` here either) and the interval between them, widest first. `--json` gives the same
+  rows as data.
 - **No finding code appears on any line, and none is emitted anywhere.** There is no interval that
   is a failure, and the command exits 0 whatever it prints.
 - A doc whose `resource:` resolves to nothing measurable — every entry a `uri`, an `unknown` or a

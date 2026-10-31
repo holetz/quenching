@@ -1,7 +1,7 @@
 ---
 name: quenching-knowledge-learn
 description: "Capture ONE piece of generic knowledge into the bundle's concepts/ home. Use for \"add this knowledge\", \"record what we learned\". Not for: repo contracts → quenching-knowledge-add; terms → quenching-knowledge-define."
-allowed-tools: "Bash(cq:*), Read, Grep, Glob, Write, Edit, AskUserQuestion"
+allowed-tools: "Bash(cq:*), Bash(cq.cmd:*), Read, Grep, Glob, Write, Edit, AskUserQuestion"
 ---
 
 <!-- GENERATED FROM plugins/quenching/commands/knowledge/learn.md -->
@@ -42,9 +42,11 @@ canonical concept path and any new subject index are fixed.
 
 ### 3. Fill the mold
 Copy `~/.omnigent/quenching/templates/concept-front.md` and complete the frontmatter:
-`type: concept` + the OKF recommended fields (`title`/`description`/`resource`/`timestamp`)
+`type: concept` + the OKF recommended fields (`title`/`description`/`resource`/`generated`)
 + the method labels (`audience` — usually `both`; `authority` — usually `background`;
-`source` — who supplied it; `maintainer`). Derive `resource`; use today's date for `timestamp`.
+`source` — who supplied it; `maintainer`). Derive `resource`; set `generated` to
+`{ by: human:<id>, at: <ISO 8601 UTC> }` (or a `process:`/`<producer>/<version>` actor when
+that is what produced it).
 **Done when:** the complete stamp is evidence-backed.
 
 ### 4. Write the concept doc

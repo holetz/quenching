@@ -1,7 +1,7 @@
 ---
 description: "Rank the open specs front into ONE ordered list the human confirms. Use for \"triage the specs\", \"prioritize the front\", \"which of these first\". Not for: building → /quenching-specs-execute."
 argument-hint: "[optional-id]"
-allowed-tools: Bash(.agents/quenching/bin/cq:*), Read, Grep, Glob, Bash(python3:*), Bash(py:*), AskUserQuestion
+allowed-tools: Bash(.agents/quenching/bin/cq:*), Bash(.agents/quenching/bin/cq.cmd:*), Read, Grep, Glob, Bash(python3:*), Bash(py:*), AskUserQuestion
 model: opus
 ---
 

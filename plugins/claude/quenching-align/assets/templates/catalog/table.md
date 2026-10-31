@@ -3,7 +3,7 @@ type: table             # OKF concept type — non-empty on every catalog concep
 title: <system>.<catalog>.<schema>.<table>
 description: detailed page of the <table> table — grain, key, columns, build
 resource: <URI/FQN — e.g. uc://<catalog>.<schema>.<table>>
-timestamp: <ISO 8601 — e.g. 2026-07-06>
+generated: { by: human:<author>, at: <ISO 8601 UTC — e.g. 2026-07-06T00:00:00Z> }
 audience: both
 authority: current
 source: <metadata origin — UC, origin dictionary, curation>

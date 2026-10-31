@@ -1,7 +1,7 @@
 ---
 description: "Report the automation surface: command count, fronts and findings, read-only. Use for \"components status\", \"check the automation surface\". Not for: repairs → /quenching-components-align."
 argument-hint: "[optional-target-root]"
-allowed-tools: Bash(.agents/quenching/bin/cq:*), Read, Grep, Glob, Bash(python3:*)
+allowed-tools: Bash(.agents/quenching/bin/cq:*), Bash(.agents/quenching/bin/cq.cmd:*), Read, Grep, Glob, Bash(python3:*)
 ---
 
 # /quenching-components-status — read the automation surface

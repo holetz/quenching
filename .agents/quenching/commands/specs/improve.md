@@ -2,7 +2,7 @@
 description: "Map a repository's relevant improvement opportunities, settle the owner's decisions, turn the plan into an epic. Use for \"map what to improve\", \"improvement plan\". Not for: ONE spec → /quenching-specs-create; rounds → /quenching-specs-autopilot."
 disable-model-invocation: true
 argument-hint: "[focus areas | --depth quick|full | --with-session-logs]"
-allowed-tools: Bash(.agents/quenching/bin/cq:*), Bash(git:*), Bash(wc:*), Bash(mkdir:*), Read, Grep, Glob, Write, Agent, Task, AskUserQuestion
+allowed-tools: Bash(.agents/quenching/bin/cq:*), Bash(.agents/quenching/bin/cq.cmd:*), Bash(git:*), Bash(wc:*), Bash(mkdir:*), Read, Grep, Glob, Write, Agent, Task, AskUserQuestion
 ---
 
 # /quenching-specs-improve — from a critical map to an approved epic

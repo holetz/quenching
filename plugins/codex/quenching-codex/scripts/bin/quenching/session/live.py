@@ -29,6 +29,8 @@ ASKING = ("AskUserQuestion", "ExitPlanMode")
 
 
 def _alive(pid) -> bool:
+    if os.name == "nt":
+        return _alive_nt(int(pid))
     try:
         os.kill(int(pid), 0)
     except PermissionError:
@@ -36,6 +38,64 @@ def _alive(pid) -> bool:
     except (OSError, ValueError, TypeError):
         return False
     return True
+
+
+class _Win32:
+    """As três chamadas de kernel32 que `_alive_nt` precisa, isoladas para o teste."""
+
+    STILL_ACTIVE = 259
+    ACCESS_DENIED = 5
+    QUERY_LIMITED_INFORMATION = 0x1000
+
+    def __init__(self) -> None:
+        import ctypes
+        from ctypes import wintypes
+
+        self._ctypes = ctypes
+        self._wintypes = wintypes
+        self._kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
+        self._kernel32.OpenProcess.argtypes = [wintypes.DWORD, wintypes.BOOL, wintypes.DWORD]
+        self._kernel32.OpenProcess.restype = wintypes.HANDLE
+        self._kernel32.GetExitCodeProcess.argtypes = [wintypes.HANDLE,
+                                                     ctypes.POINTER(wintypes.DWORD)]
+        self._kernel32.GetExitCodeProcess.restype = wintypes.BOOL
+        self._kernel32.CloseHandle.argtypes = [wintypes.HANDLE]
+
+    def open(self, pid: int):
+        return self._kernel32.OpenProcess(self.QUERY_LIMITED_INFORMATION, False, pid)
+
+    def exit_code(self, handle) -> int | None:
+        code = self._wintypes.DWORD()
+        if not self._kernel32.GetExitCodeProcess(handle, self._ctypes.byref(code)):
+            return None
+        return code.value
+
+    def close(self, handle) -> None:
+        self._kernel32.CloseHandle(handle)
+
+    def last_error(self) -> int:
+        return self._ctypes.get_last_error()
+
+
+def _alive_nt(pid: int, api: _Win32 | None = None) -> bool:
+    """Consulta o processo pela Win32, sem `tasklist` e sem criar processo filho.
+
+    Args:
+        pid: O processo a consultar.
+        api: A camada Win32; o teste injeta uma falsa para rodar fora do Windows.
+
+    Returns:
+        ``True`` enquanto o processo existe; acesso negado conta como vivo, o lado conservador.
+    """
+    api = api or _Win32()
+    handle = api.open(pid)
+    if not handle:
+        return api.last_error() == _Win32.ACCESS_DENIED
+    try:
+        code = api.exit_code(handle)
+        return True if code is None else code == _Win32.STILL_ACTIVE
+    finally:
+        api.close(handle)
 
 
 def _parse_ts(value):

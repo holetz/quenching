@@ -31,7 +31,7 @@ BARE_COMMAND = re.compile(r"(?<![/\w-])(quenching-[a-z]+):([A-Za-z0-9:-]+)")
 AGENT_ID = re.compile(r"\bquenching-specs:(" + "|".join(map(re.escape, AGENTS)) + r")\b")
 # Both the source grant and its already-translated form: a target-local `cq deploy` reads the
 # payload's own agent bodies, so the second translation must produce the first one's output.
-CQ_GRANT = re.compile(r"Bash\((?:cq|" + re.escape(CQ) + r")(?: ([^:()]+))?:\*\)$")
+CQ_GRANT = re.compile(r"Bash\(((?:cq|" + re.escape(CQ) + r")(?:\.cmd)?)(?: ([^:()]+))?:\*\)$")
 
 
 def skill_name(relpath: str) -> str:
@@ -126,8 +126,8 @@ def transform_platform(text: str) -> str:
 
 
 def transform_tools(value: str) -> str:
-    """Keep the shipped grant, re-rooted at the target-local `cq`."""
-    value = re.sub(r"Bash\(cq([^)]*):\*\)",
+    """Keep the shipped grant, re-rooted at the target-local `cq` and its `cq.cmd` twin."""
+    value = re.sub(r"Bash\(cq((?:\.cmd)?[^)]*):\*\)",
                    lambda m: f"Bash({CQ}{m.group(1)}:*)", value)
     def target_agent(item: str) -> str:
         name = item.strip().split(":")[-1]
@@ -152,6 +152,20 @@ def _body(value: str) -> str:
     return value
 
 
+LAUNCHER_NOTE = ("**Launcher.** On POSIX the skill calls `cq`; on Windows it calls "
+                 "`cq.cmd`, the sibling the deploy installs beside `bin/cq`.\n\n")
+
+
+def _with_launcher_note(body: str) -> str:
+    """Put the platform choice right under the skill's title, once, where every run reads it."""
+    if LAUNCHER_NOTE in body:
+        return body
+    head, _, tail = body.partition("\n")
+    if head.startswith("# "):
+        return f"{head}\n\n{LAUNCHER_NOTE}{tail.lstrip(chr(10))}"
+    return LAUNCHER_NOTE + body
+
+
 def skill_document(raw: str, relpath: str) -> str:
     fields, body = split_frontmatter(raw)
     description = scalar_value(fields.get("description", ""))
@@ -166,7 +180,8 @@ def skill_document(raw: str, relpath: str) -> str:
             value = transform_tools(fields[key]) if key == "allowed-tools" else scalar_value(fields[key])
             out.append((key, json.dumps(transform_platform(value), ensure_ascii=False)
                         if key == "argument-hint" else transform_platform(value)))
-    return _frontmatter(out) + HEADER + "\n\n" + transform_platform(_body(body))
+    return (_frontmatter(out) + HEADER + "\n\n"
+            + _with_launcher_note(transform_platform(_body(body))))
 
 
 def command_document(raw: str) -> str:
@@ -192,9 +207,14 @@ def reference_document(raw: str) -> str:
 
 def _cq_patterns(names: list[str]) -> list[str]:
     """One `<target cq> <verbs> *` pattern per scoped `Bash(cq <verbs>:*)` grant, in order."""
-    matches = (CQ_GRANT.match(name) for name in names)
-    return [f"{CQ} {match.group(1)} *" if match.group(1) else f"{CQ} *"
-            for match in matches if match]
+    patterns: list[str] = []
+    for name in names:
+        match = CQ_GRANT.match(name)
+        if not match:
+            continue
+        launcher = CQ + (".cmd" if match.group(1).endswith(".cmd") else "")
+        patterns.append(f"{launcher} {match.group(2)} *" if match.group(2) else f"{launcher} *")
+    return patterns
 
 
 def opencode_permissions(tools: str | None) -> dict[str, str | dict[str, str]]:

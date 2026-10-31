@@ -2,7 +2,7 @@
 description: "Report the operations front: root, router, entry points, lifecycle and findings, read-only. Use for \"ops status\", \"report operations drift\". Not for: converging → /quenching-ops-align."
 disable-model-invocation: true
 argument-hint: "[optional-target-root]"
-allowed-tools: Bash(.agents/quenching/bin/cq:*), Read, Grep, Glob, Bash(python3:*)
+allowed-tools: Bash(.agents/quenching/bin/cq:*), Bash(.agents/quenching/bin/cq.cmd:*), Read, Grep, Glob, Bash(python3:*)
 ---
 
 # /quenching-ops-status — read the operations front
