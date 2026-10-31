@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="pt-BR">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -9,37 +9,62 @@
 <link rel="stylesheet" href="/app.css">
 </head>
 <body>
-<a class="skip" href="#main">Skip to content</a>
+<a class="skip" href="#main">Ir para o conteúdo</a>
 <header class="top">
-  <h1>Quenching specs</h1>
-  <nav aria-label="Views" id="nav">
+  <h1 class="brand"><a href="#/board"><span class="mark" aria-hidden="true">Q</span> Quenching <span class="brand-sub">specs</span></a></h1>
+  <nav aria-label="Visões" id="nav">
     <a href="#/board" data-view="board">Board</a>
     <a href="#/list" data-view="list">Ranking</a>
-    <a href="#/human" data-view="human" id="nav-human">Decidir com o humano <span id="human-count" class="count" aria-label="waiting for the human">0</span></a>
+    <a href="#/human" data-view="human" id="nav-human">Decidir <span id="human-count" class="count" aria-label="esperando você">0</span></a>
+    <a href="#/epics" data-view="epics" id="nav-epics" hidden>Épicos</a>
     <a href="#/gantt" data-view="gantt" id="nav-gantt">Gantt</a>
-    <a href="#/epics" data-view="epics" id="nav-epics" hidden>Epics</a>
-    <a href="#/sessions" data-view="sessions" id="nav-sessions" hidden>Sessões <span id="sessions-count" class="count" aria-label="sessions waiting for you">0</span></a>
+    <a href="#/sessions" data-view="sessions" id="nav-sessions" hidden>Sessões <span id="sessions-count" class="count" aria-label="sessões esperando você">0</span></a>
     <a href="#/chat" data-view="chat" id="nav-chat" hidden>Chat</a>
   </nav>
-  <form role="search" id="search-form">
-    <label class="sr" for="q">Search specs</label>
-    <input id="q" type="search" placeholder="Search all specs  ( / )" autocomplete="off">
-  </form>
-  <div class="fresh">
-    <span id="fresh" aria-live="off">loading</span>
-    <button id="notify" type="button" aria-pressed="false">Notifications: off</button>
-    <button id="refresh" type="button">Refresh</button>
-    <button id="capture" type="button" class="primary">Capture</button>
+  <div class="top-actions">
+    <button id="palette-open" type="button" class="searchbtn" aria-haspopup="dialog">
+      <span class="searchbtn-label">Buscar ou executar</span> <kbd id="palette-key">Ctrl K</kbd>
+    </button>
+    <button id="theme" type="button" class="ghost" aria-label="Tema: automático" title="Tema (t)"><span id="theme-glyph" aria-hidden="true">◐</span></button>
+    <button id="help" type="button" class="ghost" aria-label="Ajuda e atalhos" title="Ajuda e atalhos (?)" aria-haspopup="dialog">?</button>
+    <button id="capture" type="button" class="primary">Capturar</button>
   </div>
 </header>
+
+<section class="pulse" id="pulse" role="group" aria-label="Pulso do repositório"></section>
 <p id="banner" class="banner" role="status" hidden></p>
+<p id="connbanner" class="banner conn" role="alert" hidden></p>
+
 <div class="shell">
   <nav id="projects" class="projects" aria-label="Projetos" hidden></nav>
   <main id="main" tabindex="-1"></main>
 </div>
+
+<footer class="statusbar" id="statusbar">
+  <span id="conn" class="conn" role="status" aria-live="polite"><i class="dot"></i><span>conectando</span></span>
+  <span id="fresh" class="fresh" aria-live="off">carregando</span>
+  <button id="pause" type="button" class="ghost small" aria-pressed="false" title="Pausar ou retomar o auto-refresh">Pausar</button>
+  <button id="refresh" type="button" class="ghost small" title="Atualizar agora">Atualizar</button>
+  <span class="grow"></span>
+  <span class="hint">pressione <kbd>?</kbd> para atalhos</span>
+  <button id="events-open" type="button" class="ghost small" aria-controls="events" aria-expanded="false" aria-label="Notificações">
+    Notificações <span id="events-count" class="count" hidden>0</span>
+  </button>
+</footer>
+
+<div id="events" class="events" role="region" aria-label="Notificações" hidden></div>
 <div id="toasts" role="alert" aria-live="assertive"></div>
-<aside id="drawer" class="drawer" role="dialog" aria-modal="false" aria-labelledby="drawer-title" hidden></aside>
-<dialog id="dlg" aria-labelledby="dlg-title"></dialog>
+
+<dialog id="drawer" aria-label="Detalhe da spec" aria-labelledby="drawer-title" aria-describedby="drawer-sub"></dialog>
+<dialog id="dlg" aria-label="Formulário" aria-labelledby="dlg-title"></dialog>
+<dialog id="palette" aria-labelledby="palette-title">
+  <h2 id="palette-title" class="sr">Paleta de comandos</h2>
+  <input id="palette-input" role="combobox" aria-label="Buscar specs ou executar uma ação" aria-expanded="true" aria-controls="palette-list" aria-autocomplete="list" aria-activedescendant="" autocomplete="off" spellcheck="false" placeholder="Buscar specs ou executar uma ação…">
+  <p id="palette-status" class="sr" role="status"></p>
+  <ul id="palette-list" role="listbox" aria-label="Resultados"></ul>
+  <div class="palette-foot"><kbd>↑</kbd> <kbd>↓</kbd> navegar · <kbd>Enter</kbd> abrir · <kbd>Esc</kbd> fechar</div>
+</dialog>
+<dialog id="help" aria-labelledby="help-title"></dialog>
 <script src="/app.js"></script>
 </body>
 </html>

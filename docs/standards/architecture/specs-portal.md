@@ -4,10 +4,10 @@ title: The specs portal reads one store and widens nothing without a decision
 description: The local spec portal (cq specs serve) reads only the specs store open_backend reads, exposes a fixed set of GET and POST routes plus, under --chat, a read-only claude -p chat polled by job, keeps its loopback, token, Host/Origin and CSP guarantees, builds every node with textContent, reuses cockpit UX patterns but never its code, shows the spec-runner's run record on the card, and regenerates the reader copy and the Codex mirror with every change
 resource: plugins/quenching/assets/bin/quenching/specs/portal.py, plugins/quenching/assets/bin/quenching/specs/chat.py, plugins/quenching/assets/portal/**, plugins/quenching/assets/bin/quenching/portal/**, plugins/quenching/assets/bin/quenching/common/lent.py, plugins/quenching/assets/bin/quenching/session/portal.py
 tags: [architecture, portal, specs, security, ux]
-timestamp: 2026-10-29
+timestamp: 2026-10-30
 audience: both
 authority: current
-source: specs 1769, 1812, 1814, 1815, 1816 and the owner decisions B-O1 to B-O4 of epics 1768 and 1810
+source: specs 1769, 1812, 1814, 1815, 1816, 2127 and the owner decisions B-O1 to B-O4 of epics 1768 and 1810
 maintainer: quenching
 ---
 
@@ -98,6 +98,23 @@ under `/`. With `--sessions` only, also `GET /api/sessions`; without the flag it
 (`sp-portal-not-found`) like any unknown route, and `/api/config` reports `sessions: false`. POST: `/api/capture`, `/api/section`, `/api/approve`, `/api/reorder`,
 `/api/discovery`, each delegating to the CLI's own verb so CAS and refusals are the terminal's.
 
+The read payloads the page consumes are fixed field by field:
+
+- `GET /api/specs` answers `{ok, fetchedAt, ttlSeconds, count, specs[], stages[]}`. A spec row
+  carries `id, title, phase, stage, date, summary, priority, rank, complexity, progress{checked,
+  blocked, total}, subject, tags, assignee, run`; nothing else reaches the page.
+- `GET /api/specs/<id>` answers `{spec, sections, tasks, records, timeline, ready, executeCommand}`.
+  `sections` are `{heading, state, body}` with `state` in `present|absent`; `tasks` carry
+  `checked, blocked, reason, verify, commit`; `ready` is `{ok, missing[]}`.
+- `GET /api/epics` answers `{supported, epics[]}`. An epic carries `id, title, items[], groups[],
+  cycle, criticalPath, children[], done, total`; an item carries `{label, title, spec, after,
+  group, groupTitle, waitingOn, status}`. Dependencies and the critical path are the server's
+  `derive_epic`, never the page's.
+- `GET /api/human` answers `{fetchedAt, count, epicMembers[], blocked[], awaitingApproval[]}`.
+  The rows carry ids and reasons, not dates; the page reads age from the matching spec row.
+- `GET /api/config` answers `{writable, readOnlyReason, ttlSeconds, stages[], headings[],
+  sessions, chat, chatBudgetUsd}`.
+
 - `GET /api/schedule` answers `{ok, fetchedAt, cycle, nodes, criticalPath}` as `cq specs schedule`
   derives it over the snapshot, each node carrying the portal's `stage`; the Gantt page (`#/gantt`)
   only draws it, as SVG built with `createElementNS`, and recomputes no date. It is read-only:
@@ -177,17 +194,92 @@ markup. A change that introduces `innerHTML`, `insertAdjacentHTML` or `document.
 
 ## UX patterns
 
-Accepted, taken as patterns from the cockpit of 2026-10-13 and never as code (it has no licence):
-a hero counter of what waits for the human, state pills, a detail drawer, the count in the title
-and favicon, and a notice when the data changes. Browser notification is opt-in by the human,
-off by default, and uses no Claude permission, so it is not a grant.
+Accepted, taken as patterns from the cockpit of 2026-10-13 and from Linear, GitHub Projects,
+Jira, Trello and Plane/Focalboard, and never as their code (the cockpit has no licence): a hero
+counter of what waits for the human, state pills, a detail drawer, the count in the title and
+favicon, and a notice when the data changes. Browser notification is opt-in by the human, off by
+default, and uses no Claude permission, so it is not a grant.
+
+The shell has a top bar (brand, seven destinations, search/palette, theme, help, capture), a
+pulse row of six counts, banners for read-only and connection state, and a status bar with
+connection, freshness, pause, refresh and the notification centre. The board remains the entry
+page; the decision queue carries a badge and never replaces it. Theme is `auto|light|dark` and
+density is `comfortable|compact`, both stored under `q2.*` and both left usable when storage is
+unavailable. The icon surface is CSS shapes and inline SVG of the brand, not a library.
+
+The board groups by stage, subject, priority, assignee, complexity or type; priority group names
+are the four bands the data actually carries (`P1 · crítica` to `P4 · baixa`, from `criticality`,
+falling back to a 1–4 level), and unknown complexity is “sem complexidade”. It sorts by rank,
+date, title or progress, filters by facets, hides empty columns, collapses a column with
+`aria-expanded` and saves at most twelve views locally. Board state lives in the URL
+(`group`, `sort`, `q`, repeated `f=key:value`) and is restored on load; a saved view is local
+preference, never store data. Cards never drag between stages: the stage is derived, so reorder
+is the ranking view's job, with buttons as the keyboard alternative and one commit per reorder.
+
+The detail is one builder used by both the drawer (`<dialog>`, focus returned to the opener) and
+the full page. It shows the nine definition sections in order, the markdown subset below, a
+table of tasks with filters for all/open/done/blocked and the reason, verify and commit of each,
+the records timeline and the neighbour links. The drawer opens immediately with a loading state
+and fills when the read lands; the page shows the same loading line on navigation. Markdown is
+built node by node: headings, lists, task boxes, code, quotes, tables, rules, links (only
+`http(s)` survives `safeHref`), bold, italic and strike.
+
+The epics view draws one panel per epic with a progress ring, a health label derived from
+`cycle`, `criticalPath` and stage counts, the next step, the wave groups (collapsible) and the
+member rows. The Gantt (`#/gantt`) draws the server's `schedule`: SVG built with
+`createElementNS`, three zooms (`day`, `week`, `month`), a “Hoje” control, dependency and critical
+path toggles, a legend, a `<caption>` table with the same data, and no date arithmetic beyond
+placing the given `earliestStart`/`earliestFinish`. Its state lives in the URL
+(`zoom`, `deps`, `crit`).
+
+The live layer treats the store as slow and fallible. Lists are read with `If-None-Match`; a 304
+keeps the snapshot. The connection has four honest states (`connecting`, `live`, `unstable`,
+`offline`) derived from the last success and the TTL, and an offline banner says since when.
+Auto-refresh can be paused, the interval follows the last load (8 s to 60 s), and a hidden tab or
+an open dialog does not poll. Scroll and focus survive a poll through `data-fkey` and
+`preventScroll`. The first paint is a skeleton, not a blank page; a failed read says so and
+offers “Tentar de novo”; a route change paints a loading line instead of leaving the previous
+screen looking like the new one. Three independent reads (specs, epics, human) run in parallel,
+so one slow endpoint does not hide the other two.
+
+Keyboard is first class: `Ctrl/Cmd+K` opens the palette (combobox/listbox with
+`aria-activedescendant`), `/` searches, `?` opens the shortcut map, `g b|l|d|e|g|s` navigates,
+`j/k` moves the cursor, `Enter` opens the drawer, `Ctrl/Cmd+Enter` the page, `a` approves with
+confirmation, `t` cycles the theme and `Esc` closes. A field, a contenteditable or an open
+dialog owns the keyboard first.
+
+## Accessibility and responsive rules
+
+- Every interactive target is at least 24 px; focus is visible and never removed.
+- The page has one `<h1>`, landmarks (`header`, `nav`, `main`, `footer`), a skip link, `lang="pt-BR"`
+  and a single `<script>`/`<link>`; no inline style or script.
+- Live regions are used sparingly: connection and loading announce, the event list does not.
+- Dialogs are native `<dialog>` with a title, focus trap and focus return; the palette and the
+  help are dialogs too.
+- From 320 px to 1800 px the shell reflows: the nav scrolls horizontally on small screens, the
+  board scrolls with snap points, tables live inside `.table-wrap`, and motion is suppressed under
+  `prefers-reduced-motion`.
+
+The three asset budgets are part of the contract: `index.html` under 12 KB, `app.css` under
+48 KB and `app.js` under 120 KB, uncompressed and without a build step.
 
 ## Regeneration
 
-Every change to `portal.py` or `assets/portal/**` regenerates the `quenching-specs-reader` copy
-(`python3 scripts/generate_plugin_modules.py --write`) and the Codex mirror
-(`python3 scripts/sync_codex_plugin.py --source plugins/quenching --target plugins/codex/quenching-codex --write`),
-and passes `bash scripts/verify_repo.sh`; see [specs-reader-plugin.md](specs-reader-plugin.md).
+Every change to `portal.py` or `assets/portal/**` regenerates every distribution and the deployed
+surface, then passes `bash scripts/verify_repo.sh`; the gate's `deployed surface lockstep` check
+refuses a stale install:
+
+```bash
+python3 scripts/generate_plugin_modules.py --write
+python3 scripts/sync_specs_reader_plugin.py --write
+python3 scripts/sync_codex_plugin.py --source plugins/quenching \
+  --target plugins/codex/quenching-codex --write
+python3 scripts/sync_opencode_plugin.py --write
+python3 scripts/sync_omnigent_plugin.py --write
+python3 plugins/quenching/assets/bin/cq deploy --target . --write
+```
+
+See [specs-reader-plugin.md](specs-reader-plugin.md) for the reader copy.
 
 <!-- rationale -->
 The portal is the one surface that both reads the store and writes it from a browser. Its
