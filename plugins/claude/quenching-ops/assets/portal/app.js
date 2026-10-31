@@ -73,6 +73,7 @@
   const state = {
     specs: [], stages: [], fetchedAt: 0, ttl: 5, writable: false, why: "",
     epics: { supported: false, epics: [] }, human: null, busy: false,
+    pending: { count: 0, specs: [], since: null, supported: false }, pushing: false,
     sessionsOn: false, sessions: null, chatOn: false, chatBudget: null,
     chat: { draft: "", worktree: "", job: null, status: "", events: [], next: 0, cost: null, error: "" },
     projects: null, project: "", base: "",
@@ -349,6 +350,7 @@
     }
     const data = specs.value;
     state.specs = data.specs; state.stages = data.stages; state.ttl = data.ttlSeconds;
+    state.pending = data.pending || { count: 0, specs: [], since: null, supported: false };
     state.fetchedAt = Date.now();
     state.loading = false; state.loadError = "";
     state.lastLoadMs = Date.now() - started;
@@ -357,6 +359,7 @@
     $("#nav-epics").hidden = !state.epics.supported;
     if (state.sessionsOn) await loadSessions();
     paintHumanCount();
+    paintPending();
     notifyGrowth(before, state.human ? state.human.count : 0);
     if (changed && Date.now() - state.lastDataLog > 60000) {
       state.lastDataLog = Date.now();
@@ -379,6 +382,7 @@
     $("#nav-sessions").hidden = !state.sessionsOn;
     $("#nav-chat").hidden = !state.chatOn;
     $("#capture").disabled = !state.writable;
+    paintPending();
     const b = $("#banner");
     b.hidden = state.writable;
     b.textContent = state.writable ? "" : "Somente leitura: " + state.why + ". As ações de escrita estão desligadas no servidor.";
@@ -443,6 +447,23 @@
     g.font = "bold 20px system-ui, sans-serif"; g.textAlign = "center"; g.textBaseline = "middle";
     g.fillText(hot > 99 ? "99" : String(hot), 16, 17);
     $("#favicon").href = c.toDataURL("image/png");
+  }
+  /* The pending-write badge: only a writable portal over a store that reports pending state
+     shows it. Publishing is one explicit gesture, and the button says so while it runs. */
+  function paintPending() {
+    const b = $("#push");
+    if (!b) return;
+    const p = state.pending || {};
+    const n = p.count || 0;
+    if (!state.writable || p.supported === false || !n) { b.hidden = true; return; }
+    b.hidden = false;
+    b.disabled = !!state.pushing;
+    b.setAttribute("aria-busy", state.pushing ? "true" : "false");
+    $("#push-label").textContent = state.pushing ? "Enviando…" : "Enviar";
+    $("#push-count").hidden = !!state.pushing;
+    $("#push-count").textContent = String(n);
+    b.setAttribute("aria-label", state.pushing ? "Publicando as escritas locais"
+      : `${n} ${n === 1 ? "spec com escrita local ainda não publicada" : "specs com escritas locais ainda não publicadas"}`);
   }
   function paintSessionsCount() {
     const n = state.sessions ? state.sessions.sessions.filter(isWaiting).length : 0;
@@ -540,6 +561,22 @@
     openDialog(`Editar ## ${sec.heading}`, [{ name: "body", label: "Markdown da seção", multiline: true, value: sec.body }], "Salvar",
       async (v) => { await api("section", { body: { spec: id, heading: sec.heading, body: v.body } }); toast("Seção salva", true); logEvent("action", `Seção ${sec.heading} de #${id} salva`); await load(true); await render(); });
   }
+  async function pushNow() {
+    if (state.pushing || !state.pending || !state.pending.count) return;
+    if (!state.writable) { toast("O portal está em somente leitura."); return; }
+    state.pushing = true; paintPending();
+    try {
+      const r = await api("push", { body: {} });
+      const sent = (r.sent || []).length;
+      toast(sent ? `Enviado: ${sent} ${sent === 1 ? "spec" : "specs"} ao remoto.` : "Nada pendente.", true);
+      logEvent("action", sent ? `${sent} ${sent === 1 ? "spec publicada" : "specs publicadas"} ao remoto` : "Publicação sem escritas pendentes");
+      for (const warn of r.cardFailures || []) {
+        toast("Card não atualizado: " + (warn.id || warn.spec || JSON.stringify(warn)));
+      }
+      await load(true); await render();
+    } catch (e) { fail(e); }
+    finally { state.pushing = false; paintPending(); }
+  }
   function discoveryDialog(id) {
     if (!state.writable) { toast("O portal está em somente leitura."); return; }
     openDialog("Registrar uma descoberta", [{ name: "text", label: "O que você encontrou?", required: true }], "Adicionar",
@@ -561,6 +598,9 @@
       { group: "Ações", label: state.paused ? "Retomar o auto-refresh" : "Pausar o auto-refresh", run: togglePause },
       { group: "Ações", label: "Atualizar agora", run: () => refresh(true) },
       { group: "Ações", label: "Capturar uma spec", run: captureDialog },
+      ...(state.writable && state.pending.count ? [{ group: "Ações",
+        label: `Enviar ${state.pending.count} ${state.pending.count === 1 ? "escrita pendente" : "escritas pendentes"} ao remoto`,
+        run: pushNow }] : []),
       { group: "Ações", label: "Abrir a ajuda e os atalhos", keys: "?", run: openHelp },
     ];
   }
@@ -1778,6 +1818,7 @@
     restoreView(before);
     paintPulse();
     paintPause();
+    paintPending();
     paintEvents();
   }
 
@@ -1898,6 +1939,7 @@
   $("#refresh").addEventListener("click", () => refresh(true));
   $("#events-open").addEventListener("click", toggleEvents);
   $("#capture").addEventListener("click", captureDialog);
+  $("#push").addEventListener("click", pushNow);
   function routeLoading() {
     return h("div", { class: "loading route-loading", role: "status", "aria-live": "polite", "aria-busy": "true" },
       h("p", { class: "loading-line" }, h("i", { class: "dot pulse", "aria-hidden": "true" }), "Abrindo a visão…"));

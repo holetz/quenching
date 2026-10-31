@@ -22,7 +22,7 @@ HTML = (ROOT / "index.html").read_text()
 CSS = (ROOT / "app.css").read_text()
 JS = (ROOT / "app.js").read_text()
 
-WRITES = {"capture", "section", "approve", "reorder", "discovery", "chat"}
+WRITES = {"capture", "section", "approve", "reorder", "discovery", "chat", "push"}
 READS = {"specs", "epics", "human", "sessions", "schedule", "config", "projects", "search", "chat"}
 
 
@@ -242,6 +242,28 @@ class Live(unittest.TestCase):
     def test_a_toast_can_carry_one_action(self):
         self.assertIn("function toast(msg, ok, action)", JS)
         self.assertIn("action.run()", JS)
+
+
+class Publish(unittest.TestCase):
+    def test_the_header_carries_the_publish_button(self):
+        self.assertIn('<button id="push" type="button" class="primary" hidden>', HTML)
+        self.assertIn('id="push-count"', HTML)
+
+    def test_only_a_writable_store_with_pending_writes_shows_it(self):
+        for needle in ("function paintPending(", "state.writable", "p.supported === false",
+                       "state.pushing", "b.hidden = true"):
+            with self.subTest(needle=needle):
+                self.assertIn(needle, JS)
+        self.assertIn('$("#push").addEventListener("click", pushNow)', JS)
+
+    def test_the_click_publishes_and_reports_the_cards(self):
+        for needle in ('api("push", { body: {} })', "cardFailures", "await load(true); await render();"):
+            with self.subTest(needle=needle):
+                self.assertIn(needle, JS)
+
+    def test_the_palette_offers_the_publish(self):
+        self.assertIn("Enviar ${state.pending.count}", JS)
+        self.assertIn("run: pushNow", JS)
 
 
 class Gantt(unittest.TestCase):
