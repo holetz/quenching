@@ -4,7 +4,7 @@ description: >-
 disable-model-invocation: true
 argument-hint: [remote:<name>]
 allowed-tools: >-
-  Bash(cq:*),
+  Bash(cq:*), Bash(cq.cmd:*),
   Bash(python3:*), Read, AskUserQuestion
 ---
 

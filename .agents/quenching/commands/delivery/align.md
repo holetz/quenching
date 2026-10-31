@@ -2,7 +2,7 @@
 description: "Converge a repository's delivery surface from its workflow tree, preserving provider and permission policy. Use for \"align the delivery front\", \"fix delivery drift\". Not for: read-only → /quenching-delivery-status."
 disable-model-invocation: true
 argument-hint: "[optional-target-root]"
-allowed-tools: Bash(.agents/quenching/bin/cq:*), Read, Grep, Glob, Bash(python3:*), AskUserQuestion, Write, Edit
+allowed-tools: Bash(.agents/quenching/bin/cq:*), Bash(.agents/quenching/bin/cq.cmd:*), Read, Grep, Glob, Bash(python3:*), AskUserQuestion, Write, Edit
 ---
 
 # /quenching-delivery-align — converge the delivery front

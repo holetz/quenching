@@ -1,7 +1,7 @@
 ---
 name: quenching-design-align
 description: "Converge /.design/ from one DTCG source through PRODUCT.md, DESIGN.md, MEDIUM.md and adapters. Use for \"align the design\", \"install the brand pack\", \"fix design drift\". Not for: read-only → quenching-design-status."
-allowed-tools: "Bash(cq:*), Read, Grep, Glob, Bash(python3:*), Bash(npx:*), AskUserQuestion"
+allowed-tools: "Bash(cq:*), Bash(cq.cmd:*), Read, Grep, Glob, Bash(python3:*), Bash(npx:*), AskUserQuestion"
 ---
 
 <!-- GENERATED FROM plugins/quenching/commands/design/align.md -->

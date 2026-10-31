@@ -1,7 +1,7 @@
 ---
 name: quenching-knowledge-documentation-build
 description: "Create or update the Zensical site layer with extensions, CSS, navigation and strict-build QA. Use for \"build the docs site\", \"fix the docs nav\". Not for: prose → quenching-knowledge-documentation-write."
-allowed-tools: "Bash(cq:*), Read, Grep, Glob, Bash, Write, Edit, AskUserQuestion"
+allowed-tools: "Bash(cq:*), Bash(cq.cmd:*), Read, Grep, Glob, Bash, Write, Edit, AskUserQuestion"
 ---
 
 <!-- GENERATED FROM plugins/quenching/commands/knowledge/documentation/build.md -->

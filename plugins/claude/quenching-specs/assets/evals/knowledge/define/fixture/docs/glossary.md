@@ -4,7 +4,7 @@ title: Glossary
 description: The single A–Z lookup of the terms the pager service uses, one entry per term.
 resource: /docs/**
 tags: [glossary, vocabulary]
-timestamp: 2026-10-24
+generated: { by: quenching/6.13.0, at: 2026-10-24T00:00:00Z }
 audience: both
 authority: current
 source: eval fixture

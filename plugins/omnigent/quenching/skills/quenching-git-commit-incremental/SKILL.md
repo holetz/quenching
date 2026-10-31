@@ -1,7 +1,7 @@
 ---
 name: quenching-git-commit-incremental
 description: "Turn pending worktree changes into small cohesive commits with one confirmation. Use for \"organize and commit my worktree\". Not for: the staged index → quenching-git-commit."
-allowed-tools: "Bash(cq:*), Read, Bash(git status:*), Bash(git diff:*), Bash(git ls-files:*), Bash(git add:*), Bash(git commit:*), Bash(git log:*), Bash(python3:*), AskUserQuestion"
+allowed-tools: "Bash(cq:*), Bash(cq.cmd:*), Read, Bash(git status:*), Bash(git diff:*), Bash(git ls-files:*), Bash(git add:*), Bash(git commit:*), Bash(git log:*), Bash(python3:*), AskUserQuestion"
 ---
 
 <!-- GENERATED FROM plugins/quenching/commands/git/commit-incremental.md -->

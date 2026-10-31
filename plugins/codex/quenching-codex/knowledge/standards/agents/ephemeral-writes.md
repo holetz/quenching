@@ -4,7 +4,7 @@ title: Agent ephemeral writes
 description: Where an agent puts a file it creates — the three destinations, the one question that sorts them, and the session-start declaration that makes the durable-ignored path present before the first write
 resource: AGENTS.md, /docs/standards/agents/ephemeral-writes.md
 tags: [agents, files, ephemeral, scratchpad, harness]
-timestamp: 2026-08-31
+generated: { by: quenching/6.13.0, at: 2026-08-31T00:00:00Z }
 audience: both
 authority: current
 source: spec 1058 — declare where an agent's ephemeral writes live and put the contract in session context

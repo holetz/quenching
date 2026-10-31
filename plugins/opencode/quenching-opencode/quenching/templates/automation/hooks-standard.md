@@ -4,7 +4,7 @@ title: Scoped hooks
 description: Where a hook may be installed, what each scope and handler costs, and the policy defaults every hook obeys
 resource: <the surfaces this rule governs — .claude/settings.json hooks + command frontmatter hooks + .claude/hooks/>
 tags: [automation, hooks, performance]
-timestamp: <ISO 8601 — e.g. 2026-07-20>
+generated: { by: human:<author>, at: <ISO 8601 UTC — e.g. 2026-07-06T00:00:00Z> }
 audience: both
 authority: background   # born background; graduates to current once the surface follows it
 source: <who agreed the rule — e.g. skill-hook-new first run, team decision>

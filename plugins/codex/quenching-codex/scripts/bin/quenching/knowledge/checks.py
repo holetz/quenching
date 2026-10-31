@@ -25,12 +25,18 @@ import re
 
 from quenching.common.frontmatter import frontmatter_anomalies, frontmatter_block, parse_frontmatter
 from quenching.knowledge.schema import (
+    ACTOR_RE,
+    ISO_DATETIME,
     LEGACY_HOMES,
     LEGACY_QUADRANTS,
+    LIFECYCLE_STATUSES,
+    OKF_VERSION,
+    READABLE_OKF_VERSIONS,
     RECOMMENDED,
     SOURCE_MAX_WORDS,
     TYPES_WITHOUT_RESOURCE,
     _nonempty,
+    recency,
 )
 
 
@@ -59,6 +65,274 @@ def _strict_yaml_findings(text: str) -> list[tuple[str, str, str]]:
     return out
 
 
+def _frontmatter_lines(text: str) -> list[str] | None:
+    """The raw lines inside the leading `---` fences, or None when there is no closed block."""
+    if not text.startswith("---"):
+        return None
+    lines = text.splitlines()
+    if lines[0].strip() != "---":
+        return None
+    for i in range(1, len(lines)):
+        if lines[i].strip() == "---":
+            return lines[1:i]
+    return None
+
+
+def _scalar(value: str) -> str:
+    """A frontmatter scalar stripped of surrounding whitespace and one matching quote pair."""
+    value = value.strip()
+    if len(value) >= 2 and value[0] == value[-1] and value[0] in ("'", '"'):
+        return value[1:-1]
+    return value
+
+
+def _flow_map(value: str) -> dict | None:
+    """A `{ k: v, ... }` flow map as a dict, or None when the text is not one."""
+    value = value.strip()
+    if not (value.startswith("{") and value.endswith("}")):
+        return None
+    out: dict = {}
+    for part in value[1:-1].split(","):
+        if ":" in part:
+            key, _, val = part.partition(":")
+            out[_scalar(key)] = _scalar(val)
+    return out
+
+
+def _read_mapping_list(text: str, key: str) -> list[dict] | None:
+    """Read a top-level `key:` whose value is a sequence of mappings.
+
+    The shared frontmatter parser flattens a block sequence of mappings — `sources:` and
+    `verified:` below their first pair — because it reads the first level only. The v0.2
+    families need the pairs, so this reads that one block from the raw text instead of
+    widening a parser every pillar shares. Returns None when the text is not that shape;
+    callers then fall back to whatever the shared parser produced and warn only if that is
+    not a usable list either.
+    """
+    body = _frontmatter_lines(text)
+    if body is None:
+        return None
+    start = None
+    for i, raw in enumerate(body):
+        if raw[:1] in (" ", "\t") or ":" not in raw:
+            continue
+        name, _, value = raw.partition(":")
+        if name.strip() == key:
+            start = i
+            inline = value.strip()
+            break
+    if start is None:
+        return None
+    if inline:
+        if not (inline.startswith("[") and inline.endswith("]")):
+            return None
+        items: list[dict] = []
+        for part in inline[1:-1].split(","):
+            mapped = _flow_map(part)
+            if mapped is None:
+                return None
+            items.append(mapped)
+        return items or None
+
+    items = []
+    current: dict | None = None
+    dash_indent = None
+    j = start + 1
+    while j < len(body):
+        raw = body[j]
+        if not raw.strip() or raw.lstrip().startswith("#"):
+            j += 1
+            continue
+        if raw[:1] not in (" ", "\t"):
+            break
+        indent = len(raw) - len(raw.lstrip())
+        stripped = raw.strip()
+        if stripped.startswith("- "):
+            if current is not None:
+                items.append(current)
+            content = stripped[2:].strip()
+            mapped = _flow_map(content)
+            if mapped is not None:
+                current = mapped
+            elif ":" in content:
+                name, _, value = content.partition(":")
+                current = {_scalar(name): _scalar(value)}
+            else:
+                return None
+            dash_indent = indent
+        elif current is not None and ":" in stripped:
+            if dash_indent is not None and indent <= dash_indent:
+                break
+            name, _, value = stripped.partition(":")
+            current[_scalar(name)] = _scalar(value)
+        else:
+            break
+        j += 1
+    if current is not None:
+        items.append(current)
+    return items or None
+
+
+def _mapping_entries(text: str, key: str, fm: dict) -> list[dict] | None:
+    """The entries of a mapping sequence, from the raw block first and the shared parse second."""
+    raw = _read_mapping_list(text, key)
+    if raw is not None:
+        return raw
+    value = fm.get(key)
+    if isinstance(value, dict):
+        return [value]
+    if isinstance(value, list):
+        mapped = [_flow_map(v) if isinstance(v, str) else v for v in value]
+        if all(isinstance(v, dict) for v in mapped):
+            return mapped  # type: ignore[return-value]
+    return None
+
+
+def _check_generated(fm: dict, out: list[tuple[str, str, str]]) -> None:
+    """OKF v0.2 `generated` — how the current content was produced (`by`, `at`)."""
+    generated = fm.get("generated")
+    if generated is None:
+        return
+    if isinstance(generated, str):
+        # `generated: true` is this plugin's own projection marker, not the v0.2 family;
+        # the name collision is accepted so an already-generated file keeps validating.
+        return
+    if not isinstance(generated, dict):
+        out.append(("WARN", "generated-malformed",
+                    "`generated` must be a mapping `{ by, at }` (OKF v0.2 §5.2)"))
+        return
+    by = str(generated.get("by", "")).strip()
+    if not by:
+        out.append(("WARN", "generated-malformed",
+                    "`generated` has no `by` — OKF v0.2 requires an actor (§5.2, §7)"))
+    elif not ACTOR_RE.match(by):
+        out.append(("WARN", "generated-by-invalid",
+                    f"`generated.by` `{by}` is not an actor — use `<producer>/<version>`, "
+                    "`human:<id>` or `process:<id>` (OKF v0.2 §7)"))
+    at = str(generated.get("at", "")).strip()
+    if at and not ISO_DATETIME.match(at):
+        out.append(("WARN", "generated-at-invalid",
+                    f"`generated.at` `{at}` is not an ISO 8601 datetime with an explicit UTC "
+                    "offset (OKF v0.2 §5)"))
+
+
+def _check_verified(text: str, fm: dict, out: list[tuple[str, str, str]]) -> None:
+    """OKF v0.2 `verified` — one mapping or a list of `{ by, at }` verification events."""
+    verified = fm.get("verified")
+    if verified is None:
+        return
+    entries = _mapping_entries(text, "verified", fm)
+    if not entries:
+        out.append(("WARN", "verified-malformed",
+                    "`verified` must be one `{ by, at }` mapping or a list of them "
+                    "(OKF v0.2 §5.2)"))
+        return
+    for entry in entries:
+        by = str(entry.get("by", "")).strip()
+        at = str(entry.get("at", "")).strip()
+        if not by:
+            out.append(("WARN", "verified-malformed",
+                        "a `verified` entry has no `by` (OKF v0.2 §5.2)"))
+        elif not ACTOR_RE.match(by):
+            out.append(("WARN", "verified-by-invalid",
+                        f"`verified.by` `{by}` is not an actor (OKF v0.2 §7)"))
+        if not at:
+            out.append(("WARN", "verified-malformed",
+                        "a `verified` entry has no `at` (OKF v0.2 §5.2)"))
+        elif not ISO_DATETIME.match(at):
+            out.append(("WARN", "verified-at-invalid",
+                        f"`verified.at` `{at}` is not an ISO 8601 datetime with an explicit "
+                        "UTC offset (OKF v0.2 §5)"))
+
+
+def _check_lifecycle(fm: dict, out: list[tuple[str, str, str]]) -> None:
+    """OKF v0.2 `status` and `stale_after` (absent `status` means stable)."""
+    status = fm.get("status")
+    if status is not None:
+        value = str(status).strip()
+        if value not in LIFECYCLE_STATUSES:
+            out.append(("WARN", "status-invalid",
+                        f"`status` `{value}` is not one of {', '.join(LIFECYCLE_STATUSES)} "
+                        "(OKF v0.2 §5.4)"))
+    stale = fm.get("stale_after")
+    if stale is not None:
+        value = str(stale).strip()
+        if not ISO_DATETIME.match(value):
+            out.append(("WARN", "stale-after-invalid",
+                        f"`stale_after` `{value}` is not an ISO 8601 datetime with an explicit "
+                        "UTC offset (OKF v0.2 §5.5)"))
+
+
+def _check_sources(text: str, fm: dict, out: list[tuple[str, str, str]]) -> None:
+    """OKF v0.2 `sources` — each entry names the material it derives from."""
+    sources = fm.get("sources")
+    if sources is not None:
+        entries = _mapping_entries(text, "sources", fm)
+        if not entries:
+            out.append(("WARN", "sources-malformed",
+                        "`sources` must be a list of `{ resource, ... }` mappings (OKF v0.2 §5.1)"))
+        else:
+            seen: set[str] = set()
+            for entry in entries:
+                resource = str(entry.get("resource", "")).strip()
+                if not resource:
+                    out.append(("WARN", "source-missing-resource",
+                                "a `sources` entry has no `resource` — OKF v0.2 requires one per entry"))
+                source_id = str(entry.get("id", "")).strip()
+                if source_id:
+                    if source_id in seen:
+                        out.append(("WARN", "source-id-duplicate",
+                                    f"`sources` id `{source_id}` is repeated; a footnote cannot tell "
+                                    "the entries apart (OKF v0.2 §5.1)"))
+                    seen.add(source_id)
+                last_modified = str(entry.get("last_modified", "")).strip()
+                if last_modified and not ISO_DATETIME.match(last_modified):
+                    out.append(("WARN", "source-last-modified-invalid",
+                                f"`sources[].last_modified` `{last_modified}` is not an ISO 8601 datetime "
+                                "with an explicit UTC offset (OKF v0.2 §5.1)"))
+    usage = fm.get("usage_window")
+    if usage is not None:
+        if (not isinstance(usage, dict)
+                or not str(usage.get("from", "")).strip()
+                or not str(usage.get("to", "")).strip()
+                or not ISO_DATETIME.match(str(usage.get("from", "")).strip())
+                or not ISO_DATETIME.match(str(usage.get("to", "")).strip())):
+            out.append(("WARN", "usage-window-invalid",
+                        "`usage_window` must be a `{ from, to }` pair of ISO 8601 datetimes "
+                        "(OKF v0.2 §5.1)"))
+
+
+def _check_attested_computation(fm: dict, out: list[tuple[str, str, str]]) -> None:
+    """OKF v0.2 `Attested Computation` — `runtime` is required for the type (§10.2)."""
+    if str(fm.get("type", "")).strip() != "Attested Computation":
+        return
+    if not _nonempty(fm, "runtime"):
+        out.append(("WARN", "attested-computation-no-runtime",
+                    "`type: Attested Computation` requires a non-empty `runtime` "
+                    "(OKF v0.2 §10.2)"))
+    for key in ("executor", "attester"):
+        value = fm.get(key)
+        if value is None:
+            continue
+        if not isinstance(value, dict):
+            out.append(("WARN", "attested-computation-malformed",
+                        f"`{key}` must be a mapping with a `resource` (OKF v0.2 §10.2)"))
+        elif not str(value.get("resource", "")).strip():
+            out.append(("WARN", "attested-computation-malformed",
+                        f"`{key}.resource` is empty — it names the code or instructions "
+                        "the consumer runs (OKF v0.2 §10.2)"))
+
+
+def _check_v02(text: str, fm: dict, out: list[tuple[str, str, str]]) -> None:
+    """The optional OKF v0.2 families. Absence is never a finding; a present-but-malformed
+    value is (WARN — they narrow the spec's SHOULDs, they are not conformance errors)."""
+    _check_generated(fm, out)
+    _check_verified(text, fm, out)
+    _check_lifecycle(fm, out)
+    _check_sources(text, fm, out)
+    _check_attested_computation(fm, out)
+
+
 def check_concept(text: str) -> list[tuple[str, str, str]]:
     out: list[tuple[str, str, str]] = []
     fm = parse_frontmatter(text)
@@ -84,6 +358,16 @@ def check_concept(text: str) -> list[tuple[str, str, str]]:
     if str(fm.get("type", "")).strip() in TYPES_WITHOUT_RESOURCE:
         recommended = tuple(k for k in RECOMMENDED if k != "resource")
     for key in recommended:
+        if key == "generated":
+            # v0.2 supersedes `timestamp` with `generated.at`, but a v0.2 consumer MAY fall
+            # back to the legacy key. Accept it silently: rewriting 200 docs on an upgrade
+            # would invent an actor for every one of them.
+            if recency(fm) is not None:
+                continue
+            out.append(("WARN", "missing-generated",
+                        "recommended recency field `generated` is absent (OKF v0.2; a legacy "
+                        "`timestamp` is accepted)"))
+            continue
         if not _nonempty(fm, key):
             out.append(("WARN", f"missing-{key}",
                         f"recommended field `{key}` is absent (OKF recommends it)"))
@@ -92,6 +376,7 @@ def check_concept(text: str) -> list[tuple[str, str, str]]:
         out.append(("WARN", "source-too-long",
                     f"`source:` is {len(source.split())} words (max {SOURCE_MAX_WORDS}) — keep spec ids "
                     "and move the lineage into a `decisions/` entry"))
+    _check_v02(text, fm, out)
     return out
 
 
@@ -146,15 +431,16 @@ def check_index(text: str, is_root: bool) -> list[tuple[str, str, str]]:
     if is_root:
         if not has_block:
             out.append(("WARN", "root-no-okf-version",
-                        "root `index.md` should declare `okf_version: \"0.1\"`"))
+                        f"root `index.md` should declare `okf_version: \"{OKF_VERSION}\"`"))
         else:
             ver = str(fm.get("okf_version", "")).strip()
             if not ver:
                 out.append(("WARN", "root-no-okf-version",
                             "root `index.md` frontmatter should declare `okf_version`"))
-            elif ver != "0.1":
+            elif ver not in READABLE_OKF_VERSIONS:
                 out.append(("WARN", "root-okf-version-mismatch",
-                            f"root `index.md` declares okf_version `{ver}` (this plugin targets 0.1)"))
+                            f"root `index.md` declares okf_version `{ver}` (this plugin writes "
+                            f"`{OKF_VERSION}` and reads {', '.join(READABLE_OKF_VERSIONS)})"))
             extra = [k for k in fm if k != "okf_version"]
             if extra:
                 out.append(("WARN", "root-extra-keys",

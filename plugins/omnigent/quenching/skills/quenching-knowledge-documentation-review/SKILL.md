@@ -1,7 +1,7 @@
 ---
 name: quenching-knowledge-documentation-review
 description: "Score documentation pages against the eleven-dimension quality gate, read-only. Use for \"review the documentation\", \"score the docs pages\". Not for: fixing gaps → quenching-knowledge-documentation-write."
-allowed-tools: "Bash(cq:*), Read, Grep, Glob, Task"
+allowed-tools: "Bash(cq:*), Bash(cq.cmd:*), Read, Grep, Glob, Task"
 ---
 
 <!-- GENERATED FROM plugins/quenching/commands/knowledge/documentation/review.md -->

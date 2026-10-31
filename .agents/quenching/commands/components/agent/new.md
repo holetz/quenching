@@ -1,7 +1,7 @@
 ---
 description: "Mint or edit ONE subagent definition in .claude/agents/. Use for \"create an agent\", \"add a subagent\", \"make a verifier agent\". Not for: commands → /quenching-components-command-new; hooks → /quenching-components-hook-new."
 argument-hint: "[agent-name-or-description]"
-allowed-tools: Bash(.agents/quenching/bin/cq:*), Bash(python3:*), Bash(py:*), Read, Grep, Glob, Write, Edit, AskUserQuestion
+allowed-tools: Bash(.agents/quenching/bin/cq:*), Bash(.agents/quenching/bin/cq.cmd:*), Bash(python3:*), Bash(py:*), Read, Grep, Glob, Write, Edit, AskUserQuestion
 ---
 
 # /quenching-components-agent-new — mint ONE subagent definition

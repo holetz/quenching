@@ -1,7 +1,7 @@
 ---
 name: quenching-specs-status
 description: "Report the specs front and store configuration, read-only. Use for \"specs status\", \"store configuration\". Not for: developing or executing → quenching-specs-develop; ranking → quenching-specs-triage."
-allowed-tools: "Bash(cq:*), Bash(python3:*), Read"
+allowed-tools: "Bash(cq:*), Bash(cq.cmd:*), Bash(python3:*), Read"
 ---
 
 <!-- GENERATED FROM plugins/quenching/commands/specs/status.md -->

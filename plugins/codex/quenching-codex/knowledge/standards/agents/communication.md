@@ -4,7 +4,7 @@ title: Agent communication
 description: The two languages a repo declares for what its agents write — the conversation tag on the root harness line, and an artifact language declared by a standard or the artifactLanguage config key — and the conduct contract that holds whether or not either is declared
 resource: /docs/**, /.specs/**
 tags: [agents, language, communication, harness]
-timestamp: 2026-07-30
+generated: { by: quenching/6.13.0, at: 2026-07-30T00:00:00Z }
 audience: both
 authority: background
 source: quenching skeleton

@@ -1,7 +1,7 @@
 ---
 description: "Read a PR's checks, reviews, threads and mergeability, read-only. Use for \"check the PR status\", \"show the review state\". Not for: opening → /quenching-git-pr-create; threads → /quenching-git-pr-review; merging → /quenching-git-merge."
 argument-hint: "[spec-id|pr-number|pr-url]"
-allowed-tools: Bash(.agents/quenching/bin/cq:*), Bash(python3:*), Bash(git remote get-url:*), Bash(git branch:*), Bash(gh repo view:*), Bash(gh pr view:*), Bash(gh api graphql:*), Bash(az repos pr:*), Bash(az devops invoke:*), Read
+allowed-tools: Bash(.agents/quenching/bin/cq:*), Bash(.agents/quenching/bin/cq.cmd:*), Bash(python3:*), Bash(git remote get-url:*), Bash(git branch:*), Bash(gh repo view:*), Bash(gh pr view:*), Bash(gh api graphql:*), Bash(az repos pr:*), Bash(az devops invoke:*), Read
 ---
 
 # /quenching-git-pr-status — read one pull request snapshot

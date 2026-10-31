@@ -3,7 +3,7 @@ type: sidecar           # OKF concept type — non-empty (the textual extract IS
 title: <extract name — e.g. "Risk Committee deck 2026-Q2">
 description: <one sentence — what the material says>
 resource: <the binary source — path/URL (same as `binary:`)>
-timestamp: <ISO 8601 — date of the binary source>
+generated: { by: human:<author>, at: <ISO 8601 UTC — date of the binary source> }
 audience: agent          # the LLM consumes the EXTRACT; the binary source is `human`
 authority: background    # extract of human/external material — background, never a current contract
 source: <author/origin of the binary — person, team, external standard>

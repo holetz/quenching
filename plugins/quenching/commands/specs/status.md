@@ -1,7 +1,7 @@
 ---
 description: >-
   Report the specs front and store configuration, read-only. Use for "specs status", "store configuration". Not for: developing or executing → /quenching-specs:specs:develop; ranking → /quenching-specs:specs:triage.
-allowed-tools: Bash(cq:*), Bash(python3:*), Read
+allowed-tools: Bash(cq:*), Bash(cq.cmd:*), Bash(python3:*), Read
 ---
 
 # /quenching-specs:specs:status — read the specs front

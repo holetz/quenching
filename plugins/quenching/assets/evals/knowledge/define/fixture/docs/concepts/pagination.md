@@ -4,7 +4,7 @@ title: Pagination
 description: How the pager service splits a result list into pages and resumes from a cursor.
 resource: /docs/**
 tags: [pagination]
-timestamp: 2026-10-24
+generated: { by: quenching/6.13.0, at: 2026-10-24T00:00:00Z }
 audience: both
 authority: current
 source: eval fixture

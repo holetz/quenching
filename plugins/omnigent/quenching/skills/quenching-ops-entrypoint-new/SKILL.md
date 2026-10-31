@@ -1,7 +1,7 @@
 ---
 name: quenching-ops-entrypoint-new
 description: "Mint ONE Python ops entry point, register it in the router and regenerate the registry. Use for \"mint an ops entry point\", \"add a command to the ops router\". Not for: repairs → quenching-ops-align."
-allowed-tools: "Bash(cq:*), Read, Grep, Glob, Bash(python3:*), AskUserQuestion, Write, Edit"
+allowed-tools: "Bash(cq:*), Bash(cq.cmd:*), Read, Grep, Glob, Bash(python3:*), AskUserQuestion, Write, Edit"
 ---
 
 <!-- GENERATED FROM plugins/quenching/commands/ops/entrypoint/new.md -->

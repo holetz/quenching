@@ -53,5 +53,6 @@ only those two commands write inside its markers (taxonomy owner:
 - **`resource` derived, never invented** — for a standard, from the doc's `file:line`
   anchors; empty/self-pointing is disallowed.
 - **MERGE, never clobber** — fill a missing key, preserve a filled or third-party one.
-- **Legacy field migration** — `summary:` → `description:`, `updated:` → `timestamp:`.
+- **Legacy field migration** — `summary:` → `description:`, `updated:` → `generated.at` when the
+  actor is known (otherwise keep a legacy `timestamp`, the OKF v0.2 fallback).
 - **Canonical English enums** — `audience: both|agent|human`, `authority: current|background`.

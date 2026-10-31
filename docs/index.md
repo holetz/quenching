@@ -1,5 +1,5 @@
 ---
-okf_version: "0.1"
+okf_version: "0.2"
 ---
 
 # Every repository, the same shape
@@ -87,7 +87,7 @@ The full path — install, probe, first alignment — is the
 
 ## This page is also the bundle's front door
 
-Everything above and below it lives in one **Open Knowledge Format (OKF v0.1)** bundle rooted at
+Everything above and below it lives in one **Open Knowledge Format (OKF v0.2)** bundle rooted at
 `/docs/`. Each **home** has a fixed name and a single purpose, so anyone moving between
 repositories that adopt this method finds the **same tree in the same place**. This `index.md` is
 that bundle's reserved listing — the only one carrying frontmatter, and only `okf_version`. Folder

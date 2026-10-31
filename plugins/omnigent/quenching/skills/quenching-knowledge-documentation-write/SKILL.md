@@ -1,7 +1,7 @@
 ---
 name: quenching-knowledge-documentation-write
 description: "Write sourced Diátaxis pages from a documentation plan. Use for \"write the documentation pages\", \"draft the docs from the plan\". Not for: planning → quenching-knowledge-documentation-plan; scoring → quenching-knowledge-documentation-review."
-allowed-tools: "Bash(cq:*), Read, Grep, Glob, Write, Edit, Task, Bash(python3:*), Bash(py:*), AskUserQuestion"
+allowed-tools: "Bash(cq:*), Bash(cq.cmd:*), Read, Grep, Glob, Write, Edit, Task, Bash(python3:*), Bash(py:*), AskUserQuestion"
 ---
 
 <!-- GENERATED FROM plugins/quenching/commands/knowledge/documentation/write.md -->

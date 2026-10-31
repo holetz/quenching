@@ -1,7 +1,7 @@
 ---
 name: quenching-components-status
 description: "Report the automation surface: command count, fronts and findings, read-only. Use for \"components status\", \"check the automation surface\". Not for: repairs → quenching-components-align."
-allowed-tools: "Bash(cq:*), Read, Grep, Glob, Bash(python3:*)"
+allowed-tools: "Bash(cq:*), Bash(cq.cmd:*), Read, Grep, Glob, Bash(python3:*)"
 ---
 
 <!-- GENERATED FROM plugins/quenching/commands/components/status.md -->

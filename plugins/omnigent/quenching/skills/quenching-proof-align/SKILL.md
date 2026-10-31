@@ -1,7 +1,7 @@
 ---
 name: quenching-proof-align
 description: "Converge a repository's proof surface from its test gate with bounded structural repairs. Use for \"align the proof front\", \"fix proof drift\". Not for: read-only → quenching-proof-status."
-allowed-tools: "Bash(cq:*), Read, Grep, Glob, Bash(python3:*), AskUserQuestion, Write, Edit"
+allowed-tools: "Bash(cq:*), Bash(cq.cmd:*), Read, Grep, Glob, Bash(python3:*), AskUserQuestion, Write, Edit"
 ---
 
 <!-- GENERATED FROM plugins/quenching/commands/proof/align.md -->

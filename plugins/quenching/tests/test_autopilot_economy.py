@@ -44,7 +44,7 @@ class EconomyModeTests(unittest.TestCase):
         self.assertIn("Every launch counts in `launches`", body)
         head = AUTOPILOT.read_text(encoding="utf-8").split("---")[1]
         self.assertIn(
-            "allowed-tools: Bash(cq:*), Bash(git:*), Bash, Read, Grep, Glob, Agent, Task, TaskStop",
+            "allowed-tools: Bash(cq:*), Bash(cq.cmd:*), Bash(git:*), Bash, Read, Grep, Glob, Agent, Task, TaskStop",
             head,
         )
 

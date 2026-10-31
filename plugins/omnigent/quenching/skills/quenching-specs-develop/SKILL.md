@@ -1,7 +1,7 @@
 ---
 name: quenching-specs-develop
 description: "Develop an existing spec to ready, argue with it, approve it. Use for \"develop this spec\", \"refine the spec\", \"approve this spec\". Not for: new specs → quenching-specs-create; building → quenching-specs-execute."
-allowed-tools: "Bash(cq:*), Read, Grep, Glob, Edit, Bash(python3:*), Bash(py:*), AskUserQuestion, Task"
+allowed-tools: "Bash(cq:*), Bash(cq.cmd:*), Read, Grep, Glob, Edit, Bash(python3:*), Bash(py:*), AskUserQuestion, Task"
 ---
 
 <!-- GENERATED FROM plugins/quenching/commands/specs/develop.md -->

@@ -12,6 +12,7 @@ import os
 import subprocess
 
 from quenching.common.config import detect_provider
+from quenching.common.tools import spawn_argv
 from quenching.specs.backends import open_backend
 from quenching.specs.commands.output import Emitter, front_fields
 from quenching.specs.members import local_key, origin_url, own_repo, read_members
@@ -65,7 +66,7 @@ def _pr_view(member: dict, provider: str | None, root: str | None,
     else:
         argv = ["gh", "pr", "view", _pr_target(member), "--json", "state,headRefName"]
     try:
-        r = subprocess.run(argv, capture_output=True, text=True, timeout=timeout, cwd=root)
+        r = subprocess.run(spawn_argv(argv), capture_output=True, text=True, timeout=timeout, cwd=root)
         got = json.loads(r.stdout) if r.returncode == 0 else {}
     except (OSError, subprocess.SubprocessError, ValueError):
         return None

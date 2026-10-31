@@ -1,7 +1,7 @@
 ---
 name: quenching-specs-execute
 description: "Build ONE spec task by task: write, verify, self-review, tick, commit. Use for \"execute this spec\", \"build it\", \"implement the tasks\", \"continue building\". Not for: sharpening → quenching-specs-develop; closing → quenching-specs-conclude."
-allowed-tools: "Bash(cq:*), Bash, Read, Glob, Grep, Write, Edit, AskUserQuestion, Task, Skill"
+allowed-tools: "Bash(cq:*), Bash(cq.cmd:*), Bash, Read, Glob, Grep, Write, Edit, AskUserQuestion, Task, Skill"
 ---
 
 <!-- GENERATED FROM plugins/quenching/commands/specs/execute.md -->

@@ -13,6 +13,7 @@ from quenching.common.git import COMMAND_TIMEOUT_S, _git
 from quenching.common.config import CONFIG_FILE, find_repo_root
 from quenching.common.io import write_text
 from quenching.common.leak import guard_store_write
+from quenching.common.tools import spawn_argv
 from quenching.specs.backends.base import (BackendRefusal, SpecBackend, parse_retry_after,
                                            read_only_refusal, transport_read_only)
 from quenching.specs.backends.hybrid import (hybrid_project, hybrid_split, hybrid_title_join,
@@ -205,7 +206,7 @@ def _az_run(cwd: str, *argv: str, stdin: str | None = None) -> tuple[int, str, s
     env = store.subprocess_env("azure")
     for attempt in range(1, max_attempts + 1):
         try:
-            out = subprocess.run(["az", *argv, "--only-show-errors"], capture_output=True,
+            out = subprocess.run(spawn_argv(["az", *argv, "--only-show-errors"]), capture_output=True,
                                  text=True, timeout=COMMAND_TIMEOUT_S, cwd=cwd, input=stdin,
                                  env=env)
             code, stdout, stderr = out.returncode, out.stdout, out.stderr

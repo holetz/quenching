@@ -12,7 +12,7 @@ The single source of the tree `/quenching-knowledge-align` installs and `/quench
 
 ```
 knowledge/                     # OKF bundle root
-  index.md                     # ONLY index.md with frontmatter — okf_version: "0.1" + home listing
+  index.md                     # ONLY index.md with frontmatter — okf_version: "0.2" + home listing
   glossary.md                  # the repo's A–Z term lookup — bundle-root file, not inside a home
   standards/                   # "how WE do it" (current) — a conformant sub-bundle
     index.md                   # reserved listing + DERIVED "Current docs" tables (BEGIN/END GENERATED)
@@ -51,7 +51,9 @@ knowledge/                     # OKF bundle root
 
 Reserved `index.md` carries **no** `type`; `AGENTS.md` (and legacy `AGENTS.md`) is exempt. `log.md` is
 reserved too but **retired** — the tree above no longer grows one, and nothing checks one that
-survived an earlier alignment.
+survived an earlier alignment. The v0.2 `Attested Computation` type lives under `concepts/` (or a
+subject subfolder of it) and is the one fixed type outside the per-home table, because a
+computation is generic knowledge with an executable contract, not a home of its own.
 
 ## Boundary rules (memorable summary)
 

@@ -4,7 +4,7 @@ title: Brand
 description: The visual north star, token roles, component vocabulary, and brand commitments projected into DESIGN.md
 resource: .design/**
 tags: [design, brand, tokens]
-timestamp: 2026-08-28
+generated: { by: quenching/6.13.0, at: 2026-08-28T00:00:00Z }
 audience: both
 authority: background
 source: quenching design brand pack; replace its background defaults with confirmed product truth

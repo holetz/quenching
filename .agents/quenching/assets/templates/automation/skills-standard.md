@@ -4,7 +4,7 @@ title: Skill taxonomy and naming
 description: How this repo's the host commands are classified and named — one file per entry point
 resource: <the surface this rule governs — .agents/skills/>
 tags: [automation, commands, naming]
-timestamp: <ISO 8601 — e.g. 2026-07-20>
+generated: { by: human:<author>, at: <ISO 8601 UTC — e.g. 2026-07-06T00:00:00Z> }
 audience: both
 authority: background   # born background (agreed-but-unproven); graduates to current once the surface follows it in practice
 source: <who agreed the rule — e.g. quenching-components-command-new first run, team decision>

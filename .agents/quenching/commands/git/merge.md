@@ -1,7 +1,7 @@
 ---
 description: "Merge a branch into its base with one of four strategies, offered to the human. Use for \"merge this branch\", \"land this work\". Not for: opening a PR → /quenching-git-pr-create; pruning → /quenching-git-cleanup."
 argument-hint: "[id-or-branch]"
-allowed-tools: Bash(.agents/quenching/bin/cq:*), Bash(git worktree:*), Bash(git merge:*), Bash(git rebase:*), Bash(git branch:*), Bash(python3:*), Read, AskUserQuestion
+allowed-tools: Bash(.agents/quenching/bin/cq:*), Bash(.agents/quenching/bin/cq.cmd:*), Bash(git worktree:*), Bash(git merge:*), Bash(git rebase:*), Bash(git branch:*), Bash(python3:*), Read, AskUserQuestion
 ---
 
 # /quenching-git-merge — bring a branch home, on the human's own strategy

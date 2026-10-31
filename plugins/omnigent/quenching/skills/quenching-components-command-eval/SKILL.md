@@ -1,7 +1,7 @@
 ---
 name: quenching-components-command-eval
 description: "Measure whether a command teaches anything with with/without runs graded on evidence. Use for \"run the with/without eval on this skill\". Not for: unevidenced edits → quenching-components-command-new."
-allowed-tools: "Bash(cq:*), Bash(python3:*), Bash(py:*), Read, Grep, Glob, Write, Edit, Task, AskUserQuestion"
+allowed-tools: "Bash(cq:*), Bash(cq.cmd:*), Bash(python3:*), Bash(py:*), Read, Grep, Glob, Write, Edit, Task, AskUserQuestion"
 ---
 
 <!-- GENERATED FROM plugins/quenching/commands/components/command/eval.md -->

@@ -4,7 +4,7 @@ title: <system alias> — access card
 description: how to connect to <system> and where its build scripts live
 resource: <URI/FQN of the system — e.g. jdbc:postgresql://<host>/<db> or uc://<catalog>>
 engine: <postgres | sqlserver | databricks-uc | bigquery | ...>
-timestamp: <ISO 8601 — e.g. 2026-07-06>
+generated: { by: human:<author>, at: <ISO 8601 UTC — e.g. 2026-07-06T00:00:00Z> }
 audience: both
 authority: current
 source: <where metadata comes from — UC, origin dictionary, curation>

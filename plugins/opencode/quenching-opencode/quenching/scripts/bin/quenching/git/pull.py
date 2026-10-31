@@ -28,6 +28,7 @@ import time
 from types import SimpleNamespace
 
 from quenching.common.output import FINDINGS, OK, emit, refuse
+from quenching.common.tools import spawn_argv
 from quenching.git.audit import _branch_ok
 from quenching.specs.commands.fields import cmd_record
 from quenching.specs.backends import open_backend
@@ -49,7 +50,7 @@ GH_TIMEOUT_S = 120
 
 def _tool(tool: str, *argv: str, stdin: str | None = None) -> tuple[int, str, str]:
     try:
-        done = subprocess.run([tool, *argv], capture_output=True, text=True, input=stdin or "",
+        done = subprocess.run(spawn_argv([tool, *argv]), capture_output=True, text=True, input=stdin or "",
                               timeout=GH_TIMEOUT_S, env={**os.environ, "LC_ALL": "C", "LANG": "C"})
     except (OSError, subprocess.SubprocessError) as e:
         return 127, "", str(e)

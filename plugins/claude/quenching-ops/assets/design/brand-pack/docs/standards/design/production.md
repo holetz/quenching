@@ -4,7 +4,7 @@ title: Design production
 description: The gate for producing a branded artifact from one token source across web, Typst, and PDF
 resource: .design/genres/**, .design/media/**
 tags: [design, production, accessibility]
-timestamp: 2026-08-28
+generated: { by: quenching/6.13.0, at: 2026-08-28T00:00:00Z }
 audience: both
 authority: background
 source: quenching design brand pack; strengthen with confirmed production constraints

@@ -2,7 +2,7 @@
 description: "Open the local spec portal: board, ranking and detail in the browser over the same backend. Use for \"open the spec board\", \"show the specs visually\". Not for: ranking by chat → /quenching-specs-triage; reading → /quenching-specs-status."
 disable-model-invocation: true
 argument-hint: "[--read-only] [--port N]"
-allowed-tools: Bash(.agents/quenching/bin/cq:*)
+allowed-tools: Bash(.agents/quenching/bin/cq:*), Bash(.agents/quenching/bin/cq.cmd:*)
 ---
 
 # /quenching-specs-board — start the local spec portal

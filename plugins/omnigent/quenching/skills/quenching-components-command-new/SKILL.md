@@ -1,7 +1,7 @@
 ---
 name: quenching-components-command-new
 description: "Mint or edit ONE skill in .agents/skills, bridged to Omnigent. Use for \"create a command\", \"mint a command for X\". Not for: agents → quenching-components-agent-new; hooks → quenching-components-hook-new."
-allowed-tools: "Bash(cq:*), Bash(python3:*), Bash(py:*), Read, Grep, Glob, Write, Edit, AskUserQuestion"
+allowed-tools: "Bash(cq:*), Bash(cq.cmd:*), Bash(python3:*), Bash(py:*), Read, Grep, Glob, Write, Edit, AskUserQuestion"
 ---
 
 <!-- GENERATED FROM plugins/quenching/commands/components/command/new.md -->

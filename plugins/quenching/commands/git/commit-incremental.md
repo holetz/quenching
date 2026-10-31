@@ -4,7 +4,7 @@ description: >-
 disable-model-invocation: true
 argument-hint: [optional subject prefix]
 allowed-tools: >-
-  Bash(cq:*),
+  Bash(cq:*), Bash(cq.cmd:*),
   Read, Bash(git status:*), Bash(git diff:*), Bash(git ls-files:*), Bash(git add:*),
   Bash(git commit:*), Bash(git log:*), Bash(python3:*), AskUserQuestion
 ---

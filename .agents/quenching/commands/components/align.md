@@ -1,7 +1,7 @@
 ---
 description: "Converge the .agents/skills surface and its Claude bridge, and review descriptions. Use for \"align the skills\", \"audit the command bodies\", \"shorten the descriptions\". Not for: one command → /quenching-components-command-new."
 argument-hint: "[optional-scope]"
-allowed-tools: Bash(.agents/quenching/bin/cq:*), Bash(python3:*), Bash(py:*), Bash(git grep:*), Bash(grep:*), Bash(mkdir:*), Bash(mv:*), Bash(rm:*), Read, Grep, Glob, Write, Edit, Task, AskUserQuestion
+allowed-tools: Bash(.agents/quenching/bin/cq:*), Bash(.agents/quenching/bin/cq.cmd:*), Bash(python3:*), Bash(py:*), Bash(git grep:*), Bash(grep:*), Bash(mkdir:*), Bash(mv:*), Bash(rm:*), Read, Grep, Glob, Write, Edit, Task, AskUserQuestion
 ---
 
 # /quenching-components-align — force the automation surface onto the taxonomy

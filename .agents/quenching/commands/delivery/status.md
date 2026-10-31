@@ -2,7 +2,7 @@
 description: "Report the delivery front (workflow inventory, pipeline findings), read-only. Use for \"delivery status\", \"check the delivery surface\". Not for: converging → /quenching-delivery-align."
 disable-model-invocation: true
 argument-hint: "[optional-target-root]"
-allowed-tools: Bash(.agents/quenching/bin/cq:*), Read, Grep, Glob, Bash(python3:*)
+allowed-tools: Bash(.agents/quenching/bin/cq:*), Bash(.agents/quenching/bin/cq.cmd:*), Read, Grep, Glob, Bash(python3:*)
 ---
 
 # /quenching-delivery-status — read the delivery front

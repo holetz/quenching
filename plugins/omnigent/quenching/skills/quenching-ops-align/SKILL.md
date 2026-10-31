@@ -1,7 +1,7 @@
 ---
 name: quenching-ops-align
 description: "Converge a repository's operations surface from its declared root and router under one plan. Use for \"align the ops front\", \"fix operational drift\". Not for: read-only → quenching-ops-status."
-allowed-tools: "Bash(cq:*), Read, Grep, Glob, Bash(python3:*), AskUserQuestion, Write, Edit"
+allowed-tools: "Bash(cq:*), Bash(cq.cmd:*), Read, Grep, Glob, Bash(python3:*), AskUserQuestion, Write, Edit"
 ---
 
 <!-- GENERATED FROM plugins/quenching/commands/ops/align.md -->

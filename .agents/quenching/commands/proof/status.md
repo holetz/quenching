@@ -2,7 +2,7 @@
 description: "Report the proof front: layers, fixtures, floors, CI evidence and findings, read-only. Use for \"proof status\", \"check the verification surface\". Not for: converging → /quenching-proof-align."
 disable-model-invocation: true
 argument-hint: "[optional-target-root]"
-allowed-tools: Bash(.agents/quenching/bin/cq:*), Read, Grep, Glob, Bash(python3:*)
+allowed-tools: Bash(.agents/quenching/bin/cq:*), Bash(.agents/quenching/bin/cq.cmd:*), Read, Grep, Glob, Bash(python3:*)
 ---
 
 # /quenching-proof-status — read the verification surface

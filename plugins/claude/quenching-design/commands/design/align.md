@@ -3,7 +3,7 @@ description: >-
   Converge /.design/ from one DTCG source through PRODUCT.md, DESIGN.md, MEDIUM.md and adapters. Use for "align the design", "install the brand pack", "fix design drift". Not for: read-only → /quenching-design:design:status.
 disable-model-invocation: true
 argument-hint: [optional-scope]
-allowed-tools: Bash(cq:*), Read, Grep, Glob, Bash(python3:*), Bash(npx:*), AskUserQuestion
+allowed-tools: Bash(cq:*), Bash(cq.cmd:*), Read, Grep, Glob, Bash(python3:*), Bash(npx:*), AskUserQuestion
 ---
 
 # /quenching-design:design:align — one source, every projection

@@ -12,11 +12,17 @@ Exempt (skipped): harness pointer files (never OKF concepts).
 `README.md` in the bundle → WARN (OKF-strict converts it to `index.md`).
 - Every **non-reserved** `.md`  → MUST have parseable YAML frontmatter (ERROR if
   absent/broken) with a **non-empty `type`** (ERROR if missing/empty). Recommended
-  fields (`title`/`description`/`resource`/`timestamp`) missing → WARN.
+  fields (`title`/`description`/`resource`/`generated`) missing → WARN. A legacy
+  `timestamp` still satisfies the recency recommendation (OKF v0.2 fallback).
 - Every **`index.md`**          → MUST NOT carry a concept `type` (ERROR). A
   **non-root** `index.md` MUST carry no frontmatter at all (ERROR). The **root**
   `index.md` (at the bundle root) MAY carry frontmatter but only `okf_version`
-  (other keys → WARN); it SHOULD declare `okf_version: "0.1"` (missing/other value → WARN).
+  (other keys → WARN); it SHOULD declare `okf_version: "0.2"` (0.1 is read; any
+  other value → WARN).
+- **OKF v0.2 families** (all optional) — `sources`, `generated`, `verified`,
+  `status`, `stale_after`, and the `Attested Computation` keys (`runtime`,
+  `parameters`, `computation`, `executor`, `attester`). Their absence is not a
+  finding; when present they are checked for shape, not for content.
 - Every **`log.md`**            → **retired**. Nothing produces it and nothing checks
   it, but the name stays reserved and stays out of the hard block, so a log surviving
   in an already-aligned bundle is recognized rather than read as a malformed concept
@@ -43,16 +49,29 @@ GLOSSARY_REL = "glossary.md"
 # Codex translation keeps the other harness pointer exempt as well.
 CLAUDE_HARNESS = "CLAUDE" + ".md"
 EXEMPT = (CLAUDE_HARNESS, "AGENTS.md")
+# The version this plugin writes, and the older one it still reads. A 0.1 bundle is
+# consumable under the v0.2 fallbacks (`timestamp`, a body `# Citations` list), so the
+# reader accepts it without a finding; `align` is what upgrades the declaration.
+OKF_VERSION = "0.2"
+READABLE_OKF_VERSIONS = ("0.1", "0.2")
 # `source:` is a one-line lineage; longer history belongs in a `decisions/` entry.
 SOURCE_MAX_WORDS = 40
-RECOMMENDED = ("title", "description", "resource", "timestamp")
+RECOMMENDED = ("title", "description", "resource", "generated")
+# The v0.2 lifecycle enum. Absent means `stable`, so only a present-but-unknown value warns.
+LIFECYCLE_STATUSES = ("draft", "stable", "deprecated")
+# OKF v0.2 §7 actor convention: `<producer>/<version>`, `human:<id>`, `process:<id>`.
+ACTOR_RE = re.compile(r"^(?:[A-Za-z0-9][A-Za-z0-9._-]*/[A-Za-z0-9][A-Za-z0-9._-]*|human:\S+|process:\S+)$")
+# OKF v0.2 §5: every timestamp-valued key is an ISO 8601 datetime with an explicit
+# UTC offset. Date-only values remain readable as the legacy `timestamp` form.
+ISO_DATETIME = re.compile(r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})$")
 # Types for which `resource` is deliberately absent, so its WARN would be permanent noise.
 # A `task` is parked work — nothing is built yet to point at (the backlog task mold omits
-# the key on purpose). Every other type anchors to code, an asset, or a URI.
+# the key on purpose). An `Attested Computation` anchors to its `executor`/`attester`
+# instead of a single asset. Every other type anchors to code, an asset, or a URI.
 # The sibling case — a doc that HAS a resource whose honest scope is the whole bundle — is
 # handled by the bundle-aggregate exemption in `check_resource`, the same mechanism
 # generalized rather than a second one.
-TYPES_WITHOUT_RESOURCE = ("task",)
+TYPES_WITHOUT_RESOURCE = ("task", "Attested Computation")
 # Glob metacharacters `parse_resource` does not implement. An entry carrying one is
 # classified `unknown` and never reported as a violation — see `parse_resource`.
 UNSUPPORTED_GLOB_CHARS = ("{", "}", "[", "]", "?")
@@ -87,7 +106,14 @@ CONCEPT_DOC_CODES = (
     "no-frontmatter", "broken-frontmatter", "frontmatter-not-yaml", "missing-type", "okf-frontmatter-unparsed",
     "index-has-type", "index-has-frontmatter",
     "source-too-long",
-    "missing-title", "missing-description", "missing-resource", "missing-timestamp",
+    "missing-title", "missing-description", "missing-resource", "missing-generated", "missing-timestamp",
+    # OKF v0.2 optional families — present-but-malformed only; absence is never one of these.
+    "generated-malformed", "generated-by-invalid", "generated-at-invalid",
+    "verified-malformed", "verified-by-invalid", "verified-at-invalid",
+    "status-invalid", "stale-after-invalid",
+    "sources-malformed", "source-missing-resource", "source-id-duplicate",
+    "source-last-modified-invalid", "usage-window-invalid",
+    "attested-computation-no-runtime", "attested-computation-malformed",
 )
 LEGACY_HOMES = {"knowledge": "concepts", "reference": "external"}
 LEGACY_QUADRANTS = {"getting-started": "tutorials", "concepts": "explanation"}
@@ -95,3 +121,19 @@ LEGACY_QUADRANTS = {"getting-started": "tutorials", "concepts": "explanation"}
 
 def _nonempty(fm: dict, key: str) -> bool:
     return bool(str(fm.get(key, "")).strip())
+
+
+def recency(fm: dict) -> str | None:
+    """The concept's last-change stamp: `generated.at` (OKF v0.2) first, the legacy
+    `timestamp` second. Returns the raw string, or None when neither is usable.
+
+    A `generated` that is not a mapping is the plugin's own projection marker
+    (`generated: true`), not the v0.2 family, and never answers this question.
+    """
+    generated = fm.get("generated")
+    if isinstance(generated, dict):
+        at = str(generated.get("at", "")).strip()
+        if at:
+            return at
+    stamp = str(fm.get("timestamp", "")).strip()
+    return stamp or None

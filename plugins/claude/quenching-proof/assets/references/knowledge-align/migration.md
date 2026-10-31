@@ -271,7 +271,10 @@ with narration — a code-coupled rename still confirms on its own, always.
 While aligning legacy docs, migrate field names to OKF (MERGE, never clobber):
 
 - `summary:` → `description:`
-- `updated:` → `timestamp:`
+- `updated:` → `generated: { by, at }` when the actor is known; otherwise keep a legacy
+  `timestamp` (a v0.2 consumer reads it as the fallback). Never invent a `by`.
+- a legacy `timestamp` stays readable; upgrade it to `generated.at` on the next substantive
+  edit, when the actor is evidenced.
 - add non-empty `type:` (from the home's vocabulary in [taxonomy.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-align/taxonomy.md))
 - rename the retired type `type: guide` → `type: documentation` (§1c.)
 - rename the retired type `type: idea` → `type: task` (§1d; the files then leave the bundle per §1e)

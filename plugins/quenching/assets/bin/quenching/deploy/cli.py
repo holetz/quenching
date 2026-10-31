@@ -8,6 +8,7 @@ import sys
 from pathlib import Path
 
 from quenching.common.deploy import MANIFEST, read_manifest
+from quenching.common.config import repository_document
 from quenching.common.output import FINDINGS, OK, REFUSAL, NoAbbrevParser, emit, refuse
 from quenching.common.version import VERSION
 from quenching.deploy import tree as deploy_tree
@@ -15,6 +16,46 @@ from quenching.deploy import tree as deploy_tree
 LEGACY = (".claude/commands", ".claude/references", ".agents/.generated-from.json")
 GENERATED_ROOTS = (".agents/quenching/", ".agents/skills/quenching-", ".claude/skills/quenching-",
                    ".claude/agents/quenching-")
+MCP_MOUNTS = {"specs"}
+
+
+def _mcp_refusal(message: str, **extra) -> dict:
+    return {"code": "ct-deploy-mcp", "message": message, **extra,
+            "remedy": "declare `shared.mcp` as {mount: \"specs\", command: [<python prefix>]}, "
+                      "or remove the key"}
+
+
+def _mcp_option(target: Path) -> tuple[dict | None, dict | None]:
+    """`shared.mcp` from the repository layer, validated before anything is written.
+
+    Read through `repository_document`, never the merged envelope: `_apply_user_layer` would
+    make the generated file vary by machine. Absent is absence, not an error.
+    """
+    document, _info, refusal = repository_document(str(target))
+    if refusal:
+        return None, refusal
+    shared = (document or {}).get("shared")
+    raw = shared.get("mcp") if isinstance(shared, dict) else None
+    if raw is None:
+        return None, None
+    if not isinstance(raw, dict):
+        return None, _mcp_refusal("`shared.mcp` must be an object with `mount` and `command`")
+    unknown = sorted(set(raw) - {"mount", "command"})
+    if unknown:
+        return None, _mcp_refusal(f"`shared.mcp` has unknown key(s): {', '.join(unknown)}",
+                                  keys=unknown)
+    mount = raw.get("mount", "specs")
+    if mount not in MCP_MOUNTS:
+        return None, _mcp_refusal(
+            f"`shared.mcp.mount` must be one of: {', '.join(sorted(MCP_MOUNTS))}", mount=mount)
+    command = raw.get("command")
+    if (not isinstance(command, list) or not command
+            or not all(isinstance(part, str) and part for part in command)):
+        return None, _mcp_refusal(
+            "`shared.mcp.command` must be a non-empty list of strings — the prefix that finds "
+            "Python, e.g. [\"uv\", \"run\", \"--no-project\", \"python\"]; the runtime path and "
+            "the mount are appended by deploy")
+    return {"mount": mount, "command": list(command)}, None
 
 
 def _split(values: list[str] | None) -> list[str]:
@@ -219,6 +260,13 @@ def main(argv: list[str]) -> int:
             return refuse({"code": "ct-deploy-harness", "harness": harness,
                            "message": f"unknown harness: {harness}"}, args.json)
     runtime = args.runtime or recorded(previous, "runtime", {"vendor", "uvx"}) or "vendor"
+    mcp, refusal = _mcp_option(target)
+    if refusal:
+        return refuse(refusal, args.json)
+    if mcp and runtime != "vendor":
+        return refuse(_mcp_refusal(
+            "`shared.mcp` needs `--runtime vendor`: the generated command points at "
+            "`.agents/quenching/assets/bin/cq`, which a uvx runtime does not carry"), args.json)
     try:
         manifest = deploy_tree.load_modules(deploy_tree.source_root())
         modules = deploy_tree.normalize_modules(
@@ -226,7 +274,7 @@ def main(argv: list[str]) -> int:
         profiles = (_split(args.profiles) or recorded(previous, "profiles")
                     or deploy_tree.profiles_for(modules))
         built = deploy_tree.build_tree(deploy_tree.source_root(), target, modules, harnesses,
-                                       runtime, profiles)
+                                       runtime, profiles, mcp=mcp)
     except (OSError, ValueError) as exc:
         return refuse({"code": "ct-deploy-source", "message": str(exc),
                        "remedy": "run deploy from a complete quenching checkout or wheel"},

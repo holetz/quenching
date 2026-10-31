@@ -1,7 +1,7 @@
 ---
 name: quenching-git-pr-status
 description: "Read a PR's checks, reviews, threads and mergeability, read-only. Use for \"check the PR status\", \"show the review state\". Not for: opening → quenching-git-pr-create; threads → quenching-git-pr-review; merging → quenching-git-merge."
-allowed-tools: "Bash(cq:*), Bash(python3:*), Bash(git remote get-url:*), Bash(git branch:*), Bash(gh repo view:*), Bash(gh pr view:*), Bash(gh api graphql:*), Bash(az repos pr:*), Bash(az devops invoke:*), Read"
+allowed-tools: "Bash(cq:*), Bash(cq.cmd:*), Bash(python3:*), Bash(git remote get-url:*), Bash(git branch:*), Bash(gh repo view:*), Bash(gh pr view:*), Bash(gh api graphql:*), Bash(az repos pr:*), Bash(az devops invoke:*), Read"
 ---
 
 <!-- GENERATED FROM plugins/quenching/commands/git/pr/status.md -->

@@ -27,9 +27,9 @@ DOC = ("---\ntitle: {title}\ndate: 2026-01-01\n---\n\n## Problem\n\n{problem}\n\
 TOOL_NAMES = {"specs_list", "specs_status", "specs_show", "specs_section", "specs_next",
               "specs_epic_progress"}
 WRITE_NAMES = {"specs_create", "specs_section_write", "specs_record", "specs_task",
-               "specs_epic_add", "specs_discover", "specs_promote"}
+               "specs_epic_add", "specs_discover", "specs_promote", "specs_push"}
 WRITE_VERBS = {"new", "section --write", "record", "task", "discover", "promote", "migrate",
-               "serve", "release", "verification", "title", "tags"}
+               "serve", "release", "verification", "title", "tags", "push"}
 
 
 def rpc(request_id, method, params=None):
@@ -308,6 +308,12 @@ class Writes(unittest.TestCase):
         self.assertEqual(len(asked), 1)
         self.assertFalse(failed, payload)
         self.assertEqual(self.backend.read_spec(2)[0]["phase"], "archive")
+
+    def test_push_without_a_git_store_is_a_tool_error_and_sends_nothing(self):
+        payload, failed, asked = self.call("specs_push", {})
+        self.assertTrue(failed)
+        self.assertEqual("sp-push-no-store", payload["code"])
+        self.assertEqual([], asked)
 
     def test_a_flag_shaped_value_never_reaches_the_core(self):
         for name, args in (("specs_create", {"name": "--force"}),

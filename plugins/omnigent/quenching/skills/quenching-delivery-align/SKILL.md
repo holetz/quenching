@@ -1,7 +1,7 @@
 ---
 name: quenching-delivery-align
 description: "Converge a repository's delivery surface from its workflow tree, preserving provider and permission policy. Use for \"align the delivery front\", \"fix delivery drift\". Not for: read-only → quenching-delivery-status."
-allowed-tools: "Bash(cq:*), Read, Grep, Glob, Bash(python3:*), AskUserQuestion, Write, Edit"
+allowed-tools: "Bash(cq:*), Bash(cq.cmd:*), Read, Grep, Glob, Bash(python3:*), AskUserQuestion, Write, Edit"
 ---
 
 <!-- GENERATED FROM plugins/quenching/commands/delivery/align.md -->
