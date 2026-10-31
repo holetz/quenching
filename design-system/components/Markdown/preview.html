@@ -1,0 +1,21 @@
+<!-- @dsCard group="Detail" height=430 width=800 subtitle="The safe subset, built node by node" -->
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Markdown</title>
+<link rel="stylesheet" href="../../tokens.css">
+<link rel="stylesheet" href="../bundle.css">
+</head>
+<body>
+<div style="padding:16px;display:grid;gap:12px;"><section class="spec-section" id="sec-1"><div class="sechead"><h3>Problem</h3><button type="button" class="ghost small">Editar</button></div>
+<div class="md"><p>As aprovações, seções e descobertas feitas no portal ficam no commit local pendente. Sem um gesto de envio, quem trabalha só pelo navegador precisa abrir um terminal para publicar.</p></div></section>
+<section class="spec-section" id="sec-2"><div class="sechead"><h3>Proposal</h3><button type="button" class="ghost small">Editar</button></div>
+<div class="md"><p>Um botão <strong>Enviar</strong> no topo, com a contagem de specs com escritas locais, que delega ao mesmo verbo de <code>cq specs push</code>.</p>
+<ul><li>Sem <code>--drop</code>: o portal nunca descarta escrita.</li><li>Conflito com o remoto vira <code>409 sp-git-stale-write</code>, com o remédio em texto.</li></ul>
+<blockquote><p>Publicar é um gesto explícito: nada sai sozinho do repositório local.</p></blockquote></div></section>
+<section class="spec-section" id="sec-3"><div class="sechead"><h3>Impact</h3><button type="button" class="ghost small">Editar</button></div>
+<div class="md"><table><thead><tr><th>Arquivo</th><th>Mudança</th></tr></thead><tbody><tr><td><code>specs/portal.py</code></td><td>rota e leitura de pendências</td></tr><tr><td><code>portal/app.js</code></td><td>botão e notificação</td></tr></tbody></table></div></section></div>
+</body>
+</html>

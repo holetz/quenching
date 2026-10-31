@@ -1,0 +1,39 @@
+<!-- @dsCard group="Target screens" height=900 width=1440 page subtitle="Search results with facets" -->
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ScreenSearch</title>
+<link rel="stylesheet" href="../../tokens.css">
+<link rel="stylesheet" href="../bundle.css">
+</head>
+<body>
+<div class="app" style="--app-h:900px">
+<a class="skip" href="#main">Ir para o conteúdo</a>
+<header class="top"><h1 class="brand"><a href="#/board"><span class="mark" aria-hidden="true">Q</span> Quenching <span class="brand-sub">specs</span></a></h1><nav class="nav" aria-label="Visões"><a href="#/board">Board</a><a href="#/list">Ranking</a><a href="#/human">Decidir <span class="count hot" aria-label="esperando você">7</span></a><a href="#/epics">Épicos</a><a href="#/gantt">Gantt</a><a href="#/sessions">Sessões <span class="count hot" aria-label="sessões esperando você">1</span></a><a href="#/chat">Chat</a></nav>
+<div class="top-actions">
+<button type="button" class="searchbtn" aria-haspopup="dialog"><svg class="i" viewBox="0 0 16 16" aria-hidden="true"><path d="M7 12A5 5 0 1 0 7 2a5 5 0 0 0 0 10Zm7 2-3.5-3.5"/></svg><span class="searchbtn-label">Buscar ou executar</span> <kbd>Ctrl K</kbd></button>
+<button type="button" class="ghost icon theme" aria-label="Tema: automático" title="Tema (t)"><svg class="i" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 14A6 6 0 1 0 8 2a6 6 0 0 0 0 12Zm0-12v12M8 5h3.6M8 8h4.9M8 11h3.6"/></svg></button>
+<button type="button" class="ghost icon helpbtn" aria-label="Ajuda e atalhos" title="Ajuda e atalhos (?)" aria-haspopup="dialog"><svg class="i" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 14.5a6.5 6.5 0 1 0 0-13 6.5 6.5 0 0 0 0 13ZM6.1 6.2a2 2 0 1 1 2.9 1.8c-.6.3-1 .8-1 1.5M8 11.6v.1"/></svg></button>
+<button type="button" class="primary"><svg class="i" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 3v10M3 8h10"/></svg> Capturar</button>
+</div></header>
+<section class="pulse" aria-label="Pulso do repositório"><a class="pulse-cell hot" href="#/human" title="fila de decisão do humano"><strong class="pulse-value">7</strong> esperando você</a><a class="pulse-cell bad" href="#/board?f=stage:blocked" title="specs com tarefa bloqueada"><strong class="pulse-value">2</strong> bloqueadas</a><a class="pulse-cell " href="#/board?f=stage:executing" title="specs na etapa em execução"><strong class="pulse-value">5</strong> em execução</a><a class="pulse-cell " href="#/board" title="specs em plans"><strong class="pulse-value">22</strong> abertas</a><a class="pulse-cell " href="#/list" title="tarefas concluídas nas specs abertas"><strong class="pulse-value">58/126</strong> tarefas</a><a class="pulse-cell " href="#/list" title="aberta desde 23/09/2026"><strong class="pulse-value">há 38 d</strong> mais antiga</a></section>
+<div></div>
+<div class="shell"><main id="main"><div class="wrap"><div class="view-head"><h2>2 de 2 resultados para “gantt”</h2><span class="grow"></span><button type="button" class="ghost small"><svg class="i" viewBox="0 0 16 16" aria-hidden="true"><path d="M7 12A5 5 0 1 0 7 2a5 5 0 0 0 0 10Zm7 2-3.5-3.5"/></svg> Nova busca</button></div>
+<div class="board-tools" style="padding:0;border:0;margin-bottom:12px"><label class="control">Etapa <select><option>todas (2)</option></select></label><label class="control">Assunto <select><option>todos (2)</option></select></label><label class="control">Tipo <select><option>todos (2)</option></select></label></div>
+<ul class="triagelist"><li class="triage"><div class="triage-main"><span class="id">2140</span><a href="#/spec/2140">Carregar o <mark>Gantt</mark> sem travar em stores com mais de 500 specs</a></div>
+<div class="triage-aside"><span class="stage" data-stage="ready">pronta</span></div><p class="why">…o <mark>Gantt</mark> lê o schedule inteiro a cada troca de zoom…</p></li><li class="triage"><div class="triage-main"><span class="id">2143</span><a href="#/spec/2143">Filtro por responsável no <mark>Gantt</mark></a></div>
+<div class="triage-aside"><span class="stage" data-stage="ready">pronta</span></div><p class="why">…filtrar as barras do <mark>Gantt</mark> pelo responsável da spec…</p></li></ul></div></main></div>
+<footer class="statusbar">
+<span class="conn-state live" role="status">ao vivo</span>
+<span class="fresh">atualizado há 3 s · 15:00</span>
+<button type="button" class="ghost icon small" aria-label="Pausar o auto-refresh" title="Pausar"><svg class="i" viewBox="0 0 16 16" aria-hidden="true"><path d="M5.5 3.5v9M10.5 3.5v9"/></svg></button>
+<button type="button" class="ghost icon small" aria-label="Atualizar agora" title="Atualizar"><svg class="i" viewBox="0 0 16 16" aria-hidden="true"><path d="M13 8a5 5 0 1 1-1.6-3.7M13 2v3h-3"/></svg></button>
+<span class="grow"></span>
+<span class="hint">pressione <kbd>?</kbd> para atalhos</span>
+<button type="button" class="ghost small" aria-label="Notificações"><svg class="i" viewBox="0 0 16 16" aria-hidden="true"><path d="M4 11.5V7.2a4 4 0 0 1 8 0v4.3l1 1.2H3l1-1.2ZM6.6 14.5h2.8"/></svg> <span class="count">2</span></button>
+</footer>
+</div>
+</body>
+</html>

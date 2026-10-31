@@ -1,0 +1,19 @@
+<!-- @dsCard group="Overlays" height=480 width=900 subtitle="Capture, edit section, register a discovery" -->
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dialog</title>
+<link rel="stylesheet" href="../../tokens.css">
+<link rel="stylesheet" href="../bundle.css">
+</head>
+<body>
+<div class="app" style="--app-h:480px;display:block"><div class="backdrop"></div><div class="dialog" role="dialog" aria-labelledby="dlg-title">
+<div class="dialog-head"><h2 id="dlg-title">Capturar uma spec</h2><button type="button" class="ghost icon small" aria-label="Fechar"><svg class="i" viewBox="0 0 16 16" aria-hidden="true"><path d="m4 4 8 8M12 4l-8 8"/></svg></button></div>
+<form class="dialog-form">
+<label class="field">Título<input type="text" required value="Mostrar quem aprovou no card da spec"></label>
+<label class="field">Problema<textarea required placeholder="O que está errado hoje e quem sofre com isso?"></textarea><span class="field-hint">A captura vai ao remoto na hora: é um ponto de sincronia.</span></label>
+<div class="actions"><button type="button">Cancelar</button><button type="submit" class="primary">Capturar</button></div></form></div></div>
+</body>
+</html>

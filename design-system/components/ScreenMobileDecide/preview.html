@@ -1,0 +1,66 @@
+<!-- @dsCard group="Target screens" height=844 width=390 page subtitle="Decide on a phone" -->
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ScreenMobileDecide</title>
+<link rel="stylesheet" href="../../tokens.css">
+<link rel="stylesheet" href="../bundle.css">
+</head>
+<body>
+<div class="app" style="--app-h:844px">
+<a class="skip" href="#main">Ir para o conteúdo</a>
+<header class="top"><h1 class="brand"><a href="#/board"><span class="mark" aria-hidden="true">Q</span> Quenching <span class="brand-sub">specs</span></a></h1><nav class="nav" aria-label="Visões"><a href="#/board">Board</a><a href="#/list">Ranking</a><a href="#/human" aria-current="page">Decidir <span class="count hot" aria-label="esperando você">7</span></a><a href="#/epics">Épicos</a><a href="#/gantt">Gantt</a><a href="#/sessions">Sessões <span class="count hot" aria-label="sessões esperando você">1</span></a><a href="#/chat">Chat</a></nav>
+<div class="top-actions">
+<button type="button" class="searchbtn" aria-haspopup="dialog"><svg class="i" viewBox="0 0 16 16" aria-hidden="true"><path d="M7 12A5 5 0 1 0 7 2a5 5 0 0 0 0 10Zm7 2-3.5-3.5"/></svg><span class="searchbtn-label">Buscar ou executar</span> <kbd>Ctrl K</kbd></button>
+<button type="button" class="ghost icon theme" aria-label="Tema: automático" title="Tema (t)"><svg class="i" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 14A6 6 0 1 0 8 2a6 6 0 0 0 0 12Zm0-12v12M8 5h3.6M8 8h4.9M8 11h3.6"/></svg></button>
+<button type="button" class="ghost icon helpbtn" aria-label="Ajuda e atalhos" title="Ajuda e atalhos (?)" aria-haspopup="dialog"><svg class="i" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 14.5a6.5 6.5 0 1 0 0-13 6.5 6.5 0 0 0 0 13ZM6.1 6.2a2 2 0 1 1 2.9 1.8c-.6.3-1 .8-1 1.5M8 11.6v.1"/></svg></button>
+<button type="button" class="primary"><svg class="i" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 3v10M3 8h10"/></svg> Capturar</button>
+</div></header>
+<section class="pulse" aria-label="Pulso do repositório"><a class="pulse-cell hot" href="#/human" title="fila de decisão do humano"><strong class="pulse-value">7</strong> esperando você</a><a class="pulse-cell bad" href="#/board?f=stage:blocked" title="specs com tarefa bloqueada"><strong class="pulse-value">2</strong> bloqueadas</a><a class="pulse-cell " href="#/board?f=stage:executing" title="specs na etapa em execução"><strong class="pulse-value">5</strong> em execução</a><a class="pulse-cell " href="#/board" title="specs em plans"><strong class="pulse-value">22</strong> abertas</a><a class="pulse-cell " href="#/list" title="tarefas concluídas nas specs abertas"><strong class="pulse-value">58/126</strong> tarefas</a><a class="pulse-cell " href="#/list" title="aberta desde 23/09/2026"><strong class="pulse-value">há 38 d</strong> mais antiga</a></section>
+<div></div>
+<div class="shell"><main id="main"><div class="wrap">
+<div class="view-head"><h2>Decidir</h2><span class="sub">7 decisões esperam por você</span><span class="grow"></span>
+<div class="segmented" role="group"><button type="button" class="ghost small" aria-pressed="true">Todas 7</button><button type="button" class="ghost small" aria-pressed="false">Aprovar 4</button><button type="button" class="ghost small" aria-pressed="false">Desbloquear 2</button><button type="button" class="ghost small" aria-pressed="false">Épicos 1</button></div></div>
+<div class="group-head"><h3>Prontas, aguardando aprovação</h3><p>Mais antigas primeiro. Aprovar grava um registro que não se desfaz.</p></div>
+<ul class="triagelist"><li class="triage is-cursor" data-spec="2140">
+<div class="triage-main"><span class="id">2140</span><a href="#/spec/2140">Carregar o Gantt sem travar em stores com mais de 500 specs</a></div>
+<div class="triage-aside"><span class="age">há 11 d</span><button type="button" class="ghost small">Abrir</button><button type="button" class="heat small">Aprovar</button></div>
+<p class="why">O Gantt relê o schedule inteiro a cada troca de zoom, e a aba congela em stores grandes.</p></li><li class="triage" data-spec="2139">
+<div class="triage-main"><span class="id">2139</span><a href="#/spec/2139">Atalho para copiar o comando de execução com a worktree</a></div>
+<div class="triage-aside"><span class="age">há 13 d</span><button type="button" class="ghost small">Abrir</button><button type="button" class="heat small">Aprovar</button></div>
+<p class="why">O comando copiado não leva a worktree, e o agente abre no checkout errado.</p></li><li class="triage" data-spec="2143">
+<div class="triage-main"><span class="id">2143</span><a href="#/spec/2143">Filtro por responsável no Gantt</a></div>
+<div class="triage-aside"><span class="age">há 6 d</span><button type="button" class="ghost small">Abrir</button><button type="button" class="heat small">Aprovar</button></div>
+<p class="why">Quem conduz várias frentes precisa ver só as barras de uma pessoa.</p></li><li class="triage" data-spec="2145">
+<div class="triage-main"><span class="id">2145</span><a href="#/spec/2145">Aprovar em lote na fila de decisão, com uma confirmação só</a></div>
+<div class="triage-aside"><span class="age">há 4 d</span><button type="button" class="ghost small">Abrir</button><button type="button" class="heat small">Aprovar</button></div>
+<p class="why">Aprovar as vinte filhas de um épico hoje pede vinte cliques e vinte confirmações.</p></li></ul>
+<div class="group-head"><h3>Tarefas bloqueadas</h3><p>O motivo está na tarefa; a spec tem o resto.</p></div>
+<ul class="triagelist"><li class="triage" data-spec="2112">
+<div class="triage-main"><span class="id">2112</span><a href="#/spec/2112">Migrar o manifesto do deploy para o formato 2</a></div>
+<div class="triage-aside"><span class="age">há 38 d</span><button type="button" class="ghost small">Abrir</button><button type="button" class="ghost small">Copiar comando</button></div>
+<p class="why is-bad">5.1: depende da decisão sobre arquivos sem dono no alvo. 5.2: espera a 5.1.</p></li><li class="triage" data-spec="2119">
+<div class="triage-main"><span class="id">2119</span><a href="#/spec/2119">Assinar as releases do plugin com a chave do CI</a></div>
+<div class="triage-aside"><span class="age">há 24 d</span><button type="button" class="ghost small">Abrir</button><button type="button" class="ghost small">Copiar comando</button></div>
+<p class="why is-bad">3.2: a chave de assinatura ainda não existe no cofre do CI.</p></li></ul>
+<div class="group-head"><h3>Membros de épicos abertos</h3><p>Itens de épicos marcados como decisão do humano.</p></div>
+<ul class="triagelist"><li class="triage" data-spec="2152">
+<div class="triage-main"><span class="id">2152</span><a href="#/spec/2152">Política de aprovação quando o épico cruza dois repositórios</a></div>
+<div class="triage-aside"><span class="age">há 7 d</span><button type="button" class="ghost small">Abrir</button><button type="button" class="ghost small">Copiar comando</button></div>
+<p class="why">Membro do épico 2127 · S9 · esperando decisão do humano.</p></li></ul>
+<p class="quiet-row"><kbd>j</kbd> <kbd>k</kbd> navegar · <kbd>Enter</kbd> abrir · <kbd>a</kbd> aprovar · <kbd>Esc</kbd> desarmar</p>
+</div></main></div>
+<footer class="statusbar">
+<span class="conn-state live" role="status">ao vivo</span>
+<span class="fresh">atualizado há 3 s · 15:00</span>
+<button type="button" class="ghost icon small" aria-label="Pausar o auto-refresh" title="Pausar"><svg class="i" viewBox="0 0 16 16" aria-hidden="true"><path d="M5.5 3.5v9M10.5 3.5v9"/></svg></button>
+<button type="button" class="ghost icon small" aria-label="Atualizar agora" title="Atualizar"><svg class="i" viewBox="0 0 16 16" aria-hidden="true"><path d="M13 8a5 5 0 1 1-1.6-3.7M13 2v3h-3"/></svg></button>
+<span class="grow"></span>
+<span class="hint">pressione <kbd>?</kbd> para atalhos</span>
+<button type="button" class="ghost small" aria-label="Notificações"><svg class="i" viewBox="0 0 16 16" aria-hidden="true"><path d="M4 11.5V7.2a4 4 0 0 1 8 0v4.3l1 1.2H3l1-1.2ZM6.6 14.5h2.8"/></svg> <span class="count">2</span></button>
+</footer>
+</div>
+</body>
+</html>

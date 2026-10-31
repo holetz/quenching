@@ -1,0 +1,14 @@
+<!-- @dsCard group="Status" height=170 width=900 subtitle="Stage mark, chips, priority, runner verdict" -->
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tags</title>
+<link rel="stylesheet" href="../../tokens.css">
+<link rel="stylesheet" href="../bundle.css">
+</head>
+<body>
+<div style="padding:16px;display:grid;gap:12px;"><div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><span class="stage" data-stage="captured">capturada</span><span class="stage" data-stage="ready">pronta</span><span class="stage" data-stage="approved">aprovada</span><span class="stage" data-stage="executing">em execução</span><span class="stage" data-stage="blocked">bloqueada</span><span class="stage" data-stage="review">em revisão</span><span class="stage" data-stage="archived">arquivada</span></div><div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><span class="chip stage-captured">capturada</span><span class="chip stage-ready">pronta</span><span class="chip stage-approved">aprovada</span><span class="chip stage-executing">em execução</span><span class="chip stage-blocked">bloqueada</span><span class="chip stage-review">em revisão</span><span class="chip stage-archived">arquivada</span></div><div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><span class="pri p1" title="prioridade P1">P1</span><span class="pri p2" title="prioridade P2">P2</span><span class="pri" title="prioridade P3">P3</span><span class="pri" title="prioridade P4">P4</span><span class="chip">Portal</span><span class="tag">#store</span><span class="chip hot">espera você</span><span class="chip ok">concluído</span><span class="chip warn">em andamento</span><span class="chip bad">bloqueio</span></div><div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><span class="run pass" title="último passo do runner: continua · verificador: verificado"><svg class="i" viewBox="0 0 16 16" aria-hidden="true"><path d="m3 8.5 3.2 3L13 4.5"/></svg>continua, verificado</span><span class="run " title="último passo do runner: feito · verificador: sem verificador">feito, sem verificador</span><span class="run bad" title="último passo do runner: falhou · verificador: reprovado"><svg class="i" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 2.5 14.5 13.5h-13L8 2.5ZM8 6.5v3.2M8 11.8v.1"/></svg>falhou, reprovado</span></div></div>
+</body>
+</html>

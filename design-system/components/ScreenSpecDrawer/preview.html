@@ -1,0 +1,223 @@
+<!-- @dsCard group="Target screens" height=900 width=1440 page subtitle="A spec in the drawer, over the board" -->
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ScreenSpecDrawer</title>
+<link rel="stylesheet" href="../../tokens.css">
+<link rel="stylesheet" href="../bundle.css">
+</head>
+<body>
+<div class="app" style="--app-h:900px">
+<a class="skip" href="#main">Ir para o conteúdo</a>
+<header class="top"><h1 class="brand"><a href="#/board"><span class="mark" aria-hidden="true">Q</span> Quenching <span class="brand-sub">specs</span></a></h1><nav class="nav" aria-label="Visões"><a href="#/board" aria-current="page">Board</a><a href="#/list">Ranking</a><a href="#/human">Decidir <span class="count hot" aria-label="esperando você">7</span></a><a href="#/epics">Épicos</a><a href="#/gantt">Gantt</a><a href="#/sessions">Sessões <span class="count hot" aria-label="sessões esperando você">1</span></a><a href="#/chat">Chat</a></nav>
+<div class="top-actions">
+<button type="button" class="searchbtn" aria-haspopup="dialog"><svg class="i" viewBox="0 0 16 16" aria-hidden="true"><path d="M7 12A5 5 0 1 0 7 2a5 5 0 0 0 0 10Zm7 2-3.5-3.5"/></svg><span class="searchbtn-label">Buscar ou executar</span> <kbd>Ctrl K</kbd></button>
+<button type="button" class="ghost icon theme" aria-label="Tema: automático" title="Tema (t)"><svg class="i" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 14A6 6 0 1 0 8 2a6 6 0 0 0 0 12Zm0-12v12M8 5h3.6M8 8h4.9M8 11h3.6"/></svg></button>
+<button type="button" class="ghost icon helpbtn" aria-label="Ajuda e atalhos" title="Ajuda e atalhos (?)" aria-haspopup="dialog"><svg class="i" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 14.5a6.5 6.5 0 1 0 0-13 6.5 6.5 0 0 0 0 13ZM6.1 6.2a2 2 0 1 1 2.9 1.8c-.6.3-1 .8-1 1.5M8 11.6v.1"/></svg></button>
+<button type="button" class="primary"><svg class="i" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 3v10M3 8h10"/></svg> Capturar</button>
+</div></header>
+<section class="pulse" aria-label="Pulso do repositório"><a class="pulse-cell hot" href="#/human" title="fila de decisão do humano"><strong class="pulse-value">7</strong> esperando você</a><a class="pulse-cell bad" href="#/board?f=stage:blocked" title="specs com tarefa bloqueada"><strong class="pulse-value">2</strong> bloqueadas</a><a class="pulse-cell " href="#/board?f=stage:executing" title="specs na etapa em execução"><strong class="pulse-value">5</strong> em execução</a><a class="pulse-cell " href="#/board" title="specs em plans"><strong class="pulse-value">22</strong> abertas</a><a class="pulse-cell " href="#/list" title="tarefas concluídas nas specs abertas"><strong class="pulse-value">58/126</strong> tarefas</a><a class="pulse-cell " href="#/list" title="aberta desde 23/09/2026"><strong class="pulse-value">há 38 d</strong> mais antiga</a></section>
+<div></div>
+<div class="shell"><main id="main" class="is-board"><section class="board-tools" aria-label="Controles do board">
+<label class="control">Agrupar <select><option>Etapa</option></select></label>
+<label class="control">Ordenar <select><option>Ranking</option></select></label>
+<button type="button" class="ghost small"><svg class="i" viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 4h11M5 8h6M7 12h2"/></svg> Filtros</button>
+<span class="tools-sep wide"></span><div class="chips wide"><button type="button" class="ghost small" aria-pressed="false">bloqueadas</button><button type="button" class="ghost small" aria-pressed="false">em execução</button><button type="button" class="ghost small" aria-pressed="false">sem responsável</button><button type="button" class="ghost small" aria-pressed="false">aguardando você</button></div>
+<span class="grow"></span>
+<label class="check wide"><input type="checkbox"> ocultar vazias</label>
+<label class="check wide"><input type="checkbox"> compacto</label>
+<button type="button" class="ghost small wide">Visões <svg class="i" viewBox="0 0 16 16" aria-hidden="true"><path d="m4 6 4 4 4-4"/></svg></button>
+</section><div class="board"><section class="col" data-stage="captured" aria-label="capturada">
+<h2 class="col-head"><button type="button" class="col-toggle" aria-expanded="true"><span class="col-name">Capturada</span><span class="count">6</span></button></h2>
+<div class="col-body"><article class="card" data-spec="2148">
+<div class="card-top"><span class="id">2148</span><span class="pri" title="prioridade P3">P3</span><span class="age">há 2 d</span></div>
+<a class="title" href="#/spec/2148">Exportar o board como CSV para a revisão do trimestre</a>
+
+<div class="card-foot"><span>sem responsável · Portal</span></div>
+<div class="quick"><button type="button" class="ghost icon small" aria-label="Abrir a gaveta"><svg class="i" viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 3h11v10h-11zM9.5 3v10"/></svg></button><button type="button" class="ghost icon small" aria-label="Copiar o comando"><svg class="i" viewBox="0 0 16 16" aria-hidden="true"><path d="M5.5 5.5h7v8h-7zM3.5 10.5v-8h7"/></svg></button></div>
+</article>
+<article class="card" data-spec="2147">
+<div class="card-top"><span class="id">2147</span><span class="pri p2" title="prioridade P2">P2</span><span class="age">há 3 d</span></div>
+<a class="title" href="#/spec/2147">Mostrar o custo estimado de uma spec antes de aprovar, por modelo e por etapa, com o teto configurado no repositório</a>
+
+<div class="card-foot"><span>sem responsável · Store</span></div>
+<div class="quick"><button type="button" class="ghost icon small" aria-label="Abrir a gaveta"><svg class="i" viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 3h11v10h-11zM9.5 3v10"/></svg></button><button type="button" class="ghost icon small" aria-label="Copiar o comando"><svg class="i" viewBox="0 0 16 16" aria-hidden="true"><path d="M5.5 5.5h7v8h-7zM3.5 10.5v-8h7"/></svg></button></div>
+</article>
+<article class="card" data-spec="2146">
+<div class="card-top"><span class="id">2146</span><span class="pri" title="prioridade P4">P4</span><span class="age">há 5 d</span></div>
+<a class="title" href="#/spec/2146">Agrupar o board por marco de entrega</a>
+
+<div class="card-foot"><span>sem responsável · Portal</span></div>
+<div class="quick"><button type="button" class="ghost icon small" aria-label="Abrir a gaveta"><svg class="i" viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 3h11v10h-11zM9.5 3v10"/></svg></button><button type="button" class="ghost icon small" aria-label="Copiar o comando"><svg class="i" viewBox="0 0 16 16" aria-hidden="true"><path d="M5.5 5.5h7v8h-7zM3.5 10.5v-8h7"/></svg></button></div>
+</article>
+<article class="card" data-spec="2144">
+<div class="card-top"><span class="id">2144</span><span class="pri" title="prioridade P3">P3</span><span class="age">há 9 d</span></div>
+<a class="title" href="#/spec/2144">Avisar quando uma spec fica parada por mais de 14 dias</a>
+
+<div class="card-foot"><span>@rui · Portal</span></div>
+<div class="quick"><button type="button" class="ghost icon small" aria-label="Abrir a gaveta"><svg class="i" viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 3h11v10h-11zM9.5 3v10"/></svg></button><button type="button" class="ghost icon small" aria-label="Copiar o comando"><svg class="i" viewBox="0 0 16 16" aria-hidden="true"><path d="M5.5 5.5h7v8h-7zM3.5 10.5v-8h7"/></svg></button></div>
+</article>
+<article class="card" data-spec="2141">
+<div class="card-top"><span class="id">2141</span><span class="pri" title="prioridade P4">P4</span><span class="age">há 12 d</span></div>
+<a class="title" href="#/spec/2141">Resumo semanal do store para quem não abre o portal</a>
+
+<div class="card-foot"><span>sem responsável · Store</span></div>
+<div class="quick"><button type="button" class="ghost icon small" aria-label="Abrir a gaveta"><svg class="i" viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 3h11v10h-11zM9.5 3v10"/></svg></button><button type="button" class="ghost icon small" aria-label="Copiar o comando"><svg class="i" viewBox="0 0 16 16" aria-hidden="true"><path d="M5.5 5.5h7v8h-7zM3.5 10.5v-8h7"/></svg></button></div>
+</article>
+<article class="card" data-spec="2133">
+<div class="card-top"><span class="id">2133</span><span class="pri" title="prioridade P3">P3</span><span class="age">há 26 d</span></div>
+<a class="title" href="#/spec/2133">Importar specs antigas do tracker sem perder o histórico</a>
+
+<div class="card-foot"><span>sem responsável · Store</span></div>
+<div class="quick"><button type="button" class="ghost icon small" aria-label="Abrir a gaveta"><svg class="i" viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 3h11v10h-11zM9.5 3v10"/></svg></button><button type="button" class="ghost icon small" aria-label="Copiar o comando"><svg class="i" viewBox="0 0 16 16" aria-hidden="true"><path d="M5.5 5.5h7v8h-7zM3.5 10.5v-8h7"/></svg></button></div>
+</article></div></section><section class="col" data-stage="ready" aria-label="pronta">
+<h2 class="col-head"><button type="button" class="col-toggle" aria-expanded="true"><span class="col-name">Pronta</span><span class="count">4</span></button></h2>
+<div class="col-body"><article class="card" data-spec="2145">
+<div class="card-top"><span class="id">2145</span><span class="pri p2" title="prioridade P2">P2</span><span class="age">há 4 d</span></div>
+<a class="title" href="#/spec/2145">Aprovar em lote na fila de decisão, com uma confirmação só</a>
+<button type="button" class="heat small approve">Aprovar</button>
+<div class="card-foot"><span>@ana · Portal</span></div>
+<div class="quick"><button type="button" class="ghost icon small" aria-label="Abrir a gaveta"><svg class="i" viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 3h11v10h-11zM9.5 3v10"/></svg></button><button type="button" class="ghost icon small" aria-label="Copiar o comando"><svg class="i" viewBox="0 0 16 16" aria-hidden="true"><path d="M5.5 5.5h7v8h-7zM3.5 10.5v-8h7"/></svg></button></div>
+</article>
+<article class="card" data-spec="2143">
+<div class="card-top"><span class="id">2143</span><span class="pri" title="prioridade P3">P3</span><span class="age">há 6 d</span></div>
+<a class="title" href="#/spec/2143">Filtro por responsável no Gantt</a>
+<button type="button" class="heat small approve">Aprovar</button>
+<div class="card-foot"><span>@rui · Portal</span></div>
+<div class="quick"><button type="button" class="ghost icon small" aria-label="Abrir a gaveta"><svg class="i" viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 3h11v10h-11zM9.5 3v10"/></svg></button><button type="button" class="ghost icon small" aria-label="Copiar o comando"><svg class="i" viewBox="0 0 16 16" aria-hidden="true"><path d="M5.5 5.5h7v8h-7zM3.5 10.5v-8h7"/></svg></button></div>
+</article>
+<article class="card" data-spec="2140">
+<div class="card-top"><span class="id">2140</span><span class="pri p2" title="prioridade P2">P2</span><span class="age">há 11 d</span></div>
+<a class="title" href="#/spec/2140">Carregar o Gantt sem travar em stores com mais de 500 specs</a>
+<button type="button" class="heat small approve">Aprovar</button>
+<div class="card-foot"><span>@ana · Portal</span></div>
+<div class="quick"><button type="button" class="ghost icon small" aria-label="Abrir a gaveta"><svg class="i" viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 3h11v10h-11zM9.5 3v10"/></svg></button><button type="button" class="ghost icon small" aria-label="Copiar o comando"><svg class="i" viewBox="0 0 16 16" aria-hidden="true"><path d="M5.5 5.5h7v8h-7zM3.5 10.5v-8h7"/></svg></button></div>
+</article>
+<article class="card" data-spec="2139">
+<div class="card-top"><span class="id">2139</span><span class="pri" title="prioridade P4">P4</span><span class="age">há 13 d</span></div>
+<a class="title" href="#/spec/2139">Atalho para copiar o comando de execução com a worktree</a>
+<button type="button" class="heat small approve">Aprovar</button>
+<div class="card-foot"><span>sem responsável · Portal</span></div>
+<div class="quick"><button type="button" class="ghost icon small" aria-label="Abrir a gaveta"><svg class="i" viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 3h11v10h-11zM9.5 3v10"/></svg></button><button type="button" class="ghost icon small" aria-label="Copiar o comando"><svg class="i" viewBox="0 0 16 16" aria-hidden="true"><path d="M5.5 5.5h7v8h-7zM3.5 10.5v-8h7"/></svg></button></div>
+</article></div></section><section class="col" data-stage="approved" aria-label="aprovada">
+<h2 class="col-head"><button type="button" class="col-toggle" aria-expanded="true"><span class="col-name">Aprovada</span><span class="count">3</span></button></h2>
+<div class="col-body"><article class="card" data-spec="2136">
+<div class="card-top"><span class="id">2136</span><span class="pri" title="prioridade P3">P3</span><span class="age">há 2 d</span></div>
+<a class="title" href="#/spec/2136">Documentar o teclado do portal no manual do plugin</a>
+
+<div class="card-foot"><span>@davi · Docs</span></div>
+<div class="quick"><button type="button" class="ghost icon small" aria-label="Abrir a gaveta"><svg class="i" viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 3h11v10h-11zM9.5 3v10"/></svg></button><button type="button" class="ghost icon small" aria-label="Copiar o comando"><svg class="i" viewBox="0 0 16 16" aria-hidden="true"><path d="M5.5 5.5h7v8h-7zM3.5 10.5v-8h7"/></svg></button></div>
+</article>
+<article class="card" data-spec="2134">
+<div class="card-top"><span class="id">2134</span><span class="pri" title="prioridade P3">P3</span><span class="age">há 5 d</span></div>
+<a class="title" href="#/spec/2134">Contrato de cores por etapa na documentação</a>
+
+<div class="card-foot"><span>sem responsável · Docs</span></div>
+<div class="quick"><button type="button" class="ghost icon small" aria-label="Abrir a gaveta"><svg class="i" viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 3h11v10h-11zM9.5 3v10"/></svg></button><button type="button" class="ghost icon small" aria-label="Copiar o comando"><svg class="i" viewBox="0 0 16 16" aria-hidden="true"><path d="M5.5 5.5h7v8h-7zM3.5 10.5v-8h7"/></svg></button></div>
+</article>
+<article class="card" data-spec="2131">
+<div class="card-top"><span class="id">2131</span><span class="pri p2" title="prioridade P2">P2</span><span class="age">há 8 d</span></div>
+<a class="title" href="#/spec/2131">Histórico de decisões no detalhe da spec</a>
+
+<div class="card-foot"><span>@rui · Portal</span></div>
+<div class="quick"><button type="button" class="ghost icon small" aria-label="Abrir a gaveta"><svg class="i" viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 3h11v10h-11zM9.5 3v10"/></svg></button><button type="button" class="ghost icon small" aria-label="Copiar o comando"><svg class="i" viewBox="0 0 16 16" aria-hidden="true"><path d="M5.5 5.5h7v8h-7zM3.5 10.5v-8h7"/></svg></button></div>
+</article></div></section><section class="col" data-stage="executing" aria-label="em execução">
+<h2 class="col-head"><button type="button" class="col-toggle" aria-expanded="true"><span class="col-name">Em execução</span><span class="count">5</span></button></h2>
+<div class="col-body"><article class="card is-cursor" data-spec="2137">
+<div class="card-top"><span class="id">2137</span><span class="pri p1" title="prioridade P1">P1</span><span class="age">há 3 d</span></div>
+<a class="title" href="#/spec/2137">Publicar as escritas pendentes a partir do shell 2.0</a>
+<div class="card-signal"><span class="progress-num">5/6</span><span class="bar" role="img" aria-label="5 de 6 tarefas concluídas"><i style="width:83%"></i></span></div><div class="card-signal"><span class="run pass" title="último passo do runner: continua · verificador: verificado"><svg class="i" viewBox="0 0 16 16" aria-hidden="true"><path d="m3 8.5 3.2 3L13 4.5"/></svg>continua, verificado</span></div>
+<div class="card-foot"><span>@ana · Portal</span><a class="pr" href="#">PR</a></div>
+<div class="quick"><button type="button" class="ghost icon small" aria-label="Abrir a gaveta"><svg class="i" viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 3h11v10h-11zM9.5 3v10"/></svg></button><button type="button" class="ghost icon small" aria-label="Copiar o comando"><svg class="i" viewBox="0 0 16 16" aria-hidden="true"><path d="M5.5 5.5h7v8h-7zM3.5 10.5v-8h7"/></svg></button></div>
+</article>
+<article class="card" data-spec="2127">
+<div class="card-top"><span class="id">2127</span><span class="pri p1" title="prioridade P1">P1</span><span class="age">há 16 d</span></div>
+<a class="title" href="#/spec/2127">Experiência do portal 2.0: shell, board e visões ao vivo</a>
+<div class="card-signal"><span class="progress-num">18/22</span><span class="bar" role="img" aria-label="18 de 22 tarefas concluídas"><i style="width:82%"></i></span></div><div class="card-signal"><span class="run pass" title="último passo do runner: continua · verificador: verificado"><svg class="i" viewBox="0 0 16 16" aria-hidden="true"><path d="m3 8.5 3.2 3L13 4.5"/></svg>continua, verificado</span></div>
+<div class="card-foot"><span>@ana · Portal</span><a class="pr" href="#">PR</a></div>
+<div class="quick"><button type="button" class="ghost icon small" aria-label="Abrir a gaveta"><svg class="i" viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 3h11v10h-11zM9.5 3v10"/></svg></button><button type="button" class="ghost icon small" aria-label="Copiar o comando"><svg class="i" viewBox="0 0 16 16" aria-hidden="true"><path d="M5.5 5.5h7v8h-7zM3.5 10.5v-8h7"/></svg></button></div>
+</article>
+<article class="card" data-spec="2132">
+<div class="card-top"><span class="id">2132</span><span class="pri p2" title="prioridade P2">P2</span><span class="age">há 9 d</span></div>
+<a class="title" href="#/spec/2132">Sincronizar o store com escrita local e ponto de envio</a>
+<div class="card-signal"><span class="progress-num">7/12</span><span class="bar" role="img" aria-label="7 de 12 tarefas concluídas"><i style="width:58%"></i></span></div><div class="card-signal"><span class="run " title="último passo do runner: feito · verificador: sem verificador">feito, sem verificador</span></div>
+<div class="card-foot"><span>@davi · Store</span></div>
+<div class="quick"><button type="button" class="ghost icon small" aria-label="Abrir a gaveta"><svg class="i" viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 3h11v10h-11zM9.5 3v10"/></svg></button><button type="button" class="ghost icon small" aria-label="Copiar o comando"><svg class="i" viewBox="0 0 16 16" aria-hidden="true"><path d="M5.5 5.5h7v8h-7zM3.5 10.5v-8h7"/></svg></button></div>
+</article>
+<article class="card" data-spec="2129">
+<div class="card-top"><span class="id">2129</span><span class="pri p2" title="prioridade P2">P2</span><span class="age">há 10 d</span></div>
+<a class="title" href="#/spec/2129">Reconciliar os cards do tracker com a etapa derivada</a>
+<div class="card-signal"><span class="progress-num">2/9</span><span class="bar" role="img" aria-label="2 de 9 tarefas concluídas"><i style="width:22%"></i></span></div><div class="card-signal"><span class="run bad" title="último passo do runner: falhou · verificador: reprovado"><svg class="i" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 2.5 14.5 13.5h-13L8 2.5ZM8 6.5v3.2M8 11.8v.1"/></svg>falhou, reprovado</span></div>
+<div class="card-foot"><span>@rui · Store · #tracker</span></div>
+<div class="quick"><button type="button" class="ghost icon small" aria-label="Abrir a gaveta"><svg class="i" viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 3h11v10h-11zM9.5 3v10"/></svg></button><button type="button" class="ghost icon small" aria-label="Copiar o comando"><svg class="i" viewBox="0 0 16 16" aria-hidden="true"><path d="M5.5 5.5h7v8h-7zM3.5 10.5v-8h7"/></svg></button></div>
+</article>
+<article class="card" data-spec="2128">
+<div class="card-top"><span class="id">2128</span><span class="pri" title="prioridade P3">P3</span><span class="age">há 14 d</span></div>
+<a class="title" href="#/spec/2128">Um servidor por máquina para vários projetos</a>
+<div class="card-signal"><span class="progress-num">9/11</span><span class="bar" role="img" aria-label="9 de 11 tarefas concluídas"><i style="width:82%"></i></span></div>
+<div class="card-foot"><span>@davi · Portal</span></div>
+<div class="quick"><button type="button" class="ghost icon small" aria-label="Abrir a gaveta"><svg class="i" viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 3h11v10h-11zM9.5 3v10"/></svg></button><button type="button" class="ghost icon small" aria-label="Copiar o comando"><svg class="i" viewBox="0 0 16 16" aria-hidden="true"><path d="M5.5 5.5h7v8h-7zM3.5 10.5v-8h7"/></svg></button></div>
+</article></div></section><section class="col" data-stage="blocked" aria-label="bloqueada">
+<h2 class="col-head"><button type="button" class="col-toggle" aria-expanded="true"><span class="col-name">Bloqueada</span><span class="count">2</span></button></h2>
+<div class="col-body"><article class="card" data-spec="2119">
+<div class="card-top"><span class="id">2119</span><span class="pri p2" title="prioridade P2">P2</span><span class="age">há 24 d</span></div>
+<a class="title" href="#/spec/2119">Assinar as releases do plugin com a chave do CI</a>
+<div class="card-signal"><span class="progress-num">3/7</span><span class="bar has-blocked" role="img" aria-label="3 de 7 tarefas concluídas"><i style="width:43%"></i></span></div><p class="card-why"><svg class="i" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 2.5 14.5 13.5h-13L8 2.5ZM8 6.5v3.2M8 11.8v.1"/></svg><span>3.2: a chave de assinatura ainda não existe no cofre do CI.</span></p>
+<div class="card-foot"><span>@davi · Release</span></div>
+<div class="quick"><button type="button" class="ghost icon small" aria-label="Abrir a gaveta"><svg class="i" viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 3h11v10h-11zM9.5 3v10"/></svg></button><button type="button" class="ghost icon small" aria-label="Copiar o comando"><svg class="i" viewBox="0 0 16 16" aria-hidden="true"><path d="M5.5 5.5h7v8h-7zM3.5 10.5v-8h7"/></svg></button></div>
+</article>
+<article class="card" data-spec="2112">
+<div class="card-top"><span class="id">2112</span><span class="pri p2" title="prioridade P2">P2</span><span class="age">há 38 d</span></div>
+<a class="title" href="#/spec/2112">Migrar o manifesto do deploy para o formato 2</a>
+<div class="card-signal"><span class="progress-num">4/10</span><span class="bar has-blocked" role="img" aria-label="4 de 10 tarefas concluídas"><i style="width:40%"></i></span></div><p class="card-why"><svg class="i" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 2.5 14.5 13.5h-13L8 2.5ZM8 6.5v3.2M8 11.8v.1"/></svg><span>5.1: depende da decisão sobre arquivos sem dono no alvo. 5.2: espera a 5.1.</span></p>
+<div class="card-foot"><span>@rui · Release</span></div>
+<div class="quick"><button type="button" class="ghost icon small" aria-label="Abrir a gaveta"><svg class="i" viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 3h11v10h-11zM9.5 3v10"/></svg></button><button type="button" class="ghost icon small" aria-label="Copiar o comando"><svg class="i" viewBox="0 0 16 16" aria-hidden="true"><path d="M5.5 5.5h7v8h-7zM3.5 10.5v-8h7"/></svg></button></div>
+</article></div></section><section class="col" data-stage="review" aria-label="em revisão">
+<h2 class="col-head"><button type="button" class="col-toggle" aria-expanded="true"><span class="col-name">Em revisão</span><span class="count">2</span></button></h2>
+<div class="col-body"><article class="card" data-spec="2125">
+<div class="card-top"><span class="id">2125</span><span class="pri p2" title="prioridade P2">P2</span><span class="age">há 2 d</span></div>
+<a class="title" href="#/spec/2125">A release redeploya a própria superfície</a>
+<div class="card-signal"><span class="progress-num">6/6</span><span class="bar" role="img" aria-label="6 de 6 tarefas concluídas"><i style="width:100%"></i></span></div><div class="card-signal"><span class="run pass" title="último passo do runner: feito · verificador: verificado"><svg class="i" viewBox="0 0 16 16" aria-hidden="true"><path d="m3 8.5 3.2 3L13 4.5"/></svg>feito, verificado</span></div>
+<div class="card-foot"><span>@ana · Release</span><a class="pr" href="#">PR</a></div>
+<div class="quick"><button type="button" class="ghost icon small" aria-label="Abrir a gaveta"><svg class="i" viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 3h11v10h-11zM9.5 3v10"/></svg></button><button type="button" class="ghost icon small" aria-label="Copiar o comando"><svg class="i" viewBox="0 0 16 16" aria-hidden="true"><path d="M5.5 5.5h7v8h-7zM3.5 10.5v-8h7"/></svg></button></div>
+</article>
+<article class="card" data-spec="2126">
+<div class="card-top"><span class="id">2126</span><span class="pri" title="prioridade P3">P3</span><span class="age">há 3 d</span></div>
+<a class="title" href="#/spec/2126">O deploy --check compara o bit de execução</a>
+<div class="card-signal"><span class="progress-num">4/4</span><span class="bar" role="img" aria-label="4 de 4 tarefas concluídas"><i style="width:100%"></i></span></div><div class="card-signal"><span class="run pass" title="último passo do runner: feito · verificador: verificado"><svg class="i" viewBox="0 0 16 16" aria-hidden="true"><path d="m3 8.5 3.2 3L13 4.5"/></svg>feito, verificado</span></div>
+<div class="card-foot"><span>@davi · Release</span><a class="pr" href="#">PR</a></div>
+<div class="quick"><button type="button" class="ghost icon small" aria-label="Abrir a gaveta"><svg class="i" viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 3h11v10h-11zM9.5 3v10"/></svg></button><button type="button" class="ghost icon small" aria-label="Copiar o comando"><svg class="i" viewBox="0 0 16 16" aria-hidden="true"><path d="M5.5 5.5h7v8h-7zM3.5 10.5v-8h7"/></svg></button></div>
+</article></div></section><section class="col is-collapsed" data-stage="archived" aria-label="arquivada">
+<h2 class="col-head"><button type="button" class="col-toggle" aria-expanded="false"><span class="col-name">Arquivada</span><span class="count">14</span></button></h2></section></div></main></div>
+<footer class="statusbar">
+<span class="conn-state live" role="status">ao vivo</span>
+<span class="fresh">atualizado há 3 s · 15:00</span>
+<button type="button" class="ghost icon small" aria-label="Pausar o auto-refresh" title="Pausar"><svg class="i" viewBox="0 0 16 16" aria-hidden="true"><path d="M5.5 3.5v9M10.5 3.5v9"/></svg></button>
+<button type="button" class="ghost icon small" aria-label="Atualizar agora" title="Atualizar"><svg class="i" viewBox="0 0 16 16" aria-hidden="true"><path d="M13 8a5 5 0 1 1-1.6-3.7M13 2v3h-3"/></svg></button>
+<span class="grow"></span>
+<span class="hint">pressione <kbd>?</kbd> para atalhos</span>
+<button type="button" class="ghost small" aria-label="Notificações"><svg class="i" viewBox="0 0 16 16" aria-hidden="true"><path d="M4 11.5V7.2a4 4 0 0 1 8 0v4.3l1 1.2H3l1-1.2ZM6.6 14.5h2.8"/></svg> <span class="count">2</span></button>
+</footer>
+<div class="backdrop"></div><aside class="drawer" role="dialog" aria-label="Detalhe da spec"><header class="detail-head">
+<h2 class="detail-title"><span class="id">2137</span>Publicar as escritas pendentes a partir do shell 2.0</h2>
+<div class="actions"><button type="button" class="ghost small"><svg class="i" viewBox="0 0 16 16" aria-hidden="true"><path d="M5.5 5.5h7v8h-7zM3.5 10.5v-8h7"/></svg> Copiar comando</button><button type="button" class="ghost small">Registrar descoberta</button><a class="ghost small" href="#/spec/2137"><svg class="i" viewBox="0 0 16 16" aria-hidden="true"><path d="M9.5 2.5h4v4M13.5 2.5 9 7M6.5 13.5h-4v-4M2.5 13.5 7 9"/></svg> Página inteira</a><button type="button" class="ghost icon small" aria-label="Fechar"><svg class="i" viewBox="0 0 16 16" aria-hidden="true"><path d="m4 4 8 8M12 4l-8 8"/></svg></button></div>
+<p class="detail-meta"><span class="chip stage-executing">em execução</span><span class="pri p1" title="prioridade P1">P1</span><span>5/6 tarefas</span><span>aberta há 3 d</span><span>@ana</span><a href="#">PR #45</a></p>
+</header>
+<div class="drawer-scroll"><div class="detail in-drawer"><div><section class="spec-section" id="sec-1"><div class="sechead"><h3>Problem</h3><button type="button" class="ghost small">Editar</button></div>
+<div class="md"><p>As aprovações, seções e descobertas feitas no portal ficam no commit local pendente. Sem um gesto de envio, quem trabalha só pelo navegador precisa abrir um terminal para publicar.</p></div></section>
+<section class="spec-section" id="sec-2"><div class="sechead"><h3>Proposal</h3><button type="button" class="ghost small">Editar</button></div>
+<div class="md"><p>Um botão <strong>Enviar</strong> no topo, com a contagem de specs com escritas locais, que delega ao mesmo verbo de <code>cq specs push</code>.</p>
+<ul><li>Sem <code>--drop</code>: o portal nunca descarta escrita.</li><li>Conflito com o remoto vira <code>409 sp-git-stale-write</code>, com o remédio em texto.</li></ul>
+<blockquote><p>Publicar é um gesto explícito: nada sai sozinho do repositório local.</p></blockquote></div></section>
+<section class="spec-section" id="sec-3"><div class="sechead"><h3>Impact</h3><button type="button" class="ghost small">Editar</button></div>
+<div class="md"><table><thead><tr><th>Arquivo</th><th>Mudança</th></tr></thead><tbody><tr><td><code>specs/portal.py</code></td><td>rota e leitura de pendências</td></tr><tr><td><code>portal/app.js</code></td><td>botão e notificação</td></tr></tbody></table></div></section></div><aside class="detail-side"><section class="side-block"><div class="sechead"><h3>Tarefas 5/6</h3></div>
+<div class="segmented" role="group"><button type="button" class="ghost small" aria-pressed="true">Todas 6</button><button type="button" class="ghost small" aria-pressed="false">Abertas 1</button><button type="button" class="ghost small" aria-pressed="false">Feitas 5</button><button type="button" class="ghost small" aria-pressed="false">Bloqueadas 0</button></div>
+<ul style="margin-top:8px"><li class="task is-done"><input type="checkbox" disabled checked aria-label="feita"><div><span class="task-id">1.1</span> <span class="task-text">Adicionar a rota de envio ao servidor do portal</span><span class="task-meta">commit 244032c</span></div></li><li class="task is-done"><input type="checkbox" disabled checked aria-label="feita"><div><span class="task-id">1.2</span> <span class="task-text">Expor as escritas pendentes em GET /api/specs</span><span class="task-meta">commit 244032c</span></div></li><li class="task is-done"><input type="checkbox" disabled checked aria-label="feita"><div><span class="task-id">2.1</span> <span class="task-text">Botão Enviar com contagem no shell</span><span class="task-meta">commit 5eb7ea4</span></div></li><li class="task is-done"><input type="checkbox" disabled checked aria-label="feita"><div><span class="task-id">2.2</span> <span class="task-text">Recusar escrita obsoleta com 409 e remédio visível</span><span class="task-meta">commit 5eb7ea4</span></div></li><li class="task is-done"><input type="checkbox" disabled checked aria-label="feita"><div><span class="task-id">3.1</span> <span class="task-text">Testar a publicação com um remoto mais novo</span><span class="task-meta">commit ba5e2e6</span></div></li><li class="task"><input type="checkbox" disabled aria-label="aberta"><div><span class="task-id">3.2</span> <span class="task-text">Documentar o gesto de envio no standard do portal</span><span class="task-meta">verificar: rodar o gate</span></div></li></ul></section><section class="side-block"><h3>Registros</h3><ol class="timeline">
+<li><div><b>approved</b>by: human · 28/10/2026</div></li>
+<li><div><b>isolation</b>worktree: quenching-2137</div></li>
+<li><div><b>run</b>continua · verificado · 31/10/2026</div></li>
+<li><div><b>pr</b>#45 · aberto</div></li></ol></section></aside></div><footer class="detail-foot"><a href="#/spec/2127">← 2127 · Experiência do portal 2.0: shell, board e visões ao vivo</a><a href="#/spec/2132">2132 · Sincronizar o store com escrita local e ponto de envio →</a></footer></div></aside></div>
+</body>
+</html>

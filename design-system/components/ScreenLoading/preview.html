@@ -1,0 +1,35 @@
+<!-- @dsCard group="Target screens" height=900 width=1440 page subtitle="First paint" -->
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ScreenLoading</title>
+<link rel="stylesheet" href="../../tokens.css">
+<link rel="stylesheet" href="../bundle.css">
+</head>
+<body>
+<div class="app" style="--app-h:900px">
+<a class="skip" href="#main">Ir para o conteúdo</a>
+<header class="top"><h1 class="brand"><a href="#/board"><span class="mark" aria-hidden="true">Q</span> Quenching <span class="brand-sub">specs</span></a></h1><nav class="nav" aria-label="Visões"><a href="#/board" aria-current="page">Board</a><a href="#/list">Ranking</a><a href="#/human">Decidir <span class="count" aria-label="esperando você">0</span></a><a href="#/epics">Épicos</a><a href="#/gantt">Gantt</a><a href="#/sessions">Sessões</a><a href="#/chat">Chat</a></nav>
+<div class="top-actions">
+<button type="button" class="searchbtn" aria-haspopup="dialog"><svg class="i" viewBox="0 0 16 16" aria-hidden="true"><path d="M7 12A5 5 0 1 0 7 2a5 5 0 0 0 0 10Zm7 2-3.5-3.5"/></svg><span class="searchbtn-label">Buscar ou executar</span> <kbd>Ctrl K</kbd></button>
+<button type="button" class="ghost icon theme" aria-label="Tema: automático" title="Tema (t)"><svg class="i" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 14A6 6 0 1 0 8 2a6 6 0 0 0 0 12Zm0-12v12M8 5h3.6M8 8h4.9M8 11h3.6"/></svg></button>
+<button type="button" class="ghost icon helpbtn" aria-label="Ajuda e atalhos" title="Ajuda e atalhos (?)" aria-haspopup="dialog"><svg class="i" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 14.5a6.5 6.5 0 1 0 0-13 6.5 6.5 0 0 0 0 13ZM6.1 6.2a2 2 0 1 1 2.9 1.8c-.6.3-1 .8-1 1.5M8 11.6v.1"/></svg></button>
+<button type="button" class="primary"><svg class="i" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 3v10M3 8h10"/></svg> Capturar</button>
+</div></header>
+<section class="pulse" aria-hidden="true"><span class="pulse-cell skeleton" style="width:150px"></span><span class="pulse-cell skeleton" style="width:150px"></span><span class="pulse-cell skeleton" style="width:150px"></span><span class="pulse-cell skeleton" style="width:150px"></span><span class="pulse-cell skeleton" style="width:150px"></span><span class="pulse-cell skeleton" style="width:150px"></span></section>
+<div></div>
+<div class="shell"><main id="main" class="is-board"><p class="loading-line" role="status">Lendo o repositório de specs…</p><div class="board" aria-hidden="true"><section class="col" data-stage="captured"><h2 class="col-head"><span class="col-toggle" style="display:flex;align-items:center"><span class="col-name">Capturada</span><span class="count">·</span></span></h2><div class="col-body"><div class="sk-card"><span class="sk w70"></span><span class="sk w95"></span><span class="sk w45"></span></div><div class="sk-card"><span class="sk w70"></span><span class="sk w95"></span><span class="sk w45"></span></div><div class="sk-card"><span class="sk w70"></span><span class="sk w95"></span><span class="sk w45"></span></div></div></section><section class="col" data-stage="ready"><h2 class="col-head"><span class="col-toggle" style="display:flex;align-items:center"><span class="col-name">Pronta</span><span class="count">·</span></span></h2><div class="col-body"><div class="sk-card"><span class="sk w70"></span><span class="sk w95"></span><span class="sk w45"></span></div><div class="sk-card"><span class="sk w70"></span><span class="sk w95"></span><span class="sk w45"></span></div><div class="sk-card"><span class="sk w70"></span><span class="sk w95"></span><span class="sk w45"></span></div></div></section><section class="col" data-stage="approved"><h2 class="col-head"><span class="col-toggle" style="display:flex;align-items:center"><span class="col-name">Aprovada</span><span class="count">·</span></span></h2><div class="col-body"><div class="sk-card"><span class="sk w70"></span><span class="sk w95"></span><span class="sk w45"></span></div><div class="sk-card"><span class="sk w70"></span><span class="sk w95"></span><span class="sk w45"></span></div><div class="sk-card"><span class="sk w70"></span><span class="sk w95"></span><span class="sk w45"></span></div></div></section><section class="col" data-stage="executing"><h2 class="col-head"><span class="col-toggle" style="display:flex;align-items:center"><span class="col-name">Em execução</span><span class="count">·</span></span></h2><div class="col-body"><div class="sk-card"><span class="sk w70"></span><span class="sk w95"></span><span class="sk w45"></span></div><div class="sk-card"><span class="sk w70"></span><span class="sk w95"></span><span class="sk w45"></span></div><div class="sk-card"><span class="sk w70"></span><span class="sk w95"></span><span class="sk w45"></span></div></div></section><section class="col" data-stage="blocked"><h2 class="col-head"><span class="col-toggle" style="display:flex;align-items:center"><span class="col-name">Bloqueada</span><span class="count">·</span></span></h2><div class="col-body"><div class="sk-card"><span class="sk w70"></span><span class="sk w95"></span><span class="sk w45"></span></div><div class="sk-card"><span class="sk w70"></span><span class="sk w95"></span><span class="sk w45"></span></div><div class="sk-card"><span class="sk w70"></span><span class="sk w95"></span><span class="sk w45"></span></div></div></section><section class="col" data-stage="review"><h2 class="col-head"><span class="col-toggle" style="display:flex;align-items:center"><span class="col-name">Em revisão</span><span class="count">·</span></span></h2><div class="col-body"><div class="sk-card"><span class="sk w70"></span><span class="sk w95"></span><span class="sk w45"></span></div><div class="sk-card"><span class="sk w70"></span><span class="sk w95"></span><span class="sk w45"></span></div><div class="sk-card"><span class="sk w70"></span><span class="sk w95"></span><span class="sk w45"></span></div></div></section></div></main></div>
+<footer class="statusbar">
+<span class="conn-state unstable" role="status">instável</span>
+<span class="fresh">carregando</span>
+<button type="button" class="ghost icon small" aria-label="Pausar o auto-refresh" title="Pausar"><svg class="i" viewBox="0 0 16 16" aria-hidden="true"><path d="M5.5 3.5v9M10.5 3.5v9"/></svg></button>
+<button type="button" class="ghost icon small" aria-label="Atualizar agora" title="Atualizar"><svg class="i" viewBox="0 0 16 16" aria-hidden="true"><path d="M13 8a5 5 0 1 1-1.6-3.7M13 2v3h-3"/></svg></button>
+<span class="grow"></span>
+<span class="hint">pressione <kbd>?</kbd> para atalhos</span>
+<button type="button" class="ghost small" aria-label="Notificações"><svg class="i" viewBox="0 0 16 16" aria-hidden="true"><path d="M4 11.5V7.2a4 4 0 0 1 8 0v4.3l1 1.2H3l1-1.2ZM6.6 14.5h2.8"/></svg> <span class="count">0</span></button>
+</footer>
+</div>
+</body>
+</html>

@@ -1,0 +1,122 @@
+/* Quenching Portal — generated from tokens.json */
+:root, [data-theme="light"] {
+  --bg: #f5f4f0;
+  --surface: #ffffff;
+  --surface-2: #efece5;
+  --surface-3: #e3dfd5;
+  --ink: #1b1a17;
+  --muted: #5f5b53;
+  --line: #dcd8cf;
+  --control-line: #8a857b;
+  --accent: #b4410a;
+  --accent-ink: #ffffff;
+  --heat-tint: #fbe9dd;
+  --ok: #1f6f43;
+  --warn: #8a5a00;
+  --bad: #a3231f;
+  --bad-tint: #f9e4e2;
+  --info: #1558d6;
+  --focus: #1558d6;
+  --chip-bg: #efece5;
+  --chip-ink: #46423b;
+  --stage-captured: #8a857b;
+  --stage-ready: #2f6fd0;
+  --stage-approved: #1f6f43;
+  --stage-executing: #a86f00;
+  --stage-blocked: #c0392b;
+  --stage-review: #6b46a8;
+  --stage-archived: #8a857b;
+  --stage-captured-bg: #e9e6df;
+  --stage-captured-ink: #4d4941;
+  --stage-ready-bg: #dbe8fb;
+  --stage-ready-ink: #0f3d8a;
+  --stage-approved-bg: #d8eee1;
+  --stage-approved-ink: #1f6f43;
+  --stage-executing-bg: #f6e4c4;
+  --stage-executing-ink: #7a4f00;
+  --stage-blocked-bg: #a3231f;
+  --stage-blocked-ink: #ffffff;
+  --stage-review-bg: #e6dcf5;
+  --stage-review-ink: #52308a;
+  --stage-archived-bg: #e9e6df;
+  --stage-archived-ink: #6b665e;
+  --overlay: rgba(12, 11, 9, .5);
+  --shadow-1: 0 1px 2px rgba(0, 0, 0, .06);
+  --shadow-2: 0 12px 32px rgba(0, 0, 0, .18);
+}
+[data-theme="dark"] {
+  --bg: #141311;
+  --surface: #1d1b18;
+  --surface-2: #26231f;
+  --surface-3: #322e28;
+  --ink: #ece9e2;
+  --muted: #a8a399;
+  --line: #3a362f;
+  --control-line: #7b766c;
+  --accent: #f08a4b;
+  --accent-ink: #1a1208;
+  --heat-tint: #3b2415;
+  --ok: #62c58d;
+  --warn: #e3b04b;
+  --bad: #ff8a84;
+  --bad-tint: #3a1c1b;
+  --info: #8ab4ff;
+  --focus: #8ab4ff;
+  --chip-bg: #2b2823;
+  --chip-ink: #d9d4ca;
+  --stage-captured: #a8a399;
+  --stage-ready: #7aa7ff;
+  --stage-approved: #62c58d;
+  --stage-executing: #e3b04b;
+  --stage-blocked: #ff8a84;
+  --stage-review: #cdb8f2;
+  --stage-archived: #7b766c;
+  --stage-captured-bg: #2b2823;
+  --stage-captured-ink: #c9c4ba;
+  --stage-ready-bg: #1f3358;
+  --stage-ready-ink: #a9c5ff;
+  --stage-approved-bg: #1b3a2a;
+  --stage-approved-ink: #8fe0b1;
+  --stage-executing-bg: #3d3216;
+  --stage-executing-ink: #e3b04b;
+  --stage-blocked-bg: #7a1f1c;
+  --stage-blocked-ink: #ffd7d5;
+  --stage-review-bg: #35284f;
+  --stage-review-ink: #cdb8f2;
+  --stage-archived-bg: #2b2823;
+  --stage-archived-ink: #9a958a;
+  --overlay: rgba(0, 0, 0, .6);
+  --shadow-1: 0 1px 2px rgba(0, 0, 0, .4);
+  --shadow-2: 0 12px 32px rgba(0, 0, 0, .5);
+}
+:root {
+  --space-1: 4px;
+  --space-2: 6px;
+  --space-3: 8px;
+  --space-4: 12px;
+  --space-5: 16px;
+  --space-6: 20px;
+  --space-7: 28px;
+  --space-8: 40px;
+  --radius-0: 4px;
+  --radius-1: 6px;
+  --radius-2: 10px;
+  --radius-3: 14px;
+  --radius-pill: 999px;
+  --step--2: 11px;
+  --step--1: 12px;
+  --step-0: 14px;
+  --step-1: 16px;
+  --step-2: 20px;
+  --step-3: 26px;
+  --font-sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+.t-view { font-family: var(--font-sans); font-size: 20px; line-height: 26px; font-weight: 700; }
+.t-section { font-family: var(--font-sans); font-size: 16px; line-height: 22px; font-weight: 600; }
+.t-body { font-family: var(--font-sans); font-size: 14px; line-height: 21px; font-weight: 400; }
+.t-strong { font-family: var(--font-sans); font-size: 14px; line-height: 20px; font-weight: 600; }
+.t-small { font-family: var(--font-sans); font-size: 12px; line-height: 17px; font-weight: 400; }
+.t-label { font-family: var(--font-sans); font-size: 11px; line-height: 14px; font-weight: 600; }
+.t-id { font-family: var(--font-mono); font-size: 12px; line-height: 16px; font-weight: 400; }
+.t-kbd { font-family: var(--font-mono); font-size: 11px; line-height: 11px; font-weight: 600; }

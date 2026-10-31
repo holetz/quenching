@@ -1,0 +1,23 @@
+<!-- @dsCard group="Actions and inputs" height=110 width=1280 subtitle="One row: group, sort, filters, quick toggles, views" -->
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BoardToolbar</title>
+<link rel="stylesheet" href="../../tokens.css">
+<link rel="stylesheet" href="../bundle.css">
+</head>
+<body>
+<section class="board-tools" aria-label="Controles do board">
+<label class="control">Agrupar <select><option>Etapa</option></select></label>
+<label class="control">Ordenar <select><option>Ranking</option></select></label>
+<button type="button" class="ghost small"><svg class="i" viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 4h11M5 8h6M7 12h2"/></svg> Filtros</button>
+<span class="tools-sep wide"></span><div class="chips wide"><button type="button" class="ghost small" aria-pressed="false">bloqueadas</button><button type="button" class="ghost small" aria-pressed="true">em execução</button><button type="button" class="ghost small" aria-pressed="false">sem responsável</button><button type="button" class="ghost small" aria-pressed="false">aguardando você</button></div><div class="chips wide"><button type="button" class="fchip">tag: portal <svg class="i" viewBox="0 0 16 16" aria-hidden="true"><path d="m4 4 8 8M12 4l-8 8"/></svg></button></div>
+<span class="grow"></span>
+<label class="check wide"><input type="checkbox"> ocultar vazias</label>
+<label class="check wide"><input type="checkbox"> compacto</label>
+<button type="button" class="ghost small wide">Visões <svg class="i" viewBox="0 0 16 16" aria-hidden="true"><path d="m4 6 4 4 4-4"/></svg></button>
+</section>
+</body>
+</html>

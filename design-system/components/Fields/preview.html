@@ -1,0 +1,18 @@
+<!-- @dsCard group="Actions and inputs" height=340 width=600 subtitle="Text, textarea, select, check, segmented" -->
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fields</title>
+<link rel="stylesheet" href="../../tokens.css">
+<link rel="stylesheet" href="../bundle.css">
+</head>
+<body>
+<div style="padding:16px;display:grid;gap:12px;max-width:520px;"><label class="field">Título<input type="text" value="Filtro por responsável no Gantt"></label>
+<label class="field">Problema<textarea placeholder="O que está errado hoje e quem sofre com isso?"></textarea><span class="field-hint">A captura vai ao remoto na hora.</span></label>
+<label class="field">Título<input type="text" aria-invalid="true" value=""><span class="field-hint" style="color:var(--bad)">Dê um título à spec.</span></label>
+<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><label class="control">Agrupar <select><option>Etapa</option></select></label><label class="control">Ordenar <select><option>Ranking</option></select></label><label class="check"><input type="checkbox" checked> compacto</label><label class="check"><input type="checkbox"> ocultar vazias</label></div>
+<div class="segmented" role="group"><button type="button" class="ghost small" aria-pressed="false">Dia</button><button type="button" class="ghost small" aria-pressed="true">Semana</button><button type="button" class="ghost small" aria-pressed="false">Mês</button></div></div>
+</body>
+</html>
