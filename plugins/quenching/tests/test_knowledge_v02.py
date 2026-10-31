@@ -42,7 +42,7 @@ def _doc(frontmatter: str) -> str:
         "type: Metric\n"
         "title: Revenue\n"
         "description: Recognized revenue.\n"
-        "resource: x\n"
+        "resource: https://example.test/revenue\n"
         f"{frontmatter}\n"
         "---\n\n# Definition\n\nBody.\n"
     )
