@@ -301,6 +301,11 @@ An **artifact** is a text that belongs to a spec and is not the spec. The handof
 for the next one is the first user; the point of putting it on the branch is that the next session
 reads it from the store, on any machine, instead of from a temporary file only one machine has.
 
+**What it costs is its own bytes, and no history.** A 4,812-byte handoff took the `specs/` tree of a
+fresh store from 3,054 to 7,866 bytes; the push replaces the parentless commit rather than appending
+to it, so the branch keeps one commit and the superseded objects wait for `gc`. An artifact is
+therefore cheap to write and never cheap to hide: it is visible in `git ls-tree` beside the spec.
+
 - **Text only, one path segment, 1 MiB.** A name is `^[A-Za-z0-9][A-Za-z0-9._-]{0,119}$` — no `/`,
   no `..` — and a name the pattern refuses is `sp-artifact-name` before anything is hashed. The
   owner is a spec ID, or `_handoffs` for an artifact attached to no spec: the two cannot collide,
