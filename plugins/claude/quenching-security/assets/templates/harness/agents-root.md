@@ -49,11 +49,14 @@ term, `quenching-align:knowledge:align` to migrate/normalize, `quenching-align:c
 <Harness-operational rules only — how to behave in this repo, not what the domain is.
 Anything that is durable knowledge belongs in a /docs/ home above, cited here, never inlined.>
 
-- **Every development request goes through a spec**, and the spec runs the whole flow. A request
-  that names a change — "implement X improvement", "fix Y" — is a request to build it: develop,
-  execute, conclude, PR/merge, deploy, without stopping to ask whether to. Only a request that
-  names the artifact — "create a spec for X" — stops at the spec. The approval a spec carries is
-  the whole flow's authorization; no later step asks the human again.
+- **Every development request goes through a spec**, and the spec runs the flow as far as the
+  request authorizes. A request that names a change — "implement X improvement", "fix Y" — is a
+  request to build it: develop, execute, conclude, open the PR, without stopping to ask whether to.
+  Only a request that names the artifact — "create a spec for X" — stops at the spec. **Merge and
+  deploy are not implied by a change request**: they run only when the human declares autonomy in
+  the request itself ("do it autonomously", "PR and merge", "all the way to deploy"). Without that
+  word the run ends at the open PR, named for the human to decide. The approval a spec carries
+  covers every step inside that scope — no later step asks the human again.
 
 <!-- Root harness pointer, auto-loaded by every supported harness on every turn. Keep it a thin pointer:
      repo-wide operations + the /docs/ home map. Knowledge is MOVED into /docs/, never copied here.
@@ -74,7 +77,7 @@ Anything that is durable knowledge belongs in a /docs/ home above, cited here, n
        `glossary.md` — term resolution via the glossary is a habit worth one line every
        turn. Drop both only if the repo has no glossary.
      • KEEP the spec-first development rule when `cq specs config` reports a store: it is the line
-       that tells the agent a change request means the whole flow (develop → execute → conclude →
-       PR/merge → deploy) and that the spec's approval authorizes all of it. Drop it only where
-       the repo has no spec store.
+       that tells the agent a change request means build it (develop → execute → conclude → PR) and
+       that merge and deploy wait for the human to declare autonomy. Drop it only where the repo has
+       no spec store.
      • Size budget: aim ≤ ~60 lines. If it is longer, more knowledge still needs to move out. -->
