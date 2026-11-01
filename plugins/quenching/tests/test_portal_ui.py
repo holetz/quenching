@@ -235,6 +235,48 @@ class Board(unittest.TestCase):
             with self.subTest(needle=needle):
                 self.assertIn(needle, bar)
 
+    def test_the_card_style_follows_the_target_anatomy(self):
+        """A grid of four rows, the title cut at three lines, and neither stripe nor card-body left."""
+        body = rule(".card")
+        self.assertIn("display: grid", body)
+        self.assertIn("var(--space-3) var(--space-4)", body)
+        self.assertIn("gap: var(--space-2)", body)
+        top = rule(".card-top, .card-foot, .card-signal")
+        self.assertIn("display: flex", top)
+        self.assertIn("min-width: 0", top)
+        self.assertIn("-webkit-line-clamp: 3", rule(".card a.title"))
+        self.assertNotIn(".stripe", CSS, "the stripe rule left with the markup")
+        self.assertNotIn(".card-body", CSS, "the card is no longer a flex row with one body")
+
+    def test_the_age_bands_follow_the_capture_date(self):
+        for selector, needle in ((".age.fresh-1", "font-weight: 700"),
+                                 (".age.fresh-2", "font-weight: 600"),
+                                 (".age.fresh-3", "color: var(--ink)")):
+            with self.subTest(selector=selector):
+                self.assertIn(needle, rule(selector))
+        for needle in ('return " fresh-1"', 'return " fresh-2"', 'return " fresh-3"', "freshOf(s.date)"):
+            with self.subTest(needle=needle):
+                self.assertIn(needle, JS)
+
+    def test_the_block_reason_is_clamped_to_two_lines_with_the_whole_text_in_the_title(self):
+        why = rule(".card-why span")
+        self.assertIn("-webkit-line-clamp: 2", why)
+        self.assertIn("overflow: hidden", why)
+        self.assertIn('class: "card-why", title: why', JS)
+
+    def test_the_quick_actions_wait_for_hover_focus_or_the_cursor(self):
+        quick = rule(".quick")
+        self.assertIn("position: absolute", quick)
+        self.assertIn("opacity: 0", quick)
+        self.assertIn(".card:hover .quick, .card:focus-within .quick, .card.is-cursor .quick { opacity: 1; }", CSS)
+        self.assertIn("@media (hover: none) { .quick { opacity: 1; position: static; justify-self: end; } }", CSS,
+                      "a touch screen has no hover, so the actions stay visible and take their own row")
+
+    def test_the_compact_density_hides_the_reason_and_the_foot(self):
+        self.assertIn(".board.compact .card-why, .board.compact .card-foot { display: none; }", CSS)
+        self.assertIn(".board.compact .card a.title { -webkit-line-clamp: 2;", CSS)
+        self.assertIn("padding: var(--space-2) var(--space-3); gap: 2px;", rule(".board.compact .card"))
+
     def test_the_board_does_not_drag_cards_between_stages(self):
         board = JS[JS.index("function card(s)"):JS.index("function viewList()")]
         self.assertNotIn("draggable", board)
