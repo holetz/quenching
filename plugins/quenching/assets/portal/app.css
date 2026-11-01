@@ -397,25 +397,26 @@ main:focus { outline: none; }
 .views-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
 .views-list li { display: flex; justify-content: space-between; gap: 8px; align-items: center; }
 
-.board { display: flex; flex: 1 1 auto; min-height: 0; gap: var(--space-4); overflow: auto; align-items: flex-start; padding: 0 var(--space-5) var(--space-3); scroll-snap-type: x proximity; }
+.board { display: flex; flex: 1 1 auto; min-height: 0; overflow-x: auto; overflow-y: hidden; scroll-snap-type: x proximity; }
 .col {
-  flex: 1 0 272px; max-width: 430px; min-width: 0; background: var(--surface-2);
-  border: 1px solid var(--line); border-radius: var(--radius-2); padding: var(--space-3);
-  scroll-snap-align: start;
+  flex: 1 0 228px; min-width: 0; max-width: 380px; min-height: 0;
+  display: flex; flex-direction: column; border-right: 1px solid var(--line); scroll-snap-align: start;
 }
-@media (min-width: 1500px) { .col { flex-basis: 300px; } }
-.col.is-collapsed { flex: 0 0 52px; max-width: 52px; padding: var(--space-3) var(--space-1); }
-.col.is-alert { border-color: var(--bad); }
-.col h2 { margin: 0 0 var(--space-3); font-size: 11px; text-transform: uppercase; letter-spacing: .07em; color: var(--muted); }
+.col:last-child { border-right: 0; }
+.col-head { margin: 0; border-top: 2px solid var(--stage, var(--line)); }
 .col-toggle {
-  width: 100%; border: 0; background: transparent; padding: 2px 4px; display: flex; justify-content: space-between;
-  gap: 6px; align-items: center; min-height: 28px; text-transform: uppercase; letter-spacing: .07em; font-size: 11px;
+  width: 100%; min-height: 34px; padding: 0 var(--space-4); border: 0; border-radius: 0;
+  background: transparent; justify-content: space-between; gap: 6px;
+  font-size: var(--step--1); font-weight: 600; color: var(--ink);
 }
-.col-toggle:hover { background: var(--surface-3); }
+.col-toggle:hover { background: var(--surface-2); }
 .col-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.col.is-collapsed .col-name { writing-mode: vertical-rl; text-orientation: mixed; white-space: nowrap; }
-.col.is-collapsed .col-toggle { flex-direction: column; height: 100%; min-height: 120px; justify-content: flex-start; }
-.col-count { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-pill); padding: 0 7px; font-variant-numeric: tabular-nums; }
+.col-body { flex: 1 1 auto; min-height: 0; overflow-y: auto; display: grid; align-content: start; padding: var(--space-1) var(--space-3) var(--space-4); }
+.col.is-collapsed { flex: 0 0 40px; }
+.col.is-collapsed .col-head { height: 100%; }
+.col.is-collapsed .col-toggle { flex-direction: column-reverse; height: 100%; justify-content: flex-end; gap: var(--space-3); padding: var(--space-3) 0; }
+.col.is-collapsed .col-name { writing-mode: vertical-rl; text-orientation: mixed; }
+.col-empty { padding: var(--space-3) var(--space-4); color: var(--muted); font-size: var(--step--1); }
 .card {
   position: relative; display: flex; background: var(--surface); border: 1px solid var(--line);
   border-radius: var(--radius-1); padding: 10px 10px 10px 16px; margin-bottom: var(--space-3);

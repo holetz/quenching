@@ -232,6 +232,32 @@ class Board(unittest.TestCase):
         self.assertNotIn("empty-inline", bar)
         self.assertIn('"aria-pressed": chips.length ? "true" : "false"', bar)
 
+    def test_the_lane_is_a_stage_rule_with_a_fixed_head_and_its_own_scroll(self):
+        col = rule(".col")
+        self.assertIn("flex-direction: column", col)
+        self.assertIn("min-height: 0", col)
+        self.assertIn("border-right: 1px solid var(--line)", col)
+        self.assertNotIn("background", col)
+        self.assertIn("border-top: 2px solid var(--stage, var(--line))", rule(".col-head"))
+        body = rule(".col-body")
+        self.assertIn("flex: 1 1 auto", body)
+        self.assertIn("overflow-y: auto", body)
+        self.assertIn("flex: 0 0 40px", rule(".col.is-collapsed"))
+        lane = JS[JS.index("function column(g, gi)"):JS.index("function copyCommand(")]
+        self.assertIn('h("h2", { class: "col-head" }', lane)
+        self.assertIn('class: "count"', lane)
+        self.assertNotIn("col-count", lane)
+        self.assertIn("col-empty", lane)
+
+    def test_the_rule_colour_comes_from_the_stage_and_only_from_a_stage_grouping(self):
+        lane = JS[JS.index("function column(g, gi)"):JS.index("function copyCommand(")]
+        self.assertIn('const stage = state.board.group === "stage" ? String(g.key) : null;', lane)
+        self.assertIn('"data-stage": stage', lane)
+
+    def test_the_archived_lane_starts_collapsed_and_the_preference_still_wins(self):
+        loader = JS[JS.index("function loadCollapsed("):JS.index("\n  }", JS.index("function loadCollapsed("))]
+        self.assertIn('["stage:archived"]', loader)
+
     def test_priority_and_complexity_are_banded_not_raw_levels(self):
         for needle in ("function priorityBand(", "function priorityShort(", "function complexityOf(",
                        "P1 · crítica", "P4 · baixa", "sem complexidade"):
@@ -510,7 +536,7 @@ class Primitives(unittest.TestCase):
     def test_tags_take_radius_zero_and_counters_the_pill(self):
         self.assertIn("border-radius: var(--radius-0)", rule(".chip"))
         self.assertIn("border-radius: var(--radius-pill)", rule(".count"))
-        self.assertIn("border-radius: var(--radius-pill)", rule(".col-count"))
+        self.assertNotIn(".col-count", CSS)
 
 
 class ShellPaint(unittest.TestCase):

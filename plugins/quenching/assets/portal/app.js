@@ -547,7 +547,8 @@
   function loadingView() {
     const columns = ["prontas", "em execução", "esperando você"].map((name) =>
       h("section", { class: "col" },
-        h("h2", {}, h("span", { class: "col-name" }, name), h("span", { class: "col-count" }, "·")),
+        h("h2", { class: "col-head" }, h("button", { type: "button", class: "col-toggle" },
+          h("span", { class: "col-name" }, name), h("span", { class: "count" }, "·"))),
         h("div", { class: "col-body" }, skeletonCard(), skeletonCard())));
     return h("div", { class: "loading", role: "status", "aria-live": "polite", "aria-busy": "true" },
       h("p", { class: "loading-line" }, h("i", { class: "dot pulse", "aria-hidden": "true" }),
@@ -1049,14 +1050,15 @@
     const key = state.board.group + ":" + g.key;
     const collapsed = isCollapsed(key);
     const id = "col-" + gi;
-    return h("section", { class: "col" + (collapsed ? " is-collapsed" : "") + (g.key === "blocked" ? " is-alert" : ""), "aria-label": String(g.key) },
-      h("h2", {},
-        h("button", { type: "button", class: "col-toggle", "aria-expanded": collapsed ? "false" : "true", "aria-controls": id,
-          on: { click: () => toggleCollapse(key) } },
+    const stage = state.board.group === "stage" ? String(g.key) : null;
+    return h("section", { class: "col" + (collapsed ? " is-collapsed" : ""), "data-stage": stage, "aria-label": String(g.key) },
+      h("h2", { class: "col-head" },
+        h("button", { type: "button", class: "col-toggle", "aria-expanded": collapsed ? "false" : "true",
+          "aria-controls": collapsed ? null : id, on: { click: () => toggleCollapse(key) } },
           h("span", { class: "col-name" }, String(g.key)),
-          h("span", { class: "col-count" }, g.specs.length))),
-      h("div", { id, class: "col-body" },
-        collapsed ? null : (g.specs.length ? g.specs.map(card) : h("p", { class: "empty" }, "nada aqui"))));
+          h("span", { class: "count" }, g.specs.length))),
+      collapsed ? null : h("div", { id, class: "col-body" },
+        g.specs.length ? g.specs.map(card) : h("p", { class: "col-empty" }, "nada aqui")));
   }
   function copyCommand(id) {
     const cmd = "/quenching-specs:specs:execute " + id;
@@ -1769,7 +1771,7 @@
     loadCollapsed();
     paintProjects();
   }
-  function loadCollapsed() { state.board.collapsed = prefsJSON("collapsed." + (state.project || "local"), []); }
+  function loadCollapsed() { state.board.collapsed = prefsJSON("collapsed." + (state.project || "local"), ["stage:archived"]); }
   function paintProjects() {
     const nav = $("#projects");
     const pick = (p) => ({ click: () => switchProject(p) });
