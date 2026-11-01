@@ -248,6 +248,30 @@ class Board(unittest.TestCase):
         self.assertNotIn(".stripe", CSS, "the stripe rule left with the markup")
         self.assertNotIn(".card-body", CSS, "the card is no longer a flex row with one body")
 
+    def test_the_first_card_sits_168_px_down_the_fold(self):
+        """48 bar + 34 pulse + 44 tools + 38 lane head + 4 body padding = the 168 px 2141 measured.
+
+        Browser-measured at 1440×900 with a fine pointer on 2026-11-01: the first card's top border
+        lands at 168,0 px and a title of three lines makes a 122,7 px card (154,7 px under
+        `hover: none`, where `.quick` takes a row of its own). The lane head is a measured 38 px
+        box — the 2 px stage rule, the 34 px toggle, and the 2 px the h2's 21 px line box leaves
+        above the baseline — counted once. The five bands are the contract: a band that moves moves
+        this sum, so the spec cannot restate the fold as arithmetic that never ran.
+        """
+        space = css_block(':root, :root[data-theme="light"]')
+        bands = css_block(":root")
+        self.assertEqual(space["space-1"], "4px")
+        self.assertEqual(bands["bar-h"], "48px")
+        self.assertEqual(bands["pulse-h"], "34px")
+        self.assertEqual(bands["tools-h"], "44px")
+        self.assertIn("min-height: 34px", rule(".col-toggle"))
+        self.assertIn("border-top: 2px solid var(--stage, var(--line))", rule(".col-head"))
+        self.assertIn("padding: var(--space-1) var(--space-3) var(--space-4)", rule(".col-body"))
+        lane_head = 2 + 34 + 2
+        bands_px = (int(bands[name].removesuffix("px")) for name in ("bar-h", "pulse-h", "tools-h"))
+        fold = sum(bands_px) + lane_head + int(space["space-1"].removesuffix("px"))
+        self.assertEqual(fold, 168, "the fold 2141 measured at 1440×900: no band above the board moved")
+
     def test_the_age_bands_follow_the_capture_date(self):
         for selector, needle in ((".age.fresh-1", "font-weight: 700"),
                                  (".age.fresh-2", "font-weight: 600"),
