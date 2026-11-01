@@ -1,13 +1,13 @@
 ---
 type: standard
 title: The specs portal reads one store and widens nothing without a decision
-description: The local spec portal (cq specs serve) reads only the specs store open_backend reads, exposes a fixed set of GET and POST routes plus, under --chat, a read-only claude -p chat polled by job, keeps its loopback, token, Host/Origin and CSP guarantees, builds every node with textContent, reuses cockpit UX patterns but never its code, shows the spec-runner's run record on the card, and regenerates the reader copy and the Codex mirror with every change
+description: The local spec portal (cq specs serve) reads only the specs store open_backend reads, exposes a fixed set of GET and POST routes plus, under --chat, a read-only claude -p chat polled by job, keeps its loopback, token, Host/Origin and CSP guarantees, builds every node with textContent, carries the design system's tokens verbatim in a delimited block pinned by test, reuses cockpit UX patterns but never its code, shows the spec-runner's run record on the card, and regenerates the reader copy and the Codex mirror with every change
 resource: plugins/quenching/assets/bin/quenching/specs/portal.py, plugins/quenching/assets/bin/quenching/specs/chat.py, plugins/quenching/assets/portal/**, plugins/quenching/assets/bin/quenching/portal/**, plugins/quenching/assets/bin/quenching/common/lent.py, plugins/quenching/assets/bin/quenching/session/portal.py
 tags: [architecture, portal, specs, security, ux]
 timestamp: 2026-11-01
 audience: both
 authority: current
-source: specs 1769, 1812, 1814, 1815, 1816, 2127, 1020213 and the owner decisions B-O1 to B-O4 of epics 1768 and 1810, plus D1 A of 2026-10-30
+source: specs 1769, 1812, 1814, 1815, 1816, 2127, 2139 and 1020213 and the owner decisions B-O1 to B-O4 of epics 1768 and 1810, plus D1 A of 2026-10-30
 maintainer: quenching
 ---
 
@@ -207,6 +207,21 @@ connect-src 'self'; img-src 'self' data:; base-uri 'none'; form-action 'none'; f
 
 `app.js` creates every node with `createElement` and `textContent`; spec text is never parsed as
 markup. A change that introduces `innerHTML`, `insertAdjacentHTML` or `document.write` is refused.
+
+## The stylesheet carries the design system's tokens verbatim
+
+`app.css` holds the design system's values between `/* ── tokens: generated from
+design-system/tokens.json ── */` and `/* ── end tokens ── */`, in three layers: the light block
+(`:root, :root[data-theme="light"]`), the dark block, and the `@media (prefers-color-scheme: dark)`
+copy the `auto` theme needs, which must agree with the dark block value for value. No value in that
+block is hand-invented: a new token starts in `design-system/tokens.json`, the block follows it, and
+no script in this repository regenerates it.
+
+`test_portal_ui.py` is what holds the two together. It reads `tokens.json` itself — never the
+compiled `design-system/tokens.css`, so the check does not depend on `build.py` running inside the
+gate — and refuses a drifted value, a theme layer that disagrees, and any `var(--x)` the file reads
+without declaring. `[data-density="compact"]` rescales `space-*` and `step-*` in the stylesheet
+because `tokens.json` publishes no compact scale; inventing one there would be new design.
 
 ## UX patterns
 
