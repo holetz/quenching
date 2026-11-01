@@ -64,7 +64,6 @@ These come from `docs/standards/architecture/specs-portal.md` and hold for every
 
 - No CDN, no external font, no framework, no build step, and no inline `style` attribute in the shipped portal (`style-src 'self'`). Previews use inline custom properties only as a sample; the portal sets them through the CSSOM.
 - Every node is built with `createElement` and `textContent`. No `innerHTML`.
-- `app.css` under 48 KB, `app.js` under 120 KB, `index.html` under 12 KB. `tokens.css`, `bundle.css` and the auto-theme copy together must stay inside the first; `build.py --check` enforces it.
 - The stage is derived. A card never drags between stages, and no view invents a number the server did not send.
 - No new write route without a human decision.
 

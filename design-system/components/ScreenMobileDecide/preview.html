@@ -11,19 +11,20 @@
 <body>
 <div class="app" style="--app-h:844px">
 <a class="skip" href="#main">Ir para o conteúdo</a>
-<header class="top"><h1 class="brand"><a href="#/board"><span class="mark" aria-hidden="true">Q</span> Quenching <span class="brand-sub">specs</span></a></h1><nav class="nav" aria-label="Visões"><a href="#/board">Board</a><a href="#/list">Ranking</a><a href="#/human" aria-current="page">Decidir <span class="count hot" aria-label="esperando você">7</span></a><a href="#/epics">Épicos</a><a href="#/gantt">Gantt</a><a href="#/sessions">Sessões <span class="count hot" aria-label="sessões esperando você">1</span></a><a href="#/chat">Chat</a></nav>
+<header class="top"><h1 class="brand"><a href="#/board"><span class="mark" aria-hidden="true">Q</span> Quenching <span class="brand-sub">specs</span></a></h1><nav class="nav" aria-label="Visões"><a href="#/board"><svg class="i" viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 2.5h3v11h-3zM6.5 2.5h3v7h-3zM10.5 2.5h3v9h-3z"/></svg>Board</a><a href="#/list"><svg class="i" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 13.5v-4h3v4M6.5 13.5v-11h3v11M10 13.5v-7h3v7"/></svg>Ranking</a><a href="#/human" aria-current="page"><svg class="i" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 13.5v-5L3.5 5.5M8 8.5l4.5-3M3.5 2.5v3h3M12.5 2.5v3h-3"/></svg>Decidir <span class="count hot" aria-label="esperando você">7</span></a><a href="#/epics"><svg class="i" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 2l6 3-6 3-6-3 6-3ZM2 8l6 3 6-3M2 11l6 3 6-3"/></svg>Épicos</a><a href="#/gantt"><svg class="i" viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 3.5h6M5.5 8h6M8.5 12.5h5"/></svg>Gantt</a><a href="#/sessions"><svg class="i" viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 3h11v10h-11zM5 6l2.5 2L5 10M8.5 10.5H11"/></svg>Sessões <span class="count hot" aria-label="sessões esperando você">1</span></a><a href="#/chat"><svg class="i" viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 3h11v8H7l-3 2.5V11H2.5z"/></svg>Chat</a></nav>
 <div class="top-actions">
 <button type="button" class="searchbtn" aria-haspopup="dialog"><svg class="i" viewBox="0 0 16 16" aria-hidden="true"><path d="M7 12A5 5 0 1 0 7 2a5 5 0 0 0 0 10Zm7 2-3.5-3.5"/></svg><span class="searchbtn-label">Buscar ou executar</span> <kbd>Ctrl K</kbd></button>
 <button type="button" class="ghost icon theme" aria-label="Tema: automático" title="Tema (t)"><svg class="i" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 14A6 6 0 1 0 8 2a6 6 0 0 0 0 12Zm0-12v12M8 5h3.6M8 8h4.9M8 11h3.6"/></svg></button>
 <button type="button" class="ghost icon helpbtn" aria-label="Ajuda e atalhos" title="Ajuda e atalhos (?)" aria-haspopup="dialog"><svg class="i" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 14.5a6.5 6.5 0 1 0 0-13 6.5 6.5 0 0 0 0 13ZM6.1 6.2a2 2 0 1 1 2.9 1.8c-.6.3-1 .8-1 1.5M8 11.6v.1"/></svg></button>
 <button type="button" class="primary"><svg class="i" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 3v10M3 8h10"/></svg> Capturar</button>
+<span class="me" tabindex="0" data-tip="Você: ana@exemplo.dev, do git config user.email"><span class="av" data-person="1" aria-hidden="true">an</span></span>
 </div></header>
-<section class="pulse" aria-label="Pulso do repositório"><a class="pulse-cell hot" href="#/human" title="fila de decisão do humano"><strong class="pulse-value">7</strong> esperando você</a><a class="pulse-cell bad" href="#/board?f=stage:blocked" title="specs com tarefa bloqueada"><strong class="pulse-value">2</strong> bloqueadas</a><a class="pulse-cell " href="#/board?f=stage:executing" title="specs na etapa em execução"><strong class="pulse-value">5</strong> em execução</a><a class="pulse-cell " href="#/board" title="specs em plans"><strong class="pulse-value">22</strong> abertas</a><a class="pulse-cell " href="#/list" title="tarefas concluídas nas specs abertas"><strong class="pulse-value">58/126</strong> tarefas</a><a class="pulse-cell " href="#/list" title="aberta desde 23/09/2026"><strong class="pulse-value">há 38 d</strong> mais antiga</a></section>
+<section class="pulse" aria-label="Pulso do repositório"><a class="pulse-cell hot" href="#/human" data-tip="fila de decisão do humano"><strong class="pulse-value">7</strong> esperando você</a><a class="pulse-cell bad" href="#/board?f=stage:blocked" data-tip="specs com tarefa bloqueada"><strong class="pulse-value">2</strong> bloqueadas</a><a class="pulse-cell " href="#/board?f=stage:executing" data-tip="specs na etapa em execução"><strong class="pulse-value">5</strong> em execução</a><a class="pulse-cell " href="#/board" data-tip="specs em plans"><strong class="pulse-value">23</strong> abertas</a><a class="pulse-cell " href="#/list" data-tip="tarefas concluídas nas specs abertas"><strong class="pulse-value">40/115</strong> tarefas</a><a class="pulse-cell " href="#/list" data-tip="Alvo 02/11/2026, segunda · 1 dia útil: Aprovar em lote na fila de decisão, com uma confirmação só"><strong class="pulse-value">1 du</strong> próximo vencimento<span class="pulse-spec"><span class="id">2145</span> <span class="pulse-title">Aprovar em lote na fila de decisão, com uma confirmação só</span></span></a><a class="pulse-cell " href="#/list" data-tip="Aberta desde 23/09/2026: Migrar o manifesto do deploy para o formato 2"><strong class="pulse-value">há 38 d</strong> mais antiga<span class="pulse-spec"><span class="id">2112</span> <span class="pulse-title">Migrar o manifesto do deploy para o formato 2</span></span></a></section>
 <div></div>
 <div class="shell"><main id="main"><div class="wrap">
 <div class="view-head"><h2>Decidir</h2><span class="sub">7 decisões esperam por você</span><span class="grow"></span>
 <div class="segmented" role="group"><button type="button" class="ghost small" aria-pressed="true">Todas 7</button><button type="button" class="ghost small" aria-pressed="false">Aprovar 4</button><button type="button" class="ghost small" aria-pressed="false">Desbloquear 2</button><button type="button" class="ghost small" aria-pressed="false">Épicos 1</button></div></div>
-<div class="group-head"><h3>Prontas, aguardando aprovação</h3><p>Mais antigas primeiro. Aprovar grava um registro que não se desfaz.</p></div>
+<div class="group-head"><h3>Na fila, aguardando aprovação</h3><p>Mais antigas primeiro. Aprovar grava um registro que não se desfaz.</p></div>
 <ul class="triagelist"><li class="triage is-cursor" data-spec="2140">
 <div class="triage-main"><span class="id">2140</span><a href="#/spec/2140">Carregar o Gantt sem travar em stores com mais de 500 specs</a></div>
 <div class="triage-aside"><span class="age">há 11 d</span><button type="button" class="ghost small">Abrir</button><button type="button" class="heat small">Aprovar</button></div>
@@ -45,11 +46,11 @@
 <div class="triage-main"><span class="id">2119</span><a href="#/spec/2119">Assinar as releases do plugin com a chave do CI</a></div>
 <div class="triage-aside"><span class="age">há 24 d</span><button type="button" class="ghost small">Abrir</button><button type="button" class="ghost small">Copiar comando</button></div>
 <p class="why is-bad">3.2: a chave de assinatura ainda não existe no cofre do CI.</p></li></ul>
-<div class="group-head"><h3>Membros de épicos abertos</h3><p>Itens de épicos marcados como decisão do humano.</p></div>
+<div class="group-head"><h3>Features de épicos abertos</h3><p>Features marcadas como decisão do humano.</p></div>
 <ul class="triagelist"><li class="triage" data-spec="2152">
 <div class="triage-main"><span class="id">2152</span><a href="#/spec/2152">Política de aprovação quando o épico cruza dois repositórios</a></div>
 <div class="triage-aside"><span class="age">há 7 d</span><button type="button" class="ghost small">Abrir</button><button type="button" class="ghost small">Copiar comando</button></div>
-<p class="why">Membro do épico 2127 · S9 · esperando decisão do humano.</p></li></ul>
+<p class="why">Feature do épico 2127 · S9 · esperando decisão do humano.</p></li></ul>
 <p class="quiet-row"><kbd>j</kbd> <kbd>k</kbd> navegar · <kbd>Enter</kbd> abrir · <kbd>a</kbd> aprovar · <kbd>Esc</kbd> desarmar</p>
 </div></main></div>
 <footer class="statusbar">
@@ -61,6 +62,17 @@
 <span class="hint">pressione <kbd>?</kbd> para atalhos</span>
 <button type="button" class="ghost small" aria-label="Notificações"><svg class="i" viewBox="0 0 16 16" aria-hidden="true"><path d="M4 11.5V7.2a4 4 0 0 1 8 0v4.3l1 1.2H3l1-1.2ZM6.6 14.5h2.8"/></svg> <span class="count">2</span></button>
 </footer>
-</div>
+<div id="m-pri" class="menu" popover aria-label="Prioridade"><button type="button" class="ghost small" popovertarget="m-pri" popovertargetaction="hide"><span class="pri p1" title="prioridade P1">P1</span> crítica</button><button type="button" class="ghost small" popovertarget="m-pri" popovertargetaction="hide"><span class="pri p2" title="prioridade P2">P2</span> alta</button><button type="button" class="ghost small" popovertarget="m-pri" popovertargetaction="hide"><span class="pri" title="prioridade P3">P3</span> média</button><button type="button" class="ghost small" popovertarget="m-pri" popovertargetaction="hide"><span class="pri" title="prioridade P4">P4</span> baixa</button></div>
+<div id="m-who" class="menu" popover aria-label="Responsável"><button type="button" class="ghost small" popovertarget="m-who" popovertargetaction="hide"><span class="av" data-person="1" aria-hidden="true">an</span> ana (você)</button><button type="button" class="ghost small" popovertarget="m-who" popovertargetaction="hide"><span class="av" data-person="2" aria-hidden="true">ru</span> rui</button><button type="button" class="ghost small" popovertarget="m-who" popovertargetaction="hide"><span class="av" data-person="3" aria-hidden="true">da</span> davi</button><button type="button" class="ghost small" popovertarget="m-who" popovertargetaction="hide">Remover responsável</button></div>
+<div id="m-date" class="menu" popover aria-label="Alvo">
+<label class="field">Alvo <input type="date" value="2026-11-03"></label>
+<p class="field-hint">O prazo conta dias úteis, de segunda a sexta.</p>
+<div class="chips"><button type="button" class="primary small" popovertarget="m-date" popovertargetaction="hide">Salvar</button>
+<button type="button" class="ghost small" popovertarget="m-date" popovertargetaction="hide">Remover alvo</button></div></div>
+<div id="m-filter" class="menu filter-menu" popover aria-label="Filtrar">
+<label class="field">Qualquer palavra <input type="search" placeholder="Título, seções, tarefas, registros"></label>
+<div class="filter-row"><select aria-label="Campo"><option>Etapa</option><option>Prioridade</option><option>Responsável</option><option>Assunto</option><option>Complexidade</option><option>Tag</option><option>Alvo</option><option>Título</option><option>Conteúdo</option></select><select aria-label="Condição"><option>contém</option><option>é</option><option>não é</option><option>vazio</option></select><input type="text" aria-label="Valor" placeholder="Valor"></div>
+<div class="chips"><button type="button" class="ghost small"><svg class="i" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 3v10M3 8h10"/></svg> Condição</button><span class="grow"></span>
+<button type="button" class="primary small" popovertarget="m-filter" popovertargetaction="hide">Aplicar</button></div></div></div>
 </body>
 </html>

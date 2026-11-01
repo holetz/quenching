@@ -40,18 +40,23 @@ Each one has a target card. Work them by slice, below.
 | R5 | **Board toolbar in one row.** Selects carry their label inline; quick filters sit beside them; filter chips join the row only when active. | `BoardToolbar` |
 | R6 | **Lanes, not boxes.** A stage-coloured rule on top, own scroll, sticky head; `arquivada` collapsed by default. The stripe and the box around each column go. | `Lane` |
 | R7 | **Card anatomy.** Id and priority on one line, title clamped at three, then only the signal that card has: progress, verdict, blocked reason or `Aprovar`. Tags show only when they tell cards apart. Open and copy appear on hover and focus, and always on touch. | `SpecCard` |
-| R8 | **Ranking as a real table.** Id, stage, priority, tasks and age as columns; arrows appear on hover and on the cursor row. | `RankTable` |
+| R8 | **Ranking as nested row cards.** A two-line card per spec: title and status take the width, and a tight block on the right holds stage, target, age, progress, owner and `Aprovar`. Epics fold over their features, which are ordered among siblings; arrows sit beside the number. | `RankList` |
 | R9 | **Decide as one queue.** The approval group first, because it is the only one solved here; a summary line instead of a repeated reason; empty groups fold to a line; approval arms in place with `a` and `Enter`. | `DecisionRow`, `ScreenDecide` |
 | R10 | **Detail as reading.** Sections are a reading column without panels; contents on the left, tasks and records on the right; actions in one row. The drawer is the same builder. | `SpecHeader`, `ScreenSpecPage`, `ScreenSpecDrawer` |
 | R11 | **Epics as programmes.** A meter by wave replaces the ring, finished waves fold to a narrow column, members are one tight line each, and the next step is a strip. | `EpicPanel` |
 | R12 | **Gantt.** Arrows into the bar's start, a legend in pt-BR, today in heat. | `GanttChart` |
-| R13 | **Sessions.** The waiting question comes first; lanes are one row with their subagents beneath. | `SessionLane` |
+| R13 | **Sessions.** The waiting question comes first; lanes are one row with their subagents beneath, and each names its host. | `SessionLane` |
 | R14 | **Chat.** The log above, the form pinned below, the ceiling and the cost in view. | `ChatPanel` |
 | R15 | **Palette.** Group headings instead of a label per row; selection in `surface-3`, not a solid accent bar. | `Palette` |
 | R16 | **Feedback without a coloured edge.** Toasts carry an icon and a word; banners carry an icon and a fill. | `Toast`, `Banner` |
 | R17 | **Icon set.** Authored inline SVG replaces `◐`, `?`, `×`, `▲` and `▼`. | `Icons` |
 | R18 | **Browser surfaces.** Selection, caret, scrollbars, underline offset, focus width and control accent all come from the palette. | `bundle.css`, base |
 | R19 | **Phone.** A one-row bottom bar; the board reachable in the first viewport, where today half of it is chrome. | `ScreenMobileBoard`, `ScreenMobileDecide` |
+| R20 | **Recency on the card.** The age fades from today to 7 days, then stays muted, so recent movement reads at a glance. | `SpecCard` |
+| R21 | **The queue replaces `pronta`.** The lane reads `na fila`; a captured card moves to it by a button, and `Aprovar` shows only on a developed spec. | `Lane`, `SpecCard`, `Stages` |
+| R22 | **Card as a control.** Owner badges, `Atribuir`, the priority menu, the target in working days with its date field, balloons, and a ring on the user's own cards. | `SpecCard` |
+| R24 | **Epics and features.** The epics view opens with the board's toolbar, and the board shows or hides epic and feature cards through two checkboxes. A card names its kind beside the owner. | `BoardToolbar`, `SpecCard`, `ScreenEpics` |
+| R23 | **Toolbar and pulse.** More grouping and sorting options, a collapsed filter on any field or word, and `próximo vencimento` and `mais antiga` with the spec beside them. | `BoardToolbar`, `Pulse` |
 
 ## Contract changes
 
@@ -62,8 +67,11 @@ These touch `docs/standards/architecture/specs-portal.md` and need a human yes b
 | C1 | UX patterns name “a hero counter” and “state pills”, and the epics view names “a progress ring”. The target replaces them with the pulse cell, the stage mark and the wave meter. | The text must follow. No route or data changes. |
 | C2 | `confirm()` at `app.js:1245` gives way to an armed row. | Same write, same route; the gesture changes. |
 | C3 | Scroll moves from the window to `main` and `.col-body`. `captureView` and `restoreView` (`app.js:1774`, `app.js:1782`) save `window.scrollY`, so they must save each scroller or a poll will jump. | Without this, “scroll and focus survive a poll” breaks. |
-| C4 | `tokens.css` as compiled has no `prefers-color-scheme` block. The `auto` theme needs the dark values a third time in `app.css`, generated from `tokens.json`. | `build.py --check` already counts that copy: 44 KB of the 48 KB budget. |
-| C5 | Icons add about 1.0 KB to `app.js`, which stands at 114.9 of 120 KB. | Fits, with little room left. The slices should remove code as they go. |
+| C4 | `tokens.css` as compiled has no `prefers-color-scheme` block. The `auto` theme needs the dark values a third time in `app.css`, generated from `tokens.json`. | A third copy of the dark values to keep in step. |
+| C6 | R20 needs a last-modified date in `GET /api/specs` rows. Today's `date` is the capture date, so the card's age never moves. | Without the new field the bands mark new specs, not modified ones. |
+| C7 | R21 needs a stored queue decision, a write route and the developed state. Today `ready` is derived from the sections and tasks, so a spec cannot be queued before it is developed, and no route moves it. | The derived-stage rule and the rule of no new write route without a human decision both apply. |
+| C8 | R22 and R23 need a stored target date with write routes for target, owner and priority, the user's git email matched to an owner, a server search over spec content, and the holiday policy of the working-day count. | Each is a new read or write surface. |
+| C9 | R24 needs the spec kind in `GET /api/specs` rows and the hierarchy in the store: an epic is made of features, a feature of user stories or tasks, a user story of tasks only. Today an epic has members and the portal has no feature or user story. A card's progress counts its direct parts, and hiding a kind must also recount the lanes and the pulse. The ranking needs an order per parent, and a move route that stays among siblings. | The checkboxes filter on a field the server does not send. |
 
 ## Suggested slices
 

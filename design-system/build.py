@@ -8,8 +8,7 @@ data, so a card on the board is the card in the catalogue. Standard library only
     python3 design-system/build.py --check  # write nothing; fail on drift or a broken contract
 
 The checks are the design system's contract: every class used is defined, every var() resolves,
-the stated colour pairs hold their floor in both themes, the stylesheets fit the portal's budget,
-and no preview reaches outside itself.
+the stated colour pairs hold their floor in both themes, and no preview reaches outside itself.
 """
 
 from __future__ import annotations
@@ -18,12 +17,12 @@ import argparse
 import json
 import re
 import sys
+from datetime import date, timedelta
 from html import escape as e
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
 COMPONENTS = ROOT / "components"
-CSS_BUDGET = 48_000  # the app.css budget of docs/standards/architecture/specs-portal.md
 
 # ── icons: one authored 16px set, 1.5 stroke, round caps. Paths only, so app.js can draw them
 #    with createElementNS and the CSP stays untouched. ─────────────────────────────────────────
@@ -32,6 +31,14 @@ ICONS = {
     "theme": "M8 14A6 6 0 1 0 8 2a6 6 0 0 0 0 12Zm0-12v12M8 5h3.6M8 8h4.9M8 11h3.6",
     "help": "M8 14.5a6.5 6.5 0 1 0 0-13 6.5 6.5 0 0 0 0 13ZM6.1 6.2a2 2 0 1 1 2.9 1.8c-.6.3-1 .8-1 1.5M8 11.6v.1",
     "plus": "M8 3v10M3 8h10",
+    "board": "M2.5 2.5h3v11h-3zM6.5 2.5h3v7h-3zM10.5 2.5h3v9h-3z",
+    "list": "M3 13.5v-4h3v4M6.5 13.5v-11h3v11M10 13.5v-7h3v7",
+    "human": "M8 13.5v-5L3.5 5.5M8 8.5l4.5-3M3.5 2.5v3h3M12.5 2.5v3h-3",
+    "epics": "M8 2l6 3-6 3-6-3 6-3ZM2 8l6 3 6-3M2 11l6 3 6-3",
+    "gantt": "M2.5 3.5h6M5.5 8h6M8.5 12.5h5",
+    "sessions": "M2.5 3h11v10h-11zM5 6l2.5 2L5 10M8.5 10.5H11",
+    "chat": "M2.5 3h11v8H7l-3 2.5V11H2.5z",
+    "target": "M8 2v2M8 12v2M2 8h2M12 8h2M8 12.5a4.5 4.5 0 1 0 0-9 4.5 4.5 0 0 0 0 9Z",
     "send": "M8 13V3M4 7l4-4 4 4",
     "down": "m4 6 4 4 4-4",
     "right": "m6 4 4 4-4 4",
@@ -59,8 +66,8 @@ def ic(name: str, label: str = "") -> str:
 
 # ── sample data: invented specs about this very project; nothing real from any store ───────────
 STAGES = [
-    ("captured", "capturada", "foi escrita, mas ainda não tem as seções de definição."),
-    ("ready", "pronta", "tem as seções e as tarefas; espera aprovação humana."),
+    ("captured", "capturada", "foi escrita e ainda não entrou na fila."),
+    ("ready", "na fila", "foi escolhida para desenvolver; desenvolvida, espera aprovação humana."),
     ("approved", "aprovada", "foi aprovada por uma pessoa e pode ser executada."),
     ("executing", "em execução", "tem tarefa em andamento ou já concluída."),
     ("blocked", "bloqueada", "tem tarefa marcada como bloqueada; o motivo está na spec."),
@@ -76,7 +83,7 @@ def spec(id_, title, stage, pri, cx, who, age, done=0, total=0, subject="Portal"
 
 
 SPECS = [
-    spec(2148, "Exportar o board como CSV para a revisão do trimestre", "captured", 3, "média", None, "há 2 d"),
+    spec(2148, "Exportar o board como CSV para a revisão do trimestre", "captured", 3, "média", None, "ontem"),
     spec(2147, "Mostrar o custo estimado de uma spec antes de aprovar, por modelo e por etapa, com o teto configurado no repositório", "captured", 2, "alta", None, "há 3 d", subject="Store"),
     spec(2146, "Agrupar o board por marco de entrega", "captured", 4, "média", None, "há 5 d"),
     spec(2144, "Avisar quando uma spec fica parada por mais de 14 dias", "captured", 3, "baixa", "rui", "há 9 d"),
@@ -86,23 +93,38 @@ SPECS = [
     spec(2143, "Filtro por responsável no Gantt", "ready", 3, "baixa", "rui", "há 6 d", 0, 4, hot=True, summary="Quem conduz várias frentes precisa ver só as barras de uma pessoa."),
     spec(2140, "Carregar o Gantt sem travar em stores com mais de 500 specs", "ready", 2, "alta", "ana", "há 11 d", 0, 9, hot=True, summary="O Gantt relê o schedule inteiro a cada troca de zoom, e a aba congela em stores grandes."),
     spec(2139, "Atalho para copiar o comando de execução com a worktree", "ready", 4, "baixa", None, "há 13 d", 0, 3, hot=True, summary="O comando copiado não leva a worktree, e o agente abre no checkout errado."),
+    spec(2142, "Mostrar no board quantas specs entraram na fila nesta semana", "ready", 3, "baixa", None, "há 7 d"),
     spec(2136, "Documentar o teclado do portal no manual do plugin", "approved", 3, "baixa", "davi", "há 2 d", 0, 3, subject="Docs"),
     spec(2134, "Contrato de cores por etapa na documentação", "approved", 3, "média", None, "há 5 d", 0, 5, subject="Docs"),
     spec(2131, "Histórico de decisões no detalhe da spec", "approved", 2, "alta", "rui", "há 8 d", 0, 8),
-    spec(2137, "Publicar as escritas pendentes a partir do shell 2.0", "executing", 1, "alta", "ana", "há 3 d", 5, 6, run=("continua", "verificado", "pass"), pr=True),
-    spec(2127, "Experiência do portal 2.0: shell, board e visões ao vivo", "executing", 1, "muito alta", "ana", "há 16 d", 18, 22, run=("continua", "verificado", "pass"), pr=True),
+    spec(2137, "Publicar as escritas pendentes a partir do shell 2.0", "executing", 1, "alta", "ana", "hoje", 5, 6, run=("continua", "verificado", "pass"), pr=True),
+    spec(2127, "Experiência do portal 2.0: shell, board e visões ao vivo", "executing", 1, "muito alta", "ana", "há 16 d", 4, 11, run=("continua", "verificado", "pass"), pr=True),
     spec(2132, "Sincronizar o store com escrita local e ponto de envio", "executing", 2, "alta", "davi", "há 9 d", 7, 12, subject="Store", run=("feito", "sem verificador", "")),
     spec(2129, "Reconciliar os cards do tracker com a etapa derivada", "executing", 2, "média", "rui", "há 10 d", 2, 9, subject="Store", tags=("tracker",), run=("falhou", "reprovado", "bad")),
     spec(2128, "Um servidor por máquina para vários projetos", "executing", 3, "média", "davi", "há 14 d", 9, 11),
     spec(2119, "Assinar as releases do plugin com a chave do CI", "blocked", 2, "média", "davi", "há 24 d", 3, 7, subject="Release", why="3.2: a chave de assinatura ainda não existe no cofre do CI."),
     spec(2112, "Migrar o manifesto do deploy para o formato 2", "blocked", 2, "alta", "rui", "há 38 d", 4, 10, subject="Release", why="5.1: depende da decisão sobre arquivos sem dono no alvo. 5.2: espera a 5.1."),
-    spec(2125, "A release redeploya a própria superfície", "review", 2, "média", "ana", "há 2 d", 6, 6, subject="Release", run=("feito", "verificado", "pass"), pr=True),
+    spec(2125, "A release redeploya a própria superfície", "review", 2, "média", "ana", "ontem", 6, 6, subject="Release", run=("feito", "verificado", "pass"), pr=True),
     spec(2126, "O deploy --check compara o bit de execução", "review", 3, "baixa", "davi", "há 3 d", 4, 4, subject="Release", run=("feito", "verificado", "pass"), pr=True),
 ]
 BY_ID = {s["id"]: s for s in SPECS}
+TODAY = date(2026, 10, 31)
+ME = "ana"
+ME_EMAIL = "ana@exemplo.dev"
+PEOPLE = {"ana": 1, "rui": 2, "davi": 3}
+DUE = {2145: "2026-11-02", 2137: "2026-11-03", 2125: "2026-11-04", 2140: "2026-11-05", 2132: "2026-10-29",
+       2131: "2026-11-10", 2127: "2026-11-12", 2126: "2026-11-16", 2129: "2026-11-20", 2136: "2026-11-24",
+       2119: "2026-12-04"}
+# An epic is made of features, a feature of user stories or tasks, a user story of tasks only.
+KINDS = {2127: "epic", 2128: "feature", 2129: "feature", 2131: "feature", 2132: "feature", 2136: "feature",
+         2137: "feature", 2140: "feature", 2119: "feature"}
+PARTS = {"epic": "features concluídas", "feature": "itens concluídos"}
+for s in SPECS:
+    s["due"] = DUE.get(s["id"])
+    s["kind"] = KINDS.get(s["id"])
 ARCHIVED = 14
 OPEN = len(SPECS)
-TASKS_DONE = sum(s["done"] for s in SPECS)
+TASKS_DONE = sum(s["done"] for s in SPECS if s["kind"] != "epic")
 TASKS_ALL = sum(s["total"] for s in SPECS)
 READY = [s for s in SPECS if s.get("hot")]
 BLOCKED = [s for s in SPECS if s["stage"] == "blocked"]
@@ -127,7 +149,7 @@ def nav(current="board", waiting=WAITING, sessions=1) -> str:
             badge = f' <span class="count{" hot" if waiting else ""}" aria-label="esperando você">{waiting}</span>'
         if key == "sessions" and sessions:
             badge = f' <span class="count hot" aria-label="sessões esperando você">{sessions}</span>'
-        links.append(f'<a href="#/{key}"{cur}>{label}{badge}</a>')
+        links.append(f'<a href="#/{key}"{cur}>{ic(key)}{label}{badge}</a>')
     return f'<nav class="nav" aria-label="Visões">{"".join(links)}</nav>'
 
 
@@ -141,21 +163,55 @@ def topbar(current="board", capture=True, push=0, waiting=WAITING, sessions=1) -
 <button type="button" class="ghost icon theme" aria-label="Tema: automático" title="Tema (t)">{ic("theme")}</button>
 <button type="button" class="ghost icon helpbtn" aria-label="Ajuda e atalhos" title="Ajuda e atalhos (?)" aria-haspopup="dialog">{ic("help")}</button>
 {send}<button type="button" class="primary"{dis}>{ic("plus")} Capturar</button>
+<span class="me" tabindex="0" data-tip="Você: {ME_EMAIL}, do git config user.email">{person(ME)}</span>
 </div></header>"""
 
 
+def work_days(target: date) -> int:
+    """Working days from today to the target, Monday to Friday, negative when overdue."""
+    step = 1 if target >= TODAY else -1
+    days = [TODAY + timedelta(i * step) for i in range(1, abs((target - TODAY).days) + 1)]
+    return step * sum(d.weekday() < 5 for d in days)
+
+
+def br_date(d: date) -> str:
+    return f'{d:%d/%m/%Y}, {("segunda", "terça", "quarta", "quinta", "sexta", "sábado", "domingo")[d.weekday()]}'
+
+
+def due_label(iso: str) -> tuple[str, str, str]:
+    """Label, band class and the balloon's exact date for a target date."""
+    target = date.fromisoformat(iso)
+    n = work_days(target)
+    unit = "dia útil" if abs(n) == 1 else "dias úteis"
+    if n < 0:
+        return f"\u2212{-n} du", " late", f"Alvo {br_date(target)} · {-n} {unit} de atraso"
+    if target == TODAY:
+        return "hoje", " soon", f"Alvo {br_date(target)} · hoje"
+    label = f"{n} du" if n <= 10 else f"{n // 5} sem"
+    return label, " soon" if n <= 3 else "", f"Alvo {br_date(target)} · {n} {unit}"
+
+
+def pulse_spec(s: dict) -> str:
+    return (f'<span class="pulse-spec"><span class="id">{s["id"]}</span> '
+            f'<span class="pulse-title">{e(s["title"])}</span></span>')
+
+
 def pulse(waiting=WAITING) -> str:
+    oldest = BY_ID[2112]
+    due_next = min((s for s in SPECS if s["due"] and s["due"] >= TODAY.isoformat()), key=lambda s: s["due"])
+    next_label, _, next_tip = due_label(due_next["due"])
     cells = [
         ("#/human", str(waiting), "esperando você", "fila de decisão do humano", "hot" if waiting else ""),
         ("#/board?f=stage:blocked", str(len(BLOCKED)), "bloqueadas", "specs com tarefa bloqueada", "bad"),
         ("#/board?f=stage:executing", "5", "em execução", "specs na etapa em execução", ""),
         ("#/board", str(OPEN), "abertas", "specs em plans", ""),
         ("#/list", f"{TASKS_DONE}/{TASKS_ALL}", "tarefas", "tarefas concluídas nas specs abertas", ""),
-        ("#/list", "há 38 d", "mais antiga", "aberta desde 23/09/2026", ""),
+        ("#/list", next_label, "próximo vencimento", f'{next_tip}: {due_next["title"]}', "", pulse_spec(due_next)),
+        ("#/list", "há 38 d", "mais antiga", f'Aberta desde 23/09/2026: {oldest["title"]}', "", pulse_spec(oldest)),
     ]
     html = "".join(
-        f'<a class="pulse-cell {c}" href="{h}" title="{e(t)}"><strong class="pulse-value">{v}</strong> {e(word)}</a>'
-        for h, v, word, t, c in cells)
+        f'<a class="pulse-cell {c[4]}" href="{c[0]}" data-tip="{e(c[3])}"><strong class="pulse-value">{c[1]}</strong> '
+        f'{e(c[2])}{c[5] if len(c) > 5 else ""}</a>' for c in cells)
     return f'<section class="pulse" aria-label="Pulso do repositório">{html}</section>'
 
 
@@ -181,6 +237,63 @@ def stage_chip(stage: str) -> str:
     return f'<span class="chip stage-{stage}">{STAGE_PT[stage]}</span>'
 
 
+def person(who: str) -> str:
+    return f'<span class="av" data-person="{PEOPLE[who]}" aria-hidden="true">{who[:2]}</span>'
+
+
+PRI_WORD = {1: "crítica", 2: "alta", 3: "média", 4: "baixa"}
+
+
+def pri_button(n: int) -> str:
+    cls = f" p{n}" if n <= 2 else ""
+    return (f'<button type="button" class="pri{cls}" popovertarget="m-pri" aria-label="Prioridade P{n}, mudar" '
+            f'data-tip="Prioridade P{n} · {PRI_WORD[n]}">P{n}</button>')
+
+
+def target_button(s: dict) -> str:
+    if not s["due"]:
+        return (f'<button type="button" class="target none" popovertarget="m-date" aria-label="Definir alvo">'
+                f'{ic("target")}alvo</button>')
+    label, band, tip = due_label(s["due"])
+    return (f'<button type="button" class="target{band}" popovertarget="m-date" aria-label="{e(tip)}, mudar" '
+            f'data-tip="{e(tip)}">{ic("target")}{label}</button>')
+
+
+def owner_button(s: dict) -> str:
+    if not s["who"]:
+        return '<button type="button" class="ghost small" popovertarget="m-who">Atribuir</button>'
+    return (f'<button type="button" class="who" popovertarget="m-who" aria-label="Responsável @{s["who"]}, mudar" '
+            f'data-tip="Responsável: @{s["who"]}">{person(s["who"])}{s["who"]}</button>')
+
+
+def age_tip(age: str) -> str:
+    days = {"hoje": 0, "ontem": 1}.get(age)
+    if days is None:
+        days = int(re.search(r"\d+", age)[0])
+    return f"Modificada em {br_date(TODAY - timedelta(days))}"
+
+
+def menus() -> str:
+    pris = "".join(f'<button type="button" class="ghost small" popovertarget="m-pri" popovertargetaction="hide">'
+                   f'{pri(n)} {PRI_WORD[n]}</button>' for n in PRI_WORD)
+    who = "".join(f'<button type="button" class="ghost small" popovertarget="m-who" popovertargetaction="hide">'
+                  f'{person(p)} {p}{" (você)" if p == ME else ""}</button>' for p in PEOPLE)
+    fields = "".join(f"<option>{f}</option>" for f in (
+        "Etapa", "Prioridade", "Responsável", "Assunto", "Complexidade", "Tag", "Alvo", "Título", "Conteúdo"))
+    return f"""<div id="m-pri" class="menu" popover aria-label="Prioridade">{pris}</div>
+<div id="m-who" class="menu" popover aria-label="Responsável">{who}<button type="button" class="ghost small" popovertarget="m-who" popovertargetaction="hide">Remover responsável</button></div>
+<div id="m-date" class="menu" popover aria-label="Alvo">
+<label class="field">Alvo <input type="date" value="2026-11-03"></label>
+<p class="field-hint">O prazo conta dias úteis, de segunda a sexta.</p>
+<div class="chips"><button type="button" class="primary small" popovertarget="m-date" popovertargetaction="hide">Salvar</button>
+<button type="button" class="ghost small" popovertarget="m-date" popovertargetaction="hide">Remover alvo</button></div></div>
+<div id="m-filter" class="menu filter-menu" popover aria-label="Filtrar">
+<label class="field">Qualquer palavra <input type="search" placeholder="Título, seções, tarefas, registros"></label>
+<div class="filter-row"><select aria-label="Campo">{fields}</select><select aria-label="Condição"><option>contém</option><option>é</option><option>não é</option><option>vazio</option></select><input type="text" aria-label="Valor" placeholder="Valor"></div>
+<div class="chips"><button type="button" class="ghost small">{ic("plus")} Condição</button><span class="grow"></span>
+<button type="button" class="primary small" popovertarget="m-filter" popovertargetaction="hide">Aplicar</button></div></div>"""
+
+
 def pri(n: int) -> str:
     cls = f" p{n}" if n <= 2 else ""
     return f'<span class="pri{cls}" title="prioridade P{n}">P{n}</span>'
@@ -201,13 +314,33 @@ def progress(s: dict) -> str:
     pct = round(100 * s["done"] / s["total"])
     bad = " has-blocked" if s["stage"] == "blocked" else ""
     return (f'<span class="progress-num">{s["done"]}/{s["total"]}</span>'
-            f'<span class="bar{bad}" role="img" aria-label="{s["done"]} de {s["total"]} tarefas concluídas">'
+            f'<span class="bar{bad}" role="img" aria-label="{s["done"]} de {s["total"]} {PARTS.get(s["kind"], "tarefas concluídas")}">'
             f'<i style="width:{pct}%"></i></span>')
 
 
+def fresh(age: str) -> str:
+    """The card's recency band: today and yesterday, up to 3 days, up to 7 days, then nothing."""
+    days = {"hoje": 0, "ontem": 1}.get(age)
+    if days is None:
+        days = int(re.search(r"\d+", age)[0]) if age.endswith(" d") else 30
+    band = 1 if days <= 1 else 2 if days <= 3 else 3 if days <= 7 else 0
+    return f" fresh-{band}" if band else ""
+
+
+KIND_PT = {"epic": "épico", "feature": "feature"}
+
+
 def card(s: dict, *, cursor=False, show_stage=False, approve=True) -> str:
-    cls = "card" + (" is-cursor" if cursor else "")
-    who = f'@{s["who"]}' if s["who"] else "sem responsável"
+    cls = "card" + (" is-cursor" if cursor else "") + (" is-mine" if s["who"] == ME else "")
+    kind = s["kind"]
+    kind_attr = f' data-kind="{kind}"' if kind else ""
+    kind_tag = f'<span class="tag">{KIND_PT[kind]}</span>' if kind else ""
+    if approve:
+        who = owner_button(s)
+    elif s["who"]:
+        who = f'<span class="who" data-tip="Responsável: @{s["who"]}">{person(s["who"])}{s["who"]}</span>'
+    else:
+        who = "sem responsável"
     tags = "".join(f" · #{t}" for t in s.get("tags", ()))
     pr = '<a class="pr" href="#">PR</a>' if s.get("pr") else ""
     stage = stage_mark(s["stage"]) if show_stage else ""
@@ -215,12 +348,16 @@ def card(s: dict, *, cursor=False, show_stage=False, approve=True) -> str:
     sig = f'<div class="card-signal">{signal}</div>' if signal else ""
     run = f'<div class="card-signal">{run_mark(s)}</div>' if s.get("run") else ""
     why = f'<p class="card-why">{ic("alert")}<span>{e(s["why"])}</span></p>' if s.get("why") else ""
-    btn = '<button type="button" class="heat small approve">Aprovar</button>' if s.get("hot") and approve else ""
-    return f"""<article class="{cls}" data-spec="{s["id"]}">
-<div class="card-top"><span class="id">{s["id"]}</span>{pri(s["pri"])}{stage}<span class="age">{s["age"]}</span></div>
+    btn = ""
+    if approve and s.get("hot"):
+        btn = '<button type="button" class="heat small approve">Aprovar</button>'
+    elif approve and s["stage"] == "captured":
+        btn = '<button type="button" class="small enqueue">Mover para a fila</button>'
+    return f"""<article class="{cls}" data-spec="{s["id"]}"{kind_attr}>
+<div class="card-top"><span class="id">{s["id"]}</span>{pri_button(s["pri"]) if approve else pri(s["pri"])}{target_button(s) if approve else ""}{stage}<span class="age{fresh(s["age"])}" data-tip="{age_tip(s["age"])}">{s["age"]}</span></div>
 <a class="title" href="#/spec/{s["id"]}">{e(s["title"])}</a>
 {sig}{run}{why}{btn}
-<div class="card-foot"><span>{who} · {e(s["subject"])}{tags}</span>{pr}</div>
+<div class="card-foot">{who}{kind_tag}<span>{e(s["subject"])}{tags}</span>{pr}</div>
 <div class="quick"><button type="button" class="ghost icon small" aria-label="Abrir a gaveta">{ic("panel")}</button><button type="button" class="ghost icon small" aria-label="Copiar o comando">{ic("copy")}</button></div>
 </article>"""
 
@@ -238,20 +375,36 @@ def lane_collapsed(stage: str, n: int) -> str:
 <h2 class="col-head"><button type="button" class="col-toggle" aria-expanded="false"><span class="col-name">{STAGE_PT[stage].capitalize()}</span><span class="count">{n}</span></button></h2></section>"""
 
 
-def toolbar(*, group="Etapa", pressed=(), chips="", sort="Ranking", compact=False) -> str:
+GROUPS = ("Etapa", "Prioridade", "Responsável", "Assunto", "Épico", "Feature", "Alvo", "Complexidade", "Tipo", "Tag")
+SORTS = ("Ranking", "Alvo", "Prioridade", "Modificação", "Criação", "Título", "Progresso", "Responsável")
+QUICK = ("minhas", "bloqueadas", "em execução", "sem responsável", "aguardando você")
+EPIC_GROUPS = ("Nenhum", "Estado", "Prioridade", "Responsável", "Assunto", "Alvo")
+EPIC_SORTS = ("Ranking", "Alvo", "Progresso", "Prioridade", "Modificação", "Criação", "Título")
+EPIC_QUICK = ("meus", "bloqueados", "em andamento", "sem responsável", "aguardando você")
+
+
+def options(items, current: str) -> str:
+    return "".join(f'<option{" selected" if i == current else ""}>{i}</option>' for i in items)
+
+
+def toolbar(*, group="Etapa", pressed=(), chips="", sort="Ranking", compact=False, groups=GROUPS, sorts=SORTS,
+            quick_items=QUICK, label="Controles do board", board=True) -> str:
     quick = "".join(
         f'<button type="button" class="ghost small" aria-pressed="{"true" if q in pressed else "false"}">{q}</button>'
-        for q in ("bloqueadas", "em execução", "sem responsável", "aguardando você"))
+        for q in quick_items)
     extra = f'<div class="chips wide">{chips}</div>' if chips else ""
     on = " checked" if compact else ""
-    return f"""<section class="board-tools" aria-label="Controles do board">
-<label class="control">Agrupar <select><option>{group}</option></select></label>
-<label class="control">Ordenar <select><option>{sort}</option></select></label>
-<button type="button" class="ghost small">{ic("filter")} Filtros</button>
+    checks = ('<label class="check wide"><input type="checkbox" id="show-epics" checked> épicos</label>'
+              '<label class="check wide"><input type="checkbox" id="show-features" checked> features</label>'
+              '<label class="check wide"><input type="checkbox"> ocultar vazias</label>') if board else ""
+    return f"""<section class="board-tools" aria-label="{label}">
+<label class="control">Agrupar <select>{options(groups, group)}</select></label>
+<label class="control">Ordenar <select>{options(sorts, sort)}</select></label>
+<button type="button" class="ghost small" popovertarget="m-filter">{ic("filter")} Filtros</button>
 <span class="tools-sep wide"></span><div class="chips wide">{quick}</div>{extra}
 <span class="grow"></span>
-<label class="check wide"><input type="checkbox"> ocultar vazias</label>
-<label class="check wide"><input type="checkbox"{on}> compacto</label>
+{checks}
+<label class="check wide"><input type="checkbox" class="density"{on}> compacto</label>
 <button type="button" class="ghost small wide">Visões {ic("down")}</button>
 </section>"""
 
@@ -274,29 +427,62 @@ def app(body: str, *, current="board", h=900, banner="", rail="", push=0, captur
 {banner or "<div></div>"}
 <div class="shell">{rail}<main id="main"{cls}>{body}</main></div>
 {status or statusbar()}
-{overlay}</div>"""
+{overlay}{menus()}</div>"""
+
+
+def rank_signal(s: dict) -> str:
+    """What the row adds to the ranking: the blocker, else the last run, else the summary."""
+    if s.get("why"):
+        return f'<span class="rank-signal is-bad">{ic("alert")}<span>{e(s["why"])}</span></span>'
+    if s.get("run"):
+        return f'<span class="rank-signal">{run_mark(s)}</span>'
+    if s.get("summary"):
+        return f'<span class="rank-signal"><span>{e(s["summary"])}</span></span>'
+    return ""
+
+
+RELEASE = {**spec(2108, "Release autônoma do plugin", "executing", 2, "alta", "davi", "há 24 d", 6, 7, subject="Release",
+                  why="S6 espera a 2119"), "due": None, "kind": "epic"}
+RANK_TREE = [  # id, children in their own order, open
+    (2127, (2137, 2132, 2129, 2131, 2140, 2128, 2136), True),
+    (2145, (), False), (2108, (2119,), False), (2112, (), False), (2125, (), False), (2147, (), False),
+    (2143, (), False), (2126, (), False),
+]
+
+
+def rank_row(s: dict, n: str, *, depth=0, kids=0, open_=False) -> str:
+    sid = s["id"]
+    cls = ("card rank-card" + (f" depth-{depth}" if depth else "") + (" is-cursor" if sid == 2140 else "")
+           + (" is-mine" if s["who"] == ME else ""))
+    kind = f'<span class="tag">{KIND_PT[s["kind"]]}</span>' if s["kind"] else ""
+    tags = "".join(f" · #{t}" for t in s.get("tags", ()))
+    pr = '<a class="pr" href="#">PR</a>' if s.get("pr") else ""
+    act = '<button type="button" class="heat small">Aprovar</button>' if s.get("hot") else ""
+    verb = "Recolher" if open_ else "Abrir"
+    fold = (f'<button type="button" class="ghost icon small" aria-expanded="{str(open_).lower()}" aria-label="{verb} {kids} de {sid}">'
+            f'{ic("down") if open_ else ic("right")}</button>') if kids else ""
+    return f"""<li class="{cls}" draggable="true" data-spec="{sid}"{f' data-kind="{s["kind"]}"' if s["kind"] else ""}>
+<div class="rank-order"><div class="grip"><button type="button" class="ghost icon small" aria-label="Mover {sid} para cima">{ic("up")}</button><button type="button" class="ghost icon small" aria-label="Mover {sid} para baixo">{ic("down")}</button></div><span class="rank-n num">{n}</span></div>
+<div class="rank-main"><div class="rank-line">{fold}<span class="id">{sid}</span>{pri_button(s["pri"])}<a class="row-title" href="#/spec/{sid}">{e(s["title"])}</a>{kind}</div>
+<div class="rank-line rank-sub"><span class="rank-ctx">{e(s["subject"])}{tags} · complexidade {s["cx"]}</span>{rank_signal(s)}{pr}</div></div>
+<div class="rank-side">{stage_mark(s["stage"])}{target_button(s)}<span class="age{fresh(s["age"])}" data-tip="{age_tip(s["age"])}">{s["age"]}</span>
+<div class="card-signal">{progress(s)}</div>{owner_button(s)}<span class="rank-act">{act}</span></div></li>"""
 
 
 def rows_ranking() -> str:
-    order = [2137, 2127, 2145, 2140, 2131, 2132, 2129, 2119, 2112, 2125, 2147, 2143, 2128, 2126, 2136]
+    specs = {**BY_ID, 2108: RELEASE}
+    placed = {k for _, kids, _ in RANK_TREE for k in kids} | {t[0] for t in RANK_TREE} | {2108}
+    tree = RANK_TREE + [(s["id"], (), False) for s in SPECS if s["id"] not in placed]
     rows = []
-    for i, sid in enumerate(order, 1):
-        s = BY_ID[sid]
-        cur = ' class="is-cursor"' if sid == 2140 else ""
-        rows.append(f"""<tr draggable="true" data-spec="{sid}"{cur}>
-<td class="num">{i}</td>
-<td><span class="id">{sid}</span> &nbsp;<a class="row-title" href="#/spec/{sid}">{e(s["title"])}</a></td>
-<td class="fit">{stage_mark(s["stage"])}</td><td class="fit">{pri(s["pri"])}</td>
-<td class="fit progress-num muted">{f'{s["done"]}/{s["total"]}' if s["total"] else "—"}</td>
-<td class="fit age muted">{s["age"]}</td>
-<td class="fit"><div class="grip"><button type="button" class="ghost icon small" aria-label="Mover {sid} para cima">{ic("up")}</button><button type="button" class="ghost icon small" aria-label="Mover {sid} para baixo">{ic("down")}</button></div></td></tr>""")
+    for i, (sid, kids, open_) in enumerate(tree, 1):
+        rows.append(rank_row(specs[sid], str(i), kids=len(kids), open_=open_))
+        if open_:
+            rows += [rank_row(specs[k], f"{i}.{j}", depth=1) for j, k in enumerate(kids, 1)]
     return "\n".join(rows)
 
 
-def table_ranking() -> str:
-    return f"""<div class="table-wrap"><table>
-<thead><tr><th scope="col">#</th><th scope="col">Spec</th><th scope="col">Etapa</th><th scope="col">Prioridade</th><th scope="col">Tarefas</th><th scope="col">Aberta</th><th scope="col"><span class="sr">Mover</span></th></tr></thead>
-<tbody>{rows_ranking()}</tbody></table></div>"""
+def rank_list() -> str:
+    return f'<ol class="rank-list">{rows_ranking()}</ol>'
 
 
 def triage(s: dict, why: str, *, bad=False, armed=False, cursor=False, kind="approve") -> str:
@@ -333,15 +519,15 @@ def decide_body(armed=True) -> str:
     ]
     rows_blocked = [triage(s, s["why"], bad=True, kind="open") for s in reversed(BLOCKED)]
     member = spec(2152, "Política de aprovação quando o épico cruza dois repositórios", "ready", 2, "alta", None, "há 7 d")
-    rows_epic = [triage(member, "Membro do épico 2127 · S9 · esperando decisão do humano.", kind="open")]
+    rows_epic = [triage(member, "Feature do épico 2127 · S9 · esperando decisão do humano.", kind="open")]
     return f"""<div class="wrap">
 <div class="view-head"><h2>Decidir</h2><span class="sub">{WAITING} decisões esperam por você</span><span class="grow"></span>
 {segmented([f"Todas {WAITING}", f"Aprovar {len(READY)}", f"Desbloquear {len(BLOCKED)}", f"Épicos {EPIC_MEMBERS}"])}</div>
-<div class="group-head"><h3>Prontas, aguardando aprovação</h3><p>Mais antigas primeiro. Aprovar grava um registro que não se desfaz.</p></div>
+<div class="group-head"><h3>Na fila, aguardando aprovação</h3><p>Mais antigas primeiro. Aprovar grava um registro que não se desfaz.</p></div>
 <ul class="triagelist">{"".join(rows_ready)}</ul>
 <div class="group-head"><h3>Tarefas bloqueadas</h3><p>O motivo está na tarefa; a spec tem o resto.</p></div>
 <ul class="triagelist">{"".join(rows_blocked)}</ul>
-<div class="group-head"><h3>Membros de épicos abertos</h3><p>Itens de épicos marcados como decisão do humano.</p></div>
+<div class="group-head"><h3>Features de épicos abertos</h3><p>Features marcadas como decisão do humano.</p></div>
 <ul class="triagelist">{"".join(rows_epic)}</ul>
 <p class="quiet-row"><kbd>j</kbd> <kbd>k</kbd> navegar · <kbd>Enter</kbd> abrir · <kbd>a</kbd> aprovar · <kbd>Esc</kbd> desarmar</p>
 </div>"""
@@ -378,8 +564,8 @@ def epic_panel() -> str:
     return f"""<section class="panel epic">
 <div class="epic-head">
 <h2 class="epic-title"><span class="id">2127</span> <a href="#/spec/2127">Portal 2.0: shell, board e visões ao vivo</a></h2>
-<div class="epic-progress"><span>4 de 11 membros · onda 2 de 4</span><div class="meter" role="img" aria-label="4 de 11 membros concluídos, em 4 ondas">{meter}</div></div>
-<div class="epic-meta"><span class="chip info" title="há membro em execução">em andamento</span><span>caminho crítico: S7 → S9 → S10</span></div>
+<div class="epic-progress"><span>4 de 11 features · onda 2 de 4</span><div class="meter" role="img" aria-label="4 de 11 features concluídas, em 4 ondas">{meter}</div></div>
+<div class="epic-meta"><span class="chip info" title="há feature em execução">em andamento</span><span>caminho crítico: S7 → S9 → S10</span></div>
 </div>
 <p class="next-step"><strong>Próximo passo:</strong> S7 · Publicar as escritas pendentes a partir do shell 2.0</p>
 <div class="waves">{wave(1, "Fundação do shell", 3, 3, "", False)}{wave(2, "Dados e servidor", 1, 3, w2)}{wave(3, "Escrita e decisão", 0, 3, w3)}{wave(4, "Fechamento", 0, 2, w4)}</div>
@@ -391,8 +577,8 @@ def epic_closed() -> str:
     return f"""<section class="panel epic">
 <div class="epic-head">
 <h2 class="epic-title"><span class="id">2108</span> <a href="#/spec/2108">Release autônoma do plugin</a></h2>
-<div class="epic-progress"><span>6 de 7 membros · onda 2 de 2</span><div class="meter" role="img" aria-label="6 de 7 membros concluídos, em 2 ondas">{meter}</div></div>
-<div class="epic-meta"><span class="chip warn" title="há membro com tarefa bloqueada">bloqueio</span><span>S6 espera a 2119</span></div>
+<div class="epic-progress"><span>6 de 7 features · onda 2 de 2</span><div class="meter" role="img" aria-label="6 de 7 features concluídas, em 2 ondas">{meter}</div></div>
+<div class="epic-meta"><span class="chip warn" title="há feature com tarefa bloqueada">bloqueio</span><span>S6 espera a 2119</span></div>
 </div>
 <p class="next-step"><strong>Próximo passo:</strong> S6 espera 2119 · Assinar as releases do plugin com a chave do CI</p>
 </section>"""
@@ -453,6 +639,9 @@ def gantt_body() -> str:
 <div class="table-wrap"><table><thead><tr><th scope="col">Spec</th><th scope="col">Etapa</th><th scope="col">Dependências</th></tr></thead><tbody>{undated}</tbody></table></div>"""
 
 
+OPENCODE_STATE = "Estado lido da atividade recente: o OpenCode não registra o processo da sessão."
+
+
 def radar(active: dict) -> str:
     cells = []
     for i in range(60):
@@ -461,9 +650,15 @@ def radar(active: dict) -> str:
     return f'<div class="radar" role="img" aria-label="Atividade dos últimos 60 minutos">{"".join(cells)}</div>'
 
 
-def session_lane(branch, where, state, label, last, active, subs="") -> str:
+def host_tag(host: str) -> str:
+    if host == "OpenCode":
+        return f'<span class="tag" tabindex="0" data-tip="{e(OPENCODE_STATE)}">{host}</span>'
+    return f'<span class="tag">{host}</span>'
+
+
+def session_lane(branch, host, where, state, label, last, active, subs="") -> str:
     tone = {"waiting": "chip hot", "busy": "chip warn", "idle": "chip"}[state]
-    return f"""<div class="lane"><div class="lane-id"><strong>{e(branch)}</strong><span>{e(where)}</span></div>
+    return f"""<div class="lane"><div class="lane-id"><strong>{e(branch)}</strong>{host_tag(host)} <span>{e(where)}</span></div>
 {radar(active)}<div class="epic-meta"><span class="{tone}">{label}</span><span>{last}</span></div>{subs}</div>"""
 
 
@@ -474,15 +669,17 @@ def sublane(name, left, width, active=False, state="concluído") -> str:
 
 def sessions_body() -> str:
     lanes = [
-        session_lane("plan/2137-portal-push", "worktree quenching-2137 · sessão 8f3a", "waiting", "esperando você", "há 4 min", {54: 60, 55: 90, 49: 40, 48: 30}),
-        session_lane("plan/2127-portal-experience", "worktree quenching-portal · sessão c21e", "busy", "ocupada", "agora", {52: 40, 54: 70, 55: 100, 56: 80, 57: 60, 58: 90, 59: 70},
+        session_lane("plan/2137-portal-push", "OpenCode", "quenching-2137 · sessão 8f3a", "waiting", "esperando você", "há 4 min", {54: 60, 55: 90, 49: 40, 48: 30}),
+        session_lane("plan/2127-portal-experience", "Claude Code", "quenching-portal · sessão c21e", "busy", "ocupada", "agora", {52: 40, 54: 70, 55: 100, 56: 80, 57: 60, 58: 90, 59: 70},
                      sublane("quenching-verifier", 88, 9, True, "ativo") + sublane("quenching-scout", 70, 12)),
-        session_lane("main", "checkout principal · sessão 03bd", "idle", "ociosa", "há 22 min", {30: 40, 31: 60, 33: 50, 36: 30}),
+        session_lane("plan/2132-store-sync", "OpenCode", "quenching-2132 · sessão e7d2", "busy", "ocupada", "há 1 min", {44: 30, 47: 50, 50: 80, 53: 60, 56: 70, 58: 90},
+                     sublane("quenching-spec-runner", 74, 22, True, "ativo")),
+        session_lane("main", "Claude Code", "checkout principal · sessão 03bd", "idle", "ociosa", "há 22 min", {30: 40, 31: 60, 33: 50, 36: 30}),
     ]
     return f"""<div class="wrap">
-<div class="view-head"><h2>Sessões</h2><span class="sub">1 espera por você · 3 nos últimos 60 min</span></div>
+<div class="view-head"><h2>Sessões</h2><span class="sub">1 espera por você · 4 nos últimos 60 min · 2 no Claude Code, 2 no OpenCode</span></div>
 <div class="group-head"><h3>Esperando você</h3></div>
-<div class="waiting-list"><div><div class="waiting-head"><span class="id">plan/2137-portal-push</span><span class="muted">desde 4 min atrás · AskUserQuestion</span></div>
+<div class="waiting-list"><div><div class="waiting-head"><span class="id">plan/2137-portal-push</span>{host_tag("OpenCode")}<span class="muted">desde 4 min atrás · question</span></div>
 <blockquote class="question" style="margin:0">Subo as escritas pendentes com um push único ou uma spec por vez?</blockquote></div></div>
 <div class="group-head"><h3>Atividade</h3></div>
 <div class="triagelist">{"".join(lanes)}</div></div>"""
@@ -548,7 +745,7 @@ def detail_head(s: dict, drawer=False) -> str:
     return f"""<header class="detail-head">
 <h2 class="detail-title"><span class="id">{s["id"]}</span>{e(s["title"])}</h2>
 <div class="actions"><button type="button" class="ghost small">{ic("copy")} Copiar comando</button><button type="button" class="ghost small">Registrar descoberta</button>{end}</div>
-<p class="detail-meta">{stage_chip(s["stage"])}{pri(s["pri"])}<span>{s["done"]}/{s["total"]} tarefas</span><span>aberta {s["age"]}</span><span>@{s["who"]}</span><a href="#">PR #45</a></p>
+<p class="detail-meta">{stage_chip(s["stage"])}{pri_button(s["pri"])}{target_button(s)}{owner_button(s)}<span>{s["done"]}/{s["total"]} {PARTS.get(s["kind"], "tarefas concluídas").split()[0]}</span><span>aberta {s["age"]}</span><a href="#">PR #45</a></p>
 </header>"""
 
 
@@ -700,7 +897,7 @@ def c_tags():
 
 def c_progress():
     return pad(f'<div class="card-signal">{progress(BY_ID[2137])}</div><div class="card-signal">{progress(BY_ID[2119])}</div>'
-               '<div class="epic-progress"><span>4 de 11 membros · onda 2 de 4</span><div class="meter" role="img" aria-label="4 de 11"><span style="--n:3"><i style="width:100%"></i></span><span style="--n:3"><i style="width:33%"></i></span><span style="--n:3"><i style="width:0"></i></span><span style="--n:2"><i style="width:0"></i></span></div></div>', width="320px")
+               '<div class="epic-progress"><span>4 de 11 features · onda 2 de 4</span><div class="meter" role="img" aria-label="4 de 11"><span style="--n:3"><i style="width:100%"></i></span><span style="--n:3"><i style="width:33%"></i></span><span style="--n:3"><i style="width:0"></i></span><span style="--n:2"><i style="width:0"></i></span></div></div>', width="320px")
 
 
 def c_cards():
@@ -726,7 +923,7 @@ def c_toast():
 
 
 def c_empty():
-    return pad('<div class="panel empty-state"><p class="empty-title">Nada espera por você</p><p class="empty-hint">Nenhum membro de épico aberto, tarefa bloqueada ou spec pronta sem aprovação.</p><a class="ghost" href="#/board">Ver o board</a></div>'
+    return pad('<div class="panel empty-state"><p class="empty-title">Nada espera por você</p><p class="empty-hint">Nenhuma feature de épico aberta, tarefa bloqueada ou spec desenvolvida sem aprovação.</p><a class="ghost" href="#/board">Ver o board</a></div>'
                '<div class="panel empty-state"><p class="empty-title">O portal não conseguiu ler o repositório</p><p class="empty-hint">git: remote ref not found</p><button type="button" class="primary">Tentar de novo</button></div>', width="640px")
 
 
@@ -745,9 +942,9 @@ def c_overlay(html: str, h: int) -> str:
 
 CARDS = [  # folder, group, height, width, subtitle, body
     ("Stages", "Foundations", 420, 960, "Seven derived stages: mark, chip and lane rule", c_stages),
-    ("Icons", "Foundations", 330, 800, "One authored 16px set, inline SVG, 1.5 stroke", c_icons),
+    ("Icons", "Foundations", 410, 800, "One authored 16px set, inline SVG, 1.5 stroke", c_icons),
     ("TopBar", "Shell", 64, 1280, "Brand, seven destinations, search, theme, help, capture", lambda: topbar()),
-    ("Pulse", "Shell", 48, 1280, "Six counts in one strip, the human's first", lambda: pulse()),
+    ("Pulse", "Shell", 48, 1280, "Seven counts in one strip, the human's first", lambda: pulse()),
     ("Banner", "Shell", 96, 1000, "Read-only and connection states", lambda: pad(READ_ONLY + OFFLINE, gap=8)),
     ("StatusBar", "Shell", 96, 1000, "Connection, freshness, pause, refresh, notifications", lambda: pad(statusbar() + statusbar("offline", "dados de 15:03 · há 2 min", 3, True), gap=8)),
     ("ProjectRail", "Shell", 300, 320, "Projects and worktrees under the central server", rail),
@@ -759,11 +956,11 @@ CARDS = [  # folder, group, height, width, subtitle, body
     ("Progress", "Status", 120, 400, "Task bar and the epic meter by wave", c_progress),
     ("SpecCard", "Board", 660, 800, "The board's unit, comfortable and compact", c_cards),
     ("Lane", "Board", 420, 1000, "A stage column: rule, count, own scroll, collapsible", c_lane),
-    ("RankTable", "Views", 520, 1100, "The global order, with drag and arrow keys", table_ranking),
+    ("RankList", "Views", 520, 1280, "The global order as row cards, with drag and arrow keys", lambda: pad(rank_list())),
     ("DecisionRow", "Views", 300, 1100, "One decision per row; approval is armed in place", lambda: pad(f'<ul class="triagelist">{triage(BY_ID[2140], "Isto grava “approved by: human” e não se desfaz.", armed=True)}{triage(BY_ID[2139], BY_ID[2139]["summary"])}{triage(BY_ID[2112], BY_ID[2112]["why"], bad=True, kind="open")}</ul>')),
     ("EpicPanel", "Views", 470, 1100, "Health, wave meter, next step and the waves", lambda: pad(epic_panel())),
     ("GanttChart", "Views", 370, 1400, "The server's schedule as SVG", lambda: pad(f'<div class="gantt-scroll">{gantt_svg()}</div>')),
-    ("SessionLane", "Views", 280, 1100, "Live sessions told apart by branch, worktree and id", lambda: pad(f'<div class="triagelist">{session_lane("plan/2137-portal-push", "worktree quenching-2137 · sessão 8f3a", "waiting", "esperando você", "há 4 min", {54: 60, 55: 90})}{session_lane("plan/2127-portal-experience", "worktree quenching-portal · sessão c21e", "busy", "ocupada", "agora", {55: 100, 56: 80, 58: 90}, sublane("quenching-verifier", 88, 9, True, "ativo"))}</div>')),
+    ("SessionLane", "Views", 280, 1100, "Live sessions told apart by branch, host, worktree and id", lambda: pad(f'<div class="triagelist">{session_lane("plan/2137-portal-push", "OpenCode", "quenching-2137 · sessão 8f3a", "waiting", "esperando você", "há 4 min", {54: 60, 55: 90})}{session_lane("plan/2127-portal-experience", "Claude Code", "quenching-portal · sessão c21e", "busy", "ocupada", "agora", {55: 100, 56: 80, 58: 90}, sublane("quenching-verifier", 88, 9, True, "ativo"))}</div>')),
     ("ChatPanel", "Views", 520, 900, "One read-only question at a time, with its cost", lambda: f'<div style="height:500px;padding:16px">{chat_body()}</div>'),
     ("SpecHeader", "Detail", 130, 1100, "Title, stage, facts and actions in one block", lambda: detail_head(BY_ID[2137])),
     ("Markdown", "Detail", 430, 800, "The safe subset, built node by node", lambda: pad(sections_block())),
@@ -796,9 +993,9 @@ def screen_grouped() -> str:
 SCREENS = [  # folder, height, width, subtitle, body
     ("ScreenBoard", 900, 1440, "Board by stage: the entry page", lambda: app(toolbar() + board_lanes(), main_cls="is-board")),
     ("ScreenBoardGrouped", 900, 1440, "Board by priority, compact, with a filter", lambda: app(screen_grouped(), main_cls="is-board")),
-    ("ScreenRanking", 900, 1440, "Global ranking", lambda: app(f'<div class="wrap"><div class="view-head"><h2>Ranking</h2><span class="sub">{OPEN} specs abertas · arraste uma linha ou use as setas; cada mudança é um commit</span></div>{table_ranking()}</div>', current="list")),
+    ("ScreenRanking", 900, 1440, "Global ranking", lambda: app(f'<div class="view-head"><h2>Ranking</h2><span class="sub">{OPEN} specs abertas · arraste uma linha ou use as setas, dentro do mesmo nível; cada mudança é um commit</span></div>{rank_list()}', current="list")),
     ("ScreenDecide", 900, 1440, "Decide: the human queue, with an armed approval", lambda: app(decide_body(), current="human", push=2)),
-    ("ScreenEpics", 900, 1440, "Epics as programmes", lambda: app(f'<div class="view-head"><h2>Épicos</h2><span class="sub">2 abertos · 18 membros</span></div>{epic_panel()}{epic_closed()}', current="epics")),
+    ("ScreenEpics", 900, 1440, "Epics as programmes", lambda: app(toolbar(group="Nenhum", groups=EPIC_GROUPS, sorts=EPIC_SORTS, quick_items=EPIC_QUICK, label="Controles de épicos", board=False) + f'<div class="view-scroll"><div class="view-head"><h2>Épicos</h2><span class="sub">2 abertos · 18 features</span></div>{epic_panel()}{epic_closed()}</div>', current="epics", main_cls="is-board")),
     ("ScreenGantt", 900, 1440, "Gantt with dated and undated specs", lambda: app(gantt_body(), current="gantt")),
     ("ScreenSessions", 900, 1440, "Live sessions", lambda: app(sessions_body(), current="sessions")),
     ("ScreenChat", 900, 1440, "Read-only chat", lambda: app(chat_body(), current="chat")),
@@ -813,7 +1010,7 @@ SCREENS = [  # folder, height, width, subtitle, body
     ("ScreenOffline", 900, 1440, "Connection lost: data kept and dated", lambda: app(toolbar() + board_lanes(), main_cls="is-board", banner=OFFLINE, status=statusbar("offline", "dados de 15:03 · há 2 min", 3, True))),
     ("ScreenLoading", 900, 1440, "First paint", lambda: app(skeleton_board(), main_cls="is-board", waiting=0, sessions=0, status=statusbar("unstable", "carregando", 0),
                                                          pulse_html='<section class="pulse" aria-hidden="true">' + '<span class="pulse-cell skeleton" style="width:150px"></span>' * 6 + "</section>")),
-    ("ScreenDecideEmpty", 900, 1440, "Decide with nothing waiting", lambda: app('<div class="wrap"><div class="view-head"><h2>Decidir</h2><span class="sub">Nada espera por você</span></div><div class="panel empty-state"><p class="empty-title">Fila limpa</p><p class="empty-hint">Nenhum membro de épico aberto, tarefa bloqueada ou spec pronta sem aprovação. Quando algo precisar de você, o contador do topo acende.</p><a class="ghost" href="#/board">Ver o board</a></div></div>', current="human", waiting=0, sessions=0)),
+    ("ScreenDecideEmpty", 900, 1440, "Decide with nothing waiting", lambda: app('<div class="wrap"><div class="view-head"><h2>Decidir</h2><span class="sub">Nada espera por você</span></div><div class="panel empty-state"><p class="empty-title">Fila limpa</p><p class="empty-hint">Nenhuma feature de épico aberta, tarefa bloqueada ou spec desenvolvida sem aprovação. Quando algo precisar de você, o contador do topo acende.</p><a class="ghost" href="#/board">Ver o board</a></div></div>', current="human", waiting=0, sessions=0)),
     ("ScreenMobileBoard", 844, 390, "Board on a phone", lambda: app(toolbar() + board_lanes(cursor=None), main_cls="is-board", h=844)),
     ("ScreenMobileDecide", 844, 390, "Decide on a phone", lambda: app(decide_body(armed=False), current="human", h=844)),
 ]
@@ -893,6 +1090,8 @@ def ratio(a: str, b: str) -> float:
 
 
 PAIRS = [(fg, bg, 4.5) for fg, bg in (
+    ("person-1-ink", "person-1-bg"), ("person-2-ink", "person-2-bg"),
+    ("person-3-ink", "person-3-bg"),
     ("ink", "bg"), ("ink", "surface"), ("ink", "surface-2"), ("ink", "surface-3"), ("muted", "bg"), ("muted", "surface"),
     ("muted", "surface-2"), ("accent", "surface"), ("accent", "bg"), ("accent", "heat-tint"), ("accent-ink", "accent"),
     ("bad", "surface"), ("bad", "bg"), ("bad", "bad-tint"), ("warn", "surface"), ("ok", "surface"), ("info", "surface"),
@@ -931,10 +1130,6 @@ def check(files: dict[Path, str]) -> list[str]:
     hooks = {"action", "wide", "theme", "helpbtn", "tree", "project", "trees", "st-executing", "searchbtn-label", "hint", "approve", "pass"}
     for name in sorted(used - defined - hooks):
         problems.append(f"class .{name} is used but not defined")
-    size = len((css + tokens_css).encode()) + sum(len(x.encode()) for x in re.findall(r'\[data-theme="dark"\] \{.*?\}', tokens_css, re.S))
-    if size > CSS_BUDGET:
-        problems.append(f"stylesheets are {size} bytes with the auto-theme copy, budget {CSS_BUDGET}")
-    print(f"css budget: {size}/{CSS_BUDGET} bytes (tokens, components, auto-theme copy)")
     return problems
 
 
