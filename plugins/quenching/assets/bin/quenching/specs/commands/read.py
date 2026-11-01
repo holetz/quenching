@@ -251,7 +251,11 @@ def cmd_status(args, root: str, out: Emitter) -> int:
                 v = ", ".join(f"{kk}: {vv}" for kk, vv in v.items())
             print(f"    {k + ':':<10} {v}")
     if obj["pending"]:
-        print(f"  pending: {len(obj['pending']['specs'])} spec(s) with unsent local writes since "
+        artifacts = len(obj["pending"]["artifacts"])
+        counted = f"{len(obj['pending']['specs'])} spec(s)"
+        if artifacts:
+            counted += f" and {artifacts} artifact(s)"
+        print(f"  pending: {counted} with unsent local writes since "
               f"{obj['pending']['since']} — `cq specs push` sends them")
     if obj["tasks"]["subjects"]:
         print(f"  subjects: {len(obj['tasks']['subjects'])} task(s) carry one")

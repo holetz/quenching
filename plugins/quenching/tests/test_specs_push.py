@@ -285,6 +285,15 @@ class ArtifactOnlyPending(PushVerb):
         self.assertEqual(([], ["_handoffs/h.md"]), (got["sent"], got["artifacts"]))
         self.assertEqual("text\n", self.remote_file("specs/artifacts/_handoffs/h.md"))
 
+    def test_the_human_status_says_what_is_waiting_without_naming_a_spec(self):
+        self.backend.write_artifact(None, "h.md", "text\n")
+        buf = io.StringIO()
+        with mock.patch.object(read_mod, "open_backend", return_value=(self.backend, {})), \
+                contextlib.redirect_stdout(buf):
+            read_mod.cmd_status(argparse.Namespace(json=False, spec="1", epic=None,
+                                                   no_fetch=False), self.path, Emitter())
+        self.assertIn("pending: 0 spec(s) and 1 artifact(s)", buf.getvalue())
+
     def test_an_empty_pending_commit_is_still_nothing_pending(self):
         self.backend.write_artifact(None, "h.md", "text\n")
         self.backend.remove_artifact(None, "h.md")
