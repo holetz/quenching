@@ -31,7 +31,8 @@ from datetime import datetime
 
 from quenching.common.config import find_repo_root
 from quenching.common.leak import guard_store_write, patterns, scan_text, store_refusal
-from quenching.specs.backends.base import BackendRefusal, SpecBackend
+from quenching.specs.backends.base import (BackendRefusal, SpecBackend, artifact_owner,
+                                           check_artifact)
 from quenching.specs.parse import PHASES, derive_info, derive_labels, resolve_one
 
 
@@ -39,6 +40,7 @@ STORE_BRANCH = "quenching"
 DEFAULT_REMOTE = "origin"
 SPECS_DIR = "specs"
 PHASE_DIRS = {"plans": "specs", "archive": "specs/archive"}
+ARTIFACTS_DIR = "specs/artifacts"
 COUNTER_PATH = "specs/.next-id"
 CONFIG_PATH = "quenching.json"
 LOCATOR_PREFIX = "quenching:"
@@ -111,6 +113,27 @@ def _spec_id(path: str) -> int | None:
 
 def _spec_paths(spec_id: int) -> tuple[str, ...]:
     return tuple(f"{phase_dir}/{spec_id}.md" for phase_dir in PHASE_DIRS.values())
+
+
+def _path_owner(path: str) -> int | None:
+    """The spec a store path belongs to: one of its two documents, or anything under its
+    artifact subtree. `_handoffs` and every other path belong to no spec."""
+    spec_id = _spec_id(path)
+    if spec_id is not None:
+        return spec_id
+    rest = path[len(ARTIFACTS_DIR) + 1:] if path.startswith(ARTIFACTS_DIR + "/") else ""
+    owner = rest.split("/", 1)[0]
+    return int(owner) if owner.isdigit() else None
+
+
+def _owned_paths(spec_id: int, *sources) -> set[str]:
+    """Every path the spec owns across the given path sets — the two documents plus the whole
+    artifact subtree. This is the one authority the replay, the late-write rescue and the
+    conflict judgement share: a path outside it is somebody else's drift."""
+    documents = set(_spec_paths(spec_id))
+    prefix = f"{ARTIFACTS_DIR}/{spec_id}/"
+    return {path for paths in sources for path in paths
+            if path in documents or path.startswith(prefix)}
 
 
 class _Blob(str):
@@ -380,19 +403,25 @@ class GitBackend(SpecBackend):
         view = dict(remote)
         changes: dict[str, str | None] = {}
         conflicts: list[dict] = []
-        remote_ids = {_spec_id(p) for p in set(before) | set(remote)
+        remote_ids = {_path_owner(p) for p in set(before) | set(remote)
                       if before.get(p) != remote.get(p)} - {None}
         touched = {p for p in set(before) | set(local) if before.get(p) != local.get(p)}
-        for spec_id in sorted({_spec_id(p) for p in touched} - {None} - set(drop)):
-            paths = _spec_paths(spec_id)
+        for spec_id in sorted({_path_owner(p) for p in touched} - {None} - set(drop)):
+            paths = _owned_paths(spec_id, before, local, remote)
             if spec_id in remote_ids and any(local.get(p) != remote.get(p) for p in paths):
                 conflicts.append({"id": spec_id,
-                                  "localBlob": next((local[p] for p in paths if p in local), None),
-                                  "remoteBlob": next((remote[p] for p in paths if p in remote),
-                                                     None)})
-            for path in paths:
+                                  "localBlob": next((local[p] for p in sorted(paths)
+                                                     if p in local), None),
+                                  "remoteBlob": next((remote[p] for p in sorted(paths)
+                                                      if p in remote), None)})
+            for path in sorted(paths):
                 if local.get(path) != remote.get(path):
                     changes[path] = _Blob(local[path]) if path in local else None
+        # A standalone artifact belongs to no spec and cannot conflict; it still has to reach
+        # the view, or a write of one is invisible until the next sync and then lost.
+        for path in sorted(touched):
+            if path.startswith(ARTIFACTS_DIR + "/") and _path_owner(path) is None:
+                changes[path] = _Blob(local[path]) if path in local else None
         if COUNTER_PATH in touched and COUNTER_PATH in local:
             mine, theirs = local[COUNTER_PATH], remote.get(COUNTER_PATH)
             texts = self._texts([b for b in (mine, theirs) if b])
@@ -666,6 +695,62 @@ class GitBackend(SpecBackend):
         verb = "archive" if dest_phase == "archive" else "restore"
         self._store(apply, f"{verb} {spec_id}")
         return LOCATOR_PREFIX + dest
+
+    # -- the artifact capability ----------------------------------------------- #
+    @staticmethod
+    def _artifact_path(spec_id: str | int | None, name: str) -> str:
+        return f"{ARTIFACTS_DIR}/{artifact_owner(spec_id)}/{name}"
+
+    @staticmethod
+    def _artifact_prefix(spec_id: str | int | None) -> str:
+        return f"{ARTIFACTS_DIR}/{artifact_owner(spec_id)}/"
+
+    def _attached(self, spec_id: str | int | None) -> None:
+        """An artifact with no spec to attach to is a typo, never a standalone one."""
+        if spec_id is not None and self.read_spec(spec_id)[1]:
+            raise _refusal("sp-unknown-id", f"no spec with id '{spec_id}' to attach the "
+                           "artifact to", id=spec_id)
+
+    def list_artifacts(self, spec_id: str | int | None = None) -> list[dict]:
+        self._attached(spec_id)
+        prefix = self._artifact_prefix(spec_id)
+        rows = [{"spec": None if spec_id is None else int(spec_id),
+                 "name": path[len(prefix):], "path": LOCATOR_PREFIX + path}
+                for path in self._view() if path.startswith(prefix)]
+        return sorted(rows, key=lambda row: row["name"])
+
+    def read_artifact(self, spec_id: str | int | None, name: str) -> str:
+        self._attached(spec_id)
+        path = self._artifact_path(spec_id, name)
+        snapshot = self._view()
+        if path not in snapshot:
+            raise _refusal("sp-artifact-unknown", f"no artifact '{name}' for "
+                           f"{artifact_owner(spec_id)} on branch '{self.branch}'")
+        return snapshot[path][1]
+
+    def write_artifact(self, spec_id: str | int | None, name: str, text: str) -> str:
+        """One local pending write, like a document: the next read sees it, the next sync
+        sends it. The name and the size are refused before anything is hashed, and the
+        text passes the same leak guard the document does."""
+        self._attached(spec_id)
+        check_artifact(name, text)
+        path = self._artifact_path(spec_id, name)
+        snapshot = self._view()
+        previous = snapshot[path][1] if path in snapshot else None
+        text = guard_store_write(text, self.repo_root, previous, BackendRefusal)
+        owner = artifact_owner(spec_id)
+        self._store(lambda view: ({path: text}, None), f"artifact {owner} {name}", sync=False)
+        return LOCATOR_PREFIX + path
+
+    def remove_artifact(self, spec_id: str | int | None, name: str) -> str:
+        self._attached(spec_id)
+        path = self._artifact_path(spec_id, name)
+        if path not in self._view():
+            raise _refusal("sp-artifact-unknown", f"no artifact '{name}' for "
+                           f"{artifact_owner(spec_id)} on branch '{self.branch}'")
+        owner = artifact_owner(spec_id)
+        self._store(lambda view: ({path: None}, None), f"artifact {owner} {name}", sync=False)
+        return LOCATOR_PREFIX + path
 
     # -- configuration on the branch ------------------------------------------ #
     def read_config(self) -> dict:
@@ -969,6 +1054,16 @@ class GitBackend(SpecBackend):
             if any(read.get(p) != pushed_tree.get(p) for p in paths):
                 held.update({p: _Blob(read[p]) if p in read else None for p in paths})
             changes.update(mine)
+        # Standalone artifacts carry no document to conflict with, so they are rescued on
+        # their own: a write that landed while the sync ran is re-based onto the pushed commit.
+        carried = {p for p in set(sent_base) | set(sent_tree)
+                   if sent_base.get(p) != sent_tree.get(p)}
+        for path in sorted(set(base) | set(local) | set(sent_tree)):
+            if not path.startswith(ARTIFACTS_DIR + "/") or _path_owner(path) is not None:
+                continue
+            if local.get(path) != sent_tree.get(path) and \
+                    (base.get(path) != local.get(path) or path in carried):
+                changes[path] = _Blob(local[path]) if path in local else None
         return changes, held
 
     def _sync_cards(self, before: str | None, after: str) -> list[dict]:
