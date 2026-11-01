@@ -54,10 +54,14 @@ including `specs serve`, `specs mcp`, `portal serve` and `codex implement`, are 
 | `write` | Can change the workspace or specs store | `readOnlyHint: false`; worktree retire also sets `destructiveHint: true` |
 | `external` | Can act outside the machine | `openWorldHint: true`; destructive merge/prune also set `destructiveHint: true` |
 
-Annotations describe capabilities; they grant no permission. The existing specs elicitation gate
-still protects `approved`, `reviewed`, `merge`, `outcome` and promotion, so `git_pr_merge`
-publishes no `spec` argument: the `merge` record goes through `specs_record`. Only a client acceptance
-permits those moves; missing capability, decline or cancel refuses without a write.
+Annotations describe capabilities; they grant no permission. The specs surface asks the human once:
+`approved` is the only gated record, and only a client acceptance writes it (`by=human`, and only on
+a spec that met the ready gate); missing capability, decline or cancel refuses without a write. What
+the flow concludes after that approval is not a second decision — the `reviewed`, `merge` and
+`outcome` records and `specs_promote` run without asking, exactly as their CLI verbs do, so an
+autonomous run archives a spec without stopping to ask again. `git_pr_merge` still publishes no
+`spec` argument: the `merge` record is stamped by `cq specs record` once the merge landed, not by
+the merge verb.
 
 `specs_push` is the one write tool with no confirmation gate: it publishes every pending local write
 of the clone with one push of the store branch, exactly like `cq specs push`, and calling the tool is

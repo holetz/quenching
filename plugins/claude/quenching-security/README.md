@@ -356,18 +356,23 @@ Write tools run the same CLI verbs, in the same process, and add no store logic:
 |---|---|---|
 | `specs_create` | `name`, `title`, `type`, `tags`, `complexity`, `verification` | captures a spec into `plans/` |
 | `specs_section_write` | `spec`, `heading`, `body`, `scope` | replaces ONE section (body up to 200,000 characters) |
-| `specs_record` | `spec`, `name`, `fields` | merges fields into a record; `priority`, `refined`, `branch`, `pr`, `buildCost`, `run` are free |
+| `specs_record` | `spec`, `name`, `fields` | merges fields into a record; only `approved` is gated |
 | `specs_task` | `spec`, `action` (check, uncheck, block, descope), `task`, `reason`, `subject`, `commit` | moves one checkbox |
 | `specs_epic_add` | `epic`, `spec`, `after`, `group`, `label`, `move` | lists a spec as an epic item |
 | `specs_discover` | `spec`, `text` | appends one line to `## Discoveries` |
-| `specs_promote` | `spec`, `to`, `outcome` | moves between `plans/` and `archive/`; gated, never forced |
+| `specs_promote` | `spec`, `to`, `outcome` | moves between `plans/` and `archive/`, stamping the outcome; never forced |
 
-Gated moves: the `approved`, `reviewed`, `merge` and `outcome` records and `specs_promote` stamp a
-human decision, so the server asks the human through the client (MCP `elicitation/create`) and runs
-the verb only on an accept. No argument confirms anything: a client without the `elicitation`
-capability gets `mcp-confirmation-unavailable`, a decline or cancel gets `mcp-confirmation-refused`,
-and nothing changes. `approved` takes no fields: the server writes `date` and `by=human` after the
-accept, and only on a spec that met the ready gate (`mcp-not-ready` otherwise, before the question).
+One human decision, asked once: `approved` is the only gated write. The server asks the human
+through the client (MCP `elicitation/create`) and runs the verb only on an accept — no argument
+confirms anything, a client without the `elicitation` capability gets
+`mcp-confirmation-unavailable`, a decline or cancel gets `mcp-confirmation-refused`, and nothing
+changes. `approved` takes no fields: the server writes `date` and `by=human` after the accept, and
+only on a spec that met the ready gate (`mcp-not-ready` otherwise, before the question).
+
+What the flow concludes after that approval writes without asking: the `reviewed`, `merge` and
+`outcome` records and `specs_promote` run as the CLI verbs do. The archive is refused (exit 2) only
+by its own content gate — an empty `## Outcome`, or an open task under `done` — never by a
+confirmation; `outcome` is not a `specs_record` at all, because `specs_promote` is its one writer.
 
 Size policy: no tool returns a whole spec; reads go by section and by task, listings are paged, and any
 answer above 60,000 characters is cut with `truncated: true` and a `hint` naming the narrower call.

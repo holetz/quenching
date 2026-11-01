@@ -49,6 +49,12 @@ term, `quenching-knowledge-align` to migrate/normalize, `quenching-components-ha
 <Harness-operational rules only — how to behave in this repo, not what the domain is.
 Anything that is durable knowledge belongs in a /docs/ home above, cited here, never inlined.>
 
+- **Every development request goes through a spec**, and the spec runs the whole flow. A request
+  that names a change — "implement X improvement", "fix Y" — is a request to build it: develop,
+  execute, conclude, PR/merge, deploy, without stopping to ask whether to. Only a request that
+  names the artifact — "create a spec for X" — stops at the spec. The approval a spec carries is
+  the whole flow's authorization; no later step asks the human again.
+
 <!-- Root harness pointer, auto-loaded by every supported harness on every turn. Keep it a thin pointer:
      repo-wide operations + the /docs/ home map. Knowledge is MOVED into /docs/, never copied here.
      Installed/maintained by the quenching plugin; this file is a harness pointer, not an
@@ -67,4 +73,8 @@ Anything that is durable knowledge belongs in a /docs/ home above, cited here, n
      • KEEP the "Resolving a term" pointer + the HOW-TO-FIND-A-TERM comment when the repo has a
        `glossary.md` — term resolution via the glossary is a habit worth one line every
        turn. Drop both only if the repo has no glossary.
+     • KEEP the spec-first development rule when `.agents/quenching/bin/cq specs config` reports a store: it is the line
+       that tells the agent a change request means the whole flow (develop → execute → conclude →
+       PR/merge → deploy) and that the spec's approval authorizes all of it. Drop it only where
+       the repo has no spec store.
      • Size budget: aim ≤ ~60 lines. If it is longer, more knowledge still needs to move out. -->
