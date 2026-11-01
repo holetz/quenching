@@ -330,9 +330,10 @@ class Portal:
             return {"count": 0, "specs": [], "since": None, "supported": True,
                     "error": e.err.get("message") or e.err.get("code")}
         if not state:
-            return {"count": 0, "specs": [], "since": None, "supported": True}
-        return {"count": len(state["specs"]), "specs": state["specs"],
-                "since": state["since"], "supported": True}
+            return {"count": 0, "specs": [], "artifacts": [], "since": None, "supported": True}
+        artifacts = state.get("artifacts") or []
+        return {"count": len(state["specs"]) + len(artifacts), "specs": state["specs"],
+                "artifacts": artifacts, "since": state["since"], "supported": True}
 
     def _snapshot(self, fresh: bool):
         now = time.time()

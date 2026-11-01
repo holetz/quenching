@@ -21,6 +21,7 @@ from quenching.common.output import CQArgumentParser, OK, refuse
 from quenching.common.version import VERSION
 from quenching.specs.backends.base import BackendRefusal
 from quenching.specs.parse.fields import UnclosedFence
+from quenching.specs.commands.artifacts import cmd_artifact
 from quenching.specs.commands.create import cmd_new
 from quenching.specs.commands.deps import cmd_depends, cmd_schedule
 from quenching.specs.commands.doctor import cmd_config, cmd_doctor
@@ -288,6 +289,25 @@ def _add_inspection(sub) -> None:
     sp.add_argument("--drop", action="append", type=int, metavar="ID",
                     help="discard this spec's pending local writes before the push (repeatable)")
 
+    sp = add_json(sub.add_parser("artifact", help="the text a spec carries beside its document, "
+                                                 "on the store branch: list, read, write or rm"))
+    asub = sp.add_subparsers(dest="artifact_cmd", metavar="VERB")
+    pad = add_json(asub.add_parser("list", help="the artifacts of `--spec`, or the standalone "
+                                                 "ones when it is omitted"))
+    pad.add_argument("--spec")
+    pad = add_json(asub.add_parser("read", help="print one artifact, or write it with --out"))
+    pad.add_argument("--spec")
+    pad.add_argument("--name", required=True)
+    pad.add_argument("--out", help="write the text to this file instead of stdout")
+    pad = add_json(asub.add_parser("write", help="store one artifact from stdin or --from"))
+    pad.add_argument("--spec")
+    pad.add_argument("--name", required=True)
+    pad.add_argument("--from", dest="from_path", metavar="PATH",
+                     help="read the text from this file (`-` is stdin, the default)")
+    pad = add_json(asub.add_parser("rm", help="remove one artifact"))
+    pad.add_argument("--spec")
+    pad.add_argument("--name", required=True)
+
     sp = add_json(sub.add_parser("discover", help="append a line to ## Discoveries"))
     sp.add_argument("spec")
     sp.add_argument("text")
@@ -421,6 +441,7 @@ DISPATCH: dict = {
     "find": cmd_find,
     "discover": cmd_discover,
     "push": cmd_push,
+    "artifact": cmd_artifact,
     "epic": cmd_epic,
     "link": cmd_epic,
     "validate": cmd_validate,
