@@ -91,9 +91,8 @@ class MemoryBackend(SpecBackend):
     def list_artifacts(self, spec_id: str | int | None = None) -> list[dict]:
         owner = self._owner(spec_id)
         rows = [{"spec": None if owner == "_handoffs" else int(owner), "name": name,
-                 "path": f"memory://artifacts/{owner}/{name}",
-                 "bytes": len(text.encode("utf-8"))}
-                for (held, name), text in self.artifacts.items() if held == owner]
+                 "path": f"memory://artifacts/{owner}/{name}"}
+                for (held, name) in self.artifacts if held == owner]
         return sorted(rows, key=lambda row: row["name"])
 
     def read_artifact(self, spec_id: str | int | None, name: str) -> str:

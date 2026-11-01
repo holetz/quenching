@@ -726,7 +726,13 @@ class GitBackend(SpecBackend):
         if path not in snapshot:
             raise _refusal("sp-artifact-unknown", f"no artifact '{name}' for "
                            f"{artifact_owner(spec_id)} on branch '{self.branch}'")
-        return snapshot[path][1]
+        try:
+            return snapshot[path][1]
+        except UnicodeDecodeError:
+            # The API refuses to write one, but a hand-committed blob can still be there.
+            raise _refusal("sp-artifact-binary", f"artifact '{name}' for "
+                           f"{artifact_owner(spec_id)} is not UTF-8 text; the store carries "
+                           "text artifacts only")
 
     def write_artifact(self, spec_id: str | int | None, name: str, text: str) -> str:
         """One local pending write, like a document: the next read sees it, the next sync
@@ -1236,7 +1242,14 @@ class _Tree:
         return self[path] if path in self.blobs else default
 
     def preload(self) -> None:
-        self._backend._texts(list(self.blobs.values()))
+        """Decode every DOCUMENT in one batch; artifacts load only when something reads one.
+
+        `list --lean` derives a title from each spec and nothing from an artifact, so warming
+        the whole subtree would read a handoff's bytes for no answer — and an artifact that is
+        not UTF-8 (written by hand, outside the API that refuses one) would fail the listing
+        that never asked for it."""
+        self._backend._texts([blob for path, blob in self.blobs.items()
+                              if _spec_id(path) is not None])
 
 
 _STORES: dict[tuple[str, str], GitBackend] = {}

@@ -7,6 +7,7 @@ as a document does. The cases that prove the second half live in `test_specs_git
 """
 
 import pathlib
+import subprocess
 import sys
 import unittest
 from unittest import mock
@@ -139,6 +140,54 @@ class Ownership(GitStoreFixture):
             fresh.write_artifact(2, "h.md", "attached to the changed spec\n")
         self.assertEqual("sp-git-stale-write", caught.exception.err["code"])
         self.assertEqual([2], caught.exception.err["ids"])
+
+
+class Preload(GitStoreFixture):
+    """`list --lean` answers from the documents, never from the artifacts beside them."""
+
+    def _binary_artifact(self, backend: GitBackend, path: str, name: str = "dump.bin") -> str:
+        """A blob the API refuses to write — written the way a hand commit would."""
+        raw = bytes(range(256)) * 4 + b"\xff\xfe\x00 not utf-8"
+        run = subprocess.run(["git", "hash-object", "-w", "--stdin"], cwd=path, input=raw,
+                             capture_output=True, check=True)
+        sha = run.stdout.decode().strip()
+        backend._store(lambda view: ({f"specs/artifacts/1/{name}": git_mod._Blob(sha)}, None),
+                       f"artifact 1 {name}")
+        return sha
+
+    def test_a_lean_listing_decodes_the_documents_and_no_artifact(self):
+        path = self.clone("a")
+        backend = GitBackend(path)
+        _seed(backend)
+        backend.write_artifact(1, "big.log", "a line of the handoff\n" * 40_000)
+        backend.push()
+        artifact_blob = backend._view()["specs/artifacts/1/big.log"][0]
+        document_blob = backend._view()["specs/1.md"][0]
+        seen: list[str] = []
+        real = GitBackend._texts
+
+        def spy(this, blobs):
+            seen.extend(blobs)
+            return real(this, blobs)
+
+        with mock.patch.object(GitBackend, "_texts", spy):
+            rows = GitBackend(path).list_specs(lean=True)
+        self.assertEqual([1], [row["id"] for row in rows])
+        self.assertEqual("Spec 1", rows[0]["title"])
+        self.assertIn(document_blob, seen)
+        self.assertNotIn(artifact_blob, seen)
+
+    def test_a_binary_artifact_neither_breaks_the_listing_nor_tracebacks_on_read(self):
+        path = self.clone("a")
+        backend = GitBackend(path)
+        _seed(backend)
+        backend.push()
+        self._binary_artifact(backend, path)
+        fresh = GitBackend(path)
+        self.assertEqual([1], [row["id"] for row in fresh.list_specs(lean=True)])
+        with self.assertRaises(BackendRefusal) as caught:
+            GitBackend(path).read_artifact(1, "dump.bin")
+        self.assertEqual("sp-artifact-binary", caught.exception.err["code"])
 
 
 class Refusals(GitStoreFixture):
