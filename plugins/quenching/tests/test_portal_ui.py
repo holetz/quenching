@@ -200,11 +200,106 @@ class Board(unittest.TestCase):
             with self.subTest(key=key):
                 self.assertIn(key, JS)
 
-    def test_the_card_carries_state_progress_and_actions(self):
-        card = JS[JS.index("function cardMeta(s)"):JS.index("function filtered()")]
-        for needle in ('class: "stripe', "progress(s)", "ageLabel(s.date)", "abrir", "copiar comando", "aprovar"):
+    def test_the_card_has_the_target_anatomy(self):
+        """`id · prioridade · idade`, title, one signal, `responsável · assunto` — and no stripe."""
+        card = JS[JS.index("function cardTop(s)"):JS.index("function filtered()")]
+        for needle in ('class: "card-top"', 'class: "id"', 'class: "pri ', "priorityBand(s.priority)",
+                       "freshOf(s.date)", "cardSignal(s)", "cardFoot(s)", 'class: "quick"',
+                       "abrir", "copiar comando", "aprovar"):
             with self.subTest(needle=needle):
                 self.assertIn(needle, card)
+        for gone in ('class: "stripe', 'class: "card-body"', 'class: "summary"', "s.summary"):
+            with self.subTest(gone=gone):
+                self.assertNotIn(gone, card)
+        self.assertNotIn("${s.id} · ${s.title", card, "the id left the title and moved to the card's top row")
+
+    def test_the_card_carries_exactly_one_signal(self):
+        """Block reason, then progress, then the run's verdict — each an early return, so never two."""
+        signal = JS[JS.index("function cardSignal(s)"):JS.index("function cardFoot(s)")]
+        for needle in ('class: "card-why"', "progress(s.progress)", 'class: "run "', "return null;"):
+            with self.subTest(needle=needle):
+                self.assertIn(needle, signal)
+        self.assertEqual(signal.count("return "), 4, "three signals and the empty case, each its own return")
+        self.assertLess(signal.index("card-why"), signal.index("progress(s.progress)"))
+        self.assertLess(signal.index("progress(s.progress)"), signal.index('class: "run '))
+        card = JS[JS.index("function card(s)"):JS.index("function filtered()")]
+        self.assertEqual(card.count("cardSignal(s)"), 1)
+        self.assertNotIn('class: "card-why"', card, "the card delegates the choice; it never paints two")
+
+    def test_the_progress_bar_paints_from_the_progress_object(self):
+        """D2: `cardMeta` handed the spec to `progress()`, which expects `{checked, total}`."""
+        self.assertIsNone(re.search(r"progress\(s\)(?!\.)", JS),
+                          "`progress()` receives the progress object, never the spec")
+        bar = JS[JS.index("function progress(p)"):JS.index("function stagePill(")]
+        for needle in ('class: "bar"', 'role: "img"', "aria-label", 'h("i"', "style: `width:"):
+            with self.subTest(needle=needle):
+                self.assertIn(needle, bar)
+
+    def test_the_card_style_follows_the_target_anatomy(self):
+        """A grid of four rows, the title cut at three lines, and neither stripe nor card-body left."""
+        body = rule(".card")
+        self.assertIn("display: grid", body)
+        self.assertIn("var(--space-3) var(--space-4)", body)
+        self.assertIn("gap: var(--space-2)", body)
+        top = rule(".card-top, .card-foot, .card-signal")
+        self.assertIn("display: flex", top)
+        self.assertIn("min-width: 0", top)
+        self.assertIn("-webkit-line-clamp: 3", rule(".card a.title"))
+        self.assertNotIn(".stripe", CSS, "the stripe rule left with the markup")
+        self.assertNotIn(".card-body", CSS, "the card is no longer a flex row with one body")
+
+    def test_the_first_card_sits_168_px_down_the_fold(self):
+        """48 bar + 34 pulse + 44 tools + 38 lane head + 4 body padding = the 168 px 2141 measured.
+
+        Browser-measured at 1440×900 with a fine pointer on 2026-11-01: the first card's top border
+        lands at 168,0 px and a title of three lines makes a 122,7 px card (154,7 px under
+        `hover: none`, where `.quick` takes a row of its own). The lane head is a measured 38 px
+        box — the 2 px stage rule, the 34 px toggle, and the 2 px the h2's 21 px line box leaves
+        above the baseline — counted once. The five bands are the contract: a band that moves moves
+        this sum, so the spec cannot restate the fold as arithmetic that never ran.
+        """
+        space = css_block(':root, :root[data-theme="light"]')
+        bands = css_block(":root")
+        self.assertEqual(space["space-1"], "4px")
+        self.assertEqual(bands["bar-h"], "48px")
+        self.assertEqual(bands["pulse-h"], "34px")
+        self.assertEqual(bands["tools-h"], "44px")
+        self.assertIn("min-height: 34px", rule(".col-toggle"))
+        self.assertIn("border-top: 2px solid var(--stage, var(--line))", rule(".col-head"))
+        self.assertIn("padding: var(--space-1) var(--space-3) var(--space-4)", rule(".col-body"))
+        lane_head = 2 + 34 + 2
+        bands_px = (int(bands[name].removesuffix("px")) for name in ("bar-h", "pulse-h", "tools-h"))
+        fold = sum(bands_px) + lane_head + int(space["space-1"].removesuffix("px"))
+        self.assertEqual(fold, 168, "the fold 2141 measured at 1440×900: no band above the board moved")
+
+    def test_the_age_bands_follow_the_capture_date(self):
+        for selector, needle in ((".age.fresh-1", "font-weight: 700"),
+                                 (".age.fresh-2", "font-weight: 600"),
+                                 (".age.fresh-3", "color: var(--ink)")):
+            with self.subTest(selector=selector):
+                self.assertIn(needle, rule(selector))
+        for needle in ('return " fresh-1"', 'return " fresh-2"', 'return " fresh-3"', "freshOf(s.date)"):
+            with self.subTest(needle=needle):
+                self.assertIn(needle, JS)
+
+    def test_the_block_reason_is_clamped_to_two_lines_with_the_whole_text_in_the_title(self):
+        why = rule(".card-why span")
+        self.assertIn("-webkit-line-clamp: 2", why)
+        self.assertIn("overflow: hidden", why)
+        self.assertIn('class: "card-why", title: why', JS)
+
+    def test_the_quick_actions_wait_for_hover_focus_or_the_cursor(self):
+        quick = rule(".quick")
+        self.assertIn("position: absolute", quick)
+        self.assertIn("opacity: 0", quick)
+        self.assertIn(".card:hover .quick, .card:focus-within .quick, .card.is-cursor .quick { opacity: 1; }", CSS)
+        self.assertIn("@media (hover: none) { .quick { opacity: 1; position: static; justify-self: end; } }", CSS,
+                      "a touch screen has no hover, so the actions stay visible and take their own row")
+
+    def test_the_compact_density_hides_the_reason_and_the_foot(self):
+        self.assertIn(".board.compact .card-why, .board.compact .card-foot { display: none; }", CSS)
+        self.assertIn(".board.compact .card a.title { -webkit-line-clamp: 2;", CSS)
+        self.assertIn("padding: var(--space-2) var(--space-3); gap: 2px;", rule(".board.compact .card"))
 
     def test_the_board_does_not_drag_cards_between_stages(self):
         board = JS[JS.index("function card(s)"):JS.index("function viewList()")]
