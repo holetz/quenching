@@ -4,7 +4,7 @@ description: >-
   to continue. Use for "generate a handoff" or "prepare a handoff for the next session". Not for:
   implementing → the owning command.
 argument-hint: "What will the next session be used for?"
-allowed-tools: Bash(cq:*), Bash(mktemp:*), Read, Write, AskUserQuestion
+allowed-tools: Bash(cq specs artifact:*), Bash(cq specs find:*), Bash(cq specs push:*), Read, Write
 ---
 
 **Input**: `$ARGUMENTS` (the focus of the next session).
