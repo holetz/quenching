@@ -192,7 +192,7 @@ align. The specs front hands off to it rather than executing git itself.
 | Command | Does |
 | --- | --- |
 | `/quenching-align:align` | The one align spanning the eight local fronts on ONE confirmation — conducting each front's own align, never reimplementing any. |
-| `/quenching-specs:handoff` | Compacts the current conversation into a handoff document a fresh session can continue from. |
+| `/quenching-specs:handoff` | Compacts the current conversation into a handoff stored on the `quenching` branch, and closes with the next session's opening prompt. |
 
 **Next:** this repository's own local automation surface (four development commands) is the
 [automation registry](automation.md); every term used above resolves in the
