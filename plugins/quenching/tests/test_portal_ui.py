@@ -390,6 +390,51 @@ class TokenBlock(unittest.TestCase):
         self.assertEqual(auto, dark)
 
 
+class ShellGeometry(unittest.TestCase):
+    """The shell is a fixed grid: bar 48, pulse 34, status 30, and `main` is the scroller."""
+
+    def test_the_band_heights_are_the_target_tokens(self):
+        root = css_block(":root")
+        self.assertEqual(root.get("bar-h"), "48px")
+        self.assertEqual(root.get("pulse-h"), "34px")
+        self.assertEqual(root.get("tools-h"), "44px")
+        self.assertEqual(root.get("status-h"), "30px")
+
+    def test_the_grid_holds_the_five_bands_with_an_elastic_middle(self):
+        body = rule(".app")
+        self.assertIn("display: grid", body)
+        self.assertIn("grid-template-rows: var(--bar-h) var(--pulse-h) auto minmax(0, 1fr) var(--status-h)", body)
+        self.assertIn("height: 100dvh", body)
+        self.assertIn("overflow: hidden", body)
+
+    def test_main_scrolls_inside_the_shell_and_the_board_keeps_its_own_scroll(self):
+        self.assertIn("overflow: auto", rule(".shell main"))
+        board = rule("main.is-board")
+        self.assertIn("display: flex", board)
+        self.assertIn("flex-direction: column", board)
+        self.assertIn("overflow: hidden", board)
+
+    def test_the_status_bar_is_a_thirty_pixel_row_not_a_fixed_strip(self):
+        body = rule(".statusbar")
+        self.assertIn("height: var(--status-h)", body)
+        self.assertNotIn("position: fixed", body)
+        self.assertNotIn("padding-bottom", rule("body"))
+
+    def test_the_current_nav_item_is_ink_underlined_not_accent(self):
+        body = rule('#nav a[aria-current="page"]')
+        self.assertIn("color: var(--ink)", body)
+        self.assertIn("box-shadow: inset 0 -2px 0 var(--ink)", body)
+        self.assertNotIn("accent", body)
+
+    def test_the_pulse_is_a_horizontal_ribbon_of_links(self):
+        pulse = rule(".pulse")
+        self.assertIn("display: flex", pulse)
+        self.assertIn("height: var(--pulse-h)", pulse)
+        cell = rule(".pulse-cell")
+        self.assertIn("white-space: nowrap", cell)
+        self.assertIn("text-decoration: none", cell)
+
+
 class Primitives(unittest.TestCase):
     """The design system's generic pieces: icon base, heat action, stage mark and control edges."""
 
