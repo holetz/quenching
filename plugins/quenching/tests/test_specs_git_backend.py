@@ -336,7 +336,7 @@ class PendingWrites(GitStoreFixture):
                                           "GIT_COMMITTER_DATE": "2026-01-02T03:04:05+00:00"}):
             self._append(backend, 1, "first")
         self._append(backend, 2, "later")
-        self.assertEqual({"specs": [1, 2], "since": "2026-01-02T03:04:05+00:00"},
+        self.assertEqual({"specs": [1, 2], "artifacts": [], "since": "2026-01-02T03:04:05+00:00"},
                          {k: v for k, v in backend.pending_state().items() if k != "commit"})
 
     def test_reads_see_their_own_writes_across_instances_and_without_a_fetch(self):
@@ -370,7 +370,7 @@ class PendingWrites(GitStoreFixture):
             fresh = GitBackend(path)
             self._append(fresh, 1, "again")
         self.assertEqual(self.remote_tip(), fresh._parent(fresh._pending()))
-        self.assertEqual({"specs": [1], "commit": fresh._pending()},
+        self.assertEqual({"specs": [1], "artifacts": [], "commit": fresh._pending()},
                          {k: v for k, v in fresh.pending_state().items() if k != "since"})
 
     def test_a_sync_is_one_parentless_commit_with_every_pending_change(self):

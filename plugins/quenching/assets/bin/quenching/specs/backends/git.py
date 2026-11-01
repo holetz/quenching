@@ -821,7 +821,7 @@ class GitBackend(SpecBackend):
             if not changes:
                 return {}
             if replay["conflicts"]:
-                stale = sorted(({_spec_id(p) for p in changes} & replay["remote"])
+                stale = sorted(({_path_owner(p) for p in changes} & replay["remote"])
                                - {c["id"] for c in replay["conflicts"]} - {None})
                 if stale:
                     raise blocked_write_refusal(stale, replay["conflicts"])
@@ -1035,15 +1035,16 @@ class GitBackend(SpecBackend):
                                 self._snapshot(sent).blobs)
         base, local = self._snapshot(self._parent(current)).blobs, self._snapshot(current).blobs
         pushed_tree = self._snapshot(pushed).blobs
-        sent_ids = {_spec_id(p) for p in set(sent_base) | set(sent_tree)
-                    if sent_base.get(p) != sent_tree.get(p)} - {None}
-        late_ids = {_spec_id(p) for p in set(base) | set(local) | set(sent_tree)
+        sent_changed = {p for p in set(sent_base) | set(sent_tree)
+                        if sent_base.get(p) != sent_tree.get(p)}
+        sent_ids = {_path_owner(p) for p in sent_changed} - {None}
+        late_ids = {_path_owner(p) for p in set(base) | set(local) | set(sent_tree)
                     if local.get(p) != sent_tree.get(p)
-                    and (base.get(p) != local.get(p) or _spec_id(p) in sent_ids)} - {None}
+                    and (base.get(p) != local.get(p) or p in sent_changed)} - {None}
         changes: dict[str, str | None] = {}
         held: dict[str, str | None] = {}
         for spec_id in sorted(late_ids):
-            paths = _spec_paths(spec_id)
+            paths = _owned_paths(spec_id, base, local, sent_tree, pushed_tree)
             mine = {p: _Blob(local[p]) if p in local else None
                     for p in paths if local.get(p) != pushed_tree.get(p)}
             if not mine:
@@ -1056,13 +1057,11 @@ class GitBackend(SpecBackend):
             changes.update(mine)
         # Standalone artifacts carry no document to conflict with, so they are rescued on
         # their own: a write that landed while the sync ran is re-based onto the pushed commit.
-        carried = {p for p in set(sent_base) | set(sent_tree)
-                   if sent_base.get(p) != sent_tree.get(p)}
         for path in sorted(set(base) | set(local) | set(sent_tree)):
             if not path.startswith(ARTIFACTS_DIR + "/") or _path_owner(path) is not None:
                 continue
             if local.get(path) != sent_tree.get(path) and \
-                    (base.get(path) != local.get(path) or path in carried):
+                    (base.get(path) != local.get(path) or path in sent_changed):
                 changes[path] = _Blob(local[path]) if path in local else None
         return changes, held
 
@@ -1134,22 +1133,29 @@ class GitBackend(SpecBackend):
         return self.last_sync or {"commit": None, "history": "unchanged"}
 
     def pending_state(self) -> dict | None:
-        """The unsent local writes, without reading the remote: `{specs, since, commit}`; None
-        when nothing is pending, an empty pending commit included."""
+        """The unsent local writes, without reading the remote: `{specs, artifacts, since,
+        commit}`; None when nothing is pending, an empty pending commit included.
+
+        AN ARTIFACT-ONLY PENDING IS STILL A PENDING. The artifact capability writes below
+        `specs/artifacts/`, and a handoff with no spec of its own is exactly that case: report
+        it here, or `push` says "nothing pending" and the next sync retires the ref with the
+        handoff inside."""
         pending = self._pending()
         if pending is None:
             return None
         base = self._parent(pending)
         before, local = self._snapshot(base).blobs, self._snapshot(pending).blobs
-        specs = sorted({_spec_id(p) for p in set(before) | set(local)
-                        if before.get(p) != local.get(p)} - {None})
-        if not specs:
+        touched = {p for p in set(before) | set(local) if before.get(p) != local.get(p)}
+        specs = sorted({_path_owner(p) for p in touched} - {None})
+        standalone = sorted(p[len(ARTIFACTS_DIR) + 1:] for p in touched
+                            if p.startswith(ARTIFACTS_DIR + "/") and _path_owner(p) is None)
+        if not specs and not standalone:
             return None
         oldest = self._git_ok("reading the pending date", "show", "-s", "--format=%aI",
                               pending).decode().strip()
         # git 2.45+ prints UTC as `Z` and older releases as `+00:00`: one form for every caller.
         oldest = datetime.fromisoformat(oldest).isoformat()
-        return {"specs": specs, "since": oldest, "commit": pending}
+        return {"specs": specs, "artifacts": standalone, "since": oldest, "commit": pending}
 
     def _guard_identity(self) -> None:
         """The author and committer emails `commit-tree` will sign with, judged like the text:

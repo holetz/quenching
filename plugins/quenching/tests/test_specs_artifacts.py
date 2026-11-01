@@ -9,22 +9,26 @@ as a document does. The cases that prove the second half live in `test_specs_git
 import pathlib
 import sys
 import unittest
+from unittest import mock
 
 try:
     import _paths  # noqa: F401  — must precede the `quenching` import; see its docstring
 except ModuleNotFoundError:  # package-qualified unittest invocation from the repository root
     sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
     import _paths  # noqa: F401
+import test_specs_git_backend as fixture
 from test_specs_git_backend import GitStoreFixture
+from quenching.specs.backends import git as git_mod
 from quenching.specs.backends.base import MAX_ARTIFACT_BYTES, BackendRefusal
 from quenching.specs.backends.git import GitBackend
 from quenching.specs.backends.github import GitHubBackend
 from quenching.specs.backends.memory import MemoryBackend
 
 
-def _seed(backend, spec_id: int = 1) -> str:
-    return backend.create_spec("plans", f"---\ntitle: Spec {spec_id}\n---\n\n"
-                               f"## Problem\n\nbody {spec_id}\n")
+def _seed(backend, count: int = 1) -> None:
+    for n in range(1, count + 1):
+        backend.create_spec("plans", f"---\ntitle: Spec {n}\n---\n\n"
+                                     f"## Problem\n\nbody {n}\n")
 
 
 class RoundTrip(GitStoreFixture):
@@ -70,6 +74,71 @@ class RoundTrip(GitStoreFixture):
             with self.assertRaises(BackendRefusal) as caught:
                 call()
             self.assertEqual("sp-unknown-id", caught.exception.err["code"])
+
+
+class Ownership(GitStoreFixture):
+    """An artifact belongs to its spec at every point the store judges ownership."""
+
+    def test_the_artifact_is_visible_to_a_second_reader_before_the_sync(self):
+        path = self.clone("a")
+        backend = GitBackend(path)
+        _seed(backend)
+        backend.write_artifact(1, "h.md", "pending text\n")
+        self.assertEqual("pending text\n", GitBackend(path).read_artifact(1, "h.md"))
+
+    def test_a_push_carries_the_document_and_its_artifact_in_one_commit(self):
+        backend = GitBackend(self.clone("a"))
+        _seed(backend)
+        backend.write_artifact(1, "h.md", "handoff\n")
+        backend.push()
+        self.assertEqual("handoff\n", self.remote_file("specs/artifacts/1/h.md"))
+        self.assertEqual("handoff\n", GitBackend(self.clone("b")).read_artifact(1, "h.md"))
+        self.assertIsNone(backend.pending_state())
+
+    def test_an_artifact_only_pending_is_reported_and_pushed(self):
+        backend = GitBackend(self.clone("a"))
+        backend.write_artifact(None, "h.md", "no spec\n")
+        state = backend.pending_state()
+        self.assertIsNotNone(state)
+        self.assertEqual([], state["specs"])
+        self.assertEqual(["_handoffs/h.md"], state["artifacts"])
+        backend.push()
+        self.assertEqual("no spec\n", self.remote_file("specs/artifacts/_handoffs/h.md"))
+        self.assertIsNone(backend.pending_state())
+
+    def test_both_sides_changing_one_artifact_conflicts_on_its_spec(self):
+        first = GitBackend(self.clone("a"))
+        _seed(first)
+        first.push()
+        second = GitBackend(self.clone("b"))
+        second.write_artifact(1, "h.md", "theirs\n")
+        first.write_artifact(1, "h.md", "mine\n")
+        first.push()
+        with self.assertRaises(BackendRefusal) as caught:
+            second.push()
+        self.assertEqual("sp-git-stale-write", caught.exception.err["code"])
+        self.assertEqual([1], caught.exception.err["ids"])
+        self.assertEqual("mine\n", self.remote_file("specs/artifacts/1/h.md"))
+
+    def test_a_write_to_an_artifact_of_a_spec_the_remote_moved_refuses(self):
+        path = self.clone("a")
+        first = GitBackend(path)
+        _seed(first, 2)
+        first.push()
+        info, _ = first.read_spec(1)
+        first.write_spec(info, info["text"] + "\nlocal\n")     # the pending write that conflicts
+        other = GitBackend(self.clone("b"))
+        for spec_id in (1, 2):
+            moved, _ = other.read_spec(spec_id)
+            other.write_spec(moved, moved["text"] + "\nremote\n")
+        other.push()
+        with mock.patch.object(git_mod, "FETCH_TTL_S", 0):
+            fresh = GitBackend(path)
+            fresh.read_spec(2)
+        with self.assertRaises(BackendRefusal) as caught:
+            fresh.write_artifact(2, "h.md", "attached to the changed spec\n")
+        self.assertEqual("sp-git-stale-write", caught.exception.err["code"])
+        self.assertEqual([2], caught.exception.err["ids"])
 
 
 class Refusals(GitStoreFixture):

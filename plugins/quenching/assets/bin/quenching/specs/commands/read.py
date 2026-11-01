@@ -272,10 +272,11 @@ def cmd_status(args, root: str, out: Emitter) -> int:
 
 
 def _pending(backend) -> dict | None:
-    """The git store's unsent local writes, `{specs, since}`, or None (nothing pending, or a
-    tracker backend)."""
+    """The git store's unsent local writes, `{specs, artifacts, since}`, or None (nothing
+    pending, or a tracker backend)."""
     state = getattr(backend, "pending_state", lambda: None)()
-    return {"specs": state["specs"], "since": state["since"]} if state else None
+    return ({"specs": state["specs"], "artifacts": state.get("artifacts") or [],
+             "since": state["since"]} if state else None)
 
 
 def cmd_export(args, root: str, out: Emitter) -> int:
