@@ -372,9 +372,15 @@ main:focus { outline: none; }
   background: var(--bg); border-bottom: 1px solid var(--line);
 }
 .tools-sep { flex: 0 0 1px; width: 1px; height: 20px; background: var(--line); }
-.chips { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
-.fchip { background: var(--surface-2); border: 1px solid var(--control-line); border-radius: 999px; padding: 2px 10px; min-height: 26px; font-size: var(--step--1); }
+.chips { display: flex; gap: 6px; flex-wrap: nowrap; align-items: center; min-width: 0; }
+.fchip { background: var(--surface-2); border: 1px solid var(--control-line); border-radius: 999px; padding: 2px 10px; min-height: 26px; font-size: var(--step--1); white-space: nowrap; }
 .fchip:hover { border-color: var(--bad); }
+/* The rail costs the board 216 px, so the bar has 1224 at 1440 — width the target spends on
+   the shortcut group. A filter already applied replaces it instead of pushing a second row. */
+@media (min-width: 900px) {
+  .board-tools { flex-wrap: nowrap; }
+  .board-tools:has(.chips:not(.quick)) .chips.quick { display: none; }
+}
 .tools-row { display: flex; gap: var(--space-3); flex-wrap: wrap; align-items: center; }
 .control { display: inline-flex; align-items: center; gap: var(--space-2); font-size: var(--step--1); color: var(--muted); }
 .control select { width: auto; min-width: 104px; min-height: 28px; padding: 2px 6px; text-transform: none; letter-spacing: 0; font-size: var(--step--1); color: var(--ink); }
