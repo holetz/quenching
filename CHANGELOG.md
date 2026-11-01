@@ -13,6 +13,27 @@ owner: [`ci-cd/versioning-release.md`](docs/standards/ci-cd/versioning-release.m
 short version for a consumer: the version is published once, deliberately, as a release — never at a
 spec's own conclude — and `cq --version` is what answers which one you are running.
 
+## 6.14.0
+
+**Arquivar uma spec não pede mais aprovação ao humano.** `specs_promote` e os registros `reviewed`,
+  `merge` e `outcome` deixaram de abrir `elicitation/create` na superfície MCP: num fluxo autônomo
+  — e em qualquer cliente sem `elicitation`, onde a resposta era `mcp-confirmation-unavailable` — a
+  conclusão parava no pedido de aprovação e o agente voltava ao humano no meio do processo. A
+  decisão humana continua recolhida **uma vez**, no registro `approved` (`by=human`, e só numa spec
+  que cumpriu o gate de pronto); o que o fluxo conclui depois disso roda como os verbos do CLI, que
+  nunca pediram confirmação. O `promote` segue recusando (exit 2) o que o gate de conteúdo recusa —
+  `## Outcome` vazio, tarefa aberta sob `done` —, e continua sem `--force` pela superfície.
+
+**`outcome` saiu do enum de `specs_record`.** A ferramenta o listava e sempre falhava com
+  `sp-record-not-writable`; `specs_promote` é o único escritor do carimbo, e agora a descrição diz
+  isso.
+
+**Um pedido de desenvolvimento é um pedido para rodar o fluxo inteiro.** O molde do `AGENTS.md`
+  raiz, que a skill `components:harness:align` escreve, passa a carregar a regra: "implemente X
+  melhoria" é um pedido para construir — develop, execute, conclude, PR/merge, deploy —, e só "crie
+  uma spec para X" para na spec. A linha é KEEP onde o repositório tem store de specs, e a skill a
+  mantém em toda realinhagem.
+
 ## 6.13.0
 
 **The knowledge front reads and writes OKF v0.2.** A bundle may declare

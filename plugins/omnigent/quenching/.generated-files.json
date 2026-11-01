@@ -81,8 +81,8 @@
     "skills/quenching-toolchain-status/SKILL.md"
   ],
   "sha256": {
-    ".generated-from.json": "e644ee68f8d81e93e9b6b3e116176cd0138c4c43682c278dfaf650f5c12080b8",
-    "README.md": "620e5f4e03e2fd32679517f9cb5cbb412c1892eeeeb3535b4397be0deb579dd6",
+    ".generated-from.json": "b23bb70b8c97fdfb6afbd87e9f3f76052f3d372d38456ff9ca0c9b1c80e815fc",
+    "README.md": "ed5d03218634bdc5be100286817b40d0b494b7dde9d8a4dbbba1119338ca8aec",
     "agents/git-steward/config.yaml": "eafc67726dd1f8a59302404f33187702f2437b156bda88127ffa80c7fc247ec5",
     "agents/git-steward/instructions.md": "6b591648113d80dfdecc220b641a1296ff626fd6263490a3c7206248827b3dd5",
     "agents/orchestrator/config.yaml": "ce7ce05a745aaf93460005e1827153aec5b6213eceb0423130e598fb393bd67b",
@@ -97,7 +97,7 @@
     "agents/spec-runner/instructions.md": "f5f1ad0a80726d1ec50270c535620653eef473306e0c664f09aa5fa05aae2d91",
     "agents/verifier/config.yaml": "fd80d17a6ff46e69370bf59f3904cba05f921d23b11e23b229bd34e9b345234c",
     "agents/verifier/instructions.md": "82520b881a3a423c1cb413e190f7c9b351593b664f8ce4a4cca064d62b487de8",
-    "config.yaml": "f894df1f7f0ee6813b82bff9cce0480ff98eca48b9b4386780c569b3a4937270",
+    "config.yaml": "b6a0ee69f210ae202d2d91890687a0c6ba47fb75c30911004df3ce015a6a708c",
     "instructions.md": "bf37c60bf678391e1c52a611cb4bf72a3a90059f96f4f13850c3beede207e653",
     "skills/quenching-align/SKILL.md": "bca12bb8bd7e180299f2a0043fa05b9d29b7c037bdb9ae7e01dbd097c4f830e4",
     "skills/quenching-components-agent-new/SKILL.md": "f5c09403b3e748c55679485cc8b9031bc35713683dd3f61fb231188dac561e01",
