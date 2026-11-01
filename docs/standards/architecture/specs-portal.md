@@ -7,7 +7,7 @@ tags: [architecture, portal, specs, security, ux]
 timestamp: 2026-11-01
 audience: both
 authority: current
-source: specs 1769, 1812, 1814, 1815, 1816, 2127, 2139 and 1020213 and the owner decisions B-O1 to B-O4 of epics 1768 and 1810, plus D1 A of 2026-10-30
+source: specs 1769, 1812, 1814, 1815, 1816, 2127, 2139, 2140 and 1020213 and the owner decisions B-O1 to B-O4 of epics 1768 and 1810, plus D1 A of 2026-10-30
 maintainer: quenching
 ---
 
@@ -283,7 +283,9 @@ dialog owns the keyboard first.
 
 - Every interactive target is at least 24 px; focus is visible and never removed.
 - The page has one `<h1>`, landmarks (`header`, `nav`, `main`, `footer`), a skip link, `lang="pt-BR"`
-  and a single `<script>`/`<link>`; no inline style or script.
+  and a single `<script>`/`<link>`; no inline style or script. Every `id` is unique across the page
+  (`test_portal_ui.py`'s `Shell.test_every_id_is_unique` pins it): a trigger and the dialog it opens
+  are the pair that collided once, when the help button and the help `<dialog>` both took `#help`.
 - Live regions are used sparingly: connection and loading announce, the event list does not.
 - Dialogs are native `<dialog>` with a title, focus trap and focus return; the palette and the
   help are dialogs too.
