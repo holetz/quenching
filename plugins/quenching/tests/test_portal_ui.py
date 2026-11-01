@@ -211,6 +211,59 @@ class Board(unittest.TestCase):
         self.assertNotIn("draggable", board)
         self.assertNotIn("dragstart", board)
 
+    def test_the_control_bar_is_one_row_and_its_panels_open_over_the_lanes(self):
+        body = rule(".board-tools")
+        self.assertIn("display: flex", body)
+        self.assertIn("flex-wrap: wrap", body)
+        self.assertIn("min-height: var(--tools-h)", body)
+        self.assertNotIn("display: grid", body)
+        panel = rule(".pop-body")
+        self.assertIn("position: absolute", panel)
+        self.assertIn("z-index: 15", panel)
+        self.assertIn("box-shadow: var(--shadow-2)", panel)
+        self.assertIn("@media (max-width: 1100px) { .chips.quick { display: none; } }", CSS)
+        self.assertIn(
+            "@media (min-width: 900px) {\n"
+            "  .board-tools { flex-wrap: nowrap; }\n"
+            "  .board-tools:has(.chips:not(.quick)) .chips.quick { display: none; }\n"
+            "}", CSS,
+            "above 900 px an applied filter replaces the shortcut group instead of wrapping the bar")
+
+    def test_the_filter_chips_appear_only_when_a_filter_is_active(self):
+        bar = JS[JS.index("function toolbar()"):JS.index("function labelOfKey(")]
+        self.assertIn('h("div", { class: "chips quick" }', bar)
+        self.assertRegex(bar, r'chips\.length\s*\?\s*h\("div", \{ class: "chips" \}')
+        self.assertEqual(bar.count("limpar tudo"), 1)
+        self.assertNotIn("sem filtro", bar)
+        self.assertNotIn("empty-inline", bar)
+        self.assertIn('"aria-pressed": chips.length ? "true" : "false"', bar)
+
+    def test_the_lane_is_a_stage_rule_with_a_fixed_head_and_its_own_scroll(self):
+        col = rule(".col")
+        self.assertIn("flex-direction: column", col)
+        self.assertIn("min-height: 0", col)
+        self.assertIn("border-right: 1px solid var(--line)", col)
+        self.assertNotIn("background", col)
+        self.assertIn("border-top: 2px solid var(--stage, var(--line))", rule(".col-head"))
+        body = rule(".col-body")
+        self.assertIn("flex: 1 1 auto", body)
+        self.assertIn("overflow-y: auto", body)
+        self.assertIn("flex: 0 0 40px", rule(".col.is-collapsed"))
+        lane = JS[JS.index("function column(g, gi)"):JS.index("function copyCommand(")]
+        self.assertIn('h("h2", { class: "col-head" }', lane)
+        self.assertIn('class: "count"', lane)
+        self.assertNotIn("col-count", lane)
+        self.assertIn("col-empty", lane)
+
+    def test_the_rule_colour_comes_from_the_stage_and_only_from_a_stage_grouping(self):
+        lane = JS[JS.index("function column(g, gi)"):JS.index("function copyCommand(")]
+        self.assertIn('const stage = state.board.group === "stage" ? String(g.key) : null;', lane)
+        self.assertIn('"data-stage": stage', lane)
+
+    def test_the_archived_lane_starts_collapsed_and_the_preference_still_wins(self):
+        loader = JS[JS.index("function loadCollapsed("):JS.index("\n  }", JS.index("function loadCollapsed("))]
+        self.assertIn('["stage:archived"]', loader)
+
     def test_priority_and_complexity_are_banded_not_raw_levels(self):
         for needle in ("function priorityBand(", "function priorityShort(", "function complexityOf(",
                        "P1 · crítica", "P4 · baixa", "sem complexidade"):
@@ -266,6 +319,16 @@ class Live(unittest.TestCase):
         for needle in ("function captureView()", "function restoreView(", "data-fkey", "preventScroll"):
             with self.subTest(needle=needle):
                 self.assertIn(needle, JS)
+
+    def test_each_lane_keeps_its_own_scroll_across_a_poll(self):
+        capture = JS[JS.index("function captureView()"):JS.index("function restoreView(")]
+        restore = JS[JS.index("function restoreView("):JS.index("let renderSeq")]
+        self.assertIn('$$(".col-body[data-lane]")', capture)
+        self.assertIn('lanes[el.getAttribute("data-lane")] = el.scrollTop', capture)
+        self.assertIn('main.classList.contains("is-board")', restore)
+        self.assertIn('el.scrollTop = v.lanes[el.getAttribute("data-lane")]', restore)
+        lane = JS[JS.index("function column(g, gi)"):JS.index("function copyCommand(")]
+        self.assertIn('"data-lane": key', lane)
 
     def test_the_event_centre_and_the_browser_notification_exist(self):
         for needle in ("function logEvent(", "function paintEventList(", "new Notification(",
@@ -489,7 +552,7 @@ class Primitives(unittest.TestCase):
     def test_tags_take_radius_zero_and_counters_the_pill(self):
         self.assertIn("border-radius: var(--radius-0)", rule(".chip"))
         self.assertIn("border-radius: var(--radius-pill)", rule(".count"))
-        self.assertIn("border-radius: var(--radius-pill)", rule(".col-count"))
+        self.assertNotIn(".col-count", CSS)
 
 
 class ShellPaint(unittest.TestCase):

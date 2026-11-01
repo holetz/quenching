@@ -547,7 +547,8 @@
   function loadingView() {
     const columns = ["prontas", "em execução", "esperando você"].map((name) =>
       h("section", { class: "col" },
-        h("h2", {}, h("span", { class: "col-name" }, name), h("span", { class: "col-count" }, "·")),
+        h("h2", { class: "col-head" }, h("button", { type: "button", class: "col-toggle" },
+          h("span", { class: "col-name" }, name), h("span", { class: "count" }, "·"))),
         h("div", { class: "col-body" }, skeletonCard(), skeletonCard())));
     return h("div", { class: "loading", role: "status", "aria-live": "polite", "aria-busy": "true" },
       h("p", { class: "loading-line" }, h("i", { class: "dot pulse", "aria-hidden": "true" }),
@@ -998,34 +999,36 @@
       h("select", { value: filterValue(key), on: { change: (e) => setFilter(key, e.target.value) } },
         h("option", { value: "" }, "todos"),
         distinct(key).map((v) => h("option", { value: v, selected: filterValue(key) === v }, v))));
+    const toggle = (kind, label) => h("button", { type: "button", class: "ghost small" + (hasQuick(kind) ? " on" : ""),
+      "aria-pressed": hasQuick(kind) ? "true" : "false", on: { click: () => quickFilter(kind) } }, label);
     return h("section", { class: "board-tools", "aria-label": "Controles do board" },
-      h("div", { class: "chips" },
-        chips.length ? chips : h("span", { class: "empty-inline" }, "sem filtro"),
-        chips.length ? h("button", { type: "button", class: "ghost small", on: { click: () => setBoard({ q: "", filters: [] }) } }, "limpar tudo") : null,
-        h("span", { class: "grow" }),
-        h("button", { type: "button", class: "ghost small" + (hasQuick("blocked") ? " on" : ""), "aria-pressed": hasQuick("blocked") ? "true" : "false", on: { click: () => quickFilter("blocked") } }, "bloqueadas"),
-        h("button", { type: "button", class: "ghost small" + (hasQuick("executing") ? " on" : ""), "aria-pressed": hasQuick("executing") ? "true" : "false", on: { click: () => quickFilter("executing") } }, "em execução"),
-        h("button", { type: "button", class: "ghost small" + (hasQuick("unassigned") ? " on" : ""), "aria-pressed": hasQuick("unassigned") ? "true" : "false", on: { click: () => quickFilter("unassigned") } }, "sem responsável"),
+      select("group", "Agrupar", GROUPINGS.map((g) => ({ key: g.key, label: g.label })), b.group, (v) => setBoard({ group: v })),
+      select("sort", "Ordenar", SORTS, b.sort, (v) => setBoard({ sort: v })),
+      h("details", { class: "pop" },
+        h("summary", { class: "ghost small", "aria-pressed": chips.length ? "true" : "false" }, "Filtros"),
+        h("div", { class: "pop-body" },
+          facet("stage", "Etapa"), facet("subject", "Assunto"), facet("tag", "Tag"),
+          facet("type", "Tipo"), facet("assignee", "Responsável"), facet("complexity", "Complexidade"))),
+      h("span", { class: "tools-sep" }),
+      h("div", { class: "chips quick" },
+        toggle("blocked", "bloqueadas"), toggle("executing", "em execução"), toggle("unassigned", "sem responsável"),
         h("button", { type: "button", class: "ghost small", on: { click: () => quickFilter("human") } }, "aguardando você")),
-      h("div", { class: "tools-row" },
-        select("group", "Agrupar", GROUPINGS.map((g) => ({ key: g.key, label: g.label })), b.group, (v) => setBoard({ group: v })),
-        select("sort", "Ordenar", SORTS, b.sort, (v) => setBoard({ sort: v })),
-        h("details", { class: "pop" },
-          h("summary", { class: "ghost small" }, "Filtros"),
-          h("div", { class: "pop-body" },
-            facet("stage", "Etapa"), facet("subject", "Assunto"), facet("tag", "Tag"),
-            facet("type", "Tipo"), facet("assignee", "Responsável"), facet("complexity", "Complexidade"))),
-        h("label", { class: "check" }, h("input", { type: "checkbox", checked: b.hide, on: { change: (e) => setBoard({ hide: e.target.checked }) } }), "ocultar vazias"),
-        h("label", { class: "check" }, h("input", { type: "checkbox", checked: b.compact, on: { change: (e) => setBoard({ compact: e.target.checked }) } }), "compacto"),
-        h("details", { class: "pop views" },
-          h("summary", { class: "ghost small" }, "Visões"),
-          h("div", { class: "pop-body" },
-            h("button", { type: "button", class: "ghost small", on: { click: saveView } }, "Salvar visão atual"),
-            savedViews().length
-              ? h("ul", { class: "views-list" }, savedViews().map((v) => h("li", {},
-                  h("button", { type: "button", class: "link", on: { click: () => applyView(v.name) } }, v.name),
-                  h("button", { type: "button", class: "ghost small", "aria-label": `Remover a visão ${v.name}`, on: { click: () => removeView(v.name) } }, "×"))))
-              : h("p", { class: "empty" }, storageOk() ? "Nenhuma visão salva." : "Este navegador não permite guardar visões.")))));
+      chips.length
+        ? h("div", { class: "chips" }, chips,
+            h("button", { type: "button", class: "ghost small", on: { click: () => setBoard({ q: "", filters: [] }) } }, "limpar tudo"))
+        : null,
+      h("span", { class: "grow" }),
+      h("label", { class: "check" }, h("input", { type: "checkbox", checked: b.hide, on: { change: (e) => setBoard({ hide: e.target.checked }) } }), "ocultar vazias"),
+      h("label", { class: "check" }, h("input", { type: "checkbox", checked: b.compact, on: { change: (e) => setBoard({ compact: e.target.checked }) } }), "compacto"),
+      h("details", { class: "pop views" },
+        h("summary", { class: "ghost small" }, "Visões"),
+        h("div", { class: "pop-body" },
+          h("button", { type: "button", class: "ghost small", on: { click: saveView } }, "Salvar visão atual"),
+          savedViews().length
+            ? h("ul", { class: "views-list" }, savedViews().map((v) => h("li", {},
+                h("button", { type: "button", class: "link", on: { click: () => applyView(v.name) } }, v.name),
+                h("button", { type: "button", class: "ghost small", "aria-label": `Remover a visão ${v.name}`, on: { click: () => removeView(v.name) } }, "×"))))
+            : h("p", { class: "empty" }, storageOk() ? "Nenhuma visão salva." : "Este navegador não permite guardar visões."))));
   }
   function labelOfKey(key) {
     return { stage: "etapa", subject: "assunto", tag: "tag", type: "tipo", assignee: "responsável", complexity: "complexidade" }[key] || key;
@@ -1047,14 +1050,15 @@
     const key = state.board.group + ":" + g.key;
     const collapsed = isCollapsed(key);
     const id = "col-" + gi;
-    return h("section", { class: "col" + (collapsed ? " is-collapsed" : "") + (g.key === "blocked" ? " is-alert" : ""), "aria-label": String(g.key) },
-      h("h2", {},
-        h("button", { type: "button", class: "col-toggle", "aria-expanded": collapsed ? "false" : "true", "aria-controls": id,
-          on: { click: () => toggleCollapse(key) } },
+    const stage = state.board.group === "stage" ? String(g.key) : null;
+    return h("section", { class: "col" + (collapsed ? " is-collapsed" : ""), "data-stage": stage, "aria-label": String(g.key) },
+      h("h2", { class: "col-head" },
+        h("button", { type: "button", class: "col-toggle", "aria-expanded": collapsed ? "false" : "true",
+          "aria-controls": collapsed ? null : id, on: { click: () => toggleCollapse(key) } },
           h("span", { class: "col-name" }, String(g.key)),
-          h("span", { class: "col-count" }, g.specs.length))),
-      h("div", { id, class: "col-body" },
-        collapsed ? null : (g.specs.length ? g.specs.map(card) : h("p", { class: "empty" }, "nada aqui"))));
+          h("span", { class: "count" }, g.specs.length))),
+      collapsed ? null : h("div", { id, class: "col-body", "data-lane": key },
+        g.specs.length ? g.specs.map(card) : h("p", { class: "col-empty" }, "nada aqui")));
   }
   function copyCommand(id) {
     const cmd = "/quenching-specs:specs:execute " + id;
@@ -1767,7 +1771,7 @@
     loadCollapsed();
     paintProjects();
   }
-  function loadCollapsed() { state.board.collapsed = prefsJSON("collapsed." + (state.project || "local"), []); }
+  function loadCollapsed() { state.board.collapsed = prefsJSON("collapsed." + (state.project || "local"), ["stage:archived"]); }
   function paintProjects() {
     const nav = $("#projects");
     const pick = (p) => ({ click: () => switchProject(p) });
@@ -1810,17 +1814,24 @@
   }
   function captureView() {
     const a = document.activeElement;
+    const lanes = {};
+    $$(".col-body[data-lane]").forEach((el) => { lanes[el.getAttribute("data-lane")] = el.scrollTop; });
     return {
       y: $("#main").scrollTop,
       key: a && a !== document.body ? a.getAttribute("data-fkey") : null,
       boardX: $(".board") ? $(".board").scrollLeft : 0,
+      lanes,
     };
   }
   function restoreView(v) {
     if (!v) return;
-    $("#main").scrollTop = v.y;
+    const main = $("#main");
+    main.scrollTop = v.y;
     const b = $(".board");
     if (b) b.scrollLeft = v.boardX;
+    if (v.lanes && main.classList.contains("is-board")) {
+      $$(".col-body[data-lane]").forEach((el) => { el.scrollTop = v.lanes[el.getAttribute("data-lane")] || 0; });
+    }
     if (v.key && (!document.activeElement || document.activeElement === document.body)) {
       const el = byKey(v.key);
       if (el) el.focus({ preventScroll: true });
