@@ -309,6 +309,40 @@ class CrossRepositoryEpic(TwoStores):
         self.assertEqual({"holetz/quenching#5": "MERGED"}, got)
         self.assertEqual(["--repo", "holetz/quenching"], seen[0][4:6])
 
+    def _a_renamed_branch(self, state, merge_pr):
+        def fake_run(argv, **kw):
+            body = json.dumps({"state": state, "headRefName": "feature/984570-2.14-tipos-struct"})
+            return subprocess.CompletedProcess(argv, 0, body, "")
+
+        member = {"phase": "archive",
+                  "frontmatter": {"pr": {"number": 228354},
+                                  "branch": {"work": "feature/revisao-registro-colunas"},
+                                  "merge": {"strategy": "merge-commit", "pr": merge_pr}}}
+        with mock.patch.object(epic_cmd.subprocess, "run", fake_run):
+            return epic_cmd.pr_states({"holetz/quenching#5": member}, self.forge)
+
+    def test_a_renamed_branch_is_read_when_the_merge_record_names_the_same_merged_pr(self):
+        self.assertEqual({"holetz/quenching#5": "MERGED"}, self._a_renamed_branch("MERGED", 228354))
+
+    def test_a_renamed_branch_stays_unverified_when_the_merge_record_names_another_pr(self):
+        self.assertEqual({}, self._a_renamed_branch("MERGED", 228578))
+
+    def test_a_renamed_branch_stays_unverified_while_the_pr_is_still_open(self):
+        self.assertEqual({}, self._a_renamed_branch("OPEN", 228354))
+
+    def test_a_renamed_branch_without_a_merge_record_stays_unverified(self):
+        member = {"phase": "archive",
+                  "frontmatter": {"pr": {"number": 228354},
+                                  "branch": {"work": "feature/revisao-registro-colunas"}}}
+
+        def fake_run(argv, **kw):
+            body = json.dumps({"state": "MERGED", "headRefName": "feature/984570-2.14-tipos-struct"})
+            return subprocess.CompletedProcess(argv, 0, body, "")
+
+        with mock.patch.object(epic_cmd.subprocess, "run", fake_run):
+            got = epic_cmd.pr_states({"holetz/quenching#5": member}, self.forge)
+        self.assertEqual({}, got)
+
 
 if __name__ == "__main__":
     unittest.main()

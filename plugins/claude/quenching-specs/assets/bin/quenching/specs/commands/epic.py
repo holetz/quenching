@@ -80,12 +80,25 @@ def _pr_view(member: dict, provider: str | None, root: str | None,
     return (state, head) if state else None
 
 
+def _merge_record_explains_the_head(member: dict, state: str) -> bool:
+    """Whether a `branch.work` that no longer matches the PR's head is explained by the member's own
+    `merge:` record: the PR is the one the record names and it is merged. `branch:` is write-once, so
+    a branch renamed after the stamp keeps the old name on record; refusing the state there would
+    hide a delivery the merge record itself proves."""
+    pr = pr_number(member) or ""
+    rec = member["frontmatter"].get("merge")
+    named = str(rec.get("pr", "")).strip() if isinstance(rec, dict) else ""
+    return bool(pr) and state == "MERGED" and named == pr
+
+
 def pr_states(members: dict, root: str | None = None, timeout: int = 15) -> dict[str, str]:
     """`member id -> PR state` for every archived member carrying a `pr:` record, read from `root`
     (the repository `--root` names, not the process cwd) with `gh pr view`, or `az repos pr show`
     when the origin is Azure DevOps. A lookup that fails, or whose head is not the member's
-    recorded `branch.work`, is left out, and the derivation then marks it `unverified`. A member
-    with no `branch.work` has nothing to contradict."""
+    recorded `branch.work`, is left out, and the derivation then marks it `unverified` — unless the
+    member's `merge:` record names that same merged PR, which is what a branch renamed after the
+    write-once `branch:` stamp looks like. A member with no `branch.work` has nothing to
+    contradict."""
     out: dict[str, str] = {}
     provider = None
     for sid, m in members.items():
@@ -99,7 +112,7 @@ def pr_states(members: dict, root: str | None = None, timeout: int = 15) -> dict
             continue
         rec = m["frontmatter"].get("branch")
         work = str(rec.get("work", "")).strip() if isinstance(rec, dict) else ""
-        if work and got[1] != work:
+        if work and got[1] != work and not _merge_record_explains_the_head(m, got[0]):
             continue
         out[str(sid)] = got[0]
     return out

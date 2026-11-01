@@ -13,6 +13,16 @@ owner: [`ci-cd/versioning-release.md`](docs/standards/ci-cd/versioning-release.m
 short version for a consumer: the version is published once, deliberately, as a release — never at a
 spec's own conclude — and `cq --version` is what answers which one you are running.
 
+## 6.14.1
+
+**Um membro de épico com a branch renomeada depois do carimbo deixa de aparecer `unverified`.** O
+  `epic status` só aceitava o estado do PR quando o head era igual ao `branch.work` gravado, e o
+  `branch:` é write-once: uma branch renomeada depois do stamp — como as specs 984570 e 1018611
+  fizeram — ficava com o nome velho no registro e a entrega provada pelo merge virava "PR #N state
+  could not be read". Agora o estado é aceito quando o membro carrega um record `merge:` que nomeia
+  **o mesmo** PR e esse PR está `MERGED`; `merge.pr` diferente, PR aberto e membro sem record
+  `merge:` continuam fora, e a derivação segue marcando `unverified`.
+
 ## 6.14.0
 
 **Arquivar uma spec não pede mais aprovação ao humano.** `specs_promote` e os registros `reviewed`,
