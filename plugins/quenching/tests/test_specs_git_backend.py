@@ -692,6 +692,112 @@ class PendingWrites(GitStoreFixture):
         self.assertNotIn("local", mirror.read_spec(1)[0]["text"])
 
 
+class ArtifactOwnership(GitStoreFixture):
+    """The six places a write can be dropped, exercised on an artifact instead of a document.
+
+    `docs/standards/architecture/spec-backend.md` names the spec as the unit of ownership and
+    the union of its paths as what every judge looks at. These cases are the proof: each one
+    fails if a judge falls back to the two document paths."""
+
+    def _seeded(self) -> tuple[str, GitBackend]:
+        path = self.clone("a")
+        backend = GitBackend(path)
+        backend.create_spec("plans", canonical._case_doc("Spec 1"))
+        backend.create_spec("plans", canonical._case_doc("Spec 2"))
+        backend.push()
+        return path, GitBackend(path)
+
+    def _append(self, backend: GitBackend, spec_id: int, line: str) -> None:
+        info, _ = backend.read_spec(spec_id)
+        backend.write_spec(info, info["text"] + f"\n{line}\n")
+
+    def _move_remotely(self, spec_id: int, line: str) -> None:
+        other = GitBackend(self.clone(f"other-{spec_id}-{line.replace(' ', '-')}"))
+        self._append(other, spec_id, line)
+        other.push()
+
+    def test_replay_keeps_a_pending_artifact_and_reads_the_newer_document(self):
+        path, backend = self._seeded()
+        backend.write_artifact(1, "h.md", "pending\n")
+        self._move_remotely(2, "remote")
+        with mock.patch.object(git_mod, "FETCH_TTL_S", 0):
+            fresh = GitBackend(path)
+            self.assertTrue(fresh.read_spec(2)[0]["text"].endswith("remote\n"))
+            self.assertEqual("pending\n", fresh.read_artifact(1, "h.md"))
+        backend.push()
+        self.assertEqual("pending\n", self.remote_file("specs/artifacts/1/h.md"))
+        self.assertTrue(self.remote_file("specs/2.md").endswith("remote\n"))
+
+    def test_the_pending_merge_keeps_an_artifact_while_the_documents_move(self):
+        path, backend = self._seeded()
+        backend.write_artifact(None, "h.md", "standalone\n")
+        self._move_remotely(2, "remote")
+        with mock.patch.object(git_mod, "FETCH_TTL_S", 0):
+            fresh = GitBackend(path)
+            self._append(fresh, 1, "local")          # a local write after the fetch
+        self.assertEqual("standalone\n", GitBackend(path).read_artifact(None, "h.md"))
+        fresh.push()
+        self.assertEqual("standalone\n", self.remote_file("specs/artifacts/_handoffs/h.md"))
+        self.assertTrue(self.remote_file("specs/1.md").endswith("local\n"))
+        self.assertTrue(self.remote_file("specs/2.md").endswith("remote\n"))
+
+    def test_a_sync_operation_carries_the_pending_artifact(self):
+        _, backend = self._seeded()
+        backend.write_artifact(1, "h.md", "pending\n")
+        backend.create_spec("plans", canonical._case_doc("Spec 3"))
+        self.assertEqual("pending\n", self.remote_file("specs/artifacts/1/h.md"))
+        self.assertIn("specs/3.md", _sh(self.remote, "ls-tree", "-r", "--name-only", "quenching"))
+        self.assertIsNone(backend.pending_state())
+
+    def test_an_artifact_written_between_the_push_and_the_close_survives(self):
+        path, backend = self._seeded()
+        self._append(backend, 1, "sent")
+        late = GitBackend(path)
+        real_push = GitBackend._push
+
+        def push_then_write(this, lease, commit):
+            result = real_push(this, lease, commit)
+            late.write_artifact(2, "h.md", "late\n")
+            return result
+        with mock.patch.object(GitBackend, "_push", push_then_write):
+            backend.push()
+        missing = subprocess.run(["git", "cat-file", "-e", "quenching:specs/artifacts/2/h.md"],
+                                 cwd=self.remote, capture_output=True)
+        self.assertNotEqual(0, missing.returncode)                 # not in the pushed commit
+        self.assertEqual([2], backend.pending_state()["specs"])
+        self.assertEqual("late\n", GitBackend(path).read_artifact(2, "h.md"))
+        backend.push()
+        self.assertEqual("late\n", self.remote_file("specs/artifacts/2/h.md"))
+
+    def test_a_late_artifact_on_the_sent_spec_survives_the_close(self):
+        path, backend = self._seeded()
+        self._append(backend, 1, "sent")
+        late = GitBackend(path)
+        real_push = GitBackend._push
+
+        def push_then_write(this, lease, commit):
+            result = real_push(this, lease, commit)
+            late.write_artifact(1, "h.md", "late on the sent spec\n")
+            return result
+        with mock.patch.object(GitBackend, "_push", push_then_write):
+            backend.push()
+        self.assertEqual([1], backend.pending_state()["specs"])
+        self.assertEqual("late on the sent spec\n", GitBackend(path).read_artifact(1, "h.md"))
+        backend.push()
+        self.assertEqual("late on the sent spec\n",
+                         self.remote_file("specs/artifacts/1/h.md"))
+
+    def test_pending_state_reports_an_artifact_only_write(self):
+        _, backend = self._seeded()
+        backend.write_artifact(None, "h.md", "no spec\n")
+        state = backend.pending_state()
+        self.assertEqual([], state["specs"])
+        self.assertEqual(["_handoffs/h.md"], state["artifacts"])
+        self.assertEqual(backend._pending(), state["commit"])
+        backend.remove_artifact(None, "h.md")
+        self.assertIsNone(backend.pending_state())
+
+
 class Configuration(GitStoreFixture):
     def _declare(self, path: str, specs: dict | None = None) -> None:
         os.makedirs(os.path.join(path, ".claude"), exist_ok=True)
