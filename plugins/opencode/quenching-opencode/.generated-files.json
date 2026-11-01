@@ -746,7 +746,7 @@
     "quenching/scripts/bin/quenching/delivery/cli.py": "deef498bb8ebbf2b70ae8880f4509a0c076bf59f632cbe596fa954172e300d29",
     "quenching/scripts/bin/quenching/delivery/config.py": "c1ccef17888077e69fe5faab4207f2300195ccb33004c41f5858d82552f0b0d2",
     "quenching/scripts/bin/quenching/delivery/doctor.py": "94e085a396df45f4c37f23701d492847d825b11d7e80a4bb2f1a75f17526e3c4",
-    "quenching/scripts/bin/quenching/delivery/inventory.py": "ffe8fdc8a2549de2ec7e40caa8314376ff0d0096cc046cf82b2cd6fb7026efac",
+    "quenching/scripts/bin/quenching/delivery/inventory.py": "3e54759cd27f216f4097556d95cb97900861ce3365ce385d58a5bbf31f0a3b3b",
     "quenching/scripts/bin/quenching/delivery/model.py": "53ab186511c90bde4539d2babbe9442b9c1928253dd0336eb17cb5ca77f258cc",
     "quenching/scripts/bin/quenching/delivery/probe.py": "ba556969ef473dfd54bba7582b633ef12c9349b00dea158cc2bfcb65856f889f",
     "quenching/scripts/bin/quenching/deploy/__init__.py": "d9efa3062ac0c40e82c0bfc4041b7485a60420e2576afef7e94a72277a8cc0ff",

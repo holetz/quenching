@@ -352,6 +352,30 @@ class DeliveryResults(unittest.TestCase):
         gate = payload["inventory"]["workflows"][0]["jobDetails"][0]
         self.assertEqual(["python:matrix:3.11", "python:matrix:3.13"], gate["runtimes"])
 
+    def test_rustup_toolchain_install_is_setup_provenance(self):
+        payload, _ = self._run({
+            ".github/workflows/ci.yml": (
+                "name: CI\non: push\njobs:\n"
+                "  check:\n    steps:\n      - uses: actions/checkout@v4\n"
+                "      - run: rustup toolchain install\n"
+                "        working-directory: desktop\n"
+                "      - run: cargo check --locked\n"
+            ),
+        })
+        self.assertEqual([], [item["code"] for item in payload["findings"]
+                              if item["code"] == "delivery-setup-missing"])
+
+    def test_cargo_without_any_setup_still_reports(self):
+        payload, _ = self._run({
+            ".github/workflows/ci.yml": (
+                "name: CI\non: push\njobs:\n"
+                "  check:\n    steps:\n      - uses: actions/checkout@v4\n"
+                "      - run: rustup --version\n"
+                "      - run: cargo check --locked\n"
+            ),
+        })
+        self.assertIn("delivery-setup-missing", [item["code"] for item in payload["findings"]])
+
     def test_real_runtime_drift_still_reports_beside_a_matrix(self):
         payload, _ = self._run({
             ".github/workflows/ci.yml": (
