@@ -9,11 +9,13 @@ same one `cq mcp` mounts with these tables inside its wider catalog.
 
 * Closed by construction: the tool tables are closed maps from a tool name to a fixed verb. No
   tool takes an argv, so no argument can reach a verb the table does not name.
-* Gated moves (`approved`, `reviewed`, `merge`, `outcome` records and `promote`) stamp a human
-  decision, so the server asks the human through the client (`elicitation/create`) and runs the
-  verb only on an accept. There is no argument that confirms: a client without the `elicitation`
-  capability gets a refusal, never a silent pass. `approved` is always written `by=human`, and
-  only after that confirmation.
+* One human decision, asked once. `approved` is the only gated write: the server asks the human
+  through the client (`elicitation/create`) and runs the verb only on an accept, writing
+  `by=human` and only on a spec that met the ready gate. There is no argument that confirms: a
+  client without the `elicitation` capability gets a refusal, never a silent pass. Everything the
+  flow concludes after that approval — the `reviewed`, `merge` and `outcome` records and
+  `promote` — writes without asking, because the approval already covers the run and the verbs
+  behind them are mechanical.
 * Size is a contract: no tool returns a whole spec. Reads go by section and by task, listings are
   paged, and a final guard cuts any answer above `MAX_CHARS` with `truncated: true`.
 * Resources (read-only context): the specs configuration (`quenching://config`, the payload of
@@ -48,8 +50,8 @@ MAX_TERMS = 20
 ID = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]*$")
 FIELD = re.compile(r"^[A-Za-z][A-Za-z0-9_]*$")
 MAX_BODY = 200_000
-GATED_RECORDS = ("approved", "reviewed", "merge", "outcome")
-FREE_RECORDS = ("priority", "refined", "branch", "pr", "buildCost", "run")
+GATED_RECORDS = ("approved",)
+FREE_RECORDS = ("priority", "refined", "branch", "pr", "reviewed", "merge", "buildCost", "run")
 TASK_ACTIONS = ("check", "uncheck", "block", "descope")
 
 
@@ -323,13 +325,6 @@ def _gate_record(args: dict) -> str | None:
     return f"Stamp the `{name}` record on spec {_id(args, 'spec', True)}? This records a human decision."
 
 
-def _gate_promote(args: dict) -> str | None:
-    target = _choice(args, "to", ("plans", "archive")) or "the next phase"
-    return (f"Promote spec {_id(args, 'spec', True)} to {target}"
-            f" (outcome: {_choice(args, 'outcome', ('done', 'abandoned')) or 'done'})? "
-            "This is a human decision.")
-
-
 def _preflight_record(args: dict, root: str) -> dict | None:
     """`approved` only on a spec that met the ready gate: refuse before asking the human."""
     if _record_name(args) != "approved":
@@ -343,14 +338,6 @@ def _preflight_record(args: dict, root: str) -> dict | None:
                 "message": "the ready gate is not met; fill the missing sections first",
                 "missing": ready.get("missing"), "malformed": ready.get("malformed")}
     return None
-
-
-def _preflight_promote(args: dict, root: str) -> dict | None:
-    """The CLI's own `--dry-run` refusals reach the human's eyes before the question does."""
-    code, payload, stderr = run_core(_w_promote(args) + ["--dry-run"], root)
-    if payload is None:
-        return {"ok": False, "code": "mcp-core-failure", "exit": code, "message": stderr}
-    return payload if code != 0 or payload.get("ok") is False else None
 
 
 # name -> (description, schema, argv builder, stdin builder, gate text builder, preflight)
@@ -371,9 +358,10 @@ WRITES: dict[str, tuple] = {
                  "scope": {"type": "string", "enum": list(SCOPES)}},
                 ["spec", "heading", "body"]), _w_section, _w_section_stdin, None, None),
     "specs_record": (
-        f"Merge fields into ONE record. Free: {', '.join(FREE_RECORDS)}. Gated, they ask the "
-        f"human first: {', '.join(GATED_RECORDS)}; `approved` takes no fields (the server writes "
-        "date and by=human after the confirmation, and only on a spec that met the ready gate).",
+        f"Merge fields into ONE record. `approved` asks the human first and takes no fields (the "
+        "server writes date and by=human after the confirmation, and only on a spec that met the "
+        f"ready gate); {', '.join(FREE_RECORDS)} write without asking. `outcome` is not here: "
+        "`specs_promote` is its one writer.",
         _schema({"spec": SPEC, "name": {"type": "string",
                                          "enum": list(FREE_RECORDS + GATED_RECORDS)},
                  "fields": {"type": "object"}}, ["spec", "name"]),
@@ -405,11 +393,12 @@ WRITES: dict[str, tuple] = {
         _schema({"spec": SPEC, "text": {"type": "string"}}, ["spec", "text"]),
         _w_discover, None, None, None),
     "specs_promote": (
-        "Move a spec between plans/ and archive/ (`to`, `outcome`). Gated: the human confirms "
-        "through the client first. Never forced.",
+        "Move a spec between plans/ and archive/ (`to`, `outcome`). The approval already given "
+        "covers the close-out, so the verb runs without asking; it is never forced and refuses "
+        "(exit 2) only while the `## Outcome` gate or an open task blocks a `done` archive.",
         _schema({"spec": SPEC, "to": {"type": "string", "enum": ["plans", "archive"]},
                  "outcome": {"type": "string", "enum": ["done", "abandoned"]}}, ["spec"]),
-        _w_promote, None, _gate_promote, _preflight_promote),
+        _w_promote, None, None, None),
     "specs_push": (
         "Publish every pending local write of this clone in one push of the store branch, the "
         "same as `cq specs push`. No confirmation gate: calling the tool is the publish.",

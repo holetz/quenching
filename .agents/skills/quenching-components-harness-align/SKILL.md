@@ -106,6 +106,10 @@ classify it MOVE or DEDUPE.
 **The ephemeral-writes declaration line is always KEEP.** Preserve
 `Ephemeral writes: <path> — the contract is /docs/standards/agents/ephemeral-writes.md` verbatim;
 never classify it MOVE or DEDUPE.
+**The spec-first development rule is always KEEP where the repo has a spec store** (`.agents/quenching/bin/cq specs
+config` reports one): the line that says a change request means the whole flow — develop, execute,
+conclude, PR/merge, deploy — and that the spec's approval authorizes all of it. It stays in Agent
+etiquette even when a rule it cites moved into `/docs/`; only the citation changes.
 **Done when:** every unit has one routing verdict and any contradiction is quoted.
 
 ### 4. Sweep the blast radius

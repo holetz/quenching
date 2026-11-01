@@ -61,8 +61,8 @@ CATALOG: dict[str, Row] = {
             "history diff", "audit", "stale", "preflight", "pr probe", "pr view"),
     **_rows("git", "write", "commit", "worktree link", "worktree add", "specs"),
     **_rows("git", "external", "push", "pr create", "pr record"),
-    # `--spec` would stamp the gated `merge` record with no elicitation: the record goes
-    # through `specs_record`, whose elicitation gate asks the human.
+    # `--spec` would stamp the `merge` record with no `specs_record` call behind it: the
+    # record is written by `cq specs record` once the merge landed, not by the merge verb.
     "git_pr_merge": Row("git", ("pr", "merge"), "external", True, frozenset({"spec"})),
     "git_worktree_retire": Row("git", ("worktree", "retire"), "write", True),
     "git_prune": Row("git", ("prune",), "external", True),
