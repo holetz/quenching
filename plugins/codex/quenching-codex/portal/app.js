@@ -808,7 +808,7 @@
       s.tags.map((t) => h("span", { class: "chip" }, "#" + t)),
       s.assignee ? h("span", {}, "@" + s.assignee) : null,
       s.date ? h("span", { class: "age", title: fmtDate(s.date) }, ageLabel(s.date)) : null,
-      progress(s), links);
+      progress(s.progress), links);
   }
   function progress(p) {
     if (!p || !p.total) return null;
@@ -819,19 +819,56 @@
   function stagePill(stage) {
     return h("span", { class: "chip stage-" + stage, title: STAGE_PT[stage] || stage }, stage);
   }
+  function blockedWhy(id) {
+    const row = state.human && state.human.blocked.find((b) => String(b.id) === String(id));
+    return row ? row.reasons.map((r) => `${r.task}: ${r.reason || "(sem motivo)"}`).join("; ") : "";
+  }
+  function freshOf(iso) {
+    const days = ageDays(iso);
+    if (days == null) return "";
+    if (days <= 1) return " fresh-1";
+    if (days <= 3) return " fresh-2";
+    if (days <= 7) return " fresh-3";
+    return "";
+  }
+  function cardTop(s) {
+    const pri = priorityShort(s.priority);
+    return h("div", { class: "card-top" },
+      h("span", { class: "id" }, String(s.id)),
+      pri ? h("span", { class: "pri " + pri.toLowerCase(), title: priorityBand(s.priority) }, pri) : null,
+      s.date ? h("span", { class: "age" + freshOf(s.date), title: fmtDate(s.date) }, ageLabel(s.date)) : null);
+  }
+  /* One signal per card: the block reason, else the progress, else the run's verdict, else nothing. */
+  function cardSignal(s) {
+    const why = s.progress && s.progress.blocked > 0 ? blockedWhy(s.id) || "(sem motivo escrito)" : "";
+    if (why) return h("p", { class: "card-why", title: why }, icon("alert"), h("span", {}, why));
+    if (s.progress && s.progress.total > 0) return h("div", { class: "card-signal" }, progress(s.progress));
+    if (s.run && s.run.state) {
+      const bad = s.run.state === "failed" || s.run.state === "blocked" || s.run.verifier === "fail";
+      return h("div", { class: "card-signal" },
+        h("span", { class: "run " + (bad ? "bad" : "pass"), title: "último passo do runner" + (s.run.date ? " em " + s.run.date : "") },
+          icon(bad ? "alert" : "check"), `${s.run.state}${s.run.verifier ? ", " + s.run.verifier : ""}`));
+    }
+    return null;
+  }
+  function cardFoot(s) {
+    if (!s.assignee && !s.subject) return null;
+    return h("div", { class: "card-foot" },
+      s.assignee ? h("span", { class: "who" }, h("span", { class: "av", "aria-hidden": "true" }, String(s.assignee).slice(0, 2).toLowerCase()), s.assignee) : null,
+      s.subject ? h("span", { class: "subject" }, s.subject) : null);
+  }
   function card(s) {
     const blocked = s.progress && s.progress.blocked > 0;
     return h("article", { class: "card" + (blocked ? " is-blocked" : ""), "data-spec": s.id, "data-fkey": "card:" + s.id, tabindex: "-1" },
-      h("span", { class: "stripe stage-" + s.stage, "aria-hidden": "true" }),
-      h("div", { class: "card-body" },
-        h("a", { class: "title", href: "#/spec/" + encodeURIComponent(s.id), "data-open": s.id, on: { click: (e) => { e.preventDefault(); openDrawer(s.id, e.currentTarget); } } },
-          `${s.id} · ${s.title || "(sem título)"}`),
-        s.summary ? h("p", { class: "summary" }, s.summary) : null,
-        cardMeta(s),
-        h("div", { class: "quick" },
-          h("button", { type: "button", class: "ghost small", on: { click: (e) => openDrawer(s.id, e.currentTarget) } }, "abrir"),
-          h("button", { type: "button", class: "ghost small", on: { click: () => copyCommand(s.id) } }, "copiar comando"),
-          isAwaiting(s.id) ? h("button", { type: "button", class: "primary small", on: { click: () => approve(s.id) } }, "aprovar") : null)));
+      cardTop(s),
+      h("a", { class: "title", href: "#/spec/" + encodeURIComponent(s.id), "data-open": s.id, on: { click: (e) => { e.preventDefault(); openDrawer(s.id, e.currentTarget); } } },
+        s.title || "(sem título)"),
+      cardSignal(s),
+      cardFoot(s),
+      h("div", { class: "quick" },
+        h("button", { type: "button", class: "ghost icon small", "aria-label": "Abrir a gaveta", title: "abrir", on: { click: (e) => openDrawer(s.id, e.currentTarget) } }, icon("panel")),
+        h("button", { type: "button", class: "ghost icon small", "aria-label": "Copiar o comando", title: "copiar comando", on: { click: () => copyCommand(s.id) } }, icon("copy")),
+        isAwaiting(s.id) ? h("button", { type: "button", class: "primary small", on: { click: () => approve(s.id) } }, "aprovar") : null));
   }
   function filtered() {
     const b = state.board;
@@ -1336,7 +1373,7 @@
       section("Tarefas bloqueadas", "O motivo está escrito na tarefa; abra a spec para ver o resto.", blocked.map((b) =>
         triageRow({ id: b.id, title: b.title, stage: b.stage, date: ageOf(b.id),
           summary: (specById(b.id) || {}).summary || "",
-          why: b.reasons.map((r) => `${r.task}: ${r.reason || "(sem motivo)"}`).join("; ") }))),
+          why: blockedWhy(b.id) }))),
       section("Prontas, aguardando aprovação", "Aprovar grava um registro write-once; a linha some no próximo carregamento.", waiting.map((w) =>
         triageRow({ id: w.id, title: w.title, stage: w.stage, date: ageOf(w.id),
           summary: (specById(w.id) || {}).summary || "",

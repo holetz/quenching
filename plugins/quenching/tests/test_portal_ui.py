@@ -200,11 +200,40 @@ class Board(unittest.TestCase):
             with self.subTest(key=key):
                 self.assertIn(key, JS)
 
-    def test_the_card_carries_state_progress_and_actions(self):
-        card = JS[JS.index("function cardMeta(s)"):JS.index("function filtered()")]
-        for needle in ('class: "stripe', "progress(s)", "ageLabel(s.date)", "abrir", "copiar comando", "aprovar"):
+    def test_the_card_has_the_target_anatomy(self):
+        """`id · prioridade · idade`, title, one signal, `responsável · assunto` — and no stripe."""
+        card = JS[JS.index("function cardTop(s)"):JS.index("function filtered()")]
+        for needle in ('class: "card-top"', 'class: "id"', 'class: "pri ', "priorityBand(s.priority)",
+                       "freshOf(s.date)", "cardSignal(s)", "cardFoot(s)", 'class: "quick"',
+                       "abrir", "copiar comando", "aprovar"):
             with self.subTest(needle=needle):
                 self.assertIn(needle, card)
+        for gone in ('class: "stripe', 'class: "card-body"', 'class: "summary"', "s.summary"):
+            with self.subTest(gone=gone):
+                self.assertNotIn(gone, card)
+        self.assertNotIn("${s.id} · ${s.title", card, "the id left the title and moved to the card's top row")
+
+    def test_the_card_carries_exactly_one_signal(self):
+        """Block reason, then progress, then the run's verdict — each an early return, so never two."""
+        signal = JS[JS.index("function cardSignal(s)"):JS.index("function cardFoot(s)")]
+        for needle in ('class: "card-why"', "progress(s.progress)", 'class: "run "', "return null;"):
+            with self.subTest(needle=needle):
+                self.assertIn(needle, signal)
+        self.assertEqual(signal.count("return "), 4, "three signals and the empty case, each its own return")
+        self.assertLess(signal.index("card-why"), signal.index("progress(s.progress)"))
+        self.assertLess(signal.index("progress(s.progress)"), signal.index('class: "run '))
+        card = JS[JS.index("function card(s)"):JS.index("function filtered()")]
+        self.assertEqual(card.count("cardSignal(s)"), 1)
+        self.assertNotIn('class: "card-why"', card, "the card delegates the choice; it never paints two")
+
+    def test_the_progress_bar_paints_from_the_progress_object(self):
+        """D2: `cardMeta` handed the spec to `progress()`, which expects `{checked, total}`."""
+        self.assertIsNone(re.search(r"progress\(s\)(?!\.)", JS),
+                          "`progress()` receives the progress object, never the spec")
+        bar = JS[JS.index("function progress(p)"):JS.index("function stagePill(")]
+        for needle in ('class: "bar"', 'role: "img"', "aria-label", 'h("i"', "style: `width:"):
+            with self.subTest(needle=needle):
+                self.assertIn(needle, bar)
 
     def test_the_board_does_not_drag_cards_between_stages(self):
         board = JS[JS.index("function card(s)"):JS.index("function viewList()")]
