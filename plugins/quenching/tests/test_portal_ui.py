@@ -5,6 +5,7 @@ pins the rest of the asset contract: the shape of the shell, the views, the keyb
 the detail, the live layer and the Gantt. A failure names the missing behaviour, not the file.
 """
 
+import json
 import pathlib
 import re
 import sys
@@ -21,6 +22,25 @@ ROOT = portal_mod.static_dir()
 HTML = (ROOT / "index.html").read_text()
 CSS = (ROOT / "app.css").read_text()
 JS = (ROOT / "app.js").read_text()
+TOKENS = json.loads((ROOT.parents[3] / "design-system" / "tokens.json").read_text(encoding="utf-8"))
+
+
+def declared(block):
+    """The custom properties a CSS block declares, name → value; the last declaration wins."""
+    return {name: value.strip() for name, value in re.findall(r"--([\w-]+)\s*:\s*([^;]+);", block)}
+
+
+def css_block(selector):
+    """Declarations of the first `selector { … }` rule whose body holds no nested rule."""
+    match = re.search(re.escape(selector) + r"\s*\{([^{}]*)\}", CSS)
+    return declared(match.group(1)) if match else {}
+
+
+def rule(selector):
+    """The body of the first rule whose selector is exactly `selector`."""
+    match = re.search(r"(?:^|\n)" + re.escape(selector) + r"\s*\{([^{}]*)\}", CSS)
+    return match.group(1) if match else ""
+
 
 WRITES = {"capture", "section", "approve", "reorder", "discovery", "chat", "push"}
 READS = {"specs", "epics", "human", "sessions", "schedule", "config", "projects", "search", "chat"}
@@ -307,6 +327,121 @@ class Tokens(unittest.TestCase):
         self.assertIn("prefers-reduced-motion", CSS)
         self.assertIn("@media (max-width: 480px)", CSS)
         self.assertIn("@media (max-width: 760px)", CSS)
+
+
+class TokenBlock(unittest.TestCase):
+    """`app.css` carries the design system's tokens verbatim, in all three theme layers."""
+
+    def test_the_block_is_delimited(self):
+        self.assertIn("/* ── tokens: generated from design-system/tokens.json ── */", CSS)
+        self.assertIn("/* ── end tokens ── */", CSS)
+
+    def test_the_light_block_carries_every_value_from_the_json(self):
+        light = css_block(':root, :root[data-theme="light"]')
+        self.assertTrue(light)
+        for family in ("step", "spacing", "radius"):
+            for token in TOKENS[family]["tokens"]:
+                with self.subTest(token=token["name"]):
+                    self.assertEqual(light.get(token["name"]), token["value"])
+        for family, value in TOKENS["type"]["families"].items():
+            with self.subTest(token=f"font-{family}"):
+                self.assertEqual(light.get(f"font-{family}"), value)
+        for family in ("color", "shadow"):
+            for token in TOKENS[family]["tokens"]:
+                with self.subTest(token=token["name"]):
+                    self.assertEqual(light.get(token["name"]), token["value"]["light"])
+
+    def test_the_dark_block_carries_every_dark_value(self):
+        dark = css_block(':root[data-theme="dark"]')
+        self.assertTrue(dark)
+        for family in ("color", "shadow"):
+            for token in TOKENS[family]["tokens"]:
+                with self.subTest(token=token["name"]):
+                    self.assertEqual(dark.get(token["name"]), token["value"]["dark"])
+
+    def test_the_auto_theme_repeats_the_dark_block(self):
+        dark = css_block(':root[data-theme="dark"]')
+        auto = css_block(':root[data-theme="auto"], :root:not([data-theme])')
+        self.assertTrue(dark)
+        self.assertTrue(auto)
+        self.assertEqual(auto, dark)
+
+
+class Primitives(unittest.TestCase):
+    """The design system's generic pieces: icon base, heat action, stage mark and control edges."""
+
+    def test_every_variable_the_css_reads_is_declared(self):
+        declared_names = set(re.findall(r"--([\w-]+)\s*:", CSS))
+        read = set(re.findall(r"var\(--([\w-]+)", CSS))
+        self.assertTrue(read)
+        self.assertEqual(sorted(read - declared_names), [])
+
+    def test_the_icon_base_is_sixteen_pixels_of_current_color(self):
+        body = rule(".i")
+        for needle in ("width: 16px", "height: 16px", "fill: none", "stroke: currentColor",
+                       "stroke-width: 1.5", "stroke-linecap: round", "stroke-linejoin: round"):
+            with self.subTest(needle=needle):
+                self.assertIn(needle, body)
+
+    def test_the_heat_action_wears_the_accent_edge_and_the_tint(self):
+        self.assertIn("button.heat { background: transparent; color: var(--accent); border-color: var(--accent);", CSS)
+        self.assertIn("button.heat:hover { background: var(--heat-tint); }", CSS)
+
+    def test_the_stage_mark_is_an_eight_pixel_square_per_stage(self):
+        body = rule(".stage::before")
+        self.assertIn("width: 8px", body)
+        self.assertIn("height: 8px", body)
+        self.assertIn("background: var(--stage", body)
+        for stage in ("captured", "ready", "approved", "executing", "blocked", "review", "archived"):
+            with self.subTest(stage=stage):
+                self.assertIn(f'[data-stage="{stage}"] {{ --stage: var(--stage-{stage}); }}', CSS)
+
+    def test_every_control_borrows_the_control_line(self):
+        for selector in ("input[type=search], input[type=text], select, textarea", "button, .ghost", ".fchip"):
+            with self.subTest(selector=selector):
+                self.assertIn("var(--control-line)", rule(selector))
+
+    def test_disabled_is_neutral_not_a_faded_accent(self):
+        body = rule("button:disabled")
+        self.assertIn("background: var(--surface-2)", body)
+        self.assertIn("color: var(--muted)", body)
+        self.assertNotIn("opacity", body)
+
+    def test_tags_take_radius_zero_and_counters_the_pill(self):
+        self.assertIn("border-radius: var(--radius-0)", rule(".chip"))
+        self.assertIn("border-radius: var(--radius-pill)", rule(".count"))
+        self.assertIn("border-radius: var(--radius-pill)", rule(".col-count"))
+
+
+class Icons(unittest.TestCase):
+    """One authored 16px set in `ICONS`, drawn through `createElementNS` by `icon(name)`."""
+
+    def icons(self):
+        block = JS[JS.index("const ICONS = {"):JS.index("\n  };", JS.index("const ICONS = {"))]
+        return {name: re.findall(r'"([^"]+)"', paths) for name, paths in re.findall(r"(\w+): \[([^\]]*)\]", block)}
+
+    def test_every_icon_is_a_non_empty_list_of_paths(self):
+        icons = self.icons()
+        self.assertTrue(icons)
+        for name, paths in icons.items():
+            with self.subTest(icon=name):
+                self.assertTrue(paths)
+                for d in paths:
+                    self.assertTrue(d.startswith(("M", "m")), d)
+
+    def test_the_shell_and_the_board_have_their_icons(self):
+        icons = self.icons()
+        for name in ("board", "list", "human", "epics", "gantt", "sessions", "chat", "search",
+                     "theme", "help", "plus", "filter", "down", "right", "up", "x", "copy",
+                     "panel", "pause", "refresh", "bell", "alert", "check"):
+            with self.subTest(icon=name):
+                self.assertIn(name, icons)
+
+    def test_the_helper_draws_an_inline_svg_without_markup(self):
+        body = JS[JS.index("function icon(name)"):JS.index("\n  }", JS.index("function icon(name)"))]
+        self.assertIn('svg("svg", { class: "i", viewBox: "0 0 16 16", "aria-hidden": "true" }', body)
+        self.assertIn("svg(", body)
+        self.assertIn("createElementNS", JS)
 
 
 class Budget(unittest.TestCase):
