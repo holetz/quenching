@@ -107,6 +107,10 @@ class Shell(unittest.TestCase):
         self.assertIn('id="banner"', app)
         self.assertIn('id="connbanner"', app)
 
+    def test_every_id_is_unique(self):
+        ids = re.findall(r'\bid="([^"]+)"', HTML)
+        self.assertEqual(len(ids), len(set(ids)))
+
 
 class Security(unittest.TestCase):
     def test_the_client_builds_no_html_string(self):
@@ -433,6 +437,13 @@ class ShellGeometry(unittest.TestCase):
         cell = rule(".pulse-cell")
         self.assertIn("white-space: nowrap", cell)
         self.assertIn("text-decoration: none", cell)
+
+
+    def test_the_phone_bar_keeps_the_navigation_inside_the_bar(self):
+        phone = CSS[CSS.index("@media (max-width: 760px)"):CSS.index("@media (max-width: 480px)")]
+        self.assertIn(".brand-sub, #theme, #help-open { display: none; }", phone)
+        self.assertIn(".searchbtn kbd { display: none; }", phone)
+        self.assertNotIn("position: fixed", phone)
 
 
 class Primitives(unittest.TestCase):

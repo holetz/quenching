@@ -1971,7 +1971,7 @@
   state.paused = prefsGet("autorefresh", "1") === "0";
   paintPause();
   $("#palette-open").prepend(icon("search"));
-  $("#help").replaceChildren(icon("help"));
+  $("#help-open").replaceChildren(icon("help"));
   $("#capture").prepend(icon("plus"));
   $("#push").prepend(icon("up"));
   $("#refresh").prepend(icon("refresh"));
@@ -1979,7 +1979,7 @@
   if (navigator.platform && /Mac/i.test(navigator.platform)) $("#palette-key").textContent = "⌘ K";
   $("#palette-open").addEventListener("click", () => openPalette());
   $("#theme").addEventListener("click", cycleTheme);
-  $("#help").addEventListener("click", openHelp);
+  $("#help-open").addEventListener("click", openHelp);
   $("#pause").addEventListener("click", togglePause);
   $("#refresh").addEventListener("click", () => refresh(true));
   $("#events-open").addEventListener("click", toggleEvents);
