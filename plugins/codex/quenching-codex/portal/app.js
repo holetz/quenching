@@ -113,6 +113,37 @@
     for (const kid of kids.flat(Infinity)) if (kid != null && kid !== false) el.append(kid.nodeType ? kid : document.createTextNode(String(kid)));
     return el;
   }
+  /* ── icons: one authored 16px set, 1.5 stroke, round caps. Paths only, drawn with
+        createElementNS so the CSP stays untouched. ─────────────────────────────────────── */
+  const ICONS = {
+    board: ["M2.5 2.5h3v11h-3z", "M6.5 2.5h3v7h-3z", "M10.5 2.5h3v9h-3z"],
+    list: ["M3 13.5v-4h3v4", "M6.5 13.5v-11h3v11", "M10 13.5v-7h3v7"],
+    human: ["M8 13.5v-5L3.5 5.5", "M8 8.5l4.5-3", "M3.5 2.5v3h3", "M12.5 2.5v3h-3"],
+    epics: ["M8 2l6 3-6 3-6-3 6-3Z", "M2 8l6 3 6-3", "M2 11l6 3 6-3"],
+    gantt: ["M2.5 3.5h6", "M5.5 8h6", "M8.5 12.5h5"],
+    sessions: ["M2.5 3h11v10h-11z", "M5 6l2.5 2L5 10", "M8.5 10.5H11"],
+    chat: ["M2.5 3h11v8H7l-3 2.5V11H2.5z"],
+    search: ["M7 12A5 5 0 1 0 7 2a5 5 0 0 0 0 10Zm7 2-3.5-3.5"],
+    theme: ["M8 14A6 6 0 1 0 8 2a6 6 0 0 0 0 12Zm0-12v12", "M8 5h3.6", "M8 8h4.9", "M8 11h3.6"],
+    help: ["M8 14.5a6.5 6.5 0 1 0 0-13 6.5 6.5 0 0 0 0 13Z", "M6.1 6.2a2 2 0 1 1 2.9 1.8c-.6.3-1 .8-1 1.5", "M8 11.6v.1"],
+    plus: ["M8 3v10", "M3 8h10"],
+    filter: ["M2.5 4h11", "M5 8h6", "M7 12h2"],
+    down: ["m4 6 4 4 4-4"],
+    right: ["m6 4 4 4-4 4"],
+    up: ["m4 10 4-4 4 4"],
+    x: ["m4 4 8 8", "M12 4l-8 8"],
+    copy: ["M5.5 5.5h7v8h-7z", "M3.5 10.5v-8h7"],
+    panel: ["M2.5 3h11v10h-11z", "M9.5 3v10"],
+    pause: ["M5.5 3.5v9", "M10.5 3.5v9"],
+    refresh: ["M13 8a5 5 0 1 1-1.6-3.7", "M13 2v3h-3"],
+    bell: ["M4 11.5V7.2a4 4 0 0 1 8 0v4.3l1 1.2H3l1-1.2", "M6.6 14.5h2.8"],
+    alert: ["M8 2.5 14.5 13.5h-13L8 2.5Z", "M8 6.5v3.2", "M8 11.8v.1"],
+    check: ["m3 8.5 3.2 3L13 4.5"],
+  };
+  function icon(name) {
+    return svg("svg", { class: "i", viewBox: "0 0 16 16", "aria-hidden": "true" },
+      ICONS[name].map((d) => svg("path", { d })));
+  }
   function nodes(...kids) { return kids.flat(Infinity).filter((k) => k != null && k !== false); }
   function safeHref(url) { return typeof url === "string" && /^https?:\/\//i.test(url) ? url : ""; }
   function prUrl(pr) {
