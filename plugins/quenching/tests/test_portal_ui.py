@@ -222,6 +222,12 @@ class Board(unittest.TestCase):
         self.assertIn("z-index: 15", panel)
         self.assertIn("box-shadow: var(--shadow-2)", panel)
         self.assertIn("@media (max-width: 1100px) { .chips.quick { display: none; } }", CSS)
+        self.assertIn(
+            "@media (min-width: 900px) {\n"
+            "  .board-tools { flex-wrap: nowrap; }\n"
+            "  .board-tools:has(.chips:not(.quick)) .chips.quick { display: none; }\n"
+            "}", CSS,
+            "above 900 px an applied filter replaces the shortcut group instead of wrapping the bar")
 
     def test_the_filter_chips_appear_only_when_a_filter_is_active(self):
         bar = JS[JS.index("function toolbar()"):JS.index("function labelOfKey(")]
