@@ -6,10 +6,15 @@ as a document does. The cases that prove the second half live in `test_specs_git
 `test_specs_push`; this module owns the capability itself.
 """
 
+import contextlib
+import io
+import json
+import os
 import pathlib
 import subprocess
 import sys
 import unittest
+from types import SimpleNamespace
 from unittest import mock
 
 try:
@@ -19,7 +24,9 @@ except ModuleNotFoundError:  # package-qualified unittest invocation from the re
     import _paths  # noqa: F401
 import test_specs_git_backend as fixture
 from test_specs_git_backend import GitStoreFixture
+from quenching.specs import backends as backends_mod
 from quenching.specs.backends import git as git_mod
+from quenching.specs.commands import cli
 from quenching.specs.backends.base import MAX_ARTIFACT_BYTES, BackendRefusal
 from quenching.specs.backends.git import GitBackend
 from quenching.specs.backends.github import GitHubBackend
@@ -248,6 +255,109 @@ class MemoryEquivalence(unittest.TestCase):
         with self.assertRaises(BackendRefusal) as caught:
             backend.write_artifact(1, "a/b", "text\n")
         self.assertEqual("sp-artifact-name", caught.exception.err["code"])
+
+
+class Cli(GitStoreFixture):
+    """`cq specs artifact` end to end: the four verbs, the two body sources and the exit codes."""
+
+    def setUp(self):
+        super().setUp()
+        self.path = self.clone("a")
+        os.makedirs(os.path.join(self.path, ".claude"))
+        with open(os.path.join(self.path, ".claude", "quenching.json"), "w") as handle:
+            json.dump({"backend": "git"}, handle)
+        backend = GitBackend(self.path)
+        _seed(backend)
+        backend.push()
+        # A `cq` invocation is a NEW process: the store it opens must not inherit the instance
+        # the push created (and the tip that instance memoized while the ref was still moving).
+        git_mod._STORES.clear()
+        backends_mod._BACKEND_CACHE.clear()
+
+    def run_cli(self, *argv: str, stdin=None) -> tuple[int, str]:
+        buf = io.StringIO()
+        patcher = mock.patch.object(sys, "stdin", stdin) if stdin is not None else None
+        if patcher:
+            patcher.start()
+            self.addCleanup(patcher.stop)
+        with contextlib.redirect_stdout(buf):
+            code = cli.main(["--root", self.path, *argv])
+        return code, buf.getvalue()
+
+    def test_write_from_stdin_then_list_read_and_rm(self):
+        code, said = self.run_cli("artifact", "write", "--spec", "1", "--name", "h.md",
+                                  stdin=io.StringIO("the handoff\n"))
+        self.assertEqual(0, code, said)
+        self.assertIn("quenching:specs/artifacts/1/h.md", said)
+        code, said = self.run_cli("artifact", "list", "--spec", "1")
+        self.assertEqual((0, "quenching:specs/artifacts/1/h.md"), (code, said.strip()))
+        code, said = self.run_cli("artifact", "read", "--spec", "1", "--name", "h.md")
+        self.assertEqual((0, "the handoff\n"), (code, said))
+        code, said = self.run_cli("artifact", "rm", "--spec", "1", "--name", "h.md")
+        self.assertEqual(0, code, said)
+        self.assertIn("removed", said)
+        code, said = self.run_cli("artifact", "list", "--spec", "1")
+        self.assertEqual((0, "no artifact for spec 1"), (code, said.strip()))
+
+    def test_write_from_a_file_and_read_it_back_into_another(self):
+        source = os.path.join(self.tmp, "source.md")
+        with open(source, "w", encoding="utf-8") as handle:
+            handle.write("from a file\n")
+        code, said = self.run_cli("artifact", "write", "--spec", "1", "--name", "h.md",
+                                  "--from", source)
+        self.assertEqual(0, code, said)
+        dest = os.path.join(self.tmp, "dest.md")
+        code, said = self.run_cli("artifact", "read", "--spec", "1", "--name", "h.md",
+                                  "--out", dest)
+        self.assertEqual(0, code, said)
+        with open(dest, encoding="utf-8") as handle:
+            self.assertEqual("from a file\n", handle.read())
+
+    def test_json_carries_the_spec_name_locator_and_size(self):
+        code, said = self.run_cli("artifact", "write", "--spec", "1", "--name", "h.md",
+                                  "--json", stdin=io.StringIO("six\n"))
+        self.assertEqual(0, code, said)
+        wrote = json.loads(said)
+        self.assertEqual((1, "h.md", "quenching:specs/artifacts/1/h.md", 4),
+                         (wrote["spec"], wrote["name"], wrote["path"], wrote["bytes"]))
+        code, said = self.run_cli("artifact", "read", "--spec", "1", "--name", "h.md", "--json")
+        read = json.loads(said)
+        self.assertEqual("six\n", read["text"])
+        code, said = self.run_cli("artifact", "list", "--json")
+        self.assertEqual({"count": 0, "artifacts": []},
+                         {k: v for k, v in json.loads(said).items()
+                          if k in ("count", "artifacts")})
+
+    def test_a_standalone_artifact_needs_no_spec(self):
+        code, said = self.run_cli("artifact", "write", "--name", "h.md", "--json",
+                                  stdin=io.StringIO("no spec\n"))
+        self.assertEqual(0, code, said)
+        self.assertIsNone(json.loads(said)["spec"])
+        code, said = self.run_cli("artifact", "list")
+        self.assertEqual("quenching:specs/artifacts/_handoffs/h.md", said.strip())
+
+    def test_every_refusal_exits_two_with_its_own_code(self):
+        missing = os.path.join(self.tmp, "absent.md")
+        binary = SimpleNamespace(buffer=io.BytesIO(b"\xff\xfe\x00"))
+        cases = {
+            "sp-artifact-verb": ("artifact", "--json"),
+            "sp-artifact-unknown": ("artifact", "read", "--spec", "1", "--name", "nope.md",
+                                    "--json"),
+            "sp-unknown-id": ("artifact", "write", "--spec", "99", "--name", "h.md", "--json"),
+            "sp-artifact-unreadable": ("artifact", "write", "--spec", "1", "--name", "h.md",
+                                       "--from", missing, "--json"),
+        }
+        for code_name, argv in cases.items():
+            with self.subTest(code=code_name):
+                code, said = self.run_cli(*argv, stdin=io.StringIO("text\n"))
+                self.assertEqual(2, code, said)
+                self.assertEqual(code_name, json.loads(said)["code"])
+        code, said = self.run_cli("artifact", "write", "--spec", "1", "--name", "h.md",
+                                  "--json", stdin=binary)
+        self.assertEqual((2, "sp-artifact-binary"), (code, json.loads(said)["code"]))
+        code, said = self.run_cli("artifact", "write", "--spec", "1", "--name", "a/b", "--json",
+                                  stdin=io.StringIO("text\n"))
+        self.assertEqual((2, "sp-artifact-name"), (code, json.loads(said)["code"]))
 
 
 if __name__ == "__main__":
