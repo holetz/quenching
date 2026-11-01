@@ -211,6 +211,27 @@ class Board(unittest.TestCase):
         self.assertNotIn("draggable", board)
         self.assertNotIn("dragstart", board)
 
+    def test_the_control_bar_is_one_row_and_its_panels_open_over_the_lanes(self):
+        body = rule(".board-tools")
+        self.assertIn("display: flex", body)
+        self.assertIn("flex-wrap: wrap", body)
+        self.assertIn("min-height: var(--tools-h)", body)
+        self.assertNotIn("display: grid", body)
+        panel = rule(".pop-body")
+        self.assertIn("position: absolute", panel)
+        self.assertIn("z-index: 15", panel)
+        self.assertIn("box-shadow: var(--shadow-2)", panel)
+        self.assertIn("@media (max-width: 1100px) { .chips.quick { display: none; } }", CSS)
+
+    def test_the_filter_chips_appear_only_when_a_filter_is_active(self):
+        bar = JS[JS.index("function toolbar()"):JS.index("function labelOfKey(")]
+        self.assertIn('h("div", { class: "chips quick" }', bar)
+        self.assertRegex(bar, r'chips\.length\s*\?\s*h\("div", \{ class: "chips" \}')
+        self.assertEqual(bar.count("limpar tudo"), 1)
+        self.assertNotIn("sem filtro", bar)
+        self.assertNotIn("empty-inline", bar)
+        self.assertIn('"aria-pressed": chips.length ? "true" : "false"', bar)
+
     def test_priority_and_complexity_are_banded_not_raw_levels(self):
         for needle in ("function priorityBand(", "function priorityShort(", "function complexityOf(",
                        "P1 · crítica", "P4 · baixa", "sem complexidade"):
