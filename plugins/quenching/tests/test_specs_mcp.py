@@ -27,7 +27,8 @@ DOC = ("---\ntitle: {title}\ndate: 2026-01-01\n---\n\n## Problem\n\n{problem}\n\
 TOOL_NAMES = {"specs_list", "specs_status", "specs_show", "specs_section", "specs_next",
               "specs_epic_progress"}
 WRITE_NAMES = {"specs_create", "specs_section_write", "specs_record", "specs_task",
-               "specs_epic_add", "specs_discover", "specs_promote", "specs_push"}
+               "specs_epic_add", "specs_link_add", "specs_link_remove", "specs_discover",
+               "specs_promote", "specs_push"}
 WRITE_VERBS = {"new", "section --write", "record", "task", "discover", "promote", "migrate",
                "serve", "release", "verification", "title", "tags", "push"}
 
@@ -177,8 +178,11 @@ class Tools(unittest.TestCase):
 
     def test_a_refusal_is_a_tool_error_carrying_the_cli_code(self):
         payload, failed = self.call("specs_epic_progress", {"epic": 1})
+        self.assertFalse(failed)
+        self.assertEqual((payload["ok"], payload["level"]), (True, "story"))
+        payload, failed = self.call("specs_epic_progress", {"epic": 999})
         self.assertTrue(failed)
-        self.assertEqual(payload["code"], "sp-epic-not-an-epic")
+        self.assertEqual(payload["code"], "sp-unknown-id")
         payload, _ = self.call("specs_status", {"spec": 999})
         self.assertEqual((payload["ok"], payload["code"]), (False, "sp-unknown-id"))
 

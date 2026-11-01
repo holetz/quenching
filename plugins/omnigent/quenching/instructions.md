@@ -16,7 +16,7 @@ Delegate to these, by name, where a skill says to:
 - `orchestrator` — Conducts an epic or a queue of specs as dependency waves, delegating each spec to a worker and accepting a result only on a verifier PASS. Use for multi-spec runs; never edits files itself.
 - `reviewer` — Reviews an epic's accepted commits for correctness, and for security when they touch a grant, hook or executable, reporting only findings it reproduced. Use once per epic, launched by the autopilot conductor. Read-only; never edits or fixes.
 - `scout` — Maps the code and standards a set of specs will touch once, as file:line pointers and standard sections, so workers do not each re-search. Read-only; returns at most ~2k tokens.
-- `spec-architect` — Proposes budget-aware spec decomposition, or captures authorized epic members with dependencies and complexity. Use for an oversized develop estimate or an epic's planned slices.
+- `spec-architect` — Proposes budget-aware spec decomposition, or captures authorized composite members with dependencies and complexity. Use for an oversized develop estimate or a composite's planned slices.
 - `spec-runner` — Builds ONE spec end to end in its own worktree (develop, execute, conclude) through the quenching commands, then returns a fixed report. Use per spec inside an orchestrated run.
 - `verifier` — Audits a spec's real git and spec state and returns PASS or FAIL with evidence. Use before accepting any worker result. Read-only; never edits or fixes.
 

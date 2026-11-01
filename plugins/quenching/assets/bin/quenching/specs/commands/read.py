@@ -11,9 +11,11 @@ import os
 from quenching.common.config import load_config
 from quenching.common.io import write_text
 from quenching.specs.backends import open_backend
-from quenching.specs.commands.epic import cmd_epic_status
+from quenching.specs.commands.epic import cmd_epic_status, composition_view, pr_states
 from quenching.specs.commands.output import Emitter, display_locator, front_fields, read_one
+from quenching.specs.members import read_members
 from quenching.specs.parse import PHASES, derive_info, spec_handle
+from quenching.specs.parse.epics import (derive_composition, has_links, parse_items)
 from quenching.specs.parse.records import spec_records
 from quenching.specs.parse.sections import (gate_report, ready_report, section_state,
                                             stray_headings)
@@ -157,6 +159,15 @@ def cmd_status(args, root: str, out: Emitter) -> int:
     info, err = read_one(backend, args.spec, out)
     if err:
         return out.emit_err(args.json, err)
+    comp = None
+    if has_links(info):
+        # `status` answers the composition question when the document asks it, without
+        # replacing the task/records half: a composite is also a spec that is developed,
+        # approved and executed, and its consumers read those fields here.
+        ids = [i["spec"] for i in parse_items(info) if i["spec"]]
+        members_state, unreadable = read_members(backend, ids, root)
+        comp = composition_view(info, derive_composition(
+            info, members_state, pr_states(members_state, root), unreadable))
     checked, blocked, total = task_progress(info["tasks"])
     dest = _next_phase(info["phase"])
     gates = gate_report(info, dest) if dest else None
@@ -198,6 +209,9 @@ def cmd_status(args, root: str, out: Emitter) -> int:
         "path": display_locator(info["path"], root),
         "pending": _pending(backend),
     }
+    if comp:
+        obj["level"] = comp.pop("level")
+        obj["composition"] = comp
     if args.json:
         print(json.dumps(out.announced(obj), indent=2, ensure_ascii=False))
         return 0
@@ -208,6 +222,15 @@ def cmd_status(args, root: str, out: Emitter) -> int:
     if total:
         print(f"  tasks: {checked}/{total} complete" +
               (f" · {blocked} blocked" if blocked else ""))
+    if comp:
+        p = comp["progress"]
+        print(f"  composition: {obj['level']} · {p['done']}/{p['total']} member(s) done"
+              + (f" · {p['ready']} ready" if p["ready"] else "")
+              + (f" · {p['blocked']} held" if p["blocked"] else ""))
+        for g in comp["groups"]:
+            print(f"    {g['title'] or '(no group)'}: {g['done']}/{g['total']} done")
+        for b in comp["blocked"]:
+            print(f"    [{b['status']}] {b['label']} spec {b['spec']}: {'; '.join(b['reasons'])}")
     for s in sections:
         mark = {"filled": "✓", "empty": "!", "absent": "·"}[s["state"]]
         print(f"    {mark} ## {s['heading']}")

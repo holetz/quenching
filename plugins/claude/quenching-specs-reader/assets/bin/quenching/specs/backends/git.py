@@ -175,24 +175,34 @@ class GitBackend(SpecBackend):
         return client.read(int(number))
 
     def _card_transitions(self, pairs: list[tuple[dict, dict]],
-                          unresolved: dict | None = None) -> list[dict]:
+                          unresolved: dict | None = None,
+                          member_states: dict[str, list[dict]] | None = None,
+                          force: set[str] | None = None) -> list[dict]:
         """One request per spec whose lifecycle facts changed — after the store was pushed, so
         a tracker failure never undoes the document and never turns the push into a failure: it
         is returned, one `sp-card-failed` entry per spec, for the caller to report beside it.
         `unresolved` is the refusal of a card client that could not be resolved: every
-        transition fails with it as its cause, and no request is made."""
+        transition fails with it as its cause, and no request is made.
+
+        `member_states` maps a composite id to its derived member rows; `force` names the
+        composites whose member changed under them, which have no lifecycle change of their
+        own but still need the card to follow."""
         from quenching.specs import cards
         client = None if unresolved else self.card()
         if client is None and not unresolved:
             return []
         failures = []
+        force = force or set()
         for old, new in pairs:
-            if cards.lifecycle_key(old) == cards.lifecycle_key(new):
+            sid = str(new["id"])
+            rows = (member_states or {}).get(sid)
+            if sid not in force and cards.lifecycle_key(old, rows) == \
+                    cards.lifecycle_key(new, rows):
                 continue
             cause = unresolved
             if client is not None:
                 try:
-                    client.update(int(new["id"]), cards.card_state(new))
+                    client.update(int(new["id"]), cards.card_state(new, rows))
                 except BackendRefusal as exc:
                     cause = exc.err
             if cause:
@@ -967,7 +977,13 @@ class GitBackend(SpecBackend):
 
         The card client is first resolved here, after the push landed: a provider that cannot
         be resolved (no Azure defaults or project, no GitHub repository) is each transition's
-        card failure, never the sync's."""
+        card failure, never the sync's.
+
+        A COMPOSITE FOLLOWS ITS MEMBERS. The snapshot holds every document at `after`, so the
+        member states are derived without a store read; a composite whose member changed is
+        forced into the transition set even when its own lifecycle key did not move."""
+        from quenching.specs.parse.epics import (derive_composition, is_remote,
+                                                 parse_items)
         unresolved = None
         try:
             if self.card() is None:
@@ -978,16 +994,42 @@ class GitBackend(SpecBackend):
         changed = {_spec_id(p) for p in set(old.blobs) | set(new.blobs)
                    if old.blobs.get(p) != new.blobs.get(p)} - {None}
         old_index, new_index = self._index(old), self._index(new)
+
+        infos: dict[tuple[str, str], dict] = {}
+
+        def at(tip: str, path: str, phase: str, text: str) -> dict:
+            key = (tip, path)
+            if key not in infos:
+                infos[key] = derive_info(self._descriptor(_spec_id(path), phase, path), text)
+            return infos[key]
+
         pairs = []
         for spec_id in sorted(changed):
             if spec_id not in old_index or spec_id not in new_index:
                 continue
             (old_phase, old_path), (new_phase, new_path) = old_index[spec_id], new_index[spec_id]
-            pairs.append((derive_info(self._descriptor(spec_id, old_phase, old_path),
-                                      old[old_path][1]),
-                          derive_info(self._descriptor(spec_id, new_phase, new_path),
-                                      new[new_path][1])))
-        return self._card_transitions(pairs, unresolved)
+            pairs.append((at("old", old_path, old_phase, old[old_path][1]),
+                          at("new", new_path, new_phase, new[new_path][1])))
+        by_id = {}
+        for sid, (phase, path) in new_index.items():
+            by_id[str(sid)] = at("new", path, phase, new[path][1])
+        member_states: dict[str, list[dict]] = {}
+        parents: set[str] = set()
+        for sid, info in by_id.items():
+            items = parse_items(info)
+            if not items:
+                continue
+            ids = [str(i["spec"]) for i in items if i["spec"]]
+            members = {k: by_id.get(k) for k in ids}
+            unreadable = {k for k in ids if is_remote(k) or k not in by_id}
+            derived = derive_composition(info, members, unreadable=unreadable)
+            member_states[sid] = [{"id": i["spec"], "label": i["label"],
+                                   "title": i["title"], "status": i["status"]}
+                                  for i in derived["items"]]
+            if any(k in changed for k in ids):
+                parents.add(sid)
+        force = parents - {str(new["id"]) for _, new in pairs}
+        return self._card_transitions(pairs, unresolved, member_states, force)
 
     def push(self, drop: tuple = (), collapse: bool = True) -> dict:
         """Send every pending write of the clone; `drop` discards those specs' local writes

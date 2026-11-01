@@ -168,8 +168,10 @@ Fifteen terms to read first; each has its full entry under *Terms*.
 - [**Entry point**](standards/architecture/ops-front.md) — an operation exposed by the ops router
   and named in its generated registry, whose implementation may live in a domain package rather than
   in the router itself.
-- [**Epic**](standards/workflows/epics.md) — a spec with `workItemType: epic` whose `## Tasks` items
-  reference member specs and whose item state is derived from the members, never ticked.
+- [**Epic**](standards/workflows/spec-composition.md) — the derived level of a composite whose spec
+  items span two or more waves; each wave is a feature, and the level is never a work-item type.
+- [**Feature**](standards/workflows/spec-composition.md) — the derived level of a composite whose
+  spec items sit in one wave (or in no wave at all); the middle level between story and epic.
 - **Fixpoint** — the state an align reaches when one more pass changes nothing; the loop ends there.
 - [**Fixture library**](standards/architecture/proof-front.md) — the shared home for fixtures needed
   by more than one test module, keeping reusable setup from becoming duplicated module definitions.

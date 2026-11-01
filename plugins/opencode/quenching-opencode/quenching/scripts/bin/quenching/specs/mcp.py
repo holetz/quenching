@@ -185,11 +185,12 @@ TOOLS: dict[str, tuple] = {
                  "moment": {"type": "string", "enum": list(MOMENTS)},
                  "scope": {"type": "string", "enum": list(SCOPES)}}, ["spec"]), _section, None),
     "specs_next": (
-        "The next action of one spec (`spec`), the member specs of an epic ready to run now "
-        "(`epic`), or the ranked front of every active spec (neither), paged.",
+        "The next action of one spec (`spec`, composition-aware: a ready task, else the ready "
+        "members), the member specs of a composite ready to run now (`epic`), or the ranked "
+        "front of every active spec (neither), paged.",
         _schema({"spec": SPEC, "epic": SPEC, **PAGE}), _next, None),
     "specs_epic_progress": (
-        "One epic's progress per group, its blocked items and critical path.",
+        "One spec's composition: progress per wave, its blocked members and critical path.",
         _schema({"epic": SPEC}, ["epic"]), _epic, None),
 }
 
@@ -284,6 +285,19 @@ def _w_epic_add(args: dict) -> list[str]:
     return argv + (["--move"] if args.get("move") is True else [])
 
 
+def _w_link_add(args: dict) -> list[str]:
+    argv = ["link", "add", _id(args, "epic", True), _id(args, "spec", True)]
+    for key in ("after", "group", "label"):
+        value = _text(args, key)
+        if value:
+            argv += [f"--{key}", value]
+    return argv
+
+
+def _w_link_remove(args: dict) -> list[str]:
+    return ["link", "remove", _id(args, "epic", True), _id(args, "spec", True)]
+
+
 def _w_discover(args: dict) -> list[str]:
     text = args.get("text")
     if not isinstance(text, str) or not text.strip() or "\n" in text or len(text) > 2000:
@@ -372,10 +386,20 @@ WRITES: dict[str, tuple] = {
                  "subject": {"type": "string"}, "commit": {"type": "string"}},
                 ["spec", "action", "task"]), _w_task, None, None, None),
     "specs_epic_add": (
-        "List a spec as an epic item and stamp `epic:` on it.",
+        "Historical alias of `specs_link_add`: list a spec as a member of another.",
         _schema({"epic": SPEC, "spec": SPEC, "after": {"type": "string"},
                  "group": {"type": "string"}, "label": {"type": "string"},
                  "move": {"type": "boolean"}}, ["epic", "spec"]), _w_epic_add, None, None, None),
+    "specs_link_add": (
+        "List a spec as a member of a composite (`epic`): the composite's `## Tasks` gains a spec "
+        "item; the member may belong to several composites.",
+        _schema({"epic": SPEC, "spec": SPEC, "after": {"type": "string"},
+                 "group": {"type": "string"}, "label": {"type": "string"}},
+                ["epic", "spec"]), _w_link_add, None, None, None),
+    "specs_link_remove": (
+        "Take a spec out of a composite; refuses while another item waits `after` it.",
+        _schema({"epic": SPEC, "spec": SPEC}, ["epic", "spec"]),
+        _w_link_remove, None, None, None),
     "specs_discover": (
         "Append one finding line to the spec's ## Discoveries.",
         _schema({"spec": SPEC, "text": {"type": "string"}}, ["spec", "text"]),

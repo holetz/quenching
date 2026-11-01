@@ -28,10 +28,10 @@ conversion through develop, and children remain captured, never implicitly ready
    Its payload carries a `path`, not an `id`; resolve the id by title afterwards. On the GitHub
    backend writes are serialized: one at a time, with backoff on failure. Exit 2 is read, never
    repeated blindly.
-5. Record each member's place in the epic with
-   `cq specs epic add <epic> <spec> --group "<wave>" --after <labels>`. `--after` takes the item
-   labels (`S<n>`) that earlier `epic add` calls returned, never spec ids: keep the label each call
-   gave you and cite those labels in the later edges.
+5. Record each member's place in the composite with
+   `cq specs link add <composite> <spec> --group "<wave>" --after <labels>`. `--after` takes the
+   item labels (`S<n>`) that earlier `link add` calls returned, never spec ids: keep the label each
+   call gave you and cite those labels in the later edges.
 6. Do not develop, approve or execute anything. Capturing is your whole job.
 
 ## Return format (fixed)

@@ -65,6 +65,6 @@ out of the critical path. The critical path follows, from the latest known
 
 ## What it does not replace
 
-`after:` between the items of one epic stays the epic-local edge ([epics.md](epics.md)), and
-`dependsOn` never replaces it. `cq specs next --front` and `next --epic` keep their ordering:
-folding `dependsOn` into the rank is a follow-up.
+`after:` between the items of one composite stays the composite-local edge
+([spec-composition.md](spec-composition.md)), and `dependsOn` never replaces it. `cq specs next
+--front` and `next --epic` keep their ordering: folding `dependsOn` into the rank is a follow-up.

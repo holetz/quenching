@@ -108,7 +108,7 @@ it is still relevant against the current code:
 
 - the surface it describes has changed → record the evidence in `## Outcome`
   (`cq specs section <id> Outcome --write`) and `cq specs promote <id> --outcome abandoned`;
-- it needs the human (the **never forced** list) → `cq specs epic add <human-epic> <id>`;
+- it needs the human (the **never forced** list) → `cq specs link add <human-composite> <id>`;
 - otherwise it joins this round's queue.
 
 **Done when:** every loose spec is queued, abandoned with evidence, or in the human epic.
@@ -122,24 +122,25 @@ this session deciding the owner's questions as the delegated owner, except those
 The map is ephemeral, under `<ephemeral area>/autopilot/<date>/`.
 **Done when:** the candidates kept are listed with evidence, or the map found none.
 
-### 4. Epic
+### 4. Composition
 **Mechanical capture, by default.** When the queue and the kept candidates already decide the
-members (title, `complexity`, dependencies), this session creates the epic and the members itself,
-with no `spec-architect`: search by title in `cq specs list --json` first (a match is
-reused), then `cq specs new "<title>" --complexity <level> </dev/null` per member and `cq specs epic
-add <epic> <spec> --group "<wave>" --after <labels>` (labels `S<n>` returned by earlier `epic add`
-calls), serializing any two members that touch the same files with `after:`. Exit 2 is read, never
-repeated blindly. The model restrictions on code and classification stay as they are.
+members (title, `complexity`, dependencies), this session creates the composite and the members
+itself, with no `spec-architect`: search by title in `cq specs list --json` first
+(a match is reused), then `cq specs new "<title>" --complexity <level> </dev/null` per member and
+`cq specs link add <composite> <spec> --group "<wave>" --after <labels>` (labels `S<n>` returned by
+earlier `link add` calls), serializing any two members that touch the same files with `after:`.
+Exit 2 is read, never repeated blindly. The model restrictions on code and classification stay as
+they are.
 **Decomposition, by the architect.** `spec-architect` is launched only for real
-decomposition: members not yet decided, a spec over the worker budget (`proposal-only`), or waves that
-need reading file overlap. Hand it the queue and the kept candidates; it creates the epic and the
-members.
-Either way, write the epic's `## Design` with `cq specs section <epic> Design --write`, carrying the
-**autonomy policy**: forced execution, push, PR and merge of every member after a verifier PASS,
-authorized by this invocation, with its date. Check the result with `cq specs status --epic <epic>`
-and `cq specs validate`.
-**Done when:** the epic exists with its waves, its `## Design` carries the dated policy, and
-`validate` raises no `sp-epic-*` finding.
+decomposition: members not yet decided, a spec over the worker budget (`proposal-only`), or waves
+that need reading file overlap. Hand it the queue and the kept candidates; it creates the composite
+and the members.
+Either way, write the composite's `## Design` with `cq specs section <composite> Design --write`,
+carrying the **autonomy policy**: forced execution, push, PR and merge of every member after a
+verifier PASS, authorized by this invocation, with its date. Check the result with
+`cq specs status --epic <composite>` and `cq specs validate`.
+**Done when:** the composite exists with its waves, its `## Design` carries the dated policy, and
+`validate` raises no `sp-link-*` finding.
 
 ### 5. Orchestrate
 **Economy mode.** An epic with **at most 2 members, every one `low` or `medium`**, runs without

@@ -18,11 +18,12 @@ from quenching.common.dates import today
 from quenching.common.git import _git
 from quenching.specs.backends import open_backend
 from quenching.specs.backends.base import SpecBackend
-from quenching.specs.commands.epic import cmd_next_epic
+from quenching.specs.commands.epic import cmd_next_epic, pr_states
 from quenching.specs.commands.output import Emitter, display_locator, front_fields, read_one
+from quenching.specs.members import read_members
 from quenching.specs.parse import derive_info, spec_handle
 from quenching.specs.parse.derive import derive_stage
-from quenching.specs.parse.epics import is_epic
+from quenching.specs.parse.epics import derive_composition, has_links, parse_items
 from quenching.specs.parse.records import spec_records
 from quenching.specs.parse.sections import ready_report
 from quenching.specs.parse.tasks import _files_bad_annotation, task_progress
@@ -30,6 +31,13 @@ from quenching.specs.schema import load_schema
 
 
 CRITICALITY_RANK = {"critical": 0, "high": 1, "medium": 2, "normal": 2, "low": 3}
+
+
+def _composition_row(i: dict) -> dict:
+    """One member as `next` reports it: the label the document uses, the spec it names, the
+    derived state and the labels it waits for."""
+    return {"label": i["label"], "spec": i["spec"], "title": i["title"],
+            "status": i["status"], "after": i["after"]}
 
 # `sp-spec-stale`'s own threshold, per specs-align/conformance.md. Read here so the table
 # reports the same age the sweep would raise a finding at.
@@ -405,15 +413,19 @@ def cmd_next(args, root: str, out: Emitter) -> int:
                               + " to reach the ready gate"}
             out.emit(args.json, obj, obj["message"])
             return 0
-        if is_epic(info["frontmatter"]):
-            # An epic's tasks are member specs, derived and never executed here: the
-            # orchestrator's entry is the ready set.
-            obj = {"ok": True, "action": "orchestrate", **base,
-                   "message": f"epic — run `cq specs next --epic {info['id']}` for the "
-                              f"member specs ready to run"}
-            out.emit(args.json, obj, obj["message"])
-            return 0
-        openable = [t for t in info["tasks"] if not t["checked"] and not t["blocked"]]
+        # A composite needs its member states before deciding which tasks are ready: a task
+        # may wait `after:` a spec item (`- [ ] 2.1 Wire — after: S2`).
+        derived = None
+        if has_links(info):
+            ids = [i["spec"] for i in parse_items(info) if i["spec"]]
+            members, unreadable = read_members(backend, ids, root)
+            derived = derive_composition(info, members, pr_states(members, root), unreadable)
+        done = {t["id"] for t in info["tasks"] if t["checked"]}
+        done |= {i["label"] for i in (derived["items"] if derived else [])
+                 if i["status"] == "done"}
+        openable = [t for t in info["tasks"]
+                    if not t["checked"] and not t["blocked"]
+                    and all(d in done for d in t.get("after") or [])]
         if openable:
             t = openable[0]
             bad = [e for e in t["files"] if _files_bad_annotation(e)]
@@ -433,11 +445,43 @@ def cmd_next(args, root: str, out: Emitter) -> int:
                    "message": f"implement task {t['id']}: {t['text']}"}
             out.emit(args.json, obj, obj["message"])
             return 0
-        if base["blocked"]:
+        if derived is not None:
+            # The document's own tasks are done (or there were none), so the composition is
+            # the next question: a ready member goes to the orchestrator, everything else is
+            # reported with the member state that holds it.
+            ready = derived["ready"]
+            remaining = [i for i in derived["items"] if i["status"] != "done"]
+            if ready:
+                obj = {"ok": True, "action": "orchestrate", **base,
+                       "ready": [_composition_row(i) for i in ready],
+                       "remaining": len(remaining),
+                       "message": f"composition — {len(ready)} member spec(s) ready to run"}
+                out.emit(args.json, obj, obj["message"])
+                return 0
+            if remaining:
+                obj = {"ok": True, "action": "blocked", **base,
+                       "members": [_composition_row(i) for i in remaining],
+                       "message": f"composition — no member ready; {len(remaining)} still "
+                                  f"open"}
+                out.emit(args.json, obj, obj["message"] + "".join(
+                    f"\n  [{i['status']}] {i['label']} spec {i['spec']}" for i in remaining))
+                return 0
+            obj = {"ok": True, "action": "promote", "to": "archive", **base,
+                   "message": "every task and every member is done — write ## Outcome, then "
+                              f"`cq specs promote {info['id']} --to archive`"}
+            out.emit(args.json, obj, obj["message"])
+            return 0
+        waiting = [t for t in info["tasks"]
+                   if not t["checked"] and not t["blocked"] and t not in openable]
+        if base["blocked"] or waiting:
             obj = {"ok": True, "action": "blocked", **base,
-                   "message": f"every remaining task is blocked ({len(base['blocked'])})"}
+                   "waiting": [{"id": t["id"], "text": t["text"], "after": t["after"]}
+                               for t in waiting],
+                   "message": f"every remaining task is blocked or waiting "
+                              f"({len(base['blocked'])} blocked, {len(waiting)} waiting)"}
             out.emit(args.json, obj, obj["message"] + "".join(
-                f"\n  [!] {b['text']}" for b in base["blocked"]))
+                f"\n  [{t['state']}] {t['text']}" for t in waiting)
+                + "".join(f"\n  [!] {b['text']}" for b in base["blocked"]))
             return 0
         obj = {"ok": True, "action": "promote", "to": "archive", **base,
                "message": f"all tasks complete — write ## Outcome, then "

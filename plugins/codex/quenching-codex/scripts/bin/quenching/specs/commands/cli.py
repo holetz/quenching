@@ -103,9 +103,9 @@ def _add_read(sub) -> None:
                     help="use the provider's native index; omit document-derived fields")
 
     sp = add_json(sub.add_parser("status", help="one spec's sections, stage, tasks, gates — "
-                                                "or one epic's progress with --epic"))
+                                                "or its composition when it lists member specs"))
     add_spec(sp, False)
-    sp.add_argument("--epic", help="an epic ID: progress per group, blocked items, critical path")
+    sp.add_argument("--epic", help="force the composition view for a spec ID")
     sp.add_argument("--no-fetch", action="store_true",
                     help="read the local remote-tracking ref already present; never fetch "
                          "(git store only — other backends refuse)")
@@ -227,22 +227,37 @@ def _add_next_and_epic(sub) -> None:
                          "ranking alone")
     sp.add_argument("--front", action="store_true",
                     help="rank every active spec: executing, closest to done, priority, age")
-    sp.add_argument("--epic", help="an epic ID: the member specs ready to run now — "
+    sp.add_argument("--epic", help="a spec ID: its member specs ready to run now — "
                                    "dependencies done, approved or ready, not blocked")
     sp.add_argument("--limit", type=int, help="with --epic: at most N ready specs")
 
-    sp = sub.add_parser("epic", help="epics: specs whose tasks are member specs")
+    sp = sub.add_parser("epic", help="the historical alias of `link add`")
     esub = sp.add_subparsers(dest="epic_cmd")
-    ep = add_json(esub.add_parser("add", help="list a spec as an epic item and stamp `epic:` "
-                                              "on it"))
-    ep.add_argument("epic", help="the epic spec ID")
+    ep = add_json(esub.add_parser("add", help="list a spec as a member of another "
+                                              "(alias of `link add`)"))
+    ep.add_argument("epic", help="the composite spec ID")
     ep.add_argument("spec", help="the member spec ID")
     ep.add_argument("--after", help="comma-separated item labels this one waits for")
     ep.add_argument("--group", help="the `### N.` group (wave) to list it under; "
                                     "created when new")
     ep.add_argument("--label", help="the item label (default: the next S<n>)")
     ep.add_argument("--move", action="store_true",
-                    help="take a spec that belongs to another epic out of it first")
+                    help="accepted as a no-op: a spec may belong to several composites")
+
+    sp = sub.add_parser("link", help="composition: list a spec as a member, or remove it")
+    lsub = sp.add_subparsers(dest="link_cmd")
+    lp = add_json(lsub.add_parser("add", help="list a spec as a member of another"))
+    lp.add_argument("epic", help="the composite spec ID")
+    lp.add_argument("spec", help="the member spec ID")
+    lp.add_argument("--after", help="comma-separated item labels this one waits for")
+    lp.add_argument("--group", help="the `### N.` group (wave) to list it under; "
+                                    "created when new")
+    lp.add_argument("--label", help="the item label (default: the next S<n>)")
+    lp.add_argument("--move", action="store_true",
+                    help="accepted as a no-op: a spec may belong to several composites")
+    lp = add_json(lsub.add_parser("remove", help="take a spec out of a composite"))
+    lp.add_argument("epic", help="the composite spec ID")
+    lp.add_argument("spec", help="the member spec ID")
 
 
 def _add_inspection(sub) -> None:
@@ -407,6 +422,7 @@ DISPATCH: dict = {
     "discover": cmd_discover,
     "push": cmd_push,
     "epic": cmd_epic,
+    "link": cmd_epic,
     "validate": cmd_validate,
     "config": cmd_config,
     "release": cmd_release,

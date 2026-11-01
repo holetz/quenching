@@ -93,7 +93,7 @@ indented one inside a record, and replaces the key's indented continuation with 
 leaves no orphaned line behind. `tests/test_specs_scalar_breaks.py` holds one test per vector.
 
 The same refusal guards caller text that lands on **one line of the body**, where a break would
-forge the sections after it: `epic add --group` (a `### N.` heading) and `task --reason`
+forge the sections after it: `link add --group` (a `### N.` heading) and `task --reason`
 (`sp-bad-scalar`, exit 2, with `field:`), and `task --subject` (`sp-bad-subject`, exit 2).
 `tests/test_specs_line_inputs.py` holds one test per verb.
 

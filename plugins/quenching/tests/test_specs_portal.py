@@ -277,13 +277,15 @@ date: 2026-01-01
         self.backend.create_spec("plans", blocked)
         status, body = self.get("/api/human?refresh=1")
         self.assertEqual(status, 200)
-        self.assertEqual([m["label"] for m in body["epicMembers"]], ["S1", "S2"])
+        # S2 is an ordinary task inside the composite, not a member: only a `— spec:`
+        # item is a member.
+        self.assertEqual([m["label"] for m in body["epicMembers"]], ["S1"])
         self.assertEqual(body["epicMembers"][0]["id"], str(mid))
         self.assertEqual(len(body["blocked"]), 1)
         self.assertIn("needs a call", body["blocked"][0]["reasons"][0]["reason"])
         self.assertEqual(body["count"], len({str(m["id"]) for m in body["epicMembers"] if m["id"]}
                                             | {str(b["id"]) for b in body["blocked"]}
-                                            | {str(a["id"]) for a in body["awaitingApproval"]}) + 1)
+                                            | {str(a["id"]) for a in body["awaitingApproval"]}))
 
     def test_human_ignores_plain_specs_and_archived_epics_titled_like_the_mark(self):
         plain = """---

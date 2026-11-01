@@ -264,10 +264,10 @@ and discuss under. The spec on the branch stays the source of truth.
   `cq specs migrate --to azure` moves a `git` store onto Azure Boards the other way. It is a dry
   run unless `--write`, and it refuses a source that is not `git`. It creates every spec through
   the destination's own `create_spec` in dependency order over numeric `dependsOn`, so each
-  predecessor link is born with its item, then rewrites an epic's `— spec: #<id>` lines with a
+  predecessor link is born with its item, then rewrites a composite's `— spec: #<id>` lines with a
   second write. The destination must list no spec before a write (a tracker create is not
   idempotent) and nothing is created when a spec is unreadable, a reference does not resolve
-  (missing id, self, cycle, missing epic member) or a document passes `AZ_DESCRIPTION_MAX`; the
+  (missing id, self, cycle, missing member) or a document passes `AZ_DESCRIPTION_MAX`; the
   dry run reports the same conditions. Azure assigns new ids, so the printed id map is the only
   record of the old ones, and prose or other keys naming an old id are not scanned. A failure
   halfway leaves the created items listed in the report; no delete primitive exists. Every spec

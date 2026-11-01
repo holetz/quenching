@@ -170,6 +170,18 @@ verification: <VERIFICATION>
      `.agents/quenching/bin/cq specs task --spec <id> --check <task-id>` flips one mechanically — NEVER hand-edit the
      `[ ]` / `[x]` character. `--subject <line>` records the commit that implements it.
 
+     AN ITEM IS EITHER A TASK OR A MEMBER SPEC. A checkbox whose text carries
+     `— spec: #<id>` names another document; it is not work to do here. Its first token is
+     the label, and `after:` orders it against other labels:
+
+       - [ ] S1 Foundations — spec: #2138
+       - [ ] S2 Migration — spec: #2139 — after: S1
+
+     A spec with at least one spec item is a COMPOSITE and needs no `workItemType: epic`.
+     `### N.` headings are waves: one wave is a feature, more than one is an epic. A
+     composite may be a member of another, and a spec may belong to several. Its items'
+     state is derived from the members and never ticked here (`.agents/quenching/bin/cq specs link add|remove`).
+
      A checkbox MAY carry indented metadata lines directly beneath it:
 
        - [ ] 3.2 Add rate limiting to the auth middleware

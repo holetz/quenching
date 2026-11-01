@@ -1,7 +1,7 @@
 ---
 name: quenching-specs-orchestrate
 description: "Run an epic or a list of specs through the orchestrator agent. Use for \"orchestrate this epic\", \"run these specs in waves\". Not for: ONE spec → /quenching-specs-execute; ranking → /quenching-specs-triage; rounds → /quenching-specs-autopilot."
-argument-hint: "[epic-id | spec-id ...] [--autonomous]"
+argument-hint: "[composite-id | spec-id ...] [--autonomous]"
 allowed-tools: Bash(.agents/quenching/bin/cq:*), Bash(.agents/quenching/bin/cq.cmd:*), Read, Agent, Task
 ---
 
@@ -11,7 +11,8 @@ allowed-tools: Bash(.agents/quenching/bin/cq:*), Bash(.agents/quenching/bin/cq.c
 
 **Launcher.** On POSIX the skill calls `cq`; on Windows it calls `cq.cmd`, the sibling the deploy installs beside `bin/cq`.
 
-**Input**: `$ARGUMENTS` — an epic id or a list of spec ids, and optionally `--autonomous`. Empty or ambiguous → run
+**Input**: `$ARGUMENTS` — a composite id (any spec whose `## Tasks` names members) or a list of spec
+ids, and optionally `--autonomous`. Empty or ambiguous → run
 `.agents/quenching/bin/cq specs list --json` and ask which on a decision sheet ([questions.md](.agents/quenching/assets/references/specs-develop/questions.md) §The four shared mechanics §1).
 
 This command is a launcher. The protocol (waves, routing, budgets, acceptance, audit) lives in the
@@ -22,7 +23,7 @@ This command is a launcher. The protocol (waves, routing, budgets, acceptance, a
 ### 1. Resolve the set
 Resolve `cq` per [align/tool-resolution.md](.agents/quenching/assets/references/align/tool-resolution.md)
 §Resolving the tool; branch on the exit code. Confirm each id exists with `.agents/quenching/bin/cq specs show --spec <id> --json`.
-**Done when:** the epic id or the list of spec ids is verified to exist.
+**Done when:** the composite id or the list of spec ids is verified to exist.
 
 ### 2. Check who can run alone
 Read `.agents/quenching/bin/cq config show --effective --json` once and take the `shared.autonomy.runAloneUpTo`,

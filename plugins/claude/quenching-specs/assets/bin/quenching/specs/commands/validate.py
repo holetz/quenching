@@ -13,8 +13,9 @@ from quenching.specs.commands.output import Emitter, front_fields, read_one
 from quenching.specs.parse import PHASES
 from quenching.specs.members import origin_url, own_repo, read_members
 from quenching.specs.parse.deps import dep_findings, deps_of, find_cycle, find_cycle_through
-from quenching.specs.parse.epics import (claim_findings, epic_findings, epic_ref, is_epic,
-                                         is_remote, parse_items)
+from quenching.specs.parse.epics import (composition_cycle, composition_findings,
+                                         deprecation_findings, has_links, is_remote,
+                                         parse_items)
 from quenching.specs.parse.text import body_after_frontmatter
 from quenching.specs.parse.sections import (duplicate_headings, gate_report, parse_impact_standards, ready_report,
                                             section_state, stray_headings)
@@ -252,27 +253,29 @@ BY_CODE_SPECS_SHOWN = 6
 
 
 def epic_sweep(backend: SpecBackend, read: dict, root: str | None = None) -> list[dict]:
-    """The epic findings for the specs a sweep already read (`read`: id -> info).
+    """The composition findings for the specs a sweep already read (`read`: id -> info).
 
     Only an id the sweep did not read — a member outside a narrowed `--spec`, or one in another
     repository's store — costs one more `read_specs` call per store, so a full sweep of local
     members adds no reads at all. A reference-form `epic:` on a member is never read."""
     wanted: set[str] = set()
     for info in read.values():
-        fm = info["frontmatter"]
-        if is_epic(fm):
-            wanted.update(str(i["spec"]) for i in parse_items(info) if i["spec"])
-        elif epic_ref(fm) and not is_remote(epic_ref(fm)):
-            wanted.add(epic_ref(fm))
+        wanted.update(str(i["spec"]) for i in parse_items(info) if i["spec"])
     missing = sorted(wanted - set(read))
     got, unreadable = read_members(backend, missing, root) if missing else ({}, set())
     known = {**read, **got}
     out: list[dict] = []
     self_repo = own_repo(origin_url(root)) if root else None
     for info in read.values():
-        if is_epic(info["frontmatter"]):
-            out.extend(epic_findings(info, known, unreadable, self_repo))
-        out.extend(claim_findings(info, known, self_repo))
+        if has_links(info):
+            out.extend(composition_findings(info, known, unreadable, self_repo))
+        out.extend(deprecation_findings(info))
+    cycle = composition_cycle(known)
+    if cycle:
+        out.append({"code": "sp-link-member-cycle", "severity": "error",
+                    "message": f"composition cycle {' -> '.join(cycle)}",
+                    "spec": cycle[0], "cycle": cycle,
+                    "remedy": "remove one member link in the reported cycle"})
     return out
 
 

@@ -9,7 +9,7 @@ from quenching.specs.commands.read import _next_phase
 from quenching.specs.parse import PHASES
 from quenching.specs.commands.epic import pr_states
 from quenching.specs.members import read_members
-from quenching.specs.parse.epics import is_epic, open_items, parse_items
+from quenching.specs.parse.epics import open_items, parse_items
 from quenching.specs.parse.fields import set_frontmatter_key
 from quenching.specs.parse.text import body_after_frontmatter
 from quenching.specs.parse.sections import duplicate_headings, gate_report, section_state
@@ -104,23 +104,25 @@ def cmd_promote(args, root: str, out: Emitter) -> int:
         # the reason into `## Outcome`; it is therefore a truthful closed task here, unlike
         # `[!]`, which remains open and still refuses a `done` archive.
         open_tasks = [t for t in info["tasks"] if not t["checked"]]
-        if is_epic(info["frontmatter"]):
-            # Epic items are never ticked: what is open is what the members have not finished.
-            ids = [i["spec"] for i in parse_items(info) if i["spec"]]
+        ids = [i["spec"] for i in parse_items(info) if i["spec"]]
+        total_items = len(info["tasks"]) + len(ids)
+        if ids:
+            # A composite's spec items are never ticked: what is open is what the members have
+            # not finished. Ordinary tasks in the same document stay in the count.
             members, unreadable = read_members(backend, ids, root)
-            open_tasks = [{"id": i["label"], "text": f"{i['label']} {i['title']}",
-                           "state": i["status"]}
-                          for i in open_items(info, members, pr_states(members, root),
-                                              unreadable)]
+            open_tasks += [{"id": i["label"], "text": f"{i['label']} {i['title']}",
+                            "state": i["status"]}
+                           for i in open_items(info, members, pr_states(members, root),
+                                               unreadable)]
         if outcome == "done" and open_tasks and not args.force:
             out.emit(args.json,
                      {"ok": False, "code": "sp-open-tasks", "id": info["id"],
-                      "open": len(open_tasks), "total": len(info["tasks"]),
+                      "open": len(open_tasks), "total": total_items,
                       "openTasks": [{"id": t["id"], "text": t["text"], "state": t["state"]}
                                     for t in open_tasks],
-                      "message": f"{len(open_tasks)} of {len(info['tasks'])} tasks still open — "
+                      "message": f"{len(open_tasks)} of {total_items} tasks still open — "
                              f"pass --force, or --outcome abandoned"},
-                     f"refused: {len(open_tasks)} of {len(info['tasks'])} tasks still open in "
+                     f"refused: {len(open_tasks)} of {total_items} tasks still open in "
                      f"'{info['id']}'\n" +
                      "\n".join(f"  [{t['state']}] {t['text'][:70]}" for t in open_tasks[:8]) +
                      "\n  pass --force to archive anyway, or --outcome abandoned")

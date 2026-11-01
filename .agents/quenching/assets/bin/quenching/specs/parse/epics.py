@@ -1,92 +1,86 @@
-"""Epics — a spec whose `## Tasks` items reference member specs, derived and never ticked.
+"""Composition — a spec whose `## Tasks` items may name member specs, derived and never ticked.
 
-Pure derivation, no backend and no I/O: the caller hands over the epic's `info` and the members'
-`info` rows it read, and gets the state back. That is what keeps one answer across the memory
-fake, the git store and the tracker backends.
+Pure derivation, no backend and no I/O: the caller hands over the composite's `info` and the
+members' `info` rows it read, and gets the state back. That is what keeps one answer across the
+memory fake, the git store and the tracker backends.
 
-An epic item reads `- [ ] S2 Title — spec: #1202 — after: S1,S3`; a member kept in another
+A spec item reads `- [ ] S2 Title — spec: #1202 — after: S1,S3`; a member kept in another
 repository's store reads `— spec: <owner>/<repo>#<id>`, and its key keeps that form (owner and
-repo lower-cased) so it never collides with a local id. The `### N.` headings above
-the items are its groups (waves). The item's state is DERIVED from the member document: done when
-the member is archived with `outcome: done` (and, when its PR is known, merged: `unmerged`
-otherwise), blocked when one of its tasks is `[!]`. The box
-written in the epic is never read as state, which is why `task` refuses epic items."""
+repo lower-cased) so it never collides with a local id. The `### N.` headings above the items
+are its waves. The item's state is DERIVED from the member document: done when the member is
+archived with `outcome: done` (and, when its PR is known, merged: `unmerged` otherwise),
+blocked when one of its tasks is `[!]`. The box written in the composite is never read as
+state, which is why `task` refuses a spec item.
+
+Composition is a PROPERTY, not a type: any spec with at least one spec item is a composite,
+may nest, and may belong to several composites. `workItemType: epic` no longer defines it."""
 from __future__ import annotations
 
 import re
 
+from quenching.specs.parse.refs import is_remote, local_key, member_key, split_ref
 from quenching.specs.parse.sections import ready_report
-from quenching.specs.parse.tasks import task_progress
+from quenching.specs.parse.tasks import SPEC_REF_RE, TAIL_RE, task_progress
 from quenching.specs.parse.text import HEADING_RE
 
-EPIC_TYPE = "epic"
 # The 100-sub-issue ceiling a GitHub parent card carries (to be confirmed); `validate` warns.
 MAX_ITEMS = 100
 
-_SPEC_RE = re.compile(r"(?:^|\s)—\s*spec\s*:\s*#?([^\s—]+)", re.IGNORECASE)
-_AFTER_RE = re.compile(r"(?:^|\s)—\s*after\s*:\s*([^—]*?)\s*(?=—|$)", re.IGNORECASE)
-_TAIL_RE = re.compile(r"\s—\s*(?:spec|after|blocked|descoped)\s*:.*$", re.IGNORECASE)
 _LABEL_NUM_RE = re.compile(r"(\d+)$")
-_REF_RE = re.compile(r"^([A-Za-z0-9_.-]+)/([A-Za-z0-9_.-]+)#(\w[\w.-]*)$")
 
 
-def member_key(raw: str) -> str:
-    """The member key an item's `spec:` value names: a bare id for this store, else
-    `owner/repo#id` with owner and repo lower-cased."""
-    raw = raw.strip().lstrip("#")
-    m = _REF_RE.match(raw)
-    return f"{m.group(1).lower()}/{m.group(2).lower()}#{m.group(3)}" if m else raw
-
-
-def split_ref(key: str) -> tuple[str | None, str]:
-    """`("owner/repo", id)` for a cross-repository key, `(None, key)` for a local one."""
-    m = _REF_RE.match(str(key))
-    return (f"{m.group(1).lower()}/{m.group(2).lower()}", m.group(3)) if m else (None, str(key))
-
-
-def local_key(key: str, self_repo: str | None) -> str:
-    """The bare id for a reference naming this repository; `key` unchanged otherwise."""
-    repo, spec_id = split_ref(key)
-    return spec_id if repo is not None and repo == self_repo else key
-
-
-def is_remote(key: str) -> bool:
-    return split_ref(key)[0] is not None
-
-
-def is_epic(fm: dict) -> bool:
-    return str(fm.get("workItemType", "")).strip().lower() == EPIC_TYPE
+def has_links(info: dict) -> bool:
+    """Whether this spec names at least one member — i.e. it is a composite."""
+    return bool(parse_items(info))
 
 
 def epic_ref(fm: dict) -> str | None:
-    """The `epic:` key a member carries, as a bare id string."""
+    """The `epic:` key a member carries, as a bare id string. DEPRECATED and ignored: the
+    link lives in the composite's `## Tasks`, read from both ends by derivation."""
     v = str(fm.get("epic") or "").strip().lstrip("#").strip()
     return v or None
 
 
 def group_titles(info: dict) -> list[str]:
     """The `### ` headings under `## Tasks`, in order; the first one is group 1."""
-    sec = info["sections"].get("Tasks")
+    sections = info.get("sections")
+    sec = sections.get("Tasks") if isinstance(sections, dict) else None
     heads = [HEADING_RE.match(line) for line in (sec["lines"] if sec else [])]
     return [m.group(2).strip() for m in heads if m and len(m.group(1)) == 3]
 
 
+def _link_rows(info: dict) -> list[dict]:
+    """The rows that are spec items. `info["links"]` is the derivation's split; a hand-built
+    info falls back to the rows that carry a spec reference."""
+    rows = info.get("links")
+    if rows is not None:
+        return rows
+    return [t for t in info.get("tasks", []) if t.get("kind") == "link" or t.get("spec")
+            or SPEC_REF_RE.search(str(t.get("text") or ""))]
+
+
 def parse_items(info: dict) -> list[dict]:
-    """Every `## Tasks` line of an epic as an item: label, title, member id, `after` labels, group."""
+    """Every spec item of a composite: label, title, member id, `after` labels, wave."""
     titles = group_titles(info)
     items = []
-    for t in info["tasks"]:
-        body = t["text"]
-        head = _TAIL_RE.sub("", body).strip()
-        label, _, title = head.partition(" ")
-        sm, am = _SPEC_RE.search(body), _AFTER_RE.search(body)
-        group = t["section"]
+    for t in _link_rows(info):
+        body = str(t.get("text") or "")
+        label = t.get("label")
+        title = t.get("title")
+        if label is None:
+            head = TAIL_RE.sub("", body).strip()
+            label, _, title = head.partition(" ")
+        spec = t.get("spec")
+        if spec is None:
+            m = SPEC_REF_RE.search(body)
+            spec = member_key(m.group(1)) if m else None
+        group = t.get("section", 0)
         items.append({
-            "label": label, "title": title.strip(), "spec": member_key(sm.group(1)) if sm else None,
-            "after": [a.strip() for a in am.group(1).split(",") if a.strip()] if am else [],
+            "label": label, "title": (title or "").strip(), "spec": spec,
+            "after": list(t.get("after") or []),
             "group": group, "groupTitle": titles[group - 1] if 0 < group <= len(titles) else None,
-            "writtenState": t["state"], "lineno": t["lineno"],
-            "blockEndLineno": t["blockEndLineno"],
+            "writtenState": t.get("state", " "), "lineno": t.get("lineno"),
+            "blockEndLineno": t.get("blockEndLineno"),
         })
     return items
 
@@ -151,12 +145,50 @@ def find_cycle(items: list[dict]) -> list[str] | None:
     return None
 
 
+def composition_cycle(infos: dict[str, dict]) -> list[str] | None:
+    """One member cycle across composites (`A -> B -> A`), or `None`.
+
+    The graph is composite id -> the local ids its spec items name. A cross-repository key is
+    not followed: its store is read by `read_members`, not by this sweep. `find_cycle` catches
+    the `after:` cycle inside one document; this one catches the document-level loop."""
+    graph: dict[str, list[str]] = {}
+    for sid, info in infos.items():
+        if info is None:
+            continue
+        graph[str(sid)] = [str(i["spec"]) for i in parse_items(info)
+                           if i["spec"] and not is_remote(str(i["spec"]))]
+    color: dict[str, int] = {}
+    stack: list[str] = []
+    for n in graph:
+        if color.get(n, 0):
+            continue
+        color[n] = 1
+        stack.append(n)
+        frames = [iter(graph[n])]
+        while frames:
+            for d in frames[-1]:
+                if d not in graph:
+                    continue
+                state = color.get(d, 0)
+                if state == 1:
+                    return stack[stack.index(d):] + [d]
+                if state == 0:
+                    color[d] = 1
+                    stack.append(d)
+                    frames.append(iter(graph[d]))
+                    break
+            else:
+                color[stack.pop()] = 2
+                frames.pop()
+    return None
+
+
 def derive_epic(info: dict, members: dict[str, dict | None],
                 pr_state: dict[str, str] | None = None,
                 unreadable: set[str] | None = None) -> dict:
-    """The epic's whole derived state. `members` maps a member key to its `info`, or `None`;
-    `unreadable` names the keys whose store could not be read, which derive `unreadable` and
-    never satisfy a dependency.
+    """The composite's whole derived state. `members` maps a member key to its `info`, or
+    `None`; `unreadable` names the keys whose store could not be read, which derive
+    `unreadable` and never satisfy a dependency.
     `pr_state` maps a member id to its PR's state (`MERGED`, `OPEN`, `CLOSED`); the derivation
     stays pure, the caller does the lookup. `None` means no lookup was made; a dict (even empty)
     means it was, and a member with a `pr:` record absent from it is `unverified`."""
@@ -190,6 +222,10 @@ def derive_epic(info: dict, members: dict[str, dict | None],
     return {"items": items, "groups": _groups(info, items), "cycle": cycle,
             "criticalPath": [] if cycle else _critical_path(items, by_label),
             "ready": [i for i in items if i["status"] in ("ready", "in-progress")]}
+
+
+# The old name stays the public one for backends and the portal; composition is the concept.
+derive_composition = derive_epic
 
 
 def _groups(info: dict, items: list[dict]) -> list[dict]:
@@ -245,6 +281,19 @@ def _critical_path(items: list[dict], by_label: dict[str, dict]) -> list[str]:
     return path
 
 
+def presentation_level(info: dict) -> str:
+    """`story`, `feature` or `epic` — a projection of the document's structure.
+
+    A spec with no member is a story. A composite whose spec items sit in one wave (or in no
+    `###` group at all) is a feature: the middle level, a compact group of stories and tasks.
+    A composite whose spec items span two or more waves is an epic: each wave is a feature, and
+    an epic is more than one of them. Never stored, never a work-item type."""
+    items = parse_items(info)
+    if not items:
+        return "story"
+    return "epic" if len({i["group"] for i in items}) > 1 else "feature"
+
+
 def next_label(items: list[dict]) -> str:
     nums = [int(m.group(1)) for i in items if (m := _LABEL_NUM_RE.search(i["label"]))]
     return f"S{max(nums, default=0) + 1}"
@@ -259,18 +308,18 @@ def render_item(label: str, title: str, spec_id: str, after: list[str]) -> str:
 def open_items(info: dict, members: dict[str, dict | None],
                pr_state: dict[str, str] | None = None,
                unreadable: set[str] | None = None) -> list[dict]:
-    """Items that keep an epic from being archived as `done`. With `pr_state` (the caller's PR
-    lookup) a member whose PR is not merged, or could not be read, stays open."""
+    """Items that keep a composite from being archived as `done`. With `pr_state` (the
+    caller's PR lookup) a member whose PR is not merged, or could not be read, stays open."""
     return [i for i in derive_epic(info, members, pr_state, unreadable)["items"]
             if i["status"] != "done"]
 
 
-def epic_findings(info: dict, members: dict[str, dict | None],
-                  unreadable: set[str] | None = None,
-                  self_repo: str | None = None) -> list[dict]:
-    """Finding rows for ONE epic: missing members, divergence, unknown dependencies, cycles.
-    A cross-repository member carries no back-reference, and a store that could not be read
-    is a warning, never a missing member."""
+def composition_findings(info: dict, members: dict[str, dict | None],
+                         unreadable: set[str] | None = None,
+                         self_repo: str | None = None) -> list[dict]:
+    """Finding rows for ONE composite: missing members, divergence, unknown dependencies,
+    cycles, and the retired `epic:` key. A cross-repository member carries no back-reference,
+    and a store that could not be read is a warning, never a missing member."""
     eid = str(info["id"])
     items = parse_items(info)
     rows: list[dict] = []
@@ -279,84 +328,70 @@ def epic_findings(info: dict, members: dict[str, dict | None],
         rows.append({"code": code, "severity": severity, "message": message, "spec": eid,
                      **extra})
 
-    if not items:
-        add("sp-epic-empty", "warn", f"epic {eid} lists no member specs under ## Tasks")
     if len(items) > MAX_ITEMS:
-        add("sp-epic-too-large", "warn",
-            f"epic {eid} has {len(items)} items; a GitHub parent card carries at most "
-            f"{MAX_ITEMS} sub-issues — split the epic")
+        add("sp-link-too-large", "warn",
+            f"spec {eid} has {len(items)} items; a GitHub parent card carries at most "
+            f"{MAX_ITEMS} sub-issues — split the composition")
     labels: set[str] = set()
     for i in items:
         if i["label"] in labels:
-            add("sp-epic-duplicate-label", "error",
-                f"epic {eid}: label `{i['label']}` is used twice", label=i["label"])
+            add("sp-link-duplicate-label", "error",
+                f"spec {eid}: label `{i['label']}` is used twice", label=i["label"])
         labels.add(i["label"])
         if i["writtenState"] != " ":
-            add("sp-epic-manual-tick", "warn",
-                f"epic {eid}: item {i['label']} is written `[{i['writtenState']}]` — epic item "
+            add("sp-link-manual-tick", "warn",
+                f"spec {eid}: item {i['label']} is written `[{i['writtenState']}]` — item "
                 f"state is derived from the member; leave the box open", label=i["label"])
     seen: dict[str, str] = {}
     for i in items:
         if not i["spec"]:
-            add("sp-epic-item-unlinked", "error",
-                f"epic {eid}: item {i['label']} has no `— spec: #<id>`", label=i["label"])
+            add("sp-link-item-unlinked", "error",
+                f"spec {eid}: item {i['label']} has no `— spec: #<id>`", label=i["label"])
             continue
         if i["spec"] in seen:
-            add("sp-epic-duplicate-member", "error",
-                f"epic {eid}: spec {i['spec']} is listed by {seen[i['spec']]} and "
+            add("sp-link-duplicate-member", "error",
+                f"spec {eid}: spec {i['spec']} is listed by {seen[i['spec']]} and "
                 f"{i['label']}", member=i["spec"])
         seen[i["spec"]] = i["label"]
         for d in i["after"]:
             if d not in labels:
-                add("sp-epic-unknown-dependency", "error",
-                    f"epic {eid}: item {i['label']} comes after `{d}`, which is not an item",
+                add("sp-link-unknown-dependency", "error",
+                    f"spec {eid}: item {i['label']} comes after `{d}`, which is not an item",
                     label=i["label"], dependency=d)
         if i["spec"] in (unreadable or ()):
-            add("sp-epic-member-unreadable", "warn",
-                f"epic {eid}: item {i['label']} references {i['spec']}, whose store could not "
+            add("sp-link-member-unreadable", "warn",
+                f"spec {eid}: item {i['label']} references {i['spec']}, whose store could not "
                 f"be read", label=i["label"], member=i["spec"])
             continue
         m = members.get(i["spec"])
         if m is None:
-            add("sp-epic-missing-member", "error",
-                f"epic {eid}: item {i['label']} references spec {i['spec']}, which does not "
+            add("sp-link-missing-member", "error",
+                f"spec {eid}: item {i['label']} references spec {i['spec']}, which does not "
                 f"exist", label=i["label"], member=i["spec"])
             continue
-        if is_epic(m["frontmatter"]):
-            add("sp-epic-nested", "error",
-                f"epic {eid}: member {i['spec']} is itself an epic — one level only",
-                member=i["spec"])
-        if is_remote(local_key(i["spec"], self_repo)):
-            continue
-        back = epic_ref(m["frontmatter"])
-        if back != eid:
-            add("sp-epic-divergent", "error",
-                f"epic {eid} lists spec {i['spec']}, but that spec's `epic:` is "
-                f"{back or 'unset'}", member=i["spec"],
-                remedy=f"cq specs epic add {eid} {i['spec']}")
     cycle = find_cycle(items)
     if cycle:
-        add("sp-epic-cycle", "error",
-            f"epic {eid}: dependency cycle {' -> '.join(cycle)}", cycle=cycle)
+        add("sp-link-cycle", "error",
+            f"spec {eid}: dependency cycle {' -> '.join(cycle)}", cycle=cycle)
     return rows
 
 
-def claim_findings(info: dict, epics: dict[str, dict | None],
-                   self_repo: str | None = None) -> list[dict]:
-    """The member's side: its `epic:` names an epic that is absent, not an epic, or omits it."""
+# The old name stays callable for the portal and any third-party caller.
+epic_findings = composition_findings
+
+
+def deprecation_findings(info: dict) -> list[dict]:
+    """The retired back-reference: a `epic:` key on a member is ignored by derivation and
+    reported once, as a warning, so the document is not left carrying a second truth."""
     ref = epic_ref(info["frontmatter"])
-    if not ref or is_remote(ref):
+    if not ref:
         return []
-    sid, parent = str(info["id"]), epics.get(ref)
-    if parent is None:
-        code, msg = "sp-epic-orphan", f"spec {sid} declares `epic: {ref}`, which does not exist"
-    elif not is_epic(parent["frontmatter"]):
-        code, msg = ("sp-epic-not-an-epic", f"spec {sid} declares `epic: {ref}`, which is not a "
-                                             f"`workItemType: epic` spec")
-    elif sid not in {local_key(str(i["spec"]), self_repo) for i in parse_items(parent)}:
-        code, msg = "sp-epic-divergent", (f"spec {sid} declares `epic: {ref}`, but that epic "
-                                          f"does not list it")
-    else:
-        return []
-    return [{"code": code, "severity": "error", "message": msg, "spec": sid,
-             "remedy": f"cq specs epic add {ref} {sid}"}]
+    sid = str(info["id"])
+    return [{"code": "sp-epic-key-deprecated", "severity": "warn",
+             "message": f"spec {sid} carries `epic: {ref}` — composition is read from the "
+                        f"composite's ## Tasks; the back-reference is ignored",
+             "spec": sid, "remedy": "remove the `epic:` key"}]
+
+
+# The old name stays callable for the sweep of an older caller.
+claim_findings = deprecation_findings

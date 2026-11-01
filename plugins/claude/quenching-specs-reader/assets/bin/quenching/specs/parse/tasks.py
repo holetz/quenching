@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import re
 
+from quenching.specs.parse.refs import member_key
 from quenching.specs.parse.sections import parse_sections
 from quenching.specs.parse.text import HEADING_RE, mask_comments
 
@@ -13,6 +14,15 @@ from quenching.specs.parse.text import HEADING_RE, mask_comments
 # `- [ ]` / `- [x]` / `- [!]` — the third is a BLOCKED task, visible and human-legible,
 # which is what replaced v1's hidden five-attempt counter in `.specs.json`.
 CHECKBOX_RE = re.compile(r"^(\s*)-\s\[( |x|X|!)\]\s+(.*)$")
+# THE ONE ITEM GRAMMAR. A checkbox whose text carries `— spec: #<id>` (or
+# `— spec: <owner>/<repo>#<id>`) is a SPEC ITEM: it names another document instead of
+# describing work to do here. Everything else is a TASK item. `after:` is read on both:
+# on a task it orders work inside this document, on a spec item it orders the member.
+SPEC_REF_RE = re.compile(r"(?:^|\s)—\s*spec\s*:\s*#?([^\s—]+)", re.IGNORECASE)
+AFTER_RE = re.compile(r"(?:^|\s)—\s*after\s*:\s*([^—]*?)\s*(?=—|$)", re.IGNORECASE)
+# Everything from the first reserved tail (`— spec:`, `— after:`, `— blocked:`,
+# `— descoped:`) on, which is metadata rather than the item's title.
+TAIL_RE = re.compile(r"\s—\s*(?:spec|after|blocked|descoped)\s*:.*$", re.IGNORECASE)
 CHECKBOX_LOOSE_RE = re.compile(r"^\s*-\s*\[.*?\]")   # looks like a checkbox (malformed detection)
 TASK_ID_RE = re.compile(r"^(\d+(?:\.\d+)*)\b")
 TASK_META_KEYS = ("files", "pattern", "cwd", "verify", "constraint", "subject", "commit")
@@ -90,6 +100,10 @@ def parse_tasks(text: str) -> list[dict]:
     number, the `[P]` marker, the optional indented metadata (`files`/`pattern`/`verify`),
     and — for a blocked task — the reason written right in the line.
 
+    Each row also carries `kind`: `task` for a checkbox that describes work, `link` for one
+    that names another spec (`— spec: #<id>`). A link carries its `label` (`S1`), its clean
+    `title`, the member key in `spec` and its `after:` labels; both kinds carry `after`.
+
     `state` is `" "` (open), `"x"` (done) or `"!"` (blocked). The blocked marker is
     deliberately IN THE FILE rather than in sidecar state: it is what a human reads when
     they come to unblock it, and v1's hidden attempt counter was read by nobody."""
@@ -116,6 +130,18 @@ def parse_tasks(text: str) -> list[dict]:
         rest = body[idm.end():].lstrip() if idm else body
         parallel = bool(PARALLEL_RE.match(rest))
         blocked = BLOCKED_REASON_RE.search(body)
+        spec_m = SPEC_REF_RE.search(body)
+        kind = "link" if spec_m else "task"
+        label = title = None
+        spec = None
+        after: list[str] = []
+        if kind == "link":
+            head = TAIL_RE.sub("", body).strip()
+            label, _, title = head.partition(" ")
+            spec = member_key(spec_m.group(1))
+        am = AFTER_RE.search(body)
+        if am:
+            after = [a.strip() for a in am.group(1).split(",") if a.strip()]
         files: list[str] = []
         pattern = cwd = verify = subject = commit = None
         subject_off = commit_off = last_meta_off = None
@@ -165,6 +191,15 @@ def parse_tasks(text: str) -> list[dict]:
             "blocked": state == "!",
             "reason": blocked.group(1) if blocked else None,
             "text": body,
+            # THE SPLIT THE REST OF THE TOOL READS. `kind` is `link` for an item that names
+            # another spec and `task` for one that describes work; `derive_info` puts the
+            # first in `info["links"]` and the second in `info["tasks"]`, so a composite's
+            # progress can count both without any caller re-parsing the line.
+            "kind": kind,
+            "label": label,
+            "title": title,
+            "spec": spec,
+            "after": after,
             "lineno": base + i,
             "section": section,
             "parallel": parallel,

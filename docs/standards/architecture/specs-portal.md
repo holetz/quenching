@@ -107,10 +107,11 @@ The read payloads the page consumes are fixed field by field:
 - `GET /api/specs/<id>` answers `{spec, sections, tasks, records, timeline, ready, executeCommand}`.
   `sections` are `{heading, state, body}` with `state` in `present|absent`; `tasks` carry
   `checked, blocked, reason, verify, commit`; `ready` is `{ok, missing[]}`.
-- `GET /api/epics` answers `{supported, epics[]}`. An epic carries `id, title, items[], groups[],
-  cycle, criticalPath, children[], done, total`; an item carries `{label, title, spec, after,
-  group, groupTitle, waitingOn, status}`. Dependencies and the critical path are the server's
-  `derive_epic`, never the page's.
+- `GET /api/epics` answers `{supported, epics[]}`. The route keeps its historical name; a row is
+  one composite — any spec whose `## Tasks` names a member — and carries `id, title, level, items[],
+  groups[], cycle, criticalPath, children[], done, total`; an item carries `{label, title, spec,
+  after, group, groupTitle, waitingOn, status}`. `level` is the derived `story|feature|epic`.
+  Dependencies and the critical path are the server's `derive_epic`, never the page's.
 - `GET /api/human` answers `{fetchedAt, count, epicMembers[], blocked[], awaitingApproval[]}`.
   The rows carry ids and reasons, not dates; the page reads age from the matching spec row.
 - `GET /api/config` answers `{writable, readOnlyReason, ttlSeconds, stages[], headings[],
@@ -239,9 +240,9 @@ and fills when the read lands; the page shows the same loading line on navigatio
 built node by node: headings, lists, task boxes, code, quotes, tables, rules, links (only
 `http(s)` survives `safeHref`), bold, italic and strike.
 
-The epics view draws one panel per epic with a progress ring, a health label derived from
-`cycle`, `criticalPath` and stage counts, the next step, the wave groups (collapsible) and the
-member rows. The Gantt (`#/gantt`) draws the server's `schedule`: SVG built with
+The composition view draws one panel per composite with a progress ring, its derived level, a
+health label derived from `cycle`, `criticalPath` and stage counts, the next step, the wave groups
+(collapsible) and the member rows. The Gantt (`#/gantt`) draws the server's `schedule`: SVG built with
 `createElementNS`, three zooms (`day`, `week`, `month`), a “Hoje” control, dependency and critical
 path toggles, a legend, a `<caption>` table with the same data, and no date arithmetic beyond
 placing the given `earliestStart`/`earliestFinish`. Its state lives in the URL

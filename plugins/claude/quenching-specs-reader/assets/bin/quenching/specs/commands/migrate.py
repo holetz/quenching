@@ -33,7 +33,6 @@ from quenching.specs.config import BRANCH_CONFIG_KEYS, CONFIG_FILE, load_config
 from quenching.specs.commands.deps import _flow
 from quenching.specs.parse import FIELD_KEYS, derive_info, strip_frontmatter_keys
 from quenching.specs.parse.deps import deps_of
-from quenching.specs.parse.epics import is_epic
 from quenching.specs.parse.fields import set_frontmatter_key
 from quenching.specs.parse.records import spec_records
 from quenching.specs.parse.tasks import task_progress
@@ -199,7 +198,7 @@ def azure_order(items: list[tuple[int, str, str]]) -> tuple[list[int], list[dict
             else:
                 deps.add(int(dep))
         waits[spec_id] = deps
-        if is_epic(fm):
+        if _MEMBER_RE.search(text):
             unresolved += [{"id": spec_id, "kind": "missing-member", "ref": int(m.group(2))}
                            for m in _MEMBER_RE.finditer(text) if int(m.group(2)) not in ids]
     order: list[int] = []
@@ -228,7 +227,7 @@ def remap_text(text: str, idmap: dict[int, int], *, members: bool = True) -> str
         value = str(fm.get(key) or "").strip().lstrip("#")
         if value.isdigit() and int(value) in idmap:
             text = set_frontmatter_key(text, key, str(idmap[int(value)]))
-    if members and is_epic(fm):
+    if members and _MEMBER_RE.search(text):
         text = _MEMBER_RE.sub(lambda m: m.group(1) + str(idmap.get(int(m.group(2)),
                                                                     m.group(2))), text)
     return text

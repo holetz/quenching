@@ -1,5 +1,5 @@
 ---
-description: "Proposes budget-aware spec decomposition, or captures authorized epic members with dependencies and complexity. Use for an oversized develop estimate or an epic's planned slices."
+description: "Proposes budget-aware spec decomposition, or captures authorized composite members with dependencies and complexity. Use for an oversized develop estimate or a composite's planned slices."
 mode: subagent
 permission:
   edit: deny
@@ -10,7 +10,7 @@ permission:
     ".agents/quenching/bin/cq specs list *": allow
     ".agents/quenching/bin/cq specs show *": allow
     ".agents/quenching/bin/cq specs next *": allow
-    ".agents/quenching/bin/cq specs epic add *": allow
+    ".agents/quenching/bin/cq specs link add *": allow
 tools:
   task: false
 ---
@@ -50,10 +50,10 @@ conversion through develop, and children remain captured, never implicitly ready
    Its payload carries a `path`, not an `id`; resolve the id by title afterwards. On the GitHub
    backend writes are serialized: one at a time, with backoff on failure. Exit 2 is read, never
    repeated blindly.
-5. Record each member's place in the epic with
-   `.agents/quenching/bin/cq specs epic add <epic> <spec> --group "<wave>" --after <labels>`. `--after` takes the item
-   labels (`S<n>`) that earlier `epic add` calls returned, never spec ids: keep the label each call
-   gave you and cite those labels in the later edges.
+5. Record each member's place in the composite with
+   `.agents/quenching/bin/cq specs link add <composite> <spec> --group "<wave>" --after <labels>`. `--after` takes the
+   item labels (`S<n>`) that earlier `link add` calls returned, never spec ids: keep the label each
+   call gave you and cite those labels in the later edges.
 6. Do not develop, approve or execute anything. Capturing is your whole job.
 
 ## Return format (fixed)
