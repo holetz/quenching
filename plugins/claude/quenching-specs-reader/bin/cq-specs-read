@@ -35,10 +35,13 @@ import sys
 PLUGIN_ROOT = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 PACKAGE_ROOT = os.path.join(PLUGIN_ROOT, "assets", "bin")
 
-READ_VERBS = ("list", "status", "show", "section", "next", "config", "serve")
+READ_VERBS = ("list", "status", "show", "section", "next", "config", "artifact", "serve")
 WRITE_FLAGS = ("--write", "--fold")
 WRITE_METHODS = ("write_spec", "create_spec", "move_spec", "_store", "_write_api",
-                 "_set_state", "_set_type", "_link_artifact", "_link_new_artifacts")
+                 "_set_state", "_set_type", "_link_artifact", "_link_new_artifacts",
+                 "write_artifact", "remove_artifact")
+# The sub-verbs of `artifact` that write. `list` and `read` are the two the reader admits.
+ARTIFACT_WRITE_VERBS = ("write", "rm")
 ROOT_ENV = "QUENCHING_SPECS_ROOT"
 OK, REFUSED = 0, 2
 
@@ -51,6 +54,7 @@ Examples:
   cq-specs-read list --phase plans --lean --json
   cq-specs-read show --spec 1139 --json      one spec's map and its tasks
   cq-specs-read section 1139 Problem,Tasks --json
+  cq-specs-read artifact read --spec 1139 --name handoff.md --out h.md
 """
 
 
@@ -140,6 +144,14 @@ def main(argv: list[str]) -> int:
     if blocked:
         return refuse("sp-read-only",
                       f"{', '.join(blocked)} writes the spec; quenching-specs-reader is read-only",
+                      as_json)
+    # `artifact` is the one verb whose sub-verb decides: reading a handoff is a read, storing
+    # or deleting one is a store write. The sub-verb is `rest[1]` — every flag of `artifact`
+    # belongs to its sub-parser, so a valid invocation has no flag before it.
+    if verb == "artifact" and len(rest) > 1 and rest[1] in ARTIFACT_WRITE_VERBS:
+        return refuse("sp-read-only",
+                      f"`artifact {rest[1]}` writes the store; quenching-specs-reader is "
+                      f"read-only — `artifact list` and `artifact read` are the two it admits",
                       as_json)
     root = root or os.environ.get(ROOT_ENV) or os.getcwd()
     root = os.path.abspath(os.path.expanduser(root))
