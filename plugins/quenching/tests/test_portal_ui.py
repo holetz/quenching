@@ -314,6 +314,16 @@ class Live(unittest.TestCase):
             with self.subTest(needle=needle):
                 self.assertIn(needle, JS)
 
+    def test_each_lane_keeps_its_own_scroll_across_a_poll(self):
+        capture = JS[JS.index("function captureView()"):JS.index("function restoreView(")]
+        restore = JS[JS.index("function restoreView("):JS.index("let renderSeq")]
+        self.assertIn('$$(".col-body[data-lane]")', capture)
+        self.assertIn('lanes[el.getAttribute("data-lane")] = el.scrollTop', capture)
+        self.assertIn('main.classList.contains("is-board")', restore)
+        self.assertIn('el.scrollTop = v.lanes[el.getAttribute("data-lane")]', restore)
+        lane = JS[JS.index("function column(g, gi)"):JS.index("function copyCommand(")]
+        self.assertIn('"data-lane": key', lane)
+
     def test_the_event_centre_and_the_browser_notification_exist(self):
         for needle in ("function logEvent(", "function paintEventList(", "new Notification(",
                        "Notification.requestPermission", "openDrawer(first.id)"):

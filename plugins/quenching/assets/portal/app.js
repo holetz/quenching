@@ -1057,7 +1057,7 @@
           "aria-controls": collapsed ? null : id, on: { click: () => toggleCollapse(key) } },
           h("span", { class: "col-name" }, String(g.key)),
           h("span", { class: "count" }, g.specs.length))),
-      collapsed ? null : h("div", { id, class: "col-body" },
+      collapsed ? null : h("div", { id, class: "col-body", "data-lane": key },
         g.specs.length ? g.specs.map(card) : h("p", { class: "col-empty" }, "nada aqui")));
   }
   function copyCommand(id) {
@@ -1814,17 +1814,24 @@
   }
   function captureView() {
     const a = document.activeElement;
+    const lanes = {};
+    $$(".col-body[data-lane]").forEach((el) => { lanes[el.getAttribute("data-lane")] = el.scrollTop; });
     return {
       y: $("#main").scrollTop,
       key: a && a !== document.body ? a.getAttribute("data-fkey") : null,
       boardX: $(".board") ? $(".board").scrollLeft : 0,
+      lanes,
     };
   }
   function restoreView(v) {
     if (!v) return;
-    $("#main").scrollTop = v.y;
+    const main = $("#main");
+    main.scrollTop = v.y;
     const b = $(".board");
     if (b) b.scrollLeft = v.boardX;
+    if (v.lanes && main.classList.contains("is-board")) {
+      $$(".col-body[data-lane]").forEach((el) => { el.scrollTop = v.lanes[el.getAttribute("data-lane")] || 0; });
+    }
     if (v.key && (!document.activeElement || document.activeElement === document.body)) {
       const el = byKey(v.key);
       if (el) el.focus({ preventScroll: true });
