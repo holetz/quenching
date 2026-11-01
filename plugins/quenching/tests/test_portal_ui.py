@@ -36,6 +36,12 @@ def css_block(selector):
     return declared(match.group(1)) if match else {}
 
 
+def rule(selector):
+    """The body of the first rule whose selector is exactly `selector`."""
+    match = re.search(r"(?:^|\n)" + re.escape(selector) + r"\s*\{([^{}]*)\}", CSS)
+    return match.group(1) if match else ""
+
+
 WRITES = {"capture", "section", "approve", "reorder", "discovery", "chat", "push"}
 READS = {"specs", "epics", "human", "sessions", "schedule", "config", "projects", "search", "chat"}
 
@@ -359,6 +365,52 @@ class TokenBlock(unittest.TestCase):
         self.assertTrue(dark)
         self.assertTrue(auto)
         self.assertEqual(auto, dark)
+
+
+class Primitives(unittest.TestCase):
+    """The design system's generic pieces: icon base, heat action, stage mark and control edges."""
+
+    def test_every_variable_the_css_reads_is_declared(self):
+        declared_names = set(re.findall(r"--([\w-]+)\s*:", CSS))
+        read = set(re.findall(r"var\(--([\w-]+)", CSS))
+        self.assertTrue(read)
+        self.assertEqual(sorted(read - declared_names), [])
+
+    def test_the_icon_base_is_sixteen_pixels_of_current_color(self):
+        body = rule(".i")
+        for needle in ("width: 16px", "height: 16px", "fill: none", "stroke: currentColor",
+                       "stroke-width: 1.5", "stroke-linecap: round", "stroke-linejoin: round"):
+            with self.subTest(needle=needle):
+                self.assertIn(needle, body)
+
+    def test_the_heat_action_wears_the_accent_edge_and_the_tint(self):
+        self.assertIn("button.heat { background: transparent; color: var(--accent); border-color: var(--accent);", CSS)
+        self.assertIn("button.heat:hover { background: var(--heat-tint); }", CSS)
+
+    def test_the_stage_mark_is_an_eight_pixel_square_per_stage(self):
+        body = rule(".stage::before")
+        self.assertIn("width: 8px", body)
+        self.assertIn("height: 8px", body)
+        self.assertIn("background: var(--stage", body)
+        for stage in ("captured", "ready", "approved", "executing", "blocked", "review", "archived"):
+            with self.subTest(stage=stage):
+                self.assertIn(f'[data-stage="{stage}"] {{ --stage: var(--stage-{stage}); }}', CSS)
+
+    def test_every_control_borrows_the_control_line(self):
+        for selector in ("input[type=search], input[type=text], select, textarea", "button, .ghost", ".fchip"):
+            with self.subTest(selector=selector):
+                self.assertIn("var(--control-line)", rule(selector))
+
+    def test_disabled_is_neutral_not_a_faded_accent(self):
+        body = rule("button:disabled")
+        self.assertIn("background: var(--surface-2)", body)
+        self.assertIn("color: var(--muted)", body)
+        self.assertNotIn("opacity", body)
+
+    def test_tags_take_radius_zero_and_counters_the_pill(self):
+        self.assertIn("border-radius: var(--radius-0)", rule(".chip"))
+        self.assertIn("border-radius: var(--radius-pill)", rule(".count"))
+        self.assertIn("border-radius: var(--radius-pill)", rule(".col-count"))
 
 
 class Budget(unittest.TestCase):
