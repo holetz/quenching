@@ -143,12 +143,12 @@
       { "Workflows" = [
         "standards/workflows/index.md",
         "standards/workflows/agent-choice-catalogues.md",
-        "standards/workflows/epics.md",
         "standards/workflows/plan-artifacts.md",
         "standards/workflows/plan-git-record.md",
         "standards/workflows/plan-lifecycle.md",
         "standards/workflows/plugin-configuration.md",
         "standards/workflows/retiring-a-standard.md",
+        "standards/workflows/spec-composition.md",
         "standards/workflows/spec-dependencies.md",
         "standards/workflows/task-execution.md",
         "standards/workflows/work-host.md",

@@ -12,7 +12,7 @@ from quenching.specs.commands.output import Emitter, read_one
 from quenching.specs.parse.derive import derive_info
 from quenching.specs.parse.edit import upsert_section
 from quenching.specs.parse.edit import nested_heading
-from quenching.specs.parse.epics import is_epic
+from quenching.specs.parse.epics import parse_items
 from quenching.specs.parse.fields import SCALAR_LINE_BREAKS, scalar_break
 from quenching.specs.parse.text import split_lines
 from quenching.specs.parse.tasks import (BLOCKED_REASON_RE, CHECKBOX_RE, COMMIT_SHA_RE,
@@ -195,14 +195,15 @@ def cmd_task(args, root: str, out: Emitter) -> int:
     if err:
         return out.emit_err(args.json, err)
     ident = args.check or args.uncheck or args.block or args.descope
-    if ident and is_epic(info["frontmatter"]):
-        # An epic item is DERIVED from its member spec — a box written here would be a second,
-        # stale copy of a fact the member already holds.
+    if ident and any(str(i["label"]) == str(ident) for i in parse_items(info)):
+        # A spec item is DERIVED from its member — a box written here would be a second,
+        # stale copy of a fact the member already holds. Ordinary tasks in the same
+        # document stay tickable.
         return out.emit_err(args.json, {
-            "code": "sp-epic-derived-task", "exit": 2, "id": info["id"], "task": ident,
-            "message": f"'{info['id']}' is an epic — its items are derived from the member "
-                       f"specs and never ticked; act on the member spec "
-                       f"(`cq specs status --epic {info['id']}`)"})
+            "code": "sp-link-derived-task", "exit": 2, "id": info["id"], "task": ident,
+            "message": f"'{ident}' in '{info['id']}' is a spec item — its state is derived "
+                       f"from the member spec and never ticked; act on the member spec "
+                       f"(`cq specs status --spec {info['id']}`)"})
     if not ident:
         out.emit(args.json, {"ok": False, "code": "sp-no-action",
                              "message": "pass --check, --uncheck, --block or --descope"},

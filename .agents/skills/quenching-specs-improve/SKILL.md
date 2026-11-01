@@ -92,11 +92,11 @@ you write.
 **Done when:** the human has approved an explicit subset of the backlog, or declined, which ends the
 run with the map as its only output.
 
-### 6. Materialize the epic
-If `epic` is missing from the target's `workItemTypes` catalog, stop and name the config key to
-add. Otherwise:
+### 6. Materialize the composite
+Composition is a property of the document, not a type: do not look for an `epic` entry in the
+target's `workItemTypes` and do not create the spec with `--type epic`.
 
-1. **Epic.** Create it with `.agents/quenching/bin/cq specs new "<title>" --type epic`. Fill its `## Problem` (the goal),
+1. **Composite.** Create it with `.agents/quenching/bin/cq specs new "<title>"`. Fill its `## Problem` (the goal),
    `## Proposal`, `## Out of Scope`, `## Risks`, `## Validation` (done criteria per wave) and
    `## Design` (the recorded decisions, **including the autonomy policy chosen in step 5, dated, in the canonical text of that choice**) with
    `.agents/quenching/bin/cq specs section <id> "<Heading>" --write`.
@@ -105,14 +105,16 @@ add. Otherwise:
    - Create it with `.agents/quenching/bin/cq specs new` with the suggested `--type`, `--subject`, `--tags` and
      `--complexity`.
    - Write its `## Problem` from the candidate file.
-   - Run `.agents/quenching/bin/cq specs epic add <epic> <spec> --group "<wave>" --after <ids>`.
+   - Run `.agents/quenching/bin/cq specs link add <composite> <spec> --group "<wave>" --after <labels>`.
 
-Write members one at a time. Every write is checked with `.agents/quenching/bin/cq specs status` and `validate`.
+Write members one at a time. Every write is checked with `.agents/quenching/bin/cq specs status` and `validate`. The
+level is derived: one wave of members is a `feature`, two or more waves are an `epic` — there is
+nothing to declare.
 **Done when:** `.agents/quenching/bin/cq specs status --epic <id>` lists every approved item with its wave and
-dependencies, and `.agents/quenching/bin/cq specs validate` raises no `sp-epic-*` finding.
+dependencies, and `.agents/quenching/bin/cq specs validate` raises no `sp-link-*` finding.
 
 ### 7. Hand off
-Print the epic id, its members per wave, and the next commands:
+Print the composite id, its derived level, its members per wave, and the next commands:
 - `/quenching-specs-develop <id>` to compose each member to ready;
 - `/quenching-specs-orchestrate <epic>` to build the epic in waves — with `--autonomous` appended
   when the policy in the epic's `## Design` is the forced-execution authorization.

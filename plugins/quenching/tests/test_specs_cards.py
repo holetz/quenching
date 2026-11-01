@@ -434,6 +434,68 @@ class AzureTransport(unittest.TestCase):
         self.assertEqual("TI\\Area", argv[argv.index("--area") + 1])
 
 
+class CompositionCards(unittest.TestCase):
+    """The composite's card: level, member list, board lane and predecessor links."""
+
+    def _info(self):
+        text = _doc_with_tasks().replace(
+            "## Tasks\n\n", "## Tasks\n\n- [ ] S1 Foundation — spec: #9\n")
+        return derive_info({"id": 8, "phase": "plans"}, text)
+
+    def _rows(self, status="in-progress"):
+        return [{"id": 9, "label": "S1", "title": "Foundation", "status": status}]
+
+    def test_the_state_carries_the_level_the_members_and_the_lane(self):
+        state = cards.card_state(self._info(), self._rows())
+        self.assertEqual(("feature", "executing"), (state["level"], state["board"]))
+        self.assertEqual((0, 1), (state["specs"]["done"], state["specs"]["total"]))
+        body = cards.render_card_body(state, None, "branch quenching, specs/8.md")
+        self.assertIn("Level: Feature", body)
+        self.assertIn("Specs 0/1", body)
+        self.assertIn("S1 spec 9 — in-progress: Foundation", body)
+
+    def test_a_member_moving_changes_the_lifecycle_key(self):
+        info = self._info()
+        self.assertNotEqual(cards.lifecycle_key(info, self._rows("ready")),
+                            cards.lifecycle_key(info, self._rows("done")))
+
+    def test_azure_adds_a_predecessor_and_never_a_parent(self):
+        calls = []
+
+        def fake(cwd, *argv, stdin=None):
+            calls.append(list(argv))
+            if "show" in argv:
+                return 0, json.dumps({"id": 8}), ""
+            return 0, json.dumps({"id": 8}), ""
+
+        client = cards.AzureCard("https://dev.azure.com/org", "TI", ".")
+        with mock.patch.object(az_mod, "_az_run", fake):
+            client.update(8, cards.card_state(self._info(), self._rows()))
+        self.assertEqual(["boards", "work-item", "relation", "add"], calls[-1][:4])
+        self.assertEqual("System.LinkTypes.Dependency-Reverse",
+                         calls[-1][calls[-1].index("--relation-type") + 1])
+        self.assertEqual("9", calls[-1][calls[-1].index("--target-id") + 1])
+        self.assertNotIn("Hierarchy-Reverse", " ".join(calls[-1]))
+
+    def test_an_existing_predecessor_is_not_linked_twice(self):
+        calls = []
+
+        def fake(cwd, *argv, stdin=None):
+            calls.append(list(argv))
+            if "show" in argv:
+                return 0, json.dumps({"id": 8, "relations": [{
+                    "rel": "System.LinkTypes.Dependency-Reverse",
+                    "url": "https://dev.azure.com/org/_apis/wit/workItems/9"}]}), ""
+            return 0, json.dumps({"id": 8}), ""
+
+        client = cards.AzureCard("https://dev.azure.com/org", "TI", ".")
+        with mock.patch.object(az_mod, "_az_run", fake):
+            client.update(8, cards.card_state(self._info(), self._rows()))
+        self.assertEqual(["boards", "work-item", "update"], calls[0][:3])
+        self.assertEqual(["boards", "work-item", "show"], calls[1][:3])
+        self.assertEqual(2, len(calls))
+
+
 class Migration(GitStoreFixture):
     class NativeSource(MemoryBackend):
         """A tracker-shaped source: tags and assignee are native fields, not in the text."""

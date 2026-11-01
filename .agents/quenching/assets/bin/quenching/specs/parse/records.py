@@ -49,6 +49,15 @@ def derive_labels(info: dict, schema: dict | None = None) -> list[str]:
     for rule in s.get("stages", {}).get("derived", []):
         if rule.get("label") and info.get("stage") == rule["id"]:
             labels.append(rule["label"])
+    # The presentation level is a second, orthogonal projection: a composite's `spec:feature`
+    # or `spec:epic` is what a board filter reads, and it is derived from the document's wave
+    # structure. A story writes nothing, so a leaf spec carries no extra label. Deferred
+    # import: `epics` reads this module's siblings, and the card layer is the only caller that
+    # needs the level.
+    from quenching.specs.parse.epics import presentation_level
+    level = presentation_level(info)
+    if level != "story":
+        labels.append(f"spec:{level}")
     return labels
 
 

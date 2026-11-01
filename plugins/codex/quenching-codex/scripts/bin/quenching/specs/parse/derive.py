@@ -55,13 +55,19 @@ def derive_info(spec: dict, text: str) -> dict:
     than a claim to be re-tested per target."""
     fm = parse_frontmatter(text)
     sections = parse_sections(body_after_frontmatter(text))
-    tasks = parse_tasks(text)
+    items = parse_tasks(text)
+    # THE ONE SPLIT. `info["tasks"]` is work this document owns; `info["links"]` names
+    # member specs (the composition). Keeping them in one list made a composite's progress
+    # count a member as an unticked task; splitting here is what every consumer reads.
+    links = [t for t in items if t["kind"] == "link"]
+    tasks = [t for t in items if t["kind"] == "task"]
     info = dict(spec)
     info.update({
         "text": text,
         "frontmatter": fm,
         "sections": sections,
         "tasks": tasks,
+        "links": links,
         "stage": derive_stage(spec, sections, fm, tasks),
         "verification": _policy(fm),
         # THE DATE COMES FROM THE DOCUMENT, not from the descriptor. It used to be the
@@ -73,7 +79,7 @@ def derive_info(spec: dict, text: str) -> dict:
     return info
 
 
-def board_state_of(info: dict) -> str:
+def board_state_of(info: dict, member_states: list[dict] | None = None) -> str:
     """The `azureColumns` de-para's KEY, computed in the core and merely CONSULTED by the
     backend — `spec-backend.md` §The interface is the document, not the verbs already
     forbids a backend deriving anything of its own, and a board-state precedence is exactly
@@ -83,9 +89,17 @@ def board_state_of(info: dict) -> str:
     stamps) > the derived stage. `reviewed` outranks the derived stage because it is the
     fact `plugin-configuration.md`'s `azureColumns` example maps to the `Aprovação` lane —
     the derived stage alone cannot tell "approved and executing" from "reviewed and awaiting
-    merge", and the record is what does."""
+    merge", and the record is what does.
+
+    A COMPOSITE FOLLOWS ITS MEMBERS: when any member is in flight (`in-progress`, `ready` or
+    `unmerged`), its lane is `executing` even though the document itself has no ticked task.
+    `member_states` is the card layer's already-derived list; None (the default) is the plain
+    document answer every non-composite caller gets."""
     if info["phase"] == "archive":
         return "archived"
     if info["frontmatter"].get("reviewed"):
         return "reviewed"
+    if member_states and any(str(m.get("status") or "") in
+                             ("in-progress", "ready", "unmerged") for m in member_states):
+        return "executing"
     return info["stage"]

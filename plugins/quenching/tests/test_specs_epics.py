@@ -28,8 +28,8 @@ from quenching.specs.commands import read as read_cmd
 from quenching.specs.commands import task as task_cmd
 from quenching.specs.commands import validate as validate_cmd
 from quenching.specs.commands.output import Emitter
-from quenching.specs.parse.epics import (claim_findings, derive_epic, epic_findings,
-                                         find_cycle, parse_items, render_item,
+from quenching.specs.parse.epics import (composition_findings, deprecation_findings,
+                                         derive_epic, find_cycle, parse_items, render_item,
                                          split_ref)
 from quenching.specs.parse.fields import set_frontmatter_key
 
@@ -93,17 +93,17 @@ class Scenarios:
         self.assertEqual(0, add(b, 5, after="S2,S3", group="Wave 3")[0])
         return b
 
-    def test_both_list_forms_project_epic_and_work_item_type(self):
+    def test_both_list_forms_project_the_declared_type_and_never_a_back_reference(self):
         b = self.diamond()
         b.create_spec("plans", doc("Loose"))
         for lean in (False, True):
             _, got = run(read_cmd.cmd_list, b, phase=None, lean=lean)
             rows = {r["id"]: r for r in got["specs"]}
             self.assertEqual((None, "epic"), (rows[1]["epic"], rows[1]["workItemType"]))
-            self.assertEqual((1, None), (rows[2]["epic"], rows[2]["workItemType"]))
+            self.assertEqual((None, None), (rows[2]["epic"], rows[2]["workItemType"]))
             self.assertEqual((None, None), (rows[6]["epic"], rows[6]["workItemType"]))
 
-    def test_add_writes_the_items_in_their_groups_and_the_epic_key_on_the_member(self):
+    def test_add_writes_the_items_in_their_groups_and_never_a_back_reference(self):
         b = self.diamond()
         epic, _ = b.read_spec(EPIC_ID)
         self.assertIn("### 1. Wave 1\n- [ ] S1 Member 1 — spec: #2\n", epic["text"])
@@ -112,7 +112,7 @@ class Scenarios:
                           ("S4", 3, ["S2", "S3"])],
                          [(i["label"], i["group"], i["after"]) for i in parse_items(epic)])
         member, _ = b.read_spec(5)
-        self.assertEqual("1", str(member["frontmatter"]["epic"]))
+        self.assertIsNone(member["frontmatter"].get("epic"))
 
     def test_a_second_item_joins_an_existing_group(self):
         b = self.diamond()
@@ -239,38 +239,34 @@ class Scenarios:
 
     def test_add_refuses_a_bad_target(self):
         b = self.diamond()
-        b.create_spec("plans", epic_doc())
-        self.assertEqual("sp-epic-member-taken", self._refusal(b, member=2, epic_id=7))
-        self.assertEqual("sp-epic-unknown-dependency", self._refusal(b, member=6, after="S9"))
-        self.assertEqual("sp-epic-bad-label", self._refusal(b, member=6, label="S1"))
-        self.assertEqual("sp-epic-not-an-epic", self._refusal(b, member=6, epic_id=2))
+        self.assertEqual("sp-link-unknown-dependency", self._refusal(b, member=6, after="S9"))
+        self.assertEqual("sp-link-bad-label", self._refusal(b, member=6, label="S1"))
+        self.assertEqual("sp-link-self", self._refusal(b, member=EPIC_ID, epic_id=EPIC_ID))
         self.assertEqual("sp-unknown-id", self._refusal(b, member=99))
 
     def second_epic(self, b):
         b.create_spec("plans", epic_doc())          # id 7
         return 7
 
-    def test_move_takes_a_member_out_of_its_epic(self):
+    def test_a_spec_may_belong_to_several_composites(self):
         b = self.diamond()
         other = self.second_epic(b)
         code, got = run(epic_cmd.cmd_epic, b, epic_cmd="add", epic=other, spec=5, after=None,
                         group=None, label=None, move=True)
         self.assertEqual(0, code, got)
-        self.assertEqual("7", str(b.read_spec(5)[0]["frontmatter"]["epic"]))
-        self.assertEqual(["S1", "S2", "S3"], [i["label"] for i in parse_items(b.read_spec(EPIC_ID)[0])])
+        self.assertEqual(["S1", "S2", "S3", "S4"],
+                         [i["label"] for i in parse_items(b.read_spec(EPIC_ID)[0])])
         self.assertEqual([5], [int(i["spec"]) for i in parse_items(b.read_spec(other)[0])])
 
-    def test_move_is_refused_without_the_flag_and_when_others_wait_on_it(self):
+    def test_remove_refuses_while_another_item_waits_on_it(self):
         b = self.diamond()
-        other = self.second_epic(b)
-        kw = dict(epic_cmd="add", epic=other, after=None, group=None, label=None)
-        code, got = run(epic_cmd.cmd_epic, b, spec=5, move=False, **kw)
-        self.assertEqual((2, "sp-epic-member-taken"), (code, got["code"]))
-        before = b.read_spec(EPIC_ID)[0]["text"]
-        code, got = run(epic_cmd.cmd_epic, b, spec=2, move=True, **kw)
+        code, got = run(epic_cmd.cmd_epic, b, link_cmd="remove", epic=EPIC_ID, spec=2)
         self.assertEqual((2, "sp-epic-move-dependents"), (code, got["code"]))
-        self.assertEqual(before, b.read_spec(EPIC_ID)[0]["text"])
-        self.assertEqual("1", str(b.read_spec(2)[0]["frontmatter"]["epic"]))
+        self.assertEqual(4, len(parse_items(b.read_spec(EPIC_ID)[0])))
+        code, got = run(epic_cmd.cmd_epic, b, link_cmd="remove", epic=EPIC_ID, spec=5)
+        self.assertEqual(0, code, got)
+        self.assertEqual(["S1", "S2", "S3"],
+                         [i["label"] for i in parse_items(b.read_spec(EPIC_ID)[0])])
 
     def _refusal(self, b, member, epic_id=EPIC_ID, **kw):
         kw.setdefault("after", None)
@@ -280,51 +276,54 @@ class Scenarios:
         self.assertEqual(2, code)
         return got["code"]
 
-    def test_add_is_idempotent_and_repairs_a_missing_back_reference(self):
+    def test_add_is_idempotent_and_writes_no_back_reference(self):
         b = self.diamond()
         before = b.read_spec(EPIC_ID)[0]["text"]
         self.assertFalse(add(b, 2)[1]["changed"])
         info, _ = b.read_spec(5)
         b.write_spec(info, info["text"].replace("epic: 1\n", ""))
-        self.assertTrue(add(b, 5)[1]["changed"])
+        self.assertFalse(add(b, 5)[1]["changed"])
         self.assertEqual(before, b.read_spec(EPIC_ID)[0]["text"])
-        self.assertEqual("1", str(b.read_spec(5)[0]["frontmatter"]["epic"]))
+        self.assertIsNone(b.read_spec(5)[0]["frontmatter"].get("epic"))
 
-    def test_task_refuses_to_tick_an_epic_item(self):
+    def test_task_refuses_to_tick_a_spec_item(self):
         b = self.diamond()
         for flag in ("check", "uncheck", "block", "descope"):
             kw = dict(spec=EPIC_ID, check=None, uncheck=None, block=None, descope=None,
                       reason="r", subject=None, commit=None)
             kw[flag] = "S1"
             code, got = run(task_cmd.cmd_task, b, **kw)
-            self.assertEqual((2, "sp-epic-derived-task"), (code, got["code"]))
+            self.assertEqual((2, "sp-link-derived-task"), (code, got["code"]))
 
-    def test_validate_is_clean_for_a_consistent_epic(self):
+    def test_validate_is_clean_for_a_consistent_composite(self):
         b = self.diamond()
         _, got = run(validate_cmd.cmd_validate, b, spec=None, phase=None, by_code=False)
-        self.assertEqual([], [f for f in got["findings"] if f["code"].startswith("sp-epic")])
+        self.assertEqual([], [f for f in got["findings"]
+                              if f["code"].startswith(("sp-link", "sp-epic"))])
 
-    def test_validate_flags_divergence_missing_members_and_cycles(self):
+    def test_validate_flags_missing_members_cycles_and_the_retired_key(self):
         b = self.diamond()
-        info, _ = b.read_spec(3)                                  # the member loses its key
-        b.write_spec(info, info["text"].replace("epic: 1\n", "epic: 77\n"))
+        info, _ = b.read_spec(3)                                  # the member gains the old key
+        b.write_spec(info, set_frontmatter_key(info["text"], "epic", "77"))
         info, _ = b.read_spec(EPIC_ID)                             # a ghost and a cycle
         text = info["text"].replace("- [ ] S1 Member 1 — spec: #2",
                                     "- [ ] S1 Member 1 — spec: #2 — after: S4")
         b.write_spec(info, text + "- [ ] S9 Ghost — spec: #900\n")
         _, got = run(validate_cmd.cmd_validate, b, spec=None, phase=None, by_code=False)
-        codes = {f["code"] for f in got["findings"] if f["code"].startswith("sp-epic")}
-        self.assertEqual({"sp-epic-divergent", "sp-epic-missing-member", "sp-epic-cycle",
-                          "sp-epic-orphan"}, codes)
+        codes = {f["code"] for f in got["findings"]
+                 if f["code"].startswith(("sp-link", "sp-epic"))}
+        self.assertEqual({"sp-link-missing-member", "sp-link-cycle",
+                          "sp-epic-key-deprecated"}, codes)
         self.assertFalse(got["ok"])
 
-    def test_a_narrowed_validate_still_sees_the_members_side(self):
+    def test_a_narrowed_validate_reports_the_retired_key_on_a_member(self):
         b = self.diamond()
         info, _ = b.read_spec(4)
         b.write_spec(info, set_frontmatter_key(info["text"], "epic", "1234"))
         _, got = run(validate_cmd.cmd_validate, b, spec="4", phase=None, by_code=False)
-        self.assertEqual(["sp-epic-orphan"],
-                         [f["code"] for f in got["findings"] if f["code"].startswith("sp-epic")])
+        self.assertEqual(["sp-epic-key-deprecated"],
+                         [f["code"] for f in got["findings"]
+                          if f["code"].startswith("sp-epic")])
 
     def test_an_epic_archives_as_done_only_when_every_member_is(self):
         b = self.diamond()
@@ -365,13 +364,13 @@ class GitStoreEpics(Scenarios, GitStoreFixture):
         super().setUp()
         self.backend = GitBackend(self.clone("a"))
 
-    def test_adding_a_member_is_one_commit_for_both_documents(self):
+    def test_adding_a_member_writes_one_document(self):
         b = self.backend
         b.create_spec("plans", epic_doc())
         b.create_spec("plans", doc("Member", "approved: yes\n"))
         add(b, 2)
         b.push()
-        self.assertEqual(["[skip ci] specs: write 1 2"], self.remote_log())
+        self.assertEqual(["[skip ci] specs: write 1"], self.remote_log())
 
     def test_a_status_reads_every_member_from_one_snapshot(self):
         self.diamond()
@@ -472,7 +471,7 @@ class PureDerivation(unittest.TestCase):
         got = derive_epic(info, b.read_specs([2]))
         self.assertEqual("ready", got["items"][0]["status"])
         _, report = run(validate_cmd.cmd_validate, b, spec=None, phase=None, by_code=False)
-        self.assertIn("sp-epic-manual-tick", {f["code"] for f in report["findings"]})
+        self.assertIn("sp-link-manual-tick", {f["code"] for f in report["findings"]})
 
 
 class CrossRepositoryGrammar(unittest.TestCase):
@@ -502,23 +501,25 @@ class CrossRepositoryGrammar(unittest.TestCase):
         got = derive_epic(info, members, unreadable={"holetz/quenching#2036"})
         self.assertEqual(["unreadable", "waiting"], [i["status"] for i in got["items"]])
         rows = {f["code"]: f["severity"]
-                for f in epic_findings(info, members, {"holetz/quenching#2036"})}
-        self.assertEqual("warn", rows.pop("sp-epic-member-unreadable"))
+                for f in composition_findings(info, members, {"holetz/quenching#2036"})}
+        self.assertEqual("warn", rows.pop("sp-link-member-unreadable"))
         self.assertEqual({}, rows)
 
     def test_a_remote_member_needs_no_back_reference_and_a_read_absence_is_missing(self):
         b, info = self.epic()
         remote = dict(b.read_spec(2)[0], frontmatter={"title": "Remote"})
         members = {"2": b.read_spec(2)[0], "holetz/quenching#2036": remote}
-        self.assertEqual([], epic_findings(info, members))
+        self.assertEqual([], composition_findings(info, members))
         members["holetz/quenching#2036"] = None
-        self.assertEqual(["sp-epic-missing-member"],
-                         [f["code"] for f in epic_findings(info, members)])
+        self.assertEqual(["sp-link-missing-member"],
+                         [f["code"] for f in composition_findings(info, members)])
 
-    def test_a_reference_form_epic_key_on_a_member_is_not_an_orphan(self):
+    def test_a_reference_form_epic_key_on_a_member_is_only_a_deprecation(self):
         b = MemoryBackend()
         b.create_spec("plans", doc("M", "epic: holetz/forge#1\n"))
-        self.assertEqual([], claim_findings(b.read_spec(1)[0], {}))
+        found = deprecation_findings(b.read_spec(1)[0])
+        self.assertEqual(["sp-epic-key-deprecated"], [f["code"] for f in found])
+        self.assertEqual("warn", found[0]["severity"])
 
 
 class InsertItemGroupNumbering(unittest.TestCase):

@@ -15,12 +15,12 @@ from quenching.common.config import detect_provider
 from quenching.common.tools import spawn_argv
 from quenching.specs.backends import open_backend
 from quenching.specs.commands.output import Emitter, front_fields
-from quenching.specs.members import local_key, origin_url, own_repo, read_members
+from quenching.specs.members import origin_url, own_repo, read_members
 from quenching.specs.parse.edit import upsert_section
-from quenching.specs.parse.epics import (derive_epic, epic_ref, group_titles, is_epic,
-                                         member_key, next_label, parse_items, pr_number,
-                                         render_item, split_ref)
-from quenching.specs.parse.fields import scalar_break, set_frontmatter_key
+from quenching.specs.parse.epics import (derive_epic, group_titles, local_key, member_key,
+                                         next_label, parse_items, presentation_level,
+                                         pr_number, render_item, split_ref)
+from quenching.specs.parse.fields import scalar_break
 from quenching.specs.parse.sections import parse_sections
 from quenching.specs.parse.text import HEADING_RE, mask_comments, split_lines
 
@@ -106,15 +106,12 @@ def pr_states(members: dict, root: str | None = None, timeout: int = 15) -> dict
 
 
 def load_epic(backend, epic_id, args, out: Emitter, root: str | None = None):
-    """`(info, derived, None)` for a readable epic, or `(None, None, exit_code)` after a refusal."""
+    """`(info, derived, None)` for a readable spec, or `(None, None, exit_code)` after a
+    refusal. Any spec may be a composite; a spec with no member derives an empty composition."""
     got = backend.read_specs([epic_id])
     info = got.get(str(epic_id))
     if info is None:
         return None, None, _refuse(out, args, "sp-unknown-id", f"no spec with id '{epic_id}'",
-                                   id=epic_id)
-    if not is_epic(info["frontmatter"]):
-        return None, None, _refuse(out, args, "sp-epic-not-an-epic",
-                                   f"spec {epic_id} is not a `workItemType: epic` spec",
                                    id=epic_id)
     ids = [i["spec"] for i in parse_items(info) if i["spec"]]
     members, unreadable = read_members(backend, ids, root)
@@ -192,13 +189,22 @@ def _without_item(old: dict, spec_id: str, args, out: Emitter, self_repo: str | 
 
 
 def cmd_epic(args, root: str, out: Emitter) -> int:
-    """`epic add <epic> <spec>` — list a spec as an epic item AND stamp `epic:` on the spec.
+    """`link add|remove <composite> <spec>` — list a spec as a member, or take it out.
 
-    Both documents change in one `write_specs` batch where the backend has one (a single commit
-    on the git store); elsewhere the epic is written first, so a half-failed add leaves the
-    `epic:` divergence `validate` names, with `epic add` itself as the remedy."""
-    if getattr(args, "epic_cmd", None) != "add":
-        return _refuse(out, args, "sp-no-command", "choose an epic command: add")
+    `epic add` is the historical spelling of `link add`. Composition is a property of the
+    document, not a type: the composite needs no `workItemType: epic`, a member may belong to
+    several composites, and a composite may itself be a member. `--move` is accepted and
+    ignored — there is no single parent to move out of."""
+    action = getattr(args, "link_cmd", None) or getattr(args, "epic_cmd", None)
+    if action not in ("add", "remove"):
+        return _refuse(out, args, "sp-no-command",
+                       "choose a link command: add or remove")
+    if action == "remove":
+        return _link_remove(args, root, out)
+    return _link_add(args, root, out)
+
+
+def _link_add(args, root: str, out: Emitter) -> int:
     # The group becomes a `### N.` heading line: a break would forge the lines after it.
     bad = scalar_break(args.group or "")
     if bad:
@@ -208,77 +214,72 @@ def cmd_epic(args, root: str, out: Emitter) -> int:
     backend, err = open_backend(root)
     if err:
         return out.emit_err(args.json, err)
-    epic_id, spec_id = str(args.epic), member_key(str(args.spec))
+    composite_id, spec_id = str(args.epic), member_key(str(args.spec))
     if split_ref(spec_id)[0]:
         spec_id = local_key(spec_id, own_repo(origin_url(root)))
-    foreign = split_ref(spec_id)[0] is not None
-    if epic_id == spec_id:
-        return _refuse(out, args, "sp-epic-self", "an epic cannot be its own member")
-    epic, _, code = load_epic(backend, epic_id, args, out, root)
+    if composite_id == spec_id:
+        return _refuse(out, args, "sp-link-self", "a spec cannot be its own member")
+    composite, _, code = load_epic(backend, composite_id, args, out, root)
     if code is not None:
         return code
     got, unreadable = read_members(backend, [spec_id], root)
     if unreadable:
-        return _refuse(out, args, "sp-epic-member-unreadable",
+        return _refuse(out, args, "sp-link-member-unreadable",
                        f"the store holding {spec_id} could not be read", id=spec_id)
     member = got.get(spec_id)
     if member is None:
         return _refuse(out, args, "sp-unknown-id", f"no spec with id '{spec_id}'", id=spec_id)
-    if is_epic(member["frontmatter"]):
-        return _refuse(out, args, "sp-epic-nested",
-                       f"spec {spec_id} is itself an epic — an epic has one level only")
-    # A member in another store keeps its own `epic:` (an epic of its store): nothing is
-    # written there, so it is never claimed, moved or stamped from here.
-    current = epic_id if foreign else epic_ref(member["frontmatter"])
-    old_epic, old_text = None, None
-    if current and current != epic_id:
-        if not getattr(args, "move", False):
-            return _refuse(out, args, "sp-epic-member-taken",
-                           f"spec {spec_id} already belongs to epic {current} "
-                           "(--move takes it out of that epic)", epic=current)
-        old_epic = backend.read_specs([current]).get(current)
-        if old_epic is not None:
-            old_text, code = _without_item(old_epic, spec_id, args, out,
-                                                own_repo(origin_url(root)))
-            if code is not None:
-                return code
-    items = parse_items(epic)
+    items = parse_items(composite)
     mine = own_repo(origin_url(root))
     existing = next((i for i in items
                      if i["spec"] and local_key(i["spec"], mine) == spec_id), None)
-    new_epic, label = None, None
     if existing:
-        label = existing["label"]
-    else:
-        after = [a.strip() for a in (args.after or "").split(",") if a.strip()]
-        known = {i["label"] for i in items}
-        label = args.label or next_label(items)
-        if not LABEL_RE.match(label) or label in known:
-            return _refuse(out, args, "sp-epic-bad-label",
-                           f"label '{label}' is used or not a plain token")
-        unknown = [a for a in after if a not in known]
-        if unknown:
-            return _refuse(out, args, "sp-epic-unknown-dependency",
-                           f"--after names no item of epic {epic_id}: {', '.join(unknown)}",
-                           unknown=unknown)
-        title = str(member["frontmatter"].get("title") or "").strip() or f"Spec {spec_id}"
-        new_epic = insert_item(epic, render_item(label, title, spec_id, after), args.group)
-    batch = []
-    if old_text is not None:
-        batch.append((old_epic, old_text))
-    if new_epic is not None:
-        batch.append((epic, new_epic))
-    if current != epic_id:
-        batch.append((member, set_frontmatter_key(member["text"], "epic", epic_id,
-                                                  after="workItemType")))
-    if len(batch) > 1 and hasattr(backend, "write_specs"):
-        backend.write_specs(batch)
-    else:
-        for info, text in batch:
-            backend.write_spec(info, text)
-    out.emit(args.json, {"ok": True, "epic": epic_id, "spec": spec_id, "label": label,
-                         "changed": bool(batch)},
-             f"epic {epic_id}: {label} -> spec {spec_id}" + ("" if batch else " (already linked)"))
+        out.emit(args.json, {"ok": True, "composite": composite_id, "spec": spec_id,
+                             "label": existing["label"], "changed": False},
+                 f"spec {composite_id}: {existing['label']} -> spec {spec_id} (already linked)")
+        return 0
+    after = [a.strip() for a in (args.after or "").split(",") if a.strip()]
+    known = {i["label"] for i in items}
+    label = args.label or next_label(items)
+    if not LABEL_RE.match(label) or label in known:
+        return _refuse(out, args, "sp-link-bad-label",
+                       f"label '{label}' is used or not a plain token")
+    unknown = [a for a in after if a not in known]
+    if unknown:
+        return _refuse(out, args, "sp-link-unknown-dependency",
+                       f"--after names no item of spec {composite_id}: "
+                       f"{', '.join(unknown)}", unknown=unknown)
+    title = str(member["frontmatter"].get("title") or "").strip() or f"Spec {spec_id}"
+    text = insert_item(composite, render_item(label, title, spec_id, after), args.group)
+    backend.write_spec(composite, text)
+    out.emit(args.json, {"ok": True, "composite": composite_id, "spec": spec_id,
+                         "label": label, "changed": True},
+             f"spec {composite_id}: {label} -> spec {spec_id}")
+    return 0
+
+
+def _link_remove(args, root: str, out: Emitter) -> int:
+    backend, err = open_backend(root)
+    if err:
+        return out.emit_err(args.json, err)
+    composite_id, spec_id = str(args.epic), member_key(str(args.spec))
+    if split_ref(spec_id)[0]:
+        spec_id = local_key(spec_id, own_repo(origin_url(root)))
+    composite, _, code = load_epic(backend, composite_id, args, out, root)
+    if code is not None:
+        return code
+    text, code = _without_item(composite, spec_id, args, out, own_repo(origin_url(root)))
+    if code is not None:
+        return code
+    if text is None:
+        out.emit(args.json, {"ok": True, "composite": composite_id, "spec": spec_id,
+                             "changed": False},
+                 f"spec {composite_id}: spec {spec_id} is not listed")
+        return 0
+    backend.write_spec(composite, text)
+    out.emit(args.json, {"ok": True, "composite": composite_id, "spec": spec_id,
+                         "changed": True},
+             f"spec {composite_id}: removed spec {spec_id}")
     return 0
 
 
@@ -289,15 +290,10 @@ def _row(i: dict) -> dict:
             "stage": m["stage"] if m else None}
 
 
-def cmd_epic_status(args, root: str, out: Emitter) -> int:
-    """`status --epic <id>` — progress per group, what is blocked, and the critical path."""
-    backend, err = open_backend(root)
-    if err:
-        return out.emit_err(args.json, err)
-    info, d, code = load_epic(backend, args.epic, args, out, root)
-    if code is not None:
-        return code
-    items = d["items"]
+def composition_view(info: dict, derived: dict) -> dict:
+    """The derived block a composite's status carries: level, progress, waves, members, the
+    held items with their reasons, and the critical path. Pure projection of `derived`."""
+    items = derived["items"]
     done = sum(1 for i in items if i["status"] == "done")
     blocked = [{**_row(i), "reasons": [t["reason"] or t["text"] for t in i["member"]["tasks"]
                                        if t["blocked"]] if i["member"] else []}
@@ -309,18 +305,32 @@ def cmd_epic_status(args, root: str, out: Emitter) -> int:
             b["reasons"] = [f"PR #{pr_number(i['member'])} is {i['prState']}"]
         elif i["status"] == "unverified":
             b["reasons"] = [f"PR #{pr_number(i['member'])} state could not be read"]
+    return {"level": presentation_level(info),
+            "progress": {"done": done, "total": len(items), "blocked": len(blocked),
+                         "ready": len(derived["ready"])},
+            "groups": derived["groups"], "items": [_row(i) for i in items],
+            "blocked": blocked, "criticalPath": derived["criticalPath"],
+            "cycle": derived["cycle"]}
+
+
+def cmd_epic_status(args, root: str, out: Emitter) -> int:
+    """`status --epic <id>` — progress per group, what is blocked, and the critical path."""
+    backend, err = open_backend(root)
+    if err:
+        return out.emit_err(args.json, err)
+    info, d, code = load_epic(backend, args.epic, args, out, root)
+    if code is not None:
+        return code
+    view = composition_view(info, d)
+    blocked = view["blocked"]
     obj = {"ok": True, **front_fields(root), "id": info["id"],
-           "title": info["frontmatter"].get("title", ""), "phase": info["phase"],
-           "progress": {"done": done, "total": len(items), "blocked": len(blocked),
-                        "ready": len(d["ready"])},
-           "groups": d["groups"], "items": [_row(i) for i in items], "blocked": blocked,
-           "criticalPath": d["criticalPath"], "cycle": d["cycle"]}
+           "title": info["frontmatter"].get("title", ""), "phase": info["phase"], **view}
     if args.json:
         print(json.dumps(obj, indent=2, ensure_ascii=False))
         return 0
     p = obj["progress"]
-    print(f"epic {info['id']} — {obj['title']}: {p['done']}/{p['total']} done, "
-          f"{p['blocked']} blocked, {p['ready']} ready")
+    print(f"spec {info['id']} ({obj['level']}) — {obj['title']}: {p['done']}/{p['total']} "
+          f"done, {p['blocked']} blocked, {p['ready']} ready")
     for g in d["groups"]:
         name = g["title"] or "(no group)"
         print(f"  {name}: {g['done']}/{g['total']} done"
@@ -355,17 +365,18 @@ def cmd_next_epic(args, root: str, out: Emitter) -> int:
     rows = [{**_row(i), "executing": i["status"] == "in-progress",
              "priority": i["member"]["frontmatter"].get("priority") or None} for i in shown]
     left = [i for i in d["items"] if i["status"] != "done"]
-    obj = {"ok": True, "epic": info["id"], "count": len(rows), "readyTotal": len(ready),
+    obj = {"ok": True, "spec": info["id"], "level": presentation_level(info),
+           "count": len(rows), "readyTotal": len(ready),
            "remaining": len(left), "finished": not left and bool(d["items"]),
            "cycle": d["cycle"], "ready": rows}
     if args.json:
         print(json.dumps(obj, indent=2, ensure_ascii=False))
         return 0
     if not rows:
-        print(f"epic {info['id']}: nothing ready — {len(left)} item(s) remaining"
-              if left else f"epic {info['id']}: every item is done")
+        print(f"spec {info['id']}: nothing ready — {len(left)} item(s) remaining"
+              if left else f"spec {info['id']}: every item is done")
         return 0
-    print(f"epic {info['id']}: {len(rows)} of {len(ready)} ready to run")
+    print(f"spec {info['id']}: {len(rows)} of {len(ready)} ready to run")
     for r in rows:
         print(f"  {r['label']:<5} spec {r['spec']:<8} {r['title']}"
               + ("  (in progress)" if r["executing"] else ""))

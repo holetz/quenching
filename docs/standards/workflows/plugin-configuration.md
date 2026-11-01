@@ -210,7 +210,7 @@ lists each leaf with its value and layer.
 | Key | Values | Default | Read by |
 | --- | --- | --- | --- |
 | `runAloneUpTo` | `none` · `low` · `medium` · `high` · `xhigh` | `low` | `/quenching-specs:specs:orchestrate` and the `orchestrator`: the highest `complexity` that runs without `approved` |
-| `merge` | `policy` · `never` · `dependencies` · `all` | `policy` | the `orchestrator`: `policy` defers to the epic's dated text, `never` merges nothing, `dependencies` only specs with a dependent, `all` every leaf |
+| `merge` | `policy` · `never` · `dependencies` · `all` | `policy` | the `orchestrator`: `policy` defers to the composite's dated text, `never` merges nothing, `dependencies` only specs with a dependent, `all` every leaf |
 | `maxWorkers` | integer 1-8 | `3` | the `orchestrator`'s parallelism |
 | `maxLaunches` | integer ≥ 1 | `40` | `/quenching-specs:specs:autopilot`, when `--max-launches` is absent |
 | `livenessMinutes` | integer ≥ 1 | `20` | `/quenching-specs:specs:autopilot`'s liveness stop |

@@ -212,9 +212,9 @@ class CrossRepositoryEpic(TwoStores):
         self.assertIn("holetz/absent", blocked["S3"]["reasons"][0])
         _, got = self.run_cmd(validate_cmd.cmd_validate, spec=None, phase=None, by_code=False)
         found = {(f["code"], f["severity"]) for f in got["findings"]
-                 if f["code"].startswith("sp-epic")}
-        self.assertIn(("sp-epic-member-unreadable", "warn"), found)
-        self.assertIn(("sp-epic-missing-member", "error"), found)
+                 if f["code"].startswith(("sp-link", "sp-epic"))}
+        self.assertIn(("sp-link-member-unreadable", "warn"), found)
+        self.assertIn(("sp-link-missing-member", "error"), found)
         self.assertNotIn("sp-epic-divergent", {c for c, _ in found})
 
     def test_add_lists_a_reference_with_its_foreign_title_and_writes_nothing_there(self):
@@ -252,40 +252,42 @@ class CrossRepositoryEpic(TwoStores):
         return self.run_cmd(epic_cmd.cmd_epic, epic_cmd="add", epic=self.epic, spec="1",
                             after=None, group=None, label=None, move=True)
 
-    def test_move_takes_a_self_qualified_item_out_of_the_old_epic(self):
+    def test_a_spec_may_belong_to_several_composites(self):
         self._old_epic("- [ ] A Forge one — spec: holetz/forge#1\n")
         code, got = self._move()
         self.assertEqual(0, code, got)
-        self.assertNotIn("Forge one", self.local.read_spec("3")[0]["text"])
+        self.assertIn("Forge one", self.local.read_spec("3")[0]["text"])
         self.assertIn("Forge one — spec: #1", self.local.read_spec(self.epic)[0]["text"])
 
-    def test_move_of_a_self_qualified_item_still_refuses_while_another_waits_on_it(self):
+    def test_remove_of_a_self_qualified_item_refuses_while_another_waits_on_it(self):
         self._old_epic("- [ ] A Forge one — spec: holetz/forge#1\n"
                        "- [ ] B Later — spec: holetz/quenching#2 — after: A\n")
-        code, got = self._move()
+        code, got = self.run_cmd(epic_cmd.cmd_epic, link_cmd="remove", epic="3", spec="1")
         self.assertEqual((2, "sp-epic-move-dependents"), (code, got.get("code")), got)
         self.assertIn("Forge one", self.local.read_spec("3")[0]["text"])
 
-    def _divergent(self):
+    def _retired_key_findings(self):
         _, got = self.run_cmd(validate_cmd.cmd_validate, spec=None, phase=None, by_code=False)
-        return [f for f in got["findings"] if f["code"] == "sp-epic-divergent"]
+        return [f for f in got["findings"] if f["code"] == "sp-epic-key-deprecated"]
 
-    def test_a_self_qualified_item_whose_spec_has_no_epic_is_divergent(self):
+    def test_a_self_qualified_item_whose_spec_has_no_epic_is_not_a_finding(self):
         self.extend_epic("- [ ] S3 Forge one — spec: holetz/forge#1\n")
-        found = self._divergent()
-        self.assertEqual(["holetz/forge#1"], [f["member"] for f in found], found)
+        self.assertEqual([], self._retired_key_findings())
+        _, got = self.run_cmd(validate_cmd.cmd_validate, spec=None, phase=None, by_code=False)
+        self.assertEqual([], [f for f in got["findings"]
+                              if f["code"] == "sp-link-missing-member"])
 
-    def test_a_self_qualified_item_whose_spec_names_another_epic_is_divergent(self):
+    def test_a_self_qualified_item_whose_spec_names_an_epic_is_only_a_deprecation(self):
         self.extend_epic("- [ ] S3 Forge one — spec: holetz/forge#1\n")
         info, _ = self.local.read_spec(1)
         self.local.write_spec(info, set_frontmatter_key(info["text"], "epic", "9"))
-        found = self._divergent()
-        self.assertEqual(["holetz/forge#1"], [f["member"] for f in found], found)
+        found = self._retired_key_findings()
+        self.assertEqual(["sp-epic-key-deprecated"], [f["code"] for f in found])
 
     def test_add_refuses_a_reference_whose_store_cannot_be_read(self):
         code, got = self.run_cmd(epic_cmd.cmd_epic, epic_cmd="add", epic=self.epic,
                                  spec="holetz/absent#1", after=None, group=None, label=None)
-        self.assertEqual((2, "sp-epic-member-unreadable"), (code, got.get("code")))
+        self.assertEqual((2, "sp-link-member-unreadable"), (code, got.get("code")))
 
     def test_the_epic_does_not_archive_as_done_while_a_foreign_member_is_open(self):
         self.extend_epic(EPIC_CLOSE)

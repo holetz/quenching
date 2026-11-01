@@ -25,6 +25,7 @@ from quenching.specs.backends import azure as az_mod
 from quenching.specs.backends import github as gh_mod
 from quenching.specs.backends.base import BackendRefusal
 from quenching.specs.parse import board_state_of, declared_tags, derive_labels, reconcile_label_set
+from quenching.specs.parse.epics import presentation_level
 from quenching.specs.parse.tasks import task_progress
 from quenching.specs.parse.text import strip_comments
 
@@ -64,24 +65,34 @@ def summary_of(info: dict) -> str:
     return text
 
 
-def lifecycle_key(info: dict) -> tuple:
+def lifecycle_key(info: dict, members: list[dict] | None = None) -> tuple:
     """The only facts that make a card write necessary. Task progress, the summary and every
     section body are deliberately absent: they ride along when a transition writes the card
-    and never cause a write of their own."""
+    and never cause a write of their own.
+
+    A composite adds its member states: when a member starts, merges or finishes, the
+    composite's card moves with it. `members` is the card layer's derived list; None is the
+    plain document answer, which is what every non-composite caller passes."""
     fm = info.get("frontmatter") or {}
-    return (str(fm.get("title") or ""), board_state_of(info), info["phase"],
-            tuple(sorted(derive_labels(info))), tuple(sorted(_tags(info))))
+    return (str(fm.get("title") or ""), board_state_of(info, members), info["phase"],
+            tuple(sorted(derive_labels(info))), tuple(sorted(_tags(info))),
+            presentation_level(info),
+            tuple((str(m.get("id")), str(m.get("status"))) for m in (members or [])))
 
 
-def card_state(info: dict) -> dict:
+def card_state(info: dict, members: list[dict] | None = None) -> dict:
     checked, _, total = task_progress(info.get("tasks") or [])
     fm = info.get("frontmatter") or {}
+    rows = list(members or [])
     return {"id": info.get("id"), "title": str(fm.get("title") or ""),
             "summary": summary_of(info), "checked": checked, "total": total,
             "phase": info["phase"], "stage": info.get("stage") or "",
-            "board": board_state_of(info), "closed": info["phase"] == "archive",
+            "board": board_state_of(info, rows), "closed": info["phase"] == "archive",
             "labels": reconcile_label_set(_tags(info), derive_labels(info)),
-            "typeKey": fm.get("workItemType")}
+            "typeKey": fm.get("workItemType"),
+            "level": presentation_level(info), "members": rows,
+            "specs": {"done": sum(1 for m in rows if m.get("status") == "done"),
+                      "total": len(rows)}}
 
 
 def spec_path(phase: str, spec_id) -> str:
@@ -90,12 +101,24 @@ def spec_path(phase: str, spec_id) -> str:
 
 
 def render_card_body(state: dict, link: str | None, link_text: str, fmt: str = "markdown") -> str:
-    """The thin body: marker, title, summary, progress, phase/stage and where the spec lives."""
+    """The thin body: marker, title, summary, progress, phase/stage and where the spec lives.
+
+    A composite adds its presentation level and one line per member: the board reads the
+    level through the label, and the human reads the membership here."""
     progress = f"Tasks {state['checked']}/{state['total']}" if state["total"] else "Tasks 0/0"
+    members = state.get("members") or []
+    level = str(state.get("level") or "story")
+    if members:
+        specs = state.get("specs") or {"done": 0, "total": len(members)}
+        progress += f" · Specs {specs['done']}/{specs['total']}"
     lines = [f"Spec: {state['title']}"]
     if state["summary"]:
         lines += ["", state["summary"]]
     lines += ["", f"{progress} · phase {state['phase']} · stage {state['stage']}"]
+    if level in ("feature", "epic"):
+        lines += ["", f"Level: {level.title()}"]
+        lines += [f"- {m.get('label') or ''} spec {m.get('id')} — {m.get('status')}: "
+                  f"{m.get('title') or ''}".rstrip() for m in members]
     if fmt == "html":
         paras = [html.escape(p) for p in "\n".join(lines).split("\n\n")]
         where = html.escape(link_text)
@@ -246,6 +269,32 @@ class AzureCard(CardClient):
         path = spec_path(state["phase"], number) if number else "specs/<this item's id>.md"
         return render_card_body(state, None, f"branch {STORE_BRANCH}, {path}", fmt="html")
 
+    def _relations(self, number: int) -> list[dict]:
+        """The work item's relations, read only when the state carries members."""
+        item = self._az(f"reading the relations of work item {number}", "work-item", "show",
+                        "--id", str(number), "--expand", "relations")
+        return list((item or {}).get("relations") or [])
+
+    def _sync_member_links(self, number: int, members: list[dict]) -> None:
+        """Add one predecessor link per member that has none.
+
+        `System.LinkTypes.Dependency-Reverse` is the relation `dependsOn` already uses and the
+        one Azure accepts between any two work-item types. A link is added once and never
+        removed: a member taken out of the document leaves a harmless stale link, and the
+        alternative — treating every predecessor as composition — would delete a dependency
+        the store wrote. No parent-child relation is ever emitted."""
+        wanted = [int(m["id"]) for m in members if str(m.get("id", "")).isdigit()]
+        if not wanted:
+            return
+        linked = az_mod.azure_predecessor_links(self._relations(number))
+        for mid in wanted:
+            if mid in linked:
+                continue
+            self._az(f"linking work item {number} to {mid}", "work-item", "relation", "add",
+                     "--id", str(number),
+                     "--relation-type", az_mod.AZ_PREDECESSOR_REL,
+                     "--target-id", str(mid))
+
     def create(self, state: dict) -> int:
         argv = ["work-item", "create", "--project", self.project,
                 "--type", self._type_name(state), "--title", state["title"],
@@ -258,6 +307,8 @@ class AzureCard(CardClient):
         if not number:
             raise BackendRefusal({"code": "sp-az-bad-response", "exit": 2,
                                   "message": "Azure created the work item but returned no id"})
+        if state.get("members"):
+            self._sync_member_links(number, state["members"])
         return number
 
     def update(self, number: int, state: dict) -> None:
@@ -269,6 +320,8 @@ class AzureCard(CardClient):
         if fields:
             argv += ["--fields", *fields]
         self._az(f"updating work item {number}", *argv)
+        if state.get("members"):
+            self._sync_member_links(number, state["members"])
 
     def read(self, number: int) -> dict:
         item = self._az(f"reading work item {number}", "work-item", "show", "--id", str(number))

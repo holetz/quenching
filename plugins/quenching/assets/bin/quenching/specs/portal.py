@@ -63,7 +63,8 @@ from quenching.specs.commands.push import cmd_push
 from quenching.specs.commands.task import cmd_discover
 from quenching.specs.members import read_members
 from quenching.specs.parse.deps import schedule
-from quenching.specs.parse.epics import derive_epic, parse_items, split_ref
+from quenching.specs.parse.epics import (derive_epic, parse_items, presentation_level,
+                                         split_ref)
 from quenching.specs.parse.fields import set_frontmatter_record
 from quenching.specs.parse.records import spec_records
 from quenching.specs.parse.sections import ready_report, section_state
@@ -425,31 +426,23 @@ class Portal:
         return _json(200, {"ok": True, "query": q, "count": len(out), "results": out[:100]})
 
     def _epics(self, snap: dict) -> dict:
-        """Epic progress, shown only when specs declare `workItemType: epic`; children point at
-        an epic through a `parent:` (or `epic:`) frontmatter key."""
-        epics = [i for i in snap["infos"].values()
-                 if str(i["frontmatter"].get("workItemType") or "").lower() == "epic"]
+        """Composition progress — every spec whose `## Tasks` names a member. The route keeps
+        its historical name; the derivation no longer reads `workItemType: epic` or a `parent:`
+        back-reference."""
+        epics = [i for i in snap["infos"].values() if parse_items(i)]
         members, unreadable = self._members(snap, epics)
         rows = []
         for e in epics:
-            kids = [i for i in snap["infos"].values()
-                    if str(i["frontmatter"].get("parent") or i["frontmatter"].get("epic") or "")
-                    .lstrip("#") == str(e["id"])]
-            done = [k for k in kids if k["phase"] == "archive"]
             derived = derive_epic(e, members, unreadable=unreadable)
             items = [{k: v for k, v in i.items() if k in _EPIC_ITEM_KEYS} for i in derived["items"]]
-            # A cross-repository member has no back-reference here: it counts through its item.
-            outside = [i for i in derived["items"] if i["spec"] and split_ref(str(i["spec"]))[0]
-                       and (i["member"] is None
-                            or snap["infos"].get(str(i["member"]["id"])) is not i["member"])]
             rows.append({"id": e["id"], "title": str(e["frontmatter"].get("title") or ""),
+                         "level": presentation_level(e),
                          "items": items, "groups": derived["groups"],
                          "cycle": derived["cycle"], "criticalPath": derived["criticalPath"],
-                         "children": [{"id": k["id"], "title": str(k["frontmatter"].get("title")
-                                                                    or ""),
-                                       "stage": self._stage(k)} for k in kids],
-                         "done": len(done) + sum(i["status"] == "done" for i in outside),
-                         "total": len(kids) + len(outside)})
+                         "children": [{"id": i["spec"], "title": i["title"],
+                                       "stage": i["status"]} for i in derived["items"]],
+                         "done": sum(1 for i in derived["items"] if i["status"] == "done"),
+                         "total": len(derived["items"])})
         return {"supported": bool(epics), "epics": rows}
 
     def _schedule(self, snap: dict) -> dict:
@@ -479,7 +472,7 @@ class Portal:
         rows = {str(r["id"]): r for r in snap["rows"]}
         epics = [e for e in infos.values()
                  if HUMAN_EPIC_MARK in str(e["frontmatter"].get("title") or "").lower()
-                 and str(e["frontmatter"].get("workItemType") or "").lower() == "epic"
+                 and parse_items(e)
                  and e["phase"] != "archive"]
         members, unreadable = self._members(snap, epics)
         epic_members, seen = [], set()

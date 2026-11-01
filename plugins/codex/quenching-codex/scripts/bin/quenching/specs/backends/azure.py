@@ -514,14 +514,24 @@ AZ_PREDECESSOR_REL = "System.LinkTypes.Dependency-Reverse"
 _AZ_URL_ID = re.compile(r"/(\d+)/?$")
 
 
-def azure_predecessor_ids(fm: dict, own_id: int | None = None) -> list[int]:
-    """The work item ids a spec waits for: its `dependsOn`, keeping only the all-digit ids (a
-    work item of this store) and never its own. Declaration order, deduplicated."""
+def azure_predecessor_ids(fm: dict, own_id: int | None = None,
+                          extra: list[int] | None = None) -> list[int]:
+    """The work item ids a spec waits for: its `dependsOn`, plus the local members of its
+    composition (`extra`), keeping only the all-digit ids (a work item of this store) and
+    never its own. Declaration order, deduplicated."""
     ids: list[int] = []
-    for dep in deps_of(fm):
+    for dep in [str(d) for d in deps_of(fm)] + [str(x) for x in (extra or [])]:
         if dep.isdigit() and int(dep) != own_id and int(dep) not in ids:
             ids.append(int(dep))
     return ids
+
+
+def composition_ids(info: dict) -> list[int]:
+    """The local spec ids a document lists as members — the ones a work item of this store can
+    link to as predecessors. A cross-repository member has no work item here."""
+    from quenching.specs.parse.epics import is_remote, parse_items
+    return [int(i["spec"]) for i in parse_items(info)
+            if i["spec"] and str(i["spec"]).isdigit() and not is_remote(str(i["spec"]))]
 
 
 def azure_predecessor_links(relations: list[dict]) -> dict[int, int]:
@@ -1137,8 +1147,10 @@ class AzureBoardsBackend(SpecBackend):
         # PREDECESSOR LINKS ride the document's own patch, so the `rev` test below guards both
         # and the write stays all-or-nothing. Read only when `dependsOn` really changed (an
         # internal diff against the pre-write `info`), so every other write pays no extra call.
-        wanted = azure_predecessor_ids(fresh["frontmatter"], item_id)
-        if wanted != azure_predecessor_ids(info["frontmatter"], item_id):
+        wanted = azure_predecessor_ids(fresh["frontmatter"], item_id,
+                                       composition_ids(fresh))
+        if wanted != azure_predecessor_ids(info["frontmatter"], item_id,
+                                           composition_ids(info)):
             ops += azure_predecessor_ops(self._relations_of(item_id), wanted,
                                          self._work_item_url)
         if ops:
@@ -1282,7 +1294,8 @@ class AzureBoardsBackend(SpecBackend):
             if self.parent_id else None
         ops = azure_patch_body({}, desired, markdown=True, parent=parent)
         # A new item has no relations to read: every wanted predecessor is an add.
-        ops += azure_predecessor_ops([], azure_predecessor_ids(fresh["frontmatter"], item_id),
+        ops += azure_predecessor_ops([], azure_predecessor_ids(fresh["frontmatter"], item_id,
+                                                              composition_ids(fresh)),
                                      self._work_item_url)
         if ops:
             self._az_patch(f"writing the new work item {item_id}", item_id, ops)
