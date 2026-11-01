@@ -481,6 +481,46 @@ class Primitives(unittest.TestCase):
         self.assertIn("border-radius: var(--radius-pill)", rule(".col-count"))
 
 
+class ShellPaint(unittest.TestCase):
+    """The bar carries icons, the pulse is a ribbon of links, and the board owns the scroll."""
+
+    def test_the_nav_draws_the_icon_of_its_view_once(self):
+        body = JS[JS.index("function paintNav("):JS.index("\n  }", JS.index("function paintNav("))]
+        self.assertIn('a.querySelector("svg.i")', body)
+        self.assertIn("icon(a.dataset.view)", body)
+
+    def test_the_pulse_is_a_ribbon_of_links_in_the_target_order(self):
+        body = JS[JS.index("function pulseCell("):JS.index("function emptyState(", JS.index("function pulseCell("))]
+        order = ['pulseCell("esperando você"', 'pulseCell("bloqueadas"', 'pulseCell("em execução"',
+                 'pulseCell("abertas"', 'pulseCell("tarefas"', 'pulseCell("mais antiga"']
+        positions = [body.index(needle) for needle in order]
+        self.assertEqual(positions, sorted(positions))
+        self.assertIn('h("a", { class: "pulse-cell"', body)
+        for href in ('"#/human"', '"#/board?f=stage:blocked"', '"#/board?f=stage:executing"', '"#/board"', '"#/list"'):
+            with self.subTest(href=href):
+                self.assertIn(href, body)
+
+    def test_the_oldest_cell_carries_the_spec_beside_the_value(self):
+        body = JS[JS.index("function pulseCell("):JS.index("function emptyState(", JS.index("function pulseCell("))]
+        self.assertIn('class: "pulse-spec"', body)
+        self.assertIn('class: "pulse-title"', body)
+
+    def test_the_theme_button_draws_its_icon_and_keeps_the_state_in_the_label(self):
+        self.assertNotIn("THEME_GLYPH", JS)
+        self.assertIn('icon("theme")', JS)
+        self.assertIn("Tema: ${THEME_LABEL[t]} (t alterna)", JS)
+
+    def test_the_board_view_takes_the_elastic_main(self):
+        self.assertIn('main.className = route.view === "board" ? "is-board" : ""', JS)
+
+    def test_the_status_bar_paints_its_icons_and_keeps_the_pause_state(self):
+        body = JS[JS.index("function paintPause("):JS.index("\n  }", JS.index("function paintPause("))]
+        self.assertIn('icon("pause")', body)
+        self.assertIn('aria-pressed", state.paused', body)
+        for needle in ('$("#refresh").prepend(icon("refresh"))', '$("#events-open").prepend(icon("bell"))'):
+            self.assertIn(needle, JS)
+
+
 class Icons(unittest.TestCase):
     """One authored 16px set in `ICONS`, drawn through `createElementNS` by `icon(name)`."""
 

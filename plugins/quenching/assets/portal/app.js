@@ -11,7 +11,6 @@
   const CONN_TEXT = { init: "conectando", live: "ao vivo", unstable: "instável", offline: "offline" };
   const THEMES = ["auto", "light", "dark"];
   const THEME_LABEL = { auto: "automático", light: "claro", dark: "escuro" };
-  const THEME_GLYPH = { auto: "◐", light: "☀", dark: "☾" };
   const TASK_FILTERS = [
     { key: "all", label: "Todas" },
     { key: "open", label: "Abertas" },
@@ -208,8 +207,7 @@
     if (btn) {
       btn.setAttribute("aria-label", `Tema: ${THEME_LABEL[t]} (t alterna)`);
       btn.setAttribute("title", `Tema: ${THEME_LABEL[t]} (t)`);
-      const g = $("#theme-glyph");
-      if (g) g.textContent = THEME_GLYPH[t];
+      if (!btn.querySelector("svg.i")) btn.prepend(icon("theme"));
     }
   }
   function cycleTheme() {
@@ -451,7 +449,7 @@
   function paintPause() {
     const b = $("#pause");
     if (!b) return;
-    b.textContent = state.paused ? "Retomar" : "Pausar";
+    b.replaceChildren(icon("pause"), state.paused ? "Retomar" : "Pausar");
     b.setAttribute("aria-pressed", state.paused ? "true" : "false");
     b.classList.toggle("is-paused", state.paused);
   }
@@ -502,11 +500,14 @@
     el.textContent = n;
     el.classList.toggle("hot", n > 0);
   }
-  function pulseCell(label, value, hint) {
-    return h("div", { class: "pulse-cell", "aria-label": `${label}: ${value}`, title: hint || label },
-      h("span", { class: "pulse-label" }, label),
+  function pulseCell(label, value, href, opts = {}) {
+    return h("a", { class: "pulse-cell" + (opts.cls ? " " + opts.cls : ""), href,
+        title: opts.hint || label, "aria-label": `${label}: ${value}` },
       h("strong", { class: "pulse-value" }, value),
-      hint ? h("span", { class: "pulse-hint" }, hint) : null);
+      label,
+      opts.spec ? h("span", { class: "pulse-spec" },
+        h("span", { class: "id" }, opts.spec.id),
+        h("span", { class: "pulse-title" }, opts.spec.title)) : null);
   }
   function paintPulse() {
     const box = $("#pulse");
@@ -520,14 +521,16 @@
     const blocked = open.filter((s) => s.stage === "blocked").length;
     const waiting = state.human ? state.human.count : null;
     const tasks = open.reduce((a, s) => ({ c: a.c + (s.progress ? s.progress.checked : 0), t: a.t + (s.progress ? s.progress.total : 0) }), { c: 0, t: 0 });
-    const oldest = open.reduce((a, s) => (s.date && (!a || s.date < a) ? s.date : a), "");
+    const oldest = open.reduce((a, s) => (s.date && (!a || s.date < a.date) ? s : a), null);
     box.replaceChildren(
-      pulseCell("abertas", String(open.length), "specs em plans"),
-      pulseCell("em execução", String(running), "specs no estágio executing"),
-      pulseCell("bloqueadas", String(blocked), "specs com tarefa bloqueada"),
-      pulseCell("esperando você", waiting == null ? "—" : String(waiting), "fila de decisão do humano"),
-      pulseCell("tarefas", tasks.t ? `${tasks.c}/${tasks.t}` : "—", "tarefas concluídas nas specs abertas"),
-      pulseCell("mais antiga", oldest ? ageLabel(oldest) : "—", oldest ? "aberta desde " + fmtDate(oldest) : "sem data"));
+      pulseCell("esperando você", waiting == null ? "—" : String(waiting), "#/human", { cls: "hot", hint: "fila de decisão do humano" }),
+      pulseCell("bloqueadas", String(blocked), "#/board?f=stage:blocked", { cls: blocked ? "bad" : "", hint: "specs com tarefa bloqueada" }),
+      pulseCell("em execução", String(running), "#/board?f=stage:executing", { hint: "specs na etapa em execução" }),
+      pulseCell("abertas", String(open.length), "#/board", { hint: "specs em plans" }),
+      pulseCell("tarefas", tasks.t ? `${tasks.c}/${tasks.t}` : "—", "#/list", { hint: "tarefas concluídas nas specs abertas" }),
+      pulseCell("mais antiga", oldest ? ageLabel(oldest.date) : "—", "#/list",
+        { hint: oldest ? "aberta desde " + fmtDate(oldest.date) : "sem data",
+          spec: oldest ? { id: oldest.id, title: oldest.title } : null }));
   }
   function emptyState(title, hint, action) {
     return h("div", { class: "empty-state" },
@@ -1800,19 +1803,22 @@
     return { view: parts[0] || "board", arg: parts.slice(1).join("/"), query };
   }
   function paintNav(view) {
-    $$("#nav a").forEach((a) => { if (a.dataset.view === view) a.setAttribute("aria-current", "page"); else a.removeAttribute("aria-current"); });
+    $$("#nav a").forEach((a) => {
+      if (!a.querySelector("svg.i")) a.prepend(icon(a.dataset.view));
+      if (a.dataset.view === view) a.setAttribute("aria-current", "page"); else a.removeAttribute("aria-current");
+    });
   }
   function captureView() {
     const a = document.activeElement;
     return {
-      y: window.scrollY,
+      y: $("#main").scrollTop,
       key: a && a !== document.body ? a.getAttribute("data-fkey") : null,
       boardX: $(".board") ? $(".board").scrollLeft : 0,
     };
   }
   function restoreView(v) {
     if (!v) return;
-    window.scrollTo(0, v.y);
+    $("#main").scrollTop = v.y;
     const b = $(".board");
     if (b) b.scrollLeft = v.boardX;
     if (v.key && (!document.activeElement || document.activeElement === document.body)) {
@@ -1845,7 +1851,9 @@
     if (seq !== renderSeq) return;
     const before = captureView();
     paintNav(route.view);
-    $("#main").replaceChildren(...nodes(content));
+    const main = $("#main");
+    main.className = route.view === "board" ? "is-board" : "";
+    main.replaceChildren(...nodes(content));
     restoreView(before);
     paintPulse();
     paintPause();
@@ -1962,6 +1970,12 @@
   applyTheme();
   state.paused = prefsGet("autorefresh", "1") === "0";
   paintPause();
+  $("#palette-open").prepend(icon("search"));
+  $("#help").replaceChildren(icon("help"));
+  $("#capture").prepend(icon("plus"));
+  $("#push").prepend(icon("up"));
+  $("#refresh").prepend(icon("refresh"));
+  $("#events-open").prepend(icon("bell"));
   if (navigator.platform && /Mac/i.test(navigator.platform)) $("#palette-key").textContent = "⌘ K";
   $("#palette-open").addEventListener("click", () => openPalette());
   $("#theme").addEventListener("click", cycleTheme);
