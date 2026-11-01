@@ -85,6 +85,33 @@ class Assets(unittest.TestCase):
         self.assertIn('href="#/gantt"', HTML)
 
 
+class Shell(unittest.TestCase):
+    """The document is one `.app` grid: bar, pulse, banners, shell and status, in that order."""
+
+    def app(self):
+        return HTML[HTML.index('<div class="app">'):HTML.index('<div id="events"')]
+
+    def test_the_shell_lives_in_one_app_grid(self):
+        self.assertEqual(HTML.count('<div class="app">'), 1)
+        self.assertIn("</footer>\n</div>", HTML)
+
+    def test_the_five_bands_keep_their_order_inside_the_grid(self):
+        app = self.app()
+        order = ['<a class="skip"', '<header class="top"', '<section class="pulse"',
+                 '<div class="banners">', '<div class="shell">', '<footer class="statusbar"']
+        positions = [app.index(needle) for needle in order]
+        self.assertEqual(positions, sorted(positions))
+
+    def test_the_banners_sit_inside_the_grid_as_one_band(self):
+        app = self.app()
+        self.assertIn('id="banner"', app)
+        self.assertIn('id="connbanner"', app)
+
+    def test_every_id_is_unique(self):
+        ids = re.findall(r'\bid="([^"]+)"', HTML)
+        self.assertEqual(len(ids), len(set(ids)))
+
+
 class Security(unittest.TestCase):
     def test_the_client_builds_no_html_string(self):
         for needle in ("innerHTML", "insertAdjacentHTML", "document.write", "outerHTML"):
@@ -367,6 +394,58 @@ class TokenBlock(unittest.TestCase):
         self.assertEqual(auto, dark)
 
 
+class ShellGeometry(unittest.TestCase):
+    """The shell is a fixed grid: bar 48, pulse 34, status 30, and `main` is the scroller."""
+
+    def test_the_band_heights_are_the_target_tokens(self):
+        root = css_block(":root")
+        self.assertEqual(root.get("bar-h"), "48px")
+        self.assertEqual(root.get("pulse-h"), "34px")
+        self.assertEqual(root.get("tools-h"), "44px")
+        self.assertEqual(root.get("status-h"), "30px")
+
+    def test_the_grid_holds_the_five_bands_with_an_elastic_middle(self):
+        body = rule(".app")
+        self.assertIn("display: grid", body)
+        self.assertIn("grid-template-rows: var(--bar-h) var(--pulse-h) auto minmax(0, 1fr) var(--status-h)", body)
+        self.assertIn("height: 100dvh", body)
+        self.assertIn("overflow: hidden", body)
+
+    def test_main_scrolls_inside_the_shell_and_the_board_keeps_its_own_scroll(self):
+        self.assertIn("overflow: auto", rule(".shell main"))
+        board = rule("main.is-board")
+        self.assertIn("display: flex", board)
+        self.assertIn("flex-direction: column", board)
+        self.assertIn("overflow: hidden", board)
+
+    def test_the_status_bar_is_a_thirty_pixel_row_not_a_fixed_strip(self):
+        body = rule(".statusbar")
+        self.assertIn("height: var(--status-h)", body)
+        self.assertNotIn("position: fixed", body)
+        self.assertNotIn("padding-bottom", rule("body"))
+
+    def test_the_current_nav_item_is_ink_underlined_not_accent(self):
+        body = rule('#nav a[aria-current="page"]')
+        self.assertIn("color: var(--ink)", body)
+        self.assertIn("box-shadow: inset 0 -2px 0 var(--ink)", body)
+        self.assertNotIn("accent", body)
+
+    def test_the_pulse_is_a_horizontal_ribbon_of_links(self):
+        pulse = rule(".pulse")
+        self.assertIn("display: flex", pulse)
+        self.assertIn("height: var(--pulse-h)", pulse)
+        cell = rule(".pulse-cell")
+        self.assertIn("white-space: nowrap", cell)
+        self.assertIn("text-decoration: none", cell)
+
+
+    def test_the_phone_bar_keeps_the_navigation_inside_the_bar(self):
+        phone = CSS[CSS.index("@media (max-width: 760px)"):CSS.index("@media (max-width: 480px)")]
+        self.assertIn(".brand-sub, #theme, #help-open { display: none; }", phone)
+        self.assertIn(".searchbtn kbd { display: none; }", phone)
+        self.assertNotIn("position: fixed", phone)
+
+
 class Primitives(unittest.TestCase):
     """The design system's generic pieces: icon base, heat action, stage mark and control edges."""
 
@@ -411,6 +490,46 @@ class Primitives(unittest.TestCase):
         self.assertIn("border-radius: var(--radius-0)", rule(".chip"))
         self.assertIn("border-radius: var(--radius-pill)", rule(".count"))
         self.assertIn("border-radius: var(--radius-pill)", rule(".col-count"))
+
+
+class ShellPaint(unittest.TestCase):
+    """The bar carries icons, the pulse is a ribbon of links, and the board owns the scroll."""
+
+    def test_the_nav_draws_the_icon_of_its_view_once(self):
+        body = JS[JS.index("function paintNav("):JS.index("\n  }", JS.index("function paintNav("))]
+        self.assertIn('a.querySelector("svg.i")', body)
+        self.assertIn("icon(a.dataset.view)", body)
+
+    def test_the_pulse_is_a_ribbon_of_links_in_the_target_order(self):
+        body = JS[JS.index("function pulseCell("):JS.index("function emptyState(", JS.index("function pulseCell("))]
+        order = ['pulseCell("esperando você"', 'pulseCell("bloqueadas"', 'pulseCell("em execução"',
+                 'pulseCell("abertas"', 'pulseCell("tarefas"', 'pulseCell("mais antiga"']
+        positions = [body.index(needle) for needle in order]
+        self.assertEqual(positions, sorted(positions))
+        self.assertIn('h("a", { class: "pulse-cell"', body)
+        for href in ('"#/human"', '"#/board?f=stage:blocked"', '"#/board?f=stage:executing"', '"#/board"', '"#/list"'):
+            with self.subTest(href=href):
+                self.assertIn(href, body)
+
+    def test_the_oldest_cell_carries_the_spec_beside_the_value(self):
+        body = JS[JS.index("function pulseCell("):JS.index("function emptyState(", JS.index("function pulseCell("))]
+        self.assertIn('class: "pulse-spec"', body)
+        self.assertIn('class: "pulse-title"', body)
+
+    def test_the_theme_button_draws_its_icon_and_keeps_the_state_in_the_label(self):
+        self.assertNotIn("THEME_GLYPH", JS)
+        self.assertIn('icon("theme")', JS)
+        self.assertIn("Tema: ${THEME_LABEL[t]} (t alterna)", JS)
+
+    def test_the_board_view_takes_the_elastic_main(self):
+        self.assertIn('main.className = route.view === "board" ? "is-board" : ""', JS)
+
+    def test_the_status_bar_paints_its_icons_and_keeps_the_pause_state(self):
+        body = JS[JS.index("function paintPause("):JS.index("\n  }", JS.index("function paintPause("))]
+        self.assertIn('icon("pause")', body)
+        self.assertIn('aria-pressed", state.paused', body)
+        for needle in ('$("#refresh").prepend(icon("refresh"))', '$("#events-open").prepend(icon("bell"))'):
+            self.assertIn(needle, JS)
 
 
 class Icons(unittest.TestCase):
