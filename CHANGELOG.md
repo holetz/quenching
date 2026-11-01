@@ -13,6 +13,16 @@ owner: [`ci-cd/versioning-release.md`](docs/standards/ci-cd/versioning-release.m
 short version for a consumer: the version is published once, deliberately, as a release — never at a
 spec's own conclude — and `cq --version` is what answers which one you are running.
 
+## 6.14.2
+
+**A regra do `AGENTS.md` para no PR quando o humano não declara autonomia.** O molde do harness
+  raiz mandava um pedido omisso rodar o fluxo inteiro — PR/merge e deploy inclusive. A fronteira
+  agora é o **PR**: um pedido que nomeia a mudança ("implemente X melhoria") vai até o PR aberto sem
+  parar para perguntar, e **merge e deploy só rodam quando o humano declara autonomia no próprio
+  pedido** ("faça de forma autônoma", "PR e merge", "até o deploy"); sem essa palavra o run termina
+  no PR, nomeado para o humano decidir. A skill `components:harness:align` mantém a linha como KEEP
+  e diz a mesma fronteira.
+
 ## 6.14.1
 
 **Um membro de épico com a branch renomeada depois do carimbo deixa de aparecer `unverified`.** O
