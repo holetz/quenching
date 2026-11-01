@@ -413,6 +413,37 @@ class Primitives(unittest.TestCase):
         self.assertIn("border-radius: var(--radius-pill)", rule(".col-count"))
 
 
+class Icons(unittest.TestCase):
+    """One authored 16px set in `ICONS`, drawn through `createElementNS` by `icon(name)`."""
+
+    def icons(self):
+        block = JS[JS.index("const ICONS = {"):JS.index("\n  };", JS.index("const ICONS = {"))]
+        return {name: re.findall(r'"([^"]+)"', paths) for name, paths in re.findall(r"(\w+): \[([^\]]*)\]", block)}
+
+    def test_every_icon_is_a_non_empty_list_of_paths(self):
+        icons = self.icons()
+        self.assertTrue(icons)
+        for name, paths in icons.items():
+            with self.subTest(icon=name):
+                self.assertTrue(paths)
+                for d in paths:
+                    self.assertTrue(d.startswith(("M", "m")), d)
+
+    def test_the_shell_and_the_board_have_their_icons(self):
+        icons = self.icons()
+        for name in ("board", "list", "human", "epics", "gantt", "sessions", "chat", "search",
+                     "theme", "help", "plus", "filter", "down", "right", "up", "x", "copy",
+                     "panel", "pause", "refresh", "bell", "alert", "check"):
+            with self.subTest(icon=name):
+                self.assertIn(name, icons)
+
+    def test_the_helper_draws_an_inline_svg_without_markup(self):
+        body = JS[JS.index("function icon(name)"):JS.index("\n  }", JS.index("function icon(name)"))]
+        self.assertIn('svg("svg", { class: "i", viewBox: "0 0 16 16", "aria-hidden": "true" }', body)
+        self.assertIn("svg(", body)
+        self.assertIn("createElementNS", JS)
+
+
 class Budget(unittest.TestCase):
     def test_the_assets_stay_inside_the_weight_budget(self):
         self.assertLess((ROOT / "app.js").stat().st_size, 120 * 1024)
