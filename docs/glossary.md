@@ -4,7 +4,7 @@ title: Glossary
 description: The repo's single A–Z lookup of terms, acronyms, and domain vocabulary — one entry per term, each linking to its full concept doc when one exists.
 resource: /docs/**
 tags: [glossary, vocabulary, terminology]
-timestamp: 2026-10-24
+timestamp: 2026-11-01
 audience: both
 authority: current
 source: quenching skeleton
@@ -190,6 +190,10 @@ Fifteen terms to read first; each has its full entry under *Terms*.
   cannot express the check.
 - [**Handoff**](standards/workflows/task-execution.md) — the `## Handoff` section of a spec,
   refreshed on four events so the next run picks up where the last stopped.
+- [**Handoff artifact**](standards/architecture/spec-backend.md) — the session-to-session handoff
+  stored on the `quenching` branch under `specs/artifacts/<id>/` (or `_handoffs/` when no spec is
+  attached) and read back with `cq specs artifact read`; a different fact from the `## Handoff`
+  section above, which is the spec's own resumption context.
 - **Harness** — the agent-facing instruction file of a repository (`AGENTS.md`, with legacy `CLAUDE.md`) that
   point into `/docs/` instead of duplicating it.
 - [**Impeccable**](standards/architecture/design-front.md) — optional screen-craft consumer that
