@@ -69,6 +69,37 @@ is reported as the failure it is — it never silently becomes the fallback. A f
 `not sent — cq specs push`. **Done when:** the artifact was read back and matches the draft, or the
 fallback is stated with the reason it was taken.
 
+### 5. Close with the direction block
+
+The handoff is worthless if the next session does not know where it is. Print ONE block, with
+these three fields in this order: the locator, the command that reads it, and the prompt that
+starts the next session. The structure and the field order are literal; the labels and the prompt
+follow the conversation's language — this repository is `pt-BR`, so its printed form is:
+
+```
+## Handoff
+
+quenching:specs/artifacts/2138/handoff-2026-11-01-destination.md
+
+Cole numa sessão nova:
+
+    Leia o handoff em
+    quenching:specs/artifacts/2138/handoff-2026-11-01-destination.md antes de agir:
+    `cq specs artifact read --spec 2138 --name handoff-2026-11-01-destination.md`.
+    Ele pertence à spec 2138; siga com `/quenching-specs:specs:execute 2138`.
+```
+
+Three substitutions, and nothing else changes:
+
+- **No spec** → the last sentence becomes `nenhuma spec está atrelada; pergunte o que fazer`, and
+  the read command loses `--spec`.
+- **Not sent** → one line under the block says `não enviado — cq specs push`.
+- **Fallback** → the locator becomes `.quenching/handoff/<name>`, the read command becomes a plain
+  file read, and one line says `só local — este repositório não tem store git de specs`.
+
+**Done when:** the block is printed with the locator, the read command and the prompt, and every
+substitution that applies is stated rather than implied.
+
 ## Invariants
 
 - Keep the handoff focused on the next session's work.
