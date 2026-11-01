@@ -22,7 +22,6 @@ try:
 except ModuleNotFoundError:  # package-qualified unittest invocation from the repository root
     sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
     import _paths  # noqa: F401
-import test_specs_git_backend as fixture
 from test_specs_git_backend import GitStoreFixture
 from quenching.specs import backends as backends_mod
 from quenching.specs.backends import git as git_mod
