@@ -85,6 +85,29 @@ class Assets(unittest.TestCase):
         self.assertIn('href="#/gantt"', HTML)
 
 
+class Shell(unittest.TestCase):
+    """The document is one `.app` grid: bar, pulse, banners, shell and status, in that order."""
+
+    def app(self):
+        return HTML[HTML.index('<div class="app">'):HTML.index('<div id="events"')]
+
+    def test_the_shell_lives_in_one_app_grid(self):
+        self.assertEqual(HTML.count('<div class="app">'), 1)
+        self.assertIn("</footer>\n</div>", HTML)
+
+    def test_the_five_bands_keep_their_order_inside_the_grid(self):
+        app = self.app()
+        order = ['<a class="skip"', '<header class="top"', '<section class="pulse"',
+                 '<div class="banners">', '<div class="shell">', '<footer class="statusbar"']
+        positions = [app.index(needle) for needle in order]
+        self.assertEqual(positions, sorted(positions))
+
+    def test_the_banners_sit_inside_the_grid_as_one_band(self):
+        app = self.app()
+        self.assertIn('id="banner"', app)
+        self.assertIn('id="connbanner"', app)
+
+
 class Security(unittest.TestCase):
     def test_the_client_builds_no_html_string(self):
         for needle in ("innerHTML", "insertAdjacentHTML", "document.write", "outerHTML"):
