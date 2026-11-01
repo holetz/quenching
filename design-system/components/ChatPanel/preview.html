@@ -1,0 +1,25 @@
+<!-- @dsCard group="Views" height=520 width=900 subtitle="One read-only question at a time, with its cost" -->
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ChatPanel</title>
+<link rel="stylesheet" href="../../tokens.css">
+<link rel="stylesheet" href="../bundle.css">
+</head>
+<body>
+<div style="height:500px;padding:16px"><div class="chat">
+<div class="chat-log" aria-live="polite">
+<p class="chat-q">Quais rotas POST o portal aceita hoje e qual delas faz push?</p>
+<p class="chat-tool"><svg class="i" viewBox="0 0 16 16" aria-hidden="true"><path d="M7 12A5 5 0 1 0 7 2a5 5 0 0 0 0 10Zm7 2-3.5-3.5"/></svg> ferramenta: <code>Grep</code></p>
+<p class="chat-tool"><svg class="i" viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 3h11v10h-11zM9.5 3v10"/></svg> ferramenta: <code>Read</code></p>
+<div class="chat-a md"><p>São seis rotas de escrita: <code>/api/capture</code>, <code>/api/section</code>, <code>/api/approve</code>, <code>/api/reorder</code>, <code>/api/discovery</code> e <code>/api/push</code>.</p>
+<p>A captura é ponto de sincronia e faz push sozinha. As outras ficam no commit local pendente até <code>/api/push</code>, um <code>cq specs push</code> ou a próxima captura.</p></div>
+<p class="chat-foot"><span class="chip ok">concluído</span><span>custo: US$ 0,0412</span></p>
+</div>
+<form class="chat-form"><label class="field">Pergunta<textarea maxlength="4000" placeholder="Pergunte sobre o código desta worktree…"></textarea></label>
+<div class="chat-form-row"><label class="control">Worktree <select><option>plan/2127-portal-experience</option></select></label><span class="muted" style="font-size:12px">somente leitura (Read, Grep, Glob) · teto US$ 0,50</span><span class="grow"></span><button type="submit" class="primary">Perguntar</button></div></form>
+</div></div>
+</body>
+</html>

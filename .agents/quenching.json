@@ -55,6 +55,7 @@
     ],
     "proofExclusions": [
       "scripts",
+      "design-system",
       "experiments",
       "site",
       "site-source"

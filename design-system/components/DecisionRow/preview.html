@@ -1,0 +1,23 @@
+<!-- @dsCard group="Views" height=300 width=1100 subtitle="One decision per row; approval is armed in place" -->
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DecisionRow</title>
+<link rel="stylesheet" href="../../tokens.css">
+<link rel="stylesheet" href="../bundle.css">
+</head>
+<body>
+<div style="padding:16px;display:grid;gap:12px;"><ul class="triagelist"><li class="triage is-armed" data-spec="2140">
+<div class="triage-main"><span class="id">2140</span><a href="#/spec/2140">Carregar o Gantt sem travar em stores com mais de 500 specs</a></div>
+<div class="triage-aside"><span class="age">há 11 d</span><button type="button" class="primary small">Confirmar aprovação</button><button type="button" class="ghost small">Cancelar</button></div>
+<p class="why">Isto grava “approved by: human” e não se desfaz.</p></li><li class="triage" data-spec="2139">
+<div class="triage-main"><span class="id">2139</span><a href="#/spec/2139">Atalho para copiar o comando de execução com a worktree</a></div>
+<div class="triage-aside"><span class="age">há 13 d</span><button type="button" class="ghost small">Abrir</button><button type="button" class="heat small">Aprovar</button></div>
+<p class="why">O comando copiado não leva a worktree, e o agente abre no checkout errado.</p></li><li class="triage" data-spec="2112">
+<div class="triage-main"><span class="id">2112</span><a href="#/spec/2112">Migrar o manifesto do deploy para o formato 2</a></div>
+<div class="triage-aside"><span class="age">há 38 d</span><button type="button" class="ghost small">Abrir</button><button type="button" class="ghost small">Copiar comando</button></div>
+<p class="why is-bad">5.1: depende da decisão sobre arquivos sem dono no alvo. 5.2: espera a 5.1.</p></li></ul></div>
+</body>
+</html>

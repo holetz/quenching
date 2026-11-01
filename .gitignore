@@ -40,3 +40,6 @@ site-source/
 *.pem
 *.key
 !plugins/claude/*/assets/checks/fixtures/documentation-site-check/glossary/site/
+
+# Impeccable live-mode state and project config
+.impeccable/

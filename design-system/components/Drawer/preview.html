@@ -1,0 +1,32 @@
+<!-- @dsCard group="Overlays" height=640 width=1200 subtitle="The detail beside the board, with focus returned" -->
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Drawer</title>
+<link rel="stylesheet" href="../../tokens.css">
+<link rel="stylesheet" href="../bundle.css">
+</head>
+<body>
+<div class="app" style="--app-h:640px;display:block"><div class="backdrop"></div><aside class="drawer" role="dialog" aria-label="Detalhe da spec"><header class="detail-head">
+<h2 class="detail-title"><span class="id">2137</span>Publicar as escritas pendentes a partir do shell 2.0</h2>
+<div class="actions"><button type="button" class="ghost small"><svg class="i" viewBox="0 0 16 16" aria-hidden="true"><path d="M5.5 5.5h7v8h-7zM3.5 10.5v-8h7"/></svg> Copiar comando</button><button type="button" class="ghost small">Registrar descoberta</button><a class="ghost small" href="#/spec/2137"><svg class="i" viewBox="0 0 16 16" aria-hidden="true"><path d="M9.5 2.5h4v4M13.5 2.5 9 7M6.5 13.5h-4v-4M2.5 13.5 7 9"/></svg> Página inteira</a><button type="button" class="ghost icon small" aria-label="Fechar"><svg class="i" viewBox="0 0 16 16" aria-hidden="true"><path d="m4 4 8 8M12 4l-8 8"/></svg></button></div>
+<p class="detail-meta"><span class="chip stage-executing">em execução</span><button type="button" class="pri p1" popovertarget="m-pri" aria-label="Prioridade P1, mudar" data-tip="Prioridade P1 · crítica">P1</button><button type="button" class="target soon" popovertarget="m-date" aria-label="Alvo 03/11/2026, terça · 2 dias úteis, mudar" data-tip="Alvo 03/11/2026, terça · 2 dias úteis"><svg class="i" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 2v2M8 12v2M2 8h2M12 8h2M8 12.5a4.5 4.5 0 1 0 0-9 4.5 4.5 0 0 0 0 9Z"/></svg>2 du</button><button type="button" class="who" popovertarget="m-who" aria-label="Responsável @ana, mudar" data-tip="Responsável: @ana"><span class="av" data-person="1" aria-hidden="true">an</span>ana</button><span>5/6 itens</span><span>aberta hoje</span><a href="#">PR #45</a></p>
+</header>
+<div class="drawer-scroll"><div class="detail in-drawer"><div><section class="spec-section" id="sec-1"><div class="sechead"><h3>Problem</h3><button type="button" class="ghost small">Editar</button></div>
+<div class="md"><p>As aprovações, seções e descobertas feitas no portal ficam no commit local pendente. Sem um gesto de envio, quem trabalha só pelo navegador precisa abrir um terminal para publicar.</p></div></section>
+<section class="spec-section" id="sec-2"><div class="sechead"><h3>Proposal</h3><button type="button" class="ghost small">Editar</button></div>
+<div class="md"><p>Um botão <strong>Enviar</strong> no topo, com a contagem de specs com escritas locais, que delega ao mesmo verbo de <code>cq specs push</code>.</p>
+<ul><li>Sem <code>--drop</code>: o portal nunca descarta escrita.</li><li>Conflito com o remoto vira <code>409 sp-git-stale-write</code>, com o remédio em texto.</li></ul>
+<blockquote><p>Publicar é um gesto explícito: nada sai sozinho do repositório local.</p></blockquote></div></section>
+<section class="spec-section" id="sec-3"><div class="sechead"><h3>Impact</h3><button type="button" class="ghost small">Editar</button></div>
+<div class="md"><table><thead><tr><th>Arquivo</th><th>Mudança</th></tr></thead><tbody><tr><td><code>specs/portal.py</code></td><td>rota e leitura de pendências</td></tr><tr><td><code>portal/app.js</code></td><td>botão e notificação</td></tr></tbody></table></div></section></div><aside class="detail-side"><section class="side-block"><div class="sechead"><h3>Tarefas 5/6</h3></div>
+<div class="segmented" role="group"><button type="button" class="ghost small" aria-pressed="true">Todas 6</button><button type="button" class="ghost small" aria-pressed="false">Abertas 1</button><button type="button" class="ghost small" aria-pressed="false">Feitas 5</button><button type="button" class="ghost small" aria-pressed="false">Bloqueadas 0</button></div>
+<ul style="margin-top:8px"><li class="task is-done"><input type="checkbox" disabled checked aria-label="feita"><div><span class="task-id">1.1</span> <span class="task-text">Adicionar a rota de envio ao servidor do portal</span><span class="task-meta">commit 244032c</span></div></li><li class="task is-done"><input type="checkbox" disabled checked aria-label="feita"><div><span class="task-id">1.2</span> <span class="task-text">Expor as escritas pendentes em GET /api/specs</span><span class="task-meta">commit 244032c</span></div></li><li class="task is-done"><input type="checkbox" disabled checked aria-label="feita"><div><span class="task-id">2.1</span> <span class="task-text">Botão Enviar com contagem no shell</span><span class="task-meta">commit 5eb7ea4</span></div></li><li class="task is-done"><input type="checkbox" disabled checked aria-label="feita"><div><span class="task-id">2.2</span> <span class="task-text">Recusar escrita obsoleta com 409 e remédio visível</span><span class="task-meta">commit 5eb7ea4</span></div></li><li class="task is-done"><input type="checkbox" disabled checked aria-label="feita"><div><span class="task-id">3.1</span> <span class="task-text">Testar a publicação com um remoto mais novo</span><span class="task-meta">commit ba5e2e6</span></div></li><li class="task"><input type="checkbox" disabled aria-label="aberta"><div><span class="task-id">3.2</span> <span class="task-text">Documentar o gesto de envio no standard do portal</span><span class="task-meta">verificar: rodar o gate</span></div></li></ul></section><section class="side-block"><h3>Registros</h3><ol class="timeline">
+<li><div><b>approved</b>by: human · 28/10/2026</div></li>
+<li><div><b>isolation</b>worktree: quenching-2137</div></li>
+<li><div><b>run</b>continua · verificado · 31/10/2026</div></li>
+<li><div><b>pr</b>#45 · aberto</div></li></ol></section></aside></div><footer class="detail-foot"><a href="#/spec/2127">← 2127 · Experiência do portal 2.0: shell, board e visões ao vivo</a><a href="#/spec/2132">2132 · Sincronizar o store com escrita local e ponto de envio →</a></footer></div></aside></div>
+</body>
+</html>

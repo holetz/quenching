@@ -455,6 +455,7 @@ class PrincipalPartition(unittest.TestCase):
 
     def test_principal_modules_activate_together_and_unpublish_the_source(self):
         manifest = load_manifest(REPO)
+        (REPO / ".quenching").mkdir(exist_ok=True)
         with tempfile.TemporaryDirectory(dir=REPO / ".quenching") as tmp:
             root = Path(tmp)
             shutil.copytree(REPO / manifest["source"], root / manifest["source"],

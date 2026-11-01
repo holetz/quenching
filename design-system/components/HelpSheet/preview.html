@@ -1,0 +1,22 @@
+<!-- @dsCard group="Overlays" height=820 width=1100 subtitle="What the portal is, stages, keys and limits" -->
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>HelpSheet</title>
+<link rel="stylesheet" href="../../tokens.css">
+<link rel="stylesheet" href="../bundle.css">
+</head>
+<body>
+<div class="app" style="--app-h:820px;display:block"><div class="backdrop"></div><div class="dialog help" role="dialog" aria-labelledby="help-title">
+<div class="dialog-head"><h2 id="help-title">Ajuda e atalhos</h2><button type="button" class="ghost icon small" aria-label="Fechar"><svg class="i" viewBox="0 0 16 16" aria-hidden="true"><path d="m4 4 8 8M12 4l-8 8"/></svg></button></div>
+<div class="help-grid"><section>
+<h3>O que é este portal</h3>
+<p>É a leitura local do store de specs: o board mostra o trabalho por etapa, o ranking mostra a prioridade global, Decidir mostra o que espera por você, Épicos mostra o programa e o Gantt mostra o cronograma derivado.</p>
+<p>Nada aqui inventa dado: cada número sai do servidor. A etapa de uma spec é derivada das tarefas e da aprovação, não é um campo que se arrasta.</p>
+<h3>O que cada etapa significa</h3><dl class="glossary"><div><dt><span class="stage" data-stage="captured">capturada</span></dt><dd>foi escrita e ainda não entrou na fila.</dd></div><div><dt><span class="stage" data-stage="ready">na fila</span></dt><dd>foi escolhida para desenvolver; desenvolvida, espera aprovação humana.</dd></div><div><dt><span class="stage" data-stage="approved">aprovada</span></dt><dd>foi aprovada por uma pessoa e pode ser executada.</dd></div><div><dt><span class="stage" data-stage="executing">em execução</span></dt><dd>tem tarefa em andamento ou já concluída.</dd></div><div><dt><span class="stage" data-stage="blocked">bloqueada</span></dt><dd>tem tarefa marcada como bloqueada; o motivo está na spec.</dd></div><div><dt><span class="stage" data-stage="review">em revisão</span></dt><dd>foi executada e espera revisão ou merge.</dd></div><div><dt><span class="stage" data-stage="archived">arquivada</span></dt><dd>saiu do trabalho ativo; o resultado está no registro.</dd></div></dl></section>
+<section><h3>Atalhos</h3><div class="keys"><div><span>Abrir a paleta de comandos</span><kbd>Ctrl/Cmd+K</kbd></div><div><span>Buscar na paleta</span><kbd>/</kbd></div><div><span>Abrir este mapa de atalhos</span><kbd>?</kbd></div><div><span>Ir para o board</span><kbd>g b</kbd></div><div><span>Ir para o ranking</span><kbd>g l</kbd></div><div><span>Ir para a fila de decisão</span><kbd>g d</kbd></div><div><span>Ir para os épicos</span><kbd>g e</kbd></div><div><span>Ir para o Gantt</span><kbd>g g</kbd></div><div><span>Ir para as sessões</span><kbd>g s</kbd></div><div><span>Próximo / anterior na lista</span><kbd>j / k</kbd></div><div><span>Abrir a gaveta</span><kbd>Enter</kbd></div><div><span>Abrir a página inteira</span><kbd>Ctrl/Cmd+Enter</kbd></div><div><span>Aprovar a spec em foco</span><kbd>a</kbd></div><div><span>Alternar o tema</span><kbd>t</kbd></div><div><span>Fechar o diálogo</span><kbd>Esc</kbd></div></div>
+<h3>O que o portal não faz</h3><ul class="plain"><li>Não move cartão entre etapas: a etapa é derivada.</li><li>Não edita tarefa nem marca checkbox: a tarefa é lida.</li><li>Não escreve fora das seis ações: capturar, editar seção, aprovar, reordenar, registrar descoberta e enviar.</li></ul></section></div></div></div>
+</body>
+</html>

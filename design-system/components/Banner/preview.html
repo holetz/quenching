@@ -1,0 +1,14 @@
+<!-- @dsCard group="Shell" height=96 width=1000 subtitle="Read-only and connection states" -->
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Banner</title>
+<link rel="stylesheet" href="../../tokens.css">
+<link rel="stylesheet" href="../bundle.css">
+</head>
+<body>
+<div style="padding:16px;display:grid;gap:8px;"><p class="banner" role="status"><svg class="i" viewBox="0 0 16 16" aria-hidden="true"><path d="M4 7h8v6.5H4zM5.5 7V5a2.5 2.5 0 0 1 5 0v2"/></svg><span>Somente leitura: o servidor foi iniciado com <code>--read-only</code>. Capturar, aprovar e enviar estão desligados.</span></p><p class="banner conn" role="alert"><svg class="i" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 2.5 14.5 13.5h-13L8 2.5ZM8 6.5v3.2M8 11.8v.1"/></svg><span>Sem conexão com o portal desde 15:04. Os dados abaixo são de 15:03.</span><button type="button" class="ghost small">Tentar de novo</button></p></div>
+</body>
+</html>

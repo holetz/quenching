@@ -1,0 +1,54 @@
+<!-- @dsCard group="Board" height=420 width=1000 subtitle="A stage column: rule, count, own scroll, collapsible" -->
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lane</title>
+<link rel="stylesheet" href="../../tokens.css">
+<link rel="stylesheet" href="../bundle.css">
+</head>
+<body>
+<div class="board" style="height:420px"><section class="col" data-stage="ready" aria-label="na fila">
+<h2 class="col-head"><button type="button" class="col-toggle" aria-expanded="true"><span class="col-name">Na fila</span><span class="count">3</span></button></h2>
+<div class="col-body"><article class="card is-mine" data-spec="2145">
+<div class="card-top"><span class="id">2145</span><button type="button" class="pri p2" popovertarget="m-pri" aria-label="Prioridade P2, mudar" data-tip="Prioridade P2 · alta">P2</button><button type="button" class="target soon" popovertarget="m-date" aria-label="Alvo 02/11/2026, segunda · 1 dia útil, mudar" data-tip="Alvo 02/11/2026, segunda · 1 dia útil"><svg class="i" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 2v2M8 12v2M2 8h2M12 8h2M8 12.5a4.5 4.5 0 1 0 0-9 4.5 4.5 0 0 0 0 9Z"/></svg>1 du</button><span class="age fresh-3" data-tip="Modificada em 27/10/2026, terça">há 4 d</span></div>
+<a class="title" href="#/spec/2145">Aprovar em lote na fila de decisão, com uma confirmação só</a>
+<button type="button" class="heat small approve">Aprovar</button>
+<div class="card-foot"><button type="button" class="who" popovertarget="m-who" aria-label="Responsável @ana, mudar" data-tip="Responsável: @ana"><span class="av" data-person="1" aria-hidden="true">an</span>ana</button><span>Portal</span></div>
+<div class="quick"><button type="button" class="ghost icon small" aria-label="Abrir a gaveta"><svg class="i" viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 3h11v10h-11zM9.5 3v10"/></svg></button><button type="button" class="ghost icon small" aria-label="Copiar o comando"><svg class="i" viewBox="0 0 16 16" aria-hidden="true"><path d="M5.5 5.5h7v8h-7zM3.5 10.5v-8h7"/></svg></button></div>
+</article>
+<article class="card" data-spec="2143">
+<div class="card-top"><span class="id">2143</span><button type="button" class="pri" popovertarget="m-pri" aria-label="Prioridade P3, mudar" data-tip="Prioridade P3 · média">P3</button><button type="button" class="target none" popovertarget="m-date" aria-label="Definir alvo"><svg class="i" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 2v2M8 12v2M2 8h2M12 8h2M8 12.5a4.5 4.5 0 1 0 0-9 4.5 4.5 0 0 0 0 9Z"/></svg>alvo</button><span class="age fresh-3" data-tip="Modificada em 25/10/2026, domingo">há 6 d</span></div>
+<a class="title" href="#/spec/2143">Filtro por responsável no Gantt</a>
+<button type="button" class="heat small approve">Aprovar</button>
+<div class="card-foot"><button type="button" class="who" popovertarget="m-who" aria-label="Responsável @rui, mudar" data-tip="Responsável: @rui"><span class="av" data-person="2" aria-hidden="true">ru</span>rui</button><span>Portal</span></div>
+<div class="quick"><button type="button" class="ghost icon small" aria-label="Abrir a gaveta"><svg class="i" viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 3h11v10h-11zM9.5 3v10"/></svg></button><button type="button" class="ghost icon small" aria-label="Copiar o comando"><svg class="i" viewBox="0 0 16 16" aria-hidden="true"><path d="M5.5 5.5h7v8h-7zM3.5 10.5v-8h7"/></svg></button></div>
+</article>
+<article class="card is-mine" data-spec="2140" data-kind="feature">
+<div class="card-top"><span class="id">2140</span><button type="button" class="pri p2" popovertarget="m-pri" aria-label="Prioridade P2, mudar" data-tip="Prioridade P2 · alta">P2</button><button type="button" class="target" popovertarget="m-date" aria-label="Alvo 05/11/2026, quinta · 4 dias úteis, mudar" data-tip="Alvo 05/11/2026, quinta · 4 dias úteis"><svg class="i" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 2v2M8 12v2M2 8h2M12 8h2M8 12.5a4.5 4.5 0 1 0 0-9 4.5 4.5 0 0 0 0 9Z"/></svg>4 du</button><span class="age" data-tip="Modificada em 20/10/2026, terça">há 11 d</span></div>
+<a class="title" href="#/spec/2140">Carregar o Gantt sem travar em stores com mais de 500 specs</a>
+<button type="button" class="heat small approve">Aprovar</button>
+<div class="card-foot"><button type="button" class="who" popovertarget="m-who" aria-label="Responsável @ana, mudar" data-tip="Responsável: @ana"><span class="av" data-person="1" aria-hidden="true">an</span>ana</button><span class="tag">feature</span><span>Portal</span></div>
+<div class="quick"><button type="button" class="ghost icon small" aria-label="Abrir a gaveta"><svg class="i" viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 3h11v10h-11zM9.5 3v10"/></svg></button><button type="button" class="ghost icon small" aria-label="Copiar o comando"><svg class="i" viewBox="0 0 16 16" aria-hidden="true"><path d="M5.5 5.5h7v8h-7zM3.5 10.5v-8h7"/></svg></button></div>
+</article></div></section><section class="col" data-stage="blocked" aria-label="bloqueada">
+<h2 class="col-head"><button type="button" class="col-toggle" aria-expanded="true"><span class="col-name">Bloqueada</span><span class="count">2</span></button></h2>
+<div class="col-body"><article class="card" data-spec="2119" data-kind="feature">
+<div class="card-top"><span class="id">2119</span><button type="button" class="pri p2" popovertarget="m-pri" aria-label="Prioridade P2, mudar" data-tip="Prioridade P2 · alta">P2</button><button type="button" class="target" popovertarget="m-date" aria-label="Alvo 04/12/2026, sexta · 25 dias úteis, mudar" data-tip="Alvo 04/12/2026, sexta · 25 dias úteis"><svg class="i" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 2v2M8 12v2M2 8h2M12 8h2M8 12.5a4.5 4.5 0 1 0 0-9 4.5 4.5 0 0 0 0 9Z"/></svg>5 sem</button><span class="age" data-tip="Modificada em 07/10/2026, quarta">há 24 d</span></div>
+<a class="title" href="#/spec/2119">Assinar as releases do plugin com a chave do CI</a>
+<div class="card-signal"><span class="progress-num">3/7</span><span class="bar has-blocked" role="img" aria-label="3 de 7 itens concluídos"><i style="width:43%"></i></span></div><p class="card-why"><svg class="i" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 2.5 14.5 13.5h-13L8 2.5ZM8 6.5v3.2M8 11.8v.1"/></svg><span>3.2: a chave de assinatura ainda não existe no cofre do CI.</span></p>
+<div class="card-foot"><button type="button" class="who" popovertarget="m-who" aria-label="Responsável @davi, mudar" data-tip="Responsável: @davi"><span class="av" data-person="3" aria-hidden="true">da</span>davi</button><span class="tag">feature</span><span>Release</span></div>
+<div class="quick"><button type="button" class="ghost icon small" aria-label="Abrir a gaveta"><svg class="i" viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 3h11v10h-11zM9.5 3v10"/></svg></button><button type="button" class="ghost icon small" aria-label="Copiar o comando"><svg class="i" viewBox="0 0 16 16" aria-hidden="true"><path d="M5.5 5.5h7v8h-7zM3.5 10.5v-8h7"/></svg></button></div>
+</article>
+<article class="card" data-spec="2112">
+<div class="card-top"><span class="id">2112</span><button type="button" class="pri p2" popovertarget="m-pri" aria-label="Prioridade P2, mudar" data-tip="Prioridade P2 · alta">P2</button><button type="button" class="target none" popovertarget="m-date" aria-label="Definir alvo"><svg class="i" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 2v2M8 12v2M2 8h2M12 8h2M8 12.5a4.5 4.5 0 1 0 0-9 4.5 4.5 0 0 0 0 9Z"/></svg>alvo</button><span class="age" data-tip="Modificada em 23/09/2026, quarta">há 38 d</span></div>
+<a class="title" href="#/spec/2112">Migrar o manifesto do deploy para o formato 2</a>
+<div class="card-signal"><span class="progress-num">4/10</span><span class="bar has-blocked" role="img" aria-label="4 de 10 tarefas concluídas"><i style="width:40%"></i></span></div><p class="card-why"><svg class="i" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 2.5 14.5 13.5h-13L8 2.5ZM8 6.5v3.2M8 11.8v.1"/></svg><span>5.1: depende da decisão sobre arquivos sem dono no alvo. 5.2: espera a 5.1.</span></p>
+<div class="card-foot"><button type="button" class="who" popovertarget="m-who" aria-label="Responsável @rui, mudar" data-tip="Responsável: @rui"><span class="av" data-person="2" aria-hidden="true">ru</span>rui</button><span>Release</span></div>
+<div class="quick"><button type="button" class="ghost icon small" aria-label="Abrir a gaveta"><svg class="i" viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 3h11v10h-11zM9.5 3v10"/></svg></button><button type="button" class="ghost icon small" aria-label="Copiar o comando"><svg class="i" viewBox="0 0 16 16" aria-hidden="true"><path d="M5.5 5.5h7v8h-7zM3.5 10.5v-8h7"/></svg></button></div>
+</article></div></section><section class="col" data-stage="review" aria-label="em revisão">
+<h2 class="col-head"><button type="button" class="col-toggle" aria-expanded="true"><span class="col-name">Em revisão</span><span class="count">0</span></button></h2>
+<div class="col-body"><p class="col-empty">nada aqui</p></div></section><section class="col is-collapsed" data-stage="archived" aria-label="arquivada">
+<h2 class="col-head"><button type="button" class="col-toggle" aria-expanded="false"><span class="col-name">Arquivada</span><span class="count">14</span></button></h2></section></div>
+</body>
+</html>

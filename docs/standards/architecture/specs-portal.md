@@ -4,7 +4,7 @@ title: The specs portal reads one store and widens nothing without a decision
 description: The local spec portal (cq specs serve) reads only the specs store open_backend reads, exposes a fixed set of GET and POST routes plus, under --chat, a read-only claude -p chat polled by job, keeps its loopback, token, Host/Origin and CSP guarantees, builds every node with textContent, reuses cockpit UX patterns but never its code, shows the spec-runner's run record on the card, and regenerates the reader copy and the Codex mirror with every change
 resource: plugins/quenching/assets/bin/quenching/specs/portal.py, plugins/quenching/assets/bin/quenching/specs/chat.py, plugins/quenching/assets/portal/**, plugins/quenching/assets/bin/quenching/portal/**, plugins/quenching/assets/bin/quenching/common/lent.py, plugins/quenching/assets/bin/quenching/session/portal.py
 tags: [architecture, portal, specs, security, ux]
-timestamp: 2026-10-30
+timestamp: 2026-11-01
 audience: both
 authority: current
 source: specs 1769, 1812, 1814, 1815, 1816, 2127, 1020213 and the owner decisions B-O1 to B-O4 of epics 1768 and 1810, plus D1 A of 2026-10-30
@@ -274,9 +274,6 @@ dialog owns the keyboard first.
 - From 320 px to 1800 px the shell reflows: the nav scrolls horizontally on small screens, the
   board scrolls with snap points, tables live inside `.table-wrap`, and motion is suppressed under
   `prefers-reduced-motion`.
-
-The three asset budgets are part of the contract: `index.html` under 12 KB, `app.css` under
-48 KB and `app.js` under 120 KB, uncompressed and without a build step.
 
 ## Regeneration
 
