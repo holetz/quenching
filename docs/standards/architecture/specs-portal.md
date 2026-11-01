@@ -7,7 +7,7 @@ tags: [architecture, portal, specs, security, ux]
 timestamp: 2026-11-01
 audience: both
 authority: current
-source: specs 1769, 1812, 1814, 1815, 1816, 2127, 2139, 2140 and 1020213 and the owner decisions B-O1 to B-O4 of epics 1768 and 1810, plus D1 A of 2026-10-30
+source: specs 1769, 1812, 1814, 1815, 1816, 2127, 2139, 2140 and 2142 and 1020213 and the owner decisions B-O1 to B-O4 of epics 1768 and 1810, plus D1 A of 2026-10-30
 maintainer: quenching
 ---
 
@@ -114,6 +114,9 @@ The read payloads the page consumes are fixed field by field:
   Dependencies and the critical path are the server's `derive_epic`, never the page's.
 - `GET /api/human` answers `{fetchedAt, count, epicMembers[], blocked[], awaitingApproval[]}`.
   The rows carry ids and reasons, not dates; the page reads age from the matching spec row.
+  It walks only the `plans` phase, so an archived spec is never in `blocked[]`: a blocked card
+  carries its written reason only while the spec is open, and falls back to `(sem motivo escrito)`
+  once it is archived. That is a limit of the payload, not a rendering bug.
 - `GET /api/config` answers `{writable, readOnlyReason, ttlSeconds, stages[], headings[],
   sessions, chat, chatBudgetUsd}`.
 
