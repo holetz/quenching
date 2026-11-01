@@ -234,5 +234,62 @@ class PushVerb(GitStoreFixture):
         self.assertIsNone(self.backend._pending())
 
 
+class ArtifactOnlyPending(PushVerb):
+    """A handoff with no spec of its own is the one pending write that names no spec, and it
+    must survive the three surfaces that decide whether anything is waiting."""
+
+    def test_push_sends_a_standalone_artifact(self):
+        self.backend.write_artifact(None, "handoff-2026-11-01-x.md", "the handoff\n")
+        before = self.remote_tip()
+        code, got = self.run_push()
+        self.assertEqual(0, code, got)
+        self.assertEqual(([], ["_handoffs/handoff-2026-11-01-x.md"]),
+                         (got["sent"], got["artifacts"]))
+        self.assertNotEqual(before, self.remote_tip())
+        self.assertEqual("the handoff\n",
+                         self.remote_file("specs/artifacts/_handoffs/handoff-2026-11-01-x.md"))
+        self.assertIsNone(self.backend._pending())
+
+    def test_the_human_line_counts_the_artifact(self):
+        self.backend.write_artifact(None, "h.md", "text\n")
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf):
+            code = push_mod.cmd_push(argparse.Namespace(json=False, drop=None), self.path,
+                                     Emitter())
+        self.assertEqual(0, code, buf.getvalue())
+        self.assertIn("pushed 0 spec(s) and 1 artifact(s)", buf.getvalue())
+
+    def test_status_reports_the_artifact_beside_the_empty_spec_list(self):
+        self.backend.write_artifact(1, "h.md", "attached\n")
+        buf = io.StringIO()
+        with mock.patch.object(read_mod, "open_backend", return_value=(self.backend, {})), \
+                contextlib.redirect_stdout(buf):
+            read_mod.cmd_status(argparse.Namespace(json=True, spec="1", epic=None,
+                                                   no_fetch=False), self.path, Emitter())
+        pending = json.loads(buf.getvalue())["pending"]
+        self.assertEqual(([1], []), (pending["specs"], pending["artifacts"]))
+        self.run_push()
+        self.backend.write_artifact(None, "h.md", "standalone\n")
+        buf = io.StringIO()
+        with mock.patch.object(read_mod, "open_backend", return_value=(self.backend, {})), \
+                contextlib.redirect_stdout(buf):
+            read_mod.cmd_status(argparse.Namespace(json=True, spec="1", epic=None,
+                                                   no_fetch=False), self.path, Emitter())
+        pending = json.loads(buf.getvalue())["pending"]
+        self.assertEqual(([], ["_handoffs/h.md"]), (pending["specs"], pending["artifacts"]))
+
+    def test_the_code_side_sync_sends_an_artifact_only_pending(self):
+        self.backend.write_artifact(None, "h.md", "text\n")
+        got = push_mod.sync_store(self.path)
+        self.assertTrue(got["ok"], got)
+        self.assertEqual(([], ["_handoffs/h.md"]), (got["sent"], got["artifacts"]))
+        self.assertEqual("text\n", self.remote_file("specs/artifacts/_handoffs/h.md"))
+
+    def test_an_empty_pending_commit_is_still_nothing_pending(self):
+        self.backend.write_artifact(None, "h.md", "text\n")
+        self.backend.remove_artifact(None, "h.md")
+        self.assertEqual("nothing pending", push_mod.sync_store(self.path)["skipped"])
+
+
 if __name__ == "__main__":
     unittest.main()
