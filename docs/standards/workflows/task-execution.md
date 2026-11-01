@@ -4,7 +4,7 @@ title: Task execution contract
 description: How a spec's task is executed — the verification policies, `verify:` scoped at authoring, the three causes of a check that can never pass (one of them invisible to the falsification run), `files:` naming the derived artifacts an edit invalidates, the failure budget, one commit per task retained across section boundaries, the two-level review split, the four-event Handoff refresh cadence, and the delegation and [P] disjunction rules
 resource: plugins/quenching/commands/specs/execute.md, plugins/quenching/commands/specs/conclude.md, plugins/quenching/assets/references/specs-execute/execution.md, plugins/quenching/assets/references/specs-develop/artifacts.md, plugins/quenching/assets/references/git/commit.md, plugins/quenching/assets/bin/quenching/specs/**, plugins/quenching/assets/specs/templates/spec.md
 tags: [workflows, specs, execution, verification, commits, delegation, handoff]
-timestamp: 2026-10-17
+timestamp: 2026-11-01
 audience: both
 authority: current
 source: refine-and-execute-specs-flow, cut-specs-execute-turns; history in ADR 0002
@@ -260,6 +260,24 @@ tells the executor something broke, at the point where the diff is already writt
 `files:` entry tells the author what the change reaches before it is made. A task whose `files:`
 omits the fixture also loses the delegation gate and the `parallel` disjunction proof over it, both
 of which read `files:` and neither of which reads the test suite.
+
+**Generated distributions are the same rule's second instance.** A task that edits the shipped
+payload under `plugins/quenching/` also regenerates everything the generators copy out of it —
+`scripts/generate_plugin_modules.py --write`, `scripts/sync_codex_plugin.py --write`,
+`scripts/sync_opencode_plugin.py --write` and `cq deploy --target . --write` rewrite the trees under
+`plugins/claude/`, `plugins/codex/`, `plugins/opencode/` and `.agents/`. Declare those trees in
+`files:` exactly as the golden above, because the repository gate's `deployed surface lockstep`
+check refuses the branch until they are regenerated: a task that omits them cannot pass its own
+`verify:`, and the execution that regenerates them anyway commits paths its declaration never
+owned. The provider copies are not all byte-identical by design — the Claude, Codex and OpenCode
+`app.js` differs only in each provider's command spelling — so the declaration is over the trees,
+not over "the same file, copied".
+
+Measured on `2139` (task 3.1, 2026-11-01): `files:` named only
+`plugins/quenching/assets/portal/app.css`, while the gate also required all four regeneration
+commands, which rewrote 29 generated files — 13 `app.css` copies, 13 `app.js` copies carrying each
+provider's command form, and 3 manifests — committed with the task and in no task's `files:` and in
+no `## Impact` line.
 
 ## A blocked task is a visible marker, not a hidden counter
 
