@@ -40,7 +40,8 @@ def sync_store(root: str) -> dict:
         result = backend.push(collapse=False)
     except BackendRefusal as exc:
         return {"ok": False, "code": exc.err.get("code"), "message": exc.err.get("message", "")}
-    return {"ok": True, "sent": pending["specs"], **result}
+    return {"ok": True, "sent": pending["specs"], "artifacts": pending.get("artifacts") or [],
+            **result}
 
 
 def card_failures(backend) -> list[dict]:
@@ -69,9 +70,12 @@ def cmd_push(args, root: str, out: Emitter) -> int:
     pending = backend.pending_state()
     result = backend.push(drop=drop)
     sent = [s for s in (pending["specs"] if pending else []) if s not in drop]
-    obj = {"ok": True, "sent": sent, "dropped": list(drop), **result}
+    artifacts = list((pending or {}).get("artifacts") or [])
+    obj = {"ok": True, "sent": sent, "artifacts": artifacts, "dropped": list(drop), **result}
     if result.get("commit"):
-        human = (f"pushed {len(sent)} spec(s) in {result['commit'][:12]} "
+        counted = f"{len(sent)} spec(s)" + (f" and {len(artifacts)} artifact(s)"
+                                           if artifacts else "")
+        human = (f"pushed {counted} in {result['commit'][:12]} "
                  f"(history {result['history']})")
     elif result.get("collapseRefused"):
         human = ("nothing pending; the remote refuses to rewrite the store branch, so it keeps "

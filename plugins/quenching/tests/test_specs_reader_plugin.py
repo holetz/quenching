@@ -130,6 +130,23 @@ class TheAllowlist(unittest.TestCase):
                 self.assertEqual(2, run.returncode, run.stdout)
                 self.assertEqual("sp-read-only", json.loads(run.stdout)["code"])
 
+    def test_artifact_write_and_rm_are_refused_before_root_resolution(self):
+        for sub in ("write", "rm"):
+            with self.subTest(sub=sub):
+                run = run_shim("--root", "/nonexistent", "artifact", sub, "--name", "h.md",
+                               "--json")
+                self.assertEqual(2, run.returncode, run.stdout)
+                self.assertEqual("sp-read-only", json.loads(run.stdout)["code"])
+
+    def test_artifact_list_and_read_reach_the_pillar(self):
+        # `sp-read-root` is the pillar's OWN refusal: the sub-verb passed the allowlist.
+        for sub in ("list", "read"):
+            with self.subTest(sub=sub):
+                run = run_shim("--root", "/nonexistent", "artifact", sub, "--name", "h.md",
+                               "--json")
+                self.assertEqual(2, run.returncode, run.stdout)
+                self.assertEqual("sp-read-root", json.loads(run.stdout)["code"])
+
     def test_a_missing_checkout_is_a_refusal(self):
         run = run_shim("list", "--json", env={"QUENCHING_SPECS_ROOT": "/nonexistent/checkout"})
         self.assertEqual(2, run.returncode, run.stdout)
@@ -161,9 +178,11 @@ from quenching.specs.backends.azure import AzureBoardsBackend
 from quenching.specs.backends.memory import MemoryBackend
 refused = {}
 for cls in (GitHubBackend, AzureBoardsBackend, MemoryBackend):
-    for name in ("write_spec", "create_spec", "move_spec"):
+    for name in ("write_spec", "create_spec", "move_spec", "write_artifact", "remove_artifact"):
+        args = (object.__new__(cls), None, "h.md", "text") if "artifact" in name \\
+            else (object.__new__(cls), {}, "")
         try:
-            getattr(cls, name)(object.__new__(cls), {}, "")
+            getattr(cls, name)(*args)
             refused[f"{cls.__name__}.{name}"] = None
         except BackendRefusal as exc:
             refused[f"{cls.__name__}.{name}"] = exc.err["code"]
@@ -180,7 +199,7 @@ print(json.dumps(refused))
                              text=True)
         self.assertEqual(0, run.returncode, run.stderr)
         refused = json.loads(run.stdout)
-        self.assertEqual(10, len(refused))
+        self.assertEqual(16, len(refused))
         self.assertEqual({"sp-read-only"}, set(refused.values()), refused)
 
 

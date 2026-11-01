@@ -68,6 +68,25 @@ class SpecBackend:
         """The one lifecycle hop — `plans/` to `archive/` — returning the new locator."""
         raise NotImplementedError
 
+    # ARTIFACTS ARE A CAPABILITY, NOT A SIXTH PRIMITIVE. They are not part of the canonical
+    # document, so they do not join the five above. A store that cannot host them refuses
+    # here instead of pretending, and the CLI turns that refusal into exit 2; the git store
+    # is the only backend that implements the four below.
+    def list_artifacts(self, spec_id: str | int | None = None) -> list[dict]:
+        """`[{spec, name, path, bytes}]` for one spec's artifacts, or the standalone ones
+        when `spec_id` is None."""
+        raise BackendRefusal(artifact_unsupported(self.name))
+
+    def read_artifact(self, spec_id: str | int | None, name: str) -> str:
+        raise BackendRefusal(artifact_unsupported(self.name))
+
+    def write_artifact(self, spec_id: str | int | None, name: str, text: str) -> str:
+        """Store one text artifact and return its locator."""
+        raise BackendRefusal(artifact_unsupported(self.name))
+
+    def remove_artifact(self, spec_id: str | int | None, name: str) -> str:
+        raise BackendRefusal(artifact_unsupported(self.name))
+
     # There is no `reconcile_labels` hook here, and the absence is deliberate. One existed
     # briefly — a no-op on the base class, meant for an external backend to override — and
     # nothing ever called it or overrode it, because the reconciliation belongs INSIDE
@@ -110,6 +129,39 @@ def read_only_refusal(tool: str, argv: tuple[str, ...]) -> BackendRefusal:
         "message": f"the specs backend is read-only; `{tool} {' '.join(argv[:4])}` is not a "
                    f"read and was refused before any process started — nothing was written",
     })
+
+
+ARTIFACT_NAME = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,119}$")
+MAX_ARTIFACT_BYTES = 1024 * 1024
+STANDALONE_OWNER = "_handoffs"
+
+
+def artifact_owner(spec_id: str | int | None) -> str:
+    """`<id>` for an artifact of a spec, `_handoffs` for one attached to none — never
+    colliding, because an id is digits."""
+    return STANDALONE_OWNER if spec_id is None else str(spec_id)
+
+
+def artifact_unsupported(backend: str) -> dict:
+    return {"code": "sp-artifact-unsupported", "exit": 2,
+            "message": f"the '{backend}' backend holds no spec artifacts; only the git store "
+                       "does, and nothing was written"}
+
+
+def check_artifact(name: str, text: str) -> None:
+    """The two rules every artifact obeys, refused before any write."""
+    if not ARTIFACT_NAME.match(name or ""):
+        raise BackendRefusal({
+            "code": "sp-artifact-name", "exit": 2,
+            "message": f"artifact name '{name}' is one path segment: a letter or digit first, "
+                       "then up to 120 of letters, digits, '.', '_' and '-' — no '/', no '..'",
+        })
+    if len(text.encode("utf-8")) > MAX_ARTIFACT_BYTES:
+        raise BackendRefusal({
+            "code": "sp-artifact-too-large", "exit": 2,
+            "message": f"the artifact is larger than {MAX_ARTIFACT_BYTES} bytes; a text "
+                       "artifact is a handoff, a log or a patch, not a data dump",
+        })
 
 
 _RETRY_AFTER_RE = re.compile(r"retry-after\s*[:=]\s*(\d+(?:\.\d+)?)", re.IGNORECASE)

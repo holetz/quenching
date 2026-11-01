@@ -4,7 +4,8 @@ Moved verbatim out of the pre-refactor specs script."""
 from __future__ import annotations
 
 from quenching.common.leak import guard_store_write
-from quenching.specs.backends.base import BackendRefusal, SpecBackend
+from quenching.specs.backends.base import (BackendRefusal, SpecBackend, artifact_owner,
+                                           check_artifact)
 from quenching.specs.parse import PHASES, derive_info, derive_labels, resolve_one
 
 
@@ -27,6 +28,8 @@ class MemoryBackend(SpecBackend):
         # Native ID -> (phase, document). The fake allocates integer IDs so it exercises the
         # same interface as the provider backends without inventing a filename.
         self.docs: dict[int, tuple[str, str]] = {}
+        # (owner, name) -> text. `owner` is the spec id as a string, or `_handoffs`.
+        self.artifacts: dict[tuple[str, str], str] = {}
         self._next_id = 1
 
     def _descriptor(self, spec_id: int) -> dict:
@@ -73,3 +76,44 @@ class MemoryBackend(SpecBackend):
         _, text = self.docs[info["id"]]
         self.docs[info["id"]] = (dest_phase, text)
         return f"memory://{dest_phase}/{info['id']}"
+
+    # -- the artifact capability ------------------------------------------------ #
+    def _owner(self, spec_id) -> str:
+        """The owner key, refusing an id this store does not hold: an attached artifact with
+        no spec to attach to is a typo, never a standalone one."""
+        owner = artifact_owner(spec_id)
+        if owner != "_handoffs" and not any(str(i) == owner for i in self.docs):
+            raise BackendRefusal({"code": "sp-unknown-id", "exit": 2,
+                                  "message": f"no spec with id '{spec_id}' to attach the "
+                                             "artifact to"})
+        return owner
+
+    def list_artifacts(self, spec_id: str | int | None = None) -> list[dict]:
+        owner = self._owner(spec_id)
+        rows = [{"spec": None if owner == "_handoffs" else int(owner), "name": name,
+                 "path": f"memory://artifacts/{owner}/{name}"}
+                for (held, name) in self.artifacts if held == owner]
+        return sorted(rows, key=lambda row: row["name"])
+
+    def read_artifact(self, spec_id: str | int | None, name: str) -> str:
+        owner = self._owner(spec_id)
+        if (owner, name) not in self.artifacts:
+            raise BackendRefusal({"code": "sp-artifact-unknown", "exit": 2,
+                                  "message": f"no artifact '{name}' for {owner} in the "
+                                             "memory store"})
+        return self.artifacts[(owner, name)]
+
+    def write_artifact(self, spec_id: str | int | None, name: str, text: str) -> str:
+        owner = self._owner(spec_id)
+        check_artifact(name, text)
+        self.artifacts[(owner, name)] = guard_store_write(
+            text, None, self.artifacts.get((owner, name)), BackendRefusal)
+        return f"memory://artifacts/{owner}/{name}"
+
+    def remove_artifact(self, spec_id: str | int | None, name: str) -> str:
+        owner = self._owner(spec_id)
+        if self.artifacts.pop((owner, name), None) is None:
+            raise BackendRefusal({"code": "sp-artifact-unknown", "exit": 2,
+                                  "message": f"no artifact '{name}' for {owner} in the "
+                                             "memory store"})
+        return f"memory://artifacts/{owner}/{name}"

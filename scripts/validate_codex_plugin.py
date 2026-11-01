@@ -51,7 +51,9 @@ def validate_cq_resolution(root: Path) -> None:
 
 
 AGENT_PATH = re.compile(r"(?:plugins/quenching/|plugins/codex/quenching-codex/|\.\./\.\./)agents/([a-z][a-z0-9-]*)\.md")
-AGENT_NAME = re.compile(r"(?<![A-Za-z0-9_/.-])quenching:([a-z][a-z0-9-]*)(?![A-Za-z0-9:-])")
+# `quenching:<agent>` — and never a store locator. The specs store names its paths
+# `quenching:specs/artifacts/<id>/<name>`, so a following `/` means a path, not an agent.
+AGENT_NAME = re.compile(r"(?<![A-Za-z0-9_/.-])quenching:([a-z][a-z0-9-]*)(?![A-Za-z0-9:/-])")
 
 
 def validate_agent_citations(root: Path) -> None:

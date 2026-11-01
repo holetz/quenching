@@ -230,7 +230,7 @@ instead of running either.
 | Command | Does |
 | --- | --- |
 | `quenching-align` | The one align that spans the eight aligned fronts, on ONE confirmation — conducting each front's own align in dependency order, never reimplementing any of them. |
-| `quenching-handoff` | Compacts the current conversation into a handoff document a fresh session can continue from — referencing existing plans, issues, commits and diffs rather than duplicating them. |
+| `quenching-handoff` | Compacts the current conversation into a handoff stored beside its spec on the `quenching` branch, pushes it, and closes with the locator, the read command and the prompt the next session starts from — referencing existing plans, issues, commits and diffs rather than duplicating them. |
 
 The `specs` front has ten commands and a flow worth reading as a whole, so it gets its own section
 below.

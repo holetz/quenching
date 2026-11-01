@@ -4,10 +4,10 @@ title: Spec backend interface
 description: The spec store is a git branch holding the canonical documents, with thin tracker cards as a projection written at lifecycle transitions; five document primitives, one ID identity and one refusal boundary keep every backend identical, and the deprecated tracker backends keep their serialisation rules
 resource: plugins/quenching/assets/bin/quenching/specs/backends/**, plugins/quenching/assets/bin/quenching/specs/commands/**, plugins/quenching/assets/references/specs-develop/spec-driven.md, plugins/quenching/assets/bin/quenching/common/leak.py
 tags: [architecture, specs, backend, interface, serialization]
-timestamp: 2026-10-29
+timestamp: 2026-11-01
 audience: both
 authority: current
-source: history in ADR 0001, ADR 0006 and ADR 0016; spec 2097 (task 3.2) — the leak guard on every store write; spec 2123 — local pending writes and the single-commit branch
+source: history in ADR 0001, ADR 0006 and ADR 0016; spec 2097 (task 3.2) — the leak guard on every store write; spec 2123 — local pending writes; spec 2138 — spec artifacts and the handoff as a sync point
 maintainer: quenching
 ---
 
@@ -24,9 +24,9 @@ records and the derived stages identical across the git store, the deprecated tr
 
 ## The interface is the document, not the verbs
 
-The CLI exposes eight verbs — `list`, `status`, `show`, `section`, `task`, `discover`, `promote`,
-`validate`. **A backend implements none of them.** It implements five primitives over the canonical
-markdown document:
+The CLI exposes its read and write verbs — `list`, `status`, `show`, `section`, `task`,
+`discover`, `promote`, `validate` — and **a backend implements none of them.** It implements five
+primitives over the canonical markdown document:
 
 | Primitive | Answers |
 | --- | --- |
@@ -37,6 +37,15 @@ markdown document:
 | `move_spec(info, dest_phase)` | archive the spec and return its new locator |
 
 The eight verbs are shared code layered on those five.
+
+**Artifacts are a capability beside the documents, never a sixth primitive.** A spec can carry a
+text that is not its document — the handoff a session writes for the next one — and the store keeps
+it under `specs/artifacts/<id>/`. `list_artifacts`, `read_artifact`, `write_artifact` and
+`remove_artifact` sit on the base class refusing `sp-artifact-unsupported`, and only the git store
+implements them: a tracker keeps the document and grows no tree beside it. Nothing derives a stage,
+a gate or an ID from an artifact, which is exactly why it does not join the five — an interface
+that accepted it would make every backend pay, in every signature, for a capability three of them
+cannot have.
 
 **This is what makes "every backend behaves identically" a property of the code rather than a
 promise.** One method per verb reads like the obvious design, and it is the wrong one: each backend
@@ -147,7 +156,10 @@ and the GitHub and Azure Boards backends keep working unchanged beside it.
 - **Layout.** The branch is `quenching`, on remote `origin`. `specs/<id>.md` holds an open spec and
   `specs/archive/<id>.md` an archived one. Each file is the canonical document, byte for byte, so
   `derive_info` reads it unchanged. The phase is the directory and never a frontmatter fact, so
-  archiving moves the file without editing its text. `specs/.next-id` is the ID counter and
+  archiving moves the file without editing its text. `specs/artifacts/<id>/<name>` holds the text a
+  spec carries beside its document, and `specs/artifacts/_handoffs/<name>` one attached to no spec;
+  an artifact keeps its path when the document is archived, because a locator a previous session
+  printed must still resolve. `specs/.next-id` is the ID counter and
   `quenching.json` at the branch root holds the specs-axis configuration under its `specs`
   namespace. The locator is `quenching:<path>`.
 - **Configuration.** With the git store selected, each specs-axis key the branch declares
@@ -173,8 +185,9 @@ and the GitHub and Azure Boards backends keep working unchanged beside it.
 - **Reads see their own writes.** A read lays the pending commit over the remote tip, also under
   `QUENCHING_SPECS_NO_FETCH`. When a fetch brought a new tip, the read replays the pending changes
   onto it **in memory** and never moves the ref; only a write persists the replay. A conflict is
-  judged per spec ID (`specs/<id>.md` and `specs/archive/<id>.md` are one spec): the read keeps the
-  local document and the sync refuses. `specs/.next-id` takes the larger value. A read-only mirror
+  judged per spec ID (`specs/<id>.md` and `specs/archive/<id>.md` are one spec, together with
+  everything under `specs/artifacts/<id>/`): the read keeps the local document and the sync refuses.
+  `specs/.next-id` takes the larger value. A read-only mirror
   ignores the pending ref.
 - **A sync is one parentless commit.** `create`, `archive`/`restore`, `import`, `configure`,
   `cq specs push [--drop <id>...]` and the end of `cq git push`, `cq git pr create` and
@@ -214,7 +227,9 @@ and the GitHub and Azure Boards backends keep working unchanged beside it.
   write onto the pushed commit before the first sync's close runs, a late write back to the base
   text reads as remote drift and is lost. It takes three overlapping processes within milliseconds.
 - **Visibility.** `cq specs status` reports how many specs hold unsent local writes, and since
-  when. Other clones and the board see a change only at the next sync point.
+  when, and names the standalone artifacts among them, which belong to no spec. Other clones and
+  the board see a change only at the next sync point. `/handoff` is one: it pushes as its last act,
+  because a handoff left in the pending ref is lost on a reboot or on another machine.
 - **Identity.** Without a tracker, the store owns identity: the counter is read and incremented
   inside the same sync as the document, so concurrent creations never share an ID.
   `create_spec(phase, text, spec_id=...)` accepts an ID that a tracker card already allocated, and
@@ -279,6 +294,51 @@ and discuss under. The spec on the branch stays the source of truth.
   (`sp-migrate-dependency-limit`), and `{"backend": "github"}` as the printed config change. On both
   destinations the equality also compares each spec's `predecessor_links` with its remapped
   numeric `dependsOn`, and a difference fails the proof.
+
+### Artifacts
+
+An **artifact** is a text that belongs to a spec and is not the spec. The handoff a session writes
+for the next one is the first user; the point of putting it on the branch is that the next session
+reads it from the store, on any machine, instead of from a temporary file only one machine has.
+
+**What it costs is its own bytes, and no history.** A 4,812-byte handoff took the `specs/` tree of a
+fresh store from 3,054 to 7,866 bytes; the push replaces the parentless commit rather than appending
+to it, so the branch keeps one commit and the superseded objects wait for `gc`. An artifact is
+therefore cheap to write and never cheap to hide: it is visible in `git ls-tree` beside the spec.
+
+- **Text only, one path segment, 1 MiB.** A name is `^[A-Za-z0-9][A-Za-z0-9._-]{0,119}$` — no `/`,
+  no `..` — and a name the pattern refuses is `sp-artifact-name` before anything is hashed. The
+  owner is a spec ID, or `_handoffs` for an artifact attached to no spec: the two cannot collide,
+  because an ID is digits. Writing the same name replaces it, which is how a later handoff of the
+  same session supersedes the earlier one. A body over 1 MiB of UTF-8 is `sp-artifact-too-large`.
+- **The body never travels in an argument.** `cq specs artifact write` reads it from stdin or
+  `--from <path>`, so a handoff never lands in a shell history or a process listing. Bytes that are
+  not UTF-8 are `sp-artifact-binary`, refused by the CLI before the store is touched; a blob a human
+  committed by hand that is not UTF-8 refuses on read with the same code rather than a traceback.
+  The write passes the same leak guard as the document.
+- **The spec owns its prefix.** `specs/artifacts/<id>/` belongs to spec `<id>` exactly as its two
+  documents do, and the union of those paths is what `_replay`, `_store_local`, `_store_sync`,
+  `_close` and `_late` judge: a spec changed on both sides conflicts whether the change is its
+  document or an artifact under it. An artifact-only write is a pending write like any other — it
+  enters the pending ref, cancels the previous sync's retirement of it, is carried onto the pushed
+  commit by a late write, and `pending_state` reports it (`artifacts`, beside `specs`) so that
+  `cq specs push` sends it instead of reporting nothing pending.
+- **Reading never decodes artifacts in bulk.** `preload` loads the documents `_index` recognises and
+  nothing else, so `list --lean`, the portal header and MCP never pay for the handoffs beside them.
+- **Archive does not move them.** The ID is the identity; `specs/artifacts/<id>/` stays where it is
+  when `specs/<id>.md` becomes `specs/archive/<id>.md`, or a locator already printed would stop
+  resolving.
+- **The verbs.** `cq specs artifact list [--spec <id>]`, `read --name <n> [--out <path>]`,
+  `write --name <n> [--spec <id>] [--from <path>]` and `rm --name <n> [--spec <id>]`, all with
+  `--json`. A backend without the capability refuses `sp-artifact-unsupported` (exit 2), and the
+  read-only reader admits `list` and `read` while refusing `write` and `rm`.
+- **The handoff closes the loop.** `/handoff` resolves the spec (an explicit ID, otherwise
+  `cq specs find` over the current branch, otherwise none), writes the artifact through this door,
+  pushes the store and reads the artifact back. When the store refuses — no git store, a tracker
+  backend, an offline push — the `.quenching/handoff/` draft is the handoff and the report says it
+  stayed local. Either way it prints one direction block: the locator, the command that reads it and
+  the prompt that starts the next session. The `## Handoff` section of a spec is a different fact,
+  the small event-bound context an executor reads, and the two never replace each other.
 
 ## Legacy tracker backends (deprecated)
 
