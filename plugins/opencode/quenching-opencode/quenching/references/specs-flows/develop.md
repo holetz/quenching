@@ -8,8 +8,8 @@ executor discovered, **composing** a bare `## Problem` into a closed ten-section
 
 **Two operations, and both are derived.** **Compose** is monotonic — it fills what is absent and
 closes the ready gate. **Refine** may overturn anything it finds, the proposal included. The
-spec's **derived stage** says where composing starts; the **gear** says whether refining runs
-without anyone asking for it.
+spec's **derived stage** says where composing starts; a **concrete signal** (or the human's ask)
+says whether refining runs.
 
 **Every `§X` below is an address, and it is loaded as one — never by opening the file.**
 
@@ -50,16 +50,18 @@ code** (0 ok · 1 findings · 2 refusal) and the `--json`, never on prose.
 
 ## Doctrine
 
-- **The stage says where composing starts; the gear says whether refining runs.** `cq specs status
-  --spec <id> --json` returns both. Never infer the stage by reading the headings, never ask the
-  human which mode they want, and **never ask which gear to run in** — the answers are on disk. A
-  conductor that moved the level on its own plan declares the moved level in the invocation. A
-  conductor running `--autonomous` declares `low` as **forced** on a spec whose level on disk is
-  higher; the gear is still `low`, and only the stamp at step 8 differs. A forced `low` writes
-  nothing to `priority`: it names the execution gear, never a level, so `complexity` on disk stays
-  what it was.
-- **The gear never shortens a stage that runs.** No checklist shrinks at a low level — the same
-  axes, lenses and gate symptoms are worked either way, and what changes is who answers them.
+- **The stage says where composing starts; the calculated pass says who answers and whether refining
+  runs.** `cq specs status --spec <id> --json` returns the stage. Never infer the stage by reading
+  the headings, never ask the human which mode they want, and **never ask them to choose a depth**
+  — the session calculates it. It enumerates the decisions the execution needs and classifies each
+  as resolved by evidence, dependent on the human, or very costly to undo. None depends on the
+  human: simple track, the session composes everything, announces what it will do and stamps
+  `by=session`. Some do: complex track, questions in batches, then `by=human`. A conductor running
+  `--autonomous` declares **autonomy**: the same composition, no questions and no refine, stamp
+  `by=orchestrator-forced`; it writes nothing to `priority`, so `complexity` on disk stays what it
+  was.
+- **Nothing shortens a stage that runs.** The same axes, lenses and gate symptoms are worked on
+  every track, and what changes is who answers them.
   Everything about *how* a stage runs is owned by
   [questions.md](~/.opencode/quenching/references/specs-develop/questions.md) §The four
   shared mechanics §Who answers.
@@ -81,7 +83,7 @@ code** (0 ok · 1 findings · 2 refusal) and the `--json`, never on prose.
   references. No OKF bundle in the repo (`/docs/index.md` with `okf_version`) → skip silently.
 - **`complexity` is re-evaluated at the close, never mid-pass.** The close's own recommendation IS
   that re-evaluation where it names a raise; where the pass merely outgrew its size, the evidence
-  that moved it is named and the level proposed. A pass that changed no size proposes nothing.
+  that moved it is named and the depth proposed. A pass that changed no size proposes nothing.
 - **Every pass reviews `tags` in silence** — `quenching-specs-create` presumes them. The review is
   narrated in step 6's consolidated plan and applied in step 7's single edit, with no screen of its
   own.
@@ -90,7 +92,7 @@ code** (0 ok · 1 findings · 2 refusal) and the `--json`, never on prose.
 
 | Where | The bounded read(s) |
 | --- | --- |
-| steps 1+2 | `cq specs status --spec <id> --json`, which also carries the `path` step 1 announces, the gear, and the `sections`/`ready` map compose drives off. Only an ID that must be *chosen* splits this: `cq specs list --json` runs first, because the question depends on its output |
+| steps 1+2 | `cq specs status --spec <id> --json`, which also carries the `path` step 1 announces, the recorded depth, and the `sections`/`ready` map compose drives off. Only an ID that must be *chosen* splits this: `cq specs list --json` runs first, because the question depends on its output |
 | step 3b | every stage's own section and the union of the spec sections the pass reads or writes — `cq components read` and `cq specs section` together, never one call per source or per stage |
 | step 7 | the entire application — the section write, every `cq specs discover` line, every `cq specs record`, `cq specs verification`, `cq specs validate` (plus `cq specs parallel` where `## Tasks` moved), and the closing `cq specs status` that verifies where the pass landed |
 
@@ -138,17 +140,17 @@ cq specs status --spec <id> --json      # stage, section states, ready map, reco
 **This is the same call as step 1** — §The batching contract's first row. The id either came in
 the input or was inferred, and the payload answers both steps at once.
 
-**The payload also carries the gear and the gap.** `records.priority.complexity` is the gear;
-absent, or no `priority` record at all, reads as `high`
+**The payload also carries the depth on record and the gap.** `records.priority.complexity` is the depth
+last recorded; absent, or no `priority` record at all, reads as `high`
 ([spec-driven.md](~/.opencode/quenching/references/specs-develop/spec-driven.md) §The scale). So does
 `ready: {ok, missing, malformed}`, which is the list compose owes.
 
 That is the whole of this step. **No section body is pulled here.**
-**Done when:** the spec's stage, section states, ready map, records, gate, backend URL and gear are
-in hand.
+**Done when:** the spec's stage, section states, ready map, records, gate, backend URL and recorded depth
+are in hand.
 
 ### 3. Derive the pass, and name it
-Look the derived stage and the gear up in
+Look the derived stage up, and calculate the decisions still open, in
 [questions.md](~/.opencode/quenching/references/specs-develop/questions.md) §The pass —
 already loaded. The pass is up to four stages, always in this order:
 
@@ -156,17 +158,17 @@ already loaded. The pass is up to four stages, always in this order:
 | --- | --- |
 | discoveries | `## Discoveries` holds a line nobody resolved |
 | compose | the spec is not yet `ready` |
-| refine | the gear is `high` or `xhigh`, or the input asked for it |
+| refine | a concrete signal fired (scope, critique, irreversibility), or the input asked for it; never on `autonomous` |
 | approval | always |
 
 A spec already `ready`/`approved` has nothing to compose, so an invocation over one **is** a refine
-request; at `low` that request raises the gear to `high` (or `xhigh`, where the premortem is asked
-for) before refine runs, because `low` never refines.
+request, run with the lens the risk argues for (alternatives, critique or premortem).
 
 Name, in ONE narration before the first question: **the stages this pass will run, in order**, the
-gear, whether the human will be asked anything and at which stages, and **each stage's stop
-condition**. The gear is announced here and nowhere else.
-**Done when:** the pass's stages are named in order, with the gear and each stop condition.
+the track the calculation chose (simple, complex or declared autonomy), whether the human will be
+asked anything and in which rounds, and **each stage's stop condition**. The track is announced
+here and nowhere else.
+**Done when:** the pass's stages are named in order, with the track and each stop condition.
 
 ### 3b. Load what THIS pass needs — and nothing more
 Now that the pass is known, and in **one call** — §The batching contract's second row, both
@@ -218,12 +220,14 @@ Skip where the spec is already `ready`. Otherwise follow §Compose, under the fo
 sequential to shape, grouped to close, every question carrying **an inline recommendation**, every
 answer naming the section it lands in, and the stage's declared stop condition.
 
-**The gear decides who answers; §Compose is unchanged either way.** At **`low`** the pass answers
-every item **from evidence**, names the assumption inside any answer that rests on one, and parks
-what no evidence answers as an `## Open Decisions` line carrying how it will be decided — it asks
-nothing. At **`medium`, `high` and `xhigh`** it drafts those same answers first and then asks the
-human **about the draft**, which is why independent headings travel grouped: a question about a
-section already drafted cannot change what another drafted section says.
+**The track decides who answers; §Compose is unchanged either way.** On the **simple track** and on
+declared autonomy the pass answers every item **from evidence**, names the assumption inside any
+answer that rests on one, records it under `### Assumptions` in `## Design` (one line, with the
+section that depends on it), and parks what no evidence answers as an `## Open Decisions` line
+carrying how it will be decided — it asks nothing. On the **complex track** it drafts those same
+answers first and asks the human **about the draft**, in batches: one round at a time, with the
+questions whose answers do not change one another, each carrying a recommendation. A question that
+depends on an answer waits for the next round.
 
 Questions must be **specific to this spec**. One that would read identically against any spec is
 noise — do not ask it, and do not pad the count with it. That holds for a drafted answer too: one
@@ -234,13 +238,14 @@ section)`.
 **Done when:** the ready set is closed in the draft, or the user called it.
 
 ### 5. Refine — where it runs
-Runs at **`high`** and **`xhigh`** automatically, and at any gear where the input asked for it
-(which raises a `low` gear first, per step 3). Skip whole otherwise, and say so in the report —
-`medium` reaches refine through step 8's recommendation, not through this step.
+Runs when a concrete signal fired and the pass is not `autonomous`, or when the input asked for it.
+Skip whole otherwise, and say so in the report — the close recommends refine where a signal fired
+and refine has not run.
 
-Follow §Refine over what step 4 just drafted: the signals select the lenses, the premortem runs
-unconditionally at `xhigh`, and a criticism once answered rewrites the next one, so this stage is
-sequential.
+Follow §Refine over what step 4 just drafted: the signals select the lenses (alternatives for an
+open decision of shape, critique for a contradiction or a gap of evidence, premortem only for the
+irreversible or wide blast radius), and a criticism once answered rewrites the next one, so this
+stage is sequential.
 
 **This is the one stage that may overturn.** It rewrites the draft, not the file — both land in
 step 7's single edit, so the spec never holds the superseded version. **A change to `## Proposal`
@@ -367,32 +372,31 @@ worker budget, unresolved inputs and exclusions. It returns independently verifi
 dependencies without creating children. Offer that concrete proposal to the human (recommended),
 explicit acceptance of the unsplit estimate risk, or stop. Only explicit authorization permits
 capture/linking; preserve the original problem and never approve/execute the children incidentally.
-In `low`, including **forced low** / `autonomous`, do not ask or automatically approve an oversized
+On the simple track and on `autonomous`, do not ask or automatically approve an oversized
 source: return `STATE: blocked` with `NOTE: needs-human: <budget evidence and proposed slices>` to
 the conductor. A lower estimate reports uncertainty and continues; it is not a fits verdict.
 
-With no unresolved size decision, close according to the gear — §Approval owns the screen:
+With no unresolved size decision, close according to the track — §Approval owns the screen:
 
-- **`low`** — no screen. With `ready` now **proved** by step 7's payload and `approved` unset, stamp
-  it here: `cq specs record <id> approved --set date=<today> --set by=low-gear`. **`by:` is never
-  omitted** — a record with no `by:` reads as `human`, so leaving it off silently claims a human
-  this pass never had. When the conductor declared `low` as **forced** (the invocation says
-  `autonomous`) and the on-disk level is above `low`, stamp `--set by=orchestrator-forced`
-  instead. That is the only path that writes this value, and only after step 7 proved `ready`.
-- **`medium` · `high` · `xhigh`** — ONE closing decision sheet that **recommends** rather than defaulting to
+- **Simple track** — no screen. With `ready` now **proved** by step 7's payload and `approved`
+  unset, stamp it here: `cq specs record <id> approved --set date=<today> --set by=session`. **`by:`
+  is never omitted** — a record with no `by:` reads as `human`, so leaving it off silently claims a
+  human this pass never had. When the invocation says `autonomous`, stamp
+  `--set by=orchestrator-forced` instead. That is the only path that writes this value, and only
+  after step 7 proved `ready`.
+- **Complex track** — ONE closing decision sheet that **recommends** rather than defaulting to
   approve. Judge what the pass produced against §Refine's three signals and lead with the move they
-  argue for, as option A (recommended), carrying the signal in its own text: approve, refine (a raise
-  to `high`), refine with the premortem (a raise to `xhigh`), or stop. Choosing a raise IS the OK to
-  restamp `complexity`; apply both and re-enter at step 3 under the raised level. A pass where
-  refine already ran recommends approving and names what the argument settled — never the raise the
-  human already took.
+  argue for, as option A (recommended), carrying the signal in its own text: approve, refine (with
+  the lens the signal names), or stop. Choosing refine IS the OK to restamp `complexity` if the depth
+  grew; apply both and re-enter at step 3. A pass where refine already ran recommends approving and
+  names what the argument settled — never the refine the human already took.
 
-**A raise re-enters the pass; it never restarts it.** What compose already wrote stays written —
-the raise buys the argument the lower gear did not have, over the artifact it drafted.
+**A refine re-enters the pass; it never restarts it.** What compose already wrote stays written —
+the refine buys the argument the first pass did not have, over the artifact it drafted.
 
 **The screen belongs to whoever holds the human.** Running standalone, present it. Running as a
 sub-agent under a conductor, present nothing: return the screen's content and let the conductor
-present it — a sub-agent never talks to the human, at any gear.
+present it — a sub-agent never talks to the human, on any track.
 
 Then report:
 
@@ -409,10 +413,10 @@ blocks:
 
 1. **The pass** — fixed. The spec's URL in the backend, repeated from step 1 off the same `path`
    field and never re-fetched; **the stages that ran, in order, and whether refine ran or was left
-   to the close's recommendation**; the gear and what it changed about who answered; how many
+   to the close's recommendation**; the track and what it changed about who answered; how many
    questions were asked and answered, and how many answers the pass gave from evidence with an
    assumption named; **what refine overturned**, if anything; **an `approved` stamped
-   `by: low-gear` or `by: orchestrator-forced` on its own line**; the sections edited; the records stamped; the routed offers and
+   `by: session`, `by: human` or `by: orchestrator-forced` on its own line**; the sections edited; the records stamped; the routed offers and
    whether each was taken; the stage before and after, and whether it landed where the pass expected.
 2. **Parked into `## Discoveries`** — optional, and every line **quoted**.
 
@@ -460,18 +464,19 @@ block, and is never asked as a question mid-pass.
   carries a recommendation either way. **And never drop a question for cadence:** this command
   changes when a question is asked, never whether it is.
 - Never ask the human to choose a mode; the derived stage says where composing starts — **and never
-  ask them to choose a gear**: the level on disk chooses it, or a conductor declares a moved one in
+  ask them to choose a depth**: the calculation chooses it, or a conductor declares `autonomous` in
   the invocation.
-- **Never let a `low` pass ask a question, and never let it refine.** An item no evidence answers
-  becomes an `## Open Decisions` line with how it will be decided. Inventing the answer and asking
-  anyway are the two failures here, and the second is the one that breaks what the gear promised. A
-  refine asked for at `low` raises the gear first; it never runs under it.
+- **Never let a simple-track or `autonomous` pass ask a question, and never let `autonomous` refine.**
+  An item no evidence answers becomes an `## Open Decisions` line with how it will be decided.
+  Inventing the answer and asking anyway are the two failures here, and the second is the one that
+  breaks what the track promised. **Never stamp `session` while a decision still depends on the
+  human.**
 - **A sub-agent may read; it may never ask, write, or decide.** The evidence sweep of step 3b
   returns a table. Every question, every `cq specs` call and every confirmation stays here.
 - **The dependency sweep's map is written by the orchestrator; the sub-agent never touches the
   spec.** Step 3c's sub-agent returns a table too, same as step 3b's — the map lands only inside
   step 7's own consolidated write, into `### Mapa de dependências` under `## Design`.
-- **Never hand this command file `context: fork`** — every gear but `low` asks the human its own
+- **Never hand this command file `context: fork`** — the complex track asks the human its own
   questions, and step 3c's read-only sub-agent is a step inside that, never a delegation of it.
 - **Never open a cited reference as a file.** `§X` is an address, loaded through
   `cq components read --sections`; and never hoist into the preamble what only one branch reads.
@@ -486,11 +491,12 @@ block, and is never asked as a question mid-pass.
 - **Never fabricate a record, and never misattribute one.** `refined` is stamped only after a stage
   really ran — drafting from evidence counts, a pass that ran neither compose nor refine does not.
   `approved` is stamped only with a truthful `by:`: `human` when a person answered the closing
-  screen, `low-gear` when the level authorized the mode and this pass stamped on that authority
-  after `ready` was proved, `orchestrator-forced` when a conductor declared `low` as forced over a
-  higher level on disk and this pass stamped after `ready` was proved. No other path writes it.
-- **A forced `low` writes nothing to `priority`.** The only record it adds is `approved` with
-  `by: orchestrator-forced`; the level on disk is never lowered to match the gear it was run at.
+  screen, `session` when the calculation left no decision to a human and this pass stamped on its
+  own authority after `ready` was proved, `orchestrator-forced` when a conductor declared
+  `autonomous` and this pass stamped after `ready` was proved. `low-gear` is the historical value of
+  older specs and is never written. No other path writes it.
+- **`autonomous` writes nothing to `priority`.** The only record it adds is `approved` with
+  `by: orchestrator-forced`; the depth on disk is never changed to match the way the pass was run.
 - **Never restamp `complexity` beyond what the close authorizes**: a fall always needs a human, and
   a level a pass did not move is the latest word on it, not a value to re-propose.
 - Never gate on refinement. A spec may always be built unrefined; `sp-unrefined` is a warning by
