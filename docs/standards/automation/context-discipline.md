@@ -236,7 +236,10 @@ boundary, and a build offers to stop there.
   section boundary and, over budget (exit 1), stops there; the `spec-runner` returns
   `STATE: continue` with `NOTE: budget: <peak>/<budget> after section <N>`, the orchestrator
   re-spawns a fresh worker without counting it as a failure re-spawn, and its totals line reports
-  `BUDGET:` from `cq components session cost --json`'s `overBudget`. Exit 2 never stops a run. **The
+  `BUDGET:` from `cq components session cost --json`'s `overBudget`. Exit 2 never stops a run. On
+  OpenCode the same command measures the session named by `OPENCODE_SESSION_ID`, which a subagent
+  has of its own, so `--self` needs no marker there; `session cost` does not read OpenCode, so the
+  `BUDGET:` line stays Claude-only. **The
   conductor budget of the `orchestrator` is enforced by code between waves:** it measures itself
   with `cq components session context --self orchestrator-<id> --json` before admitting each wave
   and, over budget (exit 1), lets the workers in flight finish (a stop is never mid-wave) and
@@ -521,6 +524,9 @@ OpenCode gave a median of 102 skill descriptions, about 11,300 tokens at four ch
 every role measured, the read-only `verifier` and the `git-steward` included. Its median first
 request is about 24,000 tokens, so the listing is near half of what a new context pays. The sample
 is mixed in project and workload, so comparing peaks across harnesses is not a cost claim.
+
+Spec 2149 keeps this repository's aggregate as the artifact `baseline-2026-11-02.json`, the reference
+for the comparison spec 2157 repeats per harness.
 
 ## What a delegated executor costs
 
