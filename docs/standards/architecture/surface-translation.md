@@ -159,7 +159,7 @@ fixtures and copied Python implementation remain data. Existing general platform
 translation is separate from the runtime model pass.
 
 The generated surface-load adapter exits 2 (inconclusive) until a Codex capture harness exists;
-it never runs the Claude harness. Generated `cq components session cost` likewise refuses
+it never runs the Claude harness. Generated `cq components session cost` and `cache` likewise refuse
 with `se-codex-telemetry-unavailable`. Import-memory may read existing Claude-format memory
 files as data, with the original source path explicit; translation invents no Codex memory layout.
 Generated runtime prefixes are excluded from reverse body reconciliation and cannot be edited

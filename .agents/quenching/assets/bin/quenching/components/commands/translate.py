@@ -502,6 +502,7 @@ def transform_asset(relative: Path, text: str, adaptation: dict) -> str:
     if relative.as_posix() == "quenching/components/commands/translate.py":
         return text
     if relative.as_posix() in {"quenching/session/commands/cost.py",
+                               "quenching/session/commands/cache.py",
                                "quenching/session/commands/context.py"}:
         command = relative.stem
         return '\n'.join([

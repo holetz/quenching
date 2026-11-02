@@ -4,10 +4,10 @@ title: Context discipline — open less, run for less time, and emit fewer turns
 description: The two halves of a run's integral `tokens × turns remaining` and the three ways to cut it — open less (the declared files rather than the folder, the cited sections rather than the file, N sections in ONE call, the block rather than the section where a section has blocks, and the rules/rationale marker convention), run for less time (the section boundary as a legitimate stopping point, with measured role budgets checked only at existing boundaries), and emit fewer turns per unit of work (the batching contract, and the ban on a turn that exists only to announce the next tool call); plus the two things measured and refused, segmenting the bundle into more files and deleting rationale to compact it
 resource: plugins/quenching/commands/**, plugins/quenching/assets/references/**, plugins/quenching/assets/bin/quenching/components/**, plugins/quenching/assets/bin/quenching/specs/**, plugins/quenching/agents/**, scripts/measure_context_distribution.py
 tags: [automation, context, reading, cost, commands, references]
-timestamp: 2026-10-17
+timestamp: 2026-11-02
 audience: both
 authority: background
-source: read-by-section-not-by-file, narrow-the-execute-preamble, extensible-surface-and-budget-retirement, 2026-08-06, 2026-08-04, scope-the-handoff-rewrite; specs 1629 (2026-10-13), 1631, 1633 (2026-10-14), 1754 (2026-10-16), 1632, 1875 (2026-10-17); lineage in ADR 0004
+source: read-by-section-not-by-file, narrow-the-execute-preamble, extensible-surface-and-budget-retirement, 2026-08-06, 2026-08-04, scope-the-handoff-rewrite; specs 1629 (2026-10-13), 1631, 1633 (2026-10-14), 1754 (2026-10-16), 1632, 1875 (2026-10-17); cross-harness cache measurement (2026-11-02); lineage in ADR 0004
 maintainer: quenching
 ---
 
@@ -236,7 +236,10 @@ boundary, and a build offers to stop there.
   section boundary and, over budget (exit 1), stops there; the `spec-runner` returns
   `STATE: continue` with `NOTE: budget: <peak>/<budget> after section <N>`, the orchestrator
   re-spawns a fresh worker without counting it as a failure re-spawn, and its totals line reports
-  `BUDGET:` from `cq components session cost --json`'s `overBudget`. Exit 2 never stops a run. **The
+  `BUDGET:` from `cq components session cost --json`'s `overBudget`. Exit 2 never stops a run. On
+  OpenCode the same command measures the session named by `OPENCODE_SESSION_ID`, which a subagent
+  has of its own, so `--self` needs no marker there; `session cost` does not read OpenCode, so the
+  `BUDGET:` line stays Claude-only. **The
   conductor budget of the `orchestrator` is enforced by code between waves:** it measures itself
   with `cq components session context --self orchestrator-<id> --json` before admitting each wave
   and, over budget (exit 1), lets the workers in flight finish (a stop is never mid-wave) and
@@ -477,6 +480,53 @@ Both were priced while writing the spec that produced this file, not argued abou
 segment also explains why the reader exists at all: given files of the right size, the missing
 piece was never a smaller file — it was the tool that resolves an address the prose was already
 writing.
+
+## The prompt cache is a per-harness measurement
+
+<!-- rules -->
+
+`cq components session cache` reads Claude Code transcripts and the OpenCode database into one
+shape: requests, hit rate, median first request, median peak, and cold requests by the gap before
+them, per harness, model, role and agent. A request is cold at 5,000 tokens of context or more with
+over half of them missed; a miss is a cache write on Claude and plain input on DeepSeek. It reports
+tokens only and never sums across models, because neither store holds the gateway's price.
+
+- **No lifetime is a constant.** A delegation or wait rule cites the measured `boundaries` for the
+  harness and model it runs on, never a remembered number. Plan, API key and gateway change the
+  lifetime; so does a move to usage credits on Claude.
+- **The method is shared; its parameters are not.** Skills stay the unit of knowledge and agents the
+  unit of isolation on every harness. What varies per harness is whether a wait is safe, and how
+  much a new context pays for its listing.
+- **Price the skill listing where the harness does not cap it.** Claude Code keeps the listing near
+  1% of the context window and drops descriptions past it. OpenCode documents no such cap, and
+  `skillListing` reports what each agent received. An always-on description there is paid by every
+  session and every subagent, so a skill's description is judged by that bill, not by Claude's.
+
+<!-- rationale -->
+
+Measured 2026-11-02 across every project on one machine, Claude Code 2.1.316 and OpenCode 2.2.x,
+DeepSeek V4.1 Flash through the Databricks gateway:
+
+| Gap before the request | Claude main | Claude subagent | DeepSeek main | DeepSeek subagent |
+| --- | --- | --- | --- | --- |
+| 2–5 min | 0.6% | 0.3% | 5.2% | 3.0% |
+| 5–10 min | 2.2% | 88–90% | 26.3% | 24.3% |
+| 10–30 min | 2.9% | 100% | 76.3% | 78.5% |
+| 30–60 min | 7.0% | 100% | 97.2% | 100% |
+| Over 60 min | 94.2% | 100% | 95.5% | 95.0% |
+
+Claude columns are Opus 5.5 and Sonnet 5.5 on a subscription, whose documented lifetimes are one hour
+for the main conversation and five minutes for subagents. DeepSeek shows no such split: main and
+subagents expire alike, and gradually. The gateway's result is not DeepSeek's direct API, which
+documents retention of hours to days.
+
+OpenCode gave a median of 102 skill descriptions, about 11,300 tokens at four characters each, to
+every role measured, the read-only `verifier` and the `git-steward` included. Its median first
+request is about 24,000 tokens, so the listing is near half of what a new context pays. The sample
+is mixed in project and workload, so comparing peaks across harnesses is not a cost claim.
+
+Spec 2149 keeps this repository's aggregate as the artifact `baseline-2026-11-02.json`, the reference
+for the comparison spec 2157 repeats per harness.
 
 ## What a delegated executor costs
 
