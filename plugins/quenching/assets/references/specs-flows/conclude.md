@@ -1,11 +1,3 @@
----
-description: >-
-  Close ONE spec out: review the branch, write knowledge, archive, prove the gate, hand off to a PR or merge. Use for "conclude this spec", "close it out", "abandon this spec". Not for: building → /quenching-specs:specs:execute.
-argument-hint: [id] [--outcome done|abandoned]
-allowed-tools: Bash(cq:*), Bash(cq.cmd:*), Bash, Read, Glob, Grep, Write, Edit, AskUserQuestion, Skill
-model: opus
----
-
 # /quenching-specs:specs:conclude — review, archive, distil — and hand off
 
 **Input**: `$ARGUMENTS` — the spec id, and optionally its outcome. A conductor launched with

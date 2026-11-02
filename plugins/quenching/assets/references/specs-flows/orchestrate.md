@@ -1,10 +1,3 @@
----
-description: >-
-  Run an epic or a list of specs through the orchestrator agent. Use for "orchestrate this epic", "run these specs in waves". Not for: ONE spec → /quenching-specs:specs:execute; ranking → /quenching-specs:specs:triage; rounds → /quenching-specs:specs:autopilot.
-argument-hint: [composite-id | spec-id ...] [--autonomous]
-allowed-tools: Bash(cq:*), Bash(cq.cmd:*), Read, Agent, Task
----
-
 # /quenching-specs:specs:orchestrate — conduct an epic or a queue
 
 **Input**: `$ARGUMENTS` — a composite id (any spec whose `## Tasks` names members) or a list of spec
