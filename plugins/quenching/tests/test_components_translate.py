@@ -319,6 +319,19 @@ class RepositorySurfaceTranslation(unittest.TestCase):
                          b"policy:\n  allow_implicit_invocation: false\n")
         self.assertNotIn("skills/specs/status/agents/openai.yaml", tree)
 
+    def test_router_stays_listed_while_its_shortcut_leaves_the_model_list(self):
+        commands = self.root / ".claude" / "commands" / "specs"
+        commands.mkdir(parents=True, exist_ok=True)
+        (commands / "specs.md").write_text("---\ndescription: Router.\n---\n\nBody.\n", encoding="utf-8")
+        (commands / "execute.md").write_text(
+            "---\ndescription: Build.\ndisable-model-invocation: true\n---\n\nBody.\n", encoding="utf-8")
+        translate.configure(str(self.root), str(self.root))
+        tree = translate.generated_tree()
+
+        self.assertNotIn("skills/specs/specs/agents/openai.yaml", tree)
+        self.assertEqual(tree["skills/specs/execute/agents/openai.yaml"],
+                         b"policy:\n  allow_implicit_invocation: false\n")
+
     def test_package_translation_keeps_both_harness_names_exempt(self):
         source = translate.payload_root()
         translate.configure(str(source), str(self.root / "quenching-codex"))
