@@ -11,6 +11,7 @@ from unittest import mock
 
 import _paths  # noqa: F401
 from quenching.session.commands.cli import build_parser
+from quenching.session.model import bare_agent
 
 CQ = Path(__file__).resolve().parents[1] / "assets/bin/cq"
 
@@ -104,6 +105,11 @@ class ContextTests(unittest.TestCase):
             code, data = run(agent)
             self.assertEqual((data["role"], data["budget"]), (role, budget))
             self.assertEqual(code, 2 if budget is None else 1 if role == "worker" else 0)
+
+    def test_deployed_agent_name_keeps_its_role(self):
+        self.assertEqual(bare_agent("quenching-spec-runner"), "spec-runner")
+        self.assertEqual(bare_agent("quenching-specs:spec-runner"), "spec-runner")
+        self.assertEqual(bare_agent("quenching:orchestrator"), "orchestrator")
 
     def test_missing_or_invalid_agent_metadata_refuses(self):
         agent = self.base / "session/subagents/agent-a.jsonl"
