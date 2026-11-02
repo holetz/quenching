@@ -3,7 +3,7 @@ description: >-
   Build ONE spec task by task: write, verify, self-review, tick, commit. Use for "execute this spec", "build it", "implement the tasks", "continue building". Not for: sharpening → /quenching-specs:specs:develop; closing → /quenching-specs:specs:conclude.
 argument-hint: [id]
 allowed-tools: Bash(cq:*), Bash(cq.cmd:*), Bash, Read, Glob, Grep, Write, Edit, AskUserQuestion, Task, Skill
-model: sonnet
+disable-model-invocation: true
 ---
 
 # /quenching-specs:specs:execute — typed shortcut
