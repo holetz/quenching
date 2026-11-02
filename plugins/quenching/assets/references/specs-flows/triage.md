@@ -1,11 +1,3 @@
----
-description: >-
-  Rank the open specs front into ONE ordered list the human confirms. Use for "triage the specs", "prioritize the front", "which of these first". Not for: building → /quenching-specs:specs:execute.
-argument-hint: [optional-id]
-allowed-tools: Bash(cq:*), Bash(cq.cmd:*), Read, Grep, Glob, Bash(python3:*), Bash(py:*), AskUserQuestion
-model: opus
----
-
 # /quenching-specs:specs:triage — rank the front, once, on one confirmation
 
 **Input**: `$ARGUMENTS` — optionally one ID to limit the sweep; omit to rank everything in

@@ -1,10 +1,3 @@
----
-description: >-
-  Capture or create a spec. Use for "convert to a spec", "add to the backlog", "create a spec". Not for: refining → /quenching-specs:specs:develop; executing → /quenching-specs:specs:execute.
-argument-hint: [what to capture, a plan path, or a plan from this session]
-allowed-tools: Bash(cq:*), Bash(cq.cmd:*), Read, Grep, Glob, Bash(python3:*), Bash(py:*), AskUserQuestion, Skill
-model: sonnet
----
 # /quenching-specs:specs:create — capture one spec, one screen, one turn
 
 **Input**: `$ARGUMENTS` — a short description of the problem, a path to a Claude or Codex plan

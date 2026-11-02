@@ -250,12 +250,12 @@ class SmallTierProjection(unittest.TestCase):
 
 class EstimatorCommand(unittest.TestCase):
     def test_default_preamble_is_the_shipped_execute_body(self):
-        shipped = Path(__file__).resolve().parents[1] / "commands/specs/execute.md"
+        shipped = Path(__file__).resolve().parents[1] / "assets/references/specs-flows/execute.md"
         self.assertEqual(shipped, EXECUTE_BODY)
         self.assertTrue(EXECUTE_BODY.is_file())
         backend = MemoryBackend()
         backend.create_spec("plans", "---\ntitle: Estimate\ndate: 2026-10-14\n---\n"
-                            "## Tasks\n- [ ] 1.1 Task\n      files: commands/specs/execute.md\n")
+                            "## Tasks\n- [ ] 1.1 Task\n      files: assets/references/specs-flows/execute.md\n")
         result = estimate_build(backend.read_spec(1)[0], Path(__file__).resolve().parents[1])
         self.assertTrue(result["preamble"]["available"])
         self.assertEqual(shipped.stat().st_size, result["preamble"]["bytes"])

@@ -13,7 +13,7 @@ def prose(path):
 
 class BuildSizeApproval(unittest.TestCase):
     def test_develop_checks_estimate_before_either_approval_route(self):
-        text = prose("commands/specs/develop.md")
+        text = prose("assets/references/specs-flows/develop.md")
         close = text[text.index("### 8. Close"):]
         self.assertLess(close.index("cq specs estimate"), close.index("stamp it here"))
         for marker in ("overBudget", "workerBudgetTokens", "forced low", "STATE: blocked",
@@ -41,7 +41,7 @@ class BuildSizeApproval(unittest.TestCase):
 
 class ObservedCostAtConclude(unittest.TestCase):
     def test_measurement_precedes_archive_and_has_explicit_build_scope(self):
-        text = prose("commands/specs/conclude.md")
+        text = prose("assets/references/specs-flows/conclude.md")
         step = text[text.index("### 4. Write"):text.index("### 5. Distil")]
         self.assertLess(step.index("cq components session cost"), step.index("cq specs promote"))
         self.assertNotIn("cq session cost", text)

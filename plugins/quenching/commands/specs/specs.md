@@ -1,8 +1,8 @@
 ---
 description: >-
-  Run one step of the specs flow: capture, develop, execute, conclude, triage, status or orchestrate, picked by the flow you name or by the spec's real stage. Use for "create a spec", "develop this spec", "build it", "conclude it", "rank the backlog", "specs status", "orchestrate this epic". Not for: committing, branching or merging → /quenching-specs:git:branch; improvement rounds → /quenching-specs:specs:autopilot.
+  Run one specs flow (create, develop, execute, conclude, triage, status, orchestrate), picked by name or stage. Use for "build it", "rank the backlog". Not for: git → /quenching-specs:git:branch; rounds → /quenching-specs:specs:autopilot.
 argument-hint: "[create|develop|execute|conclude|triage|status|orchestrate] [id or description] [flags]"
-allowed-tools: Bash(cq:*), Bash(cq.cmd:*), Bash, Read, Glob, Grep, Write, Edit, Bash(python3:*), Bash(py:*), AskUserQuestion, Skill, Task, Agent
+allowed-tools: Bash(cq:*), Bash(cq.cmd:*), Read
 ---
 
 # /quenching-specs:specs:specs — one entry point for the specs flows
@@ -14,7 +14,7 @@ This command carries no flow of its own. It picks ONE flow, loads that flow's re
 follows it as if it were this body, so the model's skill list pays for one description and each
 flow's text is read only when the flow runs.
 
-**Why `Bash` is unrestricted here.** The routed flows run the verification, `cq specs` and Git commands resolved from the live spec; the router grants the union of what its flows were granted, no more.
+**Grant.** The router grants only `cq` and `Read`, enough to load a flow's reference; it widens no flow's tool grant. A tool the chosen flow needs beyond that comes from the conductor agent's own tools, or is asked of the human in a main session; the typed shortcut carries the flow's exact grant.
 
 ## Resolving the tool
 
@@ -46,10 +46,8 @@ returns `STATE: blocked` with `NOTE: needs-human:` carrying it.
 **Done when:** exactly one flow is chosen, with its input.
 
 ### 2. Load the flow and follow it
-```bash
-.agents/quenching/bin/cq components read ${CLAUDE_PLUGIN_ROOT}/assets/references/specs-flows/<flow>.md
-```
-Read the flow whole, once, and follow it from its own `## Workflow` with the input from step 1:
+Run `cq components read` on the chosen flow's reference from the table above, with its
+`${CLAUDE_PLUGIN_ROOT}/assets/references/specs-flows/` path. Read the flow whole, once, and follow it from its own `## Workflow` with the input from step 1:
 its steps, `Done when:` lines and invariants bind this run exactly as they bound the standalone
 command. A `/quenching-specs:specs:<flow>` the flow names as the next step is the typed shortcut to
 the same reference, and a conductor reaches the same flow by calling this command with `flow` and

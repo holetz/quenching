@@ -512,7 +512,7 @@ class PayloadResolution(unittest.TestCase):
 
 class ConcludeGeneratedConflictRecipeTest(unittest.TestCase):
     def test_recipe_regenerates_the_specs_reader_before_concluding_the_merge(self):
-        text = (Path(__file__).resolve().parents[1] / "commands" / "specs" / "conclude.md").read_text(encoding="utf-8")
+        text = (Path(__file__).resolve().parents[1] / "assets" / "references" / "specs-flows" / "conclude.md").read_text(encoding="utf-8")
         text = " ".join(text.split())
         self.assertNotIn("plugins/quenching-codex", text)
         for needle in ("regenerate before concluding the merge",
@@ -720,5 +720,7 @@ class CodexReviewRemoval(unittest.TestCase):
             with self.subTest(skill=path):
                 self.assertNotRegex(text, r"cq codex (probe|review)")
                 self.assertNotRegex(text, r"scripts/cq'[^\n]*\bcodex (probe|review)\b")
-        for name in ("autopilot", "conclude"):
-            self.assertIn("Codex review: unavailable", skills[f"skills/quenching-specs-{name}/SKILL.md"])
+        self.assertIn("Codex review: unavailable", skills["skills/quenching-specs-autopilot/SKILL.md"])
+        references = {path: data.decode() for path, data in translate.generated_tree().items()
+                      if path.startswith("references/specs-flows/")}
+        self.assertIn("Codex review: unavailable", references["references/specs-flows/conclude.md"])

@@ -1302,7 +1302,7 @@ class Audit(RepoCase):
         self.assertEqual(fresh["changed"], ["c.txt"])
 
     def test_bodies_name_origin_base(self):
-        for rel in ("agents/verifier.md", "agents/orchestrator.md", "commands/specs/conclude.md"):
+        for rel in ("agents/verifier.md", "agents/orchestrator.md", "assets/references/specs-flows/conclude.md"):
             text = (PLUGIN_ROOT / rel).read_text(encoding="utf-8")
             self.assertIn("origin/<base>", text, rel)
         verifier = (PLUGIN_ROOT / "agents" / "verifier.md").read_text(encoding="utf-8")

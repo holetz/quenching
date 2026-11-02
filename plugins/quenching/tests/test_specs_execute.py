@@ -16,9 +16,9 @@ import unittest
 import _paths  # noqa: F401
 
 ROOT = Path(__file__).resolve().parents[3]
-COMMAND = ROOT / "plugins/quenching/commands/specs/execute.md"
+COMMAND = ROOT / "plugins/quenching/assets/references/specs-flows/execute.md"
 REFERENCE = ROOT / "plugins/quenching/assets/references/specs-execute/execution.md"
-CONCLUDE = ROOT / "plugins/quenching/commands/specs/conclude.md"
+CONCLUDE = ROOT / "plugins/quenching/assets/references/specs-flows/conclude.md"
 SCALE = ROOT / "plugins/quenching/assets/references/specs-develop/spec-driven.md"
 RUNNER = ROOT / "plugins/quenching/agents/spec-runner.md"
 
@@ -215,7 +215,7 @@ class TaskExecutionContractTests(unittest.TestCase):
         self.assertIn("call the `verifier` only after it returns", orchestrator)
 
     def test_orchestration_reads_scheduling_records_from_status(self):
-        for carrier in ("agents/orchestrator.md", "commands/specs/orchestrate.md"):
+        for carrier in ("agents/orchestrator.md", "assets/references/specs-flows/orchestrate.md"):
             with self.subTest(carrier=carrier):
                 text = (ROOT / "plugins/quenching" / carrier).read_text(encoding="utf-8")
                 flat = " ".join(re.sub(r"[`*_]", "", text).split())

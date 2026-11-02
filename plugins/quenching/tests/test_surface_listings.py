@@ -93,7 +93,7 @@ class ManifestSurfaceTests(unittest.TestCase):
         commands = _commands_on_disk()
         expected = {
             "knowledge": 13,
-            "specs": 10,
+            "specs": 11,
             "design": 3,
             "components": 8,
             "ops": 3,

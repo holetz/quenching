@@ -70,6 +70,7 @@ commands share is explained in [The spec lifecycle](../explanation/spec-lifecycl
 
 | Command | Does |
 | --- | --- |
+| `/quenching-specs:specs:specs` | The single entry point of the specs flows: picks `create`, `develop`, `execute`, `conclude`, `triage`, `status` or `orchestrate` by the flow you name or the spec's stage, and loads that flow's reference. The seven typed commands stay as thin shortcuts. |
 | `/quenching-specs:specs:status` | The front's only **read-only** view: specs by derived stage, the records as history, verifier and provider findings. |
 | `/quenching-specs:specs:create` | ONE spec, ONE call, ONE closing screen — a sentence becomes `## Problem` and `summary:`; a plan file becomes every section it actually supports. |
 | `/quenching-specs:specs:develop` | Compose + refine in one pass: takes the spec to a closed ready set, argues with it, ends at the approval close. Records `refined:`; never edits code. |
