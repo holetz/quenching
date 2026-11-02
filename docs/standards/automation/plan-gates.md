@@ -85,8 +85,8 @@ A go/no-go may leave the pass — and only under the three conditions, together:
    computation, not a grant. The authorization belongs to the **declaration** or to the **evidence**,
    never to a command's habit.
 2. **The record writes down the provenance.** `approved: {date, by}` — `by: human` when a person
-   answered a complex path, the session's own stamp when evidence alone closed the criterion (its
-   value is named by spec 2152; the historical `by: low-gear` stays readable), and
+   answered a complex path, the session's own stamp when evidence alone closed the criterion (`by: session`;
+   the historical `by: low-gear` stays readable), and
    `by: orchestrator-forced` when the human declared autonomy and a conductor ran `--autonomous`:
    there the human authorized the **run**, and only `develop` writes the value, after `ready` is proved —
    the orchestrator itself writes no record. A record

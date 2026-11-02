@@ -70,7 +70,7 @@ Fifteen terms to read first; each has its full entry under *Terms*.
   parse could not represent faithfully, placed beside the parser rather than folded into its return.
 - [**Approved record**](standards/workflows/plan-lifecycle.md) — the `approved: {date, by}` entry
   saying a spec may be built and on whose authority: `human` (complex path), `orchestrator-forced`
-  (autonomy the human declared) or the session's own stamp (simple path; historical `low-gear` stays
+  (autonomy the human declared) or the session's own stamp (`by: session`) (simple path; historical `low-gear` stays
   readable); an absent `by:` reads as `human`.
 - [**Authority**](standards/index.md) — the frontmatter field saying how binding a doc is: `current`
   (proven) or `background` (agreed but unproven).

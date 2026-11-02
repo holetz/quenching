@@ -106,8 +106,7 @@ inside the value rather than by being quiet about it: `priority.complexity` is c
 and re-evaluated by `develop` (it records the depth the session computed), and `approved` carries
 `by:` — `human` for a person's word on a complex path, `orchestrator-forced` for autonomy the human
 declared, and, on the simple path where evidence alone closed the trust criterion, the session's own
-stamp (its value is named by the flow of spec 2152; until it lands the flow in force still writes
-`low-gear`, a value that stays valid, read and never rewritten). The test did not bend: whose word
+stamp (`by: session`; the historical `low-gear` stays valid, read and never rewritten). The test did not bend: whose word
 approved a spec is no more derivable from the sections than a person's word is.
 
 That is why there is no `phase` (the folder), no `ready` flag (the ten gate sections), and no
@@ -149,7 +148,7 @@ record:
 | --- | --- | --- | --- |
 | `priority: {level, criticality, complexity, date}` | `triage` — `complexity` its own `[triage, create, develop]` | no | this spec's rank against every other one — `complexity` is the exception below |
 | `refined: {mode, date}` | `develop` | no | that a real interrogation happened, and in which mode |
-| `approved: {date, by}` | `develop`, or `execute` inline | yes | that this spec may be built, and on whose authority — a human's word on a complex path (`by: human`), autonomy the human declared (`by: orchestrator-forced`), or the session's own stamp on a simple path, where evidence alone closed the trust criterion (value named by spec 2152; historical `by: low-gear` stays readable) |
+| `approved: {date, by}` | `develop`, or `execute` inline | yes | that this spec may be built, and on whose authority — a human's word on a complex path (`by: human`), autonomy the human declared (`by: orchestrator-forced`), or the session's own stamp on a simple path, where evidence alone closed the trust criterion (`by: session`; historical `by: low-gear` stays readable) |
 | `branch: {base, work}` | `execute`, or `git:branch` when it hands off there | yes | after a merge, git cannot say what the base was |
 | `pr: {number, url, date}` | `git:pr:create` | no | which pull request carries this spec, before any merge decides its fate — restampable because a PR may be reopened or recreated |
 | `reviewed: {date}` | `conclude` | no | that a human read the whole branch diff |
