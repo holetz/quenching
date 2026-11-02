@@ -15,34 +15,35 @@ Tier mapping: opus → `gpt-6-astra`; sonnet → `gpt-6.1-sol`; haiku → `gpt-6
 <!-- CODEX RUNTIME END -->
 
 
-# quenching-specs-status — read the specs front
+# quenching-specs-status — typed shortcut
 
-The canonical documents live on the `quenching` branch (the git store), or in a deprecated tracker
-backend. There is no local `/.specs/` root.
+Typed shortcut to the `status` flow of [quenching-specs-specs](../../commands/specs/specs.md).
+Input: `$ARGUMENTS`.
 
-The recognised configuration envelope and its defaults live in
-[specs-align/plugin-configuration.md](../../references/specs-align/plugin-configuration.md)
-§The envelope and recognised namespaces. This command reports that state; it does
-not create a local specs store or infer missing configuration.
-
-## Workflow
-
-1. Resolve `cq` through the repository's declared tool-resolution rule.
-   **Done when:** the tool path is resolved or refusal is reported.
-2. With an ID, run `cq specs status --spec <id> --json`; without one, run `cq specs list --json`.
-   The command's payload is the source of the stage, records, task progress and provider locator.
-   **Done when:** the requested spec list or record is in hand.
-3. Run `cq specs config --json` when the report needs to explain provider selection. A missing or
-   unrecognised provider is a refusal, never a fallback to local files. **Done when:** provider
-   configuration is reported when needed.
-4. Report the tool's JSON and exit code. Do not enumerate local folders, infer a filesystem root,
-   or re-render provider data into a second source of truth. **Done when:** the JSON, exit code, and
-   refusal/absence state are reported.
-
-## Invariants
-
-- Never write, scaffold, align, migrate or repair anything.
-- Never treat an absent local `/.specs/` directory as a finding; external backends do not use it.
-- Never call `FilesBackend`, infer `backend: files`, or offer a local fallback.
-- Use `quenching-specs-develop`, `quenching-specs-execute`, or `quenching-specs-conclude` for
-  lifecycle work on one named provider-owned spec.
+```bash
+cq() {
+  local plugin_root="${CODEX_PLUGIN_ROOT:-${PLUGIN_ROOT:-}}"
+  if [ -z "$plugin_root" ]; then
+    plugin_root="$(set -o pipefail
+codex plugin list --json | python3 -c '
+import json, os, sys
+from pathlib import Path
+plugins = [p for p in json.load(sys.stdin)["installed"] if p.get("name") == "quenching-codex" and p.get("enabled")]
+if len(plugins) != 1:
+    sys.exit("quenching-codex: enable exactly one installation, or provide its plugin root")
+p = plugins[0]
+home = Path(os.environ.get("CODEX_HOME", str(Path.home() / ".codex")))
+print(p.get("installedPath") or home / "plugins/cache" / p["marketplaceName"] / p["name"] / p["version"])
+')" || return 2
+  fi
+  if [ -z "$plugin_root" ] || [ ! -f "$plugin_root/scripts/cq" ]; then
+    echo "quenching-codex: installed plugin root not found; enable the plugin first" >&2
+    return 2
+  fi
+  python3 "$plugin_root/scripts/cq" "$@"
+}
+cq components read ../../references/specs-flows/status.md
+```
+Read the flow whole, once, and follow it from its own `## Workflow` with `$ARGUMENTS` as its input:
+its steps, `Done when:` lines and invariants bind this run as they would the flow itself.
+**Done when:** the flow ran to its own `Done when:`, or stopped on its own stop condition.

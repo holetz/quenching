@@ -14,7 +14,7 @@ Input: `$ARGUMENTS`.
 **Why `Bash` is unrestricted here.** The flow runs the verification, `cq specs` and Git commands resolved from the live spec; this shortcut grants what the flow was granted.
 
 ```bash
-.agents/quenching/bin/cq components read ${CLAUDE_PLUGIN_ROOT}/assets/references/specs-flows/conclude.md
+cq components read ${CLAUDE_PLUGIN_ROOT}/assets/references/specs-flows/conclude.md
 ```
 Read the flow whole, once, and follow it from its own `## Workflow` with `$ARGUMENTS` as its input:
 its steps, `Done when:` lines and invariants bind this run as they would the flow itself.

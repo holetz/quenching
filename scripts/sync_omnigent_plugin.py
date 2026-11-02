@@ -250,8 +250,20 @@ def source_text(source: Path, kind: str, fields: dict[str, str], body: str) -> s
             + markdown(body))
 
 
+def flow_body(body: str) -> str:
+    """A typed shortcut of a specs flow, inlined with the flow's reference.
+
+    The bundle serves references raw as MCP resources, so a flow that names Claude sub-agents
+    would reach the operator untranslated; the shortcut carries the flow translated instead.
+    """
+    match = re.search(r"^cq components read \$\{CLAUDE_PLUGIN_ROOT\}/assets/references/"
+                      r"(specs-flows/[\w-]+\.md)\s*$", body, re.M)
+    return (SOURCE / "assets/references" / match.group(1)).read_text(encoding="utf-8") if match else body
+
+
 def skill(name: str, source: Path) -> str:
     fields, body = oc.frontmatter(source.read_text(encoding="utf-8"), source)
+    body = flow_body(body)
     head = [f"name: {name}", f"description: {quote(reroot(oc.platform(fields['description'])))}"]
     if "allowed-tools" in fields:   # the audit reads this as the source grant, never a missing key
         head.append(f"allowed-tools: {quote(fields['allowed-tools'])}")

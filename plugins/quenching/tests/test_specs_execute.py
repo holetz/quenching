@@ -198,7 +198,7 @@ class TaskExecutionContractTests(unittest.TestCase):
         ):
             self.assertIn(row, conclude)
         self.assertIn("`autonomous` never supplies an outcome", conclude)
-        self.assertIn("pass `--outcome done` to `/quenching-specs:specs:conclude` only when execute left every task checked", runner)
+        self.assertIn("pass `--outcome done` to `/quenching-specs:specs:specs conclude` only when execute left every task checked", runner)
         self.assertIn("never `--force`, never `abandoned` on your own", runner)
 
     def test_conclude_runs_in_its_own_spawn(self):

@@ -12,7 +12,7 @@ Typed shortcut to the `develop` flow of [/quenching-specs:specs:specs](${CLAUDE_
 Input: `$ARGUMENTS`.
 
 ```bash
-.agents/quenching/bin/cq components read ${CLAUDE_PLUGIN_ROOT}/assets/references/specs-flows/develop.md
+cq components read ${CLAUDE_PLUGIN_ROOT}/assets/references/specs-flows/develop.md
 ```
 Read the flow whole, once, and follow it from its own `## Workflow` with `$ARGUMENTS` as its input:
 its steps, `Done when:` lines and invariants bind this run as they would the flow itself.

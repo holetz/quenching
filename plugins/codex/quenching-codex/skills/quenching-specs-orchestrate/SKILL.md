@@ -15,52 +15,35 @@ Tier mapping: opus → `gpt-6-astra`; sonnet → `gpt-6.1-sol`; haiku → `gpt-6
 <!-- CODEX RUNTIME END -->
 
 
-# quenching-specs-orchestrate — conduct an epic or a queue
+# quenching-specs-orchestrate — typed shortcut
 
-**Input**: `$ARGUMENTS` — a composite id (any spec whose `## Tasks` names members) or a list of spec
-ids, and optionally `--autonomous`. Empty or ambiguous → run
-`cq specs list --json` and ask which on a decision sheet ([questions.md](../../references/specs-develop/questions.md) §The four shared mechanics §1).
+Typed shortcut to the `orchestrate` flow of [quenching-specs-specs](../../commands/specs/specs.md).
+Input: `$ARGUMENTS`.
 
-This command is a launcher. The protocol (waves, routing, budgets, acceptance, audit) lives in the
-`orchestrator` agent definition, `../../agents/orchestrator.md`; do not restate it.
-
-## Workflow
-
-### 1. Resolve the set
-Resolve `cq` per [align/tool-resolution.md](../../references/align/tool-resolution.md)
-§Resolving the tool; branch on the exit code. Confirm each id exists with `cq specs show --spec <id> --json`.
-**Done when:** the composite id or the list of spec ids is verified to exist.
-
-### 2. Check who can run alone
-Read `cq config show --effective --json` once and take the `shared.autonomy.runAloneUpTo`,
-`shared.autonomy.merge` and `shared.autonomy.maxWorkers` lines; exit 0 without a line means the
-default (`low`, `policy`, `3`). Read each spec's metadata with `cq specs status --spec <id> --json`: `complexity` comes from
-`records.priority.complexity` and `approved` from `records.approved`. Split the set from these
-`status` payloads: **runs alone** is a spec with `approved` recorded or
-a `complexity` at or below `runAloneUpTo` (`none` leaves only the approved ones); **needs a human**
-is any other spec with no `approved`. Nothing needs a
-human → go to step 3. Otherwise ask once on a decision sheet, naming the specs on each side:
-
-- **Develop now** — run `quenching-specs-develop <id>` in this session, one spec after another,
-  for the specs that need a human, then launch everything. A develop of a `medium` spec costs about
-  40k tokens of this session (its body and references alone are about 17k), so this is offered
-  only for **two specs or fewer**; for more, end the run by listing one
-  `quenching-specs-develop <id>` line per spec and `quenching-specs-orchestrate` again after.
-- **Launch the independent subset** — only the specs that run alone and depend on none of the
-  ones that need a human.
-- **Force it** — `--autonomous`: every spec runs, and the approval is stamped
-  `by=orchestrator-forced`, never `by=human`.
-
-`--autonomous` already given → skip the question. **Done when:** the set to launch is fixed.
-
-### 3. Launch the orchestrator
-Start the `quenching-specs:orchestrator` agent with a prompt of at most 1,500 characters: the epic id or
-the spec ids, the base branch, the word `autonomous` when it was forced, and the three values as
-`runAloneUpTo=<v> merge=<v> maxWorkers=<v>`. Pass nothing else; it
-carries its own protocol, and without `autonomous` it blocks a spec that still needs approval.
-**Done when:** the orchestrator has returned its fixed report.
-
-### 4. Relay
-Show its per-spec blocks and totals line unchanged. A spec in state `blocked`, `failed` or
-`continue` is named with its note and left for the human; never retry it here.
-**Done when:** the report is shown and every non-`done` spec is named.
+```bash
+cq() {
+  local plugin_root="${CODEX_PLUGIN_ROOT:-${PLUGIN_ROOT:-}}"
+  if [ -z "$plugin_root" ]; then
+    plugin_root="$(set -o pipefail
+codex plugin list --json | python3 -c '
+import json, os, sys
+from pathlib import Path
+plugins = [p for p in json.load(sys.stdin)["installed"] if p.get("name") == "quenching-codex" and p.get("enabled")]
+if len(plugins) != 1:
+    sys.exit("quenching-codex: enable exactly one installation, or provide its plugin root")
+p = plugins[0]
+home = Path(os.environ.get("CODEX_HOME", str(Path.home() / ".codex")))
+print(p.get("installedPath") or home / "plugins/cache" / p["marketplaceName"] / p["name"] / p["version"])
+')" || return 2
+  fi
+  if [ -z "$plugin_root" ] || [ ! -f "$plugin_root/scripts/cq" ]; then
+    echo "quenching-codex: installed plugin root not found; enable the plugin first" >&2
+    return 2
+  fi
+  python3 "$plugin_root/scripts/cq" "$@"
+}
+cq components read ../../references/specs-flows/orchestrate.md
+```
+Read the flow whole, once, and follow it from its own `## Workflow` with `$ARGUMENTS` as its input:
+its steps, `Done when:` lines and invariants bind this run as they would the flow itself.
+**Done when:** the flow ran to its own `Done when:`, or stopped on its own stop condition.

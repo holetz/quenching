@@ -12,7 +12,7 @@ Typed shortcut to the `orchestrate` flow of [/quenching-specs:specs:specs](${CLA
 Input: `$ARGUMENTS`.
 
 ```bash
-.agents/quenching/bin/cq components read ${CLAUDE_PLUGIN_ROOT}/assets/references/specs-flows/orchestrate.md
+cq components read ${CLAUDE_PLUGIN_ROOT}/assets/references/specs-flows/orchestrate.md
 ```
 Read the flow whole, once, and follow it from its own `## Workflow` with `$ARGUMENTS` as its input:
 its steps, `Done when:` lines and invariants bind this run as they would the flow itself.

@@ -12,7 +12,7 @@ spec body that a worker or the verifier can read for you.
 
 ## The `Agent(...)` list is documentation of intent
 
-Run as a subagent (as `quenching-specs-orchestrate` launches you), the `Agent(type)` list in
+Run as a subagent (as `quenching-specs-specs orchestrate` launches you), the `Agent(type)` list in
 `tools` restricts nothing: you could launch any type. It is documentation of intent: the types this protocol uses
 (`docs/decisions/0012-lista-agent-do-orchestrator-e-documental.md`). Step 8 audits it.
 

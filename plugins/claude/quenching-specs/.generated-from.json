@@ -38,7 +38,8 @@
       "specs-conclude",
       "specs-develop",
       "specs-execute",
-      "specs-create"
+      "specs-create",
+      "specs-flows"
     ],
     "router": true
   }

@@ -582,6 +582,10 @@ def skill_description(description: str) -> str:
     return description.strip()
 
 
+FLOW_SHORTCUTS = frozenset(f"specs/{flow}" for flow in (
+    "create", "develop", "execute", "conclude", "triage", "status", "orchestrate"))
+
+
 def apply_removals(body: str, command_id: str, adaptation: dict) -> str:
     """Cut the spans `removals` declares for this command (a Codex run never nests Codex).
 
@@ -647,7 +651,9 @@ def command_to_skill(command: Path, adaptation: dict, raw: str | None = None) ->
         preference += "Declared effort: `" + effort.group(1) + "`.\n\n"
     commands_dir = source() / "commands" if plugin_translation() else claude_surface() / "commands"
     command_id = command.relative_to(commands_dir).with_suffix("").as_posix()
-    body = apply_removals(raw[end + len("\n---\n"):], command_id, adaptation)
+    body = raw[end + len("\n---\n"):]
+    if command_id not in FLOW_SHORTCUTS:  # a shortcut's removals run on its flow's reference
+        body = apply_removals(body, command_id, adaptation)
     return header + "<!-- CODEX RUNTIME START -->\n" + preference + codex_runtime_policy(adaptation) + "<!-- CODEX RUNTIME END -->\n\n" + transform_codex_markdown(transform_platform(
         transform_codex_runtime(body, adaptation), adaptation))
 
@@ -663,6 +669,9 @@ def skill_policy(command: Path, raw: str | None = None) -> bytes | None:
 
 def reference_translation(reference: Path, text: str, adaptation: dict) -> str:
     """What a repository's `.claude/references/<rel>` becomes under `.agents/references/<rel>`."""
+    if reference.suffix == ".md" and reference.parent.name == "specs-flows":
+        # A moved flow keeps the removals its command declared (a Codex run never nests Codex).
+        text = apply_removals(text, f"specs/{reference.stem}", adaptation)
     if reference.suffix == ".md":
         text = transform_codex_runtime(text, adaptation)
     text = transform_platform(text, adaptation)
@@ -733,7 +742,10 @@ def generated_tree() -> dict[str, bytes]:
             relative = path.relative_to(source_dir)
             if relative.name == "CLAUDE.md":
                 relative = relative.with_name("AGENTS.md")
-            output[str(destination_root / relative)] = transform_asset(relative, path.read_text(encoding="utf-8"), adaptation).encode()
+            text = path.read_text(encoding="utf-8")
+            if relative.parent.name == "specs-flows" and rel == "assets/references":
+                text = apply_removals(text, f"specs/{relative.stem}", adaptation)
+            output[str(destination_root / relative)] = transform_asset(relative, text, adaptation).encode()
     output[".generated-from.json"] = json.dumps({"source": "plugins/quenching",
         "generator": "cq components translate", "command_count": len(list((source() / "commands").rglob("*.md")))}, indent=2).encode() + b"\n"
     return output

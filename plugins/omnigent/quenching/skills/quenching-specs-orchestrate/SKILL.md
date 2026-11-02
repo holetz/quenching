@@ -13,7 +13,6 @@ This runs inside the `quenching` operator agent on whatever model the server's p
 
 <!-- OMNIGENT RUNTIME END -->
 
-
 # quenching-specs-orchestrate — conduct an epic or a queue
 
 **Input**: `$ARGUMENTS` — a composite id (any spec whose `## Tasks` names members) or a list of spec
