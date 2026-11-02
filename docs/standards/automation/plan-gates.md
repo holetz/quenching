@@ -1,7 +1,7 @@
 ---
 type: standard
 title: When a command's plan gate may drop
-description: The two protected classes — a code-coupled item, an irreversible cycle action — are the whole test, and a command in which neither occurs has nothing to confirm; what replaces the approval window when the gate goes (the record's URL, announced before any read and repeated in the report), the difference between the confirmation that drops and the consolidation that stays, what still stops the pass either way, the three intermediate forms measured and rejected, and the three conditions under which a gear's authority replaces the person at the go/no-go
+description: The two protected classes — a code-coupled item, an irreversible cycle action — are the whole test, and a command in which neither occurs has nothing to confirm; what replaces the approval window when the gate goes (the record's URL, announced before any read and repeated in the report), the difference between the confirmation that drops and the consolidation that stays, what still stops the pass either way, the three intermediate forms measured and rejected, and the three conditions under which declared autonomy or the trust criterion replaces the person at the go/no-go
 resource: plugins/quenching/commands/**, plugins/quenching/assets/references/align/convergence.md, plugins/quenching/assets/references/specs-develop/questions.md
 tags: [automation, commands, gates, confirmation, cost, turns]
 timestamp: 2026-10-16
@@ -79,15 +79,16 @@ asynchronous review over an address nobody received is what would be a review th
 
 A go/no-go may leave the pass — and only under the three conditions, together:
 
-1. **The human declared the mode beforehand.** The level is on disk (`priority.complexity`), it was
-   written by `triage`, `create` or `develop` with the scale in front of someone, and it is the
-   level — not the command — that waives the stop. The authorization belongs to the **mode**, never
-   to that one spec.
+1. **The authority was established beforehand.** Either the human declared autonomy (never inferred),
+   or the trust criterion closed from evidence alone (a simple path: nothing the repository does not
+   answer, nothing costly to undo). The depth on disk (`priority.complexity`) is the session's
+   computation, not a grant. The authorization belongs to the **declaration** or to the **evidence**,
+   never to a command's habit.
 2. **The record writes down the provenance.** `approved: {date, by}` — `by: human` when a person
-   answered, `by: low-gear` when the level authorized the mode and the pass stamped it, and
-   `by: orchestrator-forced` when a conductor ran `--autonomous` and forced the `low` gear over a
-   spec whose level on disk is higher: there the human authorized the **run**, not the mode the
-   spec's own level declares, and only `develop` writes the value, after `ready` is proved —
+   answered a complex path, the session's own stamp when evidence alone closed the criterion (its
+   value is named by spec 2152; the historical `by: low-gear` stays readable), and
+   `by: orchestrator-forced` when the human declared autonomy and a conductor ran `--autonomous`:
+   there the human authorized the **run**, and only `develop` writes the value, after `ready` is proved —
    the orchestrator itself writes no record. A record
    that does not say whose word it is cannot tell the two apart, and that is where the waiver stops
    being delegation and becomes falsification.
