@@ -133,8 +133,8 @@ def runtime_policy() -> str:
             "tiers are not pinned here: every command and subagent runs on the model the OpenCode "
             "session configures; a declared tier or effort below is a preference to report, not a "
             "switch. Token usage comes from host telemetry when it exists, otherwise it is "
-            "`not measured`; `cq components session cost` and `context` read no OpenCode log and "
-            "refuse (exit 2, unmeasured), while `cq components session cache` reads the OpenCode "
+            "`not measured`; `cq components session cost` reads no OpenCode log and refuses (exit 2, "
+            "unmeasured), while `cq components session context` and `cache` read the OpenCode "
             "database. If delegation is unavailable, report the limitation; never "
             "replace a required independent verification with self-review.\n\n")
 

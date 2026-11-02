@@ -118,9 +118,10 @@ def add_subcommands(sub: argparse._SubParsersAction) -> argparse._SubParsersActi
     ca.add_argument("--json", action="store_true", help="machine-readable output")
     ca.set_defaults(func=cmd_cache)
     cx = sub.add_parser("context", help="measure a live transcript's context and role budget")
-    cx.add_argument("transcript", nargs="?", help="transcript path or session id; default: CLAUDE_CODE_SESSION_ID")
+    cx.add_argument("transcript", nargs="?", help="transcript path or session id; default: OPENCODE_SESSION_ID, "
+                                                  "then CLAUDE_CODE_SESSION_ID")
     who = cx.add_mutually_exclusive_group()
-    who.add_argument("--agent", metavar="AGENT_ID", help="select this session's subagent transcript")
+    who.add_argument("--agent", metavar="AGENT_ID", help="select this session's subagent transcript; on OpenCode, the child session id")
     who.add_argument("--self", dest="self_marker", metavar="MARKER",
                      help="select the caller's own transcript: the one whose latest call carries "
                           "`session context --self MARKER`")
