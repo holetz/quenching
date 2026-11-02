@@ -52,8 +52,8 @@ Two operations in one pass, both derived: **compose** takes the spec to a closed
 sections, and **refine** argues with it — questions grouped by dependency, each with an inline
 recommendation. The pass ends at the approval close, recommending approve, refine, or refine
 with the premortem, against the spec's own signals. The OK to build is a stamp you can point
-to: `approved: {date, by}` in the spec's frontmatter, where `by` is `human`, `low-gear` or
-`orchestrator-forced`.
+to: `approved: {date, by}` in the spec's frontmatter, where `by` is `human`, `orchestrator-forced` or the session's
+own stamp on a simple path (historical `low-gear` stays readable).
 
 ??? note "Where does 'ready' live?"
     Nowhere — and that is the point. `ready` is a **derived** stage, computed from the document
