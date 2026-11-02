@@ -104,8 +104,17 @@ class Runner(unittest.TestCase):
         self.assertEqual(summary["overall"]["with"]["caseApprovalRate"], 0.5)
 
     def test_the_commands_own_model_is_recorded_beside_the_run_model(self):
-        self.assertEqual(runner.command_model("/quenching-specs:specs:create"), "sonnet")
-        self.assertEqual(runner.command_model("/quenching-specs:specs:develop"), "opus")
+        with tempfile.TemporaryDirectory() as tmp:
+            commands = Path(tmp)
+            (commands / "pinned.md").write_text("---\ndescription: d\nmodel: opus\n---\n\nBody.\n", encoding="utf-8")
+            (commands / "free.md").write_text("---\ndescription: d\n---\n\nBody.\n", encoding="utf-8")
+            original, runner.COMMANDS_ROOT = runner.COMMANDS_ROOT, commands
+            try:
+                self.assertEqual(runner.command_model("/quenching-specs:pinned"), "opus")
+                self.assertIsNone(runner.command_model("/quenching-specs:free"))
+            finally:
+                runner.COMMANDS_ROOT = original
+        self.assertIsNone(runner.command_model("/quenching-specs:specs:create"))
         self.assertIsNone(runner.command_model("/quenching-specs:git:commit"))
         self.assertIsNone(runner.command_model("/fake:skill"))
         out = self.full_run("fake")

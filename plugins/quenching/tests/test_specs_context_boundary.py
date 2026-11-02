@@ -10,7 +10,7 @@ import unittest
 
 
 ROOT = Path(__file__).resolve().parents[3]
-SPECS = ROOT / "plugins/quenching/commands/specs"
+SPECS = ROOT / "plugins/quenching/assets/references/specs-flows"
 MOLD = ROOT / "plugins/quenching/assets/references/specs-develop/report-mold.md"
 CADENCE = ROOT / "plugins/quenching/assets/references/specs-execute/execution-cadence.md"
 

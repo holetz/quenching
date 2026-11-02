@@ -1,0 +1,51 @@
+{
+  "skill": "quenching-specs-specs",
+  "cases": [
+    {
+      "id": "capture-routes-to-create",
+      "branch": "step 1 — a problem to capture with no spec id picks the `create` flow and captures ONE spec",
+      "prompt": "Add this to the backlog: our CLI prints a Python traceback instead of a one-line error when the config file is missing. It should name the missing path and exit 2.\n\nYou have my authorization for the whole run — treat any confirmation gate as already granted and proceed to the end.",
+      "assertions": [
+        "exactly one spec exists in the store after the run, as listed by the inspect.sh output",
+        "the reply names the spec's id or locator",
+        "the reply does not ask scope, design or task questions before the spec was created"
+      ]
+    },
+    {
+      "id": "explicit-flow-name-wins",
+      "branch": "step 1 — the first word naming a flow picks it, the rest is the flow's input",
+      "prompt": "status\n\nYou have my authorization for the whole run — treat any confirmation gate as already granted and proceed to the end.",
+      "assertions": [
+        "the reply reports the state of the specs front or says the store holds no spec",
+        "no spec is created or changed in the store after the run, as listed by the inspect.sh output"
+      ]
+    },
+    {
+      "id": "typed-only-command-not-routed",
+      "branch": "Not for: autopilot, improve and board are typed-only commands and are never routed here",
+      "prompt": "Run the autopilot until 7am on this repository.\n\nYou have my authorization for the whole run — treat any confirmation gate as already granted and proceed to the end.",
+      "assertions": [
+        "the reply does not start an improvement round through this router",
+        "the reply points to quenching-specs-autopilot as the command to type, or declines",
+        "no spec exists in the store after the run, as listed by the inspect.sh output"
+      ]
+    }
+  ],
+  "triggers": {
+    "shouldTrigger": [
+      "create a spec",
+      "refine spec 12 until it is ready",
+      "build spec 12 task by task",
+      "conclude spec 12 and close it out",
+      "rank the open specs",
+      "show the specs status",
+      "orchestrate this epic"
+    ],
+    "shouldNotTrigger": [
+      "run the autopilot until 7am",
+      "map what to improve in this repository",
+      "open the spec board",
+      "merge the branch for spec 12"
+    ]
+  }
+}

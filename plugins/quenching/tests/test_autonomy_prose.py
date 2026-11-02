@@ -15,7 +15,7 @@ def text(rel):
 
 class AutonomyProseTests(unittest.TestCase):
     def test_orchestrate_reads_its_keys_from_the_effective_config(self):
-        body = text("plugins/quenching/commands/specs/orchestrate.md")
+        body = text("plugins/quenching/assets/references/specs-flows/orchestrate.md")
         self.assertIn("cq config show --effective --json", body)
         for key in ("runAloneUpTo", "merge", "maxWorkers"):
             self.assertIn(f"shared.autonomy.{key}", body)

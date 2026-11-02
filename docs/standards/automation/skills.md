@@ -230,6 +230,27 @@ The criterion is a floor, not a quota: it says which commands *may* be typed-onl
 must be. On a small surface it may admit nobody, and that is a legitimate outcome rather than a
 failure to economise.
 
+### One router per vertical, shortcuts typed-only
+
+A vertical with several flows that conductors call (`specs`: create, develop, execute, conclude,
+triage, status, orchestrate) carries **one routed skill** — `/quenching-specs:specs:specs <flow> <id>` —
+and each flow's body lives once in `assets/references/specs-flows/<flow>.md`, loaded with
+`cq components read`. The model's list pays for one description; a flow's text is read only when it
+runs. The router grants only `Bash(cq:*)`, `Bash(cq.cmd:*)` and `Read`, so it widens no flow's tool
+grant; a tool the flow needs beyond that comes from the conductor agent's own tools or a human
+prompt.
+
+Each former command stays as a thin **typed-only shortcut**: it declares
+`disable-model-invocation: true`, keeps its exact tool grant and loads the same reference, so
+typing `/quenching-specs:specs:execute` still works while its description leaves every context. A
+shortcut declares no `model:`: a worker's model comes from its agent, the main session's from the
+human.
+
+**The conductor calls the router, never the shortcut.** `disable-model-invocation: true` makes the
+Skill tool refuse the shortcut, so `spec-runner`, `orchestrator` and the translated surfaces
+(Codex, OpenCode, Omnigent) invoke the router with the `flow` argument and the id. Naming the
+shortcut in an agent body would break the conductor silently.
+
 `context: fork` runs the command in a separate context. It is **forbidden** on any command that
 asks the human anything mid-flow — a plan whose OK the run waits on, or a plain question one of its
 steps puts to them. A forked context presents neither, so the run either hangs or answers itself.

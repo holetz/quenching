@@ -22,7 +22,7 @@ EXCLUDED = [
     "host/system/harness overhead", "conditional execute references", "tool/test output",
     "iteration count", "growing conversation history", "generated code",
 ]
-EXECUTE_BODY = Path(__file__).resolve().parents[5] / "commands/specs/execute.md"
+EXECUTE_BODY = Path(__file__).resolve().parents[5] / "assets/references/specs-flows/execute.md"
 # Small-tier projection (ADR 0014). Fixed prompt of a Task sub-agent in this repository,
 # measured 2026-10-17 on the first turn of general-purpose sub-agents (32065-33329 tokens).
 EXECUTOR_FIXED_TOKENS = 33000

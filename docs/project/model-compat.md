@@ -80,6 +80,7 @@ Cell form: `approved/cases, assertion pass rate`.
 | `quenching-specs-execute` | unmeasured | unmeasured | unmeasured | unmeasured |
 | `quenching-specs-improve` | unmeasured | unmeasured | unmeasured | unmeasured |
 | `quenching-specs-orchestrate` | unmeasured | unmeasured | unmeasured | unmeasured |
+| `quenching-specs-specs` | unmeasured | unmeasured | unmeasured | unmeasured |
 | `quenching-specs-status` | unmeasured | unmeasured | unmeasured | unmeasured |
 | `quenching-specs-triage` | unmeasured | unmeasured | unmeasured | unmeasured |
 | `quenching-toolchain-align` | unmeasured | unmeasured | unmeasured | unmeasured |
