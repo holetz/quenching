@@ -134,7 +134,8 @@ def runtime_policy() -> str:
             "session configures; a declared tier or effort below is a preference to report, not a "
             "switch. Token usage comes from host telemetry when it exists, otherwise it is "
             "`not measured`; `cq components session cost` and `context` read no OpenCode log and "
-            "refuse (exit 2, unmeasured). If delegation is unavailable, report the limitation; never "
+            "refuse (exit 2, unmeasured), while `cq components session cache` reads the OpenCode "
+            "database. If delegation is unavailable, report the limitation; never "
             "replace a required independent verification with self-review.\n\n")
 
 

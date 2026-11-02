@@ -21,7 +21,9 @@ one plan → one OK, inventoried (report-only) by `/quenching-align:components:a
 
 ## When work is a subagent — and when it is not
 
-Delegate when the returned summary is **much smaller than the work** that produced it (a
+Whether a wait is safe and what a new context pays differ per harness; read them from
+`cq components session cache` ([context-discipline.md](context-discipline.md) §The prompt cache is a
+per-harness measurement). Delegate when the returned summary is **much smaller than the work** that produced it (a
 repo-wide sweep, a many-file audit, a read that ends in one table), when slices run in
 parallel, or when the tool set must be narrower than the conversation's. Keep work inline
 when its output is as large as itself (a rewrite lands in context anyway), when it is one

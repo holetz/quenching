@@ -53,7 +53,7 @@ def _rows(pillar: str, cls: str, *paths: str) -> dict[str, Row]:
 
 CATALOG: dict[str, Row] = {
     **_rows("components", "read", "read", "lint", "doctor", "session list", "session digest",
-            "session cost", "session context", "session live"),
+            "session cost", "session cache", "session context", "session live"),
     **_rows("components", "write", "registry reindex", "translate"),
     **_rows("knowledge", "read", "validate", "status"),
     **_rows("knowledge", "write", "site-source", "project", "nav", "listing"),
