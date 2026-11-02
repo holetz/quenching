@@ -179,7 +179,7 @@ class TaskExecutionContractTests(unittest.TestCase):
         self.assertNotIn('"<id> autonomous")', conclude)
         self.assertIn("do not invoke it", conclude)
         self.assertIn('Skill("quenching-specs:git:pr:create", "<id>")', scale)
-        self.assertIn("The other levels retain", scale)
+        self.assertIn("Other builds retain", scale)
 
     def test_autonomous_conclude_answers_every_question_without_inferring_the_outcome(self):
         conclude = " ".join(CONCLUDE.read_text(encoding="utf-8").split())

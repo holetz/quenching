@@ -69,8 +69,9 @@ Fifteen terms to read first; each has its full entry under *Terms*.
 - [**Anomaly sidecar**](standards/quality/parse-honesty.md) — a *second* function reporting what a
   parse could not represent faithfully, placed beside the parser rather than folded into its return.
 - [**Approved record**](standards/workflows/plan-lifecycle.md) — the `approved: {date, by}` entry
-  saying a spec may be built and on whose authority: `human`, `low-gear` (the `low` level) or
-  `orchestrator-forced` (`--autonomous` forcing `low`); an absent `by:` reads as `human`.
+  saying a spec may be built and on whose authority: `human` (complex path), `orchestrator-forced`
+  (autonomy the human declared) or the session's own stamp (simple path; historical `low-gear` stays
+  readable); an absent `by:` reads as `human`.
 - [**Authority**](standards/index.md) — the frontmatter field saying how binding a doc is: `current`
   (proven) or `background` (agreed but unproven).
 - [**Batching contract**](standards/automation/context-discipline.md) — a named block in a command

@@ -209,7 +209,7 @@ lists each leaf with its value and layer.
 
 | Key | Values | Default | Read by |
 | --- | --- | --- | --- |
-| `runAloneUpTo` | `none` · `low` · `medium` · `high` · `xhigh` | `low` | `/quenching-specs:specs:orchestrate` and the `orchestrator`: the highest `complexity` that runs without `approved` |
+| `runAloneUpTo` | `none` · `low` · `medium` · `high` · `xhigh` | `low` | `/quenching-specs:specs:orchestrate` and the `orchestrator`: the highest `complexity` (the depth the session computed) that runs without `approved`; it caps depth, it grants nothing and never replaces declared autonomy |
 | `merge` | `policy` · `never` · `dependencies` · `all` | `policy` | the `orchestrator`: `policy` defers to the composite's dated text, `never` merges nothing, `dependencies` only specs with a dependent, `all` every leaf |
 | `maxWorkers` | integer 1-8 | `3` | the `orchestrator`'s parallelism |
 | `maxLaunches` | integer ≥ 1 | `40` | `/quenching-specs:specs:autopilot`, when `--max-launches` is absent |
