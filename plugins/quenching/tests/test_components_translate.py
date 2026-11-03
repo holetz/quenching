@@ -659,7 +659,7 @@ class CodexRuntimeTranslation(unittest.TestCase):
         self.assertNotIn("~/.codex/projects/", memory)
         self.assertIn("existing Claude-format project memory data", memory)
         self.assertNotIn("read with\n`cq components session cost`", autopilot)
-        self.assertIn("`model: gpt-6.1-sol`, `effort: low`", memory)
+        self.assertIn("`model: gpt-6.1-sol`, `effort: low`", tree["references/knowledge-flows/import-memory.md"].decode())
         self.assertIn("Use Codex host sub-agents only", memory)
         self.assertIn(".claude/quenching.json", translate.transform_platform(".claude/quenching.json", translate.read_adaptation()))
 
