@@ -59,5 +59,15 @@ class TheReportAndTheOperationalTask(unittest.TestCase):
         self.assertIn("so the marker can never hide a change", body)
 
 
+class AResumedSubagent(unittest.TestCase):
+    def test_context_discipline_resumes_inside_the_measured_boundary(self):
+        body = text(CONTEXT_DISCIPLINE)
+        self.assertIn("A paused subagent is resumed inside the measured boundary, never "
+                      "relaunched by habit", body)
+        self.assertIn("A resume is not a launch", body)
+        self.assertIn("Past the measured `boundaries`", body)
+        self.assertIn("after a `budget:` stop, the cold relaunch is the honest option", body)
+
+
 if __name__ == "__main__":
     unittest.main()

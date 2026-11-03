@@ -4,10 +4,10 @@ title: Context discipline — open less, run for less time, and emit fewer turns
 description: The two halves of a run's integral `tokens × turns remaining` and the three ways to cut it — open less (the declared files rather than the folder, the cited sections rather than the file, N sections in ONE call, the block rather than the section where a section has blocks, and the rules/rationale marker convention), run for less time (the section boundary as a legitimate stopping point, with measured role budgets checked only at existing boundaries), and emit fewer turns per unit of work (the batching contract, and the ban on a turn that exists only to announce the next tool call); plus the two things measured and refused, segmenting the bundle into more files and deleting rationale to compact it
 resource: plugins/quenching/commands/**, plugins/quenching/assets/references/**, plugins/quenching/assets/bin/quenching/components/**, plugins/quenching/assets/bin/quenching/specs/**, plugins/quenching/agents/**, scripts/measure_context_distribution.py
 tags: [automation, context, reading, cost, commands, references]
-timestamp: 2026-11-02
+timestamp: 2026-11-03
 audience: both
 authority: background
-source: read-by-section-not-by-file, narrow-the-execute-preamble, extensible-surface-and-budget-retirement, 2026-08-06, 2026-08-04, scope-the-handoff-rewrite; specs 1629 (2026-10-13), 1631, 1633 (2026-10-14), 1754 (2026-10-16), 1632, 1875 (2026-10-17); cross-harness cache measurement (2026-11-02); lineage in ADR 0004
+source: read-by-section-not-by-file, narrow-the-execute-preamble, extensible-surface-and-budget-retirement, 2026-08-06, 2026-08-04, scope-the-handoff-rewrite; specs 1629 (2026-10-13), 1631, 1633 (2026-10-14), 1754 (2026-10-16), 1632, 1875 (2026-10-17); cross-harness cache measurement (2026-11-02); spec 2163 (2026-11-03); lineage in ADR 0004
 maintainer: quenching
 ---
 
@@ -494,6 +494,13 @@ tokens only and never sums across models, because neither store holds the gatewa
 - **No lifetime is a constant.** A delegation or wait rule cites the measured `boundaries` for the
   harness and model it runs on, never a remembered number. Plan, API key and gateway change the
   lifetime; so does a move to usage credits on Claude.
+- **A paused subagent is resumed inside the measured boundary, never relaunched by habit.** Keep the
+  `agentId` its launch returned: an answer given while that context is still warm goes back to the
+  SAME agent (`SendMessage({to: <agentId>})` on Claude Code), with the decision recorded where the
+  executor will read it. A resume is not a launch — it pays no cold context and re-reads neither
+  the spec nor the protocol. Past the measured `boundaries`, on a host with no resume channel, or
+  after a `budget:` stop, the cold relaunch is the honest option: the context that ran out cannot
+  be resumed into, and waiting past the boundary buys a cache miss, not warmth.
 - **The method is shared; its parameters are not.** Skills stay the unit of knowledge and agents the
   unit of isolation on every harness. What varies per harness is whether a wait is safe, and how
   much a new context pays for its listing.
