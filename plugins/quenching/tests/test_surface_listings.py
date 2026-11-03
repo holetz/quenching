@@ -24,7 +24,6 @@ README = REPO_ROOT / "README.md"
 PROJECT_COMMANDS = DOCS / "project" / "commands.md"
 MARKETPLACE = REPO_ROOT / ".claude-plugin" / "marketplace.json"
 ZENSICAL = REPO_ROOT / "zensical.toml"
-ADAPTATION = PLUGIN_ROOT / "assets" / "translation" / "codex-adaptation.json"
 
 INVOCABLE = re.compile(r"`(/[a-z][a-z:-]*)`")
 
@@ -120,7 +119,6 @@ class ListingSurfaceTests(unittest.TestCase):
             (DOCS / "tutorials" / "getting-started.md").read_text(encoding="utf-8"),
             (DOCS / "how-to" / "adopt-quenching.md").read_text(encoding="utf-8"),
             (DOCS / "standards" / "architecture" / "index.md").read_text(encoding="utf-8"),
-            ADAPTATION.read_text(encoding="utf-8"),
         ]
         combined = "\n".join(texts).lower()
         self.assertGreaterEqual(combined.count("seven"), 1)

@@ -15,7 +15,6 @@ try:
 except ModuleNotFoundError:
     sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
     import _paths  # noqa: F401
-from quenching.components.commands import translate
 from quenching.components.commands.cli import main as components_main
 
 COMMAND = ("---\ndescription: Create a table.\nallowed-tools: Bash\n---\n"
@@ -37,23 +36,11 @@ class Migrate(unittest.TestCase):
         self.git("init", "-q")
         self.write(".claude/commands/bundle/tabela/criar.md", COMMAND)
         self.write(".claude/references/bundle/rules.md", "rules\n")
-        skill, reference = self.translation()
-        self.write(".agents/skills/bundle/tabela/criar/SKILL.md", skill)
-        self.write(".agents/references/bundle/rules.md", reference)
         self.write(".claude/quenching.json", '{"backend": "github"}\n')
         self.write(".claude/agents/runner.md", "---\nname: runner\n---\n")
         self.write("CLAUDE.md", "# Instructions\n")
         self.git("add", "-A")
         self.git("-c", "user.email=t@t", "-c", "user.name=t", "commit", "-qm", "legacy")
-
-    def translation(self):
-        """The legacy `.claude → .agents` copies the retired `translate` verb wrote."""
-        translate.configure(str(self.repo), str(self.repo))
-        adaptation = translate.read_adaptation()
-        command = self.repo / ".claude/commands/bundle/tabela/criar.md"
-        reference = self.repo / ".claude/references/bundle/rules.md"
-        return (translate.command_to_skill(command, adaptation),
-                translate.reference_translation(reference, reference.read_text(), adaptation))
 
     def commit(self, message="next"):
         self.git("add", "-A")
@@ -81,7 +68,7 @@ class Migrate(unittest.TestCase):
                           ".agents/skills/bundle-tabela-criar/SKILL.md"}, payload["renames"])
         self.assertTrue((self.repo / ".claude/commands/bundle/tabela/criar.md").is_file())
 
-    def test_write_moves_the_source_and_drops_the_translation(self):
+    def test_write_moves_the_source(self):
         self.assertEqual(0, self.run_cli("--write")[0])
         skill = (self.repo / ".agents/skills/bundle-tabela-criar/SKILL.md").read_text()
         self.assertTrue(skill.startswith("---\nname: bundle-tabela-criar\ndescription:"))
@@ -160,59 +147,20 @@ class Migrate(unittest.TestCase):
         self.assertEqual(0, self.run_cli("--write")[0])
         self.assertFalse((self.repo / "CLAUDE.md").exists())
 
-    def test_a_manual_skill_with_the_translation_name_is_a_conflict_and_nothing_is_written(self):
+    def test_a_copy_beside_its_source_is_a_conflict_and_nothing_is_written(self):
+        """The copies the retired `translate` verb wrote are no longer recognised: whoever wrote a
+        second editable copy, the human settles it."""
         self.write(".agents/skills/bundle/tabela/criar/SKILL.md",
                    "---\nname: criar\ndescription: My own skill.\n---\nhand written\n")
-        self.commit()
-        code, payload = self.run_cli()
-        self.assertEqual(1, code)
-        self.assertIn({"path": ".agents/skills/bundle/tabela/criar/SKILL.md",
-                       "with": ".claude/commands/bundle/tabela/criar.md",
-                       "why": "differs from the translation of its source"}, payload["conflicts"])
-        self.assertEqual(2, self.run_cli("--write")[0])
-        self.assertEqual("", self.git("status", "--porcelain"))
-
-    def test_a_manual_reference_with_the_translation_path_is_a_conflict(self):
         self.write(".agents/references/bundle/rules.md", "my own rules\n")
         self.commit()
         code, payload = self.run_cli()
-        self.assertEqual(".agents/references/bundle/rules.md", payload["conflicts"][0]["path"])
-
-    def test_a_stale_translation_of_an_earlier_source_is_still_the_old_translation(self):
-        self.write(".claude/references/bundle/rules.md", "rules, revised\n")
-        self.write(".claude/commands/bundle/tabela/criar.md", COMMAND + "A later line.\n")
-        self.commit()
-        code, payload = self.run_cli()
-        self.assertEqual((1, []), (code, payload["conflicts"]))
-        self.assertIn({"op": "remove", "path": ".agents/skills/bundle/tabela/criar/SKILL.md",
-                       "why": "translation of .claude/commands/bundle/tabela/criar.md"},
-                      payload["operations"])
-
-    def test_a_translation_from_an_older_translator_is_the_old_translation(self):
-        rel = ".agents/skills/bundle/tabela/criar/SKILL.md"
-        text = (self.repo / rel).read_text()
-        start = text.index("<!-- CODEX RUNTIME START -->")
-        end = text.index("<!-- CODEX RUNTIME END -->\n\n") + len("<!-- CODEX RUNTIME END -->\n\n")
-        text = text[:start] + text[end:]
-        text = text.replace("/quenching-specs:git:branch", "quenching-git-branch")
-        text = text.replace(".agents/references/", ".claude/references/")
-        self.write(rel, text)
-        self.commit()
-        self.assertEqual([], self.run_cli()[1]["conflicts"])
-
-    def test_a_copy_edited_beside_its_source_is_retired_one_edited_ahead_is_not(self):
-        rules = ".claude/references/bundle/rules.md"
-        self.write(rules, "head\nrules\ntail\n")
-        self.write(".agents/references/bundle/rules.md", "head\nrules\ntail\n")
-        self.commit()
-        self.write(rules, "head, revised\nrules\ntail, revised\n")
-        self.write(".agents/references/bundle/rules.md", "head\nrules\ntail, revised\n")
-        self.commit()
-        self.assertEqual([], self.run_cli()[1]["conflicts"])
-        self.write(".agents/references/bundle/rules.md", "head\nrules\ntail, only here\n")
-        self.commit()
-        self.assertEqual(".agents/references/bundle/rules.md",
-                         self.run_cli()[1]["conflicts"][0]["path"])
+        self.assertEqual(1, code)
+        self.assertEqual({".agents/skills/bundle-tabela-criar/SKILL.md", ".agents/references/bundle/rules.md"},
+                         {conflict["path"] for conflict in payload["conflicts"]})
+        self.assertEqual({"two editable copies"}, {conflict["why"] for conflict in payload["conflicts"]})
+        self.assertEqual(2, self.run_cli("--write")[0])
+        self.assertEqual("", self.git("status", "--porcelain"))
 
     def test_the_skill_tool_forms_are_rewritten(self):
         self.assertEqual(0, self.run_cli("--write")[0])
