@@ -1,7 +1,7 @@
 # `assets/` — everything Claude Code must not surface as an entry point
 
 That sentence is the whole membership rule, and it is the standard's
-([plugin-layout.md](../../../docs/standards/architecture/plugin-layout.md)), not a local one.
+([plugin-layout.md](../../docs/standards/architecture/plugin-layout.md)), not a local one.
 `commands/**` is the only tree Claude Code registers — every `.md` under it *is* a command, since
 the path is the identity — so anything that is not an entry point lives here: the installable
 payload, the shared procedure the bodies cite, the measured case sets, the harnesses that grade

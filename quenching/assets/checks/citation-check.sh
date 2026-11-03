@@ -218,7 +218,9 @@ if want 1; then
 import os, re, sys
 
 commands_dir = os.path.join("quenching", "commands")
-HYPHENATED_RE = re.compile(r"(?<![\w:/-])(quenching-[a-z0-9-]+)(?![\w:])")
+# The retired spelling: the `:` id, `quenching-<module>:<front>:<verb>` or `quenching:<front>:<verb>`,
+# with or without the slash. The target dialect drops the module and joins the path with hyphens.
+RETIRED_RE = re.compile(r"(?<![\w:/-])quenching(?:-[a-z]+)?((?::[a-z][a-z0-9-]*)+)")
 
 live = set()
 for root, _, names in os.walk(commands_dir):
@@ -226,15 +228,6 @@ for root, _, names in os.walk(commands_dir):
         if name.endswith(".md"):
             rel = os.path.relpath(os.path.join(root, name), commands_dir)
             live.add("quenching-" + rel[:-3].replace(os.sep, "-"))
-
-# A module name (`quenching-align`, `quenching-specs`) is a plugin, not a mis-separated command,
-# even where it spells the same as one: `/quenching-align:align` lives in module `quenching-align`.
-try:
-    import json
-    with open(os.path.join("quenching", "assets", "modules.json"), encoding="utf-8") as handle:
-        live -= {module["name"] for module in json.load(handle)["modules"]}
-except (OSError, ValueError, KeyError):
-    pass
 
 findings, checked = [], 0
 for rel in sys.stdin.buffer.read().split(b"\x00"):
@@ -244,7 +237,8 @@ for rel in sys.stdin.buffer.read().split(b"\x00"):
     checked += 1
     with open(rel, encoding="utf-8", errors="replace") as handle:
         for number, line in enumerate(handle, 1):
-            for cited in HYPHENATED_RE.findall(line):
+            for tail in RETIRED_RE.findall(line):
+                cited = "quenching" + tail.replace(":", "-")
                 if cited in live:
                     findings.append((rel, number, cited))
 
@@ -260,8 +254,8 @@ if checked == 0:
     print("  nothing could be measured — this is not a pass")
     sys.exit(2)
 if findings:
-    print("  FAIL   %-22s %d hyphenated live-command name(s) in %d file(s) swept"
-          % ("(hyphenated form)", len(findings), checked))
+    print("  FAIL   %-22s %d retired `:` spelling(s) of a live command in %d file(s) swept"
+          % ("(retired `:` form)", len(findings), checked))
     sys.exit(1)
 print("  ok     %-22s none in %d file(s) swept" % ("(hyphenated form)", checked))
 '
@@ -325,15 +319,15 @@ import os, re, sys
 plugin = "quenching"
 commands_dir = os.path.join(plugin, "commands")
 
-# `${CLAUDE_PLUGIN_ROOT}/<path>`, and the same path spelled absolute in a command body — both name a
-# file under the plugin. The absolute form appears because ${CLAUDE_PLUGIN_ROOT} is expanded when
-# a body is loaded, and the expansion is what gets copied into prose.
-PLUGIN_ROOT_RE    = re.compile(r"\$\{CLAUDE_PLUGIN_ROOT\}/([A-Za-z0-9_./-]+)")
+# `.agents/quenching/<path>`: the payload path a command body cites, which names a file under the
+# source tree in this checkout.
+PLUGIN_ROOT_RE    = re.compile(r"(?<![A-Za-z0-9_./-])\.agents/quenching/([A-Za-z0-9_./-]+)")
 MD_LINK_RE        = re.compile(r"\]\(([^)\s]+)\)")
-REPO_PATH_RE      = re.compile(r"(?<![A-Za-z0-9_./-])(quenching/[A-Za-z0-9_./-]+)")
+REPO_PATH_RE      = re.compile(r"(?<![A-Za-z0-9_./-])(quenching/(?:assets|commands|agents|tests|hooks)/[A-Za-z0-9_./-]+|quenching/(?:VERSION|README\.md))")
 KNOWLEDGE_PATH_RE = re.compile(r"(?<![A-Za-z0-9_./-])/?(docs/[A-Za-z0-9_./-]+)(?![A-Za-z0-9_./-]|\{)")
-# Both citation forms. The Skill tool takes the bare `quenching-<module>:<ns>:<cmd>`; a human types the slash.
-CMD_RE            = re.compile(r"/?(quenching(?:-[a-z]+)?(?::[a-z][a-z0-9-]*){2,})")
+# A command is cited by its target-dialect id; the slash form is the one a human types. The bare
+# form the Skill tool takes is a plain word that module, agent and package names also spell.
+CMD_RE            = re.compile(r"(?<![\w:/.-])/(quenching-[a-z0-9]+(?:-[a-z0-9]+)*)(?![\w:/.-]|-)")
 
 # Content the plugin ships for a target checkout to hold, plus the fixture data that names files
 # on purpose absent. See the header: these say which repo a tree describes, they exempt no path.
@@ -346,6 +340,8 @@ CMD_RE            = re.compile(r"/?(quenching(?:-[a-z]+)?(?::[a-z][a-z0-9-]*){2,
 # exactly those two trees against the published skeleton, which is the right base.
 SHIPPED = (plugin + "/assets/knowledge/", plugin + "/assets/templates/", plugin + "/tests/fixtures/",
            plugin + "/commands/", plugin + "/assets/references/", plugin + "/assets/bin/")
+
+MIRRORS = (".agents/", ".claude/skills/", ".claude/agents/", ".opencode/")
 
 def unmeasurable(p):
     return (not p) or any(c in p for c in "*?<>${}|") or "..." in p \
@@ -363,16 +359,6 @@ def trim(p):
     # below is a single-quoted shell argument, and one would end it mid-parser.)
     return p.rstrip(".,;:)")
 
-# Each command is published under the module that owns its front (assets/modules.json).
-try:
-    import json
-    with open(os.path.join(plugin, "assets/modules.json"), encoding="utf-8") as handle:
-        owners = {rel[:-3] if rel.endswith(".md") else rel: module["name"]
-                  for module in json.load(handle)["modules"]
-                  for rel in module.get("owned", {}).get("commands", [])}
-except (OSError, ValueError, KeyError):
-    owners = {}
-
 path_findings, cmd_findings = [], []
 paths_checked = cmds_checked = 0
 commands = set()
@@ -381,8 +367,7 @@ for root, _, names in os.walk(commands_dir):
     for n in names:
         if n.endswith(".md"):
             rel = os.path.relpath(os.path.join(root, n), commands_dir)
-            ident = rel[:-3].replace(os.sep, ":")
-            commands.add(owners.get(ident.split(":", 1)[0], "quenching") + ":" + ident)
+            commands.add("quenching-" + rel[:-3].replace(os.sep, "-"))
 
 FROZEN_DATA = (plugin + "/tests/fixtures/golden/", plugin + "/tests/capture_golden.py",
                # A `files:` case table reproducing a real, historical bug report verbatim — a
@@ -423,11 +408,14 @@ for rel in sys.stdin.buffer.read().split(b"\x00"):
     in_bundle = rel.startswith("docs/") or rel.startswith(SHIPPED)
     in_plugin = rel.startswith(plugin + "/")
     candidates = []
-    # ${CLAUDE_PLUGIN_ROOT} names the plugin the CITING file ships in, not always this one.
-    # Under integrations/<name>/ the plugin is two segments deep; the source is quenching/.
-    parts = rel.split("/")
-    own_plugin = "/".join(parts[:2]) if parts[0] == "integrations" else plugin
-    candidates += [(m, [os.path.join(own_plugin, trim(m))]) for m in PLUGIN_ROOT_RE.findall(text)]
+    # `.agents/quenching/<path>` names the payload a deploy installs: the source tree `quenching/`,
+    # where the runtime (`bin/cq`) lives under `assets/`.
+    # Only prose the source ships is read this way: a deployed mirror cites its own payload, and a
+    # launcher (`bin/cq.cmd`) is generated, so neither is a file of this tree.
+    if rel.endswith(".md") and not rel.startswith(MIRRORS):
+        candidates += [(".agents/quenching/" + m,
+                        [os.path.join(plugin, trim(m)), os.path.join(plugin, "assets", trim(m))])
+                       for m in PLUGIN_ROOT_RE.findall(text) if trim(m) != "bin/cq.cmd"]
     candidates += [(m, [trim(m)]) for m in REPO_PATH_RE.findall(text)]
     if not in_bundle:
         candidates += [(m, [trim(m)]) for m in KNOWLEDGE_PATH_RE.findall(text)]
@@ -512,11 +500,12 @@ plugin = os.path.join(repo, "quenching")
 source_roots = ("quenching/commands/", "quenching/assets/references/")
 link_re = re.compile(r"\]\(([^)\s]+)\)")
 bare_path_re = re.compile(
-    r"(?<![A-Za-z0-9_./-])/?(?:\$\{CLAUDE_PLUGIN_ROOT\}/)?"
+    r"(?<![A-Za-z0-9_./-])/?(?:\.agents/quenching/)?"
     r"(?:[A-Za-z0-9_.-]+/)+[A-Za-z0-9_.-]+\.md(?:#[A-Za-z0-9_.-]+)?"
 )
 filename_re = re.compile(r"(?<![A-Za-z0-9_./-])([A-Za-z0-9_.-]+\.md(?:#[A-Za-z0-9_.-]+)?)")
 section_re = re.compile(r"§")
+GENERIC_FILENAMES = {"AGENTS.md", "README.md", "CLAUDE.md", "index.md", "SKILL.md"}
 
 
 def tracked_files():
@@ -570,8 +559,8 @@ def relative_target(source, raw):
         return None
     if target.startswith(("http:", "https:", "mailto:", "#")):
         return None
-    if target.startswith("${CLAUDE_PLUGIN_ROOT}/"):
-        target = target[len("${CLAUDE_PLUGIN_ROOT}/") :]
+    if target.startswith(".agents/quenching/"):
+        target = target[len(".agents/quenching/") :]
         if any(char in target for char in "*?<>${}|"):
             return None
         return os.path.normpath(os.path.join("quenching", target))
@@ -611,6 +600,10 @@ def target_for(source, marker_start, line):
             candidates.append((match.start(), target))
     for match in filename_re.finditer(line):
         if match.start() >= marker_start:
+            continue
+        # A name every repository has (`AGENTS.md`, `README.md`) is no claim about one file here.
+        if match.group(1).split("#", 1)[0] in GENERIC_FILENAMES:
+            candidates.append((match.start(), ""))
             continue
         target = relative_target(source, match.group(1))
         if target:

@@ -195,7 +195,7 @@ class KnowledgeAlignmentContract(unittest.TestCase):
             shutil.copy2(ROOT / "assets" / "modules.json", script.parents[1] / "modules.json")
             command = repo / "quenching" / "commands" / "knowledge" / "align.md"
             command.parent.mkdir(parents=True)
-            missing_path = "${CLAUDE_PLUGIN_ROOT}/assets/references/" + "missing.md"
+            missing_path = ".agents/quenching/assets/references/" + "missing.md"
             command.write_text(
                 "/quenching-knowledge-align\n"
                 f"`{missing_path}`\n"

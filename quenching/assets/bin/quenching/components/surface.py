@@ -128,7 +128,7 @@ def find_surface_root(root_arg: str | None) -> str:
 # --------------------------------------------------------------------------- #
 def command_invocation(relpath: str, prefix: str | None = None) -> str:
     """`specs/develop.md` -> `/quenching-specs-develop` on the source surface (the `prefix` is
-    `quenching`), `/specs:develop` on a target's own `.claude/commands/`. The path IS the identity,
+    `quenching`), `/front:verb` on a target's own `.claude/commands/`. The path IS the identity,
     so this is the whole naming rule; nothing derives a second name to compare it against."""
     parts = relpath[:-3].split("/")
     return "/" + "-".join([prefix, *parts]) if prefix else "/" + ":".join(parts)

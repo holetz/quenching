@@ -33,7 +33,7 @@ The plugin acts on **eight** surfaces of a repository, and the interface is the 
 Eight local fronts have an align, the specs axis has no local tree to converge,
 and one root command spans the eight aligned fronts. The `security` and `git` axes are
 **pillars** rather than fronts — they converge no tree of their own, so they carry no align at all
-(see [`architecture/align-surface.md`](../../docs/standards/architecture/align-surface.md)
+(see [`architecture/align-surface.md`](../docs/standards/architecture/align-surface.md)
 §The security subject is pillar-shaped and §The git pillar has no align):
 
 | Front / pillar | Namespace | **align** — probe-first, structure + content |
@@ -92,7 +92,7 @@ their rows rather than a second structural inventory: the `65` in this heading i
 canonical displayed total, while [`tests/test_readme_surface.py`](tests/test_readme_surface.py)
 reads it and fails the suite whenever these tables
 and `commands/**` disagree
-([`quality/surface-verification.md`](../../docs/standards/quality/surface-verification.md)
+([`quality/surface-verification.md`](../docs/standards/quality/surface-verification.md)
 §A hand-written inventory of the surface needs a machine holding its lockstep).
 
 The split is by front and pillar: `/quenching-align:knowledge:*` acts on the OKF `/docs/` bundle,
@@ -218,7 +218,7 @@ never written in the first place.
 
 The `security` and `git` pillars carry no `align`: they converge no tree, only answer read-only
 questions about the target's live evidence, so there is nothing a probe could find drifted
-([`architecture/align-surface.md`](../../docs/standards/architecture/align-surface.md) §The
+([`architecture/align-surface.md`](../docs/standards/architecture/align-surface.md) §The
 security subject is pillar-shaped and §The git pillar has no align). The `specs` axis hands off to
 the git pillar rather than executing git
 itself — `/quenching-specs:specs:execute` invokes `/quenching-specs:git:branch` for isolation, and
@@ -336,7 +336,7 @@ asset layout under `quenching_plugin/`. Packaging a local committed HEAD can be 
 `quenching://references/<path>.md`, or select headings with `?section=<heading>`. Large documents
 return outlines, and the shared response guard bounds the result. The specs resources below
 remain available. The architectural contract is
-[mcp-server.md](../../docs/standards/architecture/mcp-server.md).
+[mcp-server.md](../docs/standards/architecture/mcp-server.md).
 
 ### The specs MCP server — reads, writes and gated moves, stdio
 
@@ -589,7 +589,7 @@ Shared contracts keep gates explicit; missing `gh` or `az` is a named refusal
 ## Install
 
 quenching is served only by installation into the target repository with `cq deploy`
-([ADR 0017](../../docs/decisions/0017-install-only-by-deploy.md)); there is no marketplace plugin
+([ADR 0017](../docs/decisions/0017-install-only-by-deploy.md)); there is no marketplace plugin
 to install for it. Try it first in a disposable repository. From a clone of this repository:
 
 ```bash
@@ -622,7 +622,7 @@ Deploy writes `AGENTS.md` and `.agents/quenching.json` only when absent, plus th
 `.claude/skills/` bridge and, per selected harness, the Claude and OpenCode subagents. It records
 what it owns in `.agents/.quenching-deploy.json`. `CLAUDE.md` is not created. Deploy installs the
 surface only: the target's `/quenching-knowledge-align` installs `/docs/` and converges the fronts.
-The full contract is [deploy-mode.md](../../docs/standards/architecture/deploy-mode.md).
+The full contract is [deploy-mode.md](../docs/standards/architecture/deploy-mode.md).
 
 In a deployed target every command is `/quenching-<front>-<verb>` — this manual's
 `/quenching-specs:specs:create` is `/quenching-specs-create` there. A route into a module that was
@@ -670,10 +670,10 @@ A target upgrades by running `cq deploy --target <repo> --write` again from a ne
 release tag; the manifest keeps the recorded modules, harnesses and runtime unless a flag overrides
 them, and `cq deploy --target <repo> --check` reports drift in between.
 
-The release history is kept in the root [`CHANGELOG.md`](../../CHANGELOG.md). The plugin version is
+The release history is kept in the root [`CHANGELOG.md`](../CHANGELOG.md). The plugin version is
 updated only by a deliberate release; `cq specs release <version>` checks the changelog entry and
 updates the published artifacts in lockstep. See
-[`ci-cd/versioning-release.md`](../../docs/standards/ci-cd/versioning-release.md) for the release
+[`ci-cd/versioning-release.md`](../docs/standards/ci-cd/versioning-release.md) for the release
 contract.
 
 <!-- quenching-proof-readme-start -->
