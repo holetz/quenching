@@ -97,7 +97,7 @@ form; a plain branch happens only when this run's input asked for one in the hum
 It is a `Skill` call, never `context: fork`:
 
 ```
-Skill("quenching-specs:git:branch", "<id>")
+Skill("quenching-specs:git:git", "branch <id>")
 ```
 
 When it returns, re-read the state it left:

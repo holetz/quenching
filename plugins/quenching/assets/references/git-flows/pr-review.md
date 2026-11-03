@@ -57,7 +57,7 @@ a fix (or ask what the human wants instead), and apply it only on a yes. **Done 
 thread has either been fixed and staged, or explicitly skipped with a stated reason.
 
 ### 4. Commit and resolve
-Once at least one thread's fix is staged, invoke `/quenching-specs:git:commit` to commit it (the command
+Once at least one thread's fix is staged, invoke `/quenching-specs:git:git commit` to commit it (the command
 must be available; otherwise stop before resolving anything). Then, per
 thread actually fixed:
 ```bash

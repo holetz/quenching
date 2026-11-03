@@ -105,7 +105,8 @@
           "specs-develop",
           "specs-execute",
           "specs-create",
-          "specs-flows"
+          "specs-flows",
+          "git-flows"
         ],
         "router": true
       },
