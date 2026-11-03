@@ -10,6 +10,7 @@ from quenching.delivery.probe import probe_delivery, workflow_artifacts
 
 
 _TOP_LEVEL = re.compile(r"^([A-Za-z_][A-Za-z0-9_.-]*):(?:\s*(.*?))?\s*$")
+_RUSTUP_SETUP = re.compile(r"(?:^|&&|\|\||;|\n)\s*rustup\s+(?:toolchain\s+install|default|show\s+active-toolchain)\b")
 _MAPPING = re.compile(r"^\s+([A-Za-z_][A-Za-z0-9_.-]*):(?:\s*(.*?))?\s*$")
 _LIST = re.compile(r"^\s*-\s*([^\s#]+)")
 _AZURE_JOB = re.compile(r"^\s*-\s*(?:job|deployment):\s*([^\s#]+)")
@@ -281,6 +282,7 @@ def _job(lines: list[str], name: str, kind: str) -> Job:
         or kind == "azure-pipelines" and any(
             re.match(r"^\s*-\s*checkout:\s*self(?:\s|$)", line) for line in lines),
         setup=any(re.match(r"^(?:[^/@]+/)?setup-", action) for action in actions)
+        or any(_RUSTUP_SETUP.search(command) for command in commands)
         or kind == "gitlab-ci" and any(re.match(r"^\s*(?:image|before_script):", line)
                                         for line in lines)
         or kind == "azure-pipelines" and any(
