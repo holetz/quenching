@@ -225,6 +225,15 @@ commands under one `/<vertical>:` namespace that conductors call) is a finding t
 the former commands kept as typed-only shortcuts, per
 `/docs/standards/automation/skills.md` §One router per vertical, shortcuts typed-only. Propose, never apply.
 
+**A local family.** Read `families` from `cq components status --json` in the probe: each entry with
+`candidate: true` (three or more model-invocable skills sharing the first kebab segment) is reported as
+"propose a router", never as a finding, and `ok` and `state` stay as they are. The proposal names the
+router `.agents/skills/<family>/SKILL.md`, the flows `.agents/references/<family>-flows/<flow>.md` and
+the migration that keeps every skill: the body moves verbatim into its reference, the skill stays as a
+typed-only shortcut with the same grant, and the router carries one line per flow. Nothing is deleted
+and no `quenching-*` agent is edited; per `/docs/standards/automation/skills.md`
+§A target extends a vertical with its own router. Propose, never apply.
+
 Report each finding as `command · violated rule · one-line evidence · the quenching-components-command-new invocation
 that opens the edit`, labelled **"reported, not applied"**. Skip every legacy `openspec-*` body —
 that surface is out of scope here as everywhere. Never rewrite a body to close a finding.

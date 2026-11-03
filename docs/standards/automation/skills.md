@@ -278,6 +278,31 @@ consolidated edit without confirming it and stays forbidden all the same, becaus
 all — one that only reads and reports may fork freely, and that is the lever's home: self-contained,
 noisy, summary-out work whose trail would otherwise sit in the main context forever.
 
+### A target extends a vertical with its own router
+
+A target repository that needs more flows in a family adds them to **its own** routed skill and never edits
+an agent that came from the plugin (`.claude/agents/quenching-*.md`): the next `cq deploy --write`
+would overwrite the edit, and the list would swell again. The unit of extension is the target's router:
+
+- **The router** is `.agents/skills/<family>/SKILL.md`, one kebab segment without the `quenching-`
+  prefix, so it never collides with the plugin's `quenching-<vertical>-<vertical>`. Its Claude bridge is
+  generated as for any target skill.
+- **The flow bodies** live in `.agents/references/<family>-flows/<flow>.md`, loaded with
+  `cq components read`; the router lists one line per flow.
+- **Each former skill stays** as a typed-only shortcut (`disable-model-invocation: true`) with the same
+  tool grant, loading the same reference. Body and grant move verbatim; nothing is deleted without a human
+  word.
+- **The grant** follows the plugin's router (`Bash(cq:*)`, `Bash(cq.cmd:*)`, `Read`) and widens no
+  flow; a flow that needs more keeps asking in its shortcut.
+- **The plugin's agents** keep calling the plugin's router; the target's main session calls the
+  target's router.
+
+**Which families earn a router.** The family is the first kebab segment of a local skill's name, and the
+criterion is the plugin's: three or more model-invocable entries. `cq components status` reports it as
+`families` (`skills`, `invocable`, `candidate`), a signal and never a finding, so `ok` and `state` do not
+change. `components:align` reads it and proposes; the human confirms before anything moves. A target that
+names its skills by suffix, or with no convention, gets no candidate and falls back to the manual report.
+
 ## The execution profile
 
 Every further capability a command uses — `context: fork` with `agent`/`background`, a

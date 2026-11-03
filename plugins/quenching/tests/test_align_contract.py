@@ -47,6 +47,19 @@ class KnowledgeAlignmentContract(unittest.TestCase):
         self.assertEqual(positions, sorted(positions))
         self.assertIn("--glossary-term", verify)
 
+    def test_align_proposes_a_router_for_local_families(self):
+        align = (ROOT / "assets" / "references" / "components-flows" / "align.md").read_text(encoding="utf-8")
+        doctrine = (
+            ROOT / "assets" / "references" / "components-command-new" / "doctrine.md"
+        ).read_text(encoding="utf-8")
+        section = "§A target extends a vertical with its own router"
+
+        self.assertIn("`families`", align)
+        self.assertIn("`candidate: true`", align)
+        self.assertIn("typed-only shortcut", align)
+        self.assertIn(section, align)
+        self.assertIn(section, doctrine)
+
     def test_status_collects_the_payload_that_controls_derive_from(self):
         status = (ROOT / "assets" / "references" / "knowledge-flows" / "status.md").read_text(encoding="utf-8")
         collect = status.split("### 2. Collect (read-only)", 1)[1].split("### 3.", 1)[0]
