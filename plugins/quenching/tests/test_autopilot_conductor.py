@@ -62,5 +62,42 @@ class DecisionsPersistedInTheDesign(unittest.TestCase):
                       "restating it", body)
 
 
+class ResumeInsteadOfRelaunch(unittest.TestCase):
+    """A `needs-human` decided in minutes goes back to the SAME agent with
+    `SendMessage({to: <agentId>})`; the cold launch is the exception, named one by one, and a
+    resume never counts as a launch."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.body = text()
+
+    def test_the_answered_needs_human_is_resumed_in_place(self):
+        self.assertIn("A `needs-human:` already answered is RESUMED, not relaunched", self.body)
+        self.assertIn("write the answer as a dated bullet in the epic's `## Design`", self.body)
+        self.assertIn("`SendMessage({to: <agentId>})`", self.body)
+
+    def test_the_window_is_measured_never_assumed(self):
+        self.assertIn("The window is not a constant", self.body)
+        self.assertIn("`cq components session cache --json`", self.body)
+        self.assertIn("§The prompt cache is a per-harness measurement", self.body)
+
+    def test_a_cold_relaunch_is_the_named_exception(self):
+        for exception in ("for `budget:`", "no `SendMessage` in your grants",
+                          "for an `agentId` lost",
+                          "for a decision taken outside the measured window",
+                          "for a decision that repeats one already in the epic's `## Design`"):
+            self.assertIn(exception, self.body)
+
+    def test_a_resume_is_not_a_launch(self):
+        self.assertIn("A resume is not a launch", self.body)
+        self.assertIn("it counts in `resumes:` of the round block and never in `launches`",
+                      self.body)
+
+    def test_step_5_hands_the_blocked_worker_to_the_same_agent(self):
+        body = step(5)
+        self.assertIn("takes the resume rule of the invariants", body)
+        self.assertIn("it goes back to the same agent by `SendMessage`", body)
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -46,10 +46,17 @@ class AutopilotTreeCeilingTests(unittest.TestCase):
         self.assertIn("is not a failure, but needs progress", body)
         self.assertIn("`needs-human`", body)
 
+    def test_a_budget_continue_is_still_a_cold_relaunch(self):
+        """`budget:` is the one stop that needs a clean context: it stays a relaunch, and the
+        resume channel never replaces it."""
+        body = text(AUTOPILOT)
+        self.assertIn("A `budget:` continue is relaunched, not retried", body)
+        self.assertIn("A cold relaunch stays, and is never a resume, for `budget:`", body)
+
     def test_allowed_tools_not_widened(self):
         head = AUTOPILOT.read_text(encoding="utf-8").split("---")[1]
         self.assertIn(
-            "allowed-tools: Bash(cq:*), Bash(cq.cmd:*), Bash(git:*), Bash, Read, Grep, Glob, Agent, Task, TaskStop",
+            "allowed-tools: Bash(cq:*), Bash(cq.cmd:*), Bash(git:*), Bash, Read, Grep, Glob, Agent, Task, TaskStop, SendMessage",
             head,
         )
 

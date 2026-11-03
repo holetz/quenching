@@ -3,7 +3,7 @@ description: >-
   Run ONE improvement round (triage, map, epic, orchestrate, review, gate); `--until-dry` or `--until` repeat rounds until a dry queue or a deadline. Use for "run the autopilot until 7am". Not for: ONE epic → /quenching-specs:specs:orchestrate; owner-decided map → /quenching-specs:specs:improve.
 disable-model-invocation: true
 argument-hint: "[--until <ISO-8601 date-time with offset>] [--until-dry] [--max-launches <n>] [--max-tree-tokens <n>] [focus areas]"
-allowed-tools: Bash(cq:*), Bash(cq.cmd:*), Bash(git:*), Bash, Read, Grep, Glob, Agent, Task, TaskStop
+allowed-tools: Bash(cq:*), Bash(cq.cmd:*), Bash(git:*), Bash, Read, Grep, Glob, Agent, Task, TaskStop, SendMessage
 ---
 
 # /quenching-specs:specs:autopilot — one round of improvement; more only on request
@@ -69,8 +69,25 @@ non-`cq`, non-`git` command is run.
   relaunch counts in `launches` and is not a failure, but needs progress: at least one more spec
   `done` or `merged` than at the previous return. Without progress the epic goes to the report as
   `needs-human`.
+- **A `needs-human:` already answered is RESUMED, not relaunched.** Keep the `agentId` every
+  `Agent`/`Task` result returns. When an orchestrator (or, in economy mode, a `spec-runner`) returns
+  `blocked` with `NOTE: needs-human: …` and the question is answered — by the human, or by this
+  session as the delegated owner — write the answer as a dated bullet in the epic's `## Design`
+  first (step 4's read, append, write), then hand it back to the SAME agent with
+  `SendMessage({to: <agentId>})`, naming the epic and the bullet: the transcript is still warm, and
+  a fresh launch pays to re-read spec, protocol and code for a question decided in minutes. **The
+  window is not a constant:** read `cq components session cache --json` (`boundaries`, per harness
+  and model) and compare it with the elapsed time; `docs/standards/automation/context-discipline.md`
+  §The prompt cache is a per-harness measurement measures the documented five-minute subagent
+  lifetime of Claude Code as the case, and this body assumes no number of its own. A cold relaunch stays, and is
+  never a resume, for `budget:` (the invariant above), for a host that exposes no channel (no
+  `SendMessage` in your grants, or a handle that cannot be messaged), for an `agentId` lost, for a
+  decision taken outside the measured window, and for a decision that repeats one already in the
+  epic's `## Design` — that repetition goes to the report with the two notes, `needs-human` and the
+  decision it already carried, never a second `SendMessage`. **A resume is not a launch:** it counts
+  in `resumes:` of the round block and never in `launches`.
 - **The round record is resumable.** Each round writes `<ephemeral area>/autopilot/<date>/rounds.md`
-  (one block per round: number, start ref, epic, specs placed, `launches`, next step,
+  (one block per round: number, start ref, epic, specs placed, `launches`, `resumes`, next step,
   `open|closed`) at the end of every step 1–7. A round that returns `continue` stays `open`.
 - **The deadline binds launches.** With `--until`, no worker starts if it cannot finish before the
   deadline; what is in flight at the deadline is reported `continue` with its state.
@@ -172,7 +189,9 @@ holds `Agent` and `Task`.
 **Otherwise** (3 or more members, or any `high`/`xhigh`), start `quenching-specs:spec-orchestrator` on
 the epic with the word `autonomous`, the base branch and the deadline (≤ 1,500 characters).
 Apply **Liveness** to every worker, in either mode. A spec returned `blocked` with a `needs-human:`
-note moves to the human epic; `failed` or `continue` is carried to the report with its note, never
+note takes the resume rule of the invariants: answered inside the measured window, it goes back to
+the same agent by `SendMessage`; otherwise it moves to the human epic. `failed` or `continue` is
+carried to the report with its note, never
 retried in this round; a `continue` whose note starts with `budget:` is the exception, relaunched as
 the invariant above says.
 **Done when:** every member is `done` or placed (economy mode), or the orchestrator returned its
@@ -225,7 +244,8 @@ record `closed` and the next step printed as the invocation to resume in a new s
 the flags asked for.
 
 ### 8. Final report
-Print: the launches used against `--max-launches`; per epic, the merged specs with their PRs; the human epic and its members; every decision
+Print: the launches used against `--max-launches` and the resumes it made; per epic, the merged
+specs with their PRs; the human epic and its members; every decision
 this session took as the delegated owner; specs in flight at the deadline, as `continue` with their
 state; second stalls; and the tokens the run spent per model and agent type, read with
 `cq components session cost` and never summed across tiers; plus the Codex review of each epic —
