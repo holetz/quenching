@@ -33,7 +33,6 @@ ROOT = Path(__file__).resolve().parents[1]
 EVALS_ROOT = ROOT / "plugins/quenching/assets/evals"
 COMMANDS_ROOT = ROOT / "plugins/quenching/commands"
 PROFILES = Path(__file__).resolve().with_name("eval_harnesses.json")
-OMNIGENT_AGENT = ROOT / "plugins/omnigent/quenching"
 CQ = ROOT / "plugins/quenching/assets/bin/cq"
 CQ_BIN = ROOT / "plugins/quenching/bin"
 ARMS = ("with", "without")
@@ -161,23 +160,9 @@ def load_profiles(path: Path) -> dict:
     return json.loads(path.read_text(encoding="utf-8"))["profiles"]
 
 
-def skill_name(skill: str) -> str:
-    """The operator agent's skill for the command a suite evaluates, `/quenching-specs:git:commit` -> `quenching-git-commit`."""
-    _, _, path = skill.lstrip("/").partition(":")
-    return "quenching-" + path.replace(":", "-")
-
-
-def arm_values(args, profile: dict, case: dict, workdir: str, skill: str | None = None) -> dict:
-    """The substitution values of one arm; a profile that names `{agent}` also gets the operator agent and the
-    suite's skill, refused when either is missing from the generated bundle."""
-    values = {"prompt": case["prompt"], "model": args.model, "workdir": workdir, "max_turns": str(args.max_turns)}
-    if "{agent}" in json.dumps(profile):
-        name = skill_name(skill or "")
-        if not (OMNIGENT_AGENT / "skills" / name / "SKILL.md").is_file():
-            raise ValueError(f"no generated Omnigent skill for {skill!r} in {OMNIGENT_AGENT}; "
-                             "run scripts/sync_omnigent_plugin.py --write")
-        values |= {"agent": str(OMNIGENT_AGENT), "agent_harness": args.agent_harness, "skill": name}
-    return values
+def arm_values(args, case: dict, workdir: str) -> dict:
+    """The substitution values of one arm."""
+    return {"prompt": case["prompt"], "model": args.model, "workdir": workdir, "max_turns": str(args.max_turns)}
 
 
 def render(profile: dict, arm: str | None, values: dict, extra: list[str], container: bool = False) -> list[str]:
@@ -426,7 +411,7 @@ def material_of(output: str, snap: str) -> str:
 
 # --------------------------------------------------------------------------- run
 
-def run_arm(args, profiles: dict, suite: Path, case: dict, arm: str, skill: str | None = None) -> dict:
+def run_arm(args, profiles: dict, suite: Path, case: dict, arm: str) -> dict:
     profile = profiles[args.harness]
     with tempfile.TemporaryDirectory(prefix="eval-") as temporary:
         try:
@@ -443,7 +428,7 @@ def run_arm(args, profiles: dict, suite: Path, case: dict, arm: str, skill: str 
             arm_env["PATH"] = f"{CQ_BIN}{os.pathsep}{env.get('PATH', '')}"
         if arm != "with":
             arm_env.pop("CQ", None)  # the without arm gets no path to the tool or the skill bodies
-        values = arm_values(args, profile, case, str(workspace), skill)
+        values = arm_values(args, case, str(workspace))
         record = invoke(arm_argv(args, profile, arm, values, temporary), workspace, arm_env, args.timeout)
         text, tokens = output_text(profile, record["stdout"])
         output = text + (f"\n[stderr]\n{record['stderr'][-4000:]}" if record["stderr"] else "")
@@ -569,17 +554,11 @@ def run(args) -> int:
             return 2
         cases = [c for c in data["cases"] if not args.case or c["id"] in args.case]
         suites.append((directory, data, cases))
-    for _, data, cases in suites:
-        try:
-            arm_values(args, profiles[args.harness], cases[0] if cases else {"prompt": ""}, "<workspace>", data["skill"])
-        except ValueError as exc:
-            print(f"run_evals: {exc}", file=sys.stderr)
-            return 2
     if args.dry_run:
         for directory, data, cases in suites:
             for case in cases:
                 for arm in arms:
-                    values = arm_values(args, profiles[args.harness], case, "<workspace>", data["skill"])
+                    values = arm_values(args, case, "<workspace>")
                     argv = arm_argv(args, profiles[args.harness], arm, values, "<fixture>")
                     print(json.dumps({"suite": suite_name(directory), "case": case["id"], "arm": arm,
                                       "deploy": profiles[args.harness].get("deploy", {}).get(arm),
@@ -599,7 +578,7 @@ def run(args) -> int:
         for case in cases:
             entry = {"case": case["id"], "branch": case["branch"], "arms": {}}
             for arm in arms:
-                arm_record = run_arm(args, profiles, directory, case, arm, data["skill"])
+                arm_record = run_arm(args, profiles, directory, case, arm)
                 (target / f"{case['id']}.{arm}.output.txt").write_text(arm_record.pop("output"), encoding="utf-8")
                 (target / f"{case['id']}.{arm}.snapshot.txt").write_text(arm_record.pop("snapshot"), encoding="utf-8")
                 results = [a["result"] for a in arm_record["assertions"]]
@@ -652,8 +631,6 @@ def parser() -> argparse.ArgumentParser:
     p.add_argument("--harnesses", default=str(PROFILES), help="the harness profile file")
     p.add_argument("--harness", help="the profile the arms run under")
     p.add_argument("--model", help="the model the arms run on")
-    p.add_argument("--agent-harness", default="opencode",
-                   help="the harness an Omnigent bundle runs on (profiles that name {agent_harness}; default: opencode)")
     p.add_argument("--arms", default="with", help="comma-separated: with, without (default: with)")
     p.add_argument("--grader-harness", default=DEFAULT_GRADER_HARNESS,
                    help=f"the profile the grader runs under (default: {DEFAULT_GRADER_HARNESS})")
