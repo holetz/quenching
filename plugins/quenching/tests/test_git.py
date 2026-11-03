@@ -1583,6 +1583,31 @@ class RunnerGateExit(unittest.TestCase):
                       "line", self.text)
 
 
+class BranchDirtyCut(unittest.TestCase):
+    """The one exception to the clean-tree precondition: a caller that authorized a cut from
+    `origin/<base>` proceeds, and the dirty paths stay in the base — never in the worktree."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.text = " ".join((PLUGIN_ROOT / "assets" / "references" / "git-flows" / "branch.md")
+                            .read_text(encoding="utf-8").split())
+
+    def test_an_authorized_cut_proceeds_and_names_what_stays_behind(self):
+        self.assertIn("an authorized cut is the one exception, and the authorization is the "
+                      "caller's word, never this command's inference", self.text)
+        self.assertIn("they stay in the base and never enter the new worktree", self.text)
+        self.assertIn("also state the dirty paths that stayed in the base", self.text)
+
+    def test_the_exception_is_worktree_only(self):
+        self.assertIn("The exception is **worktree-only**", self.text)
+        self.assertIn("a dirty tree there stays a refusal", self.text)
+        self.assertIn("The Branch form in a dirty checkout is always a refusal", self.text)
+
+    def test_an_unauthorized_dirty_tree_still_refuses(self):
+        self.assertIn("Anything short of that explicit authorization → refuse, name the "
+                      "offending paths, and stop", self.text)
+
+
 class Worktree(RepoCase):
     def setUp(self):
         super().setUp()
