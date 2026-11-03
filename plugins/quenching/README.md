@@ -661,7 +661,7 @@ installed target migrates once:
    `/quenching-specs:handoff`); `align`, `knowledge` and `components` move to `quenching-align`
    (`/quenching-align:align`, `/quenching-align:knowledge:add`); every other front moves to the
    module of its own name (`/quenching-ops:ops:status`). Agent ids move to `quenching-specs`
-   (`quenching-specs:verifier`).
+   (`quenching-specs:spec-verifier`).
 5. `/reload-plugins`, then run `cq modules --json` to confirm each module reports `enabled: true`.
 
 Nothing in the target's `/docs/`, `.agents/quenching.json` (or legacy `.claude/quenching.json`) or spec store changes: a declared

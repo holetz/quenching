@@ -148,7 +148,7 @@ def measure(path: Path, root: Path) -> dict:
             anomalies["non-object-agent-metadata"] += 1
             meta = {}
         agent_type = meta.get("agentType") or "unknown"
-        role = {"spec-runner": "worker", "orchestrator": "conductor"}.get(
+        role = {"spec-runner": "worker", "spec-orchestrator": "conductor", "orchestrator": "conductor"}.get(
             bare_agent(agent_type), "unknown-subagent" if agent_type == "unknown" else "other-subagent")
     else:
         role = "main"

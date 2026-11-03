@@ -515,7 +515,7 @@ print(p.get("installedPath") or home / "plugins/cache" / p["marketplaceName"] / 
    §The verification policy); otherwise the chain starts at `git add`. A task with
    **no `files:` declared** — the line absent, or `files: []` — has no diff to commit, so its
    chain *ends* at the tick, run without `--subject` or `--commit`, and with neither `git add` nor
-   run `cq git commit`. **A task that runs generators writes files, so it declares their outputs in `files:`**; with `files: []` the verifier fails the scope of whatever it wrote. A `branch:` record also gets the branch marked, per the rule loaded in 5d.
+   run `cq git commit`. **A task that runs generators writes files, so it declares their outputs in `files:`**; with `files: []` the spec-verifier fails the scope of whatever it wrote. A `branch:` record also gets the branch marked, per the rule loaded in 5d.
 
 f. **Read the chain's tail, and act on which link broke** — per §The commit, already loaded in
    5d: `verify:`/staging failed → nothing ticked, nothing committed; fix and retry, or block it
@@ -690,6 +690,8 @@ Emit §The report mold. The single-spec header line carries overall progress; th
    whichever command wrote it.
 
 Print §The session-size line before the block — `cq components session context --json`, read once; exit 1 turns the `→` line into a recommendation to run the next stage **in a new session**, exit 0 and 2 leave it an offer.
+
+**Name what git needs.** Add one line stating what the git flow owes the branch next and what to review first: `quenching-git-pr-create <id>` (or `quenching-git-merge`) after `quenching-specs-conclude`, over the diff `origin/<base>...HEAD`. Execute runs none of it: git is the main session's flow, and in an orchestrated run the `spec-orchestrator` publishes after the `spec-verifier` PASS.
 
 Close on §The next-step block, its recommended line carrying **this spec's id**:
 `quenching-specs-conclude <id>` at 100%, `quenching-specs-execute <id>` when the run paused

@@ -17,20 +17,20 @@ class BuildSizeApproval(unittest.TestCase):
         close = text[text.index("### 8. Close"):]
         self.assertLess(close.index("cq specs estimate"), close.index("stamp it here"))
         for marker in ("overBudget", "workerBudgetTokens", "autonomous", "STATE: blocked",
-                       "spec-architect", "proposal-only", "never proves the full build fits"):
+                       "in this session", "creating no children yet", "never proves the full build fits"):
             self.assertIn(marker, close)
 
     def test_shared_approval_rule_covers_simple_track_and_estimate_uncertainty(self):
         text = prose("assets/references/specs-develop/questions.md")
         close = text[text.index("## Approval —"):text.index("## Gathering the evidence")]
         for marker in ("overBudget", "No automatic approval", "autonomous", "unknown inputs",
-                       "complexity", "explicitly accept", "spec-architect"):
+                       "complexity", "explicitly accept", "develop session"):
             self.assertIn(marker, close)
 
-    def test_architect_proposal_has_no_write_and_capture_requires_authorization(self):
-        text = prose("agents/spec-architect.md")
-        for marker in ("proposal-only", "Do not create", "explicit authorization", "worker budget",
-                       "original problem", "Do not develop, approve or execute"):
+    def test_slice_proposal_creates_nothing_and_capture_requires_authorization(self):
+        text = prose("assets/references/specs-flows/develop.md")
+        for marker in ("creating no children yet", "Only explicit authorization permits",
+                       "preserve the original problem", "never approve/execute the children incidentally"):
             self.assertIn(marker, text)
 
     def test_manual_describes_a_heuristic_without_guaranteeing_fit(self):

@@ -97,7 +97,7 @@ class ContextTests(unittest.TestCase):
 
     def test_agent_roles_come_from_metadata_and_unknown_refuses(self):
         for kind, role, budget in (("quenching-specs:spec-runner", "worker", 100000),
-                                    ("quenching-specs:orchestrator", "conductor", 150000),
+                                    ("quenching-specs:spec-orchestrator", "conductor", 150000),
                                     ("quenching-specs:spec-orchestrator", "conductor", 150000),
                                     ("quenching:autopilot", "conductor", 150000),
                                     ("Explore", "unknown", None), (7, "unknown", None)):

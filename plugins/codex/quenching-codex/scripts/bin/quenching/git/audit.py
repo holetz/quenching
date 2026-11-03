@@ -1,4 +1,4 @@
-"""`cq git audit` — the facts the `verifier` agent checks inside a spec's worktree, read with a
+"""`cq git audit` — the facts the `spec-verifier` agent checks inside a spec's worktree, read with a
 fixed argv so the agent needs no `Bash(git …)` grant at all.
 
 A wildcard grant such as `Bash(git -C * status:*)` admits any git command that merely ends in
@@ -14,10 +14,10 @@ driver runs; `log.showSignature` is forced off so `gpg.program` never runs; and 
 or an absent `--sha` never runs `core.sshCommand` or any other transport the config names.
 `rewrites` and `reflog` are evidence of what the worker did not erase, not proof against a worker with
 `Bash`: `git reflog delete` or `expire` removes the entries and the payload then reads empty with
-`complete: true`. The audit, like check 9 of the verifier, catches the widening a worker that follows the
+`complete: true`. The audit, like check 9 of the spec-verifier, catches the widening a worker that follows the
 protocol makes by mistake; it is not a sandbox against one who evades it on purpose (a worker with
 free `Bash` writes outside any diff anyway). A REPORT only, exit 0 on any facts, and a read that failed is
-an entry of the payload's `errors` (`complete: false`), never an empty list; judging them is the verifier's.
+an entry of the payload's `errors` (`complete: false`), never an empty list; judging them is the spec-verifier's.
 An agent, command or skill is read under `.agents/`, under `plugins/<one segment>/`, and under every
 plugin root the base or the tip declares (a `.claude-plugin/plugin.json`, a relative `source` of a
 `.claude-plugin/marketplace.json`, and the component paths either names), never by an `agents/` at

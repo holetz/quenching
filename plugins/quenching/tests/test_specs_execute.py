@@ -204,7 +204,7 @@ class TaskExecutionContractTests(unittest.TestCase):
     def test_conclude_runs_in_its_own_spawn(self):
         runner = " ".join(RUNNER.read_text(encoding="utf-8").split())
         orchestrator = " ".join(
-            (ROOT / "plugins/quenching/agents/orchestrator.md").read_text(encoding="utf-8").split())
+            (ROOT / "plugins/quenching/agents/spec-orchestrator.md").read_text(encoding="utf-8").split())
 
         self.assertIn("`NOTE: execute-done:", runner)
         self.assertIn("Given the word `conclude`, skip develop and execute", runner)
@@ -212,10 +212,10 @@ class TaskExecutionContractTests(unittest.TestCase):
         self.assertIn("NOTE starting `execute-done:`", orchestrator)
         self.assertIn("whose prompt carries the word `conclude`", orchestrator)
         self.assertIn("with `model` passed explicitly", orchestrator)
-        self.assertIn("call the `verifier` only after it returns", orchestrator)
+        self.assertIn("call the `spec-verifier` only after it returns", orchestrator)
 
     def test_orchestration_reads_scheduling_records_from_status(self):
-        for carrier in ("agents/orchestrator.md", "assets/references/specs-flows/orchestrate.md"):
+        for carrier in ("agents/spec-orchestrator.md", "assets/references/specs-flows/orchestrate.md"):
             with self.subTest(carrier=carrier):
                 text = (ROOT / "plugins/quenching" / carrier).read_text(encoding="utf-8")
                 flat = " ".join(re.sub(r"[`*_]", "", text).split())

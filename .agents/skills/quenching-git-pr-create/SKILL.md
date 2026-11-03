@@ -17,7 +17,7 @@ link), or free text to use as the PR title. Append `remote:<name>` to select a r
 confirmation, given by a conductor launched with `--autonomous`: see step 4.
 
 Opens the PR and **stops there** — merging is `/quenching-git-merge`'s, on its own confirmation,
-except in an `autonomous` orchestrated run, where the `git-steward`'s `merge` step merges the PR
+except in an `autonomous` orchestrated run, where the `spec-orchestrator` merges the PR
 of a spec the next wave depends on.
 The route follows `.agents/quenching/bin/cq specs config --json`, and both go through `.agents/quenching/bin/cq git pr` verbs with a fixed argv:
 `github` runs `gh` underneath, `azure-boards` runs `az repos` with no `--auto-complete` and no
@@ -50,7 +50,7 @@ A spec id in `$ARGUMENTS` → read its provider-owned status once, then read the
   "Problem,Proposal,Impact,Validation,Tasks" --json
 ```
 The status payload supplies the spec `title`, `path`, `branch` facts and task counts. The section
-payload supplies the text. A caller without the `.agents/quenching/bin/cq specs section` grant (the `git-steward`) reads
+payload supplies the text. A caller without the `.agents/quenching/bin/cq specs section` grant (the `spec-orchestrator`) reads
 the same sections through `.agents/quenching/bin/cq specs show --spec "<id>" --full`, a verb with no write flag.
 
 §The declared-directive layer's table governs each of the two artifacts independently:
@@ -90,7 +90,7 @@ else: never add `--delete-source-branch`, and an absent title or a missing spec 
 asked, never invented. Without the token, the confirmation below stands.
 
 Show the remote, the branch name it pushes under, and the title/body, and put them on a
-decision sheet ([specs-develop/questions.md](.agents/quenching/assets/references/specs-develop/questions.md) §1; A confirm, B decline) that ends the turn — except in a sub-agent that holds the AskUserQuestion grant (the `git-steward`), which carries the sheet inside one `AskUserQuestion` call (§1):
+decision sheet ([specs-develop/questions.md](.agents/quenching/assets/references/specs-develop/questions.md) §1; A confirm, B decline) that ends the turn — and a sub-agent holds no `AskUserQuestion`, so without `autonomous` it returns `STATE: blocked`, `NOTE: needs-human:` carrying the sheet (§1):
 For Azure, show the work item id, whether the separate source-branch deletion offer was accepted
 (`--delete-source-branch`), and whether `--transition-work-items` is included in the
 command the human is confirming. The deletion offer defaults to preserve the branch.
@@ -122,8 +122,7 @@ records pass. A target that carries `standards/workflows/plan-git-record.md` sta
 ### 5. Stamp, with an ID
 On both providers the verb of step 4 already stamped it: pass `--spec "<id>"` there and skip this
 step. The verb checks `--spec` (it exists, and owns `--head`) before the PR is created, so a wrong id
-opens nothing, and it writes the record through `.agents/quenching/bin/cq specs record`'s function, so the orchestrated
-steward, which holds no spec write, stamps it too; exit 1 with `reason: stamp-failed` means the PR
+opens nothing, and it writes the record through `.agents/quenching/bin/cq specs record`'s function, so the `spec-orchestrator`, which holds no spec write, stamps it too; exit 1 with `reason: stamp-failed` means the PR
 exists and the record does not. A PR opened outside the verb is stamped with
 `.agents/quenching/bin/cq git pr record --spec "<id>" --head "<branch>" --number <provider-pr-id> --url <webUrl> --json`.
 `pr:` is **write-many** — a later PR on the same spec is a new fact.

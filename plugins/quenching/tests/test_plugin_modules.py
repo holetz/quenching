@@ -250,7 +250,7 @@ class PrincipalGeneration(unittest.TestCase):
             "commands/specs/develop.md": f"Read {ROOT_TOKEN}/assets/references/specs-develop/a.md; "
                                          "then /quenching-design:design:status.\n",
             "commands/design/status.md": f"Run cq design; see {ROOT_TOKEN}/assets/references/design-align/.\n",
-            "agents/scout.md": "agent\n",
+            "agents/spec-scout.md": "agent\n",
             "assets/references/specs-develop/a.md": "shared\n",
             "assets/references/design-align/b.md": "design\n",
             "assets/bin/quenching/common/version.py": 'VERSION = "1.2.3"\n',
@@ -304,7 +304,7 @@ class PrincipalGeneration(unittest.TestCase):
         self.assertEqual(0, self.run_generator("--write"))
         specs, design = self.root / "plugins/claude/quenching-specs", self.root / "plugins/claude/quenching-design"
         self.assertTrue((specs / "commands/specs/develop.md").is_file())
-        self.assertTrue((specs / "agents/scout.md").is_file())
+        self.assertTrue((specs / "agents/spec-scout.md").is_file())
         self.assertFalse((specs / "commands/design").exists())
         self.assertFalse((specs / "assets/references/design-align").exists())
         self.assertTrue((design / "assets/references/design-align/b.md").is_file())
@@ -427,7 +427,7 @@ class PrincipalPartition(unittest.TestCase):
         self.assertEqual("quenching-specs:handoff", published_id(OLD + "handoff", mapping))
         self.assertEqual("quenching-align:align", published_id(OLD + "align", mapping))
         self.assertEqual("quenching-align:knowledge:add", published_id(OLD + "knowledge:add", mapping))
-        self.assertEqual("quenching-specs:orchestrator", published_id(OLD + "orchestrator", mapping))
+        self.assertEqual("quenching-specs:spec-orchestrator", published_id(OLD + "spec-orchestrator", mapping))
         self.assertEqual("quenching-design:design:status", published_id(OLD + "design:status", mapping))
         with self.assertRaises(ValueError):
             published_id(OLD + "nowhere:x", mapping)

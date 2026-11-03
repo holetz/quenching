@@ -235,7 +235,7 @@ class SelfWindowTests(unittest.TestCase):
             if not parent:
                 records.append(self.call(aid, ts))
             write(self.sub / f"agent-{aid}.jsonl", records)
-            meta = {"agentType": "quenching-specs:spec-runner" if parent else "quenching-specs:orchestrator"}
+            meta = {"agentType": "quenching-specs:spec-runner" if parent else "quenching-specs:spec-orchestrator"}
             if parent:
                 meta["parentAgentId"] = parent
             (self.sub / f"agent-{aid}.meta.json").write_text(json.dumps(meta))

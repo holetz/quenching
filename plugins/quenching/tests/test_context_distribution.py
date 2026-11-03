@@ -84,7 +84,7 @@ class TestContextDistribution(unittest.TestCase):
 
     def test_role_comes_from_metadata_and_models_do_not_merge(self):
         row = transcript(self.tmp_path, [request("a", 10), request("b", 40, model="model-b")],
-                         subagent=True, metadata={"agentType": "quenching-specs:orchestrator"})
+                         subagent=True, metadata={"agentType": "quenching-specs:spec-orchestrator"})
         assert row["role"] == "conductor"
         groups = instrument.aggregate([row])["groups"]
         assert [(g["model"], g["tokenExposure"]) for g in groups if g["dimension"] == "roleByModel"] == [

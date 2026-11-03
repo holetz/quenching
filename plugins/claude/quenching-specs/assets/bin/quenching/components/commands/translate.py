@@ -543,7 +543,7 @@ exit 2
         text = codex_tool_resolution(text)
     if relative.suffix == ".md":
         text = transform_codex_markdown(text)
-        if relative.name in {"orchestrator.md", "scout.md", "spec-runner.md", "spec-architect.md", "verifier.md", "git-steward.md", "reviewer.md"}:
+        if relative.name in {"spec-orchestrator.md", "spec-scout.md", "spec-runner.md", "spec-verifier.md", "spec-reviewer.md"}:
             text += "\n" + codex_runtime_policy(adaptation)
     if relative.as_posix() != "quenching/components/surface.py":
         return text
