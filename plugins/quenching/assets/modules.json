@@ -160,7 +160,8 @@
           "front-align",
           "knowledge-documentation",
           "knowledge-import-memory",
-          "knowledge-flows"
+          "knowledge-flows",
+          "components-flows"
         ],
         "router": true
       },
