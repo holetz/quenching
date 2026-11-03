@@ -32,7 +32,8 @@ from quenching.specs.parse.derive import derive_info
 from quenching.specs.parse.edit import write_handoff_block
 from quenching.specs.parse.handoff import current_handoff_section, parse_handoff
 from quenching.specs.parse.spec import resolve_one
-from quenching.specs.parse.tasks import _files_bad_annotation, parse_tasks
+from quenching.specs.parse.tasks import (_files_bad_annotation, is_operational,
+                                         operational_entries, parse_tasks)
 from quenching.specs.parse.text import body_after_frontmatter
 from quenching.specs.schema import capture_form
 
@@ -304,6 +305,9 @@ FILES_ANNOTATION_CASES = [
      "parenthetical is"),
     ("src/a.py (new)", False,
      "`(new)` is the one reserved annotation — the path it names is about to be created"),
+    ("src/a.py (operational)", False,
+     "`(operational)` is the second reserved annotation — the task writes no repository "
+     "file, and its proof is the `verify:`"),
     ("c/dir/", False, "a plain path is never an annotation"),
 ]
 
@@ -344,6 +348,32 @@ class FilesParsing(unittest.TestCase):
             with self.subTest(entry=entry):
                 note = _files_bad_annotation(entry)
                 self.assertEqual(note is not None, want_bad, why)
+
+    def test_the_operational_annotation_counts_only_alone(self):
+        """`(operational)` IS the declaration; beside a path it is a mixed one that
+        `validate` refuses, and the parser must not read it as operational."""
+        self.assertTrue(is_operational(["(operational)"]))
+        self.assertFalse(is_operational([]))
+        self.assertFalse(is_operational(["src/a.py (new)"]))
+        self.assertFalse(is_operational(["src/a.py", "(operational)"]),
+                         "beside a path the annotation would hide that path from the "
+                         "verifier's scope union")
+        self.assertEqual(operational_entries(["src/a.py", "(operational)"]),
+                         ["(operational)"])
+
+    def test_an_operational_task_parses_as_no_files_and_a_flag(self):
+        """D2's normalisation happens at the parser, so `show --task`, `next`, `estimate`
+        and `parallel` cannot each invent their own reading of the annotation."""
+        got = parse_tasks("## Tasks\n\n### 1. X\n\n- [ ] 5.2 Gate\n"
+                          "      files: (operational)\n"
+                          "      verify: systemctl --user is-active x\n")
+        self.assertEqual(got[0]["files"], [])
+        self.assertTrue(got[0]["operational"])
+        self.assertEqual(got[0]["verify"], "systemctl --user is-active x")
+        ordinary = parse_tasks("## Tasks\n\n### 1. X\n\n- [ ] 1.1 t\n"
+                               "      files: src/a.ts (new)\n")
+        self.assertEqual(ordinary[0]["files"], ["src/a.ts (new)"])
+        self.assertFalse(ordinary[0]["operational"])
 
 
 HANDOFF_WRITE_FIXTURE = """---
