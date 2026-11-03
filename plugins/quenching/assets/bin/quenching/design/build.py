@@ -339,8 +339,7 @@ def _render_typst(records: dict[str, Token], root: Path) -> str:
         else:
             resolved = resolve_token(token, records)
             if token.type == "color":
-                css = color_to_css(resolved)
-                value = f"rgb({json.dumps(css)})" if css.startswith("#") else json.dumps(css)
+                value = _color_to_typst(resolved)
             elif token.type == "dimension":
                 value = _dimension_to_typst(resolved)
             elif token.type == "number" and isinstance(resolved, (int, float)):
@@ -570,6 +569,43 @@ def _slug(value: str) -> str:
     value = re.sub(r"([a-z0-9])([A-Z])", r"\1-\2", value)
     value = re.sub(r"[^A-Za-z0-9]+", "-", value).strip("-").lower()
     return value or "token"
+
+
+def _color_to_typst(value: Any) -> str:
+    """Project one DTCG color as a Typst color; an unsupported space keeps its CSS string."""
+    if not isinstance(value, dict) or not isinstance(value.get("colorSpace"), str):
+        raise DesignError(f"cannot project {value!r} as a Typst color")
+    components = value.get("components")
+    if (not isinstance(components, list) or len(components) != 3
+            or not all(isinstance(part, (int, float)) for part in components)):
+        raise DesignError(f"cannot project {value!r} as a Typst color")
+    alpha = value.get("alpha", 1)
+    if not isinstance(alpha, (int, float)):
+        raise DesignError(f"cannot project {value!r} as a Typst color")
+    alpha = max(0.0, min(1.0, float(alpha)))
+    space = value["colorSpace"]
+    channels = [float(part) for part in components]
+    if space == "srgb":
+        if alpha == 1:
+            # Installed repositories already carry this exact line; keep its bytes stable.
+            return f"rgb({json.dumps(color_to_css(value))})"
+        rgb = [max(0, min(255, round(channel * 255))) for channel in channels]
+        return f"rgb({rgb[0]}, {rgb[1]}, {rgb[2]}, {_typst_number(alpha * 100)}%)"
+    suffix = "" if alpha == 1 else f", {_typst_number(alpha * 100)}%"
+    if space == "srgb-linear":
+        parts = ", ".join(f"{_typst_number(channel * 100)}%" for channel in channels)
+        return f"color.linear-rgb({parts}{suffix})"
+    if space == "hsl":
+        hue, saturation, lightness = channels
+        return (f"color.hsl({_typst_number(hue)}deg, {_typst_number(saturation)}%, "
+                f"{_typst_number(lightness)}%{suffix})")
+    if space in {"oklab", "oklch"}:
+        lightness, second, third = channels
+        angle = f"{_typst_number(third)}deg" if space == "oklch" else _typst_number(third)
+        return (f"color.{space}({_typst_number(lightness * 100)}%, "
+                f"{_typst_number(second)}, {angle}{suffix})")
+    # Typst has no constructor for this space, so the portable CSS string stands.
+    return json.dumps(color_to_css(value), ensure_ascii=False)
 
 
 def _typst_number(value: float) -> str:

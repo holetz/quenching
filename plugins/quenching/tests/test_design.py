@@ -395,6 +395,64 @@ components:
         typst = (self.root / ".design" / "build" / "tokens.typ").read_text(encoding="utf-8")
         self.assertIn('#let token-typography-display-font-family = "Brand Sans"', typst)
 
+    def test_typst_projection_emits_transparent_colors_as_typst_colors(self):
+        path = self.root / ".design" / "tokens.json"
+        source = read_json(path)
+        colors = source["colors"]
+        colors["veil"] = {"$type": "color", "$value": {
+            "colorSpace": "srgb", "components": [0.07, 0.46, 0.43], "alpha": 0.5}}
+        colors["tint"] = {"$type": "color", "$value": {
+            "colorSpace": "oklch", "components": [0.62, 0.12, 180], "alpha": 0.25}}
+        colors["haze"] = {"$type": "color", "$value": {
+            "colorSpace": "oklab", "components": [0.62, 0.05, -0.02], "alpha": 0.25}}
+        colors["wash"] = {"$type": "color", "$value": {
+            "colorSpace": "hsl", "components": [180, 46, 25], "alpha": 0.25}}
+        colors["film"] = {"$type": "color", "$value": {
+            "colorSpace": "srgb-linear", "components": [0.07, 0.46, 0.43], "alpha": 0.25}}
+        colors["quiet"] = {"$type": "color", "$value": {
+            "colorSpace": "oklch", "components": [0.62, 0.12, 180]}}
+        path.write_text(json.dumps(source), encoding="utf-8")
+        write_build(compute_build(self.root))
+        typst = (self.root / ".design" / "build" / "tokens.typ").read_text(encoding="utf-8")
+        expected = (
+            "#let token-colors-veil = rgb(18, 117, 110, 50%)",
+            "#let token-colors-tint = color.oklch(62%, 0.12, 180deg, 25%)",
+            "#let token-colors-haze = color.oklab(62%, 0.05, -0.02, 25%)",
+            "#let token-colors-wash = color.hsl(180deg, 46%, 25%, 25%)",
+            "#let token-colors-film = color.linear-rgb(7%, 46%, 43%, 25%)",
+            "#let token-colors-quiet = color.oklch(62%, 0.12, 180deg)",
+            '#let token-colors-primary = rgb("#0F766E")',
+        )
+        for line in expected:
+            self.assertIn(line, typst)
+        for line in typst.splitlines():
+            if line.startswith("#let token-colors-"):
+                self.assertNotIn('"rgb(', line)
+                self.assertNotIn('"oklch(', line)
+
+    @unittest.skipUnless(shutil.which("typst"), "typst is not installed")
+    def test_typst_projection_compiles_with_the_real_compiler(self):
+        path = self.root / ".design" / "tokens.json"
+        source = read_json(path)
+        source["colors"]["veil"] = {"$type": "color", "$value": {
+            "colorSpace": "srgb", "components": [0.07, 0.46, 0.43], "alpha": 0.5}}
+        path.write_text(json.dumps(source), encoding="utf-8")
+        write_build(compute_build(self.root))
+        document = self.root / "colors.typ"
+        document.write_text(
+            '#set page(width: 4cm, height: 2cm)\n'
+            '#import ".design/build/tokens.typ": *\n'
+            '#rect(width: 3cm, height: 1cm, fill: token-colors-veil)\n'
+            '#text(fill: token-colors-veil)[transparent]\n',
+            encoding="utf-8",
+        )
+        result = subprocess.run(
+            ["typst", "compile", str(document), str(self.root / "colors.pdf")],
+            capture_output=True, text=True,
+        )
+        self.assertEqual(0, result.returncode, result.stderr)
+        self.assertTrue((self.root / "colors.pdf").is_file())
+
     def test_doctor_reports_missing_declared_font_assets(self):
         path = self.root / ".design" / "tokens.json"
         source = read_json(path)
