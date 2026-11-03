@@ -1,16 +1,16 @@
 ---
 name: release
 description: >-
-  Publish what the primary branch accumulated as a deliberate release — the plugin's
+  Publish what the primary branch accumulated as a deliberate release — quenching's
   version lockstep, the git tag, and the push to origin. Use when the user
   asks to "publish a release", "cut a release", "release this", "is it time to release",
-  or "publish the plugin". Judges patch/minor/major from what actually accumulated and
+  or "publish quenching". Judges patch/minor/major from what actually accumulated and
   asks for confirmation before touching anything; when the primary branch carries exactly
   one PR since the last release, asks once whether this is a release or a habit. When it
   finishes: the bump and its tag live on the primary branch's tip, on origin. Not for:
-  concluding or merging ONE spec into the primary branch → /quenching-specs:specs:conclude.
+  concluding or merging ONE spec into the primary branch → /quenching-specs-conclude.
 argument-hint: [version — optional, skips the proposal and confirms this exact X.Y.Z]
-allowed-tools: Bash(git:*), Bash(python3:*), Bash(QUENCHING_FUNCTIONAL=1 QUENCHING_DISTRIBUTION=1 bash scripts/verify_repo.sh:*), Read, AskUserQuestion
+allowed-tools: Bash(git:*), Bash(python3:*), Bash(QUENCHING_FUNCTIONAL=1 bash scripts/verify_repo.sh:*), Read, AskUserQuestion
 ---
 <!-- generated from .agents/skills/release/SKILL.md by cq components bridge; edit the source -->
 
@@ -22,19 +22,18 @@ from what accumulated and confirms it with you).
 This repository publishes from a single long-lived branch —
 [docs/standards/git/branching.md](/docs/standards/git/branching.md): every spec lands on the
 primary branch (`main`) through a reviewed pull request, and the release is the one deliberate act
-that moves the plugin's version-carrying artifacts (including the HUD's `plugins/claude/quenching-hud/.claude-plugin/plugin.json`)
+that moves the version-carrying artifacts (the source's, the marketplace's and the HUD's `plugins/claude/quenching-hud/.claude-plugin/plugin.json`)
 ([docs/standards/ci-cd/versioning-release.md](/docs/standards/ci-cd/versioning-release.md))
 and creates a tag. This command is that deliberate act. The mechanical half — the artifact
 bump, the commit, the tag — is `plugins/quenching/assets/bin/cq specs release <version>`, already
 implemented and self-tested; this command judges *whether* and *what*, gets it confirmed, and
 publishes the result.
 
-**Always the LOCAL copy of the tool, never the installed plugin.** Every git command and every
+**Always the LOCAL source of the tool, never the deployed copy.** Every git command and every
 `cq specs` call below uses the path **relative to this repository's own root**
-(`plugins/quenching/assets/bin/cq`) — never `${CLAUDE_PLUGIN_ROOT}`. A release packages what
-is actually on this checkout's primary branch; resolving through the installed plugin could run the
-tool from a different, possibly older, copy than the one being released — the exact risk this
-repository's own memory already names as the plugin cache lagging the repo source.
+(`plugins/quenching/assets/bin/cq`) — never `.agents/quenching/bin/cq`. A release packages what
+is actually on this checkout's primary branch; the deployed copy could run the tool from a
+different, possibly older, copy than the one being released.
 
 ## Workflow
 
@@ -79,20 +78,18 @@ policy**: this is human judgment the command conducts, per
 Present ONE plan and wait for it: the proposed version, "bump the version artifacts and tag
 `<version>` on the primary branch", and "push the primary branch and the tag `<version>` to origin" —
 the push is part of this same plan, not a second confirmation, because an unpushed release reaches
-nobody who installs via the marketplace. **Done when:** the human has confirmed one exact `X.Y.Z`,
+nobody who deploys from the tag. **Done when:** the human has confirmed one exact `X.Y.Z`,
 or declined — a decline stops the run with nothing written.
 
 ### 4. Bump on the primary branch, and push
-Before the bump, from the primary branch's checkout, run the surface-load measurement and the
-isolated Codex marketplace upgrade that the ordinary local gate keeps opt-in:
+Before the bump, from the primary branch's checkout, run the surface-load measurement that the
+ordinary local gate keeps opt-in:
 ```bash
-( cd <primary checkout from step 1> && QUENCHING_FUNCTIONAL=1 QUENCHING_DISTRIBUTION=1 bash scripts/verify_repo.sh )
+( cd <primary checkout from step 1> && QUENCHING_FUNCTIONAL=1 bash scripts/verify_repo.sh )
 ```
-Any exit other than **0** — a failed check, an inconclusive exit 2, either host missing from PATH,
-or the `6.4.0` baseline tag unavailable — blocks the release: report what failed and stop without
-bumping. The Codex check installs the actual baseline in an isolated home, refreshes through Git,
-reinstalls the candidate and checks its cleanup skill and bundled `cq` version without a model call.
-It measures installation, not the skills loaded in a live session.
+Any exit other than **0** — a failed check, an inconclusive exit 2, or `claude` missing from PATH —
+blocks the release: report what failed and stop without bumping. The measurement deploys this
+checkout into throwaway targets and loads the deployed skills in real sessions.
 The bump comes FIRST, on the primary branch's checkout — the tag points at the bump, which is what
 makes the release one atomic fact on the branch that publishes
 ([versioning-release.md](/docs/standards/ci-cd/versioning-release.md) §When the bump happens).

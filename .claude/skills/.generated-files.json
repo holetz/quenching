@@ -4,7 +4,7 @@
   "verifiedClaudeCode": "2.1.312",
   "files": {
     "commands-tighten/SKILL.md": "218a4df9033cc9504ba72f0ce4ef04d0815fafb59b345d9ee757b96485135d12",
-    "quenching-align/SKILL.md": "99b54c2f273cc9b00af8f00668a1b44b12c0a73574fbf64cab2dfb3cde9142ae",
+    "quenching-align/SKILL.md": "c0e00388137c7d3d77c436baef9da7e07d21332fbde3b7fe508cde20f0837658",
     "quenching-components-agent-new/SKILL.md": "25bf28cb337a85b6c348e64d45337f4b997c7b3257920df2d91f56ed48f1b58c",
     "quenching-components-align/SKILL.md": "27bfe4b4987aaac0144a6963264601daa105e327e347b0c1039157d5982a1b8c",
     "quenching-components-command-eval/SKILL.md": "01bbbbef4596922e513ba94bb96525ac24addc9a8214753b85c5a46a48e01c17",
@@ -70,7 +70,7 @@
     "quenching-toolchain-align/SKILL.md": "3b17d7dcc870aaf6177c9c6abe1e3f0d0251c2625d8566bcfb04be72e77efe19",
     "quenching-toolchain-status/SKILL.md": "0868a7a210b7fbdd46bebd9bb0c1cbf29a574a8e4feaf67c6df9bec2b908bcf3",
     "references-tighten/SKILL.md": "4c35e68e5f19f30e491f75fa70867295c0ab8fc83caec97ef5a5160bcd3266a2",
-    "release/SKILL.md": "0844d4c06e4f6204c1b07d14782445f920cdfb5bdff6e998690c40e41bf14423",
+    "release/SKILL.md": "704a36f5640fa1c72f18c3697c16ccee54606808ae9778c74711c3cb0bff44a9",
     "skill-map/SKILL.md": "eb309cf9d098a5daccbabff27d97f3da24a967c888bbde88f0400cc6af09b5be"
   }
 }
