@@ -1,13 +1,13 @@
-# /quenching-align:knowledge:add — add new knowledge, OKF-conformant
+# /quenching-knowledge-add — add new knowledge, OKF-conformant
 
 **Input**: `$ARGUMENTS` (the piece of information to file — a standard, catalog table, announcement, external asset, …).
 
 Files one new piece of knowledge into the canonical OKF bundle so it lands in the right home
-with a complete stamp. Assumes the bundle already exists (run `/quenching-align:knowledge:align` first if not).
-The routing table and procedure are in [knowledge-add/homes.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-add/homes.md). The home boundaries, `type`
-vocabulary, and conformance rules are shared with `/quenching-align:knowledge:align`
-(`${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-align/taxonomy.md`,
-`${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-align/conformance.md`).
+with a complete stamp. Assumes the bundle already exists (run `/quenching-knowledge-align` first if not).
+The routing table and procedure are in [knowledge-add/homes.md](.agents/quenching/assets/references/knowledge-add/homes.md). The home boundaries, `type`
+vocabulary, and conformance rules are shared with `/quenching-knowledge-align`
+(`.agents/quenching/assets/references/knowledge-align/taxonomy.md`,
+`.agents/quenching/assets/references/knowledge-align/conformance.md`).
 
 ## Doctrine
 
@@ -38,7 +38,7 @@ vocabulary, and conformance rules are shared with `/quenching-align:knowledge:al
 ## Workflow
 
 ### 1. Classify → home + `type` + mold
-Apply the boundary rules ([knowledge-add/homes.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-add/homes.md)):
+Apply the boundary rules ([knowledge-add/homes.md](.agents/quenching/assets/references/knowledge-add/homes.md)):
 `standards` = "how **we** do it" · `external` = "what we **consume**" · `catalog` = "our
 **data**" · `documentation` = a product-facing explanation or announcement. Pick the home, its
 `type`, and the matching mold. **Done when:** the home, type, and mold are named.
@@ -51,7 +51,7 @@ homes with a fixed shape, follow it
 (`catalog/<system>/<catalog>/<schema>/<table>.md`). **Done when:** the canonical path is fixed.
 
 ### 3. Fill the mold
-Copy the matching mold from `${CLAUDE_PLUGIN_ROOT}/assets/templates/` and complete the frontmatter:
+Copy the matching mold from `.agents/quenching/assets/templates/` and complete the frontmatter:
 non-empty `type` + the OKF recommended fields (`title`/`description`/`resource`/`generated`) +
 the method labels (`audience`/`authority`/`source`/`maintainer`). Derive `resource`; an
 unproven standard is `authority: background`. **Done when:** the stamp is complete and
@@ -65,20 +65,20 @@ written without overwriting filled content.
 ### 5. Update the folder's `index.md`
 Add a bullet-link with the doc's `description` (`* [<title>](<rel-path>.md) — <description>`).
 For `standards/**`, the layer index's **Current docs** tables are a DERIVED zone — run
-`cq knowledge listing --write` to regenerate only what is between `<!-- BEGIN GENERATED -->` /
+`.agents/quenching/bin/cq knowledge listing --write` to regenerate only what is between `<!-- BEGIN GENERATED -->` /
 `<!-- END GENERATED -->` from disk (`--check` proves it fresh); never hand-edit inside the
 markers. Never add frontmatter to an `index.md`. **Done when:** every touched
 index lists the new file and remains frontmatter-free.
 
 ### 6. Enrich the glossary
 If the new concept introduced a **repo-specific term**, add or sharpen its entry in
-`glossary.md` per **Enriching the glossary** in [knowledge-add/homes.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-add/homes.md)
-(`/quenching-align:knowledge:define` handles one term; `/quenching-align:knowledge:glossary-backfill` handles a bulk sweep).
+`glossary.md` per **Enriching the glossary** in [knowledge-add/homes.md](.agents/quenching/assets/references/knowledge-add/homes.md)
+(`/quenching-knowledge-define` handles one term; `/quenching-knowledge-glossary-backfill` handles a bulk sweep).
 **Done when:** every introduced repo-specific term is linked or explicitly left for a glossary command.
 
 ### 7. Self-check against the conformance core
 Verify every file you touched against
-[knowledge-align/conformance.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-align/conformance.md).
+[knowledge-align/conformance.md](.agents/quenching/assets/references/knowledge-align/conformance.md).
 **Done when:** the conformance result and touched-file list are reported.
 
 ## Special cases

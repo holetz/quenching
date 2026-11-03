@@ -1,12 +1,12 @@
 ---
 description: >-
-  Converge a repository's delivery surface from its workflow tree, preserving provider and permission policy. Use for "align the delivery front", "fix delivery drift". Not for: read-only → /quenching-delivery:delivery:status.
+  Converge a repository's delivery surface from its workflow tree, preserving provider and permission policy. Use for "align the delivery front", "fix delivery drift". Not for: read-only → /quenching-delivery-status.
 disable-model-invocation: true
 argument-hint: [optional-target-root]
 allowed-tools: Bash(cq:*), Bash(cq.cmd:*), Read, Grep, Glob, Bash(python3:*), AskUserQuestion, Write, Edit
 ---
 
-# /quenching-delivery:delivery:align — converge the delivery front
+# /quenching-delivery-align — converge the delivery front
 
 **Input**: `$ARGUMENTS` (an optional target repository root; omit to use the current repository).
 
@@ -14,12 +14,12 @@ This command owns the delivery front's bounded convergence pass. It probes the w
 classifies static pipeline findings, applies only authorized mechanical or structural shape
 repairs, and leaves provider, environment, promotion, publication and permission choices with the
 target owner. The finding bands live in
-[delivery-align/bands.md](${CLAUDE_PLUGIN_ROOT}/assets/references/delivery-align/bands.md); the common
-front floor lives in [front-align/mold.md](${CLAUDE_PLUGIN_ROOT}/assets/references/front-align/mold.md).
+[delivery-align/bands.md](.agents/quenching/assets/references/delivery-align/bands.md); the common
+front floor lives in [front-align/mold.md](.agents/quenching/assets/references/front-align/mold.md).
 
 Set `TARGET_ROOT` to the supplied argument, or to `.` when omitted, and pass that same root to
-every `cq delivery` call. Resolve `cq` per
-[tool-resolution.md](${CLAUDE_PLUGIN_ROOT}/assets/references/align/tool-resolution.md)
+every `.agents/quenching/bin/cq delivery` call. Resolve `cq` per
+[tool-resolution.md](.agents/quenching/assets/references/align/tool-resolution.md)
 §Resolving the tool. Branch on JSON and exit code: `0` is conformant, `1` carries findings, and
 `2` is a refusal.
 
@@ -30,7 +30,7 @@ every `cq delivery` call. Resolve `cq` per
 Run the verifier before interpreting the workflow tree:
 
 ```bash
-cq --root "$TARGET_ROOT" delivery doctor --json
+.agents/quenching/bin/cq --root "$TARGET_ROOT" delivery doctor --json
 ```
 
 On exit `0`, report the applicability state and "delivery conformant, nothing to align"; do not
@@ -66,7 +66,7 @@ branch, publish scope, permission set or deployment command. Never run a release
 After authorized edits, run the same probe again:
 
 ```bash
-cq --root "$TARGET_ROOT" delivery doctor --json
+.agents/quenching/bin/cq --root "$TARGET_ROOT" delivery doctor --json
 ```
 
 If structural residue remains, report it rather than widening the plan. Judgement findings remain
@@ -88,7 +88,7 @@ residual owner action.
 ## Invariants
 
 - Applicability is probed before inventory, classification and confirmation.
-- `cq delivery status` remains read-only; align never invents a workflow tree.
+- `.agents/quenching/bin/cq delivery status` remains read-only; align never invents a workflow tree.
 - Mechanical and bounded structural findings may be repaired only under one authorization.
 - Provider, environment, promotion, publication, permission and deployment choices remain human-owned.
-- The closing verifier is the same `cq delivery doctor --json` program as the probe.
+- The closing verifier is the same `.agents/quenching/bin/cq delivery doctor --json` program as the probe.

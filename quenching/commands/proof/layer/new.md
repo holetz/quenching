@@ -1,12 +1,12 @@
 ---
 description: >-
-  Mint one named proof test layer: marker, reach, budget, fixtures, README. Use for "create a proof layer", "add a test layer". Not for: existing drift → /quenching-proof:proof:align.
+  Mint one named proof test layer: marker, reach, budget, fixtures, README. Use for "create a proof layer", "add a test layer". Not for: existing drift → /quenching-proof-align.
 disable-model-invocation: true
 argument-hint: <layer-name> [optional-target-root]
 allowed-tools: Bash(cq:*), Bash(cq.cmd:*), Read, Grep, Glob, Bash(python3:*), Bash(mkdir:*), Bash(mv:*), AskUserQuestion, Write, Edit
 ---
 
-# /quenching-proof:proof:layer:new — mint one proof layer
+# /quenching-proof-layer-new — mint one proof layer
 
 **Input**: `$ARGUMENTS` — one new layer name and an optional target repository root. A layer name
 must be a single stable directory/marker name; the command never invents a taxonomy or mints more
@@ -17,10 +17,10 @@ the derived marker, its reach and budget, the collection hook, the optional shar
 and the generated proof README as one operation. Existing tests that might belong there are a
 proposal only; moving them changes what evidence a gate collects and needs its own confirmation.
 
-Read [proof-align/layer-contract.md](${CLAUDE_PLUGIN_ROOT}/assets/references/proof-align/layer-contract.md),
-[proof-align/target-structure.md](${CLAUDE_PLUGIN_ROOT}/assets/references/proof-align/target-structure.md),
-and the two templates under `${CLAUDE_PLUGIN_ROOT}/assets/templates/proof/` before writing. Resolve
-`cq` per [tool-resolution.md](${CLAUDE_PLUGIN_ROOT}/assets/references/align/tool-resolution.md),
+Read [proof-align/layer-contract.md](.agents/quenching/assets/references/proof-align/layer-contract.md),
+[proof-align/target-structure.md](.agents/quenching/assets/references/proof-align/target-structure.md),
+and the two templates under `.agents/quenching/assets/templates/proof/` before writing. Resolve
+`cq` per [tool-resolution.md](.agents/quenching/assets/references/align/tool-resolution.md),
 and branch on exit code and JSON: `0` is clean, `1` carries findings, and `2` is a refusal.
 
 ## Workflow
@@ -30,7 +30,7 @@ and branch on exit code and JSON: `0` is clean, `1` carries findings, and `2` is
 Set `TARGET_ROOT` to the supplied root, or `.` when it is omitted. Read the current state first:
 
 ```bash
-cq --root "$TARGET_ROOT" proof inventory --json
+.agents/quenching/bin/cq --root "$TARGET_ROOT" proof inventory --json
 ```
 
 Refuse if the proof root is missing, the layer name already exists, the name is empty or unsafe as
@@ -75,7 +75,7 @@ Present one plan for the five coupled structural edits:
 4. add the recognizable path-to-marker block to `tests/conftest.py`, installing the collection
    hook template when no hook exists;
 5. create `tests/fixtures/<layer>.py` when the reach requires shared setup, then run
-   `cq proof readme --write` to regenerate the layer README.
+   `.agents/quenching/bin/cq proof readme --write` to regenerate the layer README.
 
 Ask once for authorization of this structural batch. Present the proposed existing-test moves as a
 second, separately confirmed item with the count and every path. A declined migration leaves every
@@ -98,7 +98,7 @@ tests, invent another layer, retire an existing layer, install CI, or run the ta
 Regenerate the README:
 
 ```bash
-cq --root "$TARGET_ROOT" proof readme --write --json
+.agents/quenching/bin/cq --root "$TARGET_ROOT" proof readme --write --json
 ```
 
 The operation must either leave all five declarations complete or leave a state the doctor names
@@ -118,7 +118,7 @@ unconfirmed test move or target-suite execution occurred.
 Run the static verifier:
 
 ```bash
-cq --root "$TARGET_ROOT" proof doctor --json
+.agents/quenching/bin/cq --root "$TARGET_ROOT" proof doctor --json
 ```
 
 Report the layer name, purpose, reach, budget, required state, marker, fixture module, test paths
@@ -126,7 +126,7 @@ moved or left in place, README digest, and the closing doctor payload. State whe
 is empty by design and state plainly that the target suite was not run.
 
 If a finding remains, distinguish the new layer's evidence from pre-existing residue and name
-`/quenching-proof:proof:align` or the target owner's reviewed change that closes it. Do not call an empty
+`/quenching-proof-align` or the target owner's reviewed change that closes it. Do not call an empty
 new layer healthy; report its declared state and the command that owns the next decision.
 
 **Done when:** the five-edit contract has a static closing proof, the migration decision is visible,
@@ -141,5 +141,5 @@ and the report hands back every remaining decision without writing anything else
   confirmation.
 - Existing hook rules and authored README prose survive; generated zones are the only bytes the
   generator replaces.
-- The target suite is never run. `cq proof doctor` is the closing verifier, not a test runner.
+- The target suite is never run. `.agents/quenching/bin/cq proof doctor` is the closing verifier, not a test runner.
 - A new layer may be empty by design; the report states that fact instead of manufacturing proof.

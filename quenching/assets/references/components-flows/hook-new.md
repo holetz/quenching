@@ -1,4 +1,4 @@
-# /quenching-align:components:hook:new — wire ONE scoped hook
+# /quenching-components-hook-new — wire ONE scoped hook
 
 **Input**: `$ARGUMENTS` (what the hook should catch — a behavior, a rule, an observed
 failure).
@@ -6,17 +6,17 @@ failure).
 Installs or edits **ONE hook** in the target repo: a wiring (which decides its scope) plus,
 for a `command` handler, a script under `.claude/hooks/`. The scope ladder, the handler
 ladder, and the policy defaults live in
-[components-command-new/capabilities.md](${CLAUDE_PLUGIN_ROOT}/assets/references/components-command-new/capabilities.md)
+[components-command-new/capabilities.md](.agents/quenching/assets/references/components-command-new/capabilities.md)
 §Hooks. The wiring mold is
-`${CLAUDE_PLUGIN_ROOT}/assets/templates/automation/hook.md`.
+`.agents/quenching/assets/templates/automation/hook.md`.
 
 ## Doctrine
 - **The rule governs; the plan proposes.** In a target repo the rule is
   `/docs/standards/automation/hooks.md`; absent + OKF bundle present → the plan offers
   creating it from `automation/hooks-standard.md`, born `authority: background`. No bundle →
-  write the hook only, suggest `/quenching-align:knowledge:align` once.
+  write the hook only, suggest `/quenching-knowledge-align` once.
 Resolve `cq` per
-[align/tool-resolution.md](${CLAUDE_PLUGIN_ROOT}/assets/references/align/tool-resolution.md)
+[align/tool-resolution.md](.agents/quenching/assets/references/align/tool-resolution.md)
 §Resolving the tool; branch on the **exit code** (0 ok · 1 findings · 2 refusal), never on prose.
 
 ## Workflow
@@ -25,7 +25,7 @@ Resolve `cq` per
 Read `/docs/standards/automation/hooks.md` and confirm the bundle (`/docs/index.md` carries
 `okf_version`). Rule present → it governs (a repo delta there beats the plugin default).
 Absent + bundle → plan its creation from the mold. No bundle → note the tail as skipped and
-plan the `/quenching-align:knowledge:align` suggestion. **Done when:** the governing rule (or its planned
+plan the `/quenching-knowledge-align` suggestion. **Done when:** the governing rule (or its planned
 creation, or the no-bundle note) is fixed.
 
 ### 2. Name what the hook catches
@@ -35,7 +35,7 @@ stated this way is not a hook yet — it is a doctrine question for the human. *
 the one-sentence check is fixed.
 
 ### 3. Choose the rung and the handler
-Walk [capabilities.md](${CLAUDE_PLUGIN_ROOT}/assets/references/components-command-new/capabilities.md)
+Walk [capabilities.md](.agents/quenching/assets/references/components-command-new/capabilities.md)
 §Hooks top-down. Scope: a check tied to ONE command's workflow → its frontmatter `hooks:`; an
 operation → event + `matcher` (+ `if`); a wide event → dirty-gated or `once: true`; unmatched
 session-wide only with the stated reason nothing narrower suffices. Handler: `command` first
@@ -69,13 +69,13 @@ python3 -m json.tool .claude/settings.json          # the merge left valid JSON
 echo '{"hook_event_name":"<other>"}' | python3 .claude/hooks/<name>.py   # fast path → {}
 ```
 Then feed one **matching** synthetic payload and confirm the finding fires with the chosen
-action. A frontmatter wiring is checked with `cq components lint <owning-command> --json`
+action. A frontmatter wiring is checked with `.agents/quenching/bin/cq components lint <owning-command> --json`
 instead. **Done when:** the fast path prints `{}`, the matching payload fires, and the wiring
 parses.
 
 ### 8. OKF tail and report
 Bundle present: write the rule if planned, per
-[knowledge-add/homes.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-add/homes.md). Report: the
+[knowledge-add/homes.md](.agents/quenching/assets/references/knowledge-add/homes.md). Report: the
 check, the installed scope, the cost claim **as installed**, and — for a born-disabled rule —
 the exact line that enables it. **Done when:** the report states the cost claim.
 

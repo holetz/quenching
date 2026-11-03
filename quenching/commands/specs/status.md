@@ -1,17 +1,17 @@
 ---
 description: >-
-  Report the specs front and store configuration, read-only. Use for "specs status", "store configuration". Not for: developing or executing → /quenching-specs:specs:develop; ranking → /quenching-specs:specs:triage.
+  Report the specs front and store configuration, read-only. Use for "specs status", "store configuration". Not for: developing or executing → /quenching-specs-develop; ranking → /quenching-specs-triage.
 allowed-tools: Bash(cq:*), Bash(cq.cmd:*), Bash(python3:*), Read
 disable-model-invocation: true
 ---
 
-# /quenching-specs:specs:status — typed shortcut
+# /quenching-specs-status — typed shortcut
 
-Typed shortcut to the `status` flow of [/quenching-specs:specs:specs](${CLAUDE_PLUGIN_ROOT}/commands/specs/specs.md).
+Typed shortcut to the `status` flow of [/quenching-specs-specs](.agents/quenching/commands/specs/specs.md).
 Input: `$ARGUMENTS`.
 
 ```bash
-cq components read ${CLAUDE_PLUGIN_ROOT}/assets/references/specs-flows/status.md
+.agents/quenching/bin/cq components read .agents/quenching/assets/references/specs-flows/status.md
 ```
 Read the flow whole, once, and follow it from its own `## Workflow` with `$ARGUMENTS` as its input:
 its steps, `Done when:` lines and invariants bind this run as they would the flow itself.

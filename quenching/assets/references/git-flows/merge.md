@@ -1,34 +1,34 @@
-# /quenching-specs:git:merge — bring a branch home, on the human's own strategy
+# /quenching-git-merge — bring a branch home, on the human's own strategy
 
 **Input**: `$ARGUMENTS` — a spec id (its `branch.work`/`branch.base` records name the branch and
 target) or a bare branch name to merge into the resolved base. Omitted → ask.
 
 The four strategies, the squash caveat and the post-merge worktree removal are in
-[git/merge.md](${CLAUDE_PLUGIN_ROOT}/assets/references/git/merge.md).
+[git/merge.md](.agents/quenching/assets/references/git/merge.md).
 
 ## Workflow
 
 ### 1. Load the rules and resolve branch, base and checkout
 ```bash
-cq components read ${CLAUDE_PLUGIN_ROOT}/assets/references/git/merge.md \
+.agents/quenching/bin/cq components read .agents/quenching/assets/references/git/merge.md \
   --sections "§Merge strategies" --sections "§The squash caveat" \
   --sections "§The worktree is removed after a successful merge"
-cq components read ${CLAUDE_PLUGIN_ROOT}/assets/references/git/conventions.md \
+.agents/quenching/bin/cq components read .agents/quenching/assets/references/git/conventions.md \
   --sections "§The declared-directive layer"
-cq git conventions --json   # `config.mergeSubject`, or absent
-cq git base --json
+.agents/quenching/bin/cq git conventions --json   # `config.mergeSubject`, or absent
+.agents/quenching/bin/cq git base --json
 git worktree list --porcelain
 ```
-An ID in `$ARGUMENTS` → `cq specs status --spec "<id>" --json`, its `branch.work` is the branch
-to merge and `branch.base` the target (falling back to `cq git base`'s answer where absent). A bare
-branch name → merge it into `cq git base`'s answer. No checkout in the worktree list holds the base
+An ID in `$ARGUMENTS` → `.agents/quenching/bin/cq specs status --spec "<id>" --json`, its `branch.work` is the branch
+to merge and `branch.base` the target (falling back to `.agents/quenching/bin/cq git base`'s answer where absent). A bare
+branch name → merge it into `.agents/quenching/bin/cq git base`'s answer. No checkout in the worktree list holds the base
 → **stop without merging**, naming the base and the fix (provide a checkout or add a worktree of it
 outside this command). Never check out the base here.
 **Done when:** the branch, the base, and the checkout that holds it are all resolved, or the run has
 stopped for lack of one.
 
 ### 2. Offer the strategy, and the branch's fate under squash
-Show the trade in one line each, from §Merge strategies, and put it on ONE decision sheet ([specs-develop/questions.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/questions.md) §1) that ends the turn; the options
+Show the trade in one line each, from §Merge strategies, and put it on ONE decision sheet ([specs-develop/questions.md](.agents/quenching/assets/references/specs-develop/questions.md) §1) that ends the turn; the options
 of `D1`, with A the recommended one:
 
 - **A (recommended) merge commit** — every per-task commit stays on the base, one extra commit.
@@ -44,7 +44,7 @@ branch-survival preference is recorded.
 ### 3. Run it in the base's own checkout
 The subject the strategy writes follows §The declared-directive layer's table:
 `config.mergeSubject` from step 1 where declared, else the target's docs, else
-`plan/<id>-<handle>: merge (<strategy>)` from [git/commit.md](${CLAUDE_PLUGIN_ROOT}/assets/references/git/commit.md)
+`plan/<id>-<handle>: merge (<strategy>)` from [git/commit.md](.agents/quenching/assets/references/git/commit.md)
 §Commit messages. `fast-forward` writes no commit, so it has no subject to govern.
 ```bash
 git -C <the checkout from step 1> <the chosen strategy's command>
@@ -55,13 +55,13 @@ merge command exits 0, or the run has stopped on its failure.
 
 ### 4. Stamp, with an ID
 ```bash
-cq specs record "<id>" merge --set strategy=<strategy> --set subject=<the merge commit's subject, or "none — <why>" under fast-forward/rebase>
+.agents/quenching/bin/cq specs record "<id>" merge --set strategy=<strategy> --set subject=<the merge commit's subject, or "none — <why>" under fast-forward/rebase>
 ```
 Write-once — a record already present is read, never overwritten. No ID → nothing to stamp.
 A local merge is not a sync point of the git spec store, so the stamp stays in the clone's pending
 commit; send it, with every other pending write, in the same call:
 ```bash
-cq specs push
+.agents/quenching/bin/cq specs push
 ```
 **Done when:** the record is stamped and pushed (with an ID) or explicitly skipped (without one).
 

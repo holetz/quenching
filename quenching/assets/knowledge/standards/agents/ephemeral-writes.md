@@ -36,7 +36,7 @@ versioned tree when it must travel with the repository or be reviewed there.
 
 ## Declaring the durable-ignored area
 
-The root harness (`AGENTS.md`; `CLAUDE.md` is legacy) may carry one line:
+The root harness (`AGENTS.md`; `AGENTS.md` is legacy) may carry one line:
 
 ```
 Ephemeral writes: <path> — the contract is /docs/standards/agents/ephemeral-writes.md

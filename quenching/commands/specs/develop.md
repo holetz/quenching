@@ -1,18 +1,18 @@
 ---
 description: >-
-  Develop an existing spec to ready, argue with it, approve it. Use for "develop this spec", "refine the spec", "approve this spec". Not for: new specs → /quenching-specs:specs:create; building → /quenching-specs:specs:execute.
+  Develop an existing spec to ready, argue with it, approve it. Use for "develop this spec", "refine the spec", "approve this spec". Not for: new specs → /quenching-specs-create; building → /quenching-specs-execute.
 argument-hint: [id-or-description]
 allowed-tools: Bash(cq:*), Bash(cq.cmd:*), Read, Grep, Glob, Edit, Bash(python3:*), Bash(py:*), AskUserQuestion, Task
 disable-model-invocation: true
 ---
 
-# /quenching-specs:specs:develop — typed shortcut
+# /quenching-specs-develop — typed shortcut
 
-Typed shortcut to the `develop` flow of [/quenching-specs:specs:specs](${CLAUDE_PLUGIN_ROOT}/commands/specs/specs.md).
+Typed shortcut to the `develop` flow of [/quenching-specs-specs](.agents/quenching/commands/specs/specs.md).
 Input: `$ARGUMENTS`.
 
 ```bash
-cq components read ${CLAUDE_PLUGIN_ROOT}/assets/references/specs-flows/develop.md
+.agents/quenching/bin/cq components read .agents/quenching/assets/references/specs-flows/develop.md
 ```
 Read the flow whole, once, and follow it from its own `## Workflow` with `$ARGUMENTS` as its input:
 its steps, `Done when:` lines and invariants bind this run as they would the flow itself.

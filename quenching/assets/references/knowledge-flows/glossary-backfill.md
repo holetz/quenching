@@ -1,4 +1,4 @@
-# /quenching-align:knowledge:glossary-backfill — backfill the glossary from the whole bundle
+# /quenching-knowledge-glossary-backfill — backfill the glossary from the whole bundle
 
 **Input**: `$ARGUMENTS` (an optional home/slice to scope the sweep; omit to scan the whole bundle).
 
@@ -6,27 +6,27 @@ Sweeps the canonical OKF bundle's **entire** `/docs/` tree for repo-specific ter
 [`/docs/glossary.md`](/docs/glossary.md), and backfills them in one
 consolidated pass. This is a **retroactive, whole-bundle** sweep, not a capture: it never
 writes a `concepts/` concept doc and never asks the human what a term means — those stay
-`/quenching-align:knowledge:learn`'s job. The glossary format and the shared **Enriching the glossary**
-procedure live with `/quenching-align:knowledge:add`
-([knowledge-add/homes.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-add/homes.md)); the
-`type` vocabulary and conformance rules with `/quenching-align:knowledge:align`
-([knowledge-align/taxonomy.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-align/taxonomy.md),
-[knowledge-align/conformance.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-align/conformance.md)). The fan-out convention
+`/quenching-knowledge-learn`'s job. The glossary format and the shared **Enriching the glossary**
+procedure live with `/quenching-knowledge-add`
+([knowledge-add/homes.md](.agents/quenching/assets/references/knowledge-add/homes.md)); the
+`type` vocabulary and conformance rules with `/quenching-knowledge-align`
+([knowledge-align/taxonomy.md](.agents/quenching/assets/references/knowledge-align/taxonomy.md),
+[knowledge-align/conformance.md](.agents/quenching/assets/references/knowledge-align/conformance.md)). The fan-out convention
 (bounded recon, sliced `Task` agents, compact partials, one merged plan) follows
-`/quenching-align:knowledge:import-memory`, the only other skill in this plugin that uses `Task`.
+`/quenching-knowledge-import-memory`, the only other skill in this plugin that uses `Task`.
 
 ## Workflow
 
 ### 1. Locate the glossary and read the baseline
 Find `/docs/glossary.md` — the bundle root is the fixed `/docs/` convention. If the
 `concepts/` home or the glossary seed is missing, stop and offer
-`/quenching-align:knowledge:align` to install the skeleton, then stop; do not resume in the same run. Read the current entries once — this
+`/quenching-knowledge-align` to install the skeleton, then stop; do not resume in the same run. Read the current entries once — this
 is the dedupe baseline every slice's candidates get checked against.
 **Done when:** the glossary path and baseline are resolved, or the missing-bundle handoff is reported.
 
 ### 2. List the bundle, bounded
 List every doc path under `/docs/` with `Glob`, paths only — never read bodies here,
-excluding `index.md`, `log.md`, and harness files (`AGENTS.md`; legacy `CLAUDE.md`). `catalog/**` and
+excluding `index.md`, `log.md`, and harness files (`AGENTS.md`; legacy `AGENTS.md`). `catalog/**` and
   `external/repositories/**` are listed but **not** body-scanned by default — note them as
   excluded from the sweep. If `$ARGUMENTS` names a home or slice, restrict the candidate set to
   that subtree and report the omitted homes; otherwise scan the whole bundle. **Done when:** the
@@ -69,7 +69,7 @@ command writes; the count of terms added and refined belongs in the report, not 
 
 ### 7. Self-check against the conformance core
 Verify every file you touched against
-[knowledge-align/conformance.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-align/conformance.md),
+[knowledge-align/conformance.md](.agents/quenching/assets/references/knowledge-align/conformance.md),
 plus this skill's own gate: the list is still sorted and its links resolve. **Done when:** the
 glossary passes the conformance and link checks.
 
@@ -87,4 +87,4 @@ glossary passes the conformance and link checks.
 - Never blindly descend into `catalog/**` or `external/repositories/**` — list-only by
   default, reported as excluded, opt-in only.
 - Never author a `concepts/` concept doc or ask the human what a term means — that is
-  `/quenching-align:knowledge:learn`'s job, not this skill's.
+  `/quenching-knowledge-learn`'s job, not this skill's.

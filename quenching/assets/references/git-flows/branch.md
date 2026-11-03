@@ -1,4 +1,4 @@
-# /quenching-specs:git:branch — take isolation before writing code
+# /quenching-git-branch — take isolation before writing code
 
 **Input**: `$ARGUMENTS` — optionally a spec id (stamps that spec's `branch:` record and its
 `quenching-specs:` marking) or a short name for standalone work with no spec behind it. Omitted →
@@ -7,24 +7,24 @@ ask what the isolation is for.
 Cuts a **worktree** before the first line of code — the form is the default and is taken unasked; a
 plain branch in the current checkout only when the human asks for it. The mechanics — the names,
 `worktreeSetup`, `sharedPaths` and the two records a taken isolation leaves behind — are owned by
-[git/isolation.md](${CLAUDE_PLUGIN_ROOT}/assets/references/git/isolation.md), cited below rather
+[git/isolation.md](.agents/quenching/assets/references/git/isolation.md), cited below rather
 than restated; this command is its standalone entry point for a caller with no build loop of its own.
 
-**Grants.** `allowed-tools` holds only the `cq` verbs a caller that holds no `Skill` also holds, so the body stays followable from a `tools:` list of `cq` verbs and a call outside them here would leave the step blocked. A `worktreeSetup`, `git checkout -b` and the `cq specs record` stamps go through the normal permission prompt.
+**Grants.** `allowed-tools` holds only the `cq` verbs a caller that holds no `Skill` also holds, so the body stays followable from a `tools:` list of `cq` verbs and a call outside them here would leave the step blocked. A `worktreeSetup`, `git checkout -b` and the `.agents/quenching/bin/cq specs record` stamps go through the normal permission prompt.
 
 ## Workflow
 
 ### 1. Load the rules and the state in one read
 ```bash
-cq components read ${CLAUDE_PLUGIN_ROOT}/assets/references/git/isolation.md \
+.agents/quenching/bin/cq components read .agents/quenching/assets/references/git/isolation.md \
   --sections "§Isolation happens on the way into a build" --sections "§Branch and worktree names" \
   --sections "§Recording the isolation"
-cq components read ${CLAUDE_PLUGIN_ROOT}/assets/references/git/conventions.md \
+.agents/quenching/bin/cq components read .agents/quenching/assets/references/git/conventions.md \
   --sections "§The declared-directive layer" --sections "§The read-if-present rule"
-cq git conventions --json   # `config.branchName`, or absent
-cq git state --json           # `branch`, `status` (porcelain), `staged`, `remotes`
-cq git base --json
-cq specs config --json        # `worktreeSetup`, `sharedPaths`, or their empty values — exit 0 either way
+.agents/quenching/bin/cq git conventions --json   # `config.branchName`, or absent
+.agents/quenching/bin/cq git state --json           # `branch`, `status` (porcelain), `staged`, `remotes`
+.agents/quenching/bin/cq git base --json
+.agents/quenching/bin/cq specs config --json        # `worktreeSetup`, `sharedPaths`, or their empty values — exit 0 either way
 ```
 `status` non-empty → **an authorized cut is the one exception, and the authorization is the
 caller's word, never this command's inference.** The autopilot's step 1 authorizes a worktree cut
@@ -40,7 +40,7 @@ was already sitting there into the first commit on the new ref, silently.
 under an authorized cut, and the base branch is resolved.
 
 ### 2. Resolve the ID, when one was given
-`$ARGUMENTS` naming a spec → `cq specs status --spec "<id>" --json` and read its `records.branch`.
+`$ARGUMENTS` naming a spec → `.agents/quenching/bin/cq specs status --spec "<id>" --json` and read its `records.branch`.
 Already stamped → report it (`base`, `work`) and **stop**; a second isolation for an already-isolated
 spec is a no-op, not a fresh cut. No record → continue to the cut below, carrying the ID through
 to step 4. `$ARGUMENTS` naming no spec (or empty) → continue with no ID; nothing gets stamped in
@@ -72,7 +72,7 @@ reported verbatim and nothing is stamped. **The cut starts from the remote base*
 a PR merged through `gh` moves no local ref and the local `<base>` may miss the dependency the run
 waited on:
 ```bash
-cq git worktree add --path <path> --branch <branch> --base <base> [--spec "<id>"] --json
+.agents/quenching/bin/cq git worktree add --path <path> --branch <branch> --base <base> [--spec "<id>"] --json
 ```
 With an ID from step 2, pass `--spec`: the verb refuses (exit 2, nothing cut) a spec that does not
 exist or does not own `<branch>`, and after the cut stamps the `branch:` record itself
@@ -86,14 +86,14 @@ link succeeds, run a declared `worktreeSetup` once with cwd inside the new workt
 setup does not undo the worktree — report both facts separately. **A worktree outside the project
 directory is not the shell's cwd:** the harness may return the cwd to the base checkout after every
 command, so from here on each command carries the worktree explicitly — `cd <worktree> && …` in
-the same call, `git -C <worktree>`, `cq --root <worktree>` — or a cwd-dependent tool (`cq` without
+the same call, `git -C <worktree>`, `.agents/quenching/bin/cq --root <worktree>` — or a cwd-dependent tool (`cq` without
 `--root`, `git diff`, tests) reads the base checkout and reports green over a tree that did not
-change. `cq git …` takes no `--root` on its write verbs
-(a usage error): it always runs as `cd <worktree> && cq git …`. Then, only with an ID from step 2
+change. `.agents/quenching/bin/cq git …` takes no `--root` on its write verbs
+(a usage error): it always runs as `cd <worktree> && .agents/quenching/bin/cq git …`. Then, only with an ID from step 2
 (the Worktree form already stamped `branch:` through `--spec`; **Branch** form stamps it by hand):
 ```bash
-cq specs record "<id>" branch --set base=<base> --set work=<branch>   # Branch form only
-cq git specs <branch> --add "<id>" --json
+.agents/quenching/bin/cq specs record "<id>" branch --set base=<base> --set work=<branch>   # Branch form only
+.agents/quenching/bin/cq git specs <branch> --add "<id>" --json
 ```
 **Done when:** the worktree (or the requested branch) exists on disk, the setup ran and was reported
 (worktree only), and — with an ID — `branch:` and the `quenching-specs:` marking are stamped.

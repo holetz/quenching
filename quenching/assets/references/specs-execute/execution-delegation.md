@@ -17,12 +17,12 @@ Everything else the work reveals — a gotcha, a second-order consequence, a rul
 of — costs **one line and no authoring**:
 
 ```bash
-cq specs discover "<id>" "<what was found, one line>"
+.agents/quenching/bin/cq specs discover "<id>" "<what was found, one line>"
 ```
 
-It is captured **indiscriminately**. The lines are resolved by `/quenching-specs:specs:develop`'s
+It is captured **indiscriminately**. The lines are resolved by `/quenching-specs-develop`'s
 discoveries stage, and the doc an emergent finding deserves is written by
-`/quenching-specs:specs:conclude` at distillation.
+`/quenching-specs-conclude` at distillation.
 
 A task that writes into `knowledge/` is not delegated — §Delegating an executor.
 
@@ -36,18 +36,18 @@ A per-task executor sub-agent (`Task`) is **permitted** when both hold:
 - the task writes nothing under `knowledge/`.
 
 Pin it to the session model, with one exception: **the `haiku` rung, per task.** When
-`cq specs estimate --spec <id> --task <tid> --json` reports `smallTierEligible: true` — an
+`.agents/quenching/bin/cq specs estimate --spec <id> --task <tid> --json` reports `smallTierEligible: true` — an
 executable `verify:` whose tests sit outside the task's `files:` (`oracleProtected`), nothing under
 `/docs/` or `knowledge/`, and a projected context at or under 80k — the executor may be pinned to
 `haiku` for ONE attempt. A failed `verify:` returns the task to the session model, which corrects on
 the diff; a second failure goes to the human. The self-review (5d) reads the diff on the session
 model before the tick. `smallTierEligible: false`, or no estimate → the session model. Judgment
-never descends, and `/quenching-align:knowledge:import-memory`'s classifiers stay never-`haiku`:
+never descends, and `/quenching-knowledge-import-memory`'s classifiers stay never-`haiku`:
 they authorize a deletion and have no oracle.
 
 **The orchestrator keeps, without exception:** spec selection, the isolation, every
-confirmation, every `cq specs task --check` flip, every `cq specs task --block` marker, every
-`docs/standards/` write, every `cq specs discover` line, the commit, and the decision to pause. The
+confirmation, every `.agents/quenching/bin/cq specs task --check` flip, every `.agents/quenching/bin/cq specs task --block` marker, every
+`docs/standards/` write, every `.agents/quenching/bin/cq specs discover` line, the commit, and the decision to pause. The
 sub-agent writes code inside its declared files and reports back — it never talks to the human and
 never touches the spec's bookkeeping.
 
@@ -83,7 +83,7 @@ The delegation is a `Task`, not `context: fork` — §Tooling asides.
 Two tasks run concurrently **only** when all three hold:
 
 1. a `[P]` marker was set on both **at definition time** — never inferred while executing;
-2. their declared `files:` sets are **provably disjoint** (`cq specs` checks this mechanically —
+2. their declared `files:` sets are **provably disjoint** (`.agents/quenching/bin/cq specs` checks this mechanically —
    see §The `[P]` check);
 3. neither writes into `knowledge/`.
 
@@ -95,7 +95,7 @@ trades wall-clock for merge conflicts and loses on both.
 <!-- rules -->
 
 ```bash
-cq specs parallel --spec "<id>" [--json]
+.agents/quenching/bin/cq specs parallel --spec "<id>" [--json]
 ```
 
 Reports each `[P]` group and whether it is `eligible`. Exit **0** when every marked group is

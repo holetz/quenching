@@ -1,7 +1,7 @@
 # The execution profile — strategic capability use, priced
 
-Every Claude Code lever a command, agent, or hook may use, each stated three ways: what it
-buys, what it costs, and the default. Thresholds and finding codes live in `cq components` and
+Every the host lever a command, agent, or hook may use, each stated three ways: what it
+buys, what it costs, and the default. Thresholds and finding codes live in `.agents/quenching/bin/cq components` and
 `docs/standards/automation/skills.md` — this file names the code, never the number.
 
 **The premise: a lever is bought, never collected.** A lever whose buy nobody can state is
@@ -9,11 +9,11 @@ bloat wearing a feature's name.
 
 ## Contents
 
-`cq components read <this file>` returns the heading index; `--sections` addresses one.
+`.agents/quenching/bin/cq components read <this file>` returns the heading index; `--sections` addresses one.
 
 ## The cost model — where each byte lands
 
-**Fonte:** <https://code.claude.com/docs/en/skills>, <https://code.claude.com/docs/en/sub-agents>, <https://code.claude.com/docs/en/hooks>. A página oficial não declara versão para o modelo de custo; Conferido em 2026-10-11 contra Claude Code 2.1.296.
+**Fonte:** <https://code.claude.com/docs/en/skills>, <https://code.claude.com/docs/en/sub-agents>, <https://code.claude.com/docs/en/hooks>. A página oficial não declara versão para o modelo de custo; Conferido em 2026-10-11 contra the host 2.1.296.
 
 <!-- rules -->
 Five places a capability's cost can land, from most expensive to least:
@@ -38,7 +38,7 @@ iteration that touches nothing it validates.
 
 ## The default profile
 
-**Fonte:** <https://code.claude.com/docs/en/skills>. Campos de frontmatter de skill conforme a tabela de referência da página; sem versão declarada; Conferido em 2026-10-11 contra Claude Code 2.1.296.
+**Fonte:** <https://code.claude.com/docs/en/skills>. Campos de frontmatter de skill conforme a tabela de referência da página; sem versão declarada; Conferido em 2026-10-11 contra the host 2.1.296.
 
 A minted command starts with **all levers off**:
 
@@ -55,12 +55,12 @@ into the plan (§The profile is part of the plan). "It might help" is not a reas
 
 ## `context: fork` — isolation, priced
 
-**Fonte:** <https://code.claude.com/docs/en/skills>, <https://code.claude.com/docs/en/sub-agents>. Fork em segundo plano por padrão e `background: false` exigem Claude Code v2.1.218 ou superior (declarado na página de skills); Explore e Plan pulam o CLAUDE.md (página de sub-agents). Conferido em 2026-10-11 contra Claude Code 2.1.296.
+**Fonte:** <https://code.claude.com/docs/en/skills>, <https://code.claude.com/docs/en/sub-agents>. Fork em segundo plano por padrão e `background: false` exigem the host v2.1.218 ou superior (declarado na página de skills); Explore e Plan pulam o AGENTS.md (página de sub-agents). Conferido em 2026-10-11 contra the host 2.1.296.
 
 **What it does.** The command runs in a forked context: a fresh subagent whose prompt is the
 command body, with **no conversation history**, its own cache, and — by default — background
 execution. `agent: <name>` selects the runner (`general-purpose` default; `Explore` for
-read-only work, and it skips `CLAUDE.md`, keeping the fork small; or a custom
+read-only work, and it skips `AGENTS.md`, keeping the fork small; or a custom
 `.claude/agents/` definition). `background: false` makes the invoking turn wait for the
 result.
 
@@ -90,7 +90,7 @@ main conversation pays one invocation line and one result instead of the whole t
 
 ## Model and effort — pin only what is mechanical
 
-**Fonte:** <https://code.claude.com/docs/en/skills>, <https://code.claude.com/docs/en/sub-agents>. `effort` e `model` no frontmatter conforme a página de skills; sem versão declarada; Conferido em 2026-10-11 contra Claude Code 2.1.296.
+**Fonte:** <https://code.claude.com/docs/en/skills>, <https://code.claude.com/docs/en/sub-agents>. `effort` e `model` no frontmatter conforme a página de skills; sem versão declarada; Conferido em 2026-10-11 contra the host 2.1.296.
 
 **`effort: low`** fits work that is genuinely mechanical — a single-field edit, a capture
 with zero interrogation, a fixed-vocabulary classification the plan gate re-checks. Judgment
@@ -104,7 +104,7 @@ a deletion, or that lands in production code **without a protected oracle** — 
 misclassification there becomes a wrong irreversible action, which is this plugin's
 `import-memory` rule generalized. A protected oracle is an executable `verify:` whose test
 files sit outside the task's `files:`, in a disposable worktree, with the projected context
-at or under 80k (`cq specs estimate --spec <id> --task <tid>` reports `smallTierEligible`);
+at or under 80k (`.agents/quenching/bin/cq specs estimate --spec <id> --task <tid>` reports `smallTierEligible`);
 there `haiku` may execute ONE task, and a failed `verify:` returns it to the session model.
 Judgment never descends.
 
@@ -117,7 +117,7 @@ inline pin against the session it interrupts, not against the single call it mak
 
 ## Subagents — when delegation pays
 
-**Fonte:** <https://code.claude.com/docs/en/sub-agents>. `omitClaudeMd` exige v2.1.271 ou superior (declarado na página). Sem versão declarada para os demais campos; Conferido em 2026-10-11 contra Claude Code 2.1.296.
+**Fonte:** <https://code.claude.com/docs/en/sub-agents>. `omitClaudeMd` exige v2.1.271 ou superior (declarado na página). Sem versão declarada para os demais campos; Conferido em 2026-10-11 contra the host 2.1.296.
 
 **The test:** the returned summary is much smaller than the work that produced it. A
 repo-wide grep sweep, a many-file audit, a documentation read that ends in one table —
@@ -126,7 +126,7 @@ Delegation **wastes** when the output is as large as the work (a rewrite, a full
 transform — the result lands in context anyway), when the task is one quick lookup, or when
 the subagent must be handed so much context that the handoff costs what the isolation saves.
 
-**The definition contract** (`.claude/agents/<name>.md` — the one Claude-only home: Claude Code
+**The definition contract** (`.claude/agents/<name>.md` — the one Claude-only home: the host
 2.1.312 does not read `.agents/agents/`, so no bridge applies): frontmatter `name`, `description`
 (what it does **and when to invoke it** — the description is always-on context, the same
 cost discipline as a command's), `tools` scoped to the narrowest set, and `model`/`effort`
@@ -151,7 +151,7 @@ this plugin holds.
 
 ## Hooks — the scope ladder and the handler ladder
 
-**Fonte:** <https://code.claude.com/docs/en/hooks>, <https://code.claude.com/docs/en/skills>. `timeout` (padrão 600 s para `command`) e `stop_hook_active` conforme a página de hooks; sem versão declarada; Conferido em 2026-10-11 contra Claude Code 2.1.296.
+**Fonte:** <https://code.claude.com/docs/en/hooks>, <https://code.claude.com/docs/en/skills>. `timeout` (padrão 600 s para `command`) e `stop_hook_active` conforme a página de hooks; sem versão declarada; Conferido em 2026-10-11 contra the host 2.1.296.
 
 <!-- rules -->
 A hook is the only capability that charges **other people's operations**: it fires on events
@@ -169,7 +169,7 @@ only with evidence.
    to an *operation* ("every edit under `db/migrations/` is checked") rather than a workflow.
 3. **A gated wide event** — `Stop`/`UserPromptSubmit` hooks made cheap by construction:
    dirty-gated by a marker file so a turn that touched nothing relevant costs one stat (the
-   `cq knowledge validate stopScan: "dirty"` precedent), or `once: true` for a per-session check.
+   `.agents/quenching/bin/cq knowledge validate stopScan: "dirty"` precedent), or `once: true` for a per-session check.
 4. **An unmatched session-wide hook** — the top of the ladder, and a finding
    (`sk-hook-unmatched`) unless its body states why nothing narrower catches its cases.
 
@@ -227,7 +227,7 @@ and it does so where nobody wired it.
 
 ## Invocation-surface controls — what each costs
 
-**Fonte:** <https://code.claude.com/docs/en/skills>. `disable-model-invocation`, `user-invocable` e `paths` conforme a tabela de frontmatter; sem versão declarada; Conferido em 2026-10-11 contra Claude Code 2.1.296.
+**Fonte:** <https://code.claude.com/docs/en/skills>. `disable-model-invocation`, `user-invocable` e `paths` conforme a tabela de frontmatter; sem versão declarada; Conferido em 2026-10-11 contra the host 2.1.296.
 
 The invocation/permission decision table lives in `docs/standards/automation/skills.md`. The
 price of each control:
@@ -246,11 +246,11 @@ price of each control:
 
 ## Dynamic context — pay at render, not in turns
 
-**Fonte:** <https://code.claude.com/docs/en/skills>. Injeção `` !`comando` `` e `${CLAUDE_SKILL_DIR}` conforme a seção de contexto dinâmico; sem versão declarada; Conferido em 2026-10-11 contra Claude Code 2.1.296.
+**Fonte:** <https://code.claude.com/docs/en/skills>. Injeção `` !`comando` `` e `${CLAUDE_SKILL_DIR}` conforme a seção de contexto dinâmico; sem versão declarada; Conferido em 2026-10-11 contra the host 2.1.296.
 
 A `` !`command` `` line in a command body runs **at render time**, before the model reads the
 body, and its output lands inline. Used well, it converts turns into text: a workflow whose
-step 1 is "run `git status`" or "run `cq specs list --json`" can carry the answer into the
+step 1 is "run `git status`" or "run `.agents/quenching/bin/cq specs list --json`" can carry the answer into the
 body instead of spending a tool round-trip on it — deterministic state, fetched once, at
 exactly the moment it is fresh.
 
@@ -262,7 +262,7 @@ Two bounds keep it a lever instead of a leak:
 - **Inject only what every run reads.** Output the body merely *might* use belongs to a step
   that fetches it on demand.
 
-`${CLAUDE_SKILL_DIR}` (the command's own directory) and `${CLAUDE_PROJECT_DIR}` (the repo
+`${CLAUDE_SKILL_DIR}` (the command's own directory) and `.` (the repo
 root) substitute in bodies and `allowed-tools`, and are how a command cites its assets
 portably. Re-invocation is deduplicated by rendered content: a second run whose render is
 identical costs a note, not the body again — one more reason to keep dynamic output stable.
@@ -271,9 +271,9 @@ identical costs a note, not the body again — one more reason to keep dynamic o
 
 The mint's ONE plan shows the chosen profile — each non-default lever with its stated
 reason — so the human confirms the capability spend along with the files. The sweeps read
-the same page in reverse: `cq components` reports the mechanically decidable slice
+the same page in reverse: `.agents/quenching/bin/cq components` reports the mechanically decidable slice
 (`sk-fork-gate`, `sk-profile-value`, `sk-hook-unmatched`, `sk-hook-llm-frequent`,
 `sk-agent-no-description`), and the doctrine audit reads what no parser can — a fork that
 forks away its own context, a hook whose cost claim no longer holds, an agent whose
 description routes nothing — each reported with the command that fixes it
-(`/quenching-align:components:command:new`, `/quenching-align:components:hook:new`, `/quenching-align:components:agent:new`), never rewritten in place.
+(`/quenching-components-command-new`, `/quenching-components-hook-new`, `/quenching-components-agent-new`), never rewritten in place.

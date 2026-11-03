@@ -14,7 +14,7 @@ is claimed until such an artifact is part of the route's measured inventory.
 
 | Code | Closure |
 | --- | --- |
-| `delivery-generated-stale` | Regenerate the owned workflow or release artifact from its deterministic source, then rerun `cq delivery doctor --json`. |
+| `delivery-generated-stale` | Regenerate the owned workflow or release artifact from its deterministic source, then rerun `.agents/quenching/bin/cq delivery doctor --json`. |
 
 ## Structural findings
 

@@ -1,18 +1,18 @@
 ---
 description: >-
-  Revert one known commit into a new commit, preserving history. Use for "revert this commit", "undo a task safely", "back out this change". Not for: rewriting history; publishing → /quenching-specs:git:push.
+  Revert one known commit into a new commit, preserving history. Use for "revert this commit", "undo a task safely", "back out this change". Not for: rewriting history; publishing → /quenching-git-push.
 disable-model-invocation: true
 argument-hint: "[commit:ref|spec:id task:id [mainline:n]]"
 allowed-tools: Bash(cq:*), Bash(cq.cmd:*), Bash(git status:*), Bash(git branch --show-current:*), Bash(git rev-parse:*), Bash(git rev-list:*), Bash(git merge-base:*), Bash(git log:*), Bash(git show:*), Bash(git diff:*), Bash(git revert:*), Bash(python3:*), Read, AskUserQuestion
 ---
 
-# /quenching-specs:git:revert — compensate one commit without rewriting history
+# /quenching-git-revert — compensate one commit without rewriting history
 
 **Input**: `$ARGUMENTS` — `commit:<ref>` names a commit or tag; `spec:<id> task:<id>` resolves the
 recorded task subject to exactly one commit; append `mainline:<n>` when the target is a merge commit.
 No input, an ambiguous subject or a missing target refuses without touching the index or history.
 
-The commit contract in `${CLAUDE_PLUGIN_ROOT}/assets/references/git/commit.md` owns task subjects
+The commit contract in `.agents/quenching/assets/references/git/commit.md` owns task subjects
 and their anchor semantics. A successful revert of a task's implementing commit also reopens that
 task with a reason: the task anchor is no longer true, and the explanation belongs in the spec's
 `## Discoveries` section.
@@ -27,7 +27,7 @@ Read the current branch, HEAD, working-tree status and resolved base:
 git status --porcelain
 git branch --show-current
 git rev-parse --verify HEAD
-cq git base --json
+.agents/quenching/bin/cq git base --json
 ```
 
 Refuse a dirty tree, detached HEAD, missing repository, or a request to rewrite history. The
@@ -37,7 +37,7 @@ HEAD, base and clean-index precondition are known, or the refusal is reported.
 ### 2. Resolve one target and its task anchor
 
 For `commit:<ref>`, resolve exactly one commit with `git rev-parse --verify <ref>^{commit}`. For
-`spec:<id> task:<id>`, read `cq specs status --spec <id> --json`, select that task's recorded
+`spec:<id> task:<id>`, read `.agents/quenching/bin/cq specs status --spec <id> --json`, select that task's recorded
 subject, and run `git log --grep=<subject> --fixed-strings` until exactly one commit matches. Zero
 or multiple matches refuse; a task SHA that no longer exists is not replaced by a guessed subject.
 **Done when:** one target SHA, its source selector and — when applicable — its task anchor are
@@ -55,7 +55,7 @@ explicit `mainline:<n>` naming one valid parent; never choose a mainline by posi
 ### 4. Show the revert and ask once
 
 Show the branch, target SHA, original subject, author/date, files, selected mainline, expected
-inverse effect and the native `git revert` command. Put a decision sheet ([specs-develop/questions.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/questions.md) §1; A confirm, B decline) for confirmation of
+inverse effect and the native `git revert` command. Put a decision sheet ([specs-develop/questions.md](.agents/quenching/assets/references/specs-develop/questions.md) §1; A confirm, B decline) for confirmation of
 that exact new commit, and end the turn. Before confirmation, do not alter spec records, task checkboxes, remote refs
 or the target commit. **Done when:** the human confirms or declines the exact revert.
 
@@ -69,7 +69,7 @@ and `git show --stat --summary HEAD`. If the input resolved through `spec:<id> t
 that new revert commit is verified, run:
 
 ```bash
-cq specs task --spec <id> --uncheck <task> \
+.agents/quenching/bin/cq specs task --spec <id> --uncheck <task> \
   --reason "reverted by <new-revert-sha>"
 ```
 
@@ -84,7 +84,7 @@ or the conflict/failure is reported without a recovery action.
 State the original target, new revert commit, branch, whether a mainline was used, files affected,
 and, for a task selector, the `--uncheck --reason` write to `## Discoveries`; for a direct commit
 selector, state that no spec record was selected. In either case no remote was changed. Name
-`/quenching-specs:git:push` only as a later human action; do not invoke it. **Done when:** the compensating
+`/quenching-git-push` only as a later human action; do not invoke it. **Done when:** the compensating
 commit or the unchanged conflict state is fully reported.
 
 ## Invariants
@@ -92,6 +92,6 @@ commit or the unchanged conflict state is fully reported.
 - Create a new revert commit; never erase, amend, reset, rebase, force-push or alter the original.
 - Require a clean tree, attached current branch, unique target and explicit mainline for merges.
 - Never resolve a conflict, alter an unrelated spec, or change remote state in this command. For a
-  confirmed `spec:<id> task:<id>` selector, reopening that exact task with `cq specs task --uncheck
+  confirmed `spec:<id> task:<id>` selector, reopening that exact task with `.agents/quenching/bin/cq specs task --uncheck
   --reason` is the required post-revert bookkeeping, and happens only after the revert commit.
 - Preserve Git's own failure and conflict output; never infer a successful revert from a changed file.

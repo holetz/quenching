@@ -23,14 +23,14 @@ One is a variable, the other a constant — see [Why conduct is not declared](#w
 ### Declaring it
 
 A repo declares its **conversation** language as **one BCP-47 tag**, on a single line of its **root** harness file
-(`AGENTS.md`; `CLAUDE.md` is legacy):
+(`AGENTS.md`; `AGENTS.md` is legacy):
 
 ```
 Language: pt-BR — the contract is /docs/standards/agents/communication.md
 ```
 
 That line carries **a value and a citation, and nothing else**. It never paraphrases the rule below:
-a harness file that restates a standard is precisely the drift `/quenching-align:components:harness:align` exists to remove,
+a harness file that restates a standard is precisely the drift `/quenching-components-harness-align` exists to remove,
 while a value plus a pointer is not a restatement. It carries **one** value — a second configuration
 key on that line is a defect, not a feature.
 
@@ -81,7 +81,7 @@ declares it in one of two places:
 
 - a **standard** under its own `/docs/standards/` that names the language its artifacts use; or
 - the **`artifactLanguage`** key (one BCP-47 tag) in its quenching configuration —
-  `.agents/quenching.json` (or the legacy `.claude/quenching.json`) or, when specs-axis
+  `.agents/quenching.json` (or the legacy `.agents/quenching.json`) or, when specs-axis
   configuration lives on the `quenching` branch, the `quenching.json` at that branch's root.
 
 Either one is enough. If both exist and disagree, the standard is the written contract and the key

@@ -1,12 +1,12 @@
 ---
 description: >-
-  Converge /.design/ from one DTCG source through PRODUCT.md, DESIGN.md, MEDIUM.md and adapters. Use for "align the design", "install the brand pack", "fix design drift". Not for: read-only → /quenching-design:design:status.
+  Converge /.design/ from one DTCG source through PRODUCT.md, DESIGN.md, MEDIUM.md and adapters. Use for "align the design", "install the brand pack", "fix design drift". Not for: read-only → /quenching-design-status.
 disable-model-invocation: true
 argument-hint: [optional-scope]
 allowed-tools: Bash(cq:*), Bash(cq.cmd:*), Read, Grep, Glob, Bash(python3:*), Bash(npx:*), AskUserQuestion
 ---
 
-# /quenching-design:design:align — one source, every projection
+# /quenching-design-align — one source, every projection
 
 **Input**: `$ARGUMENTS` (optional scope inside `/.design/`; omit for the whole front).
 
@@ -15,13 +15,13 @@ the owner of screen craft: its `document` flow may propose a new `DESIGN.md`, bu
 source only through the explicit import choice below.
 
 The common front contract is in
-[front-align/mold.md](${CLAUDE_PLUGIN_ROOT}/assets/references/front-align/mold.md); this command
+[front-align/mold.md](.agents/quenching/assets/references/front-align/mold.md); this command
 keeps the design delta in
-[design-align/bands.md](${CLAUDE_PLUGIN_ROOT}/assets/references/design-align/bands.md). The mold
+[design-align/bands.md](.agents/quenching/assets/references/design-align/bands.md). The mold
 does not choose a DTCG source winner or turn visual policy into an automatic repair.
 
 Resolve `cq` per
-[tool-resolution.md](${CLAUDE_PLUGIN_ROOT}/assets/references/align/tool-resolution.md)
+[tool-resolution.md](.agents/quenching/assets/references/align/tool-resolution.md)
 §Resolving the tool. Use the resolved path literally and branch on exit codes
 (0 ok · 1 findings · 2 refusal) and JSON, never prose.
 
@@ -32,15 +32,15 @@ Resolve `cq` per
 Run:
 
 ```bash
-cq --root . design status --json
-cq --root . design align --check --json
-cq knowledge validate docs --json
+.agents/quenching/bin/cq --root . design status --json
+.agents/quenching/bin/cq --root . design align --check --json
+.agents/quenching/bin/cq knowledge validate docs --json
 ```
 
 Inventory `/docs/` headings that can project the product record, `/.design/tokens.json`, the
 three root projections, `.impeccable/design.json`, genres, medium primitives and brand assets.
 Classify an existing root `DESIGN.md` as **generated** only when its frontmatter carries the literal
-generated notice emitted by `cq design build`; otherwise it is an Impeccable proposal awaiting the human's
+generated notice emitted by `.agents/quenching/bin/cq design build`; otherwise it is an Impeccable proposal awaiting the human's
 import/build choice. Do the equivalent provenance check for `PRODUCT.md`, but fold its confirmed
 facts into the correct OKF homes by judgment — there is no mechanical product importer.
 
@@ -76,11 +76,11 @@ Wait for one OK unless the inherited authorization applies.
 
 Create or merge the confirmed product facts under the applicable `/docs/vision/` and
 `/docs/standards/` homes. Install only missing brand-pack files from
-`${CLAUDE_PLUGIN_ROOT}/assets/design/brand-pack/`; preserve every existing file. If the accepted
+`.agents/quenching/assets/design/brand-pack/`; preserve every existing file. If the accepted
 source is an external `DESIGN.md`, preserve it until the pack's `tokens.json` exists, then run:
 
 ```bash
-cq --root . design import --json
+.agents/quenching/bin/cq --root . design import --json
 ```
 
 Otherwise let the DTCG source win. Keep `.impeccable/config.json` untouched: it belongs to
@@ -94,7 +94,7 @@ source has been folded without overwriting the losing source prematurely.
 Run:
 
 ```bash
-cq --root . design build --json
+.agents/quenching/bin/cq --root . design build --json
 ```
 
 This emits root `PRODUCT.md`, `DESIGN.md`, `MEDIUM.md`, `.impeccable/design.json` schema 2 and

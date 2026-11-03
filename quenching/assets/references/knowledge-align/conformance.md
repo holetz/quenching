@@ -1,6 +1,6 @@
 # Conformance — the exact checks
 
-The executable `cq knowledge validate` implements **exactly** these
+The executable `.agents/quenching/bin/cq knowledge validate` implements **exactly** these
 checks; the skills apply the same rules by hand when they cannot shell out, and their self-check
 steps **cite this file** rather than restating the rules. Severities: **ERROR** fails conformance
 (validator exit 1); **WARN** is a recommendation (exit 0 unless `warnAsError`).
@@ -13,7 +13,7 @@ steps **cite this file** rather than restating the rules. Severities: **ERROR** 
 | --- | --- | --- |
 | `index.md` | reserved listing | `check_index` |
 | `log.md` | reserved, **retired** | nothing — recognized, never judged (see below) |
-| `AGENTS.md` (legacy `CLAUDE.md`) | harness pointer | **exempt** (skipped; honesty checked by `/quenching-align:components:harness:align`, not the validator) |
+| `AGENTS.md` (legacy `AGENTS.md`) | harness pointer | **exempt** (skipped; honesty checked by `/quenching-components-harness-align`, not the validator) |
 | `README.md` | migration nudge | WARN "convert to index.md" |
 | any other `*.md` | concept doc | `check_concept` |
 
@@ -88,9 +88,9 @@ gate. `RetiredLogChecker` in `tests/test_knowledge.py` holds the line with a fix
 
 <!-- rules -->
 
-A target that has not run `/quenching-align:knowledge:align` since a plugin release renamed one of its own
+A target that has not run `/quenching-knowledge-align` since a plugin release renamed one of its own
 declared roots (the bundle root moved twice: `.docs/` → `.knowledge/` → `docs/` — see
-[migration.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-align/migration.md) §1g). Each
+[migration.md](.agents/quenching/assets/references/knowledge-align/migration.md) §1g). Each
 finding looks at exactly one site and is **idempotent** — migrating that one site clears it, whether
 or not the others have migrated yet. **ERROR**, decided in `renomear-docs-para-knowledge` `##
 Open Decisions`: nothing enforces it as a block — the plugin's self-installed enforcement hook, the
@@ -173,7 +173,7 @@ A doc that is provably **lying about itself**. These join the structural set the
 
 <!-- rules -->
 
-- **`cq knowledge validate <bundle> --activity`** prints, per doc and **per `resource:` entry**,
+- **`.agents/quenching/bin/cq knowledge validate <bundle> --activity`** prints, per doc and **per `resource:` entry**,
   the stamped `generated.at` (or the legacy `timestamp`), the last commit touching that entry
   (`git log -1 --format=%cI` with explicit **`:(glob)`** pathspec magic, so a single `*` does not
   cross a `/` here either) and the interval between them, widest first. `--json` gives the same
@@ -197,19 +197,19 @@ that the plugin's self-installed enforcement hook — the one caller with a late
 <!-- rules -->
 
 ```bash
-cq knowledge validate <repo>/docs        # human report; exit 0/1
-cq knowledge validate <repo>/docs --json # machine-readable findings
+.agents/quenching/bin/cq knowledge validate <repo>/docs        # human report; exit 0/1
+.agents/quenching/bin/cq knowledge validate <repo>/docs --json # machine-readable findings
 ```
 
 Config block `okfValidate` in `hooks-config.json` (`warnAsError`, plus `ignoreGlobs` alongside it)
 tunes the CLI's own behaviour — treating a warning as a failure, and pruning regenerable/vendored
 paths from the scan.
 
-## Verify gate (Step 5 of /quenching-align:knowledge:align)
+## Verify gate (Step 5 of /quenching-knowledge-align)
 
 <!-- rules -->
 
-A bundle is **aligned** when `cq knowledge validate docs` exits 0 **and** the structural-integrity and
+A bundle is **aligned** when `.agents/quenching/bin/cq knowledge validate docs` exits 0 **and** the structural-integrity and
 resource-integrity WARNs are all cleared — **zero** `dir-no-index`, `index-broken-link`,
 `index-orphan`, `glossary-broken-link`, `generated-listing-missing`, `generated-listing-drift`,
 `resource-unresolved`, `resource-self`. (These are WARN,

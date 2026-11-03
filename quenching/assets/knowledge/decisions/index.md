@@ -2,7 +2,7 @@
 
 The **history and measurements** behind a contract: the dated measurement, the first cut that
 failed, the chain of specs that moved a rule. A [standard](/docs/standards/index.md) keeps only the
-rule and a link here, so an agent reading the standard (`cq components read --rules-only`) pays for
+rule and a link here, so an agent reading the standard (`.agents/quenching/bin/cq components read --rules-only`) pays for
 the rule, not for how it was found. One decision per file, `type: decision`, numbered
 `NNNN-<slug>.md` in the order written; a decision is **append-only**: a later one supersedes it
 by saying so, never by rewriting it.

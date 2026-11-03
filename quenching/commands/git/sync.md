@@ -6,13 +6,13 @@ allowed-tools: Bash(cq:*), Bash(cq.cmd:*), Bash(git status:*), Bash(git remote g
 disable-model-invocation: true
 ---
 
-# /quenching-specs:git:sync — typed shortcut
+# /quenching-git-sync — typed shortcut
 
-Typed shortcut to the `sync` flow of [/quenching-specs:git:git](${CLAUDE_PLUGIN_ROOT}/commands/git/git.md).
+Typed shortcut to the `sync` flow of [/quenching-git-git](.agents/quenching/commands/git/git.md).
 Input: `$ARGUMENTS`.
 
 ```bash
-cq components read ${CLAUDE_PLUGIN_ROOT}/assets/references/git-flows/sync.md
+.agents/quenching/bin/cq components read .agents/quenching/assets/references/git-flows/sync.md
 ```
 Read the flow whole, once, and follow it from its own `## Workflow` with `$ARGUMENTS` as its input:
 its steps, `Done when:` lines and invariants bind this run as they would the flow itself.

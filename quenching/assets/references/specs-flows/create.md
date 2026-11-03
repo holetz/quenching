@@ -1,18 +1,18 @@
-# /quenching-specs:specs:create — capture one spec, one screen, one turn
+# /quenching-specs-create — capture one spec, one screen, one turn
 
 **Input**: `$ARGUMENTS` — a short description of the problem, a path to a Claude or Codex plan
 file, or a plan already developed in this session (including a `<proposed_plan>` block). With no
 argument and no identifiable plan in the conversation, ask what to capture.
 
-Creates ONE spec: `/quenching-specs:specs:develop` fills its sections, `/quenching-specs:specs:execute` builds
-it, and `/quenching-specs:specs:conclude` closes it out under the same identity.
+Creates ONE spec: `/quenching-specs-develop` fills its sections, `/quenching-specs-execute` builds
+it, and `/quenching-specs-conclude` closes it out under the same identity.
 
 The layout, the thirteen canonical sections, the gates and the front's on-write check live in
-[specs-develop/spec-driven.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/spec-driven.md)
-§The thirteen sections §The gates and the stage-scoped explicit-none rule. The `cq specs` surface
-lives in [specs-surface.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/specs-surface.md)
-§The `cq specs` tool surface; the report shape lives in
-[report-mold.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/report-mold.md)
+[specs-develop/spec-driven.md](.agents/quenching/assets/references/specs-develop/spec-driven.md)
+§The thirteen sections §The gates and the stage-scoped explicit-none rule. The `.agents/quenching/bin/cq specs` surface
+lives in [specs-surface.md](.agents/quenching/assets/references/specs-develop/specs-surface.md)
+§The `.agents/quenching/bin/cq specs` tool surface; the report shape lives in
+[report-mold.md](.agents/quenching/assets/references/specs-develop/report-mold.md)
 §The report mold.
 
 ## The one rule: effort proportional to input
@@ -33,8 +33,8 @@ file already answered most of them. The develop pass re-evaluates the level when
 
 ## Resolving the tool
 
-Resolve `cq specs` per
-[align/tool-resolution.md](${CLAUDE_PLUGIN_ROOT}/assets/references/align/tool-resolution.md)
+Resolve `.agents/quenching/bin/cq specs` per
+[align/tool-resolution.md](.agents/quenching/assets/references/align/tool-resolution.md)
 §Resolving the tool; branch on the **exit code** (0 ok · 1 findings · 2 refusal), never on prose.
 
 ## Workflow
@@ -46,7 +46,7 @@ or a plan already developed in this session — including the contents of `<prop
 plan-source path. Use the complete plan available in the conversation as the source; it does not
 need an intermediate file. With no argument and no identifiable plan in the conversation, ask what
 to capture. Never search plan directories automatically for a candidate. This is the one decision
-the CLI cannot make: `cq specs new` (step 5) resolves the backend and the workspace on its own.
+the CLI cannot make: `.agents/quenching/bin/cq specs new` (step 5) resolves the backend and the workspace on its own.
 **Done when:** the path is chosen.
 
 ### 2. Choose the title
@@ -61,7 +61,7 @@ number when a card is configured, else the branch's counter, assigned when the s
 ### 3. Plan-source path only — read it, and read the bundle
 
 Read the whole plan file, or the complete plan content from the current session, then read
-[specs-create/plan-mapping.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-create/plan-mapping.md)
+[specs-create/plan-mapping.md](.agents/quenching/assets/references/specs-create/plan-mapping.md)
 §The mapping and classify the plan's parts against it. When the plan is inside
 `<proposed_plan>`, use that block as the plan source and ignore the wrapper itself.
 
@@ -71,7 +71,7 @@ Read the whole plan file, or the complete plan content from the current session,
 ### 4. Resolve a subject, a type, tags and `complexity` — decide, never ask
 
 ```bash
-cq specs config --json
+.agents/quenching/bin/cq specs config --json
 ```
 
 Read `subjects`, `workItemTypes` and `tagCatalog`. **All three absent or empty → skip only the
@@ -89,13 +89,13 @@ chosen key to step 5's `--subject`. Keep the one-line reason it was chosen for s
 **A declared `tagCatalog`:** read each tag's description — prompt material — and resolve zero or
 more that fit the input. A tag outside the declared catalog is never chosen. Carry
 whatever was resolved to step 5's `--tags`; the subject's own fixed tags need not be repeated —
-`cq specs new` folds them in on its own.
+`.agents/quenching/bin/cq specs new` folds them in on its own.
 
 **Compute `complexity`** from the classification (step 1), never by interrogating: both the
 **sentence path and the plan-source path yield `medium`**, and `low` only where the input explicitly
 asks for an unattended pass. The level answers how much a human needs to be part of the process,
 never the size or difficulty of the input — the four levels and what each buys are
-[spec-driven.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/spec-driven.md) §The scale, never
+[spec-driven.md](.agents/quenching/assets/references/specs-develop/spec-driven.md) §The scale, never
 transcribed here.
 
 **A capture presumes `medium`**: it puts a human on every question of the definition and then
@@ -123,14 +123,14 @@ record>`. Never fabricate.
 
 Everything step 4 resolved, everything above, and the closing `validate` — **one Bash block**,
 chained with `&&` per
-[align/tool-resolution.md](${CLAUDE_PLUGIN_ROOT}/assets/references/align/tool-resolution.md)
+[align/tool-resolution.md](.agents/quenching/assets/references/align/tool-resolution.md)
 §Resolving the tool:
 
 ```bash
-cq specs new "<title>" \
+.agents/quenching/bin/cq specs new "<title>" \
   [--subject <key>] [--type <key>] [--tags "<subject's fixed tags>,<confirmed catalog tags>"] \
   --complexity <level> <<'EOF' \
-&& cq specs validate --spec <id>
+&& .agents/quenching/bin/cq specs validate --spec <id>
 ## Problem
 
 <two sentences, or what the source supports>
@@ -150,7 +150,7 @@ is wrong — recompute and retry the same call. `sp-stray-heading` (`source: str
 or `sp-write-duplicate-heading` means the stdin stream is malformed — fix the stream and retry the
 same call, never split it into smaller ones. `sp-no-subject`/`sp-subject-unknown`/`sp-type-unknown`
 means step 4's own resolution disagrees with the target's declared config RIGHT NOW (a race, or a
-stale read) — re-run `cq specs config --json` and redo step 4 rather than retrying blind.
+stale read) — re-run `.agents/quenching/bin/cq specs config --json` and redo step 4 rather than retrying blind.
 `sp-az-workitemtype-only-answer` means the target still declares the retired
 `azurePlacement.workItemType` with no `workItemTypes` catalog resolving one — name the finding and
 its remedy verbatim, and stop; migrating the target's config is not this command's call to make.
@@ -159,18 +159,18 @@ Any other backend failure (`sp-backend-unavailable`, `sp-worktree-unusable`,
 invented beside it.
 **A failure after the issue was created** (a refusal carrying `issue`/`url`, or any `new` that
 died past its POST) is never retried blind: search the target by exact title first
-(`cq specs list --json`, matched on the title), and finish or reuse the issue that exists instead
+(`.agents/quenching/bin/cq specs list --json`, matched on the title), and finish or reuse the issue that exists instead
 of running `new` again — a blind retry duplicates it.
 
-The chained `cq specs validate --spec <id>` is the whole check — its own finding, if any, is named
+The chained `.agents/quenching/bin/cq specs validate --spec <id>` is the whole check — its own finding, if any, is named
 verbatim in step 6, never swallowed by the `&&`.
-**Done when:** `cq specs new` exited 0, `validate` ran in the same call, and the locator it
+**Done when:** `.agents/quenching/bin/cq specs new` exited 0, `validate` ran in the same call, and the locator it
 returned is in hand.
 
 ### 6. The one screen — capture, correction and direction
 
 ```bash
-cq components read ${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/report-mold.md \
+.agents/quenching/bin/cq components read .agents/quenching/assets/references/specs-develop/report-mold.md \
   --sections "§The report mold" --rules-only
 ```
 
@@ -182,10 +182,10 @@ presumed and why — the shape differs by path:
 | sentence | the descriptive title and drafted `## Problem` text **in full**, exactly what a human wants to check about the capture. Plus subject, type, tags and `complexity`, each with its one-line reason |
 | plan source | subject, type, tags and `complexity` (each reasoned), and the **list** of sections filled with the task count. **Never the bodies** — the plan is large and the human just wrote it |
 
-Then the next-step block — `/quenching-specs:specs:develop <id>` as the forward candidate — and **one**
-decision sheet ([questions.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/questions.md) §The four shared mechanics §1), immediately after. Two options, labelled in the declared language:
+Then the next-step block — `/quenching-specs-develop <id>` as the forward candidate — and **one**
+decision sheet ([questions.md](.agents/quenching/assets/references/specs-develop/questions.md) §The four shared mechanics §1), immediately after. Two options, labelled in the declared language:
 
-A. **Develop now (recommended)** — narrate, then invoke `quenching-specs:specs:develop <id>` through
+A. **Develop now (recommended)** — narrate, then invoke `quenching-specs-develop <id>` through
    the **Skill** tool, with no sentence declared. Whether that pass asks anything is the
    `complexity` shown on this sheet: `high` and `xhigh` ask, `low` and `medium` answer from
    evidence and park the rest in `## Open Decisions`; correcting it in the reply is how the human
@@ -194,9 +194,9 @@ B. **Stop here** — nothing more is invoked; the report above is the whole of t
 
 **The correction is free text in the reply**, invited explicitly by the sheet ("…or correct any
 presumption in your reply before continuing"). A correction is
-applied with the deterministic verb that owns the field — `cq specs tags <id> "<whole list>"`
-(fixed tags included, or they are lost), `cq specs record <id> priority --set
-complexity=<level> --set date=<today>`, `cq specs section <id> "<Heading>" --write` — **and only
+applied with the deterministic verb that owns the field — `.agents/quenching/bin/cq specs tags <id> "<whole list>"`
+(fixed tags included, or they are lost), `.agents/quenching/bin/cq specs record <id> priority --set
+complexity=<level> --set date=<today>`, `.agents/quenching/bin/cq specs section <id> "<Heading>" --write` — **and only
 then** honour whichever of the two options the same reply also names. A reply that names
 no direction falls to B.
 
@@ -211,12 +211,12 @@ both — has been fully honoured.
 - **Never carry a plan's merge obligations into `## Tasks`.** On the plan-source path a native plan's
   "Etapas" routinely end in a version bump, a changelog entry or *update the docs*; none of them
   converts, because what the release *is* is unknowable until the last task lands.
-  `/quenching-specs:specs:conclude` owns them, along with the `/docs/` the work *reveals* and the cycle's
+  `/quenching-specs-conclude` owns them, along with the `/docs/` the work *reveals* and the cycle's
   own closing actions. A standard the plan declares the spec will write still becomes a checkbox.
 - Never accept a generated title or a `titleize` fallback when the input lacks a descriptive title.
 - **Never ask for a metadata field before the spec exists.** Subject, type, tags and `complexity`
   are resolved and written in step 5; the human is asked only after, on the closing screen.
-- **Never invoke `/quenching-specs:specs:develop` without the human having chosen a direction** on the
+- **Never invoke `/quenching-specs-develop` without the human having chosen a direction** on the
   closing screen — a correction alone, with no direction named, ends the run at option B.
 - **Never print the closing screen without naming what was presumed and why** — every subject,
   type, tag and `complexity` level carries its reason.

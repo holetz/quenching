@@ -1,26 +1,26 @@
 ---
 description: >-
-  Mint ONE editorial genre under /.design/genres/ with fields, register and medium templates. Use for "create a design genre", "define a deck contract". Not for: whole front → /quenching-design:design:align.
+  Mint ONE editorial genre under /.design/genres/ with fields, register and medium templates. Use for "create a design genre", "define a deck contract". Not for: whole front → /quenching-design-align.
 disable-model-invocation: true
 argument-hint: <genre-name-or-description>
 allowed-tools: Bash(cq:*), Bash(cq.cmd:*), Read, Grep, Glob, Bash(python3:*), AskUserQuestion
 ---
 
-# /quenching-design:design:genre:new — one genre, N destinations
+# /quenching-design-genre-new — one genre, N destinations
 
 **Input**: `$ARGUMENTS` (one genre name or a short description of it).
 
 This command mints one stable editorial contract. It does not produce an instance of the document;
-`cq design render` does that after fields have data.
+`.agents/quenching/bin/cq design render` does that after fields have data.
 
 ## Workflow
 
 ### 1. Prove the front exists
 
 Resolve `cq` per
-[tool-resolution.md](${CLAUDE_PLUGIN_ROOT}/assets/references/align/tool-resolution.md)
+[tool-resolution.md](.agents/quenching/assets/references/align/tool-resolution.md)
 §Resolving the tool and run `design status --json`. An absent or invalid front routes to
-`/quenching-design:design:align` and stops. Read existing genres and medium templates for name/path
+`/quenching-design-align` and stops. Read existing genres and medium templates for name/path
 collisions.
 
 **Done when:** the front is healthy and the proposed genre has no collision.
@@ -52,7 +52,7 @@ background run or hook. Wait for one OK.
 Invoke one command, repeating `--media` and `--field`:
 
 ```bash
-cq --root . design genre new <slug> \
+.agents/quenching/bin/cq --root . design genre new <slug> \
   --name "<name>" --register "<register>" \
   --media <medium> --field "<name>:<required|optional>:<description>" --json
 ```

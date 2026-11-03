@@ -1,30 +1,30 @@
 ---
 description: >-
-  Report the open source front: every owner's catalog answers and the baseline level, read-only. Use for "opensource status", "which baseline level do we reach". Not for: writing artifacts → /quenching-opensource:opensource:align.
+  Report the open source front: every owner's catalog answers and the baseline level, read-only. Use for "opensource status", "which baseline level do we reach". Not for: writing artifacts → /quenching-opensource-align.
 disable-model-invocation: true
 argument-hint: [optional-target-root]
 allowed-tools: Bash(cq:*), Bash(cq.cmd:*), Read, Grep, Glob, Bash(python3:*)
 ---
 
-# /quenching-opensource:opensource:status — read the open source front
+# /quenching-opensource-status — read the open source front
 
 **Input**: `$ARGUMENTS` (an optional target repository root; omit to use the current repository).
 
 This command is the read-only view of the open source front. The common front contract is in
-[front-align/mold.md](${CLAUDE_PLUGIN_ROOT}/assets/references/front-align/mold.md), the catalog
+[front-align/mold.md](.agents/quenching/assets/references/front-align/mold.md), the catalog
 contract is in
-[opensource-controls/catalog.md](${CLAUDE_PLUGIN_ROOT}/assets/references/opensource-controls/catalog.md),
+[opensource-controls/catalog.md](.agents/quenching/assets/references/opensource-controls/catalog.md),
 and the finding-to-owner map is in
-[opensource-align/bands.md](${CLAUDE_PLUGIN_ROOT}/assets/references/opensource-align/bands.md).
+[opensource-align/bands.md](.agents/quenching/assets/references/opensource-align/bands.md).
 It aggregates what each owning front already answers; it never probes another owner's control and
 never writes an artifact.
 
 Resolve `cq` per
-[tool-resolution.md](${CLAUDE_PLUGIN_ROOT}/assets/references/align/tool-resolution.md)
+[tool-resolution.md](.agents/quenching/assets/references/align/tool-resolution.md)
 §Resolving the tool. Set `TARGET_ROOT` to the supplied argument, or to `.` when omitted, and run:
 
 ```bash
-cq --root "$TARGET_ROOT" opensource status --json
+.agents/quenching/bin/cq --root "$TARGET_ROOT" opensource status --json
 ```
 
 Branch on the JSON and exit code: `0` is a clean report, `1` carries findings, and `2` is a
@@ -36,7 +36,7 @@ write-capable command.
 
 ### 1. Read the status payload
 
-Re-read the status payload using the `cq opensource status --json` invocation above. Branch on its
+Re-read the status payload using the `.agents/quenching/bin/cq opensource status --json` invocation above. Branch on its
 exit code and preserve its baseline, owner blocks, findings and advisories.
 
 **Done when:** the payload is captured, or the refusal is preserved with its reason.
@@ -65,7 +65,7 @@ disposition, and an unmeasured requirement remains unmeasured.
 ### 3. Hand back control
 
 State that this command wrote nothing. For an `os-*` finding or advisory, name
-`/quenching-opensource:opensource:align` as the closing command. For another owner's residue, name
+`/quenching-opensource-align` as the closing command. For another owner's residue, name
 the `command` its owner block returned; status never runs it.
 
 **Done when:** the report states its read-only boundary and observed exit code.

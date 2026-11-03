@@ -1,28 +1,28 @@
 # Harness routing — from an AGENTS.md unit to its OKF home
 
-How `/quenching-align:components:harness:align` decides, for each unit of a harness file, whether it **stays** (harness-
+How `/quenching-components-harness-align` decides, for each unit of a harness file, whether it **stays** (harness-
 operational) or **moves** into an OKF home (durable knowledge). Once a unit is routed to a home it
-is filed exactly as `/quenching-align:knowledge:add` would — see
-[knowledge-add/homes.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-add/homes.md) for the
+is filed exactly as `/quenching-knowledge-add` would — see
+[knowledge-add/homes.md](.agents/quenching/assets/references/knowledge-add/homes.md) for the
 `type`/mold/path shape and the index/log procedure, and
-[knowledge-align/taxonomy.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-align/taxonomy.md) for the
+[knowledge-align/taxonomy.md](.agents/quenching/assets/references/knowledge-align/taxonomy.md) for the
 home boundaries.
 
 ## Contents
 
-`cq components read <this file>` returns the heading index; `--sections` addresses one.
+`.agents/quenching/bin/cq components read <this file>` returns the heading index; `--sections` addresses one.
 
 ## 1. What a harness file is
 
 <!-- rules -->
 `AGENTS.md` is the navigation pointer every harness auto-loads — the root `AGENTS.md`
-repo-wide, a subfolder `AGENTS.md` only when working under its folder. Claude Code 2.1.277+
-reads `AGENTS.md` directly; `CLAUDE.md` is the legacy fallback of older hosts and is removed by
+repo-wide, a subfolder `AGENTS.md` only when working under its folder. the host 2.1.277+
+reads `AGENTS.md` directly; `AGENTS.md` is the legacy fallback of older hosts and is removed by
 the migration, never created.
-OKF-strict point 7 ([knowledge-align/okf-spec.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-align/okf-spec.md))
-says they are **not** OKF concepts, and the validator (`cq knowledge validate`) **skips them entirely**
+OKF-strict point 7 ([knowledge-align/okf-spec.md](.agents/quenching/assets/references/knowledge-align/okf-spec.md))
+says they are **not** OKF concepts, and the validator (`.agents/quenching/bin/cq knowledge validate`) **skips them entirely**
 — including link checks (`index-broken-link` runs only on `index.md`). The target shape is the
-shipped exemplar [docs/standards/AGENTS.md](${CLAUDE_PLUGIN_ROOT}/assets/knowledge/standards/AGENTS.md)
+shipped exemplar [docs/standards/AGENTS.md](.agents/quenching/assets/knowledge/standards/AGENTS.md)
 ("thin pointer, never a copy").
 
 <!-- rationale -->
@@ -58,7 +58,7 @@ units.
 | architecture description / module map | **MOVE** | `standards/architecture/` (`standard`; unproven ⇒ `authority: background`), or `concepts/<subject>/` (`concept`) if non-binding |
 | coding / naming conventions | **MOVE** | `standards/code/` · `standards/naming/` (`standard`) |
 | "we chose X because Y" — agreed / proven | **MOVE** | `standards/` (`standard`; agreed-but-unproven ⇒ `authority: background`, proven ⇒ `current`) — no separate decision home |
-| roadmap / TODO / next-steps item (raw, unscoped) | **MOVE** | a spec in `specs/plans/` (via `/quenching-specs:specs:create`, outside the OKF bundle — unranked until `/quenching-specs:specs:triage` says otherwise), or `vision/` (`vision`) for settled direction with no deadline |
+| roadmap / TODO / next-steps item (raw, unscoped) | **MOVE** | a spec in `specs/plans/` (via `/quenching-specs-create`, outside the OKF bundle — unranked until `/quenching-specs-triage` says otherwise), or `vision/` (`vision`) for settled direction with no deadline |
 | step-by-step procedure / onboarding | **MOVE** | `how-to/` (`documentation`) |
 | facts about an external tool / lib / service | **MOVE** | `external/{tools,libraries,regulations}/` (`external`) |
 | domain concept / glossary term | **MOVE** | `concepts/<subject>/` (`concept`) |
@@ -73,8 +73,8 @@ line beginning `Ephemeral writes:` and carrying exactly one path plus this citat
 `Ephemeral writes: <path> — the contract is /docs/standards/agents/ephemeral-writes.md`.
 Preserve it verbatim; never classify it MOVE or DEDUPE.
 
-**Tie-breakers** are `/quenching-align:knowledge:add`'s — see
-[knowledge-add/homes.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-add/homes.md).
+**Tie-breakers** are `/quenching-knowledge-add`'s — see
+[knowledge-add/homes.md](.agents/quenching/assets/references/knowledge-add/homes.md).
 
 ## 5. Pointer-honesty checklist (the step-8 verify gate)
 
@@ -93,7 +93,7 @@ The validator won't check harness files, so this skill does:
 ## 6. Nesting rules
 
 - **Root `AGENTS.md`** = repo-wide operations + the `knowledge/` home map, loaded on every turn.
-  There is no root `CLAUDE.md` in a conformant target (§7).
+  There is no root `AGENTS.md` in a conformant target (§7).
 - **Subfolder `AGENTS.md`** = nearest-file navigation (auto-loads only under that folder): the
   folder's local commands/quirks + a pointer to the home that **covers** it. **Never duplicate the
   root.**
@@ -115,21 +115,21 @@ The validator won't check harness files, so this skill does:
   `site-packages`/vendored dependency trees, and anything gitignored as a build artifact (verify
   with `git check-ignore`). A folder that only holds data or
   output earns no harness.
-- `/quenching-align:knowledge:align`'s skeleton already owns `docs/standards/AGENTS.md`.
+- `/quenching-knowledge-align`'s skeleton already owns `docs/standards/AGENTS.md`.
 
-## 7. AGENTS.md is the root source; CLAUDE.md is legacy
+## 7. AGENTS.md is the root source; AGENTS.md is legacy
 
 <!-- rules -->
 The root `AGENTS.md` carries the repo-wide KEEP residue and pointers, and every harness reads it.
-A root `CLAUDE.md` that carries its own instructions is consolidated into `AGENTS.md` — moved with
+A root `AGENTS.md` that carries its own instructions is consolidated into `AGENTS.md` — moved with
 `git mv` when `AGENTS.md` is absent, unit by unit when both exist, with a fact present in both a
 **FLAG** — and the pointer-only residue (`@AGENTS.md`) is **removed**, never recreated.
 
-**Fact, and the version it was verified on.** Claude Code 2.1.312 (2026-10-28) reads `AGENTS.md`
-directly when there is no `CLAUDE.md`/`CLAUDE.local.md` in the working directory or above it
+**Fact, and the version it was verified on.** the host 2.1.312 (2026-10-28) reads `AGENTS.md`
+directly when there is no `AGENTS.md`/`CLAUDE.local.md` in the working directory or above it
 (default `claude-md-or-agents-md`, added in 2.1.277). With both files side by side, only
-`CLAUDE.md` loads unless the setting is `claude-md-and-agents-md`. OpenCode 1.18.35 and Codex read
-`AGENTS.md`. A host before 2.1.277 still needs the one-line `CLAUDE.md` import; that is a legacy
+`AGENTS.md` loads unless the setting is `claude-md-and-agents-md`. OpenCode 1.18.35 and Codex read
+`AGENTS.md`. A host before 2.1.277 still needs the one-line `AGENTS.md` import; that is a legacy
 fallback, not the conformant layout.
 
 <!-- rationale -->

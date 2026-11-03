@@ -1,27 +1,27 @@
 ---
 description: >-
-  Report the /.design/ front: source validity, generated identity, genres and drift, read-only. Use for "design status", "is DESIGN.md current". Not for: fixes → /quenching-design:design:align.
+  Report the /.design/ front: source validity, generated identity, genres and drift, read-only. Use for "design status", "is DESIGN.md current". Not for: fixes → /quenching-design-align.
 disable-model-invocation: true
 allowed-tools: Bash(cq:*), Bash(cq.cmd:*), Read, Grep, Glob, Bash(python3:*)
 ---
 
-# /quenching-design:design:status — read the whole design front
+# /quenching-design-status — read the whole design front
 
 **Input**: `$ARGUMENTS` (optional focus; omission reads the whole front).
 
 The common front contract is in
-[front-align/mold.md](${CLAUDE_PLUGIN_ROOT}/assets/references/front-align/mold.md), and the
+[front-align/mold.md](.agents/quenching/assets/references/front-align/mold.md), and the
 design-specific disposition map is in
-[design-align/bands.md](${CLAUDE_PLUGIN_ROOT}/assets/references/design-align/bands.md). This
+[design-align/bands.md](.agents/quenching/assets/references/design-align/bands.md). This
 read-only view preserves design's source arbitration, projection and optional-detector deltas.
 
 Resolve `cq` per
-[tool-resolution.md](${CLAUDE_PLUGIN_ROOT}/assets/references/align/tool-resolution.md)
+[tool-resolution.md](.agents/quenching/assets/references/align/tool-resolution.md)
 §Resolving the tool, then run:
 
 ```bash
-cq --root . design status --json
-cq --root . design build --check --json
+.agents/quenching/bin/cq --root . design status --json
+.agents/quenching/bin/cq --root . design build --check --json
 ```
 
 Read the source and named findings only as needed to explain them. Do not write, import, build,

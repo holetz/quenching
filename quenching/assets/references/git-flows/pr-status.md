@@ -1,10 +1,10 @@
-# /quenching-specs:git:pr:status — read one pull request snapshot
+# /quenching-git-pr-status — read one pull request snapshot
 
 **Input**: `$ARGUMENTS` — `spec:<id>`, a provider PR number or URL, or omitted for the current
 branch's PR.
 
 Read the provider and field contract in
-`${CLAUDE_PLUGIN_ROOT}/assets/references/git/pr.md`; it owns the query shapes, unknown-state
+`.agents/quenching/assets/references/git/pr.md`; it owns the query shapes, unknown-state
 rules and recommendation vocabulary used below.
 
 ## Workflow
@@ -20,12 +20,12 @@ missing, ambiguous, mismatched or unauthenticated route.
 For the initial facts, use the bundled `cq` route and the local git identity:
 
 ```bash
-cq specs config --json
+.agents/quenching/bin/cq specs config --json
 git remote get-url origin
 git branch --show-current
 ```
 
-For `spec:<id>`, also read `cq specs status --spec <id> --json` and use only its recorded PR
+For `spec:<id>`, also read `.agents/quenching/bin/cq specs status --spec <id> --json` and use only its recorded PR
 number or URL. Do not substitute an issue number for a PR number. **Done when:** the provider
 route and one selector are known, or a refusal names the missing, ambiguous, mismatched or
 unauthenticated route.
@@ -53,7 +53,7 @@ as Link para revisão; if no safe browser link can be derived, report it as `unk
 ### 4. Choose the textual next step
 
 Apply the reference's recommendation rules to the normalized facts. Point to
-`/quenching-specs:git:pr:review`, `/quenching-specs:git:sync`, `/quenching-specs:git:merge` or no action as the facts
+`/quenching-git-pr-review`, `/quenching-git-sync`, `/quenching-git-merge` or no action as the facts
 warrant; recommendations are prose only. **Done when:** one next step is stated with the fact that
 caused it, or the refusal is the next step.
 
@@ -66,7 +66,7 @@ read-only snapshot is returned and its evidence boundaries are explicit.
 
 ## Invariants
 
-- Use only the provider selected by `cq specs config --json` and the matching `origin` host.
+- Use only the provider selected by `.agents/quenching/bin/cq specs config --json` and the matching `origin` host.
 - Keep the normalized **Link para revisão** and **API URL** labels distinct; never expose an
   Azure `/_apis/` endpoint as the human review link.
 - Preserve not-found, authentication, permission and unknown states; none is a green result.

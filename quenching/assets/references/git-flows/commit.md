@@ -1,7 +1,7 @@
-# /quenching-specs:git:commit — commit what is staged, under the target's own convention
+# /quenching-git-commit — commit what is staged, under the target's own convention
 
-This command is the single commit boundary for standalone commits. `/quenching-specs:specs:execute` does
-not delegate here per task: it commits each task through `cq git commit --subject`. This command
+This command is the single commit boundary for standalone commits. `/quenching-specs-execute` does
+not delegate here per task: it commits each task through `.agents/quenching/bin/cq git commit --subject`. This command
 resolves the subject, commits the existing index and reports the subject actually written. It never receives a request to stage an unrelated path.
 
 **Input**: `$ARGUMENTS` — an optional explicit commit subject. When omitted, resolve one from the
@@ -14,12 +14,12 @@ never a guess at which files belong together.
 
 ### 1. Read-if-present, and the staged diff
 ```bash
-cq components read ${CLAUDE_PLUGIN_ROOT}/assets/references/git/conventions.md \
+.agents/quenching/bin/cq components read .agents/quenching/assets/references/git/conventions.md \
   --sections "§The declared-directive layer" --sections "§The read-if-present rule"
-cq git conventions --json
-cq git state --json   # `staged` is the index, `branch` the current branch
+.agents/quenching/bin/cq git conventions --json
+.agents/quenching/bin/cq git state --json   # `staged` is the index, `branch` the current branch
 ```
-One `cq git conventions` call answers both declared layers: `config.commitSubject` is the target's
+One `.agents/quenching/bin/cq git conventions` call answers both declared layers: `config.commitSubject` is the target's
 directive for this artifact, `governs`/`declared` the docs layer. Nothing staged → refuse: name that
 the index is empty and say what to stage. **Done when:** which layer governs the subject
 (`gitConventions.commitSubject`, the target's docs, or the plugin default below) and the staged file
@@ -30,14 +30,14 @@ list are both known.
 step 1 wins where it is declared; else a target doc naming a subject format wins outright, and a doc
 covering only part of it governs that part. With neither declared:
 ```bash
-cq components read ${CLAUDE_PLUGIN_ROOT}/assets/references/git/commit.md --sections "§Commit messages"
+.agents/quenching/bin/cq components read .agents/quenching/assets/references/git/commit.md --sections "§Commit messages"
 ```
 `$ARGUMENTS` given → use it verbatim, wrapped rather than truncated past 72 characters where the
 title allows; an explicit subject always wins. When it is omitted, resolve the current branch and
 its `quenching-specs:` mark:
 ```bash
-cq git specs <current-branch> --json   # <current-branch>: `branch` from step 1's `cq git state`
-cq specs next --spec <spec-id> --json
+.agents/quenching/bin/cq git specs <current-branch> --json   # <current-branch>: `branch` from step 1's `.agents/quenching/bin/cq git state`
+.agents/quenching/bin/cq specs next --spec <spec-id> --json
 ```
 If that produces exactly one spec and one actionable task, derive the subject with the governing
 convention from the spec id, task id and task title. If the execution caller already supplies a
@@ -49,7 +49,7 @@ the refusal is reported.
 
 ### 3. Commit
 ```bash
-cq git commit --subject "<subject>" --json
+.agents/quenching/bin/cq git commit --subject "<subject>" --json
 ```
 The verb reports the `sha`, the `subject` git recorded and `subjectMatches`; exit 1 is git refusing
 the commit (a hook, an identity) with HEAD unchanged, exit 2 a blank subject or an empty index.

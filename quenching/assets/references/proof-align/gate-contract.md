@@ -7,7 +7,7 @@ failure collection, order evidence, CI parity and conditional operations-entry-p
 
 ## Contents
 
-`cq components read <this file>` returns the heading index; `--sections` addresses one.
+`.agents/quenching/bin/cq components read <this file>` returns the heading index; `--sections` addresses one.
 
 ## The five gate rules
 
@@ -74,7 +74,7 @@ The gate contract owns these codes and no other reference defines them:
 | `pf-order-unproven` | Test order independence has not been exercised with observable evidence. | `error` | structural* |
 | `pf-no-ci` | CI does not invoke the same proof contract. | `error` | judgement |
 | `pf-untested-entrypoint` | An active operations entry point lacks test or not-applicable evidence. | `error` | judgement |
-| `pf-coverage-missing` | `cq proof ratchet` found no coverage artifact; the target's gate has not produced one. | refusal (exit 2) | refusal |
+| `pf-coverage-missing` | `.agents/quenching/bin/cq proof ratchet` found no coverage artifact; the target's gate has not produced one. | refusal (exit 2) | refusal |
 | `pf-coverage-invalid` | The coverage artifact exists but cannot be read. | refusal (exit 2) | refusal |
 | `pf-coverage-no-measured-root` | The coverage artifact measures none of the declared measured roots. | refusal (exit 2) | refusal |
 | `pf-floor-invalid` | The floor file exists but is malformed. | refusal (exit 2) | refusal |

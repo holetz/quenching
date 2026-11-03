@@ -1,21 +1,21 @@
-# /quenching-align:components:command:new — mint ONE conformant command, registry included
+# /quenching-components-command-new — mint ONE conformant command, registry included
 
 **Input**: `$ARGUMENTS` (the command to create or edit — a name or a description of what it should do).
 
 Creates or edits **ONE FILE** in the **target repo's own** automation surface — a
 `.agents/skills/<name>/SKILL.md` carrying both the description that routes to it and the body that
-runs, invocable as `/<name>`. `.agents/` is the only editable source: Claude Code does not read
-`.agents/skills/`, so `cq components bridge` generates its `.claude/skills/<name>/` copy, never
-edited by hand. `<name>` is **one segment** — Claude Code does not discover a nested
+runs, invocable as `/<name>`. `.agents/` is the only editable source: the host does not read
+`.agents/skills/`, so `.agents/quenching/bin/cq components bridge` generates its `.claude/skills/<name>/` copy, never
+edited by hand. `<name>` is **one segment** — the host does not discover a nested
 `.claude/skills/<a>/<b>/SKILL.md` — and it IS the skill's identity. The axis, naming, and
 registry format live in
-[components-command-new/taxonomy.md](${CLAUDE_PLUGIN_ROOT}/assets/references/components-command-new/taxonomy.md); how the
-body itself is written lives in [components-command-new/doctrine.md](${CLAUDE_PLUGIN_ROOT}/assets/references/components-command-new/doctrine.md);
+[components-command-new/taxonomy.md](.agents/quenching/assets/references/components-command-new/taxonomy.md); how the
+body itself is written lives in [components-command-new/doctrine.md](.agents/quenching/assets/references/components-command-new/doctrine.md);
 what a command may strategically use — fork, pins, hooks, the invocation controls — and what
 each lever costs lives in
-[components-command-new/capabilities.md](${CLAUDE_PLUGIN_ROOT}/assets/references/components-command-new/capabilities.md).
+[components-command-new/capabilities.md](.agents/quenching/assets/references/components-command-new/capabilities.md).
 Molds live at
-`${CLAUDE_PLUGIN_ROOT}/assets/templates/automation/`.
+`.agents/quenching/assets/templates/automation/`.
 
 ## Doctrine
 
@@ -26,19 +26,19 @@ Molds live at
   never created without the OK.
 - **No bundle, no tail — but the mint proceeds.** `/docs/index.md` without `okf_version`
   (or absent) means: write the command file only, skip registry/glossary, report that the bundle
-  tail did not apply, and suggest `/quenching-align:knowledge:align` **once**.
+  tail did not apply, and suggest `/quenching-knowledge-align` **once**.
 - **One plan, one OK, nothing before.** Classification, names, every file to be written,
   and the OKF tail appear in ONE plan; no file is created or modified before the single
   confirmation. A declined plan writes nothing.
 - **MERGE, never clobber.** An edit preserves the skill's body and any hand-written
   content; only the gap being fixed changes. This skill never deletes a skill.
-- **The registry zone is regenerated, never composed.** `cq components registry reindex` owns the
+- **The registry zone is regenerated, never composed.** `.agents/quenching/bin/cq components registry reindex` owns the
   zone's format; the zone is never written between the markers by hand.
 
 ## Resolving the tool
 
-Resolve `cq components` per
-[align/tool-resolution.md](${CLAUDE_PLUGIN_ROOT}/assets/references/align/tool-resolution.md)
+Resolve `.agents/quenching/bin/cq components` per
+[align/tool-resolution.md](.agents/quenching/assets/references/align/tool-resolution.md)
 §Resolving the tool §Write the resolved path literally on every invocation; branch on the
 **exit code** (0 ok · 1 findings · 2 refusal) and the `--json`, never on prose. Findings carry
 `sk-*` codes: an `error` is fixed, a `warn` is reported with its code.
@@ -49,11 +49,11 @@ Resolve `cq components` per
 Read `/docs/standards/automation/skills.md` and confirm the bundle
 (`/docs/index.md` carries `okf_version`). Rule present → it governs. Rule absent, bundle
 present → add "create the rule from `automation/skills-standard.md`" to the plan. No
-bundle → note the tail as skipped and plan the `/quenching-align:knowledge:align` suggestion.
+bundle → note the tail as skipped and plan the `/quenching-knowledge-align` suggestion.
 **Done when:** the governing rule (or its planned creation, or the no-bundle note) is fixed.
 
 ### 2. Classify — category first, then the axis
-Apply the classification test ([components-command-new/taxonomy.md](${CLAUDE_PLUGIN_ROOT}/assets/references/components-command-new/taxonomy.md) §The single axis) in order:
+Apply the classification test ([components-command-new/taxonomy.md](.agents/quenching/assets/references/components-command-new/taxonomy.md) §The single axis) in order:
 
 - **Category/subject.** `Glob` `.agents/skills/*/` for the `<categoria>-` prefixes already in use
   in this repo target, and ask which one this command belongs to (`git`, `deploy`, `tests`, ...) —
@@ -83,8 +83,8 @@ convention reads **nest** → `<categoria>-<subfolder>-<verb>`. The file is
 `.agents/skills/<name>/SKILL.md`, its frontmatter `name:` equals `<name>` (OpenCode requires the
 match), and the invocation is `/<name>`. There is no second name to derive. `Glob`
 `.agents/skills/*/SKILL.md` for collisions — an existing path is a MERGE target (edit), never
-silently overwritten. A target still on the legacy `.claude/commands/` layout is
-`/quenching-align:components:align`'s to migrate first; never mint into it. Shared procedure lives in
+silently overwritten. A target still on the legacy `.agents/skills/` layout is
+`/quenching-components-align`'s to migrate first; never mint into it. Shared procedure lives in
 `.agents/references/<name>/` or beside `SKILL.md` in the skill's folder, cited by path.
 
 **Rename sweep (an edit whose derived path differs from the old path).** The path is the name:
@@ -96,7 +96,7 @@ folder is reported as residue, never deleted, and the bridge reports its copy as
 hit with a disposition (or states the sweep found none).
 
 ### 4. Choose the execution profile
-Walk [components-command-new/capabilities.md](${CLAUDE_PLUGIN_ROOT}/assets/references/components-command-new/capabilities.md):
+Walk [components-command-new/capabilities.md](.agents/quenching/assets/references/components-command-new/capabilities.md):
 the default profile is **all levers off**, and each departure needs a stated buy — `context:
 fork` only for a self-contained, noisy, summary-out run with **no mid-flow gate**; an
 `effort`/`model` pin only for genuinely mechanical work; `paths` to bind a domain-bound command to
@@ -107,14 +107,14 @@ with its one-line reason — or the profile is stated as default.
 
 ### 5. Draft under the doctrine
 Fill `automation/command.md` per
-[components-command-new/doctrine.md](${CLAUDE_PLUGIN_ROOT}/assets/references/components-command-new/doctrine.md): description front-loads the leading
+[components-command-new/doctrine.md](.agents/quenching/assets/references/components-command-new/doctrine.md): description front-loads the leading
 concept, one verbatim trigger per branch in the second sentence, `Not for:` boundary;
 steps end in checkable **Done when** criteria; every line passes the no-op test;
 prescriptions positive; body well under 500 lines; the description within the 1,536-char cap.
 The description is the **only** always-on text there is — its triggers and its boundary are what
 route a spoken request here. For an edit, apply the doctrine to the diff — cure the named failure mode
 (sediment, sprawl, negation, …), keep the rest. List the old description's quoted triggers first;
-each survives the draft, or is reported with the `/quenching-align:components:command:eval <command>`
+each survives the draft, or is reported with the `/quenching-components-command-eval <command>`
 that decides its retirement — a quoted trigger is never cut for length.
 **Done when:** the draft passes the doctrine's failure-mode table read top to bottom, and every
 quoted trigger is present or reported.
@@ -124,7 +124,7 @@ Show: axis value + bound folder, the command path, **the execution profile** (ea
 non-default lever with its reason, or "default"), every file (the skill, its generated
 `.claude/skills/<name>/` bridge copy, rule if planned, registry create-or-regenerate), and the
 tail steps. For an edit, also: the rename hits and, when `evals.json` exists
-in the mirrored tree (`.agents/evals/<name>/`; `${CLAUDE_PLUGIN_ROOT}/assets/evals/<path>/` here),
+in the mirrored tree (`.agents/evals/<name>/`; `.agents/quenching/assets/evals/<path>/` here),
 its case count and that the rerun is yours to run, not this command's. Wait for the single confirmation.
 **Done when:** the user has answered; declined → report "nothing written" and stop.
 
@@ -132,7 +132,7 @@ its case count and that the rerun is yours to run, not this command's. Wait for 
 Write `.agents/skills/<name>/SKILL.md` from `automation/command.md` — frontmatter and body in the
 one file; write the rule if planned. Then generate the Claude copy from the source:
 ```bash
-cq components bridge --target . --write --json
+.agents/quenching/bin/cq components bridge --target . --write --json
 ```
 Exit 2 `ct-bridge-unowned` names a `.claude/skills/<name>/` the bridge did not generate: report it
 and stop the bridge there, never overwrite it. **Done when:** every planned file exists with its
@@ -142,32 +142,32 @@ planned content and `bridge --write` exited 0.
 Create `/docs/project/automation.md` from `automation/registry.md` first if it is
 absent (it was in the plan). Then regenerate the zone:
 ```bash
-cq components registry reindex --json
+.agents/quenching/bin/cq components registry reindex --json
 ```
 Update `project/`'s `index.md` per the procedure in
-[knowledge-add/homes.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-add/homes.md). If the
+[knowledge-add/homes.md](.agents/quenching/assets/references/knowledge-add/homes.md). If the
 command coined a new repo-specific term, **offer** ONE `glossary.md` entry — the user
 decides. **Done when:** `registry reindex` exits 0 and the index is honest.
 
 ### 9. Self-check
 Ask the tool, do not read for it:
 ```bash
-cq components lint <skill-file> --json     # this skill's conformance
-cq components doctor --json                # the surface invariant it just changed
-cq components bridge --target . --check --json  # exit 0 — the Claude copy matches the source
-cq components registry reindex --json      # `changed: false` — nothing wrote inside the markers after the description pass
+.agents/quenching/bin/cq components lint <skill-file> --json     # this skill's conformance
+.agents/quenching/bin/cq components doctor --json                # the surface invariant it just changed
+.agents/quenching/bin/cq components bridge --target . --check --json  # exit 0 — the Claude copy matches the source
+.agents/quenching/bin/cq components registry reindex --json      # `changed: false` — nothing wrote inside the markers after the description pass
 ```
 Fix every `error`; report every `warn` with its `sk-*` code. What no parser can decide — the no-op
 test, sediment, sprawl, positive prescription — is read by eye against
-[components-command-new/doctrine.md](${CLAUDE_PLUGIN_ROOT}/assets/references/components-command-new/doctrine.md). Any OKF doc touched passes
-[knowledge-align/conformance.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-align/conformance.md).
+[components-command-new/doctrine.md](.agents/quenching/assets/references/components-command-new/doctrine.md). Any OKF doc touched passes
+[knowledge-align/conformance.md](.agents/quenching/assets/references/knowledge-align/conformance.md).
 An edit's `evals.json` (step 6's path), when present, is reported "present, not rerun", with the next
-human action `/quenching-align:components:command:eval <path>` — this command holds no `Task` and cannot rerun it.
+human action `/quenching-components-command-eval <path>` — this command holds no `Task` and cannot rerun it.
 Assertions on changed branches are reported stale, never rewritten.
 So this step, not a later one, owns the functional proof: **where the repo ships a harness that
 spawns a fresh session and asserts on captured tool calls, run it now** — scoped to what this mint
 changed. In this plugin that is
-`assets/checks/functional-checks.sh` (default subset for a body; `/quenching-align:components:command:eval` for a description).
+`assets/checks/functional-checks.sh` (default subset for a body; `/quenching-components-command-eval` for a description).
 **Where the repo ships none, say plainly that the command is written but unproven until a fresh
 session** — never report a linter's exit 0 as evidence that the surface loaded.
 

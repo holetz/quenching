@@ -1,28 +1,28 @@
 ---
 description: >-
-  Report the toolchain front: manifests, locks, language pins, tool config and findings, read-only. Use for "toolchain status", "check the toolchain surface". Not for: converging → /quenching-toolchain:toolchain:align.
+  Report the toolchain front: manifests, locks, language pins, tool config and findings, read-only. Use for "toolchain status", "check the toolchain surface". Not for: converging → /quenching-toolchain-align.
 disable-model-invocation: true
 argument-hint: [optional-target-root]
 allowed-tools: Bash(cq:*), Bash(cq.cmd:*), Read, Grep, Glob, Bash(python3:*)
 ---
 
-# /quenching-toolchain:toolchain:status — read the toolchain front
+# /quenching-toolchain-status — read the toolchain front
 
 **Input**: `$ARGUMENTS` (an optional target repository root; omit to use the current repository).
 
 This command is the read-only view of the toolchain front. The common front contract is in
-[front-align/mold.md](${CLAUDE_PLUGIN_ROOT}/assets/references/front-align/mold.md), and the
+[front-align/mold.md](.agents/quenching/assets/references/front-align/mold.md), and the
 finding-to-owner map is in
-[toolchain-align/bands.md](${CLAUDE_PLUGIN_ROOT}/assets/references/toolchain-align/bands.md).
+[toolchain-align/bands.md](.agents/quenching/assets/references/toolchain-align/bands.md).
 It reports capability and evidence without repairing a manifest, lock, pin, tool configuration or
 target policy.
 
 Resolve `cq` per
-[tool-resolution.md](${CLAUDE_PLUGIN_ROOT}/assets/references/align/tool-resolution.md)
+[tool-resolution.md](.agents/quenching/assets/references/align/tool-resolution.md)
 §Resolving the tool. Set `TARGET_ROOT` to the supplied argument, or to `.` when omitted, and run:
 
 ```bash
-cq --root "$TARGET_ROOT" toolchain status --json
+.agents/quenching/bin/cq --root "$TARGET_ROOT" toolchain status --json
 ```
 
 Branch on the JSON and exit code: `0` is a clean report, `1` carries findings, and `2` is a
@@ -34,7 +34,7 @@ returned payload as the complete read model and do not invoke a write-capable co
 
 ### 1. Read the status payload
 
-Re-read the status payload using the `cq toolchain status --json` invocation above. Branch on its
+Re-read the status payload using the `.agents/quenching/bin/cq toolchain status --json` invocation above. Branch on its
 exit code and preserve its applicability, refusal or findings.
 
 **Done when:** the payload is captured, or the refusal is preserved with its reason.
@@ -66,7 +66,7 @@ disposition, and absent policy remains unmeasured.
 ### 3. Hand back control
 
 State that this command wrote nothing. For mechanical or bounded structural residue, name
-`/quenching-toolchain:toolchain:align` as the closing command. For a target-owned build decision, retain the
+`/quenching-toolchain-align` as the closing command. For a target-owned build decision, retain the
 evidence and name the owner action from `toolchain-align/bands.md`; status never runs it.
 
 **Done when:** the report states its read-only boundary and observed exit code.

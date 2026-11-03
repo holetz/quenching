@@ -1,8 +1,8 @@
-# /quenching-specs:specs:orchestrate — conduct an epic or a queue
+# /quenching-specs-orchestrate — conduct an epic or a queue
 
 **Input**: `$ARGUMENTS` — a composite id (any spec whose `## Tasks` names members) or a list of spec
 ids, and optionally `--autonomous`. Empty or ambiguous → run
-`cq specs list --json` and ask which on a decision sheet ([questions.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/questions.md) §The four shared mechanics §1).
+`.agents/quenching/bin/cq specs list --json` and ask which on a decision sheet ([questions.md](.agents/quenching/assets/references/specs-develop/questions.md) §The four shared mechanics §1).
 
 This command is a launcher. The protocol (waves, routing, budgets, acceptance, audit) lives in the
 `spec-orchestrator` agent definition, `plugins/quenching/agents/spec-orchestrator.md`; do not restate it.
@@ -10,25 +10,25 @@ This command is a launcher. The protocol (waves, routing, budgets, acceptance, a
 ## Workflow
 
 ### 1. Resolve the set
-Resolve `cq` per [align/tool-resolution.md](${CLAUDE_PLUGIN_ROOT}/assets/references/align/tool-resolution.md)
-§Resolving the tool; branch on the exit code. Confirm each id exists with `cq specs show --spec <id> --json`.
+Resolve `cq` per [align/tool-resolution.md](.agents/quenching/assets/references/align/tool-resolution.md)
+§Resolving the tool; branch on the exit code. Confirm each id exists with `.agents/quenching/bin/cq specs show --spec <id> --json`.
 **Done when:** the composite id or the list of spec ids is verified to exist.
 
 ### 2. Check who can run alone
-Read `cq config show --effective --json` once and take the `shared.autonomy.runAloneUpTo`,
+Read `.agents/quenching/bin/cq config show --effective --json` once and take the `shared.autonomy.runAloneUpTo`,
 `shared.autonomy.merge` and `shared.autonomy.maxWorkers` lines; exit 0 without a line means the
-default (`low`, `policy`, `3`). Read each spec's metadata with `cq specs status --spec <id> --json`: `complexity` comes from
+default (`low`, `policy`, `3`). Read each spec's metadata with `.agents/quenching/bin/cq specs status --spec <id> --json`: `complexity` comes from
 `records.priority.complexity` and `approved` from `records.approved`. Split the set from these
 `status` payloads: **runs alone** is a spec with `approved` recorded or
 a `complexity` at or below `runAloneUpTo` (`none` leaves only the approved ones); **needs a human**
 is any other spec with no `approved`. Nothing needs a
 human → go to step 3. Otherwise ask once on a decision sheet, naming the specs on each side:
 
-- **Develop now** — run `/quenching-specs:specs:develop <id>` in this session, one spec after another,
+- **Develop now** — run `/quenching-specs-develop <id>` in this session, one spec after another,
   for the specs that need a human, then launch everything. A develop of a `medium` spec costs about
   40k tokens of this session (its body and references alone are about 17k), so this is offered
   only for **two specs or fewer**; for more, end the run by listing one
-  `/quenching-specs:specs:develop <id>` line per spec and `/quenching-specs:specs:orchestrate` again after.
+  `/quenching-specs-develop <id>` line per spec and `/quenching-specs-orchestrate` again after.
 - **Launch the independent subset** — only the specs that run alone and depend on none of the
   ones that need a human.
 - **Force it** — `--autonomous`: every spec runs, and the approval is stamped
@@ -37,7 +37,7 @@ human → go to step 3. Otherwise ask once on a decision sheet, naming the specs
 `--autonomous` already given → skip the question. **Done when:** the set to launch is fixed.
 
 ### 3. Launch the orchestrator
-Start the `quenching-specs:spec-orchestrator` agent with a prompt of at most 1,500 characters: the epic id or
+Start the `quenching-spec-orchestrator` agent with a prompt of at most 1,500 characters: the epic id or
 the spec ids, the base branch, the word `autonomous` when it was forced, and the three values as
 `runAloneUpTo=<v> merge=<v> maxWorkers=<v>`. Pass nothing else; it
 carries its own protocol, and without `autonomous` it blocks a spec that still needs approval.

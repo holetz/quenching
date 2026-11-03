@@ -11,7 +11,7 @@ allowed-tools: Bash(cq specs artifact:*), Bash(cq specs find:*), Bash(cq specs p
 
 The handoff is a file the next session READS BEFORE IT ACTS, and it belongs to a spec whenever one
 exists: it is stored on the `quenching` branch under `specs/artifacts/<id>/`, travels with
-`cq specs push`, and is readable from any clone — not left in a temp directory that the next
+`.agents/quenching/bin/cq specs push`, and is readable from any clone — not left in a temp directory that the next
 machine cannot see.
 
 ## Workflow
@@ -27,7 +27,7 @@ An id already stated in the conversation or in `$ARGUMENTS` wins. Otherwise reso
 branch:
 
 ```bash
-cq specs find --branch "$(git branch --show-current)" --json
+.agents/quenching/bin/cq specs find --branch "$(git branch --show-current)" --json
 ```
 
 One match → that id. No match, no store, or any failure → **no spec**, and the report says so
@@ -49,8 +49,8 @@ context to resume the work and points to existing artifacts rather than copying 
 ### 4. Store it through the door, then read it back
 
 ```bash
-cq specs artifact write --spec <id> --name <name> --from .quenching/handoff/<name>
-cq specs push
+.agents/quenching/bin/cq specs artifact write --spec <id> --name <name> --from .quenching/handoff/<name>
+.agents/quenching/bin/cq specs push
 ```
 
 Omit `--spec` when step 2 found none: the artifact then lives under `specs/artifacts/_handoffs/`.
@@ -58,15 +58,15 @@ The write leaves the handoff in the clone's pending ref; the push sends it. Then
 through the same door:
 
 ```bash
-cq specs artifact read --spec <id> --name <name>
+.agents/quenching/bin/cq specs artifact read --spec <id> --name <name>
 ```
 
 Branch on the exit code, never on prose. The write refusing with `sp-artifact-unsupported`,
 `sp-artifact-no-store` or a backend refusal means this repository has no store to hold it: the
 `.quenching/handoff/` draft IS the handoff, and the report says it stayed local. Any OTHER refusal
 is reported as the failure it is — it never silently becomes the fallback. A failed
-`cq specs push` (offline, lease taken) leaves the artifact pending and the report says
-`not sent — cq specs push`. **Done when:** the artifact was read back and matches the draft, or the
+`.agents/quenching/bin/cq specs push` (offline, lease taken) leaves the artifact pending and the report says
+`not sent — .agents/quenching/bin/cq specs push`. **Done when:** the artifact was read back and matches the draft, or the
 fallback is stated with the reason it was taken.
 
 ### 5. Close with the direction block
@@ -85,15 +85,15 @@ Cole numa sessão nova:
 
     Leia o handoff em
     quenching:specs/artifacts/2138/handoff-2026-11-01-destination.md antes de agir:
-    `cq specs artifact read --spec 2138 --name handoff-2026-11-01-destination.md`.
-    Ele pertence à spec 2138; siga com `/quenching-specs:specs:execute 2138`.
+    `.agents/quenching/bin/cq specs artifact read --spec 2138 --name handoff-2026-11-01-destination.md`.
+    Ele pertence à spec 2138; siga com `/quenching-specs-execute 2138`.
 ```
 
 Three substitutions, and nothing else changes:
 
 - **No spec** → the last sentence becomes `nenhuma spec está atrelada; pergunte o que fazer`, and
   the read command loses `--spec`.
-- **Not sent** → one line under the block says `não enviado — cq specs push`.
+- **Not sent** → one line under the block says `não enviado — .agents/quenching/bin/cq specs push`.
 - **Fallback** → the locator becomes `.quenching/handoff/<name>`, the read command becomes a plain
   file read, and one line says `só local — este repositório não tem store git de specs`.
 

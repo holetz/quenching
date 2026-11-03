@@ -1,41 +1,41 @@
-# /quenching-align:components:align — force the automation surface onto the taxonomy
+# /quenching-components-align — force the automation surface onto the taxonomy
 
 **Input**: `$ARGUMENTS` (an optional scope; omit to sweep the whole automation surface).
 
-The sweep counterpart of `/quenching-align:components:command:new`: where the mint keeps each **new** command
+The sweep counterpart of `/quenching-components-command-new`: where the mint keeps each **new** command
 conformant, this one converges everything that **already exists** — including a surface still
 built as `skills/<name>/SKILL.md` + a mirrored wrapper, which it **collapses to one file per
 entry point** (§6 below) — then **reads every surviving body against the writing doctrine** (§7)
 and **reviews every description against it in one surface-wide pass** (§8).
 
 The axis, naming, placement, and registry format live in
-[components-command-new/taxonomy.md](${CLAUDE_PLUGIN_ROOT}/assets/references/components-command-new/taxonomy.md);
+[components-command-new/taxonomy.md](.agents/quenching/assets/references/components-command-new/taxonomy.md);
 the writing doctrine judged against is
-[components-command-new/doctrine.md](${CLAUDE_PLUGIN_ROOT}/assets/references/components-command-new/doctrine.md);
+[components-command-new/doctrine.md](.agents/quenching/assets/references/components-command-new/doctrine.md);
 the capability levers the wider inventory reads against are
-[components-command-new/capabilities.md](${CLAUDE_PLUGIN_ROOT}/assets/references/components-command-new/capabilities.md).
+[components-command-new/capabilities.md](.agents/quenching/assets/references/components-command-new/capabilities.md).
 Molds live at
-`${CLAUDE_PLUGIN_ROOT}/assets/templates/automation/`.
+`.agents/quenching/assets/templates/automation/`.
 
 ## Doctrine
 
-Read [align/sweep-doctrine.md](${CLAUDE_PLUGIN_ROOT}/assets/references/align/sweep-doctrine.md) as
+Read [align/sweep-doctrine.md](.agents/quenching/assets/references/align/sweep-doctrine.md) as
 this skill's doctrine. What follows is specific to the automation surface:
 
 - **The legacy `openspec-*` surface is not this sweep's.** `.claude/skills/openspec-*/` and
-  `.claude/commands/opsx/` are left by a prior `openspec init`; clearing them is a human's call
-  ([specs-align/conformance.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-align/conformance.md)
+  `.agents/skills/opsx/` are left by a prior `openspec init`; clearing them is a human's call
+  ([specs-align/conformance.md](.agents/quenching/assets/references/specs-align/conformance.md)
   §Finding policy). Inventory them only to **note** them; never classify them onto the axis,
   rename them, or remove them here.
 - **The wider `.claude/` is inventoried, never migrated.** `.claude/agents/*.md` and the
   hooks wired in `settings.json` and in command frontmatter are **report-only** surfaces:
   the tool names their findings (`sk-agent-*`, `sk-hook-*`) and each is routed to the mint
-  that owns it (`/quenching-align:components:agent:new`, `/quenching-align:components:hook:new`).
+  that owns it (`/quenching-components-agent-new`, `/quenching-components-hook-new`).
 - **`.agents/` is the source; `.claude/skills/` is the generated bridge.** A target's skills live
   in `.agents/skills/<name>/SKILL.md` (one segment, `/<name>`), its references in
-  `.agents/references/**`, its instructions in `AGENTS.md`. `cq components migrate --target .`
-  plans the move off the legacy layout (`.claude/commands/**`, `.claude/references/**`, the old
-  Codex translation under `.agents/`); `cq components bridge --target . --check` names the drift
+  `.agents/references/**`, its instructions in `AGENTS.md`. `.agents/quenching/bin/cq components migrate --target .`
+  plans the move off the legacy layout (`.agents/skills/**`, `.claude/references/**`, the old
+  Codex translation under `.agents/`); `.agents/quenching/bin/cq components bridge --target . --check` names the drift
   of the generated `.claude/skills/<name>/` copies. **Conformant means both**: an empty migrate
   plan (`conformant: true`) and `bridge --check` exit 0.
 - **The `.claude → .agents` translation is the legacy layout `migrate` retires.** No verb writes it
@@ -43,8 +43,8 @@ this skill's doctrine. What follows is specific to the automation surface:
 
 ## Resolving the tool
 
-Resolve `cq components` per
-[align/tool-resolution.md](${CLAUDE_PLUGIN_ROOT}/assets/references/align/tool-resolution.md)
+Resolve `.agents/quenching/bin/cq components` per
+[align/tool-resolution.md](.agents/quenching/assets/references/align/tool-resolution.md)
 §Resolving the tool §Write the resolved path literally on every invocation; branch on the
 **exit code** (0 ok · 1 findings · 2 refusal) and the `--json`, never on prose.
 
@@ -62,13 +62,13 @@ size, step criteria, unscoped `Bash`). Neither decides the **axis**: classificat
 ### 1. Probe — the checks that decide whether anything else runs
 Before any inventory, ask the tool whether there is work at all:
 ```bash
-cq components migrate --target . --json
-cq components bridge --target . --check --json
-cq components doctor --json
-cq components lint --json
+.agents/quenching/bin/cq components migrate --target . --json
+.agents/quenching/bin/cq components bridge --target . --check --json
+.agents/quenching/bin/cq components doctor --json
+.agents/quenching/bin/cq components lint --json
 ```
 plus one `Glob` for the legacy pairs the tool cannot see (below). Branch as
-[sweep-doctrine](${CLAUDE_PLUGIN_ROOT}/assets/references/align/sweep-doctrine.md) §1. Probe before the inventory prescribes:
+[sweep-doctrine](.agents/quenching/assets/references/align/sweep-doctrine.md) §1. Probe before the inventory prescribes:
 
 | Probe result | What happens |
 | --- | --- |
@@ -98,13 +98,13 @@ surface); list them as *out of scope, owned by no command — a human's call* an
 working set, including from the tool's findings.
 
 For each remaining item, make the **axis classification** per the
-test ([taxonomy](${CLAUDE_PLUGIN_ROOT}/assets/references/components-command-new/taxonomy.md) §The single axis — several unrelated folders
+test ([taxonomy](.agents/quenching/assets/references/components-command-new/taxonomy.md) §The single axis — several unrelated folders
 → unroutable). Read `/docs/standards/automation/skills.md` if present — it governs; note whether
 the rule and the registry (`/docs/project/automation.md`) exist.
 
 **Where an item classifies with an evident category, also read the nest-vs-replace convention**
 already established for that category in this repo (taxonomy.md §Reading the nest-vs-replace
-convention): `Glob` `.agents/skills/<categoria>-*/` (legacy: `.claude/commands/<categoria>/**`) and infer it from what already sits there.
+convention): `Glob` `.agents/skills/<categoria>-*/` (legacy: `.agents/skills/<categoria>/**`) and infer it from what already sits there.
 Derive the canonical path the classification produces and diff it against the item's current
 path — a mismatch is a relocation candidate, fed into §4's existing renames row like any other,
 never a new plan section or a new confirmation of its own.
@@ -116,7 +116,7 @@ never a new plan section or a new confirmation of its own.
 
 ### 3. Sweep the blast radius
 Run the shared procedure in
-[align/sweep-doctrine.md](${CLAUDE_PLUGIN_ROOT}/assets/references/align/sweep-doctrine.md)
+[align/sweep-doctrine.md](.agents/quenching/assets/references/align/sweep-doctrine.md)
 §4. The blast-radius sweep — two repo scans for the whole set, never two per rename — over every name slated for
 rename or removal: skill names **and** command paths. **A collapse retires a skill name**, so
 every site naming it (a conductor invoking it via the Skill tool, a runbook, a registry row) is a
@@ -140,7 +140,7 @@ Wait for the single confirmation; code-coupled items each await their own.
 **Done when:** the user has answered; declined → nothing written, run ends.
 
 ### 5. Apply
-Execute the confirmed plan: **the migration first** — `cq components migrate --target . --write
+Execute the confirmed plan: **the migration first** — `.agents/quenching/bin/cq components migrate --target . --write
 --json`, which leaves every `openspec-*` skill and `opsx/` command where it stands — then
 **collapse each pair per §6**, rename command paths, create/rewrite
 commands from `automation/command.md`, fix frontmatter gaps per the doctrine (description within
@@ -176,7 +176,7 @@ Delete `skills/<name>/` only once its body is in place and its neighbours are re
 
 **A pair that is not a clean pair is reported, never guessed:** a skill with no wrapper needs a
 path chosen (a human decision), and a wrapper naming no skill has no body to take.
-Then regenerate the bridge from the edited bodies: `cq components bridge --target . --write --json`.
+Then regenerate the bridge from the edited bodies: `.agents/quenching/bin/cq components bridge --target . --write --json`.
 **Done when:** every confirmed pair is one file, `skills/` holds nothing that was migrated, the
 bridge was written after the last body edit, and every unclean pair is listed with what it needs.
 
@@ -190,7 +190,7 @@ Keep these evidence types separate:
   `sk-description-portable`, `sk-metadata-cap`.
 - **What only a read can judge.** For each remaining body: the no-op test, sediment, sprawl,
   positive prescription, and whether shared procedure is **cited rather than restated**
-  ([doctrine](${CLAUDE_PLUGIN_ROOT}/assets/references/components-command-new/doctrine.md)).
+  ([doctrine](.agents/quenching/assets/references/components-command-new/doctrine.md)).
 
 **Collection may be delegated; judgment may not.** On a surface too large to read whole, dispatch
 read-only `Task` collectors — one per slice — that report *what each body contains* (levers in
@@ -203,7 +203,7 @@ commands under one `/<vertical>:` namespace that conductors call) is a finding t
 the former commands kept as typed-only shortcuts, per
 `/docs/standards/automation/skills.md` §One router per vertical, shortcuts typed-only. Propose, never apply.
 
-**A local family.** Read `families` from `cq components status --json` in the probe: each entry with
+**A local family.** Read `families` from `.agents/quenching/bin/cq components status --json` in the probe: each entry with
 `candidate: true` (three or more model-invocable skills sharing the first kebab segment) is reported as
 "propose a router", never as a finding, and `ok` and `state` stay as they are. The proposal names the
 router `.agents/skills/<family>/SKILL.md`, the flows `.agents/references/<family>-flows/<flow>.md` and
@@ -212,7 +212,7 @@ typed-only shortcut with the same grant, and the router carries one line per flo
 and no `quenching-*` agent is edited; per `/docs/standards/automation/skills.md`
 §A target extends a vertical with its own router. Propose, never apply.
 
-Report each finding as `command · violated rule · one-line evidence · the /quenching-align:components:command:new invocation
+Report each finding as `command · violated rule · one-line evidence · the /quenching-components-command-new invocation
 that opens the edit`, labelled **"reported, not applied"**. Skip every legacy `openspec-*` body —
 that surface is out of scope here as everywhere. Never rewrite a body to close a finding.
 **Done when:** every surviving body carries a verdict — a finding with its fix invocation, or
@@ -233,7 +233,7 @@ keeps all three slots at full length for the human picking it from the `/` menu
 frontmatter, never guessed.
 
 Judge each description against the three slots and the competitor test in
-[components-command-new/doctrine.md](${CLAUDE_PLUGIN_ROOT}/assets/references/components-command-new/doctrine.md)
+[components-command-new/doctrine.md](.agents/quenching/assets/references/components-command-new/doctrine.md)
 §The three slots. What this stage does with each verdict:
 
 | Verdict | Action |
@@ -243,7 +243,7 @@ Judge each description against the three slots and the competitor test in
 | no trigger, or a trigger after the second sentence (`sk-trigger-position`) | **add** one verbatim phrase per branch that has none; move them into the second sentence. **Routed only** — on a typed-only command an absent trigger is not a defect, and adding one buys nothing that routes |
 | `Not for:` naming a command that fails the competitor test | **cut**, and record the waiver with the competitor set checked |
 | a real competitor with no `Not for:` (`sk-no-boundary`) | **add** the one clause that routes: `Not for: <job> → <command>` |
-| a quoted trigger that looks like sediment | **report**, never cut — `/quenching-align:components:command:eval <command>` decides it on a measured miss |
+| a quoted trigger that looks like sediment | **report**, never cut — `/quenching-components-command-eval <command>` decides it on a measured miss |
 | over a cap (`sk-metadata-cap`, `sk-description-portable`) after all of the above | **report** the residue with its code; a cap is not closed by deleting a trigger |
 
 The competitor test runs **against the surface in hand**: §1's `lint` paths and the descriptions
@@ -262,20 +262,20 @@ deleted.
 ### 9. Verify, decide, report
 Regenerate the zone, then let the tool judge the surface the migration produced:
 ```bash
-cq components registry reindex --json   # the zone, from the post-migration surface and §8's descriptions
-cq components bridge --target . --write --json # the bridge, from §8's descriptions
-cq components migrate --target . --json        # `conformant: true` — an empty plan
-cq components bridge --target . --check --json # exit 0 — the bridge matches .agents/skills/
-cq components doctor --json             # the surface invariant the migration just changed
-cq components lint --json               # the gaps the migration was supposed to close — §8's codes
-cq components registry reindex --json   # `changed: false` — the zone now matches disk
+.agents/quenching/bin/cq components registry reindex --json   # the zone, from the post-migration surface and §8's descriptions
+.agents/quenching/bin/cq components bridge --target . --write --json # the bridge, from §8's descriptions
+.agents/quenching/bin/cq components migrate --target . --json        # `conformant: true` — an empty plan
+.agents/quenching/bin/cq components bridge --target . --check --json # exit 0 — the bridge matches .agents/skills/
+.agents/quenching/bin/cq components doctor --json             # the surface invariant the migration just changed
+.agents/quenching/bin/cq components lint --json               # the gaps the migration was supposed to close — §8's codes
+.agents/quenching/bin/cq components registry reindex --json   # `changed: false` — the zone now matches disk
 ```
 Every renamed reference site greps clean, and no citation still points into a deleted
 `skills/` tree. `reindex` runs **after** §8: the zone's `Typical trigger` column is each
 description's **first quoted phrase**, which §8 may move.
 
 Then re-run §1's probe and decide by the four outcomes in
-[convergence.md](${CLAUDE_PLUGIN_ROOT}/assets/references/align/convergence.md)
+[convergence.md](.agents/quenching/assets/references/align/convergence.md)
 §The convergence contract: **progress** → another pass from §2 under the same OK, narrating its
 plan; **converged** → report; **residue** → stop and report; **pass cap reached** → stop and report
 what remains. §7's findings are **not** progress: they are read-only and carry forward unchanged.
@@ -283,14 +283,14 @@ what remains. §7's findings are **not** progress: they are read-only and carry 
 to re-open a table the human already answered.
 
 In an OKF repo, confirm the registry is indexed, per
-[knowledge-add/homes.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-add/homes.md). The migration
+[knowledge-add/homes.md](.agents/quenching/assets/references/knowledge-add/homes.md). The migration
 counts go in the report below, not into the bundle.
 Report: passes run; collapsed / renamed / created / flattened / rule+registry created / unroutable /
 flagged; every surviving `sk-*` finding, every migrate conflict and every bridge change still standing, by code; §7's doctrine findings, listed
-apart, each with its `/quenching-align:components:command:new`; and §8's line — descriptions reviewed, edited,
+apart, each with its `/quenching-components-command-new`; and §8's line — descriptions reviewed, edited,
 declined; the description-code count before → after from `lint`; every waived boundary with the
 competitor set checked (and its accepted `sk-no-boundary`); and every trigger handed to
-`/quenching-align:components:command:eval`. **Done when:** `migrate` reports an empty plan, `bridge --check` exits 0, `doctor` and `lint`
+`/quenching-components-command-eval`. **Done when:** `migrate` reports an empty plan, `bridge --check` exits 0, `doctor` and `lint`
 exit 0 or each surviving finding is named with its code, the second
 `registry reindex` reports `changed: false`, and the counts, the doctrine findings and §8's line
 are reported.
@@ -308,7 +308,7 @@ are reported.
 - Never inventory before the probe, and never treat §7's read-only findings as progress that
   justifies another pass.
 - Never delete a quoted trigger phrase — not for length, not for looking redundant. A trigger
-  retires on a measured miss, which is `/quenching-align:components:command:eval`'s; here it is reported
+  retires on a measured miss, which is `/quenching-components-command-eval`'s; here it is reported
   with that invocation.
 - Never write a `Not for:` clause naming a command that fails the competitor test, and never cut
   one without stating the set that was checked.

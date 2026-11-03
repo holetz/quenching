@@ -49,12 +49,12 @@ Add a term whenever a repo-specific word, acronym, or piece of jargon surfaces t
 newcomer would not know. Three ways in:
 
 - **Automatically, as a tail of a capture.** The `quenching` knowledge skills
-  (`quenching-align:knowledge:learn`, `quenching-align:knowledge:add`, `quenching-align:knowledge:import-memory`) each check, at
+  (`quenching-knowledge-learn`, `quenching-knowledge-add`, `quenching-knowledge-import-memory`) each check, at
   the end of a capture, whether the new concept introduced a term that belongs here, and
   add or update the entry — linking it to the concept doc just written.
-- **On demand, one term at a time.** Run `quenching-align:knowledge:define` to add or refine a single
+- **On demand, one term at a time.** Run `quenching-knowledge-define` to add or refine a single
   entry (inserted in alphabetical position, MERGE — never clobbering a filled definition).
-- **In bulk, across the whole bundle.** Run `quenching-align:knowledge:glossary-backfill` to sweep every doc
+- **In bulk, across the whole bundle.** Run `quenching-knowledge-glossary-backfill` to sweep every doc
   already in `/docs/` for repo-specific terms that were never fed into the glossary and
   backfill them in one pass.
 
@@ -64,7 +64,7 @@ and let the linked doc carry the depth.
 ## Published projection
 
 The glossary remains canonical here and is copied into the bounded `site-source/` input by
-`cq knowledge site-source`; there is no second editable route to keep in step. Only the abbreviation snippet used for tooltips is
+`.agents/quenching/bin/cq knowledge site-source`; there is no second editable route to keep in step. Only the abbreviation snippet used for tooltips is
 derived from this file; never maintain a second editable list of terms there. The site layer turns
 each canonical entry into Python-Markdown `*[term]: definition` syntax, so terms such as `ASRC` and
 `chave conformada` gain tooltips without authors marking occurrences by hand.

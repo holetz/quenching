@@ -1,7 +1,7 @@
 # Ops router snippets
 
 Choose exactly one snippet: the router declared by `.agents/quenching.json` (or the legacy
-`.claude/quenching.json`). Replace
+`.agents/quenching.json`). Replace
 `<operation>` with the normalized entry-point name and `<module.path>` with the Python module
 that exposes `main`. The router is the active surface; it does not copy domain logic.
 
@@ -54,5 +54,5 @@ a second router and must not register a second implementation.
 
 Register only `active` entry points in the canonical router. An `archived` entry point remains
 searchable under `_archive/` and in the generated registry, but it has no active router entry.
-After applying one snippet, run `cq ops registry --write` and `cq ops doctor --json`; the latter
+After applying one snippet, run `.agents/quenching/bin/cq ops registry --write` and `.agents/quenching/bin/cq ops doctor --json`; the latter
 proves that the router and generated registry name the same entry point.

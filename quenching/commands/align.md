@@ -17,17 +17,17 @@ front named in that cell has completed its inherited authorization.
 
 | Front | Route | Depends on |
 | --- | --- | --- |
-| `knowledge` — `/docs/` | `/quenching-align:knowledge:align` | applicability |
-| `design` — `/.design/` | `/quenching-design:design:align` | `knowledge` |
-| `components` — `.agents/` and the Claude bridge | `/quenching-align:components:align` | `design` |
-| `ops` — operations surface | `/quenching-ops:ops:align` | `components` |
-| `proof` — verification surface | `/quenching-proof:proof:align` | `ops` |
-| `toolchain` — toolchain surface | `/quenching-toolchain:toolchain:align` | `proof` |
-| `delivery` — delivery surface | `/quenching-delivery:delivery:align` | `toolchain` |
-| `opensource` — community, license and governance artifacts | `/quenching-opensource:opensource:align` | `delivery` |
+| `knowledge` — `/docs/` | `/quenching-knowledge-align` | applicability |
+| `design` — `/.design/` | `/quenching-design-align` | `knowledge` |
+| `components` — `.agents/` and the Claude bridge | `/quenching-components-align` | `design` |
+| `ops` — operations surface | `/quenching-ops-align` | `components` |
+| `proof` — verification surface | `/quenching-proof-align` | `ops` |
+| `toolchain` — toolchain surface | `/quenching-toolchain-align` | `proof` |
+| `delivery` — delivery surface | `/quenching-delivery-align` | `toolchain` |
+| `opensource` — community, license and governance artifacts | `/quenching-opensource-align` | `delivery` |
 
 **Only deployed modules are conducted.** Before the first front, read `cq modules --json` once
-([tool-resolution.md](${CLAUDE_PLUGIN_ROOT}/assets/references/align/tool-resolution.md) §Routing into
+([tool-resolution.md](.agents/quenching/assets/references/align/tool-resolution.md) §Routing into
 another module). A front whose module reports `enabled: false` is `not-installed: <module>`: it is
 skipped, named in the report, and its dependants depend on the nearest earlier front that ran.
 
@@ -36,7 +36,7 @@ Skill tool. `design`, `ops`, `proof`, `toolchain`, `delivery` and `opensource` a
 commands (`disable-model-invocation: true`), so the Skill tool refuses them. For those six, Read the
 front's own body at `<root>/commands/<front>/align.md`, where `<root>` is the `root` that
 `cq modules --json` reports for the front's module, and follow it inline, substituting that same
-`<root>` for any `${CLAUDE_PLUGIN_ROOT}` it cites, with the same inherited authorization and the
+`<root>` for any `.agents/quenching` it cites, with the same inherited authorization and the
 same stages; its `cq <front> …` verbs run as written.
 
 The `specs` provider flow has no row because it owns no local tree, while the `security` and `git`
@@ -44,10 +44,10 @@ pillars have no row because they answer live questions without a converging fron
 commands remain available through their own namespaces.
 
 Every applicable front must expose the common front mold at
-`${CLAUDE_PLUGIN_ROOT}/assets/references/front-align/mold.md`. The conductor sequences and reports;
+`.agents/quenching/assets/references/front-align/mold.md`. The conductor sequences and reports;
 it never reimplements a front's verifier or repair logic.
 
-Before probing, read `cq specs config --json`. An absent `shared.profiles.installed` means all eight
+Before probing, read `.agents/quenching/bin/cq specs config --json`. An absent `shared.profiles.installed` means all eight
 local fronts are eligible; a declared list limits the conductor to its named local fronts, in the
 dependency order above. Report other local fronts as skipped by profile. This scope affects only
 this conductor run: it does not remove commands or change a command's own invocation contract.
@@ -59,32 +59,32 @@ this conductor run: it does not remove commands or change a command's own invoca
 Probe every declared front in the table before inventory. If `$ARGUMENTS` names a front or a path
 inside one, probe only that front and mark the others skipped by scope.
 
-- **`knowledge`** — run `cq knowledge validate docs --json`; record the bundle, validator counts,
+- **`knowledge`** — run `.agents/quenching/bin/cq knowledge validate docs --json`; record the bundle, validator counts,
   project memory and harness files.
-- **`design`** — run `cq --root . design status --json` when installed; when absent, run
+- **`design`** — run `.agents/quenching/bin/cq --root . design status --json` when installed; when absent, run
   `design align --check --json` only when scope or root `PRODUCT.md`/`DESIGN.md` artifacts signal
   adoption.
-- **`components`** — run `cq components doctor --json`, `cq components migrate --target . --json`
-  and `cq components bridge --target . --check --json`; inspect command skills for legacy pairs.
+- **`components`** — run `.agents/quenching/bin/cq components doctor --json`, `.agents/quenching/bin/cq components migrate --target . --json`
+  and `.agents/quenching/bin/cq components bridge --target . --check --json`; inspect command skills for legacy pairs.
   `migrate` exit 1 puts its whole plan (operations, renames, conflicts) in the Authorization plan
   as one block; `bridge --check` exit 1 puts its changes there. Conformant is `migrate`
   `conformant: true` and `bridge --check` exit 0.
-- **`ops`** — read `.agents/quenching.json` (legacy: `.claude/quenching.json`)
+- **`ops`** — read `.agents/quenching.json` (legacy: `.agents/quenching.json`)
   for `ops.opsRoot`; when absent, inspect only
   `scripts/`, `tools/`, `bin/` and `script/` for an executable entry point.
-- **`proof`** — read `.agents/quenching.json` (legacy: `.claude/quenching.json`)
+- **`proof`** — read `.agents/quenching.json` (legacy: `.agents/quenching.json`)
   for `proof.proofRoot`; when absent, inspect only
   `tests/` and `test/` for a test module.
-- **`toolchain`** — run `cq toolchain doctor --json`; use its applicability signal and recognized
+- **`toolchain`** — run `.agents/quenching/bin/cq toolchain doctor --json`; use its applicability signal and recognized
   manifests, locks, language pins and tool configuration as the complete probe result.
-- **`delivery`** — run `cq delivery doctor --json`; use its applicability signal and workflow
+- **`delivery`** — run `.agents/quenching/bin/cq delivery doctor --json`; use its applicability signal and workflow
   inventory as the complete probe result.
-- **`opensource`** — run `cq opensource doctor --json`; its `applicability` (a root `LICENSE*` or
+- **`opensource`** — run `.agents/quenching/bin/cq opensource doctor --json`; its `applicability` (a root `LICENSE*` or
   `COPYING*`, or `opensource` in `shared.profiles.installed`) and findings are the complete probe
   result.
 
-- **configuration** (not a front) — run `cq config check --json`. Exit 2 `cq-config-absent` puts
-  "seed `.agents/quenching.json` with `cq config init --write`" in the plan; the Authorization OK
+- **configuration** (not a front) — run `.agents/quenching/bin/cq config check --json`. Exit 2 `cq-config-absent` puts
+  "seed `.agents/quenching.json` with `.agents/quenching/bin/cq config init --write`" in the plan; the Authorization OK
   covers it, and it runs before the first front so every front reads the seeded file. Exit 1 lists
   the seeded keys the file lacks: report them, never rewrite a file the human edited. Exit 0 is
   conformant.
@@ -110,7 +110,7 @@ Wait for one OK. A decline writes nothing.
 
 ### Front: `knowledge`
 
-Invoke the router `/quenching-align:knowledge:knowledge` through the Skill tool under its registry name, with the
+Invoke the router `/quenching-knowledge-knowledge` through the Skill tool under its registry name, with the
 flow `align` and the inherited authorization:
 
 > Running under `/align` authorization granted at run start — skip your plan-confirmation pause;
@@ -124,14 +124,14 @@ write into or depend on it.
 ### Front: `design`
 
 When `/.design/` is absent and neither scope nor portable artifacts signal adoption, report this
-front not applicable. Otherwise run `/quenching-design:design:align` (read its body) with the inherited authorization.
+front not applicable. Otherwise run `/quenching-design-align` (read its body) with the inherited authorization.
 Product truth and design standards land in the knowledge bundle; source arbitration and visual taste
 remain human choices. A hard failure establishing valid DTCG stops later fronts.
 
 ### Front: `components`
 
 When the automation surface is empty, skip it rather than scaffolding a taxonomy. Otherwise invoke
-`/quenching-align:components:align` with the inherited authorization after `design` has completed. The
+`/quenching-components-align` with the inherited authorization after `design` has completed. The
 run-start OK covers the migration plan shown in Authorization: the front applies `migrate --write`
 and then `bridge --write` without asking again; a migrate conflict is never covered and stays the
 human's. Its rule and registry changes belong to the knowledge bundle; its doctrine findings remain
@@ -140,35 +140,35 @@ report-only.
 ### Front: `ops`
 
 When the applicability probe finds no operations signal, report `ops` not applicable. Otherwise
-run `/quenching-ops:ops:align` (read its body) after `components`, with the inherited authorization. Its inventory
+run `/quenching-ops-align` (read its body) after `components`, with the inherited authorization. Its inventory
 and registry feed the proof front's conditional entry-point check.
 
 ### Front: `proof`
 
 When the applicability probe finds no proof signal, report `proof` not applicable. Otherwise run
-`/quenching-proof:proof:align` (read its body) after `ops`, with the inherited authorization. It consumes the operations
+`/quenching-proof-align` (read its body) after `ops`, with the inherited authorization. It consumes the operations
 inventory when configured and reports its own layer and gate residue; it never runs a target suite.
 
 ### Front: `toolchain`
 
 When the applicability probe finds no toolchain signal, report `toolchain` not applicable.
-Otherwise run `/quenching-toolchain:toolchain:align` (read its body) after `proof`, with the inherited authorization.
+Otherwise run `/quenching-toolchain-align` (read its body) after `proof`, with the inherited authorization.
 It consumes the declared manifests, locks, language pins and tool configuration without choosing
 target-owned build policy; its runtime evidence feeds the delivery front.
 
 ### Front: `delivery`
 
 When the applicability probe finds no delivery signal, report `delivery` not applicable. Otherwise
-run `/quenching-delivery:delivery:align` (read its body) after `toolchain`, with the inherited authorization. It consumes
+run `/quenching-delivery-align` (read its body) after `toolchain`, with the inherited authorization. It consumes
 the workflow inventory and reports pipeline reachability while leaving provider, environment,
 promotion, publication and permission policy with the target owner.
 
 ### Front: `opensource`
 
 When the applicability probe reports `not-applicable`, report `opensource` not applicable. Otherwise
-run `/quenching-opensource:opensource:align` (read its body) after `delivery`, with the inherited
+run `/quenching-opensource-align` (read its body) after `delivery`, with the inherited
 authorization. It writes only the community, license and governance artifacts the catalog gives it,
-through `cq opensource apply`; the license, maintainers, code owners, conduct contact, citation and
+through `.agents/quenching/bin/cq opensource apply`; the license, maintainers, code owners, conduct contact, citation and
 funding remain the owner's individual answers, never covered by the batch OK. Another owner's
 control stays with that owner's front.
 
@@ -193,9 +193,9 @@ writes nothing of its own; each front owns its writes and its report is the acco
 - Never run a front before its dependency in the declaration table has completed.
 - Never ask for a second authorization or suppress an interruption the front contract still owns.
 - Never reimplement a front's stages, verifier or repairs here; run its align: through Skill for `knowledge` and `components`, by reading its body for the typed-only fronts.
-- Never act on residue owned by `/quenching-align:knowledge:add`, `/quenching-align:knowledge:learn`,
-  `/quenching-align:knowledge:define`, `/quenching-specs:specs:develop`, `/quenching-specs:specs:conclude`,
-  `/quenching-design:design:genre:new`, or `/quenching-align:components:command:new`.
+- Never act on residue owned by `/quenching-knowledge-add`, `/quenching-knowledge-learn`,
+  `/quenching-knowledge-define`, `/quenching-specs-develop`, `/quenching-specs-conclude`,
+  `/quenching-design-genre-new`, or `/quenching-components-command-new`.
 - Never scaffold an empty `.claude/` surface or silently install a visual world.
 - Never loop past 3 passes or widen scope to force a clean number.
 - Never hand this command `context: fork`; the gate and nested confirmations are mid-flow.

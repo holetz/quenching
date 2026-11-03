@@ -1,12 +1,12 @@
 # Canonical taxonomy — the tree, homes, `type` vocabulary, boundaries
 
-The single source of the tree `/quenching-align:knowledge:align` installs and `/quenching-align:knowledge:add` files into. Every repo
+The single source of the tree `/quenching-knowledge-align` installs and `/quenching-knowledge-add` files into. Every repo
 **converges to this same tree of identical names**; a variant name is a non-convergence smell
-(→ [migration.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-align/migration.md)).
+(→ [migration.md](.agents/quenching/assets/references/knowledge-align/migration.md)).
 
 ## Contents
 
-`cq components read <this file>` returns the heading index; `--sections` addresses one.
+`.agents/quenching/bin/cq components read <this file>` returns the heading index; `--sections` addresses one.
 
 ## The canonical tree (locked)
 
@@ -49,7 +49,7 @@ knowledge/                     # OKF bundle root
 | `external/` | `external` | `tools/`·`libraries/`·`regulations/` |
 | `external/regulations/` (extracts) | `sidecar` | one per binary |
 
-Reserved `index.md` carries **no** `type`; `AGENTS.md` (and legacy `CLAUDE.md`) is exempt. `log.md` is
+Reserved `index.md` carries **no** `type`; `AGENTS.md` (and legacy `AGENTS.md`) is exempt. `log.md` is
 reserved too but **retired** — the tree above no longer grows one, and nothing checks one that
 survived an earlier alignment. The v0.2 `Attested Computation` type lives under `concepts/` (or a
 subject subfolder of it) and is the one fixed type outside the per-home table, because a
@@ -71,7 +71,7 @@ computation is generic knowledge with an executable contract, not a home of its 
   Internal boundary: `code/` governs **symbols**, `naming/` governs **data**.
 - **`vision/`** — direction segmented by area (`<area>.md`, `type: vision`), **no deadline**.
   A raw unit of work toward it → a spec in `specs/plans/` (**outside** this OKF bundle —
-  see `/quenching-specs:specs:create`); what became reality → `standards/`.
+  see `/quenching-specs-create`); what became reality → `standards/`.
 - **The reader-facing quadrants** — `tutorials/` (`type: tutorial`), `how-to/` (`type: how-to`,
   absorbs the former `guides/`), `explanation/` (`type: explanation`) and `project/`
   (`type: project`, this repository's own manual — commands, automation, layout). They are homes
@@ -90,7 +90,7 @@ computation is generic knowledge with an executable contract, not a home of its 
   `standards/` and leaves. Ships **one fixed file** — the bundle-root `glossary.md`, the repo's
   A–Z term lookup (a flat, alphabetically sorted bullet list in the same syntax every `index.md`
   uses — the one deliberate exception to "one concept per file", and the one place an
-  unlinked entry is a valid permanent state). `/quenching-align:knowledge:align` installs the seed.
+  unlinked entry is a valid permanent state). `/quenching-knowledge-align` installs the seed.
 - **`external/`** — external facts we consume (`type: external`, usually
   `authority: background`); a regulation's PDF lives here via a **sidecar**, while *our*
   implementation of it lives in `standards/`.

@@ -2,7 +2,7 @@
 
 ## The data contract
 
-The shared data lives at `${CLAUDE_PLUGIN_ROOT}/assets/opensource/controls.json`. Its
+The shared data lives at `.agents/quenching/assets/opensource/controls.json`. Its
 `schema_version: 1` describes routing and evidence requirements, not assessment results.
 Read it as JSON. Do not derive IDs or owners from prose in command bodies.
 

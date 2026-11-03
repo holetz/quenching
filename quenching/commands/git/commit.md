@@ -1,6 +1,6 @@
 ---
 description: >-
-  Commit what is already staged under the repo's commit convention. Use for "commit this", "make a commit", "wrap this up in a commit". Not for: staging, merging or pushing → /quenching-specs:git:merge.
+  Commit what is already staged under the repo's commit convention. Use for "commit this", "make a commit", "wrap this up in a commit". Not for: staging, merging or pushing → /quenching-git-merge.
 argument-hint: [subject]
 allowed-tools: Bash(cq git commit:*), Bash(cq git conventions:*), Bash(cq git specs:*), Bash(cq git state:*), Bash(cq specs next:*), Bash(cq components read:*), Read
 disable-model-invocation: true
@@ -9,17 +9,17 @@ hooks:
     - matcher: Bash
       hooks:
         - type: command
-          command: test -f "${CLAUDE_PLUGIN_ROOT}/assets/hooks/warn-git-add-all.sh" || exit 0; bash "${CLAUDE_PLUGIN_ROOT}/assets/hooks/warn-git-add-all.sh"
+          command: test -f ".agents/quenching/assets/hooks/warn-git-add-all.sh" || exit 0; bash ".agents/quenching/assets/hooks/warn-git-add-all.sh"
           timeout: 5
 ---
 
-# /quenching-specs:git:commit — typed shortcut
+# /quenching-git-commit — typed shortcut
 
-Typed shortcut to the `commit` flow of [/quenching-specs:git:git](${CLAUDE_PLUGIN_ROOT}/commands/git/git.md).
+Typed shortcut to the `commit` flow of [/quenching-git-git](.agents/quenching/commands/git/git.md).
 Input: `$ARGUMENTS`.
 
 ```bash
-cq components read ${CLAUDE_PLUGIN_ROOT}/assets/references/git-flows/commit.md
+.agents/quenching/bin/cq components read .agents/quenching/assets/references/git-flows/commit.md
 ```
 Read the flow whole, once, and follow it from its own `## Workflow` with `$ARGUMENTS` as its input:
 its steps, `Done when:` lines and invariants bind this run as they would the flow itself.

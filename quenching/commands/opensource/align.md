@@ -1,27 +1,27 @@
 ---
 description: >-
-  Write the open source artifacts (license, contributing, conduct, governance, templates) from pinned molds. Use for "align the opensource front", "prepare this repo to be open sourced". Not for: read-only → /quenching-opensource:opensource:status.
+  Write the open source artifacts (license, contributing, conduct, governance, templates) from pinned molds. Use for "align the opensource front", "prepare this repo to be open sourced". Not for: read-only → /quenching-opensource-status.
 disable-model-invocation: true
 argument-hint: [optional-target-root]
 allowed-tools: Bash(cq:*), Bash(cq.cmd:*), Read, Grep, Glob, Bash(python3:*), AskUserQuestion, Write, Edit
 ---
 
-# /quenching-opensource:opensource:align — converge the open source front
+# /quenching-opensource-align — converge the open source front
 
 **Input**: `$ARGUMENTS` (an optional target repository root; omit to use the current repository).
 
 This command owns the open source front's convergence pass. It writes only the artifacts the
-catalog gives to `opensource`, each through `cq opensource apply` from a template whose upstream
+catalog gives to `opensource`, each through `.agents/quenching/bin/cq opensource apply` from a template whose upstream
 text is byte-identical to the published one, and leaves every choice — license, maintainers,
 contact, funding — with the target owner. The common front floor is in
-[front-align/mold.md](${CLAUDE_PLUGIN_ROOT}/assets/references/front-align/mold.md), the catalog
+[front-align/mold.md](.agents/quenching/assets/references/front-align/mold.md), the catalog
 contract is in
-[opensource-controls/catalog.md](${CLAUDE_PLUGIN_ROOT}/assets/references/opensource-controls/catalog.md),
+[opensource-controls/catalog.md](.agents/quenching/assets/references/opensource-controls/catalog.md),
 and the finding bands and closure boundary are in
-[opensource-align/bands.md](${CLAUDE_PLUGIN_ROOT}/assets/references/opensource-align/bands.md).
+[opensource-align/bands.md](.agents/quenching/assets/references/opensource-align/bands.md).
 
 Set `TARGET_ROOT` to the supplied argument, or to `.` when the argument is omitted. Resolve `cq`
-per [tool-resolution.md](${CLAUDE_PLUGIN_ROOT}/assets/references/align/tool-resolution.md)
+per [tool-resolution.md](.agents/quenching/assets/references/align/tool-resolution.md)
 §Resolving the tool, pass the same root to every call, and branch on the JSON and exit code:
 `0` is a clean answer, `1` carries findings, and `2` is a refusal.
 
@@ -32,7 +32,7 @@ per [tool-resolution.md](${CLAUDE_PLUGIN_ROOT}/assets/references/align/tool-reso
 Run the route before reading or editing a target:
 
 ```bash
-cq --root "$TARGET_ROOT" opensource doctor --json
+.agents/quenching/bin/cq --root "$TARGET_ROOT" opensource doctor --json
 ```
 
 The probe reports `applicability`, template integrity and the `os-*` findings. Invoked directly,
@@ -88,8 +88,8 @@ value in hand, or rejected without a target edit.
 For each authorized artifact, first dry-run, then write:
 
 ```bash
-cq --root "$TARGET_ROOT" opensource apply --artifact <name> --var <key>=<value> ... --dry-run --json
-cq --root "$TARGET_ROOT" opensource apply --artifact <name> --var <key>=<value> ... --json
+.agents/quenching/bin/cq --root "$TARGET_ROOT" opensource apply --artifact <name> --var <key>=<value> ... --dry-run --json
+.agents/quenching/bin/cq --root "$TARGET_ROOT" opensource apply --artifact <name> --var <key>=<value> ... --json
 ```
 
 The license takes `--var spdx=<id>` as its selector. Never write, paste or adapt a template's text
@@ -99,7 +99,7 @@ placeholders. A refusal — `os-artifact-unknown`, `os-license-unvendored`, `os-
 existing file is never overwritten. Then re-run the closing verifier:
 
 ```bash
-cq --root "$TARGET_ROOT" opensource status --json
+.agents/quenching/bin/cq --root "$TARGET_ROOT" opensource status --json
 ```
 
 If findings remain, distinguish unanswered judgement residue from a refused or failed apply. Do not
@@ -121,8 +121,8 @@ and every residual owner action.
 
 ## Invariants
 
-- The doctor is probed before any confirmation, and the closing verifier is `cq opensource status --json`.
-- Every write goes through `cq opensource apply`; upstream text is never adapted and an existing file is never overwritten.
+- The doctor is probed before any confirmation, and the closing verifier is `.agents/quenching/bin/cq opensource status --json`.
+- Every write goes through `.agents/quenching/bin/cq opensource apply`; upstream text is never adapted and an existing file is never overwritten.
 - License, maintainers, code owners, conduct contact, citation and funding are the owner's answers, never defaults.
 - Community artifacts and placeholder prose are English by template declaration, never by detection; a residual target-language doubt is the owner's judgement, not a finding.
 - Another owner's control is reported with its owner's command, never closed here.

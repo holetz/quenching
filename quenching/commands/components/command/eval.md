@@ -1,26 +1,26 @@
 ---
 description: >-
-  Measure whether a command teaches anything with with/without runs graded on evidence. Use for "run the with/without eval on this skill". Not for: unevidenced edits → /quenching-align:components:command:new.
+  Measure whether a command teaches anything with with/without runs graded on evidence. Use for "run the with/without eval on this skill". Not for: unevidenced edits → /quenching-components-command-new.
 disable-model-invocation: true
 argument-hint: [skill-name]
 allowed-tools: Bash(cq:*), Bash(cq.cmd:*), Bash(python3:*), Bash(py:*), Read, Grep, Glob, Write, Edit, Task, AskUserQuestion
 ---
 
-# /quenching-align:components:command:eval — measure whether a skill teaches anything
+# /quenching-components-command-eval — measure whether a skill teaches anything
 
 ## Resolving the tool
 
-Resolve `cq components` per
-[align/tool-resolution.md](${CLAUDE_PLUGIN_ROOT}/assets/references/align/tool-resolution.md)
+Resolve `.agents/quenching/bin/cq components` per
+[align/tool-resolution.md](.agents/quenching/assets/references/align/tool-resolution.md)
 §Resolving the tool.
 
 **Input**: optionally a skill name. If omitted, infer from context; if more than one is plausible,
-put a decision sheet ([specs-develop/questions.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/questions.md) §1) and end the turn.
+put a decision sheet ([specs-develop/questions.md](.agents/quenching/assets/references/specs-develop/questions.md) §1) and end the turn.
 
 ## Workflow
 
 ### 1. Select the skill and check its floor
-Resolve the skill folder. Run `cq components lint <skill-folder> --json`: an **error** means the skill
+Resolve the skill folder. Run `.agents/quenching/bin/cq components lint <skill-folder> --json`: an **error** means the skill
 does not load as intended — report it and stop. Record a **warn** and continue.
 **Done when:** one skill is named back to the user and `lint` has run.
 
@@ -31,7 +31,7 @@ distinct branch the workflow can take; a branch with no case is untested surface
 **Done when:** every branch and every promise is listed.
 
 ### 3. Derive the cases
-Per [components-command-eval/evaluation.md](${CLAUDE_PLUGIN_ROOT}/assets/references/components-command-eval/evaluation.md) §Writing cases: one case per branch, each
+Per [components-command-eval/evaluation.md](.agents/quenching/assets/references/components-command-eval/evaluation.md) §Writing cases: one case per branch, each
 a realistic user prompt plus assertions about the **observable outcome**. Include at
 least one case the skill should **decline** (its `Not for:` boundary), and the should-trigger /
 should-not-trigger prompts step 7 needs.
@@ -45,9 +45,9 @@ that spawns subagents per run, and the human is authorizing that spend.
 
 ### 5. Write the case set, then run both arms
 Write `evals.json` beside the skill it measures — `.agents/evals/<name>/` in a target repo
-(the skill name, never the generated `.claude/skills/` bridge), `${CLAUDE_PLUGIN_ROOT}/assets/evals/<path>/`
+(the skill name, never the generated `.claude/skills/` bridge), `.agents/quenching/assets/evals/<path>/`
 in this plugin, `<path>` mirroring the command path
-([components-command-eval/evaluation.md](${CLAUDE_PLUGIN_ROOT}/assets/references/components-command-eval/evaluation.md)
+([components-command-eval/evaluation.md](.agents/quenching/assets/references/components-command-eval/evaluation.md)
 §Where the artifacts live). Then, per case, dispatch **two** `Task` subagents — one told the
 skill is available, one given the same prompt with no reference to it. Pin both to the session
 model; **never `haiku`**. Record each arm's
@@ -68,7 +68,7 @@ evidence or an explicit `unknown`.
 Run the should-trigger and should-not-trigger prompts and count how often the description routes
 correctly. A trigger no should-trigger prompt reaches is **sediment**; a should-not-trigger prompt
 that fires is a boundary the description fails to state. Propose the edit, show the measured rates
-behind it, and apply on its own OK — then re-run `cq components lint` so the caps still hold.
+behind it, and apply on its own OK — then re-run `.agents/quenching/bin/cq components lint` so the caps still hold.
 **Done when:** the rates are reported and the edit is applied or declined.
 
 ### 8. Report
@@ -82,8 +82,8 @@ plainly when the delta is **zero**.
 - Never run only the with-skill arm, and never reuse this context as an arm.
 - Never grade without evidence — `unknown` is an honest grade, an unquoted pass is not.
 - Never downgrade an arm's model to `haiku`; the delta is only comparable between equal arms.
-- Never rewrite a skill body here — report it with its `/quenching-align:components:command:new` invocation. The description is
+- Never rewrite a skill body here — report it with its `/quenching-components-command-new` invocation. The description is
   the single exception, and only under step 7's own confirmation.
-- Never duplicate an unchanged `cq components lint` check; after editing a description, rerun it and
+- Never duplicate an unchanged `.agents/quenching/bin/cq components lint` check; after editing a description, rerun it and
   report the new findings by code.
 - Never hand this command file `context: fork` — steps 4 and 7 gate mid-flow.

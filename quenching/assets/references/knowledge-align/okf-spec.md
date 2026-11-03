@@ -4,12 +4,12 @@ The **Open Knowledge Format** models a body of knowledge as a **bundle**: a dire
 of markdown **concept documents**, plus reserved listing/history files. Source:
 `GoogleCloudPlatform/open-knowledge-format/SPEC.md` (v0.2, the canonical repository; the older
 `knowledge-catalog/okf/` copy is a frozen v0.1 snapshot). This file condenses the normative
-rules the plugin enforces; [conformance.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-align/conformance.md)
+rules the plugin enforces; [conformance.md](.agents/quenching/assets/references/knowledge-align/conformance.md)
 turns them into checks.
 
 ## Contents
 
-`cq components read <this file>` returns the heading index; `--sections` addresses one.
+`.agents/quenching/bin/cq components read <this file>` returns the heading index; `--sections` addresses one.
 
 ## Reserved filenames
 
@@ -29,9 +29,9 @@ turns them into checks.
   current content was produced).
 - Producers **MAY** add any additional keys (this plugin's `audience`/`authority`/`source`/
   `maintainer`/`source_uri` are such extra keys). `source_uri` is written by
-  `/quenching-align:knowledge:import` alone; its contract — the exact-URI value, and why it is
+  `/quenching-knowledge-import` alone; its contract — the exact-URI value, and why it is
   separate from the authorial prose in `source` — is owned by
-  [sources.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-import/sources.md) §Attribution.
+  [sources.md](.agents/quenching/assets/references/knowledge-import/sources.md) §Attribution.
 
 ## Provenance, trust, and lifecycle (all optional)
 
@@ -153,7 +153,7 @@ OKF-valid — additive keys, descriptive types, reserved-file structures):
 1. **`index.md` carries no frontmatter** — except the **root** `docs/index.md`, which carries
    **only** `okf_version: "0.2"`.
 2. **`type` is mandatory and drawn from the fixed vocabulary** per home (see
-   [taxonomy.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-align/taxonomy.md)).
+   [taxonomy.md](.agents/quenching/assets/references/knowledge-align/taxonomy.md)).
 3. **`resource` is derived, never invented** — for standards a comma-separated **glob set** of
    what the doc governs (`*`/`**` only, repo-root-relative); for catalog/reference the asset URI.
    Empty is disallowed, and so is self-pointing (`resource-self`) — except a **bundle-level
@@ -178,9 +178,9 @@ OKF-valid — additive keys, descriptive types, reserved-file structures):
    stays self-contained deliberately: a format spec is what other implementers read to build
    against, and one that defers to a doc living inside a particular repo's bundle stops being
    self-describing.)*
-7. **Harness files** `AGENTS.md` (a legacy root `CLAUDE.md` is its fallback) are navigation
+7. **Harness files** `AGENTS.md` (a legacy root `AGENTS.md` is its fallback) are navigation
    pointers, **not** OKF concepts —
-   exempt from the `type` requirement. The validator skips them entirely; the `/quenching-align:components:harness:align`
+   exempt from the `type` requirement. The validator skips them entirely; the `/quenching-components-harness-align`
    skill keeps them thin and honest.
 8. **Every knowledge-holding folder has an `index.md`, and listings do not lie.** The validator
    flags (WARN) a folder of concept docs with no `index.md`, a listing link to a nonexistent

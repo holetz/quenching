@@ -1,7 +1,7 @@
 # The evaluation contract — cases, grading, and the benchmark
 
 <!-- rules -->
-The owner of **what an evaluation produces**. `/quenching-align:components:command:eval`'s body owns the workflow;
+The owner of **what an evaluation produces**. `/quenching-components-command-eval`'s body owns the workflow;
 this file owns the three artifact shapes, what makes an assertion worth grading, and the
 description-tuning loop.
 
@@ -12,7 +12,7 @@ have installed.
 
 ## Contents
 
-`cq components read assets/references/components-command-eval/evaluation.md` returns the heading index;
+`.agents/quenching/bin/cq components read assets/references/components-command-eval/evaluation.md` returns the heading index;
 `--sections` addresses one.
 
 ## Where the artifacts live
@@ -29,8 +29,8 @@ have installed.
 In a target repo `<name>` **mirrors the skill name**: `/release-notes` is measured by
 `.agents/evals/release-notes/evals.json`, beside the `.agents/` source and never under the
 generated `.claude/skills/` bridge. In this plugin the tree lives at
-`${CLAUDE_PLUGIN_ROOT}/assets/evals/<path>/`, `<path>` mirroring the command path
-(`knowledge/add` for `/quenching-align:knowledge:add`).
+`.agents/quenching/assets/evals/<path>/`, `<path>` mirroring the command path
+(`knowledge/add` for `/quenching-knowledge-add`).
 
 Run outputs are timestamped so two runs can be compared rather than overwriting each other — pass
 the timestamp in; never read the clock inside a case.
@@ -223,6 +223,6 @@ record whether it routes to this skill:
 
 **A trigger is only removed on a measured miss**, never because a
 description needs to be shorter — that is how a skill quietly stops firing for the user who
-worded it differently. And after any edit, re-run `cq components lint`: the caps
+worded it differently. And after any edit, re-run `.agents/quenching/bin/cq components lint`: the caps
 (`sk-metadata-cap`, `sk-description-portable`) and the trigger position
 (`sk-trigger-position`) still hold.

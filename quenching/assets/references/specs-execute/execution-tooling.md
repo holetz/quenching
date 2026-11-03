@@ -9,9 +9,9 @@ context, loaded only when a command needs to explain one of those choices.
 
 <!-- rationale -->
 
-`/quenching-specs:specs:execute` is the one `/quenching-specs:specs:*` command that runs the target repo's own toolchain
+`/quenching-specs-execute` is the one `/quenching-specs-*` command that runs the target repo's own toolchain
 — build, tests, linters, migrations, and `git` — as part of implementing a task. Its siblings are
-scoped to `python3`/`py` because they only ever talk to `cq specs`.
+scoped to `python3`/`py` because they only ever talk to `.agents/quenching/bin/cq specs`.
 
 ### Why the resolved-whole notice matters
 
@@ -20,7 +20,7 @@ scoped to `python3`/`py` because they only ever talk to `cq specs`.
 When `cq` does not resolve, the body falls back to `Read`ing the cited file whole and says so in
 the report — because that is the run's context cost changing, not a cosmetic difference.
 
-Every rung above that fallback is the plugin's own file — bare `cq` through the `bin/` shim on
+Every rung above that fallback is the plugin's own file — the target-local `.agents/quenching/bin/cq` through the `bin/` shim on
 `PATH`, or the plugin path — and nothing else is one. A deployed target is the generated
 exception: its body calls the manifest-owned `.agents/quenching/bin/cq`, not a hand-installed
 copy. This sentence used to name a rung outside the plugin, "the target's `.claude/hooks/cq`", which
@@ -41,11 +41,11 @@ one, where every later turn re-sends it.
 
 <!-- rationale -->
 
-The mirror image of the line above. `cq specs validate` already warns when a declared standard has
+The mirror image of the line above. `.agents/quenching/bin/cq specs validate` already warns when a declared standard has
 no task (`sp-impact-uncovered`); the inverse — a binding standard nobody declared — is not
 derivable, because deciding a standard governs a task is reading, not parsing. Every approximation
 of it has to re-read the folder to have something to warn about, which is the cost
-`/quenching-specs:specs:execute` step 4 removed by reading only the declared files.
+`/quenching-specs-execute` step 4 removed by reading only the declared files.
 
 ### Why the spec's author declares the policy
 
@@ -164,8 +164,8 @@ cannot present the mid-flow confirmations every sweep depends on — the convers
 human's OK would be out of reach.
 
 Dispatching a `Task` for a bounded, file-scoped unit of work does the opposite: **the orchestrator
-stays in the live conversation**, exactly where `/quenching-align:knowledge:glossary-backfill` and
-`/quenching-align:knowledge:import` already dispatch from. One moves the decision-maker out of reach; the
+stays in the live conversation**, exactly where `/quenching-knowledge-glossary-backfill` and
+`/quenching-knowledge-import` already dispatch from. One moves the decision-maker out of reach; the
 other sends a worker out and keeps the decision-maker in place. They are different mechanisms
 about different things, and no future sweep should "fix" one into the other.
 
@@ -195,7 +195,7 @@ A section is the unit because it is the smallest independently deliverable one t
 defines; `per-section` is the default verification policy for the same reason, so a boundary is
 also the point where the suite has just run.
 
-The window size came back once it was measured rather than invented: `cq components session
+The window size came back once it was measured rather than invented: `.agents/quenching/bin/cq components session
 context` reads the recorded peak against the role budget of
 `docs/standards/automation/context-discipline.md` §Measured context budgets. It still triggers
 nothing — the section boundary does — and it only turns the boundary from silent into a

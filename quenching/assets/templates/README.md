@@ -3,8 +3,8 @@
 Frontmatter + body molds the commands stamp/apply. They live **outside** the `/docs/` bundle
 (so they are not themselves validated), and each produces an OKF-conformant concept doc when
 filled — except the `harness/` and `automation/command|agent|hook` molds, which produce files
-that are not OKF concepts at all. `/quenching-align:knowledge:add` picks the mold by home → `type` (see
-`${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-add/homes.md`).
+that are not OKF concepts at all. `/quenching-knowledge-add` picks the mold by home → `type` (see
+`.agents/quenching/assets/references/knowledge-add/homes.md`).
 
 A mold is **applied per insert, never copied wholesale**: its content reaches the target repo,
 the file itself does not.
@@ -21,7 +21,7 @@ the file itself does not.
 | `index.md.tmpl` | a folder's reserved `index.md` listing (no frontmatter; root carries only `okf_version`) | *(reserved)* |
 | `harness/agents-root.md` | a repo-root `AGENTS.md` thin pointer over the bundle | *(harness — exempt)* |
 | `harness/agents-subfolder.md` | a subfolder `AGENTS.md` nearest-file pointer | *(harness — exempt)* |
-| `automation/command.md` | `.claude/commands/<folder-path>/<verb>.md` — the whole entry point (**outside** the OKF bundle) | *(not an OKF concept)* |
+| `automation/command.md` | `.agents/skills/<folder-path>/<verb>.md` — the whole entry point (**outside** the OKF bundle) | *(not an OKF concept)* |
 | `automation/agent.md` | `.claude/agents/<name>.md` — a subagent definition (**outside** the bundle) | *(not an OKF concept)* |
 | `automation/hook.md` | a hook **wiring** — prose mold carrying the three shapes, narrowest first; the chosen one lands in `.claude/settings.json`, command frontmatter, or `.claude/hooks/` | *(not an OKF concept)* |
 | `automation/registry.md` | `project/automation.md` (the derived command registry) | `documentation` |
@@ -31,21 +31,21 @@ the file itself does not.
 
 The **harness molds** (`harness/`) produce **exempt** files — `AGENTS.md` carries **no
 frontmatter and no `type`** (harness pointers, not OKF concepts — okf-spec strict-7; the validator
-skips them). `/quenching-align:components:harness:align` applies them when it refactors a repo's harness files into thin
+skips them). `/quenching-components-harness-align` applies them when it refactors a repo's harness files into thin
 pointers over the bundle.
 
-The **automation molds** (`automation/`) are the `/quenching-align:components:*` family's —
-`/quenching-align:components:command:new`, `/quenching-align:components:agent:new`,
-`/quenching-align:components:hook:new` mint from the three artifact molds, and
-`/quenching-align:components:align` maintains the registry and the three `*-standard.md` rules in the
+The **automation molds** (`automation/`) are the `/quenching-components-*` family's —
+`/quenching-components-command-new`, `/quenching-components-agent-new`,
+`/quenching-components-hook-new` mint from the three artifact molds, and
+`/quenching-components-align` maintains the registry and the three `*-standard.md` rules in the
 target's bundle. There is
-ONE command mold, not a skill-plus-wrapper pair: Claude Code merged commands into skills, so a
-single `.claude/commands/<path>.md` carries both the description that routes to it and the body
+ONE command mold, not a skill-plus-wrapper pair: the host merged commands into skills, so a
+single `.agents/skills/<path>.md` carries both the description that routes to it and the body
 that runs. It lands under `.claude/` (outside the bundle — never validated), while the registry
 and taxonomy-standard molds are OKF concept docs the pair maintains in the bundle; the
-registry's `<!-- GENERATED:BEGIN/END -->` zone is derived from `.claude/commands/**/*.md` and
+registry's `<!-- GENERATED:BEGIN/END -->` zone is derived from `.agents/skills/**/*.md` and
 only those two commands write inside its markers (taxonomy owner:
-`${CLAUDE_PLUGIN_ROOT}/assets/references/components-command-new/taxonomy.md`).
+`.agents/quenching/assets/references/components-command-new/taxonomy.md`).
 
 ## Stamp discipline
 

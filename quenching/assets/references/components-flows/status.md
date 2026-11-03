@@ -1,10 +1,10 @@
-# /quenching-align:components:status — read the automation surface
+# /quenching-components-status — read the automation surface
 
 **Input**: `$ARGUMENTS` (an optional target repository root; omit to use the current repository).
 
 This command is the read-only view of the target's automation surface: `.agents/skills/` as the
 source, `.claude/skills/` as its generated Claude bridge. The common
-front contract is in [front-align/mold.md](${CLAUDE_PLUGIN_ROOT}/assets/references/front-align/mold.md).
+front contract is in [front-align/mold.md](.agents/quenching/assets/references/front-align/mold.md).
 The components doctor owns the mechanical surface invariant; status adds the compact inventory of
 commands, fronts and finding codes without choosing an axis or repairing a body.
 
@@ -15,9 +15,9 @@ commands, fronts and finding codes without choosing an axis or repairing a body.
 Set `TARGET_ROOT` to `$ARGUMENTS`, or to `.` when the argument is omitted, and run:
 
 ```bash
-cq --root "$TARGET_ROOT" components status --json
-cq components migrate --target "$TARGET_ROOT" --json
-cq components bridge --target "$TARGET_ROOT" --check --json
+.agents/quenching/bin/cq --root "$TARGET_ROOT" components status --json
+.agents/quenching/bin/cq components migrate --target "$TARGET_ROOT" --json
+.agents/quenching/bin/cq components bridge --target "$TARGET_ROOT" --check --json
 ```
 
 `migrate` without `--write` and `bridge --check` only plan: neither writes.
@@ -35,10 +35,10 @@ Report one compact table with the target root and applicability state, command c
 front, finding codes with their error/warning totals, and the overall `ok` state; then one
 conformance line: the migrate plan (`conformant: true`, or its operation and conflict counts) and
 the bridge (in step, or its change count). Conformant is both: an empty plan and `bridge --check`
-exit 0; anything else routes to `/quenching-align:components:align`. Preserve every
+exit 0; anything else routes to `/quenching-components-align`. Preserve every
 returned code and message; an empty surface is an explicit state, not a reason to invent commands.
-For an actionable finding, name `/quenching-align:components:align` as the bounded repair route; for a
-single command body or description, name `/quenching-align:components:command:new` as the focused edit
+For an actionable finding, name `/quenching-components-align` as the bounded repair route; for a
+single command body or description, name `/quenching-components-command-new` as the focused edit
 route. Status itself does not invoke either route.
 
 **Done when:** every returned field is represented, and each finding keeps its code, severity and
@@ -54,7 +54,7 @@ workflow or test suite. Confirm that the report matches the status payload and i
 ## Invariants
 
 - Read only: no command, description, registry or generated surface is edited.
-- Applicability, missing state, command count, front counts and findings come from `cq components status`;
+- Applicability, missing state, command count, front counts and findings come from `.agents/quenching/bin/cq components status`;
   migration and bridge state come from `migrate` and `bridge --check`, never from a guess.
 - Findings retain their emitted code and severity; status never softens a finding into a clean state.
 - The report names a closing command but never invokes a repair.

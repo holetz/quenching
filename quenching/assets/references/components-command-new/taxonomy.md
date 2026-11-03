@@ -6,7 +6,7 @@ In a target repo this rule is stamped to `docs/standards/automation/skills.md` f
 **Owned elsewhere — cite, never restate.** The
 invocation/permission decision table, the scoped-`allowed-tools` rule, and the description
 caps all live in `docs/standards/automation/skills.md`; the registry zone's row format in
-`cq components registry reindex`. Findings arrive as `sk-*` codes and are named by code, never by
+`.agents/quenching/bin/cq components registry reindex`. Findings arrive as `sk-*` codes and are named by code, never by
 restated threshold.
 
 ## The single axis
@@ -30,7 +30,7 @@ fits; it is never forced.**
 - **Category, no single real folder tied to the skill** — e.g. `git` for a `commit`
   skill: a subject, not a repo folder. The skill nests flat under the category. **This
   example stays valid even in a repo that also has this plugin installed** — a target's own
-  bare-cited `git`-category `commit` command and this plugin's `/quenching-specs:git:commit` coexist
+  bare-cited `git`-category `commit` command and this plugin's `/quenching-git-commit` coexist
   rather than collide, because the citation forms already separate them
   (`naming/command-surface.md` §Three citation forms): the example is about the target's own
   category, and this plugin's commands are never bare-cited in a repo that did not vendor them.
@@ -71,7 +71,7 @@ repo.
 | Category, folder nests | `<categoria>-<folder-path>-<verb>` | `deploy` + `infra/terraform/` + apply → `deploy-infra-terraform-apply` |
 | Category, folder replaced | `<categoria>-<verb>` | `deploy` + `infra/terraform/` + apply → `deploy-apply` — the category takes the folder's place |
 
-Every name is **one segment**: Claude Code discovers `.claude/skills/<name>/SKILL.md` only flat,
+Every name is **one segment**: the host discovers `.claude/skills/<name>/SKILL.md` only flat,
 and the bridge copies the source folder as it is. The name alone tells where the skill acts: a
 reader scanning `.agents/skills/` reconstructs the monorepo map from the domain-bound and category paths, and anything at the
 top level is repo-wide by declaration.
@@ -84,23 +84,23 @@ top level is repo-wide by declaration.
   `name:` equals the folder name. The name is the whole identity, and nothing derives a second
   name that could disagree with it. Mold: `assets/templates/automation/command.md`.
 - **`.agents/` is the only editable source.** `.claude/skills/<name>/` is the copy
-  `cq components bridge` generates from it, marked as generated and pinned by a sha256
+  `.agents/quenching/bin/cq components bridge` generates from it, marked as generated and pinned by a sha256
   manifest; it is never edited, and `bridge --check` names its drift.
 - **A generic skill with no evident category is a flat** `<verb-object>`, never prefixed with a
   folder or category it does not serve.
 
 **A skill's folder holds only that skill**: `SKILL.md` and the files it alone reads. Shared
 procedure lives in `.agents/references/<name>/` and eval cases in `.agents/evals/<name>/`, cited
-by path. A legacy `.claude/commands/` surface is `/quenching-align:components:align`'s to migrate
-(`cq components migrate`); the mint never writes into it.
+by path. A legacy `.agents/skills/` surface is `/quenching-components-align`'s to migrate
+(`.agents/quenching/bin/cq components migrate`); the mint never writes into it.
 
 **Accepted variation (documented, never generated):** directory-scoped surfaces
-(`<folder>/.claude/commands/`) also bind a command to a folder — the sweep classifies them in
+(`<folder>/.agents/skills/`) also bind a command to a folder — the sweep classifies them in
 place. The mint always writes into the repo-root `.agents/`, keeping the surface auditable in
 one place.
 
 <!-- rationale -->
-Claude Code merged custom commands into skills, and OpenCode reads `.claude/skills/` and
+the host merged custom commands into skills, and OpenCode reads `.claude/skills/` and
 `.agents/skills/` alike. A flat `.agents/skills/<name>/` source copied verbatim into
 `.claude/skills/<name>/` is the one shape all three harnesses discover, with no link, so it holds
 on Windows without administrator rights.
@@ -115,7 +115,7 @@ The registry at `docs/project/automation.md` (`type: project`,
 stamped from `assets/templates/automation/registry.md`) is the bundle's authoritative
 listing of the local automation surface.
 
-**`cq components registry reindex` owns the zone's format.** The row shape, the column
+**`.agents/quenching/bin/cq components registry reindex` owns the zone's format.** The row shape, the column
 order, the sort, and the placeholders are the tool's. To see the current shape, run the
 tool; to change it, change the tool.
 
@@ -127,18 +127,18 @@ This file owns, because no tool decides it:
   markers and is never touched by regeneration. A registry with no markers is
   `sk-no-zone`.
 - **What the zone is derived from.** The local entry points' frontmatter
-  (`.agents/skills/*/SKILL.md`; `.claude/commands/**/*.md` on a legacy layout),
+  (`.agents/skills/*/SKILL.md`; `.agents/skills/**/*.md` on a legacy layout),
   and only that: the zone lists the repo's **own** surface. Commands contributed by
-  installed plugins (`/quenching-specs:specs:*`, marketplace plugins) stay out of it and may be pointed
+  installed plugins (`/quenching-specs-*`, marketplace plugins) stay out of it and may be pointed
   at from the curated prose.
-- **Who may run the regeneration.** `/quenching-align:components:command:new` (in its OKF tail) and
-  `/quenching-align:components:align` (in its verify step). Neither writes between the markers by
+- **Who may run the regeneration.** `/quenching-components-command-new` (in its OKF tail) and
+  `/quenching-components-align` (in its verify step). Neither writes between the markers by
   hand, and neither composes the table itself. Both end their run on a second
   `registry reindex` reporting `changed: false`.
 
 <!-- rationale -->
 The format is stated in one place that executes, not in prose two skills reproduce by hand,
-exactly as `cq specs backlog reindex` owns the backlog listing's. On `sk-no-zone` the tool
+exactly as `.agents/quenching/bin/cq specs backlog reindex` owns the backlog listing's. On `sk-no-zone` the tool
 refuses rather than placing a table at a guessed anchor inside prose a human wrote. A skill
 that generates a derived table and then diffs it against its own source is one reader
 checking its own arithmetic, which is the failure this tool exists to remove; a hand edit

@@ -7,7 +7,7 @@ target tree, the active entry points, or the canonical router.
 
 ## Contents
 
-`cq components read <this file>` returns the heading index; `--sections` addresses one.
+`.agents/quenching/bin/cq components read <this file>` returns the heading index; `--sections` addresses one.
 
 ## 1. One declared operations root
 

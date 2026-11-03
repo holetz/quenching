@@ -1,27 +1,27 @@
 ---
 description: >-
-  Mint ONE Python ops entry point, register it in the router and regenerate the registry. Use for "mint an ops entry point", "add a command to the ops router". Not for: repairs → /quenching-ops:ops:align.
+  Mint ONE Python ops entry point, register it in the router and regenerate the registry. Use for "mint an ops entry point", "add a command to the ops router". Not for: repairs → /quenching-ops-align.
 disable-model-invocation: true
 argument-hint: <entry-point-name-or-purpose>
 allowed-tools: Bash(cq:*), Bash(cq.cmd:*), Read, Grep, Glob, Bash(python3:*), AskUserQuestion, Write, Edit
 ---
 
-# /quenching-ops:ops:entrypoint:new — mint one operations entry point
+# /quenching-ops-entrypoint-new — mint one operations entry point
 
 **Input**: `$ARGUMENTS` (one proposed operation name or a short description of the entry point).
 
 This command creates one Python entry point in the target repository's declared operations root.
 The seven-rule contract lives in
-[ops-align/entrypoint-contract.md](${CLAUDE_PLUGIN_ROOT}/assets/references/ops-align/entrypoint-contract.md);
+[ops-align/entrypoint-contract.md](.agents/quenching/assets/references/ops-align/entrypoint-contract.md);
 the target tree, lifecycle and router boundary live in
-[ops-align/target-structure.md](${CLAUDE_PLUGIN_ROOT}/assets/references/ops-align/target-structure.md)
-and [ops-align/lifecycle.md](${CLAUDE_PLUGIN_ROOT}/assets/references/ops-align/lifecycle.md).
-The mold is `${CLAUDE_PLUGIN_ROOT}/assets/templates/ops/entrypoint.py.tmpl`; router registrations
-come from `${CLAUDE_PLUGIN_ROOT}/assets/templates/ops/router-snippets.md`.
+[ops-align/target-structure.md](.agents/quenching/assets/references/ops-align/target-structure.md)
+and [ops-align/lifecycle.md](.agents/quenching/assets/references/ops-align/lifecycle.md).
+The mold is `.agents/quenching/assets/templates/ops/entrypoint.py.tmpl`; router registrations
+come from `.agents/quenching/assets/templates/ops/router-snippets.md`.
 
 Resolve `cq` per
-[align/tool-resolution.md](${CLAUDE_PLUGIN_ROOT}/assets/references/align/tool-resolution.md)
-§Resolving the tool. Use the resolved path literally, pass the target root to every `cq ops` call,
+[align/tool-resolution.md](.agents/quenching/assets/references/align/tool-resolution.md)
+§Resolving the tool. Use the resolved path literally, pass the target root to every `.agents/quenching/bin/cq ops` call,
 and branch on exit code and JSON: `0` is clean, `1` carries findings, and `2` is a refusal.
 
 ## Workflow
@@ -32,7 +32,7 @@ Set `TARGET_ROOT` to the target repository root, or `.` when the caller did not 
 target. Run:
 
 ```bash
-cq --root "$TARGET_ROOT" ops doctor --json
+.agents/quenching/bin/cq --root "$TARGET_ROOT" ops doctor --json
 ```
 
 Read the returned configuration and inventory state. Stop on exit `2`, naming every missing key;
@@ -96,11 +96,11 @@ the contract's bootstrap, exit, stream, JSON, arming and lifecycle rules.
 ### 5. Register and regenerate
 
 Apply the snippet for the declared router from
-`${CLAUDE_PLUGIN_ROOT}/assets/templates/ops/router-snippets.md`. Register an active entry point;
+`.agents/quenching/assets/templates/ops/router-snippets.md`. Register an active entry point;
 leave an archived entry point out of the active router. Then regenerate the registry:
 
 ```bash
-cq --root "$TARGET_ROOT" ops registry --write --json
+.agents/quenching/bin/cq --root "$TARGET_ROOT" ops registry --write --json
 ```
 
 The generator owns the marked block. Preserve authored prose around it and do not edit generated
@@ -115,8 +115,8 @@ Run the closing verifier and, when it reports a finding, fix only the new entry 
 router registration or the generated registry block:
 
 ```bash
-cq --root "$TARGET_ROOT" ops doctor --json
-cq --root "$TARGET_ROOT" ops registry --check --json
+.agents/quenching/bin/cq --root "$TARGET_ROOT" ops doctor --json
+.agents/quenching/bin/cq --root "$TARGET_ROOT" ops registry --check --json
 ```
 
 For a write-capable entry point, exercise the preview path without `--apply` and confirm no
@@ -130,7 +130,7 @@ selected write/non-write shape has a captured help, preview or JSON proof.
 
 Report the invocation, created path, purpose, domain, lifecycle, router, registry path, write
 policy, verification payloads and any target-owned residue. State explicitly when the command
-refused before writing or when a judgement finding remains for `/quenching-ops:ops:align`.
+refused before writing or when a judgement finding remains for `/quenching-ops-align`.
 
 **Done when:** one new entry point and its proof are fully accounted for, with no claim beyond the
 captured verifier output.
@@ -142,5 +142,5 @@ captured verifier output.
 - The four answers bind the path, write shape and lifecycle; the mold supplies the deterministic
   contract.
 - A write outside the repository is preview-first and explicitly armed; there is no unarmed branch.
-- The registry's generated block is regenerated by `cq ops registry`, never hand-composed.
+- The registry's generated block is regenerated by `.agents/quenching/bin/cq ops registry`, never hand-composed.
 - Never hand this command `context: fork`; its confirmation gate is mid-flow.

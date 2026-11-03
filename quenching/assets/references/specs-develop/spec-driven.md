@@ -2,16 +2,16 @@
 
 **This file is the single owner of the spec document's format** — identity, frontmatter,
 canonical sections, gates, derived stages, the executor contract and the boundary with the OKF
-bundle. The `cq specs` tool surface and the report shape live in focused references, and every
-`/quenching-specs:specs:*` command cites the smallest owner instead of loading this file whole. The OKF
+bundle. The `.agents/quenching/bin/cq specs` tool surface and the report shape live in focused references, and every
+`/quenching-specs-*` command cites the smallest owner instead of loading this file whole. The OKF
 bridge (what durable knowledge crosses from a spec into `knowledge/` and how) lives with the close-out command
-([specs-conclude/distill.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-conclude/distill.md)).
+([specs-conclude/distill.md](.agents/quenching/assets/references/specs-conclude/distill.md)).
 
 **A spec is a document on the `quenching` branch** (the git store), with an optional thin tracker
 card (GitHub issue or Azure Boards work item) as its human-facing projection. The document carries
 the same thirteen sections, frontmatter records, and derived stages throughout its lifecycle. The
 `github` and `azure-boards` backends, which keep the document in the tracker item, are deprecated
-but work. Every command drives `cq specs`, never a repository path or the tracker item.
+but work. Every command drives `.agents/quenching/bin/cq specs`, never a repository path or the tracker item.
 
 What every backend owes that model — the five primitives, the obligation to reassemble the whole
 canonical document on read, and refusal on unsupported selection — is owned by
@@ -19,7 +19,7 @@ canonical document on read, and refusal on unsupported selection — is owned by
 
 ## Contents
 
-`cq components read <this file>` returns the heading index; `--sections` addresses one.
+`.agents/quenching/bin/cq components read <this file>` returns the heading index; `--sections` addresses one.
 
 ## The scale
 
@@ -45,20 +45,20 @@ Autonomy is never inferred, and it covers only what the human declared: widening
 
 **Building is the same on every path:** every stage runs in one session and crosses section boundaries without pausing. The loop stops only for a question that requires a human answer or for an actual blocker. Depth selects the definition mode, never the execution mode.
 
-At the end of an unattended build, the close-out command carries the PR handoff by `Skill` after its green gate: `Skill("quenching-specs:git:git", "pr-create <id>")`. The PR command keeps its own confirmation, push and provider record. Other builds retain `conclude`'s named handoff for the human.
+At the end of an unattended build, the close-out command carries the PR handoff by `Skill` after its green gate: `Skill("quenching-git-git", "pr-create <id>")`. The PR command keeps its own confirmation, push and provider record. Other builds retain `conclude`'s named handoff for the human.
 
 **Defining is never isolated in a sub-agent while it may ask.** Isolation means only the summary returns, which is incompatible with stopping to ask. The simple path could be isolated and is not: it is one pass landing one edit, so the returned summary would be as large as the work.
 
 An answer with no destination is conversation, and conversation is what gets summarized away. As each answer arrives, record which canonical section it belongs to — that mapping IS the consolidated edit, and an answer that maps to nothing is either out of scope (route it, per the body's guardrails) or was not worth asking.
 
-**Every defining stage reads `complexity` from a payload it already fetches.** `cq specs status --spec <slug> --json` returns `records`, and `priority.complexity` is inside it. The execution loop does not consult this field for section boundaries.
+**Every defining stage reads `complexity` from a payload it already fetches.** `.agents/quenching/bin/cq specs status --spec <slug> --json` returns `records`, and `priority.complexity` is inside it. The execution loop does not consult this field for section boundaries.
 
 ## The spec document
 
 <!-- rules -->
 
 **One spec is ONE canonical document for its entire lifecycle.** Phases enrich it; they never
-split it. `cq specs` reads the complete document on every read. The card is never the source: a
+split it. `.agents/quenching/bin/cq specs` reads the complete document on every read. The card is never the source: a
 human's comment on it is discussion, and an edit to its body is overwritten at the next transition.
 The open or archived phase is the document's directory, and the stage and outcome derive from the
 document.
@@ -68,7 +68,7 @@ reversion (what crosses into `knowledge/`: §Boundary).
 
 The store owns the locator and lifecycle transition. `promote` archives the document on the
 `quenching` branch and closes the card; it moves nothing on the code branches. What does not change is anything a command can
-observe through `cq specs`.
+observe through `.agents/quenching/bin/cq specs`.
 
 <!-- rationale -->
 
@@ -86,7 +86,7 @@ the folder did not.
 number (issue number, work-item ID); without one it is the branch's counter. The capture date is
 `date:` in the document, written **once, at creation**; transitions never change the ID or the date.
 
-**Identity is the ID, not the locator.** Every command and cross-reference names the ID; `cq specs`
+**Identity is the ID, not the locator.** Every command and cross-reference names the ID; `.agents/quenching/bin/cq specs`
 resolves that exact ID through the configured store. The file path, card URL and any exported path
 locate the document but are not identity, and a title is descriptive data rather
 than a key. A missing ID is a refusal (exit 2), never a title or fuzzy-match fallback.
@@ -112,7 +112,7 @@ else.**
 | `slug` | always | `create` | the identity key every command and cross-reference names |
 | `title` | always | `create` | one human-readable line |
 | `date` | always | `create` | `YYYY-MM-DD`, the capture date — stamped once and never rewritten (why it is not the basename's prefix: §Identity) |
-| `verification` | **optional** | `create` / `develop` | `per-task` · `per-section` · `end-of-plan` — when `verify:` runs. Absent means the default (`per-section`), applied on read; written after capture with `cq specs verification`, **never** by editing the frontmatter |
+| `verification` | **optional** | `create` / `develop` | `per-task` · `per-section` · `end-of-plan` — when `verify:` runs. Absent means the default (`per-section`), applied on read; written after capture with `.agents/quenching/bin/cq specs verification`, **never** by editing the frontmatter |
 | `priority` | once ranked | `triage` | `{level, criticality, complexity, date}` — a human's ranking against every other spec. `complexity` alone is also written at capture, by `create` — the one field of this record a second command may write (`assets/specs/schema.json`'s `complexity.writtenBy: [triage, create, develop]`) |
 | `refined` | once interrogated | `develop` | `{mode, date}` — that a real interrogation happened, and which operation ran it |
 | `approved` | once approved | `develop`, or `execute` inline | `{date, by}` — **that this spec may be built, and on whose authority**: `by: human` is a person's word, `by: orchestrator-forced` a declared-autonomy run's, and `by: session` the simple path's own stamp (`by: low-gear`, its historical value, stays valid and is never rewritten); absent reads as `human` |
@@ -143,11 +143,11 @@ merely derived fact earns no such mirror.
 There is no attempt counter and no `.specs.json`.
 
 **Four more keys — `tags`, `assignee`, `start`, `target` — are STATE, never records.** Each is a
-first-level frontmatter key with its own deterministic verb (`cq specs tags|assignee|start|target
+first-level frontmatter key with its own deterministic verb (`.agents/quenching/bin/cq specs tags|assignee|start|target
 <id> [value]`), not a `{field: value}` record and not owned by one lifecycle command. `tags` is
-also written at capture — `cq specs new --tags` folds a resolved `subjects.<KEY>`'s own fixed tags
+also written at capture — `.agents/quenching/bin/cq specs new --tags` folds a resolved `subjects.<KEY>`'s own fixed tags
 in automatically, so the whole list still lands in ONE write rather than the capture's own tags
-followed by a second, separate `cq specs tags` call. On the git store all four live in the document's frontmatter; the card shows
+followed by a second, separate `.agents/quenching/bin/cq specs tags` call. On the git store all four live in the document's frontmatter; the card shows
 tags and assignee as labels and assignees at transitions. A deprecated tracker backend instead
 stores them natively and reassembles them on read (`docs/standards/architecture/spec-backend.md`
 §Legacy tracker backends).
@@ -184,11 +184,11 @@ the body prose is written in is owned by the bundle's `docs/standards/agents/com
 
 **Every section declares its moment, and that is load-bearing.** `## Proposal` / `## Out of Scope`
 / `## Design` / `## Impact` / `## Handoff` / `## Tasks` are the `build` set — exactly what
-`/quenching-specs:specs:execute` step 4 sends an executor (`cq specs section <id> --moment build`).
+`/quenching-specs-execute` step 4 sends an executor (`.agents/quenching/bin/cq specs section <id> --moment build`).
 `## Problem` / `## Alternatives Considered` / `## Open Decisions` / `## Risks` are
 `decision` — the human's, weighing whether to build at all. `## Validation` / `## Outcome` are
-`close` — `/quenching-specs:specs:conclude`'s. `## Discoveries` carries no moment: captured
-indiscriminately while building, it is resolved later by `/quenching-specs:specs:develop`'s triage sweep, on its own
+`close` — `/quenching-specs-conclude`'s. `## Discoveries` carries no moment: captured
+indiscriminately while building, it is resolved later by `/quenching-specs-develop`'s triage sweep, on its own
 schedule.
 
 - **`## Validation`** is the fallback for a task with no `verify:` line.
@@ -216,7 +216,7 @@ omission; it is a *not-yet*.
 
 **`ready` is a derived stage, not a folder, and it refuses nothing.** Filling those ten sections is
 what makes a spec ready; no file moves, so there is nothing to refuse. It is a **floor** that
-`/quenching-specs:specs:execute` reports against — and the tool simply has no task to hand out until the ten are
+`/quenching-specs-execute` reports against — and the tool simply has no task to hand out until the ten are
 filled, which is where the old promote's teeth went. The OK to build is a separate fact,
 `approved:`, asked for inline rather than encoded in a folder — or, on the simple path alone,
 stamped by the session itself once the trust criterion (§The scale) closes — or `by: orchestrator-forced` when the human declared autonomy.
@@ -229,7 +229,7 @@ Three rules decide whether a section counts as filled:
    explicit null is strictly more information than an absent heading. It costs one line.
 2. **A present-but-empty heading is malformed and refuses.** It is neither an answer nor a
    not-yet.
-3. **An absent heading before its gate is legal.** `cq specs new` stamps `## Problem` and nothing
+3. **An absent heading before its gate is legal.** `.agents/quenching/bin/cq specs new` stamps `## Problem` and nothing
    else — a captured spec is four lines of body, not a thirteen-heading skeleton.
 
 The sets live in `assets/specs/schema.json` and are read by **both** `promote` and `validate` — one
@@ -275,10 +275,10 @@ declares post-merge field validation, an obligation known at definition time. Fi
 right moment dropped the spec to `executing` before a single box existed — measured on a spec whose
 `## Tasks` was still empty and which had not even reached the `ready` gate, reported as under
 construction and ranked against specs with code in flight. A ticked box is the honest signal
-because `cq specs task` writes it only after a commit; nothing else on this list can be written by
+because `.agents/quenching/bin/cq specs task` writes it only after a commit; nothing else on this list can be written by
 accident.
 
-`cq specs list` and `cq specs next --front` both group by these stages, deriving them from disk
+`.agents/quenching/bin/cq specs list` and `.agents/quenching/bin/cq specs next --front` both group by these stages, deriving them from disk
 on every call.
 
 ## `## Impact` — the one parsed declaration
@@ -306,7 +306,7 @@ A bullet may carry a `§`address beside its path —
 `docs/standards/automation/skills.md §The verifier` — naming exactly which sections of that
 standard the task must honor. `parse_impact_standards()` already tolerates it: the regex matches
 only the `docs/standards/**.md` path and ignores the rest of the line, addressed or not. Without an
-address, `/quenching-specs:specs:execute` step 4 reads the file whole — the address is an
+address, `/quenching-specs-execute` step 4 reads the file whole — the address is an
 assertion the spec's own author makes, never an economy the executor infers on its own.
 
 ## `## Tasks` and the `[!]` blocked marker
@@ -314,7 +314,7 @@ assertion the spec's own author makes, never an economy the executor infers on i
 <!-- rules -->
 
 Checkboxes `- [ ] <id> <text>` grouped under `### N. <Section>` headings, carrying optional
-`files:` / `verify:` / `pattern:` / `subject:` / `commit:` / `[P]` metadata. `cq specs task
+`files:` / `verify:` / `pattern:` / `subject:` / `commit:` / `[P]` metadata. `.agents/quenching/bin/cq specs task
 --check <id>` flips a box mechanically — **never by string surgery**.
 
 `subject:` and `commit:` are written by `task --check --subject <line> --commit <sha>` and record
@@ -323,7 +323,7 @@ than as a trailer inside the commit message, which leaves the target repo's mess
 entirely its own. The task is checked after the local commit because the spec lives outside the code
 branch and its write cannot be part of that commit; the recorded commit facts let a failed remote
 write be retried without rebuilding or amending it
-([execution.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/execution.md) §The commit).
+([execution.md](.agents/quenching/assets/references/specs-execute/execution.md) §The commit).
 A spec built before this change may carry only `subject:` or only `commit:`; both forms are read and
 neither is backfilled.
 `## Tasks` is the file's churn zone by design — its boxes already flip — so the low-churn doctrine
@@ -339,7 +339,7 @@ Written by the orchestrator when it decides to stop retrying; `next` skips it. *
 attempt limit.**
 
 `[P]` marks a parallel-eligible group, honoured only when the group's `files:` sets are provably
-disjoint (`cq specs parallel`). Serial by default.
+disjoint (`.agents/quenching/bin/cq specs parallel`). Serial by default.
 
 <!-- rationale -->
 
@@ -361,18 +361,18 @@ it.
 It does **not** receive the `decision`-moment sections (`## Problem` /
 `## Alternatives Considered` / `## Open Decisions` / `## Risks`), nor the rest of the `build` set
 verbatim. The orchestrator itself reads the `build` set at step 4
-(`cq specs section <id> --moment build --scope current`) — the other five sections whole, and
+(`.agents/quenching/bin/cq specs section <id> --moment build --scope current`) — the other five sections whole, and
 `## Handoff` already cut to the same global-plus-own-section slice the bullet above promises an
 executor, so **neither side depends on an agent remembering to narrow it**; a `## Design` decision
 that bears on the task reaches the executor distilled into the task line or `## Handoff`, never as
 the section itself. It returns
 a structured result — status, diff summary, `verify:` output, discoveries, handoff deltas — and
-**never writes the spec**. The orchestrator applies everything via `cq specs` (`task --check`, `discover`,
+**never writes the spec**. The orchestrator applies everything via `.agents/quenching/bin/cq specs` (`task --check`, `discover`,
 `section --write`), runs `verify:` itself, and commits: **whoever commits, verifies.**
 
 Discoveries are **captured indiscriminately**; whether one is worth acting on is a later judgment,
 not the executor's. They are born in the origin spec's `## Discoveries` and resolved in place by
-`/quenching-specs:specs:develop`'s discoveries stage — `promoted: <new-slug>`, `folded: <section>`, or
+`/quenching-specs-develop`'s discoveries stage — `promoted: <new-slug>`, `folded: <section>`, or
 `dismissed: <reason>` — so provenance is never lost and the human pays the decision cost in batch.
 
 `## Handoff` refresh is **bound to events, not judgment**: the orchestrator rewrites it on four of
@@ -380,7 +380,7 @@ them — the run pauses, a task is written blocked, a discovery is recorded, the
 lands — and on nothing else. Each names an act the executor just performed, never an assessment it
 has to make, which is what lets the rule hold in an unattended run; staleness is this section's
 failure mode, and `validate` warns when a spec past the ready gate has an empty `## Handoff`. What a
-rewrite touches is scoped the same way what an executor reads is: `cq specs section <id> Handoff
+rewrite touches is scoped the same way what an executor reads is: `.agents/quenching/bin/cq specs section <id> Handoff
 --write --scope global` for the evergreen block, `--scope current` for the block of the section
 whose tasks are still open. A section's block is never targeted again once its last task commits —
 that IS the close, no separate flag marks it — so a run that has moved on to `### 4.` never pays to
@@ -398,13 +398,13 @@ One writer with mechanical writes is also what makes one file safe under paralle
 this section.
 
 - `specs/plans/` — **the in-flight unit of work**: a spec's problem, design, and task checklist
-  while it is being defined and built. Owned by the `/quenching-specs:specs:*` commands; leaves for `archive/` when
+  while it is being defined and built. Owned by the `/quenching-specs-*` commands; leaves for `archive/` when
   it is concluded.
 - `docs/standards/` — **how WE build** (binding contracts: naming, architecture, code);
   `docs/concepts/` — generic understanding. A spec writes its durable rule **directly** into
-  `docs/standards/` (`authority`-graded) **when a task explicitly names it**, and `/quenching-specs:specs:conclude`
+  `docs/standards/` (`authority`-graded) **when a task explicitly names it**, and `/quenching-specs-conclude`
   routes what the work merely *revealed*
-  ([distill.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-conclude/distill.md)) — never by bulk
+  ([distill.md](.agents/quenching/assets/references/specs-conclude/distill.md)) — never by bulk
   copy.
 
 The spec **is** the change: what it proves out lands in `knowledge/` as it is built, honestly graded

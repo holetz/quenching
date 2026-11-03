@@ -1,11 +1,11 @@
 ---
 description: >-
-  Run one components flow (command, agent or hook mint, align, status, harness align). Use for "create a command", "align the skills", "wire a hook", "slim down AGENTS.md". Not for: knowledge docs → /quenching-align:knowledge:knowledge.
+  Run one components flow (command, agent or hook mint, align, status, harness align). Use for "create a command", "align the skills", "wire a hook", "slim down AGENTS.md". Not for: knowledge docs → /quenching-knowledge-knowledge.
 argument-hint: "[command-new|agent-new|hook-new|align|status|harness-align] [input]"
 allowed-tools: Bash(cq:*), Bash(cq.cmd:*), Read
 ---
 
-# /quenching-align:components:components — one entry point for the components flows
+# /quenching-components-components — one entry point for the components flows
 
 **Input**: `$ARGUMENTS` — an optional flow name, then what that flow takes. The remaining words go to the flow untouched.
 
@@ -17,8 +17,8 @@ flow's text is read only when the flow runs.
 
 ## Resolving the tool
 
-Resolve `cq` (`cq components read` is the section reader every `§X` citation resolves through)
-per [align/tool-resolution.md](${CLAUDE_PLUGIN_ROOT}/assets/references/align/tool-resolution.md)
+Resolve `cq` (`.agents/quenching/bin/cq components read` is the section reader every `§X` citation resolves through)
+per [align/tool-resolution.md](.agents/quenching/assets/references/align/tool-resolution.md)
 §Resolving the tool; branch on the **exit code** (0 ok · 1 findings · 2 refusal) and the `--json`,
 never on prose.
 
@@ -31,22 +31,22 @@ returns `STATE: blocked` with `NOTE: needs-human:` carrying it.
 
 | Flow | Reference | Picked when |
 | --- | --- | --- |
-| `command-new` | [components-flows/command-new.md](${CLAUDE_PLUGIN_ROOT}/assets/references/components-flows/command-new.md) | minting or editing ONE skill or command |
-| `agent-new` | [components-flows/agent-new.md](${CLAUDE_PLUGIN_ROOT}/assets/references/components-flows/agent-new.md) | minting or editing ONE subagent definition |
-| `hook-new` | [components-flows/hook-new.md](${CLAUDE_PLUGIN_ROOT}/assets/references/components-flows/hook-new.md) | wiring ONE scoped hook |
-| `align` | [components-flows/align.md](${CLAUDE_PLUGIN_ROOT}/assets/references/components-flows/align.md) | converging the whole `.agents/skills` surface and its descriptions |
-| `status` | [components-flows/status.md](${CLAUDE_PLUGIN_ROOT}/assets/references/components-flows/status.md) | a read-only report of the automation surface |
-| `harness-align` | [components-flows/harness-align.md](${CLAUDE_PLUGIN_ROOT}/assets/references/components-flows/harness-align.md) | refactoring AGENTS.md into pointers over the `/docs/` bundle |
+| `command-new` | [components-flows/command-new.md](.agents/quenching/assets/references/components-flows/command-new.md) | minting or editing ONE skill or command |
+| `agent-new` | [components-flows/agent-new.md](.agents/quenching/assets/references/components-flows/agent-new.md) | minting or editing ONE subagent definition |
+| `hook-new` | [components-flows/hook-new.md](.agents/quenching/assets/references/components-flows/hook-new.md) | wiring ONE scoped hook |
+| `align` | [components-flows/align.md](.agents/quenching/assets/references/components-flows/align.md) | converging the whole `.agents/skills` surface and its descriptions |
+| `status` | [components-flows/status.md](.agents/quenching/assets/references/components-flows/status.md) | a read-only report of the automation surface |
+| `harness-align` | [components-flows/harness-align.md](.agents/quenching/assets/references/components-flows/harness-align.md) | refactoring AGENTS.md into pointers over the `/docs/` bundle |
 
 `command:eval`, `command:retro` are typed-only commands and are never routed here.
 
 **Done when:** exactly one flow is chosen, with its input.
 
 ### 2. Load the flow and follow it
-Run `cq components read` on the chosen flow's reference from the table above, with its
-`${CLAUDE_PLUGIN_ROOT}/assets/references/components-flows/` path. Read the flow whole, once, and follow it from its own `## Workflow` with the input from step 1:
+Run `.agents/quenching/bin/cq components read` on the chosen flow's reference from the table above, with its
+`.agents/quenching/assets/references/components-flows/` path. Read the flow whole, once, and follow it from its own `## Workflow` with the input from step 1:
 its steps, `Done when:` lines and invariants bind this run exactly as they bound the standalone
-command. A `/quenching-align:components:<flow>` the flow names as the next step is the typed shortcut to
+command. A `/quenching-components-<flow>` the flow names as the next step is the typed shortcut to
 the same reference, and a conductor reaches the same flow by calling this command with the flow name and
 the input.
 **Done when:** the flow ran to its own `Done when:`, or stopped on its own stop condition.

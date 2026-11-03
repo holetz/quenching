@@ -1,6 +1,6 @@
 # Composing and refining — what `develop` asks, and how
 
-The owner of **what** `/quenching-specs:specs:develop` asks and **when it stops**. The command body owns
+The owner of **what** `/quenching-specs-develop` asks and **when it stops**. The command body owns
 the loop (resolve → derive the pass → ask → one edit → verify); this file owns the two operations,
 the stages around them and the mechanics they share, and the body never restates it.
 
@@ -11,7 +11,7 @@ where composing starts, a concrete signal says whether refining runs without bei
 
 ## Contents
 
-`cq components read <this file>` returns the heading index; `--sections` addresses one.
+`.agents/quenching/bin/cq components read <this file>` returns the heading index; `--sections` addresses one.
 
 ## The pass — what runs, and in what order
 
@@ -24,7 +24,7 @@ A pass runs up to four stages, always in this order:
 | 2 | [refine](#refine) | a concrete signal fired, or a human asked for it | is this the right thing to build at all? |
 | 3 | [approval](#approval--the-close-and-its-recommendation) | always | does this spec get a go, and what should happen to it next? |
 
-**The stage says where composing starts, never which operation runs.** `cq specs status --spec <id>
+**The stage says where composing starts, never which operation runs.** `.agents/quenching/bin/cq specs status --spec <id>
 --json` reports it, and the `sections` and `ready` fields of that same payload say exactly which
 headings compose still owes:
 
@@ -131,7 +131,7 @@ each of those buys nothing — every turn re-sends the whole conversation, so a 
 costs the preamble again.
 
 Measured on this repository's own transcripts, question turns are **not** where this command's
-tokens go: real `/quenching-specs:specs:develop` runs made 2–5 `AskUserQuestion` calls, against whole-file
+tokens go: real `/quenching-specs-develop` runs made 2–5 `AskUserQuestion` calls, against whole-file
 reference reads worth ~900k token-turns in a single run. Grouping is here because the old rule
 overreached, not because it closes a leak.
 
@@ -155,7 +155,7 @@ not. Invoking the command is the authorization, and the human's window on the ed
 URL in the backend.
 
 **The edit lands per pass, not per stage** — compose and refine write together, in one call, and the
-tool is built for exactly that: `cq specs section <id> "<H1>,<H2>,…" --write` splices N headings and
+tool is built for exactly that: `.agents/quenching/bin/cq specs section <id> "<H1>,<H2>,…" --write` splices N headings and
 **lands them as ONE write**, so a mismatched heading set refuses (exit 2) without writing any of
 them. A pass is therefore all-or-nothing: an abandoned one leaves the spec exactly as it was.
 
@@ -203,12 +203,12 @@ stage.** What the session calculates is two things — **who answers** a stage t
 **whether refine runs**.
 
 **The calculation.** Before it asks anything, the session reads the state
-(`cq specs status --spec <id> --json`), enumerates the decisions the execution will need, and
+(`.agents/quenching/bin/cq specs status --spec <id> --json`), enumerates the decisions the execution will need, and
 classifies each as **resolved by evidence** (the spec, the codebase, the `/docs/standards/` its
 `## Impact` declares and `/docs/glossary.md` answer it), **dependent on the human** (appetite, a
 policy, a choice of direction no evidence settles) or **very costly to undo** (irreversible, or of
 wide blast radius). `priority.complexity` records the depth the calculation reached
-([spec-driven.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/spec-driven.md) §The scale);
+([spec-driven.md](.agents/quenching/assets/references/specs-develop/spec-driven.md) §The scale);
 it informs the calculation and never replaces it. Absent reads as `high`.
 
 | Calculation | Track | Who answers | Stamp |
@@ -267,7 +267,7 @@ are worth tabling at all; once a shape is on the page, the remaining headings do
 another and travel together on one decision sheet.
 
 **Drive the gap off the tool, never off a reading of the file.** The `sections` and `ready`
-(`{ok, missing, malformed}`) fields of the step's own `cq specs status --spec <id> --json` payload
+(`{ok, missing, malformed}`) fields of the step's own `.agents/quenching/bin/cq specs status --spec <id> --json` payload
 already name every heading that is absent or malformed, and the section read returns
 `(## X is absent)` for the rest — so the map of what compose owes costs no call of its own.
 
@@ -317,7 +317,7 @@ The questions come from the gap itself, in the spec's own terms:
 - a term the spec uses in a sense the repo's glossary does not.
 
 **And the three questions only this moment can answer** — every one of them is a decision
-`/quenching-specs:specs:execute` is forbidden to make for itself, so a spec that leaves them unasked is
+`/quenching-specs-execute` is forbidden to make for itself, so a spec that leaves them unasked is
 built with the cheap options closed:
 
 - **which task groups touch provably disjoint `files:`** → mark them `[P]` now. Execution **never
@@ -338,14 +338,14 @@ frontmatter, so `execute` never has to guess mid-build) and the parsed `### Stan
 write into docs/standards/` sub-heading under `## Impact`.
 
 **Evidence answers** all seven symptoms and all three execution decisions — `[P]`, `files:`
-and `pattern:` are provable against the tree, and `cq specs parallel` proves the first
+and `pattern:` are provable against the tree, and `.agents/quenching/bin/cq specs parallel` proves the first
 mechanically. **Only a human answers** the `verification` policy; on the simple track and on declared autonomy the pass **declares
 nothing** and lets the default stand, because stamping the default records a decision nobody made.
 
 **Stop when** the ready set is closed — every gate section answered with content or a reasoned
 `- none`, every task with a judgeable completion, no `## Impact` path uncovered — and the human
 would recognise the spec as describing their idea. A `[P]` compose set is **proved** when the edit
-lands, by `cq specs parallel`, never argued about here: the tool checks disjunction mechanically and
+lands, by `.agents/quenching/bin/cq specs parallel`, never argued about here: the tool checks disjunction mechanically and
 names the group it refuses.
 
 <!-- rationale -->
@@ -487,7 +487,7 @@ Three resolutions and nothing else:
 
 | Resolution | When | What it costs |
 | --- | --- | --- |
-| `promoted: <id>` | it is work someone will do, and the front does not already hold it | one `cq specs list --json` to check, then one `cq specs new` — offer it, and write the ID back |
+| `promoted: <id>` | it is work someone will do, and the front does not already hold it | one `.agents/quenching/bin/cq specs list --json` to check, then one `.agents/quenching/bin/cq specs new` — offer it, and write the ID back |
 | `folded: <section>` | it changes THIS spec | the answer lands in that section in the same edit |
 | `dismissed: <reason>` | it is real but not worth acting on, or another spec already covers it | one line, and the reason is the whole value |
 
@@ -518,7 +518,7 @@ the same: what the spec now commits to, in the proposal's one line, the task cou
 `verification` policy in force, the declared `docs/standards/` paths, and the biggest accepted
 risk, plus the declared-reading estimate, worker budget and unknown inputs.
 
-**The size signal precedes every approval stamp.** Run `cq specs estimate <id> --json` after
+**The size signal precedes every approval stamp.** Run `.agents/quenching/bin/cq specs estimate <id> --json` after
 ready verification. Its `overBudget` compares the largest task section's known reading estimate
 with `workerBudgetTokens` (S2: 100000). Bytes / 4 is a heuristic, not measured build context;
 excluded overhead and unknown inputs remain visible below the budget. Never claim a build fits
@@ -542,7 +542,7 @@ text:
 | Recommendation | When | What choosing it does |
 | --- | --- | --- |
 | **Decompose** | known declared reading exceeds worker budget | propose independently verifiable slices in this session; capture only on explicit authorization |
-| **Approve** | no signal fired | `cq specs record "<id>" approved --set date=<today> --set by=human`, never by editing the provider document directly |
+| **Approve** | no signal fired | `.agents/quenching/bin/cq specs record "<id>" approved --set date=<today> --set by=human`, never by editing the provider document directly |
 | **Refine** | a scope or critique signal fired, and refine has not run this pass | the choice IS the OK to refine with the lens the signal names, restamping `complexity` if the depth grew, and the pass re-enters at refine |
 | **Refine with the premortem** | the spec is irreversible | same mechanics, premortem lens |
 | **Stop here** | — | nothing stamped, and the report says what is open |
@@ -553,7 +553,7 @@ decide the same thing twice.
 
 **On the simple track, after the size check leaves no unresolved oversized-plan decision — the pass
 approves, and the record says so.**
-`cq specs record "<id>" approved --set date=<today> --set by=session`. There is no screen, because
+`.agents/quenching/bin/cq specs record "<id>" approved --set date=<today> --set by=session`. There is no screen, because
 the simple track is the one with nothing left for a human to decide. The review window is **the
 spec's URL in the backend**, announced before the pass read anything and repeated in its report. The
 stamp is not an inference from the sections and never claims to be one. When the conductor declared
@@ -574,8 +574,8 @@ question later.
 
 Every stage that reads the codebase or `docs/` to answer its own questions — compose's
 "read it, do not theorize" included, not only what follows below — does so under
-[align/evidence-doctrine.md](${CLAUDE_PLUGIN_ROOT}/assets/references/align/evidence-doctrine.md):
-the aggregate a `grep`/`gh`/`cq` call produces, never the raw dump; `cq components read <path>
+[align/evidence-doctrine.md](.agents/quenching/assets/references/align/evidence-doctrine.md):
+the aggregate a `grep`/`gh`/`cq` call produces, never the raw dump; `.agents/quenching/bin/cq components read <path>
 --sections "§X"` for `docs/standards/` and `knowledge/glossary.md`, the same way this
 plugin's own references already address a section instead of a whole file.
 
@@ -621,7 +621,7 @@ never answers substituted for them.
 
 Two things that look like this and are not available. **`context: fork` cannot ask a question** —
 `sk-fork-gate` is an error, and a fork beside an `AskUserQuestion` grant is incoherent by
-construction ([capabilities.md](${CLAUDE_PLUGIN_ROOT}/assets/references/components-command-new/capabilities.md)
+construction ([capabilities.md](.agents/quenching/assets/references/components-command-new/capabilities.md)
 §`context: fork`); the complex track is nothing but questions. And a sub-agent **does not share
 the session's prompt cache** — it runs on a cold context and pays the full first read of every file
 it touches, so delegation here is never a cache play.

@@ -6,17 +6,17 @@ argument-hint: [optional-target-root]
 allowed-tools: Bash(cq:*), Bash(cq.cmd:*), Read, Grep, Glob, Bash(python3:*)
 ---
 
-# /quenching-security:security:status — read the security pillar
+# /quenching-security-status — read the security pillar
 
 **Input**: `$ARGUMENTS` (an optional target repository root; omit to use the current repository).
 
 This command is the read-only status/audit view of the security pillar. It reports live evidence
 without owning a security tree, selecting a target policy or repairing a finding. Resolve `cq` per
-[tool-resolution.md](${CLAUDE_PLUGIN_ROOT}/assets/references/align/tool-resolution.md)
+[tool-resolution.md](.agents/quenching/assets/references/align/tool-resolution.md)
 §Resolving the tool. Set `TARGET_ROOT` to `$ARGUMENTS`, or `.` when omitted, and run:
 
 ```bash
-cq --root "$TARGET_ROOT" security --json
+.agents/quenching/bin/cq --root "$TARGET_ROOT" security --json
 ```
 
 Branch on the JSON and exit code: `0` is a measured report, `1` carries reported observations, and
@@ -28,7 +28,7 @@ complete read model and do not invoke a write-capable command.
 
 ### 1. Read the status payload
 
-Re-read the payload using the `cq security --json` invocation above. Branch on its exit code and
+Re-read the payload using the `.agents/quenching/bin/cq security --json` invocation above. Branch on its exit code and
 preserve its measured, refused or not-measured state.
 
 **Done when:** the payload is captured, or the refusal is preserved with its reason.

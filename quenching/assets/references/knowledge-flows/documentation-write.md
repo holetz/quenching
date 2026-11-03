@@ -1,18 +1,18 @@
-# /quenching-align:knowledge:documentation:write — draft pages from the accepted plan
+# /quenching-knowledge-documentation-write — draft pages from the accepted plan
 
 **Input**: `$ARGUMENTS` (an optional page slice or plan path; omit to use
-`${CLAUDE_PROJECT_DIR}/.quenching/documentation/plan.md` and write every assigned page).
+`./.quenching/documentation/plan.md` and write every assigned page).
 
 Reads the accepted plan and writes only the assigned pages in the bundle's **reader-facing
-quadrants** — `${CLAUDE_PROJECT_DIR}/docs/{tutorials,how-to,explanation,project}/` and the root
+quadrants** — `./docs/{tutorials,how-to,explanation,project}/` and the root
 `index.md`. `standards/`, `concepts/`, `external/`, `catalog/`, `vision/` and `glossary.md` belong
 to the knowledge front and are written under its contract, never here. The Zensical site stages
 only the allowlisted homes plus the root glossary; raw `external/` and `catalog/` content is never
 published by this site. Apply
-[knowledge-documentation/craft.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-documentation/craft.md),
-[knowledge-documentation/visual.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-documentation/visual.md)
+[knowledge-documentation/craft.md](.agents/quenching/assets/references/knowledge-documentation/craft.md),
+[knowledge-documentation/visual.md](.agents/quenching/assets/references/knowledge-documentation/visual.md)
 and
-[knowledge-documentation/agent-readability.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-documentation/agent-readability.md)
+[knowledge-documentation/agent-readability.md](.agents/quenching/assets/references/knowledge-documentation/agent-readability.md)
 in one pass per page.
 
 ## Doctrine
@@ -24,7 +24,7 @@ in one pass per page.
 - **Glossary links point at the glossary.** The canonical file is staged into `site-source/` and
   publishes as `glossary.md`; link it relatively (`../glossary.md`) from a section page. Terms stay
   canonical in the root file, and authors never hand-maintain abbreviation definitions. Run
-  `cq knowledge project docs --write`, then `cq knowledge site-source docs site-source --write` to
+  `.agents/quenching/bin/cq knowledge project docs --write`, then `.agents/quenching/bin/cq knowledge site-source docs site-source --write` to
   materialize the snippet and bounded input from their source hashes; rerunning either must be a
   byte-identical no-op.
 - **Derived knowledge is curated, not copied wholesale.** `standards/`, `concepts/` and `vision/`
@@ -78,7 +78,7 @@ bundle; an intentional exclusion is a plan decision, not a blank page.
 ### 5. Self-check the written set
 
 Check page paths, frontmatter, relative links (including the published glossary route), stable headings, component syntax and next-step
-links. Run `cq knowledge project ... --check` and compare every mandatory map row with a non-empty
+links. Run `.agents/quenching/bin/cq knowledge project ... --check` and compare every mandatory map row with a non-empty
 route. Report pages intentionally left for a later slice, but do not call the whole-bundle gate
 green when a mandatory surface is missing.
 **Done when:** the diff contains only assigned documentation pages and ledger changes, with no

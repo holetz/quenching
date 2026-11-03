@@ -1,18 +1,18 @@
 ---
 description: >-
-  Report the automation surface: command count, fronts and findings, read-only. Use for "components status", "check the automation surface". Not for: repairs → /quenching-align:components:align.
+  Report the automation surface: command count, fronts and findings, read-only. Use for "components status", "check the automation surface". Not for: repairs → /quenching-components-align.
 argument-hint: [optional-target-root]
 allowed-tools: Bash(cq:*), Bash(cq.cmd:*), Read, Grep, Glob, Bash(python3:*)
 disable-model-invocation: true
 ---
 
-# /quenching-align:components:status — typed shortcut
+# /quenching-components-status — typed shortcut
 
-Typed shortcut to the `status` flow of [/quenching-align:components:components](${CLAUDE_PLUGIN_ROOT}/commands/components/components.md).
+Typed shortcut to the `status` flow of [/quenching-components-components](.agents/quenching/commands/components/components.md).
 Input: `$ARGUMENTS`.
 
 ```bash
-cq components read ${CLAUDE_PLUGIN_ROOT}/assets/references/components-flows/status.md
+.agents/quenching/bin/cq components read .agents/quenching/assets/references/components-flows/status.md
 ```
 Read the flow whole, once, and follow it from its own `## Workflow` with `$ARGUMENTS` as its input:
 its steps, `Done when:` lines and invariants bind this run as they would the flow itself.

@@ -4,7 +4,7 @@ Rules for the second audience: agents that search, lift, reconstruct and cite a 
 
 ## Contents
 
-`cq components read ${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-documentation/agent-readability.md`
+`.agents/quenching/bin/cq components read .agents/quenching/assets/references/knowledge-documentation/agent-readability.md`
 returns the heading index; `--sections <name>` addresses one.
 
 <!-- rules -->
@@ -24,7 +24,7 @@ Pages carrying a reusable contract include a compact, high-signal block:
     - **Does:** audits a repo's knowledge surface, installs fixes with confirmation.
     - **Contract:** `repo path → scored report → item-by-item install`.
     - **Invariants:** never removes without OK; three dimensions are proposed-only.
-    - **Run:** `cq knowledge validate docs`
+    - **Run:** `.agents/quenching/bin/cq knowledge validate docs`
 ```
 
 Put facts, inputs, outputs and invariants in text. A diagram reinforces a fact; it never owns the

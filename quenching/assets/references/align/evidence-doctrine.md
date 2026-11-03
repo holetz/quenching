@@ -3,16 +3,16 @@
 Front-neutral: any command body that gathers evidence from `grep`/`gh`/`cq` to answer a small
 question, or reads a doctrine or standard to obey part of it, pays for what it reads on every turn
 that follows. This file states the two rules that keep that payment proportional to the question
-being answered, cited by `${CLAUDE_PLUGIN_ROOT}` from wherever a command needs them.
+being answered, cited by `.agents/quenching` from wherever a command needs them.
 
-Measured on one real `/quenching-specs:specs:develop` session (`renomear-docs-para-knowledge`, backend
+Measured on one real `/quenching-specs-develop` session (`renomear-docs-para-knowledge`, backend
 `github`): raw evidence was 36.6% of the ~58k tokens ingested — one `grep` alone returned 14,252
 chars to produce an eight-line table — and whole-reference reads were 20.2%. Neither number is the
 rule; both are why it was written down.
 
 ## Contents
 
-`cq components read <this file>` returns the heading index; `--sections` addresses one.
+`.agents/quenching/bin/cq components read <this file>` returns the heading index; `--sections` addresses one.
 
 ## 1. Extract the aggregate; never paste the raw dump
 
@@ -28,9 +28,9 @@ output, not the one that reads it.
 Where the sweep is wide and the question is still "one small table from many files," delegate
 instead of narrowing badly: a read-only sub-agent (`Read, Grep, Glob`, nothing else) that returns
 the table and no trail. This is not a new mechanism —
-[specs-develop/questions.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/questions.md)
+[specs-develop/questions.md](.agents/quenching/assets/references/specs-develop/questions.md)
 §Gathering the evidence and
-[align/sweep-doctrine.md](${CLAUDE_PLUGIN_ROOT}/assets/references/align/sweep-doctrine.md) §4 The
+[align/sweep-doctrine.md](.agents/quenching/assets/references/align/sweep-doctrine.md) §4 The
 blast-radius sweep both already delegate exactly this way; this rule is what generalizes their
 shared shape to every other site that gathers evidence the same way.
 
@@ -46,7 +46,7 @@ question for a few dozen.
 
 <!-- rules -->
 
-`cq components read <path> --sections "§X"` resolves **any** markdown file, not only
+`.agents/quenching/bin/cq components read <path> --sections "§X"` resolves **any** markdown file, not only
 `assets/references/**` — a target repo's own `/docs/standards/**.md` and
 `/docs/glossary.md` included. Where a step needs only the one or two sections that
 govern its decision, address them the same way this plugin already addresses its own references;
@@ -57,7 +57,7 @@ A doctrine text that says "read `/docs/standards/<subject>.md`" without naming a
 whole-file read on purpose — a short file with one governing rule throughout, or a step that
 genuinely needs all of it. That default never changes on its own; narrowing to a section is an
 assertion the citing text makes deliberately, the same way
-[specs-execute/execution.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/execution.md)
+[specs-execute/execution.md](.agents/quenching/assets/references/specs-execute/execution.md)
 §Read what the tasks must satisfy already narrows a spec's own `## Impact`-declared standards when
 the bullet carries a `§`address.
 
@@ -66,14 +66,14 @@ the bullet carries a `§`address.
 body that cites it. A target's `/docs/` carries no such guarantee: the standard a target holds
 may have been born from `assets/templates/automation/skills-standard.md` and never touched, or
 evolved past it, and the two heading sets differ — `§Single-axis classification` exists only in the
-evolved one. An unresolved section is a **refusal**, not a degradation: `cq components read` exits
+evolved one. An unresolved section is a **refusal**, not a degradation: `.agents/quenching/bin/cq components read` exits
 with 2, naming the headings the file does have. So a command body may hardcode a `§`address against
 a target's `/docs/` only where it also says what to do on that exit 2. A path discovered at
 runtime and read whole is unaffected — there is no address to be wrong.
 
 <!-- rationale -->
 
-The mechanism already generalizes — nothing about `cq components read` is specific to the plugin's
+The mechanism already generalizes — nothing about `.agents/quenching/bin/cq components read` is specific to the plugin's
 own `assets/references/`, and a doctrine site that still reaches for the plain file-reading tool on
 a target's `/docs/` is paying for that gap, not for a real constraint. A rule two sections long
 costs the same to read narrow as it does to read whole; only the surrounding rules that were not

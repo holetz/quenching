@@ -1,4 +1,4 @@
-# /quenching-align:knowledge:align — force the knowledge base into OKF shape, and keep filling it
+# /quenching-knowledge-align — force the knowledge base into OKF shape, and keep filling it
 
 **Input**: `$ARGUMENTS` (optionally a `/docs/` path or a scope; omit to align the whole bundle).
 
@@ -6,23 +6,23 @@ The **`docs` front's one entry point**. It installs and enforces a single canoni
 bundle, pulls in the durable content outside it (project memory, a fat harness) and backfills the
 glossary, looping until a pass changes nothing.
 
-The payload (skeleton, molds, validator) lives at `${CLAUDE_PLUGIN_ROOT}/assets/`; the contract at
-`${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-align/`:
+The payload (skeleton, molds, validator) lives at `.agents/quenching/assets/`; the contract at
+`.agents/quenching/assets/references/knowledge-align/`:
 
-- [knowledge-align/okf-spec.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-align/okf-spec.md) §Normative rules §Bundle & conformance — the normative OKF v0.2 rules (MUST/SHOULD/MAY).
-- [knowledge-align/taxonomy.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-align/taxonomy.md) §The canonical tree (locked) §The `type` vocabulary §Boundary rules (memorable summary) §The homes, one by one — the canonical tree, homes, `type` vocabulary, boundaries.
-- [knowledge-align/migration.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-align/migration.md) §1. Map variant → canonical §3. Measure and SURFACE the blast radius BEFORE executing §4. Propose the migration; NEVER rename/delete without OK — variant→canonical map + blast-radius doctrine.
-- [knowledge-align/conformance.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-align/conformance.md) §Bundle level §Structural integrity (whole-tree — CLI + `Stop` only) §Resource integrity (per-doc — every mode) — the exact checks the validator applies.
-- [knowledge-align/cycle.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-align/cycle.md) §The stage pipeline §Finding → owning-command routing table — the stage pipeline, the parallel-prep flow, and the finding → owning-command routing table.
+- [knowledge-align/okf-spec.md](.agents/quenching/assets/references/knowledge-align/okf-spec.md) §Normative rules §Bundle & conformance — the normative OKF v0.2 rules (MUST/SHOULD/MAY).
+- [knowledge-align/taxonomy.md](.agents/quenching/assets/references/knowledge-align/taxonomy.md) §The canonical tree (locked) §The `type` vocabulary §Boundary rules (memorable summary) §The homes, one by one — the canonical tree, homes, `type` vocabulary, boundaries.
+- [knowledge-align/migration.md](.agents/quenching/assets/references/knowledge-align/migration.md) §1. Map variant → canonical §3. Measure and SURFACE the blast radius BEFORE executing §4. Propose the migration; NEVER rename/delete without OK — variant→canonical map + blast-radius doctrine.
+- [knowledge-align/conformance.md](.agents/quenching/assets/references/knowledge-align/conformance.md) §Bundle level §Structural integrity (whole-tree — CLI + `Stop` only) §Resource integrity (per-doc — every mode) — the exact checks the validator applies.
+- [knowledge-align/cycle.md](.agents/quenching/assets/references/knowledge-align/cycle.md) §The stage pipeline §Finding → owning-command routing table — the stage pipeline, the parallel-prep flow, and the finding → owning-command routing table.
 
-The executable checker is bare `cq` (`cq knowledge validate docs` → exit 0 = conforms), the one
+The executable checker is the target-local `.agents/quenching/bin/cq` (`.agents/quenching/bin/cq knowledge validate docs` → exit 0 = conforms), the one
 form every body writes —
-[align/tool-resolution.md](${CLAUDE_PLUGIN_ROOT}/assets/references/align/tool-resolution.md)
+[align/tool-resolution.md](.agents/quenching/assets/references/align/tool-resolution.md)
 §Resolving the tool.
 
 ## Doctrine (non-negotiable)
 
-Read [align/sweep-doctrine.md](${CLAUDE_PLUGIN_ROOT}/assets/references/align/sweep-doctrine.md)
+Read [align/sweep-doctrine.md](.agents/quenching/assets/references/align/sweep-doctrine.md)
 §1. Probe before the inventory §2. Convergence, not accommodation §3. Force with ONE confirmation §4. The blast-radius sweep §5. MERGE, never clobber; never delete on a guess §6. Align conformance; report the cycle §7. Citing a command — three forms, one condition each §8. End honest.
 What follows is specific to `/docs/`:
 
@@ -33,16 +33,16 @@ write stays gated by the workflow below.
 - **This is the one front with a real loop**: a fact the harness MOVEs in is a term the glossary
   must then index. The loop ends at a **fixpoint** — a pass that changed nothing with the validator
   clean — bounded by a pass cap and a no-progress guard
-  ([convergence.md](${CLAUDE_PLUGIN_ROOT}/assets/references/align/convergence.md) §The convergence contract).
+  ([convergence.md](.agents/quenching/assets/references/align/convergence.md) §The convergence contract).
 - **Conduct the content stages, never reimplement them.** Steps 6–7 **invoke**
-  `/quenching-align:knowledge:import-memory`, `/quenching-align:components:harness:align` and `/quenching-align:knowledge:glossary-backfill` through the `Skill` tool
-  under their registry names (`quenching-align:knowledge:import-memory`, …); each runs under its own
+  `/quenching-knowledge-import-memory`, `/quenching-components-harness-align` and `/quenching-knowledge-glossary-backfill` through the `Skill` tool
+  under their registry names (`quenching-knowledge-import-memory`, …); each runs under its own
   doctrine and code-coupled confirmations.
 - **The expensive stage is offered, never assumed.** The glossary sweep reads the whole bundle and
   has no cheap signal, so it is gated on a free proxy and **offered** with its cost
   (sweep-doctrine §Probe before the inventory).
-- **Per-item commands are stage tools, not stages.** `/quenching-align:knowledge:add`,
-  `/quenching-align:knowledge:learn` and `/quenching-align:knowledge:define` each act on ONE item a human
+- **Per-item commands are stage tools, not stages.** `/quenching-knowledge-add`,
+  `/quenching-knowledge-learn` and `/quenching-knowledge-define` each act on ONE item a human
   states, and a loop pass has no fresh human input. A content gap only they can close is
   **surfaced** in the report, never fabricated.
 - **Completeness of what fits, evidence-gated.** A repo without data gets no `catalog/`; a
@@ -73,10 +73,10 @@ write stays gated by the workflow below.
 Resolve the bundle at its fixed root `/docs/`, then read all three signals and nothing
 else:
 ```bash
-cq knowledge validate docs --json          # structure: exit 0 = conformant
+.agents/quenching/bin/cq knowledge validate docs --json          # structure: exit 0 = conformant
 ls ~/.claude/projects/<cwd>/memory/    # out-of-band store 1: any undrained memory?
 ```
-plus one `Read` of each harness file that exists (`AGENTS.md`, and a legacy root `CLAUDE.md` that
+plus one `Read` of each harness file that exists (`AGENTS.md`, and a legacy root `AGENTS.md` that
 carries more than `@AGENTS.md`) — a fat one inlines
 durable knowledge; a thin one points. The glossary is **not** probed: it has no cheap signal, so
 it is proxied in step 7 instead.
@@ -113,19 +113,19 @@ inventory, plan, and structural write set to that scope; report out-of-scope fin
 them. With no argument, use the whole bundle.
 Detect the existing sections, which docs carry frontmatter, and match each section to a canonical
 home via the variant→canonical map
-([knowledge-align/migration.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-align/migration.md) §1. Map variant → canonical) —
+([knowledge-align/migration.md](.agents/quenching/assets/references/knowledge-align/migration.md) §1. Map variant → canonical) —
 top-level (`arquitetura/`→`standards/`) and subfolder (`codigo/`→`code/`). Read
-[knowledge-align/conformance.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-align/conformance.md)
+[knowledge-align/conformance.md](.agents/quenching/assets/references/knowledge-align/conformance.md)
 §Structural integrity (whole-tree — CLI + `Stop` only) §Resource integrity (per-doc — every mode) and
 route every probe finding to its owner via
-[knowledge-align/cycle.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-align/cycle.md) §Finding → owning-command routing table. Produce
+[knowledge-align/cycle.md](.agents/quenching/assets/references/knowledge-align/cycle.md) §Finding → owning-command routing table. Produce
 the plan — enumerate:
   - **(a)** homes to scaffold (only those that apply);
   - **(a2)** pre-rename plugin-layout sites to migrate (`okf-legacy-root`/`-home`/
     `-documentation-home`/`-doc-quadrant`/`-glossary` findings) — the bundle root, a home, the
     retired `documentation/` wrapper, a quadrant under it, or the glossary still sitting under a
     name a plugin release retired; resolved via
-    [knowledge-align/migration.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-align/migration.md)
+    [knowledge-align/migration.md](.agents/quenching/assets/references/knowledge-align/migration.md)
     §1g, each swept for blast radius like any other rename (f);
   - **(b)** variants to migrate/rename (with per-item destination);
   - **(b2)** **prefix-clusters to fold into subfolders** (`nomenclatura-*` siblings → a
@@ -162,33 +162,33 @@ returning `rename → [file:line, …]` and classify each hit yourself. The batc
 enumerated docs-only set. Each **code-coupled** rename is its **own** confirmation item.
 
 This gate runs **once per run**, before pass 1 — later passes narrate their plan and do not re-ask
-([convergence.md](${CLAUDE_PLUGIN_ROOT}/assets/references/align/convergence.md)
+([convergence.md](.agents/quenching/assets/references/align/convergence.md)
 §The cycle-authorization contract).
 **Done when:** one OK covers the batch, or each code-coupled item was answered on its own, or the
 plan was rejected and nothing was written.
 
 ### 4. Execute the structural pass (invasive)
-- **Scaffold** missing homes from `${CLAUDE_PLUGIN_ROOT}/assets/knowledge/` (copy the applicable
+- **Scaffold** missing homes from `.agents/quenching/assets/knowledge/` (copy the applicable
   `index.md` listings, e.g. `tutorials/**`; adapt boundary
   lines to the repo). When scaffolding `concepts/`, also copy
   its **fixed `glossary.md` seed** — the repo's A–Z term lookup — to the bundle root, and list it in
   `concepts/index.md` (it is the only pre-seeded concept doc the skeleton ships).
 - **Migrate** variants: move the folder, update every cross-ref found in step 3 (relative
   within a home, absolute `/docs/...` across homes).
-- **Resolve `okf-legacy-*` sites** ([migration.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-align/migration.md)
+- **Resolve `okf-legacy-*` sites** ([migration.md](.agents/quenching/assets/references/knowledge-align/migration.md)
   §1g): `git mv` the root/home/quadrant/glossary to its canonical name, root first, then repoint
   every code-coupled reference the blast-radius sweep found (a path default, a docstring, a hook's
   own root constant) — each such site is its **own** confirmation from step 3, never folded into
   the batch OK.
-- **Stamp/merge** frontmatter with the molds in `${CLAUDE_PLUGIN_ROOT}/assets/templates/`
+- **Stamp/merge** frontmatter with the molds in `.agents/quenching/assets/templates/`
   (`standard-front.md` for standards, `concept-front.md` otherwise).
 - **Regenerate** every `index.md` deterministically — **one for every directory that holds
   concept docs** (create the missing ones the `dir-no-index` check reports; a subject folder,
   a freshly folded cluster, and a catalog schema dir all get a front door). Each listing links
   its real children (no `dir-no-index`, no `index-broken-link`, no `index-orphan` left behind);
   strip stray frontmatter; for `standards/index.md` rebuild only the
-  `<!-- BEGIN/END GENERATED -->` zone with `cq knowledge listing --write`, then confirm it with
-  `cq knowledge listing --check`.
+  `<!-- BEGIN/END GENERATED -->` zone with `.agents/quenching/bin/cq knowledge listing --write`, then confirm it with
+  `.agents/quenching/bin/cq knowledge listing --check`.
 - **Write** `okf_version: "0.2"` into the root `/docs/index.md` frontmatter.
 - **Never create a `log.md`, and never touch one that is already there.**
 
@@ -198,7 +198,7 @@ plan was rejected and nothing was written.
 Both are one-shot scaffolding, not loop stages; skip this step entirely on later passes.
 
 **The language declaration.** Ask **once**, and only when the target's **root** harness file
-(`AGENTS.md`; a legacy root `CLAUDE.md` only while no `AGENTS.md` exists) carries no declaration
+(`AGENTS.md`; a legacy root `AGENTS.md` only while no `AGENTS.md` exists) carries no declaration
 yet. Ask for one BCP-47 tag — `pt-BR`, `en`,
 `ja` — and write a single line into that root file:
 
@@ -226,36 +226,36 @@ stays with it. When no `pyproject.toml` exists, merge/copy the payload's pinned
 lock. If the selected manager is unavailable, report the missing toolchain and leave the project
 files untouched.
 
-Offer to copy from `${CLAUDE_PLUGIN_ROOT}/assets/zensical/`: `zensical.toml.tmpl` → the repo
+Offer to copy from `.agents/quenching/assets/zensical/`: `zensical.toml.tmpl` → the repo
 **root** as `zensical.toml` **only if absent** (never clobber a customized one — show a diff and
 let the user merge), filling `site_name`/`site_description`; `quenching.css` → the bundle's own
 `assets/stylesheets/quenching.css`, the path `extra_css` names; on
 request, `ci-github-pages.yml` → `.github/workflows/docs.yml` (opt-in, platform-specific), or
 `azure-pipelines-docs.yml` → `azure-pipelines-docs.yml` only when the target remote is Azure DevOps.
 The first install also stages the bounded source with
-`cq knowledge site-source docs site-source --write`; `catalog/` and `external/` are absent from
+`.agents/quenching/bin/cq knowledge site-source docs site-source --write`; `catalog/` and `external/` are absent from
 that tree.
 
 This is the **first install only**; every later update, dependency sync, nav regeneration, config
-merge and build verification is `/quenching-align:knowledge:documentation:build`'s. Anything beyond
+merge and build verification is `/quenching-knowledge-documentation-build`'s. Anything beyond
 stamping absent files — a customized config to merge, a `docs_dir` pointing elsewhere, a stale nav
 or `uv.lock` — hands off to that command.
 **Done when:** the two offers have been made once and answered, or the pass is >1 and this step
 was skipped.
 
 ### 6. Run the content stages that have work, in order
-Invoke each through the `Skill` tool under its **registry name** — `quenching-align:knowledge:import-memory`,
-`quenching-align:components:harness:align`. Which of the three citation forms is correct, and the condition on each,
-is [sweep-doctrine.md](${CLAUDE_PLUGIN_ROOT}/assets/references/align/sweep-doctrine.md) §7. Citing a command. Declare the cycle-authorization mode to each
-([convergence.md](${CLAUDE_PLUGIN_ROOT}/assets/references/align/convergence.md)
+Invoke each through the `Skill` tool under its **registry name** — `quenching-knowledge-import-memory`,
+`quenching-components-harness-align`. Which of the three citation forms is correct, and the condition on each,
+is [sweep-doctrine.md](.agents/quenching/assets/references/align/sweep-doctrine.md) §7. Citing a command. Declare the cycle-authorization mode to each
+([convergence.md](.agents/quenching/assets/references/align/convergence.md)
 §The cycle-authorization contract), and **skip any stage the probe found empty**:
 
-1. `quenching-align:knowledge:import-memory` — drain the project's memory dir into its homes, clearing each
+1. `quenching-knowledge-import-memory` — drain the project's memory dir into its homes, clearing each
    memory once its doc lands and passes conformance.
-2. `quenching-align:components:harness:align` — thin `AGENTS.md` (legacy pointer-only `CLAUDE.md` removed), MOVEing durable knowledge into homes.
+2. `quenching-components-harness-align` — thin `AGENTS.md` (legacy pointer-only `AGENTS.md` removed), MOVEing durable knowledge into homes.
 
 The order is
-[knowledge-align/cycle.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-align/cycle.md) §The stage
+[knowledge-align/cycle.md](.agents/quenching/assets/references/knowledge-align/cycle.md) §The stage
 pipeline's. When **both** have work this pass, follow its §Parallel prep —
 harness's read-only discovery runs in a background `Task` agent while the drain executes inline.
 **Writes to `/docs/` are one stage at a time, always.**
@@ -268,17 +268,17 @@ Read the free proxy: the count of concept docs in the bundle against the number 
 `glossary.md`, plus whether steps 4 and 6 created any docs this pass. A bundle that grew
 and a glossary that did not is the signal.
 
-Offer `quenching-align:knowledge:glossary-backfill` with what it costs (a whole-bundle sweep, fanned out per
-home) and what the proxy shows. Put it as a decision sheet ([specs-develop/questions.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/questions.md) §1; A recommended) when the answer is a plain yes/no. A
+Offer `quenching-knowledge-glossary-backfill` with what it costs (a whole-bundle sweep, fanned out per
+home) and what the proxy shows. Put it as a decision sheet ([specs-develop/questions.md](.agents/quenching/assets/references/specs-develop/questions.md) §1; A recommended) when the answer is a plain yes/no. A
 declined offer is a complete answer — record it and do not re-offer on a later pass of the same
 run. Never run the sweep to discover whether it had work.
 **Done when:** the offer has been made once per run and answered, or the proxy showed no gap and
 the offer was deliberately not made.
 
 ### 8. Verify, then decide: loop or stop
-Re-run the applicable convergence checks in this order: `cq knowledge validate docs --json`,
-`cq knowledge project docs --check`, `cq knowledge nav docs --check`,
-`cq knowledge site-source docs site-source --check`, a strict site build, and the rendered site
+Re-run the applicable convergence checks in this order: `.agents/quenching/bin/cq knowledge validate docs --json`,
+`.agents/quenching/bin/cq knowledge project docs --check`, `.agents/quenching/bin/cq knowledge nav docs --check`,
+`.agents/quenching/bin/cq knowledge site-source docs site-source --check`, a strict site build, and the rendered site
 checker (`documentation-site-check.py`) immediately after that build. The projection, navigation and bounded-source checks are
 skipped only when their site layer is absent or the accepted map marks that publication
 `not-applicable`; a catalog checker runs only when the map exposes a catalog route. When the
@@ -292,7 +292,7 @@ zero `dir-no-index`, `index-broken-link`, `index-orphan`** (these are WARN, so e
 not prove them clean — inspect the findings).
 
 Then re-run step 1's probe — never the step 2 inventory — and decide by the four outcomes in
-[convergence.md](${CLAUDE_PLUGIN_ROOT}/assets/references/align/convergence.md)
+[convergence.md](.agents/quenching/assets/references/align/convergence.md)
 §The convergence contract: **progress** → another pass from step 2 under the same OK, narrating its
 plan; **converged** → step 9 only when the full applicable sequence above is clean; **residue** →
 stop and report each `error-corrigible`, `source-gap`, `plugin-package-gap`, `plan-drift` or

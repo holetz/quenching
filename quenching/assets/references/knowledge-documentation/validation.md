@@ -5,7 +5,7 @@ The runbook for validating the generated site. It builds into the gitignored `si
 
 ## Contents
 
-`cq components read ${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-documentation/validation.md`
+`.agents/quenching/bin/cq components read .agents/quenching/assets/references/knowledge-documentation/validation.md`
 returns the heading index; `--sections <name>` addresses one.
 
 <!-- rules -->
@@ -17,9 +17,9 @@ processes every Markdown below `docs_dir` and has no supported `exclude_docs`/`n
 hatch, so raw `catalog/` and `external/` homes must not be present in the tree it reads:
 
 ```bash
-cq knowledge project docs --check
-cq knowledge site-source docs site-source --write
-cq knowledge site-source docs site-source --check
+.agents/quenching/bin/cq knowledge project docs --check
+.agents/quenching/bin/cq knowledge site-source docs site-source --write
+.agents/quenching/bin/cq knowledge site-source docs site-source --check
 ```
 
 Run the build using the project's existing dependency manager:
@@ -75,7 +75,7 @@ When the canonical glossary exists and the map does not explicitly say `do not p
 verify the deterministic source projection and then pass the same contract to the rendered check:
 
 ```bash
-cq knowledge project docs --check
+.agents/quenching/bin/cq knowledge project docs --check
 python3 <plugin>/assets/checks/documentation-site-check.py site \
   --require-glossary \
   --glossary-source docs/glossary.md \

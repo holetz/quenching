@@ -7,7 +7,7 @@ fixtures and decide when a declared layer is empty.
 
 ## Contents
 
-`cq components read <this file>` returns the heading index; `--sections` addresses one.
+`.agents/quenching/bin/cq components read <this file>` returns the heading index; `--sections` addresses one.
 
 ## The four layer rules
 
@@ -66,7 +66,7 @@ records its non-applicability rather than creating a placeholder.
 
 ## Minting one declared layer
 
-`quenching-proof:proof:layer:new` applies the five coupled edits as one unit for the layer a human names:
+`quenching-proof-layer-new` applies the five coupled edits as one unit for the layer a human names:
 
 | Edit | Contract it closes |
 | --- | --- |
@@ -77,11 +77,11 @@ records its non-applicability rather than creating a placeholder.
 | Regenerate `tests/README.md` | Publishes the layer's meaning, reach, budget, marker, test count, and fixture module from the inventory. |
 
 The layer's reach and budget are declarations in `.agents/quenching.json` (or the legacy
-`.claude/quenching.json`) under `layers`; the
+`.agents/quenching.json`) under `layers`; the
 fixture module does not become a second configuration store. A newly minted layer may be empty
 until the owner separately accepts a proposed test migration, but its five structural edits are
 not split across partially declared states. The collection-hook and fixture templates under
-`${CLAUDE_PLUGIN_ROOT}/assets/templates/proof/` are the canonical shapes for those two generated
+`.agents/quenching/assets/templates/proof/` are the canonical shapes for those two generated
 files.
 
 ## Finding codes

@@ -49,18 +49,18 @@ processes every Markdown file below `docs_dir` and does not support `exclude_doc
 only reader-facing and selected durable-knowledge homes enter it. `catalog/` and `external/` stay
 in the bundle and never enter the Zensical source tree. The plugin ships a batteries-included
 **Zensical** setup at the repo root (`zensical.toml`) — first installed by
-`quenching-align:knowledge:align`, then owned by the
+`quenching-knowledge-align`, then owned by the
 **documentation family**: `plan`, `write`, `review` and `build`, conducted end to end by
 `produce`.
 
 - `docs_dir = "site-source"` points at the generated sibling, kept at the repo root. Run
-  `cq knowledge site-source docs site-source --write` before a build and
-  `cq knowledge site-source docs site-source --check` to verify it. Never point Zensical at the
+  `.agents/quenching/bin/cq knowledge site-source docs site-source --write` before a build and
+  `.agents/quenching/bin/cq knowledge site-source docs site-source --check` to verify it. Never point Zensical at the
   complete bundle: nav omission is not an exclusion mechanism.
 - Each reserved `index.md` doubles as its section's landing page (the theme's
   `navigation.indexes` feature) — no separate landing file needed.
 - Navigation is the explicit `nav` list in `zensical.toml`, generated from the same publication
-  allowlist by `cq knowledge nav`; a title a human wrote there survives regeneration.
+  allowlist by `.agents/quenching/bin/cq knowledge nav`; a title a human wrote there survives regeneration.
 - The markdown stays **generator-neutral**: no theme components, no raw HTML with theme classes,
   no attribute lists. The bundle has to read as well on a Git host and in a `grep` as it does on
   the site.

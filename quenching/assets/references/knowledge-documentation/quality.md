@@ -5,7 +5,7 @@ source provenance, and a bounded review → write loop.
 
 ## Contents
 
-`cq components read ${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-documentation/quality.md`
+`.agents/quenching/bin/cq components read .agents/quenching/assets/references/knowledge-documentation/quality.md`
 returns the heading index; `--sections <name>` addresses one.
 
 <!-- rules -->

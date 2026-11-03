@@ -1,12 +1,12 @@
 ---
 description: >-
-  Converge a repository's proof surface from its test gate with bounded structural repairs. Use for "align the proof front", "fix proof drift". Not for: read-only → /quenching-proof:proof:status.
+  Converge a repository's proof surface from its test gate with bounded structural repairs. Use for "align the proof front", "fix proof drift". Not for: read-only → /quenching-proof-status.
 disable-model-invocation: true
 argument-hint: [optional-target-root]
 allowed-tools: Bash(cq:*), Bash(cq.cmd:*), Read, Grep, Glob, Bash(python3:*), AskUserQuestion, Write, Edit
 ---
 
-# /quenching-proof:proof:align — converge the verification surface
+# /quenching-proof-align — converge the verification surface
 
 **Input**: `$ARGUMENTS` (an optional target repository root; omit to use the current repository).
 
@@ -14,17 +14,17 @@ This command owns one convergence pass over a target's declared proof surface. I
 static test inventory and gate, applies only mechanical and bounded structural repairs, and leaves
 layer taxonomy, measured-surface scope, CI installation, and operations coverage with the target
 owner. The disposition rules live in
-[proof-align/bands.md](${CLAUDE_PLUGIN_ROOT}/assets/references/proof-align/bands.md); the gate and
+[proof-align/bands.md](.agents/quenching/assets/references/proof-align/bands.md); the gate and
 layer contracts live in
-[proof-align/gate-contract.md](${CLAUDE_PLUGIN_ROOT}/assets/references/proof-align/gate-contract.md)
-and [proof-align/layer-contract.md](${CLAUDE_PLUGIN_ROOT}/assets/references/proof-align/layer-contract.md).
+[proof-align/gate-contract.md](.agents/quenching/assets/references/proof-align/gate-contract.md)
+and [proof-align/layer-contract.md](.agents/quenching/assets/references/proof-align/layer-contract.md).
 The common front contract lives in
-[front-align/mold.md](${CLAUDE_PLUGIN_ROOT}/assets/references/front-align/mold.md); these references
+[front-align/mold.md](.agents/quenching/assets/references/front-align/mold.md); these references
 keep the layer, fixture, measurement and gate evidence separate from the shared mold.
 
 Set `TARGET_ROOT` to the supplied argument, or to `.` when the argument is omitted, and pass that
-same root to every `cq proof` call. Resolve `cq` per
-[tool-resolution.md](${CLAUDE_PLUGIN_ROOT}/assets/references/align/tool-resolution.md) and branch
+same root to every `.agents/quenching/bin/cq proof` call. Resolve `cq` per
+[tool-resolution.md](.agents/quenching/assets/references/align/tool-resolution.md) and branch
 on exit code and JSON: `0` is clean, `1` carries findings, and `2` is a refusal.
 
 ## Workflow
@@ -34,7 +34,7 @@ on exit code and JSON: `0` is clean, `1` carries findings, and `2` is a refusal.
 Run the verifier before reading the proof tree:
 
 ```bash
-cq --root "$TARGET_ROOT" proof doctor --json
+.agents/quenching/bin/cq --root "$TARGET_ROOT" proof doctor --json
 ```
 
 When it exits `0` with no findings, report "proof conformant, nothing to align" and stop. Do not
@@ -50,7 +50,7 @@ has authorized the inventory stage below.
 Only after exit `1`, run the single inventory pass:
 
 ```bash
-cq --root "$TARGET_ROOT" proof inventory --json
+.agents/quenching/bin/cq --root "$TARGET_ROOT" proof inventory --json
 ```
 
 Read `proof-align/bands.md`, `proof-align/gate-contract.md`, `proof-align/layer-contract.md`, and
@@ -68,7 +68,7 @@ Build one plan grouped by the three bands in `bands.md`:
 | Band | Finding codes | Disposition |
 | --- | --- | --- |
 | Mechanical | none in the current contract | report that no generated proof artifact is owned by this band |
-| Structural | `pf-unmarked`, `pf-stop-first`, `pf-loose-fixture`, `pf-fat-conftest`, `pf-no-floor`, and conditionally `pf-order-unproven` | make bounded gate or fixture-ownership edits; use `cq proof ratchet --raise --json` only when the measured surface is unchanged and an artifact exists |
+| Structural | `pf-unmarked`, `pf-stop-first`, `pf-loose-fixture`, `pf-fat-conftest`, `pf-no-floor`, and conditionally `pf-order-unproven` | make bounded gate or fixture-ownership edits; use `.agents/quenching/bin/cq proof ratchet --raise --json` only when the measured surface is unchanged and an artifact exists |
 | Judgement | `pf-unlayered`, `pf-empty-layer`, `pf-unmeasured-surface`, `pf-no-ci`, `pf-untested-entrypoint`, and conditional `pf-order-unproven` | report evidence and the command that closes it; never drive the change |
 
 When no layers are declared, keep every unlayered test as judgement residue and do not infer a
@@ -96,7 +96,7 @@ only when `bands.md`'s non-blocking condition is satisfied. Raise a floor only a
 scope is unchanged and the target has produced the artifact the ratchet reads:
 
 ```bash
-cq --root "$TARGET_ROOT" proof ratchet --raise --json
+.agents/quenching/bin/cq --root "$TARGET_ROOT" proof ratchet --raise --json
 ```
 
 Read the result by the codes in `findings`, not by the exit code alone:
@@ -118,7 +118,7 @@ not call the ratchet; state the reason in the report.
 After edits, run the same probe again:
 
 ```bash
-cq --root "$TARGET_ROOT" proof doctor --json
+.agents/quenching/bin/cq --root "$TARGET_ROOT" proof doctor --json
 ```
 
 Distinguish remaining judgement residue from a failed structural convergence. Do not loop an empty
@@ -146,5 +146,5 @@ next target-owned action for every judgement finding.
   their own confirmation.
 - `pf-unmeasured-surface` defers `pf-no-floor`'s write in the same pass.
 - Judgement findings are report-only, and no subcommand runs the target suite.
-- The closing verifier is the same `cq proof doctor --json` program as the probe.
+- The closing verifier is the same `.agents/quenching/bin/cq proof doctor --json` program as the probe.
 - The proof align's report is the only run record; no sweep log is written.

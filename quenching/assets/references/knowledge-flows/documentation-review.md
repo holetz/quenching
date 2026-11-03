@@ -1,12 +1,12 @@
-# /quenching-align:knowledge:documentation:review — score and report without writing
+# /quenching-knowledge-documentation-review — score and report without writing
 
 **Input**: `$ARGUMENTS` (an optional page slice or plan path; omit to review the pages named by
-`${CLAUDE_PROJECT_DIR}/.quenching/documentation/plan.md`).
+`./.quenching/documentation/plan.md`).
 
 This is a read-only critic. It applies the rubric, forbiddens and ledger in
-[knowledge-documentation/quality.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-documentation/quality.md),
+[knowledge-documentation/quality.md](.agents/quenching/assets/references/knowledge-documentation/quality.md),
 scores dimension #8 against
-[knowledge-documentation/agent-readability.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-documentation/agent-readability.md),
+[knowledge-documentation/agent-readability.md](.agents/quenching/assets/references/knowledge-documentation/agent-readability.md),
 and returns a verdict for each page. No `Write`, `Edit`, shell or other mutating tool is granted.
 
 ## Doctrine

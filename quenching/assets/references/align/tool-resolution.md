@@ -7,16 +7,16 @@ front as the first argument. The fronts are `specs`, `git`, `knowledge`, `compon
 ## Resolving the tool
 
 **Source spelling: bare `cq …`.** Every command body and reference in the source writes
-`cq specs …`, never a path and never `python3 …/cq`; `cq deploy` rewrites each call to the
+`.agents/quenching/bin/cq specs …`, never a path and never `python3 …/cq`; `cq deploy` rewrites each call to the
 target-local launcher it installs (below).
 
 A body that runs `cq` declares `Bash(cq:*)` in its `allowed-tools`, which the deploy rewrites the
 same way; without it the call prompts (or is denied in a never-prompt session). A body must not
 widen it to `Bash(python3:*)` to reach the tool.
 
-The command is followed by the front and its subcommand: `cq specs ...`, `cq git ...`,
-`cq knowledge ...`, `cq components ...`, `cq design ...`, `cq ops ...`, `cq proof ...`,
-`cq toolchain ...`, `cq delivery ...`, `cq security ...`, `cq codex ...`. **There is no second form and no third
+The command is followed by the front and its subcommand: `.agents/quenching/bin/cq specs ...`, `.agents/quenching/bin/cq git ...`,
+`.agents/quenching/bin/cq knowledge ...`, `.agents/quenching/bin/cq components ...`, `.agents/quenching/bin/cq design ...`, `.agents/quenching/bin/cq ops ...`, `.agents/quenching/bin/cq proof ...`,
+`.agents/quenching/bin/cq toolchain ...`, `.agents/quenching/bin/cq delivery ...`, `.agents/quenching/bin/cq security ...`, `cq codex ...`. **There is no second form and no third
 rung**: never look for a copy under a target's `.claude/hooks/`, never install one there, never
 merge anything into a target's `.claude/settings.json` to make a tool resolve.
 
@@ -30,7 +30,7 @@ quenching reaches a repository only through `cq deploy`. The target carries the 
 generated grant is `Bash(.agents/quenching/bin/cq:*)`. This is a **generated** copy owned by
 `.agents/.quenching-deploy.json`, never a hand-installed third rung: upgrade it with
 `cq deploy --write` from a new release, and never copy a `cq` into `.claude/hooks/` or edit the
-user's `PATH`. The reference `cq components read` remains the same; the local payload carries the
+user's `PATH`. The reference `.agents/quenching/bin/cq components read` remains the same; the local payload carries the
 references under `.agents/quenching/assets/references/`.
 
 ### Modules: one `cq`, the fronts of the deployed modules
@@ -56,12 +56,12 @@ rather than the code being written. When editing this repository, run the checko
 explicitly — `python3 plugins/quenching/assets/bin/cq …` — as the author's check. That is a
 developer invocation, never something a command body or reference writes for a target.
 
-### `${CLAUDE_PLUGIN_ROOT}` in the source
+### `.agents/quenching` in the source
 
-The source spells its own payload root `${CLAUDE_PLUGIN_ROOT}`; `cq deploy` substitutes the
+The source spells its own payload root `.agents/quenching`; `cq deploy` substitutes the
 target-local `.agents/quenching/` for it. **A shell has no such variable**: the same spelling
 reached any other way expands to nothing. Anything executable the payload ships locates itself
-from its own `__file__`, never from `${CLAUDE_PLUGIN_ROOT}`.
+from its own `__file__`, never from `.agents/quenching`.
 
 ### Write the resolved path literally on every invocation
 
@@ -71,8 +71,8 @@ word-split scalars. Write `cq` on each call. **Chain several writes so a failure
 
 ```bash
 set -e
-cq specs section my-spec "Proposal" --write <<'EOF'
+.agents/quenching/bin/cq specs section my-spec "Proposal" --write <<'EOF'
 …
 EOF
-cq specs validate --spec my-spec --json
+.agents/quenching/bin/cq specs validate --spec my-spec --json
 ```

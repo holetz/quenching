@@ -1,30 +1,30 @@
 ---
 description: >-
-  Run ONE improvement round (triage, map, epic, orchestrate, review, gate); `--until-dry` or `--until` repeat rounds until a dry queue or a deadline. Use for "run the autopilot until 7am". Not for: ONE epic → /quenching-specs:specs:orchestrate; owner-decided map → /quenching-specs:specs:improve.
+  Run ONE improvement round (triage, map, epic, orchestrate, review, gate); `--until-dry` or `--until` repeat rounds until a dry queue or a deadline. Use for "run the autopilot until 7am". Not for: ONE epic → /quenching-specs-orchestrate; owner-decided map → /quenching-specs-improve.
 disable-model-invocation: true
 argument-hint: "[--until <ISO-8601 date-time with offset>] [--until-dry] [--max-launches <n>] [--max-tree-tokens <n>] [focus areas]"
 allowed-tools: Bash(cq:*), Bash(cq.cmd:*), Bash(git:*), Bash, Read, Grep, Glob, Agent, Task, TaskStop, SendMessage
 ---
 
-# /quenching-specs:specs:autopilot — one round of improvement; more only on request
+# /quenching-specs-autopilot — one round of improvement; more only on request
 
 **Input**: `$ARGUMENTS` — no flag runs **ONE round** (steps 1–8) and stops. `--until-dry` repeats
 rounds until the queue runs dry; `--until <date-time with offset>` (e.g. `2026-10-09T07:00-03:00`)
 repeats them until the deadline (and still stops at a dry queue). `--max-launches <n>` sets the
-launch ceiling; without it the ceiling is `shared.autonomy.maxLaunches` from `cq config show --effective --json`
+launch ceiling; without it the ceiling is `shared.autonomy.maxLaunches` from `.agents/quenching/bin/cq config show --effective --json`
 (default **40**, provisional: it is fixed only after the human reads the measurement of the last three runs), and the flag wins over the key. `--max-tree-tokens <n>` sets an opt-in ceiling on the tokens measured per
-model across the tree, with **no default**: without it nothing is read or compared. Optionally focus areas as in `/quenching-specs:specs:improve`.
+model across the tree, with **no default**: without it nothing is read or compared. Optionally focus areas as in `/quenching-specs-improve`.
 Typed by the human only: **the invocation is the human's delegation** for the whole run — every
 forced execution, push, PR and merge below is authorized by it, and by nothing else.
 
 This session is the **conductor**. It decides as the owner's delegate, keeps only summaries, and
 never builds: reading, mapping, decomposing, building and reviewing are agents
-(`quenching-specs:spec-scout`, `quenching-specs:spec-orchestrator` or, in economy mode, the spec-runner/spec-verifier pair with this session publishing, and the read-only opus
-`quenching-specs:spec-reviewer`, which this conductor launches at step 6). Decomposition is a step of develop, run in this session, never an agent. The spec-orchestrator's protocol (waves, workers, spec-verifier, acceptance, publication) lives in
+(`quenching-spec-scout`, `quenching-spec-orchestrator` or, in economy mode, the spec-runner/spec-verifier pair with this session publishing, and the read-only opus
+`quenching-spec-reviewer`, which this conductor launches at step 6). Decomposition is a step of develop, run in this session, never an agent. The spec-orchestrator's protocol (waves, workers, spec-verifier, acceptance, publication) lives in
 `plugins/quenching/agents/spec-orchestrator.md`; do not restate it.
 
 **Why `Bash` is unrestricted here.** Step 1 and step 7 run the gate the target's root harness
-declares in its operating section (`AGENTS.md`; legacy `CLAUDE.md`), whose command no fixed grant can name. No other
+declares in its operating section (`AGENTS.md`; legacy `AGENTS.md`), whose command no fixed grant can name. No other
 non-`cq`, non-`git` command is run.
 
 ## Invariants
@@ -35,7 +35,7 @@ non-`cq`, non-`git` command is run.
   "decide with the human" — one per run, created on first need — and the round continues without
   it. **Narrowing** a grant is not widening it.
 - **Relevance over activity.** A spec enters the run only with evidence (`path:line`, a command's
-  output, a measurement) and a concrete consequence — the bar of `/quenching-specs:specs:improve`. "Nothing
+  output, a measurement) and a concrete consequence — the bar of `/quenching-specs-improve`. "Nothing
   left to polish" is never a reason to invent work.
 - **Findings become specs, never hot fixes.** What the correctness review finds is a spec of the
   next round; the conductor never patches `main` itself.
@@ -57,7 +57,7 @@ non-`cq`, non-`git` command is run.
   and reports `continue`. The count covers what the conductor and the returned reports show; what
   is in flight is declared `not measured`.
 - **The tree-token ceiling is opt-in and per model.** Only with `--max-tree-tokens <n>`, before each
-  launch the conductor reads `cq components session cost --json` (its default is the most recent session for this cwd, the conductor's own) and
+  launch the conductor reads `.agents/quenching/bin/cq components session cost --json` (its default is the most recent session for this cwd, the conductor's own) and
   compares, per model, the measured tokens (`input + cacheRead + cacheWrite + output` of that
   model's `byModel` row) with `<n>`, never summing tiers. A model already at the ceiling, or with no
   margin (its measured total plus the largest measured total of a single agent of that model in the
@@ -76,10 +76,10 @@ non-`cq`, non-`git` command is run.
   first (step 4's read, append, write), then hand it back to the SAME agent with
   `SendMessage({to: <agentId>})`, naming the epic and the bullet: the transcript is still warm, and
   a fresh launch pays to re-read spec, protocol and code for a question decided in minutes. **The
-  window is not a constant:** read `cq components session cache --json` (`boundaries`, per harness
+  window is not a constant:** read `.agents/quenching/bin/cq components session cache --json` (`boundaries`, per harness
   and model) and compare it with the elapsed time; `docs/standards/automation/context-discipline.md`
   §The prompt cache is a per-harness measurement measures the documented five-minute subagent
-  lifetime of Claude Code as the case, and this body assumes no number of its own. A cold relaunch stays, and is
+  lifetime of the host as the case, and this body assumes no number of its own. A cold relaunch stays, and is
   never a resume, for `budget:` (the invariant above), for a host that exposes no channel (no
   `SendMessage` in your grants, or a handle that cannot be messaged), for an `agentId` lost, for a
   decision taken outside the measured window, and for a decision that repeats one already in the
@@ -95,11 +95,11 @@ non-`cq`, non-`git` command is run.
 ## Workflow
 
 ### 1. Health
-Resolve `cq` per [align/tool-resolution.md](${CLAUDE_PLUGIN_ROOT}/assets/references/align/tool-resolution.md)
+Resolve `cq` per [align/tool-resolution.md](.agents/quenching/assets/references/align/tool-resolution.md)
 §Resolving the tool; branch on the exit code. Read the root harness for the gate command and the
 ephemeral area. Check, on `main`: `git stash list` is empty, `git worktree list` holds only this
 run's worktrees, and the gate is green. Anything red there → this round's first spec is fixing it
-(`cq specs new`, then steps 4–5 on it alone).
+(`.agents/quenching/bin/cq specs new`, then steps 4–5 on it alone).
 
 **A dirty checkout is decided HERE, never discovered at the first worktree cut.** Read
 `git status --short` and split what it shows. A path the round record's `dirty:` line already names
@@ -115,7 +115,7 @@ spec|cut from origin/<base>>` before anything launches, and step 4 copies it int
 `## Design`.
 
 Then run
-`cq git preflight --json` once (covered by the existing `Bash(cq:*)`; no new grant) and write its
+`.agents/quenching/bin/cq git preflight --json` once (covered by the existing `Bash(cq:*)`; no new grant) and write its
 five checks (`store`, `types`, `push`, `ghAuth`, `ci`) in the round block as `preflight:`. `store`,
 `push` or `ghAuth` in `fail` → fixing it is this round's first spec, like a red gate. `mergesAllowed:
 false` (CI unavailable) → steps 4–5 plan no merges and no chain that depends on a merge, and the
@@ -127,20 +127,20 @@ round's start ref: `git rev-parse main`.
 a fix spec, or an authorized cut from `origin/<base>` — and recorded.
 
 ### 2. Queue
-List the loose specs — open, in no epic — with `cq specs list --lean --json`, and the store's
-errors with `cq specs validate`. Before any of them enters, one `quenching-specs:spec-scout` per batch proves
+List the loose specs — open, in no epic — with `.agents/quenching/bin/cq specs list --lean --json`, and the store's
+errors with `.agents/quenching/bin/cq specs validate`. Before any of them enters, one `quenching-spec-scout` per batch proves
 it is still relevant against the current code:
 
 - the surface it describes has changed → record the evidence in `## Outcome`
-  (`cq specs section <id> Outcome --write`) and `cq specs promote <id> --outcome abandoned`;
-- it needs the human (the **never forced** list) → `cq specs link add <human-composite> <id>`;
+  (`.agents/quenching/bin/cq specs section <id> Outcome --write`) and `.agents/quenching/bin/cq specs promote <id> --outcome abandoned`;
+- it needs the human (the **never forced** list) → `.agents/quenching/bin/cq specs link add <human-composite> <id>`;
 - otherwise it joins this round's queue.
 
 **Done when:** every loose spec is queued, abandoned with evidence, or in the human epic.
 
 ### 3. Map
 Only when the queue is short (fewer than three specs): run the mapping of
-`/quenching-specs:specs:improve` steps 1–3 — read-only `quenching-specs:spec-scout` agents per area, evidence plus
+`/quenching-specs-improve` steps 1–3 — read-only `quenching-spec-scout` agents per area, evidence plus
 consequence, no duplicate of an open spec, at most 15 candidates, every `high` re-checked — with
 this session deciding the owner's questions as the delegated owner, except those on the
 **never forced** list, which go to the human epic. Focus areas from `$ARGUMENTS` narrow the areas.
@@ -150,18 +150,18 @@ The map is ephemeral, under `<ephemeral area>/autopilot/<date>/`.
 ### 4. Composition
 **Mechanical capture, by default.** When the queue and the kept candidates already decide the
 members (title, `complexity`, dependencies), this session creates the composite and the members
-itself: search by title in `cq specs list --json` first
-(a match is reused), then `cq specs new "<title>" --complexity <level> </dev/null` per member and
-`cq specs link add <composite> <spec> --group "<wave>" --after <labels>` (labels `S<n>` returned by
+itself: search by title in `.agents/quenching/bin/cq specs list --json` first
+(a match is reused), then `.agents/quenching/bin/cq specs new "<title>" --complexity <level> </dev/null` per member and
+`.agents/quenching/bin/cq specs link add <composite> <spec> --group "<wave>" --after <labels>` (labels `S<n>` returned by
 earlier `link add` calls), serializing any two members that touch the same files with `after:`.
 Exit 2 is read, never repeated blindly. The model restrictions on code and classification stay as
 they are.
 **Decomposition, by this session.** Members not yet decided, a spec over the worker budget, or waves
 that need reading file overlap are decomposed here, as the develop flow's decomposition step does
-(`/quenching-specs:specs:specs develop`): propose the slices from the queue and the kept candidates,
-then create the composite and the members with the same `cq specs new` and `cq specs link add`.
+(`/quenching-specs-specs develop`): propose the slices from the queue and the kept candidates,
+then create the composite and the members with the same `.agents/quenching/bin/cq specs new` and `.agents/quenching/bin/cq specs link add`.
 Either way, write the composite's `## Design` — and write it as a READ, AN APPEND AND ONE WRITE,
-because `cq specs section --write` REPLACES the section: `cq specs section <composite> Design
+because `.agents/quenching/bin/cq specs section --write` REPLACES the section: `.agents/quenching/bin/cq specs section <composite> Design
 --json`, the round's dated bullets appended, the body back on stdin. It carries the **autonomy
 policy** (forced execution, push, PR and merge of every member after a verifier PASS, authorized by
 this invocation, with its date) and **every decision this session took as the delegated owner**,
@@ -169,15 +169,15 @@ each a dated bullet with the evidence it rests on — the step 1 dirty-checkout 
 spec, a spec sent to the human epic, a proof not run — written BEFORE the launch that depends on
 it. A decision that lives only in a brief is lost at the next relaunch; the briefs of steps 5 and 6
 name the composite and the bullet instead of restating it. Check the result with
-`cq specs status --epic <composite>` and `cq specs validate`.
+`.agents/quenching/bin/cq specs status --epic <composite>` and `.agents/quenching/bin/cq specs validate`.
 **Done when:** the composite exists with its waves, its `## Design` carries the dated policy and
 this round's decisions, and `validate` raises no `sp-link-*` finding.
 
 ### 5. Orchestrate
 **Economy mode.** An epic with **at most 2 members, every one `low` or `medium`**, runs without
-`quenching-specs:spec-orchestrator`: this session launches `quenching-specs:spec-runner` →
-`quenching-specs:spec-verifier` for each member and, after the PASS, publishes it itself
-(`/quenching-specs:git:git pr-create autonomous`, then `cq git pr merge` on green CI), with the acceptance rules
+`quenching-spec-orchestrator`: this session launches `quenching-spec-runner` →
+`quenching-spec-verifier` for each member and, after the PASS, publishes it itself
+(`/quenching-git-git pr-create autonomous`, then `.agents/quenching/bin/cq git pr merge` on green CI), with the acceptance rules
 of the spec-orchestrator's protocol, cited and not restated — steps 3 (budget, `budget:` relaunch), 4
 (acceptance only on a spec-verifier PASS, the `execute-done:`/`conclude` two spawns, publish after the PASS,
 one re-spawn) and 5 (retry, idempotency) of `plugins/quenching/agents/spec-orchestrator.md`.
@@ -187,12 +187,12 @@ stash, checkout or reset; work only in your worktree." — and CLOSES with the v
 id, the worktree, the epic id and the decision it carries. Fixed prefix first is what lets two
 prompts of the same type share a cacheable prefix; the gain BETWEEN distinct agents is ASSUMED, not
 measured in this repository — the table of `context-discipline.md` §The prompt cache is a
-per-harness measurement measures generations inside one agent — and `cq components session cache` is
+per-harness measurement measures generations inside one agent — and `.agents/quenching/bin/cq components session cache` is
 the measurement that would confirm or refute it. Two members with a
 dependency run in series; without one, in parallel (never more than 3 workers). Every launch counts
 in `launches`, and the ceilings of the invariants above bind it. No new grant: this session already
 holds `Agent` and `Task`.
-**Otherwise** (3 or more members, or any `high`/`xhigh`), start `quenching-specs:spec-orchestrator` on
+**Otherwise** (3 or more members, or any `high`/`xhigh`), start `quenching-spec-orchestrator` on
 the epic with the word `autonomous`, the base branch and the deadline (≤ 1,500 characters), its
 brief ordered the same way: the fixed sentence and the word `autonomous` first, the epic id, the
 base branch, the deadline and the decision last.
@@ -206,7 +206,7 @@ the invariant above says.
 fixed report and every non-`done` spec is placed.
 
 ### 6. Correctness review
-After every epic that changed code, start `quenching-specs:spec-reviewer` once (`model: opus`) over the epic's
+After every epic that changed code, start `quenching-spec-reviewer` once (`model: opus`) over the epic's
 merges (`git log --merges <round start>..main`); the orchestrator does not launch it. It is
 read-only, and the gate is the only thing it executes. It reports only findings it **reproduced** —
 a command, its output, the `path:line` — never style, and a security review of the same range when
@@ -229,7 +229,7 @@ codex or both. A finding the reviewer reproduced stands. A `codex`-only finding 
 only once reproduced — by the reviewer or by the conductor, with the command and its output; the
 payload's `findingsNeedReproduction` binds.
 Unreproduced ones are dropped and counted in the report. Keep the Codex tokens from the payload, or
-`not measured`. Each finding kept becomes a loose spec (`cq specs new`, then its `## Problem` with
+`not measured`. Each finding kept becomes a loose spec (`.agents/quenching/bin/cq specs new`, then its `## Problem` with
 the reproduction), queued for the next round; `NONE` creates none.
 **Done when:** the review returned (and Codex returned or fell back, reported) and each reproduced
 finding is a spec.
@@ -247,7 +247,7 @@ Neither → without `--until-dry`/`--until`, close the round record (`closed`), 
 **fresh context**: launch one sub-agent that follows this body from step 1 with the record as its
 only input (counted as a launch). If a sub-agent cannot launch sub-agents, stop instead, with the
 record `closed` and the next step printed as the invocation to resume in a new session
-(`/quenching-specs:specs:autopilot --until-dry`).
+(`/quenching-specs-autopilot --until-dry`).
 **Done when:** the gate and the audit were read, and the run either stops or starts the next round
 the flags asked for.
 
@@ -256,7 +256,7 @@ Print: the launches used against `--max-launches` and the resumes it made; per e
 specs with their PRs; the human epic and its members; every decision
 this session took as the delegated owner; specs in flight at the deadline, as `continue` with their
 state; second stalls; and the tokens the run spent per model and agent type, read with
-`cq components session cost` and never summed across tiers; plus the Codex review of each epic —
+`.agents/quenching/bin/cq components session cost` and never summed across tiers; plus the Codex review of each epic —
 ran or fallback with its reason, findings by origin, dropped unreproduced count, and its tokens or
 `not measured`, kept apart from the Claude tiers.
 **Done when:** the report is printed.

@@ -11,7 +11,7 @@ be. A description written as a `/`-menu label routes nothing.
 
 **This file owns the judgement; the tool owns the thresholds.** Every number a rule below depends
 on — the two description caps, the body line limit, trigger position, the `Not for:` boundary —
-lives in `docs/standards/automation/skills.md`, and is checked by `cq components lint` under a
+lives in `docs/standards/automation/skills.md`, and is checked by `.agents/quenching/bin/cq components lint` under a
 stable `sk-*` code. This file names the code and never restates the number, so the rule and its
 checker cannot drift apart.
 
@@ -19,7 +19,7 @@ checker cannot drift apart.
 | --- | --- | --- |
 | Triggers in the second sentence — *routed commands only* | `lint` | `sk-trigger-position` |
 | The `Not for:` boundary is present — *routed commands only* | `lint` | `sk-no-boundary` |
-| The metadata fits Claude Code's cap | `lint` | `sk-metadata-cap` (error) |
+| The metadata fits the host's cap | `lint` | `sk-metadata-cap` (error) |
 | The description is portable | `lint` | `sk-description-portable` |
 | The description fits the 250-character budget, use case first | `lint` | `sk-description-budget` (warn) |
 | The body stays under the size cap | `lint` | `sk-body-length` |
@@ -27,7 +27,7 @@ checker cannot drift apart.
 | `allowed-tools` is scoped | `lint` | `sk-unscoped-bash` |
 | Invocation control is coherent | `lint` | `sk-unreachable`, `sk-invocation-value`, `sk-inert-stage` (error) |
 | `context: fork` never beside a mid-flow gate | `lint` | `sk-fork-gate` (error) |
-| `effort`/`context` values Claude Code can parse | `lint` | `sk-profile-value` |
+| `effort`/`context` values the host can parse | `lint` | `sk-profile-value` |
 | A plugin's commands are cited in a form that resolves | `lint` | `sk-bare-citation` |
 | **The no-op test, sediment, sprawl, positive prescription** | **a reader** | — |
 | **Every non-default lever carries a stated buy** | **a reader** | — |
@@ -56,8 +56,8 @@ silently swallowed.
 
 <!-- rationale -->
 
-`/quenching-align:components:command:new` applies this doctrine to every command it mints or edits;
-`/quenching-align:components:align` cites it when judging conformance gaps. Adapted from mattpocock/skills'
+`/quenching-components-command-new` applies this doctrine to every command it mints or edits;
+`/quenching-components-align` cites it when judging conformance gaps. Adapted from mattpocock/skills'
 `writing-great-skills`, folded into this plugin's own constraints (the description caps, the
 bundled-reference pattern, the plan → OK gate).
 
@@ -124,9 +124,9 @@ with this" is a claim about the whole surface and only a reader holding all of i
 
 **A quoted trigger is never cut for length.** Shortening a description by deleting a trigger is how
 a command quietly stops firing for the user who worded it differently, and only a measured miss
-retires one — `/quenching-align:components:command:eval`'s, and that measured retirement is the one edit
+retires one — `/quenching-components-command-eval`'s, and that measured retirement is the one edit
 measurement authorizes. A trigger that looks like sediment is **reported** with the
-`/quenching-align:components:command:eval <command>` that decides it.
+`/quenching-components-command-eval <command>` that decides it.
 
 ## The loading hierarchy
 
@@ -138,9 +138,9 @@ level that still reaches it in time:
 2. **In-body reference** — sections after the workflow (`## Special cases`,
    `## Invariants`) consulted when a step points at them.
 3. **A bundled reference file** — doctrine, tables, and formats loaded only when a step reads
-   them. It lives OUTSIDE `commands/`, because that tree is the only one Claude Code registers
+   them. It lives OUTSIDE `commands/`, because that tree is the only one the host registers
    and a reference parked in it becomes a phantom command; cite it by absolute path
-   (`${CLAUDE_PLUGIN_ROOT}/assets/references/<name>/<file>.md` in a plugin). Shared procedure
+   (`.agents/quenching/assets/references/<name>/<file>.md` in a plugin). Shared procedure
    lives **once**, in its owning file; every other command cites the owner and never restates
    it (restatement is how copies drift).
 
@@ -150,7 +150,7 @@ level that still reaches it in time:
 
 A step is done when a stated condition is observable — a file exists, a diff is empty, a
 command exits 0, a table matches disk. "Handle the edge cases" is not a step;
-"`cq components registry reindex` reports `changed: false`" is. Write the criterion as
+"`.agents/quenching/bin/cq components registry reindex` reports `changed: false`" is. Write the criterion as
 `**Done when:** …` — that literal marker is what `lint` counts (`sk-step-criterion`).
 
 <!-- rationale -->

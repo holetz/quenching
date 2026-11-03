@@ -1,9 +1,9 @@
 # Hook mold — the three wiring shapes, narrowest first
 
-The mold `/quenching-align:components:hook:new` copies from. A hook is not one file: it is a **wiring** (where it
+The mold `/quenching-components-hook-new` copies from. A hook is not one file: it is a **wiring** (where it
 is declared, which decides its scope) plus, for a `command` handler, a **script**. Pick the
 shape from the scope ladder
-(`${CLAUDE_PLUGIN_ROOT}/assets/references/components-command-new/capabilities.md` §Hooks) — the narrowest
+(`.agents/quenching/assets/references/components-command-new/capabilities.md` §Hooks) — the narrowest
 rung that still catches what the hook exists to catch — and delete the other two.
 
 ## Shape 1 — skill-scoped (frontmatter `hooks:` in the owning command)
@@ -17,7 +17,7 @@ hooks:
     - matcher: "Write|Edit"
       hooks:
         - type: command
-          command: 'test -f "${CLAUDE_PROJECT_DIR}/.claude/hooks/<name>.py" || exit 0; python3 "${CLAUDE_PROJECT_DIR}/.claude/hooks/<name>.py"'
+          command: 'test -f "./.claude/hooks/<name>.py" || exit 0; python3 "./.claude/hooks/<name>.py"'
           timeout: 10
 ```
 
@@ -42,7 +42,7 @@ Fires on the matched tool calls, session-wide. The home for a check tied to an *
         "hooks": [
           {
             "type": "command",
-            "command": "python3 ${CLAUDE_PROJECT_DIR}/.claude/hooks/<name>.py",
+            "command": "python3 ./.claude/hooks/<name>.py",
             "timeout": 10
           }
         ]
@@ -96,7 +96,7 @@ if __name__ == "__main__":
     sys.exit(main())
 ```
 
-<!-- MOLD (quenching · scoped hook) → wired by /quenching-align:components:hook:new under
+<!-- MOLD (quenching · scoped hook) → wired by /quenching-components-hook-new under
      `/docs/standards/automation/hooks.md`, one plan → one OK.
 
      THE COST CLAIM. Every hook enters its plan with one line of arithmetic: which event ×

@@ -1,6 +1,6 @@
 # The execution contract — verify, review, commit
 
-The owner of **how** `/quenching-specs:specs:execute` verifies and commits one task. The command body
+The owner of **how** `/quenching-specs-execute` verifies and commits one task. The command body
 owns the workflow (select → isolate → read → loop → hand off); this file owns the core mechanics,
 while delegation and handoff cadence live in focused references.
 
@@ -9,14 +9,14 @@ nothing in between and nothing after. A task that was never run, never reviewed,
 committed leaves a checkbox that claims more than the repo can show.
 
 **Where this contract stops.** It ends at the last task's commit. Reviewing the whole branch,
-writing the `knowledge/` the work *revealed*, merging, and archiving belong to `/quenching-specs:specs:conclude` — a
+writing the `knowledge/` the work *revealed*, merging, and archiving belong to `/quenching-specs-conclude` — a
 different scale of judgment, needing a different confirmation, and resumable on its own: a run that
 dies after task nine must be resumable without redoing tasks one through eight. This file never
 reaches past the loop.
 
 ## Contents
 
-`cq components read <this file>` returns the heading index; `--sections` addresses one.
+`.agents/quenching/bin/cq components read <this file>` returns the heading index; `--sections` addresses one.
 
 ## The precondition: a clean tree
 
@@ -62,7 +62,7 @@ route around it with `--no-verify`. No `.claude/settings.json`, or nothing wired
 Taking a worktree, naming it, and stamping `branch: {base, work}` all happen inline in
 the command body's own step 2 — not a separate command it dispatches to. The convention it applies
 lives in
-[git/isolation.md](${CLAUDE_PLUGIN_ROOT}/assets/references/git/isolation.md)
+[git/isolation.md](.agents/quenching/assets/references/git/isolation.md)
 §Recording the isolation, cited rather than restated.
 
 **The cut fires only when `HEAD` is on the repository's base branch, and its form is a worktree.**
@@ -86,8 +86,8 @@ without moving anything.
 
 <!-- rules -->
 
-Declared per spec in the frontmatter (`verification`), written by `/quenching-specs:specs:develop`, read by
-`cq specs status --spec <id> --json`. **Execute never decides when to test.**
+Declared per spec in the frontmatter (`verification`), written by `/quenching-specs-develop`, read by
+`.agents/quenching/bin/cq specs status --spec <id> --json`. **Execute never decides when to test.**
 
 | Policy | Run the `verify:` command |
 | --- | --- |
@@ -102,12 +102,12 @@ finding to report, not a silent pass** — say plainly that the task was impleme
 **A check that spawns billed agent sessions does not belong in a `verify:` line.** A `verify:` runs
 per task *and again on every retry of the loop below*, so a suite that costs money per invocation
 is multiplied by exactly the thing this loop is for. Those belong in `## Validation`, which
-`/quenching-specs:specs:conclude` runs **once**, as its pre-merge gate. When a task's `verify:` names one anyway,
+`/quenching-specs-conclude` runs **once**, as its pre-merge gate. When a task's `verify:` names one anyway,
 say so and run the narrowest scope the tool offers rather than the whole suite by reflex — and
 report the substitution, because a narrowed check is a narrowed claim.
 
 **A harness that proves the *command surface* loads belongs to neither.** It is owned by the
-command that edits the surface — `/quenching-align:components:command:new`, or `/quenching-align:components:command:eval` for a description.
+command that edits the surface — `/quenching-components-command-new`, or `/quenching-components-command-eval` for a description.
 
 ## The validation loop
 
@@ -128,10 +128,10 @@ Two rules bound the loop:
   When the orchestrator judges that further attempts are repeating rather than converging, it
   writes the task blocked, with the reason:
   ```bash
-  cq specs task --spec "<id>" --block <id> --reason "<why, one line>"
+  .agents/quenching/bin/cq specs task --spec "<id>" --block <id> --reason "<why, one line>"
   ```
   That writes a **visible marker into `## Tasks`** — `- [!] <id> <title> — blocked: <reason>` —
-  and `cq specs next` then skips it and offers the following task, so one bad task never stalls
+  and `.agents/quenching/bin/cq specs next` then skips it and offers the following task, so one bad task never stalls
   the whole spec.
 
 **`--block` requires `--reason`** (the tool refuses without one).
@@ -146,7 +146,7 @@ result as one evidence line in the task's report: `RED: <test> fails without <fi
 **Remove the RED worktree before returning**, never with `--force` and only at the fixed path you created: make the tree match the base again (delete the copied test if it is new; when it overwrote a file that already exists in the base, rewrite that file with `git -C .quenching/red cat-file --filters HEAD:<file> > .quenching/red/<file>`, never checkout or restore; the filters restore checkout bytes, including EOL and configured smudge conversions), run `git worktree remove .quenching/red`, then `rmdir .quenching` if empty. A leftover worktree or empty `.quenching/` under the spec's worktree keeps `retire` from retiring it.
 
 A human resumes a blocked task by fixing the cause and un-blocking it —
-`cq specs task --spec <id> --uncheck <id>` returns it to `- [ ]` — after changing something,
+`.agents/quenching/bin/cq specs task --spec <id> --uncheck <id>` returns it to `- [ ]` — after changing something,
 never merely to try the same approach again.
 
 ## The diff self-review — four items, before every commit
@@ -163,7 +163,7 @@ Cheap, per task, over that task's diff only (`git diff`). Four questions, not a 
    mid-task.
 
 Fix what it finds **before** committing, so the commit is the reviewed version. The
-whole-branch review runs once, and it belongs to `/quenching-specs:specs:conclude`.
+whole-branch review runs once, and it belongs to `/quenching-specs-conclude`.
 
 ## The commit — one per task
 
@@ -179,8 +179,8 @@ Run it as **one chained call**, gate included:
 ```bash
 <the task's verify:> \
   && git add <the task's files> \
-  && cq git commit --subject "<subject>" --json \
-  && cq specs task --check <task-id> --spec "<spec-id>" --subject "<subject reported by cq git commit>" --commit "<sha reported by cq git commit>"
+  && .agents/quenching/bin/cq git commit --subject "<subject>" --json \
+  && .agents/quenching/bin/cq specs task --check <task-id> --spec "<spec-id>" --subject "<subject reported by .agents/quenching/bin/cq git commit>" --commit "<sha reported by .agents/quenching/bin/cq git commit>"
 ```
 
 **The `&&` is the ordering:** verify before staging, staging before the commit, the
@@ -189,7 +189,7 @@ spec's declared policy says this task is not a gate, the chain simply starts at 
 
 Stage only the task's declared `files:`, never the whole tree and never an assumed spec file —
 `git add -A` also picks up whatever an editor or a tool wrote while the task ran, which is the same
-contamination §The precondition refuses at the start. `cq git commit` commits the existing index and never stages; execute resolves the subject from the
+contamination §The precondition refuses at the start. `.agents/quenching/bin/cq git commit` commits the existing index and never stages; execute resolves the subject from the
 conventions it already loaded and passes the subject and sha the verb reports to the spec write.
 
 If verification, staging or the commit **fails** — a rejecting hook or nothing staged — no spec
@@ -199,7 +199,7 @@ recoverable remote-write failure with its subject and sha, and retry the spec wr
 rebuilding or amending the commit.
 
 The **subject line format** is the target repo's to declare. Read
-[git/commit.md](${CLAUDE_PLUGIN_ROOT}/assets/references/git/commit.md)
+[git/commit.md](.agents/quenching/assets/references/git/commit.md)
 §Commit messages: a repo with `docs/standards/git/**` owns the format outright and this contract defers to it; with nothing
 declared, the plugin's default is `plan/<id>-<handle>: <task-id> <task title>`. Never install a git
 standard into a target to create the answer.
@@ -235,7 +235,7 @@ level down: it produces no diff of its own, so there is no commit to anchor to a
 commit sha to record. Its chain ends at the spec tick:
 
 ```bash
-<the task's verify:> && cq specs task --check <task-id> --spec "<spec-id>"
+<the task's verify:> && .agents/quenching/bin/cq specs task --check <task-id> --spec "<spec-id>"
 ```
 
 — no `--subject`, no `git add`, no `git commit`. The box still ticks. Where the backend keeps the

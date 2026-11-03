@@ -1,10 +1,10 @@
 # Memory routing — from a memory file to an OKF home
 
 **Content decides the home**; the memory's `metadata.type` is only a hint. Once the home is
-chosen, the concept is filed exactly as `/quenching-align:knowledge:add` would — see
-[knowledge-add/homes.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-add/homes.md) for the
+chosen, the concept is filed exactly as `/quenching-knowledge-add` would — see
+[knowledge-add/homes.md](.agents/quenching/assets/references/knowledge-add/homes.md) for the
 `type`/mold/path shape and the index/log procedure, and
-[knowledge-align/taxonomy.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-align/taxonomy.md) for the
+[knowledge-align/taxonomy.md](.agents/quenching/assets/references/knowledge-align/taxonomy.md) for the
 boundaries.
 
 This skill writes to **only three destinations** — two `knowledge/` homes, `standards/` and
@@ -14,7 +14,7 @@ bundle). `vision/`, `documentation/`, `external/` (and `catalog/`) are out of sc
 ## The memory file
 
 <!-- rules -->
-A Claude Code project memory lives under
+A the host project memory lives under
 `~/.claude/projects/<encoded-cwd>/memory/` as one fact per `.md` file with frontmatter:
 
 `<encoded-cwd>` is the **native** absolute working directory — the path the OS reports, not a
@@ -44,7 +44,7 @@ metadata:
 The Windows drive letter produces the **double** dash (`c:` + `\`) and its case is not stable. This
 is why the path is resolved in Python rather than from `pwd`, which under Windows Git Bash reports
 `/c/Users/…` and encodes to a directory that does not exist —
-`/quenching-align:knowledge:import-memory` §The memory file owns the resolver.
+`/quenching-knowledge-import-memory` §The memory file owns the resolver.
 
 ## Routing table — memory `type` → likely home (content overrides)
 

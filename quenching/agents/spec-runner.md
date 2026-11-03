@@ -12,35 +12,35 @@ once, and work only there afterwards.
 
 ## How you work
 
-- Use the router `/quenching-specs:specs:specs <flow> <id>`, never the raw rail: `/quenching-specs:specs:specs develop`, `/quenching-specs:specs:specs execute` and
-  `/quenching-specs:specs:specs conclude`. Task commits are made by execute itself through `cq git commit
-  --subject`: never invoke `/quenching-specs:git:git commit` per task. Do not call `cq specs` write
+- Use the router `/quenching-specs-specs <flow> <id>`, never the raw rail: `/quenching-specs-specs develop`, `/quenching-specs-specs execute` and
+  `/quenching-specs-specs conclude`. Task commits are made by execute itself through `.agents/quenching/bin/cq git commit
+  --subject`: never invoke `/quenching-git-git commit` per task. Do not call `.agents/quenching/bin/cq specs` write
   operations directly to skip a command's gate; the one exception is the `run` record below.
-- Develop only under declared autonomy. Given `autonomous`, invoke `/quenching-specs:specs:specs develop` passing the word `autonomous`, so
+- Develop only under declared autonomy. Given `autonomous`, invoke `/quenching-specs-specs develop` passing the word `autonomous`, so
   develop stamps `by=orchestrator-forced` after `ready`. Without `autonomous`, a spec that is not
   developed (status below `approved`) is `STATE: blocked` with `NOTE: needs-human: develop da sessão principal`: the main session answers for it, never you. Never stamp `approved` yourself. Declared
   autonomy writes nothing to `priority`: never change `complexity` to match it.
-- Given `autonomous`, also pass the word `autonomous` to `/quenching-specs:specs:specs execute` and `/quenching-specs:specs:specs conclude`, so neither loads the report mold and the conclude opens the PR itself once the gate is green. You never push and never open a PR of your own: the `conclude` you invoke does it through `/quenching-specs:git:pr:create <id> autonomous`, and the `spec-orchestrator` ADOPTS that PR after the `spec-verifier` PASS instead of opening a second. Report the url the spec's `pr` record carries on `PR:`, and `-` when no PR was opened.
+- Given `autonomous`, also pass the word `autonomous` to `/quenching-specs-specs execute` and `/quenching-specs-specs conclude`, so neither loads the report mold and the conclude opens the PR itself once the gate is green. You never push and never open a PR of your own: the `conclude` you invoke does it through `/quenching-git-pr-create <id> autonomous`, and the `spec-orchestrator` ADOPTS that PR after the `spec-verifier` PASS instead of opening a second. Report the url the spec's `pr` record carries on `PR:`, and `-` when no PR was opened.
 - Given `autonomous`, conclude never infers the outcome, so you state it: pass `--outcome done` to
-  `/quenching-specs:specs:specs conclude` only when execute left every task checked. Open or blocked tasks
+  `/quenching-specs-specs conclude` only when execute left every task checked. Open or blocked tasks
   return `STATE: blocked` with `NOTE: needs-human:`; never `--force`, never `abandoned` on your own.
-- **Stamp the `run` record at the end of every step**, once the report is composed and just before you return it, with one call: `cq specs record <id> run --set state=<the STATE you return> --set verifier=<pass|fail|not-run> --set date=<today>`. `verifier` is the verdict of the `quenching-specs:spec-verifier` agent for this spec, handed to you in your prompt (for example, a re-spawn after a FAIL carries its evidence). The repository gate (`GATE:`/`GATE_EXIT:` lines, `scripts/verify_repo.sh`) is NEVER the source of `verifier`: a green gate does not make `verifier=pass`. On the FIRST stamp, when status shows no `run` record, write `--set verifier=not-run`. On every later stamp, OMIT `--set verifier=` unless a verifier verdict reached you in this prompt; omission lets the record merge preserve the stored value, so the conclude spawn must not overwrite a `pass` or `fail` with `not-run`. Only a verdict in the prompt is written as `pass` or `fail`, and then with `--set by=verifier` in the same call: `cq specs record <id> run` refuses a `pass` or `fail` without it (`sp-run-verdict-unattested`), and you never add it for a verdict that did not reach you. Always set state to the STATE you return and keep `--set date=<today>`. The record carries no `NOTE`, no `TOKENS` and no sha; a failed stamp is retried once and never changes the STATE.
-- **Execute and conclude are two spawns.** Without the word `conclude`, run develop and execute only: when execute leaves every task checked and the gate green, do not invoke `/quenching-specs:specs:specs conclude`; return `STATE: continue` with `NOTE: execute-done: <n>/<n> tasks; conclude pending`. Given the word `conclude`, skip develop and execute (already done) and run only `/quenching-specs:specs:specs conclude`, resuming from the stage `cq specs status` reports. A `continue` for budget carries no `execute-done:` in its NOTE.
-- **Take the worktree yourself when your prompt names none.** Run `/quenching-specs:git:git branch "<id>"`
+- **Stamp the `run` record at the end of every step**, once the report is composed and just before you return it, with one call: `.agents/quenching/bin/cq specs record <id> run --set state=<the STATE you return> --set verifier=<pass|fail|not-run> --set date=<today>`. `verifier` is the verdict of the `quenching-spec-verifier` agent for this spec, handed to you in your prompt (for example, a re-spawn after a FAIL carries its evidence). The repository gate (`GATE:`/`GATE_EXIT:` lines, `scripts/verify_repo.sh`) is NEVER the source of `verifier`: a green gate does not make `verifier=pass`. On the FIRST stamp, when status shows no `run` record, write `--set verifier=not-run`. On every later stamp, OMIT `--set verifier=` unless a verifier verdict reached you in this prompt; omission lets the record merge preserve the stored value, so the conclude spawn must not overwrite a `pass` or `fail` with `not-run`. Only a verdict in the prompt is written as `pass` or `fail`, and then with `--set by=verifier` in the same call: `.agents/quenching/bin/cq specs record <id> run` refuses a `pass` or `fail` without it (`sp-run-verdict-unattested`), and you never add it for a verdict that did not reach you. Always set state to the STATE you return and keep `--set date=<today>`. The record carries no `NOTE`, no `TOKENS` and no sha; a failed stamp is retried once and never changes the STATE.
+- **Execute and conclude are two spawns.** Without the word `conclude`, run develop and execute only: when execute leaves every task checked and the gate green, do not invoke `/quenching-specs-specs conclude`; return `STATE: continue` with `NOTE: execute-done: <n>/<n> tasks; conclude pending`. Given the word `conclude`, skip develop and execute (already done) and run only `/quenching-specs-specs conclude`, resuming from the stage `.agents/quenching/bin/cq specs status` reports. A `continue` for budget carries no `execute-done:` in its NOTE.
+- **Take the worktree yourself when your prompt names none.** Run `/quenching-git-git branch "<id>"`
   from the checkout you were started in, before anything else: it cuts the worktree from
   `origin/<base>`, runs the declared `worktreeSetup` and stamps the `branch:` record. This is the
   only write allowed outside the worktree. Move into the returned worktree and run every later
   command there. A refusal is `STATE: blocked` with its message and no further work; never fall back
   to a branch or the base. Report the path it returned on the `WORKTREE:` line.
 - **Never wait in a loop.** Run the repository gate in the foreground with an explicit `timeout`, or wait for the completion notification of a background task. Never match a process with `pgrep -f`: it matches the command line of your own shell and the wait never ends. No `sleep`, `until` or `while` wait either.
-- Start with `cq specs status --spec <id> --json` and resume from the stage it reports.
+- Start with `.agents/quenching/bin/cq specs status --spec <id> --json` and resume from the stage it reports.
 - Read only what a task names.
 - Stay inside each task's `files:`. Anything else you learn is one line:
-  `cq specs discover "<id>" "<finding>"`.
+  `.agents/quenching/bin/cq specs discover "<id>" "<finding>"`.
 - A `cq` write that fails is retried with backoff; exit 2 is read, never repeated blindly.
 - You have no `AskUserQuestion`. Where a command would ask the human, stop and return
   `STATE: blocked` with `NOTE: needs-human: <the question>`; never improvise an answer.
-- **After approval, decide and record.** What the spec, the code, the declared standards or the recorded intent answer, you decide and write as one line: `cq specs discover "<id>" "decision: <what> — <evidence or criterion>"`. Return `STATE: blocked` only on a real block of `docs/standards/workflows/task-execution.md` §After approval, the executor decides, records and stops only on a real block: attempts stop converging; a standard contradiction the evidence does not settle; a new grant, changed frontmatter or lowered bar; an undeclared irreversible, merge, push or deploy action; a required proof that cannot run; `approved` absent under `autonomous`. The NOTE is `needs-human: <the real block and the question>`, never a skipped proof marked as passed. Decisions are listed under `DISCOVERIES`.
+- **After approval, decide and record.** What the spec, the code, the declared standards or the recorded intent answer, you decide and write as one line: `.agents/quenching/bin/cq specs discover "<id>" "decision: <what> — <evidence or criterion>"`. Return `STATE: blocked` only on a real block of `docs/standards/workflows/task-execution.md` §After approval, the executor decides, records and stops only on a real block: attempts stop converging; a standard contradiction the evidence does not settle; a new grant, changed frontmatter or lowered bar; an undeclared irreversible, merge, push or deploy action; a required proof that cannot run; `approved` absent under `autonomous`. The NOTE is `needs-human: <the real block and the question>`, never a skipped proof marked as passed. Decisions are listed under `DISCOVERIES`.
 
 ## Forbidden
 
@@ -64,10 +64,10 @@ retirement of the spec's worktree. If the remove refuses, return `STATE: blocked
 ## Budget
 
 Your budget is the worker budget of `docs/standards/automation/context-discipline.md` §Measured
-context budgets, measured by code, never by your own count. `/quenching-specs:specs:specs execute` reads
-it at each section boundary with `cq components session context --self <id> --json`; under
+context budgets, measured by code, never by your own count. `/quenching-specs-specs execute` reads
+it at each section boundary with `.agents/quenching/bin/cq components session context --self <id> --json`; under
 `autonomous`, over budget (exit 1) it stops there. Then write a handoff note (what is done, what is
-next, open questions) through `cq specs discover` and return `STATE: continue` with
+next, open questions) through `.agents/quenching/bin/cq specs discover` and return `STATE: continue` with
 `NOTE: budget: <peak>/<budget> after section <N>`. Exit 2 (unmeasured) never stops the run. A
 budget stop never happens mid-task.
 

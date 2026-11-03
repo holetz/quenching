@@ -1,6 +1,6 @@
 # Pull request status — provider facts and normalized snapshot
 
-This reference owns the read-only facts used by `/quenching-specs:git:pr:status`. The command resolves
+This reference owns the read-only facts used by `/quenching-git-pr-status`. The command resolves
 the provider from the specs backend and the `origin` host, then reports the provider's answer
 without turning an unavailable field into a positive state.
 
@@ -40,14 +40,14 @@ provider did not return one.
 
 ## Selection and provider route
 
-Read `cq specs config --json` and the `origin` URL before
+Read `.agents/quenching/bin/cq specs config --json` and the `origin` URL before
 choosing a provider. A GitHub route requires a GitHub host and `gh repo view`; an Azure route
 requires a DevOps host and the `az` CLI's detected project/repository context. A host mismatch,
 unknown backend or unauthenticated CLI is a refusal with its cause.
 
 The selector is resolved in this order:
 
-1. `spec:<id>` reads `cq specs status --spec <id> --json` and uses its recorded PR number/URL.
+1. `spec:<id>` reads `.agents/quenching/bin/cq specs status --spec <id> --json` and uses its recorded PR number/URL.
 2. A provider URL or numeric PR id is sent to the configured provider.
 3. No argument reads the PR for the current branch; Azure lists active PRs by source branch.
 
@@ -91,10 +91,10 @@ labels distinct from provider-specific detail.
 
 Recommendations are text only:
 
-- unresolved threads → `/quenching-specs:git:pr:review`;
+- unresolved threads → `/quenching-git-pr-review`;
 - failed checks or conflicts → inspect/fix before merge;
 - pending checks or unknown mergeability → wait or refresh provider state;
-- known clean checks, approvals and mergeability → `/quenching-specs:git:merge` may be the next human step;
+- known clean checks, approvals and mergeability → `/quenching-git-merge` may be the next human step;
 - missing PR, authentication failure or incomplete evidence → no action until the cause is resolved.
 
 The command never pushes, edits, resolves threads, changes a spec record or merges a PR.

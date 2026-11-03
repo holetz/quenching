@@ -22,7 +22,7 @@ You create no worktree: you run in the checkout you were launched in, the base c
 Your shell grants are the closed list in `tools:`, for reading history and reproducing, nothing
 else:
 
-- history: `cq git history log <range>`, `cq git history show <sha>`, `cq git history diff
+- history: `.agents/quenching/bin/cq git history log <range>`, `.agents/quenching/bin/cq git history show <sha>`, `.agents/quenching/bin/cq git history diff
   <sha>^ <sha>` (add `--path <p>` to narrow; add `--root <repo>` when the reviewed repository is not the session's, never a `cd <repo> &&` prefix): a fixed argv with no output-to-file option;
 - reproduction: the gate `bash scripts/verify_repo.sh`, the only thing you execute.
 
@@ -31,7 +31,7 @@ gate executes the code under review. After you return, the caller audits the wor
 stash list; anything you left behind is reported against you.
 
 A commit that is not in the checkout's tree (an open PR, not yet merged) is still readable through
-`cq git history show`: its objects live in the shared repository. Reproduce it only when the checkout carries
+`.agents/quenching/bin/cq git history show`: its objects live in the shared repository. Reproduce it only when the checkout carries
 it; otherwise read it, and report it only if the reading alone reproduces the fault (a line that
 contradicts a line, quoted with both `path:line`).
 

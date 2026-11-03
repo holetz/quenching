@@ -6,7 +6,7 @@ This file owns only the `os-*` codes, their disposition bands and the artifact-s
 shapes. The common axis is defined in [`front-align/mold.md`](../front-align/mold.md)
 §Disposition bands; ownership of each control is the catalog's, in
 [`opensource-controls/catalog.md`](../opensource-controls/catalog.md). Every write closes through
-`cq opensource apply`, which copies the pinned template byte for byte and substitutes only the
+`.agents/quenching/bin/cq opensource apply`, which copies the pinned template byte for byte and substitutes only the
 placeholders `sources.json` declares.
 
 ## Artifact language
@@ -29,7 +29,7 @@ deterministic source in the target.
 
 The align may close a structural code after the one plan authorization, once the owner has
 declared the template's placeholders in that plan. It applies one artifact per code and re-runs
-`cq opensource status --json`.
+`.agents/quenching/bin/cq opensource status --json`.
 
 | Code | Severity | Artifact | Closure |
 | --- | --- | --- | --- |
@@ -57,7 +57,7 @@ closing action, and writes nothing.
 
 ## Apply refusals
 
-These are refusals of `cq opensource apply` (exit 2), never findings: the align reports each as it
+These are refusals of `.agents/quenching/bin/cq opensource apply` (exit 2), never findings: the align reports each as it
 came and skips that artifact.
 
 | Code | Meaning |

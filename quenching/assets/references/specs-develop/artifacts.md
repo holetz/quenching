@@ -1,25 +1,25 @@
 # Authoring a spec's sections
 
-The per-section authoring doctrine every `/quenching-specs:specs:*` command applies when it writes into a spec. The
-**layout, the thirteen sections, the gates, the derived stages and the `cq specs` surface** live
+The per-section authoring doctrine every `/quenching-specs-*` command applies when it writes into a spec. The
+**layout, the thirteen sections, the gates, the derived stages and the `.agents/quenching/bin/cq specs` surface** live
 once in
-[spec-driven.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/spec-driven.md) and are
+[spec-driven.md](.agents/quenching/assets/references/specs-develop/spec-driven.md) and are
 cited, never restated here.
 
 There is **no delta and no sync**. A spec proves its durable rules straight into `docs/standards/`
-while it is built (`/quenching-specs:specs:execute`), and `## Impact` is where it *declares* that scope. Two things
+while it is built (`/quenching-specs-execute`), and `## Impact` is where it *declares* that scope. Two things
 in a spec are machine contracts — the `## Tasks` checkboxes and the one parsed sub-heading of
 `## Impact` — and everything else is prose for a human reviewer.
 
 ## Contents
 
-`cq components read <this file>` returns the heading index; `--sections` addresses one.
+`.agents/quenching/bin/cq components read <this file>` returns the heading index; `--sections` addresses one.
 
 ## Writing a section through stdin
 
 <!-- rules -->
 
-`cq specs section <slug> "<Heading>[,<Heading>…]" --write` (bodies on stdin) creates each heading in
+`.agents/quenching/bin/cq specs section <slug> "<Heading>[,<Heading>…]" --write` (bodies on stdin) creates each heading in
 canonical position on first write, so creating and revising are the same call. An emptied section
 becomes an explicit `- none — <reason>`, never a deleted heading (§The explicit-none rule).
 
@@ -28,7 +28,7 @@ are three turns buying what one already does, and a pass that filled six section
 paid six round trips for one edit:
 
 ```bash
-cq specs section "<slug>" "<Heading>,<Other Heading>" --write <<'BODY'
+.agents/quenching/bin/cq specs section "<slug>" "<Heading>,<Other Heading>" --write <<'BODY'
 ## <Heading>
 
 <the drafted section, verbatim>
@@ -61,9 +61,9 @@ gave is worse than leaving the heading absent, because it looks decided. And nev
 of them at creation: a spec that did would derive as `designed` and clear the whole ready gate
 without anyone having thought anything.
 
-`cq specs new <id>` stamps the frontmatter and `## Problem` alone, from
+`.agents/quenching/bin/cq specs new <id>` stamps the frontmatter and `## Problem` alone, from
 `assets/specs/templates/spec.md`. Every other heading is created on first write by
-`cq specs section <id> "<Heading>" --write`, in canonical position. Do not invent new top-level
+`.agents/quenching/bin/cq specs section <id> "<Heading>" --write`, in canonical position. Do not invent new top-level
 headings — one outside the canonical thirteen is a stray and `validate` flags it — and never paste
 this doctrine into the spec.
 
@@ -93,7 +93,7 @@ costs one line.
 - **`## Design`** — each decision with the alternatives weighed and why this one, plus the binding
   contracts the design must not contradict (the relevant `docs/standards/`, the existing code
   shape, external limits). State a decision as a **durable rule**, not a diary entry: this is the
-  material `/quenching-specs:specs:conclude` later distils.
+  material `/quenching-specs-conclude` later distils.
 - **`## Alternatives Considered`** — whole-shape alternatives rejected at the spec level, each with
   the reason it lost. Per-decision alternatives stay inside `## Design`; this section is for the
   ones that would have changed the spec's shape. The next person with the same idea reads why it
@@ -123,7 +123,7 @@ Three sub-headings, and exactly one is machine-checked:
 - `src/auth/session.ts` — the mint/revoke path
 ```
 
-`cq specs validate` parses **only the first sub-heading** (`parse_impact_standards`) and emits
+`.agents/quenching/bin/cq specs validate` parses **only the first sub-heading** (`parse_impact_standards`) and emits
 `sp-impact-uncovered` (warn) for any `docs/standards/**.md` path bulleted there that no `## Tasks`
 item names. Keep the heading text verbatim — it is the anchor.
 
@@ -131,9 +131,9 @@ A spec with no such sub-heading declares nothing and is never flagged — **the 
 writing the heading**. An unfilled `<placeholder>` declares nothing either.
 
 This sub-heading is also the **declared/emergent line**: a `docs/standards/` doc named here *and*
-by a task is written during execution; anything the work merely reveals is one `cq specs discover`
+by a task is written during execution; anything the work merely reveals is one `.agents/quenching/bin/cq specs discover`
 line and is written at conclude
-([execution-delegation.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/execution-delegation.md) §Declared
+([execution-delegation.md](.agents/quenching/assets/references/specs-execute/execution-delegation.md) §Declared
 versus emergent `knowledge/`).
 
 <!-- rationale -->
@@ -152,7 +152,7 @@ closed section's block and never the whole `## Handoff`.
 It is warned on (not gated) once the ready gate is met, and it is rewritten on **four events** —
 the run pauses · a task is written blocked · a discovery is recorded · the run's last commit lands
 — rather than when someone judges it stale. What changed is what a rewrite touches, not when one
-happens: `cq specs section <id> Handoff --write --scope global` for the evergreen block,
+happens: `.agents/quenching/bin/cq specs section <id> Handoff --write --scope global` for the evergreen block,
 `--scope current` for the block of whichever section still has open work — never both, and never a
 closed section's.
 
@@ -167,7 +167,7 @@ tasks all land between two rewrite events never gets a block of its own at all, 
 Each of those four is a moment the executor *just finished doing something*, never one where it
 appraises something: that is the property that makes the rule survivable unattended, and it is what
 any future edit has to preserve. What a resumed run can derive on its own — which tasks are done,
-which commit carried each — lives in `git log` and in the `subjects` `cq specs status` returns;
+which commit carried each — lives in `git log` and in the `subjects` `.agents/quenching/bin/cq specs status` returns;
 this section carries only what nothing derives.
 
 <!-- rationale -->
@@ -185,11 +185,11 @@ less often already fixed *when* the resend happened; this fixes *how much* each 
 
 ## `## Tasks`
 
-The implementation checklist `cq specs` parses: checkboxes `- [ ] <id> <text>` grouped under
-`### N. <Section>` headings. `cq specs task --spec <id> --check <id>` flips a box mechanically —
+The implementation checklist `.agents/quenching/bin/cq specs` parses: checkboxes `- [ ] <id> <text>` grouped under
+`### N. <Section>` headings. `.agents/quenching/bin/cq specs task --spec <id> --check <id>` flips a box mechanically —
 never hand-edit the checkbox character.
 
-Shape it so `/quenching-specs:specs:execute` can walk it top to bottom:
+Shape it so `/quenching-specs-execute` can walk it top to bottom:
 
 - **Ordered by dependency**, grouped into coherent sections (setup → core → wiring → tests → the
   standards `## Impact` declares). Each item is one reviewable unit of work — small enough to
@@ -198,7 +198,7 @@ Shape it so `/quenching-specs:specs:execute` can walk it top to bottom:
   delegate by file or by a coherent set of tasks.
 - **Within what the dependency order allows, group by file.** A section is the unit execution
   delegates — *"delegate by file, or by section of tasks, never task by task"*
-  ([execution-delegation.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/execution-delegation.md) §The cost of
+  ([execution-delegation.md](.agents/quenching/assets/references/specs-execute/execution-delegation.md) §The cost of
   delegating) — so six tasks over one file, kept in one section, cost that file **one** read; the
   same six scattered across four phase-shaped sections cost it four. A `[P]` group is bounded to
   one `### N.` section too, so scattering forecloses the parallelism as well as the delegation.
@@ -214,14 +214,14 @@ Shape it so `/quenching-specs:specs:execute` can walk it top to bottom:
 - **What the merge owns is never written here.**
   A version bump, a changelog entry, a manifest re-stamp; the `/docs/` the work *revealed* rather
   than declared; and the cycle's own closing actions — all three belong to
-  `/quenching-specs:specs:conclude`, which settles them once the branch is written and what the release
+  `/quenching-specs-conclude`, which settles them once the branch is written and what the release
   *is* is finally knowable. The axis is **declared versus revealed**, not docs versus code: the
   bullet above still requires a checkbox for every standard `## Impact` declares, and the test is
   whether the task would exist if this branch were never merged.
 
 Do not put `docs/concepts/` captures or glossary terms in `## Tasks` as durable content — those
-route through `/quenching-align:knowledge:learn` / `/quenching-align:knowledge:define`; a task may *name* the capture
-(`- [ ] 5.2 Capture the retry-budget gotcha via /quenching-align:knowledge:learn`) but the knowledge itself lives in its
+route through `/quenching-knowledge-learn` / `/quenching-knowledge-define`; a task may *name* the capture
+(`- [ ] 5.2 Capture the retry-budget gotcha via /quenching-knowledge-learn`) but the knowledge itself lives in its
 OKF home, never in the checklist.
 
 ## Execution metadata — optional, indented, additive
@@ -266,8 +266,8 @@ while the task is being written. Declare the test beside the implementation it p
 only proof is the `verify:`, whose absence is the `sp-operational-no-verify` warning. It is how a
 redeploy, a `systemctl is-active` or the repository gate is declared without inventing a path, and
 the verifier accepts such a task without a commit sha because it has no path to hang one on. The
-readers that hand a task on carry `operational: true` beside `files: []` (`cq specs next`,
-`cq specs show --task`), and that flag — never the empty list — is what excuses the sha: a task with
+readers that hand a task on carry `operational: true` beside `files: []` (`.agents/quenching/bin/cq specs next`,
+`.agents/quenching/bin/cq specs show --task`), and that flag — never the empty list — is what excuses the sha: a task with
 no `files:` line parses to the same `[]`, and only the flag tells the two apart.
 
 **Declare every generated mirror the diff changes.** A task that edits a translated source also
@@ -300,7 +300,7 @@ matching.
 
 Set it **here, at definition time** — execution never infers it. It is honoured only when the
 marked tasks' `files:` sets are provably disjoint and none writes into `knowledge/`, which
-`cq specs parallel` checks mechanically. Serial is the default and needs no marker: without proven
+`.agents/quenching/bin/cq specs parallel` checks mechanically. Serial is the default and needs no marker: without proven
 disjunction, parallel execution trades wall-clock for merge conflicts and loses on both.
 
 **A blocked task is a visible marker, not a hidden counter** —
@@ -322,14 +322,14 @@ because the phrase wrapped across a line, and again because inline `**` sat betw
 <!-- rules -->
 `per-task` / `per-section` (default) / `end-of-plan`, recorded in frontmatter. It answers *when* the
 checks run; `verify:` answers *what* runs. Declaring it during definition is what keeps
-`/quenching-specs:specs:execute` from having to guess, or from stopping mid-build to ask.
+`/quenching-specs-execute` from having to guess, or from stopping mid-build to ask.
 
 ## `## Discoveries` and `## Outcome`
 
 **`## Discoveries`** has no gate — it is appended to during execution, one line per finding, by
-`cq specs discover`. Captured **indiscriminately**: whether a discovery is worth acting on is a
+`.agents/quenching/bin/cq specs discover`. Captured **indiscriminately**: whether a discovery is worth acting on is a
 later judgment, and asking the executor to make it mid-task is how a finding gets dropped for being
-inconvenient. Each line is resolved **in place** by `/quenching-specs:specs:develop`'s discoveries stage, so
+inconvenient. Each line is resolved **in place** by `/quenching-specs-develop`'s discoveries stage, so
 provenance is never lost:
 
 ```markdown

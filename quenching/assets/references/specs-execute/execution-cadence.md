@@ -13,7 +13,7 @@ The four events are the command body's. Why four events rather than a threshold 
 **The four events say when a Handoff update happens; they do not add another boundary event.** Since
 `## Handoff` gained per-section blocks — a small global block plus one `### N.` block per `## Tasks`
 section — an update at any of the four events targets ONE of the two:
-`cq specs section <id> Handoff --write --scope global` for the evergreen block, or `--scope
+`.agents/quenching/bin/cq specs section <id> Handoff --write --scope global` for the evergreen block, or `--scope
 current` for the block of whichever `### N.` still has open work. A section's block closes — stops
 being targeted — the moment its last task commits, but that close adds no fifth event: `--scope
 current` always resolves to whichever section still has an open task, so once `### N.` has none
@@ -30,16 +30,16 @@ A `## N.` section's last task committing, with another section still ahead, is a
 the loop keeps the task commits and continues with the next task.
 
 - **The trigger is that event, never a window size; the measured size decides only the tone.** The
-  boundary reads `cq components session context --json` once. Within the budget, or unmeasured
+  boundary reads `.agents/quenching/bin/cq components session context --json` once. Within the budget, or unmeasured
   (exit 2), the loop continues and the boundary is not a question. Over it (exit 1), the loop asks
   once, recommending a new session; continuing stays an option. A count never stops a task midway.
-- **Nothing extra is written.** `## Handoff`, `git log`, and the `subjects` `cq specs status`
+- **Nothing extra is written.** `## Handoff`, `git log`, and the `subjects` `.agents/quenching/bin/cq specs status`
   returns already carry everything a fresh session needs; the boundary adds no record and no fifth
   Handoff event.
 - **Only a human-required question or a real blocker pauses the loop.** A section boundary is
   neither; the pause conditions remain the command body's own.
 - **The contract still ends at the last commit.** Reaching this boundary is not a close-out: the
-  branch review, the merge and the archive remain `/quenching-specs:specs:conclude`'s, exactly as they are
+  branch review, the merge and the archive remain `/quenching-specs-conclude`'s, exactly as they are
   for a run that goes to the end.
 
 ## The loop's progress banner
@@ -73,7 +73,7 @@ records and stops only on a real block; this section is its loop-side procedure.
 - **Decide what the evidence answers.** The spec, the code, the standards declared under `## Impact`
   and the glossary answer most questions; the recorded intent covers the rest by criterion. The loop
   does not ask.
-- **Record each decision as one line.** `cq specs discover "<id>" "decision: <what> — <evidence or
+- **Record each decision as one line.** `.agents/quenching/bin/cq specs discover "<id>" "decision: <what> — <evidence or
   criterion>"`. A `decision:` line is not one of the four Handoff events and writes no Handoff.
 - **Stop only on a real block**, the closed list of the standard: attempts stop converging; a task
   contradicts a standard and the evidence does not choose; the plan needs a new grant, a changed

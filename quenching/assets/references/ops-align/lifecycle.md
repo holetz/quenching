@@ -7,7 +7,7 @@ archived and to decide whether archiving may move its path.
 
 ## Contents
 
-`cq components read <this file>` returns the heading index; `--sections` addresses one.
+`.agents/quenching/bin/cq components read <this file>` returns the heading index; `--sections` addresses one.
 
 ## The two lifecycle states
 

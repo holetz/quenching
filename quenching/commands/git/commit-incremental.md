@@ -1,6 +1,6 @@
 ---
 description: >-
-  Turn pending worktree changes into small cohesive commits with one confirmation. Use for "organize and commit my worktree". Not for: the staged index → /quenching-specs:git:commit.
+  Turn pending worktree changes into small cohesive commits with one confirmation. Use for "organize and commit my worktree". Not for: the staged index → /quenching-git-commit.
 disable-model-invocation: true
 argument-hint: [optional subject prefix]
 allowed-tools: >-
@@ -9,14 +9,14 @@ allowed-tools: >-
   Bash(git commit:*), Bash(git log:*), Bash(python3:*), AskUserQuestion
 ---
 
-# /quenching-specs:git:commit-incremental — turn the current worktree into atomic commits
+# /quenching-git-commit-incremental — turn the current worktree into atomic commits
 
 **Input**: `$ARGUMENTS` — an optional subject prefix; absent → use the target convention or the
 fallback below.
 
 Operate on the current checkout only. Read the shared git rules from
-`${CLAUDE_PLUGIN_ROOT}/assets/references/git/conventions.md` and
-`${CLAUDE_PLUGIN_ROOT}/assets/references/git/commit.md`; those references own convention precedence,
+`.agents/quenching/assets/references/git/conventions.md` and
+`.agents/quenching/assets/references/git/commit.md`; those references own convention precedence,
 subject anchoring and commit hygiene. The report is in the repository's declared conversation
 language, while commit subjects and messages remain canonical English artifacts.
 
@@ -27,7 +27,7 @@ language, while commit subjects and messages remain canonical English artifacts.
 Read the target's git conventions, then collect one initial snapshot:
 
 ```bash
-cq git conventions --json
+.agents/quenching/bin/cq git conventions --json
 git status --short
 git diff --name-status
 git diff --cached --name-status
@@ -72,7 +72,7 @@ applies. The subject describes the group's concern, not its file list.
 ### 4. Confirm, then stage and commit each group
 
 Before the first `git add`, show the full group table, paths, diffs, subjects and the two byte/secret
-guards' clean result. Put one decision sheet ([specs-develop/questions.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/questions.md) §1; A carry out, B decline) on whether to carry out the listed commits, and end the turn;
+guards' clean result. Put one decision sheet ([specs-develop/questions.md](.agents/quenching/assets/references/specs-develop/questions.md) §1; A carry out, B decline) on whether to carry out the listed commits, and end the turn;
 decline leaves every pending path untouched. Then, for each group in dependency order, quote each
 path and stage only that list:
 

@@ -1,19 +1,19 @@
 ---
 description: >-
-  Report the proof front: layers, fixtures, floors, CI evidence and findings, read-only. Use for "proof status", "check the verification surface". Not for: converging → /quenching-proof:proof:align.
+  Report the proof front: layers, fixtures, floors, CI evidence and findings, read-only. Use for "proof status", "check the verification surface". Not for: converging → /quenching-proof-align.
 disable-model-invocation: true
 argument-hint: [optional-target-root]
 allowed-tools: Bash(cq:*), Bash(cq.cmd:*), Read, Grep, Glob, Bash(python3:*)
 ---
 
-# /quenching-proof:proof:status — read the verification surface
+# /quenching-proof-status — read the verification surface
 
 **Input**: `$ARGUMENTS` (an optional target repository root; omit to use the current repository).
 
 The common front contract is in
-[front-align/mold.md](${CLAUDE_PLUGIN_ROOT}/assets/references/front-align/mold.md), and the proof
+[front-align/mold.md](.agents/quenching/assets/references/front-align/mold.md), and the proof
 disposition map is in
-[proof-align/bands.md](${CLAUDE_PLUGIN_ROOT}/assets/references/proof-align/bands.md). This
+[proof-align/bands.md](.agents/quenching/assets/references/proof-align/bands.md). This
 read-only view preserves proof's layer, fixture, measurement, floor, CI and order deltas.
 
 This command is the read-only view of the proof front. It reports the declared proof root, layers
@@ -22,12 +22,12 @@ definitions and invocation evidence, and findings grouped by the disposition ban
 absent floor or artifact as absent, never as healthy, and states plainly that the target suite was
 not run.
 
-The payload is produced by `cq proof status`; the finding and disposition rules live in
-[proof-align/bands.md](${CLAUDE_PLUGIN_ROOT}/assets/references/proof-align/bands.md),
-[proof-align/gate-contract.md](${CLAUDE_PLUGIN_ROOT}/assets/references/proof-align/gate-contract.md),
-and [proof-align/layer-contract.md](${CLAUDE_PLUGIN_ROOT}/assets/references/proof-align/layer-contract.md).
+The payload is produced by `.agents/quenching/bin/cq proof status`; the finding and disposition rules live in
+[proof-align/bands.md](.agents/quenching/assets/references/proof-align/bands.md),
+[proof-align/gate-contract.md](.agents/quenching/assets/references/proof-align/gate-contract.md),
+and [proof-align/layer-contract.md](.agents/quenching/assets/references/proof-align/layer-contract.md).
 Resolve `cq` per
-[tool-resolution.md](${CLAUDE_PLUGIN_ROOT}/assets/references/align/tool-resolution.md) and branch
+[tool-resolution.md](.agents/quenching/assets/references/align/tool-resolution.md) and branch
 on exit code and JSON: `0` is a clean report, `1` carries findings, and `2` is a refusal.
 
 ## Workflow
@@ -37,7 +37,7 @@ on exit code and JSON: `0` is a clean report, `1` carries findings, and `2` is a
 Set `TARGET_ROOT` to the supplied argument, or to `.` when the argument is omitted, and run:
 
 ```bash
-cq --root "$TARGET_ROOT" proof status --json
+.agents/quenching/bin/cq --root "$TARGET_ROOT" proof status --json
 ```
 
 On exit `2`, report the refusal and every missing or invalid declaration exactly as returned. Do
@@ -77,9 +77,9 @@ finding keeps its code and band, and the report distinguishes static evidence fr
 ### 3. Hand back control
 
 State that this command wrote nothing and that the suite was not run. For a structural finding,
-name `/quenching-proof:proof:align` as the command that can converge it. For a judgement finding,
+name `/quenching-proof-align` as the command that can converge it. For a judgement finding,
 retain its evidence and name the target owner's closing command from `bands.md`; status never
-runs that command. For a missing layer, name `/quenching-proof:proof:layer:new`; for a missing CI gate,
+runs that command. For a missing layer, name `/quenching-proof-layer-new`; for a missing CI gate,
 name the target owner's reviewed CI change.
 
 **Done when:** the report ends with the appropriate owner for each finding and no repair or test
@@ -93,5 +93,5 @@ execution has been attempted.
   nothing is called healthy because it is missing.
 - Findings come from `bands.md` and retain their severity and code.
 - The target suite is never run; status reports this explicitly.
-- Status names `/quenching-proof:proof:align` for bounded repair and `/quenching-proof:proof:layer:new` for
+- Status names `/quenching-proof-align` for bounded repair and `/quenching-proof-layer-new` for
   layer creation, without invoking either.

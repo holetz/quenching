@@ -36,13 +36,13 @@ one entry per term with a link to its full doc when one exists. `grep -i '<term>
      every index.md uses), linked when a concept doc exists. To resolve a word: `grep -i
      '<term>' /docs/glossary.md` (or Ctrl-F it). A matching entry gives the local
      meaning and, when linked, its full concept doc; no entry means the term is not yet
-     defined — add it with the `quenching-align:knowledge:define` skill (one term), backfill many at once
-     with `quenching-align:knowledge:glossary-backfill`, or capture the concept with `quenching-align:knowledge:learn` (which
+     defined — add it with the `quenching-knowledge-define` skill (one term), backfill many at once
+     with `quenching-knowledge-glossary-backfill`, or capture the concept with `quenching-knowledge-learn` (which
      enters the term as its tail step). -->
 
 To **create / edit / move** knowledge (keeping the listing in sync), use the
-`quenching` skills: `quenching-align:knowledge:add` to add one, `quenching-align:knowledge:define` to add a glossary
-term, `quenching-align:knowledge:align` to migrate/normalize, `quenching-align:components:harness:align` to keep this file thin.
+`quenching` skills: `quenching-knowledge-add` to add one, `quenching-knowledge-define` to add a glossary
+term, `quenching-knowledge-align` to migrate/normalize, `quenching-components-harness-align` to keep this file thin.
 
 ## Agent etiquette
 
@@ -69,17 +69,17 @@ Anything that is durable knowledge belongs in a /docs/ home above, cited here, n
 <!-- MOLD (quenching · root harness pointer — do NOT copy this note into the produced file):
      Produces the repo-root AGENTS.md as a THIN, HONEST navigation pointer over the OKF bundle.
      • NO frontmatter, NO `type` — a harness file is EXEMPT from OKF (okf-spec §strict-7); the
-       validator skips it. Pointer honesty is verified by the `quenching-align:components:harness:align` skill, not the
+       validator skips it. Pointer honesty is verified by the `quenching-components-harness-align` skill, not the
        validator: EVERY link here MUST resolve before the run ends.
      • KEEP only what the agent needs on EVERY task (commands, env, etiquette). MOVE durable
-       knowledge into its /docs/ home (via the quenching-align:knowledge:add procedure) and leave a one-line
+       knowledge into its /docs/ home (via the quenching-knowledge-add procedure) and leave a one-line
        pointer that CITES the doc — never a paraphrase (a restated rule is drift, like a lying index).
      • List ONLY homes that exist in this repo — drop the bullets for absent homes; do not invent
        a home. Structure/links are canonical English; prose MAY follow the repo's language.
      • KEEP the "Resolving a term" pointer + the HOW-TO-FIND-A-TERM comment when the repo has a
        `glossary.md` — term resolution via the glossary is a habit worth one line every
        turn. Drop both only if the repo has no glossary.
-     • KEEP the spec-first development rule when `cq specs config` reports a store: it is the line
+     • KEEP the spec-first development rule when `.agents/quenching/bin/cq specs config` reports a store: it is the line
        that tells the agent a change request means build it (develop → execute → conclude → PR) and
        that merge and deploy wait for the human to declare autonomy. Drop it only where the repo has
        no spec store.

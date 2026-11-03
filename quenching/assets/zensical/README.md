@@ -1,8 +1,8 @@
 # `assets/zensical/` — the site setup payload (Zensical)
 
-Inert here, like the rest of `assets/`. `/quenching-align:knowledge:align` (Step 7) stamps these into a target
+Inert here, like the rest of `assets/`. `/quenching-knowledge-align` (Step 7) stamps these into a target
 repo **once**, while scaffolding the bundle, so the OKF bundle renders as a site;
-`/quenching-align:knowledge:documentation:build` **owns** the layer after that — it installs, merges forward,
+`/quenching-knowledge-documentation-build` **owns** the layer after that — it installs, merges forward,
 keeps the `nav` in step with the folder tree, and verifies the build. **The OKF
 markdown stays generator-neutral; only this config layer names a generator.**
 
@@ -40,8 +40,8 @@ deployment as a separate platform-owned stage with its own credentials and appro
 
 ```bash
 pip install -r requirements.txt
-cq knowledge project docs --check
-cq knowledge site-source docs site-source --write
+.agents/quenching/bin/cq knowledge project docs --check
+.agents/quenching/bin/cq knowledge site-source docs site-source --write
 zensical build --clean --strict
 # fallbacks: python -m zensical build --clean --strict · uv run zensical build --clean --strict
 ```
@@ -66,8 +66,8 @@ internal `/docs/<home>/…` path. A `do not publish` home has no staged file, ro
 
 The glossary route is `glossary.md` in the bounded source. When the canonical root `glossary.md`
 has content, it is published by default unless the accepted map explicitly says `do not publish`.
-The write stage runs `cq knowledge project --write`, which derives the abbreviation snippet and
-records the source SHA-256; `cq knowledge site-source --write` stages both without creating a
+The write stage runs `.agents/quenching/bin/cq knowledge project --write`, which derives the abbreviation snippet and
+records the source SHA-256; `.agents/quenching/bin/cq knowledge site-source --write` stages both without creating a
 second editable glossary. The template's `abbr` and
 `pymdownx.snippets.auto_append` load those definitions on every page. The derived files are
 generated data, never a second hand-maintained glossary.

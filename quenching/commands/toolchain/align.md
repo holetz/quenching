@@ -1,24 +1,24 @@
 ---
 description: >-
-  Converge a repository's toolchain surface from manifests, locks, language pins and tool config, preserving build policy. Use for "align the toolchain front", "fix toolchain drift". Not for: read-only → /quenching-toolchain:toolchain:status.
+  Converge a repository's toolchain surface from manifests, locks, language pins and tool config, preserving build policy. Use for "align the toolchain front", "fix toolchain drift". Not for: read-only → /quenching-toolchain-status.
 disable-model-invocation: true
 argument-hint: [optional-target-root]
 allowed-tools: Bash(cq:*), Bash(cq.cmd:*), Read, Grep, Glob, Bash(python3:*), AskUserQuestion, Write, Edit
 ---
 
-# /quenching-toolchain:toolchain:align — converge the toolchain front
+# /quenching-toolchain-align — converge the toolchain front
 
 **Input**: `$ARGUMENTS` (an optional target repository root; omit to use the current repository).
 
 This command owns the toolchain front's convergence pass. It reads manifests, locks, language pins
 and tool configuration, applies only deterministic or contract-bounded repairs, and leaves build
 policy with the target owner. The common front floor is in
-[front-align/mold.md](${CLAUDE_PLUGIN_ROOT}/assets/references/front-align/mold.md), and the
+[front-align/mold.md](.agents/quenching/assets/references/front-align/mold.md), and the
 toolchain finding bands and closure boundary are in
-[toolchain-align/bands.md](${CLAUDE_PLUGIN_ROOT}/assets/references/toolchain-align/bands.md).
+[toolchain-align/bands.md](.agents/quenching/assets/references/toolchain-align/bands.md).
 
 Set `TARGET_ROOT` to the supplied argument, or to `.` when the argument is omitted. Resolve `cq`
-per [tool-resolution.md](${CLAUDE_PLUGIN_ROOT}/assets/references/align/tool-resolution.md)
+per [tool-resolution.md](.agents/quenching/assets/references/align/tool-resolution.md)
 §Resolving the tool, pass the same root to every call, and branch on the JSON and exit code:
 `0` is a clean answer, `1` carries findings, and `2` is a refusal.
 
@@ -29,7 +29,7 @@ per [tool-resolution.md](${CLAUDE_PLUGIN_ROOT}/assets/references/align/tool-reso
 Run the route before reading or editing a target:
 
 ```bash
-cq --root "$TARGET_ROOT" toolchain doctor --json
+.agents/quenching/bin/cq --root "$TARGET_ROOT" toolchain doctor --json
 ```
 
 The probe establishes applicability from recognized toolchain artifacts. `not-applicable` is an
@@ -91,7 +91,7 @@ already made them deterministic.
 Re-run the same closing verifier:
 
 ```bash
-cq --root "$TARGET_ROOT" toolchain doctor --json
+.agents/quenching/bin/cq --root "$TARGET_ROOT" toolchain doctor --json
 ```
 
 If findings remain, distinguish unresolved judgement residue from a failed mechanical or structural
@@ -117,5 +117,5 @@ and every residual owner action.
 - `not-applicable` and refusal are explicit states, never guessed healthy configuration.
 - The doctor payload is the authoritative finding and inventory source for this pass.
 - Mechanical and bounded structural findings may be applied; build policy and judgement remain report-only.
-- The closing verifier is the same `cq toolchain doctor --json` program as the probe.
+- The closing verifier is the same `.agents/quenching/bin/cq toolchain doctor --json` program as the probe.
 - The command never rewrites `.agents/quenching.json` into a toolchain artifact or creates a second configuration home.

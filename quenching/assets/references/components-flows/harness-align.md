@@ -1,25 +1,25 @@
-# /quenching-align:components:harness:align — make AGENTS.md a thin, honest pointer into the bundle
+# /quenching-components-harness-align — make AGENTS.md a thin, honest pointer into the bundle
 
-**Input**: `$ARGUMENTS` (an optional specific harness file; omit to sweep every CLAUDE.md/AGENTS.md).
+**Input**: `$ARGUMENTS` (an optional specific harness file; omit to sweep every AGENTS.md/AGENTS.md).
 
 Refactors a repo's **harness files** (the root `AGENTS.md`, every subfolder `AGENTS.md`) into thin
 navigation pointers over the OKF `/docs/` bundle: operational rules stay;
 durable knowledge is **moved** into its `/docs/` home and cited. Assumes the bundle already exists (run
-`/quenching-align:knowledge:align` first if not). It also **creates** a thin subfolder `AGENTS.md` where discovery
+`/quenching-knowledge-align` first if not). It also **creates** a thin subfolder `AGENTS.md` where discovery
 finds a folder with a local operational surface but no harness — evidence-gated, never one per
 directory (routing §6). The unit → verdict → home routing and the pointer-honesty gate are
-in [components-harness-align/harness-routing.md](${CLAUDE_PLUGIN_ROOT}/assets/references/components-harness-align/harness-routing.md); the home boundaries, `type`
-  vocabulary, molds, and index procedure are shared with `/quenching-align:knowledge:add`
-([knowledge-add/homes.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-add/homes.md)) and
-`/quenching-align:knowledge:align` ([knowledge-align/taxonomy.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-align/taxonomy.md),
-[knowledge-align/conformance.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-align/conformance.md),
-[knowledge-align/migration.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-align/migration.md)). Harness
-molds live at `${CLAUDE_PLUGIN_ROOT}/assets/templates/harness/`.
+in [components-harness-align/harness-routing.md](.agents/quenching/assets/references/components-harness-align/harness-routing.md); the home boundaries, `type`
+  vocabulary, molds, and index procedure are shared with `/quenching-knowledge-add`
+([knowledge-add/homes.md](.agents/quenching/assets/references/knowledge-add/homes.md)) and
+`/quenching-knowledge-align` ([knowledge-align/taxonomy.md](.agents/quenching/assets/references/knowledge-align/taxonomy.md),
+[knowledge-align/conformance.md](.agents/quenching/assets/references/knowledge-align/conformance.md),
+[knowledge-align/migration.md](.agents/quenching/assets/references/knowledge-align/migration.md)). Harness
+molds live at `.agents/quenching/assets/templates/harness/`.
 
 ## Doctrine
 
-- **`AGENTS.md` is the source; there is no root `CLAUDE.md`** — Claude Code 2.1.277+ reads
-  `AGENTS.md` directly when no `CLAUDE.md`/`CLAUDE.local.md` exists (routing §7 has the verified fact).
+- **`AGENTS.md` is the source; there is no root `AGENTS.md`** — the host 2.1.277+ reads
+  `AGENTS.md` directly when no `AGENTS.md`/`CLAUDE.local.md` exists (routing §7 has the verified fact).
 - **Commands and etiquette stay; knowledge moves.** The one test: would the agent need this on
   **EVERY** task under this file's folder (keep) — or only when working on **that subject** (move +
   pointer)?
@@ -31,11 +31,11 @@ molds live at `${CLAUDE_PLUGIN_ROOT}/assets/templates/harness/`.
 - **Plan first, execute on one confirmation.** Read every harness file, classify every unit, and
   present **ONE** table — file → unit → verdict → destination. A single OK executes the batch; an
   edit whose blast radius reaches **product code** is its own confirmation item. **Exception —
-  cycle-authorized runs:** invoked as a stage of `/quenching-align:knowledge:align`'s cycle (or of `/align`) under the cycle-authorization contract
-  ([align/convergence.md](${CLAUDE_PLUGIN_ROOT}/assets/references/align/convergence.md)), the plan is
+  cycle-authorized runs:** invoked as a stage of `/quenching-knowledge-align`'s cycle (or of `/align`) under the cycle-authorization contract
+  ([align/convergence.md](.agents/quenching/assets/references/align/convergence.md)), the plan is
   presented as narration, not a gate; a product-code edit still confirms on its own, always. The
   cycle may hand this skill a **pre-collected steps 1–4 table** (gathered read-only while
-  `/quenching-align:knowledge:import-memory` ran — cycle.md §Parallel prep); before writing, re-verify any unit
+  `/quenching-knowledge-import-memory` ran — cycle.md §Parallel prep); before writing, re-verify any unit
   whose home/subject intersects the docs that run just created — a fresh doc can flip a MOVE
   into a DEDUPE (the staleness delta-recheck); the rest of the table stands.
 - **Write-then-verify-then-cut.** A unit leaves the harness file **only after** its concept doc is
@@ -45,16 +45,16 @@ molds live at `${CLAUDE_PLUGIN_ROOT}/assets/templates/harness/`.
   with `/docs/` is a **FLAG** resolved per item; secrets and personal notes are flagged and **NEVER**
   filed into shared `/docs/` (`CLAUDE.local.md` is treated like a `user` memory).
 Resolve `cq` per
-[align/tool-resolution.md](${CLAUDE_PLUGIN_ROOT}/assets/references/align/tool-resolution.md)
+[align/tool-resolution.md](.agents/quenching/assets/references/align/tool-resolution.md)
 §Resolving the tool; branch on the **exit code** (0 ok · 1 findings · 2 refusal), never on prose.
 
 ## Workflow
 
 ### 1. Inventory the harness surface (read-only)
-`Glob` `**/AGENTS.md`, `**/CLAUDE.md` (legacy), and `CLAUDE.local.md`; add a `grep --no-ignore` sweep to
+`Glob` `**/AGENTS.md`, `**/AGENTS.md` (legacy), and `CLAUDE.local.md`; add a `grep --no-ignore` sweep to
 catch gitignored ones. Confirm `/docs/index.md` carries `okf_version` — if there is no OKF bundle,
-**stop** and offer `/quenching-align:knowledge:align` first. List every harness file found, and
-the **root harness state** — conformant (`AGENTS.md` only), legacy (`CLAUDE.md` content or pointer), or doubled
+**stop** and offer `/quenching-knowledge-align` first. List every harness file found, and
+the **root harness state** — conformant (`AGENTS.md` only), legacy (`AGENTS.md` content or pointer), or doubled
 (routing §7).
 
 Then **discover greenfield candidates** (read-only), swept **repo-wide from the repository
@@ -68,7 +68,7 @@ dirs (`.build/`, `dist/`, `build/`, `target/`, `node_modules/`, `**/__pycache__/
 `assets/`, `.venv/`, any nested `site-packages`/vendored dependency tree) and anything gitignored
 as a build artifact — check each hit with `git check-ignore`.
 Each survivor is a **proposed** subfolder `AGENTS.md`, carried into the plan (step 5) as its own
-gated item — never auto-created. See [components-harness-align/harness-routing.md](${CLAUDE_PLUGIN_ROOT}/assets/references/components-harness-align/harness-routing.md) §6.
+gated item — never auto-created. See [components-harness-align/harness-routing.md](.agents/quenching/assets/references/components-harness-align/harness-routing.md) §6.
 
 On a large repo, delegate this repo-wide `find`/`grep` sweep to **one read-only `Task`
 sub-agent** (`model: haiku`, `effort: low`) that only **collects** — harness paths, candidate
@@ -83,9 +83,9 @@ build command paired with an architecture note becomes two).
 **Done when:** every harness file is segmented into anchored units.
 
 ### 3. Classify every unit
-Apply the [components-harness-align/harness-routing.md](${CLAUDE_PLUGIN_ROOT}/assets/references/components-harness-align/harness-routing.md) table →
+Apply the [components-harness-align/harness-routing.md](.agents/quenching/assets/references/components-harness-align/harness-routing.md) table →
 **KEEP / MOVE / DEDUPE / FLAG / UNROUTABLE**. A **MOVE** derives its home + `type` + mold via
-[knowledge-add/homes.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-add/homes.md); a **DEDUPE**
+[knowledge-add/homes.md](.agents/quenching/assets/references/knowledge-add/homes.md); a **DEDUPE**
 cites the existing doc (`Grep /docs/` to confirm coverage); a **FLAG** quotes both sides of the
 contradiction.
 
@@ -95,15 +95,15 @@ classify it MOVE or DEDUPE.
 **The ephemeral-writes declaration line is always KEEP.** Preserve
 `Ephemeral writes: <path> — the contract is /docs/standards/agents/ephemeral-writes.md` verbatim;
 never classify it MOVE or DEDUPE.
-**The spec-first development rule is always KEEP where the repo has a spec store** (`cq specs
+**The spec-first development rule is always KEEP where the repo has a spec store** (`.agents/quenching/bin/cq specs
 config` reports one): the line that says a change request means the whole flow — develop, execute,
 conclude, PR — and that merge and deploy run only when the human declared autonomy. It stays in
 Agent etiquette even when a rule it cites moved into `/docs/`; only the citation changes.
 **Done when:** every unit has one routing verdict and any contradiction is quoted.
 
 ### 4. Sweep the blast radius
-Per `/quenching-align:knowledge:align`'s migration doctrine
-([knowledge-align/migration.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-align/migration.md) §3 §4):
+Per `/quenching-knowledge-align`'s migration doctrine
+([knowledge-align/migration.md](.agents/quenching/assets/references/knowledge-align/migration.md) §3 §4):
 `git grep` + `grep -rn --no-ignore` for anything that reads or links the harness files or their
 anchors. As in step 1, a large sweep goes to one read-only `Task` collector (`model: haiku`,
 `effort: low`) returning `anchor → [file:line, …]`; the orchestrator judges each hit. Any hit in
@@ -122,9 +122,9 @@ confirmation** before writing anything.
 
 ### 6. Per MOVE unit: insert, verify, then cut
 For each MOVE row, run the full insert procedure exactly as
-[knowledge-add/homes.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-add/homes.md) specifies it —
+[knowledge-add/homes.md](.agents/quenching/assets/references/knowledge-add/homes.md) specifies it —
   stamp → index → glossary → self-check (against
-[knowledge-align/conformance.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-align/conformance.md)) —
+[knowledge-align/conformance.md](.agents/quenching/assets/references/knowledge-align/conformance.md)) —
 with this skill's deltas kept inline:
 - `source:` = the harness file the unit came from; an unproven rule enters
   `authority: background`.
@@ -134,8 +134,8 @@ cover it.
 **Done when:** every approved MOVE is indexed and self-checked before it is cut.
 
 ### 7. Rewrite each harness file
-Root `AGENTS.md` from `${CLAUDE_PLUGIN_ROOT}/assets/templates/harness/agents-root.md`, a subfolder from
-`.../harness/agents-subfolder.md`. A legacy `CLAUDE.md` that holds only `@AGENTS.md` is removed;
+Root `AGENTS.md` from `.agents/quenching/assets/templates/harness/agents-root.md`, a subfolder from
+`.../harness/agents-subfolder.md`. A legacy `AGENTS.md` that holds only `@AGENTS.md` is removed;
 content-bearing legacy files are consolidated first. Structure and links are canonical English; prose may follow the
 repo's language. The root file's language declaration line is carried through **verbatim**. UNROUTABLE and
 FLAG-pending units stay under a clearly marked residue section. **No frontmatter, ever.**
@@ -143,7 +143,7 @@ FLAG-pending units stay under a clearly marked residue section. **No frontmatter
 
 ### 8. Verify and report
 **Resolve EVERY link** in every rewritten harness file (the validator won't). Confirm no moved fact
-is still restated inline; run `cq knowledge validate` over `/docs/` → 0 errors and the structural WARNs
+is still restated inline; run `.agents/quenching/bin/cq knowledge validate` over `/docs/` → 0 errors and the structural WARNs
   clean; confirm each moved doc is indexed. Report counts: **moved** (by home) /
 **deduped** / **kept** / **flagged** / **unroutable** / **harness created** (subfolder pointers).
 **Done when:** links, conformance, index ownership, and all disposition counts are reported.
@@ -163,4 +163,4 @@ is still restated inline; run `cq knowledge validate` over `/docs/` → 0 errors
   cycle-authorized run (convergence.md §The cycle-authorization contract) replaces the batch gate with narration — never the
   product-code item's own OK — and a pre-collected table is delta-rechecked before any write.
 - Never blanket-create subfolder `AGENTS.md`s — creation is evidence-gated per harness-routing.md §6.
-- Never recreate the pointer-only `CLAUDE.md`; Claude Code 2.1.277+ reads `AGENTS.md`.
+- Never recreate the pointer-only `AGENTS.md`; the host 2.1.277+ reads `AGENTS.md`.

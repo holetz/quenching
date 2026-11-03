@@ -1,30 +1,30 @@
 ---
 description: >-
-  Converge a repository's operations surface from its declared root and router under one plan. Use for "align the ops front", "fix operational drift". Not for: read-only → /quenching-ops:ops:status.
+  Converge a repository's operations surface from its declared root and router under one plan. Use for "align the ops front", "fix operational drift". Not for: read-only → /quenching-ops-status.
 disable-model-invocation: true
 argument-hint: [optional-target-root]
 allowed-tools: Bash(cq:*), Bash(cq.cmd:*), Read, Grep, Glob, Bash(python3:*), AskUserQuestion, Write, Edit
 ---
 
-# /quenching-ops:ops:align — converge the operations surface
+# /quenching-ops-align — converge the operations surface
 
 **Input**: `$ARGUMENTS` (an optional target repository root; omit to use the current repository).
 
 This command owns the operations front's convergence pass. It reads the target's declared
 operations root and canonical router, applies only deterministic mechanical and bounded structural
 repairs, and leaves production-risk decisions with the target owner. The disposition rules live in
-[ops-align/bands.md](${CLAUDE_PLUGIN_ROOT}/assets/references/ops-align/bands.md); the target tree and
-router contract live in [ops-align/target-structure.md](${CLAUDE_PLUGIN_ROOT}/assets/references/ops-align/target-structure.md)
-and [ops-align/entrypoint-contract.md](${CLAUDE_PLUGIN_ROOT}/assets/references/ops-align/entrypoint-contract.md).
+[ops-align/bands.md](.agents/quenching/assets/references/ops-align/bands.md); the target tree and
+router contract live in [ops-align/target-structure.md](.agents/quenching/assets/references/ops-align/target-structure.md)
+and [ops-align/entrypoint-contract.md](.agents/quenching/assets/references/ops-align/entrypoint-contract.md).
 The common front contract lives in
-[front-align/mold.md](${CLAUDE_PLUGIN_ROOT}/assets/references/front-align/mold.md); these references
+[front-align/mold.md](.agents/quenching/assets/references/front-align/mold.md); these references
 keep the router, registry and entry-point-specific evidence separate from the shared mold.
 
 Set `TARGET_ROOT` to the supplied argument, or to `.` when the argument is omitted, and pass that
-same root to every `cq ops` call.
+same root to every `.agents/quenching/bin/cq ops` call.
 
 Resolve `cq` per
-[tool-resolution.md](${CLAUDE_PLUGIN_ROOT}/assets/references/align/tool-resolution.md)
+[tool-resolution.md](.agents/quenching/assets/references/align/tool-resolution.md)
 §Resolving the tool. Use the resolved path literally and branch on exit code and JSON:
 `0` is clean, `1` reports findings, and `2` is a refusal.
 
@@ -35,14 +35,14 @@ Resolve `cq` per
 Resolve the tool, then run the verifier before reading the operations tree:
 
 ```bash
-cq --root "$TARGET_ROOT" ops doctor --json
+.agents/quenching/bin/cq --root "$TARGET_ROOT" ops doctor --json
 ```
 
 When it exits `0` with no findings, report "ops conformant, nothing to align" and stop. Do not
 run `ops inventory`, ask for confirmation, or write anything. When it exits `2` with
 `op-config-missing`, report the missing `opsRoot` and/or `router` exactly as returned and stop;
 the align never guesses `scripts/`, a router, or an inventory. The probe rule is the operations
-application of [sweep-doctrine.md](${CLAUDE_PLUGIN_ROOT}/assets/references/align/sweep-doctrine.md)
+application of [sweep-doctrine.md](.agents/quenching/assets/references/align/sweep-doctrine.md)
 §1. Probe before the inventory.
 
 **Done when:** the clean case or a configuration refusal has stopped without an inventory, or a
@@ -53,7 +53,7 @@ non-clean verifier result has authorized the inventory stage below.
 Only after exit `1`, read the verifier's JSON and run the single inventory pass:
 
 ```bash
-cq --root "$TARGET_ROOT" ops inventory --json
+.agents/quenching/bin/cq --root "$TARGET_ROOT" ops inventory --json
 ```
 
 Read `ops-align/bands.md`, `ops-align/entrypoint-contract.md`, `ops-align/lifecycle.md`, and
@@ -95,14 +95,14 @@ If the plan is rejected, write nothing and stop.
 ### 5. Apply only the first two bands
 
 Under the authorization, apply the mechanical closures and the bounded structural repairs. Use
-`cq ops registry --write` only for a mechanical registry finding, and edit only the declared
+`.agents/quenching/bin/cq ops registry --write` only for a mechanical registry finding, and edit only the declared
 operations root or registry path for a structural finding. Never arm a write-capable entry point,
 archive an entry point, re-enable a disabled check, or select a router the target did not declare.
 
 After the edits, run the same probe again:
 
 ```bash
-cq --root "$TARGET_ROOT" ops doctor --json
+.agents/quenching/bin/cq --root "$TARGET_ROOT" ops doctor --json
 ```
 
 If the probe still reports findings, distinguish remaining judgement residue from failed
@@ -128,5 +128,5 @@ human-owned action for every judgement finding.
 - One plan and one routine confirmation cover the pass; code-coupled and irreversible actions keep
   their own confirmation.
 - Mechanical and structural findings may be applied; judgement findings are report-only.
-- The closing verifier is the same `cq ops doctor --json` program as the probe.
+- The closing verifier is the same `.agents/quenching/bin/cq ops doctor --json` program as the probe.
 - The operations front's own report is the only run record; no sweep log is written.
