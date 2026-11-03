@@ -11,7 +11,7 @@ os_env:
   type: caller_process
   cwd: .
 tools:
-  agents: ["git-steward", "orchestrator", "reviewer", "scout", "spec-architect", "spec-runner", "verifier"]
+  agents: ["spec-orchestrator", "spec-reviewer", "spec-runner", "spec-scout", "spec-verifier"]
   quenching:
     type: mcp
     command: uvx

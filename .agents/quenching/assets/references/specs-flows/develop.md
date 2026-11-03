@@ -361,11 +361,11 @@ it **never proves the full build fits**, even when every declared input was foun
 volume is not a context peak; system overhead, future code, outputs and iterations are not predicted.
 
 When `overBudget` is true, follow §Approval's decomposition recommendation **before stamping**:
-brief `spec-architect` in **proposal-only** mode with the source id/problem, task-section estimates,
-worker budget, unresolved inputs and exclusions. It returns independently verifiable slices and
-dependencies without creating children. Offer that concrete proposal to the human (recommended),
+propose, in this session, independently verifiable slices and
+dependencies from the source id/problem, task-section estimates,
+worker budget, unresolved inputs and exclusions, creating no children yet. Offer that concrete proposal to the human (recommended),
 explicit acceptance of the unsplit estimate risk, or stop. Only explicit authorization permits
-capture/linking; preserve the original problem and never approve/execute the children incidentally.
+capture/linking, which this session runs with `.agents/quenching/bin/cq specs new` and `.agents/quenching/bin/cq specs link add`; preserve the original problem and never approve/execute the children incidentally.
 On the simple track and on `autonomous`, do not ask or automatically approve an oversized
 source: return `STATE: blocked` with `NOTE: needs-human: <budget evidence and proposed slices>` to
 the conductor. A lower estimate reports uncertainty and continues; it is not a fits verdict.

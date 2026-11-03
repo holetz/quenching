@@ -524,8 +524,8 @@ with `workerBudgetTokens` (S2: 100000). Bytes / 4 is a heuristic, not measured b
 excluded overhead and unknown inputs remain visible below the budget. Never claim a build fits
 from this signal, and never change `complexity` to make a plan appear smaller.
 
-An excess recommends **decomposition via `spec-architect`**, not an unconditional approve:
-pass the source spec and section estimates in `proposal-only` mode, obtain independent slices
+An excess recommends **decomposition in the develop session**, not an unconditional approve:
+from the source spec and section estimates, propose independent slices
 and dependency edges, and present them before asking to capture an epic. Capture/linking needs
 explicit authorization and keeps the original problem available; an existing approval or task
 history is never silently rewritten. The human may instead **explicitly accept** the unsplit
@@ -541,7 +541,7 @@ text:
 
 | Recommendation | When | What choosing it does |
 | --- | --- | --- |
-| **Decompose** | known declared reading exceeds worker budget | propose independently verifiable slices via `spec-architect`; capture only on explicit authorization |
+| **Decompose** | known declared reading exceeds worker budget | propose independently verifiable slices in this session; capture only on explicit authorization |
 | **Approve** | no signal fired | `cq specs record "<id>" approved --set date=<today> --set by=human`, never by editing the provider document directly |
 | **Refine** | a scope or critique signal fired, and refine has not run this pass | the choice IS the OK to refine with the lens the signal names, restamping `complexity` if the depth grew, and the pass re-enters at refine |
 | **Refine with the premortem** | the spec is irreversible | same mechanics, premortem lens |

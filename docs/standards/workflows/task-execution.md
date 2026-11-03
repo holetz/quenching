@@ -468,8 +468,8 @@ conditions hold:
    the tick.
 
 The rung lives per task, inside execute: the whole-spec route (the orchestrator's spec-runner) does
-not change, and judgment — develop, triage, conclude, orchestrator, verifier, reviewer,
-spec-architect, every `/docs/standards/` write — never descends.
+not change, and judgment — develop, triage, conclude, spec-orchestrator, spec-verifier,
+spec-reviewer, spec-runner, every `/docs/standards/` write — never descends.
 
 The orchestrator keeps, without exception: spec selection, the isolation, every
 confirmation, every `cq specs task --check` flip, every block marker, every `/docs/standards/`

@@ -21,7 +21,7 @@ class AutonomyProseTests(unittest.TestCase):
             self.assertIn(f"shared.autonomy.{key}", body)
 
     def test_orchestrator_consumes_the_three_values_and_keeps_the_merge_text(self):
-        body = text("plugins/quenching/agents/orchestrator.md")
+        body = text("plugins/quenching/agents/spec-orchestrator.md")
         for key in ("runAloneUpTo=", "merge=", "maxWorkers"):
             self.assertIn(key, body)
         self.assertIn(CANONICAL, body)

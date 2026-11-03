@@ -39,7 +39,7 @@ class GeneratedTree(unittest.TestCase):
                 self.assertNotIn(marker, text, rel)
 
     def test_cq_bash_blocks_define_the_opencode_wrapper(self):
-        text = self.text("commands/quenching-specs-status.md") + self.text("agents/quenching-verifier.md")
+        text = self.text("commands/quenching-specs-status.md") + self.text("agents/quenching-spec-verifier.md")
         self.assertIn(sync.OPENCODE_CQ_WRAPPER, text)
 
     def test_tool_resolution_reference_is_rewritten_for_opencode(self):
@@ -65,7 +65,7 @@ class GeneratedTree(unittest.TestCase):
             self.assertIn(expected, header + "\n", source.name)
 
     def test_read_only_agent_is_never_wider_than_cq_allow(self):
-        header = self.text("agents/quenching-verifier.md").split("\n---\n", 1)[0]
+        header = self.text("agents/quenching-spec-verifier.md").split("\n---\n", 1)[0]
         self.assertIn("mode: subagent", header)
         self.assertIn("edit: deny", header)
         self.assertIn('bash:\n    "*": ask\n    "cq specs status *": allow\n    "cq specs show *": allow\n'
@@ -137,7 +137,7 @@ class Permissions(unittest.TestCase):
         self.assertEqual("ask", sync.permissions("Read, Bash(git ls-files:*)")["bash"])
 
     def test_registered_agent_carries_the_cq_pattern_map_and_denies_edit_and_webfetch(self):
-        registered, _ = sync.agent_files(sync.SOURCE / "agents" / "scout.md")
+        registered, _ = sync.agent_files(sync.SOURCE / "agents" / "spec-scout.md")
         header = registered.split("\n---\n", 1)[0]
         self.assertIn('  bash:\n    "*": ask\n    "cq specs show *": allow\n    "cq components read *": allow\n', header)
         self.assertIn("  edit: deny\n  webfetch: deny\n", header)
@@ -147,7 +147,7 @@ class Permissions(unittest.TestCase):
         self.assertEqual("deny", sync.permissions("Read, Grep")["bash"])
 
     def test_edit_webfetch_and_task_follow_the_source(self):
-        granted = sync.permissions("Agent(quenching-specs:verifier, quenching-specs:scout), Read, Write")
+        granted = sync.permissions("Agent(quenching-specs:spec-verifier, quenching-specs:spec-scout), Read, Write")
         self.assertEqual(("allow", "deny", "allow"), (granted["edit"], granted["webfetch"], granted["task"]))
 
     def test_no_tools_line_adds_no_permission_block(self):
@@ -156,8 +156,8 @@ class Permissions(unittest.TestCase):
 
 class Platform(unittest.TestCase):
     def test_module_qualified_ids_and_agents_map_to_opencode_names(self):
-        text = sync.platform("run /quenching-specs:specs:execute then quenching-specs:verifier on Claude Code")
-        self.assertEqual("run quenching-specs-execute then quenching-verifier on OpenCode", text)
+        text = sync.platform("run /quenching-specs:specs:execute then quenching-specs:spec-verifier on Claude Code")
+        self.assertEqual("run quenching-specs-execute then quenching-spec-verifier on OpenCode", text)
 
     def test_an_unowned_module_id_refuses(self):
         with self.assertRaises(ValueError):

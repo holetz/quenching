@@ -2,7 +2,7 @@
 type: decision
 title: The orchestrator's Agent(...) list is documentary
 description: Why the Agent(type) allowlist in the orchestrator's tools restricts nothing when it runs as a subagent, and the accepted decision to document it and audit the launched types instead of blocking them
-resource: plugins/quenching/agents/orchestrator.md
+resource: plugins/quenching/agents/spec-orchestrator.md
 tags: [decision, agents, orchestrator, security]
 timestamp: 2026-10-11
 audience: both
@@ -20,7 +20,7 @@ This decision supersedes the passage of [0007](0007-native-claude-code-features.
 
 The official sub-agents documentation (checked against Claude Code 2.1.296) honours an
 `Agent(type)` allowlist only for an agent run as the main thread (`claude --agent`). In a subagent
-definition the list of types is ignored. `plugins/quenching/agents/orchestrator.md` declares
+definition the list of types is ignored. `plugins/quenching/agents/spec-orchestrator.md` declares
 `tools: Agent(quenching:spec-runner, quenching:verifier, ...)` and
 `commands/specs/orchestrate.md` launches it as a subagent, so it can launch any type. The capability
 reference already says so (`components-command-new/capabilities.md`); 0007 contradicted it.

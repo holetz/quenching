@@ -240,7 +240,7 @@ boundary, and a build offers to stop there.
   OpenCode the same command measures the session named by `OPENCODE_SESSION_ID`, which a subagent
   has of its own, so `--self` needs no marker there; `session cost` does not read OpenCode, so the
   `BUDGET:` line stays Claude-only. **The
-  conductor budget of the `orchestrator` is enforced by code between waves:** it measures itself
+  conductor budget of the `spec-orchestrator` is enforced by code between waves:** it measures itself
   with `cq components session context --self orchestrator-<id> --json` before admitting each wave
   and, over budget (exit 1), lets the workers in flight finish (a stop is never mid-wave) and
   returns `STATE: continue` with `NOTE: budget: <peak>/<budget> before wave <N>` for each spec not
@@ -296,7 +296,7 @@ not a context peak, and even complete declared-input coverage never proves the b
 host/harness overhead, conditional references, outputs, generated code and iterations are excluded.
 
 Develop checks this signal before every approval path. Known reading above the budget proposes
-independently verifiable slices through `spec-architect` in proposal-only mode. Capturing/linking
+independently verifiable slices in the main session, proposal-only. Capturing/linking
 children needs explicit authorization; the source problem and approval/task history survive.
 Low/forced-low autonomous runs return the oversized-plan decision to their conductor, without
 approving it automatically. A human may explicitly accept the unsplit estimate risk.
@@ -521,7 +521,7 @@ subagents expire alike, and gradually. The gateway's result is not DeepSeek's di
 documents retention of hours to days.
 
 OpenCode gave a median of 102 skill descriptions, about 11,300 tokens at four characters each, to
-every role measured, the read-only `verifier` and the `git-steward` included. Its median first
+every role measured, the read-only `spec-verifier` and the `spec-runner` included. Its median first
 request is about 24,000 tokens, so the listing is near half of what a new context pays. The sample
 is mixed in project and workload, so comparing peaks across harnesses is not a cost claim.
 

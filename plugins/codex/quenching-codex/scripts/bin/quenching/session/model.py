@@ -14,8 +14,8 @@ def normalize(name: str) -> str:
 
 
 def bare_agent(agent_type: str) -> str:
-    """`quenching-specs:orchestrator`, `quenching:orchestrator` and the OpenCode or deployed
-    `quenching-orchestrator` are one agent."""
+    """`quenching-specs:spec-orchestrator`, `quenching:spec-orchestrator` and the OpenCode or deployed
+    `quenching-spec-orchestrator` are one agent; the pre-rename names stay recognised."""
     return PLUGIN_PREFIX.sub("", agent_type).removeprefix("quenching-")
 
 

@@ -82,7 +82,7 @@ belongs to exactly one module, and so does every agent:
 
 | Module | Commands it registers | Agents |
 | --- | --- | --- |
-| `quenching-specs` | `/quenching-specs:specs:*`, `/quenching-specs:git:*`, `/quenching-specs:handoff` | `quenching-specs:git-steward`, `:orchestrator`, `:scout`, `:spec-architect`, `:spec-runner`, `:verifier` |
+| `quenching-specs` | `/quenching-specs:specs:*`, `/quenching-specs:git:*`, `/quenching-specs:handoff` | `quenching-specs:spec-orchestrator`, `:spec-reviewer`, `:spec-runner`, `:spec-scout`, `:spec-verifier` |
 | `quenching-align` | `/quenching-align:align`, `/quenching-align:knowledge:*`, `/quenching-align:components:*` | — |
 | `quenching-design` | `/quenching-design:design:*` | — |
 | `quenching-ops` | `/quenching-ops:ops:*` | — |

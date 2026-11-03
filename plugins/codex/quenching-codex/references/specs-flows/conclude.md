@@ -1,7 +1,7 @@
 # quenching-specs-conclude — review, archive, distil — and hand off
 
 **Input**: `$ARGUMENTS` — the spec id, and optionally its outcome. A conductor launched with
-`--autonomous` adds the word `autonomous`; the run then stops at the named PR handoff, which the `git-steward` performs.
+`--autonomous` adds the word `autonomous`; the run then stops at the named PR handoff, which the `spec-orchestrator` performs after the `spec-verifier` PASS, or the main session otherwise.
 
 Closes ONE spec out, short of the merge itself. Four things happen, in this order, and each is a
 separate decision: the whole branch is **reviewed**, the `/docs/` the work *revealed* is
@@ -416,7 +416,7 @@ never run the gate over a branch you know is behind.
 **Under `autonomous` the answer is given, and it is the merge.** A sibling spec merged mid-wave is
 the ordinary way to be behind, and a `needs-human` there is never relaunched. Run
 `git merge --no-edit origin/<base>` — a merge, never a rebase, so the task shas stay ancestors and
-the verifier's check 7 accepts them — and then the gate over the merged tree. A conflict only in
+the spec-verifier's check 7 accepts them — and then the gate over the merged tree. A conflict only in
 generated files (`plugins/claude/quenching-specs-reader/**`) is mechanical: take the base's side
 (`git show :3:<path> > <path>`, `git add <path>`), then **regenerate before concluding the merge** —
 `python3 scripts/sync_specs_reader_plugin.py --write` — `git add` what it rewrote, and conclude
@@ -445,8 +445,8 @@ Skill("quenching-specs:git:pr:create", "<id>")
 
 Invoke it with the spec id; `quenching-git-pr-create` owns its own confirmation, push and PR
 record. Do not offer a second handoff or invoke `quenching-git-merge` on the low path.
-**When this run's input carried `autonomous`, do not invoke it:** the orchestrator hands push and PR
-to the `git-steward` after the verifier accepts the spec. Name the handoff (`quenching-git-pr-create
+**When this run's input carried `autonomous`, do not invoke it:** the `spec-orchestrator` publishes (push and PR)
+after the `spec-verifier` accepts the spec. Name the handoff (`quenching-git-pr-create
 <id> autonomous`) in the report and stop. **For
 `medium`, `high` and `xhigh`, name the handoff and stop:**
 
