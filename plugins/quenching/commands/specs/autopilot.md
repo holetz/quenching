@@ -181,13 +181,21 @@ this round's decisions, and `validate` raises no `sp-link-*` finding.
 of the spec-orchestrator's protocol, cited and not restated — steps 3 (budget, `budget:` relaunch), 4
 (acceptance only on a spec-verifier PASS, the `execute-done:`/`conclude` two spawns, publish after the PASS,
 one re-spawn) and 5 (retry, idempotency) of `plugins/quenching/agents/spec-orchestrator.md`.
-Each prompt is ≤ 1,500 characters and carries the word `autonomous`, the model passed explicitly and
-the sentence "No git stash, checkout or reset; work only in your worktree." Two members with a
+Each prompt is ≤ 1,500 characters, and it OPENS with the fixed text every prompt of that type
+shares — the word `autonomous`, the base, the model passed explicitly and the sentence "No git
+stash, checkout or reset; work only in your worktree." — and CLOSES with the variables: the spec
+id, the worktree, the epic id and the decision it carries. Fixed prefix first is what lets two
+prompts of the same type share a cacheable prefix; the gain BETWEEN distinct agents is ASSUMED, not
+measured in this repository — the table of `context-discipline.md` §The prompt cache is a
+per-harness measurement measures generations inside one agent — and `cq components session cache` is
+the measurement that would confirm or refute it. Two members with a
 dependency run in series; without one, in parallel (never more than 3 workers). Every launch counts
 in `launches`, and the ceilings of the invariants above bind it. No new grant: this session already
 holds `Agent` and `Task`.
 **Otherwise** (3 or more members, or any `high`/`xhigh`), start `quenching-specs:spec-orchestrator` on
-the epic with the word `autonomous`, the base branch and the deadline (≤ 1,500 characters).
+the epic with the word `autonomous`, the base branch and the deadline (≤ 1,500 characters), its
+brief ordered the same way: the fixed sentence and the word `autonomous` first, the epic id, the
+base branch, the deadline and the decision last.
 Apply **Liveness** to every worker, in either mode. A spec returned `blocked` with a `needs-human:`
 note takes the resume rule of the invariants: answered inside the measured window, it goes back to
 the same agent by `SendMessage`; otherwise it moves to the human epic. `failed` or `continue` is

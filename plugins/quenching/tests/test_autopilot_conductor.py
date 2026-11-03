@@ -99,5 +99,33 @@ class ResumeInsteadOfRelaunch(unittest.TestCase):
         self.assertIn("it goes back to the same agent by `SendMessage`", body)
 
 
+class BriefWithAStablePrefix(unittest.TestCase):
+    """The fixed text opens the brief and the variables close it, so two prompts of the same
+    type share a cacheable prefix. The gain between distinct agents is assumed, not measured
+    here, and the body says so."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.body = step(5)
+
+    def test_the_fixed_text_opens_and_the_variables_close(self):
+        self.assertIn("it OPENS with the fixed text every prompt of that type shares", self.body)
+        self.assertIn("and CLOSES with the variables: the spec id, the worktree, the epic id and "
+                      "the decision it carries", self.body)
+        self.assertLess(self.body.index("it OPENS with the fixed text"),
+                        self.body.index("and CLOSES with the variables"))
+
+    def test_the_assumption_is_declared_and_names_its_measurement(self):
+        self.assertIn("the gain BETWEEN distinct agents is ASSUMED, not measured in this "
+                      "repository", self.body)
+        self.assertIn("generations inside one agent", self.body)
+        self.assertIn("`cq components session cache` is the measurement that would confirm or "
+                      "refute it", self.body)
+
+    def test_the_orchestrator_brief_is_ordered_the_same_way(self):
+        self.assertIn("its brief ordered the same way", self.body)
+        self.assertIn("the epic id, the base branch, the deadline and the decision last", self.body)
+
+
 if __name__ == "__main__":
     unittest.main()
