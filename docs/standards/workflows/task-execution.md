@@ -4,10 +4,10 @@ title: Task execution contract
 description: How a spec's task is executed — the verification policies, `verify:` scoped at authoring, the three causes of a check that can never pass (one of them invisible to the falsification run), `files:` naming the derived artifacts an edit invalidates, the failure budget, one commit per task retained across section boundaries, the two-level review split, the four-event Handoff refresh cadence, the decision-and-real-block contract after approval, and the delegation and [P] disjunction rules
 resource: plugins/quenching/commands/specs/execute.md, plugins/quenching/commands/specs/conclude.md, plugins/quenching/assets/references/specs-execute/execution.md, plugins/quenching/assets/references/specs-develop/artifacts.md, plugins/quenching/assets/references/git/commit.md, plugins/quenching/assets/bin/quenching/specs/**, plugins/quenching/assets/specs/templates/spec.md
 tags: [workflows, specs, execution, verification, commits, delegation, handoff]
-timestamp: 2026-11-02
+timestamp: 2026-11-03
 audience: both
 authority: current
-source: refine-and-execute-specs-flow, cut-specs-execute-turns; history in ADR 0002
+source: refine-and-execute-specs-flow, cut-specs-execute-turns; history in ADR 0002; spec 2160 (install only by deploy)
 maintainer: quenching
 ---
 
@@ -263,14 +263,14 @@ of which read `files:` and neither of which reads the test suite.
 
 **Generated distributions are the same rule's second instance.** A task that edits the shipped
 payload under `plugins/quenching/` also regenerates everything the generators copy out of it: the
-trees under `plugins/claude/`, `plugins/codex/`, `plugins/opencode/` and `.agents/` are rewritten by
+trees under `plugins/omnigent/`, `.agents/` and the deployed `.claude/` bridge are rewritten by
 the commands [specs-portal.md](../architecture/specs-portal.md) §Regeneration lists. Declare those
 trees in `files:` exactly as the golden above, because the repository gate's `deployed surface
 lockstep` check refuses the branch until they are regenerated: a task that omits them cannot pass
 its own `verify:`, and the execution that regenerates them anyway commits paths its declaration
-never owned. The provider copies are not all byte-identical by design — the Claude, Codex and
-OpenCode `app.js` differs only in each provider's command spelling — so the declaration is over the
-trees, not over "the same file, copied".
+never owned. The copies are not byte-identical to the source by design — a deployed or Omnigent
+copy carries its harness's command spelling — so the declaration is over the trees, not over "the
+same file, copied".
 
 Measured on `2139` (task 3.1, 2026-11-01): `files:` named only
 `plugins/quenching/assets/portal/app.css`, while the gate also required all four regeneration

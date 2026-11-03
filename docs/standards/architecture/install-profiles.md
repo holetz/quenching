@@ -4,10 +4,10 @@ title: Install profiles — the front is the unit of alignment
 description: A profile declares which of the eight local fronts a repository asks the root align to conduct; provider-owned specs and the security and git pillars remain available axes, and the profile does not alter command files or host invocation behavior; the root align conducts the intersection of the profile with the enabled modules
 resource: .agents/quenching.json, plugins/quenching/assets/modules.json, plugins/quenching/commands/align.md, plugins/quenching/assets/references/align/tool-resolution.md, plugins/quenching/commands/knowledge/**, plugins/quenching/commands/specs/**, plugins/quenching/commands/design/**, plugins/quenching/commands/components/**, plugins/quenching/commands/ops/**, plugins/quenching/commands/proof/**, plugins/quenching/commands/toolchain/**, plugins/quenching/commands/delivery/**, plugins/quenching/commands/opensource/**, plugins/quenching/commands/security/**, plugins/quenching/commands/git/**
 tags: [architecture, install, profiles, fronts, configuration]
-timestamp: 2026-10-17
+timestamp: 2026-11-03
 audience: both
 authority: current
-source: spec 1111 — a fresh Claude Code 2.1.258 session showed no observable profile-controlled context difference, so the profile contract is limited to `/align` conduction scope; spec 1635 intersected it with the enabled modules; spec 1637 (opensource)
+source: spec 1111 — a fresh Claude Code 2.1.258 session showed no observable profile-controlled context difference, so the profile contract is limited to `/align` conduction scope; spec 1635 intersected it with the enabled modules; spec 1637 (opensource); spec 2160 (deploy only)
 maintainer: quenching
 ---
 
@@ -47,8 +47,8 @@ available through their own namespaces regardless of the local-front scope.
 Two independent facts decide whether `/quenching-align:align` runs a local front, and the run takes
 their **intersection**:
 
-- **The module is enabled** — the host loaded the module that owns the front (the table's last
-  column). `/quenching-align:align` reads `cq modules --json` once, before the first front.
+- **The module is enabled** — the target received the module that owns the front (the table's
+  last column) with `cq deploy --modules`. `/quenching-align:align` reads `cq modules --json` once, before the first front.
 - **The profile names it** — or no profile is declared (§The declaration).
 
 The profile restricts; an absent module removes. A front the profile names but whose module is not
@@ -56,7 +56,7 @@ enabled is reported `not-installed: <module>` and skipped, never invoked, and th
 depend on it depend on the nearest earlier front that ran. A front whose module is enabled but the
 profile omits is reported skipped by profile. Neither case is an error.
 
-Enabling a module is the installation mechanism; the profile is not. Declaring an entry in
+Deploying a module is the installation mechanism; the profile is not. Declaring an entry in
 `shared.profiles.installed` never makes its module's commands exist, and enabling a module never
 widens a declared profile. The root conductor itself lives in `quenching-align`: with that module
 absent there is no root align to read a profile, and each enabled front is run through its own

@@ -4,10 +4,10 @@ title: Command surface naming
 description: How the plugin's commands are named and namespaced — one file per entry point, where the path is the identity; the module prefix each front publishes under and the full command and agent mapping; the design namespace for DTCG source and projections; the proof namespace for the verification surface rather than its test artifact; the seventh namespace (`git`, a pillar rather than a front) and its coexistence with a target's own `git` category; the components front's four sibling contexts, each named for the artifact it mints, and the rule that keeps a front-level verb off an artifact-level context; and the one-segment skill name of a target repository
 resource: plugins/quenching/commands/**, plugins/quenching/agents/**, plugins/quenching/assets/modules.json
 tags: [naming, commands, taxonomy]
-timestamp: 2026-10-28
+timestamp: 2026-11-03
 audience: both
 authority: current
-source: rename-command-surface, 2026-07-21, 2026-07-24, collapse-skills-into-commands, 2026-07-26, correct-command-citation-form, spec 1635 (module extraction), spec 1637 (the `quenching-opensource` module), spec 2118 (one-segment target skill names); lineage in ADR 0004 and ADR 0013
+source: rename-command-surface, 2026-07-21, 2026-07-24, collapse-skills-into-commands, 2026-07-26, correct-command-citation-form, spec 1635 (module extraction), spec 1637 (the `quenching-opensource` module), spec 2118 (one-segment target skill names); spec 2160 (install only by deploy); lineage in ADR 0004 and ADR 0013
 maintainer: quenching
 ---
 
@@ -75,9 +75,10 @@ commands keep their `:` identity: this rule governs a target's surface, not the 
 
 ## The plugin prefix is the module
 
-The plugin is published as nine modules ([../architecture/plugin-layout.md](../architecture/plugin-layout.md)
-§One editable source, eight generated modules), so the segment before the first `:` names the
-**module** that registers the command, and the rest is the command's path inside it. Every front
+The source is split into nine modules ([../architecture/plugin-layout.md](../architecture/plugin-layout.md)
+§One editable source, installed by deploy), so the segment before the first `:` names the
+**module** that owns the command, and the rest is the command's path inside it; `cq deploy`
+translates `/quenching-<module>:<front>:<verb>` to the target's one-segment `quenching-<front>-<verb>`. Every front
 belongs to exactly one module, and so does every agent:
 
 | Module | Commands it registers | Agents |
@@ -94,9 +95,7 @@ belongs to exactly one module, and so does every agent:
 
 - **The map has one home.** The front-to-module assignment is the `owned` record of each module in
   `plugins/quenching/assets/modules.json`; `quenching.common.modules.namespace_map` derives the
-  table above from it, the Codex translator consumes the same map, and the generator refuses a
-  module file citing a `quenching-<module>:` id no module owns. The table is a reading of that
-  record, never a second source.
+  table above from it. The table is a reading of that record, never a second source.
 - **The published name is written in the source.** Bodies, agents, references, the README and the
   Python literals that recognize ids spell `quenching-<module>:…`; the bare `quenching:` prefix
   survives only as the source's own unpublished registration and in history (`docs/decisions/`,

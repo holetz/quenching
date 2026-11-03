@@ -2,12 +2,12 @@
 type: standard
 title: Opensource front
 description: The target repository's license, community and governance artifacts, written only from pinned templates through cq opensource apply, and the read-only aggregate of every owner's open source catalog answers into a conservative baseline level with stable os-* findings
-resource: plugins/quenching/commands/opensource/**, plugins/quenching/assets/bin/quenching/opensource/**, plugins/quenching/assets/opensource/templates/**, plugins/quenching/assets/references/opensource-align/**, plugins/claude/quenching-opensource/**
+resource: plugins/quenching/commands/opensource/**, plugins/quenching/assets/bin/quenching/opensource/**, plugins/quenching/assets/opensource/templates/**, plugins/quenching/assets/references/opensource-align/**
 tags: [architecture, opensource, governance, community, license]
-timestamp: 2026-10-17
+timestamp: 2026-11-03
 audience: both
 authority: current
-source: spec 1637 (epic 1627) — route, aggregate, level, apply and template sha256 proved by test_opensource_front.py; module resolution measured with the nine principal modules on PATH
+source: spec 1637 (epic 1627) — route, aggregate, level, apply and template sha256 proved by test_opensource_front.py; module resolution measured with the nine principal modules on PATH; spec 2160 (install only by deploy)
 maintainer: quenching
 ---
 
@@ -91,11 +91,11 @@ them as declared; it never proposes a default, and a batch authorization never c
 
 ## The module
 
-The front ships as the published module `quenching-opensource`, generated from `plugins/quenching`.
-It owns the `opensource` commands and the `opensource` package, ships the `common` and `controls`
+The front is the module `quenching-opensource` of `assets/modules.json`, which `cq deploy --modules`
+selects. It owns the `opensource` commands and the `opensource` package, ships the `common` and `controls`
 packages and the `opensource-controls` and `opensource-align` references as generated support, and
-is not the owner of the `cq` on `PATH`: with the module disabled, `cq opensource` exits 2 naming the
-module to enable.
+does not own `cq`: in a target that did not receive the module, `cq opensource` exits 2 naming the
+module to add with `cq deploy --modules`.
 
 <!-- rationale -->
 

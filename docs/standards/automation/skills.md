@@ -4,10 +4,10 @@ title: Command authoring and alignment
 description: How the plugin's commands are classified, authored, named, and swept into conformance — one file per entry point, including the admission criterion that decides whether a command's description stays resident in context or goes typed-only, and where a target repository's skill is born and how its Claude bridge is generated and verified
 resource: plugins/quenching/commands/**, plugins/quenching/assets/references/**, plugins/quenching/assets/bin/quenching/components/commands/bridge.py, plugins/quenching/assets/bin/quenching/components/commands/migrate.py
 tags: [automation, commands, taxonomy, authoring]
-timestamp: 2026-10-28
+timestamp: 2026-11-03
 audience: both
 authority: current
-source: collapse-skills-into-commands, 2026-07-26, correct-command-citation-form, 2026-07-31, route-commands-without-always-on-descriptions, 2026-08-02, spec 2118 (target skills in .agents/skills with a generated Claude bridge, 2026-10-28); lineage in ADR 0004
+source: collapse-skills-into-commands, 2026-07-26, correct-command-citation-form, 2026-07-31, route-commands-without-always-on-descriptions, 2026-08-02, spec 2118 (target skills in .agents/skills with a generated Claude bridge, 2026-10-28); spec 2160 (install only by deploy); lineage in ADR 0004
 maintainer: quenching
 ---
 
@@ -155,10 +155,8 @@ The bridge is generated, and verified by code:
   committed version of that source (or that translation plus edits the current source already
   carries), so a hand-made skill of the same name is a conflict and nothing is written. A nested
   skill folder flattens whole, sibling files with it; `openspec-*` and `opsx/` stay put.
-- A target is conformant when `migrate` reports `conformant: true` and `bridge --check` exits 0.
-  `cq components translate` refuses (exit 2) on such a target, so the legacy translation never
-  lands over the source ([surface-translation.md](../architecture/surface-translation.md)
-  §Target repositories).
+- A target is conformant when `migrate` reports `conformant: true` and `bridge --check` exits 0
+  ([surface-translation.md](../architecture/surface-translation.md) §Target repositories).
 
 ## Invocation and permission are authored decisions
 
