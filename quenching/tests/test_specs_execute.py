@@ -15,12 +15,12 @@ import unittest
 
 import _paths  # noqa: F401
 
-ROOT = Path(__file__).resolve().parents[3]
-COMMAND = ROOT / "plugins/quenching/assets/references/specs-flows/execute.md"
-REFERENCE = ROOT / "plugins/quenching/assets/references/specs-execute/execution.md"
-CONCLUDE = ROOT / "plugins/quenching/assets/references/specs-flows/conclude.md"
-SCALE = ROOT / "plugins/quenching/assets/references/specs-develop/spec-driven.md"
-RUNNER = ROOT / "plugins/quenching/agents/spec-runner.md"
+ROOT = Path(__file__).resolve().parents[2]
+COMMAND = ROOT / "quenching/assets/references/specs-flows/execute.md"
+REFERENCE = ROOT / "quenching/assets/references/specs-execute/execution.md"
+CONCLUDE = ROOT / "quenching/assets/references/specs-flows/conclude.md"
+SCALE = ROOT / "quenching/assets/references/specs-develop/spec-driven.md"
+RUNNER = ROOT / "quenching/agents/spec-runner.md"
 
 
 def git(cwd, *args):
@@ -37,7 +37,7 @@ def git(cwd, *args):
 class TaskExecutionContractTests(unittest.TestCase):
     def test_execute_commits_through_the_deterministic_verb(self):
         command = COMMAND.read_text(encoding="utf-8")
-        commit = (ROOT / "plugins/quenching/assets/references/git-flows/commit.md").read_text(encoding="utf-8")
+        commit = (ROOT / "quenching/assets/references/git-flows/commit.md").read_text(encoding="utf-8")
 
         self.assertIn('cq git commit --subject "<subject>"', command)
         self.assertNotIn('Skill("quenching-specs:git:commit"', command)
@@ -204,7 +204,7 @@ class TaskExecutionContractTests(unittest.TestCase):
     def test_conclude_runs_in_its_own_spawn(self):
         runner = " ".join(RUNNER.read_text(encoding="utf-8").split())
         orchestrator = " ".join(
-            (ROOT / "plugins/quenching/agents/spec-orchestrator.md").read_text(encoding="utf-8").split())
+            (ROOT / "quenching/agents/spec-orchestrator.md").read_text(encoding="utf-8").split())
 
         self.assertIn("`NOTE: execute-done:", runner)
         self.assertIn("Given the word `conclude`, skip develop and execute", runner)
@@ -217,7 +217,7 @@ class TaskExecutionContractTests(unittest.TestCase):
     def test_orchestration_reads_scheduling_records_from_status(self):
         for carrier in ("agents/spec-orchestrator.md", "assets/references/specs-flows/orchestrate.md"):
             with self.subTest(carrier=carrier):
-                text = (ROOT / "plugins/quenching" / carrier).read_text(encoding="utf-8")
+                text = (ROOT / "quenching" / carrier).read_text(encoding="utf-8")
                 flat = " ".join(re.sub(r"[`*_]", "", text).split())
                 self.assertIn("cq specs status --spec <id> --json", flat)
                 self.assertIn("records.priority.complexity", flat)

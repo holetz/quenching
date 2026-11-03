@@ -9,10 +9,10 @@ import re
 import unittest
 
 
-ROOT = Path(__file__).resolve().parents[3]
-SPECS = ROOT / "plugins/quenching/assets/references/specs-flows"
-MOLD = ROOT / "plugins/quenching/assets/references/specs-develop/report-mold.md"
-CADENCE = ROOT / "plugins/quenching/assets/references/specs-execute/execution-cadence.md"
+ROOT = Path(__file__).resolve().parents[2]
+SPECS = ROOT / "quenching/assets/references/specs-flows"
+MOLD = ROOT / "quenching/assets/references/specs-develop/report-mold.md"
+CADENCE = ROOT / "quenching/assets/references/specs-execute/execution-cadence.md"
 
 
 def text(path):

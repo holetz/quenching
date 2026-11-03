@@ -3,8 +3,8 @@ import pathlib
 import re
 import unittest
 
-REPO = pathlib.Path(__file__).resolve().parents[3]
-ROUTER = REPO / "plugins/quenching/commands/knowledge/knowledge.md"
+REPO = pathlib.Path(__file__).resolve().parents[2]
+ROUTER = REPO / "quenching/commands/knowledge/knowledge.md"
 FLOWS = ('add', 'learn', 'define', 'glossary-backfill', 'import', 'import-memory', 'align', 'status', 'documentation-plan', 'documentation-write', 'documentation-review', 'documentation-build', 'documentation-produce')
 TYPED_ONLY = ()
 
@@ -17,7 +17,7 @@ class KnowledgeRouter(unittest.TestCase):
         for flow in FLOWS:
             with self.subTest(flow=flow):
                 self.assertRegex(self.text, rf"\| `{flow}` \| \[knowledge-flows/{flow}\.md\]")
-                ref = REPO / "plugins/quenching/assets/references/knowledge-flows" / f"{flow}.md"
+                ref = REPO / "quenching/assets/references/knowledge-flows" / f"{flow}.md"
                 self.assertTrue(ref.is_file())
 
     def test_typed_only_commands_are_not_rows(self):

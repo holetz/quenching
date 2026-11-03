@@ -3,8 +3,8 @@ import pathlib
 import re
 import unittest
 
-REPO = pathlib.Path(__file__).resolve().parents[3]
-ROUTER = REPO / "plugins/quenching/commands/components/components.md"
+REPO = pathlib.Path(__file__).resolve().parents[2]
+ROUTER = REPO / "quenching/commands/components/components.md"
 FLOWS = ('command-new', 'agent-new', 'hook-new', 'align', 'status', 'harness-align')
 TYPED_ONLY = ('command-eval', 'command-retro')
 
@@ -17,7 +17,7 @@ class ComponentsRouter(unittest.TestCase):
         for flow in FLOWS:
             with self.subTest(flow=flow):
                 self.assertRegex(self.text, rf"\| `{flow}` \| \[components-flows/{flow}\.md\]")
-                ref = REPO / "plugins/quenching/assets/references/components-flows" / f"{flow}.md"
+                ref = REPO / "quenching/assets/references/components-flows" / f"{flow}.md"
                 self.assertTrue(ref.is_file())
 
     def test_typed_only_commands_are_not_rows(self):

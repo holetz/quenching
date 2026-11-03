@@ -5,11 +5,11 @@ import re
 import unittest
 
 
-ROOT = Path(__file__).resolve().parents[3]
+ROOT = Path(__file__).resolve().parents[2]
 
 
 def waiting_section():
-    body = (ROOT / "plugins/quenching/agents/spec-orchestrator.md").read_text(encoding="utf-8")
+    body = (ROOT / "quenching/agents/spec-orchestrator.md").read_text(encoding="utf-8")
     match = re.search(r"## Waiting\n(.*?)(?=\n## )", body, re.S)
     assert match, "## Waiting section is missing"
     return re.sub(r"\s+", " ", match.group(1))

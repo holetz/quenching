@@ -22,7 +22,7 @@ ROOT = portal_mod.static_dir()
 HTML = (ROOT / "index.html").read_text()
 CSS = (ROOT / "app.css").read_text()
 JS = (ROOT / "app.js").read_text()
-TOKENS = json.loads((ROOT.parents[3] / "design-system" / "tokens.json").read_text(encoding="utf-8"))
+TOKENS = json.loads((ROOT.parents[2] / "design-system" / "tokens.json").read_text(encoding="utf-8"))
 
 
 def declared(block):

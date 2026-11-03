@@ -5,8 +5,8 @@ import re
 import unittest
 
 
-ROOT = Path(__file__).resolve().parents[3]
-AUTOPILOT = ROOT / "plugins/quenching/commands/specs/autopilot.md"
+ROOT = Path(__file__).resolve().parents[2]
+AUTOPILOT = ROOT / "quenching/commands/specs/autopilot.md"
 
 
 def text():
@@ -36,7 +36,7 @@ class EconomyModeTests(unittest.TestCase):
     def test_pair_and_acceptance_rules_are_cited_not_restated(self):
         body = text()
         self.assertIn("`quenching-specs:spec-runner` → `quenching-specs:spec-verifier`", body)
-        self.assertIn("plugins/quenching/agents/spec-orchestrator.md", body)
+        self.assertIn("quenching/agents/spec-orchestrator.md", body)
         self.assertIn("acceptance only on a spec-verifier PASS", body)
 
     def test_launches_still_counted_and_no_new_grant(self):

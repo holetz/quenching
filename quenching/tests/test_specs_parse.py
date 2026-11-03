@@ -275,8 +275,8 @@ FILES_PARSE_CASES = [
      ["src/middleware/auth.ts", "src/config/limits.ts (new)"]),
     ("the repro of the original defect reads as ONE entry, never two",
      "## Tasks\n\n### 1. X\n\n- [ ] 1.1 t\n"
-     "      files: plugins/quenching/commands/zzprobe.md (descartável, revertido ao fim)\n",
-     ["plugins/quenching/commands/zzprobe.md (descartável, revertido ao fim)"]),
+     "      files: quenching/commands/zzprobe.md (descartável, revertido ao fim)\n",
+     ["quenching/commands/zzprobe.md (descartável, revertido ao fim)"]),
     ("nested parentheses keep the whole nesting one entry",
      "## Tasks\n\n### 1. X\n\n- [ ] 1.1 t\n      files: x (a (b), c), y\n",
      ["x (a (b), c)", "y"]),
@@ -297,7 +297,7 @@ FILES_PARSE_CASES = [
 
 FILES_ANNOTATION_CASES = [
     ("a.md (x, y)", True, "a comma-carrying comment is an annotation, not a path"),
-    ("plugins/quenching/commands/zzprobe.md (descartável, revertido ao fim)", True,
+    ("quenching/commands/zzprobe.md (descartável, revertido ao fim)", True,
      "the original repro's comment is refused whole — never split, never kept as part of "
      "the path"),
     ("src/(old)/x.py", False,

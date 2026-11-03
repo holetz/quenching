@@ -12,7 +12,7 @@
 # with `cq deploy` — the only way quenching reaches a repository since the plugin model was retired
 # (spec 2160). The session reads project settings only and loads no plugin: the surface is the
 # box's own `.claude/skills/` bridge and its `.agents/quenching/` payload, so it proves exactly
-# what a deploy installs. A read observed under the source tree `plugins/quenching`, or under a
+# what a deploy installs. A read observed under the source tree `quenching`, or under a
 # plugin cache or marketplace, is therefore a failure, and a non-builtin plugin in the startup
 # inventory fails the isolation. Deploying from the checkout is also what lets this harness see a
 # BRANCH or a WORKTREE, and therefore gate a merge before it happens rather than report on it after.
@@ -87,14 +87,14 @@ while [ $# -gt 0 ]; do
   esac
 done
 
-# checks -> assets -> quenching -> plugins -> the repo root, which is where `docs/` and the
+# checks -> assets -> quenching -> the repo root, which is where `docs/` and the
 # project's own .claude/settings.json live.
-REPO="${REPO:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../../../.." && pwd)}"
+REPO="${REPO:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)}"
 REPO="$(cd "$REPO" 2>/dev/null && pwd)" || {
   printf 'functional-checks: repository is not a directory: %s\n' "$REPO" >&2
   exit 2
 }
-SOURCE="$REPO/plugins/quenching"
+SOURCE="$REPO/quenching"
 if [ "$MCP_SMOKE" -eq 1 ]; then
   command -v uvx >/dev/null || { echo 'INCONCLUSIVE: uvx is unavailable'; exit 2; }
   python3 - "$REPO" <<'PYSMOKE'
@@ -104,7 +104,7 @@ import subprocess
 import sys
 
 repo = Path(sys.argv[1])
-sys.path.insert(0, str(repo / "plugins/quenching/assets/bin"))
+sys.path.insert(0, str(repo / "quenching/assets/bin"))
 from quenching.mcp.cli import surface
 
 requests = "\n".join(json.dumps(request) for request in [
@@ -113,7 +113,7 @@ requests = "\n".join(json.dumps(request) for request in [
 ]) + "\n"
 # Pin HEAD: the package and the in-process catalog must describe the same commit.
 revision = subprocess.check_output(["git", "-C", str(repo), "rev-parse", "HEAD"], text=True).strip()
-source = f"git+{repo.as_uri()}@{revision}#subdirectory=plugins/quenching"
+source = f"git+{repo.as_uri()}@{revision}#subdirectory=quenching"
 try:
     result = subprocess.run(["uvx", "--from", source, "quenching-mcp"], input=requests,
                             text=True, capture_output=True, cwd=repo, timeout=180)

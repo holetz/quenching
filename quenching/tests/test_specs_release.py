@@ -28,7 +28,7 @@ from quenching.specs.release import (
 )
 
 # One value per artifact `kind`, each pre-set to the old version the bump must move away from.
-PUBLISHED = [p["name"] for p in load_manifest(Path(__file__).resolve().parents[3])["plugins"]
+PUBLISHED = [p["name"] for p in load_manifest(Path(__file__).resolve().parents[2])["plugins"]
              if p["marketplace"]]
 KINDS = {
     "plain": "9.9.9\n",
@@ -49,7 +49,7 @@ class Lockstep(unittest.TestCase):
             path = os.path.join(self.tmp, rel)
             os.makedirs(os.path.dirname(path), exist_ok=True)
             write_text(path, KINDS[kind])
-        manifest = load_manifest(Path(__file__).resolve().parents[3])
+        manifest = load_manifest(Path(__file__).resolve().parents[2])
         source = Path(self.tmp) / manifest["source"] / "assets"
         # Module records name source closures load_manifest checks exist; stand them up empty.
         for module in manifest["modules"]:

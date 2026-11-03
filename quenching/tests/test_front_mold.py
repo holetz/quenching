@@ -5,10 +5,10 @@ import pathlib
 import unittest
 
 
-ROOT = pathlib.Path(__file__).resolve().parents[3]
+ROOT = pathlib.Path(__file__).resolve().parents[2]
 DOC = ROOT / "docs" / "standards" / "architecture" / "front-mold.md"
-COMMANDS = ROOT / "plugins" / "quenching" / "commands"
-SOURCE_REFS = ROOT / "plugins" / "quenching" / "assets" / "references"
+COMMANDS = ROOT / "quenching" / "commands"
+SOURCE_REFS = ROOT / "quenching" / "assets" / "references"
 CONDUCTOR = COMMANDS / "align.md"
 
 
@@ -63,7 +63,7 @@ class FrontMoldContract(unittest.TestCase):
                 self.assertIn(term, route)
 
         self.assertIn("This file is the canonical host", self.document)
-        self.assertIn("plugins/quenching/assets/references/front-align/mold.md", self.document)
+        self.assertIn("quenching/assets/references/front-align/mold.md", self.document)
 
     def test_front_specific_deltas_and_bands_are_explicit(self):
         deltas = self.document.split("## Explicit front deltas", 1)[1]

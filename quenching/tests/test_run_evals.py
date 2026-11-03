@@ -11,7 +11,7 @@ import unittest
 
 import _paths  # noqa: F401
 
-REPO = Path(__file__).resolve().parents[3]
+REPO = Path(__file__).resolve().parents[2]
 spec = importlib.util.spec_from_file_location("run_evals", REPO / "scripts/run_evals.py")
 runner = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(runner)
@@ -221,7 +221,7 @@ class Runner(unittest.TestCase):
 
     def test_a_dry_run_in_the_default_mode_needs_no_image(self):
         out, err = io.StringIO(), io.StringIO()
-        suite = REPO / "plugins/quenching/assets/evals/git/commit"
+        suite = REPO / "quenching/assets/evals/git/commit"
         with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
             code = runner.main(["--suite", str(suite), "--case", "staged-change-committed", "--dry-run",
                                 "--harness", "opencode", "--model", "stub", "--run-id", "r"])

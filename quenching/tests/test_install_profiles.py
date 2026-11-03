@@ -7,10 +7,10 @@ import unittest
 
 import _paths  # noqa: F401
 
-REPO_ROOT = pathlib.Path(__file__).resolve().parents[3]
+REPO_ROOT = pathlib.Path(__file__).resolve().parents[2]
 STANDARD = REPO_ROOT / "docs" / "standards" / "architecture" / "install-profiles.md"
-ALIGN = REPO_ROOT / "plugins" / "quenching" / "commands" / "align.md"
-CONFIG_REFERENCE = (REPO_ROOT / "plugins" / "quenching" / "assets" / "references" /
+ALIGN = REPO_ROOT / "quenching" / "commands" / "align.md"
+CONFIG_REFERENCE = (REPO_ROOT / "quenching" / "assets" / "references" /
                     "specs-align" / "plugin-configuration.md")
 REPO_CONFIG = _paths.repository_config(REPO_ROOT)
 

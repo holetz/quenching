@@ -16,8 +16,8 @@ import _paths  # noqa: F401
 from quenching.common.modules import load_manifest, namespace_map
 from quenching.knowledge.site_source import _selected_files
 
-REPO_ROOT = pathlib.Path(__file__).resolve().parents[3]
-PLUGIN_ROOT = REPO_ROOT / "plugins" / "quenching"
+REPO_ROOT = pathlib.Path(__file__).resolve().parents[2]
+PLUGIN_ROOT = REPO_ROOT / "quenching"
 COMMANDS = PLUGIN_ROOT / "commands"
 DOCS = REPO_ROOT / "docs"
 README = REPO_ROOT / "README.md"

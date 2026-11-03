@@ -165,7 +165,7 @@ class AlignCleanPath(unittest.TestCase):
             self.assertEqual(clean_branch.count("ops inventory"), 1)
 
     def test_read_path_containing_inventory_is_not_an_inventory_call(self):
-        body_path = "/work/quenching-inventory/plugins/quenching/commands/ops/align.md"
+        body_path = "/work/quenching-inventory/quenching/commands/ops/align.md"
         probe = 'cq --root "$TARGET_ROOT" ops doctor --json'
         clean = [("Read", body_path), ("Bash", probe)]
         self.assertNotIn("inventory", bash_commands(clean))

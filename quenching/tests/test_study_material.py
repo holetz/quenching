@@ -9,13 +9,13 @@ from pathlib import Path
 import _paths  # noqa: F401
 
 
-ROOT = Path(__file__).resolve().parents[3]
+ROOT = Path(__file__).resolve().parents[2]
 
 
 class StudyMaterial(unittest.TestCase):
     def test_public_material_has_no_withdrawn_or_host_drift(self):
         root_readme = (ROOT / "README.md").read_text(encoding="utf-8")
-        source_index = (ROOT / "plugins/quenching/assets/knowledge/index.md").read_text(encoding="utf-8")
+        source_index = (ROOT / "quenching/assets/knowledge/index.md").read_text(encoding="utf-8")
         getting_started = (ROOT / "docs/tutorials/getting-started.md").read_text(encoding="utf-8")
         vision = (ROOT / "docs/vision/index.md").read_text(encoding="utf-8")
         changelog = (ROOT / "CHANGELOG.md").read_text(encoding="utf-8")

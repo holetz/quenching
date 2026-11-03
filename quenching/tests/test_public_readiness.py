@@ -374,7 +374,7 @@ class AdversarialTest(ReadinessCase):
                 self.assertNotIn(self.tmp.name, run.stdout + run.stderr)
 
 
-REPO = pathlib.Path(__file__).resolve().parents[3]
+REPO = pathlib.Path(__file__).resolve().parents[2]
 
 
 class CleanCloneTest(ReadinessCase):
@@ -386,14 +386,14 @@ class CleanCloneTest(ReadinessCase):
             self.skipTest("the repository is not a git checkout")
         source = pathlib.Path(self.tmp.name, "export")
         source.mkdir()
-        archive = subprocess.run(["git", "-C", str(REPO), "archive", "HEAD", "plugins/quenching"],
+        archive = subprocess.run(["git", "-C", str(REPO), "archive", "HEAD", "quenching"],
                                  check=True, capture_output=True).stdout
         with tarfile.open(fileobj=io.BytesIO(archive)) as tar:
             tar.extractall(source, filter="data")
         target = pathlib.Path(self.tmp.name, "target")
         target.mkdir()
         subprocess.run(["git", "init", "-q", str(target)], check=True)
-        subprocess.run([sys.executable, str(source / "plugins/quenching/assets/bin/cq"), "deploy",
+        subprocess.run([sys.executable, str(source / "quenching/assets/bin/cq"), "deploy",
                         "--target", str(target), "--modules", "all", "--harness", "none", "--write"],
                        check=True, capture_output=True)
         return target

@@ -9,7 +9,7 @@ from pathlib import Path
 
 
 spec = importlib.util.spec_from_file_location(
-    "context_distribution", Path(__file__).resolve().parents[3] / "scripts/measure_context_distribution.py")
+    "context_distribution", Path(__file__).resolve().parents[2] / "scripts/measure_context_distribution.py")
 instrument = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(instrument)
 

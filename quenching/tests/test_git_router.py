@@ -3,8 +3,8 @@ import pathlib
 import re
 import unittest
 
-REPO = pathlib.Path(__file__).resolve().parents[3]
-ROUTER = REPO / "plugins/quenching/commands/git/git.md"
+REPO = pathlib.Path(__file__).resolve().parents[2]
+ROUTER = REPO / "quenching/commands/git/git.md"
 FLOWS = ('branch', 'commit', 'merge', 'sync', 'pr-create', 'pr-review', 'pr-status')
 TYPED_ONLY = ('cleanup', 'commit-incremental', 'push', 'revert')
 
@@ -17,7 +17,7 @@ class GitRouter(unittest.TestCase):
         for flow in FLOWS:
             with self.subTest(flow=flow):
                 self.assertRegex(self.text, rf"\| `{flow}` \| \[git-flows/{flow}\.md\]")
-                ref = REPO / "plugins/quenching/assets/references/git-flows" / f"{flow}.md"
+                ref = REPO / "quenching/assets/references/git-flows" / f"{flow}.md"
                 self.assertTrue(ref.is_file())
 
     def test_typed_only_commands_are_not_rows(self):

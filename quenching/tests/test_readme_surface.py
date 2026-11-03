@@ -36,7 +36,7 @@ INVOCABLE = re.compile(r"`(/[a-z][a-z:-]*)`")
 def _commands_on_disk() -> set[str]:
     """`commands/knowledge/add.md` is `/quenching-align:knowledge:add` — the path IS the identity,
     published under the module that owns its front."""
-    owners = namespace_map(PLUGIN_ROOT.parents[1], load_manifest(PLUGIN_ROOT.parents[1]))
+    owners = namespace_map(PLUGIN_ROOT.parent, load_manifest(PLUGIN_ROOT.parent))
     ids = {path.relative_to(COMMANDS).with_suffix("").as_posix().replace("/", ":")
            for path in COMMANDS.rglob("*.md")}
     return {f"/{owners[ident.split(':', 1)[0]]}:{ident}" for ident in ids}

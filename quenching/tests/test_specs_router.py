@@ -3,8 +3,8 @@ import pathlib
 import re
 import unittest
 
-REPO = pathlib.Path(__file__).resolve().parents[3]
-ROUTER = REPO / "plugins/quenching/commands/specs/specs.md"
+REPO = pathlib.Path(__file__).resolve().parents[2]
+ROUTER = REPO / "quenching/commands/specs/specs.md"
 FLOWS = ("create", "develop", "execute", "conclude", "triage", "status", "orchestrate")
 TYPED_ONLY = ("autopilot", "improve", "board")
 

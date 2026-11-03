@@ -12,12 +12,12 @@ import subprocess
 import tempfile
 import unittest
 
-REPO_ROOT = pathlib.Path(__file__).resolve().parent.parent.parent.parent
+REPO_ROOT = pathlib.Path(__file__).resolve().parent.parent.parent
 SCRIPT = REPO_ROOT / "scripts" / "verify_repo.sh"
 START = "printf '\\n==> surface-load checks\\n'"
 END = "printf '\\nRepository verification passed.\\n'"
 BASH = shutil.which("bash")
-FUNCTIONAL = REPO_ROOT / "plugins" / "quenching" / "assets" / "checks" / "functional-checks.sh"
+FUNCTIONAL = REPO_ROOT / "quenching" / "assets" / "checks" / "functional-checks.sh"
 
 
 def _block() -> str:
@@ -30,7 +30,7 @@ class SurfaceLoadBlock(unittest.TestCase):
     def run_block(self, *, functional=None, claude=False, stub_rc=0):
         with tempfile.TemporaryDirectory() as tmp:
             root = pathlib.Path(tmp)
-            checks = root / "plugins" / "quenching" / "assets" / "checks"
+            checks = root / "quenching" / "assets" / "checks"
             checks.mkdir(parents=True)
             (checks / "functional-checks.sh").write_text(f"exit {stub_rc}\n")
             fakebin = root / "fakebin"

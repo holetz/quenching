@@ -11,7 +11,7 @@ import unittest
 
 import _paths  # noqa: F401
 
-REPO = Path(__file__).resolve().parents[3]
+REPO = Path(__file__).resolve().parents[2]
 SCRIPT = REPO / "scripts/eval_gateway_grader.py"
 
 

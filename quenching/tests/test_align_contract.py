@@ -8,7 +8,7 @@ import tempfile
 import unittest
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
-ALIGN_DECLARATION = ROOT.parent.parent / "docs" / "standards" / "architecture" / "align-surface.md"
+ALIGN_DECLARATION = ROOT.parent / "docs" / "standards" / "architecture" / "align-surface.md"
 
 
 class KnowledgeAlignmentContract(unittest.TestCase):
@@ -154,19 +154,19 @@ class KnowledgeAlignmentContract(unittest.TestCase):
         check = ROOT / "assets" / "checks" / "citation-check.sh"
         with tempfile.TemporaryDirectory() as directory:
             repo = pathlib.Path(directory)
-            script = repo / "plugins" / "quenching" / "assets" / "checks" / check.name
+            script = repo / "quenching" / "assets" / "checks" / check.name
             script.parent.mkdir(parents=True)
             shutil.copy2(check, script)
             shutil.copy2(ROOT / "assets" / "modules.json", script.parents[1] / "modules.json")
-            command = repo / "plugins" / "quenching" / "commands" / "knowledge" / "align.md"
+            command = repo / "quenching" / "commands" / "knowledge" / "align.md"
             command.parent.mkdir(parents=True)
             command.write_text(
                 "/quenching-align:knowledge:align\n"
-                "`plugins/quenching/commands/knowledge/align.md`\n"
+                "`quenching/commands/knowledge/align.md`\n"
                 "[reference.md](../../assets/references/reference.md) §Inexistente\n",
                 encoding="utf-8",
             )
-            reference = repo / "plugins" / "quenching" / "assets" / "references" / "reference.md"
+            reference = repo / "quenching" / "assets" / "references" / "reference.md"
             reference.parent.mkdir(parents=True)
             reference.write_text("# Reference\n\n## Existing\n", encoding="utf-8")
             subprocess.run(["git", "init", "-q"], cwd=repo, check=True)
@@ -190,11 +190,11 @@ class KnowledgeAlignmentContract(unittest.TestCase):
         check = ROOT / "assets" / "checks" / "citation-check.sh"
         with tempfile.TemporaryDirectory() as directory:
             repo = pathlib.Path(directory)
-            script = repo / "plugins" / "quenching" / "assets" / "checks" / check.name
+            script = repo / "quenching" / "assets" / "checks" / check.name
             script.parent.mkdir(parents=True)
             shutil.copy2(check, script)
             shutil.copy2(ROOT / "assets" / "modules.json", script.parents[1] / "modules.json")
-            command = repo / "plugins" / "quenching" / "commands" / "knowledge" / "align.md"
+            command = repo / "quenching" / "commands" / "knowledge" / "align.md"
             command.parent.mkdir(parents=True)
             missing_path = "${CLAUDE_PLUGIN_ROOT}/assets/references/" + "missing.md"
             command.write_text(
@@ -203,7 +203,7 @@ class KnowledgeAlignmentContract(unittest.TestCase):
                 "[reference.md](../../assets/references/reference.md) §Existing\n",
                 encoding="utf-8",
             )
-            reference = repo / "plugins" / "quenching" / "assets" / "references" / "reference.md"
+            reference = repo / "quenching" / "assets" / "references" / "reference.md"
             reference.parent.mkdir(parents=True)
             reference.write_text("# Reference\n\n## Existing\n", encoding="utf-8")
             subprocess.run(["git", "init", "-q"], cwd=repo, check=True)

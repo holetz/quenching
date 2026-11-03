@@ -12,8 +12,8 @@ import pathlib
 import re
 import unittest
 
-REPO = pathlib.Path(__file__).resolve().parents[3]
-BODY = REPO / "plugins/quenching/commands/handoff.md"
+REPO = pathlib.Path(__file__).resolve().parents[2]
+BODY = REPO / "quenching/commands/handoff.md"
 LOCATOR = re.compile(r"quenching:specs/artifacts/(?P<owner>[^/\s]+)/(?P<name>[\w.-]+\.md)")
 READ = re.compile(r"cq specs artifact read (?:--spec (?P<spec>\d+) )?--name (?P<name>[\w.-]+)")
 

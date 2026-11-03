@@ -5,8 +5,8 @@ import re
 import unittest
 
 
-ROOT = Path(__file__).resolve().parents[3]
-PLUGIN = ROOT / "plugins/quenching"
+ROOT = Path(__file__).resolve().parents[2]
+PLUGIN = ROOT / "quenching"
 SPEC_RUNNER = PLUGIN / "agents/spec-runner.md"
 LOOP_WITH_PGREP = re.compile(r"\b(until|while)\b[^;\n]*pgrep\s+-f")
 

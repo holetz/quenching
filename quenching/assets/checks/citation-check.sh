@@ -20,7 +20,7 @@
 #
 # THE ARGUMENT IS THE REPOSITORY ROOT, AND ANYTHING ELSE EXITS 2. Every pathspec here is written
 # from the root, so a subdirectory does not narrow the sweep — it DISARMS the exclusions. Run from
-# `plugins/quenching`, `--half 1 .` reported six dead patterns as survivors over 202 files instead
+# `quenching`, `--half 1 .` reported six dead patterns as survivors over 202 files instead
 # of 466, because the golden fixtures stopped being excluded. Omitting the argument is always safe:
 # the root is derived from this file's own location.
 #
@@ -63,13 +63,13 @@ while [ $# -gt 0 ]; do
   esac
 done
 
-# checks -> assets -> quenching -> plugins -> the repo root.
+# checks -> assets -> quenching -> the repo root.
 # RESOLVED BEFORE THE `cd`, AND WITHOUT `realpath`. `${BASH_SOURCE[0]}` is relative to the caller's
 # cwd, so reading it after the `cd` names a file that is not there — `bash assets/checks/...` from
 # the plugin directory, the way `CLAUDE.md` runs it, left `SELF` empty and every pathspec below
 # unparseable, which reads as `exit 2`, not as a pass. `realpath --relative-to` is GNU-only besides.
 SELF_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-REPO="${REPO:-$(cd "$SELF_DIR/../../../.." && pwd)}"
+REPO="${REPO:-$(cd "$SELF_DIR/../../.." && pwd)}"
 cd "$REPO" || { echo "citation-check: cannot enter $REPO"; exit 2; }
 # Take the repo root back from the shell, absolute, rather than from the argument. `SELF` below is
 # a RELATIVE pathspec derived by stripping this prefix off an absolute `SELF_DIR`, so a caller who
@@ -80,7 +80,7 @@ cd "$REPO" || { echo "citation-check: cannot enter $REPO"; exit 2; }
 REPO="$PWD"
 # And refuse anything that is not the repository ROOT. Every pathspec below — the scope excludes,
 # `git ls-files`, `SELF` itself — is written from the root, so a subdirectory silently drops all of
-# them: measured from `plugins/quenching`, the golden fixtures stop being excluded and half 1
+# them: measured from `quenching`, the golden fixtures stop being excluded and half 1
 # reports SIX dead patterns as survivors over a corpus of 202 files instead of 466. A verdict over
 # a fraction of the repository with the exclusions disarmed is not a weaker measurement, it is a
 # wrong one — so it exits 2, the code this harness reserves for "nothing could be measured".
@@ -106,10 +106,10 @@ GENERATED_EXCLUDE+=(':!.agents/quenching/')
 
 # Half 1's own scope, beyond frozen golden data, not live citations — see the header's third scope
 # rule for why.
-SCOPE_EXCLUDE=(':!plugins/quenching/tests/fixtures/golden/'
-               ':!plugins/quenching/tests/capture_golden.py'
-               ':(exclude,glob)plugins/quenching/assets/evals/**/runs/**'
-               ':!plugins/quenching/assets/checks/citation-check.sh'
+SCOPE_EXCLUDE=(':!quenching/tests/fixtures/golden/'
+               ':!quenching/tests/capture_golden.py'
+               ':(exclude,glob)quenching/assets/evals/**/runs/**'
+               ':!quenching/assets/checks/citation-check.sh'
                "${GENERATED_EXCLUDE[@]}")
 
 want () { case ",$HALF," in *",$1,"*) return 0 ;; *) return 1 ;; esac; }
@@ -131,7 +131,7 @@ echo
 #
 # THE NAMESPACE PATTERNS NAME VERBS, NOT A BARE PREFIX. The ten `docs` verbs and six `skill` verbs
 # below are the CLOSED, historical set this rename actually retired
-# (`git log --diff-filter=R -- plugins/quenching/commands/` names them exactly), so each pattern
+# (`git log --diff-filter=R -- quenching/commands/` names them exactly), so each pattern
 # asserts what died rather than reserving the prefix — a bare `/docs:` would also condemn a name
 # nobody retired. That is not hypothetical: this repository's own `.claude/commands/docs/` group
 # lived under exactly that prefix and had nothing to do with the plugin's `docs` front, until the
@@ -213,11 +213,11 @@ if want 1; then
   # `## Upgrade` changelog names directories that really existed between releases 0.11 and 0.18 —
   # rewriting a dated record falsifies it — and its per-command manual is the whole scope of the
   # rewrite-readme-for-collapsed-surface spec, which promises exactly this rename there.
-  git ls-files -z -- 'plugins/quenching/commands' 'plugins/quenching/assets/references' \
-                     'plugins/quenching/assets/templates' | python3 -c '
+  git ls-files -z -- 'quenching/commands' 'quenching/assets/references' \
+                     'quenching/assets/templates' | python3 -c '
 import os, re, sys
 
-commands_dir = os.path.join("plugins", "quenching", "commands")
+commands_dir = os.path.join("quenching", "commands")
 HYPHENATED_RE = re.compile(r"(?<![\w:/-])(quenching-[a-z0-9-]+)(?![\w:])")
 
 live = set()
@@ -231,7 +231,7 @@ for root, _, names in os.walk(commands_dir):
 # even where it spells the same as one: `/quenching-align:align` lives in module `quenching-align`.
 try:
     import json
-    with open(os.path.join("plugins", "quenching", "assets", "modules.json"), encoding="utf-8") as handle:
+    with open(os.path.join("quenching", "assets", "modules.json"), encoding="utf-8") as handle:
         live -= {module["name"] for module in json.load(handle)["modules"]}
 except (OSError, ValueError, KeyError):
     pass
@@ -322,7 +322,7 @@ if want 2; then
   git ls-files -z -- . "${GENERATED_EXCLUDE[@]}" | python3 -c '
 import os, re, sys
 
-plugin = "plugins/quenching"
+plugin = "quenching"
 commands_dir = os.path.join(plugin, "commands")
 
 # `${CLAUDE_PLUGIN_ROOT}/<path>`, and the same path spelled absolute in a command body — both name a
@@ -330,7 +330,7 @@ commands_dir = os.path.join(plugin, "commands")
 # a body is loaded, and the expansion is what gets copied into prose.
 PLUGIN_ROOT_RE    = re.compile(r"\$\{CLAUDE_PLUGIN_ROOT\}/([A-Za-z0-9_./-]+)")
 MD_LINK_RE        = re.compile(r"\]\(([^)\s]+)\)")
-REPO_PATH_RE      = re.compile(r"(?<![A-Za-z0-9_./-])(plugins/quenching/[A-Za-z0-9_./-]+)")
+REPO_PATH_RE      = re.compile(r"(?<![A-Za-z0-9_./-])(quenching/[A-Za-z0-9_./-]+)")
 KNOWLEDGE_PATH_RE = re.compile(r"(?<![A-Za-z0-9_./-])/?(docs/[A-Za-z0-9_./-]+)(?![A-Za-z0-9_./-]|\{)")
 # Both citation forms. The Skill tool takes the bare `quenching-<module>:<ns>:<cmd>`; a human types the slash.
 CMD_RE            = re.compile(r"/?(quenching(?:-[a-z]+)?(?::[a-z][a-z0-9-]*){2,})")
@@ -424,10 +424,9 @@ for rel in sys.stdin.buffer.read().split(b"\x00"):
     in_plugin = rel.startswith(plugin + "/")
     candidates = []
     # ${CLAUDE_PLUGIN_ROOT} names the plugin the CITING file ships in, not always this one.
-    # Under plugins/<harness>/<name>/ the plugin is three segments deep; the source is two.
+    # Under integrations/<name>/ the plugin is two segments deep; the source is quenching/.
     parts = rel.split("/")
-    own_plugin = ("/".join(parts[:2]) if parts[1] == "quenching" else "/".join(parts[:3])) \
-        if rel.startswith("plugins/") else plugin
+    own_plugin = "/".join(parts[:2]) if parts[0] == "integrations" else plugin
     candidates += [(m, [os.path.join(own_plugin, trim(m))]) for m in PLUGIN_ROOT_RE.findall(text)]
     candidates += [(m, [trim(m)]) for m in REPO_PATH_RE.findall(text)]
     if not in_bundle:
@@ -509,8 +508,8 @@ import subprocess
 import sys
 
 repo = sys.argv[1]
-plugin = os.path.join(repo, "plugins", "quenching")
-source_roots = ("plugins/quenching/commands/", "plugins/quenching/assets/references/")
+plugin = os.path.join(repo, "quenching")
+source_roots = ("quenching/commands/", "quenching/assets/references/")
 link_re = re.compile(r"\]\(([^)\s]+)\)")
 bare_path_re = re.compile(
     r"(?<![A-Za-z0-9_./-])/?(?:\$\{CLAUDE_PLUGIN_ROOT\}/)?"
@@ -575,10 +574,10 @@ def relative_target(source, raw):
         target = target[len("${CLAUDE_PLUGIN_ROOT}/") :]
         if any(char in target for char in "*?<>${}|"):
             return None
-        return os.path.normpath(os.path.join("plugins/quenching", target))
+        return os.path.normpath(os.path.join("quenching", target))
     if any(char in target for char in "*?<>${}|"):
         return None
-    if target.startswith("plugins/quenching/"):
+    if target.startswith("quenching/"):
         return os.path.normpath(target)
     if target.startswith("docs/"):
         return os.path.normpath(target)
@@ -591,7 +590,7 @@ def relative_target(source, raw):
     matches = [
         path
         for path in files
-        if path.startswith("plugins/quenching/") and os.path.basename(path) == basename
+        if path.startswith("quenching/") and os.path.basename(path) == basename
     ]
     return matches[0] if len(matches) == 1 else relative
 
@@ -716,7 +715,7 @@ source_files = [
 heading_cache = {
     path: heading_names(path)
     for path in files
-    if path.endswith(".md") and (path.startswith("plugins/quenching/") or path.startswith("docs/"))
+    if path.endswith(".md") and (path.startswith("quenching/") or path.startswith("docs/"))
 }
 heading_index = heading_cache
 findings = []
@@ -733,7 +732,7 @@ for source in source_files:
         markers = list(section_re.finditer(line))
         if not markers:
             for _, target in targets_on_line(source, line):
-                if target.startswith(("plugins/quenching/", "docs/")):
+                if target.startswith(("quenching/", "docs/")):
                     active_target = target
             continue
         for marker in markers:
@@ -759,13 +758,13 @@ for source in source_files:
                 (
                     candidate
                     for candidate in targets
-                    if candidate.startswith(("plugins/quenching/", "docs/"))
+                    if candidate.startswith(("quenching/", "docs/"))
                     and os.path.isfile(os.path.join(repo, candidate))
                     and resolve_address(address, heading_names(candidate))
                 ),
                 targets[0],
             )
-            if not target.startswith(("plugins/quenching/", "docs/")):
+            if not target.startswith(("quenching/", "docs/")):
                 continue
             if not os.path.isfile(os.path.join(repo, target)):
                 continue
@@ -775,7 +774,7 @@ for source in source_files:
             if not resolve_address(address, heading_cache[target]):
                 findings.append((source, index + 1, target, "§" + address.strip()))
         for _, target in targets_on_line(source, line):
-            if target.startswith(("plugins/quenching/", "docs/")):
+            if target.startswith(("quenching/", "docs/")):
                 active_target = target
 
 if findings:
@@ -804,7 +803,7 @@ fi
 # Half 3 — the shipped prose promises only what the skeleton delivers.
 #
 # One assertion: every markdown link to a `/docs/**.md` written in prose the plugin SHIPS
-# resolves against the published skeleton, `plugins/quenching/assets/knowledge/`.
+# resolves against the published skeleton, `quenching/assets/knowledge/`.
 #
 # WHY THIS IS NOT A CORRECTION OF HALF 2. Half 2 is right that a shipped tree describes another
 # repository — it exempts `assets/knowledge/` and `assets/templates/` for exactly that reason. It
@@ -824,17 +823,17 @@ fi
 # finding, leaving a rule that reads "never name a standard the target owns".
 #
 # Both spellings of the same promise are one claim: rooted at the repo (`/docs/...`) and
-# written relative to the citing file (`../../../../docs/...`) normalize to the same tail.
+# written relative to the citing file (`../../../docs/...`) normalize to the same tail.
 #
 # The instrument does not measure itself: this file is under `assets/checks/`, outside the two
 # trees swept, by construction rather than by exception.
 # --------------------------------------------------------------------------- #
 if want 3; then
   echo "3. the shipped prose promises only what the skeleton delivers"
-  git ls-files -z -- 'plugins/quenching/commands' 'plugins/quenching/assets/references' | python3 -c '
+  git ls-files -z -- 'quenching/commands' 'quenching/assets/references' | python3 -c '
 import os, re, sys
 
-skeleton = "plugins/quenching/assets/knowledge"
+skeleton = "quenching/assets/knowledge"
 # A markdown link whose target names a file in the bundle, in either spelling. The optional `#frag`
 # is an address inside the page, never part of the claim that the page exists.
 LINK_RE = re.compile(r"\]\(([^)\s#]*docs/[A-Za-z0-9_./-]+\.md)(?:#[^)\s]*)?\)")

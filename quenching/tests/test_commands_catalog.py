@@ -7,7 +7,7 @@ import pathlib
 import re
 import unittest
 
-REPO = pathlib.Path(__file__).resolve().parents[3]
+REPO = pathlib.Path(__file__).resolve().parents[2]
 ROW = re.compile(r"^\| `(/quenching(?:-[a-z]+)?:[^`]+)` \|", re.MULTILINE)
 
 
@@ -17,7 +17,7 @@ def _commands(path: pathlib.Path) -> set[str]:
 
 class CommandsCatalogLockstep(unittest.TestCase):
     def test_catalog_lists_exactly_the_readme_commands(self):
-        readme = _commands(REPO / "plugins/quenching/README.md")
+        readme = _commands(REPO / "quenching/README.md")
         catalog = _commands(REPO / "docs/project/commands.md")
         self.assertTrue(readme, "the README command tables parsed to nothing")
         self.assertEqual(sorted(readme - catalog), [], "in the README, missing from docs/project/commands.md")

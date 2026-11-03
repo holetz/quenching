@@ -13,8 +13,8 @@ import tempfile
 import unittest
 
 
-ROOT = pathlib.Path(__file__).resolve().parents[3]
-SCRIPT = ROOT / "plugins/quenching/assets/checks/functional-checks.sh"
+ROOT = pathlib.Path(__file__).resolve().parents[2]
+SCRIPT = ROOT / "quenching/assets/checks/functional-checks.sh"
 FAKE = r'''
 import json, os, pathlib, sys
 args = sys.argv[1:]
