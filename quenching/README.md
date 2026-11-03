@@ -675,3 +675,17 @@ updated only by a deliberate release; `cq specs release <version>` checks the ch
 updates the published artifacts in lockstep. See
 [`ci-cd/versioning-release.md`](../../docs/standards/ci-cd/versioning-release.md) for the release
 contract.
+
+<!-- quenching-proof-readme-start -->
+<!-- quenching-proof-readme-sha256 2c27d5ef8fd7333fa93eea38e7ef8b83f97abefad8ed2d66a7079eed9f3f0ec9 -->
+## Declared proof layers
+
+### tests
+- Proves: the `tests` proof contract declared by the target.
+- Marker: `tests`
+- Reach: tree
+- Budget: not declared
+- Required: yes
+- Test modules: 151
+- Fixture modules: none
+<!-- quenching-proof-readme-end -->

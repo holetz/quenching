@@ -30,10 +30,10 @@ import tempfile
 import time
 
 ROOT = Path(__file__).resolve().parents[1]
-EVALS_ROOT = ROOT / "plugins/quenching/assets/evals"
-COMMANDS_ROOT = ROOT / "plugins/quenching/commands"
+EVALS_ROOT = ROOT / "quenching/assets/evals"
+COMMANDS_ROOT = ROOT / "quenching/commands"
 PROFILES = Path(__file__).resolve().with_name("eval_harnesses.json")
-CQ = ROOT / "plugins/quenching/assets/bin/cq"
+CQ = ROOT / "quenching/assets/bin/cq"
 ARMS = ("with", "without")
 RESULTS = ("pass", "fail", "unknown")
 GIT_ENV = {"GIT_AUTHOR_NAME": "Eval fixture", "GIT_AUTHOR_EMAIL": "eval@example.com",

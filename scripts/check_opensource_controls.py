@@ -8,7 +8,7 @@ import json
 from pathlib import Path
 import re
 
-DATA = Path(__file__).resolve().parents[1] / "plugins/quenching/assets/opensource"
+DATA = Path(__file__).resolve().parents[1] / "quenching/assets/opensource"
 OWNERS = {"opensource", "security", "delivery", "toolchain", "knowledge", "proof", "git"}
 SOURCE_IDS = {"osps", "scorecard", "github-community", "reuse", "contributor-covenant",
               "dco", "keep-a-changelog", "semver", "cff", "github-funding"}

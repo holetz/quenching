@@ -3,7 +3,7 @@ set -euo pipefail
 
 repo_root="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../.." && pwd)"
 experiment_root="$repo_root/experiments/first-workflow"
-cq_bin="$repo_root/plugins/quenching/assets/bin/cq"
+cq_bin="$repo_root/quenching/assets/bin/cq"
 cq_cmd=(python3 "$cq_bin")
 
 initial_repo_status="$(git -C "$repo_root" status --porcelain)"

@@ -46,7 +46,7 @@ jobs:
         run: uv run bash scripts/verify_repo.sh
       - name: Unit suite on the newest supported Python
         if: matrix.python-version != '3.11'
-        run: uv run pytest plugins/quenching/tests -q -p randomly -n auto --randomly-seed=${{ github.run_id }}
+        run: uv run pytest quenching/tests -q -p randomly -n auto --randomly-seed=${{ github.run_id }}
 
   windows:
     name: Windows (focused tests, no administrator rights)
@@ -58,13 +58,13 @@ jobs:
         with:
           python-version: '3.11'
       - name: Process group helper
-        run: python -m unittest discover -s plugins/quenching/tests -p test_windows_process.py
+        run: python -m unittest discover -s quenching/tests -p test_windows_process.py
       - name: Tool spawn without cmd.exe
-        run: python -m unittest discover -s plugins/quenching/tests -p test_windows_tools.py
+        run: python -m unittest discover -s quenching/tests -p test_windows_tools.py
       - name: Live session liveness
-        run: python -m unittest discover -s plugins/quenching/tests -p test_session_live.py
+        run: python -m unittest discover -s quenching/tests -p test_session_live.py
       - name: Junction fallback
-        run: python -m unittest discover -s plugins/quenching/tests -p test_windows_links.py
+        run: python -m unittest discover -s quenching/tests -p test_windows_links.py
 
   lint:
     name: Ruff
@@ -87,8 +87,8 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Static guard (selfcheck)
-        run: bash plugins/quenching/assets/checks/functional-checks.sh --selfcheck
+        run: bash quenching/assets/checks/functional-checks.sh --selfcheck
       - name: Observed-path guard (selftest)
-        run: bash plugins/quenching/assets/checks/functional-checks.sh --selftest
+        run: bash quenching/assets/checks/functional-checks.sh --selftest
       - name: Where the surface-load measurement runs
         run: echo "CI measures no surface load (no claude CLI here). Run QUENCHING_FUNCTIONAL=1 bash scripts/verify_repo.sh locally; /release requires it before the bump."

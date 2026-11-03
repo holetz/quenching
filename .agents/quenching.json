@@ -50,17 +50,18 @@
     ]
   },
   "proof": {
-    "proofRoot": "plugins",
+    "proofRoot": "quenching",
     "layers": {
-      "quenching": {
+      "tests": {
         "reach": "tree",
         "required": true
       }
     },
     "measuredRoots": [
-      "plugins/quenching/assets/bin/quenching"
+      "quenching/assets/bin/quenching"
     ],
     "proofExclusions": [
+      "integrations",
       "scripts",
       "design-system",
       "experiments",
