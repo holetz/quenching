@@ -11,6 +11,7 @@ import unittest
 
 ROOT = Path(__file__).resolve().parents[3]
 ARTIFACTS = ROOT / "plugins/quenching/assets/references/specs-develop/artifacts.md"
+DEVELOP = ROOT / "plugins/quenching/assets/references/specs-flows/develop.md"
 
 
 def text(path: Path) -> str:
@@ -31,6 +32,15 @@ class FilesDeclaresItsTests(unittest.TestCase):
         self.assertIn("`sp-files-operational`", body)
         self.assertIn("`sp-operational-no-verify`", body)
         self.assertIn("without a commit sha because it has no path to hang one on", body)
+
+
+class ComposeAsksForTheTests(unittest.TestCase):
+    def test_develop_asks_the_question_beside_the_three_execution_decisions(self):
+        body = text(DEVELOP)
+        self.assertIn("The fourth execution question is asked here", body)
+        self.assertIn("which tests does this task touch?", body)
+        self.assertIn("beside them, per task", body)
+        self.assertIn("the out-of-scope diff the verifier charges at the door", body)
 
 
 if __name__ == "__main__":
