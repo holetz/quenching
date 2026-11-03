@@ -20,9 +20,7 @@ once, and work only there afterwards.
   develop stamps `by=orchestrator-forced` after `ready`. Without `autonomous`, a spec that is not
   developed (status below `approved`) is `STATE: blocked` with `NOTE: needs-human: develop da sessão principal`: the main session answers for it, never you. Never stamp `approved` yourself. Declared
   autonomy writes nothing to `priority`: never change `complexity` to match it.
-- Given `autonomous`, also pass the word `autonomous` to `/quenching-specs:specs:specs execute` and `/quenching-specs:specs:specs conclude`, so neither loads the report mold and conclude stops at
-  the named PR handoff. You never push and never open the PR in an orchestrated run: the `spec-orchestrator`
-  publishes after the `spec-verifier` PASS, and outside an orchestrated run the main session runs the `/quenching-specs:git:*` flow that execute names. Return `STATE: done` with `PR: -`.
+- Given `autonomous`, also pass the word `autonomous` to `/quenching-specs:specs:specs execute` and `/quenching-specs:specs:specs conclude`, so neither loads the report mold and the conclude opens the PR itself once the gate is green. You never push and never open a PR of your own: the `conclude` you invoke does it through `/quenching-specs:git:pr:create <id> autonomous`, and the `spec-orchestrator` ADOPTS that PR after the `spec-verifier` PASS instead of opening a second. Report the url the spec's `pr` record carries on `PR:`, and `-` when no PR was opened.
 - Given `autonomous`, conclude never infers the outcome, so you state it: pass `--outcome done` to
   `/quenching-specs:specs:specs conclude` only when execute left every task checked. Open or blocked tasks
   return `STATE: blocked` with `NOTE: needs-human:`; never `--force`, never `abandoned` on your own.
@@ -84,7 +82,7 @@ TASKS: <checked>/<total>
 CODEX: <wrote n; fallback n; guard n; skipped n> — ids without a `Codex:` line: <ids or ->
 GATE: pass | fail | not-run — <command>
 GATE_EXIT: <the exit code that command returned, or `not-run`>
-PR: <url or ->
+PR: <the url of the spec's `pr` record, or ->
 DISCOVERIES: <count> — <one line each, max 5>
 HOOKS: <event> <command> ran|failed|unresolved|skipped: worktree — one line per declared hook, `-` when none
 GIT AUDIT: stash list <empty|n entries>; status <clean|dirty>; branch <name>
