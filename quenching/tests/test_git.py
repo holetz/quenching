@@ -482,14 +482,14 @@ class Audit(RepoCase):
         self.assertEqual(got, {"test-deleted"})
 
     def test_lowered_fails_a_test_moved_out_of_the_discovered_directory(self):
-        for dest in ("plugins/q/attic/test_m.py", "elsewhere/test_m.py"):
+        for dest in ("integrations/q/attic/test_m.py", "elsewhere/test_m.py"):
             with self.subTest(dest=dest):
                 self.setUp()
-                got = self._lowered_after({"plugins/q/tests/test_m.py": "def t():\n    assert 1\n",
+                got = self._lowered_after({"integrations/q/tests/test_m.py": "def t():\n    assert 1\n",
                                            "src/a.py": "x = 1\n"},
-                                          "plugins/q/tests/test_m.py",
+                                          "integrations/q/tests/test_m.py",
                                           {dest: "def t():\n    assert 1\n", "src/a.py": "x = 2\n"})
-                self.assertEqual(got, {("plugins/q/tests/test_m.py", "fail", "test-deleted")})
+                self.assertEqual(got, {("integrations/q/tests/test_m.py", "fail", "test-deleted")})
                 self.tearDown()
 
     def test_lowered_ignores_a_js_or_ts_test_move_when_the_repo_has_no_gate(self):
@@ -651,14 +651,14 @@ class Audit(RepoCase):
         self.assertEqual(self._lowered(), [])
 
     def test_grants_reports_added_entries_and_never_a_narrowing(self):
-        agent = "plugins/p/agents/a.md"
+        agent = "integrations/p/agents/a.md"
         self.assertEqual(self._grants(), [])
         self._commit_file(agent, "---\nname: a\ntools: Read, Bash(cq x:*)\n---\nbody\n", "agent")
         self.assertEqual(self._grants(), [{"path": agent, "kind": "tools",
                                            "added": ["Bash(cq x:*)", "Read"]}])
 
     def test_grants_widening_over_a_base_that_has_the_file(self):
-        agent = "plugins/p/agents/a.md"
+        agent = "integrations/p/agents/a.md"
         full = pathlib.Path(self.repo, agent)
         full.parent.mkdir(parents=True, exist_ok=True)
         full.write_text("---\nname: a\ntools: Read, Bash(cq x:*)\n---\n", encoding="utf-8")
@@ -671,7 +671,7 @@ class Audit(RepoCase):
         self.assertEqual(self._grants(), [])
 
     def test_grants_reads_allowed_tools_block_list_and_ci_lines(self):
-        cmd = "plugins/p/commands/c.md"
+        cmd = "integrations/p/commands/c.md"
         self._commit_file(cmd, "---\nallowed-tools:\n  - Bash\n  - Read\n---\n", "cmd")
         wf = ".github/workflows/x.yml"
         self._commit_file(wf, "on: push\njobs: {}\n", "ci")
@@ -681,8 +681,8 @@ class Audit(RepoCase):
         self.assertIn("on: push", got[wf]["added"])
 
     def test_grants_reads_plugin_manifest_and_server_config_lines(self):
-        paths = ("plugins/p/.claude-plugin/plugin.json", ".claude-plugin/marketplace.json",
-                 "plugins/p/.mcp.json", ".lsp.json")
+        paths = ("integrations/p/.claude-plugin/plugin.json", ".claude-plugin/marketplace.json",
+                 "integrations/p/.mcp.json", ".lsp.json")
         for path in paths:
             self._commit_file(path, '{"x": "%s"}\n' % path, path)
         got = {g["path"]: g for g in self._grants()}
@@ -691,7 +691,7 @@ class Audit(RepoCase):
                              ("surface", ['{"x": "%s"}' % path]))
 
     def test_grants_flags_a_line_removed_from_a_server_config_as_unknown(self):
-        path = "plugins/p/.mcp.json"
+        path = "integrations/p/.mcp.json"
         full = pathlib.Path(self.repo, path)
         full.parent.mkdir(parents=True, exist_ok=True)
         full.write_text('{\n  "args": [\n    "--read-only",\n    "x"\n  ]\n}\n', encoding="utf-8")
@@ -704,7 +704,7 @@ class Audit(RepoCase):
                                            "added": ["(removed or rewritten lines)"]}])
 
     def test_grants_flag_lines_removed_from_settings_and_hooks_as_unknown(self):
-        settings, hooks = ".claude/settings.json", "plugins/p/hooks/hooks.json"
+        settings, hooks = ".claude/settings.json", "integrations/p/hooks/hooks.json"
         guard = '{"matcher": "Bash", "hooks": [{"type": "command", "command": "guard.sh"}]}'
         self._commit_on_main(settings, '{\n  "sandbox": {"enabled": true},\n  "defaultMode": "plan",\n'
                                        '  "hooks": {"PreToolUse": [\n    ' + guard + '\n  ]}\n}\n')
@@ -733,7 +733,7 @@ class Audit(RepoCase):
             self.assertIn("bypassPermissions", got[(path, "surface")][0])
 
     def test_grants_read_a_codex_plugin_manifest(self):
-        path = "plugins/x/.codex-plugin/plugin.json"
+        path = "integrations/x/.codex-plugin/plugin.json"
         self._commit_file(path, '{"mcpServers": {"s": {"command": "x"}}}\n', "codex mcp")
         self.assertEqual([(g["path"], g["kind"]) for g in self._grants()], [(path, "surface")])
 
@@ -848,14 +848,14 @@ class Audit(RepoCase):
         self.assertEqual(sorted(got), ["azure-pipelines-docs.yml", "templates/main.yml"])
 
     def test_grants_ignore_an_azure_template_the_plugin_distributes_but_keep_a_real_root(self):
-        tpl = "plugins/quenching/assets/zensical/azure-pipelines-docs.yml"
+        tpl = "quenching/assets/zensical/azure-pipelines-docs.yml"
         self._commit_file(tpl, "steps: []\n", "template")
         self.assertEqual(self._grants(), [])
-        self._commit_file("plugins/foo/assets/deep/x/azure-pipelines-prod.yaml", "steps: []\n", "other")
-        self.assertEqual([g["path"] for g in self._grants()], ["plugins/foo/assets/deep/x/azure-pipelines-prod.yaml"])
+        self._commit_file("integrations/foo/assets/deep/x/azure-pipelines-prod.yaml", "steps: []\n", "other")
+        self.assertEqual([g["path"] for g in self._grants()], ["integrations/foo/assets/deep/x/azure-pipelines-prod.yaml"])
         self._commit_file("azure-pipelines.yml", "steps: []\n", "root")
         self.assertEqual(sorted(g["path"] for g in self._grants()),
-                         ["azure-pipelines.yml", "plugins/foo/assets/deep/x/azure-pipelines-prod.yaml"])
+                         ["azure-pipelines.yml", "integrations/foo/assets/deep/x/azure-pipelines-prod.yaml"])
 
     def test_grants_take_a_github_uses_of_the_root_as_the_whole_repository(self):
         got = self._ci_surface({
@@ -904,7 +904,7 @@ class Audit(RepoCase):
         _run(self.repo, "commit", "-q", "-m", f"main {rel}")
 
     def test_grants_agent_without_tools_grants_everything(self):
-        new, old = "plugins/p/agents/b.md", "plugins/p/agents/a.md"
+        new, old = "integrations/p/agents/b.md", "integrations/p/agents/a.md"
         self._commit_on_main(old, "---\nname: a\ntools: Read\n---\n")
         _run(self.wt, "merge", "-q", "main")
         self._commit_file(new, "---\nname: b\n---\nbody\n", "new agent")
@@ -925,12 +925,12 @@ class Audit(RepoCase):
         self.assertEqual(sorted(g["path"] for g in self._grants()), sorted(paths))
 
     def test_grants_read_a_frontmatter_behind_a_bom(self):
-        agent = "plugins/p/agents/a.md"
+        agent = "integrations/p/agents/a.md"
         self._commit_file(agent, "\ufeff---\ntools: Bash\n---\nbody\n", "bom")
         self.assertEqual(self._grants(), [{"path": agent, "kind": "tools", "added": ["Bash"]}])
 
     def test_grants_split_the_frontmatter_on_lf_only(self):
-        skill, agent = ".claude/skills/s/SKILL.md", "plugins/p/agents/a.md"
+        skill, agent = ".claude/skills/s/SKILL.md", "integrations/p/agents/a.md"
         self._commit_file(skill, "---\nallowed-tools: Read # , Bash(rm -rf:*)\n---\n", "skill")
         self._commit_file(agent, "---\ntools: Read\f# , Bash\n---\n", "agent")
         got = {g["path"]: g["added"] for g in self._grants() if g["kind"] == "tools"}
@@ -938,7 +938,7 @@ class Audit(RepoCase):
         self.assertIn("Bash", got[agent])
 
     def test_grants_exempt_the_inert_keys_and_keep_the_rest_unknown(self):
-        agent = "plugins/p/agents/a.md"
+        agent = "integrations/p/agents/a.md"
         self._commit_file(agent, "---\nname: a\ndescription: d\nargument-hint: x\ntools: Read\n"
                                  "model: haiku\n---\n", "keys")
         self.assertEqual(self._grants(), [{"path": agent, "kind": "tools", "added": ["Read"]},
@@ -954,18 +954,18 @@ class Audit(RepoCase):
                                (skill, "tools"): ["Bash"]})
 
     def test_grants_ignore_an_okf_standard_in_an_agents_folder_inside_a_plugin(self):
-        standard = "plugins/p/assets/knowledge/standards/agents/new-standard.md"
-        mirror = "plugins/p-codex/knowledge/standards/agents/communication.md"
-        agent = "plugins/p/agents/a.md"
+        standard = "integrations/p/assets/knowledge/standards/agents/new-standard.md"
+        mirror = "integrations/p-codex/knowledge/standards/agents/communication.md"
+        agent = "integrations/p/agents/a.md"
         for path in (standard, mirror):
             self._commit_file(path, "---\ntitle: x\ntype: standard\ntimestamp: 1\n---\nbody\n", path)
         self._commit_file(agent, "---\nname: a\ntools: Bash\n---\nbody\n", "agent")
         self.assertEqual(self._grants(), [{"path": agent, "kind": "tools", "added": ["Bash"]}])
 
     def test_grants_read_agents_and_commands_under_any_plugin_root_a_manifest_declares(self):
-        for root in ("external_plugins/rev", "plugins/group/inner", "tools/my-plugin"):
+        for root in ("external_integrations/rev", "integrations/group/inner", "tools/my-plugin"):
             self._commit_file(f"{root}/.claude-plugin/plugin.json", '{"name": "x"}\n', root)
-        reviewer, inner = "external_plugins/rev/agents/reviewer.md", "plugins/group/inner/agents/inner.md"
+        reviewer, inner = "external_integrations/rev/agents/reviewer.md", "integrations/group/inner/agents/inner.md"
         deploy, standard = "tools/my-plugin/commands/deploy.md", "tools/my-plugin/standards/agents/s.md"
         for path in (reviewer, inner):
             self._commit_file(path, "---\nname: r\n---\nbody\n", path)
@@ -1002,7 +1002,7 @@ class Audit(RepoCase):
                                           {"path": "plain.txt", **link}])
 
     def test_grants_and_changed_carry_a_non_ascii_path(self):
-        agent = "plugins/p/agents/é.md"
+        agent = "integrations/p/agents/é.md"
         self._commit_file(agent, "---\nname: e\ntools: Bash, Write\n---\n", "accent")
         payload = _cq_json(self.repo, "audit", "--worktree", self.wt, "--base", "main",
                            "--branch", "spec/1")
@@ -1011,7 +1011,7 @@ class Audit(RepoCase):
                                               "added": ["Bash", "Write"]}])
 
     def test_grants_report_a_removed_deny(self):
-        settings, agent = ".claude/settings.json", "plugins/p/agents/a.md"
+        settings, agent = ".claude/settings.json", "integrations/p/agents/a.md"
         self._commit_on_main(settings, '{"permissions": {"deny": ["Bash(rm:*)"]}}\n')
         self._commit_on_main(agent, "---\nname: a\ntools: Read\ndisallowedTools: Write\n---\n")
         _run(self.wt, "merge", "-q", "main")
@@ -1030,7 +1030,7 @@ class Audit(RepoCase):
         self.assertEqual(asks, [{"path": settings, "kind": "ask", "added": ["Bash(git push:*)"]}])
 
     def test_grants_ignore_a_new_doc_under_agents_and_a_narrowing_from_everything(self):
-        doc, agent = "do" "cs/notes/agents/x.md", "plugins/p/agents/a.md"
+        doc, agent = "do" "cs/notes/agents/x.md", "integrations/p/agents/a.md"
         self._commit_on_main(agent, "---\nname: a\n---\nbody\n")
         _run(self.wt, "merge", "-q", "main")
         self._commit_file(doc, "# x\n", "doc")
@@ -1038,7 +1038,7 @@ class Audit(RepoCase):
         self.assertEqual(self._grants(), [])
 
     def test_grants_ignore_a_narrowing_on_the_base_after_the_cut(self):
-        agent = "plugins/p/agents/a.md"
+        agent = "integrations/p/agents/a.md"
         self._commit_on_main(agent, "---\nname: a\ntools: Read, Skill\n---\nbody\n")
         _run(self.wt, "merge", "-q", "main")
         self._commit_file(agent, "---\nname: a\ntools: Read, Skill\n---\nnew body\n", "body")
@@ -1046,7 +1046,7 @@ class Audit(RepoCase):
         self.assertEqual(self._grants(), [])
 
     def test_grants_report_an_unknown_frontmatter_key_as_unknown(self):
-        agent, cmd = "plugins/p/agents/a.md", "plugins/p/commands/c.md"
+        agent, cmd = "integrations/p/agents/a.md", "integrations/p/commands/c.md"
         self._commit_on_main(agent, "---\nname: a\ndescription: d\ntools: Read, Bash\n---\nbody\n")
         self._commit_on_main(cmd, "---\ndescription: d\nhooks:\n  PreToolUse:\n    - command: true\n---\n")
         _run(self.wt, "merge", "-q", "main")
@@ -1058,7 +1058,7 @@ class Audit(RepoCase):
                                           {"path": cmd, "kind": "unknown", "added": ["hooks"]}])
 
     def test_grants_read_a_folded_scalar_so_a_description_edit_is_not_unknown(self):
-        cmd = "plugins/p/commands/c.md"
+        cmd = "integrations/p/commands/c.md"
         head = "---\ndescription: >-\n  %s\nallowed-tools: >-\n  Bash(cq:*),\n  Read\n---\nbody\n"
         self._commit_on_main(cmd, head % "old")
         _run(self.wt, "merge", "-q", "main")
@@ -1070,7 +1070,7 @@ class Audit(RepoCase):
         self.assertEqual([g["kind"] for g in self._grants()], ["unknown"])
 
     def test_grants_read_a_plain_scalar_continued_on_the_next_lines(self):
-        cmd = "plugins/p/commands/c.md"
+        cmd = "integrations/p/commands/c.md"
         head = "---\ndescription: %s\nallowed-tools: Read, Grep,\n  Bash(cq:*),\n  Task\n---\nbody\n"
         self._commit_on_main(cmd, head % "old")
         _run(self.wt, "merge", "-q", "main")
@@ -1082,7 +1082,7 @@ class Audit(RepoCase):
         self.assertEqual([g["kind"] for g in self._grants()], ["unknown"])
 
     def test_grants_report_a_frontmatter_it_cannot_read_whole(self):
-        agent, skill = "plugins/p/agents/a.md", ".claude/skills/s/SKILL.md"
+        agent, skill = "integrations/p/agents/a.md", ".claude/skills/s/SKILL.md"
         self._commit_on_main(agent, "---\nname: a\ntools: Read, Grep\n---\nbody\n")
         self._commit_on_main(skill, "---\nname: s\nallowed-tools: Read\n---\nbody\n")
         _run(self.wt, "merge", "-q", "main")
@@ -1095,7 +1095,7 @@ class Audit(RepoCase):
         self.assertEqual(len(self._grants()), 2)
 
     def test_grants_report_a_change_inside_a_frontmatter_already_unreadable(self):
-        skill, cmd = ".claude/skills/s/SKILL.md", "plugins/p/commands/c.md"
+        skill, cmd = ".claude/skills/s/SKILL.md", "integrations/p/commands/c.md"
         self._commit_on_main(skill, '---\nname: s\n"allowed-tools": Read\n---\nbody\n')
         self._commit_on_main(cmd, "---\nstray line\ndescription: d\n---\n")
         _run(self.wt, "merge", "-q", "main")
@@ -1106,7 +1106,7 @@ class Audit(RepoCase):
         self.assertEqual(got, {skill: unparsed, cmd: unparsed})
 
     def test_grants_report_a_deleted_sensitive_file(self):
-        settings, hook, agent = ".claude/settings.json", "hooks/pre.sh", "plugins/p/agents/a.md"
+        settings, hook, agent = ".claude/settings.json", "hooks/pre.sh", "integrations/p/agents/a.md"
         self._commit_on_main(settings, '{"permissions": {"deny": ["Bash(rm -rf:*)"]}}\n')
         self._commit_on_main(hook, "#!/bin/sh\nexit 1\n")
         self._commit_on_main(agent, "---\nname: a\ntools: Read\n---\n")
@@ -1310,7 +1310,7 @@ class Audit(RepoCase):
         self.assertIn("--base origin/<base>", verifier)
 
 
-SRC, MOD = "plugins/" + "quenching", "plugins/" + "m"
+SRC, MOD = "quenching", "integrations/" + "m"
 
 
 class AuditGenerated(RepoCase):
@@ -1361,7 +1361,7 @@ class AuditGenerated(RepoCase):
 
     def test_a_module_the_manifest_does_not_declare_is_not_generated(self):
         self.assertEqual(self._generated({f"{SRC}/commands/z.md": "z\n",
-                                          "plugins/other/commands/" + "z.md": "z\n"}), [])
+                                          "integrations/other/commands/" + "z.md": "z\n"}), [])
 
 
 class AuditRelocation(RepoCase):
@@ -1426,7 +1426,7 @@ class AuditRelocation(RepoCase):
         self.assertEqual([(g["path"], g["added"]) for g in got], [(f"{MOD}/agents/new.md", ["Read"])])
 
     def test_a_copy_outside_a_declared_module_is_not_absolved(self):
-        got = self._payload({"plugins/other/agents/w.md":
+        got = self._payload({"integrations/other/agents/w.md":
                              self.AGENT.format(tools="Agent(quenching:w), Read")})["grants"]
         self.assertEqual([g["added"] for g in got], [["Agent(quenching:w)", "Read"]])
 
@@ -2841,7 +2841,7 @@ class WorktreeRetire(RepoCase):
         self.assertTrue(os.path.isdir(self.wt))
 
     def test_repo_config_declares_pytest_cache_regenerable(self):
-        root = pathlib.Path(__file__).resolve().parents[3]
+        root = pathlib.Path(__file__).resolve().parents[2]
         config = json.loads(_paths.repository_config(root).read_text(encoding="utf-8"))
         self.assertIn(".pytest_cache", config["shared"]["regenerablePaths"])
 
