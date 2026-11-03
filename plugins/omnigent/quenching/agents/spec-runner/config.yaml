@@ -1,6 +1,6 @@
 spec_version: 1
 name: "spec-runner"
-description: "Builds ONE spec end to end in its own worktree (develop, execute, conclude) through the quenching commands, then returns a fixed report. Use per spec inside an orchestrated run."
+description: "Builds ONE already-developed spec in its own worktree (execute, conclude; develop only under declared autonomy) through the quenching commands, then returns a fixed report. Use per spec inside an orchestrated run."
 instructions: instructions.md
 executor:
   type: omnigent

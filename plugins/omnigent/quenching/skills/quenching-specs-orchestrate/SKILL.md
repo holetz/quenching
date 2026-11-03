@@ -13,7 +13,6 @@ This runs inside the `quenching` operator agent on whatever model the server's p
 
 <!-- OMNIGENT RUNTIME END -->
 
-
 # quenching-specs-orchestrate — conduct an epic or a queue
 
 **Input**: `$ARGUMENTS` — a composite id (any spec whose `## Tasks` names members) or a list of spec
@@ -21,7 +20,7 @@ ids, and optionally `--autonomous`. Empty or ambiguous → run
 `cq specs list --json` and ask which on a decision sheet ([questions.md](quenching://references/specs-develop/questions.md) §The four shared mechanics §1).
 
 This command is a launcher. The protocol (waves, routing, budgets, acceptance, audit) lives in the
-`orchestrator` agent definition, `agents/orchestrator/instructions.md`; do not restate it.
+`spec-orchestrator` agent definition, `agents/spec-orchestrator/instructions.md`; do not restate it.
 
 ## Workflow
 
@@ -53,7 +52,7 @@ human → go to step 3. Otherwise ask once on a decision sheet, naming the specs
 `--autonomous` already given → skip the question. **Done when:** the set to launch is fixed.
 
 ### 3. Launch the orchestrator
-Start the `orchestrator` agent with a prompt of at most 1,500 characters: the epic id or
+Start the `spec-orchestrator` agent with a prompt of at most 1,500 characters: the epic id or
 the spec ids, the base branch, the word `autonomous` when it was forced, and the three values as
 `runAloneUpTo=<v> merge=<v> maxWorkers=<v>`. Pass nothing else; it
 carries its own protocol, and without `autonomous` it blocks a spec that still needs approval.

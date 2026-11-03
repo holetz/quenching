@@ -90,14 +90,6 @@ run_check "docs bundle" \
   python3 plugins/quenching/assets/bin/cq knowledge validate docs
 run_check "docs doctor" \
   python3 plugins/quenching/assets/bin/cq knowledge doctor docs
-run_check "generated plugin modules and published lockstep" \
-  python3 scripts/generate_plugin_modules.py --check
-run_check "Claude/Codex translation" \
-  python3 scripts/sync_codex_plugin.py --source plugins/quenching --target plugins/codex/quenching-codex --check --json
-run_check "Codex artifact lockstep" \
-  python3 scripts/validate_codex_plugin.py
-run_check "Claude/OpenCode distribution" \
-  python3 scripts/sync_opencode_plugin.py --check --json
 run_check "Claude/Omnigent distribution" \
   python3 scripts/sync_omnigent_plugin.py --check --json
 # A checkout that installed the surface with `cq deploy` keeps it in lockstep with this source;
@@ -108,13 +100,6 @@ if [ -f .agents/.quenching-deploy.json ]; then
     python3 plugins/quenching/assets/bin/cq deploy --target . --check --json
 else
   printf '\n==> deployed surface lockstep\nSKIPPED: this checkout does not use deploy mode (no .agents/.quenching-deploy.json).\n'
-fi
-printf '\n==> Codex marketplace upgrade\n'
-if [ "${QUENCHING_DISTRIBUTION:-}" != "1" ]; then
-  printf 'SKIPPED: set QUENCHING_DISTRIBUTION=1 to exercise a real Codex marketplace upgrade (required by /release).\n'
-else
-  run_check "Codex marketplace upgrade from 6.4.0" \
-    python3 scripts/check_codex_upgrade.py
 fi
 run_check "citation checks" \
   bash plugins/quenching/assets/checks/citation-check.sh

@@ -40,9 +40,9 @@ class SourceToolsLock(unittest.TestCase):
         skills = sorted(r for r in self.tree if r.startswith("skills/") and r.endswith("/SKILL.md"))
         configs = sorted(r for r in self.tree if r.startswith("agents/") and r.endswith("/config.yaml"))
         self.assertEqual(len(list((sync.SOURCE / "commands").rglob("*.md"))), len(skills))
-        self.assertEqual(len(sync.oc.agent_names()), len(configs))
+        self.assertEqual(len(sync.agent_names()), len(configs))
         self.assertIn("skills/quenching-specs-develop/SKILL.md", skills)
-        self.assertIn("agents/verifier/config.yaml", configs)
+        self.assertIn("agents/spec-verifier/config.yaml", configs)
         self.assertEqual([], sync.validate(self.tree))
 
     def test_the_bundle_carries_no_payload_and_no_permissions_or_model_files(self):
@@ -56,7 +56,7 @@ class SourceToolsLock(unittest.TestCase):
         self.assertIn("harness: opencode", text)
         self.assertRegex(text, r"(?m)^skills: none$")
         self.assertNotRegex(text, r"(?m)^\s*model:")
-        for agent in sync.oc.agent_names():
+        for agent in sync.agent_names():
             self.assertIn(json.dumps(agent), text)
         version = (sync.SOURCE / "VERSION").read_text(encoding="utf-8").strip()
         self.assertIn(f"git+https://github.com/holetz/quenching@{version}#subdirectory=plugins/quenching", text)
@@ -73,7 +73,7 @@ class SourceToolsLock(unittest.TestCase):
 
     def test_every_sub_agent_denies_exactly_what_its_source_does_not_grant(self):
         for source in sorted((sync.SOURCE / "agents").glob("*.md")):
-            fields, _ = sync.oc.frontmatter(source.read_text(encoding="utf-8"), source)
+            fields, _ = sync.frontmatter(source.read_text(encoding="utf-8"), source)
             names = sync.tool_names(fields.get("tools"))
             heads = {n.split("(", 1)[0] for n in names}
             model = sync.permission_model(fields.get("tools"))
@@ -89,13 +89,13 @@ class SourceToolsLock(unittest.TestCase):
     def test_every_skill_and_sub_agent_carries_the_source_grant_never_a_missing_key(self):
         for source in sorted((sync.SOURCE / "commands").rglob("*.md")):
             name = "quenching-" + "-".join(source.relative_to(sync.SOURCE / "commands").with_suffix("").parts)
-            fields, _ = sync.oc.frontmatter(source.read_text(encoding="utf-8"), source)
+            fields, _ = sync.frontmatter(source.read_text(encoding="utf-8"), source)
             text = self.tree[f"skills/{name}/SKILL.md"].decode("utf-8")
             self.assertTrue(text.startswith(f"---\nname: {name}\ndescription: "), name)
             if "allowed-tools" in fields:
                 self.assertIn(f"\nallowed-tools: {json.dumps(fields['allowed-tools'])}\n---\n", text, name)
         for source in sorted((sync.SOURCE / "agents").glob("*.md")):
-            fields, _ = sync.oc.frontmatter(source.read_text(encoding="utf-8"), source)
+            fields, _ = sync.frontmatter(source.read_text(encoding="utf-8"), source)
             text = self.tree[f"agents/{source.stem}/instructions.md"].decode("utf-8")
             self.assertTrue(text.startswith(f"---\ntools: {fields['tools']}\n---\n"), source.stem)
 
@@ -111,7 +111,7 @@ class SourceToolsLock(unittest.TestCase):
         self.assertTrue(set(sync.SHELL_TOOLS) <= set(lone["denied"]))
 
     def test_sub_agent_config_pins_a_harness_and_no_model_and_names_the_policy(self):
-        text = self.tree["agents/git-steward/config.yaml"].decode("utf-8")
+        text = self.tree["agents/spec-runner/config.yaml"].decode("utf-8")
         self.assertIn("harness: opencode", text)
         self.assertNotRegex(text, r"(?m)^\s*model:")
         self.assertIn(sync.CEL_HANDLER, text)
@@ -121,7 +121,7 @@ class SourceToolsLock(unittest.TestCase):
     def test_prose_is_rerooted_to_omnigent_and_references_become_mcp_resources(self):
         text = self.tree["skills/quenching-specs-status/SKILL.md"].decode("utf-8")
         self.assertNotRegex(text, r"(?i)opencode")
-        self.assertIn(sync.CQ_WRAPPER, self.tree["agents/verifier/instructions.md"].decode("utf-8"))
+        self.assertIn(sync.CQ_WRAPPER, self.tree["agents/spec-verifier/instructions.md"].decode("utf-8"))
         everything = b"".join(self.tree.values()).decode("utf-8")
         self.assertNotIn(sync.ROOT + "/references/", everything)
         self.assertIn(sync.REFERENCES_URI, text)
@@ -131,21 +131,21 @@ class SourceToolsLock(unittest.TestCase):
         self.assertNotIn("cq components read quenching://", everything)
         text = self.tree["skills/quenching-git-commit/SKILL.md"].decode("utf-8")
         self.assertIn("# Read the quenching MCP resource: "
-                      "quenching://references/git/commit.md?section=%C2%A7Commit%20messages", text)
+                      "quenching://references/git-flows/commit.md", text)
 
     def test_sub_agents_are_cited_by_their_registered_name_and_bundled_protocol(self):
         everything = b"".join(self.tree.values()).decode("utf-8")
-        for name in sync.oc.agent_names():
+        for name in sync.agent_names():
             self.assertNotRegex(everything, rf"\bquenching-{name}(?![\w/:-])")
         self.assertNotIn(sync.ROOT + "/agents/", everything)
         text = self.tree["skills/quenching-specs-orchestrate/SKILL.md"].decode("utf-8")
-        self.assertIn("`agents/orchestrator/instructions.md`", text)
-        self.assertIn("Start the `orchestrator` agent", text)
+        self.assertIn("`agents/spec-orchestrator/instructions.md`", text)
+        self.assertIn("Start the `spec-orchestrator` agent", text)
 
     def test_a_payload_sub_agent_protocol_is_a_finding(self):
         tree = dict(self.tree)
         rel = "skills/quenching-specs-status/SKILL.md"
-        tree[rel] = tree[rel] + f"\nSee {sync.ROOT}/agents/scout.md.\n".encode()
+        tree[rel] = tree[rel] + f"\nSee {sync.ROOT}/agents/spec-scout.md.\n".encode()
         self.assertTrue(any(p.startswith(f"{rel}: cites a sub-agent protocol") for p in sync.validate(tree)))
 
     def test_a_dangling_reference_resource_is_a_finding(self):
@@ -234,7 +234,7 @@ class LoaderAcceptsTheBundle(unittest.TestCase):
             self.assertEqual("quenching", loaded.name)
             self.assertEqual("none", loaded.skills_filter)
             self.assertEqual(len(list((sync.SOURCE / "commands").rglob("*.md"))), len(loaded.skills))
-            self.assertEqual(sync.oc.agent_names(), sorted(agent.name for agent in loaded.sub_agents))
+            self.assertEqual(sync.agent_names(), sorted(agent.name for agent in loaded.sub_agents))
             self.assertEqual(["quenching"], [server.name for server in loaded.mcp_servers])
 
 

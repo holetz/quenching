@@ -98,24 +98,11 @@ if [ "$TOPLEVEL" != "$REPO" ]; then
 fi
 SELF="${SELF_DIR#"$REPO"/}/$(basename "${BASH_SOURCE[0]}")"
 
-# The generated principal module trees are byte copies of plugins/quenching, proved equal and
-# closure-checked per module by `scripts/generate_plugin_modules.py --check`. Every half here
-# measures the source once; sweeping the copies too would re-measure it under paths the source's
-# own exemptions do not name.
-mapfile -t GENERATED < <(python3 -c '
-import json, os, sys
-manifest = os.path.join(sys.argv[1], "plugins/quenching/assets/modules.json")
-if os.path.isfile(manifest):
-    for m in json.load(open(manifest, encoding="utf-8"))["modules"]:
-        if "owned" in m: print(m["path"])
-' "$REPO")
 GENERATED_EXCLUDE=()
-for tree in "${GENERATED[@]}"; do GENERATED_EXCLUDE+=(":!$tree/"); done
-# The surface `cq deploy` installs under `.agents/quenching/` is a byte copy of this source, like
-# the published distributions above: its citations are the source's, checked once. The target's
-# own `.agents/skills/` and `.agents/references/` stay in scope — they are authored here.
+# The surface `cq deploy` installs under `.agents/quenching/` is a byte copy of this source: its
+# citations are the source's, checked once. The target's own `.agents/skills/` and
+# `.agents/references/` stay in scope — they are authored here.
 GENERATED_EXCLUDE+=(':!.agents/quenching/')
-export QUENCHING_GENERATED_TREES="${GENERATED[*]}"
 
 # Half 1's own scope, beyond frozen golden data, not live citations — see the header's third scope
 # rule for why.
@@ -123,7 +110,6 @@ SCOPE_EXCLUDE=(':!plugins/quenching/tests/fixtures/golden/'
                ':!plugins/quenching/tests/capture_golden.py'
                ':(exclude,glob)plugins/quenching/assets/evals/**/runs/**'
                ':!plugins/quenching/assets/checks/citation-check.sh'
-               ':!plugins/codex/quenching-codex/checks/citation-check.sh'
                "${GENERATED_EXCLUDE[@]}")
 
 want () { case ",$HALF," in *",$1,"*) return 0 ;; *) return 1 ;; esac; }
@@ -221,7 +207,7 @@ if want 1; then
   # A FOURTH SCOPE RULE, AND IT IS THE SAME KIND AS THE THREE ABOVE: what is swept is the prose
   # that INSTRUCTS an agent to route — command bodies, the references they cite, and the moulds
   # stamped into an adopting repo. It stops there because outside those trees the same spelling is
-  # not a routing claim. The TRANSLATED surfaces (`plugins/codex/quenching-codex/**`, `.agents/**`) are
+  # not a routing claim. The TRANSLATED surfaces (`plugins/omnigent/**`, `.agents/**`) are
   # the clearest case: Codex has no `:` namespace, so the hyphenated name IS the real skill
   # directory there, and the translator's own tests govern it. `README.md` is the other: its
   # `## Upgrade` changelog names directories that really existed between releases 0.11 and 0.18 —
@@ -360,23 +346,8 @@ CMD_RE            = re.compile(r"/?(quenching(?:-[a-z]+)?(?::[a-z][a-z0-9-]*){2,
 # exactly those two trees against the published skeleton, which is the right base.
 SHIPPED = (plugin + "/assets/knowledge/", plugin + "/assets/templates/", plugin + "/tests/fixtures/",
            plugin + "/commands/", plugin + "/assets/references/", plugin + "/assets/bin/",
-           # The translated sibling is the same shipped prose in another platform'"'"'s spelling —
-           # generated, never hand-edited, and describing the target repo just as its source does.
-           # Its own tree names differ (`knowledge/`, `references/`, `templates/` sit at the plugin
-           # root), so listing the source prefixes does not reach it. Measured before it was added:
-           # four findings, every one a path that is correct THERE and cannot resolve here — a
-           # target under Codex really does carry `AGENTS.md`, and one of the four was a sentence
-           # SAYING a path does not exist, read as a claim that it does.
-           "plugins/codex/quenching-codex/",
-           # The OpenCode distribution is the same generated prose again, its payload under
-           # `quenching/`: 33 findings before it was listed, every one a target-describing path.
-           "plugins/opencode/quenching-opencode/",
-           # The Omnigent operator agent re-roots the OpenCode prose: the same target-describing paths.
-           "plugins/omnigent/",
-           # The read-only reader ships a generated copy of `assets/bin/` and one command body run
-           # inside the target, which cites its own `bin/` through ${CLAUDE_PLUGIN_ROOT}: the
-           # same four findings the source trees are exempt from, measured when it was added.
-           "plugins/claude/quenching-specs-reader/")
+           # The Omnigent operator agent is generated prose describing the target, re-rooted.
+           "plugins/omnigent/")
 
 def unmeasurable(p):
     return (not p) or any(c in p for c in "*?<>${}|") or "..." in p \
@@ -436,7 +407,7 @@ for rel in sys.stdin.buffer.read().split(b"\x00"):
     rel = rel.decode("utf-8", "replace")
     if not rel or rel.endswith((".png", ".jpg", ".gif", ".ico")):
         continue
-    if rel in (plugin + "/assets/checks/citation-check.sh", "plugins/codex/quenching-codex/checks/citation-check.sh"):
+    if rel == plugin + "/assets/checks/citation-check.sh":
         continue
     if rel.startswith(FROZEN_DATA) or is_frozen_eval_run(rel):
         continue
@@ -553,8 +524,7 @@ section_re = re.compile(r"§")
 
 def tracked_files():
     result = subprocess.run(
-        ["git", "ls-files", "-z", "--", ".",
-         *(":!" + tree + "/" for tree in os.environ.get("QUENCHING_GENERATED_TREES", "").split())],
+        ["git", "ls-files", "-z", "--", ".", ":!.agents/quenching/"],
         cwd=repo, check=True, stdout=subprocess.PIPE
     )
     return [path.decode("utf-8", "replace") for path in result.stdout.split(b"\x00") if path]

@@ -161,13 +161,6 @@ def load_profiles(path: Path) -> dict:
     return json.loads(path.read_text(encoding="utf-8"))["profiles"]
 
 
-def plugin_dirs() -> list[str]:
-    manifest = json.loads((ROOT / "plugins/quenching/assets/modules.json").read_text(encoding="utf-8"))
-    modules = [m for m in manifest["modules"] if "owned" in m]
-    modules.sort(key=lambda m: not m.get("cqPathOwner"))
-    return [str(ROOT / m["path"]) for m in modules]
-
-
 def skill_name(skill: str) -> str:
     """The operator agent's skill for the command a suite evaluates, `/quenching-specs:git:commit` -> `quenching-git-commit`."""
     _, _, path = skill.lstrip("/").partition(":")
@@ -203,12 +196,7 @@ def render(profile: dict, arm: str | None, values: dict, extra: list[str], conta
     argv: list[str] = []
     for token in template:
         if token == "{arm}":
-            for item in arm_tokens:
-                if item == "{plugin_dirs}":
-                    for directory in plugin_dirs():
-                        argv += ["--plugin-dir", directory]
-                else:
-                    argv.append(item.format(**values))
+            argv += [item.format(**values) for item in arm_tokens]
         elif token == "{extra}":
             argv += extra
         elif token == "{permission}":
@@ -298,12 +286,17 @@ def invoke(argv: list[str], cwd: Path, env: dict, timeout: int) -> dict:
 
 # --------------------------------------------------------------------------- fixture
 
-def provision(suite: Path, case_id: str, parent: Path) -> tuple[Path, dict]:
+def provision(suite: Path, case_id: str, parent: Path, deploy: str | None = None) -> tuple[Path, dict]:
+    """The case's workspace. `deploy` names the harness whose surface `cq deploy` installs into it
+    before the fixture commit, so the snapshot diff never carries the installed surface."""
     workspace = parent / "workspace"
     if (suite / "fixture").is_dir():
         shutil.copytree(suite / "fixture", workspace)
     else:
         workspace.mkdir()
+    if deploy:
+        subprocess.run([sys.executable, str(CQ), "deploy", "--target", str(workspace), "--modules", "all",
+                        "--harness", deploy, "--write"], check=True, capture_output=True, text=True)
     env = {**os.environ, **GIT_ENV, "CQ": str(CQ), "EVAL_CASE": case_id,
            "EVAL_WORKSPACE": str(workspace)}
     for argv in (["git", "init", "-q", "-b", "main"], ["git", "add", "-A"],
@@ -437,7 +430,7 @@ def run_arm(args, profiles: dict, suite: Path, case: dict, arm: str, skill: str 
     profile = profiles[args.harness]
     with tempfile.TemporaryDirectory(prefix="eval-") as temporary:
         try:
-            workspace, env = provision(suite, case["id"], Path(temporary))
+            workspace, env = provision(suite, case["id"], Path(temporary), profile.get("deploy", {}).get(arm))
         except (subprocess.CalledProcessError, subprocess.TimeoutExpired, OSError) as exc:
             detail = getattr(exc, "stderr", None) or ""
             detail = detail.decode(errors="replace") if isinstance(detail, bytes) else detail
@@ -589,6 +582,7 @@ def run(args) -> int:
                     values = arm_values(args, profiles[args.harness], case, "<workspace>", data["skill"])
                     argv = arm_argv(args, profiles[args.harness], arm, values, "<fixture>")
                     print(json.dumps({"suite": suite_name(directory), "case": case["id"], "arm": arm,
+                                      "deploy": profiles[args.harness].get("deploy", {}).get(arm),
                                       "argv": argv}, ensure_ascii=False))
         return 0
     out = Path(args.out or ROOT / ".quenching/evals" / args.run_id)

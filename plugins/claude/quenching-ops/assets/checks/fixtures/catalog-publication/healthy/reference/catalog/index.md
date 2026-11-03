@@ -1,3 +1,0 @@
-# Catálogo
-
-- [Clientes](clientes.md)

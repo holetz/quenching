@@ -4,6 +4,7 @@ import io
 import json
 import os
 from pathlib import Path
+import sqlite3
 import subprocess
 import tempfile
 import unittest
@@ -11,6 +12,7 @@ from unittest import mock
 
 import _paths  # noqa: F401
 from quenching.session.commands.cli import build_parser
+from quenching.session.model import bare_agent
 
 CQ = Path(__file__).resolve().parents[1] / "assets/bin/cq"
 
@@ -95,7 +97,8 @@ class ContextTests(unittest.TestCase):
 
     def test_agent_roles_come_from_metadata_and_unknown_refuses(self):
         for kind, role, budget in (("quenching-specs:spec-runner", "worker", 100000),
-                                    ("quenching-specs:orchestrator", "conductor", 150000),
+                                    ("quenching-specs:spec-orchestrator", "conductor", 150000),
+                                    ("quenching-specs:spec-orchestrator", "conductor", 150000),
                                     ("quenching:autopilot", "conductor", 150000),
                                     ("Explore", "unknown", None), (7, "unknown", None)):
             agent = self.base / "session/subagents/agent-worker.jsonl"
@@ -104,6 +107,13 @@ class ContextTests(unittest.TestCase):
             code, data = run(agent)
             self.assertEqual((data["role"], data["budget"]), (role, budget))
             self.assertEqual(code, 2 if budget is None else 1 if role == "worker" else 0)
+
+    def test_deployed_agent_name_keeps_its_role(self):
+        self.assertEqual(bare_agent("quenching-spec-runner"), "spec-runner")
+        self.assertEqual(bare_agent("quenching-specs:spec-runner"), "spec-runner")
+        self.assertEqual(bare_agent("quenching:orchestrator"), "orchestrator")
+        self.assertEqual(bare_agent("quenching-spec-orchestrator"), "spec-orchestrator")
+        self.assertEqual(bare_agent("quenching-specs:spec-orchestrator"), "spec-orchestrator")
 
     def test_missing_or_invalid_agent_metadata_refuses(self):
         agent = self.base / "session/subagents/agent-a.jsonl"
@@ -243,6 +253,62 @@ class ContextTests(unittest.TestCase):
             proc = subprocess.run(["python3", str(CQ), *argv], capture_output=True, text=True)
             self.assertEqual(proc.returncode, 0, proc.stderr)
             self.assertEqual(json.loads(proc.stdout)["peakContext"], 3)
+
+
+
+class OpenCodeContextTests(unittest.TestCase):
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.tmp.cleanup)
+        self.db = Path(self.tmp.name) / "opencode.db"
+        db = sqlite3.connect(self.db)
+        db.executescript("""
+            CREATE TABLE session_v2 (id TEXT, parent_id TEXT, agent TEXT, directory TEXT);
+            CREATE TABLE session_message (id TEXT, session_id TEXT, type TEXT, seq INT, data TEXT);""")
+        db.executemany("INSERT INTO session_v2 VALUES (?,?,?,?)", [
+            ("ses_root", None, "build", "/r"), ("ses_kid", "ses_root", "quenching-spec-runner", "/r"),
+            ("ses_odd", "ses_root", "explore", "/r")])
+        steps = [("ses_root", 1000, 500), ("ses_kid", 40000, 60000), ("ses_kid", 1000, 110000), ("ses_odd", 5, 5)]
+        for n, (sid, inp, read) in enumerate(steps):
+            db.execute("INSERT INTO session_message VALUES (?,?,'assistant',?,?)", (f"m{n}", sid, n, json.dumps({
+                "time": {"created": 1_790_000_000_000}, "model": {"id": "deepseek"},
+                "tokens": {"input": inp, "output": 1, "reasoning": 0, "cache": {"read": read, "write": 0}}})))
+        db.commit()
+        db.close()
+        patcher = mock.patch.dict(os.environ, {"QUENCHING_OPENCODE_DB": str(self.db)})
+        patcher.start()
+        self.addCleanup(patcher.stop)
+
+    def live(self, session, *argv):
+        with mock.patch.dict(os.environ, {"OPENCODE_SESSION_ID": session, "CLAUDE_CODE_SESSION_ID": "claude"}):
+            return run(*argv)
+
+    def test_worker_over_budget_measures_itself_and_the_marker_is_not_needed(self):
+        code, out = self.live("ses_kid", "--self", "2149")
+        self.assertEqual(code, 1)
+        self.assertEqual((out["role"], out["peakContext"], out["budget"], out["exceeded"], out["turns"]),
+                         ("worker", 111000, 100000, True, 2))
+        self.assertEqual(out["measurement"], "recorded-OpenCode-usage")
+
+    def test_main_session_is_within_budget(self):
+        code, out = self.live("ses_root")
+        self.assertEqual((code, out["role"], out["peakContext"]), (0, "main", 1500))
+
+    def test_child_is_selected_by_agent(self):
+        self.assertEqual(self.live("ses_root", "--agent", "ses_kid")[1]["role"], "worker")
+
+    def test_explicit_session_id_needs_no_environment(self):
+        self.assertEqual(run("ses_kid")[1]["peakContext"], 111000)
+
+    def test_unknown_role_and_unknown_session_are_unmeasured(self):
+        self.assertEqual(self.live("ses_odd")[0], 2)
+        code, out = self.live("ses_none")
+        self.assertEqual((code, out["code"]), (2, "se-context-inconclusive"))
+
+    def test_missing_database_refuses(self):
+        with mock.patch.dict(os.environ, {"QUENCHING_OPENCODE_DB": str(self.db) + ".none"}):
+            code, out = self.live("ses_root")
+        self.assertEqual((code, out["code"]), (2, "se-no-transcript"))
 
 
 if __name__ == "__main__":

@@ -13,7 +13,7 @@ ALIGN_DECLARATION = ROOT.parent.parent / "docs" / "standards" / "architecture" /
 
 class KnowledgeAlignmentContract(unittest.TestCase):
     def test_align_preflights_evidence_and_classifies_residuals(self):
-        align = (ROOT / "commands" / "knowledge" / "align.md").read_text(encoding="utf-8")
+        align = (ROOT / "assets" / "references" / "knowledge-flows" / "align.md").read_text(encoding="utf-8")
 
         for marker in (
             "preflight",
@@ -31,7 +31,7 @@ class KnowledgeAlignmentContract(unittest.TestCase):
         self.assertLess(preflight, inventory)
 
     def test_align_convergence_order_is_explicit(self):
-        align = (ROOT / "commands" / "knowledge" / "align.md").read_text(encoding="utf-8")
+        align = (ROOT / "assets" / "references" / "knowledge-flows" / "align.md").read_text(encoding="utf-8")
         verify = align.split("### 8. Verify, then decide: loop or stop", 1)[1].split(
             "### 9. Report", 1
         )[0]
@@ -47,8 +47,21 @@ class KnowledgeAlignmentContract(unittest.TestCase):
         self.assertEqual(positions, sorted(positions))
         self.assertIn("--glossary-term", verify)
 
+    def test_align_proposes_a_router_for_local_families(self):
+        align = (ROOT / "assets" / "references" / "components-flows" / "align.md").read_text(encoding="utf-8")
+        doctrine = (
+            ROOT / "assets" / "references" / "components-command-new" / "doctrine.md"
+        ).read_text(encoding="utf-8")
+        section = "§A target extends a vertical with its own router"
+
+        self.assertIn("`families`", align)
+        self.assertIn("`candidate: true`", align)
+        self.assertIn("typed-only shortcut", align)
+        self.assertIn(section, align)
+        self.assertIn(section, doctrine)
+
     def test_status_collects_the_payload_that_controls_derive_from(self):
-        status = (ROOT / "commands" / "knowledge" / "status.md").read_text(encoding="utf-8")
+        status = (ROOT / "assets" / "references" / "knowledge-flows" / "status.md").read_text(encoding="utf-8")
         collect = status.split("### 2. Collect (read-only)", 1)[1].split("### 3.", 1)[0]
         report = status.split("### 4. Report", 1)[1].split("### 5.", 1)[0]
 
@@ -104,7 +117,7 @@ class KnowledgeAlignmentContract(unittest.TestCase):
         # not runtime invocation order.
 
     def test_build_gates_catalog_and_glossary_qa(self):
-        build = (ROOT / "commands" / "knowledge" / "documentation" / "build.md").read_text(
+        build = (ROOT / "assets" / "references" / "knowledge-flows" / "documentation-build.md").read_text(
             encoding="utf-8"
         )
 
@@ -115,7 +128,7 @@ class KnowledgeAlignmentContract(unittest.TestCase):
         self.assertIn("--glossary-term", build)
 
     def test_build_checks_all_generated_paths_for_tracking(self):
-        build = (ROOT / "commands" / "knowledge" / "documentation" / "build.md").read_text(
+        build = (ROOT / "assets" / "references" / "knowledge-flows" / "documentation-build.md").read_text(
             encoding="utf-8"
         )
 

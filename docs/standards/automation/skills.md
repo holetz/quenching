@@ -4,10 +4,10 @@ title: Command authoring and alignment
 description: How the plugin's commands are classified, authored, named, and swept into conformance — one file per entry point, including the admission criterion that decides whether a command's description stays resident in context or goes typed-only, and where a target repository's skill is born and how its Claude bridge is generated and verified
 resource: plugins/quenching/commands/**, plugins/quenching/assets/references/**, plugins/quenching/assets/bin/quenching/components/commands/bridge.py, plugins/quenching/assets/bin/quenching/components/commands/migrate.py
 tags: [automation, commands, taxonomy, authoring]
-timestamp: 2026-10-28
+timestamp: 2026-11-03
 audience: both
 authority: current
-source: collapse-skills-into-commands, 2026-07-26, correct-command-citation-form, 2026-07-31, route-commands-without-always-on-descriptions, 2026-08-02, spec 2118 (target skills in .agents/skills with a generated Claude bridge, 2026-10-28); lineage in ADR 0004
+source: collapse-skills-into-commands, 2026-07-26, correct-command-citation-form, 2026-07-31, route-commands-without-always-on-descriptions, 2026-08-02, spec 2118 (target skills in .agents/skills with a generated Claude bridge, 2026-10-28); spec 2160 (install only by deploy); lineage in ADR 0004
 maintainer: quenching
 ---
 
@@ -155,10 +155,8 @@ The bridge is generated, and verified by code:
   committed version of that source (or that translation plus edits the current source already
   carries), so a hand-made skill of the same name is a conflict and nothing is written. A nested
   skill folder flattens whole, sibling files with it; `openspec-*` and `opsx/` stay put.
-- A target is conformant when `migrate` reports `conformant: true` and `bridge --check` exits 0.
-  `cq components translate` refuses (exit 2) on such a target, so the legacy translation never
-  lands over the source ([surface-translation.md](../architecture/surface-translation.md)
-  §Target repositories).
+- A target is conformant when `migrate` reports `conformant: true` and `bridge --check` exits 0
+  ([surface-translation.md](../architecture/surface-translation.md) §Target repositories).
 
 ## Invocation and permission are authored decisions
 
@@ -230,6 +228,41 @@ The criterion is a floor, not a quota: it says which commands *may* be typed-onl
 must be. On a small surface it may admit nobody, and that is a legitimate outcome rather than a
 failure to economise.
 
+### One router per vertical, shortcuts typed-only
+
+A vertical with several flows that conductors call (`specs`: create, develop, execute, conclude,
+triage, status, orchestrate) carries **one routed skill** — `/quenching-specs:specs:specs <flow> <id>` —
+and each flow's body lives once in `assets/references/specs-flows/<flow>.md`, loaded with
+`cq components read`. The pattern applies to **any vertical**, in the same shape:
+`commands/<vertical>/<vertical>.md` routes, `assets/references/<vertical>-flows/<flow>.md` holds
+each body (`knowledge`, `components` and `git` follow it). A flow already typed-only (a human-only
+command) never enters the router's table.
+
+**Which verticals earn a router.** The criterion is the count of model-invocable entries the vertical
+puts in the list: a router replaces N resident descriptions with one, so it pays only where N is large.
+The verticals of one to three commands (`align`, `delivery`, `design`, `ops`, `proof`, `toolchain`,
+`opensource`, `security`) stay as they are, since the saving is smaller than the router's own
+description. `components:align` and `command:new` recognise a vertical with many model-invocable
+entries and *propose* the router; they never apply it unasked. The model's list pays for one description; a flow's text is read only when it
+runs. The router grants only `Bash(cq:*)`, `Bash(cq.cmd:*)` and `Read`, so it widens no flow's tool
+grant; a tool the flow needs beyond that comes from the conductor agent's own tools or a human
+prompt. **The exception is `git`**: its router grants the narrower `Bash(cq components read:*)`,
+`Bash(cq.cmd components read:*)`, `Bash(cq specs status:*)` and `Read`, because the git flows run raw
+`git` and `gh` under the conductor's own grants and the router adds nothing to them. A `hooks:` block
+stays on the typed-only shortcut that declares it (`git/commit.md`); a flow loaded through the router
+does not fire it, and that loss is accepted, since the hook only warns.
+
+Each former command stays as a thin **typed-only shortcut**: it declares
+`disable-model-invocation: true`, keeps its exact tool grant and loads the same reference, so
+typing `/quenching-specs:specs:execute` still works while its description leaves every context. A
+shortcut declares no `model:`: a worker's model comes from its agent, the main session's from the
+human.
+
+**The conductor calls the router, never the shortcut.** `disable-model-invocation: true` makes the
+Skill tool refuse the shortcut, so `spec-runner`, `spec-orchestrator` and the translated surfaces
+(Codex, OpenCode, Omnigent) invoke the router with the `flow` argument and the id. Naming the
+shortcut in an agent body would break the conductor silently.
+
 `context: fork` runs the command in a separate context. It is **forbidden** on any command that
 asks the human anything mid-flow — a plan whose OK the run waits on, or a plain question one of its
 steps puts to them. A forked context presents neither, so the run either hangs or answers itself.
@@ -242,6 +275,31 @@ consolidated edit without confirming it and stays forbidden all the same, becaus
 `low` asks at each stage and its approval close still waits on a go. A command earns the lever by asking nothing at
 all — one that only reads and reports may fork freely, and that is the lever's home: self-contained,
 noisy, summary-out work whose trail would otherwise sit in the main context forever.
+
+### A target extends a vertical with its own router
+
+A target repository that needs more flows in a family adds them to **its own** routed skill and never edits
+an agent that came from the plugin (`.claude/agents/quenching-*.md`): the next `cq deploy --write`
+would overwrite the edit, and the list would swell again. The unit of extension is the target's router:
+
+- **The router** is `.agents/skills/<family>/SKILL.md`, one kebab segment without the `quenching-`
+  prefix, so it never collides with the plugin's `quenching-<vertical>-<vertical>`. Its Claude bridge is
+  generated as for any target skill.
+- **The flow bodies** live in `.agents/references/<family>-flows/<flow>.md`, loaded with
+  `cq components read`; the router lists one line per flow.
+- **Each former skill stays** as a typed-only shortcut (`disable-model-invocation: true`) with the same
+  tool grant, loading the same reference. Body and grant move verbatim; nothing is deleted without a human
+  word.
+- **The grant** follows the plugin's router (`Bash(cq:*)`, `Bash(cq.cmd:*)`, `Read`) and widens no
+  flow; a flow that needs more keeps asking in its shortcut.
+- **The plugin's agents** keep calling the plugin's router; the target's main session calls the
+  target's router.
+
+**Which families earn a router.** The family is the first kebab segment of a local skill's name, and the
+criterion is the plugin's: three or more model-invocable entries. `cq components status` reports it as
+`families` (`skills`, `invocable`, `candidate`), a signal and never a finding, so `ok` and `state` do not
+change. `components:align` reads it and proposes; the human confirms before anything moves. A target that
+names its skills by suffix, or with no convention, gets no candidate and falls back to the manual report.
 
 ## The execution profile
 

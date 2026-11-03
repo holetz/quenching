@@ -59,7 +59,7 @@ class Deploy(unittest.TestCase):
         status = self.target_cq("components", "status", "--json")
         self.assertEqual(0, status.returncode, status.stderr)
         document = json.loads(status.stdout)
-        self.assertEqual((0, 44), (document["commands"], document["generated"]))
+        self.assertEqual((0, 48), (document["commands"], document["generated"]))
         template = (self.target / ".agents/quenching/assets/templates/harness/agents-root.md").read_text()
         self.assertIn("quenching-knowledge-add", template)
         self.assertNotIn("quenching-align:knowledge:add", template)
@@ -68,6 +68,22 @@ class Deploy(unittest.TestCase):
         local = self.target_cq("deploy", "--target", ".", "--modules", "core", "--check", "--json")
         self.assertEqual(0, local.returncode, local.stdout + local.stderr)
         self.assertEqual([], json.loads(local.stdout)["changes"])
+
+    def test_a_local_skill_and_agent_survive_a_deploy(self):
+        self.assertEqual(0, self.run_deploy("--modules", "core", "--write")[0])
+        skill = self.target / ".agents/skills/bundle-local/SKILL.md"
+        skill.parent.mkdir(parents=True)
+        skill.write_text("---\nname: bundle-local\ndescription: a target's own skill\n---\n\nBody.\n",
+                         encoding="utf-8")
+        agent = self.target / ".claude/agents/local-agent.md"
+        agent.parent.mkdir(parents=True, exist_ok=True)
+        agent.write_text("---\nname: local-agent\ndescription: a target's own agent\n---\n\nBody.\n",
+                         encoding="utf-8")
+        self.assertEqual(0, self.run_deploy("--modules", "core", "--write")[0])
+        self.assertTrue(skill.is_file())
+        self.assertTrue(agent.is_file())
+        check, again = self.run_deploy("--modules", "core", "--check")
+        self.assertEqual((0, []), (check, again["changes"]))
 
     def test_generated_skill_grants_both_launchers_and_names_the_platform(self):
         self.assertEqual(0, self.run_deploy("--modules", "core", "--write")[0])
@@ -160,7 +176,7 @@ class Deploy(unittest.TestCase):
                    "---\ndescription: Mine.\n---\n\nread notes\n")
         self.assertEqual(0, self.run_deploy("--modules", "core", "--write")[0])
         status = json.loads(self.target_cq("components", "status", "--json").stdout)
-        self.assertEqual((1, 44), (status["commands"], status["generated"]))
+        self.assertEqual((1, 48), (status["commands"], status["generated"]))
         lint = self.target_cq("components", "lint", "--json")
         self.assertEqual(0, lint.returncode, lint.stderr)
 
@@ -192,7 +208,7 @@ class Deploy(unittest.TestCase):
 
     def test_the_opencode_harness_writes_its_subagents(self):
         self.assertEqual(0, self.run_deploy("--modules", "core", "--write")[0])
-        agent = self.target / ".opencode/agents/quenching-verifier.md"
+        agent = self.target / ".opencode/agents/quenching-spec-verifier.md"
         text = agent.read_text(encoding="utf-8")
         self.assertIn("mode: subagent", text)
         self.assertIn('".agents/quenching/bin/cq git audit *": allow', text)

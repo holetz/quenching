@@ -13,6 +13,9 @@ maintainer: quenching
 
 # Plugin module split measurements
 
+> **Superseded** by [ADR 0017](0017-install-only-by-deploy.md): the module plugins were retired and
+> quenching reaches a repository only through `cq deploy`. The measurements below stay as the record.
+
 This record earns a **go for form A** under the approved rule. It records the shape for the
 extraction members; it does not itself extract or publish modules. The experimental repository
 baseline is commit `9bebfb8a`; every paid invocation used a disposable `CLAUDE_CONFIG_DIR` below

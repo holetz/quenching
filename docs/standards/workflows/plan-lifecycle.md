@@ -103,9 +103,11 @@ The organizing principle, and the admission test for every frontmatter key:
 
 Most of those facts are a human's judgment. Two are not, and both declare their own provenance
 inside the value rather than by being quiet about it: `priority.complexity` is computed by `create`
-and re-evaluated by `develop`, and `approved` carries `by:` — `human` for a person's word,
-`low-gear` for the level that authorized the mode, `orchestrator-forced` for a conductor's forced `low`. The test did not bend: a level's authority is no
-more derivable from the sections than a person's word is.
+and re-evaluated by `develop` (it records the depth the session computed), and `approved` carries
+`by:` — `human` for a person's word on a complex path, `orchestrator-forced` for autonomy the human
+declared, and, on the simple path where evidence alone closed the trust criterion, the session's own
+stamp (`by: session`; the historical `low-gear` stays valid, read and never rewritten). The test did not bend: whose word
+approved a spec is no more derivable from the sections than a person's word is.
 
 That is why there is no `phase` (the folder), no `ready` flag (the ten gate sections), and no
 attempt counter (the visible `- [!]` marker).
@@ -146,7 +148,7 @@ record:
 | --- | --- | --- | --- |
 | `priority: {level, criticality, complexity, date}` | `triage` — `complexity` its own `[triage, create, develop]` | no | this spec's rank against every other one — `complexity` is the exception below |
 | `refined: {mode, date}` | `develop` | no | that a real interrogation happened, and in which mode |
-| `approved: {date, by}` | `develop`, or `execute` inline | yes | that this spec may be built, and on whose authority — a human's word (`by: human`), the `low` level's (`by: low-gear`), or a conductor's forced `low` under `--autonomous` (`by: orchestrator-forced`) |
+| `approved: {date, by}` | `develop`, or `execute` inline | yes | that this spec may be built, and on whose authority — a human's word on a complex path (`by: human`), autonomy the human declared (`by: orchestrator-forced`), or the session's own stamp on a simple path, where evidence alone closed the trust criterion (`by: session`; historical `by: low-gear` stays readable) |
 | `branch: {base, work}` | `execute`, or `git:branch` when it hands off there | yes | after a merge, git cannot say what the base was |
 | `pr: {number, url, date}` | `git:pr:create` | no | which pull request carries this spec, before any merge decides its fate — restampable because a PR may be reopened or recreated |
 | `reviewed: {date}` | `conclude` | no | that a human read the whole branch diff |

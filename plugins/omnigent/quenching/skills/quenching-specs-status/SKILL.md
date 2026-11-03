@@ -13,7 +13,6 @@ This runs inside the `quenching` operator agent on whatever model the server's p
 
 <!-- OMNIGENT RUNTIME END -->
 
-
 # quenching-specs-status — read the specs front
 
 The canonical documents live on the `quenching` branch (the git store), or in a deprecated tracker

@@ -7,14 +7,11 @@ allowed-tools: "Bash(cq:*), Bash(cq.cmd:*), Bash, Read, Glob, Grep, Write, Edit,
 <!-- GENERATED FROM plugins/quenching/commands/specs/execute.md -->
 
 <!-- OMNIGENT RUNTIME START -->
-Source model tier: `sonnet`.
-
 ## Omnigent runtime
 
 This runs inside the `quenching` operator agent on whatever model the server's policy selects; it pins none and names no vendor CLI. The bundle carries no payload: read a reference through the `quenching` MCP server's resources (`quenching://references/<path>`), and prefer its tools (`<pillar>_<verb>`) to a shell `cq`, which resolves only where a local install sits under `$QUENCHING_OMNIGENT_ROOT`. Delegate only to the operator's declared sub-agents. Source model tiers and effort are not switches: a declared tier or effort below is a preference to report. Token usage comes from host telemetry when it exists, otherwise it is `not measured`. A tool the permission policy denies stays denied: report it, never route around it. If delegation is unavailable, report the limitation; never replace a required independent verification with self-review.
 
 <!-- OMNIGENT RUNTIME END -->
-
 
 # quenching-specs-execute — build one spec, one task at a time
 
@@ -116,7 +113,7 @@ form; a plain branch happens only when this run's input asked for one in the hum
 It is a `Skill` call, never `context: fork`:
 
 ```
-Skill("quenching-specs:git:branch", "<id>")
+Skill("quenching-specs:git:git", "branch <id>")
 ```
 
 When it returns, re-read the state it left:
@@ -170,7 +167,9 @@ of [execution-delegation.md](quenching://references/specs-execute/execution-dele
 
 - **`approved` unset** → ask for it inline, in one question showing what the spec commits to, and
   on a yes stamp it `--set by=human` (`cq specs record "<id>" approved --set date=<today> --set
-  by=human`). **Never refuse over it.** A no ends the run cleanly.
+  by=human`). **Never refuse over it.** A no ends the run cleanly. **Under `autonomous`, `approved`
+  unset is a real block**: never ask, never stamp — return `STATE: blocked` with `NOTE: needs-human:
+  approval is develop's`.
 - **`next` reports `write_section`** → the ready gate is not met. Name the missing or malformed
   sections and route to `quenching-specs-develop <id>`, then stop.
 - **Every task already `- [x]`** → say so and offer to chain into `quenching-specs-conclude` (step 7).
@@ -310,7 +309,7 @@ cq() { python3 "${QUENCHING_OMNIGENT_ROOT:-$HOME/.omnigent/quenching}/scripts/cq
    §The verification policy); otherwise the chain starts at `git add`. A task with
    **no `files:` declared** — the line absent, or `files: []` — has no diff to commit, so its
    chain *ends* at the tick, run without `--subject` or `--commit`, and with neither `git add` nor
-   run `cq git commit`. **A task that runs generators writes files, so it declares their outputs in `files:`**; with `files: []` the verifier fails the scope of whatever it wrote. A `branch:` record also gets the branch marked, per the rule loaded in 5d.
+   run `cq git commit`. **A task that runs generators writes files, so it declares their outputs in `files:`**; with `files: []` the spec-verifier fails the scope of whatever it wrote. A `branch:` record also gets the branch marked, per the rule loaded in 5d.
 
 f. **Read the chain's tail, and act on which link broke** — per §The commit, already loaded in
    5d: `verify:`/staging failed → nothing ticked, nothing committed; fix and retry, or block it
@@ -383,6 +382,16 @@ h. **At a section boundary, keep the task commits, read the session size once, a
 task contradicts a `/docs/standards/` contract (surface it and let the human pick — revise the
 standard via `quenching-knowledge-add`, or the spec via `quenching-specs-develop`); attempts stop converging; or the user
 interrupts.
+
+**Under `autonomous`, the pause is the real block**, the closed list of
+`/docs/standards/workflows/task-execution.md` §After approval, the executor decides, records and stops
+only on a real block: attempts stop converging; a standard contradiction the evidence does not
+settle; a new grant, a changed frontmatter key or a lowered bar; an undeclared irreversible, merge, push or deploy
+action; a required proof that cannot run; `approved` absent. A proof the spec requires that cannot
+run for a missing environment variable, credential or service is a real block — never skipped in silence,
+never marked as passed. Anything else the evidence or the recorded intent answers is decided and
+recorded as one line, `cq specs discover "<id>" "decision: <what> — <evidence or criterion>"`; a
+`decision:` line is not a Handoff event.
 **Done when:** every task is `- [x]` or `- [!]`, or the run pauses with the reason stated.
 
 ### 6. Refresh `## Handoff` on four events, never on judgment
@@ -436,6 +445,8 @@ Emit §The report mold. The single-spec header line carries overall progress; th
    whichever command wrote it.
 
 Print §The session-size line before the block — `cq components session context --json`, read once; exit 1 turns the `→` line into a recommendation to run the next stage **in a new session**, exit 0 and 2 leave it an offer.
+
+**Name what git needs.** Add one line stating what the git flow owes the branch next and what to review first: `quenching-git-pr-create <id>` (or `quenching-git-merge`) after `quenching-specs-conclude`, over the diff `origin/<base>...HEAD`. Execute runs none of it: git is the main session's flow, and in an orchestrated run the `spec-orchestrator` publishes after the `spec-verifier` PASS.
 
 Close on §The next-step block, its recommended line carrying **this spec's id**:
 `quenching-specs-conclude <id>` at 100%, `quenching-specs-execute <id>` when the run paused
@@ -498,7 +509,7 @@ each is absolute. The three whose failure is **silent and permanent**:
   post-commit exception and carries that commit's subject and sha; no later history rewrite or
   anchor repair is part of a section close.
 - Never refuse over a missing `approved`; ask inline and stamp it with `cq specs record`, never by
-  editing the frontmatter.
+  editing the frontmatter. The one exception is `autonomous`, where it is a real block.
 - Stamp `branch:` once the work ref is resolved, taken or declined (`work` then equals `base`) —
   never over an existing record, through `cq specs record`, never the frontmatter.
 - Write **only** the `/docs/` a task explicitly names. Emergent findings are one `cq specs discover`

@@ -16,7 +16,7 @@ def text(rel):
 
 class MergePolicyTests(unittest.TestCase):
     def test_orchestrator_requires_the_policy_to_name_the_merge(self):
-        body = text("plugins/quenching/agents/orchestrator.md")
+        body = text("plugins/quenching/agents/spec-orchestrator.md")
         self.assertIn(CANONICAL, body)
         self.assertNotIn("carries the dated autonomy policy", body)
 

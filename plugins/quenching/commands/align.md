@@ -26,7 +26,7 @@ front named in that cell has completed its inherited authorization.
 | `delivery` — delivery surface | `/quenching-delivery:delivery:align` | `toolchain` |
 | `opensource` — community, license and governance artifacts | `/quenching-opensource:opensource:align` | `delivery` |
 
-**Only enabled modules are conducted.** Before the first front, read `cq modules --json` once
+**Only deployed modules are conducted.** Before the first front, read `cq modules --json` once
 ([tool-resolution.md](${CLAUDE_PLUGIN_ROOT}/assets/references/align/tool-resolution.md) §Routing into
 another module). A front whose module reports `enabled: false` is `not-installed: <module>`: it is
 skipped, named in the report, and its dependants depend on the nearest earlier front that ran.
@@ -110,8 +110,8 @@ Wait for one OK. A decline writes nothing.
 
 ### Front: `knowledge`
 
-Invoke `/quenching-align:knowledge:align` through the Skill tool under its registry name, with the
-inherited authorization:
+Invoke the router `/quenching-align:knowledge:knowledge` through the Skill tool under its registry name, with the
+flow `align` and the inherited authorization:
 
 > Running under `/align` authorization granted at run start — skip your plan-confirmation pause;
 > present your plan as narration and execute; code-coupled and irreversible items still gate

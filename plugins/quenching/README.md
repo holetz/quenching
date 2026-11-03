@@ -83,12 +83,12 @@ confirms on its own, always — and inside a conducted run, so does every **irre
 That contract lives once, in
 [`align/convergence.md`](assets/references/align/convergence.md).
 
-## The 61 commands
+## The 65 commands
 
 **One file per entry point** — Claude Code merged custom commands into skills, so each
 `commands/<path>.md` carries both the description that routes to it and the body that runs; there is
 no `skills/` tree and no wrapper. The tables below are the manual, and the count is a property of
-their rows rather than a second structural inventory: the `61` in this heading is the manual's
+their rows rather than a second structural inventory: the `65` in this heading is the manual's
 canonical displayed total, while [`tests/test_readme_surface.py`](tests/test_readme_surface.py)
 reads it and fails the suite whenever these tables
 and `commands/**` disagree
@@ -105,6 +105,7 @@ the explicit entry point.
 
 | Command | Does |
 | --- | --- |
+| `/quenching-align:knowledge:knowledge` | The single entry point of the knowledge flows: picks one of the thirteen flows (add, align, define, learn, import, import-memory, glossary-backfill, status, documentation build, plan, produce, review, write) by the flow you name and loads that flow's reference; each typed shortcut stays. |
 | `/quenching-align:knowledge:align` | Forces `/docs/` into the canonical OKF bundle and pulls in the content sitting out-of-band — probe first, then ONE confirmed plan, looped to a fixpoint. |
 | `/quenching-align:knowledge:status` | The front's only **read-only** view: where the bundle stands, what is conformant, what drifted. Writes nothing. |
 | `/quenching-align:knowledge:add` | Inserts ONE concept doc — right home, right type, honest stamp. |
@@ -135,6 +136,7 @@ motion, shadows, breakpoints, and snippets remain in the source and sidecar.
 
 | Command | Does |
 | --- | --- |
+| `/quenching-align:components:components` | The single entry point of the components flows: picks `command-new`, `agent-new`, `hook-new`, `align`, `status` or `harness-align` by the flow you name and loads that flow's reference; each typed shortcut stays. |
 | `/quenching-align:components:align` | Converges the whole `.claude/` surface onto one file per entry point, then audits every body and rewrites every description against the writing doctrine. |
 | `/quenching-align:components:status` | Reports the command count, fronts and finding codes for the target's automation surface without writing. |
 | `/quenching-align:components:command:new` | Mints or edits ONE command — the structural half, including its `description`. |
@@ -192,12 +194,13 @@ motion, shadows, breakpoints, and snippets remain in the source and sidecar.
 
 | Command | Does |
 | --- | --- |
+| `/quenching-specs:git:git` | The single entry point of the git flows: picks `branch`, `commit`, `merge`, `sync`, `pr-create`, `pr-review` or `pr-status` by the flow you name and loads that flow's reference; each typed shortcut stays. |
 | `/quenching-specs:git:branch` | Takes isolation for a build: a worktree by default and unasked, a plain branch only when the human asks, stating the cost and stamping the `branch:` record. |
 | `/quenching-specs:git:commit` | Commits what is already staged, under the target's own convention when one is declared. Never `git add -A`. |
 | `/quenching-specs:git:commit-incremental` | Turns the current worktree's pending changes into cohesive commits with explicit paths and safe stop conditions. |
 | `/quenching-specs:git:push` | Publishes one branch to an exact remote and refspec after measuring preconditions and receiving confirmation, without force or PR side effects. |
 | `/quenching-specs:git:revert` | Creates a compensating commit for one known target after showing its effect and requiring an explicit mainline for merges, without rewriting history. |
-| `/quenching-specs:git:pr:create` | Pushes and opens a pull request, with `Closes #<n>` when an issue is named, reporting plainly whether that keyword will actually close it. The word `autonomous` (accepted by `pr:create`, `conclude`, `spec-runner`, `git-steward` and `orchestrator`) is the conductor's pre-answer to its confirmation: the PR is published without asking, by the `git-steward`, after the `verifier` PASS. |
+| `/quenching-specs:git:pr:create` | Pushes and opens a pull request, with `Closes #<n>` when an issue is named, reporting plainly whether that keyword will actually close it. The word `autonomous` (accepted by `pr:create`, `conclude`, `spec-runner` and `spec-orchestrator`) is the conductor's pre-answer to its confirmation: the PR is published without asking, by the `spec-orchestrator`, after the `spec-verifier` PASS. |
 | `/quenching-specs:git:pr:status` | Reports one read-only snapshot of a pull request's provider state, checks, reviews, threads and mergeability, preserving unknown causes. |
 | `/quenching-specs:git:merge` | Merges a branch home on one of four strategies, offered and never chosen for the human. |
 | `/quenching-specs:git:sync` | Rebases a work branch onto the latest base, with `--update-refs` so a stacked branch is not orphaned. |
@@ -258,7 +261,7 @@ rewritten only at lifecycle transitions, and never holds the plan; `card: github
 none` configures it, and `cq specs new --card <n>` adopts an existing issue. **Frontmatter records human judgments** (`priority`, `refined`,
 `approved`, `branch`, `reviewed`, `merge`, `outcome`); the store, git and section state record
 everything else — `ready` is a *derived* stage, and the OK to build is the
-`approved: {date, by}` stamp, where `by` is `human`, `low-gear` or `orchestrator-forced`. Four more frontmatter keys — `tags`, `assignee`, `start`, `target` — are
+`approved: {date, by}` stamp, where `by` is `human`, `session`, `orchestrator-forced` or the historical `low-gear`. Four more frontmatter keys — `tags`, `assignee`, `start`, `target` — are
 **state, never records**: first-level frontmatter keys (a deprecated tracker backend stores them
 natively instead). A fifth key, `summary:`, is neither a record nor one of those four — one line
 saying what the spec is, written at capture and refreshed by every
@@ -295,14 +298,15 @@ With `QUENCHING_SPECS_SYNC=1` and the `azure-boards` backend, every read is answ
 
 | Command | Role |
 | --- | --- |
+| `/quenching-specs:specs:specs` | The single entry point of the specs flows: picks `create`, `develop`, `execute`, `conclude`, `triage`, `status` or `orchestrate` by the flow you name or the spec's stage, and loads that flow's reference. The seven typed commands stay as thin shortcuts. |
 | `/quenching-specs:specs:status` | The front's only **read-only** view: specs by derived stage with task progress, the frontmatter records as the history they narrate, the verifier results, and provider configuration findings. |
 | `/quenching-specs:specs:create` | ONE spec in `plans/`, ONE call, ONE closing screen — effort proportional to input, never an interrogation. A sentence becomes `## Problem` and `summary:`; a Claude Code plan file becomes every section it actually supports, mapped and never invented. Subject, type, tags and `complexity` are resolved and written with the capture, then shown — corrected or not — on the one screen at the end, which also offers to hand straight into `/quenching-specs:specs:develop` — whether that pass asks anything is the `complexity` the same screen shows. |
 | `/quenching-specs:specs:develop` | Two operations in ONE pass, both derived and neither offered as a choice: **compose** takes the spec from wherever its derived stage leaves it to a closed ten-section ready set, and **refine** argues with the composed spec and may overturn anything in it, the proposal included. Discovery resolution opens the pass, the approval close ends it — recommending approve, refine, or refine with the premortem against the spec's own signals. Questions grouped by dependency, each with an inline recommendation; one edit per pass, records `refined:`. Never edits code. |
 | `/quenching-specs:specs:execute` | Builds `## Tasks` one verified commit at a time: clean tree required, a worktree taken inline when it starts from the base branch, `verify:` run under the spec's declared policy, four-item diff self-review, then the box ticked with the subject of the commit it is about to make (`cq specs task --check --subject`) so code and box land in ONE commit. Writes only the `/docs/standards/` a task explicitly names; everything else is one `cq specs discover` line. Marks an isolated branch's own description with the slug(s) it built there — never on the base — so `conclude` can self-discover it later. Stops at the last commit. |
 | `/quenching-specs:specs:conclude` | Closes a spec out, resumable, **merging last**: whole-branch review (`reviewed:`), the emergent `/docs/`, the archive with `outcome: done` (refuses on open boxes unless forced) or `abandoned` (always allowed), ONE distillation pass, the release obligations your standards attach to the merge itself (a version bump, a changelog entry — never a spec task) and the `merge: {strategy, subject, pr}` stamp — all on the work branch — and only then the merge, by the **route** you chose alongside the strategy: local, or a pull request where `gh` resolves the repo (pushed, opened and merged in one consented block, with `pr:` recorded). Called with no `--spec`, reads the branch's own marking first — one valid slug resolves silently, several ask, none falls to a diff-measured offer to materialize a minimal spec — before falling back to a plain list-and-ask. Nothing is committed to the base after it. |
 | `/quenching-specs:specs:improve` | **Typed only.** Maps a repository's genuinely relevant improvement opportunities with read-only scouts (evidence, consequence, no duplicate of an open spec, at most 15), settles the owner's decisions in rounds (the epic's autonomy policy among them, written into its `## Design`), and turns the approved part of the plan into an epic with member specs. Never builds. |
-| `/quenching-specs:specs:orchestrate` | Launches the `orchestrator` agent over an epic id or a list of spec ids: dependency waves, at most 3 workers, a result accepted only on a `verifier` PASS. A pre-check separates the specs that run alone from those that need a human (develop now, launch the independent subset, or `--autonomous`, which stamps `by=orchestrator-forced`); without `--autonomous` a `medium`+ spec with no `approved` comes back `blocked` as `needs-approval`. A thin launcher; the protocol lives in `agents/orchestrator.md`. A spec is accepted as done only when archived with an Outcome, and a worker `blocked` with a `needs-human:` note is never re-spawned: its question goes to the human. |
-| `/quenching-specs:specs:autopilot` | **Typed only.** The invocation is the human's delegation for an unattended run: rounds of health, queue (each loose spec proves relevance or is abandoned with evidence), the `/quenching-specs:specs:improve` map decided by the conductor as delegated owner, an epic from `spec-architect` with the dated autonomy policy in its `## Design`, the `orchestrator` with `autonomous`, a read-only correctness review per epic, run in parallel with a Codex review when the quota allows (fallback reported, `codex`-only findings kept only once reproduced), whose reproduced findings become next-round specs, then the gate. Never forces a decision that widens a grant or an executing surface — those go to a human epic. Runs ONE round by default; `--until-dry` or `--until` repeat rounds (a resumable round record, the next round in a fresh context) until the deadline or a whole round produces no spec with evidence and consequence, and `--max-launches` (provisional 40) caps the launches of the whole tree. |
+| `/quenching-specs:specs:orchestrate` | Launches the `spec-orchestrator` agent over an epic id or a list of spec ids: dependency waves, at most 3 workers, a result accepted only on a `spec-verifier` PASS. A pre-check separates the specs that run alone from those that need a human (develop now, launch the independent subset, or `--autonomous`, which stamps `by=orchestrator-forced`); without `--autonomous` a `medium`+ spec with no `approved` comes back `blocked` as `needs-approval`. A thin launcher; the protocol lives in `agents/spec-orchestrator.md`. A spec is accepted as done only when archived with an Outcome, and a worker `blocked` with a `needs-human:` note is never re-spawned: its question goes to the human. |
+| `/quenching-specs:specs:autopilot` | **Typed only.** The invocation is the human's delegation for an unattended run: rounds of health, queue (each loose spec proves relevance or is abandoned with evidence), the `/quenching-specs:specs:improve` map decided by the conductor as delegated owner, an epic with the dated autonomy policy in its `## Design`, the `spec-orchestrator` with `autonomous`, a read-only correctness review per epic, run in parallel with a Codex review when the quota allows (fallback reported, `codex`-only findings kept only once reproduced), whose reproduced findings become next-round specs, then the gate. Never forces a decision that widens a grant or an executing surface — those go to a human epic. Runs ONE round by default; `--until-dry` or `--until` repeat rounds (a resumable round record, the next round in a fresh context) until the deadline or a whole round produces no spec with evidence and consequence, and `--max-launches` (provisional 40) caps the launches of the whole tree. |
 | `/quenching-specs:specs:triage` | Ranks the whole front in ONE confirmed table, writing `priority: {level, criticality, complexity, date}` per spec and nothing else — merging, never clobbering a human's ranking. |
 | `/quenching-specs:specs:board` | Human-only. Starts `cq specs serve` in the background and prints the URL: a local browser portal (board by derived stage, drag-to-rank list, spec detail, search, capture, approve as `by: human`) over the same backend as the CLI. Loopback only, per-run token, `Host`/`Origin` checks, `--read-only` disables writes on the server; `cq-specs-read serve` is always read-only. |
 
@@ -480,7 +484,7 @@ conducted pass does not have. Every command on this front is **quenching-native*
 
 ## The signature: a canonical OKF bundle of `/docs/`
 
-The plugin installs **the same tree** in every repo (adapted to what fits — a repo
+quenching installs **the same tree** in every repo (adapted to what fits — a repo
 without data gets no `catalog/`):
 
 ```
@@ -534,12 +538,12 @@ worker policy is **100000 input-context tokens** (S2); `--worker-budget` declare
 The estimate **never proves** a full build fits: system/harness overhead, conditional references,
 future code, tool/test output, iteration count and growing history are excluded. Total reading
 volume is not a context peak. Develop compares the largest section before approval and proposes
-decomposition via `spec-architect` when known reading exceeds the budget. It presents independent
-slices first; capturing an epic requires explicit authorization. Forced low leaves an oversized
+decomposition in the main session when known reading exceeds the budget. It presents independent
+slices first; capturing an epic requires explicit authorization. Declared autonomy leaves an oversized
 source unapproved and returns the decision to its conductor.
 
 The command registry loads at **session start**, so surface changes require fresh `claude -p`
-processes. `assets/checks/functional-checks.sh` runs them with `--plugin-dir` and proves root
+processes. `assets/checks/functional-checks.sh` deploys this checkout into throwaway targets and proves root
 substitution, conductor reachability and description routing. Each check is a **billed agent
 session** owned by the command that changes the surface; the default is the body subset and
 spoken routing is opt-in (`--only 3`).
@@ -549,7 +553,7 @@ Claude, `gpt-6-luna` in Codex) writes product code only as the executor of ONE t
 an executable `verify:` whose tests sit outside the task's `files:`, a disposable worktree,
 nothing under `/docs/`, and a projected context at or under 80k (`cq specs estimate --task`
 reports `smallTierEligible`). One attempt; a failed `verify:` returns the task to the session
-model. Develop, triage, conclude, the orchestrator, verifier, reviewer, spec-architect and every
+model. Develop, triage, conclude, the spec-orchestrator, spec-verifier, spec-reviewer, spec-runner and every
 `/docs/standards/` write never descend, and `import-memory` stays never-`haiku`.
 
 | Surface | Policy |
@@ -560,7 +564,7 @@ model. Develop, triage, conclude, the orchestrator, verifier, reviewer, spec-arc
 | `/quenching-specs:specs:status` | **no pin**, no sub-agents, **no `Write`/`Edit` in `allowed-tools`** — it classifies against a fixed finding vocabulary it does not own, and `cq specs status` is scoped to full-progress plans rather than run per plan. The former `effort: low` was dropped for the cache trap: a read-only view is not worth invalidating the session's prompt cache |
 | `/quenching-align:knowledge:status` | **no pin**, no sub-agents, **no `Write`/`Edit` in `allowed-tools`** — the `docs` counterpart of the row above, and its `effort: low` was dropped for the same reason. Both bodies also forbid `context: fork` by name: each doubles as a sweep's preview, and the report has to land in the conversation where the OK will be given |
 | `/quenching-specs:specs:board` | **no pin**, `disable-model-invocation: true`, `Bash(cq:*)` only — a launcher over `cq specs serve`; the server is stdlib Python and its assets live in `assets/portal/` (no build, no CDN) |
-| `/quenching-specs:specs:orchestrate` | **no pin**, no `Write`/`Edit` in `allowed-tools` — a launcher; the plugin ships seven agents in `agents/` that carry the pins: `orchestrator` opus/medium, `spec-runner` sonnet/medium (opus when `complexity: high`, passed by the orchestrator), `verifier`, `git-steward` and `scout` sonnet/low, `spec-architect` opus/high, `reviewer` opus/high (read-only, once per epic, launched by the autopilot conductor, not by the orchestrator). No spec route runs on haiku: the small-tier rung is per task, inside execute. |
+| `/quenching-specs:specs:orchestrate` | **no pin**, no `Write`/`Edit` in `allowed-tools` — a launcher; the plugin ships five agents in `agents/` that carry the pins: `spec-orchestrator` opus/medium, `spec-runner` sonnet/medium (opus when `complexity: high`, passed by the orchestrator), `spec-verifier` and `spec-scout` sonnet/low, `spec-reviewer` opus/high (read-only, once per epic, launched by the autopilot conductor, not by the orchestrator). No spec route runs on haiku: the small-tier rung is per task, inside execute. |
 | `/quenching-specs:specs:conclude` | **`model: opus`** when a human invokes it directly (under the `spec-runner` it runs on the runner's model, sonnet or opus by `complexity`, because the pin does not switch the runner's session), no sub-agents — the branch review, the merge choice, the outcome, and the distillation are all judgment; there is nothing mechanical here to downgrade, and the review reads a whole branch diff for coherence rather than one task's |
 | `/quenching-align:knowledge:glossary-backfill` | **no pin** on the orchestrator (the former inline `effort: medium` charged the cache trap); slice sub-agents `model: haiku` + `effort: low` (pure extraction, cross-checked by the orchestrator) — a sub-agent's pin is cache-safe, it has its own context. `Bash` scoped to `python3`/`py`: its reading is `Grep`/`Glob`/`Task`, and the checker is the only shell it runs |
 | `/quenching-align:knowledge:import-memory` | classification sub-agents `model: sonnet` + `effort: low`; **executor sub-agents inherit the session model** (their self-check authorizes memory deletion). `Bash` stays unrestricted **and is now priced in the body**: step 1 derives the memory directory as one compound shell expression, which no prefix grant can match |
@@ -584,126 +588,82 @@ Shared contracts keep gates explicit; missing `gh` or `az` is a named refusal
 
 ## Install
 
-quenching is published as nine modules. `quenching-specs` carries the spec cycle, the git
-commands and the one `cq` every other module runs through, so it is always installed; add the
-modules for the fronts you want beside it. Try it first in a disposable repository:
+quenching is served only by installation into the target repository with `cq deploy`
+([ADR 0017](../../docs/decisions/0017-install-only-by-deploy.md)); there is no marketplace plugin
+to install for it. Try it first in a disposable repository. From a clone of this repository:
 
-```text
-/plugin marketplace add holetz/claude-quenching
-/plugin install quenching-specs@quenching
-/plugin install quenching-align@quenching
-/plugin install quenching-design@quenching
-/plugin install quenching-ops@quenching
-/plugin install quenching-proof@quenching
-/plugin install quenching-toolchain@quenching
-/plugin install quenching-delivery@quenching
-/plugin install quenching-security@quenching
-/plugin install quenching-opensource@quenching
+```bash
+python3 plugins/quenching/assets/bin/cq deploy --target <repo> --write
 ```
 
-All nine together are the whole surface. `quenching-specs` alone is a complete spec cycle, from
-`/quenching-specs:specs:create` to `/quenching-specs:specs:conclude`; a route into a module that is
-not installed is reported `not-installed: <module>` instead of being invoked, and `cq <front>` for
-it exits 2 naming the module to install. `quenching-align` adds `/quenching-align:align`, which
-conducts only the fronts whose module is installed. Install every module at the same version: the
-one `cq` ignores a module whose version differs from its own.
-
-Run `/reload-plugins` after installation when the session was already open.
-
-### Deploy mode — the target carries the generic surface
-
-A target can operate without a marketplace install. `cq deploy` writes the selected modules into
-the standard generic layer and generates the Claude bridge; `CLAUDE.md` is not created.
+Or, with no clone, from a release tag through `uvx` (Python 3.11+, no Node):
 
 ```bash
 uvx --from "git+https://github.com/holetz/quenching@<tag>#subdirectory=plugins/quenching" \
   cq deploy --target . --modules core --write
 ```
 
-`core` is `quenching-specs` plus `quenching-align` (specs, git, knowledge, components).
-`--modules all` selects every principal module; `--profiles` controls
-`shared.profiles.installed`. `--runtime vendor` (default) is offline; `--runtime uvx` writes a
-pinned shim. The target keeps `AGENTS.md` and `.agents/` as its editable source, while
-`.agents/quenching/` and `.claude/skills/` are generated. Deploy installs the surface only: the
-target's `quenching-knowledge-align` skill installs `/docs/` and converges the fronts. See
-[deploy-mode.md](../../docs/standards/architecture/deploy-mode.md).
+| Option | Values |
+| --- | --- |
+| `--modules` | `core` (default: `quenching-specs` plus `quenching-align` — specs, git, knowledge, components), `all`, or a comma list of modules; `specs` is always included because it owns the one `cq` |
+| `--harness` | `claude`, `codex`, `opencode` (default: all three) or `none` |
+| `--runtime` | `vendor` (default, offline) copies the runtime; `uvx` writes a shim pinned to the release tag |
+| `--profiles` | overrides the derived `shared.profiles.installed` |
+| `--check` | exit 1 on drift instead of writing |
+| `--prune-legacy` | removes a pointer-only `CLAUDE.md` |
 
-Local development only — load the generated module trees, never the `plugins/quenching` source,
-which registers names the bodies do not cite:
+Deploy writes `AGENTS.md` and `.agents/quenching.json` only when absent, plus the generated
+`.agents/skills/`, `.agents/quenching/` (with the target's own `.agents/quenching/bin/cq`), the
+`.claude/skills/` bridge and, per selected harness, the Claude and OpenCode subagents. It records
+what it owns in `.agents/.quenching-deploy.json`. `CLAUDE.md` is not created. Deploy installs the
+surface only: the target's `/quenching-knowledge-align` installs `/docs/` and converges the fronts.
+The full contract is [deploy-mode.md](../../docs/standards/architecture/deploy-mode.md).
 
-```bash
-python3 scripts/generate_plugin_modules.py --write
-claude --plugin-dir ./plugins/claude/quenching-specs --plugin-dir ./plugins/claude/quenching-align
-```
+In a deployed target every command is `/quenching-<front>-<verb>` — this manual's
+`/quenching-specs:specs:create` is `/quenching-specs-create` there. A route into a module that was
+not deployed is reported `not-installed: <module>`, and `cq <front>` for it exits 2 naming the
+module.
 
-Add one `--plugin-dir` per further module. `--plugin-dir` loads the checkout directly for plugin
-development and testing; it is not the normal adoption or upgrade path. A published installation
-is managed by Claude Code. Every command reaches its own module's payload via
-`${CLAUDE_PLUGIN_ROOT}/assets/...`.
+Local development of this repository uses the same path: it runs its own deployed surface, and
+`python3 plugins/quenching/assets/bin/cq deploy --target . --write` refreshes it after a change to
+a command body, a reference or the payload.
 
-### Migrating from the single `quenching` plugin
+### Migrating from the retired plugins
 
-Releases before the module split published one plugin, `quenching`, with every command under
-the `quenching:` plugin prefix. That plugin is no longer published and there are no compatibility aliases, so an
-installed target migrates once:
+Releases before ADR 0017 published the surface as Claude marketplace plugins (`quenching`, then the
+nine `quenching-<module>` modules and `quenching-specs-reader`), a Codex plugin and an OpenCode
+distribution under `~/.opencode/`. None is published any more, and an installed copy competes with
+the deployed one for the same command names. Migrate a target once:
 
-1. Uninstall the old plugin: `/plugin uninstall quenching@quenching`.
-2. Refresh the marketplace (`/plugin marketplace update quenching`) and install `quenching-specs`
-   plus the modules the repository uses, as above.
-3. In the target's `.claude/settings.json`, replace `"quenching@quenching": true` under
-   `enabledPlugins` with one `"quenching-<module>@quenching": true` entry per installed module,
-   so every collaborator gets the same set.
-4. Rename every typed or cited command in the target's own files — its `.claude/commands/**`,
-   `AGENTS.md` (legacy `CLAUDE.md`), hooks and scripts. Replace the old plugin prefix `quenching` with the
-   module that owns the command and keep the rest of the name: the `specs` and `git` fronts and
-   `handoff` move to `quenching-specs` (`/quenching-specs:specs:create`,
-   `/quenching-specs:handoff`); `align`, `knowledge` and `components` move to `quenching-align`
-   (`/quenching-align:align`, `/quenching-align:knowledge:add`); every other front moves to the
-   module of its own name (`/quenching-ops:ops:status`). Agent ids move to `quenching-specs`
-   (`quenching-specs:verifier`).
-5. `/reload-plugins`, then run `cq modules --json` to confirm each module reports `enabled: true`.
+1. Uninstall the retired plugins from each harness, and remove their `enabledPlugins` entries
+   from the target's `.claude/settings.json`.
+2. Run `cq deploy --target <repo> --write` as above.
+3. Rename every typed or cited command in the target's own files — `.agents/skills/**`,
+   `AGENTS.md` (legacy `CLAUDE.md`), hooks and scripts — from `/quenching-<module>:<front>:<verb>`
+   to `/quenching-<front>-<verb>`.
 
-Nothing in the target's `/docs/`, `.agents/quenching.json` (or legacy `.claude/quenching.json`) or spec store changes: a declared
-`shared.profiles.installed` keeps its meaning, now intersected with the installed modules.
-
-### Read-only: another project's specs only
-
-A project that only reads another project's specs (for example, an Obsidian vault using them as
-its to-do list) installs the sibling plugin instead. It registers one command and cannot write
-the specs store or a card:
-
-```text
-/plugin install quenching-specs-reader@quenching
-```
-
-Point it at a checkout of the project to read with `QUENCHING_SPECS_ROOT` in that project's
-`.claude/settings.json` `env` block, then run `/quenching-specs-reader:read`. Its README is
-[../claude/quenching-specs-reader/README.md](../claude/quenching-specs-reader/README.md).
+Nothing in the target's `/docs/`, `.agents/quenching.json` (or legacy `.claude/quenching.json`) or
+spec store changes. A project that only read another project's specs through the retired reader
+deploys `core` instead: the read verbs ship with it.
 
 ## Uninstall or reverse
 
-To remove an installed module while keeping the marketplace available:
+Re-running `cq deploy --write` with a narrower `--modules` or `--harness` removes the dropped part
+of the surface. To remove all of it, delete the files `.agents/.quenching-deploy.json` lists and
+the manifest itself, or revert the commit that deployed them. Neither touches the target's `/docs/`,
+its own skills or `.agents/quenching.json`: those are repository-owned data and configuration. To
+reverse an alignment, review and revert the target repository's own commits; removing the surface
+is not a data rollback. If an upgrade is the problem, deploy the previous release tag again.
 
-```text
-/plugin uninstall quenching-design@quenching
-/reload-plugins
-```
-
-Uninstall `quenching-specs` last: every other module runs its `cq` through it.
-
-Removing the marketplace itself (`/plugin marketplace remove quenching`) also uninstalls plugins
-installed from it. Neither operation deletes the target repository's `/docs/`, `.claude/` or
-`.agents/quenching.json` (legacy `.claude/quenching.json`) files: those are repository-owned data and configuration. To reverse an
-alignment, review and revert the target repository's own commits; uninstalling the plugin is not
-a data rollback. If an upgrade is the problem, disable or uninstall the plugin first, then
-reinstall the previously published version or load its known checkout with `--plugin-dir` for
-development-only recovery. Reload the session after changing the installation.
-
-The CLI has two equivalent entry points: `bin/cq` on the plugin-managed `PATH` and
-`assets/bin/cq` with an explicit plugin root. Only `quenching-specs` ships `bin/cq`. Their resolution rules are in
+In a deployed target the CLI is `.agents/quenching/bin/cq`; this checkout runs
+`plugins/quenching/assets/bin/cq`. The resolution rules are in
 [`assets/references/align/tool-resolution.md`](assets/references/align/tool-resolution.md).
 
 ## Upgrade
+
+A target upgrades by running `cq deploy --target <repo> --write` again from a newer checkout or
+release tag; the manifest keeps the recorded modules, harnesses and runtime unless a flag overrides
+them, and `cq deploy --target <repo> --check` reports drift in between.
 
 The release history is kept in the root [`CHANGELOG.md`](../../CHANGELOG.md). The plugin version is
 updated only by a deliberate release; `cq specs release <version>` checks the changelog entry and

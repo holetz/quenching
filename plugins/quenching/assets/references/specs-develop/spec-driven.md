@@ -25,61 +25,33 @@ canonical document on read, and refusal on unsupported selection — is owned by
 
 <!-- rules -->
 
-Four levels, and each changes something real in the **definition** half — how the spec is reached
-and argued with. The building half deliberately has one continuous mode for every level, so a
-level that changes nothing in definition is vocabulary and this table is the whole of what each one
-buys:
+**Two independent dimensions replace the four gears** (epic 2148, human decisions of 2026-11-02): the **depth** of the definition, which the main session computes, and the **autonomy**, which only the human declares. Neither implies the other.
 
-| Level | Defining — who answers, and whether the spec is argued with |
-| --- | --- |
-| `low` | the pass **composes** the whole spec from evidence and interrupts nobody; it **never refines**; it stamps `approved` itself, `by: low-gear`, and the review window is the spec's URL in the backend |
-| `medium` | the pass **asks at every stage of the composition**, and does not refine on its own — the closing screen recommends it where a signal fired, and taking that recommendation raises the level |
-| `high` | `medium`, and **the refine pass runs automatically** once the composition closes: the spec is argued with rather than only completed |
-| `xhigh` | `high`, plus the refine pass's **premortem lens runs unconditionally** — not only when the spec's own risk triggers it |
+**Depth is computed, against a trust criterion (confiança no intent).** The session builds from the spec and may approve it, and enters execution, only when every decision the execution will need is one of: resolved by evidence in the repository; answered by the human; or covered by a criterion written into the spec for the executor to apply. It asks only what the evidence does not answer and what would be expensive to undo. The criterion is checkable on the spec's own state: the ten ready sections closed, no `## Open Decisions` line the execution depends on, `files:` and `verify:` on every delegable task.
 
-**Building is the same at every level:** every stage runs in one session and crosses section
-boundaries without pausing. The loop stops only for a question that requires a human answer or for
-an actual blocker.
+**Three paths follow from it.**
 
-**Where the levels split, twice, and neither split is about how much work there is.** The first is
-**who answers**, and it falls between `low` and everything above it: `low` interrupts nobody, every
-other level asks at every stage of the composition. The second is **whether the spec is argued with
-without anyone asking for it**, and it falls between `medium` and `high`: `medium` composes and
-recommends, `high` and `xhigh` refine on their own authority. `low` is therefore the only level
-that is fast by construction, and that is its whole content — a spec that should be defined without
-a conversation asks for it by name. Neither distinction changes the continuous execution loop.
+| Path | How it is reached | Who answers | `approved.by` |
+| --- | --- | --- | --- |
+| Simple | the criterion closes from evidence alone | the session, which only reports what it will do | the session's own stamp, `by: session` |
+| Complex | decisions remain that evidence does not answer or that are costly to undo | the human, one batched round at a time; then the session decides alone | `human` |
+| Autonomous | the human **declared** autonomy, over a simple or a complex spec | the session, to the end, returning only the conclusion | `orchestrator-forced` |
 
-At the end of a `low` build, the close-out command carries the PR handoff by `Skill` after its
-green gate: `Skill("quenching-specs:git:pr:create", "<id>")`. The PR command keeps its own confirmation,
-push and provider record; `low` removes the extra handoff choice from `conclude`, not the safety
-gate owned by the PR command. The other levels retain `conclude`'s named handoff for the human.
+Autonomy is never inferred, and it covers only what the human declared: widening a grant or lowering a bar still goes to the human, and merge and deploy need declared autonomy.
 
-**Defining is never isolated in a sub-agent, at any level.** Isolation means only the summary
-returns, which is incompatible with stopping to ask — and every level but `low` asks. `low` could
-be isolated and is not: it is one pass landing one edit, so the returned summary would be as large
-as the work, which is the sub-agent mode's own test failing (§The scale).
+**What happens to the fields.** `priority.complexity` stays, with the same four values, and records the depth the session computed; it is kept for the history, the portal, the backends and `shared.autonomy.runAloneUpTo`, which still caps the complexity that runs without `approved`. Absent still reads as `high`, never `low`: guessing downward builds a spec on nobody's word, guessing upward costs a refine nobody asked for. `by: low-gear` remains a valid value, read and never rewritten. The word *gear* leaves the normative prose.
 
-**A level selects the definition mode, not the execution mode.** The execution loop is continuous
-across section boundaries for every level; its only stops are human-required questions and real
-blockers. Delegation remains a separate decision for one stage, so the `priority` record and the
-commands need no second vocabulary for execution.
+**Transition.** This section is the contract. The develop flow (spec 2152) implements it; the execute and conclude flows (spec 2153) follow, and where they still name gears, `low`, `medium`, `high` and `xhigh` read as depth values of `complexity`.
 
-**What the scale measures.** Not the size of the change, its scope or its difficulty — a small
-change can still need a human at every step, and a large mechanical one can need almost none. It
-measures **how much a human needs to be part of the process**, and the definition column above is
-that measure spent. `triage`, `create` and `develop` propose a level against this criterion, never
-against the word's plain reading.
+**Building is the same on every path:** every stage runs in one session and crosses section boundaries without pausing. The loop stops only for a question that requires a human answer or for an actual blocker. Depth selects the definition mode, never the execution mode.
 
-**Absent reads as `high`, never `low`.** A spec whose `priority` record carries no `complexity` has
-nothing to derive from, and the two errors are not symmetric: `low` is a positive claim — *this can
-run unattended, and the pass may stamp the go itself* — and it is the one that costs when it is
-wrong. Guessing upward costs a refine pass nobody asked for; guessing downward costs a spec built
-on nobody's word (`/quenching-specs:specs:triage` states the same asymmetry for a ranked
-row's floor).
+At the end of an unattended build, the close-out command carries the PR handoff by `Skill` after its green gate: `Skill("quenching-specs:git:git", "pr-create <id>")`. The PR command keeps its own confirmation, push and provider record. Other builds retain `conclude`'s named handoff for the human.
 
-**Every defining stage reads the level from a payload it already fetches.** `cq specs status --spec
-<slug> --json` returns `records`, and `priority.complexity` is inside it — so reading the gear costs
-no call of its own. The execution loop does not consult this field for section boundaries.
+**Defining is never isolated in a sub-agent while it may ask.** Isolation means only the summary returns, which is incompatible with stopping to ask. The simple path could be isolated and is not: it is one pass landing one edit, so the returned summary would be as large as the work.
+
+An answer with no destination is conversation, and conversation is what gets summarized away. As each answer arrives, record which canonical section it belongs to — that mapping IS the consolidated edit, and an answer that maps to nothing is either out of scope (route it, per the body's guardrails) or was not worth asking.
+
+**Every defining stage reads `complexity` from a payload it already fetches.** `cq specs status --spec <slug> --json` returns `records`, and `priority.complexity` is inside it. The execution loop does not consult this field for section boundaries.
 
 ## The spec document
 
@@ -143,7 +115,7 @@ else.**
 | `verification` | **optional** | `create` / `develop` | `per-task` · `per-section` · `end-of-plan` — when `verify:` runs. Absent means the default (`per-section`), applied on read; written after capture with `cq specs verification`, **never** by editing the frontmatter |
 | `priority` | once ranked | `triage` | `{level, criticality, complexity, date}` — a human's ranking against every other spec. `complexity` alone is also written at capture, by `create` — the one field of this record a second command may write (`assets/specs/schema.json`'s `complexity.writtenBy: [triage, create, develop]`) |
 | `refined` | once interrogated | `develop` | `{mode, date}` — that a real interrogation happened, and which operation ran it |
-| `approved` | once approved | `develop`, or `execute` inline | `{date, by}` — **that this spec may be built, and on whose authority**: `by: human` is a person's word, `by: low-gear` the level's, `by: orchestrator-forced` a conductor's forced `low` over a higher level; absent reads as `human` |
+| `approved` | once approved | `develop`, or `execute` inline | `{date, by}` — **that this spec may be built, and on whose authority**: `by: human` is a person's word, `by: orchestrator-forced` a declared-autonomy run's, and `by: session` the simple path's own stamp (`by: low-gear`, its historical value, stays valid and is never rewritten); absent reads as `human` |
 | `branch` | once building | `execute` | `{base, work}` — after a merge, git cannot say what the base was |
 | `pr` | once opened | `conclude` | `{number, url, date}` — a PR opened but not yet merged, distinct from `merge.pr`, which is stamped only once the merge already happened. Restamped if the PR is recreated |
 | `reviewed` | once reviewed | `conclude` | `{date}` — that a human read the whole branch diff |
@@ -246,9 +218,8 @@ omission; it is a *not-yet*.
 what makes a spec ready; no file moves, so there is nothing to refuse. It is a **floor** that
 `/quenching-specs:specs:execute` reports against — and the tool simply has no task to hand out until the ten are
 filled, which is where the old promote's teeth went. The OK to build is a separate fact,
-`approved:`, asked for inline rather than encoded in a folder — or, under the `low` gear alone,
-stamped by the pass itself with `by: low-gear`, the human having authorized the mode rather than
-this spec — or `by: orchestrator-forced` when a conductor running `--autonomous` forced that gear.
+`approved:`, asked for inline rather than encoded in a folder — or, on the simple path alone,
+stamped by the session itself once the trust criterion (§The scale) closes — or `by: orchestrator-forced` when the human declared autonomy.
 
 `## Tasks` is in that set because nothing may be built with nothing to execute.
 

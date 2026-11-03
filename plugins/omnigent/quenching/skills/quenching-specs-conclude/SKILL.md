@@ -7,25 +7,22 @@ allowed-tools: "Bash(cq:*), Bash(cq.cmd:*), Bash, Read, Glob, Grep, Write, Edit,
 <!-- GENERATED FROM plugins/quenching/commands/specs/conclude.md -->
 
 <!-- OMNIGENT RUNTIME START -->
-Source model tier: `opus`.
-
 ## Omnigent runtime
 
 This runs inside the `quenching` operator agent on whatever model the server's policy selects; it pins none and names no vendor CLI. The bundle carries no payload: read a reference through the `quenching` MCP server's resources (`quenching://references/<path>`), and prefer its tools (`<pillar>_<verb>`) to a shell `cq`, which resolves only where a local install sits under `$QUENCHING_OMNIGENT_ROOT`. Delegate only to the operator's declared sub-agents. Source model tiers and effort are not switches: a declared tier or effort below is a preference to report. Token usage comes from host telemetry when it exists, otherwise it is `not measured`. A tool the permission policy denies stays denied: report it, never route around it. If delegation is unavailable, report the limitation; never replace a required independent verification with self-review.
 
 <!-- OMNIGENT RUNTIME END -->
 
-
 # quenching-specs-conclude — review, archive, distil — and hand off
 
 **Input**: `$ARGUMENTS` — the spec id, and optionally its outcome. A conductor launched with
-`--autonomous` adds the word `autonomous`; the run then stops at the named PR handoff, which the `git-steward` performs.
+`--autonomous` adds the word `autonomous`; the run then stops at the named PR handoff, which the `spec-orchestrator` performs after the `spec-verifier` PASS, or the main session otherwise.
 
 Closes ONE spec out, short of the merge itself. Four things happen, in this order, and each is a
 separate decision: the whole branch is **reviewed**, the `/docs/` the work *revealed* is
 **written**, the spec is **archived and distilled** into the OKF bundle, and the pre-merge gate is
 **proven green** — then the run **stops**, naming `quenching-git-pr-create` or
-`quenching-git-merge` as the human's own next command — except that `low` gear chains directly
+`quenching-git-merge` as the human's own next command — except that a spec recorded at `low` complexity chains directly
 to `quenching-git-pr-create` through `Skill` after the green gate, unless the input carried `autonomous`.
 
 **Done work ends on the work branch; abandoned close-out writes land in the checkout holding the
@@ -348,12 +345,12 @@ never run the gate over a branch you know is behind.
 **Under `autonomous` the answer is given, and it is the merge.** A sibling spec merged mid-wave is
 the ordinary way to be behind, and a `needs-human` there is never relaunched. Run
 `git merge --no-edit origin/<base>` — a merge, never a rebase, so the task shas stay ancestors and
-the verifier's check 7 accepts them — and then the gate over the merged tree. A conflict only in
-generated files (`plugins/claude/quenching-specs-reader/**`) is mechanical: take the base's side
-(`git show :3:<path> > <path>`, `git add <path>`), then **regenerate before concluding the merge** —
-`python3 scripts/sync_specs_reader_plugin.py --write` — `git add` what it rewrote, and conclude
-the merge. A manifest taken from the base alone loses the branch's entries. Then
-`python3 scripts/sync_specs_reader_plugin.py --check` exits 0. A conflict in any other path →
+the spec-verifier's check 7 accepts them — and then the gate over the merged tree. A conflict only in
+the deployed surface (`.agents/quenching/**`, `.omnigent/skills/**`, `.agents/.quenching-deploy.json`)
+is mechanical: take the base's side (`git show :3:<path> > <path>`, `git add <path>`), then
+**regenerate before concluding the merge** — `cq deploy --target . --write` — `git add` what it
+rewrote, and conclude the merge. A manifest taken from the base alone loses the branch's entries.
+Then `cq deploy --target . --check` exits 0. A conflict in any other path →
 `git merge --abort` and `needs-human` naming the paths.
 
 **An inconclusive result is not a green one.** A check that cannot tell "this failed" from "this
@@ -372,13 +369,13 @@ read the complexity from the status payload already in hand. **`low` chains the 
 now:**
 
 ```text
-Skill("quenching-specs:git:pr:create", "<id>")
+Skill("quenching-specs:git:git", "pr-create <id>")
 ```
 
 Invoke it with the spec id; `quenching-git-pr-create` owns its own confirmation, push and PR
 record. Do not offer a second handoff or invoke `quenching-git-merge` on the low path.
-**When this run's input carried `autonomous`, do not invoke it:** the orchestrator hands push and PR
-to the `git-steward` after the verifier accepts the spec. Name the handoff (`quenching-git-pr-create
+**When this run's input carried `autonomous`, do not invoke it:** the `spec-orchestrator` publishes (push and PR)
+after the `spec-verifier` accepts the spec. Name the handoff (`quenching-git-pr-create
 <id> autonomous`) in the report and stop. **For
 `medium`, `high` and `xhigh`, name the handoff and stop:**
 

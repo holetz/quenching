@@ -29,6 +29,7 @@ Cell form: `approved/cases, assertion pass rate`.
 | `quenching-components-command-eval` | unmeasured | unmeasured | unmeasured | unmeasured |
 | `quenching-components-command-new` | unmeasured | unmeasured | unmeasured | unmeasured |
 | `quenching-components-command-retro` | unmeasured | unmeasured | unmeasured | unmeasured |
+| `quenching-components-components` | unmeasured | unmeasured | unmeasured | unmeasured |
 | `quenching-components-harness-align` | unmeasured | unmeasured | unmeasured | unmeasured |
 | `quenching-components-hook-new` | unmeasured | unmeasured | unmeasured | unmeasured |
 | `quenching-components-status` | unmeasured | unmeasured | unmeasured | unmeasured |
@@ -41,6 +42,7 @@ Cell form: `approved/cases, assertion pass rate`.
 | `quenching-git-cleanup` | unmeasured | unmeasured | unmeasured | unmeasured |
 | `quenching-git-commit-incremental` | unmeasured | unmeasured | unmeasured | unmeasured |
 | `quenching-git-commit` | 3/3, 100% | 3/3, 100% | 3/3, 100% | 3/3, 100% |
+| `quenching-git-git` | unmeasured | unmeasured | unmeasured | unmeasured |
 | `quenching-git-merge` | unmeasured | unmeasured | unmeasured | unmeasured |
 | `quenching-git-pr-create` | unmeasured | unmeasured | unmeasured | unmeasured |
 | `quenching-git-pr-review` | unmeasured | unmeasured | unmeasured | unmeasured |
@@ -60,6 +62,7 @@ Cell form: `approved/cases, assertion pass rate`.
 | `quenching-knowledge-glossary-backfill` | unmeasured | unmeasured | unmeasured | unmeasured |
 | `quenching-knowledge-import-memory` | unmeasured | unmeasured | unmeasured | unmeasured |
 | `quenching-knowledge-import` | unmeasured | unmeasured | unmeasured | unmeasured |
+| `quenching-knowledge-knowledge` | unmeasured | unmeasured | unmeasured | unmeasured |
 | `quenching-knowledge-learn` | unmeasured | unmeasured | unmeasured | unmeasured |
 | `quenching-knowledge-status` | unmeasured | unmeasured | unmeasured | unmeasured |
 | `quenching-opensource-align` | unmeasured | unmeasured | unmeasured | unmeasured |
@@ -80,6 +83,7 @@ Cell form: `approved/cases, assertion pass rate`.
 | `quenching-specs-execute` | unmeasured | unmeasured | unmeasured | unmeasured |
 | `quenching-specs-improve` | unmeasured | unmeasured | unmeasured | unmeasured |
 | `quenching-specs-orchestrate` | unmeasured | unmeasured | unmeasured | unmeasured |
+| `quenching-specs-specs` | unmeasured | unmeasured | unmeasured | unmeasured |
 | `quenching-specs-status` | unmeasured | unmeasured | unmeasured | unmeasured |
 | `quenching-specs-triage` | unmeasured | unmeasured | unmeasured | unmeasured |
 | `quenching-toolchain-align` | unmeasured | unmeasured | unmeasured | unmeasured |

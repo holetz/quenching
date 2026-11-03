@@ -36,16 +36,17 @@ from quenching.git.worktree import _is_codex_artifact
 
 PLUGIN_ROOT = pathlib.Path(__file__).resolve().parent.parent
 CQ = str(PLUGIN_ROOT / "assets" / "bin" / "cq")
-PR_CREATE = PLUGIN_ROOT / "commands" / "git" / "pr" / "create.md"
-PR_STATUS = PLUGIN_ROOT / "commands" / "git" / "pr" / "status.md"
+PR_CREATE = PLUGIN_ROOT / "assets" / "references" / "git-flows" / "pr-create.md"
+PR_STATUS = PLUGIN_ROOT / "assets" / "references" / "git-flows" / "pr-status.md"
 PUSH_COMMAND = PLUGIN_ROOT / "commands" / "git" / "push.md"
 REVERT_COMMAND = PLUGIN_ROOT / "commands" / "git" / "revert.md"
+PR_STATUS_SHORTCUT = PLUGIN_ROOT / "commands" / "git" / "pr" / "status.md"
 PR_REFERENCE = PLUGIN_ROOT / "assets" / "references" / "git" / "pr.md"
 MERGE_REFERENCE = PLUGIN_ROOT / "assets" / "references" / "git" / "merge.md"
-COMMIT_COMMAND = PLUGIN_ROOT / "commands" / "git" / "commit.md"
+COMMIT_COMMAND = PLUGIN_ROOT / "assets" / "references" / "git-flows" / "commit.md"
 COMMIT_INCREMENTAL_COMMAND = PLUGIN_ROOT / "commands" / "git" / "commit-incremental.md"
 CLEANUP_COMMAND = PLUGIN_ROOT / "commands" / "git" / "cleanup.md"
-SYNC_COMMAND = PLUGIN_ROOT / "commands" / "git" / "sync.md"
+SYNC_COMMAND = PLUGIN_ROOT / "assets" / "references" / "git-flows" / "sync.md"
 
 
 def _normalise_prose(text: str) -> str:
@@ -1302,10 +1303,10 @@ class Audit(RepoCase):
         self.assertEqual(fresh["changed"], ["c.txt"])
 
     def test_bodies_name_origin_base(self):
-        for rel in ("agents/verifier.md", "agents/orchestrator.md", "commands/specs/conclude.md"):
+        for rel in ("agents/spec-verifier.md", "agents/spec-orchestrator.md", "assets/references/specs-flows/conclude.md"):
             text = (PLUGIN_ROOT / rel).read_text(encoding="utf-8")
             self.assertIn("origin/<base>", text, rel)
-        verifier = (PLUGIN_ROOT / "agents" / "verifier.md").read_text(encoding="utf-8")
+        verifier = (PLUGIN_ROOT / "agents" / "spec-verifier.md").read_text(encoding="utf-8")
         self.assertIn("--base origin/<base>", verifier)
 
 
@@ -1447,7 +1448,7 @@ class VerifierGrants(unittest.TestCase):
     `bash` grant: those admitted `branch -D`, `clean -fdx`, `--output=<file>` and arbitrary code."""
 
     def test_no_wildcard_mid_pattern_and_no_raw_git_or_bash(self):
-        text = (PLUGIN_ROOT / "agents" / "verifier.md").read_text(encoding="utf-8")
+        text = (PLUGIN_ROOT / "agents" / "spec-verifier.md").read_text(encoding="utf-8")
         tools = next(line for line in text.splitlines() if line.startswith("tools:"))
         grants = re.findall(r"Bash\(([^)]*)\)", tools)
         self.assertIn("cq git audit:*", grants)
@@ -1457,7 +1458,7 @@ class VerifierGrants(unittest.TestCase):
             self.assertFalse(grant.startswith(("git ", "bash ")), grant)
 
     def test_check_9_cites_the_surfaces_the_grants_audit_covers(self):
-        text = " ".join((PLUGIN_ROOT / "agents" / "verifier.md").read_text(encoding="utf-8").split())
+        text = " ".join((PLUGIN_ROOT / "agents" / "spec-verifier.md").read_text(encoding="utf-8").split())
         for surface in (".claude-plugin/*.json", ".codex-plugin/*.json", ".mcp.json", ".lsp.json",
                         "(symlink)", "at any depth", "`hooks`, `mcpServers` or `lspServers`",
                         ".gitlab-ci.yml", "azure-pipelines*.yml", "bitbucket-pipelines.yml",
@@ -1469,7 +1470,7 @@ class VerifierGrants(unittest.TestCase):
             self.assertIn(surface, text)
 
     def test_checks_9_and_10_name_the_proof_that_absolves_a_relocation(self):
-        text = " ".join((PLUGIN_ROOT / "agents" / "verifier.md").read_text(encoding="utf-8").split())
+        text = " ".join((PLUGIN_ROOT / "agents" / "spec-verifier.md").read_text(encoding="utf-8").split())
         for phrase in ("a relocation proved by the audit", "byte-for-byte copy of its source",
                        "`quenching:<head>` to `<module>:<head>`", "the branch's own manifest never proves",
                        "its namespace rewrite by the same BASE map", "an unknown head never absolves",
@@ -1479,7 +1480,7 @@ class VerifierGrants(unittest.TestCase):
 
 class VerifierScopeCheck(unittest.TestCase):
     def test_check_4_applies_scope_only_after_removing_proven_copies(self):
-        text = (PLUGIN_ROOT / "agents" / "verifier.md").read_text(encoding="utf-8")
+        text = (PLUGIN_ROOT / "agents" / "spec-verifier.md").read_text(encoding="utf-8")
         check = " ".join(text.split("4. Scope:", 1)[1].split("5. Hygiene:", 1)[0].split())
         self.assertIn("`n/a` only when `changed` is empty", check)
         self.assertIn("Every remaining path outside the union is FAIL, including when the union is empty", check)
@@ -1489,12 +1490,12 @@ class VerifierScopeCheck(unittest.TestCase):
         self.assertNotIn("a task with `files: []` that regenerated mirrors included", check)
 
     def test_check_4_names_where_the_tasks_files_are_read(self):
-        text = " ".join((PLUGIN_ROOT / "agents" / "verifier.md").read_text(encoding="utf-8").split())
+        text = " ".join((PLUGIN_ROOT / "agents" / "spec-verifier.md").read_text(encoding="utf-8").split())
         self.assertIn("cq specs show --spec <id> --task <t> --json", text)
         self.assertIn("carries no `files:`", text)
 
     def test_check_4_subtracts_the_audits_generated_paths(self):
-        text = " ".join((PLUGIN_ROOT / "agents" / "verifier.md").read_text(encoding="utf-8").split())
+        text = " ".join((PLUGIN_ROOT / "agents" / "spec-verifier.md").read_text(encoding="utf-8").split())
         self.assertIn("remove the payload's `generated`", text)
         self.assertIn("byte-for-byte copy of their source", text)
 
@@ -1504,7 +1505,7 @@ class OrchestratorGrants(unittest.TestCase):
     or `git stash list` grant: those admit the config's filter drivers and `--output`."""
 
     def test_no_raw_status_or_stash_grant(self):
-        text = (PLUGIN_ROOT / "agents" / "orchestrator.md").read_text(encoding="utf-8")
+        text = (PLUGIN_ROOT / "agents" / "spec-orchestrator.md").read_text(encoding="utf-8")
         tools = next(line for line in text.splitlines() if line.startswith("tools:"))
         grants = re.findall(r"Bash\(([^)]*)\)", tools)
         self.assertIn("cq git state:*", grants)
@@ -1512,7 +1513,7 @@ class OrchestratorGrants(unittest.TestCase):
         self.assertNotIn("git stash list:*", grants)
 
     def test_the_verifier_prompt_carries_the_gate_exit_the_worker_reported(self):
-        text = " ".join((PLUGIN_ROOT / "agents" / "orchestrator.md").read_text(encoding="utf-8").split())
+        text = " ".join((PLUGIN_ROOT / "agents" / "spec-orchestrator.md").read_text(encoding="utf-8").split())
         self.assertIn("the exit the worker reported on its `GATE:` line as a claim", text)
         self.assertIn("`sem relato` when it reported none", text)
 
@@ -1844,7 +1845,7 @@ class PullRequestPayload(unittest.TestCase):
         self.assertIn("squash", reference)
 
     def test_status_command_routes_both_providers_and_normalizes_the_snapshot(self):
-        command = PR_STATUS.read_text(encoding="utf-8")
+        command = PR_STATUS_SHORTCUT.read_text(encoding="utf-8") + PR_STATUS.read_text(encoding="utf-8")
         reference = PR_REFERENCE.read_text(encoding="utf-8")
         combined = f"{command}\n{reference}"
         for phrase in (
@@ -1872,7 +1873,7 @@ class PullRequestPayload(unittest.TestCase):
             self.assertIn(phrase, combined)
 
     def test_status_command_is_read_only_and_keeps_provider_failures_distinct(self):
-        command = PR_STATUS.read_text(encoding="utf-8").lower()
+        command = (PR_STATUS_SHORTCUT.read_text(encoding="utf-8") + PR_STATUS.read_text(encoding="utf-8")).lower()
         reference = PR_REFERENCE.read_text(encoding="utf-8").lower()
         combined = f"{command}\n{reference}"
         for phrase in (
@@ -2979,7 +2980,7 @@ sys.exit(0)
 
 
 class PullRequestVerbs(RepoCase):
-    """`cq git pr create|merge` — the steward's PR writes, through a fake `gh` on PATH."""
+    """`cq git pr create|merge` — the orchestrator's PR writes, through a fake `gh` on PATH."""
 
     URL = "https://github.com/o/r/pull/42"
 
@@ -3406,52 +3407,26 @@ def _grants(path: pathlib.Path, key: str) -> set:
     return {g.strip() for g in re.split(r",\s*(?![^()]*\))", joined) if g.strip()}
 
 
-class StewardSkillSubset(unittest.TestCase):
-    """The steward follows each command body with its own `tools:`, never through `Skill`, whose
-    target's `allowed-tools` would amplify the agent's grant: it holds no `Skill`, and each command it
-    follows must hold nothing its `tools:` does not (specs 1339, 1365)."""
+class OrchestratorPublishTools(unittest.TestCase):
+    """The `spec-orchestrator` publishes through `cq git` verbs and never through `Skill`, whose
+    target's `allowed-tools` would amplify the agent's grant (specs 1339, 1365, 2154)."""
 
     @classmethod
     def setUpClass(cls):
-        cls.agent = PLUGIN_ROOT / "agents" / "git-steward.md"
+        cls.agent = PLUGIN_ROOT / "agents" / "spec-orchestrator.md"
         cls.tools = _grants(cls.agent, "tools")
-        text = " ".join(cls.agent.read_text(encoding="utf-8").split("## Rules")[0].split())
-        names = re.findall(r"`(/quenching-specs:git:[a-z:]+|:[a-z]+(?::[a-z]+)?)`", text)
-        cls.named = [n.removeprefix("/quenching-specs:git:").removeprefix(":").replace(":", "/") for n in names]
 
-    def _extra(self, command: str) -> list:
-        path = PLUGIN_ROOT / "commands" / "git" / f"{command}.md"
-        return sorted(_grants(path, "allowed-tools") - self.tools)
+    def test_the_orchestrator_holds_no_skill_and_no_write_tool(self):
+        self.assertEqual(sorted(g for g in self.tools if g.startswith(("Skill", "Edit", "Write"))), [])
 
-    def test_the_steward_holds_no_skill(self):
-        self.assertEqual(sorted(g for g in self.tools if g.startswith("Skill")), [])
-
-    def test_the_steward_names_the_commands_it_runs(self):
-        self.assertEqual(self.named, ["branch", "commit", "pr/create"])
-
-    def test_branch_holds_nothing_outside_the_steward_tools(self):
-        self.assertEqual(self._extra("branch"), [])
-
-    def test_commit_holds_nothing_outside_the_steward_tools(self):
-        self.assertEqual(self._extra("commit"), [])
-
-    def test_pr_create_holds_nothing_outside_the_steward_tools(self):
-        self.assertEqual(self._extra("pr/create"), [])
-
-    def test_every_named_command_is_a_subset(self):
-        for command in self.named:
-            self.assertEqual(self._extra(command), [], command)
-
-    def test_merge_is_not_run_by_the_steward(self):
-        # `git:merge` grants cq:*, python3:* and raw git; the steward merges a PR through `cq git pr merge`.
-        self.assertNotIn("merge", self.named)
-        self.assertTrue(self._extra("merge"))
-        self.assertNotIn("Bash(python3:*)", self.tools)
-        self.assertNotIn("Bash(cq:*)", self.tools)
+    def test_the_orchestrator_holds_no_broad_cq_python_or_merge_grant(self):
+        for broad in ("Bash(cq:*)", "Bash(cq git:*)", "Bash(python3:*)", "Bash"):
+            self.assertNotIn(broad, self.tools)
+        self.assertIn("Bash(cq git pr merge:*)", self.tools)
 
 
-class StewardGrants(unittest.TestCase):
-    """The `git-steward` acts through `cq git` verbs: no grant of its `tools:` admits the commands
+class OrchestratorPublishGrants(unittest.TestCase):
+    """The `spec-orchestrator` acts through `cq git` verbs: no grant of its `tools:` admits the commands
     reproduced against the 1279 blocklist on 2026-10-08."""
 
     REPRODUCED = ("cq specs section 1292 Outcome --w", "cq specs section 1292 Outcome --write",
@@ -3466,7 +3441,7 @@ class StewardGrants(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        text = (PLUGIN_ROOT / "agents" / "git-steward.md").read_text(encoding="utf-8")
+        text = (PLUGIN_ROOT / "agents" / "spec-orchestrator.md").read_text(encoding="utf-8")
         line = next(line for line in text.splitlines() if line.startswith("tools:"))
         cls.grants = re.findall(r"Bash\(([^)]*)\)", line)
 
@@ -3485,50 +3460,39 @@ class StewardGrants(unittest.TestCase):
     def test_grants_are_plain_prefixes_with_no_raw_git_or_gh_write(self):
         self.assertNotIn("cq git:*", self.grants)
         self.assertEqual([g for g in self.grants if g.startswith("cq git ")], [
-            "cq git base:*", "cq git commit:*", "cq git conventions:*", "cq git specs:*",
             "cq git state:*", "cq git push:*", "cq git pr create:*", "cq git pr probe:*",
-            "cq git pr merge:*", "cq git pr record:*", "cq git worktree add:*",
-            "cq git worktree retire:*"])
-        for unused in ("stale", "prune", "audit"):
+            "cq git pr record:*", "cq git pr merge:*", "cq git base:*", "cq git conventions:*"])
+        for unused in ("stale", "prune", "audit", "commit", "worktree retire", "worktree add"):
             for grant in self.grants:
                 self.assertFalse(self._admits(grant, f"cq git {unused}"), (grant, unused))
-
-    def test_every_cq_git_verb_a_followed_body_calls_is_granted(self):
-        root = PLUGIN_ROOT
-        bodies = [root / "agents" / "git-steward.md"] + [
-            root / "commands" / "git" / f"{c}.md" for c in ("branch", "commit", "pr/create")]
-        for body in bodies:
-            text = body.read_text(encoding="utf-8").split("\n---\n", 1)[-1]
-            for verb in set(re.findall(r"`?cq git ((?:pr|worktree) [a-z]+|[a-z]+)", text)):
-                if verb in ("pr", "worktree", "takes", "declares", "verb", "verbs"):
-                    continue  # prose ("cq git takes no --root"), not a call
-                self.assertTrue(any(self._admits(g, f"cq git {verb}") for g in self.grants),
-                                (body.name, verb))
         for grant in self.grants:
             self.assertNotIn("*", grant.removesuffix(":*"), grant)
-            self.assertFalse(grant.startswith(("git ", "git:", "bash", "gh pr merge",
-                                               "gh pr create", "cq specs section")), grant)
+            self.assertFalse(grant.startswith(("git add", "git commit", "git push", "git merge", "bash",
+                                               "gh pr merge", "gh pr create", "cq specs section")), grant)
+
+    def test_every_cq_git_verb_the_body_calls_is_granted(self):
+        text = (PLUGIN_ROOT / "agents" / "spec-orchestrator.md").read_text(encoding="utf-8").split("\n---\n", 1)[-1]
+        for verb in set(re.findall(r"`?cq git ((?:pr|worktree) [a-z]+|[a-z]+)", text)):
+            if verb in ("pr", "worktree", "takes", "declares", "verb", "verbs"):
+                continue  # prose, not a call
+            self.assertTrue(any(self._admits(g, f"cq git {verb}") for g in self.grants), verb)
 
     def test_the_verbs_it_relies_on_exist(self):
         from quenching.git import DISPATCH
-        for verb in ("state", "worktree", "commit", "specs", "push", "pr", "stale", "prune"):
+        for verb in ("state", "push", "pr", "base", "conventions"):
             self.assertIn(verb, DISPATCH)
 
-    def test_the_cleanup_step_runs_retire_and_the_orchestrator_routes_it(self):
-        agents = PLUGIN_ROOT / "agents"
-        steward = " ".join((agents / "git-steward.md").read_text(encoding="utf-8").split())
-        orchestrator = " ".join((agents / "orchestrator.md").read_text(encoding="utf-8").split())
-        self.assertIn("cq git worktree retire --path", steward)
-        self.assertIn("`branch -d`", steward)
-        self.assertNotIn("cleanup (always blocked)", steward)
-        self.assertIn("the step `cleanup`", orchestrator)
+    def test_the_cleanup_is_not_granted_and_the_note_hands_it_to_the_vertical(self):
+        text = " ".join((PLUGIN_ROOT / "agents" / "spec-orchestrator.md").read_text(encoding="utf-8").split())
+        self.assertIn("cleanup pending: /quenching-specs:git:cleanup", text)
+        self.assertNotIn("cq git worktree retire", text)
 
 
 class ReviewerHistory(RepoCase):
     """The `reviewer` reads history through `cq git history`, which cannot write a file."""
 
     def test_reviewer_has_no_raw_git_grant(self):
-        text = (PLUGIN_ROOT / "agents" / "reviewer.md").read_text(encoding="utf-8")
+        text = (PLUGIN_ROOT / "agents" / "spec-reviewer.md").read_text(encoding="utf-8")
         tools = next(line for line in text.splitlines() if line.startswith("tools:"))
         grants = re.findall(r"Bash\(([^)]*)\)", tools)
         self.assertIn("cq git history:*", grants)

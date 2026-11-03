@@ -69,8 +69,7 @@ class ThePathShim(unittest.TestCase):
         }
         self.assertEqual({VERSION}, set(source.values()), source)
         marketplace_versions = {item["name"]: item["version"] for item in marketplace["plugins"]}
-        self.assertIn("quenching-specs", marketplace_versions)
-        self.assertNotIn("quenching", marketplace_versions)
+        self.assertEqual({"quenching-hud"}, set(marketplace_versions))
         self.assertEqual({VERSION}, set(marketplace_versions.values()), marketplace_versions)
 
     def test_the_entrypoint_declares_and_checks_the_python_floor_before_package_imports(self):
@@ -114,80 +113,44 @@ if __name__ == "__main__":
     unittest.main()
 
 
-class EnabledModules(unittest.TestCase):
-    """One cq reaches the packages of the modules the host enabled, and names the ones it did not."""
+class DeployedModules(unittest.TestCase):
+    """A target's one cq reaches the modules `cq deploy --modules` installed, and names the rest."""
 
     @classmethod
     def setUpClass(cls):
-        import copy
-        import importlib.util
         import tempfile
         (REPO_ROOT / ".quenching").mkdir(exist_ok=True)
         cls.tmp = tempfile.TemporaryDirectory(dir=REPO_ROOT / ".quenching")
-        root = pathlib.Path(cls.tmp.name)
-        spec = importlib.util.spec_from_file_location(
-            "generate_plugin_modules", REPO_ROOT / "scripts/generate_plugin_modules.py")
-        generator = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(generator)
-        manifest = copy.deepcopy(generator.load_manifest(REPO_ROOT))
         cls.roots = {}
-        for module in manifest["modules"]:
-            if module["name"] in ("quenching-specs", "quenching-design", "quenching-proof", "quenching-ops"):
-                target = root / module["name"]
-                for rel, (data, mode) in generator.principal_tree(REPO_ROOT, manifest, module).items():
-                    path = target / rel
-                    path.parent.mkdir(parents=True, exist_ok=True)
-                    path.write_bytes(data)
-                    path.chmod(mode)
-                cls.roots[module["name"]] = target
+        for selection in ("core", "all"):
+            target = pathlib.Path(cls.tmp.name) / selection
+            target.mkdir()
+            subprocess.run(["git", "init", "-q"], cwd=target, check=True)
+            subprocess.run([sys.executable, str(REAL), "deploy", "--target", str(target),
+                            "--modules", selection, "--harness", "none", "--write"],
+                           check=True, capture_output=True)
+            cls.roots[selection] = target
 
     @classmethod
     def tearDownClass(cls):
         cls.tmp.cleanup()
 
-    def cq(self, *args, enabled=("quenching-specs",)):
-        path = os.pathsep.join([str(self.roots[name] / "bin") for name in enabled]
-                               + [os.environ.get("PATH", "")])
-        return subprocess.run([str(self.roots["quenching-specs"] / "bin/cq"), *args],
-                              capture_output=True, text=True, env={**os.environ, "PATH": path})
+    def cq(self, selection, *args):
+        return subprocess.run([str(self.roots[selection] / ".agents/quenching/bin/cq"), *args],
+                              capture_output=True, text=True)
 
-    def test_specs_alone_refuses_an_absent_front_by_its_module(self):
-        run = self.cq("design", "--help")
+    def test_a_core_target_refuses_an_undeployed_front_by_its_module(self):
+        run = self.cq("core", "design", "--help")
         self.assertEqual(2, run.returncode, run.stdout)
         self.assertIn("quenching-design, which is not enabled", run.stderr)
-        self.assertIn("(module quenching-design is not enabled)", self.cq("--help").stdout)
-        rows = {row["name"]: row["enabled"] for row in json.loads(self.cq("modules", "--json").stdout)["modules"]}
+        self.assertIn("cq deploy --modules", run.stderr)
+        self.assertIn("(module quenching-design is not enabled)", self.cq("core", "--help").stdout)
+        rows = {row["name"]: row["enabled"]
+                for row in json.loads(self.cq("core", "modules", "--json").stdout)["modules"]}
         self.assertTrue(rows["quenching-specs"])
         self.assertFalse(rows["quenching-design"])
 
-    def test_an_enabled_module_on_path_is_reached_by_the_one_cq(self):
-        enabled = ("quenching-specs", "quenching-design")
-        run = self.cq("design", "--help", enabled=enabled)
-        self.assertEqual(0, run.returncode, run.stderr)
-        rows = {row["name"]: row
-                for row in json.loads(self.cq("modules", "--json", enabled=enabled).stdout)["modules"]}
-        self.assertTrue(rows["quenching-design"]["enabled"])
-        self.assertEqual(str(self.roots["quenching-design"].resolve()),
-                         str(pathlib.Path(rows["quenching-design"]["root"]).resolve()))
-        self.assertIsNone(rows["quenching-security"]["root"])
-
-    def test_a_package_copied_into_another_module_does_not_enable_its_owner(self):
-        enabled = ("quenching-specs", "quenching-proof")
-        rows = {row["name"]: row for row in json.loads(self.cq("modules", "--json", enabled=enabled).stdout)["modules"]}
-        self.assertFalse(rows["quenching-ops"]["enabled"])
-        self.assertIsNone(rows["quenching-ops"]["root"])
-        self.assertEqual(2, self.cq("ops", "--help", enabled=enabled).returncode)
-        both = ("quenching-specs", "quenching-proof", "quenching-ops")
-        rows = {row["name"]: row for row in json.loads(self.cq("modules", "--json", enabled=both).stdout)["modules"]}
-        self.assertTrue(rows["quenching-ops"]["enabled"])
-        self.assertEqual(str(self.roots["quenching-ops"].resolve()), str(pathlib.Path(rows["quenching-ops"]["root"]).resolve()))
-
-    def test_a_module_of_another_version_is_not_loaded(self):
-        version = self.roots["quenching-design"] / "VERSION"
-        original = version.read_text()
-        version.write_text("0.0.0\n")
-        try:
-            run = self.cq("design", "--help", enabled=("quenching-specs", "quenching-design"))
-        finally:
-            version.write_text(original)
-        self.assertEqual(2, run.returncode)
+    def test_a_target_with_every_module_reaches_every_front(self):
+        self.assertEqual(0, self.cq("all", "design", "--help").returncode)
+        rows = json.loads(self.cq("all", "modules", "--json").stdout)["modules"]
+        self.assertTrue(all(row["enabled"] for row in rows), rows)

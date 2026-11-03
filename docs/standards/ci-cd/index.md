@@ -11,7 +11,7 @@ carries `type: standard` + a derived `resource:`; add each to [../index.md](../i
 ## Current docs
 
 * [versioning-release.md](versioning-release.md) — The source version surfaces that
-  `cq specs release` bumps together, with the generated specs-reader sibling and the HUD manifest moved to the same version
+  `cq specs release` bumps together, with the HUD manifest and every Claude marketplace entry moved to the same version
 
 ## Candidate sub-standards
 
@@ -28,9 +28,9 @@ Per-subject ledger the verify gate reads. A subject is "done" only when every ca
 - `versioning-release` — **present**: [versioning-release.md](versioning-release.md).
 - `build` — **deferred, not applicable.** There is no build step: the plugin ships markdown
   command bodies and one dependency-free stdlib Python package, copied as-is.
-- `deploy` — **deferred for product code.** Distribution is the marketplace manifest plus the
-  host's plugin upgrade; `cq deploy` is surface installation, not a product deployment, and nothing
-  reaches a running environment.
+- `deploy` — **deferred for product code.** Distribution is `cq deploy` into a target repository
+  plus the HUD's marketplace upgrade; `cq deploy` is surface installation, not a product
+  deployment, and nothing reaches a running environment.
 - `manifest-generation` — **deferred.** Both manifests (`plugin.json`, `marketplace.json`) are
   hand-edited and small; nothing generates them today.
 - `pipeline-stages` — **present, inline.** `.github/workflows/ci.yml` is the plugin's own pipeline:

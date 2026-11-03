@@ -7,7 +7,7 @@ import unittest
 
 ROOT = Path(__file__).resolve().parents[3]
 AUTOPILOT = ROOT / "plugins/quenching/commands/specs/autopilot.md"
-ORCHESTRATOR = ROOT / "plugins/quenching/agents/orchestrator.md"
+ORCHESTRATOR = ROOT / "plugins/quenching/agents/spec-orchestrator.md"
 
 
 def text(path):

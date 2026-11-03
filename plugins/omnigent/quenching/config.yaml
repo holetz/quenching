@@ -11,8 +11,8 @@ os_env:
   type: caller_process
   cwd: .
 tools:
-  agents: ["git-steward", "orchestrator", "reviewer", "scout", "spec-architect", "spec-runner", "verifier"]
+  agents: ["spec-orchestrator", "spec-reviewer", "spec-runner", "spec-scout", "spec-verifier"]
   quenching:
     type: mcp
     command: uvx
-    args: ["--from", "git+https://github.com/holetz/quenching@6.14.2#subdirectory=plugins/quenching", "quenching-mcp"]
+    args: ["--from", "git+https://github.com/holetz/quenching@7.0.0#subdirectory=plugins/quenching", "quenching-mcp"]

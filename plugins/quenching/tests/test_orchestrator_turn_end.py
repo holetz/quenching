@@ -9,7 +9,7 @@ ROOT = Path(__file__).resolve().parents[3]
 
 
 def waiting_section():
-    body = (ROOT / "plugins/quenching/agents/orchestrator.md").read_text(encoding="utf-8")
+    body = (ROOT / "plugins/quenching/agents/spec-orchestrator.md").read_text(encoding="utf-8")
     match = re.search(r"## Waiting\n(.*?)(?=\n## )", body, re.S)
     assert match, "## Waiting section is missing"
     return re.sub(r"\s+", " ", match.group(1))
@@ -19,7 +19,7 @@ class TurnEndTests(unittest.TestCase):
     def test_turn_ends_only_when_every_worker_returned_and_passed_the_verifier(self):
         text = waiting_section()
         self.assertIn("The turn ends only when every worker you launched has returned", text)
-        self.assertIn("passed the verifier", text)
+        self.assertIn("passed the spec-verifier", text)
 
     def test_stopping_with_active_workers_requires_a_report_with_the_reason(self):
         text = waiting_section()

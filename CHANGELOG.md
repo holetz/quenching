@@ -3,15 +3,48 @@
 Release history for the quenching plugin. The installation and upgrade contract remains in the plugin
 README; this file keeps the versioned record that `cq specs release` checks before publishing.
 
-Resolution is **plugin-first, with no install and no third rung** — every command reaches its tool
-either bare through `bin/cq` on the PATH or at `${CLAUDE_PLUGIN_ROOT}/assets/bin/cq`, and both are
-the same file inside the plugin — so a version bump reaches every consumer the moment Claude Code
-applies the plugin upgrade; there is nothing installed to compare against and nothing to sync.
+Since 7.0.0 quenching reaches a repository only through `cq deploy`: the target carries its own
+copy of the tool at `.agents/quenching/bin/cq` and upgrades by deploying again from a newer release
+tag. The only plugins left are the ones that install into no repository (the HUD, the OpenCode
+vitrine and the Omnigent operator agent).
 
 What a bump moves, when it moves, and why each half of the lockstep matters is one rule with one
 owner: [`ci-cd/versioning-release.md`](docs/standards/ci-cd/versioning-release.md). The
 short version for a consumer: the version is published once, deliberately, as a release — never at a
 spec's own conclude — and `cq --version` is what answers which one you are running.
+
+## 7.0.0
+
+**Quebra: o quenching deixa de ser distribuído como plugin e passa a ser servido só por instalação
+  no repositório alvo (`cq deploy`).** Saíram os oito plugins de módulo do Claude e o
+  `quenching-specs-reader`, o plugin Codex com seu marketplace (`.agents/plugins/marketplace.json`),
+  a distribuição OpenCode em `~/.opencode/`, os seis geradores e validadores dessas árvores,
+  `cq components translate` e a checagem de upgrade do Codex no gate e na CI. **Quem instalou pelo
+  marketplace** deve desinstalar os plugins `quenching-*` (menos o `quenching-hud`, se quiser a faixa)
+  e rodar, a partir de um clone deste repositório no tag `7.0.0`,
+  `python3 plugins/quenching/assets/bin/cq deploy --target <repo> --write`; os comandos passam a se
+  chamar `/quenching-<front>-<verb>`. Ficam como plugin só o `quenching-hud` (único item do
+  marketplace), o `quenching-vitrine` — painel Specs do OpenCode Desktop, adotado nesta versão — e o
+  agente operador do Omnigent. `assets/modules.json` vira o manifesto do deploy (schema 2), o lockstep
+  de versão cobre a fonte, o HUD e o marketplace, e as checagens de carga da superfície e o braço
+  `with` das evals medem alvos instalados por `cq deploy` (ADR 0017, que supera o 0013).
+
+**Skills roteadoras por vertical.** Specs, knowledge, components e git ganham um ponto de entrada
+  cada (`quenching-<vertical>-<vertical>`), com os fluxos em references e os atalhos fora da lista do
+  modelo; o align dos repositórios alvo propõe o roteador da família e estende verticais sem editar os
+  agentes do pacote.
+
+**Contrato de confiança no intent.** Os gears deram lugar a profundidade calculada e autonomia
+  declarada: o desenvolvimento roda na sessão principal com perguntas em lote e refino escolhido por
+  necessidade, e a execução aprovada segue sozinha, registrando decisões e parando só em bloqueio
+  real.
+
+**Cinco agentes de spec** — runner, verifier, reviewer, scout e orchestrator; git e decomposição
+  viraram fluxos das verticais.
+
+**Medição por harness.** `cq components session cache` publicado, `session context` mede sessões do
+  OpenCode, o worker do OpenCode ganhou orçamento, e a medição por harness foi refeita e registrada em
+  `context-discipline.md`.
 
 ## 6.14.2
 

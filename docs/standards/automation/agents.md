@@ -21,7 +21,9 @@ one plan → one OK, inventoried (report-only) by `/quenching-align:components:a
 
 ## When work is a subagent — and when it is not
 
-Delegate when the returned summary is **much smaller than the work** that produced it (a
+Whether a wait is safe and what a new context pays differ per harness; read them from
+`cq components session cache` ([context-discipline.md](context-discipline.md) §The prompt cache is a
+per-harness measurement). Delegate when the returned summary is **much smaller than the work** that produced it (a
 repo-wide sweep, a many-file audit, a read that ends in one table), when slices run in
 parallel, or when the tool set must be narrower than the conversation's. Keep work inline
 when its output is as large as itself (a rewrite lands in context anyway), when it is one
@@ -65,20 +67,32 @@ The full pricing doctrine lives once, in
 
 ## Plugin-shipped agents
 
-Rules for agents the plugin itself ships in `plugins/quenching/agents/` (as opposed to a target's
-`.claude/agents/`):
+The plugin ships exactly five agents in `plugins/quenching/agents/`, all prefixed `spec-` (as opposed
+to a target's own `.claude/agents/`). Git (branch, commit, PR, merge, cleanup) and decomposition into
+slices are flows of their verticals, not agents: `/quenching-specs:specs:develop` proposes and captures
+the slices in the main session, and the orchestrator publishes after the verifier's PASS.
+
+| Agent | Pin | Role |
+|---|---|---|
+| `spec-runner` | sonnet/medium (opus when `complexity: high`, passed by the orchestrator) | Builds ONE developed spec in its own worktree (execute, conclude); runs develop only under declared autonomy |
+| `spec-verifier` | sonnet/low | Audits the real git and spec state and returns PASS or FAIL with evidence; read-only |
+| `spec-reviewer` | opus/high | Reviews an epic's accepted commits for correctness, reproducing what it reports; read-only, once per epic, launched by the autopilot conductor |
+| `spec-scout` | sonnet/low | Maps the code and standards a set of specs touches, at most ~2k tokens; read-only |
+| `spec-orchestrator` | opus/medium | Conducts an epic or a queue, never a single spec; accepts a result only on a `spec-verifier` PASS and then publishes it |
+
+Rules:
 
 - One file per agent, `name` matching the filename, `description` within the command cap.
 - `tools` is the narrowest allowlist: an orchestrator holds no `Edit`/`Write`, a verifier and a
-  scout are read-only, and delegation is limited to the plugin's own `quenching:*` agent types.
+  scout are read-only, and delegation is limited to the plugin's own `quenching-specs:spec-*` agent types.
 - The shared protocol lives once, in the orchestrator body, which the cache reuses across sessions;
   never in a scratchpad file a prompt points at.
 - Every worker and the orchestrator forbid `git stash`, `checkout`, `switch` and `reset`, and end
-  in a fixed return report. A worker result is accepted only on a `verifier` PASS.
+  in a fixed return report. A worker result is accepted only on a `spec-verifier` PASS.
 - Plugin agents cannot carry hooks, so prohibitions are prose, enforced by the verifier's audit.
 - Pass `model` explicitly when delegating; a declared pin may not survive into a subagent.
 - Models: no `haiku` for agents that write product code, except the per-task executor of
   `/quenching-specs:specs:execute` on a task with a protected oracle (an executable `verify:` whose
   tests sit outside its `files:`, nothing under `/docs/`, projected context ≤ 80k by
-  `cq specs estimate --task`) — ADR 0014. Judgment agents (orchestrator, verifier, reviewer,
-  spec-architect, spec-runner) never descend, and `import-memory` stays never-`haiku`.
+  `cq specs estimate --task`) — ADR 0014. Judgment agents (`spec-orchestrator`, `spec-verifier`,
+  `spec-reviewer`, `spec-runner`) never descend, and `import-memory` stays never-`haiku`.

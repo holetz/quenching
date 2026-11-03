@@ -1,13 +1,13 @@
 ---
 type: standard
 title: The specs portal reads one store and widens nothing without a decision
-description: The local spec portal (cq specs serve) reads only the specs store open_backend reads, exposes a fixed set of GET and POST routes plus, under --chat, a read-only claude -p chat polled by job, keeps its loopback, token, Host/Origin and CSP guarantees, builds every node with textContent, carries the design system's tokens verbatim in a delimited block pinned by test, reuses cockpit UX patterns but never its code, shows the spec-runner's run record on the card, and regenerates the reader copy and the Codex mirror with every change
+description: The local spec portal (cq specs serve) reads only the specs store open_backend reads, exposes a fixed set of GET and POST routes plus, under --chat, a read-only claude -p chat polled by job, keeps its loopback, token, Host/Origin and CSP guarantees, builds every node with textContent, carries the design system's tokens verbatim in a delimited block pinned by test, reuses cockpit UX patterns but never its code, shows the spec-runner's run record on the card, and redeploys the surface with every change
 resource: plugins/quenching/assets/bin/quenching/specs/portal.py, plugins/quenching/assets/bin/quenching/specs/chat.py, plugins/quenching/assets/portal/**, plugins/quenching/assets/bin/quenching/portal/**, plugins/quenching/assets/bin/quenching/common/lent.py, plugins/quenching/assets/bin/quenching/session/portal.py
 tags: [architecture, portal, specs, security, ux]
-timestamp: 2026-11-01
+timestamp: 2026-11-03
 audience: both
 authority: current
-source: specs 1769, 1812, 1814, 1815, 1816, 2127, 2139, 2140 and 2142 and 1020213 and the owner decisions B-O1 to B-O4 of epics 1768 and 1810, plus D1 A of 2026-10-30
+source: specs 1769, 1812, 1814, 1815, 1816, 2127, 2139, 2140 and 2142 and 1020213 and the owner decisions B-O1 to B-O4 of epics 1768 and 1810, plus D1 A of 2026-10-30; spec 2160 (install only by deploy)
 maintainer: quenching
 ---
 
@@ -42,9 +42,9 @@ only when the module carrying the session package is enabled; the portal calls
 same route, never a direct import: the `portal` pillar borrows `portal.specs`
 (`quenching.specs.portal`), `portal.worktrees` (`quenching.session.worktrees`) and
 `specs.portal.sessions` under `LOANS["portal"]`, and `cq portal serve` refuses
-(`portal-serve-unavailable`) when either of the first two is not lent. The `quenching-specs-reader` copy does not carry the session
-package, so nothing is lent and it refuses `--sessions` (`sp-portal-sessions-unavailable`) before
-a socket opens.
+(`portal-serve-unavailable`) when either of the first two is not lent. Where the session package
+is absent, nothing is lent and `--sessions` is refused (`sp-portal-sessions-unavailable`) before a
+socket opens.
 
 The second exception is the chat, and only when the portal was started with `--chat` (off by
 default). Then `POST /api/chat` starts one child process, `claude -p`, whose `cwd` is a worktree of
@@ -298,21 +298,14 @@ dialog owns the keyboard first.
 
 ## Regeneration
 
-Every change to `portal.py` or `assets/portal/**` regenerates every distribution and the deployed
+Every change to `portal.py` or `assets/portal/**` regenerates the Omnigent bundle and the deployed
 surface, then passes `bash scripts/verify_repo.sh`; the gate's `deployed surface lockstep` check
 refuses a stale install:
 
 ```bash
-python3 scripts/generate_plugin_modules.py --write
-python3 scripts/sync_specs_reader_plugin.py --write
-python3 scripts/sync_codex_plugin.py --source plugins/quenching \
-  --target plugins/codex/quenching-codex --write
-python3 scripts/sync_opencode_plugin.py --write
 python3 scripts/sync_omnigent_plugin.py --write
 python3 plugins/quenching/assets/bin/cq deploy --target . --write
 ```
-
-See [specs-reader-plugin.md](specs-reader-plugin.md) for the reader copy.
 
 <!-- rationale -->
 The portal is the one surface that both reads the store and writes it from a browser. Its

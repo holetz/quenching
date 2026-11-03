@@ -6,17 +6,17 @@ resource: .agents/skills/
 tags:
   - automation
   - commands
-timestamp: 2026-08-26
+timestamp: 2026-11-03
 audience: both
 authority: current
-source: quenching-components-align first run + alocar-comandos-skills-por-categoria (2026-08-15), which made category/subject the axis's first question
+source: quenching-components-align first run + alocar-comandos-skills-por-categoria (2026-08-15), which made category/subject the axis's first question; spec 2160
 maintainer: Israel Holetz
 ---
 
 # Automation registry
 
-This repository's **own** automation surface is small by design: it is the marketplace that
-hosts the `quenching` plugin, so nearly every command a session here reaches for is
+This repository's **own** automation surface is small by design: it is the source of
+quenching and runs its own deployed copy, so nearly every command a session here reaches for is
 *contributed* rather than local. The four local commands are development instruments for
 building this repo's documentation and diagrams, classified on the single axis the rule
 defines. Commands without an evident category are read on the axis's second question alone — a
@@ -26,7 +26,7 @@ level (`/skill-map` maps whatever it is pointed at, so no single folder claims i
 that did belong to a subject would path under it instead (`/git:commit`). The rule
 itself is the internal `standards/automation/skills.md` contract.
 
-The `quenching` plugin installed from this marketplace contributes the published command surface
+The quenching surface this repository deploys into itself (`cq deploy --target . --write`) contributes the command surface
 across the five local fronts, the provider-owned `specs` front, and the alignless `git` pillar,
 plus root `/align`. Those are the **product's** commands,
 documented in the repository's plugin README, and they stay out
