@@ -67,7 +67,7 @@ class Reading(unittest.TestCase):
     def test_a_served_reference_links_its_siblings_as_resources(self):
         text = resources._read("git/commit.md")
         self.assertIn("quenching://references/git/conventions.md", text)
-        self.assertNotIn("${CLAUDE_PLUGIN_ROOT}/assets/references/", text)
+        self.assertNotIn(".agents/quenching/assets/references/", text)
 
     def test_an_absent_section_is_a_refusal_naming_it(self):
         small, _, _ = self.small_and_large()

@@ -26,7 +26,7 @@ from quenching.components.surface import (REFERENCES_DIR, body_after_frontmatter
 
 
 REFERENCE_RE = re.compile(
-    r"(?:\$\{CLAUDE_PLUGIN_ROOT\}/)?assets/references/([A-Za-z0-9_./-]+\.md)"
+    r"(?:\.agents/quenching/)?assets/references/([A-Za-z0-9_./-]+\.md)"
 )
 FENCE_RE = re.compile(r"^ {0,3}(`{3,}|~{3,})", re.MULTILINE)
 def _bytes(text: str) -> int:

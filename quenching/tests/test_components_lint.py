@@ -189,7 +189,7 @@ class ReferenceRoot(unittest.TestCase):
         self.assertEqual(self._codes(body), ["sk-reference-root"])
 
     def test_a_root_anchored_link_is_clean_when_no_tree_is_present(self):
-        body = "See [q](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/questions.md).\n"
+        body = "See [q](.agents/quenching/assets/references/specs-develop/questions.md).\n"
         self.assertEqual(self._codes(body), [])
 
     def test_a_root_anchored_link_to_a_missing_file_is_an_error_with_a_tree(self):
@@ -197,7 +197,7 @@ class ReferenceRoot(unittest.TestCase):
             refs = pathlib.Path(tmp) / "assets" / "references" / "a"
             refs.mkdir(parents=True)
             (refs / "real.md").write_text("x", encoding="utf-8")
-            root = "${CLAUDE_PLUGIN_ROOT}/" + "assets" + "/references/"
+            root = ".agents/quenching/" + "assets" + "/references/"
             ok = f"[r]({root}a/real.md)\n"
             bad = f"[r]({root}a/gone.md)\n"
             bare = "[r](a/real.md)\n"
@@ -217,7 +217,7 @@ class ReferenceRoot(unittest.TestCase):
         for q in ('"', "'"):
             body = f"Run cq components read {q}assets" + f"/references/a.md{q} --sections x.\n"
             self.assertEqual(self._codes(body), ["sk-reference-root"], q)
-        quoted_ok = 'cq components read "${CLAUDE_PLUGIN_ROOT}/assets' + '/references/a.md"\n'
+        quoted_ok = 'cq components read ".agents/quenching/assets' + '/references/a.md"\n'
         self.assertEqual(self._codes(quoted_ok), [])
 
 
