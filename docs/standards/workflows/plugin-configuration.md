@@ -94,7 +94,7 @@ edited. `cq config check` flattens the file to dotted leaves and lists the seede
 (exit 1; exit 2 when the file is absent or not an object); it never reports extra keys, and reads
 only the repository file. `cq doctor` prints the same list as a `config` block and a line in its
 report, but only reports: a missing key is information, never a failed prerequisite.
-`/quenching-align:align` runs `check` before the fronts and, under its one authorization, seeds an
+`/quenching-align` runs `check` before the fronts and, under its one authorization, seeds an
 absent file.
 
 ## The envelope and its owners
@@ -225,11 +225,11 @@ lists each leaf with its value and layer.
 
 | Key | Values | Default | Read by |
 | --- | --- | --- | --- |
-| `runAloneUpTo` | `none` · `low` · `medium` · `high` · `xhigh` | `low` | `/quenching-specs:specs:orchestrate` and the `orchestrator`: the highest `complexity` (the depth the session computed) that runs without `approved`; it caps depth, it grants nothing and never replaces declared autonomy |
+| `runAloneUpTo` | `none` · `low` · `medium` · `high` · `xhigh` | `low` | `/quenching-specs-orchestrate` and the `orchestrator`: the highest `complexity` (the depth the session computed) that runs without `approved`; it caps depth, it grants nothing and never replaces declared autonomy |
 | `merge` | `policy` · `never` · `dependencies` · `all` | `policy` | the `orchestrator`: `policy` defers to the composite's dated text, `never` merges nothing, `dependencies` only specs with a dependent, `all` every leaf |
 | `maxWorkers` | integer 1-8 | `3` | the `orchestrator`'s parallelism |
-| `maxLaunches` | integer ≥ 1 | `40` | `/quenching-specs:specs:autopilot`, when `--max-launches` is absent |
-| `livenessMinutes` | integer ≥ 1 | `20` | `/quenching-specs:specs:autopilot`'s liveness stop |
+| `maxLaunches` | integer ≥ 1 | `40` | `/quenching-specs-autopilot`, when `--max-launches` is absent |
+| `livenessMinutes` | integer ≥ 1 | `20` | `/quenching-specs-autopilot`'s liveness stop |
 
 A value of the wrong shape falls back to the leaf default and is named in the `warnings` of the
 effective view; it is never applied silently. An explicit flag wins over the key. No value grants a
@@ -246,7 +246,7 @@ explicit flag wins over the key.
 | --- | --- | --- | --- |
 | `shared.okfValidate` | `{warnAsError: boolean, ignoreGlobs: list of strings}` | `false`, `[]` | `cq knowledge validate`; wins key by key over `.claude/hooks/hooks-config.local.json` and `hooks-config.json` |
 | `shared.contextBudgets` | `{main, worker, conductor}`, positive integers | `200000` / `100000` / `150000` | `cq session context` per role; `cq specs estimate --worker-budget` uses `worker` |
-| `shared.autonomy.maxLaunches` | integer ≥ 1 | `40` | `/quenching-specs:specs:autopilot` (see the autonomy block); the launch ceiling lives only there |
+| `shared.autonomy.maxLaunches` | integer ≥ 1 | `40` | `/quenching-specs-autopilot` (see the autonomy block); the launch ceiling lives only there |
 | `shared.workHost` | `{target, dockerContext, runner, remoteRoot, syncFlags, syncExclude, pullBack, protectedPaths, minFreeGb}` | disabled | `cq config host --plan`; see [work-host.md](work-host.md) |
 | `shared.mcp` | `{mount: "specs", command: [strings]}` | absent; no MCP file is generated | `cq deploy`; read from the repository document only, never the merged envelope |
 | `specs.chat` | `{model: string, budgetUsd: number > 0, timeoutSeconds: number > 0}` | `sonnet`, `0.50`, `300` | the portal's `--chat`; `--chat-budget-usd` wins over `budgetUsd` |

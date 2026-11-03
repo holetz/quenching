@@ -18,7 +18,7 @@ class MechanicalCaptureTests(unittest.TestCase):
         body = text()
         self.assertIn("**Mechanical capture, by default.**", body)
         self.assertNotIn("spec-architect", body)
-        self.assertIn("`cq specs new", body)
+        self.assertIn("`.agents/quenching/bin/cq specs new", body)
 
     def test_real_decomposition_stays_in_this_session(self):
         body = text()
@@ -30,12 +30,12 @@ class EconomyModeTests(unittest.TestCase):
     def test_threshold_is_two_members_low_or_medium(self):
         body = text()
         self.assertIn("**at most 2 members, every one `low` or `medium`**", body)
-        self.assertIn("runs without `quenching-specs:spec-orchestrator`", body)
+        self.assertIn("runs without `quenching-spec-orchestrator`", body)
         self.assertIn("3 or more members, or any `high`/`xhigh`", body)
 
     def test_pair_and_acceptance_rules_are_cited_not_restated(self):
         body = text()
-        self.assertIn("`quenching-specs:spec-runner` → `quenching-specs:spec-verifier`", body)
+        self.assertIn("`quenching-spec-runner` → `quenching-spec-verifier`", body)
         self.assertIn("quenching/agents/spec-orchestrator.md", body)
         self.assertIn("acceptance only on a spec-verifier PASS", body)
 

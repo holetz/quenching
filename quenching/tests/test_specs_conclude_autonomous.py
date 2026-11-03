@@ -21,15 +21,15 @@ class ConcludeAutonomous(unittest.TestCase):
         cls.text = " ".join(CONCLUDE.read_text(encoding="utf-8").split())
 
     def test_it_invokes_pr_create_with_the_autonomous_word(self):
-        self.assertIn('Skill("quenching-specs:git:git", "pr-create <id> autonomous")',
+        self.assertIn('Skill("quenching-git-git", "pr-create <id> autonomous")',
                       self.text)
         self.assertIn("**Under `autonomous` the run opens the PR itself, whatever the "
                       "complexity**", self.text)
-        self.assertIn("`/quenching-specs:git:pr:create <id> autonomous` owns its own push",
+        self.assertIn("`/quenching-git-pr-create <id> autonomous` owns its own push",
                       self.text)
 
     def test_outside_autonomous_the_handoff_is_named_and_not_invoked(self):
-        self.assertIn('Skill("quenching-specs:git:git", "pr-create <id>")', self.text)
+        self.assertIn('Skill("quenching-git-git", "pr-create <id>")', self.text)
         self.assertIn("name the handoff and stop", self.text)
         self.assertNotIn("stops at the named PR handoff", self.text,
                          "the autonomous run no longer stops before its own PR")
@@ -45,7 +45,7 @@ class RunnerReportsThePrRecord(unittest.TestCase):
 
     def test_the_runner_adopts_rather_than_opens_a_second(self):
         self.assertIn("the `conclude` you invoke does it through "
-                      "`/quenching-specs:git:pr:create <id> autonomous`", self.text)
+                      "`/quenching-git-pr-create <id> autonomous`", self.text)
         self.assertIn("the `spec-orchestrator` ADOPTS that PR after the `spec-verifier` PASS "
                       "instead of opening a second", self.text)
 

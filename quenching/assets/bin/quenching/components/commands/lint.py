@@ -3,7 +3,7 @@
 Moved verbatim out of the pre-refactor components script.
 
 Every check here is decidable FROM THE FILE. The doctrine's remaining tests — the no-op test,
-sediment, sprawl, positive prescription — stay a human read in `/quenching-align:components:align` Stage 2, because
+sediment, sprawl, positive prescription — stay a human read in `/quenching-components-align` Stage 2, because
 each needs a claim about behaviour that no parser can make. Adding a heuristic for one of them
 would move the plugin's anti-fabrication boundary, not the tool's coverage.
 """
@@ -49,9 +49,9 @@ EFFORT_VALUES = ("low", "medium", "high", "xhigh", "max")
 
 # A slash citation of a command in either spelling. The target dialect is the hyphenated id,
 # `/quenching-knowledge-add`; the retired spelling carries at least one `:`,
-# `/quenching-align:knowledge:add` or the bare `/knowledge:add`. The lookbehind rejects a citation
+# `/quenching-knowledge-add` or the bare `/knowledge:add`. The lookbehind rejects a citation
 # already prefixed by a path or a scheme (`https://`, `.agents/quenching/…`), and requiring a
-# segment after the `:` keeps a bare namespace (`/quenching-align:components:`) out: naming the
+# segment after the `:` keeps a bare namespace (`/quenching-components-`) out: naming the
 # namespace is not citing a command.
 CITATION_RE = re.compile(r"(?<![\w:/-])/([a-z0-9-]+(?::[a-z0-9-]+)+)")
 HYPHEN_CITATION_RE = re.compile(r"(?<![\w:/.-])/([a-z0-9]+(?:-[a-z0-9]+)+)(?![\w:-])")
@@ -781,7 +781,7 @@ def _lint_frontmatter_hooks(cmd: dict, where: dict) -> list[dict]:
                            "the ladder checks could not read it — it is NOT reported as clean",
                            **where,
                            remedy="rewrite it in the shape of "
-                                  "assets/templates/automation/hook.md shape 1 (/quenching-align:components:hook:new)"))
+                                  "assets/templates/automation/hook.md shape 1 (/quenching-components-hook-new)"))
     out.extend(hook_ladder_findings(cmd.get("hooks") or {},
                                     where_in=f"{where['path']} frontmatter", where=where))
     return out

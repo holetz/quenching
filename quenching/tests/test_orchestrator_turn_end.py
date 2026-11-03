@@ -32,7 +32,7 @@ class TurnEndTests(unittest.TestCase):
         text = waiting_section()
         self.assertIn("when no worker is alive, its work is finished", text)
         self.assertIn("however its last message reads", text)
-        self.assertIn("Read the real state with `cq specs status <id>` and the worktree's git state", text)
+        self.assertIn("Read the real state with `.agents/quenching/bin/cq specs status <id>` and the worktree's git state", text)
         self.assertIn("then continue with execute, conclude or the next spec", text)
 
 

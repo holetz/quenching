@@ -89,7 +89,7 @@ class RootOption(unittest.TestCase):
     def test_status_reads_the_named_repository_from_another_cwd(self):
         cq = os.path.join(os.path.dirname(os.path.abspath(_paths.__file__)),
                           "..", "assets", "bin", "cq")
-        repo = os.path.abspath(os.path.join(os.path.dirname(cq), "..", "..", "..", ".."))
+        repo = os.path.abspath(os.path.join(os.path.dirname(cq), "..", "..", ".."))
 
         def code(*extra, cwd):
             proc = subprocess.run([sys.executable, cq, "specs", "status", "--spec", "1", *extra,

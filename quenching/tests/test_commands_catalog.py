@@ -8,7 +8,7 @@ import re
 import unittest
 
 REPO = pathlib.Path(__file__).resolve().parents[2]
-ROW = re.compile(r"^\| `(/quenching(?:-[a-z]+)?:[^`]+)` \|", re.MULTILINE)
+ROW = re.compile(r"^\| `(/quenching-[^`]+)` \|", re.MULTILINE)
 
 
 def _commands(path: pathlib.Path) -> set[str]:

@@ -152,7 +152,7 @@ body runs, in order:
    `codex-git-guard` it stops the build and names the changed paths for the human.
 
 - **The hook is `optional: true`:** an absent `codex`, a spent quota or a timeout never pauses the build.
-- **Worktree limit.** `/quenching-specs:specs:execute` never invokes a hook in a linked worktree
+- **Worktree limit.** `/quenching-specs-execute` never invokes a hook in a linked worktree
   (it reports `skipped: worktree`), so this review runs only in the main checkout, never in an
   orchestrated build.
 - **Findings are reported, never acted on:** `findingsNeedReproduction` holds, so a Codex finding
@@ -160,7 +160,7 @@ body runs, in order:
 
 ## The executor
 
-`/quenching-specs:specs:execute` step 5b hands one task at a time to Codex when the code admits it.
+`/quenching-specs-execute` step 5b hands one task at a time to Codex when the code admits it.
 
 `cq codex eligible --spec <id> --task <tid> [--json]` decides, exit `0` eligible, `1` not, `2`
 refusal (unknown spec or task). A task is eligible when `executor.enabled` holds, it declares

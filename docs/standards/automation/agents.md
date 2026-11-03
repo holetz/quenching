@@ -16,8 +16,8 @@ maintainer: quenching
 <!-- rules -->
 
 A **subagent** is a delegation: work runs in a fresh context and only its result returns.
-One definition per file at `.claude/agents/<name>.md`, minted by `/quenching-align:components:agent:new` under
-one plan → one OK, inventoried (report-only) by `/quenching-align:components:align`.
+One definition per file at `.claude/agents/<name>.md`, minted by `/quenching-components-agent-new` under
+one plan → one OK, inventoried (report-only) by `/quenching-components-align`.
 
 ## When work is a subagent — and when it is not
 
@@ -69,7 +69,7 @@ The full pricing doctrine lives once, in
 
 The plugin ships exactly five agents in `quenching/agents/`, all prefixed `spec-` (as opposed
 to a target's own `.claude/agents/`). Git (branch, commit, PR, merge, cleanup) and decomposition into
-slices are flows of their verticals, not agents: `/quenching-specs:specs:develop` proposes and captures
+slices are flows of their verticals, not agents: `/quenching-specs-develop` proposes and captures
 the slices in the main session, and the orchestrator publishes after the verifier's PASS.
 
 | Agent | Pin | Role |
@@ -100,7 +100,7 @@ Rules:
 - Plugin agents cannot carry hooks, so prohibitions are prose, enforced by the verifier's audit.
 - Pass `model` explicitly when delegating; a declared pin may not survive into a subagent.
 - Models: no `haiku` for agents that write product code, except the per-task executor of
-  `/quenching-specs:specs:execute` on a task with a protected oracle (an executable `verify:` whose
+  `/quenching-specs-execute` on a task with a protected oracle (an executable `verify:` whose
   tests sit outside its `files:`, nothing under `/docs/`, projected context ≤ 80k by
   `cq specs estimate --task`) — ADR 0014. Judgment agents (`spec-orchestrator`, `spec-verifier`,
   `spec-reviewer`, `spec-runner`) never descend, and `import-memory` stays never-`haiku`.

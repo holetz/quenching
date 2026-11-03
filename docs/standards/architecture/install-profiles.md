@@ -27,28 +27,28 @@ uses the same entry names, while `/align` can conduct only the eight local front
 
 | Entry | Commands | Kind | Module |
 | --- | --- | --- | --- |
-| `knowledge` | `/quenching-align:knowledge:*` | front | `quenching-align` |
-| `specs` | `/quenching-specs:specs:*` | provider-owned axis | `quenching-specs` |
-| `design` | `/quenching-design:design:*` | front | `quenching-design` |
-| `components` | `/quenching-align:components:*` | front | `quenching-align` |
-| `ops` | `/quenching-ops:ops:*` | front | `quenching-ops` |
-| `proof` | `/quenching-proof:proof:*` | front | `quenching-proof` |
-| `toolchain` | `/quenching-toolchain:toolchain:*` | front | `quenching-toolchain` |
-| `delivery` | `/quenching-delivery:delivery:*` | front | `quenching-delivery` |
-| `opensource` | `/quenching-opensource:opensource:*` | front | `quenching-opensource` |
-| `security` | `/quenching-security:security:*` | pillar | `quenching-security` |
-| `git` | `/quenching-specs:git:*` | pillar | `quenching-specs` |
+| `knowledge` | `/quenching-knowledge-*` | front | `quenching-align` |
+| `specs` | `/quenching-specs-*` | provider-owned axis | `quenching-specs` |
+| `design` | `/quenching-design-*` | front | `quenching-design` |
+| `components` | `/quenching-components-*` | front | `quenching-align` |
+| `ops` | `/quenching-ops-*` | front | `quenching-ops` |
+| `proof` | `/quenching-proof-*` | front | `quenching-proof` |
+| `toolchain` | `/quenching-toolchain-*` | front | `quenching-toolchain` |
+| `delivery` | `/quenching-delivery-*` | front | `quenching-delivery` |
+| `opensource` | `/quenching-opensource-*` | front | `quenching-opensource` |
+| `security` | `/quenching-security-*` | pillar | `quenching-security` |
+| `git` | `/quenching-git-*` | pillar | `quenching-specs` |
 
 `specs` has no local tree, and `security` and `git` have no conductor row. Their commands remain
 available through their own namespaces regardless of the local-front scope.
 
 ## Profiles intersect with enabled modules
 
-Two independent facts decide whether `/quenching-align:align` runs a local front, and the run takes
+Two independent facts decide whether `/quenching-align` runs a local front, and the run takes
 their **intersection**:
 
 - **The module is enabled** — the target received the module that owns the front (the table's
-  last column) with `cq deploy --modules`. `/quenching-align:align` reads `cq modules --json` once, before the first front.
+  last column) with `cq deploy --modules`. `/quenching-align` reads `cq modules --json` once, before the first front.
 - **The profile names it** — or no profile is declared (§The declaration).
 
 The profile restricts; an absent module removes. A front the profile names but whose module is not

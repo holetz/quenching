@@ -23,7 +23,7 @@ COMMAND = ("---\ndescription: Create a table.\nallowed-tools: Bash\n---\n"
            'Or call Skill(skill="bundle:tabela:criar"), Skill(\'bundle:tabela:criar\', args="t"), '
            'Skill(bundle:tabela:criar) or {"skill": "bundle:tabela:criar"}, '
            'never Skill(skill="bundle:tabela:criar:x").\n'
-           "Branch with /quenching-specs:git:branch first.\n"
+           "Branch with /quenching-git-branch first.\n"
            + "".join(f"Step {n}: a line of body that the move keeps unchanged.\n"
                      for n in range(20)))
 

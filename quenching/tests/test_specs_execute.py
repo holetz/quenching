@@ -125,7 +125,7 @@ class TaskExecutionContractTests(unittest.TestCase):
                         command.index('cq git commit --subject "<subject>"'))
         self.assertLess(command.index('cq git commit --subject "<subject>"'),
                         command.index("cq specs task --check <task-id>"))
-        self.assertIn('--commit "<sha reported by cq git commit>"', command)
+        self.assertIn('--commit "<sha reported by .agents/quenching/bin/cq git commit>"', command)
         self.assertIn("spec tick **fails**", reference)
         self.assertIn("preserve the commit", reference)
         self.assertNotIn("<the spec file>", reference)
@@ -174,11 +174,11 @@ class TaskExecutionContractTests(unittest.TestCase):
         conclude = CONCLUDE.read_text(encoding="utf-8")
         scale = SCALE.read_text(encoding="utf-8")
 
-        self.assertIn('Skill("quenching-specs:git:git", "pr-create <id>")', conclude)
+        self.assertIn('Skill("quenching-git-git", "pr-create <id>")', conclude)
         self.assertIn("`low` chains the provider handoff", conclude)
         self.assertNotIn('"<id> autonomous")', conclude)
         self.assertIn("do not invoke it", conclude)
-        self.assertIn('Skill("quenching-specs:git:git", "pr-create <id>")', scale)
+        self.assertIn('Skill("quenching-git-git", "pr-create <id>")', scale)
         self.assertIn("Other builds retain", scale)
 
     def test_autonomous_conclude_answers_every_question_without_inferring_the_outcome(self):
@@ -198,7 +198,7 @@ class TaskExecutionContractTests(unittest.TestCase):
         ):
             self.assertIn(row, conclude)
         self.assertIn("`autonomous` never supplies an outcome", conclude)
-        self.assertIn("pass `--outcome done` to `/quenching-specs:specs:specs conclude` only when execute left every task checked", runner)
+        self.assertIn("pass `--outcome done` to `/quenching-specs-specs conclude` only when execute left every task checked", runner)
         self.assertIn("never `--force`, never `abandoned` on your own", runner)
 
     def test_conclude_runs_in_its_own_spawn(self):

@@ -16,7 +16,7 @@ maintainer: quenching
 <!-- rules -->
 
 The source, `quenching/`, is written for Claude: `/quenching-<module>:<front>:<verb>` ids
-and `${CLAUDE_PLUGIN_ROOT}` citations. One translation leaves it: **`cq deploy`**
+and `.agents/quenching` citations. One translation leaves it: **`cq deploy`**
 writes a target repository's generic layer — `.agents/skills/` (read by Codex and OpenCode), the
 payload under `.agents/quenching/`, the Claude bridge under `.claude/skills/` and the subagents under
 `.claude/agents/` and `.opencode/agents/` ([deploy-mode.md](deploy-mode.md), §Target repositories).

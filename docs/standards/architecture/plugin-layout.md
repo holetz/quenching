@@ -55,7 +55,7 @@ they need, and `cq deploy --modules core|all|<list>` selects which records a tar
   not receive exits 2 naming the module and `cq deploy --modules`, and the help lists only the
   fronts present. `cq modules --json` lists each module with its pillars, whether it is enabled,
   and its root.
-- **Resources stay inside the payload.** A body cites `${CLAUDE_PLUGIN_ROOT}/…`, which deploy
+- **Resources stay inside the payload.** A body cites `.agents/quenching/…`, which deploy
   rewrites to `.agents/quenching/…`; routing to another module's command is a Skill call, offered
   only when that module is deployed.
 
@@ -106,7 +106,7 @@ shim there with `--runtime uvx`). Two properties of the generated launcher are l
 
 - **the execute bit.** A `100644` mode is not a cosmetic slip — it is the whole feature missing;
   `cq deploy --check` reports a non-executable `bin/cq` as drift.
-- **self-location from `__file__`.** Never from `${CLAUDE_PLUGIN_ROOT}`, which is substituted into a
+- **self-location from `__file__`.** Never from `.agents/quenching`, which is substituted into a
   command body's *text* and is **empty in a shell**. This binds anything executable the surface ever
   ships.
 
@@ -227,10 +227,10 @@ one side, the runtime procedure on the other — and the branch review stops bei
 Every citation of a bundled reference is:
 
 ```
-${CLAUDE_PLUGIN_ROOT}/assets/references/<name>/<file>.md
+.agents/quenching/assets/references/<name>/<file>.md
 ```
 
-`${CLAUDE_PLUGIN_ROOT}` substitutes inside a command body — measured, not assumed
+`.agents/quenching` substitutes inside a command body — measured, not assumed
 ([../../external/tools/claude-code-skill-command-mechanics.md](../../external/tools/claude-code-skill-command-mechanics.md)
 rows 1–2, re-measured 2026-07-26 on Claude Code 2.1.215).
 
@@ -263,9 +263,9 @@ listing from being flattened. Same input, two encodings, two jobs — do not rec
 
 ### A mold cites nothing it does not also install
 
-The rule above governs citation **inside** the plugin, where `${CLAUDE_PLUGIN_ROOT}` resolves. The
+The rule above governs citation **inside** the plugin, where `.agents/quenching` resolves. The
 reason is mechanical, not a claim about what a target repo happens to have: Claude Code substitutes
-`${CLAUDE_PLUGIN_ROOT}` only while it **loads a file that is part of the plugin itself** — the
+`.agents/quenching` only while it **loads a file that is part of the plugin itself** — the
 variable is never exported to a shell, and never substituted for a copy sitting in a target repo, a
 `bash` block pasted into a terminal, or any other reader outside that load path. A cross-reference to
 `quality/surface-verification.md` is correct in the plugin's own bundle and dangles wherever that
@@ -274,13 +274,13 @@ installed-elsewhere is not the same fact as loaded-from-here.
 
 **The test is "is whoever reads this inside the plugin's own file-load path?", not "does a copy
 leave the plugin?"** The narrower test missed a case the wider one catches: a payload meant to be
-pasted by a human into a raw terminal dangles a `${CLAUDE_PLUGIN_ROOT}` citation inside its `bash`
+pasted by a human into a raw terminal dangles a `.agents/quenching` citation inside its `bash`
 blocks the moment a human reads that block verbatim — before the file is copied anywhere, and
 regardless of whether the plugin is loaded in the session doing the reading. Three trees still
 answer the wider test today — `assets/templates/**` (the harness and front-matter molds),
-`assets/knowledge/**` (the OKF skeleton, copied by `/quenching-align:knowledge:align`) and `assets/specs/templates/**`; a
+`assets/knowledge/**` (the OKF skeleton, copied by `/quenching-knowledge-align`) and `assets/specs/templates/**`; a
 fourth surface added later inherits the rule without amending this list. Naming one folder was how
-a `${CLAUDE_PLUGIN_ROOT}` citation reached `assets/docs/` unnoticed: the reasoning covered it, the
+a `.agents/quenching` citation reached `assets/docs/` unnoticed: the reasoning covered it, the
 wording did not, and nothing else checks. **No validator catches this** — a path that fails to
 resolve reads as ordinary prose, so the rule is the only guard.
 
@@ -312,14 +312,14 @@ sentence of ambiguity survived every gate this repo owns.
 ### A plugin body cites the target's bundle only where the align installs it
 
 The rule above governs the direction a mold may not cite: content that will *become* target
-content may not cite the plugin, because `${CLAUDE_PLUGIN_ROOT}` never resolves once it is copied
+content may not cite the plugin, because `.agents/quenching` never resolves once it is copied
 there. The opposite direction — a command or a reference, which stays in the plugin forever,
 citing a path in the target's own bundle — needs its own rule, because nothing above states one.
 
 `/docs/standards/<subject>/<file>.md` is a **fixed string**
 ([bundle-root.md](bundle-root.md)), never a variable, so it reads as a well-formed link in every
 repo whether or not the named file actually exists there. Existence is not syntax: a target only
-carries that file if `/quenching-align:knowledge:align` installs it — that is, only if it exists under
+carries that file if `/quenching-knowledge-align` installs it — that is, only if it exists under
 `quenching/assets/knowledge/**` in this very plugin.
 
 **A command body or a reference in `commands/**` or `assets/references/**` links a `/docs/` path
@@ -356,7 +356,7 @@ the slug stays English, the prose around it follows the tag. Their whole value i
 at the instant a slug is written, which a citation spends a tool call to destroy.
 
 **The ownership test** — is a reminder legitimate at all? A boundary reminder states the edge of a
-rule the citing place **already owns**, seen from the other side. `/quenching-align:knowledge:add` owns where a doc goes
+rule the citing place **already owns**, seen from the other side. `/quenching-knowledge-add` owns where a doc goes
 and what its slug looks like, so "the slug is canonical English, the body may follow the repo's
 language" is that command's own rule at its border, not a second copy of somebody else's. A
 restatement states a fact the citing place neither owns nor can change.

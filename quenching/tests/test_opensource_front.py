@@ -75,9 +75,9 @@ class AggregateTest(unittest.TestCase):
                 self.assertFalse(contract["contentVerified"])
                 self.assertEqual([
                     {"artifact": "readme", "owner": "knowledge",
-                     "command": "/quenching-align:knowledge:align"},
+                     "command": "/quenching-knowledge-align"},
                     {"artifact": "security", "owner": "security",
-                     "command": "/quenching-security:security:status"},
+                     "command": "/quenching-security-status"},
                 ], contract["handoffs"])
                 self.assertTrue(all(row["language"] == "en" for row in payload["artifacts"]))
                 self.assertNotIn("os-artifact-not-english",

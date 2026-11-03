@@ -22,7 +22,6 @@ import re
 import unittest
 
 import _paths  # noqa: F401
-from quenching.common.modules import load_manifest, namespace_map
 
 PLUGIN_ROOT = pathlib.Path(__file__).resolve().parent.parent
 COMMANDS = PLUGIN_ROOT / "commands"
@@ -34,12 +33,10 @@ INVOCABLE = re.compile(r"`(/[a-z][a-z:-]*)`")
 
 
 def _commands_on_disk() -> set[str]:
-    """`commands/knowledge/add.md` is `/quenching-align:knowledge:add` — the path IS the identity,
+    """`commands/knowledge/add.md` is `/quenching-knowledge-add` — the path IS the identity,
     published under the module that owns its front."""
-    owners = namespace_map(PLUGIN_ROOT.parent, load_manifest(PLUGIN_ROOT.parent))
-    ids = {path.relative_to(COMMANDS).with_suffix("").as_posix().replace("/", ":")
-           for path in COMMANDS.rglob("*.md")}
-    return {f"/{owners[ident.split(':', 1)[0]]}:{ident}" for ident in ids}
+    return {"/quenching-" + path.relative_to(COMMANDS).with_suffix("").as_posix().replace("/", "-")
+            for path in COMMANDS.rglob("*.md")}
 
 
 def _manual_span(text: str) -> str:
@@ -65,12 +62,12 @@ class ReadmeManualMatchesTheSurface(unittest.TestCase):
         self.assertEqual(listed - on_disk, set(), "commands the README manual names that do not exist")
 
         self.assertEqual(
-            {command for command in listed if command.startswith("/quenching-ops:ops:")},
-            {"/quenching-ops:ops:align", "/quenching-ops:ops:status", "/quenching-ops:ops:entrypoint:new"},
+            {command for command in listed if command.startswith("/quenching-ops-")},
+            {"/quenching-ops-align", "/quenching-ops-status", "/quenching-ops-entrypoint-new"},
         )
         self.assertEqual(
-            {command for command in listed if command.startswith("/quenching-proof:proof:")},
-            {"/quenching-proof:proof:align", "/quenching-proof:proof:status", "/quenching-proof:proof:layer:new"},
+            {command for command in listed if command.startswith("/quenching-proof-")},
+            {"/quenching-proof-align", "/quenching-proof-status", "/quenching-proof-layer-new"},
         )
 
     def test_the_check_can_fail(self):

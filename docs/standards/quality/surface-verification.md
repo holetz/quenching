@@ -74,7 +74,7 @@ claimed:
    and restrict settings sources as precondition 5 requires; enabling an installed plugin in the
    fixture would test that installed copy.
 3. **Satisfy the command's own preconditions, or you measure the precondition.** A spoken-routing
-   probe for `/quenching-align:knowledge:add` invoked nothing in an empty sandbox — correctly, because there was no OKF
+   probe for `/quenching-knowledge-add` invoked nothing in an empty sandbox — correctly, because there was no OKF
    bundle to add to. That reads as a routing failure and is not one. Re-run against a real bundle,
    it routed immediately. A check on a surface whose commands have preconditions must meet them
    before its result means anything.
@@ -134,7 +134,7 @@ measured*, which is neither a pass nor a failure.
 ## The harness belongs to the components front, not to the spec cycle
 
 **The command that changes the surface is the command that proves it still loads.** That is
-`/quenching-align:components:command:new`, which mints and edits a command here, and `/quenching-align:components:command:eval`, which tunes a description on
+`/quenching-components-command-new`, which mints and edits a command here, and `/quenching-components-command-eval`, which tunes a description on
 measured hit rates. The harness is **not** a repo-wide post-change mandate, and it is **not** named
 in a spec's `## Validation` or a task's `verify:`.
 
@@ -148,8 +148,8 @@ the whole `/.specs/archive/` record: **every red run this harness has ever produ
 defect in the harness itself** — the cp1252 read, a hardcoded marketplace ref that made a live
 command read as `Unknown command`, a turn cap that reported working triggers as misses, a probe
 flaky enough to flip verdict on identical runs. **Not one traced to a surface regression.**
-Meanwhile the one real routing defect the repo has recorded — a `/quenching-align:components:hook:new` trigger that
-measured as a miss — was found by `/quenching-align:components:command:eval`, and check 3 gained a probe for it only afterwards.
+Meanwhile the one real routing defect the repo has recorded — a `/quenching-components-hook-new` trigger that
+measured as a miss — was found by `/quenching-components-command-eval`, and check 3 gained a probe for it only afterwards.
 
 **That measurement is scoped to `functional-checks.sh` alone.** It does not extend to
 `citation-check.sh` or the conclude-order check by proximity — no equivalent record exists for
@@ -165,7 +165,7 @@ A check that has only ever caught itself earns a narrow trigger. Two things foll
 
 - **It runs where the surface is edited, once**, not on every spec that happens to reach a merge.
   A spec whose work never touches `commands/**` was paying eight agent sessions to learn nothing.
-- **`/quenching-align:components:command:eval` is the instrument for routing, and check 3 is a worse copy of it.** Step 7 of
+- **`/quenching-components-command-eval` is the instrument for routing, and check 3 is a worse copy of it.** Step 7 of
   that command measures the same property with should-trigger *and* should-not-trigger prompts,
   graded per command, against five hardcoded phrases with no boundary arm. Check 3 is therefore
   **opt-in** (`--only 3`), kept only to re-guard phrases already tuned; the default run is
@@ -192,7 +192,7 @@ what can move them. Making a harness all-or-nothing is what turns a correct rule
 | what changed | what can regress | what to run |
 | --- | --- | --- |
 | a command **body** | placeholder resolution, a stale citation, a conductor's stage names | the default — checks 1, 2, 4 |
-| a `description:` line | spoken routing, and nothing else | **`/quenching-align:components:command:eval`**; `--only 3` only to re-guard the tuned phrases |
+| a `description:` line | spoken routing, and nothing else | **`/quenching-components-command-eval`**; `--only 3` only to re-guard the tuned phrases |
 | a conductor's stage names | the stage reached by registry name | `--only 2,4` |
 
 **A verification tool with no selector will be run too often or not at all.** Give one to any check
@@ -202,7 +202,7 @@ the cheap subset rather than the exhaustive one.
 ## When a process-spawning check *does* gate a merge, it gates before it
 
 Nothing above is specific to this harness: it holds for any check a repo's `## Validation` names
-that costs real resources per run. `/quenching-specs:specs:conclude` step 6 runs that gate on the **work branch,
+that costs real resources per run. `/quenching-specs-conclude` step 6 runs that gate on the **work branch,
 before the merge**, and a red check stops the merge.
 
 - Run afterwards, a failure's only repair is a commit on the base — the exact write that command's

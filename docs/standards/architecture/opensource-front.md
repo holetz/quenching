@@ -64,7 +64,7 @@ requirement. An optional control and an artifact no control names produce an `in
 never changes the exit code. `doctor` reports `applicable` when the root carries a `LICENSE*` or
 `COPYING*` file or `shared.profiles.installed` names `opensource`, and `not-applicable` otherwise;
 the root conductor reports and skips a `not-applicable` front, while
-`/quenching-opensource:opensource:align` invoked directly runs anyway. No configuration namespace
+`/quenching-opensource-align` invoked directly runs anyway. No configuration namespace
 exists: the owner's answers live in the align plan and in the written artifacts.
 
 ## Writing through the route, from pinned templates

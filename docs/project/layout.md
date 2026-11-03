@@ -23,15 +23,15 @@ of a behaviour and editing a generated copy of it.
 
 | Path | What it is | Who writes it |
 | --- | --- | --- |
-| `docs/` | this OKF bundle — the knowledge tree **and** the source of this site | `/quenching-align:knowledge:*` |
+| `docs/` | this OKF bundle — the knowledge tree **and** the source of this site | `/quenching-knowledge-*` |
 | `quenching/` | the single editable source `cq deploy` installs | the owning spec |
 | `integrations/opencode-vitrine/` | **hand-written** OpenCode Desktop GUI plugin (Specs panel); built with npm, `dist/` committed | the owning spec |
 | `integrations/claude-hud/` | band above the prompt (active spec, stage, task progress; read with `cq specs status --no-fetch`: local ref only, no fetch, no network); **hand-written**, validated by the gate with `claude plugin validate` | the owning spec |
 | `.agents/skills/`, `.agents/quenching/`, `.claude/skills/` | this repository's own deployed surface, generated from `quenching/` | `cq deploy --target . --write` |
-| `.claude/` | this repository's own local command surface | `/quenching-align:components:*` |
+| `.claude/` | this repository's own local command surface | `/quenching-components-*` |
 | `scripts/` | thin launchers CI calls | the owning spec |
-| `zensical.toml` | the site layer — outside the bundle, on purpose | `/quenching-align:knowledge:documentation:build` |
-| `AGENTS.md` (legacy `CLAUDE.md`) | the harness pointer, kept thin over this bundle | `/quenching-align:components:harness:align` |
+| `zensical.toml` | the site layer — outside the bundle, on purpose | `/quenching-knowledge-documentation-build` |
+| `AGENTS.md` (legacy `CLAUDE.md`) | the harness pointer, kept thin over this bundle | `/quenching-components-harness-align` |
 
 Every generated tree is the trap: it is **regenerated wholesale**, so editing it by hand produces a
 change that survives until the next sync and then vanishes without a diff to explain it. That holds
@@ -63,17 +63,17 @@ quenching/
 ```
 
 **`assets/knowledge/` is not this bundle.** It is the *skeleton* — the empty tree with its
-listings — that `/quenching-align:knowledge:align` writes into someone else's repository. A link this
+listings — that `/quenching-knowledge-align` writes into someone else's repository. A link this
 repository's own prose resolves may not exist there, which is exactly what
 `citation-check.sh`'s third half measures.
 
 ## Where a change belongs
 
 - Changing what a command *does* → its body under `commands/`, through
-  `/quenching-align:components:command:new`.
+  `/quenching-components-command-new`.
 - Changing the detail a body cites → the matching file under `assets/references/`.
 - Changing a durable rule about how we build → a standard under
-  [`standards/`](../standards/index.md), through `/quenching-align:knowledge:add`.
+  [`standards/`](../standards/index.md), through `/quenching-knowledge-add`.
 - Changing what a new target repo receives → `assets/knowledge/`, and never only there: the
   bundle in `docs/` and the skeleton must describe the same shape.
 

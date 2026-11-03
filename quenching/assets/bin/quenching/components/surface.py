@@ -15,7 +15,7 @@ Two shapes are conformant and both resolve here:
 
 ONE FILE PER ENTRY POINT. A command file carries its own description AND its own body; a
 command's path IS its invocation and its identity: `commands/specs/develop.md` is
-`/quenching-specs:specs:develop`, one `:` per path segment. There is nothing to mirror.
+`/quenching-specs-develop`, one `:` per path segment. There is nothing to mirror.
 
 `commands/**` is the ONLY tree Claude Code registers, which is why nothing else may live
 there: a `references/` folder beside a command file would surface every reference as a

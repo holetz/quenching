@@ -38,16 +38,16 @@ UNROUTABLE_DESCRIPTION = "Does a thing to the tree and reports what it did."
 # / tool actually takes" onto the line under the registry citation let `drop the registry arm`
 # survive the whole suite.
 CONDUCTOR_BODY = """\
-Stage 1 hands off to `qx:stage:registry`, in the bare registry form.
+Stage 1 hands off to `qx-stage-registry`, in the bare registry form.
 
-Stage 2 chains into /qx:stage:adjacent through the Skill tool.
+Stage 2 chains into /qx-stage-adjacent through the Skill tool.
 
-Stage 3 is documented for a reader as /qx:stage:slashed — a citation, not a call.
+Stage 3 is documented for a reader as /qx-stage-slashed — a citation, not a call.
 """
 
 # Its own name, in the registry form, inside its own body — a body that documents what it
 # itself does. Without the self-reference guard this reads as a command reaching itself.
-SELF_NAMING_BODY = "This command, `qx:stage:selfnamed`, rewrites the tree in place.\n"
+SELF_NAMING_BODY = "This command, `qx-stage-selfnamed`, rewrites the tree in place.\n"
 
 
 def command(name: str, body: str = "", *, typed_only: bool = False,
@@ -70,13 +70,13 @@ def command(name: str, body: str = "", *, typed_only: bool = False,
     }
 
 
-CONDUCTOR = command("/routed:conductor", CONDUCTOR_BODY)
+CONDUCTOR = command("/qx-routed-conductor", CONDUCTOR_BODY)
 SURFACE = [
     CONDUCTOR,
-    command("/stage:registry", typed_only=True),
-    command("/stage:adjacent", typed_only=True),
-    command("/stage:slashed", typed_only=True),
-    command("/stage:selfnamed", SELF_NAMING_BODY, typed_only=True),
+    command("/qx-stage-registry", typed_only=True),
+    command("/qx-stage-adjacent", typed_only=True),
+    command("/qx-stage-slashed", typed_only=True),
+    command("/qx-stage-selfnamed", SELF_NAMING_BODY, typed_only=True),
 ]
 
 
@@ -92,45 +92,45 @@ class NamedByBodies(unittest.TestCase):
 
     def test_the_registry_form_reaches_a_command(self):
         """Kills: drop the registry arm."""
-        self.assertEqual(self.reached.get("/stage:registry"), {"/routed:conductor"})
+        self.assertEqual(self.reached.get("/qx-stage-registry"), {"/qx-routed-conductor"})
 
     def test_a_name_beside_a_skill_tool_line_reaches_a_command(self):
         """Kills: drop the Skill-tool arm.
 
-        The name is written `/qx:stage:adjacent` — the leading slash that disqualifies the
+        The name is written `/qx-stage-adjacent` — the leading slash that disqualifies the
         registry form is not a disqualifier here, which is what makes this a second arm rather
         than a looser spelling of the first."""
-        self.assertEqual(self.reached.get("/stage:adjacent"), {"/routed:conductor"})
+        self.assertEqual(self.reached.get("/qx-stage-adjacent"), {"/qx-routed-conductor"})
 
     def test_a_leading_slash_away_from_a_skill_tool_line_reaches_nothing(self):
         """Kills: drop the leading-slash exclusion.
 
-        `/qx:stage:slashed` appears in the same body as the two hits above and is a citation
+        `/qx-stage-slashed` appears in the same body as the two hits above and is a citation
         for a human, not a call. Both arms have to decline it: the registry arm on the slash,
         the adjacent arm because no Skill-tool line is within a line of it."""
-        self.assertNotIn("/stage:slashed", self.reached)
+        self.assertNotIn("/qx-stage-slashed", self.reached)
 
     def test_a_body_naming_itself_does_not_reach_itself(self):
         """Kills: drop the self-reference guard."""
-        self.assertNotIn("/stage:selfnamed", self.reached)
+        self.assertNotIn("/qx-stage-selfnamed", self.reached)
 
     def test_only_the_names_the_bodies_carry_are_reached(self):
         """The union is the wider read, not an open one: a predicate that returned every
         command would satisfy three of the four assertions above."""
-        self.assertEqual(set(self.reached), {"/stage:registry", "/stage:adjacent"})
+        self.assertEqual(set(self.reached), {"/qx-stage-registry", "/qx-stage-adjacent"})
 
 
 class InertStage(unittest.TestCase):
     def test_a_typed_only_command_reached_by_name_is_reported_inert(self):
         self.assertIn("sk-inert-stage",
-                      codes(command("/stage:registry", typed_only=True), {"/routed:conductor"}))
+                      codes(command("/qx-stage-registry", typed_only=True), {"/qx-routed-conductor"}))
 
     def test_the_same_command_no_caller_reaches_is_not(self):
         """Kills: ungate `sk-inert-stage` from the caller set.
 
         `disable-model-invocation: true` is a legitimate state — it is how a stage says the
         human types it. The defect is only ever the pair: typed-only AND named by a body."""
-        typed_only = command("/stage:registry", typed_only=True)
+        typed_only = command("/qx-stage-registry", typed_only=True)
         self.assertNotIn("sk-inert-stage", codes(typed_only, None))
         self.assertNotIn("sk-inert-stage", codes(typed_only, set()))
 
@@ -141,7 +141,7 @@ class ResidencyGate(unittest.TestCase):
 
     def test_a_resident_description_with_no_trigger_and_no_boundary_raises_both(self):
         """Kills: `description_is_resident` → always `False`."""
-        found = codes(command("/routed:bare", description=UNROUTABLE_DESCRIPTION))
+        found = codes(command("/qx-routed-bare", description=UNROUTABLE_DESCRIPTION))
         self.assertIn("sk-trigger-position", found)
         self.assertIn("sk-no-boundary", found)
 
@@ -150,7 +150,7 @@ class ResidencyGate(unittest.TestCase):
 
         Nothing routes from a description that is not in context, so judging its routing prose
         is `lint` reporting a defect the command cannot have."""
-        found = codes(command("/stage:bare", description=UNROUTABLE_DESCRIPTION,
+        found = codes(command("/qx-stage-bare", description=UNROUTABLE_DESCRIPTION,
                               typed_only=True))
         self.assertNotIn("sk-trigger-position", found)
         self.assertNotIn("sk-no-boundary", found)

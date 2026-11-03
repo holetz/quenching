@@ -312,7 +312,7 @@ class CmdReleaseCommit(Lockstep):
         self.assertEqual(self.git("tag"), "")
 
 
-REPO = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", ".."))
+REPO = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 
 
 class RealRepoLockstep(unittest.TestCase):

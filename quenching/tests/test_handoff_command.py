@@ -54,7 +54,7 @@ class TheBodySendsTheHandoffThroughTheStore(unittest.TestCase):
 
     def test_it_stores_beside_the_spec_and_sends_it(self):
         self.assertIn("cq specs artifact write --spec <id> --name <name>", self.text)
-        self.assertIn("cq specs push", self.text)
+        self.assertIn(".agents/quenching/bin/cq specs push", self.text)
         self.assertIn("cq specs artifact read --spec <id> --name <name>", self.text)
         self.assertIn("specs/artifacts/_handoffs/", self.text)   # the no-spec destination
 
@@ -65,7 +65,7 @@ class TheBodySendsTheHandoffThroughTheStore(unittest.TestCase):
     def test_a_refusal_that_is_not_the_store_stays_a_failure(self):
         for code in ("sp-artifact-unsupported", "sp-artifact-no-store"):
             self.assertIn(code, self.text)
-        self.assertIn("not sent — cq specs push", self.text)
+        self.assertIn("not sent — .agents/quenching/bin/cq specs push", self.text)
 
 
 class TheGrantIsNarrow(unittest.TestCase):
@@ -97,7 +97,7 @@ class TheDirectionBlock(unittest.TestCase):
         read = READ.search(self.block)
         self.assertIsNotNone(locator, self.block)
         self.assertIsNotNone(read, self.block)
-        self.assertIn("/quenching-specs:specs:execute", self.block)
+        self.assertIn("/quenching-specs-execute", self.block)
 
     def test_all_three_fields_name_the_same_artifact(self):
         locator = LOCATOR.search(self.block)

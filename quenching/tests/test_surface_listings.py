@@ -13,7 +13,7 @@ import tomllib
 import unittest
 
 import _paths  # noqa: F401
-from quenching.common.modules import load_manifest, namespace_map
+from quenching.common.modules import load_manifest
 from quenching.knowledge.site_source import _selected_files
 
 REPO_ROOT = pathlib.Path(__file__).resolve().parents[2]
@@ -29,10 +29,8 @@ INVOCABLE = re.compile(r"`(/[a-z][a-z:-]*)`")
 
 
 def _commands_on_disk() -> set[str]:
-    owners = namespace_map(REPO_ROOT, load_manifest(REPO_ROOT))
-    ids = {path.relative_to(COMMANDS).with_suffix("").as_posix().replace("/", ":")
-           for path in COMMANDS.rglob("*.md")}
-    return {f"/{owners[ident.split(':', 1)[0]]}:{ident}" for ident in ids}
+    return {"/quenching-" + path.relative_to(COMMANDS).with_suffix("").as_posix().replace("/", "-")
+            for path in COMMANDS.rglob("*.md")}
 
 
 def _published_docs_on_disk() -> set[str]:
@@ -68,8 +66,8 @@ class ManifestSurfaceTests(unittest.TestCase):
     def test_manifest_counts_match_the_command_population(self):
         commands = _commands_on_disk()
         counts = {
-            "local fronts": len({command.split(":")[1] for command in commands
-                                  if command.split(":")[1] in {
+            "local fronts": len({command[len("/quenching-"):].split("-")[0] for command in commands
+                                  if command[len("/quenching-"):].split("-")[0] in {
                                       "knowledge", "design", "components", "ops", "proof",
                                       "toolchain", "delivery",
                                   }}),
@@ -83,8 +81,8 @@ class ManifestSurfaceTests(unittest.TestCase):
 
     def test_manifest_count_check_discriminates_a_changed_population(self):
         commands = _commands_on_disk()
-        self.assertNotIn("/quenching:" + "invented:command", commands)
-        self.assertNotEqual(len(commands), len(commands | {"/quenching:" + "invented:command"}))
+        self.assertNotIn("/quenching-" + "invented-command", commands)
+        self.assertNotEqual(len(commands), len(commands | {"/quenching-" + "invented-command"}))
 
     def test_manifest_projection_covers_each_namespace_derived_from_the_surface(self):
         commands = _commands_on_disk()
@@ -101,7 +99,7 @@ class ManifestSurfaceTests(unittest.TestCase):
             "git": 12,
         }
         actual = {
-            namespace: sum(command.split(":", 1)[1].startswith(f"{namespace}:") for command in commands)
+            namespace: sum(command.startswith(f"/quenching-{namespace}-") for command in commands)
             for namespace in expected
         }
         self.assertEqual(actual, expected)

@@ -35,7 +35,7 @@ flowchart LR
 === "Conducted (recommended)"
 
     ```text
-    /quenching-align:knowledge:documentation:produce
+    /quenching-knowledge-documentation-produce
     ```
 
     One authorization, four stages in order, one final report: coverage over the **whole
@@ -44,10 +44,10 @@ flowchart LR
 === "Stage by stage"
 
     ```text
-    /quenching-align:knowledge:documentation:plan      # diagnose + publication map + one OK
-    /quenching-align:knowledge:documentation:write     # sourced pages from the plan
-    /quenching-align:knowledge:documentation:review    # scores; changes not a byte
-    /quenching-align:knowledge:documentation:build     # site layer, strict build, rendered QA
+    /quenching-knowledge-documentation-plan      # diagnose + publication map + one OK
+    /quenching-knowledge-documentation-write     # sourced pages from the plan
+    /quenching-knowledge-documentation-review    # scores; changes not a byte
+    /quenching-knowledge-documentation-build     # site layer, strict build, rendered QA
     ```
 
     Useful when iterating on one stage — the plan of record persists at
@@ -92,7 +92,7 @@ python3 <plugin>/assets/checks/documentation-site-check.py site --local \
 ```
 
 (`<plugin>` is the quenching plugin root; inside a session the command bodies resolve it as
-`${CLAUDE_PLUGIN_ROOT}` — in a plain shell that variable is empty, so spell the path out.)
+`.agents/quenching` — in a plain shell that variable is empty, so spell the path out.)
 
 The strict build fails on broken links and unresolved references; the site checker runs
 **always, immediately after every build** — even a green one — and proves what a build cannot:

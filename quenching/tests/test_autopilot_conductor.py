@@ -51,7 +51,7 @@ class DecisionsPersistedInTheDesign(unittest.TestCase):
     def test_step_4_appends_to_the_design_and_never_rewrites_it(self):
         body = step(4)
         self.assertIn("a READ, AN APPEND AND ONE WRITE", body)
-        self.assertIn("`cq specs section --write` REPLACES the section", body)
+        self.assertIn("`.agents/quenching/bin/cq specs section --write` REPLACES the section", body)
 
     def test_every_delegated_decision_is_written_before_the_launch_it_governs(self):
         body = step(4)
@@ -78,7 +78,7 @@ class ResumeInsteadOfRelaunch(unittest.TestCase):
 
     def test_the_window_is_measured_never_assumed(self):
         self.assertIn("The window is not a constant", self.body)
-        self.assertIn("`cq components session cache --json`", self.body)
+        self.assertIn("`.agents/quenching/bin/cq components session cache --json`", self.body)
         self.assertIn("§The prompt cache is a per-harness measurement", self.body)
 
     def test_a_cold_relaunch_is_the_named_exception(self):
@@ -119,7 +119,7 @@ class BriefWithAStablePrefix(unittest.TestCase):
         self.assertIn("the gain BETWEEN distinct agents is ASSUMED, not measured in this "
                       "repository", self.body)
         self.assertIn("generations inside one agent", self.body)
-        self.assertIn("`cq components session cache` is the measurement that would confirm or "
+        self.assertIn("`.agents/quenching/bin/cq components session cache` is the measurement that would confirm or "
                       "refute it", self.body)
 
     def test_the_orchestrator_brief_is_ordered_the_same_way(self):

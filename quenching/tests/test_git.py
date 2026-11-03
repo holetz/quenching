@@ -1916,7 +1916,7 @@ class PullRequestPayload(unittest.TestCase):
     def test_provider_locator_fixture_keeps_github_and_azure_native(self):
         github = "append exactly `Closes #<n>` to the generated body"
         self.assertIn("take it from the status id, never from path", _normalise_prose(self.payload_step))
-        azure = "pass it as `--work-item <n>` to `cq git pr create`"
+        azure = "pass it as `--work-item <n>` to `.agents/quenching/bin/cq git pr create`"
         self.assertIn(github, self.payload_step)
         self.assertIn(azure, self.payload_step)
         self.assertIn("do not invent a `Closes #<n>` sentence", self.payload_step)
@@ -1969,9 +1969,9 @@ class PullRequestPayload(unittest.TestCase):
         for phrase in (
             "read-only",
             "not for:",
-            "/quenching-specs:git:pr:create",
-            "/quenching-specs:git:pr:review",
-            "/quenching-specs:git:merge",
+            "/quenching-git-pr-create",
+            "/quenching-git-pr-review",
+            "/quenching-git-merge",
             "authentication",
             "permission",
             "not-found",
@@ -2011,7 +2011,7 @@ class PullRequestPayload(unittest.TestCase):
             "detached head",
             "divergent",
             "no commits ahead",
-            "/quenching-specs:git:pr:create",
+            "/quenching-git-pr-create",
         ):
             self.assertIn(phrase.lower(), lower)
 
@@ -2188,7 +2188,7 @@ class SyncContract(unittest.TestCase):
 
     def test_sync_hands_rebased_publication_to_push_with_a_lease(self):
         self.assertIn("force-with-lease", self.lower)
-        self.assertIn("git:push", self.lower)
+        self.assertIn("git-push", self.lower)
         self.assertIn("do not publish", self.lower)
 
 
@@ -3587,7 +3587,7 @@ class OrchestratorPublishGrants(unittest.TestCase):
 
     def test_the_cleanup_is_not_granted_and_the_note_hands_it_to_the_vertical(self):
         text = " ".join((PLUGIN_ROOT / "agents" / "spec-orchestrator.md").read_text(encoding="utf-8").split())
-        self.assertIn("cleanup pending: /quenching-specs:git:cleanup", text)
+        self.assertIn("cleanup pending: /quenching-git-cleanup", text)
         self.assertNotIn("cq git worktree retire", text)
 
 

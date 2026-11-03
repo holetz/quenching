@@ -22,7 +22,7 @@ copy, a new source or an orphan. Exit 1 means the check ran and found a repairab
 difference, not that translation was unable to run.
 
 A caller that wants to reconcile the generated copy runs the same command with `--write` and then
-checks again. `/quenching-align:components:align` reports the same findings; it does not write the
+checks again. `/quenching-components-align` reports the same findings; it does not write the
 generated surface as a side effect of its taxonomy sweep. This repository checks its own
 deployed surface in `scripts/verify_repo.sh`.
 

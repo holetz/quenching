@@ -107,8 +107,6 @@ def transform_platform(text: str) -> str:
     text = AGENT_ID.sub(_agent_id, text)
     text = PLUGIN_COMMAND.sub(_module_id, text)
     text = BARE_COMMAND.sub(_bare_id, text)
-    text = text.replace("${CLAUDE_PLUGIN_ROOT}/assets/", PAYLOAD + "/assets/")
-    text = text.replace("${CLAUDE_PLUGIN_ROOT}", PAYLOAD)
     text = text.replace("${CLAUDE_PROJECT_DIR}", ".")
     text = text.replace(".claude/quenching.json", ".agents/quenching.json")
     text = text.replace(".claude/commands/", ".agents/skills/")
@@ -118,7 +116,7 @@ def transform_platform(text: str) -> str:
     text = text.replace("bare cq", f"the target-local `{CQ}`")
     text = EXPLICIT_CQ.sub(CQ, text)
     text = CQ_INVOCATION.sub(CQ, text)
-    for marker in ("${CLAUDE_PLUGIN_ROOT}", "${CLAUDE_PROJECT_DIR}", "CLAUDE_PLUGIN_ROOT"):
+    for marker in ("${CLAUDE_PROJECT_DIR}", "CLAUDE_PLUGIN_ROOT"):
         if marker in text:
             raise ValueError(f"untranslated platform marker: {marker}")
     return text

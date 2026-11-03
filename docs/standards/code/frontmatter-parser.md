@@ -21,7 +21,7 @@ line, one per shipped script, because each ran self-contained out of a target re
 `.claude/hooks/` and could import nothing else
 (`quenching/assets/references/align/tool-resolution.md`
 §Resolving the tool). Nothing installs standalone any more — every pillar resolves through
-`${CLAUDE_PLUGIN_ROOT}/assets/bin/cq` — so the premise that forced three copies is gone, and this
+`.agents/quenching/assets/bin/cq` — so the premise that forced three copies is gone, and this
 module is what replaced them.
 
 It governs the **subset of YAML** the parser claims to read, and — just as importantly — what it
