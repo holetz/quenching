@@ -137,7 +137,7 @@
     ".agents/quenching/assets/bin/quenching/components/commands/migrate.py": "bc43cb98a96ddf66f85f1bbe401ec8ca9d657c5997e97391350a85d2943322ec",
     ".agents/quenching/assets/bin/quenching/components/commands/read.py": "a0dd7e9c409dda70939e3c1d502da0154bfb02c81d92d09e038c75926567964f",
     ".agents/quenching/assets/bin/quenching/components/commands/registry.py": "954486747de7b5278a985b6d86b106a67b7a1776b39f91ce74b7bfb7ef89ee4d",
-    ".agents/quenching/assets/bin/quenching/components/commands/translate.py": "f5b713fa3d69d5320feafb33d423c19ccce7f8a9c495f0daa87ee008033636ca",
+    ".agents/quenching/assets/bin/quenching/components/commands/translate.py": "164eb898b6b96e992aaf03480e62e09b418f19c20f2532b4aa413e16870d1b01",
     ".agents/quenching/assets/bin/quenching/components/cq_calls.py": "08196c48ed43f154bb3993e518d15075fe9a5051b8060decf6d60380ff3c3b5d",
     ".agents/quenching/assets/bin/quenching/components/hooks.py": "53011ca5e13ad0e5bf1552d6f99ec60880b46670c44419de20a519f05f332f23",
     ".agents/quenching/assets/bin/quenching/components/sections.py": "8343fba43a2922960e0fc41c12590c3b075dff0f13a557c6b07d607aac18ae1d",
