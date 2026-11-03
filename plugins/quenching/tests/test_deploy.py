@@ -69,6 +69,31 @@ class Deploy(unittest.TestCase):
         self.assertEqual(0, local.returncode, local.stdout + local.stderr)
         self.assertEqual([], json.loads(local.stdout)["changes"])
 
+    def test_the_identity_hooks_ship_warn_until_active_and_refuse_an_outside_email(self):
+        self.assertEqual(0, self.run_deploy("--modules", "core", "--write")[0])
+        for hook in ("pre-commit", "pre-push"):
+            path = self.target / ".agents/quenching/assets/githooks" / hook
+            self.assertTrue(path.stat().st_mode & 0o111, hook)
+        self.assertEqual([], self.run_deploy("--modules", "core", "--check")[1]["warnings"])
+        config = json.loads((self.target / ".agents/quenching.json").read_text(encoding="utf-8"))
+        config["shared"]["gitIdentity"] = {"allowedEmails": ["dev@example.org"]}
+        self.write(".agents/quenching.json", json.dumps(config))
+        warnings = self.run_deploy("--modules", "core", "--check")[1]["warnings"]
+        self.assertTrue(any("git config core.hooksPath .agents/quenching/assets/githooks" in w
+                            for w in warnings), warnings)
+        self.git("config", "core.hooksPath", ".agents/quenching/assets/githooks")
+        self.git("config", "commit.gpgsign", "false")
+        self.git("config", "user.name", "Dev")
+        self.assertEqual([], self.run_deploy("--modules", "core", "--check")[1]["warnings"])
+        self.git("add", "-A")
+        refused = subprocess.run(
+            ["git", "-C", str(self.target), "-c", "user.email=someone@corp.example", "commit",
+             "-q", "-m", "outside"], capture_output=True, text=True)
+        self.assertNotEqual(0, refused.returncode)
+        self.assertIn("someone@corp.example", refused.stdout + refused.stderr)
+        self.git("-c", "user.email=dev@example.org", "commit", "-q", "-m", "inside")
+        self.assertEqual("dev@example.org", self.git("log", "-1", "--format=%ae").strip())
+
     def test_a_local_skill_and_agent_survive_a_deploy(self):
         self.assertEqual(0, self.run_deploy("--modules", "core", "--write")[0])
         skill = self.target / ".agents/skills/bundle-local/SKILL.md"

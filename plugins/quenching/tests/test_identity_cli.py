@@ -1,4 +1,4 @@
-"""Executable proofs for `cq security identity` and the identity findings `leak` adds."""
+"""Executable proofs for `cq git identity` and the identity findings `cq security leak` adds."""
 from __future__ import annotations
 
 import contextlib
@@ -15,16 +15,23 @@ try:
 except ModuleNotFoundError:  # package-qualified unittest invocation from the repository root
     sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
     import _paths  # noqa: F401
-from quenching.security import main
+from quenching.git import main as git_main
+from quenching.security import main as security_main
 from test_identity_allowlist import ALLOWED, OUTSIDE, IdentityRepo, declare
 from test_leak_scan import HOME, git
 
 
 def run(argv: list[str], stdin: str = "", as_json: bool = True) -> tuple[int, object]:
+    """`identity …` runs `cq git identity`; `leak …` runs `cq security leak`."""
+    main = git_main if argv[0] == "identity" else security_main
     out, err = io.StringIO(), io.StringIO()
-    with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err), \
-            mock.patch.object(sys, "stdin", io.StringIO(stdin)):
-        code = main([*argv, "--json"] if as_json else argv)
+    cwd = os.getcwd()
+    try:
+        with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err), \
+                mock.patch.object(sys, "stdin", io.StringIO(stdin)):
+            code = main([*argv, "--json"] if as_json else argv)
+    finally:
+        os.chdir(cwd)
     text = out.getvalue() or err.getvalue()
     return code, json.loads(text) if as_json else text
 
@@ -79,10 +86,12 @@ class IdentityVerb(IdentityRepo):
         code, out = run(["leak", "--staged", "--generic-only", "--root", self.repo])
         self.assertEqual((code, out["code"]), (2, "identity-allowlist-invalid"))
 
-    def test_identity_needs_a_hook_mode(self):
-        self.assertEqual(run(["identity", "--root", self.repo])[1]["code"], "identity-mode-missing")
-        self.assertEqual(run(["identity", "--all", "--root", self.repo])[1]["code"],
-                         "identity-mode-invalid")
+    def test_identity_needs_exactly_one_hook_mode(self):
+        for argv in (["identity", "--root", self.repo],
+                     ["identity", "--staged", "--pre-push", "--root", self.repo]):
+            with self.subTest(argv=argv), self.assertRaises(SystemExit) as caught:
+                run(argv)
+            self.assertEqual(caught.exception.code, 2)
 
     def test_leak_adds_the_identity_findings(self):
         declare(self.repo, {"allowedEmails": ALLOWED})

@@ -7,7 +7,9 @@ the check off in silence. A denylist cannot enumerate every address that must no
 allowlist names the few that may.
 
 The findings reuse the leak gate's `Finding`, labelled `email-not-allowed`, and — unlike a leak
-excerpt — carry the email itself: the person refused needs to see which identity to fix.
+excerpt — carry the email itself: the person refused needs to see which identity to fix. Two verbs
+answer with them: `cq security leak` beside its content patterns, and `cq git identity` alone —
+the one the hooks `cq deploy` ships call, because the `git` package is in every deployed target.
 """
 from __future__ import annotations
 
@@ -92,3 +94,31 @@ def push_findings(root: str, hook_input: str, patterns: list[str],
                 if not allowed(email, patterns):
                     findings.append(_finding(f"commit {sha[:12]} ({role})", email))
     return findings
+
+
+def refusal(invalid: AllowlistInvalid) -> dict:
+    """The exit-2 payload a verb emits for a malformed declaration."""
+    return {"code": "identity-allowlist-invalid", "key": KEY, "message": str(invalid),
+            "remedy": f"declare {KEY} as a list such as "
+                      '["you@example.org", "*@users.noreply.github.com"], or remove it'}
+
+
+def findings(mode: str, root: str, patterns: list[str] | None, hook_input: str = "",
+             remote: str | None = None) -> list[Finding]:
+    """The findings of one hook mode (`staged` or `pre-push`); none without a declaration."""
+    if not patterns:
+        return []
+    if mode == "staged":
+        return staged_findings(root, patterns)
+    if mode == "pre-push":
+        return push_findings(root, hook_input, patterns, remote)
+    return []
+
+
+def render(gate: str, mode: str, found: list[Finding]) -> str:
+    """The human report: one line per finding, the remedy when an identity was refused, a total."""
+    lines = [f.render() for f in found]
+    if any(f.label == LABEL for f in found):
+        lines.append(STAGED_REMEDY if mode == "staged" else PUSH_REMEDY)
+    lines.append(f"{gate} ({mode}): {len(found)} finding(s)" if found else f"{gate} ({mode}): clean")
+    return "\n".join(lines)

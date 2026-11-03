@@ -1,7 +1,9 @@
 """The read-only ``security`` pillar: its live questions, and the leak gate's scanner.
 
 ``leak`` reads and answers through its exit code (0 clean, 1 findings, 2 configuration); the hook
-that calls it is what refuses the commit or the push.
+that calls it is what refuses the commit or the push. ``--staged`` and ``--pre-push`` also judge
+the declared email allowlist (`shared.gitIdentity.allowedEmails`); `cq git identity` runs that
+check alone, for targets that do not deploy this module.
 """
 from __future__ import annotations
 
@@ -10,7 +12,7 @@ import os
 import subprocess
 import sys
 
-from quenching.common import leak
+from quenching.common import identity, leak
 from quenching.common.front import resolve_root
 from quenching.common.output import NoAbbrevParser, emit, refuse
 from quenching.common.version import VERSION
@@ -82,21 +84,24 @@ def _leak(args: argparse.Namespace, root: str, as_json: bool) -> int:
         return refuse({"code": "leak-denylist-missing", "path": str(missing.path),
                        "message": f"{missing}; create it (one regex per line), set "
                                   f"{leak.DENYLIST_ENV}, or pass --generic-only"}, as_json)
+    try:
+        allow = identity.load_allowlist(root)
+    except identity.AllowlistInvalid as invalid:
+        return refuse(identity.refusal(invalid), as_json)
     mode = "staged" if args.staged else "pre-push" if args.pre_push else "all"
+    hook_input = sys.stdin.read() if args.pre_push else ""
     try:
         if args.staged:
             found = leak.scan_staged(root, pats)
         elif args.pre_push:
-            found = leak.scan_push(root, sys.stdin.read(), pats, args.remote)
+            found = leak.scan_push(root, hook_input, pats, args.remote)
         else:
             found = leak.scan_all(root, pats)
+        found += identity.findings(mode, root, allow, hook_input, args.remote)
     except subprocess.CalledProcessError as failed:
         return refuse({"code": "leak-git-failed",
                        "message": f"git failed while scanning: {(failed.stderr or '').strip()}"}, as_json)
     payload = {"ok": not found, "mode": mode, "genericOnly": bool(args.generic_only),
                "findings": [f.as_dict() for f in found]}
-    lines = [f.render() for f in found]
-    lines.append(f"leak gate ({mode}): {len(found)} finding(s)" if found
-                 else f"leak gate ({mode}): clean")
-    emit(as_json, payload, "\n".join(lines))
+    emit(as_json, payload, identity.render("leak gate", mode, found))
     return 1 if found else 0
