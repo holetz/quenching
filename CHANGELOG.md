@@ -13,6 +13,47 @@ owner: [`ci-cd/versioning-release.md`](docs/standards/ci-cd/versioning-release.m
 short version for a consumer: the version is published once, deliberately, as a release — never at a
 spec's own conclude — and `cq --version` is what answers which one you are running.
 
+## 7.0.2
+
+**A cor transparente dos tokens vira cor Typst.** O `tokens.typ` projeta `srgb`, `srgb-linear`,
+  `hsl`, `oklab` e `oklch` como construtor de cor do Typst, `alpha` incluso, para o template consumir
+  o token em `fill:` ou `stroke:`; um espaço que o Typst não constrói mantém a string CSS portátil, e
+  o adaptador nunca converte wide-gamut por conta própria. A linha do `srgb` opaco mantém os bytes que
+  os repositórios instalados já carregam.
+
+**O ciclo de spec para de pagar contexto que já está quente.** Um `needs-human:` respondido volta ao
+  MESMO agente por `SendMessage`, dentro da janela medida em `cq components session cache`, em vez de
+  um relançamento frio — que continua sendo a resposta honesta para `budget:`, host sem canal,
+  `agentId` perdido, decisão fora da janela e repetição de uma decisão já registrada. A resume conta
+  em `resumes:`, nunca em `launches`, e vale também para o `spec-runner` em economy mode.
+
+**O relatório fixo carrega o exit do gate em campo próprio.** `GATE_EXIT:` fica ao lado de `GATE:` em
+  todo STATE, e o verifier lê o código como claim, sem garimpar número em prosa; linha omitida é
+  inconclusiva, nunca passe.
+
+**Task que não escreve arquivo se declara `files: (operational)`.** O marcador é o `files:` inteiro —
+  `validate` recusa misturado com caminho (`sp-files-operational`), a operacional sem `verify:` avisa
+  (`sp-operational-no-verify`), o grupo `[P]` fica inelegível e o Codex não a recebe. `next` e
+  `show --task` entregam `operational: true` com `files: []`, e é o flag — nunca a lista vazia — que
+  dispensa o sha no verifier; o scope check continua cobrando qualquer arquivo que a task escreveu. O
+  template e o schema documentam a anotação em lockstep byte a byte.
+
+**Sob `autonomous` o `conclude` abre o PR.** O run publica sozinho depois do gate verde, em qualquer
+  complexidade, porque a publicação não pode depender de um orquestrador que talvez não exista; o
+  `spec-orchestrator` adota esse PR no PASS do verifier em vez de abrir um segundo.
+
+**O corte de worktree aceita a base suja sob autorização explícita.** O passo 1 do autopilot decide o
+  checkout sujo e grava a decisão no round record e no `## Design` do épico antes do lançamento que
+  depende dela; o corte autorizado parte de `origin/<base>` e reporta os caminhos que ficam na base,
+  nunca dentro da worktree. O formulário Branch, que roda `git checkout -b` no próprio checkout,
+  continua recusando.
+
+**O `## Design` do épico passa a ser leitura, append e uma escrita.** `cq specs section --write`
+  substitui a seção, então as decisões do dono delegado viram bullets datados escritos antes do
+  lançamento; o brief do passo 5 abre com o prefixo fixo e fecha com as variáveis, e o develop
+  pergunta na composição quais testes a task toca, para declará-los em `files:` junto da
+  implementação.
+
 ## 7.0.1
 
 **Painel Specs do OpenCode sem depender do `cq` no PATH.** O `quenching-vitrine` passa a rodar o
