@@ -603,6 +603,11 @@ uvx --from "git+https://github.com/holetz/quenching@<tag>#subdirectory=plugins/q
   cq deploy --target . --modules core --write
 ```
 
+`<tag>` is a release tag such as `7.0.0` (list them with
+`git ls-remote --tags https://github.com/holetz/quenching`); a literal `<tag>` fails with
+`Git operation failed`. To upgrade an installed target, drop `--modules`: the recorded manifest
+keeps its modules, while `--modules core` narrows a wider install and deletes the rest.
+
 | Option | Values |
 | --- | --- |
 | `--modules` | `core` (default: `quenching-specs` plus `quenching-align` — specs, git, knowledge, components), `all`, or a comma list of modules; `specs` is always included because it owns the one `cq` |

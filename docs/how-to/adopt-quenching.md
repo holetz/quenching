@@ -37,6 +37,11 @@ uvx --from "git+https://github.com/holetz/quenching@<tag>#subdirectory=plugins/q
   cq deploy --target . --modules core --write
 ```
 
+`<tag>` is a release tag such as `7.0.0` (list them with
+`git ls-remote --tags https://github.com/holetz/quenching`); a literal `<tag>` fails with
+`Git operation failed`. To upgrade an installed target, drop `--modules`: the recorded manifest
+keeps its modules, while `--modules core` narrows a wider install and deletes the rest.
+
 `--modules` takes `core` (default), `all` or a comma list; `--harness` takes `claude`, `codex`,
 `opencode` or `none`; `--runtime uvx` writes a pinned shim instead of vendoring the runtime. The
 target keeps `AGENTS.md` and `.agents/` as its source; `.agents/quenching/` and `.claude/skills/`
