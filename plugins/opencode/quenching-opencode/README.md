@@ -3,7 +3,7 @@
 This OpenCode distribution is generated from `plugins/quenching/`, the only editable source. Run
 `python3 scripts/sync_opencode_plugin.py --write` to refresh it; never edit it by hand.
 
-It carries 62 commands (`commands/`), 5 subagents (`agents/`) and the payload they
+It carries 65 commands (`commands/`), 5 subagents (`agents/`) and the payload they
 cite (`quenching/`, including the bundled `cq`).
 
 ## Install

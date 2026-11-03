@@ -36,16 +36,17 @@ from quenching.git.worktree import _is_codex_artifact
 
 PLUGIN_ROOT = pathlib.Path(__file__).resolve().parent.parent
 CQ = str(PLUGIN_ROOT / "assets" / "bin" / "cq")
-PR_CREATE = PLUGIN_ROOT / "commands" / "git" / "pr" / "create.md"
-PR_STATUS = PLUGIN_ROOT / "commands" / "git" / "pr" / "status.md"
+PR_CREATE = PLUGIN_ROOT / "assets" / "references" / "git-flows" / "pr-create.md"
+PR_STATUS = PLUGIN_ROOT / "assets" / "references" / "git-flows" / "pr-status.md"
 PUSH_COMMAND = PLUGIN_ROOT / "commands" / "git" / "push.md"
 REVERT_COMMAND = PLUGIN_ROOT / "commands" / "git" / "revert.md"
+PR_STATUS_SHORTCUT = PLUGIN_ROOT / "commands" / "git" / "pr" / "status.md"
 PR_REFERENCE = PLUGIN_ROOT / "assets" / "references" / "git" / "pr.md"
 MERGE_REFERENCE = PLUGIN_ROOT / "assets" / "references" / "git" / "merge.md"
-COMMIT_COMMAND = PLUGIN_ROOT / "commands" / "git" / "commit.md"
+COMMIT_COMMAND = PLUGIN_ROOT / "assets" / "references" / "git-flows" / "commit.md"
 COMMIT_INCREMENTAL_COMMAND = PLUGIN_ROOT / "commands" / "git" / "commit-incremental.md"
 CLEANUP_COMMAND = PLUGIN_ROOT / "commands" / "git" / "cleanup.md"
-SYNC_COMMAND = PLUGIN_ROOT / "commands" / "git" / "sync.md"
+SYNC_COMMAND = PLUGIN_ROOT / "assets" / "references" / "git-flows" / "sync.md"
 
 
 def _normalise_prose(text: str) -> str:
@@ -1844,7 +1845,7 @@ class PullRequestPayload(unittest.TestCase):
         self.assertIn("squash", reference)
 
     def test_status_command_routes_both_providers_and_normalizes_the_snapshot(self):
-        command = PR_STATUS.read_text(encoding="utf-8")
+        command = PR_STATUS_SHORTCUT.read_text(encoding="utf-8") + PR_STATUS.read_text(encoding="utf-8")
         reference = PR_REFERENCE.read_text(encoding="utf-8")
         combined = f"{command}\n{reference}"
         for phrase in (
@@ -1872,7 +1873,7 @@ class PullRequestPayload(unittest.TestCase):
             self.assertIn(phrase, combined)
 
     def test_status_command_is_read_only_and_keeps_provider_failures_distinct(self):
-        command = PR_STATUS.read_text(encoding="utf-8").lower()
+        command = (PR_STATUS_SHORTCUT.read_text(encoding="utf-8") + PR_STATUS.read_text(encoding="utf-8")).lower()
         reference = PR_REFERENCE.read_text(encoding="utf-8").lower()
         combined = f"{command}\n{reference}"
         for phrase in (

@@ -131,7 +131,7 @@ class SourceToolsLock(unittest.TestCase):
         self.assertNotIn("cq components read quenching://", everything)
         text = self.tree["skills/quenching-git-commit/SKILL.md"].decode("utf-8")
         self.assertIn("# Read the quenching MCP resource: "
-                      "quenching://references/git/commit.md?section=%C2%A7Commit%20messages", text)
+                      "quenching://references/git-flows/commit.md", text)
 
     def test_sub_agents_are_cited_by_their_registered_name_and_bundled_protocol(self):
         everything = b"".join(self.tree.values()).decode("utf-8")

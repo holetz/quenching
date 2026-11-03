@@ -20,4 +20,4 @@ Delegate to these, by name, where a skill says to:
 
 ## Skills
 
-62 skills, one per quenching command.
+65 skills, one per quenching command.

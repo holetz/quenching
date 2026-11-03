@@ -92,16 +92,16 @@ class ManifestSurfaceTests(unittest.TestCase):
     def test_manifest_projection_covers_each_namespace_derived_from_the_surface(self):
         commands = _commands_on_disk()
         expected = {
-            "knowledge": 13,
+            "knowledge": 14,
             "specs": 11,
             "design": 3,
-            "components": 8,
+            "components": 9,
             "ops": 3,
             "proof": 3,
             "toolchain": 2,
             "delivery": 2,
             "security": 1,
-            "git": 11,
+            "git": 12,
         }
         actual = {
             namespace: sum(command.split(":", 1)[1].startswith(f"{namespace}:") for command in commands)

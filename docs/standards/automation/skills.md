@@ -235,10 +235,24 @@ failure to economise.
 A vertical with several flows that conductors call (`specs`: create, develop, execute, conclude,
 triage, status, orchestrate) carries **one routed skill** — `/quenching-specs:specs:specs <flow> <id>` —
 and each flow's body lives once in `assets/references/specs-flows/<flow>.md`, loaded with
-`cq components read`. The model's list pays for one description; a flow's text is read only when it
+`cq components read`. The pattern applies to **any vertical**, in the same shape:
+`commands/<vertical>/<vertical>.md` routes, `assets/references/<vertical>-flows/<flow>.md` holds
+each body (`knowledge`, `components` and `git` follow it). A flow already typed-only (a human-only
+command) never enters the router's table.
+
+**Which verticals earn a router.** The criterion is the count of model-invocable entries the vertical
+puts in the list: a router replaces N resident descriptions with one, so it pays only where N is large.
+The verticals of one to three commands (`align`, `delivery`, `design`, `ops`, `proof`, `toolchain`,
+`opensource`, `security`) stay as they are, since the saving is smaller than the router's own
+description. `components:align` and `command:new` recognise a vertical with many model-invocable
+entries and *propose* the router; they never apply it unasked. The model's list pays for one description; a flow's text is read only when it
 runs. The router grants only `Bash(cq:*)`, `Bash(cq.cmd:*)` and `Read`, so it widens no flow's tool
 grant; a tool the flow needs beyond that comes from the conductor agent's own tools or a human
-prompt.
+prompt. **The exception is `git`**: its router grants the narrower `Bash(cq components read:*)`,
+`Bash(cq.cmd components read:*)`, `Bash(cq specs status:*)` and `Read`, because the git flows run raw
+`git` and `gh` under the conductor's own grants and the router adds nothing to them. A `hooks:` block
+stays on the typed-only shortcut that declares it (`git/commit.md`); a flow loaded through the router
+does not fire it, and that loss is accepted, since the hook only warns.
 
 Each former command stays as a thin **typed-only shortcut**: it declares
 `disable-model-invocation: true`, keeps its exact tool grant and loads the same reference, so
@@ -247,7 +261,7 @@ shortcut declares no `model:`: a worker's model comes from its agent, the main s
 human.
 
 **The conductor calls the router, never the shortcut.** `disable-model-invocation: true` makes the
-Skill tool refuse the shortcut, so `spec-runner`, `orchestrator` and the translated surfaces
+Skill tool refuse the shortcut, so `spec-runner`, `spec-orchestrator` and the translated surfaces
 (Codex, OpenCode, Omnigent) invoke the router with the `flow` argument and the id. Naming the
 shortcut in an agent body would break the conductor silently.
 

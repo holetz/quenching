@@ -137,7 +137,7 @@ verifier PASS, authorized by this invocation, with its date. Check the result wi
 **Economy mode.** An epic with **at most 2 members, every one `low` or `medium`**, runs without
 `quenching-spec-orchestrator`: this session launches `quenching-spec-runner` →
 `quenching-spec-verifier` for each member and, after the PASS, publishes it itself
-(`/quenching-git-pr-create autonomous`, then `.agents/quenching/bin/cq git pr merge` on green CI), with the acceptance rules
+(`/quenching-git-git pr-create autonomous`, then `.agents/quenching/bin/cq git pr merge` on green CI), with the acceptance rules
 of the spec-orchestrator's protocol, cited and not restated — steps 3 (budget, `budget:` relaunch), 4
 (acceptance only on a spec-verifier PASS, the `execute-done:`/`conclude` two spawns, publish after the PASS,
 one re-spawn) and 5 (retry, idempotency) of `plugins/quenching/agents/spec-orchestrator.md`.

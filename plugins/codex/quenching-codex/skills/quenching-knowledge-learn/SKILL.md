@@ -15,74 +15,35 @@ Tier mapping: opus → `gpt-6-astra`; sonnet → `gpt-6.1-sol`; haiku → `gpt-6
 <!-- CODEX RUNTIME END -->
 
 
-# quenching-knowledge-learn — capture generic knowledge, OKF-conformant
+# quenching-knowledge-learn — typed shortcut
 
-**Input**: `$ARGUMENTS` (the generic understanding to capture — a concept, mental model, explanation, or learning).
+Typed shortcut to the `learn` flow of [quenching-knowledge-knowledge](../../commands/knowledge/knowledge.md).
+Input: `$ARGUMENTS`.
 
-Files one piece of understanding the human gives you into the canonical OKF bundle's
-[`concepts/`](../../knowledge/concepts/index.md) home. Assumes the bundle already exists (run `quenching-knowledge-align` first if not). The home boundaries are shared with `quenching-knowledge-add`
-([knowledge-add/homes.md](../../references/knowledge-add/homes.md)); the `type` vocabulary
-and conformance rules with `quenching-knowledge-align`
-([knowledge-align/taxonomy.md](../../references/knowledge-align/taxonomy.md),
-[knowledge-align/conformance.md](../../references/knowledge-align/conformance.md)).
-
-## Workflow
-
-### 1. Confirm the home
-Read the knowledge the human stated. Confirm it is **generic understanding** (not a contract /
-decision / procedure / external-asset fact). If it belongs in another home, say so and hand off
-to `quenching-knowledge-add`. Otherwise proceed under `concepts/`. **Done when:** the home is
-confirmed or the item is routed away.
-
-### 2. Determine identity (path)
-Pick (or create) the `concepts/<subject>/` subfolder for the concept — e.g. `domain/`,
-`glossary/`, `concepts/`. Concept ID = the path without `.md`; one concept per file; kebab-case;
-**English slug**. If the subject already carries a cluster subfolder, nest inside it. If the
-concept creates a **new** subfolder, that subfolder needs its own `index.md`. **Done when:** the
-canonical concept path and any new subject index are fixed.
-
-### 3. Fill the mold
-Copy `../../templates/concept-front.md` and complete the frontmatter:
-`type: concept` + the OKF recommended fields (`title`/`description`/`resource`/`generated`)
-+ the method labels (`audience` — usually `both`; `authority` — usually `background`;
-`source` — who supplied it; `maintainer`). Derive `resource`; set `generated` to
-`{ by: human:<id>, at: <ISO 8601 UTC> }` (or a `process:`/`<producer>/<version>` actor when
-that is what produced it).
-**Done when:** the complete stamp is evidence-backed.
-
-### 4. Write the concept doc
-Write the file with `Write`. Favor structural markdown (headings, lists, tables). Cross-home
-links absolute (`/docs/...`); within-home links relative. Body prose MAY be the repo's language.
-**Done when:** the concept body is written without overwriting filled content.
-
-### 5. Update `concepts/index.md`
-Add a bullet-link with the doc's `description`
-(`* [<title>](<rel-path>.md) — <description>`) under the right subject. If you created a new
-subfolder, create its frontmatter-free `index.md` and link it from `concepts/index.md`. Never
-add frontmatter to an `index.md`. **Done when:** the concept and all required index links are in
-place.
-
-### 6. Enrich the glossary
-If the concept introduced a **repo-specific term**, add or sharpen its entry in
-`glossary.md` per **Enriching the glossary** in
-[knowledge-add/homes.md](../../references/knowledge-add/homes.md) (the tail step
-every capture runs; on-demand counterpart `quenching-knowledge-define`, bulk counterpart
-`quenching-knowledge-glossary-backfill`). **Done when:** every repo-specific term is linked or
-explicitly left for a glossary command.
-
-### 7. Self-check against the conformance core
-Verify every file you touched against
-[knowledge-align/conformance.md](../../references/knowledge-align/conformance.md) —
-the same checks `cq knowledge validate` machine-verifies. **Done when:** validation and the touched
-file list are reported.
-
-## Invariants to never violate
-
-- Never file a **contract / decision / procedure / external-asset fact** under `concepts/` —
-  route it to its home via `quenching-knowledge-add`.
-- Never write an empty or self-pointing `resource`, and never fabricate a `source`.
-- Never add frontmatter to an `index.md`; never leave a new subfolder without one.
-- Never overwrite a filled key on merge; never leave the index un-updated.
-- Never skip the glossary tail step when the concept names a repo-specific term — but never
-  clobber a filled glossary entry, and never fold a term's full explanation into the glossary
-  (it holds the one-liner + the link; the depth stays in the concept doc).
+```bash
+cq() {
+  local plugin_root="${CODEX_PLUGIN_ROOT:-${PLUGIN_ROOT:-}}"
+  if [ -z "$plugin_root" ]; then
+    plugin_root="$(set -o pipefail
+codex plugin list --json | python3 -c '
+import json, os, sys
+from pathlib import Path
+plugins = [p for p in json.load(sys.stdin)["installed"] if p.get("name") == "quenching-codex" and p.get("enabled")]
+if len(plugins) != 1:
+    sys.exit("quenching-codex: enable exactly one installation, or provide its plugin root")
+p = plugins[0]
+home = Path(os.environ.get("CODEX_HOME", str(Path.home() / ".codex")))
+print(p.get("installedPath") or home / "plugins/cache" / p["marketplaceName"] / p["name"] / p["version"])
+')" || return 2
+  fi
+  if [ -z "$plugin_root" ] || [ ! -f "$plugin_root/scripts/cq" ]; then
+    echo "quenching-codex: installed plugin root not found; enable the plugin first" >&2
+    return 2
+  fi
+  python3 "$plugin_root/scripts/cq" "$@"
+}
+cq components read ../../references/knowledge-flows/learn.md
+```
+Read the flow whole, once, and follow it from its own `## Workflow` with `$ARGUMENTS` as its input:
+its steps, `Done when:` lines and invariants bind this run as they would the flow itself.
+**Done when:** the flow ran to its own `Done when:`, or stopped on its own stop condition.
