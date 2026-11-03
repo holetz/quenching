@@ -186,6 +186,7 @@
       "decisions/0015-deploy-mode.md",
       "decisions/0016-spec-store-writes-accumulate-locally.md",
       "decisions/0017-install-only-by-deploy.md",
+      "decisions/0018-retire-omnigent-and-source-manifest.md",
     ] },
     "glossary.md",
   ]

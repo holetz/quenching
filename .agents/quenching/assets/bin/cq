@@ -160,11 +160,9 @@ def module_owners() -> dict[str, str]:
             for package in module.get("owned", {}).get("packages", [])}
 
 
-def _plugin_name(root: str) -> str:
-    try:
-        return json.loads(_read(os.path.join(root, ".claude-plugin", "plugin.json")) or "{}").get("name", "")
-    except ValueError:
-        return ""
+def _is_source(root: str) -> bool:
+    """The source of quenching is the root that carries `VERSION` and `assets/modules.json`."""
+    return os.path.isfile(os.path.join(root, "VERSION")) and os.path.isfile(os.path.join(root, "assets", "modules.json"))
 
 
 def package_root(package: str) -> str | None:
@@ -178,7 +176,7 @@ def package_root(package: str) -> str | None:
         if os.path.basename(os.path.normpath(entry)) != "bin" or not os.path.isdir(os.path.join(entry, "quenching", package)):
             continue
         root = os.path.dirname(os.path.dirname(os.path.realpath(entry)))
-        if owner is None or _plugin_name(root) in (owner, "quenching"):
+        if owner is None or _is_source(root):
             return root
     return None
 

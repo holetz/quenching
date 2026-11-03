@@ -22,10 +22,10 @@ supersedes the part of 0017 that kept the Omnigent operator agent as a plugin th
 - `plugins/omnigent/quenching/` was a generated bundle (one operator agent, no payload) with its own
   generator, a `--check` in the gate, an eval profile, a model-compatibility table and a release
   regeneration step. It installed into no repository and pinned its MCP server to a published tag.
-- `plugins/quenching/.claude-plugin/plugin.json` was the manifest of a plugin that is no longer
+- The source's `.claude-plugin/plugin.json` was the manifest of a plugin that is no longer
   published. Code still used it as the identity of the source (`package_root`, `plugin_prefix`) and
   as a lockstep artifact.
-- `plugins/quenching/bin/cq` and `bin/cq.cmd` existed only for the `PATH` entry Claude Code builds
+- The source's `bin/cq` and `bin/cq.cmd` existed only for the `PATH` entry Claude Code builds
   for an enabled plugin. The real entry point is `assets/bin/cq`, which the wheel, the release tool,
   the evals and the vitrine already call.
 - `cq components translate` packaged the Codex plugin; ADR 0017 removed its purpose but kept it so
