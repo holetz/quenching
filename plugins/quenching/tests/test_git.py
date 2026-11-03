@@ -1478,6 +1478,32 @@ class VerifierGrants(unittest.TestCase):
             self.assertIn(phrase, text)
 
 
+class VerifierOperationalTask(unittest.TestCase):
+    """The verifier reads the `(operational)` DECLARATION, and the scope check stays the
+    guard that keeps it from hiding a diff: the marker excuses the sha it owes and adds no
+    path to the union, so anything the task wrote is still outside the declaration."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.text = " ".join((PLUGIN_ROOT / "agents" / "spec-verifier.md")
+                            .read_text(encoding="utf-8").split())
+
+    def test_check_2_excuses_only_the_operational_task(self):
+        self.assertIn("it is the ONE kind of checked task that owes no sha", self.text)
+        self.assertIn("Every other checked task without a sha is FAIL", self.text)
+        self.assertIn('"operational": true', self.text)
+
+    def test_check_3_reads_the_gate_exit_claim(self):
+        self.assertIn("Read the code the worker reported on its own `GATE_EXIT:` line as a "
+                      "CLAIM", self.text)
+        self.assertIn("An absent line and `not-run` are both INCONCLUSIVE, never FAIL",
+                      self.text)
+
+    def test_check_4_still_fails_a_file_an_operational_task_wrote(self):
+        self.assertIn("An operational task contributes no path to the union, so a file it "
+                      "wrote stays outside and is FAIL", self.text)
+
+
 class VerifierScopeCheck(unittest.TestCase):
     def test_check_4_applies_scope_only_after_removing_proven_copies(self):
         text = (PLUGIN_ROOT / "agents" / "spec-verifier.md").read_text(encoding="utf-8")
