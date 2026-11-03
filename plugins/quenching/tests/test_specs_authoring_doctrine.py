@@ -12,6 +12,8 @@ import unittest
 ROOT = Path(__file__).resolve().parents[3]
 ARTIFACTS = ROOT / "plugins/quenching/assets/references/specs-develop/artifacts.md"
 DEVELOP = ROOT / "plugins/quenching/assets/references/specs-flows/develop.md"
+AGENTS = ROOT / "docs/standards/automation/agents.md"
+CONTEXT_DISCIPLINE = ROOT / "docs/standards/automation/context-discipline.md"
 
 
 def text(path: Path) -> str:
@@ -41,6 +43,20 @@ class ComposeAsksForTheTests(unittest.TestCase):
         self.assertIn("which tests does this task touch?", body)
         self.assertIn("beside them, per task", body)
         self.assertIn("the out-of-scope diff the verifier charges at the door", body)
+
+
+class TheReportAndTheOperationalTask(unittest.TestCase):
+    def test_agents_names_the_gate_exit_field(self):
+        body = text(AGENTS)
+        self.assertIn("The fixed report carries the gate's exit in a field of its own", body)
+        self.assertIn("`GATE_EXIT: <code | not-run>`", body)
+        self.assertIn("an omitted line is read as inconclusive, never as a pass", body)
+
+    def test_agents_accepts_the_operational_task_without_a_commit(self):
+        body = text(AGENTS)
+        self.assertIn("A task that writes no repository file is accepted without a commit", body)
+        self.assertIn("the verifier requires a sha only from the tasks that declared paths", body)
+        self.assertIn("so the marker can never hide a change", body)
 
 
 if __name__ == "__main__":
