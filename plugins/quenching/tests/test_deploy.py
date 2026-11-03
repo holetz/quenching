@@ -69,6 +69,22 @@ class Deploy(unittest.TestCase):
         self.assertEqual(0, local.returncode, local.stdout + local.stderr)
         self.assertEqual([], json.loads(local.stdout)["changes"])
 
+    def test_a_local_skill_and_agent_survive_a_deploy(self):
+        self.assertEqual(0, self.run_deploy("--modules", "core", "--write")[0])
+        skill = self.target / ".agents/skills/bundle-local/SKILL.md"
+        skill.parent.mkdir(parents=True)
+        skill.write_text("---\nname: bundle-local\ndescription: a target's own skill\n---\n\nBody.\n",
+                         encoding="utf-8")
+        agent = self.target / ".claude/agents/local-agent.md"
+        agent.parent.mkdir(parents=True, exist_ok=True)
+        agent.write_text("---\nname: local-agent\ndescription: a target's own agent\n---\n\nBody.\n",
+                         encoding="utf-8")
+        self.assertEqual(0, self.run_deploy("--modules", "core", "--write")[0])
+        self.assertTrue(skill.is_file())
+        self.assertTrue(agent.is_file())
+        check, again = self.run_deploy("--modules", "core", "--check")
+        self.assertEqual((0, []), (check, again["changes"]))
+
     def test_generated_skill_grants_both_launchers_and_names_the_platform(self):
         self.assertEqual(0, self.run_deploy("--modules", "core", "--write")[0])
         skill = (self.target / ".agents/skills/quenching-specs-execute/SKILL.md").read_text()
