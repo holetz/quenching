@@ -7,7 +7,7 @@ tags: [architecture, listings, derived-state, verification, convergence]
 timestamp: 2026-11-03
 audience: both
 authority: current
-source: decide-plans-index-need spec (task 6.1) — the retirement of /.specs/plans/index.md is the case that proved it; validar-a-zona-generated-contra-o-disco (2026-08-17) — the checker that made "keeps its checker" true for the zone's content; spec 2163 (2026-11-03) — the gate charged the proof README's own drift
+source: decide-plans-index-need spec (task 6.1) — the retirement of /.specs/plans/index.md is the case that proved it; validar-a-zona-generated-contra-o-disco (2026-08-17) — the checker that made "keeps its checker" true for the zone's content; spec 2163 (2026-11-03)
 maintainer: quenching
 ---
 
