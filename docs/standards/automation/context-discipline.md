@@ -528,6 +528,27 @@ is mixed in project and workload, so comparing peaks across harnesses is not a c
 Spec 2149 keeps this repository's aggregate as the artifact `baseline-2026-11-02.json`, the reference
 for the comparison spec 2157 repeats per harness.
 
+Spec 2157 repeated it on 2026-11-02, per harness, with the same command and the baseline of 2149 as
+the "before". The sample is small and the comparison is indicative, never a cost claim:
+
+| Harness | Before (baseline of 2149, this repository) | After (`--all --since 2026-11-02T23:37-03:00`, the merge of 2156) | Reading |
+| --- | --- | --- | --- |
+| Claude Code | `spec-runner` on Sonnet: 492 sessions, 8,172 requests, 93.8% hit, median first request 19,025 tokens | `spec-runner` on Sonnet: 1 session, 18 requests, 91.8% hit, median first request 20,651 | one session is not a median; no regression is visible and no gain can be claimed |
+| OpenCode (DeepSeek) | 9 `spec-runner` sessions, 98.8% hit, median first request 15,016 | no session after the merge | nothing to compare; the listing below is the only post-epic number |
+
+Static skill listing of this repository's `.agents/skills/` (name plus description, four characters per
+token), at the commit before the router specs and at the tip after 2156: 65 to 69 skills, of which 39
+to 10 are offered to the model (the rest are typed shortcuts with `disable-model-invocation`), or about
+2,140 to 390 tokens. It counts only this repository's skills; the 102 entries (about 11,300 tokens) the
+OpenCode sessions measured also carry skills from other sources, and whether OpenCode drops
+`disable-model-invocation` skills from its listing is unproved until an OpenCode session runs on the new
+surface and `skillListing` reports it. Raw artifacts: `after-2026-11-02.json` and
+`listing-2026-11-02.json` in the store of spec 2157.
+
+What stays unmeasured, and why: the three real specs, one per trajectory, with questions and refinements
+counted. They need live sessions and paid spend. DeepSeek through the gateway stays in tokens, with no
+price.
+
 ## What a delegated executor costs
 
 <!-- rules -->
