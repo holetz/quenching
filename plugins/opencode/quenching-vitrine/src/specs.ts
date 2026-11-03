@@ -1,6 +1,6 @@
 import { spawn, type ChildProcess } from "node:child_process"
 import { createInterface } from "node:readline"
-import { cqBinary, cqJson, git, mainRoot } from "./cq.js"
+import { cqBinary, cqJson, git, mainRoot, spawnArgs, type Launch } from "./cq.js"
 
 /** Uma linha de `cq specs list`, normalizada para a GUI. */
 export type SpecRow = {
@@ -448,8 +448,9 @@ export async function commitSpec(cwd: string): Promise<number | undefined> {
 type Portal = { child: ChildProcess; url: Promise<string> }
 let portal: Portal | undefined
 
-function launch(cwd: string, bin: string, args: string[]): Portal {
-  const child = spawn(bin, args, { cwd, stdio: ["ignore", "pipe", "inherit"] })
+function launch(cwd: string, cq: Launch, args: string[]): Portal {
+  const call = spawnArgs(cq, args)
+  const child = spawn(call.command, call.args, { cwd, stdio: ["ignore", "pipe", "inherit"], windowsHide: true, ...call.options })
   const url = new Promise<string>((resolveURL, reject) => {
     let text = ""
     createInterface({ input: child.stdout! }).on("line", (line) => {
@@ -480,15 +481,15 @@ function stop(): void {
 }
 
 async function start(cwd: string): Promise<string> {
-  const { bin } = await cqBinary(cwd)
+  const { launch: cq } = await cqBinary(cwd)
   // Sem `--read-only`: o board abre com escrita habilitada (o backend ainda pode recusar).
-  const central = launch(cwd, bin, ["portal", "serve", "--json"])
+  const central = launch(cwd, cq, ["portal", "serve", "--json"])
   portal = central
   try {
     return await central.url
   } catch {
     if (portal?.child === central.child) portal = undefined
-    const single = launch(cwd, bin, ["specs", "serve", "--json"])
+    const single = launch(cwd, cq, ["specs", "serve", "--json"])
     portal = single
     return single.url
   }
