@@ -19,7 +19,8 @@ Register this directory as an agent on the Omnigent server, or run it locally:
 omnigent run --agent plugins/omnigent/quenching -p "/quenching-specs-status"
 ```
 
-Do not install the OpenCode distribution on the same machine: it carries the same commands.
+On a host that serves this agent, do not also `cq deploy` quenching skills into the user-level
+skill directories named above: both copies would load.
 
 ## Permissions
 

@@ -82,7 +82,7 @@
   ],
   "sha256": {
     ".generated-from.json": "e3af5e9a2e90bb63015192fef0affb0a5d9c4cb409c87ac8530bb515bc465b60",
-    "README.md": "f1bab3ff0dedb0353442983a09e109c5883591ae116a3138207fd2065dac4c49",
+    "README.md": "e77156fd8faea5f9d84b500c46ef9b4883c5dbdc73eff3b4d10eb7ab53313dea",
     "agents/spec-orchestrator/config.yaml": "7476a0d24e103a930c4587837cff88d36a9e9f9c61c3400c4082e47159c31a77",
     "agents/spec-orchestrator/instructions.md": "57758a94c742cac91be2e1d632c34bdafb6b6bcc8d1b92d28346d2c6484c44ed",
     "agents/spec-reviewer/config.yaml": "db52faea2b651a3de9a44b259bf86c88808397bd615af98130e6b2058d037a35",
