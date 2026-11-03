@@ -26,6 +26,9 @@ site-source/
 # Throwaway experiment directories.
 .tmp-*/
 
+# Dependencies of the hand-written OpenCode GUI plugin (installed, never committed).
+node_modules/
+
 # The documentation-site checker keeps a committed static fixture named `site/`.
 !plugins/quenching/assets/checks/fixtures/documentation-site-check/glossary/site/
 !plugins/quenching/assets/checks/fixtures/documentation-site-check/glossary/site/**
