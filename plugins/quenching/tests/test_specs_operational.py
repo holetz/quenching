@@ -27,6 +27,7 @@ except ModuleNotFoundError:  # package-qualified unittest invocation from the re
 
 from quenching.specs.backends.memory import MemoryBackend
 from quenching.specs.commands import estimate as estimate_module
+from quenching.specs.commands import granular as granular_module
 from quenching.specs.commands import next as next_module
 from quenching.specs.commands import parallel as parallel_module
 from quenching.specs.commands import validate as validate_module
@@ -207,6 +208,32 @@ class Next(Workspace):
         code, payload = self.next(ident)
         self.assertEqual(code, 1)
         self.assertEqual(payload["code"], "sp-files-operational")
+
+
+class Show(Workspace):
+    def test_the_task_view_carries_the_flag_that_files_alone_cannot(self):
+        """`files: []` is ambiguous on its own: an operational task and one that declared
+        the empty list print the same. The verifier excuses a sha only for the first, so
+        the flag has to be on the row it reads."""
+        ident = self.write("### 1. One\n\n- [ ] 1.1 Gate\n      files: (operational)\n"
+                           "      verify: make check\n")
+        code, payload = self.dispatch("show", granular_module, spec=str(ident),
+                                      task=["1.1"], full=False)
+        self.assertEqual(code, 0)
+        row = payload["tasks"][0]
+        self.assertEqual(row["files"], [])
+        self.assertTrue(row["operational"])
+
+    def test_an_undeclared_task_is_not_operational(self):
+        """No `files:` line parses to the same `[]` an operational task carries, which is
+        exactly why the flag cannot be inferred from the list."""
+        ident = self.write("### 1. One\n\n- [ ] 1.1 Gate\n      verify: make check\n")
+        code, payload = self.dispatch("show", granular_module, spec=str(ident),
+                                      task=["1.1"], full=False)
+        self.assertEqual(code, 0)
+        row = payload["tasks"][0]
+        self.assertEqual(row["files"], [])
+        self.assertFalse(row["operational"])
 
 
 class Estimate(Workspace):

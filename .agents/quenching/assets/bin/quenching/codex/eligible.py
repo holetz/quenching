@@ -29,7 +29,10 @@ WRITTEN_KNOWLEDGE = ("docs", "knowledge")
 
 
 def strip_annotation(entry: str) -> str:
-    """`path (new)` → `path`: a trailing RESERVED `files:` annotation, dropped."""
+    """`path (new)` → `path`: the one annotation that reaches this point, dropped.
+
+    `(operational)` never gets here — `eligibility` refuses the task before it reads the
+    paths, because there is nothing for Codex to write."""
     return entry[:-len("(new)")].rstrip() if entry.endswith("(new)") else entry
 
 
