@@ -159,7 +159,8 @@
           "components-harness-align",
           "front-align",
           "knowledge-documentation",
-          "knowledge-import-memory"
+          "knowledge-import-memory",
+          "knowledge-flows"
         ],
         "router": true
       },
