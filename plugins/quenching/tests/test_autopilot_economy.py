@@ -44,9 +44,18 @@ class EconomyModeTests(unittest.TestCase):
         self.assertIn("Every launch counts in `launches`", body)
         head = AUTOPILOT.read_text(encoding="utf-8").split("---")[1]
         self.assertIn(
-            "allowed-tools: Bash(cq:*), Bash(cq.cmd:*), Bash(git:*), Bash, Read, Grep, Glob, Agent, Task, TaskStop",
+            "allowed-tools: Bash(cq:*), Bash(cq.cmd:*), Bash(git:*), Bash, Read, Grep, Glob, Agent, Task, TaskStop, SendMessage",
             head,
         )
+
+    def test_a_blocked_economy_worker_is_resumed_the_same_way(self):
+        """Economy mode has no orchestrator, so the worker it launched is the one to resume:
+        the rule names it, and step 5 never sends an answered question to the human epic."""
+        body = text()
+        self.assertIn("in economy mode, a `spec-runner`) returns `blocked` with `NOTE: "
+                      "needs-human:", body)
+        self.assertIn("answered inside the measured window, it goes back to the same agent by "
+                      "`SendMessage`", body)
 
 
 if __name__ == "__main__":

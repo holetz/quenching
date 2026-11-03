@@ -26,9 +26,18 @@ cq git state --json           # `branch`, `status` (porcelain), `staged`, `remot
 cq git base --json
 cq specs config --json        # `worktreeSetup`, `sharedPaths`, or their empty values — exit 0 either way
 ```
-`status` non-empty → refuse, name the offending paths, and stop; isolating a dirty
-tree carries whatever was already sitting there into the first commit on the new ref, silently.
-**Done when:** the rules are loaded, the tree is confirmed clean, and the base branch is resolved.
+`status` non-empty → **an authorized cut is the one exception, and the authorization is the
+caller's word, never this command's inference.** The autopilot's step 1 authorizes a worktree cut
+from `origin/<base>` when the base is dirty and no fix spec may absorb it; a caller that says so in
+its own words ("authorized cut", "cut from origin/<base> with the base dirty") proceeds. Name the
+dirty paths first, say plainly that they stay in the base and never enter the new worktree, then
+cut in step 3 from the remote tip, which carries none of them. The exception is **worktree-only**:
+the Branch form runs `git checkout -b` in this checkout and would carry the dirt into the first
+commit on the new ref, so a dirty tree there stays a refusal. Anything short of that explicit
+authorization → refuse, name the offending paths, and stop; isolating a dirty tree carries whatever
+was already sitting there into the first commit on the new ref, silently.
+**Done when:** the rules are loaded, the tree is confirmed clean or its dirty paths were named
+under an authorized cut, and the base branch is resolved.
 
 ### 2. Resolve the ID, when one was given
 `$ARGUMENTS` naming a spec → `cq specs status --spec "<id>" --json` and read its `records.branch`.
@@ -91,11 +100,15 @@ cq git specs <branch> --add "<id>" --json
 
 ### 5. Report
 State the form taken, the branch name and **which layer governed it**, the worktree path, the setup's
-result (if run), and what was stamped. **Done when:** the summary names every fact step 4 produced.
+result (if run), and what was stamped. Under an authorized cut, also state the dirty paths that
+stayed in the base — the round reports them, and nothing of them is in the worktree.
+**Done when:** the summary names every fact step 4 produced.
 
 ## Invariants
 
-- Never isolate over a dirty tree — refuse and name the paths.
+- Never isolate over a dirty tree, except the authorized worktree cut from `origin/<base>`: there
+  the dirty paths are named, reported as staying in the base, and never enter the new worktree. The
+  Branch form in a dirty checkout is always a refusal.
 - **Take a worktree by default, unasked.** No decision sheet on the form, no offer, and no sniffing
   the target repo to pick something else; a plain branch only when the human asks for it in the
   run's own words.

@@ -51,15 +51,23 @@ matches (`--root` is an option of the granted verb). Without a worktree, `--work
 
 1. Tasks: `.agents/quenching/bin/cq specs status --spec <id> --json` shows checked == total. For a spec of another repository add `--root <repo>` after the verb (`.agents/quenching/bin/cq specs status --root <repo> --spec <id> --json`, same for `show`): a flag before the verb matches no grant.
 2. Commits: the payload's `commits` is non-empty, and each task sha the worker named is in it.
-3. Gate: you execute nothing. Record the exit code the worker reported for the spec's declared
-   gate as a CLAIM, not a verdict: the gate is certified by CI on the PR before the merge
-   (the `spec-orchestrator` `merge` step). A missing report is inconclusive; neither a reported pass nor
-   a reported failure decides your verdict on its own, and a claimed failure is FAIL.
+   A checked task whose `files:` is the reserved `(operational)` annotation writes no repository
+   file, so it is the ONE kind of checked task that owes no sha: `.agents/quenching/bin/cq specs show --spec <id>
+   --task <t> --json` reports it as `"operational": true` with `"files": []`. Every other
+   checked task without a sha is FAIL — the declaration is the whole excuse, and it never
+   extends to a task that declared paths.
+3. Gate: you execute nothing. Read the code the worker reported on its own `GATE_EXIT:` line as
+   a CLAIM, not a verdict: the gate is certified by CI on the PR before the merge
+   (the `spec-orchestrator` `merge` step). An absent line and `not-run` are both INCONCLUSIVE,
+   never FAIL; neither a reported pass nor a reported failure decides your verdict on its own,
+   and a claimed failure is FAIL.
 4. Scope: `n/a` only when `changed` is empty. Otherwise, first remove the payload's `generated`:
    paths the audit proved a byte-for-byte copy of their source in a module the base manifest
    declares. Compare the remaining paths with the union of the tasks' `files:` (plus spec records).
    The `tasks` list of `.agents/quenching/bin/cq specs show --spec <id> --json` carries no `files:`: read it per task with
-   `.agents/quenching/bin/cq specs show --spec <id> --task <t> --json` (`--task` repeats).
+   `.agents/quenching/bin/cq specs show --spec <id> --task <t> --json` (`--task` repeats). An operational task
+   contributes no path to the union, so a file it wrote stays outside and is FAIL: the marker
+   declares a task that writes nothing, it never hides a diff.
    Every remaining path outside the union is FAIL, including when the union is empty; list each
    one. A non-empty `changed` containing only proven generated copies passes scope, never `n/a`.
    A generated file that was edited by hand, a derived output that is no copy and an authored file

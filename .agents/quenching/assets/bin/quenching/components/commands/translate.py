@@ -153,6 +153,13 @@ def transform_codex_runtime(text: str, adaptation: dict) -> str:
         pieces[index] = re.sub(r"\b(opus|sonnet|haiku)\b",
                                lambda match: models[match.group()], pieces[index])
         pieces[index] = pieces[index].replace("`TaskStop`", "the host's interrupt-agent tool")
+        # `SendMessage` is the Claude resume channel, and no Codex host exposes it. The body
+        # already carries the cold-relaunch fallback, so the command form goes first and the
+        # bare name after it, so no occurrence of either survives the translation.
+        pieces[index] = pieces[index].replace(
+            "`SendMessage({to: <agentId>})`",
+            "`the host's message-agent tool ({to: <agentId>})`")
+        pieces[index] = pieces[index].replace("SendMessage", "the host's message-agent tool")
     text = "".join(pieces)
     text = re.sub(r"8\. \*\*Telemetry\.\*\*[\s\S]*?(?=\n## Hard prohibitions)",
         "8. **Telemetry.** Record host-provided usage per Codex model and agent role, never sum "

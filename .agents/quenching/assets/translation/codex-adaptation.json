@@ -37,6 +37,7 @@
     "AskUserQuestion",
     "Task",
     "Skill",
+    "SendMessage — the resume channel becomes the host's message-an-agent tool; a host without one takes the cold relaunch the body names",
     "context: fork",
     "hooks",
     "align — preserve the seven-front dependency order, applicability probes, not-applicable versus skipped vocabulary, and cross-front re-probe",

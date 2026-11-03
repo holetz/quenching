@@ -4,10 +4,10 @@ title: Subagent authoring
 description: When work becomes a subagent, the definition contract for .claude/agents/, and how the surface is inventoried
 resource: plugins/quenching/commands/components/agent/new.md, plugins/quenching/commands/components/align.md, plugins/quenching/assets/bin/quenching/components/**
 tags: [automation, agents, delegation]
-timestamp: 2026-10-17
+timestamp: 2026-11-03
 audience: both
 authority: current
-source: skill-front capability research (2026-07-27) — hookify/plugin-dev/agent-sdk-dev + official docs; instrument-and-extend-skill-front plan §6
+source: skill-front capability research (2026-07-27) — hookify/plugin-dev/agent-sdk-dev + official docs; instrument-and-extend-skill-front plan §6; spec 2163 (2026-11-03)
 maintainer: quenching
 ---
 
@@ -89,6 +89,14 @@ Rules:
   never in a scratchpad file a prompt points at.
 - Every worker and the orchestrator forbid `git stash`, `checkout`, `switch` and `reset`, and end
   in a fixed return report. A worker result is accepted only on a `spec-verifier` PASS.
+- **The fixed report carries the gate's exit in a field of its own.** A worker states
+  `GATE: pass | fail | not-run — <command>` and `GATE_EXIT: <code | not-run>` as two lines, in
+  every STATE; the verifier reads the code as a claim and never parses a number out of prose. A
+  gate that did not run says `not-run` — an omitted line is read as inconclusive, never as a pass.
+- **A task that writes no repository file is accepted without a commit.** `files: (operational)`
+  declares it; the verifier requires a sha only from the tasks that declared paths, and the scope
+  check still charges any file the task wrote as an out-of-scope diff, so the marker can never hide
+  a change.
 - Plugin agents cannot carry hooks, so prohibitions are prose, enforced by the verifier's audit.
 - Pass `model` explicitly when delegating; a declared pin may not survive into a subagent.
 - Models: no `haiku` for agents that write product code, except the per-task executor of

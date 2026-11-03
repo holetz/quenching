@@ -2,12 +2,12 @@
 type: standard
 title: Generated listings — a derived listing only pays for itself when a program can prove it is fresh
 description: A listing regenerated from disk is a second source of a fact something else already derives, so it earns its keep only where nothing else derives that fact and a checker can decide freshness; the decision criterion is whether a command already answers the same question on demand, the /docs/ bundle index.md files are the counterexample that bounds the rule, and a convergence condition may name only what a checker decides
-resource: plugins/quenching/assets/knowledge/**/index.md, plugins/quenching/assets/bin/quenching/knowledge/structure.py, plugins/quenching/assets/bin/quenching/components/**, plugins/quenching/assets/bin/quenching/specs/**, plugins/quenching/assets/references/specs-align/conformance.md, plugins/quenching/assets/references/align/convergence.md
+resource: plugins/quenching/assets/knowledge/**/index.md, plugins/quenching/assets/bin/quenching/knowledge/structure.py, plugins/quenching/assets/bin/quenching/components/**, plugins/quenching/assets/bin/quenching/specs/**, plugins/quenching/assets/references/specs-align/conformance.md, plugins/quenching/assets/references/align/convergence.md, plugins/README.md
 tags: [architecture, listings, derived-state, verification, convergence]
-timestamp: 2026-08-17
+timestamp: 2026-11-03
 audience: both
 authority: current
-source: decide-plans-index-need spec (task 6.1) — the retirement of /.specs/plans/index.md is the case that proved it; validar-a-zona-generated-contra-o-disco (2026-08-17) — the checker that made "keeps its checker" true for the zone's content
+source: decide-plans-index-need spec (task 6.1) — the retirement of /.specs/plans/index.md is the case that proved it; validar-a-zona-generated-contra-o-disco (2026-08-17) — the checker that made "keeps its checker" true for the zone's content; spec 2163 (2026-11-03)
 maintainer: quenching
 ---
 
@@ -35,7 +35,7 @@ writer of the bytes between its delimiters; authored prose outside them remains 
 | Zone | Owner | Delimiters | Freshness marker |
 | --- | --- | --- | --- |
 | Operations registry | `cq ops registry --write` / `--check` | `<!-- quenching-ops-registry-start -->` / `<!-- quenching-ops-registry-end -->` | `<!-- quenching-ops-registry-sha256 <64 lowercase hexadecimal digits> -->` |
-| Proof layer README | `cq proof readme --write` / `--check` | `<!-- quenching-proof-readme-start -->` / `<!-- quenching-proof-readme-end -->` | `<!-- quenching-proof-readme-sha256 <64 lowercase hexadecimal digits> -->` |
+| Proof layer README | `cq proof readme --write` / `--check`, on `plugins/README.md` | `<!-- quenching-proof-readme-start -->` / `<!-- quenching-proof-readme-end -->` | `<!-- quenching-proof-readme-sha256 <64 lowercase hexadecimal digits> -->` |
 | Standards index | `cq knowledge listing --write` / `--check` | `<!-- BEGIN GENERATED -->` / `<!-- END GENERATED -->` in `standards/index.md` | no hash marker: freshness is the `generated-listing-missing` / `generated-listing-drift` findings |
 
 ## The decision criterion, applied before writing any code

@@ -205,6 +205,26 @@ class CodexRuntimeTranslation(unittest.TestCase):
         self.assertIn("fixture = 'opus'", result)
         self.assertIn("model: opus", raw)
 
+    def test_runtime_rewrites_the_resume_channel_and_manual_review_names_it(self):
+        """No Codex host exposes `SendMessage`: the command form and the bare name both go,
+        and the human translating by hand is told the channel and its fallback."""
+        saved = (translate.SOURCE, translate.TARGET, translate.MANIFEST)
+        self.addCleanup(lambda: setattr(translate, "SOURCE", saved[0]))
+        self.addCleanup(lambda: setattr(translate, "TARGET", saved[1]))
+        self.addCleanup(lambda: setattr(translate, "MANIFEST", saved[2]))
+        translate.configure(str(translate.payload_root()), str(translate.payload_root()))
+        adaptation = translate.read_adaptation()
+        raw = ("keep the `agentId`, then `SendMessage({to: <agentId>})`; no `SendMessage` "
+               "in your grants.\n```text\nSendMessage({to: <agentId>})\n```\n")
+        result = translate.transform_codex_runtime(raw, adaptation)
+        self.assertNotIn("SendMessage", result.split("```")[0])
+        self.assertIn("the host's message-agent tool ({to: <agentId>})", result)
+        self.assertIn("the host's message-agent tool", result)
+        self.assertIn("SendMessage({to: <agentId>})", result,
+                      "a fenced fixture is data, never rewritten")
+        self.assertIn("SendMessage — the resume channel becomes the host's message-an-agent "
+                      "tool", " ".join(adaptation["manual_review"]))
+
     def test_runtime_policy_admits_luna_only_on_a_protected_oracle(self):
         adaptation = {"runtime": {"models": {"opus": "gpt-6-astra", "sonnet": "gpt-6.1-sol",
                                              "haiku": "gpt-6-luna"}}}

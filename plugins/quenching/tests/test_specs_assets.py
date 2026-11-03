@@ -36,6 +36,16 @@ class EmbeddedAssets(unittest.TestCase):
         self.assertEqual((ASSETS / "templates" / "spec.md").read_text(encoding="utf-8"),
                          TEMPLATE_SPEC)
 
+    def test_the_operational_annotation_is_documented_in_both_copies(self):
+        """The byte-for-byte check proves the copies agree; this one proves the pair still
+        DOCUMENTS the second reserved annotation, so an edit cannot drop it from both
+        silently and leave `files: (operational)` accepted by code and unexplained by the
+        grammar a human writes against."""
+        for text in ((ASSETS / "templates" / "spec.md").read_text(encoding="utf-8"),
+                     TEMPLATE_SPEC):
+            self.assertIn("`(operational)`", text)
+            self.assertIn("sp-files-operational", text)
+
     def test_stripping_the_prose_is_load_bearing_and_not_decoration(self):
         """Why the comparison above goes through `_behavioral` at all.
 

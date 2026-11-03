@@ -1,14 +1,17 @@
 # /quenching-specs:specs:conclude — review, archive, distil — and hand off
 
 **Input**: `$ARGUMENTS` — the spec id, and optionally its outcome. A conductor launched with
-`--autonomous` adds the word `autonomous`; the run then stops at the named PR handoff, which the `spec-orchestrator` performs after the `spec-verifier` PASS, or the main session otherwise.
+`--autonomous` adds the word `autonomous`; for a `done` outcome the run then opens the PR itself
+after the green gate, and the `spec-orchestrator` adopts that PR on the `spec-verifier` PASS
+instead of opening a second.
 
 Closes ONE spec out, short of the merge itself. Four things happen, in this order, and each is a
 separate decision: the whole branch is **reviewed**, the `/docs/` the work *revealed* is
 **written**, the spec is **archived and distilled** into the OKF bundle, and the pre-merge gate is
 **proven green** — then the run **stops**, naming `/quenching-specs:git:pr:create` or
 `/quenching-specs:git:merge` as the human's own next command — except that a spec recorded at `low` complexity chains directly
-to `/quenching-specs:git:pr:create` through `Skill` after the green gate, unless the input carried `autonomous`.
+to `/quenching-specs:git:pr:create` through `Skill` after the green gate; under `autonomous` that same
+invocation carries the word `autonomous` and runs unasked.
 
 **Done work ends on the work branch; abandoned close-out writes land in the checkout holding the
 base.**
@@ -100,7 +103,8 @@ stops the run with `STATE: blocked` and `NOTE: needs-human: <the question>`.
 | Step 6 — an inconclusive check | `needs-human`, the check named |
 | Step 6 — the abandoned branch-delete offer | keep, recorded in the report |
 
-A red gate is `STATE: failed`, never a question. The PR handoff is named and not invoked (step 6).
+A red gate is `STATE: failed`, never a question. For a `done` outcome step 6 opens the PR itself;
+for `abandoned` there is no handoff to make.
 
 ## Workflow
 
@@ -345,7 +349,18 @@ the scope, follow it; when it does not, run what it says and report the cost as 
 selector.
 
 The gate passed — the branch is reviewed, distilled, archived, and proven. For a `done` outcome,
-read the complexity from the status payload already in hand. **`low` chains the provider handoff
+read the complexity from the status payload already in hand. **Under `autonomous` the run opens the
+PR itself, whatever the complexity**, because publication cannot depend on an orchestrator that
+may never exist: the same verb the `low` path chains, with the word `autonomous` as the human's
+pre-answer to its confirmation.
+
+```text
+Skill("quenching-specs:git:git", "pr-create <id> autonomous")
+```
+
+`/quenching-specs:git:pr:create <id> autonomous` owns its own push, confirmation and `pr` record;
+report the url it stamps on `PR:`, and never a second handoff — `/quenching-specs:git:merge` is not
+invoked from here under any outcome. **Outside `autonomous`, `low` chains the provider handoff
 now:**
 
 ```text
@@ -354,10 +369,7 @@ Skill("quenching-specs:git:git", "pr-create <id>")
 
 Invoke it with the spec id; `/quenching-specs:git:pr:create` owns its own confirmation, push and PR
 record. Do not offer a second handoff or invoke `/quenching-specs:git:merge` on the low path.
-**When this run's input carried `autonomous`, do not invoke it:** the `spec-orchestrator` publishes (push and PR)
-after the `spec-verifier` accepts the spec. Name the handoff (`/quenching-specs:git:pr:create
-<id> autonomous`) in the report and stop. **For
-`medium`, `high` and `xhigh`, name the handoff and stop:**
+**For `medium`, `high` and `xhigh`, do not invoke it: name the handoff and stop:**
 
 Use the provider configuration already read in step 1 to name the next command: recommend
 `/quenching-specs:git:pr:create` when the configured provider supports the PR route, otherwise

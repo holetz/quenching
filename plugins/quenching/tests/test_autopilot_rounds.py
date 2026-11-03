@@ -27,6 +27,10 @@ class AutopilotRoundsTests(unittest.TestCase):
         self.assertIn("`open|closed`", body)
         self.assertIn("resumes at its recorded next step", body)
 
+    def test_round_record_counts_resumes_apart_from_launches(self):
+        body = text()
+        self.assertIn("`launches`, `resumes`, next step", body)
+
     def test_next_round_opens_in_fresh_context_with_fallback(self):
         body = text()
         self.assertIn("**fresh context**", body)
@@ -38,9 +42,9 @@ class AutopilotRoundsTests(unittest.TestCase):
         self.assertIn("default **40**, provisional", body)
         self.assertIn("The launch ceiling binds the whole tree", body)
 
-    def test_grants_are_unchanged(self):
+    def test_grants_carry_the_resume_channel_and_no_bash_widening(self):
         head = AUTOPILOT.read_text(encoding="utf-8").split("---")[1]
-        self.assertIn("allowed-tools: Bash(cq:*), Bash(cq.cmd:*), Bash(git:*), Bash, Read, Grep, Glob, Agent, Task, TaskStop", head)
+        self.assertIn("allowed-tools: Bash(cq:*), Bash(cq.cmd:*), Bash(git:*), Bash, Read, Grep, Glob, Agent, Task, TaskStop, SendMessage", head)
 
 
 if __name__ == "__main__":

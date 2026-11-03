@@ -1478,6 +1478,32 @@ class VerifierGrants(unittest.TestCase):
             self.assertIn(phrase, text)
 
 
+class VerifierOperationalTask(unittest.TestCase):
+    """The verifier reads the `(operational)` DECLARATION, and the scope check stays the
+    guard that keeps it from hiding a diff: the marker excuses the sha it owes and adds no
+    path to the union, so anything the task wrote is still outside the declaration."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.text = " ".join((PLUGIN_ROOT / "agents" / "spec-verifier.md")
+                            .read_text(encoding="utf-8").split())
+
+    def test_check_2_excuses_only_the_operational_task(self):
+        self.assertIn("it is the ONE kind of checked task that owes no sha", self.text)
+        self.assertIn("Every other checked task without a sha is FAIL", self.text)
+        self.assertIn('"operational": true', self.text)
+
+    def test_check_3_reads_the_gate_exit_claim(self):
+        self.assertIn("Read the code the worker reported on its own `GATE_EXIT:` line as a "
+                      "CLAIM", self.text)
+        self.assertIn("An absent line and `not-run` are both INCONCLUSIVE, never FAIL",
+                      self.text)
+
+    def test_check_4_still_fails_a_file_an_operational_task_wrote(self):
+        self.assertIn("An operational task contributes no path to the union, so a file it "
+                      "wrote stays outside and is FAIL", self.text)
+
+
 class VerifierScopeCheck(unittest.TestCase):
     def test_check_4_applies_scope_only_after_removing_proven_copies(self):
         text = (PLUGIN_ROOT / "agents" / "spec-verifier.md").read_text(encoding="utf-8")
@@ -1514,8 +1540,72 @@ class OrchestratorGrants(unittest.TestCase):
 
     def test_the_verifier_prompt_carries_the_gate_exit_the_worker_reported(self):
         text = " ".join((PLUGIN_ROOT / "agents" / "spec-orchestrator.md").read_text(encoding="utf-8").split())
-        self.assertIn("the exit the worker reported on its `GATE:` line as a claim", text)
+        self.assertIn("carries the worker's `GATE_EXIT:` line verbatim as a claim", text)
         self.assertIn("`sem relato` when it reported none", text)
+        self.assertNotIn("`GATE:` line as a claim", text,
+                         "the exit code is its own line — the verifier never parses `GATE:` "
+                         "for a number")
+
+    def test_the_delegation_prompt_opens_with_the_fixed_text(self):
+        """Fixed text first is what lets two prompts of the same type share a cacheable
+        prefix; the variables that differ per spec close the brief."""
+        text = " ".join((PLUGIN_ROOT / "agents" / "spec-orchestrator.md").read_text(encoding="utf-8").split())
+        self.assertIn("it OPENS with the fixed text every prompt of that type shares", text)
+        self.assertIn("and CLOSES with the variables: the spec id", text)
+        self.assertLess(text.index("it OPENS with the fixed text"),
+                        text.index("and CLOSES with the variables: the spec id"))
+
+
+class RunnerGateExit(unittest.TestCase):
+    """The gate's exit code is a FIELD of the runner's fixed report — never a number a
+    verifier has to find inside prose.
+
+    A worker once cost a whole extra runner because `GATE:` carried the command and the code
+    together and the report named no code at all. `GATE_EXIT:` is what the verifier reads,
+    and it is owed in every STATE, `blocked` and `failed` included: a gate that did not run
+    says `not-run`."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.text = " ".join((PLUGIN_ROOT / "agents" / "spec-runner.md")
+                            .read_text(encoding="utf-8").split())
+
+    def test_the_report_splits_the_verdict_from_the_exit_code(self):
+        self.assertIn("GATE: pass | fail | not-run — <command>", self.text)
+        self.assertIn("GATE_EXIT: <the exit code that command returned, or `not-run`>",
+                      self.text)
+        self.assertNotIn("GATE: pass | fail | not-run — <command and exit code>", self.text)
+
+    def test_both_lines_are_owed_in_every_state(self):
+        self.assertIn("`GATE:` and `GATE_EXIT:` are present in EVERY STATE, `blocked` and "
+                      "`failed` included", self.text)
+        self.assertIn("a gate that did not run says `GATE_EXIT: not-run`, never an omitted "
+                      "line", self.text)
+
+
+class BranchDirtyCut(unittest.TestCase):
+    """The one exception to the clean-tree precondition: a caller that authorized a cut from
+    `origin/<base>` proceeds, and the dirty paths stay in the base — never in the worktree."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.text = " ".join((PLUGIN_ROOT / "assets" / "references" / "git-flows" / "branch.md")
+                            .read_text(encoding="utf-8").split())
+
+    def test_an_authorized_cut_proceeds_and_names_what_stays_behind(self):
+        self.assertIn("an authorized cut is the one exception, and the authorization is the "
+                      "caller's word, never this command's inference", self.text)
+        self.assertIn("they stay in the base and never enter the new worktree", self.text)
+        self.assertIn("also state the dirty paths that stayed in the base", self.text)
+
+    def test_the_exception_is_worktree_only(self):
+        self.assertIn("The exception is **worktree-only**", self.text)
+        self.assertIn("a dirty tree there stays a refusal", self.text)
+        self.assertIn("The Branch form in a dirty checkout is always a refusal", self.text)
+
+    def test_an_unauthorized_dirty_tree_still_refuses(self):
+        self.assertIn("Anything short of that explicit authorization → refuse, name the "
+                      "offending paths, and stop", self.text)
 
 
 class Worktree(RepoCase):
@@ -3423,6 +3513,19 @@ class OrchestratorPublishTools(unittest.TestCase):
         for broad in ("Bash(cq:*)", "Bash(cq git:*)", "Bash(python3:*)", "Bash"):
             self.assertNotIn(broad, self.tools)
         self.assertIn("Bash(cq git pr merge:*)", self.tools)
+
+    def test_an_existing_pr_is_adopted_never_opened_twice(self):
+        """The `autonomous` conclude opens the PR before the verifier sees the branch, so the
+        orchestrator's publish ADOPTS it: a second `pr create` would be a second PR for one
+        branch, and a FAIL after the PR exists never deletes it."""
+        text = " ".join(self.agent.read_text(encoding="utf-8").split())
+        self.assertIn("an existing PR is ADOPTED", text)
+        self.assertIn("never opened a second", text)
+        self.assertIn("a FAIL after the PR exists never deletes it", text)
+        self.assertIn("Your publish opens the PR when none exists and otherwise pushes the "
+                      "branch so the adopted PR updates itself", text)
+        self.assertNotIn("**Publish after PASS.** A spec the spec-verifier accepted, with no "
+                         "PR yet", text)
 
 
 class OrchestratorPublishGrants(unittest.TestCase):
