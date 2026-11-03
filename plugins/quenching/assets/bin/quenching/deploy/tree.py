@@ -293,7 +293,6 @@ def build_tree(source: Path, target: Path, modules: list[str], harnesses: list[s
         _add_tree(tree, source, "bin/cq.cmd")
     _add_tree(tree, source, "assets/modules.json")
     _add_tree(tree, source, "VERSION")
-    _add_tree(tree, source, ".claude-plugin/plugin.json")
     _add_tree(tree, source, "assets/references", translate.reference_document)
     _add_tree(tree, source, "assets/templates", translate.reference_document)
     _add_tree(tree, source, "assets/translation")

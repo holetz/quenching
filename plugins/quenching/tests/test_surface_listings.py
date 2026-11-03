@@ -23,7 +23,6 @@ DOCS = REPO_ROOT / "docs"
 README = REPO_ROOT / "README.md"
 PROJECT_COMMANDS = DOCS / "project" / "commands.md"
 MARKETPLACE = REPO_ROOT / ".claude-plugin" / "marketplace.json"
-PLUGIN_MANIFEST = PLUGIN_ROOT / ".claude-plugin" / "plugin.json"
 ZENSICAL = REPO_ROOT / "zensical.toml"
 ADAPTATION = PLUGIN_ROOT / "assets" / "translation" / "codex-adaptation.json"
 
@@ -63,8 +62,7 @@ def _nav_paths(value: object) -> set[str]:
 
 def _manifest_descriptions() -> list[str]:
     marketplace = json.loads(MARKETPLACE.read_text(encoding="utf-8"))
-    return [marketplace["description"], marketplace["plugins"][0]["description"],
-            json.loads(PLUGIN_MANIFEST.read_text(encoding="utf-8"))["description"]]
+    return [marketplace["description"], marketplace["plugins"][0]["description"]]
 
 
 class ManifestSurfaceTests(unittest.TestCase):
