@@ -1,15 +1,15 @@
 ---
 type: tutorial
 title: Getting started
-description: Load the quenching study artifact, verify the bundled CLI, probe a repository read-only, and inspect the first alignment.
+description: Deploy quenching into a repository, verify the bundled CLI, probe a repository read-only, and inspect the first alignment.
 resource: plugins/quenching/README.md
 tags:
   - tutorial
   - install
-timestamp: 2026-08-28
+timestamp: 2026-11-03
 audience: human
 authority: current
-source: plugins/quenching/README.md §The seven fronts, the non-converging axes, and the one align per front; command bodies under plugins/quenching/commands/
+source: plugins/quenching/README.md §The seven fronts, the non-converging axes, and the one align per front; command bodies under plugins/quenching/commands/; spec 2160
 maintainer: Israel Holetz
 ---
 
@@ -17,82 +17,61 @@ maintainer: Israel Holetz
 
 *Audience: implementer · ~10 min at 4 steps · The first probe writes nothing; alignment waits for your OK*
 
-By the end of this page you will have quenching loaded in a Claude Code session, the bundled
+By the end of this page you will have quenching deployed into a repository, the bundled
 `cq` CLI answering, and a read-only report of where your repository stands — and you will have
 run your first alignment knowing exactly what it was about to change, because it told you first.
 
 !!! note "Prerequisites"
     - **Claude Code** installed and working in a terminal.
     - **Python 3.11 or newer** on the PATH — the `cq` CLI is a self-contained stdlib tool, no `pip install`.
-    - A **git repository** to point the plugin at (any repo; a fresh one works fine).
+    - A **git repository** to deploy into (any repo; a fresh one works fine).
 
-## 1. Install the plugin
+## 1. Deploy quenching into the target
 
-For a disposable study target, start Claude Code in the target repository and run the published
-plugin path:
-
-```text
-/plugin marketplace add holetz/claude-quenching
-/plugin install quenching@quenching
-```
-
-Run `/reload-plugins` when Claude Code was already open. For local plugin development and testing,
-clone the marketplace repository and load the checkout directly instead:
+quenching is installed into the repository itself with `cq deploy`; there is no plugin to install.
+From a clone of the source repository:
 
 ```bash
-git clone https://github.com/holetz/claude-quenching
+git clone https://github.com/holetz/quenching
+python3 quenching/plugins/quenching/assets/bin/cq deploy --target your-repository --write
+```
+
+Or, without a clone, from a release tag through `uvx`:
+
+```bash
 cd your-repository
-claude --plugin-dir ../claude-quenching/plugins/quenching
-```
-
-The `--plugin-dir` form is a development path; marketplace installation is the normal adoption
-and upgrade path.
-
-**Alternative — deploy the surface into the target.** A repository that must operate without a
-harness plugin can carry the generic layer itself:
-
-```bash
 uvx --from "git+https://github.com/holetz/quenching@<tag>#subdirectory=plugins/quenching" \
   cq deploy --target . --modules core --write
 ```
 
-This writes `AGENTS.md`, `.agents/skills/`, the vendored runtime under `.agents/quenching/` and
-the generated `.claude/skills/` bridge. It never creates `CLAUDE.md`; Claude Code 2.1.277+ reads
-`AGENTS.md` directly. Deploy does not install `/docs/` — run the target's `quenching-knowledge-align` skill next. The contract
-is [deploy-mode.md](../standards/architecture/deploy-mode.md).
-
-Claude Code appends the plugin's `bin/` to the session PATH, which is what lets every command —
-and you — call `cq` bare.
+This writes `AGENTS.md` (only when absent), `.agents/skills/`, the vendored runtime under
+`.agents/quenching/` and the generated `.claude/skills/` bridge, for Claude Code, Codex and OpenCode
+by default (`--harness` narrows it). It never creates `CLAUDE.md`; Claude Code 2.1.277+ reads
+`AGENTS.md` directly. Deploy does not install `/docs/` — that is step 4. The contract is
+[deploy-mode.md](../standards/architecture/deploy-mode.md). Start Claude Code in the target once
+the files exist; every command is `/quenching-<front>-<verb>`.
 
 ### Stop or undo the installation
 
-To remove the plugin without removing the marketplace:
-
-```text
-/plugin uninstall quenching@quenching
-/reload-plugins
-```
-
-This leaves the target repository's `/docs/`, `.claude/` and `.agents/quenching.json` (or the
-legacy `.claude/quenching.json`) intact.
-Plugin removal is not a rollback of repository changes: review the target's Git history and
-revert the commits that you want to undo. For a bad plugin upgrade, reinstall the previously
-published version or use a known checkout with `--plugin-dir` only for development recovery, then
-reload the session.
+The deploy manifest `.agents/.quenching-deploy.json` lists every file deploy owns: delete those
+and the manifest, or revert the commit that added them. That leaves the target's `/docs/` and
+`.agents/quenching.json` intact. Removing the surface is not a rollback of repository changes:
+review the target's Git history and revert the commits that you want to undo. For a bad upgrade,
+deploy the previous release tag again.
 
 ## 2. Verify the tool answers
 
-Inside the session (or any shell with the plugin's `bin/` on the PATH):
+From the target repository:
 
 ```bash
-cq --version
+python3 .agents/quenching/bin/cq --version
 ```
 
 !!! success "You should see"
     ```text
-    <the plugin version you installed>
+    <the version you deployed>
     ```
-    One line, the plugin's version. `cq` is the deterministic rail every command drives —
+    One line, the deployed version. `cq` is the deterministic rail every command drives —
     uniform `--json` output, exit codes `0` ok · `1` findings · `2` refusal.
 
 ## 3. Probe before you change anything
@@ -101,14 +80,14 @@ The status commands are intended as read-only views, and their declared tool gra
 `Write` and `Edit`:
 
 ```text
-/quenching-align:knowledge:status
-/quenching-design:design:status
-/quenching-specs:specs:status
-/quenching-ops:ops:status
-/quenching-proof:proof:status
-/quenching-toolchain:toolchain:status
-/quenching-delivery:delivery:status
-/quenching-security:security:status
+/quenching-knowledge-status
+/quenching-design-status
+/quenching-specs-status
+/quenching-ops-status
+/quenching-proof-status
+/quenching-toolchain-status
+/quenching-delivery-status
+/quenching-security-status
 ```
 
 These reports cover the seven aligned fronts, provider-owned specs and the read-only security
@@ -119,7 +98,7 @@ not a sandbox: an available shell or Python interpreter remains outside the stat
 ## 4. Run your first alignment
 
 ```text
-/quenching-align:align
+/quenching-align
 ```
 
 This conducts the seven local fronts in dependency order. What happens next depends on what the probe
@@ -136,7 +115,7 @@ own work with the front's
 validator:
 
 ```bash
-cq knowledge validate docs
+python3 .agents/quenching/bin/cq knowledge validate docs
 ```
 
 !!! success "You should see"
@@ -147,7 +126,7 @@ cq knowledge validate docs
 
 ## Recap
 
-You installed the plugin from the marketplace, proved the rail answers (`cq --version`), read the available
+You deployed the surface into the target, proved the rail answers (`cq --version`), read the available
 read-only status reports, and ran one conducted alignment that asked before writing. That
 probe → plan → OK → apply → verify loop is the plugin's one interface — every front repeats it.
 

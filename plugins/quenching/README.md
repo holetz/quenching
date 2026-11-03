@@ -484,7 +484,7 @@ conducted pass does not have. Every command on this front is **quenching-native*
 
 ## The signature: a canonical OKF bundle of `/docs/`
 
-The plugin installs **the same tree** in every repo (adapted to what fits — a repo
+quenching installs **the same tree** in every repo (adapted to what fits — a repo
 without data gets no `catalog/`):
 
 ```
@@ -543,7 +543,7 @@ slices first; capturing an epic requires explicit authorization. Declared autono
 source unapproved and returns the decision to its conductor.
 
 The command registry loads at **session start**, so surface changes require fresh `claude -p`
-processes. `assets/checks/functional-checks.sh` runs them with `--plugin-dir` and proves root
+processes. `assets/checks/functional-checks.sh` deploys this checkout into throwaway targets and proves root
 substitution, conductor reachability and description routing. Each check is a **billed agent
 session** owned by the command that changes the surface; the default is the body subset and
 spoken routing is opt-in (`--only 3`).
@@ -588,126 +588,82 @@ Shared contracts keep gates explicit; missing `gh` or `az` is a named refusal
 
 ## Install
 
-quenching is published as nine modules. `quenching-specs` carries the spec cycle, the git
-commands and the one `cq` every other module runs through, so it is always installed; add the
-modules for the fronts you want beside it. Try it first in a disposable repository:
+quenching is served only by installation into the target repository with `cq deploy`
+([ADR 0017](../../docs/decisions/0017-install-only-by-deploy.md)); there is no marketplace plugin
+to install for it. Try it first in a disposable repository. From a clone of this repository:
 
-```text
-/plugin marketplace add holetz/claude-quenching
-/plugin install quenching-specs@quenching
-/plugin install quenching-align@quenching
-/plugin install quenching-design@quenching
-/plugin install quenching-ops@quenching
-/plugin install quenching-proof@quenching
-/plugin install quenching-toolchain@quenching
-/plugin install quenching-delivery@quenching
-/plugin install quenching-security@quenching
-/plugin install quenching-opensource@quenching
+```bash
+python3 plugins/quenching/assets/bin/cq deploy --target <repo> --write
 ```
 
-All nine together are the whole surface. `quenching-specs` alone is a complete spec cycle, from
-`/quenching-specs:specs:create` to `/quenching-specs:specs:conclude`; a route into a module that is
-not installed is reported `not-installed: <module>` instead of being invoked, and `cq <front>` for
-it exits 2 naming the module to install. `quenching-align` adds `/quenching-align:align`, which
-conducts only the fronts whose module is installed. Install every module at the same version: the
-one `cq` ignores a module whose version differs from its own.
-
-Run `/reload-plugins` after installation when the session was already open.
-
-### Deploy mode — the target carries the generic surface
-
-A target can operate without a marketplace install. `cq deploy` writes the selected modules into
-the standard generic layer and generates the Claude bridge; `CLAUDE.md` is not created.
+Or, with no clone, from a release tag through `uvx` (Python 3.11+, no Node):
 
 ```bash
 uvx --from "git+https://github.com/holetz/quenching@<tag>#subdirectory=plugins/quenching" \
   cq deploy --target . --modules core --write
 ```
 
-`core` is `quenching-specs` plus `quenching-align` (specs, git, knowledge, components).
-`--modules all` selects every principal module; `--profiles` controls
-`shared.profiles.installed`. `--runtime vendor` (default) is offline; `--runtime uvx` writes a
-pinned shim. The target keeps `AGENTS.md` and `.agents/` as its editable source, while
-`.agents/quenching/` and `.claude/skills/` are generated. Deploy installs the surface only: the
-target's `quenching-knowledge-align` skill installs `/docs/` and converges the fronts. See
-[deploy-mode.md](../../docs/standards/architecture/deploy-mode.md).
+| Option | Values |
+| --- | --- |
+| `--modules` | `core` (default: `quenching-specs` plus `quenching-align` — specs, git, knowledge, components), `all`, or a comma list of modules; `specs` is always included because it owns the one `cq` |
+| `--harness` | `claude`, `codex`, `opencode` (default: all three) or `none` |
+| `--runtime` | `vendor` (default, offline) copies the runtime; `uvx` writes a shim pinned to the release tag |
+| `--profiles` | overrides the derived `shared.profiles.installed` |
+| `--check` | exit 1 on drift instead of writing |
+| `--prune-legacy` | removes a pointer-only `CLAUDE.md` |
 
-Local development only — load the generated module trees, never the `plugins/quenching` source,
-which registers names the bodies do not cite:
+Deploy writes `AGENTS.md` and `.agents/quenching.json` only when absent, plus the generated
+`.agents/skills/`, `.agents/quenching/` (with the target's own `.agents/quenching/bin/cq`), the
+`.claude/skills/` bridge and, per selected harness, the Claude and OpenCode subagents. It records
+what it owns in `.agents/.quenching-deploy.json`. `CLAUDE.md` is not created. Deploy installs the
+surface only: the target's `/quenching-knowledge-align` installs `/docs/` and converges the fronts.
+The full contract is [deploy-mode.md](../../docs/standards/architecture/deploy-mode.md).
 
-```bash
-python3 scripts/generate_plugin_modules.py --write
-claude --plugin-dir ./plugins/claude/quenching-specs --plugin-dir ./plugins/claude/quenching-align
-```
+In a deployed target every command is `/quenching-<front>-<verb>` — this manual's
+`/quenching-specs:specs:create` is `/quenching-specs-create` there. A route into a module that was
+not deployed is reported `not-installed: <module>`, and `cq <front>` for it exits 2 naming the
+module.
 
-Add one `--plugin-dir` per further module. `--plugin-dir` loads the checkout directly for plugin
-development and testing; it is not the normal adoption or upgrade path. A published installation
-is managed by Claude Code. Every command reaches its own module's payload via
-`${CLAUDE_PLUGIN_ROOT}/assets/...`.
+Local development of this repository uses the same path: it runs its own deployed surface, and
+`python3 plugins/quenching/assets/bin/cq deploy --target . --write` refreshes it after a change to
+a command body, a reference or the payload.
 
-### Migrating from the single `quenching` plugin
+### Migrating from the retired plugins
 
-Releases before the module split published one plugin, `quenching`, with every command under
-the `quenching:` plugin prefix. That plugin is no longer published and there are no compatibility aliases, so an
-installed target migrates once:
+Releases before ADR 0017 published the surface as Claude marketplace plugins (`quenching`, then the
+nine `quenching-<module>` modules and `quenching-specs-reader`), a Codex plugin and an OpenCode
+distribution under `~/.opencode/`. None is published any more, and an installed copy competes with
+the deployed one for the same command names. Migrate a target once:
 
-1. Uninstall the old plugin: `/plugin uninstall quenching@quenching`.
-2. Refresh the marketplace (`/plugin marketplace update quenching`) and install `quenching-specs`
-   plus the modules the repository uses, as above.
-3. In the target's `.claude/settings.json`, replace `"quenching@quenching": true` under
-   `enabledPlugins` with one `"quenching-<module>@quenching": true` entry per installed module,
-   so every collaborator gets the same set.
-4. Rename every typed or cited command in the target's own files — its `.claude/commands/**`,
-   `AGENTS.md` (legacy `CLAUDE.md`), hooks and scripts. Replace the old plugin prefix `quenching` with the
-   module that owns the command and keep the rest of the name: the `specs` and `git` fronts and
-   `handoff` move to `quenching-specs` (`/quenching-specs:specs:create`,
-   `/quenching-specs:handoff`); `align`, `knowledge` and `components` move to `quenching-align`
-   (`/quenching-align:align`, `/quenching-align:knowledge:add`); every other front moves to the
-   module of its own name (`/quenching-ops:ops:status`). Agent ids move to `quenching-specs`
-   (`quenching-specs:spec-verifier`).
-5. `/reload-plugins`, then run `cq modules --json` to confirm each module reports `enabled: true`.
+1. Uninstall the retired plugins from each harness, and remove their `enabledPlugins` entries
+   from the target's `.claude/settings.json`.
+2. Run `cq deploy --target <repo> --write` as above.
+3. Rename every typed or cited command in the target's own files — `.agents/skills/**`,
+   `AGENTS.md` (legacy `CLAUDE.md`), hooks and scripts — from `/quenching-<module>:<front>:<verb>`
+   to `/quenching-<front>-<verb>`.
 
-Nothing in the target's `/docs/`, `.agents/quenching.json` (or legacy `.claude/quenching.json`) or spec store changes: a declared
-`shared.profiles.installed` keeps its meaning, now intersected with the installed modules.
-
-### Read-only: another project's specs only
-
-A project that only reads another project's specs (for example, an Obsidian vault using them as
-its to-do list) installs the sibling plugin instead. It registers one command and cannot write
-the specs store or a card:
-
-```text
-/plugin install quenching-specs-reader@quenching
-```
-
-Point it at a checkout of the project to read with `QUENCHING_SPECS_ROOT` in that project's
-`.claude/settings.json` `env` block, then run `/quenching-specs-reader:read`. Its README is
-[../claude/quenching-specs-reader/README.md](../claude/quenching-specs-reader/README.md).
+Nothing in the target's `/docs/`, `.agents/quenching.json` (or legacy `.claude/quenching.json`) or
+spec store changes. A project that only read another project's specs through the retired reader
+deploys `core` instead: the read verbs ship with it.
 
 ## Uninstall or reverse
 
-To remove an installed module while keeping the marketplace available:
+Re-running `cq deploy --write` with a narrower `--modules` or `--harness` removes the dropped part
+of the surface. To remove all of it, delete the files `.agents/.quenching-deploy.json` lists and
+the manifest itself, or revert the commit that deployed them. Neither touches the target's `/docs/`,
+its own skills or `.agents/quenching.json`: those are repository-owned data and configuration. To
+reverse an alignment, review and revert the target repository's own commits; removing the surface
+is not a data rollback. If an upgrade is the problem, deploy the previous release tag again.
 
-```text
-/plugin uninstall quenching-design@quenching
-/reload-plugins
-```
-
-Uninstall `quenching-specs` last: every other module runs its `cq` through it.
-
-Removing the marketplace itself (`/plugin marketplace remove quenching`) also uninstalls plugins
-installed from it. Neither operation deletes the target repository's `/docs/`, `.claude/` or
-`.agents/quenching.json` (legacy `.claude/quenching.json`) files: those are repository-owned data and configuration. To reverse an
-alignment, review and revert the target repository's own commits; uninstalling the plugin is not
-a data rollback. If an upgrade is the problem, disable or uninstall the plugin first, then
-reinstall the previously published version or load its known checkout with `--plugin-dir` for
-development-only recovery. Reload the session after changing the installation.
-
-The CLI has two equivalent entry points: `bin/cq` on the plugin-managed `PATH` and
-`assets/bin/cq` with an explicit plugin root. Only `quenching-specs` ships `bin/cq`. Their resolution rules are in
+In a deployed target the CLI is `.agents/quenching/bin/cq`; this checkout runs
+`plugins/quenching/assets/bin/cq`. The resolution rules are in
 [`assets/references/align/tool-resolution.md`](assets/references/align/tool-resolution.md).
 
 ## Upgrade
+
+A target upgrades by running `cq deploy --target <repo> --write` again from a newer checkout or
+release tag; the manifest keeps the recorded modules, harnesses and runtime unless a flag overrides
+them, and `cq deploy --target <repo> --check` reports drift in between.
 
 The release history is kept in the root [`CHANGELOG.md`](../../CHANGELOG.md). The plugin version is
 updated only by a deliberate release; `cq specs release <version>` checks the changelog entry and
