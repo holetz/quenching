@@ -340,6 +340,10 @@ class RealRepoLockstep(unittest.TestCase):
             found["marketplace:" + entry["name"]] = entry["version"]
         self.assertEqual(len(set(found.values())), 1, found)
 
+    def test_the_marketplace_lists_exactly_the_marketplace_plugins(self):
+        from quenching.common.modules import distribution_findings
+        self.assertEqual([], distribution_findings(Path(REPO), load_manifest(Path(REPO))))
+
     def test_manifests_carry_no_hard_coded_command_count(self):
         for rel in (".claude-plugin/marketplace.json",
                     "plugins/quenching/.claude-plugin/plugin.json"):
