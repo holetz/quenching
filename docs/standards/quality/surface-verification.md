@@ -2,7 +2,7 @@
 type: standard
 title: Surface verification
 description: How a change to the command surface is proven — a fresh process because the registry is built at session start over a throwaway box the checkout was deployed into, assertions on captured tool_use rather than prose, the five preconditions a functional check must satisfy to measure what it claims, why the harness belongs to the components front rather than the spec cycle and how to scope its cost, and how an ordering property is verified by running a real cycle
-resource: plugins/quenching/tests/test_readme_surface.py, plugins/quenching/assets/checks/functional-checks.sh, plugins/quenching/commands/components/command/new.md, plugins/quenching/commands/specs/conclude.md, plugins/quenching/commands/**
+resource: quenching/tests/test_readme_surface.py, quenching/assets/checks/functional-checks.sh, quenching/commands/components/command/new.md, quenching/commands/specs/conclude.md, quenching/commands/**
 tags: [quality, verification, automation, commands, functional-tests, cost]
 timestamp: 2026-11-03
 audience: both
@@ -121,7 +121,7 @@ claimed:
    enumerating today's probes, so new probes remain inside the guard. Offline fake-CLI tests
    exercise the sessions, including a foreign plugin alongside otherwise correct tool events,
    without billing model calls. The anchor's negative half — a read under `/plugins/cache/`,
-   `/plugins/marketplaces/`, the source tree `plugins/quenching` or another box's payload is a
+   `/plugins/marketplaces/`, the source tree `quenching` or another box's payload is a
    failure — is the grading guard; `--selftest` exercises each of those rejections. Its positive
    prefix, the box's own `.agents/quenching/`, is the diagnostic companion: when it differs, the
    harness prints the observed path beside the expected payload path.
@@ -267,7 +267,7 @@ a check only the plugin's repo can run. **Reopen when a second consumer appears*
 maintaining a hand-written inventory of its *own* surface. Until then the suite is the correct home,
 and the decision needs no revisiting.
 
-**Measured, 2026-08-27.** `plugins/quenching/README.md` had drifted to naming three commands that do
+**Measured, 2026-08-27.** `quenching/README.md` had drifted to naming three commands that do
 not exist — two written in a short form without the plugin namespace, one an invented example — while
 omitting eighteen that do, under a heading whose count was written from memory. The surface had gone
 from 26 commands to 38 in the interval; no check observed any of it.

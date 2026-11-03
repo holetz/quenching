@@ -2,7 +2,7 @@
 type: standard
 title: Worktree setup contract
 description: The `worktreeSetup` hook prepares a code-isolation worktree from `.agents/quenching.json`; its absence is normal, the declaration is displayed verbatim before it runs, and provider-owned specs never use this hook as persistent storage
-resource: plugins/quenching/assets/bin/quenching/specs/**, plugins/quenching/commands/specs/execute.md, plugins/quenching/commands/git/branch.md, plugins/quenching/assets/references/git/isolation.md
+resource: quenching/assets/bin/quenching/specs/**, quenching/commands/specs/execute.md, quenching/commands/git/branch.md, quenching/assets/references/git/isolation.md
 tags: [workflows, specs, worktree, configuration, consent]
 timestamp: 2026-10-30
 audience: both

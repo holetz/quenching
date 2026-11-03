@@ -2,7 +2,7 @@
 type: standard
 title: Subagent authoring
 description: When work becomes a subagent, the definition contract for .claude/agents/, and how the surface is inventoried
-resource: plugins/quenching/commands/components/agent/new.md, plugins/quenching/commands/components/align.md, plugins/quenching/assets/bin/quenching/components/**
+resource: quenching/commands/components/agent/new.md, quenching/commands/components/align.md, quenching/assets/bin/quenching/components/**
 tags: [automation, agents, delegation]
 timestamp: 2026-11-03
 audience: both
@@ -62,12 +62,12 @@ checks, recommendations citing the standard each applies. Fixes re-enter through
 command that owns authoring, under its own confirmation.
 
 The full pricing doctrine lives once, in
-`plugins/quenching/assets/references/components-command-new/capabilities.md`
+`quenching/assets/references/components-command-new/capabilities.md`
 §Subagents; this standard is the repo-side projection of it.
 
 ## Plugin-shipped agents
 
-The plugin ships exactly five agents in `plugins/quenching/agents/`, all prefixed `spec-` (as opposed
+The plugin ships exactly five agents in `quenching/agents/`, all prefixed `spec-` (as opposed
 to a target's own `.claude/agents/`). Git (branch, commit, PR, merge, cleanup) and decomposition into
 slices are flows of their verticals, not agents: `/quenching-specs:specs:develop` proposes and captures
 the slices in the main session, and the orchestrator publishes after the verifier's PASS.

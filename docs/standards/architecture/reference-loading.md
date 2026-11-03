@@ -2,7 +2,7 @@
 type: standard
 title: Loading is a call inside the step; citing is preamble prose
 description: A body that needs a reference section at step N loads that section at step N, with the literal, copy-pasteable cq components read invocation — a preamble citation says where the rule lives and does not make the session open the file, and the opposite was measured happening across the eight /quenching-specs:specs:* bodies
-resource: plugins/quenching/commands/**/*.md
+resource: quenching/commands/**/*.md
 tags: [architecture, references, commands, skills, cq]
 timestamp: 2026-08-10
 audience: both

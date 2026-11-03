@@ -2,7 +2,7 @@
 type: how-to
 title: Converge a legacy repository's operations and proof fronts
 description: Migrate an existing operations tree and verification suite in a safe order — declare roots, close judgement residue, then establish a measured floor.
-resource: plugins/quenching/README.md
+resource: quenching/README.md
 tags:
   - how-to
   - align
@@ -11,7 +11,7 @@ tags:
 timestamp: 2026-08-30
 audience: human
 authority: current
-source: measured migration of the <redacted>-gold target worktree on 2026-08-30; plugins/quenching/commands/ops/align.md; plugins/quenching/commands/proof/align.md
+source: measured migration of the <redacted>-gold target worktree on 2026-08-30; quenching/commands/ops/align.md; quenching/commands/proof/align.md
 maintainer: Israel Holetz
 ---
 

@@ -38,7 +38,7 @@
 *[canonical set]: an ordered contract declared in one place and read in many: schema.json's sections array, its phases[].entryGate, the frontmatter record vocabulary.
 *[Commit record]: the subject: field on a completed task line, written mechanically by cq specs task --check --subject, that links the checkbox to the commit implementing it by naming that commit's subject and resolving with git log --grep --fixed-strings.
 *[commit record]: the subject: field on a completed task line, written mechanically by cq specs task --check --subject, that links the checkbox to the commit implementing it by naming that commit's subject and resolving with git log --grep --fixed-strings.
-<!-- explicit glossary abbr fallback: Compose (plugins/quenching/assets/references/specs-develop/questions.md) -->
+<!-- explicit glossary abbr fallback: Compose (quenching/assets/references/specs-develop/questions.md) -->
 <!-- explicit glossary abbr fallback: Context (components) -->
 *[Context integral]: a run's true cost, tokens × turns remaining, not tokens: every turn re-sends the whole conversation, so a block loaded once is paid once for each turn that follows it.
 *[context integral]: a run's true cost, tokens × turns remaining, not tokens: every turn re-sends the whole conversation, so a block loaded once is paid once for each turn that follows it.
@@ -116,8 +116,8 @@
 *[Order independence]: evidence that a suite remains correct when sampled collection orders change, exposing state or fixture leakage that a stable run can hide.
 *[order independence]: evidence that a suite remains correct when sampled collection orders change, exposing state or fixture leakage that a stable run can hide.
 <!-- explicit glossary abbr fallback: Origin key (sourceuri) -->
-*[Package]: the Python package under plugins/quenching/assets/bin/quenching/, the directory that replaced the four self-contained scripts the plugin used to ship. Split into common/, specs/, knowledge/ and components/, with no file too large to be read whole in one tool call; cq is the only entry point that exposes it.
-*[package]: the Python package under plugins/quenching/assets/bin/quenching/, the directory that replaced the four self-contained scripts the plugin used to ship. Split into common/, specs/, knowledge/ and components/, with no file too large to be read whole in one tool call; cq is the only entry point that exposes it.
+*[Package]: the Python package under quenching/assets/bin/quenching/, the directory that replaced the four self-contained scripts the plugin used to ship. Split into common/, specs/, knowledge/ and components/, with no file too large to be read whole in one tool call; cq is the only entry point that exposes it.
+*[package]: the Python package under quenching/assets/bin/quenching/, the directory that replaced the four self-contained scripts the plugin used to ship. Split into common/, specs/, knowledge/ and components/, with no file too large to be read whole in one tool call; cq is the only entry point that exposes it.
 *[Parked follow-up]: an out-of-scope finding a definition pass records as ONE line of ## Discoveries on the spec it is developing, instead of minting a spec for it.
 *[parked follow-up]: an out-of-scope finding a definition pass records as ONE line of ## Discoveries on the spec it is developing, instead of minting a spec for it.
 *[Parse honesty]: the obligation that a verifier names its own parse failure rather than reporting it as a content gap.
@@ -151,9 +151,9 @@
 *[provider ID]: the tracker's own identifier for a spec — a GitHub issue number, an Azure Boards work-item ID — and the spec's whole identity.
 *[Publication branch]: under the develop/main flow, main: the one branch that takes the deliberate develop → main merge, the one moment the version lockstep moves and a tag is created.
 *[publication branch]: under the develop/main flow, main: the one branch that takes the deliberate develop → main merge, the one moment the version lockstep moves and a tag is created.
-*[Published skeleton]: the OKF bundle the plugin SHIPS, at plugins/quenching/assets/knowledge/: index files plus a single leaf standard (standards/agents/communication.md).
-*[published skeleton]: the OKF bundle the plugin SHIPS, at plugins/quenching/assets/knowledge/: index files plus a single leaf standard (standards/agents/communication.md).
-<!-- explicit glossary abbr fallback: Refine (plugins/quenching/assets/references/specs-develop/questions.md) -->
+*[Published skeleton]: the OKF bundle the plugin SHIPS, at quenching/assets/knowledge/: index files plus a single leaf standard (standards/agents/communication.md).
+*[published skeleton]: the OKF bundle the plugin SHIPS, at quenching/assets/knowledge/: index files plus a single leaf standard (standards/agents/communication.md).
+<!-- explicit glossary abbr fallback: Refine (quenching/assets/references/specs-develop/questions.md) -->
 *[Refinement record]: the refined: {mode, date} entry a spec's frontmatter gains once it has been interrogated, whose absence raises the non-gating sp-unrefined warning.
 *[refinement record]: the refined: {mode, date} entry a spec's frontmatter gains once it has been interrogated, whose absence raises the non-gating sp-unrefined warning.
 *[Remedy]: the remedy field every verifier finding carries, and the contract it takes on: naming an action the surface that emitted the finding actually offers. A remedy that describes the desired state, or an action the same CLI refuses, spends the trust of the whole output — not just that of the item carrying it.

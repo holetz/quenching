@@ -2,7 +2,7 @@
 type: standard
 title: The quenching MCP server
 description: A closed parser-derived tool catalog over the cq core, three tool classes, bounded reference resources and a stdio launcher packaged with the plugin layout intact
-resource: plugins/quenching/assets/bin/quenching/mcp/**, plugins/quenching/assets/bin/quenching/specs/mcp.py, plugins/quenching/pyproject.toml, plugins/quenching/.mcp.json
+resource: quenching/assets/bin/quenching/mcp/**, quenching/assets/bin/quenching/specs/mcp.py, quenching/pyproject.toml, quenching/.mcp.json
 tags: [architecture, mcp, distribution, tooling]
 timestamp: 2026-10-30
 audience: both
@@ -87,18 +87,18 @@ and document reads retain the existing specs size and pagination rules.
 
 ## Distribution and proof
 
-`plugins/quenching/pyproject.toml` uses hatchling and reads the package version from the plugin's
+`quenching/pyproject.toml` uses hatchling and reads the package version from the plugin's
 `VERSION`. The wheel keeps the plugin tree under `quenching_plugin/`, so asset lookups using
 `parents[N]` keep their meaning. Its `launch` module adds `assets/bin` to the import path and
 exposes `quenching-mcp` and `cq`. Runtime dependencies are the Python standard library only;
 Python 3.11 is the floor.
 
 ```bash
-uvx --from "git+https://github.com/holetz/quenching@<tag>#subdirectory=plugins/quenching" quenching-mcp
+uvx --from "git+https://github.com/holetz/quenching@<tag>#subdirectory=quenching" quenching-mcp
 ```
 
 Consumers pin a published tag; publishing that tag is a separate release decision. The local
-packaging smoke is `bash plugins/quenching/assets/checks/functional-checks.sh --mcp-smoke`:
+packaging smoke is `bash quenching/assets/checks/functional-checks.sh --mcp-smoke`:
 it builds the current committed HEAD through `git+file`, initializes the server and compares
 its tool count with the in-process catalog. Missing uvx or unavailable network is inconclusive
 (exit 2), never a pass. The MCP test families and repository gate prove the source and mirrors;

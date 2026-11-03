@@ -2,14 +2,14 @@
 type: how-to
 title: Publish the documentation site
 description: Turn the /docs/ bundle into a rendered Diátaxis site — planned against a closed publication map, sourced, reviewed and gated by a strict build.
-resource: plugins/quenching/README.md
+resource: quenching/README.md
 tags:
   - how-to
   - documentation
 timestamp: 2026-08-28
 audience: both
 authority: current
-source: command bodies under plugins/quenching/commands/knowledge/documentation/; references under plugins/quenching/assets/references/knowledge-documentation/
+source: command bodies under quenching/commands/knowledge/documentation/; references under quenching/assets/references/knowledge-documentation/
 maintainer: Israel Holetz
 ---
 

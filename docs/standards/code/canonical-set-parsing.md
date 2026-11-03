@@ -2,7 +2,7 @@
 type: standard
 title: Reading a canonical set
 description: How the shipped tools consume a declared set — slice it by declared membership and never by position, because an ordinal index is a claim about the set's shape that nothing re-checks when the set grows; why a byte-for-byte lockstep check proves the copies agree but never that the code reading them still means the same thing, so a membership invariant is owed its own assertion; and why a case list must exercise the function that ships rather than a copy of its rule written inside the selftest
-resource: plugins/quenching/assets/bin/quenching/specs/schema.py, plugins/quenching/assets/bin/quenching/components/**, plugins/quenching/assets/specs/schema.json, plugins/quenching/assets/specs/templates/spec.md
+resource: quenching/assets/bin/quenching/specs/schema.py, quenching/assets/bin/quenching/components/**, quenching/assets/specs/schema.json, quenching/assets/specs/templates/spec.md
 tags: [code, parsing, contracts, schema, lockstep, selftest]
 timestamp: 2026-08-27
 audience: both

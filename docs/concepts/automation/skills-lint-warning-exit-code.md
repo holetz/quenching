@@ -2,7 +2,7 @@
 type: concept
 title: cq components lint exits 0 with warning-severity findings still present
 description: "cq components lint's exit code alone never proves a warning-severity finding closed, and a single-file invocation re-roots the command path — both need naming so a verify: written against this tool does not pass in silence"
-resource: plugins/quenching/assets/bin/quenching/components/commands/lint.py
+resource: quenching/assets/bin/quenching/components/commands/lint.py
 tags: [automation, cq, components, lint, verification, gotcha]
 timestamp: 2026-08-10
 audience: both
@@ -41,7 +41,7 @@ invoking `lint` on one file and trusting its own idea of that file's path. Re-me
 ## The combined check
 
 ```bash
-cd plugins/quenching && python3 assets/bin/cq --root . components lint --json \
+cd quenching && python3 assets/bin/cq --root . components lint --json \
 | python3 -c "import json,sys; P='commands/knowledge/add.md'; \
 F=json.load(sys.stdin)['findings']; \
 B=[f for f in F if f['path']==P and f['code'] in ('sk-trigger-position','sk-no-boundary')]; \

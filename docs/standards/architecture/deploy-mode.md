@@ -2,7 +2,7 @@
 type: standard
 title: Deploy mode — install the surface in a target repository
 description: "`cq deploy` materializes the selected quenching modules in a target's generic layer — AGENTS.md, .agents/skills and a vendored runtime — while Claude Code receives only a generated bridge under .claude; install is not alignment and never calls a model."
-resource: plugins/quenching/assets/bin/quenching/deploy/**, plugins/quenching/assets/bin/cq, plugins/quenching/assets/modules.json, plugins/quenching/pyproject.toml
+resource: quenching/assets/bin/quenching/deploy/**, quenching/assets/bin/cq, quenching/assets/modules.json, quenching/pyproject.toml
 tags: [architecture, deploy, installation, agents, skills, bridge]
 timestamp: 2026-11-03
 audience: both
@@ -19,7 +19,7 @@ maintainer: quenching
 
 Deploy is the only mode: since [ADR 0017](../../decisions/0017-install-only-by-deploy.md) no
 plugin carries the command surface, and `cq deploy` materializes the selected surface from
-`plugins/quenching` in a target repository. It never edits a target's knowledge or code by itself.
+`quenching` in a target repository. It never edits a target's knowledge or code by itself.
 
 `cq deploy` is a **top-level command**, not a front. `delivery` and `ops` keep their own meaning
 for deployment; this verb installs the tool surface. It never invokes a model, never aligns

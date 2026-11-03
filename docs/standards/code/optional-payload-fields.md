@@ -2,7 +2,7 @@
 type: standard
 title: An optional payload field is `null` or absent, never a sentinel
 description: Optional `cq specs` JSON fields use `null` for the absence of a usable answer, never a sentinel; the former `overview` projection and `summary` field are retired, and any future body projection must name one source and one shared detector
-resource: plugins/quenching/assets/bin/quenching/specs/parse/text.py, plugins/quenching/assets/bin/quenching/specs/commands/read.py
+resource: quenching/assets/bin/quenching/specs/parse/text.py, quenching/assets/bin/quenching/specs/commands/read.py
 tags: [code, cli, json-payload, explicit-none, findings]
 timestamp: 2026-08-22
 audience: both

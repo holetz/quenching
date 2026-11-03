@@ -2,7 +2,7 @@
 type: project
 title: Repository layout
 description: What sits where in this checkout — the editable source cq deploy installs, its asset families, the plugins that install into no repository, and which command owns each surface
-resource: plugins/**, scripts/**, docs/**
+resource: quenching/**, integrations/**, scripts/**, docs/**
 tags: [repository, layout, plugin, deploy]
 timestamp: 2026-11-03
 audience: both
@@ -24,10 +24,10 @@ of a behaviour and editing a generated copy of it.
 | Path | What it is | Who writes it |
 | --- | --- | --- |
 | `docs/` | this OKF bundle — the knowledge tree **and** the source of this site | `/quenching-align:knowledge:*` |
-| `plugins/quenching/` | the single editable source `cq deploy` installs | the owning spec |
-| `plugins/opencode/quenching-vitrine/` | **hand-written** OpenCode Desktop GUI plugin (Specs panel); built with npm, `dist/` committed | the owning spec |
-| `plugins/claude/quenching-hud/` | band above the prompt (active spec, stage, task progress; read with `cq specs status --no-fetch`: local ref only, no fetch, no network); **hand-written**, validated by the gate with `claude plugin validate` | the owning spec |
-| `.agents/skills/`, `.agents/quenching/`, `.claude/skills/` | this repository's own deployed surface, generated from `plugins/quenching/` | `cq deploy --target . --write` |
+| `quenching/` | the single editable source `cq deploy` installs | the owning spec |
+| `integrations/opencode-vitrine/` | **hand-written** OpenCode Desktop GUI plugin (Specs panel); built with npm, `dist/` committed | the owning spec |
+| `integrations/claude-hud/` | band above the prompt (active spec, stage, task progress; read with `cq specs status --no-fetch`: local ref only, no fetch, no network); **hand-written**, validated by the gate with `claude plugin validate` | the owning spec |
+| `.agents/skills/`, `.agents/quenching/`, `.claude/skills/` | this repository's own deployed surface, generated from `quenching/` | `cq deploy --target . --write` |
 | `.claude/` | this repository's own local command surface | `/quenching-align:components:*` |
 | `scripts/` | thin launchers CI calls | the owning spec |
 | `zensical.toml` | the site layer — outside the bundle, on purpose | `/quenching-align:knowledge:documentation:build` |
@@ -35,10 +35,10 @@ of a behaviour and editing a generated copy of it.
 
 Every generated tree is the trap: it is **regenerated wholesale**, so editing it by hand produces a
 change that survives until the next sync and then vanishes without a diff to explain it. That holds
-for this repository's own deployed surface. The first level
-under `plugins/` is the source or a harness, the second the name that harness registers
+for this repository's own deployed surface. The source is
+`quenching/` and the trees that install into no repository sit under `integrations/`
 ([plugin-layout.md](../standards/architecture/plugin-layout.md) §One tree per harness).
-`plugins/claude/quenching-hud/` and `plugins/opencode/quenching-vitrine/` are the hand-written trees
+`integrations/claude-hud/` and `integrations/opencode-vitrine/` are the hand-written trees
 under a harness: edit the vitrine's `src/` and rebuild `dist/`, never a generated copy. The Claude
 module plugins, the specs reader, the Codex plugin and the OpenCode user-level distribution were
 retired on 2026-11-03 with their generators.
@@ -46,7 +46,7 @@ retired on 2026-11-03 with their generators.
 ## Inside the plugin payload
 
 ```
-plugins/quenching/
+quenching/
   VERSION               one of the artifacts kept in version lockstep
   commands/             one file per entry point — the executable prose
   assets/
@@ -79,7 +79,7 @@ repository's own prose resolves may not exist there, which is exactly what
 
 ## The gate
 
-From `plugins/quenching/`, zero errors is the bundle gate; `stale-doc` is advisory.
+From `quenching/`, zero errors is the bundle gate; `stale-doc` is advisory.
 
 ```bash
 cat VERSION

@@ -2,7 +2,7 @@
 type: standard
 title: Command surface naming
 description: How the plugin's commands are named and namespaced — one file per entry point, where the path is the identity; the module prefix each front publishes under and the full command and agent mapping; the design namespace for DTCG source and projections; the proof namespace for the verification surface rather than its test artifact; the seventh namespace (`git`, a pillar rather than a front) and its coexistence with a target's own `git` category; the components front's four sibling contexts, each named for the artifact it mints, and the rule that keeps a front-level verb off an artifact-level context; and the one-segment skill name of a target repository
-resource: plugins/quenching/commands/**, plugins/quenching/agents/**, plugins/quenching/assets/modules.json
+resource: quenching/commands/**, quenching/agents/**, quenching/assets/modules.json
 tags: [naming, commands, taxonomy]
 timestamp: 2026-11-03
 audience: both
@@ -94,7 +94,7 @@ belongs to exactly one module, and so does every agent:
 | `quenching-opensource` | `/quenching-opensource:opensource:*` | — |
 
 - **The map has one home.** The front-to-module assignment is the `owned` record of each module in
-  `plugins/quenching/assets/modules.json`; `quenching.common.modules.namespace_map` derives the
+  `quenching/assets/modules.json`; `quenching.common.modules.namespace_map` derives the
   table above from it. The table is a reading of that record, never a second source.
 - **The published name is written in the source.** Bodies, agents, references, the README and the
   Python literals that recognize ids spell `quenching-<module>:…`; the bare `quenching:` prefix
@@ -106,7 +106,7 @@ belongs to exactly one module, and so does every agent:
 - **A route into another module is conditional.** A `Not for:` hand-off, an offer or a `Skill`
   call naming another module's command runs only when that module is enabled; otherwise it is
   reported `not-installed: <module>` and never invoked
-  (`plugins/quenching/assets/references/align/tool-resolution.md` §Routing into another module).
+  (`quenching/assets/references/align/tool-resolution.md` §Routing into another module).
   A wildcard such as `/quenching-align:*` names every command of one module and carries the same
   condition.
 

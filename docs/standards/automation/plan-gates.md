@@ -2,7 +2,7 @@
 type: standard
 title: When a command's plan gate may drop
 description: The two protected classes — a code-coupled item, an irreversible cycle action — are the whole test, and a command in which neither occurs has nothing to confirm; what replaces the approval window when the gate goes (the record's URL, announced before any read and repeated in the report), the difference between the confirmation that drops and the consolidation that stays, what still stops the pass either way, the three intermediate forms measured and rejected, and the three conditions under which declared autonomy or the trust criterion replaces the person at the go/no-go
-resource: plugins/quenching/commands/**, plugins/quenching/assets/references/align/convergence.md, plugins/quenching/assets/references/specs-develop/questions.md
+resource: quenching/commands/**, quenching/assets/references/align/convergence.md, quenching/assets/references/specs-develop/questions.md
 tags: [automation, commands, gates, confirmation, cost, turns]
 timestamp: 2026-10-16
 audience: both
@@ -27,7 +27,7 @@ is the test that decides whether that stop is buying anything.
 > nothing on the other side.
 
 The two classes are the same ones
-`plugins/quenching/assets/references/align/convergence.md`
+`quenching/assets/references/align/convergence.md`
 §The cycle-authorization contract already protects — this criterion invents no third one, and a
 command does not lose its gate for being cheap, short or "low-risk". It loses it for containing
 neither of the two.

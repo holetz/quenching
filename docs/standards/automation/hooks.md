@@ -2,7 +2,7 @@
 type: standard
 title: Scoped hooks
 description: Where a hook may be installed, what each scope and handler costs, and the policy defaults every hook obeys
-resource: .claude/settings.json, plugins/quenching/commands/**, plugins/quenching/assets/bin/quenching/components/**
+resource: .claude/settings.json, quenching/commands/**, quenching/assets/bin/quenching/components/**
 tags: [automation, hooks, performance, budget]
 timestamp: 2026-10-18
 audience: both
@@ -93,7 +93,7 @@ carried a rung-1 frontmatter block running `cq knowledge validate` on its own `W
 three were removed on 2026-08-03 (`enxugar-create-e-eliminar-o-rung-hooks` spec) as redundant with
 the wiring above — which was then discontinued along with it. **Nothing replaced them**: each
 command's own *Self-check against the conformance core* step, run against
-`plugins/quenching/assets/references/knowledge-align/conformance.md`, is the whole of the
+`quenching/assets/references/knowledge-align/conformance.md`, is the whole of the
 conformance check at the moment of the write, and it is a step the body executes rather than an
 event anything answers. Restoring the rung would be a **mint, not a revert** — through
 `/quenching-align:components:hook:new`, under the two ladders above and behind the missing-handler guard
@@ -112,6 +112,6 @@ can move underneath it, and it then reports **failures of its own staleness as f
 repo**. `/quenching-align:knowledge:align` removes that class of debris on sight.
 
 The full pricing doctrine lives once, in
-`plugins/quenching/assets/references/components-command-new/capabilities.md` §Hooks;
+`quenching/assets/references/components-command-new/capabilities.md` §Hooks;
 this standard is the repo-side projection of it. An unparseable `settings*.json` is
 `sk-hook-unparseable` — every hook wired in it is dead.

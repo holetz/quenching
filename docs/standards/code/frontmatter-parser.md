@@ -2,7 +2,7 @@
 type: standard
 title: Frontmatter parsing — the one parser
 description: The YAML subset `common/frontmatter.py` reads — the comment rule (a `#` opens a comment only at the start of a value or after whitespace, and never inside a quoted scalar), the canonical case list its tests hold it to, the anomaly sidecar, and why the union it now reads is wider than any of the three parsers it replaced
-resource: plugins/quenching/assets/bin/quenching/common/frontmatter.py
+resource: quenching/assets/bin/quenching/common/frontmatter.py
 tags: [code, parsing, yaml, frontmatter, tools]
 timestamp: 2026-10-08
 audience: both
@@ -19,7 +19,7 @@ maintainer: quenching
 `specs`, `knowledge` and `components` alike. Three hand-written mini-parsers used to hold this
 line, one per shipped script, because each ran self-contained out of a target repo's
 `.claude/hooks/` and could import nothing else
-(`plugins/quenching/assets/references/align/tool-resolution.md`
+(`quenching/assets/references/align/tool-resolution.md`
 §Resolving the tool). Nothing installs standalone any more — every pillar resolves through
 `${CLAUDE_PLUGIN_ROOT}/assets/bin/cq` — so the premise that forced three copies is gone, and this
 module is what replaced them.

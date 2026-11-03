@@ -2,7 +2,7 @@
 type: standard
 title: Ops front
 description: The target repository's current operations surface — one normalized router, its entry-point contract, lifecycle and finding vocabulary, verified by the shipped cq ops route
-resource: .agents/quenching.json, plugins/quenching/assets/bin/quenching/common/config.py, plugins/quenching/assets/bin/quenching/ops/**
+resource: .agents/quenching.json, quenching/assets/bin/quenching/common/config.py, quenching/assets/bin/quenching/ops/**
 tags: [architecture, ops, automation, scripts, contract]
 timestamp: 2026-08-31
 audience: both
@@ -26,8 +26,8 @@ The ops front adopts the common minimum from
 [`front-mold.md`](front-mold.md). Its applicability signal is the `ops` namespace in the target's
 `.agents/quenching.json`; its read model is `cq ops status`, and its verifier is `cq ops doctor`.
 The align and status bodies cite the executor projection at
-`plugins/quenching/assets/references/front-align/mold.md`, while this front keeps the ops-specific
-disposition map in `plugins/quenching/assets/references/ops-align/bands.md`.
+`quenching/assets/references/front-align/mold.md`, while this front keeps the ops-specific
+disposition map in `quenching/assets/references/ops-align/bands.md`.
 
 Ops retains its domain deltas: `opsRoot`, `router` and `registry` ownership, inventory and generated
 registry freshness, lifecycle and entry-point reachability, typed exits, output channels and

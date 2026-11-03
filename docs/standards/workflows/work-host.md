@@ -2,7 +2,7 @@
 type: standard
 title: Work host contract
 description: The `shared.workHost` block names the user's remote host for heavy processing once per user; `cq config host --plan` prints the dispatch steps with the known traps built in and runs nothing, so quenching holds no SSH grant
-resource: plugins/quenching/assets/bin/quenching/config/**
+resource: quenching/assets/bin/quenching/config/**
 tags: [workflows, configuration, ssh, work-host]
 timestamp: 2026-10-17
 audience: both

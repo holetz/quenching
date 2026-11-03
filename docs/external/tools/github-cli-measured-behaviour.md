@@ -2,7 +2,7 @@
 type: external
 title: GitHub CLI measured behaviour
 description: Measured facts about `gh` and the GitHub REST API's issue endpoints — the REST create's silent handling of an invalid Issue Type versus the porcelain commands' loud refusal for the same name, where Issue Types are actually defined, why `closingIssuesReferences` stays empty for a PR that targets an integration branch, and the three shapes a `--paginate --slurp` listing can take (`[[]]` for a genuinely empty one, `[]` for zero pages, and no output at all) plus the free `issues.totalCount` that corroborates them
-resource: plugins/quenching/assets/bin/quenching/specs/**
+resource: quenching/assets/bin/quenching/specs/**
 tags: [github, gh-cli, rest-api, issue-types, closing-keywords, pagination, tooling]
 timestamp: 2026-08-17
 audience: both

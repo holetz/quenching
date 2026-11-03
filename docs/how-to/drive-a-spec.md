@@ -2,14 +2,14 @@
 type: how-to
 title: Drive a spec from idea to merge
 description: Carry one unit of work through the spec lifecycle — capture, refine, build task by task, close with the merge last.
-resource: plugins/quenching/README.md
+resource: quenching/README.md
 tags:
   - how-to
   - specs
 timestamp: 2026-08-28
 audience: human
 authority: current
-source: plugins/quenching/README.md §The specs flow; command bodies under plugins/quenching/commands/specs/
+source: quenching/README.md §The specs flow; command bodies under quenching/commands/specs/
 maintainer: Israel Holetz
 ---
 

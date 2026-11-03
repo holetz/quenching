@@ -2,7 +2,7 @@
 type: standard
 title: Retiring a reserved artifact — drop the checker, keep the reservation
 description: A reserved filename that is retired keeps its slot in RESERVED and its skip in the hard block; only its checker goes, because unreserving it silently converts every surviving file into a malformed concept doc — plus the one departure this house made knowingly, and the three things that made it payable
-resource: plugins/quenching/assets/bin/quenching/knowledge/**, plugins/quenching/assets/references/knowledge-align/conformance.md, plugins/quenching/assets/references/knowledge-align/okf-spec.md
+resource: quenching/assets/bin/quenching/knowledge/**, quenching/assets/references/knowledge-align/conformance.md, quenching/assets/references/knowledge-align/okf-spec.md
 tags: [architecture, okf, validator, reserved-names, deprecation]
 timestamp: 2026-08-10
 audience: both
@@ -27,7 +27,7 @@ forgets to *not* make:
 1. **Remove its checker** — the dispatch to `check_<name>` and every finding code it emitted.
 2. **Stop producing it** — no command creates, seeds, or appends to it; no skeleton ships one.
 3. **Change nothing else.** The name stays in `RESERVED`
-   (the knowledge pillar (`plugins/quenching/assets/bin/quenching/knowledge/`)) and stays in
+   (the knowledge pillar (`quenching/assets/bin/quenching/knowledge/`)) and stays in
    `hard_block_exempt()`. Its per-file branch stays too, returning no findings.
 
 A retired artifact must also stay **out of the concept-doc count** wherever the tooling counts

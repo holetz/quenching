@@ -2,7 +2,7 @@
 type: concept
 title: The structure already produced is the record — a parallel catalogue can disagree with it
 description: When a convention has to be remembered across invocations, reading it back from the artefacts it already produced costs nothing to maintain and cannot drift; a dedicated registry is a second source of truth that can disagree with the tree it describes
-resource: plugins/quenching/assets/references/components-command-new/taxonomy.md, docs/standards/automation/skills.md
+resource: quenching/assets/references/components-command-new/taxonomy.md, docs/standards/automation/skills.md
 tags: [automation, convention, registry, drift, naming]
 timestamp: 2026-08-15
 audience: both

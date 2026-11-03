@@ -2,14 +2,14 @@
 type: how-to
 title: Adopt quenching in a repository
 description: Exercise the full convergence workflow on a disposable repository copy — probe, one plan, one OK per front — while preserving the target's existing files.
-resource: plugins/quenching/README.md
+resource: quenching/README.md
 tags:
   - how-to
   - align
 timestamp: 2026-11-03
 audience: human
 authority: current
-source: plugins/quenching/README.md §The seven fronts, the non-converging axes, and the one align per front; command bodies under plugins/quenching/commands/{knowledge,design,components,ops,proof,toolchain,delivery}/ and align.md; spec 2160
+source: quenching/README.md §The seven fronts, the non-converging axes, and the one align per front; command bodies under quenching/commands/{knowledge,design,components,ops,proof,toolchain,delivery}/ and align.md; spec 2160
 maintainer: Israel Holetz
 ---
 
@@ -27,13 +27,13 @@ quenching is installed into the target repository with `cq deploy`
 ([ADR 0017](../decisions/0017-install-only-by-deploy.md)). From a clone of the source repository:
 
 ```bash
-python3 plugins/quenching/assets/bin/cq deploy --target <repo> --write
+python3 quenching/assets/bin/cq deploy --target <repo> --write
 ```
 
 Or from a release tag through `uvx`:
 
 ```bash
-uvx --from "git+https://github.com/holetz/quenching@<tag>#subdirectory=plugins/quenching" \
+uvx --from "git+https://github.com/holetz/quenching@<tag>#subdirectory=quenching" \
   cq deploy --target . --modules core --write
 ```
 

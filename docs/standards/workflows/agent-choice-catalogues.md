@@ -2,7 +2,7 @@
 type: standard
 title: Agent-choice catalogues
 description: The one shape `subjects`, `tagCatalog` and `workItemTypes` all share — an abstract key mapping to a human-facing description an agent reads to PROPOSE and a human CONFIRMS — why the three converged on it independently, the one invariant that shape enforces on every consumer, and why a fourth catalogue should reuse it rather than invent its own review mechanism
-resource: plugins/quenching/assets/bin/quenching/specs/**, plugins/quenching/commands/specs/create.md
+resource: quenching/assets/bin/quenching/specs/**, quenching/commands/specs/create.md
 tags: [workflows, specs, configuration, agent-choice]
 timestamp: 2026-10-16
 audience: both
@@ -65,7 +65,7 @@ asking anyone anything, and writes the result with the spec's very first capture
 — there is no locator, no text and nothing yet for a human to judge before that write exists. What
 this invariant forbids is not the presumption; it is a presumption that never surfaces. The
 confirmation is RELOCATED, never removed — the same figure
-`plugins/quenching/assets/references/align/convergence.md` §The PR route argues
+`quenching/assets/references/align/convergence.md` §The PR route argues
 for a review moved out of a gate and into the artifact that carries it: here it moves to the screen
 that closes the capture, which names every candidate and the one-line reason it was chosen, or —
 where nobody looks at that screen — to the first pass `/quenching-specs:specs:develop` runs over a

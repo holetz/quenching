@@ -2,7 +2,7 @@
 type: standard
 title: A guard that names what it forbids must parse, not match
 description: A checker whose finding text quotes the pattern it prohibits will match itself — the self-accusation this repo measured on its first run, why the fix is parsing the construct rather than excluding the checker, and the narrow case where a substring scan is still honest
-resource: plugins/quenching/assets/bin/quenching/specs/**
+resource: quenching/assets/bin/quenching/specs/**
 tags: [quality, verification, selftest, parsing, false-positive]
 timestamp: 2026-08-10
 audience: both

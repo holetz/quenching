@@ -2,7 +2,7 @@
 type: standard
 title: Command authoring and alignment
 description: How the plugin's commands are classified, authored, named, and swept into conformance — one file per entry point, including the admission criterion that decides whether a command's description stays resident in context or goes typed-only, and where a target repository's skill is born and how its Claude bridge is generated and verified
-resource: plugins/quenching/commands/**, plugins/quenching/assets/references/**, plugins/quenching/assets/bin/quenching/components/commands/bridge.py, plugins/quenching/assets/bin/quenching/components/commands/migrate.py
+resource: quenching/commands/**, quenching/assets/references/**, quenching/assets/bin/quenching/components/commands/bridge.py, quenching/assets/bin/quenching/components/commands/migrate.py
 tags: [automation, commands, taxonomy, authoring]
 timestamp: 2026-11-03
 audience: both
@@ -22,7 +22,7 @@ sweeps the whole surface into conformance. The naming these produce is governed 
 [command-surface.md](../naming/command-surface.md); the layout rule for what may sit under
 `commands/` by [../architecture/plugin-layout.md](../architecture/plugin-layout.md); the
 writing-doctrine detail lives once in
-`plugins/quenching/assets/references/components-command-new/` and is cited, never restated.
+`quenching/assets/references/components-command-new/` and is cited, never restated.
 
 **One file per entry point.** Claude Code merged custom commands into skills, so a command file
 carries both the description that routes to it and the body that runs. Where this standard once
@@ -310,7 +310,7 @@ buy. The five inline `model:` pins on `/quenching-specs:specs:*` (opus: develop,
 cache-safe); `paths` binds a domain-bound command's autonomous firing to its folder. Subagents
 are governed by [agents.md](agents.md), hooks by [hooks.md](hooks.md); the pricing doctrine
 lives once in the plugin
-(`plugins/quenching/assets/references/components-command-new/capabilities.md`) and is cited, never
+(`quenching/assets/references/components-command-new/capabilities.md`) and is cited, never
 restated.
 
 ### `allowed-tools` is always scoped

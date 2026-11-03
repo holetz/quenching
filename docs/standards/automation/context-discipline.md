@@ -2,7 +2,7 @@
 type: standard
 title: Context discipline — open less, run for less time, and emit fewer turns
 description: The two halves of a run's integral `tokens × turns remaining` and the three ways to cut it — open less (the declared files rather than the folder, the cited sections rather than the file, N sections in ONE call, the block rather than the section where a section has blocks, and the rules/rationale marker convention), run for less time (the section boundary as a legitimate stopping point, with measured role budgets checked only at existing boundaries), and emit fewer turns per unit of work (the batching contract, and the ban on a turn that exists only to announce the next tool call); plus the two things measured and refused, segmenting the bundle into more files and deleting rationale to compact it
-resource: plugins/quenching/commands/**, plugins/quenching/assets/references/**, plugins/quenching/assets/bin/quenching/components/**, plugins/quenching/assets/bin/quenching/specs/**, plugins/quenching/agents/**, scripts/measure_context_distribution.py
+resource: quenching/commands/**, quenching/assets/references/**, quenching/assets/bin/quenching/components/**, quenching/assets/bin/quenching/specs/**, quenching/agents/**, scripts/measure_context_distribution.py
 tags: [automation, context, reading, cost, commands, references]
 timestamp: 2026-11-03
 audience: both

@@ -100,7 +100,7 @@ Fifteen terms to read first; each has its full entry under *Terms*.
   target's OKF bundle, and `/.specs/` for a files-backend specs workspace, a convention no
   configuration file names because an LLM executor runs command bodies literally and a root it must
   resolve from config is a root it can resolve wrong.
-- **Cache trap** (`plugins/quenching/assets/references/components-command-new/capabilities.md`) —
+- **Cache trap** (`quenching/assets/references/components-command-new/capabilities.md`) —
   the standing cost of an inline `model:`/`effort:` pin in a command's frontmatter: the pin is part
   of the session's prompt-cache key, so changing it makes the next request recompute every input
   token.
@@ -114,7 +114,7 @@ Fifteen terms to read first; each has its full entry under *Terms*.
   completed task line, written mechanically by `cq specs task --check --subject`, that links the
   checkbox to the commit implementing it by naming that commit's **subject** and resolving with `git
   log --grep --fixed-strings`.
-- **Compose** (`plugins/quenching/assets/references/specs-develop/questions.md`) — the monotonic
+- **Compose** (`quenching/assets/references/specs-develop/questions.md`) — the monotonic
   half of a `/quenching-specs:specs:develop` pass: it takes a spec from wherever its derived stage leaves
   it to a closed ten-section ready set, filling what is absent and sharpening what is thin, and it
   never overturns what a human settled.
@@ -131,10 +131,10 @@ Fifteen terms to read first; each has its full entry under *Terms*.
 - [**Coverage ratchet**](standards/architecture/proof-front.md) — a per-source-root floor that a
   verification gate may raise after a successful run but may never lower, preserving progress
   without forcing tests toward a fixed percentage target.
-- [**cq**](/plugins/quenching/assets/references/align/tool-resolution.md) — the plugin's one entry
+- [**cq**](/quenching/assets/references/align/tool-resolution.md) — the plugin's one entry
   point, `${CLAUDE_PLUGIN_ROOT}/assets/bin/cq`, replacing the self-contained scripts each pillar
   used to ship separately.
-- [**Decision sheet**](/plugins/quenching/assets/references/specs-develop/questions.md) — the
+- [**Decision sheet**](/quenching/assets/references/specs-develop/questions.md) — the
   default form of every question put to the human: a reply-format line (`D1 A · D2 B …`), one
   `### D<n>` per independent decision with options `A (recommended)` / `B` / `C`, each with its
   consequence, and a closing block of fixes made unless vetoed. It ends the turn.
@@ -241,7 +241,7 @@ Fifteen terms to read first; each has its full entry under *Terms*.
   tasks are written, declaring it may run concurrently with its group; honoured only when `cq specs
   parallel` proves the group's `files:` sets disjoint, and never inferred while building.
 - [**Package**](standards/architecture/plugin-layout.md) — the Python package under
-  `plugins/quenching/assets/bin/quenching/`, the directory that replaced the four self-contained
+  `quenching/assets/bin/quenching/`, the directory that replaced the four self-contained
   scripts the plugin used to ship. Split into `common/`, `specs/`, `knowledge/` and `components/`,
   with no file too large to be read whole in one tool call; `cq` is the only entry point that
   exposes it.
@@ -301,9 +301,9 @@ Fifteen terms to read first; each has its full entry under *Terms*.
   one branch that takes the deliberate `develop → main` merge, the one moment the version lockstep
   moves and a tag is created.
 - **Published skeleton** — the OKF bundle the plugin SHIPS, at
-  `plugins/quenching/assets/knowledge/`: index files plus a single leaf standard
+  `quenching/assets/knowledge/`: index files plus a single leaf standard
   (`standards/agents/communication.md`).
-- **Refine** (`plugins/quenching/assets/references/specs-develop/questions.md`) — the non-monotonic
+- **Refine** (`quenching/assets/references/specs-develop/questions.md`) — the non-monotonic
   half of a `/quenching-specs:specs:develop` pass, and the only operation licensed to overturn what the
   spec already says, the `## Proposal` included.
 - [**Refinement record**](standards/workflows/plan-artifacts.md) — the `refined: {mode, date}` entry

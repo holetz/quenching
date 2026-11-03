@@ -71,7 +71,7 @@ Two exclusions, and only two:
    repos. That rule is not this doc's — it belongs to
    [../naming/command-surface.md](../naming/command-surface.md), and this doc only names it as its
    own boundary.
-2. **This plugin's own command surface.** Every body under `plugins/quenching/commands/**` is
+2. **This plugin's own command surface.** Every body under `quenching/commands/**` is
    English whatever a target repo declares. **Their output is not.** A question a command asks and a
    report it prints are prose aimed at the human, and they follow the tag. The body in English, the
    output in the language — translating a body is the error this distinction exists to prevent.
@@ -141,8 +141,8 @@ drawn explicitly:
 
 | Ground | Owner | This doc |
 | --- | --- | --- |
-| What one command promises, refuses and routes elsewhere | that command's own body and `description` under `plugins/quenching/commands/**` | never restates it |
-| The mechanics of actually asking — how a question is posed (the decision sheet, by default), accumulated and applied | `specs-develop/questions.md` §The four shared mechanics (`plugins/quenching/assets/references/specs-develop/questions.md`) | cites it |
+| What one command promises, refuses and routes elsewhere | that command's own body and `description` under `quenching/commands/**` | never restates it |
+| The mechanics of actually asking — how a question is posed (the decision sheet, by default), accumulated and applied | `specs-develop/questions.md` §The four shared mechanics (`quenching/assets/references/specs-develop/questions.md`) | cites it |
 | How commands, hooks and agent definitions are classified, authored, budgeted and swept | [../automation/](../automation/index.md) | cites it |
 
 What is left — and what this doc owns — is only what holds in **every** task, command or not. That

@@ -2,7 +2,7 @@
 type: standard
 title: Spec document contract
 description: The one spec document, its thirteen canonical sections, the phase-scoped explicit-none rule, the parsed Impact sub-heading, the duplicated template and the three-copy record vocabulary, and how to read a v1 plan in /.specs/archive/
-resource: plugins/quenching/assets/specs/templates/spec.md, plugins/quenching/assets/specs/schema.json, plugins/quenching/assets/bin/quenching/specs/schema.py, plugins/quenching/commands/specs/**
+resource: quenching/assets/specs/templates/spec.md, quenching/assets/specs/schema.json, quenching/assets/bin/quenching/specs/schema.py, quenching/commands/specs/**
 tags: [workflows, specs, sections, gates, validation]
 timestamp: 2026-08-22
 audience: both

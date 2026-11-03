@@ -2,7 +2,7 @@
 type: standard
 title: Dependency sweep
 description: The contract of the sub-agent dependency sweep that runs at the open of a /quenching-specs:specs:develop pass, before it asks anything — trigger, tool profile, deliverable, and the persistence of the map with the date it carries
-resource: plugins/quenching/commands/specs/develop.md, plugins/quenching/assets/references/specs-develop/questions.md
+resource: quenching/commands/specs/develop.md, quenching/assets/references/specs-develop/questions.md
 tags: [automation, dependency-sweep, subagent, specs-develop]
 timestamp: 2026-08-25
 audience: both

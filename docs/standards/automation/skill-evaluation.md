@@ -2,7 +2,7 @@
 type: standard
 title: Skill evaluation
 description: What it takes to claim a skill works — with/without runs in isolated processes, assertions graded on quoted evidence, a rate reported with its fixture, and a delta reported even when it is zero
-resource: plugins/quenching/assets/evals/**, plugins/quenching/commands/components/command/eval.md, scripts/run_evals.py
+resource: quenching/assets/evals/**, quenching/commands/components/command/eval.md, scripts/run_evals.py
 tags: [automation, skills, evaluation, testing, benchmark]
 timestamp: 2026-10-24
 audience: both
@@ -205,7 +205,7 @@ Rewriting a body is authoring, and authoring needs the human whose intent the sk
 
 `evals/evals.json` beside the skill, and a timestamped run directory holding `grading.json` and
 `benchmark.json`. The shapes are adopted verbatim from Anthropic's `skill-creator` and owned by
-`plugins/quenching/assets/references/components-command-eval/evaluation.md`; this
+`quenching/assets/references/components-command-eval/evaluation.md`; this
 standard states what they must contain, not how they are keyed.
 
 The case set is **committed and reviewed in the same diff as the body it tests** — a case set that

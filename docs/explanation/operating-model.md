@@ -2,14 +2,14 @@
 type: explanation
 title: The operating model
 description: The map the whole plugin fits on — seven local fronts, the specs axis, the read-only security and git pillars, and conductor-shaped commands that never reimplement what they conduct.
-resource: plugins/quenching/README.md
+resource: quenching/README.md
 tags:
   - explanation
   - architecture
 timestamp: 2026-08-31
 audience: both
 authority: current
-source: plugins/quenching/README.md §The seven fronts, the non-converging axes, and the one align per front, §The 58 commands; docs/standards/architecture/align-surface.md §Conductor order and dependency edges
+source: quenching/README.md §The seven fronts, the non-converging axes, and the one align per front, §The 58 commands; docs/standards/architecture/align-surface.md §Conductor order and dependency edges
 maintainer: Israel Holetz
 ---
 
@@ -54,9 +54,9 @@ flowchart TD
 | components front | `/quenching-align:components:*` | the `.claude/` automation surface | [command catalog](../project/commands.md#the-components-front) |
 | ops front | `/quenching-ops:ops:*` | the target repository's operations surface | [command catalog](../project/commands.md#the-ops-front) |
 | proof front | `/quenching-proof:proof:*` | the target repository's verification surface | [command catalog](../project/commands.md#the-proof-front) |
-| toolchain front | `/quenching-toolchain:toolchain:*` | the target repository's manifests, locks, pins and tool configuration | [toolchain align](../../plugins/quenching/commands/toolchain/align.md) |
-| delivery front | `/quenching-delivery:delivery:*` | the target repository's workflow and release reachability | [delivery align](../../plugins/quenching/commands/delivery/align.md) |
-| security pillar | `/quenching-security:security:*` | nothing — read-only security questions | [security status](../../plugins/quenching/commands/security/status.md) |
+| toolchain front | `/quenching-toolchain:toolchain:*` | the target repository's manifests, locks, pins and tool configuration | [toolchain align](../../quenching/commands/toolchain/align.md) |
+| delivery front | `/quenching-delivery:delivery:*` | the target repository's workflow and release reachability | [delivery align](../../quenching/commands/delivery/align.md) |
+| security pillar | `/quenching-security:security:*` | nothing — read-only security questions | [security status](../../quenching/commands/security/status.md) |
 | git pillar | `/quenching-specs:git:*` | nothing — answers, never converges | [command catalog](../project/commands.md#the-git-pillar) |
 
 ## Probe-first: the interface

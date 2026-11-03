@@ -2,7 +2,7 @@
 type: standard
 title: Mutation-checking a test
 description: A test that has never been observed to fail is untested — the mutation pass that earns the claim, one mutation per rule the fixture exists to prove, why the pass is run once at authoring rather than wired into CI, and the graduation gate the repo's new tests/ suite has not yet cleared
-resource: plugins/quenching/tests/**
+resource: quenching/tests/**
 tags: [quality, testing, mutation, verification]
 timestamp: 2026-08-27
 audience: both

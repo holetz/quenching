@@ -2,7 +2,7 @@
 type: standard
 title: A conditional projection's guard must fail loudly, and must not name a field the contract can drop
 description: A projection that falls back to "store it whole" when its shape check refuses is invisible on the way down — so the guard must be asserted against the shape the contract writes TODAY, and a contract change that removes a frontmatter key has to be traced into every guard that named it, because the failure is a silent loss of a capability rather than an error anyone sees
-resource: plugins/quenching/assets/bin/quenching/specs/backends/hybrid.py
+resource: quenching/assets/bin/quenching/specs/backends/hybrid.py
 tags: [code, projections, guards, contract-change, silent-failure]
 timestamp: 2026-08-23
 audience: both

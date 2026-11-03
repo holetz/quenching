@@ -2,7 +2,7 @@
 type: standard
 title: Front mold
 description: The one binding minimum for a local front declaration, route, align/status surface, disposition bands, with measured domain-specific deltas
-resource: docs/standards/architecture/{design-front.md,ops-front.md,proof-front.md,toolchain-front.md,delivery-front.md,security-pillar.md}, plugins/quenching/commands/{design,ops,proof,toolchain,delivery,security}/**
+resource: docs/standards/architecture/{design-front.md,ops-front.md,proof-front.md,toolchain-front.md,delivery-front.md,security-pillar.md}, quenching/commands/{design,ops,proof,toolchain,delivery,security}/**
 tags: [architecture, front, mold, design, ops, proof, toolchain, delivery, security]
 timestamp: 2026-08-31
 audience: both
@@ -26,7 +26,7 @@ explicit.
 This file is the canonical host for the mold. The architecture standards for design, ops, proof,
 toolchain and delivery cite it for the shared minimum; the security pillar cites it for the
 read-only route and reporting floor. The executor-facing
-`plugins/quenching/assets/references/front-align/mold.md` is a projection for command readers and
+`quenching/assets/references/front-align/mold.md` is a projection for command readers and
 must not introduce a competing binding rule.
 
 The host is an architecture standard because the rule governs how a front is shaped across target
@@ -113,8 +113,8 @@ the generated index registration in task 4.1.
 | proof | 1 | 2 | 4 | 2 | 4 | 5 | **18 files / 101,461 bytes** |
 | **three fronts** | **3** | **6** | **8** | **6** | **8** | **11** | **42 files / 253,850 bytes** |
 
-At that point the shared conductor added `plugins/quenching/commands/align.md` and
-`plugins/quenching/tests/test_align_contract.py`: **2 files / 17,813 bytes**, making the
+At that point the shared conductor added `quenching/commands/align.md` and
+`quenching/tests/test_align_contract.py`: **2 files / 17,813 bytes**, making the
 pre-adoption common baseline **44 files / 271,663 bytes**.
 
 ### Post-adoption final footprint (task 4.3)

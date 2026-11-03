@@ -2,7 +2,7 @@
 type: standard
 title: The seams a prose deletion opens
 description: Removing prose damages the text left behind, not only the text never opened — the hard wrap makes the line a unit the sentence does not respect, an orphaned continuation is promoted under the neighbouring bullet rather than left as litter, and a grant's justification outlives the use that earned it; the three seams measured on one branch, why every checker stays green through all three, and the reading that closes them
-resource: plugins/quenching/**
+resource: quenching/**
 tags: [quality, deletion, prose, refactoring, review]
 timestamp: 2026-08-10
 audience: both
@@ -33,7 +33,7 @@ The branch review found three defects, one per seam:
 
 | # | Site | What the edit did | What the file then said |
 | --- | --- | --- | --- |
-| 1 | `plugins/quenching/README.md` | deleted a wrapped line whose first two words ended the *previous* sentence | *"…contradicting every other statement that the inbox is outside"* — then a new paragraph |
+| 1 | `quenching/README.md` | deleted a wrapped line whose first two words ended the *previous* sentence | *"…contradicting every other statement that the inbox is outside"* — then a new paragraph |
 | 2 | the knowledge front's `align.md` (then still `commands/docs/`) | deleted a bullet, kept its three indented continuation lines | the continuation reattached to the **preceding** bullet, telling a live command to list a file that no longer exists |
 | 3 | the components front's `align.md` (then still `commands/skill/`) | deleted the only thing a `Bash(cp:*)` grant was for | the body still justified the grant by *"the manual install"*, and the grant was still in `allowed-tools` |
 

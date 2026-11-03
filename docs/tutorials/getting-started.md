@@ -2,14 +2,14 @@
 type: tutorial
 title: Getting started
 description: Deploy quenching into a repository, verify the bundled CLI, probe a repository read-only, and inspect the first alignment.
-resource: plugins/quenching/README.md
+resource: quenching/README.md
 tags:
   - tutorial
   - install
 timestamp: 2026-11-03
 audience: human
 authority: current
-source: plugins/quenching/README.md §The seven fronts, the non-converging axes, and the one align per front; command bodies under plugins/quenching/commands/; spec 2160
+source: quenching/README.md §The seven fronts, the non-converging axes, and the one align per front; command bodies under quenching/commands/; spec 2160
 maintainer: Israel Holetz
 ---
 
@@ -33,14 +33,14 @@ From a clone of the source repository:
 
 ```bash
 git clone https://github.com/holetz/quenching
-python3 quenching/plugins/quenching/assets/bin/cq deploy --target your-repository --write
+python3 quenching/quenching/assets/bin/cq deploy --target your-repository --write
 ```
 
 Or, without a clone, from a release tag through `uvx`:
 
 ```bash
 cd your-repository
-uvx --from "git+https://github.com/holetz/quenching@<tag>#subdirectory=plugins/quenching" \
+uvx --from "git+https://github.com/holetz/quenching@<tag>#subdirectory=quenching" \
   cq deploy --target . --modules core --write
 ```
 

@@ -2,7 +2,7 @@
 type: standard
 title: A `verify:` that greps prose pins the wording it asserts
 description: A check written as a grep over prose does not prove the prose — it pins it to the phrase the check named, and the resulting failure is ambiguous between "the text is wrong" and "the check named a phrase nobody agreed to"; how to write the assertion, how to read the failure, the third reading that is never permitted, and the negative face where the check forbids a string the spec itself requires elsewhere
-resource: plugins/quenching/commands/**, plugins/quenching/assets/references/**
+resource: quenching/commands/**, quenching/assets/references/**
 tags: [quality, verification, prose, specs, verify]
 timestamp: 2026-08-27
 audience: both

@@ -2,7 +2,7 @@
 type: standard
 title: Translation drift is a finding
 description: Translation divergence is a named, repairable finding with exit 1; refusal remains exit 2 and neither result is a silent success
-resource: plugins/quenching/assets/bin/quenching/deploy/cli.py, plugins/quenching/assets/bin/quenching/components/commands/bridge.py, plugins/quenching/commands/components/align.md
+resource: quenching/assets/bin/quenching/deploy/cli.py, quenching/assets/bin/quenching/components/commands/bridge.py, quenching/commands/components/align.md
 tags: [quality, translation, drift, ci, findings]
 timestamp: 2026-11-03
 audience: both

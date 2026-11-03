@@ -2,7 +2,7 @@
 type: standard
 title: Session evidence
 description: How a session transcript is read as evidence for the command that drove it — where transcripts live, the two entry forms, the JSONL-first arm ladder with the arm declared in the output, and the rule that a counted claim comes from code, never from a model recalling its own run
-resource: plugins/quenching/assets/bin/quenching/session/**, plugins/quenching/commands/components/command/retro.md
+resource: quenching/assets/bin/quenching/session/**, quenching/commands/components/command/retro.md
 tags: [automation, transcript, evidence, session, retro]
 timestamp: 2026-08-25
 audience: both
@@ -17,8 +17,8 @@ maintainer: quenching
 
 A command body is normally revised from taste alone — nobody reads back the session the command
 actually drove. This standard is the contract for the one tool that does:
-`plugins/quenching/assets/bin/quenching/session/` (driven by `/quenching-align:components:command:retro`,
-`plugins/quenching/commands/components/command/retro.md`) turns a session transcript into evidence about the
+`quenching/assets/bin/quenching/session/` (driven by `/quenching-align:components:command:retro`,
+`quenching/commands/components/command/retro.md`) turns a session transcript into evidence about the
 command that ran in it, so a finding can carry a count and a quoted turn instead of an impression.
 
 ## Where a transcript lives

@@ -2,7 +2,7 @@
 type: standard
 title: A withdrawn contract's prose residue
 description: When a change removes a contract rather than changing a computed value, its prose residue has no canonical spelling to grep for — the sites assert it in their own words — so `## Impact` must name the CLASS of documents that assert it and derive the file list mechanically; the five misses measured on one branch, why naming the file is not enough either, and why the reviewer's question is "what did this make false?" rather than "which files changed?"
-resource: plugins/quenching/commands/**, plugins/quenching/assets/**
+resource: quenching/commands/**, quenching/assets/**
 tags: [quality, sweeps, documentation, specs, impact]
 timestamp: 2026-08-27
 audience: both
@@ -63,7 +63,7 @@ So: **declare the membership rule, then derive the list from it in the task**, a
 derivation be the thing the task runs.
 
 ```bash
-grep -rln 'tool-resolution.md' --include='*.md' plugins/ /docs/
+grep -rln 'tool-resolution.md' --include='*.md' quenching/ /docs/
 ```
 
 A list written from memory is a claim about a set nobody enumerated. A list derived from a rule is

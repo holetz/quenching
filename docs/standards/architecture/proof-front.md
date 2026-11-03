@@ -2,7 +2,7 @@
 type: standard
 title: Proof front
 description: The target repository's canonical verification surface — layered tests, explicit fixture reach, measured source roots, a coverage ratchet, order evidence and a CI gate
-resource: .agents/quenching.json, plugins/quenching/assets/bin/quenching/common/config.py, plugins/quenching/assets/bin/quenching/proof/**, plugins/quenching/assets/references/proof-align/target-structure.md, plugins/quenching/assets/references/proof-align/layer-contract.md, plugins/quenching/assets/references/proof-align/gate-contract.md
+resource: .agents/quenching.json, quenching/assets/bin/quenching/common/config.py, quenching/assets/bin/quenching/proof/**, quenching/assets/references/proof-align/target-structure.md, quenching/assets/references/proof-align/layer-contract.md, quenching/assets/references/proof-align/gate-contract.md
 tags: [architecture, proof, tests, coverage, verification]
 timestamp: 2026-08-31
 audience: both
@@ -26,8 +26,8 @@ The proof front adopts the common minimum from
 [`front-mold.md`](front-mold.md). Its applicability signal is the `proof` namespace in the
 target's `.agents/quenching.json`; its read model is `cq proof status`, and its verifier is
 `cq proof doctor`. The align and status bodies cite the executor projection at
-`plugins/quenching/assets/references/front-align/mold.md`, while this front keeps proof-specific
-disposition in `plugins/quenching/assets/references/proof-align/bands.md`.
+`quenching/assets/references/front-align/mold.md`, while this front keeps proof-specific
+disposition in `quenching/assets/references/proof-align/bands.md`.
 
 Proof retains its domain deltas: layer meaning and derived markers, fixture reach, measured roots,
 exclusions and ratchet floors, CI invocation and order evidence. Inventory, readme and ratchet are
@@ -58,11 +58,11 @@ tree.
 
 The target-structure, layer and gate details are self-contained in the proof-front references:
 
-- [target structure](../../../plugins/quenching/assets/references/proof-align/target-structure.md)
+- [target structure](../../../quenching/assets/references/proof-align/target-structure.md)
   owns the tree, root and bootstrap shape;
-- [layer contract](../../../plugins/quenching/assets/references/proof-align/layer-contract.md)
+- [layer contract](../../../quenching/assets/references/proof-align/layer-contract.md)
   owns layer meaning, derived markers and fixture reach;
-- [gate contract](../../../plugins/quenching/assets/references/proof-align/gate-contract.md)
+- [gate contract](../../../quenching/assets/references/proof-align/gate-contract.md)
   owns measured surfaces, floors, order evidence, CI and entry-point proof.
 
 ## Configuration home

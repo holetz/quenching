@@ -2,7 +2,7 @@
 type: standard
 title: A shared mold carries only keys every citer may write
 description: A frontmatter mold cited by several commands is a fill-in invitation, so a key only one writer may legitimately set stays out of it and lives with that writer's own contract — prevention where a deterministic check is not available
-resource: plugins/quenching/assets/references/knowledge-add/homes.md, plugins/quenching/assets/references/knowledge-import/sources.md, plugins/quenching/commands/knowledge/*.md
+resource: quenching/assets/references/knowledge-add/homes.md, quenching/assets/references/knowledge-import/sources.md, quenching/commands/knowledge/*.md
 tags: [architecture, frontmatter, references, anti-fabrication, ownership]
 timestamp: 2026-08-11
 audience: both
@@ -64,9 +64,9 @@ contract is; the mold itself is untouched.
 The measurement is what makes the rule checkable in practice even though the *value* is not:
 
 ```bash
-grep -rl source_uri plugins/quenching/                 # exactly 5 paths: the contract, the
+grep -rl source_uri quenching/                 # exactly 5 paths: the contract, the
                                                        # command, and the three citers
-grep -rl source_uri plugins/quenching/assets/templates/ # nothing — a hit here is the failure
+grep -rl source_uri quenching/assets/templates/ # nothing — a hit here is the failure
 ```
 
 A sixth file, or any hit under the shared templates, is the leak this standard exists to prevent.

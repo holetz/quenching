@@ -2,7 +2,7 @@
 type: standard
 title: Mechanical sweeps over prose
 description: A find-and-replace over prose corrupts exactly the sentences that talk ABOUT the form being replaced — how to recognise those sites, why the check written to guard the sweep cannot see them, and the mitigation that survives both
-resource: plugins/quenching/commands/**, plugins/quenching/assets/references/**
+resource: quenching/commands/**, quenching/assets/references/**
 tags: [quality, sweeps, prose, refactoring]
 timestamp: 2026-07-31
 audience: both

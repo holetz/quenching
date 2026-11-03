@@ -2,7 +2,7 @@
 type: standard
 title: Task execution contract
 description: How a spec's task is executed — the verification policies, `verify:` scoped at authoring, the three causes of a check that can never pass (one of them invisible to the falsification run), `files:` naming the derived artifacts an edit invalidates, the failure budget, one commit per task retained across section boundaries, the two-level review split, the four-event Handoff refresh cadence, the decision-and-real-block contract after approval, and the delegation and [P] disjunction rules
-resource: plugins/quenching/commands/specs/execute.md, plugins/quenching/commands/specs/conclude.md, plugins/quenching/assets/references/specs-execute/execution.md, plugins/quenching/assets/references/specs-develop/artifacts.md, plugins/quenching/assets/references/git/commit.md, plugins/quenching/assets/bin/quenching/specs/**, plugins/quenching/assets/specs/templates/spec.md
+resource: quenching/commands/specs/execute.md, quenching/commands/specs/conclude.md, quenching/assets/references/specs-execute/execution.md, quenching/assets/references/specs-develop/artifacts.md, quenching/assets/references/git/commit.md, quenching/assets/bin/quenching/specs/**, quenching/assets/specs/templates/spec.md
 tags: [workflows, specs, execution, verification, commits, delegation, handoff]
 timestamp: 2026-11-03
 audience: both
@@ -70,7 +70,7 @@ task. Three causes, measured on two specs — the first two on
 third on `revisar-fluxo-do-develop-custo-e-gates`:
 
 **A path that does not resolve from the declared `cwd:`.** A task declared
-`cwd: plugins/quenching` and `verify: … cq knowledge validate docs`. The bundle is at the
+`cwd: quenching` and `verify: … cq knowledge validate docs`. The bundle is at the
 repository root, so from that directory the command exits 1 with `no-bundle` whether the task is
 done or not.
 
@@ -82,7 +82,7 @@ same rule as *scoped at authoring time, never filtered at the gate* below, seen 
 side.
 
 **A phrase the target file's own language standard forbids.** A task declared
-``verify: test "$(grep -c 'campo `path`' plugins/quenching/commands/specs/develop.md)" -ge 1`` —
+``verify: test "$(grep -c 'campo `path`' quenching/commands/specs/develop.md)" -ge 1`` —
 a pt-BR literal demanded of a command body that
 [/docs/standards/agents/communication.md](../agents/communication.md) §What it governs forces
 to be English. No correct implementation could satisfy it: greening the check meant breaking the
@@ -262,7 +262,7 @@ omits the fixture also loses the delegation gate and the `parallel` disjunction 
 of which read `files:` and neither of which reads the test suite.
 
 **Generated distributions are the same rule's second instance.** A task that edits the shipped
-payload under `plugins/quenching/` also regenerates everything the generators copy out of it: the
+payload under `quenching/` also regenerates everything the generators copy out of it: the
 trees under `.agents/` and the deployed `.claude/` bridge are rewritten by
 the commands [specs-portal.md](../architecture/specs-portal.md) §Regeneration lists. Declare those
 trees in `files:` exactly as the golden above, because the repository gate's `deployed surface
@@ -273,7 +273,7 @@ copy carries its harness's command spelling — so the declaration is over the t
 same file, copied".
 
 Measured on `2139` (task 3.1, 2026-11-01): `files:` named only
-`plugins/quenching/assets/portal/app.css`, while the gate also required all four regeneration
+`quenching/assets/portal/app.css`, while the gate also required all four regeneration
 commands, which rewrote 29 generated files — 13 `app.css` copies, 13 `app.js` copies carrying each
 provider's command form, and 3 manifests — committed with the task and in no task's `files:` and in
 no `## Impact` line.
@@ -402,7 +402,7 @@ If the commit fails, **undo the tick** so no box claims a commit that does not e
 `cq specs task --check <id> --spec <slug>`, without `git add` or `git commit`.
 
 The trigger is the task's own `files:`, never the configured backend, because `files:` is already a
-deliberate declaration and not a convenience (`plugins/quenching/assets/references/specs-develop/artifacts.md`
+deliberate declaration and not a convenience (`quenching/assets/references/specs-develop/artifacts.md`
 §Execution metadata). A checkbox-only task has no commit to anchor, whether its backend stores the
 spec in the working tree or outside git.
 

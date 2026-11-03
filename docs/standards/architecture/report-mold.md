@@ -2,7 +2,7 @@
 type: standard
 title: A front's report is a mold, owned once
 description: The shape a front's commands print their report in belongs to ONE section every one of them cites — three fixed bands, an ordered set of columns each command takes a subset of, and every column naming a command executable as printed — and a block whose cells come from a payload is rendered by the TOOL, with the body quoting the output, because a format rewritten in eight bodies goes stale in seven, a table rewritten in three renderers diverges in all three, and no checker sees either
-resource: plugins/quenching/assets/references/specs-develop/spec-driven.md, plugins/quenching/commands/specs/*.md, plugins/quenching/assets/bin/quenching/specs/commands/next.py
+resource: quenching/assets/references/specs-develop/spec-driven.md, quenching/commands/specs/*.md, quenching/assets/bin/quenching/specs/commands/next.py
 tags: [architecture, commands, report, output, references, specs]
 timestamp: 2026-08-16
 audience: both
@@ -25,7 +25,7 @@ the most visible product of the whole front, and it is the one part no validator
 > which next-step candidates and under what condition.
 
 For the `specs` front that section is
-`plugins/quenching/assets/references/specs-develop/spec-driven.md`
+`quenching/assets/references/specs-develop/spec-driven.md`
 §The report mold, cited by seven of the eight `/quenching-specs:specs:*` commands.
 
 The mold is **literal**: it carries the rendered block the body copies and substitutes into, not a
@@ -158,8 +158,8 @@ that standard names — reading the tag at session start and still reporting in 
 
 ## Known divergence, accepted and uncorrected
 
-Until this branch, `plugins/quenching/commands/knowledge/status.md` §4 was a near-literal copy of
-`plugins/quenching/commands/specs/status.md` §4 — the same five sections, the same titles, the same
+Until this branch, `quenching/commands/knowledge/status.md` §4 was a near-literal copy of
+`quenching/commands/specs/status.md` §4 — the same five sections, the same titles, the same
 closing sentence. It was a shared format *in fact*, written twice and owned by no file.
 
 This work touched only the `specs` front, so **the two stopped being mirrors**. That is recorded as

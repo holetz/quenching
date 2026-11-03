@@ -2,7 +2,7 @@
 type: standard
 title: Plan git record contract
 description: How a spec records the git facts that cannot be derived later — per-task commit subjects, branch, pull request and merge records, branch marks for conclude discovery, base inference, merge routes, and safe local and remote branch cleanup
-resource: plugins/quenching/assets/references/git/**, plugins/quenching/assets/references/specs-execute/execution.md, plugins/quenching/assets/references/specs-conclude/auto-discover.md, plugins/quenching/assets/bin/quenching/specs/**, plugins/quenching/assets/bin/quenching/git/**, plugins/quenching/commands/specs/execute.md, plugins/quenching/commands/specs/conclude.md, plugins/quenching/commands/git/merge.md, plugins/quenching/commands/git/pr/create.md
+resource: quenching/assets/references/git/**, quenching/assets/references/specs-execute/execution.md, quenching/assets/references/specs-conclude/auto-discover.md, quenching/assets/bin/quenching/specs/**, quenching/assets/bin/quenching/git/**, quenching/commands/specs/execute.md, quenching/commands/specs/conclude.md, quenching/commands/git/merge.md, quenching/commands/git/pr/create.md
 tags: [workflows, specs, git, commits, records]
 timestamp: 2026-10-29
 audience: both
@@ -163,7 +163,7 @@ same admission test — a fact no derivation can reproduce:
   before stamping, because the record is write-once and that is the only moment disagreeing with
   it is cheap. **Never `git merge-base` or `--fork-point`** — both answer a commit, not a branch
   name, and a commit ancestral to three branches identifies none of them. The mechanics live in
-  `plugins/quenching/assets/references/git/isolation.md` §Recording the
+  `quenching/assets/references/git/isolation.md` §Recording the
   isolation, cited rather than restated.
 - **`pr: {number, url, date}`** — stamped by `/quenching-specs:git:pr:create` the moment `gh pr create`
   returns, and **write-many** where the other two are write-once: a PR may be closed and reopened,
@@ -229,7 +229,7 @@ Beside `branch:`, `pr:` and `merge:` above, `/quenching-specs:specs:execute` wri
 **not** a frontmatter record: a recognizable line in the branch's own description —
 `quenching-specs: <id1>,<id2>` — rewritten, never duplicated, after every task's commit, and
 never written on the base. The mechanism is
-`plugins/quenching/assets/references/git/isolation.md` §Marking the branch with
+`quenching/assets/references/git/isolation.md` §Marking the branch with
 the specs it built, owned by `execute`.
 
 `/quenching-specs:specs:conclude` reads it to resolve which spec(s) built the branch it is closing when
@@ -237,7 +237,7 @@ called with no `--spec`: one valid ID resolves silently, more than one asks, and
 names that no longer resolves under `plans/` is dropped as stale rather than trusted. No
 valid marking at all falls to measuring the branch's own diff and always asking whether to
 materialize a minimal spec before continuing — never a size threshold. The full procedure is
-`plugins/quenching/assets/references/specs-conclude/auto-discover.md`, owned by
+`quenching/assets/references/specs-conclude/auto-discover.md`, owned by
 `conclude`.
 
 **Why this is not a fourth frontmatter record.** The three records above answer questions only
@@ -285,7 +285,7 @@ the route rather than choosing it: `/quenching-specs:git:pr:create` where `gh` r
 `/quenching-specs:git:merge` either way, in its own next-step block. Neither is invoked from `conclude`
 itself — every run reads the named route and runs the command on its own word. The PR route and the
 merge route remain separate because human review decides whether and when the branch enters the
-base (`plugins/quenching/assets/references/align/convergence.md` §The PR route).
+base (`quenching/assets/references/align/convergence.md` §The PR route).
 
 ## The squash caveat, and what rebase no longer costs
 

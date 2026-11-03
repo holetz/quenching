@@ -2,14 +2,14 @@
 type: project
 title: Command catalog
 description: The complete command catalog by front — one line each — plus the cq rail's exit-code contract.
-resource: plugins/quenching/README.md
+resource: quenching/README.md
 tags:
   - reference
   - commands
 timestamp: 2026-10-29
 audience: both
 authority: current
-source: plugins/quenching/README.md §The 61 commands (long rows condensed); command set held in lockstep by test_commands_catalog.py
+source: quenching/README.md §The 61 commands (long rows condensed); command set held in lockstep by test_commands_catalog.py
 maintainer: Israel Holetz
 ---
 

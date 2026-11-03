@@ -2,7 +2,7 @@
 type: standard
 title: Bundle verification
 description: What the knowledge front machine-checks versus what it leaves to a skill's prose self-check, when an invariant is owed a deterministic check, where an accepted gap is recorded, and the resource glob-set format
-resource: plugins/quenching/assets/bin/quenching/knowledge/**, plugins/quenching/assets/references/knowledge-align/conformance.md, plugins/quenching/commands/knowledge/status.md
+resource: quenching/assets/bin/quenching/knowledge/**, quenching/assets/references/knowledge-align/conformance.md, quenching/commands/knowledge/status.md
 tags: [quality, verification, okf, validator, conformance]
 timestamp: 2026-08-27
 audience: both
@@ -48,14 +48,14 @@ reports the gap — the command exits 0 either way.
 
 Measured 2026-07-31 on the language-clause census. The invariant read *"returns **exactly** the
 fourteen places in the table"* and was implemented as
-`grep -rn -A1 "repo.s language" --include='*.md' --include='*.py' plugins/ docs/`. It returned 14.
+`grep -rn -A1 "repo.s language" --include='*.md' --include='*.py' quenching/ docs/`. It returned 14.
 The real population was **19 hits across 17 files**. Three whole files were unreachable, for two
 different mechanical reasons:
 
 - **Line wrap.** One occurrence had `the repo's` and `language` on separate lines. A single-line
   pattern cannot match it, and `-A1` does not help: it extends a hit already found, so where there
   is no hit there is nothing to extend. The spec had written `-A1` believing it did.
-- **Declared scope.** Two files sat outside `plugins/ docs/` — one of them the installed copy of a
+- **Declared scope.** Two files sat outside `quenching/ docs/` — one of them the installed copy of a
   manual, the exact artifact class the sweep existed to keep in sync.
 
 **The number agreed by arithmetic coincidence**, which is the part worth fearing. One file counted
@@ -163,7 +163,7 @@ makes it say *what the doc governs* — so what the comparison detects is **acti
 the glob**, never drift of the content. Two measurements, three weeks apart, say the same thing
 from different directions:
 
-- 2026-07-30: a branch editing only `plugins/quenching/**` took this bundle from 12 warnings to 14
+- 2026-07-30: a branch editing only `quenching/**` took this bundle from 12 warnings to 14
   without one doc becoming wrong. The resource moved; the rule did not. This is structural — a
   branch cannot touch code a standard governs without ageing that standard by this measure.
 - 2026-08-27: **50 of the 95 docs** carried it. A signal more than half the corpus raises is not

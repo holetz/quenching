@@ -2,14 +2,14 @@
 type: explanation
 title: The OKF bundle
 description: The signature /docs/ tree every adopted repository shares — its homes, the strict rules that keep it greppable, and why sameness is the feature.
-resource: plugins/quenching/README.md
+resource: quenching/README.md
 tags:
   - explanation
   - okf
 timestamp: 2026-08-28
 audience: both
 authority: current
-source: plugins/quenching/README.md §The signature; /docs/ home index pages of this repository
+source: quenching/README.md §The signature; /docs/ home index pages of this repository
 maintainer: Israel Holetz
 ---
 

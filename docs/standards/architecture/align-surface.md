@@ -2,7 +2,7 @@
 type: standard
 title: Align surface — one align per front, probe first
 description: The aligned-front column — one align per local front carrying its content stages, the `security` and `git` pillars declared outside the conductor, the probe-before-inventory rule that makes a no-op align cost a couple of tool calls, the rule that no sweep records itself, and the conductor categories sharing the cycle-authorization contract — `/align` conducts the eight local fronts (`knowledge`, `design`, `components`, `ops`, `proof`, `toolchain`, `delivery`, `opensource`); none reimplements what it conducts
-resource: plugins/quenching/commands/align.md, plugins/quenching/commands/knowledge/align.md, plugins/quenching/commands/design/align.md, plugins/quenching/commands/components/align.md, plugins/quenching/commands/ops/align.md, plugins/quenching/commands/proof/align.md, plugins/quenching/commands/toolchain/align.md, plugins/quenching/commands/delivery/align.md, plugins/quenching/commands/opensource/align.md, plugins/quenching/commands/security/status.md, plugins/quenching/assets/bin/quenching/design/**, plugins/quenching/assets/bin/quenching/git/**, plugins/quenching/assets/bin/quenching/toolchain/**, plugins/quenching/assets/bin/quenching/delivery/**, plugins/quenching/assets/bin/quenching/security/**, plugins/quenching/assets/references/align/**, plugins/quenching/assets/references/proof-align/**
+resource: quenching/commands/align.md, quenching/commands/knowledge/align.md, quenching/commands/design/align.md, quenching/commands/components/align.md, quenching/commands/ops/align.md, quenching/commands/proof/align.md, quenching/commands/toolchain/align.md, quenching/commands/delivery/align.md, quenching/commands/opensource/align.md, quenching/commands/security/status.md, quenching/assets/bin/quenching/design/**, quenching/assets/bin/quenching/git/**, quenching/assets/bin/quenching/toolchain/**, quenching/assets/bin/quenching/delivery/**, quenching/assets/bin/quenching/security/**, quenching/assets/references/align/**, quenching/assets/references/proof-align/**
 tags: [architecture, aligns, commands, probe, convergence]
 timestamp: 2026-08-31
 audience: both
@@ -16,13 +16,13 @@ maintainer: quenching
 The shape of the plugin's alignment surface after the fold: **one align per local front**, each
 carrying its front's content stages, opened by a probe that makes the no-op case free. The full
 behavioral contract every align shares lives in
-`plugins/quenching/assets/references/align/sweep-doctrine.md`; this standard records the
+`quenching/assets/references/align/sweep-doctrine.md`; this standard records the
 architectural rule — why the surface has this shape and not the previous one.
 
 ## Conductor order and dependency edges
 
 The executable order has one owner: the declaration table in
-[`plugins/quenching/commands/align.md`](../../../plugins/quenching/commands/align.md) under
+[`quenching/commands/align.md`](../../../quenching/commands/align.md) under
 `## Execution order`. Its rows are named fronts, not ordinals:
 
 | Edge | Meaning |
