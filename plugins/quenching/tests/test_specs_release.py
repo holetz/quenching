@@ -28,8 +28,8 @@ from quenching.specs.release import (
 )
 
 # One value per artifact `kind`, each pre-set to the old version the bump must move away from.
-PUBLISHED = [m["name"] for m in load_manifest(Path(__file__).resolve().parents[3])["modules"]
-             if m["published"]]
+PUBLISHED = [p["name"] for p in load_manifest(Path(__file__).resolve().parents[3])["plugins"]
+             if p["marketplace"]]
 KINDS = {
     "plain": "9.9.9\n",
     "json": '{\n  "name": "x",\n  "version": "9.9.9"\n}\n',
@@ -50,33 +50,22 @@ class Lockstep(unittest.TestCase):
             os.makedirs(os.path.dirname(path), exist_ok=True)
             write_text(path, KINDS[kind])
         manifest = load_manifest(Path(__file__).resolve().parents[3])
-        manifest["modules"] = [m for m in manifest["modules"]
-                               if m["published"] or m["path"] == manifest["source"]]
         source = Path(self.tmp) / manifest["source"] / "assets"
+        # Module records name source closures load_manifest checks exist; stand them up empty.
         for module in manifest["modules"]:
-            plugin = Path(self.tmp) / module["path"] / ".claude-plugin/plugin.json"
-            plugin.write_text(json.dumps({"name": module["name"], "version": "9.9.9"}))
-            module.pop("generated", None)
-            # Principal records name source closures load_manifest checks exist; stand them up empty.
-            if "owned" in module:
-                support = module["generatedSupport"]
-                for package in [*module["owned"]["packages"], *support["packages"]]:
-                    (source / "bin/quenching" / package).mkdir(parents=True, exist_ok=True)
-                for reference in support["references"]:
-                    (source / "references" / reference).mkdir(parents=True, exist_ok=True)
+            support = module["generatedSupport"]
+            for package in [*module["owned"]["packages"], *support["packages"]]:
+                (source / "bin/quenching" / package).mkdir(parents=True, exist_ok=True)
+            for reference in support["references"]:
+                (source / "references" / reference).mkdir(parents=True, exist_ok=True)
+        marketplace = [p for p in manifest["plugins"] if p["marketplace"]]
+        for plugin in marketplace:
+            (Path(self.tmp) / plugin["path"] / ".claude-plugin/plugin.json").write_text(
+                json.dumps({"name": plugin["name"], "version": "9.9.9"}))
         market = Path(self.tmp) / manifest["marketplace"]
         market.write_text(json.dumps({"plugins": [
-            {"name": m["name"], "source": "./" + m["path"], "version": "9.9.9"}
-            for m in manifest["modules"] if m["published"]]}))
-        for distribution in manifest.get("distributions", []):
-            plugin = Path(self.tmp) / distribution["path"] / distribution["pluginManifest"]
-            plugin.write_text(json.dumps({"name": distribution["name"], "version": "9.9.9"}))
-            catalog = Path(self.tmp) / distribution["marketplace"]
-            catalog.parent.mkdir(parents=True, exist_ok=True)
-            catalog.write_text(json.dumps({"plugins": [{
-                "name": distribution["name"], "source": "./" + distribution["path"],
-                "policy": {"installation": "AVAILABLE", "authentication": "ON_INSTALL"},
-                "category": "Developer Tools"}]}))
+            {"name": p["name"], "source": "./" + p["path"], "version": "9.9.9"}
+            for p in marketplace]}))
         self.manifest_path = Path(self.tmp) / MANIFEST
         self.manifest_path.write_text(json.dumps(manifest))
         write_text(os.path.join(self.tmp, "CHANGELOG.md"), "# Changelog\n\n## 9.10.0\n")
@@ -148,12 +137,11 @@ class Lockstep(unittest.TestCase):
 
     def add_published_consumer(self):
         manifest = json.loads(self.manifest_path.read_text())
-        manifest["modules"].append({"name": "quenching-extra", "path": "plugins/quenching-extra",
-                                    "published": True, "versionFile": True, "cqPathOwner": False})
+        manifest["plugins"].append({"name": "quenching-extra", "path": "plugins/quenching-extra",
+                                    "marketplace": True})
         self.manifest_path.write_text(json.dumps(manifest))
         folder = Path(self.tmp) / "plugins/quenching-extra"
         (folder / ".claude-plugin").mkdir(parents=True)
-        (folder / "VERSION").write_text(KINDS["plain"])
         (folder / ".claude-plugin/plugin.json").write_text(json.dumps({
             "name": "quenching-extra", "version": "9.9.9"}))
         market_path = Path(self.tmp) / ".claude-plugin/marketplace.json"
@@ -167,14 +155,15 @@ class Lockstep(unittest.TestCase):
         folder = self.add_published_consumer()
         result = bump_release_artifacts(self.tmp, "9.10.0")
         self.assertTrue(result["ok"], result.get("error"))
-        self.assertEqual("9.10.0", (folder / "VERSION").read_text().strip())
         self.assertEqual("9.10.0", json.loads((folder / ".claude-plugin/plugin.json").read_text())["version"])
-        self.assertIn("plugins/quenching-extra/VERSION", {a["path"] for a in result["artifacts"]})
-        self.assertNotIn(("plugins/quenching-extra/VERSION", "plain"), RELEASE_ARTIFACTS)
+        extra = "plugins/quenching-extra/.claude-plugin/plugin.json"
+        self.assertIn(extra, {a["path"] for a in result["artifacts"]})
+        self.assertNotIn((extra, "json"), RELEASE_ARTIFACTS)
 
     def test_new_target_consumer_drift_refuses_before_any_existing_surface_changes(self):
         folder = self.add_published_consumer()
-        (folder / "VERSION").write_text("9.9.8\n")
+        (folder / ".claude-plugin/plugin.json").write_text(json.dumps({
+            "name": "quenching-extra", "version": "9.9.8"}))
         before = {p: p.read_bytes() for p in Path(self.tmp).rglob("*") if p.is_file()}
         result = bump_release_artifacts(self.tmp, "9.10.0")
         self.assertFalse(result["ok"])
@@ -197,12 +186,12 @@ class Lockstep(unittest.TestCase):
         before = {p: p.read_bytes() for p in Path(self.tmp).rglob("*") if p.is_file()}
         result = bump_release_artifacts(self.tmp, "9.10.0")
         self.assertFalse(result["ok"])
-        self.assertIn("published modules", result["error"])
+        self.assertIn("marketplace plugins", result["error"])
         self.assertEqual(before, {p: p.read_bytes() for p in before})
 
-    def test_codex_distribution_failure_refuses_before_any_version_moves(self):
+    def test_marketplace_failure_refuses_before_any_version_moves(self):
         manifest = json.loads(self.manifest_path.read_text())
-        catalog = Path(self.tmp) / manifest["distributions"][0]["marketplace"]
+        catalog = Path(self.tmp) / manifest["marketplace"]
         original = catalog.read_text()
         for failure in ("missing", "unlisted", "wrong path", "malformed"):
             with self.subTest(failure=failure):
@@ -243,7 +232,7 @@ class CmdReleaseCommit(Lockstep):
         self.git("config", "user.name", "t")
         self.git("config", "commit.gpgsign", "false")
         os.makedirs(os.path.join(self.tmp, "scripts"))
-        write_text(os.path.join(self.tmp, "scripts/generate_plugin_modules.py"), GENERATOR)
+        write_text(os.path.join(self.tmp, "scripts/sync_omnigent_plugin.py"), GENERATOR)
         write_text(os.path.join(self.tmp, "copy.txt"), "copy\n")
         write_text(os.path.join(self.tmp, "CHANGELOG.md"), "# Changelog\n\n## 9.9.9\n")
         self.git("add", "-A")
@@ -282,6 +271,7 @@ class CmdReleaseCommit(Lockstep):
                    "import sys\nfrom pathlib import Path\n"
                    "Path('deployed.txt').write_text(' '.join(sys.argv[1:]) + '\\n')\n")
         if manifest:
+            os.makedirs(os.path.join(self.tmp, ".agents"), exist_ok=True)
             write_text(os.path.join(self.tmp, ".agents/.quenching-deploy.json"), "{}\n")
         self.git("add", "-A")
         self.git("commit", "-q", "-m", "deploy stub")
@@ -307,7 +297,7 @@ class CmdReleaseCommit(Lockstep):
         self.assertEqual(read_text(os.path.join(self.tmp, "plugins/quenching/VERSION")).strip(), "9.9.9")
 
     def test_a_failing_generator_leaves_the_bump_uncommitted_and_untagged(self):
-        write_text(os.path.join(self.tmp, "scripts/generate_plugin_modules.py"),
+        write_text(os.path.join(self.tmp, "scripts/sync_omnigent_plugin.py"),
                    "raise SystemExit(3)\n")
         self.git("add", "-A")
         self.git("commit", "-q", "-m", "break generator")
@@ -316,10 +306,10 @@ class CmdReleaseCommit(Lockstep):
         self.assertEqual(self.git("rev-parse", "HEAD"), head)
         self.assertEqual(self.git("tag"), "")
 
-    def test_a_generator_that_drops_the_codex_catalog_cannot_commit_or_tag(self):
+    def test_a_generator_that_drops_the_marketplace_cannot_commit_or_tag(self):
         manifest = json.loads(self.manifest_path.read_text())
-        catalog = manifest["distributions"][0]["marketplace"]
-        write_text(os.path.join(self.tmp, "scripts/generate_plugin_modules.py"),
+        catalog = manifest["marketplace"]
+        write_text(os.path.join(self.tmp, "scripts/sync_omnigent_plugin.py"),
                    f"from pathlib import Path\nPath({catalog!r}).unlink()\n")
         self.git("add", "-A")
         self.git("commit", "-q", "-m", "generator drops publication")
