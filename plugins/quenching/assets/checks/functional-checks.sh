@@ -504,18 +504,26 @@ You have my authorization for the whole run — treat the plan gate as granted a
 need you to reach and INVOKE Front 1 via the Skill tool; stop right after that stage is invoked." \
   --max-turns 12 --output-format stream-json --verbose < /dev/null > "$WORK/2.jsonl" 2>&1 )
 if evidence "$WORK/2.jsonl"; then
-  if grep -q '"quenching-knowledge-align"' <<<"$(tools Skill "$WORK/2.jsonl")"; then r=yes
+  # The conductor reaches Front 1 through the knowledge router with the `align` flow; the leaf
+  # skill by its own name is the same stage.
+  if python3 -c '
+import json,sys
+for line in sys.stdin:
+    call=json.loads(line)
+    skill,args=call.get("skill",""),str(call.get("args","")).lstrip()
+    if skill=="quenching-knowledge-align" or (skill=="quenching-knowledge-knowledge" and args.startswith("align")): sys.exit(0)
+sys.exit(1)' <<<"$(tools Skill "$WORK/2.jsonl")"; then r=yes
   elif grep -q '"subtype":"error_max_turns"' "$WORK/2.jsonl"; then r=cap
   else r=no; fi
   if [ "$r" = cap ]; then
-    inconc "invoked quenching-knowledge-align by name" "hit the turn cap before routing"
+    inconc "invoked the knowledge align stage by name" "hit the turn cap before routing"
   else
-    check "$r" "invoked quenching-knowledge-align by name"
+    check "$r" "invoked the knowledge align stage by name"
   fi
   if grep -qE '"skill": *"quenching-[a-z]+:' <<<"$(tools Skill "$WORK/2.jsonl")"; then r=no; else r=yes; fi
   check "$r" "invoked no retired plugin-namespaced skill name"
 else
-  inconc "invoked quenching-knowledge-align by name" "missing tool activity or verifiable skill inventory"
+  inconc "invoked the knowledge align stage by name" "missing tool activity or verifiable skill inventory"
   inconc "invoked no retired plugin-namespaced skill name" "missing tool activity or verifiable skill inventory"
 fi
 fi
