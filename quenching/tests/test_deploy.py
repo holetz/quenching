@@ -19,7 +19,7 @@ except ModuleNotFoundError:
 from quenching.deploy.cli import main as deploy_main
 
 PLUGIN_ROOT = pathlib.Path(__file__).resolve().parent.parent
-REPO_ROOT = PLUGIN_ROOT.parent.parent
+REPO_ROOT = PLUGIN_ROOT.parent
 REAL = PLUGIN_ROOT / "assets" / "bin" / "cq"
 VERSION = (PLUGIN_ROOT / "VERSION").read_text().strip()
 
@@ -255,7 +255,7 @@ class Deploy(unittest.TestCase):
         self.assertEqual(0, self.run_deploy("--modules", "specs", "--runtime", "uvx", "--write")[0])
         shim = (self.target / ".agents/quenching/bin/cq").read_text()
         self.assertIn("uvx --from", shim)
-        self.assertIn("#subdirectory=plugins/quenching", shim)
+        self.assertIn("#subdirectory=quenching", shim)
         self.assertFalse((self.target / ".agents/quenching/assets/bin/quenching").exists())
         self.assertFalse((self.target / ".agents/quenching/assets/bin/cq").exists())
 

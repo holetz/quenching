@@ -79,7 +79,7 @@ class Lockstep(unittest.TestCase):
     def test_the_hud_manifest_moves_with_the_lockstep(self):
         bump_release_artifacts(self.tmp, "9.10.0")
         text = read_text(os.path.join(
-            self.tmp, "plugins/claude/quenching-hud/.claude-plugin/plugin.json"))
+            self.tmp, "integrations/claude-hud/.claude-plugin/plugin.json"))
         self.assertEqual(json.loads(text)["version"], "9.10.0")
 
     def test_every_artifact_reads_back_the_new_version(self):
@@ -99,7 +99,7 @@ class Lockstep(unittest.TestCase):
         # riding the same line must survive it.
         bump_release_artifacts(self.tmp, "9.10.0")
         text = read_text(os.path.join(
-            self.tmp, "plugins/quenching/assets/bin/quenching/common/version.py"))
+            self.tmp, "quenching/assets/bin/quenching/common/version.py"))
         self.assertIn("# a comment that must survive the bump", text)
 
     def test_a_release_without_a_matching_changelog_entry_is_refused_before_writes(self):
@@ -117,15 +117,15 @@ class Lockstep(unittest.TestCase):
     def test_a_lockstep_already_drifted_is_refused_rather_than_compounded(self):
         # Precondition: one artifact disagreeing with the rest BEFORE the bump is a refusal,
         # not a fifth value folded into the compare.
-        write_text(os.path.join(self.tmp, "plugins/quenching/VERSION"), "9.9.8\n")
+        write_text(os.path.join(self.tmp, "quenching/VERSION"), "9.9.8\n")
         result = bump_release_artifacts(self.tmp, "9.10.0")
         self.assertFalse(result["ok"])
 
     def test_a_drifted_lockstep_is_refused_before_any_artifact_is_written(self):
-        write_text(os.path.join(self.tmp, "plugins/quenching/VERSION"), "9.9.8\n")
+        write_text(os.path.join(self.tmp, "quenching/VERSION"), "9.9.8\n")
         bump_release_artifacts(self.tmp, "9.10.0")
         for rel, kind in RELEASE_ARTIFACTS:
-            if rel == "plugins/quenching/VERSION":
+            if rel == "quenching/VERSION":
                 continue
             with self.subTest(artifact=rel):
                 self.assertEqual(read_text(os.path.join(self.tmp, rel)), self.initial[rel])
@@ -137,16 +137,16 @@ class Lockstep(unittest.TestCase):
 
     def add_published_consumer(self):
         manifest = json.loads(self.manifest_path.read_text())
-        manifest["plugins"].append({"name": "quenching-extra", "path": "plugins/quenching-extra",
+        manifest["plugins"].append({"name": "quenching-extra", "path": "quenching-extra",
                                     "marketplace": True})
         self.manifest_path.write_text(json.dumps(manifest))
-        folder = Path(self.tmp) / "plugins/quenching-extra"
+        folder = Path(self.tmp) / "quenching-extra"
         (folder / ".claude-plugin").mkdir(parents=True)
         (folder / ".claude-plugin/plugin.json").write_text(json.dumps({
             "name": "quenching-extra", "version": "9.9.9"}))
         market_path = Path(self.tmp) / ".claude-plugin/marketplace.json"
         market = json.loads(market_path.read_text())
-        market["plugins"].append({"name": "quenching-extra", "source": "./plugins/quenching-extra",
+        market["plugins"].append({"name": "quenching-extra", "source": "./quenching-extra",
                                  "version": "9.9.9"})
         market_path.write_text(json.dumps(market))
         return folder
@@ -156,7 +156,7 @@ class Lockstep(unittest.TestCase):
         result = bump_release_artifacts(self.tmp, "9.10.0")
         self.assertTrue(result["ok"], result.get("error"))
         self.assertEqual("9.10.0", json.loads((folder / ".claude-plugin/plugin.json").read_text())["version"])
-        extra = "plugins/quenching-extra/.claude-plugin/plugin.json"
+        extra = "quenching-extra/.claude-plugin/plugin.json"
         self.assertIn(extra, {a["path"] for a in result["artifacts"]})
         self.assertNotIn((extra, "json"), RELEASE_ARTIFACTS)
 
@@ -203,7 +203,7 @@ class Lockstep(unittest.TestCase):
                     if failure == "unlisted":
                         document["plugins"] = []
                     elif failure == "wrong path":
-                        document["plugins"][0]["source"] = "./plugins/absent"
+                        document["plugins"][0]["source"] = "./integrations/absent"
                     else:
                         document["plugins"] = None
                     catalog.write_text(json.dumps(document))
@@ -217,7 +217,7 @@ class Lockstep(unittest.TestCase):
 
 GENERATOR = (
     "import pathlib, sys\n"
-    "v = pathlib.Path('plugins/quenching/VERSION').read_text().strip()\n"
+    "v = pathlib.Path('quenching/VERSION').read_text().strip()\n"
     "pathlib.Path('copy.txt').write_text('copy ' + v + '\\n')\n"
 )
 
@@ -259,20 +259,20 @@ class CmdReleaseCommit(Lockstep):
         files = set(self.git("show", "--name-only", "--format=", "HEAD").split())
         self.assertIn("CHANGELOG.md", files)
         self.assertIn("copy.txt", files)
-        self.assertIn("plugins/quenching/VERSION", files)
+        self.assertIn("quenching/VERSION", files)
         self.assertEqual(read_text(os.path.join(self.tmp, "copy.txt")), "copy 9.10.0\n")
         self.assertEqual(self.git("status", "--porcelain"), "")
         self.assertEqual(self.git("rev-list", "-n1", "9.10.0"), self.git("rev-parse", "HEAD"))
 
     def install_deploy_stub(self, *, manifest, body=None):
         """A bundled `cq` that records its argv (or runs `body`); the deploy manifest only when asked for."""
-        write_text(os.path.join(self.tmp, "plugins/quenching/assets/bin/cq"),
+        write_text(os.path.join(self.tmp, "quenching/assets/bin/cq"),
                    body or ("import sys\nfrom pathlib import Path\n"
                             "Path('deployed.txt').write_text(' '.join(sys.argv[1:]) + '\\n')\n"))
         if manifest:
             os.makedirs(os.path.join(self.tmp, ".agents"), exist_ok=True)
             write_text(os.path.join(self.tmp, ".agents/.quenching-deploy.json"), "{}\n")
-        self.git("add", "plugins/quenching/assets/bin/cq", *([".agents/.quenching-deploy.json"] if manifest else []))
+        self.git("add", "quenching/assets/bin/cq", *([".agents/.quenching-deploy.json"] if manifest else []))
         self.git("commit", "-q", "-m", "deploy stub")
 
     def test_a_deployed_surface_is_redeployed_into_the_release_commit(self):
@@ -293,7 +293,7 @@ class CmdReleaseCommit(Lockstep):
         head = self.git("rev-parse", "HEAD")
         self.assertEqual(self.release(), 2)
         self.assertEqual(self.git("rev-parse", "HEAD"), head)
-        self.assertEqual(read_text(os.path.join(self.tmp, "plugins/quenching/VERSION")).strip(), "9.9.9")
+        self.assertEqual(read_text(os.path.join(self.tmp, "quenching/VERSION")).strip(), "9.9.9")
 
     def test_a_failing_generator_leaves_the_bump_uncommitted_and_untagged(self):
         self.install_deploy_stub(manifest=True, body="raise SystemExit(3)\n")
@@ -339,7 +339,7 @@ class RealRepoLockstep(unittest.TestCase):
 
     def test_manifests_carry_no_hard_coded_command_count(self):
         for rel in (".claude-plugin/marketplace.json",
-                    "plugins/claude/quenching-hud/.claude-plugin/plugin.json"):
+                    "integrations/claude-hud/.claude-plugin/plugin.json"):
             self.assertNotRegex(read_text(os.path.join(REPO, rel)), r"\d+ commands", rel)
 
 
