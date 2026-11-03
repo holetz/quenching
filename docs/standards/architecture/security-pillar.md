@@ -2,12 +2,12 @@
 type: standard
 title: Security pillar
 description: A read-only pillar that reports workflow permissions, secret and ignore coverage, advisory dependency configuration and access ownership without owning a converged tree
-resource: .github/workflows/**, .gitignore, pyproject.toml, .agents/quenching.json, plugins/quenching/commands/security/**, plugins/quenching/assets/bin/quenching/security/**, plugins/quenching/assets/bin/quenching/controls/**, plugins/quenching/assets/bin/quenching/common/leak.py, scripts/githooks/**
+resource: .github/workflows/**, .gitignore, pyproject.toml, .agents/quenching.json, plugins/quenching/commands/security/**, plugins/quenching/assets/bin/quenching/security/**, plugins/quenching/assets/bin/quenching/controls/**, plugins/quenching/assets/bin/quenching/common/leak.py, plugins/quenching/assets/bin/quenching/common/identity.py, plugins/quenching/assets/bin/quenching/git/identity.py, plugins/quenching/assets/githooks/**, scripts/githooks/**
 tags: [architecture, security, pillar, read-only, permissions]
-timestamp: 2026-10-24
+timestamp: 2026-11-03
 audience: both
 authority: background
-source: spec 1071 (task 1.1) — the security subject was classified as pillar-shaped by the axis contract; this declaration fixes its questions and boundary before route implementation; spec 2097 (task 3.2) — the `leak` verb
+source: spec 1071 (task 1.1) — the security subject was classified as pillar-shaped by the axis contract, fixing its questions and boundary; spec 2097 (task 3.2) — the `leak` verb; spec 2164 — the identity allowlist
 maintainer: quenching
 ---
 
@@ -59,8 +59,8 @@ of the pattern it matched. Exactly one mode is required:
 
 | Mode | Scans | Caller |
 | --- | --- | --- |
-| `--staged` | the index's content and the configured `user.email` | the `pre-commit` hook |
-| `--pre-push [--remote <name>]` | the commits named on stdin by git: added lines, messages, author and committer emails. A new ref is judged against the destination's remote-tracking refs only (`--remote`, the hook's first argument), or whole without it | the `pre-push` hook |
+| `--staged` | the index's content and the configured `user.email`; with an allowlist declared, the author and committer the commit will carry | the `pre-commit` hook |
+| `--pre-push [--remote <name>]` | the commits named on stdin by git: added lines, messages, author and committer emails (patterns, and the allowlist when declared). A new ref is judged against the destination's remote-tracking refs only (`--remote`, the hook's first argument), or whole without it | the `pre-push` hook |
 | `--all` | every tracked file | the repository gate, which CI runs |
 
 Three pattern sets feed one scanner, from one module (`quenching/common/leak.py`) that the specs
@@ -79,6 +79,39 @@ guard):
 The verb reads and never corrects: the hook refuses the commit, and a finding is fixed by removing
 the content, never by weakening a pattern or passing `--no-verify`. The repository publishes the two
 hooks under `scripts/githooks/`; pointing `core.hooksPath` at them is a per-machine choice.
+
+### The identity allowlist
+
+A pattern can say which content must not leave; it can never enumerate every address that must
+not sign a commit. `shared.gitIdentity.allowedEmails` in `.agents/quenching.json` names the few
+that may — exact addresses or `fnmatch` globs (`*@users.noreply.github.com`), matched
+case-insensitively ([`plugin-configuration.md`](../workflows/plugin-configuration.md) §The
+`shared.gitIdentity` block). One module, `quenching/common/identity.py`, judges it:
+
+- **Absent**, nothing is judged and every caller behaves as before.
+- **Malformed** — not a list, empty, or holding a blank or non-string entry — the caller fails
+  closed with exit 2 (`identity-allowlist-invalid`; `sp-identity-allowlist-invalid` in the store),
+  so a typo never turns the check off.
+- **Declared**, every email outside it is a finding labelled `email-not-allowed` that, unlike a
+  content excerpt, names the email, followed by the remedy: `git config user.email <an allowed
+  address>` before the commit, `git commit --amend --reset-author` after it.
+
+The configured identity is read with `git var GIT_AUTHOR_IDENT` / `GIT_COMMITTER_IDENT`, because
+git exports `--author` and the `GIT_*_EMAIL` variables to the hook; a push judges `%ae` and `%ce` of
+the same commit set the content scan judges. Three callers apply it:
+
+| Caller | Judges | Refusal |
+| --- | --- | --- |
+| `cq security leak --staged` / `--pre-push` | the allowlist beside the content patterns | exit 1, the hook refuses |
+| `cq git identity --staged` / `--pre-push [--remote]` | the allowlist alone | exit 1, the hook refuses |
+| the specs git store (`_guard_identity`) | the identity `commit-tree` will sign with | `sp-identity-not-allowed`, nothing written |
+
+`cq git identity` sits in the `git` package because every deployed target carries it, while this
+module is optional. `cq deploy` ships `pre-commit` and `pre-push` under
+`.agents/quenching/assets/githooks/`, each calling it. Activation stays the per-machine choice
+above: deploy writes no git configuration, and warns while a target declares the list and its
+`core.hooksPath` does not point at those hooks (`git config core.hooksPath
+.agents/quenching/assets/githooks`).
 
 <!-- rationale -->
 

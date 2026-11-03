@@ -2,12 +2,12 @@
 type: standard
 title: Plugin configuration contract
 description: "`.agents/quenching.json` is the plugin's single configuration home, with `.claude/quenching.json` read as legacy; provider selection is derived from the repository remote, while placement, Azure mappings, lifecycle hooks, profiles, proposal catalogues and the `git` pillar's per-artifact writing directives remain explicit target settings"
-resource: .agents/quenching.json, plugins/quenching/assets/bin/quenching/common/config.py, plugins/quenching/assets/bin/quenching/specs/config.py, plugins/quenching/assets/bin/quenching/specs/store.py, plugins/quenching/assets/bin/quenching/ops/**, plugins/quenching/assets/bin/quenching/proof/**, plugins/quenching/assets/bin/quenching/git/base.py, plugins/quenching/assets/bin/quenching/git/conventions.py, plugins/quenching/assets/bin/quenching/config/**
+resource: .agents/quenching.json, plugins/quenching/assets/bin/quenching/common/config.py, plugins/quenching/assets/bin/quenching/specs/config.py, plugins/quenching/assets/bin/quenching/specs/store.py, plugins/quenching/assets/bin/quenching/ops/**, plugins/quenching/assets/bin/quenching/proof/**, plugins/quenching/assets/bin/quenching/git/base.py, plugins/quenching/assets/bin/quenching/git/conventions.py, plugins/quenching/assets/bin/quenching/config/**, plugins/quenching/assets/bin/quenching/common/identity.py
 tags: [workflows, specs, configuration, provider, plugin]
-timestamp: 2026-10-30
+timestamp: 2026-11-03
 audience: both
 authority: current
-source: specs 1065, 1075, 1405, 1907, 1908, 1909, 1910, 1911, 1912, 2092, 2118, 1020213 — lineage in decision 0004
+source: specs 1065, 1075, 1405, 1907, 1908, 1909, 1910, 1911, 1912, 2092, 2118, 2164, 1020213 — lineage in decision 0004
 maintainer: quenching
 ---
 
@@ -149,7 +149,7 @@ Ownership follows the meaning of the key, not the module that happens to read it
 | Namespace | Owned declarations | Boundary |
 | --- | --- | --- |
 | root | `backend` | legacy/provider metadata only; provider selection comes from `origin` |
-| `shared` | `worktreeSetup`, `sharedPaths`, `regenerablePaths`, `hooks`, `profiles`, `gitConventions`, `autonomy`, `workHost`, `okfValidate`, `contextBudgets`, `codex` | settings used by more than one local surface or by isolation |
+| `shared` | `worktreeSetup`, `sharedPaths`, `regenerablePaths`, `hooks`, `profiles`, `gitConventions`, `gitIdentity`, `autonomy`, `workHost`, `okfValidate`, `contextBudgets`, `codex` | settings used by more than one local surface or by isolation |
 | `specs` | Azure state and placement mappings, `subjects`, `tagCatalog`, `workItemTypes`, `chat`, `artifactLanguage`, `card`, `cardAt` | provider-owned plan lifecycle and proposal conventions |
 | `delivery` | `provider` | the delivery front's explicit provider declaration; it chooses no pipeline policy |
 | `ops` | `opsRoot`, `router`, `registry` | operations inventory, router and generated registry |
@@ -169,6 +169,22 @@ and the `executor` object. Its keys and their effect are owned by
 default and is named in the payload's warnings, and `cq config show --effective` lists every leaf.
 `delivery.provider` is read by `delivery/config.py`; `specs.artifactLanguage`, `specs.card` and
 `specs.cardAt` by `specs/config.py` (the last three may also sit on the `quenching` branch).
+
+## The `shared.gitIdentity` block
+
+`shared.gitIdentity.allowedEmails` declares which emails may author or commit in the repository: a
+non-empty list of exact addresses or `fnmatch` patterns, matched case-insensitively.
+
+```json
+{"shared": {"gitIdentity": {"allowedEmails": ["you@example.org", "*@users.noreply.github.com"]}}}
+```
+
+An absent block or key declares nothing, and nothing is judged. Unlike a limit read through
+`setting`, a malformed value never falls back to a default: the identity gate fails closed with
+exit 2, because a typo that silently disabled it would defeat the declaration. It is read through
+the merged envelope, so a user layer may hold a machine-wide list and the repository's own key
+replaces it whole. `cq config seed` does not emit it. What reads it, and where it refuses, is owned
+by [security-pillar.md](../architecture/security-pillar.md) §The identity allowlist.
 
 ## The `shared.mcp` block
 
