@@ -1518,6 +1518,33 @@ class OrchestratorGrants(unittest.TestCase):
         self.assertIn("`sem relato` when it reported none", text)
 
 
+class RunnerGateExit(unittest.TestCase):
+    """The gate's exit code is a FIELD of the runner's fixed report — never a number a
+    verifier has to find inside prose.
+
+    A worker once cost a whole extra runner because `GATE:` carried the command and the code
+    together and the report named no code at all. `GATE_EXIT:` is what the verifier reads,
+    and it is owed in every STATE, `blocked` and `failed` included: a gate that did not run
+    says `not-run`."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.text = " ".join((PLUGIN_ROOT / "agents" / "spec-runner.md")
+                            .read_text(encoding="utf-8").split())
+
+    def test_the_report_splits_the_verdict_from_the_exit_code(self):
+        self.assertIn("GATE: pass | fail | not-run — <command>", self.text)
+        self.assertIn("GATE_EXIT: <the exit code that command returned, or `not-run`>",
+                      self.text)
+        self.assertNotIn("GATE: pass | fail | not-run — <command and exit code>", self.text)
+
+    def test_both_lines_are_owed_in_every_state(self):
+        self.assertIn("`GATE:` and `GATE_EXIT:` are present in EVERY STATE, `blocked` and "
+                      "`failed` included", self.text)
+        self.assertIn("a gate that did not run says `GATE_EXIT: not-run`, never an omitted "
+                      "line", self.text)
+
+
 class Worktree(RepoCase):
     def setUp(self):
         super().setUp()
