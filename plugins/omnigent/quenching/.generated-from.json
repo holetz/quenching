@@ -2,7 +2,7 @@
   "source": "plugins/quenching",
   "generator": "scripts/sync_omnigent_plugin.py",
   "omnigent": "0.19.1",
-  "version": "6.14.2",
+  "version": "7.0.0",
   "skill_count": 65,
   "agent_count": 5
 }
