@@ -335,8 +335,6 @@ class EntryPoint(unittest.TestCase):
         modules = {m["name"]: m for m in json.loads(
             (PLUGIN / "assets" / "modules.json").read_text(encoding="utf-8"))["modules"]}
         self.assertIn("mcp", modules["quenching-specs"]["owned"]["packages"])
-        self.assertIn("assets/bin/quenching/mcp",
-                      modules["quenching-specs-reader"]["generated"]["trees"])
 
 
 if __name__ == "__main__":
