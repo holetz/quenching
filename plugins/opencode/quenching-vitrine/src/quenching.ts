@@ -26,7 +26,6 @@ export type QuenchingUpdate = {
 
 const MANIFESTS = [
   ".agents/.quenching-deploy.json",
-  ".agents/quenching/.claude-plugin/plugin.json",
 ]
 
 async function jsonVersion(path: string): Promise<string> {
