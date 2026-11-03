@@ -4,7 +4,7 @@ title: Design front
 description: The single DTCG source, its portable and editorial projections, explicit arbitration with Impeccable, and the boundary between web and non-web drift
 resource: plugins/quenching/assets/bin/quenching/design/**, plugins/quenching/assets/design/**, plugins/quenching/commands/design/**
 tags: [architecture, design, dtcg, impeccable, projections]
-timestamp: 2026-08-28
+timestamp: 2026-11-03
 audience: both
 authority: current
 source: design-front architecture proposal revision 2, confirmed by the implementation and plugins/quenching/tests/test_design.py
@@ -52,6 +52,11 @@ owner rather than being disguised as mechanical repairs.
 The executable list and in-memory calculation live in
 [build.py](../../../plugins/quenching/assets/bin/quenching/design/build.py):70. A pointer is not a
 valid projection because consumers read the artifact's content.
+
+`tokens.typ` projects each color the Typst language expresses — `srgb`, `srgb-linear`, `hsl`,
+`oklab` and `oklch` — as a Typst color constructor, `alpha` included, so a template can consume the
+token as `fill:` or `stroke:`. A color space Typst has no constructor for keeps the portable CSS
+string; the adapter never converts wide-gamut color on its own.
 
 ## The portable boundary is deliberately lossy
 
