@@ -16,6 +16,7 @@ try:
 except ModuleNotFoundError:
     sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
     import _paths  # noqa: F401
+from quenching.deploy import translate
 from quenching.deploy.cli import main as deploy_main
 
 PLUGIN_ROOT = pathlib.Path(__file__).resolve().parent.parent
@@ -357,6 +358,22 @@ class Deploy(unittest.TestCase):
         self.assertTrue((child / ".mcp.json").exists())
         self.assertEqual('{"mcpServers": {"parent": {}}}\n',
                          (parent / ".mcp.json").read_text())
+
+
+class SourceDialect(unittest.TestCase):
+    """The source is written in the target dialect; the deploy refuses what is not."""
+
+    def test_plugin_root_marker_is_refused(self):
+        with self.assertRaises(ValueError):
+            translate.transform_platform("run ${CLAUDE_PLUGIN_ROOT}/x")
+
+    def test_plugin_surface_id_is_refused(self):
+        with self.assertRaises(ValueError):
+            translate.transform_platform("use /quenching-specs:create")
+
+    def test_target_dialect_passes_unchanged(self):
+        text = "use /quenching-specs-create and .agents/quenching/bin/cq specs"
+        self.assertEqual(text, translate.transform_platform(text))
 
 
 class TargetLauncher(unittest.TestCase):

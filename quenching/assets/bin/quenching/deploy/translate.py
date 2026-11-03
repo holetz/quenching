@@ -1,9 +1,9 @@
 """Target translation for `cq deploy`.
 
-The plugin's command bodies are written for the plugin surface.  A deployed target has one
-generic layer: skills under ``.agents/skills/``, the payload under ``.agents/quenching/`` and no
-``CLAUDE.md``.  This module performs the deterministic, text-only pass that makes those bodies
-resolve there.  It never decides what to deploy; `tree` does.
+The source is written in the target dialect.  This module rewrites only frontmatter, the
+generated header, the grants (and OpenCode permissions) and the ``cq.cmd`` launcher note, and
+refuses a source that still carries a plugin-surface id.  It never decides what to deploy; `tree`
+does.
 """
 from __future__ import annotations
 
@@ -20,14 +20,8 @@ KEEP_FRONTMATTER = {"description", "argument-hint", "allowed-tools", "disable-mo
                     "user-invocable"}
 AGENTS = ("spec-orchestrator", "spec-reviewer", "spec-runner", "spec-scout", "spec-verifier")
 
-CQ_INVOCATION = re.compile(
-    r"(?<![\w./-])cq(?=\s+(?:--root|--version|--help|specs|knowledge|design|components|git|"
-    r"ops|proof|toolchain|delivery|security|opensource|config|portal|session)\b)")
-EXPLICIT_CQ = re.compile(
-    r"python3\s+(?:\"?\.agents/quenching/)?(?:assets/bin|bin)/cq\"?")
-PLUGIN_COMMAND = re.compile(r"/(quenching-[a-z]+):([A-Za-z0-9:-]+)")
-BARE_COMMAND = re.compile(r"(?<![/\w-])(quenching-[a-z]+):([A-Za-z0-9:-]+)")
-AGENT_ID = re.compile(r"\bquenching-specs:(" + "|".join(map(re.escape, AGENTS)) + r")\b")
+# A source id written for the plugin surface (`/quenching-specs:create`) is refused, not rewritten.
+PLUGIN_ID = re.compile(r"(?<![\w-])/?quenching-[a-z]+:[A-Za-z0-9-]")
 # Both the source grant and its already-translated form: a target-local `cq deploy` reads the
 # payload's own agent bodies, so the second translation must produce the first one's output.
 CQ_GRANT = re.compile(r"Bash\(((?:cq|" + re.escape(CQ) + r")(?:\.cmd)?)(?: ([^:()]+))?:\*\)$")
@@ -90,35 +84,13 @@ def scalar_value(value: str) -> str:
     return value
 
 
-def _module_id(match: re.Match) -> str:
-    return "/quenching-" + match.group(2).replace(":", "-")
-
-
-def _bare_id(match: re.Match) -> str:
-    return "quenching-" + match.group(2).replace(":", "-")
-
-
-def _agent_id(match: re.Match) -> str:
-    return agent_name(match.group(1))
-
-
 def transform_platform(text: str) -> str:
-    """The one prose pass every deployed Markdown file receives."""
-    text = AGENT_ID.sub(_agent_id, text)
-    text = PLUGIN_COMMAND.sub(_module_id, text)
-    text = BARE_COMMAND.sub(_bare_id, text)
-    text = text.replace("${CLAUDE_PROJECT_DIR}", ".")
-    text = text.replace(".claude/quenching.json", ".agents/quenching.json")
-    text = text.replace(".claude/commands/", ".agents/skills/")
-    text = text.replace("CLAUDE.md", "AGENTS.md")
-    text = text.replace("Claude Code", "the host")
-    text = text.replace("bare `cq`", f"the target-local `{CQ}`")
-    text = text.replace("bare cq", f"the target-local `{CQ}`")
-    text = EXPLICIT_CQ.sub(CQ, text)
-    text = CQ_INVOCATION.sub(CQ, text)
-    for marker in ("${CLAUDE_PROJECT_DIR}", "CLAUDE_PLUGIN_ROOT"):
-        if marker in text:
-            raise ValueError(f"untranslated platform marker: {marker}")
+    """The source is already written in the target dialect: refuse what still needs rewriting."""
+    if "CLAUDE_PLUGIN_ROOT" in text:
+        raise ValueError("source still carries the plugin-root marker: CLAUDE_PLUGIN_ROOT")
+    found = PLUGIN_ID.search(text)
+    if found:
+        raise ValueError(f"source still carries a plugin-surface id: {found.group(0)}")
     return text
 
 
