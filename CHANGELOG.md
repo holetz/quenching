@@ -13,6 +13,25 @@ owner: [`ci-cd/versioning-release.md`](docs/standards/ci-cd/versioning-release.m
 short version for a consumer: the version is published once, deliberately, as a release — never at a
 spec's own conclude — and `cq --version` is what answers which one you are running.
 
+## 7.0.1
+
+**Painel Specs do OpenCode sem depender do `cq` no PATH.** O `quenching-vitrine` passa a rodar o
+  `cq` do checkout de onde é carregado (`plugins/quenching/assets/bin/cq`) para a checagem de versão e
+  o deploy, na ordem `QUENCHING_CQ` → checkout do plugin → PATH; as leituras de spec continuam
+  preferindo o `.agents/quenching/bin/cq` do projeto. Scripts Python rodam pelo interpretador
+  (`python3`; `py -3` ou `python` no Windows) e o shim do `--runtime uvx` pelo `cq.cmd` via `cmd.exe`,
+  o que destrava o painel no Windows. Requisito do painel: Python 3.11+ e git. Para atualizar, basta
+  atualizar o checkout e reiniciar o OpenCode.
+
+**Delivery reconhece `rustup toolchain install` como setup do job.** Um job que instala a toolchain
+  Rust por `rustup` deixa de ser acusado de `delivery-setup-missing`.
+
+**Deploy por clone deixa de vendorizar o `quenching_launch.py`**, como o deploy por uvx já fazia; a
+  documentação explica o placeholder `<tag>` do uvx e o `--modules` no upgrade.
+
+**Dependências**: `actions/setup-python` 7.1.0, `astral-sh/setup-uv` 10.3.3, `ruff` 0.17.3,
+  `coverage` 7.17.0, `pytest` 9.2.0, `zensical` 0.0.73.
+
 ## 7.0.0
 
 **Quebra: o quenching deixa de ser distribuído como plugin e passa a ser servido só por instalação
