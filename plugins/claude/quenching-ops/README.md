@@ -83,12 +83,12 @@ confirms on its own, always — and inside a conducted run, so does every **irre
 That contract lives once, in
 [`align/convergence.md`](assets/references/align/convergence.md).
 
-## The 62 commands
+## The 65 commands
 
 **One file per entry point** — Claude Code merged custom commands into skills, so each
 `commands/<path>.md` carries both the description that routes to it and the body that runs; there is
 no `skills/` tree and no wrapper. The tables below are the manual, and the count is a property of
-their rows rather than a second structural inventory: the `62` in this heading is the manual's
+their rows rather than a second structural inventory: the `65` in this heading is the manual's
 canonical displayed total, while [`tests/test_readme_surface.py`](tests/test_readme_surface.py)
 reads it and fails the suite whenever these tables
 and `commands/**` disagree
@@ -105,6 +105,7 @@ the explicit entry point.
 
 | Command | Does |
 | --- | --- |
+| `/quenching-align:knowledge:knowledge` | The single entry point of the knowledge flows: picks one of the thirteen flows (add, align, define, learn, import, import-memory, glossary-backfill, status, documentation build, plan, produce, review, write) by the flow you name and loads that flow's reference; each typed shortcut stays. |
 | `/quenching-align:knowledge:align` | Forces `/docs/` into the canonical OKF bundle and pulls in the content sitting out-of-band — probe first, then ONE confirmed plan, looped to a fixpoint. |
 | `/quenching-align:knowledge:status` | The front's only **read-only** view: where the bundle stands, what is conformant, what drifted. Writes nothing. |
 | `/quenching-align:knowledge:add` | Inserts ONE concept doc — right home, right type, honest stamp. |
@@ -135,6 +136,7 @@ motion, shadows, breakpoints, and snippets remain in the source and sidecar.
 
 | Command | Does |
 | --- | --- |
+| `/quenching-align:components:components` | The single entry point of the components flows: picks `command-new`, `agent-new`, `hook-new`, `align`, `status` or `harness-align` by the flow you name and loads that flow's reference; each typed shortcut stays. |
 | `/quenching-align:components:align` | Converges the whole `.claude/` surface onto one file per entry point, then audits every body and rewrites every description against the writing doctrine. |
 | `/quenching-align:components:status` | Reports the command count, fronts and finding codes for the target's automation surface without writing. |
 | `/quenching-align:components:command:new` | Mints or edits ONE command — the structural half, including its `description`. |
@@ -192,6 +194,7 @@ motion, shadows, breakpoints, and snippets remain in the source and sidecar.
 
 | Command | Does |
 | --- | --- |
+| `/quenching-specs:git:git` | The single entry point of the git flows: picks `branch`, `commit`, `merge`, `sync`, `pr-create`, `pr-review` or `pr-status` by the flow you name and loads that flow's reference; each typed shortcut stays. |
 | `/quenching-specs:git:branch` | Takes isolation for a build: a worktree by default and unasked, a plain branch only when the human asks, stating the cost and stamping the `branch:` record. |
 | `/quenching-specs:git:commit` | Commits what is already staged, under the target's own convention when one is declared. Never `git add -A`. |
 | `/quenching-specs:git:commit-incremental` | Turns the current worktree's pending changes into cohesive commits with explicit paths and safe stop conditions. |

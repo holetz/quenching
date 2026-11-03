@@ -37,7 +37,7 @@ def git(cwd, *args):
 class TaskExecutionContractTests(unittest.TestCase):
     def test_execute_commits_through_the_deterministic_verb(self):
         command = COMMAND.read_text(encoding="utf-8")
-        commit = (ROOT / "plugins/quenching/commands/git/commit.md").read_text(encoding="utf-8")
+        commit = (ROOT / "plugins/quenching/assets/references/git-flows/commit.md").read_text(encoding="utf-8")
 
         self.assertIn('cq git commit --subject "<subject>"', command)
         self.assertNotIn('Skill("quenching-specs:git:commit"', command)
@@ -174,11 +174,11 @@ class TaskExecutionContractTests(unittest.TestCase):
         conclude = CONCLUDE.read_text(encoding="utf-8")
         scale = SCALE.read_text(encoding="utf-8")
 
-        self.assertIn('Skill("quenching-specs:git:pr:create", "<id>")', conclude)
+        self.assertIn('Skill("quenching-specs:git:git", "pr-create <id>")', conclude)
         self.assertIn("`low` chains the provider handoff", conclude)
         self.assertNotIn('"<id> autonomous")', conclude)
         self.assertIn("do not invoke it", conclude)
-        self.assertIn('Skill("quenching-specs:git:pr:create", "<id>")', scale)
+        self.assertIn('Skill("quenching-specs:git:git", "pr-create <id>")', scale)
         self.assertIn("Other builds retain", scale)
 
     def test_autonomous_conclude_answers_every_question_without_inferring_the_outcome(self):

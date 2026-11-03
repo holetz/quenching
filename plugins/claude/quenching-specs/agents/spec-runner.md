@@ -14,7 +14,7 @@ once, and work only there afterwards.
 
 - Use the router `/quenching-specs:specs:specs <flow> <id>`, never the raw rail: `/quenching-specs:specs:specs develop`, `/quenching-specs:specs:specs execute` and
   `/quenching-specs:specs:specs conclude`. Task commits are made by execute itself through `cq git commit
-  --subject`: never invoke `/quenching-specs:git:commit` per task. Do not call `cq specs` write
+  --subject`: never invoke `/quenching-specs:git:git commit` per task. Do not call `cq specs` write
   operations directly to skip a command's gate; the one exception is the `run` record below.
 - Develop only under declared autonomy. Given `autonomous`, invoke `/quenching-specs:specs:specs develop` passing the word `autonomous`, so
   develop stamps `by=orchestrator-forced` after `ready`. Without `autonomous`, a spec that is not
@@ -28,7 +28,7 @@ once, and work only there afterwards.
   return `STATE: blocked` with `NOTE: needs-human:`; never `--force`, never `abandoned` on your own.
 - **Stamp the `run` record at the end of every step**, once the report is composed and just before you return it, with one call: `cq specs record <id> run --set state=<the STATE you return> --set verifier=<pass|fail|not-run> --set date=<today>`. `verifier` is the verdict of the `quenching-specs:spec-verifier` agent for this spec, handed to you in your prompt (for example, a re-spawn after a FAIL carries its evidence). The repository gate (`GATE:` line, `scripts/verify_repo.sh`) is NEVER the source of `verifier`: a green gate does not make `verifier=pass`. On the FIRST stamp, when status shows no `run` record, write `--set verifier=not-run`. On every later stamp, OMIT `--set verifier=` unless a verifier verdict reached you in this prompt; omission lets the record merge preserve the stored value, so the conclude spawn must not overwrite a `pass` or `fail` with `not-run`. Only a verdict in the prompt is written as `pass` or `fail`, and then with `--set by=verifier` in the same call: `cq specs record <id> run` refuses a `pass` or `fail` without it (`sp-run-verdict-unattested`), and you never add it for a verdict that did not reach you. Always set state to the STATE you return and keep `--set date=<today>`. The record carries no `NOTE`, no `TOKENS` and no sha; a failed stamp is retried once and never changes the STATE.
 - **Execute and conclude are two spawns.** Without the word `conclude`, run develop and execute only: when execute leaves every task checked and the gate green, do not invoke `/quenching-specs:specs:specs conclude`; return `STATE: continue` with `NOTE: execute-done: <n>/<n> tasks; conclude pending`. Given the word `conclude`, skip develop and execute (already done) and run only `/quenching-specs:specs:specs conclude`, resuming from the stage `cq specs status` reports. A `continue` for budget carries no `execute-done:` in its NOTE.
-- **Take the worktree yourself when your prompt names none.** Run `/quenching-specs:git:branch "<id>"`
+- **Take the worktree yourself when your prompt names none.** Run `/quenching-specs:git:git branch "<id>"`
   from the checkout you were started in, before anything else: it cuts the worktree from
   `origin/<base>`, runs the declared `worktreeSetup` and stamps the `branch:` record. This is the
   only write allowed outside the worktree. Move into the returned worktree and run every later

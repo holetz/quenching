@@ -1,0 +1,53 @@
+{
+  "skill": "/quenching-align:knowledge:knowledge",
+  "cases": [
+    {
+      "id": "define-routes-to-define",
+      "branch": "step 1 — a glossary term picks the `define` flow and files ONE entry",
+      "prompt": "Add the term \"cursor\" to the glossary: an opaque token that marks where the next page of results starts.\n\nYou have my authorization for the whole run — treat any confirmation gate as already granted and proceed to the end.",
+      "assertions": [
+        "the reply names the glossary or the term `cursor` as written",
+        "docs/glossary.md carries an entry for `cursor` after the run, as listed by the inspect.sh output"
+      ]
+    },
+    {
+      "id": "explicit-flow-name-wins",
+      "branch": "step 1 — the first word naming a flow picks it, the rest is the flow's input",
+      "prompt": "status\n\nYou have my authorization for the whole run — treat any confirmation gate as already granted and proceed to the end.",
+      "assertions": [
+        "the reply reports where the bundle stands or says it is conformant",
+        "no file under docs/ changes after the run, as listed by the inspect.sh output"
+      ]
+    },
+    {
+      "id": "specs-request-is-not-routed",
+      "branch": "Not for: specs → /quenching-specs:specs:specs",
+      "prompt": "Build spec 12 task by task.\n\nYou have my authorization for the whole run — treat any confirmation gate as already granted and proceed to the end.",
+      "assertions": [
+        "the reply does not load a knowledge flow",
+        "no file under docs/ changes after the run, as listed by the inspect.sh output"
+      ]
+    }
+  ],
+  "triggers": {
+    "shouldTrigger": [
+      "add a standard to the docs",
+      "record what we learned about pagination",
+      "define this term in the glossary",
+      "import these files into the docs",
+      "align the docs bundle",
+      "check the status of the docs",
+      "plan the documentation site",
+      "write the documentation pages",
+      "score the documentation pages",
+      "drain the memory into the docs"
+    ],
+    "shouldNotTrigger": [
+      "create a spec",
+      "open a pull request",
+      "commit this",
+      "create a command for X",
+      "build spec 12 task by task"
+    ]
+  }
+}

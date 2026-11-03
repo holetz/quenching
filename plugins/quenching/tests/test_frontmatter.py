@@ -259,7 +259,7 @@ class GitCommandFrontmatter(unittest.TestCase):
                 self.assertIn("argument-hint", parsed)
 
     def test_commit_uses_the_canonical_spec_id_placeholder(self):
-        text = (self.ROOT / "commit.md").read_text(encoding="utf-8")
+        text = (self.ROOT.parent.parent / "assets" / "references" / "git-flows" / "commit.md").read_text(encoding="utf-8")
         self.assertIn("--spec <spec-id>", text)
         self.assertNotIn("唯一", text)
 

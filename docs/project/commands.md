@@ -49,6 +49,7 @@ Acts on the `/docs/` OKF bundle.
 
 | Command | Does |
 | --- | --- |
+| `/quenching-align:knowledge:knowledge` | The single entry point of the knowledge flows: picks one of the thirteen flows (add, align, define, learn, import, import-memory, glossary-backfill, status, documentation build, plan, produce, review, write) by the flow you name and loads that flow's reference; each typed shortcut stays. |
 | `/quenching-align:knowledge:align` | Forces `/docs/` into the canonical OKF bundle and pulls in out-of-band content — probe first, ONE confirmed plan, looped to a fixpoint. |
 | `/quenching-align:knowledge:status` | The front's only **read-only** view: where the bundle stands, what drifted. Writes nothing. |
 | `/quenching-align:knowledge:add` | Inserts ONE concept doc — right home, right type, honest stamp. |
@@ -103,6 +104,7 @@ Acts on the target repository's `.claude/` automation surface.
 
 | Command | Does |
 | --- | --- |
+| `/quenching-align:components:components` | The single entry point of the components flows: picks `command-new`, `agent-new`, `hook-new`, `align`, `status` or `harness-align` by the flow you name and loads that flow's reference; each typed shortcut stays. |
 | `/quenching-align:components:align` | Converges `.claude/` onto one file per entry point, audits every body against the writing doctrine, rewrites every description. |
 | `/quenching-align:components:status` | Reports command count, fronts and finding codes for the target automation surface without writing. |
 | `/quenching-align:components:command:new` | Mints or edits ONE command — the structural half, including its `description`. |
@@ -176,6 +178,7 @@ align. The specs front hands off to it rather than executing git itself.
 
 | Command | Does |
 | --- | --- |
+| `/quenching-specs:git:git` | The single entry point of the git flows: picks `branch`, `commit`, `merge`, `sync`, `pr-create`, `pr-review` or `pr-status` by the flow you name and loads that flow's reference; each typed shortcut stays. |
 | `/quenching-specs:git:branch` | Takes isolation for a build: a worktree by default and unasked, a plain branch only when the human asks, stating the cost and stamping the `branch:` record. |
 | `/quenching-specs:git:commit` | Commits what is already staged, under the target's own convention when one is declared. Never `git add -A`. |
 | `/quenching-specs:git:commit-incremental` | Turns the current worktree's pending changes into cohesive commits with explicit paths and safe stop conditions. |

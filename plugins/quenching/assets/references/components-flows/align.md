@@ -202,7 +202,7 @@ verdict stays with the orchestrator.
 commands under one `/<vertical>:` namespace that conductors call) is a finding too, reported as
 "propose a router": one skill `commands/<vertical>/<vertical>.md` over `assets/references/<vertical>-flows/`,
 the former commands kept as typed-only shortcuts, per
-[skills.md](docs/standards/automation/skills.md) §One router per vertical, shortcuts typed-only. Propose, never apply.
+`/docs/standards/automation/skills.md` §One router per vertical, shortcuts typed-only. Propose, never apply.
 
 Report each finding as `command · violated rule · one-line evidence · the /quenching-align:components:command:new invocation
 that opens the edit`, labelled **"reported, not applied"**. Skip every legacy `openspec-*` body —

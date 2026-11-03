@@ -114,8 +114,8 @@ Wait for one OK. A decline writes nothing.
 
 ### Front: `knowledge`
 
-Invoke `/quenching-knowledge-align` through the Skill tool under its registry name, with the
-inherited authorization:
+Invoke the router `/quenching-knowledge-knowledge` through the Skill tool under its registry name, with the
+flow `align` and the inherited authorization:
 
 > Running under `/align` authorization granted at run start — skip your plan-confirmation pause;
 > present your plan as narration and execute; code-coupled and irreversible items still gate

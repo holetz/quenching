@@ -349,7 +349,7 @@ read the complexity from the status payload already in hand. **`low` chains the 
 now:**
 
 ```text
-Skill("quenching-git-pr-create", "<id>")
+Skill("quenching-git-git", "pr-create <id>")
 ```
 
 Invoke it with the spec id; `/quenching-git-pr-create` owns its own confirmation, push and PR

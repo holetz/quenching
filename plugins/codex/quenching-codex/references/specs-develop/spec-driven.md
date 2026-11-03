@@ -45,7 +45,7 @@ Autonomy is never inferred, and it covers only what the human declared: widening
 
 **Building is the same on every path:** every stage runs in one session and crosses section boundaries without pausing. The loop stops only for a question that requires a human answer or for an actual blocker. Depth selects the definition mode, never the execution mode.
 
-At the end of an unattended build, the close-out command carries the PR handoff by `Skill` after its green gate: `Skill("quenching-specs:git:pr:create", "<id>")`. The PR command keeps its own confirmation, push and provider record. Other builds retain `conclude`'s named handoff for the human.
+At the end of an unattended build, the close-out command carries the PR handoff by `Skill` after its green gate: `Skill("quenching-specs:git:git", "pr-create <id>")`. The PR command keeps its own confirmation, push and provider record. Other builds retain `conclude`'s named handoff for the human.
 
 **Defining is never isolated in a sub-agent while it may ask.** Isolation means only the summary returns, which is incompatible with stopping to ask. The simple path could be isolated and is not: it is one pass landing one edit, so the returned summary would be as large as the work.
 
