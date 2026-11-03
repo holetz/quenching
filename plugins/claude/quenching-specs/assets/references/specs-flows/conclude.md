@@ -7,7 +7,7 @@ Closes ONE spec out, short of the merge itself. Four things happen, in this orde
 separate decision: the whole branch is **reviewed**, the `/docs/` the work *revealed* is
 **written**, the spec is **archived and distilled** into the OKF bundle, and the pre-merge gate is
 **proven green** — then the run **stops**, naming `/quenching-specs:git:pr:create` or
-`/quenching-specs:git:merge` as the human's own next command — except that `low` gear chains directly
+`/quenching-specs:git:merge` as the human's own next command — except that a spec recorded at `low` complexity chains directly
 to `/quenching-specs:git:pr:create` through `Skill` after the green gate, unless the input carried `autonomous`.
 
 **Done work ends on the work branch; abandoned close-out writes land in the checkout holding the

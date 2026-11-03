@@ -7,7 +7,7 @@ the stages around them and the mechanics they share, and the body never restates
 **Two operations, not a ladder of banks.** **Compose** is monotonic: it takes the spec from wherever
 it is to `ready`, filling what is absent. **Refine** is not: it runs over the composed spec and may
 rewrite anything it finds, the proposal included. Which of them runs is **derived** — the stage says
-where composing starts, the level says whether refining runs without being asked for.
+where composing starts, a concrete signal says whether refining runs without being asked for.
 
 ## Contents
 
@@ -21,7 +21,7 @@ A pass runs up to four stages, always in this order:
 | --- | --- | --- | --- |
 | 0 | [discoveries](#discoveries) | `## Discoveries` holds a line nobody resolved | what did execution already find that this spec has not absorbed? |
 | 1 | [compose](#compose) | the spec is not yet `ready` | what IS this, and what has nobody answered yet? |
-| 2 | [refine](#refine) | the level runs it, or a human asked for it | is this the right thing to build at all? |
+| 2 | [refine](#refine) | a concrete signal fired, or a human asked for it | is this the right thing to build at all? |
 | 3 | [approval](#approval--the-close-and-its-recommendation) | always | does this spec get a go, and what should happen to it next? |
 
 **The stage says where composing starts, never which operation runs.** `cq specs status --spec <id>
@@ -36,7 +36,7 @@ headings compose still owes:
 
 **A spec that is already `ready` and gets invoked again is a refine request.** Nothing remains to
 compose, and re-invoking the command is a human asking for the one operation left. That is also the
-only route by which a `low` spec is ever refined (§Who answers — the gear decides).
+route by which a spec on the simple track is refined (§Who answers — the calculated pass).
 
 **The order is fixed, and it is the whole point.** Arguing with a spec before its tasks, its impact
 and its validation exist is arguing with half a claim. *Is this worth building?* is answerable only
@@ -103,7 +103,7 @@ When the human asks for the menu, the recommended option is listed first and mar
 AskUserQuestion grant is the exception:** it carries the sheet inside one `AskUserQuestion` call
 (each `Dn` a question, the recommended option first and marked "(Recommended)", the reasoning in its
 description), because that call is its only channel to the human, and it does not end the turn on
-prose. Autonomous paths and the `low` gear ask nothing, sheet or menu.
+prose. Declared autonomy and the simple track ask nothing, sheet or menu.
 
 Which shape a stage takes is a property of the stage, stated with it:
 
@@ -193,69 +193,67 @@ each answer arrives, record which canonical section it belongs to — that mappi
 consolidated edit, and an answer that maps to nothing is either out of scope (route it, per the
 body's guardrails) or was not worth asking.
 
-## Who answers, and who is argued with — the gear decides
+## Who answers, and who is argued with — the calculated pass
 
 <!-- rules -->
 
 The stages below are the engine of **content**, and each is the same wherever it runs: the same
-axes, the same lenses, the same seven gate symptoms, the same stop conditions. **A gear never
-shortens a stage.** What the level decides is two things — **who answers** a stage that runs, and
-**whether refine runs at all**.
+axes, the same lenses, the same seven gate symptoms, the same stop conditions. **Nothing shortens a
+stage.** What the session calculates is two things — **who answers** a stage that runs, and
+**whether refine runs**.
 
-The gear is `priority.complexity`, read from the same `cq specs status --spec <id> --json` payload
-that reports the stage
-([spec-driven.md](../../references/specs-develop/spec-driven.md) §The scale). Absent reads
-as `high`.
+**The calculation.** Before it asks anything, the session reads the state
+(`cq specs status --spec <id> --json`), enumerates the decisions the execution will need, and
+classifies each as **resolved by evidence** (the spec, the codebase, the `/docs/standards/` its
+`## Impact` declares and `/docs/glossary.md` answer it), **dependent on the human** (appetite, a
+policy, a choice of direction no evidence settles) or **very costly to undo** (irreversible, or of
+wide blast radius). `priority.complexity` records the depth the calculation reached
+([spec-driven.md](../../references/specs-develop/spec-driven.md) §The scale);
+it informs the calculation and never replaces it. Absent reads as `high`.
 
-| Gear | Who answers compose | Does refine run? |
-| --- | --- | --- |
-| `low` | **the pass**, from evidence, interrupting nobody | **never** — asking for one raises the level first |
-| `medium` | **the human**, at every stage of the composition | not on its own; the close **recommends** it where a signal fired |
-| `high` | the human, as `medium` | **yes, automatically**, once the composition closes |
-| `xhigh` | the human, as `medium` | yes, and §Refine's **premortem lens runs unconditionally** |
+| Calculation | Track | Who answers | Stamp |
+| --- | --- | --- | --- |
+| no decision depends on the human | **simple** | the session composes everything from evidence and **announces** what it will do before it does | `approved --set by=session` |
+| at least one decision depends on the human | **complex** | the session asks **in batches**, one round at a time, then decides | `approved --set by=human` |
+| `autonomous` declared | **declared autonomy** | the session, from evidence, asking nobody | `approved --set by=orchestrator-forced` |
 
-**`low` is the only level that does not ask, and that is its whole content.** It answers every item
-from what the spec, the codebase, the `/docs/standards/` its `## Impact` declares and
-`/docs/glossary.md` support. An answer resting on something unproved is written with **the
-assumption named in the text it lands in**. Anything no evidence answers becomes an
-`## Open Decisions` line carrying **how it will be decided** — never invented, and never asked. It
-composes, it closes, it stamps `approved` `by: low-gear`, and it is done in one pass.
+**Batches.** A round carries the questions whose answers do not change one another, each with the
+session's recommendation (§1). Questions that depend on a previous answer wait for the next round.
+Every stage drafts an answer first and puts it in front of the human as the question — *"here is
+what I would write for `## Out of Scope`; is the boundary right?"* — so a question about a
+**drafted** section cannot change what the next question asks, only what the next edit writes.
 
-**Every other level asks at every stage of the composition.** It drafts an answer first and puts it
-in front of the human as the question — *"here is what I would write for `## Out of Scope`; is the
-boundary right?"* — which is what lets independent headings travel grouped under §1: a question
-about a **drafted** section cannot change what the next question asks, only what the next edit
-writes. Two genuinely dependent questions still travel alone.
+**Declared autonomy asks nothing and never refines.** What evidence does not answer becomes an
+`## Open Decisions` line carrying **how it will be decided** — never invented, never asked. Refining
+changes the proposal, and that is always the human's.
 
-**Refine is where the level's second split lives.** `medium` composes and then *recommends*;
-`high` and `xhigh` refine on their own authority. Taking the recommendation raises the level, so a
-`medium` spec that gets refined is a `high` spec by the time it is — the record and the behaviour
-never disagree.
+**Every answer that rests on an assumption is recorded.** One line per assumption under
+`### Assumptions` in `## Design`, naming the section that depends on it, so execution and review
+read it. An answer resting on something unproved is also written with the assumption named in the
+text it lands in.
 
-**`low` never refines, and asking is how that is escaped.** A request to refine a `low` spec raises
-it to `high` (or `xhigh`, with the premortem) and runs there. A raise re-enters the pass; it never
-restarts it — what compose already wrote stays written, and the raise buys the argument the lower
-level did not have.
-
-**What the `low` level may never do.** It may not invent an explicit none. It may not resolve a
+**What the session may never do.** It may not invent an explicit none. It may not resolve a
 `## Discoveries` line `promoted:`, which mints a spec (§Discoveries). It may not present a screen
 from inside a sub-agent — the sub-agent returns the screen's content and the conductor presents it.
-It may not refine. And it may not treat an unanswerable item as answered: `## Open Decisions` with
-how it will be decided is the result, and a pass that has no evidence and writes a confident
-sentence anyway has failed in the way this level is most likely to fail.
+It may not stamp `session` while a decision still depends on the human. And it may not treat an
+unanswerable item as answered: `## Open Decisions` with how it will be decided is the result, and a
+pass that has no evidence and writes a confident sentence anyway has failed in the way the simple
+track is most likely to fail.
+
+**Refine runs by concrete need.** It runs when a signal fires (§Refine's scope, critique and
+irreversibility) or when the human asks for it, and never on declared autonomy. The lens follows
+the risk: **alternatives** if a decision of shape is open, **critique** if there is a contradiction
+or a gap in the evidence, **premortem** if the change is irreversible or of wide blast radius. The
+premortem is an option, never the default. The report of the pass names the lens applied, because
+`refined.mode` records only `compose` or `refine`.
 
 <!-- rationale -->
 
-The line moved, and it moved on purpose. It used to fall between `medium` and `high` — `low` and
-`medium` silent, `high` and `xhigh` asking — which made `medium` a second silent level whose only
-distinguishing feature was one closing screen. Speed lived in two levels and judgment in two, and
-neither pair had a reason to be a pair.
-
-It now falls between `low` and everything else, and a **second** line falls between `medium` and
-`high`. That buys each level a fact of its own: `low` is fast, `medium` is attended, `high` is
-argued with, `xhigh` is argued with under the worst case. And it puts the speed of small work in one
-place, so a spec that should be defined without a conversation asks for it by name instead of
-inheriting silence from a level chosen for another reason.
+The previous design chose by a recorded level, and the measurement over the specs dated from
+2026-10-01 shows what that bought: `refined` is `compose` in 415 specs and `refine` in 7, so refine
+ran in about 1% of them, and the premortem the text provided for `high` and `xhigh` was not the
+practice. A calculated pass puts the speed of small work in one place — nothing to ask, so nothing
+is asked — and keeps judgment where a concrete risk is.
 
 ## Compose
 
@@ -298,8 +296,9 @@ questions and often replaces one.
 
 **Evidence answers** what is actually wrong (read the code), the shapes table with its
 recommendation, and the boundary. **Only a human answers** *why now* — what waiting costs is
-appetite, not a fact about the tree — and *what would make this not worth doing*. At `low` both go
-to `## Open Decisions` unless `## Problem` already states them.
+appetite, not a fact about the tree — and *what would make this not worth doing*. Their presence puts
+the spec on the complex track; on declared autonomy both go to `## Open Decisions` unless
+`## Problem` already states them.
 
 ### Closing the ready set
 
@@ -340,7 +339,7 @@ write into docs/standards/` sub-heading under `## Impact`.
 
 **Evidence answers** all seven symptoms and all three execution decisions — `[P]`, `files:`
 and `pattern:` are provable against the tree, and `cq specs parallel` proves the first
-mechanically. **Only a human answers** the `verification` policy; at `low` the pass **declares
+mechanically. **Only a human answers** the `verification` policy; on the simple track and on declared autonomy the pass **declares
 nothing** and lets the default stand, because stamping the default records a decision nobody made.
 
 **Stop when** the ready set is closed — every gate section answered with content or a reasoned
@@ -358,15 +357,15 @@ as a side effect. One operation, one edit, one `validate`.
 
 ## Refine
 
-**Runs when** the level runs it — `high` and `xhigh`, automatically, once the composition closes —
-or when a human asks for it, which is the only route at `low` and `medium` (§Who answers). **Goal:**
+**Runs when** a concrete signal fires — scope, critique or irreversibility — or when a human asks
+for it, never on declared autonomy (§Who answers). **Goal:**
 make the spec survive the argument, or change it.
 
 **This is the one operation with a licence to overturn.** Compose fills; refine may rewrite anything
 it finds — cut the scope, convert a risk, re-table the alternatives, and **change the proposal
-itself**. That licence is safe because of where refine runs: at `medium` and above the human answers
-at every stage, so a changed proposal is a question put to a person, never a decision a pass took
-alone. `low` never refines, which is why the licence never reaches an unattended pass.
+itself**. That licence is safe because of where refine runs: a changed proposal is a question put to
+a person, never a decision a pass took alone. Declared autonomy never refines, which is why the
+licence never reaches an unattended pass.
 
 **Shape.** Sequential (§1) — a criticism once answered rewrites the next one.
 
@@ -380,9 +379,8 @@ being swept — invoked again when it was already `ready` — gets the sweep fir
 `## Design`, written by the orchestrator. A spec is swept at most once.
 
 It runs three lenses. Use the ones the spec's own signals argue for; a spec that deserves two gets
-two, in this order. **At `xhigh` the premortem runs regardless of what the signals say** — that lens
-is the judgment the level buys, and a level whose stage fires only on a trigger it shares with every
-other level buys nothing.
+two, in this order. **The premortem runs only when the change is irreversible or of wide blast radius** — it is an
+option chosen by that risk, never the default.
 
 ### The signals — which lenses fire, and what the close recommends
 
@@ -436,7 +434,7 @@ stated reason.
 Lands in `## Out of Scope` (a scope cut taken), `## Open Decisions` (one that needs evidence), or
 the spec's own sections where the remedy rewrites them.
 
-### Lens: premortem — unconditional at `xhigh`
+### Lens: premortem — for the irreversible
 
 State the frame out loud: *"It is three months from now. This spec was built and it went badly.
 What happened?"* — then generate the failure stories from the spec's actual content, not from a
@@ -499,7 +497,7 @@ covers the line, resolve it `dismissed: already covered by {id}`.
 A line is never deleted, and never left unresolved with a shrug. `dismissed: acceptable` with no
 reason is the failure mode to hunt for.
 
-At `low`, `folded:` and `dismissed:` are resolutions evidence supports. **`promoted:` is not** — it
+On the simple track and on declared autonomy, `folded:` and `dismissed:` are resolutions evidence supports. **`promoted:` is not** — it
 mints a spec, which no unattended pass may do. The line stays unresolved, this stage's stop
 condition is **not met**, and the report says so. A `dismissed:` invented to empty the queue is the
 failure mode to hunt for here.
@@ -531,7 +529,7 @@ pass the source spec and section estimates in `proposal-only` mode, obtain indep
 and dependency edges, and present them before asking to capture an epic. Capture/linking needs
 explicit authorization and keeps the original problem available; an existing approval or task
 history is never silently rewritten. The human may instead **explicitly accept** the unsplit
-estimate risk or stop. **No automatic approval** above budget, including `low`, **forced low**
+estimate risk or stop. **No automatic approval** above budget, including the simple track
 and `autonomous`: a worker returns `STATE: blocked` / `NOTE: needs-human:` with the evidence and
 proposal so the conductor holds the decision. An estimator refusal/failure also leaves approval
 unstamped. Incomplete input coverage is reported honestly; it never becomes a false fits verdict.
@@ -545,21 +543,21 @@ text:
 | --- | --- | --- |
 | **Decompose** | known declared reading exceeds worker budget | propose independently verifiable slices via `spec-architect`; capture only on explicit authorization |
 | **Approve** | no signal fired | `cq specs record "<id>" approved --set date=<today> --set by=human`, never by editing the provider document directly |
-| **Refine** | a scope or critique signal fired, and refine has not run this pass | a **raise to `high`** because the composition has outgrown its original level; the choice IS the OK to restamp `complexity`, and the pass re-enters at refine |
-| **Refine with the premortem** | the spec is irreversible | a raise to `xhigh`, same mechanics, premortem forced |
+| **Refine** | a scope or critique signal fired, and refine has not run this pass | the choice IS the OK to refine with the lens the signal names, restamping `complexity` if the depth grew, and the pass re-enters at refine |
+| **Refine with the premortem** | the spec is irreversible | same mechanics, premortem lens |
 | **Stop here** | — | nothing stamped, and the report says what is open |
 
 A pass where refine already ran does not recommend refining again; absent a size excess it recommends approving, and
 names what the argument settled. Recommending the raise a human has already taken is asking them to
 decide the same thing twice.
 
-**At `low`, after the size check leaves no unresolved oversized-plan decision — the pass approves,
-and the record says so.**
-`cq specs record "<id>" approved --set date=<today> --set by=low-gear`. There is no screen, because
-`low` is the level whose whole content is that there is none. The review window is **the spec's URL
-in the backend**, announced before the pass read anything and repeated in its report. The stamp is
-not an inference from the sections and never claims to be one. When the conductor declared `low`
-as forced over a higher level on disk, the stamp is `by=orchestrator-forced` instead. `by:` is what keeps a level's
+**On the simple track, after the size check leaves no unresolved oversized-plan decision — the pass
+approves, and the record says so.**
+`cq specs record "<id>" approved --set date=<today> --set by=session`. There is no screen, because
+the simple track is the one with nothing left for a human to decide. The review window is **the
+spec's URL in the backend**, announced before the pass read anything and repeated in its report. The
+stamp is not an inference from the sections and never claims to be one. When the conductor declared
+`autonomous`, the stamp is `by=orchestrator-forced` instead. `by:` is what keeps the session's
 authority distinguishable from a human's word, and a reader who wants only human approvals filters
 on it.
 
@@ -624,7 +622,7 @@ never answers substituted for them.
 Two things that look like this and are not available. **`context: fork` cannot ask a question** —
 `sk-fork-gate` is an error, and a fork beside an `AskUserQuestion` grant is incoherent by
 construction ([capabilities.md](../../references/components-command-new/capabilities.md)
-§`context: fork`); every level but `low` is nothing but questions. And a sub-agent **does not share
+§`context: fork`); the complex track is nothing but questions. And a sub-agent **does not share
 the session's prompt cache** — it runs on a cold context and pays the full first read of every file
 it touches, so delegation here is never a cache play.
 
@@ -658,14 +656,15 @@ cannot be earned by completeness, which is what makes it worth reading.
 whose entire value is that it cannot be inferred from the sections, so a stamp on a pass where
 nothing ran makes the field worthless everywhere.
 
-**`low` still stamps it.** At `low` compose answers its own questions from evidence, and **that
-drafting IS the interrogation** — the record says which operation ran it, never who answered. What
-the record can never survive is a pass that ran nothing and stamped anyway. `mode: refine` is
-unreachable at `low` by construction, since `low` never refines.
+**The simple track and declared autonomy still stamp it.** There compose answers its own questions
+from evidence, and **that drafting IS the interrogation** — the record says which operation ran it,
+never who answered. What the record can never survive is a pass that ran nothing and stamped anyway.
+`mode: refine` is unreachable on declared autonomy by construction, since it never refines.
 
 **`approved` carries a second field, and it is never omitted.** `by: human` for a person's word on
-the closing screen, `by: low-gear` for the stamp a `low` pass makes on the level's authority
-(§Approval), `by: orchestrator-forced` for the stamp a forced `low` pass makes under an
-`--autonomous` conductor. A record written with no `by:` reads as `human` — that is the only thing that could
-have written it before the field existed — so leaving it off a `low-gear` stamp silently claims a
-human the pass never had. The tool cannot require a field on a record; this rule is what does.
+the closing screen, `by: session` for the stamp the simple track makes on the session's own
+calculation (§Approval), `by: orchestrator-forced` for the stamp a declared-autonomy pass makes under
+an `--autonomous` conductor, and `by: low-gear` only as the historical value on older specs. A
+record written with no `by:` reads as `human` — that is the only thing that could have written it
+before the field existed — so leaving it off a `session` stamp silently claims a human the pass
+never had. The tool cannot require a field on a record; this rule is what does.

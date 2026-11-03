@@ -258,7 +258,7 @@ rewritten only at lifecycle transitions, and never holds the plan; `card: github
 none` configures it, and `cq specs new --card <n>` adopts an existing issue. **Frontmatter records human judgments** (`priority`, `refined`,
 `approved`, `branch`, `reviewed`, `merge`, `outcome`); the store, git and section state record
 everything else — `ready` is a *derived* stage, and the OK to build is the
-`approved: {date, by}` stamp, where `by` is `human`, `low-gear` or `orchestrator-forced`. Four more frontmatter keys — `tags`, `assignee`, `start`, `target` — are
+`approved: {date, by}` stamp, where `by` is `human`, `session`, `orchestrator-forced` or the historical `low-gear`. Four more frontmatter keys — `tags`, `assignee`, `start`, `target` — are
 **state, never records**: first-level frontmatter keys (a deprecated tracker backend stores them
 natively instead). A fifth key, `summary:`, is neither a record nor one of those four — one line
 saying what the spec is, written at capture and refreshed by every
@@ -536,7 +536,7 @@ The estimate **never proves** a full build fits: system/harness overhead, condit
 future code, tool/test output, iteration count and growing history are excluded. Total reading
 volume is not a context peak. Develop compares the largest section before approval and proposes
 decomposition via `spec-architect` when known reading exceeds the budget. It presents independent
-slices first; capturing an epic requires explicit authorization. Forced low leaves an oversized
+slices first; capturing an epic requires explicit authorization. Declared autonomy leaves an oversized
 source unapproved and returns the decision to its conductor.
 
 The command registry loads at **session start**, so surface changes require fresh `claude -p`

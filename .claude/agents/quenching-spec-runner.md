@@ -18,9 +18,9 @@ once, and work only there afterwards.
   `/quenching-specs-specs conclude`. Task commits are made by execute itself through `.agents/quenching/bin/cq git commit
   --subject`: never invoke `/quenching-git-commit` per task. Do not call `.agents/quenching/bin/cq specs` write
   operations directly to skip a command's gate; the one exception is the `run` record below.
-- Given `autonomous`, invoke `/quenching-specs-specs develop` declaring the `low` gear as **forced**, so
-  develop stamps `by=orchestrator-forced` after `ready`. Never stamp `approved` yourself. A forced `low`
-  writes nothing to `priority`: never change `complexity` to match the gear.
+- Given `autonomous`, invoke `/quenching-specs-specs develop` passing the word `autonomous`, so
+  develop stamps `by=orchestrator-forced` after `ready`. Never stamp `approved` yourself. Declared
+  autonomy writes nothing to `priority`: never change `complexity` to match it.
 - Given `autonomous`, also pass the word `autonomous` to `/quenching-specs-specs execute` and `/quenching-specs-specs conclude`, so neither loads the report mold and conclude stops at
   the named PR handoff. You never push and never open the PR in an orchestrated run: the orchestrator
   hands that step to the `git-steward`. Return `STATE: done` with `PR: -`.

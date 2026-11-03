@@ -70,10 +70,11 @@ would announce the waiver of a gate that does not exist — noise in the invocat
 left believing the command has a stop it never had. This is not an exemption from the contract:
 the two protected classes do not occur there, because the command edits no code and takes no
 irreversible cycle action. What still stops it stops it in either mode — the questions it
-asks at every level but `low`, and the go/no-go that is the origin of an `approved` stamped
-`by: human`. Under the `low` gear that go/no-go does not occur at all: the level authorized the
-mode, the pass stamps `by: low-gear` (or `by: orchestrator-forced` when a conductor forced the
-`low` gear over a higher level), and the record says which of the three happened
+asks on the complex track, and the go/no-go that is the origin of an `approved` stamped
+`by: human`. On the simple track that go/no-go does not occur at all: the session's own calculation left
+nothing for a person to decide, the pass stamps `by: session` (or `by: orchestrator-forced` when a
+conductor declared autonomy; `by: low-gear` survives only as history), and the record says which of
+the three happened
 (`/docs/standards/automation/plan-gates.md` §When authority replaces the person states
 the three conditions that make the substitution legitimate).
 

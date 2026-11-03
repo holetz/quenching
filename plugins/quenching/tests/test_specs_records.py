@@ -123,13 +123,13 @@ class RecordFieldValueError(unittest.TestCase):
 
 
 class ApprovedByLevels(unittest.TestCase):
-    """The real `approved` record admits the three authorities — `human`, `low-gear` and
-    `orchestrator-forced` — and keeps refusing any other `by`."""
+    """The real `approved` record admits the four authorities — `human`, `session`, the historical `low-gear`
+    and `orchestrator-forced` — and keeps refusing any other `by`."""
 
     RSPEC = load_schema()["frontmatter"]["records"]["approved"]
 
-    def test_the_forced_stamp_is_admitted_beside_the_other_two(self):
-        for good in ("human", "low-gear", "orchestrator-forced"):
+    def test_the_forced_stamp_is_admitted_beside_the_others(self):
+        for good in ("human", "session", "low-gear", "orchestrator-forced"):
             with self.subTest(value=good):
                 self.assertIsNone(record_field_value_error(self.RSPEC, "by", good))
 

@@ -16,14 +16,14 @@ class BuildSizeApproval(unittest.TestCase):
         text = prose("assets/references/specs-flows/develop.md")
         close = text[text.index("### 8. Close"):]
         self.assertLess(close.index("cq specs estimate"), close.index("stamp it here"))
-        for marker in ("overBudget", "workerBudgetTokens", "forced low", "STATE: blocked",
+        for marker in ("overBudget", "workerBudgetTokens", "autonomous", "STATE: blocked",
                        "spec-architect", "proposal-only", "never proves the full build fits"):
             self.assertIn(marker, close)
 
-    def test_shared_approval_rule_covers_low_and_estimate_uncertainty(self):
+    def test_shared_approval_rule_covers_simple_track_and_estimate_uncertainty(self):
         text = prose("assets/references/specs-develop/questions.md")
         close = text[text.index("## Approval —"):text.index("## Gathering the evidence")]
-        for marker in ("overBudget", "No automatic approval", "forced low", "unknown inputs",
+        for marker in ("overBudget", "No automatic approval", "autonomous", "unknown inputs",
                        "complexity", "explicitly accept", "spec-architect"):
             self.assertIn(marker, close)
 

@@ -14,8 +14,8 @@
 *[anchorless strategy]: a merge strategy that produces no merge commit — fast-forward and rebase — so the Merge record has nothing to name and carries an explicit none instead of a fabricated pointer.
 *[Anomaly sidecar]: a second function reporting what a parse could not represent faithfully, placed beside the parser rather than folded into its return.
 *[anomaly sidecar]: a second function reporting what a parse could not represent faithfully, placed beside the parser rather than folded into its return.
-*[Approved record]: the approved: {date, by} entry saying a spec may be built and on whose authority: human (complex path), orchestrator-forced (autonomy the human declared) or the session's own stamp (simple path; historical low-gear stays readable); an absent by: reads as human.
-*[approved record]: the approved: {date, by} entry saying a spec may be built and on whose authority: human (complex path), orchestrator-forced (autonomy the human declared) or the session's own stamp (simple path; historical low-gear stays readable); an absent by: reads as human.
+*[Approved record]: the approved: {date, by} entry saying a spec may be built and on whose authority: human (complex path), orchestrator-forced (autonomy the human declared) or the session's own stamp (by: session) (simple path; historical low-gear stays readable); an absent by: reads as human.
+*[approved record]: the approved: {date, by} entry saying a spec may be built and on whose authority: human (complex path), orchestrator-forced (autonomy the human declared) or the session's own stamp (by: session) (simple path; historical low-gear stays readable); an absent by: reads as human.
 *[Authority]: the frontmatter field saying how binding a doc is: current (proven) or background (agreed but unproven).
 *[authority]: the frontmatter field saying how binding a doc is: current (proven) or background (agreed but unproven).
 *[Batching contract]: a named block in a command body naming which of its consecutive tool calls are ONE call, so the batching rule is checkable against the body instead of re-judged every run.

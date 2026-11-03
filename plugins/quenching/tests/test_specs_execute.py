@@ -170,7 +170,7 @@ class TaskExecutionContractTests(unittest.TestCase):
 
         self.assertIn("ran|failed|unresolved|skipped: worktree", runner)
 
-    def test_low_gear_chains_conclude_to_the_provider_pr_skill(self):
+    def test_low_complexity_chains_conclude_to_the_provider_pr_skill(self):
         conclude = CONCLUDE.read_text(encoding="utf-8")
         scale = SCALE.read_text(encoding="utf-8")
 

@@ -33,7 +33,7 @@ canonical document on read, and refusal on unsupported selection — is owned by
 
 | Path | How it is reached | Who answers | `approved.by` |
 | --- | --- | --- | --- |
-| Simple | the criterion closes from evidence alone | the session, which only reports what it will do | the session's own stamp; its value is named by the flow that writes it (spec 2152), and until then the flow in force still writes `low-gear` |
+| Simple | the criterion closes from evidence alone | the session, which only reports what it will do | the session's own stamp, `by: session` |
 | Complex | decisions remain that evidence does not answer or that are costly to undo | the human, one batched round at a time; then the session decides alone | `human` |
 | Autonomous | the human **declared** autonomy, over a simple or a complex spec | the session, to the end, returning only the conclusion | `orchestrator-forced` |
 
@@ -41,7 +41,7 @@ Autonomy is never inferred, and it covers only what the human declared: widening
 
 **What happens to the fields.** `priority.complexity` stays, with the same four values, and records the depth the session computed; it is kept for the history, the portal, the backends and `shared.autonomy.runAloneUpTo`, which still caps the complexity that runs without `approved`. Absent still reads as `high`, never `low`: guessing downward builds a spec on nobody's word, guessing upward costs a refine nobody asked for. `by: low-gear` remains a valid value, read and never rewritten. The word *gear* leaves the normative prose.
 
-**Transition.** This section is the contract; the flows that implement it (specs 2152 and 2153) still name gears until they land, and `low`, `medium`, `high` and `xhigh` in them read as depth values of `complexity`.
+**Transition.** This section is the contract. The develop flow (spec 2152) implements it; the execute and conclude flows (spec 2153) follow, and where they still name gears, `low`, `medium`, `high` and `xhigh` read as depth values of `complexity`.
 
 **Building is the same on every path:** every stage runs in one session and crosses section boundaries without pausing. The loop stops only for a question that requires a human answer or for an actual blocker. Depth selects the definition mode, never the execution mode.
 
@@ -115,7 +115,7 @@ else.**
 | `verification` | **optional** | `create` / `develop` | `per-task` · `per-section` · `end-of-plan` — when `verify:` runs. Absent means the default (`per-section`), applied on read; written after capture with `cq specs verification`, **never** by editing the frontmatter |
 | `priority` | once ranked | `triage` | `{level, criticality, complexity, date}` — a human's ranking against every other spec. `complexity` alone is also written at capture, by `create` — the one field of this record a second command may write (`assets/specs/schema.json`'s `complexity.writtenBy: [triage, create, develop]`) |
 | `refined` | once interrogated | `develop` | `{mode, date}` — that a real interrogation happened, and which operation ran it |
-| `approved` | once approved | `develop`, or `execute` inline | `{date, by}` — **that this spec may be built, and on whose authority**: `by: human` is a person's word, `by: orchestrator-forced` a declared-autonomy run's, and the simple path's session stamp (until spec 2152 names it, `by: low-gear`, kept as a valid historical value); absent reads as `human` |
+| `approved` | once approved | `develop`, or `execute` inline | `{date, by}` — **that this spec may be built, and on whose authority**: `by: human` is a person's word, `by: orchestrator-forced` a declared-autonomy run's, and `by: session` the simple path's own stamp (`by: low-gear`, its historical value, stays valid and is never rewritten); absent reads as `human` |
 | `branch` | once building | `execute` | `{base, work}` — after a merge, git cannot say what the base was |
 | `pr` | once opened | `conclude` | `{number, url, date}` — a PR opened but not yet merged, distinct from `merge.pr`, which is stamped only once the merge already happened. Restamped if the PR is recreated |
 | `reviewed` | once reviewed | `conclude` | `{date}` — that a human read the whole branch diff |
