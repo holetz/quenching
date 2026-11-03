@@ -125,6 +125,29 @@ class RulesOnlyLadder(unittest.TestCase):
                 self.assertTrue(got_text.strip())
 
 
+class ComponentsStatusFamilies(unittest.TestCase):
+    def test_families_name_the_router_candidates_without_moving_ok(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            skills = pathlib.Path(tmp, "skills")
+            for name, flag in (("bundle-a", ""), ("bundle-b", ""), ("bundle-c", ""),
+                               ("bi-a", ""), ("bi-b", ""), ("bi-c", "disable-model-invocation: true\n")):
+                folder = skills / name
+                folder.mkdir(parents=True)
+                (folder / "SKILL.md").write_text(
+                    f"---\nname: {name}\ndescription: use for {name}\n{flag}---\n\nBody.\n",
+                    encoding="utf-8")
+            output = io.StringIO()
+            with contextlib.redirect_stdout(output):
+                components_cli.main(["--root", tmp, "status", "--json"])
+        payload = json.loads(output.getvalue())
+        self.assertEqual(payload["families"]["bundle"],
+                         {"skills": 3, "invocable": 3, "candidate": True})
+        self.assertEqual(payload["families"]["bi"],
+                         {"skills": 3, "invocable": 2, "candidate": False})
+        self.assertEqual(payload["state"], "conformant")
+        self.assertTrue(payload["ok"])
+
+
 class ComponentsStatus(unittest.TestCase):
     def test_status_reports_the_surface_without_writing(self):
         with tempfile.TemporaryDirectory() as tmp:
