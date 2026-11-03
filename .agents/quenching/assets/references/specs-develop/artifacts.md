@@ -265,7 +265,10 @@ while the task is being written. Declare the test beside the implementation it p
 `files:` — never combined with a path, which `validate` refuses as `sp-files-operational` — and its
 only proof is the `verify:`, whose absence is the `sp-operational-no-verify` warning. It is how a
 redeploy, a `systemctl is-active` or the repository gate is declared without inventing a path, and
-the verifier accepts such a task without a commit sha because it has no path to hang one on.
+the verifier accepts such a task without a commit sha because it has no path to hang one on. The
+readers that hand a task on carry `operational: true` beside `files: []` (`.agents/quenching/bin/cq specs next`,
+`.agents/quenching/bin/cq specs show --task`), and that flag — never the empty list — is what excuses the sha: a task with
+no `files:` line parses to the same `[]`, and only the flag tells the two apart.
 
 **Declare every generated mirror the diff changes.** A task that edits a translated source also
 rewrites what the generator emits from it. List each such derived output in the task's `files:`

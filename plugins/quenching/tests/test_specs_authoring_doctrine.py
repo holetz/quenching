@@ -34,6 +34,7 @@ class FilesDeclaresItsTests(unittest.TestCase):
         self.assertIn("`sp-files-operational`", body)
         self.assertIn("`sp-operational-no-verify`", body)
         self.assertIn("without a commit sha because it has no path to hang one on", body)
+        self.assertIn("that flag — never the empty list — is what excuses the sha", body)
 
 
 class ComposeAsksForTheTests(unittest.TestCase):
