@@ -298,12 +298,10 @@ dialog owns the keyboard first.
 
 ## Regeneration
 
-Every change to `portal.py` or `assets/portal/**` regenerates the Omnigent bundle and the deployed
-surface, then passes `bash scripts/verify_repo.sh`; the gate's `deployed surface lockstep` check
+Every change to `portal.py` or `assets/portal/**` regenerates the deployed surface, then passes `bash scripts/verify_repo.sh`; the gate's `deployed surface lockstep` check
 refuses a stale install:
 
 ```bash
-python3 scripts/sync_omnigent_plugin.py --write
 python3 plugins/quenching/assets/bin/cq deploy --target . --write
 ```
 

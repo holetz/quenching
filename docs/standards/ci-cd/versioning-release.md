@@ -1,13 +1,13 @@
 ---
 type: standard
 title: Versioning and release — the version lockstep
-description: The version surfaces cq specs release bumps together — the unpublished source, the HUD plugin manifest, every Claude marketplace entry and the bundled cq identity — and the copies it regenerates before the release commit
-resource: plugins/quenching/assets/modules.json, plugins/quenching/VERSION, plugins/quenching/.claude-plugin/plugin.json, plugins/claude/quenching-hud/**, .claude-plugin/marketplace.json, plugins/quenching/assets/bin/quenching/common/version.py, plugins/quenching/assets/bin/quenching/common/modules.py, plugins/quenching/assets/bin/quenching/specs/release.py, scripts/sync_omnigent_plugin.py
+description: The version surfaces cq specs release bumps together — the source VERSION, the HUD plugin manifest, every Claude marketplace entry and the bundled cq identity — and the copies it regenerates before the release commit
+resource: plugins/quenching/assets/modules.json, plugins/quenching/VERSION, plugins/claude/quenching-hud/**, .claude-plugin/marketplace.json, plugins/quenching/assets/bin/quenching/common/version.py, plugins/quenching/assets/bin/quenching/common/modules.py, plugins/quenching/assets/bin/quenching/specs/release.py
 tags: [release, versioning, lockstep, plugin, distribution]
 timestamp: 2026-11-03
 audience: both
 authority: current
-source: modularizar-specs-knowledge-components, one-entry-point, notice-installed-tool-version-drift, 2026-08-03, enxugar-create-e-eliminar-o-rung-hooks, configurable-branch-strategy, spec 1634, spec 1635 (module extraction); Codex marketplace upgrade regression, 2026-10-22; spec 2125 (release redeploys the surface); spec 2160 (install only by deploy); lineage in ADR 0004, ADR 0013 and ADR 0017
+source: modularizar-specs-knowledge-components, one-entry-point, notice-installed-tool-version-drift, 2026-08-03, enxugar-create-e-eliminar-o-rung-hooks, configurable-branch-strategy, spec 1634, spec 1635 (module extraction); Codex marketplace upgrade regression, 2026-10-22; spec 2125 (release redeploys the surface); spec 2160 (install only by deploy); spec 2168; lineage in ADR 0004, 0013, 0017
 maintainer: quenching
 ---
 
@@ -23,9 +23,8 @@ the set, and a partial bump makes one of them wrong.
 `## <version>` entry in `CHANGELOG.md`, then moves every surface in one release operation.
 
 The release commit is self-contained: the verb refuses (exit 2, nothing written) when the tree
-has changes beyond `CHANGELOG.md`, bumps, **regenerates the copies** — first
-`scripts/sync_omnigent_plugin.py --write` (the Omnigent operator pins its MCP server to the version
-tag), then, last and only where `.agents/.quenching-deploy.json` exists, the bundled
+has changes beyond `CHANGELOG.md`, bumps, **regenerates the copy** — only
+where `.agents/.quenching-deploy.json` exists, the bundled
 `plugins/quenching/assets/bin/cq deploy --target . --write`, so the gate's deployed surface lockstep
 holds at the new version — and commits everything with the `CHANGELOG.md` entry, so
 `verify_repo.sh` is already green on the tag. A failed regeneration leaves the bump uncommitted and
@@ -39,7 +38,7 @@ before the bump, so the surface-load checks are measured, not skipped.
 
 | # | Artifact | Read by |
 | --- | --- | --- |
-| 1 | `plugins/quenching/VERSION` and `plugins/quenching/.claude-plugin/plugin.json` (the unpublished source) | `cq deploy`, which records the version in a target's `.agents/.quenching-deploy.json`, and the Omnigent generator |
+| 1 | `plugins/quenching/VERSION` (the unpublished source; it carries no `plugin.json`) | `cq deploy`, which records the version in a target's `.agents/.quenching-deploy.json` |
 | 2 | `.claude-plugin/plugin.json` of every entry of `plugins` with `marketplace: true` — today only `plugins/claude/quenching-hud` | Claude Code, to detect and apply the HUD upgrade |
 | 3 | `.claude-plugin/marketplace.json` → **every** entry's `version` | the marketplace listing |
 | 4 | `plugins/quenching/assets/bin/quenching/common/version.py` → `VERSION` | every pillar's own `--version` (`cq specs`, `cq knowledge`, `cq components`) |
@@ -138,11 +137,10 @@ drift check for what a deploy owns.
 
 ## Verifying
 
-The deterministic repository gate checks the Omnigent bundle and this checkout's own deployed
+The deterministic repository gate checks this checkout's own deployed
 surface against the source. Direct read-only checks are:
 
 ```bash
-python3 scripts/sync_omnigent_plugin.py --check --json
 python3 plugins/quenching/assets/bin/cq deploy --target . --check --json
 ```
 

@@ -25,7 +25,6 @@ of a behaviour and editing a generated copy of it.
 | --- | --- | --- |
 | `docs/` | this OKF bundle — the knowledge tree **and** the source of this site | `/quenching-align:knowledge:*` |
 | `plugins/quenching/` | the single editable source `cq deploy` installs | the owning spec |
-| `plugins/omnigent/quenching/` | **generated** Omnigent operator agent, no payload | `scripts/sync_omnigent_plugin.py` |
 | `plugins/opencode/quenching-vitrine/` | **hand-written** OpenCode Desktop GUI plugin (Specs panel); built with npm, `dist/` committed | the owning spec |
 | `plugins/claude/quenching-hud/` | band above the prompt (active spec, stage, task progress; read with `cq specs status --no-fetch`: local ref only, no fetch, no network); **hand-written**, validated by the gate with `claude plugin validate` | the owning spec |
 | `.agents/skills/`, `.agents/quenching/`, `.claude/skills/` | this repository's own deployed surface, generated from `plugins/quenching/` | `cq deploy --target . --write` |
@@ -36,7 +35,7 @@ of a behaviour and editing a generated copy of it.
 
 Every generated tree is the trap: it is **regenerated wholesale**, so editing it by hand produces a
 change that survives until the next sync and then vanishes without a diff to explain it. That holds
-for `plugins/omnigent/quenching/` and for this repository's own deployed surface. The first level
+for this repository's own deployed surface. The first level
 under `plugins/` is the source or a harness, the second the name that harness registers
 ([plugin-layout.md](../standards/architecture/plugin-layout.md) §One tree per harness).
 `plugins/claude/quenching-hud/` and `plugins/opencode/quenching-vitrine/` are the hand-written trees

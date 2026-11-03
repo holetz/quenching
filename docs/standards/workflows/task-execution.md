@@ -263,12 +263,12 @@ of which read `files:` and neither of which reads the test suite.
 
 **Generated distributions are the same rule's second instance.** A task that edits the shipped
 payload under `plugins/quenching/` also regenerates everything the generators copy out of it: the
-trees under `plugins/omnigent/`, `.agents/` and the deployed `.claude/` bridge are rewritten by
+trees under `.agents/` and the deployed `.claude/` bridge are rewritten by
 the commands [specs-portal.md](../architecture/specs-portal.md) §Regeneration lists. Declare those
 trees in `files:` exactly as the golden above, because the repository gate's `deployed surface
 lockstep` check refuses the branch until they are regenerated: a task that omits them cannot pass
 its own `verify:`, and the execution that regenerates them anyway commits paths its declaration
-never owned. The copies are not byte-identical to the source by design — a deployed or Omnigent
+never owned. The copies are not byte-identical to the source by design — a deployed
 copy carries its harness's command spelling — so the declaration is over the trees, not over "the
 same file, copied".
 

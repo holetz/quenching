@@ -7,7 +7,7 @@ tags: [architecture, deploy, installation, agents, skills, bridge]
 timestamp: 2026-11-03
 audience: both
 authority: current
-source: deploy-mode implementation (2026-10-28); surface facts re-measured on Claude Code 2.1.312; drift redefined as content plus the executable bit (spec 2126, 2026-10-30); spec 2160 (install only by deploy)
+source: deploy-mode implementation (2026-10-28); surface facts re-measured on Claude Code 2.1.312; drift redefined as content plus the executable bit (spec 2126, 2026-10-30); spec 2160 (install only by deploy); spec 2168 (the launcher is generated)
 maintainer: quenching
 ---
 
@@ -70,8 +70,10 @@ in the manifest's write set.
 
 ## Runtime
 
-`--runtime vendor` copies the selected Python packages and the launcher into
-`.agents/quenching/assets/bin/`; it is offline and self-contained. `--runtime uvx` omits the
+`--runtime vendor` copies the selected Python packages and the entry point into
+`.agents/quenching/assets/bin/` and **generates** the launcher `.agents/quenching/bin/cq` (with its
+`bin/cq.cmd` for Windows), a shim that re-executes `../assets/bin/cq`; it is offline and
+self-contained. The source ships no `bin/` of its own. `--runtime uvx` omits the
 packages and writes `.agents/quenching/bin/cq` as a shim pinned to the release tag, so the target
 needs network and `uvx` at call time.
 
