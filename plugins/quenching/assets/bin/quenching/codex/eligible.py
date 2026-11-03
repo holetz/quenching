@@ -29,7 +29,7 @@ WRITTEN_KNOWLEDGE = ("docs", "knowledge")
 
 
 def strip_annotation(entry: str) -> str:
-    """`path (new)` → `path`: the one reserved `files:` annotation."""
+    """`path (new)` → `path`: a trailing RESERVED `files:` annotation, dropped."""
     return entry[:-len("(new)")].rstrip() if entry.endswith("(new)") else entry
 
 
@@ -70,6 +70,9 @@ def eligibility(task: dict, settings: dict, root: str, quota=None,
         return no("shared.codex.executor.enabled is false")
     if task["checked"] or task["blocked"]:
         return no(f"task {task['id']} is not open")
+    if task.get("operational"):
+        return no("files: (operational) — the task writes no repository file, so there is "
+                  "nothing for Codex to write")
     files = [strip_annotation(f) for f in task["files"]]
     if not files:
         return no("the task declares no files:")

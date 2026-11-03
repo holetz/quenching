@@ -26,6 +26,8 @@ except ModuleNotFoundError:  # package-qualified unittest invocation from the re
     import _paths  # noqa: F401
 
 from quenching.specs.backends.memory import MemoryBackend
+from quenching.specs.commands import estimate as estimate_module
+from quenching.specs.commands import next as next_module
 from quenching.specs.commands import parallel as parallel_module
 from quenching.specs.commands import validate as validate_module
 from quenching.specs.commands.cli import DISPATCH
@@ -39,6 +41,42 @@ verification: per-section
 ---
 
 # Operational
+
+## Problem
+
+The task writes no repository file.
+
+## Proposal
+
+Declare it operational.
+
+## Out of Scope
+
+- none — the test document is the whole subject.
+
+## Impact
+
+- none — no standard is written here.
+
+## Validation
+
+- none — the verify of each task is the proof.
+
+## Design
+
+- none — the annotation is the design under test.
+
+## Alternatives Considered
+
+- none — the alternatives are recorded in the spec that owns the annotation.
+
+## Open Decisions
+
+- none — nothing is left open.
+
+## Risks
+
+- none — the guards are what the suite proves.
 
 ## Tasks
 
@@ -77,6 +115,14 @@ class Workspace(unittest.TestCase):
 
     def parallel(self, ident: int):
         return self.dispatch("parallel", parallel_module, spec=str(ident))
+
+    def next(self, ident: int):
+        return self.dispatch("next", next_module, spec=str(ident), front=False, table=False,
+                             columns=None, order="rank")
+
+    def estimate(self, ident: int, task: str | None = None):
+        return self.dispatch("estimate", estimate_module, spec=str(ident),
+                             worker_budget=100000, task=task)
 
     def codes(self, ident: int) -> list[str]:
         return [f["code"] for f in self.validate(ident)[1]["findings"]]
@@ -140,6 +186,66 @@ class Parallel(Workspace):
         code, payload = self.parallel(ident)
         self.assertEqual(code, 0)
         self.assertTrue(payload["groups"][0]["eligible"])
+
+
+class Next(Workspace):
+    def test_an_operational_task_is_handed_on_as_no_files(self):
+        """The chain `no files: → tick with no commit` already exists; the annotation adds
+        the DECLARATION the verifier reads, never a second execution path."""
+        ident = self.write("### 1. One\n\n- [ ] 1.1 Gate\n      files: (operational)\n"
+                           "      verify: make check\n")
+        code, payload = self.next(ident)
+        self.assertEqual(code, 0)
+        self.assertEqual(payload["action"], "implement_task")
+        self.assertEqual(payload["files"], [])
+        self.assertTrue(payload["operational"])
+
+    def test_the_mixed_form_never_reaches_an_executor(self):
+        ident = self.write("### 1. One\n\n- [ ] 1.1 Gate\n"
+                           "      files: src/a.py, (operational)\n"
+                           "      verify: make check\n")
+        code, payload = self.next(ident)
+        self.assertEqual(code, 1)
+        self.assertEqual(payload["code"], "sp-files-operational")
+
+
+class Estimate(Workspace):
+    def test_an_operational_task_is_out_of_the_unresolved_inputs(self):
+        ident = self.write("### 1. One\n\n- [ ] 1.1 Gate\n      files: (operational)\n"
+                           "      verify: make check\n")
+        code, payload = self.estimate(ident)
+        self.assertEqual(code, 0)
+        self.assertEqual(payload["sections"][0]["unresolved"], [])
+        self.assertTrue(payload["complete"])
+
+    def test_the_task_projection_has_nothing_to_size(self):
+        ident = self.write("### 1. One\n\n- [ ] 1.1 Gate\n      files: (operational)\n"
+                           "      verify: make check\n")
+        code, row = self.estimate(ident, task="1.1")
+        self.assertEqual(code, 0)
+        self.assertEqual((row["bytes"], row["readTokens"], row["unresolved"]), (0, 0, []))
+        self.assertFalse(row["smallTierEligible"],
+                         "an operational task has no files: to pin a small tier on")
+
+
+class CodexEligible(Workspace):
+    def eligible(self, ident: int, task_id: str):
+        from quenching.codex import eligible as eligible_module
+        from quenching.codex.config import DEFAULTS
+        settings = {**DEFAULTS, "maxUsedPercent": dict(DEFAULTS["maxUsedPercent"]),
+                    "executor": {**DEFAULTS["executor"]}}
+        quota = lambda _settings: {"state": "available", "reason": "test"}  # noqa: E731
+        with mock.patch.object(eligible_module, "open_backend",
+                               lambda _root: (self.backend, {})):
+            return eligible_module.run_eligible(self.root, settings, str(ident), task_id,
+                                                quota)
+
+    def test_an_operational_task_is_refused_with_its_own_reason(self):
+        ident = self.write("### 1. One\n\n- [ ] 1.1 Gate\n      files: (operational)\n"
+                           "      verify: make check\n")
+        payload, code = self.eligible(ident, "1.1")
+        self.assertEqual(code, 1)
+        self.assertIn("(operational)", payload["reason"])
 
 
 if __name__ == "__main__":
