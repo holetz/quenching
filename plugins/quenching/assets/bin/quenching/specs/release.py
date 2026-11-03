@@ -113,8 +113,6 @@ def bump_release_artifacts(repo_root: str, new_version: str) -> dict:
 
 
 _REGENERATE_STEPS = (
-    # The Omnigent operator pins its MCP server to the version tag, so a bump rewrites config.yaml.
-    ("sync_omnigent_plugin", ("scripts/sync_omnigent_plugin.py", "--write")),
     # Last, so it copies sources already at the new version; only where a surface was deployed.
     ("deploy_surface", ("plugins/quenching/assets/bin/cq", "deploy", "--target", ".", "--write"),
      ("plugins/quenching/assets/bin/cq", ".agents/.quenching-deploy.json")),

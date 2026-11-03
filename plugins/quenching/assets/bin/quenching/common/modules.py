@@ -72,10 +72,10 @@ def load_manifest(root: Path) -> dict:
 
 
 def release_artifacts(manifest: dict) -> tuple[tuple[str, str], ...]:
-    """Every file that carries the release version: the source, the marketplace plugins, the
+    """Every file that carries the release version: the source `VERSION`, the marketplace plugins, the
     marketplace catalog and the `cq` version constant."""
     source = manifest["source"]
-    artifacts = [(source + "/VERSION", "plain"), (source + "/.claude-plugin/plugin.json", "json")]
+    artifacts = [(source + "/VERSION", "plain")]
     artifacts += [(plugin["path"] + "/.claude-plugin/plugin.json", "json")
                   for plugin in manifest.get("plugins", []) if plugin["marketplace"]]
     return tuple(artifacts + [(manifest["marketplace"], "jsonall"),

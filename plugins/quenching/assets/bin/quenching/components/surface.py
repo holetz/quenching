@@ -56,7 +56,6 @@ SURFACE_MISSING = "—"
 
 FRONTMATTER_FENCE = "---"
 
-PLUGIN_MANIFEST = os.path.join(".claude-plugin", "plugin.json")
 
 QUOTED_RE = re.compile(r"[\"“]([^\"”]{2,}?)[\"”]")
 
@@ -246,18 +245,13 @@ def load_surface(root: str) -> dict:
 
 
 def plugin_prefix(root: str) -> str | None:
-    """The registry prefix this surface's commands carry, from `<root>/.claude-plugin/
-    plugin.json`. `None` says the surface is a target repo's own `.claude/` — where a
-    command file IS in `.claude/commands/`, the bare form is the one that resolves, and
-    the citation check has nothing to say."""
-    text = read_text(os.path.join(root, PLUGIN_MANIFEST))
-    if text is None:
-        return None
-    try:
-        name = json.loads(text).get("name")
-    except (ValueError, AttributeError):
-        return None
-    return name.strip() if isinstance(name, str) and name.strip() else None
+    """The registry prefix this surface's commands carry: `quenching` for the source of quenching
+    (the root with `VERSION` and `assets/modules.json`). `None` says the surface is a target repo's
+    own `.claude/` — where a command file IS in `.claude/commands/`, the bare form is the one that
+    resolves, and the citation check has nothing to say."""
+    if os.path.isfile(os.path.join(root, "VERSION")) and os.path.isfile(os.path.join(root, "assets", "modules.json")):
+        return "quenching"
+    return None
 
 
 def claude_side(root: str) -> str:

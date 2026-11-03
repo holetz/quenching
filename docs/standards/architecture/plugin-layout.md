@@ -1,8 +1,8 @@
 ---
 type: standard
 title: Plugin layout — what may live under commands/
-description: one editable source, plugins/quenching, reaches a repository only through cq deploy, and three plugins that install into no repository sit beside it under plugins/<harness>/<name>/; in the source, commands/** is the only tree Claude Code registers, so everything that is not an entry point lives under assets/ and is cited by absolute path
-resource: plugins/quenching/commands/**, plugins/quenching/assets/**, plugins/quenching/bin/**, plugins/claude/quenching-hud/**, plugins/opencode/quenching-vitrine/**, plugins/omnigent/**, scripts/sync_omnigent_plugin.py
+description: one editable source, plugins/quenching, reaches a repository only through cq deploy, and two plugins that install into no repository sit beside it under plugins/<harness>/<name>/; in the source, commands/** is the only tree Claude Code registers, so everything that is not an entry point lives under assets/ and is cited by absolute path
+resource: plugins/quenching/commands/**, plugins/quenching/assets/**, plugins/claude/quenching-hud/**, plugins/opencode/quenching-vitrine/**
 tags: [architecture, plugin, commands, layout, claude-code]
 timestamp: 2026-11-03
 audience: both
@@ -15,7 +15,7 @@ maintainer: quenching
 
 <!-- rules -->
 
-## One source and three plugins
+## One source and two plugins
 
 The first level under `plugins/` is the source or a harness; the second is the name that harness
 registers. The command surface reaches a repository only through `cq deploy`
@@ -27,7 +27,6 @@ plugins that install into no repository.
 | `plugins/quenching/` | the source, the only editable tree of the command surface, never published; `cq deploy` installs it into a target ([deploy-mode.md](deploy-mode.md)) | — |
 | `plugins/claude/quenching-hud/` | the band above the Claude Code prompt, the only entry of `.claude-plugin/marketplace.json` | hand-written; the gate runs `claude plugin validate` |
 | `plugins/opencode/quenching-vitrine/` | the OpenCode Desktop GUI plugin (TypeScript + Solid); `npm run build` writes the committed `dist/gui-experimental.cjs`, `node_modules/` is ignored, and OpenCode installs it from the `plugins` array of its configuration | hand-written |
-| `plugins/omnigent/quenching/` | the Omnigent operator agent, one bundle with no payload | `scripts/sync_omnigent_plugin.py`, whose `--check` runs in the gate |
 
 `assets/modules.json` declares the HUD under `plugins`, which is what keeps it in the marketplace
 and the release lockstep ([versioning-release.md](../ci-cd/versioning-release.md)). The vitrine
@@ -47,8 +46,7 @@ they need, and `cq deploy --modules core|all|<list>` selects which records a tar
 
 - **Ids are written once and translated at deploy.** The source spells
   `/quenching-<module>:<front>:<verb>` ([command-surface.md](../naming/command-surface.md));
-  `cq deploy` writes `quenching-<front>-<verb>` into the target. The source keeps its path because
-  the Omnigent bundle pins its MCP server with `#subdirectory=plugins/quenching`.
+  `cq deploy` writes `quenching-<front>-<verb>` into the target.
 - **The source cannot be loaded as proof.** Surface-load checks
   (`assets/checks/functional-checks.sh`) deploy this checkout into throwaway targets and grade the
   deployed copy; they never load a tree with `--plugin-dir`
@@ -75,12 +73,9 @@ verbs, so no separate read-only plugin is left to govern.
 
 ## Code `cq` runs ships under `assets/`
 
-The deploy translation (`assets/bin/quenching/deploy/`) and the per-file translation
-`cq components migrate` uses to recognise a legacy copy
-(`assets/bin/quenching/components/commands/translate.py`, with its adaptation map in
-`assets/translation/`) live under `assets/`. A target receives the payload under
-`.agents/quenching/`, never this repository's root `scripts/`; placing either in `scripts/` would
-make it a checkout-only accident.
+The deploy translation (`assets/bin/quenching/deploy/`) lives under `assets/`. A target receives
+the payload under `.agents/quenching/`, never this repository's root `scripts/`; placing it in
+`scripts/` would make it a checkout-only accident.
 
 <!-- rationale -->
 
@@ -101,38 +96,22 @@ This is not a style preference. Before the collapse the question could not arise
 folder rather than by file. Moving bodies into `commands/` made the adjacency illegal, and
 nothing in the repo said so.
 
-### `bin/` is the second tree Claude Code reads, and it puts it on `PATH`
+### The source has no `bin/`
 
-`commands/**` is the only tree that becomes an **entry point**, which is what the heading above is
-about — but it is not the only path Claude Code loads from a plugin by name. **Claude Code appends
-`<pluginRoot>/bin` to `PATH` for every enabled plugin whose `bin/` directory exists** — measured
-2026-10-29 on Claude Code 2.1.312 with `quenching-specs` and `quenching-align` enabled: `PATH`
-held only `quenching-specs/bin`, the one of the two present on disk. (A measurement of 2026-08-15
-had found the entry appended for absent directories too; the host no longer does.)
+Claude Code appends `<pluginRoot>/bin` to `PATH` for every enabled plugin, which is what once made a
+bare `cq` resolve. The source is not an enabled plugin any longer, so it ships no `bin/`: the entry
+point is `assets/bin/cq`, cited by absolute path from the command surface and the golden fixtures,
+and `cq deploy` **generates** the target's `.agents/quenching/bin/cq` and `bin/cq.cmd` (or a `uvx`
+shim there with `--runtime uvx`). Two properties of the generated launcher are load-bearing:
 
-A convention-named path at the plugin's top level is neither an entry point nor an asset, so it
-sits *outside* both trees rather than being filed under `assets/` — the `assets/` definition
-("everything Claude Code must not surface as an entry point") would otherwise swallow a directory
-Claude Code is specifically meant to find. And the reason it may sit there is the same one that
-governs `commands/`: **the path is the identity**, fixed by the host, not chosen by us. A further
-such path added by Claude Code later inherits this paragraph without amending the `assets/`
-inventory below.
-
-`bin/` holds `bin/cq` and its `bin/cq.cmd`; `cq deploy` copies both to `.agents/quenching/bin/`
-(or writes a `uvx` shim there with `--runtime uvx`). Two properties of `bin/cq` are load-bearing:
-
-- **the execute bit.** The host resolves it off `PATH` and executes it, so a `100644` mode is not a
-  cosmetic slip — it is the whole feature missing, and silently: the PATH entry is built at session
-  start, so the session that breaks the mode cannot observe the breakage it caused.
+- **the execute bit.** A `100644` mode is not a cosmetic slip — it is the whole feature missing;
+  `cq deploy --check` reports a non-executable `bin/cq` as drift.
 - **self-location from `__file__`.** Never from `${CLAUDE_PLUGIN_ROOT}`, which is substituted into a
-  command body's *text* and is **empty in a shell**. An executable that read it to find its own
-  plugin would resolve to `/assets/bin/…`. This binds anything executable the plugin ever ships,
-  not only this file.
+  command body's *text* and is **empty in a shell**. This binds anything executable the surface ever
+  ships.
 
-`bin/cq` is a shim, not a move: the entry point stays at `assets/bin/cq`, where the command surface
-and the golden fixtures cite it. The two are one file reached two ways, and the order between them
-is `plugins/quenching/assets/references/align/tool-resolution.md` §Resolving the tool.
-
+The order between the launcher and the entry point is
+`plugins/quenching/assets/references/align/tool-resolution.md` §Resolving the tool.
 
 ## Where it goes instead: `assets/`
 
@@ -199,7 +178,7 @@ Current subtrees, by the reason each is here:
 | --- | --- |
 | payload copied whole by an align | `knowledge/` `specs/` `claude/` `zensical/` `design/` |
 | payload applied per insert (molds) | `templates/` |
-| tool the plugin executes | `bin/cq` (its four retired predecessors, unwired, still sit under `bin/` until removed) |
+| tool the plugin executes | `bin/cq` |
 | artifact of developing this repository | `references/` `evals/` `checks/` |
 
 Four rows is one past what the warning above tolerates, so the warning needs restating rather

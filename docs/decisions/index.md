@@ -31,3 +31,4 @@ evidence, not the rule.
 * [0015 — Deploy mode: a vendored surface in the target generic layer](0015-deploy-mode.md) — why the target keeps .agents/AGENTS.md as source, vendors or pins the runtime, and receives only a generated Claude bridge
 * [0016 — Spec store writes accumulate locally and the store branch keeps a single commit](0016-spec-store-writes-accumulate-locally.md) — why a store write stopped being a push: one local pending commit, sync points, and one parentless commit per sync under a lease
 * [0017 — quenching reaches a repository only through cq deploy](0017-install-only-by-deploy.md) — why the module, reader, Codex and OpenCode plugin distributions were retired and which plugins stay
+* [0018 — The plugin-model remnants are retired](0018-retire-omnigent-and-source-manifest.md) — why the Omnigent bundle, the source plugin.json, the source launcher and cq components translate were removed, and what identifies the source instead

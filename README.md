@@ -7,11 +7,10 @@ boundary: a command declared read-only does not contain an assistant that has a 
 quenching reaches a repository only through `cq deploy`, which installs the surface into that
 repository for Claude Code, Codex and OpenCode
 ([ADR 0017](docs/decisions/0017-install-only-by-deploy.md)). The single editable source lives in
-[`plugins/quenching/`](plugins/quenching/). Three plugins that install into no repository sit beside
+[`plugins/quenching/`](plugins/quenching/). Two plugins that install into no repository sit beside
 it: the Claude Code band [`plugins/claude/quenching-hud/`](plugins/claude/quenching-hud/) (the only
-entry of this repository's Claude marketplace), the OpenCode Desktop Specs panel
-[`plugins/opencode/quenching-vitrine/`](plugins/opencode/quenching-vitrine/), and the generated
-Omnigent operator agent under `plugins/omnigent/quenching/`.
+entry of this repository's Claude marketplace) and the OpenCode Desktop Specs panel
+[`plugins/opencode/quenching-vitrine/`](plugins/opencode/quenching-vitrine/).
 
 **Core fronts** — maintained actively, with reliability, adoption and cost as priorities:
 `knowledge`, `specs`, `git` and `components`. **Non-core fronts** — `design`, `ops`, `proof`,

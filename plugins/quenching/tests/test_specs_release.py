@@ -231,8 +231,6 @@ class CmdReleaseCommit(Lockstep):
         self.git("config", "user.email", "t@example.com")
         self.git("config", "user.name", "t")
         self.git("config", "commit.gpgsign", "false")
-        os.makedirs(os.path.join(self.tmp, "scripts"))
-        write_text(os.path.join(self.tmp, "scripts/sync_omnigent_plugin.py"), GENERATOR)
         write_text(os.path.join(self.tmp, "copy.txt"), "copy\n")
         write_text(os.path.join(self.tmp, "CHANGELOG.md"), "# Changelog\n\n## 9.9.9\n")
         self.git("add", "-A")
@@ -256,6 +254,7 @@ class CmdReleaseCommit(Lockstep):
             os.chdir(cwd)
 
     def test_the_commit_carries_changelog_bump_and_regenerated_copy(self):
+        self.install_deploy_stub(manifest=True, body=GENERATOR)
         self.assertEqual(self.release(), 0)
         files = set(self.git("show", "--name-only", "--format=", "HEAD").split())
         self.assertIn("CHANGELOG.md", files)
@@ -265,15 +264,15 @@ class CmdReleaseCommit(Lockstep):
         self.assertEqual(self.git("status", "--porcelain"), "")
         self.assertEqual(self.git("rev-list", "-n1", "9.10.0"), self.git("rev-parse", "HEAD"))
 
-    def install_deploy_stub(self, *, manifest):
-        """A bundled `cq` that records its argv; the deploy manifest only when asked for."""
+    def install_deploy_stub(self, *, manifest, body=None):
+        """A bundled `cq` that records its argv (or runs `body`); the deploy manifest only when asked for."""
         write_text(os.path.join(self.tmp, "plugins/quenching/assets/bin/cq"),
-                   "import sys\nfrom pathlib import Path\n"
-                   "Path('deployed.txt').write_text(' '.join(sys.argv[1:]) + '\\n')\n")
+                   body or ("import sys\nfrom pathlib import Path\n"
+                            "Path('deployed.txt').write_text(' '.join(sys.argv[1:]) + '\\n')\n"))
         if manifest:
             os.makedirs(os.path.join(self.tmp, ".agents"), exist_ok=True)
             write_text(os.path.join(self.tmp, ".agents/.quenching-deploy.json"), "{}\n")
-        self.git("add", "-A")
+        self.git("add", "plugins/quenching/assets/bin/cq", *([".agents/.quenching-deploy.json"] if manifest else []))
         self.git("commit", "-q", "-m", "deploy stub")
 
     def test_a_deployed_surface_is_redeployed_into_the_release_commit(self):
@@ -297,10 +296,7 @@ class CmdReleaseCommit(Lockstep):
         self.assertEqual(read_text(os.path.join(self.tmp, "plugins/quenching/VERSION")).strip(), "9.9.9")
 
     def test_a_failing_generator_leaves_the_bump_uncommitted_and_untagged(self):
-        write_text(os.path.join(self.tmp, "scripts/sync_omnigent_plugin.py"),
-                   "raise SystemExit(3)\n")
-        self.git("add", "-A")
-        self.git("commit", "-q", "-m", "break generator")
+        self.install_deploy_stub(manifest=True, body="raise SystemExit(3)\n")
         head = self.git("rev-parse", "HEAD")
         self.assertEqual(self.release(), 2)
         self.assertEqual(self.git("rev-parse", "HEAD"), head)
@@ -309,10 +305,7 @@ class CmdReleaseCommit(Lockstep):
     def test_a_generator_that_drops_the_marketplace_cannot_commit_or_tag(self):
         manifest = json.loads(self.manifest_path.read_text())
         catalog = manifest["marketplace"]
-        write_text(os.path.join(self.tmp, "scripts/sync_omnigent_plugin.py"),
-                   f"from pathlib import Path\nPath({catalog!r}).unlink()\n")
-        self.git("add", "-A")
-        self.git("commit", "-q", "-m", "generator drops publication")
+        self.install_deploy_stub(manifest=True, body=f"from pathlib import Path\nPath({catalog!r}).unlink()\n")
         head = self.git("rev-parse", "HEAD")
         self.assertEqual(self.release(), 2)
         self.assertEqual(self.git("rev-parse", "HEAD"), head)
@@ -346,7 +339,7 @@ class RealRepoLockstep(unittest.TestCase):
 
     def test_manifests_carry_no_hard_coded_command_count(self):
         for rel in (".claude-plugin/marketplace.json",
-                    "plugins/quenching/.claude-plugin/plugin.json"):
+                    "plugins/claude/quenching-hud/.claude-plugin/plugin.json"):
             self.assertNotRegex(read_text(os.path.join(REPO, rel)), r"\d+ commands", rel)
 
 

@@ -375,8 +375,7 @@ Fifteen terms to read first; each has its full entry under *Terms*.
   (`per-task`, `per-section`, `end-of-plan`) written at creation that decides when a task's
   `verify:` command runs, so execution never guesses and never asks mid-task.
 - [**Version lockstep**](standards/ci-cd/versioning-release.md) — the version strings a release
-  must bump together (the list is `RELEASE_ARTIFACTS` in `release.py`), split into two halves read by two independent consumers: the `plugin.json`
-  `version` + `VERSION` pair Claude Code compares to decide an upgrade fires, and the one shared
+  must bump together (the list is `RELEASE_ARTIFACTS` in `release.py`), the source `VERSION`, the HUD's `plugin.json` and the marketplace catalog, and the one shared
   `VERSION` constant every pillar's `--version` reads.
 - [**Withdrawn contract residue**](standards/quality/withdrawn-contract-residue.md) — the prose
   still asserting a contract a change **removed**, and the sibling of **Prose fan-out**

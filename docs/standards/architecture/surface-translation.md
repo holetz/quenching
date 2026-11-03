@@ -1,26 +1,25 @@
 ---
 type: standard
-title: Surface translation — Claude, Codex, OpenCode and Omnigent
-description: A target repository keeps its surface in .agents/ and AGENTS.md, reads AGENTS.md natively on Claude Code 2.1.277 and later, and gets only the Claude-only generated bridge under .claude; cq deploy translates the Claude-spelled source into that layer for Claude, Codex and OpenCode, and a generator translates it into the Omnigent operator agent
-resource: plugins/quenching/assets/bin/quenching/deploy/**, plugins/quenching/assets/bin/quenching/components/commands/translate.py, plugins/quenching/assets/bin/quenching/components/commands/bridge.py, plugins/quenching/assets/bin/quenching/components/commands/migrate.py, plugins/quenching/assets/translation/codex-adaptation.json, plugins/opencode/quenching-vitrine/**, scripts/sync_omnigent_plugin.py, plugins/omnigent/**, docs/project/model-compat.md, plugins/quenching/assets/translation/omnigent-model-compat.json
-tags: [architecture, claude-code, codex, opencode, omnigent, translation, surfaces]
+title: Surface translation — Claude, Codex and OpenCode
+description: A target repository keeps its surface in .agents/ and AGENTS.md, reads AGENTS.md natively on Claude Code 2.1.277 and later, and gets only the Claude-only generated bridge under .claude; cq deploy translates the Claude-spelled source into that layer for Claude, Codex and OpenCode
+resource: plugins/quenching/assets/bin/quenching/deploy/**, plugins/quenching/assets/bin/quenching/components/commands/bridge.py, plugins/quenching/assets/bin/quenching/components/commands/migrate.py, plugins/opencode/quenching-vitrine/**
+tags: [architecture, claude-code, codex, opencode, translation, surfaces]
 timestamp: 2026-11-03
 audience: both
 authority: current
-source: alinhar-plugin-a-agents-md spec, tasks 2.1–2.4 (2026-08-18); spec 2115 (layout per harness, Omnigent operator agent, 2026-10-28); spec 2118 (target surface in .agents/ with a generated Claude bridge, 2026-10-28); AGENTS.md native-fallback re-measured on Claude Code 2.1.312 (2026-10-28); spec 2160 (install only by deploy)
+source: alinhar-plugin-a-agents-md spec, tasks 2.1–2.4 (2026-08-18); spec 2115 (layout per harness, 2026-10-28); spec 2118 (target surface in .agents/ with a generated Claude bridge, 2026-10-28); AGENTS.md native-fallback re-measured on Claude Code 2.1.312 (2026-10-28); spec 2160 (install only by deploy); spec 2168
 maintainer: quenching
 ---
 
-# Surface translation — Claude, Codex, OpenCode and Omnigent
+# Surface translation — Claude, Codex and OpenCode
 
 <!-- rules -->
 
 The source, `plugins/quenching/`, is written for Claude: `/quenching-<module>:<front>:<verb>` ids
-and `${CLAUDE_PLUGIN_ROOT}` citations. Two translations leave it, and they never mix. **`cq deploy`**
+and `${CLAUDE_PLUGIN_ROOT}` citations. One translation leaves it: **`cq deploy`**
 writes a target repository's generic layer — `.agents/skills/` (read by Codex and OpenCode), the
 payload under `.agents/quenching/`, the Claude bridge under `.claude/skills/` and the subagents under
 `.claude/agents/` and `.opencode/agents/` ([deploy-mode.md](deploy-mode.md), §Target repositories).
-**`scripts/sync_omnigent_plugin.py`** writes the Omnigent operator agent (§Omnigent distribution).
 No Codex package and no user-level OpenCode distribution exist since
 [ADR 0017](../../decisions/0017-install-only-by-deploy.md). A target's `.claude/commands/` is the
 legacy layout, which `cq components migrate` converts.
@@ -95,10 +94,9 @@ the plan (exit 1), and `--write` refuses it (exit 2, `ct-migrate-conflict`) and 
 Before deploy, a target received `cq components translate`: each `.claude/commands/<path>.md`
 became `.agents/skills/<path>/SKILL.md` with platform vocabulary adapted, `.claude/references/**`
 became `.agents/references/**`, and `.agents/.generated-from.json` and `.generated-files.json`
-recorded one sha256 per generated file. The command is retired; its per-file translation stays in
-`components/commands/translate.py`, with the adaptation map in `assets/translation/`, only so
-`cq components migrate` can recognise a legacy copy as generated and replace it. Both ship under
-`assets/`, so an installed `cq` needs nothing from this repository's root `scripts/`.
+recorded one sha256 per generated file. The command and its translation are retired: a copy it
+wrote beside its `.claude/` source is, to `cq components migrate`, a second editable copy, and
+therefore a conflict for the human to settle — never overwritten.
 
 The configuration is never copied: one editable file exists, so coexistence cannot create two
 independently editable configurations.
@@ -106,8 +104,7 @@ independently editable configurations.
 ## Codex runtime policy
 
 Deployed skills carry no model pin: `cq deploy` drops `model` and `effort` from their
-frontmatter. The project's role mapping for a Codex run, recorded in
-`assets/translation/codex-adaptation.json`, is `opus` → `gpt-6-astra`, `sonnet` → `gpt-6.1-sol`, and
+frontmatter. The project's role mapping for a Codex run is `opus` → `gpt-6-astra`, `sonnet` → `gpt-6.1-sol`, and
 `haiku` → `gpt-6-luna`; these are project routing choices, not measured model equivalence.
 Luna writes product code only on ONE task whose
 `cq specs estimate --task` reports `oracleProtected` and `smallTierEligible` — an executable
@@ -147,112 +144,3 @@ scoped `Bash(...)` with no `cq` → `bash: ask`. Only the verbs the source grant
 read-only agent never runs `cq git push` or `cq specs record` unasked. Per-agent permission sets
 beyond this mapping and hooks are not generated; they widen or reshape grants and stay a human
 decision.
-
-## Omnigent distribution
-
-`plugins/omnigent/quenching/` is generated by `python3 scripts/sync_omnigent_plugin.py --write` and checked by
-`--check` in the repository gate (the `Claude/Omnigent distribution` line of `scripts/verify_repo.sh`). It is
-**one operator agent, with no payload**: the plugin's commands as skills, its agents as sub-agents and the
-`quenching` MCP server. The pin is `OMNIGENT_VERSION = "0.19.1"` (server image `omnigent-server:v0.19.1`), whose
-bundle schema (`omnigent/server/schemas.py`, `inner/datamodel.py`) the generator validates against.
-
-| Path | What it holds |
-| --- | --- |
-| `config.yaml` | `name: quenching`, `instructions: instructions.md`, an `executor` of type `omnigent` with `harness: opencode`, `skills: none`, `os_env` of type `caller_process`, `tools.agents` listing the sub-agents and `tools.quenching` of `type: mcp` (stdio, `uvx --from git+…@<VERSION>#subdirectory=plugins/quenching quenching-mcp`, the tag equal to `plugins/quenching/VERSION`, without `v`) |
-| `instructions.md` | the operator role and the routing to the skills, the sub-agents and the MCP server |
-| `skills/<id>/SKILL.md` | one skill per source command (`quenching-<front>-<verb>`), 61 today |
-| `agents/<name>/` | one sub-agent per source agent (`config.yaml` plus `instructions.md`, named without prefix), with its deny-only policy |
-| `README.md` | the generated install note |
-
-No model is pinned: the server's policy chooses it, and `omnigent run --harness X --model Y` overrides both
-executor fields. The Omnigent schema declares the MCP server inline under `tools.<name>`; there is no
-`mcp_servers` key. The generator is self-contained: it carries the OpenCode vocabulary pass (ids become
-`quenching-<front>-<verb>`, agents `quenching-<agent>`) and re-roots its output — `~/.omnigent/quenching`,
-`QUENCHING_OMNIGENT_ROOT`, the word Omnigent — so one prose pass exists and no second harness vocabulary is
-forked. A cited reference becomes `quenching://references/<path>`, served by the MCP server; a citation to a
-template, knowledge, design, zensical, eval or check asset stays under `~/.omnigent/quenching` and resolves
-only where a local install sits there, since the bundle ships no payload. Every bundle loads with
-`omnigent.spec.load`; a test loads it when Omnigent is importable.
-
-The operator runs with the session's tools: the 61 skills carry no per-command policy. A skill keeps its source
-`allowed-tools:` in its frontmatter as metadata the audit reads, never as a policy Omnigent applies; `hooks:` and
-`model:` frontmatter are dropped. Only the sub-agents carry a policy, derived from their source `tools:` by the
-rules below.
-
-### Rule ordering
-
-Omnigent has no positional allow list. Policies run in declaration order within a level, the levels run session,
-then agent spec, then server, a DENY from any policy short-circuits, and DENY outranks ASK outranks ALLOW
-(`docs/POLICIES.md` and `PolicyResult` in `omnigent/policies/types.py`, tag v0.19.1). OpenCode is the opposite
-(the last matching rule wins), so an OpenCode "catch-all first" ordering does not carry over. Durable rule: an
-Omnigent policy states only denials; an ALLOW can never reopen a DENY, so the order of two denials is irrelevant
-and the allowed `cq` verbs are the exception inside the one shell denial, never a rule of their own.
-
-### Permission mapping (deny-only)
-
-One CEL policy (`omnigent.policies.builtins.cel.cel_policy`, under `guardrails.policies.source_tools`) per
-sub-agent returns DENY on a `tool_call` whose `event.data.name` is in the denied set, else ALLOW. The source
-agent's `tools:` is the grant set.
-
-| Source head | Absent or not granted: denied names |
-| --- | --- |
-| `Write`, `Edit`, `NotebookEdit` | `sys_os_write`, `Write`, `write` / `sys_os_edit`, `Edit`, `MultiEdit`, `edit` / `NotebookEdit`; each head independently |
-| `Read`, `Grep`, `Glob` | `sys_os_read`, `Read`, `read` / `Grep`, `grep` / `Glob`, `glob` |
-| `WebFetch` | `WebFetch`, `webfetch`, `WebSearch`, `websearch`; a granted `WebFetch` has no Omnigent tool |
-| bare `Agent` or `Task` | `sys_session_create`, `Task`, `Agent`, `task` when neither is bare; a scoped `Agent(names)` stays denied |
-| `Skill` | `Skill` when absent |
-| `Bash` | absent: `sys_os_shell`, `Bash`, `Shell`, `bash`; bare: none; scoped only: the shell rule |
-
-Shell rule, for scoped `Bash(cq …:*)` and no bare `Bash`: a shell call is denied unless its `command` argument
-matches, in full, one or more segments joined by `&&`, `||` or `;`, each `cq <verbs>` (the source verbs; bare
-`Bash(cq:*)` meaning `cq`) followed by arguments free of `;`, `&`, `|`, `<`, `>`, `$`, backtick, backslash and
-newline. A missing or non-string `command` is denied. A heredoc, a redirect, a pipe or a command substitution is
-therefore denied: Omnigent has no parser a CEL expression can call, and the conservative regex denies what it
-cannot split. A non-`cq` scoped grant (`python3`, `py`, `rm`, `git ls-files`, …) is denied, never widened. Tests
-run adversarial commands through `celpy`.
-
-### Model compatibility table
-
-`plugins/quenching/assets/translation/omnigent-model-compat.json` holds the measured cells of spike H1 (forge
-`spikes/h1/REPORT.md`): per command and model, the approved cases and the assertion pass rate, plus the agent cost
-of the 9 cases. The same generator writes [model-compat.md](../../project/model-compat.md), an OKF doc with one
-row per generated skill and one column per model, `unmeasured` unless the JSON holds the cell. H1 ran OpenCode
-with the since-retired quenching-opencode port, not an Omnigent-hosted run, so a cell is evidence about the model on that
-harness and not about Omnigent. Filling the rest is a human step; its per-case cost is computed from the JSON by
-the generator, so the figures cannot drift from it.
-
-### Eval profile
-
-`scripts/eval_harnesses.json` has an `omnigent` profile: `omnigent run {arm} --harness {agent_harness} --model
-{model} --no-session {extra} -p {prompt}`, with arm `with: ["{agent}"]` (the operator agent,
-`plugins/omnigent/quenching`) and `without: []` (the bare harness), `prompts.with = "/{skill} {prompt}"` so the
-with arm invokes the suite's `skill` in the session, and a `container` block with no permission token.
-`run_evals.py` takes `--agent-harness` (default `opencode`) and refuses a skill missing from the bundle. The
-wiring is proved by `--dry-run` and a stub; no Omnigent-hosted eval has been run. Whether a non-interactive
-`omnigent run -p "/<skill> …"` invokes the skill is unproved: in the live proof below the command opened an interactive
-REPL, and the path proved live is the HTTP API's `slash_command` of kind `skill`. The generated tree is never
-edited by hand, and nothing flows back from it to the source.
-
-### Live proof on Omnigent 0.19.1 (2026-10-28)
-
-The operator bundle `plugins/omnigent/quenching/` was proved on an isolated `uvx omnigent@0.19.1` server (own
-port, `OMNIGENT_DATA_DIR`, `HOME` and no auth), one host daemon, one session on `harness: opencode` and the
-DeepSeek V4.1 Flash endpoint through the Databricks gateway. What it showed:
-
-- **Registration.** `omnigent server --agent plugins/omnigent/quenching` pre-registers `quenching` beside the
-  built-in agents (`/v1/agents`, 61 skills, one stdio MCP server); `omnigent.spec.load` of 0.19.1 reads the
-  bundle with `skills_filter: none` and the 7 sub-agents.
-- **Skills.** The 61 skills reach the session through `omnigent_load_skill`; a `slash_command` of kind `skill`
-  injects the bundle's `SKILL.md` into the turn.
-- **Sub-agent with policy.** The operator delegated to `scout` through `omnigent_sys_session_send`; the scout's
-  write was denied by its CEL policy (`omnigent-policy`) and no file was created.
-- **`skills: none` does not remove the duplication under OpenCode.** OpenCode's own `skill` tool still listed
-  the host skills planted in `~/.claude/skills/` and `~/.agents/skills/`, including a host copy of
-  `quenching-security-status` beside the bundle's; only `~/.config/opencode/skills/` was hidden, by the
-  per-session `XDG_CONFIG_HOME`. The field stays in the bundle (it binds the Claude SDK harness), and a host
-  that serves the operator must not carry quenching skills in those two directories.
-- **MCP.** The `uvx --from git+…@6.9.0#subdirectory=plugins/quenching quenching-mcp` server does not start:
-  the 6.9.0 tag has no `pyproject.toml` there. It starts only from a release that ships the MCP.
-- **Cost.** Estimated at 150–250k tokens for three turns and one sub-agent; measured 53,195 tokens (49,438
-  input, 1,274 output, 51,921 of them cache reads), with `total_cost_usd` 0.0 because the gateway endpoint
-  carries no price in Omnigent's catalog.

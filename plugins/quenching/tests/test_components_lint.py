@@ -626,12 +626,18 @@ class DanglingCitation(unittest.TestCase):
             self.assertEqual(self._codes(cmd_lint, root), [])
             self.assertEqual(self._codes(cmd_doctor, root), [])
 
+    @staticmethod
+    def _mark_source(root: str) -> None:
+        """Make `root` the source of quenching: it carries `VERSION` and `assets/modules.json`."""
+        pathlib.Path(root, "VERSION").write_text("1.0.0\n", encoding="utf-8")
+        modules = pathlib.Path(root, "assets", "modules.json")
+        modules.parent.mkdir(exist_ok=True)
+        modules.write_text('{"modules": []}', encoding="utf-8")
+
     def test_a_plugin_surface_is_left_to_the_bare_citation_check(self):
         with tempfile.TemporaryDirectory() as root:
             self._target(root, {"frente/novo.md": "Run /frente:velho first."})
-            manifest = pathlib.Path(root, ".claude-plugin", "plugin.json")
-            manifest.parent.mkdir()
-            manifest.write_text('{"name": "p"}', encoding="utf-8")
+            self._mark_source(root)
             self.assertEqual(self._codes(cmd_lint, root), [])
 
     def _lint_other(self, cwd: str, path: str) -> list[str]:
@@ -673,14 +679,12 @@ class DanglingCitation(unittest.TestCase):
             commands_dir = os.path.join(target, "commands")
             self.assertEqual(self._lint_other(cwd, commands_dir), [])
 
-    def test_a_plugin_target_keeps_its_prefix_from_a_cwd_without_manifest(self):
+    def test_a_source_target_keeps_its_prefix_from_a_cwd_that_is_not_the_source(self):
         with tempfile.TemporaryDirectory() as cwd, tempfile.TemporaryDirectory() as target:
             self._target(cwd, {"frente/outro.md": "Body."})
             self._target(target, {"frente/novo.md": "Run /frente:outro first.",
                                   "frente/outro.md": "Body."})
-            manifest = pathlib.Path(target, ".claude-plugin", "plugin.json")
-            manifest.parent.mkdir()
-            manifest.write_text('{"name": "p"}', encoding="utf-8")
+            self._mark_source(target)
             codes = [f["code"] for f in self._findings_other(cwd, target)]
             self.assertIn("sk-bare-citation", codes)
 
@@ -706,12 +710,10 @@ class DanglingCitation(unittest.TestCase):
             self.assertEqual({f["command"] for f in single["findings"]}, {"/frente:novo"})
 
 
-    def test_a_cwd_plugin_prefix_is_not_applied_to_a_bare_target(self):
+    def test_a_cwd_source_prefix_is_not_applied_to_a_bare_target(self):
         with tempfile.TemporaryDirectory() as cwd, tempfile.TemporaryDirectory() as target:
             self._target(cwd, {"frente/outro.md": "Body."})
-            manifest = pathlib.Path(cwd, ".claude-plugin", "plugin.json")
-            manifest.parent.mkdir()
-            manifest.write_text('{"name": "p"}', encoding="utf-8")
+            self._mark_source(cwd)
             self._target(target, {"frente/novo.md": "Run /frente:outro first.",
                                   "frente/outro.md": "Body."})
             codes = [f["code"] for f in self._findings_other(cwd, target)]

@@ -23,9 +23,7 @@ DOCS = REPO_ROOT / "docs"
 README = REPO_ROOT / "README.md"
 PROJECT_COMMANDS = DOCS / "project" / "commands.md"
 MARKETPLACE = REPO_ROOT / ".claude-plugin" / "marketplace.json"
-PLUGIN_MANIFEST = PLUGIN_ROOT / ".claude-plugin" / "plugin.json"
 ZENSICAL = REPO_ROOT / "zensical.toml"
-ADAPTATION = PLUGIN_ROOT / "assets" / "translation" / "codex-adaptation.json"
 
 INVOCABLE = re.compile(r"`(/[a-z][a-z:-]*)`")
 
@@ -63,8 +61,7 @@ def _nav_paths(value: object) -> set[str]:
 
 def _manifest_descriptions() -> list[str]:
     marketplace = json.loads(MARKETPLACE.read_text(encoding="utf-8"))
-    return [marketplace["description"], marketplace["plugins"][0]["description"],
-            json.loads(PLUGIN_MANIFEST.read_text(encoding="utf-8"))["description"]]
+    return [marketplace["description"], marketplace["plugins"][0]["description"]]
 
 
 class ManifestSurfaceTests(unittest.TestCase):
@@ -122,7 +119,6 @@ class ListingSurfaceTests(unittest.TestCase):
             (DOCS / "tutorials" / "getting-started.md").read_text(encoding="utf-8"),
             (DOCS / "how-to" / "adopt-quenching.md").read_text(encoding="utf-8"),
             (DOCS / "standards" / "architecture" / "index.md").read_text(encoding="utf-8"),
-            ADAPTATION.read_text(encoding="utf-8"),
         ]
         combined = "\n".join(texts).lower()
         self.assertGreaterEqual(combined.count("seven"), 1)

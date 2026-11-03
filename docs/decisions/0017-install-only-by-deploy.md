@@ -13,6 +13,9 @@ maintainer: quenching
 
 # 0017 — quenching reaches a repository only through `cq deploy`
 
+> Superseded in part by [ADR 0018](0018-retire-omnigent-and-source-manifest.md): the Omnigent operator
+> agent, the source `plugin.json`, the source `bin/cq` and `cq components translate` were later removed.
+
 The rules live in [plugin-layout](../standards/architecture/plugin-layout.md),
 [deploy-mode](../standards/architecture/deploy-mode.md) and
 [versioning-release](../standards/ci-cd/versioning-release.md); this records why they changed. It

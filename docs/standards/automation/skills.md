@@ -260,7 +260,7 @@ human.
 
 **The conductor calls the router, never the shortcut.** `disable-model-invocation: true` makes the
 Skill tool refuse the shortcut, so `spec-runner`, `spec-orchestrator` and the translated surfaces
-(Codex, OpenCode, Omnigent) invoke the router with the `flow` argument and the id. Naming the
+(Codex, OpenCode) invoke the router with the `flow` argument and the id. Naming the
 shortcut in an agent body would break the conductor silently.
 
 `context: fork` runs the command in a separate context. It is **forbidden** on any command that

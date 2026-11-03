@@ -90,8 +90,6 @@ run_check "docs bundle" \
   python3 plugins/quenching/assets/bin/cq knowledge validate docs
 run_check "docs doctor" \
   python3 plugins/quenching/assets/bin/cq knowledge doctor docs
-run_check "Claude/Omnigent distribution" \
-  python3 scripts/sync_omnigent_plugin.py --check --json
 # A checkout that installed the surface with `cq deploy` keeps it in lockstep with this source;
 # `--check` with no flags reuses the manifest's recorded selection. A checkout that never adopted
 # deploy mode has nothing to compare, and says so instead of reporting a green it did not measure.
