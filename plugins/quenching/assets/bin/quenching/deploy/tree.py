@@ -286,7 +286,8 @@ def build_tree(source: Path, target: Path, modules: list[str], harnesses: list[s
     if runtime == "vendor":
         for package in packages:
             _add_tree(tree, source, "assets/bin/quenching/" + package)
-        _add_tree(tree, source, "assets/bin/quenching_launch.py")
+        # quenching_launch.py is the wheel entry point only (the build maps it to launch.py);
+        # the vendored target runs bin/cq, so a clone and a uvx deploy write the same tree.
         _add_tree(tree, source, "assets/bin/cq")
         _add_tree(tree, source, "bin/cq")
         _add_tree(tree, source, "bin/cq.cmd")
