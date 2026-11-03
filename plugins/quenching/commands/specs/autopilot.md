@@ -80,9 +80,24 @@ non-`cq`, non-`git` command is run.
 ### 1. Health
 Resolve `cq` per [align/tool-resolution.md](${CLAUDE_PLUGIN_ROOT}/assets/references/align/tool-resolution.md)
 §Resolving the tool; branch on the exit code. Read the root harness for the gate command and the
-ephemeral area. Check, on `main`: the checkout is clean (`git status --short`), `git stash list` is
-empty, `git worktree list` holds only this run's worktrees, and the gate is green. Anything red →
-this round's first spec is fixing it (`cq specs new`, then steps 4–5 on it alone). Then run
+ephemeral area. Check, on `main`: `git stash list` is empty, `git worktree list` holds only this
+run's worktrees, and the gate is green. Anything red there → this round's first spec is fixing it
+(`cq specs new`, then steps 4–5 on it alone).
+
+**A dirty checkout is decided HERE, never discovered at the first worktree cut.** Read
+`git status --short` and split what it shows. A path the round record's `dirty:` line already names
+opened the round with it — it is the human's work, an upgrade or a fix in progress — while a path
+that appeared after the round opened is this run's, and the audit of the invariants above handles
+it. For the human's, this session decides as the delegated owner, and the invocation authorizes
+both answers: when a new spec is permitted, the fix spec above absorbs it; when it is not, every
+worktree of the round is cut from `origin/<base>`, which never carries the base's uncommitted
+files, and `cq git branch` accepts that authorized cut with the base still dirty, reporting the
+paths it left in it. With neither answer the round stops before its first launch: `STATE: blocked`,
+the dirty paths named. The answer is written in the round record as `dirty: <n> path(s) — <fix
+spec|cut from origin/<base>>` before anything launches, and step 4 copies it into the epic's
+`## Design`.
+
+Then run
 `cq git preflight --json` once (covered by the existing `Bash(cq:*)`; no new grant) and write its
 five checks (`store`, `types`, `push`, `ghAuth`, `ci`) in the round block as `preflight:`. `store`,
 `push` or `ghAuth` in `fail` → fixing it is this round's first spec, like a red gate. `mergesAllowed:
@@ -91,7 +106,8 @@ report says why. Hooks are never disabled and `--no-verify` is never passed. Rea
 round record first: an `open` round whose start ref is still reachable from `main` resumes at its
 recorded next step and keeps its `launches`; any other record opens a new round. Record the
 round's start ref: `git rev-parse main`.
-**Done when:** `main` is clean and green, or the fix is this round's first spec.
+**Done when:** `main` is green, and either the checkout is clean or the dirty base was decided —
+a fix spec, or an authorized cut from `origin/<base>` — and recorded.
 
 ### 2. Queue
 List the loose specs — open, in no epic — with `cq specs list --lean --json`, and the store's
@@ -127,12 +143,18 @@ they are.
 that need reading file overlap are decomposed here, as the develop flow's decomposition step does
 (`/quenching-specs:specs:specs develop`): propose the slices from the queue and the kept candidates,
 then create the composite and the members with the same `cq specs new` and `cq specs link add`.
-Either way, write the composite's `## Design` with `cq specs section <composite> Design --write`,
-carrying the **autonomy policy**: forced execution, push, PR and merge of every member after a
-verifier PASS, authorized by this invocation, with its date. Check the result with
+Either way, write the composite's `## Design` — and write it as a READ, AN APPEND AND ONE WRITE,
+because `cq specs section --write` REPLACES the section: `cq specs section <composite> Design
+--json`, the round's dated bullets appended, the body back on stdin. It carries the **autonomy
+policy** (forced execution, push, PR and merge of every member after a verifier PASS, authorized by
+this invocation, with its date) and **every decision this session took as the delegated owner**,
+each a dated bullet with the evidence it rests on — the step 1 dirty-checkout answer, an abandoned
+spec, a spec sent to the human epic, a proof not run — written BEFORE the launch that depends on
+it. A decision that lives only in a brief is lost at the next relaunch; the briefs of steps 5 and 6
+name the composite and the bullet instead of restating it. Check the result with
 `cq specs status --epic <composite>` and `cq specs validate`.
-**Done when:** the composite exists with its waves, its `## Design` carries the dated policy, and
-`validate` raises no `sp-link-*` finding.
+**Done when:** the composite exists with its waves, its `## Design` carries the dated policy and
+this round's decisions, and `validate` raises no `sp-link-*` finding.
 
 ### 5. Orchestrate
 **Economy mode.** An epic with **at most 2 members, every one `low` or `medium`**, runs without
