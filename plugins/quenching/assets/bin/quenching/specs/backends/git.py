@@ -16,7 +16,7 @@ never a text merge, and a document that changed under the caller refuses as a st
 instead of being overwritten.
 
 Every mutation of the pending ref and of the branch funnels through `_store`, the name the
-read-only specs-reader already blocks."""
+read-only guard (`read_only`) blocks."""
 from __future__ import annotations
 
 import hashlib

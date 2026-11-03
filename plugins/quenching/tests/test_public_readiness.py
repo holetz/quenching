@@ -378,36 +378,42 @@ REPO = pathlib.Path(__file__).resolve().parents[3]
 
 
 class CleanCloneTest(ReadinessCase):
-    """The published quenching-opensource module, exported from the committed tree, runs the flow."""
+    """The opensource module, deployed from the committed source into a clean target, runs the flow."""
 
     def export(self) -> pathlib.Path:
         if subprocess.run(["git", "-C", str(REPO), "rev-parse", "--verify", "-q", "HEAD"],
                           capture_output=True).returncode != 0:
             self.skipTest("the repository is not a git checkout")
-        target = pathlib.Path(self.tmp.name, "export")
-        target.mkdir()
-        archive = subprocess.run(["git", "-C", str(REPO), "archive", "HEAD", "plugins/claude/quenching-opensource"],
+        source = pathlib.Path(self.tmp.name, "export")
+        source.mkdir()
+        archive = subprocess.run(["git", "-C", str(REPO), "archive", "HEAD", "plugins/quenching"],
                                  check=True, capture_output=True).stdout
         with tarfile.open(fileobj=io.BytesIO(archive)) as tar:
-            tar.extractall(target, filter="data")
-        return target / "plugins" / "claude" / "quenching-opensource"
+            tar.extractall(source, filter="data")
+        target = pathlib.Path(self.tmp.name, "target")
+        target.mkdir()
+        subprocess.run(["git", "init", "-q", str(target)], check=True)
+        subprocess.run([sys.executable, str(source / "plugins/quenching/assets/bin/cq"), "deploy",
+                        "--target", str(target), "--modules", "all", "--harness", "none", "--write"],
+                       check=True, capture_output=True)
+        return target
 
     def test_the_module_carries_the_command_and_the_reference_it_cites(self):
-        module = self.export()
-        command = (module / "commands" / "opensource" / "readiness.md").read_text(encoding="utf-8")
-        self.assertIn("cq --root \"$TARGET_ROOT\" opensource readiness --json", command)
-        self.assertIn("${CLAUDE_PLUGIN_ROOT}/assets/references/opensource-readiness/report.md", command)
-        self.assertTrue((module / "assets" / "references" / "opensource-readiness" / "report.md").is_file())
+        target = self.export()
+        command = (target / ".agents/skills/quenching-opensource-readiness/SKILL.md").read_text(encoding="utf-8")
+        self.assertIn('.agents/quenching/bin/cq --root "$TARGET_ROOT" opensource readiness --json', command)
+        self.assertIn(".agents/quenching/assets/references/opensource-readiness/report.md", command)
+        self.assertTrue((target / ".agents/quenching/assets/references/opensource-readiness/report.md").is_file())
 
     def test_the_module_route_measures_a_clean_fixture_end_to_end(self):
-        module = self.export()
+        target = self.export()
         commit(self.root, "README.md", "hello\n")
         self.install("gitleaks", "reuse")
         evidence = self.evidence({"state": "compatible", "reviewedBy": "owner"},
                                  {"state": "granted", "reviewedBy": "owner"})
         env = dict(os.environ, FAKE_REUSE_ROWS=json.dumps({"non_compliant": {}}))
         before = snapshot(self.root)
-        run = subprocess.run([sys.executable, str(module / "assets" / "bin" / "cq"), "--root", self.root,
+        run = subprocess.run([sys.executable, str(target / ".agents/quenching/assets/bin/cq"), "--root", self.root,
                               "opensource", "readiness", "--json", "--evidence", evidence],
                              capture_output=True, text=True, env=env)
         self.assertEqual(before, snapshot(self.root))

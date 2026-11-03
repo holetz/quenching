@@ -1,13 +1,13 @@
 ---
 type: standard
 title: Versioning and release — the version lockstep
-description: The version surfaces cq specs release bumps together — the unpublished source, every published module manifest (the eight principal modules, the specs reader and the HUD) and every marketplace entry
-resource: plugins/quenching/assets/modules.json, plugins/claude/quenching-*/VERSION, plugins/claude/quenching-*/.claude-plugin/plugin.json, plugins/codex/quenching-codex/VERSION, plugins/quenching/VERSION, plugins/quenching/.claude-plugin/plugin.json, .claude-plugin/marketplace.json, .agents/plugins/marketplace.json, plugins/quenching/assets/bin/quenching/common/version.py, scripts/generate_plugin_modules.py, scripts/check_codex_upgrade.py
+description: The version surfaces cq specs release bumps together — the unpublished source, the HUD plugin manifest, every Claude marketplace entry and the bundled cq identity — and the copies it regenerates before the release commit
+resource: plugins/quenching/assets/modules.json, plugins/quenching/VERSION, plugins/quenching/.claude-plugin/plugin.json, plugins/claude/quenching-hud/**, .claude-plugin/marketplace.json, plugins/quenching/assets/bin/quenching/common/version.py, plugins/quenching/assets/bin/quenching/common/modules.py, plugins/quenching/assets/bin/quenching/specs/release.py, scripts/sync_omnigent_plugin.py
 tags: [release, versioning, lockstep, plugin, distribution]
-timestamp: 2026-10-29
+timestamp: 2026-11-03
 audience: both
 authority: current
-source: modularizar-specs-knowledge-components, one-entry-point, notice-installed-tool-version-drift, 2026-08-03, enxugar-create-e-eliminar-o-rung-hooks, configurable-branch-strategy, spec 1634, spec 1635 (module extraction); Codex marketplace upgrade regression, 2026-10-22; spec 2125 (release redeploys the surface); lineage in ADR 0004 and ADR 0013
+source: modularizar-specs-knowledge-components, one-entry-point, notice-installed-tool-version-drift, 2026-08-03, enxugar-create-e-eliminar-o-rung-hooks, configurable-branch-strategy, spec 1634, spec 1635 (module extraction); Codex marketplace upgrade regression, 2026-10-22; spec 2125 (release redeploys the surface); spec 2160 (install only by deploy); lineage in ADR 0004, ADR 0013 and ADR 0017
 maintainer: quenching
 ---
 
@@ -16,136 +16,83 @@ maintainer: quenching
 <!-- rules -->
 
 A release bumps the version surfaces in lockstep. The rule is not bookkeeping tidiness:
-Claude, the marketplace and the bundled `cq` identity read different halves of the set, and a
-partial bump makes one of them wrong.
+Claude Code, the marketplace, `cq deploy` and the bundled `cq` identity read different halves of
+the set, and a partial bump makes one of them wrong.
 
 `cq specs release <version>` — the tool this section's *Verifying* block names — requires a matching
 `## <version>` entry in `CHANGELOG.md`, then moves every surface in one release operation.
 
 The release commit is self-contained: the verb refuses (exit 2, nothing written) when the tree
-has changes beyond `CHANGELOG.md`, bumps, **regenerates the copies**
-(`scripts/generate_plugin_modules.py`, `scripts/sync_codex_plugin.py`, `scripts/sync_opencode_plugin.py`
-and `scripts/sync_omnigent_plugin.py`, each `--write` and each when present; the Omnigent operator pins
-its MCP server to the version tag), then, last and only where `.agents/.quenching-deploy.json` exists,
-redeploys the repository's own installed surface with the bundled
+has changes beyond `CHANGELOG.md`, bumps, **regenerates the copies** — first
+`scripts/sync_omnigent_plugin.py --write` (the Omnigent operator pins its MCP server to the version
+tag), then, last and only where `.agents/.quenching-deploy.json` exists, the bundled
 `plugins/quenching/assets/bin/cq deploy --target . --write`, so the gate's deployed surface lockstep
-holds at the new version, and commits everything with the `CHANGELOG.md` entry, so `verify_repo.sh` is already green
-on the tag. A failed regeneration leaves the bump uncommitted and makes no commit or tag.
+holds at the new version — and commits everything with the `CHANGELOG.md` entry, so
+`verify_repo.sh` is already green on the tag. A failed regeneration leaves the bump uncommitted and
+makes no commit or tag. The `/release` command runs `QUENCHING_FUNCTIONAL=1 bash scripts/verify_repo.sh`
+before the bump, so the surface-load checks are measured, not skipped.
 
-## The published set
+## The version set
 
-`plugins/quenching/assets/modules.json` is the declarative source. Each published module
-contributes its `.claude-plugin/plugin.json` and, when declared, its `VERSION` file. The editable
-source `plugins/quenching` contributes its pair **although it is not published**: it is the
-version every generated module copies, so a release that skipped it would regenerate every module
-back to the old number. The marketplace and source `common/version.py` complete the set. A module
-record that is not published (and is not the source) contributes no release surface. `cq specs release` loads the **target repository's**
-manifest; `RELEASE_ARTIFACTS` in `release.py` is a derived export of the bundled manifest for
-existing callers, not a separately maintained list.
+`plugins/quenching/assets/modules.json` is the declarative source, and `release_artifacts` in
+`common/modules.py` derives the set from it:
 
 | # | Artifact | Read by |
 | --- | --- | --- |
-| 1 | `plugins/quenching-<module>/.claude-plugin/plugin.json` → `version`, for every published module | Claude Code, to detect and apply an upgrade |
-| 2 | `plugins/quenching-<module>/VERSION`, for every published module that declares one | the same detection, as the pair's other half |
+| 1 | `plugins/quenching/VERSION` and `plugins/quenching/.claude-plugin/plugin.json` (the unpublished source) | `cq deploy`, which records the version in a target's `.agents/.quenching-deploy.json`, and the Omnigent generator |
+| 2 | `.claude-plugin/plugin.json` of every entry of `plugins` with `marketplace: true` — today only `plugins/claude/quenching-hud` | Claude Code, to detect and apply the HUD upgrade |
 | 3 | `.claude-plugin/marketplace.json` → **every** entry's `version` | the marketplace listing |
 | 4 | `plugins/quenching/assets/bin/quenching/common/version.py` → `VERSION` | every pillar's own `--version` (`cq specs`, `cq knowledge`, `cq components`) |
-| 5 | `plugins/quenching/VERSION` and `plugins/quenching/.claude-plugin/plugin.json` (the unpublished source) | `scripts/generate_plugin_modules.py`, which writes it into every generated module |
 
-The published modules are the eight principal modules (`quenching-specs`, `quenching-align`,
-`quenching-design`, `quenching-ops`, `quenching-proof`, `quenching-toolchain`,
-`quenching-delivery`, `quenching-security`), the generated `quenching-specs-reader` and the
-authored `quenching-hud`, whose manifest carries no `VERSION` file.
-Adding a published module changes the derived release set without editing the release code.
-Manifest paths and ownership are validated before writes; artifact presence, changelog entry,
-marketplace membership and existing version agreement must all pass before any version moves.
+Adding a marketplace plugin to `plugins` changes the derived set without editing the release code.
+`cq specs release` loads the **target repository's** manifest; `RELEASE_ARTIFACTS` in `release.py`
+is a derived export of the bundled manifest for existing callers, not a separately maintained list.
+Artifact presence, the changelog entry, marketplace membership and existing version agreement must
+all pass before any version moves.
 
 ## Why each half matters
 
 <!-- rationale -->
 
-**Artifacts 1–2 are the Claude upgrade trigger, once per module.** Each enabled module is its own
-installed plugin, so a module left at the old number is a module the host never upgrades while its
-siblings move: the one `cq` in `quenching-specs` refuses to load a module package whose version
-differs from its own, so a split version silently removes that module's fronts. The `plugin.json` `version` and the `VERSION` file are
-the pair Claude Code uses to decide that an installed plugin is stale and should be replaced. Bump
-one without the other and the upgrade either never fires or fires against a plugin that reports a
+**Artifact 1 is what a deploy installs.** A target receives the source's version with its payload
+and moves only when `cq deploy --write` runs from the new release; a release that skipped the
+source would redeploy the old number.
+
+**Artifacts 2–3 are the HUD's upgrade route.** The HUD is the one plugin Claude Code still
+installs from the marketplace, so its `plugin.json` and the listing must agree with each other and
+with the release, or the upgrade either never fires or fires against a plugin that reports a
 version it does not have.
 
-**Artifact 3 is the marketplace listing.** It must agree with the two Claude upgrade surfaces so the
-published plugin advertises the version it actually contains.
+**Artifact 4 is the *tool identity*, held once.** Every command invokes the deployed `cq` at
+`.agents/quenching/bin/cq` ([deploy-mode.md](../architecture/deploy-mode.md);
+`plugins/quenching/assets/references/align/tool-resolution.md` §Resolving the tool), so a bump
+*delivers* nothing by itself. What the one constant still does is answer `--version` for every
+pillar alike. Four scripts each carrying their own copy of this constant was never a design
+choice — it was the shape a self-contained, no-import single file forced, back when each pillar
+shipped as its own script ([frontmatter-parser.md](../code/frontmatter-parser.md), which owns that
+history). One package with internal imports has no such constraint: `common/version.py` is read by
+every pillar's `--version`, not duplicated by it.
 
-**Artifact 4 is the *tool identity*, now held once.** Plugin mode installs no tool standalone: every
-command invokes the plugin's own `cq`, bare through the `bin/` shim on `PATH` or at
-`${CLAUDE_PLUGIN_ROOT}/assets/bin/cq`, with no third rung. Deploy mode is the one generated
-exception: the target carries a manifest-owned copy under `.agents/quenching/bin/cq`, upgraded only
-by `cq deploy --write` from a new release ([deploy-mode.md](../architecture/deploy-mode.md)).
-(`plugins/quenching/assets/references/align/tool-resolution.md`
-§Resolving the tool) — so a bump no longer *delivers* anything. What the one constant still does is
-answer `--version` for every pillar alike. Four scripts each carrying their own copy of this
-constant was never a design choice — it was the shape a self-contained, no-import single file
-forced, back when each pillar shipped as its own script
-([frontmatter-parser.md](../code/frontmatter-parser.md), which owns that history). One package with
-internal imports has no such constraint: `common/version.py` is read by every pillar's `--version`,
-not duplicated by it.
+`cq specs release` rewrites the `version` of **every** plugin entry in
+`.claude-plugin/marketplace.json`, never only the first. A marketplace entry with no `version`, or
+a catalog that disagrees with the declared marketplace plugins, is refused.
+`test_specs_release.py` asserts that every one of these versions is equal. The manifests carry no
+hard-coded command counts, since they drift on the next command change.
 
-Every module is bumped in the same operation. `cq specs release` moves each published module's
-`VERSION` and `.claude-plugin/plugin.json` — the eight principal modules, the specs reader and the
-HUD's manifest — together with the source pair, and it rewrites the `version` of **every** plugin
-entry in `.claude-plugin/marketplace.json`, never only the first. A
-marketplace entry with no `version`, or entries that disagree with published module membership,
-are refused. Afterwards `python3 scripts/generate_plugin_modules.py --write` regenerates the
-copied assets; `--check` proves generated consumers, published versions and the single active
-PATH `cq` owner together. The old `sync_specs_reader_plugin.py` invocation remains a compatibility
-wrapper over that same generator. The generated Codex package
-(`plugins/codex/quenching-codex/VERSION` and `.codex-plugin/plugin.json`), declared under
-`distributions` in `assets/modules.json` with its platform, identity, package path, plugin manifest
-and marketplace path, moves in the same lockstep. Afterwards
-`sync_codex_plugin.py --write` regenerates its payload and translation manifest; the repository
-gate checks both translation drift and package validity.
-`test_specs_release.py` asserts that every one of these versions is equal. The manifests carry no hard-coded command counts, since they drift on the next command change.
+## Publication is checked before and after regeneration
 
-## Publication is checked per platform
+`distribution_findings` in `common/modules.py` proves that `.claude-plugin/marketplace.json` lists
+exactly the `plugins` entries with `marketplace: true`, each at its declared source path, with a
+`plugin.json` bearing the declared name. `cq specs release` runs it before writing any version and
+again after regeneration, so a generator cannot remove a delivery route between the preflight and
+the tag. A missing catalog, a missing entry, a wrong source or a wrong identity is a failure even
+when version equality passes.
 
-The principal `modules` declare the Claude distribution and its `.claude-plugin/marketplace.json`.
-Additional `distributions` declare the Codex package and `.agents/plugins/marketplace.json`.
-The latter catalog keeps the existing `quenching` marketplace and `quenching-codex` plugin identity
-so installations from 6.4.0 retain their update route. Its entries are versionless: Codex reads the
-version from the package manifest, which moves with `VERSION` in the release lockstep.
-
-`distribution_findings` in `common/modules.py` checks both catalogs before a release writes any
-version. Every declared package must be listed exactly once, at its declared source path, with an
-existing manifest bearing the declared identity; the Codex entry must be installable. The
-repository gate uses the same check. A missing catalog, missing entry, wrong source or wrong
-identity is a failure even when generation and version equality pass.
-
-Removing or renaming a published package also requires an explicit migration path for existing
-installations. Keep the old catalog identity until the host upgrade test proves the replacement;
-changing the declared set and the catalog together is not evidence of a successful migration.
-
-## Upgrade acceptance
-
-`python3 scripts/check_codex_upgrade.py` measures the actual Codex CLI installation route without
-calling a model. It installs the published `6.4.0` Codex package in an isolated home, advances a
-disposable Git marketplace to the candidate package, runs `plugin marketplace upgrade` and
-`plugin add`, then checks the installed cleanup skill against the candidate bytes, executes that
-skill's own tool resolver and runs the installed `scripts/cq --version`. It also checks that the
-installed plugin is enabled. Git rewrites
-a reserved test URL to the disposable local repository; no user installation or cache is edited.
-
-CI runs this check with Codex CLI 0.163.0. The ordinary repository gate reports it skipped unless
-`QUENCHING_DISTRIBUTION=1`; `/release` requires that flag alongside `QUENCHING_FUNCTIONAL=1`
-before the bump. Missing Codex or the baseline tag exits 2 (inconclusive), which blocks a release.
-The baseline is kept until an explicit migration changes the acceptance contract.
-
-This proves package delivery, not the skills loaded in an existing model session. Start a new
-session after updating; the generated Codex README includes installation, upgrade, version/path
-inspection and migration guidance for mixed installations.
-
-Generated shell blocks resolve the host-provided plugin root or the single enabled installation
-from `codex plugin list --json`, including its exact cache version. They never choose the first
-or newest cached directory. Regression tests retain multiple cache versions and require the
-selected host version; missing or ambiguous selections refuse instead of falling back to a stale
-copy. This check is separate from session loading.
+Spec 2160 retired the module plugins, the specs reader, the Codex plugin and its 6.4.0 upgrade
+baseline, and the OpenCode distribution
+([ADR 0017](../../decisions/0017-install-only-by-deploy.md)). A target that installed them keeps a
+frozen version until it runs `cq deploy`; the release that ships this is a major one and its
+changelog entry says so.
 
 ## When the bump happens — once, at the release, on the primary branch
 
@@ -180,33 +127,28 @@ everywhere else in this front.
 
 ## What a bump does not need to do any more
 
-Resolution is **plugin-first with no third rung**, so a bump reaches every plugin-installed repo
-the moment the plugin upgrades — nothing installs a global tool, and the two doors that do exist
-(`bin/cq` on `PATH`, the plugin path) are the same file inside the plugin. A deploy-mode target is
-the generated exception: its `.agents/quenching/` copy carries the version in
-`.agents/.quenching-deploy.json` and moves only when `cq deploy --write` runs from the new release,
-which is an explicit target action rather than an upgrade the marketplace can miss. Earlier plugin
-generations shipped separate scripts an align could copy into a target's `.claude/hooks/`, which
-meant a bump could leave a stale, still-executing copy behind; a dedicated detector
-(`cq components drift`) existed for exactly that gap. Neither that copying nor its gap exists any
-more — a plugin-installed target repository holds nothing this plugin ships beyond the command
-bodies Claude Code itself loads — so the detector was retired with the four scripts it used to
-compare an installed copy against (`modularizar-specs-knowledge-components` spec, task 10.3).
+A deployed target carries the version in `.agents/.quenching-deploy.json` and moves only when
+`cq deploy --write` runs from the new release, which is an explicit target action rather than an
+upgrade a marketplace can miss. Earlier plugin generations shipped separate scripts an align could
+copy into a target's `.claude/hooks/`, which meant a bump could leave a stale, still-executing copy
+behind; a dedicated detector (`cq components drift`) existed for exactly that gap. That copying is
+gone, so the detector was retired with the four scripts it used to compare an installed copy
+against (`modularizar-specs-knowledge-components` spec, task 10.3); `cq deploy --check` is the
+drift check for what a deploy owns.
 
 ## Verifying
 
-The deterministic repository gate checks the manifest-derived published surfaces and copied
-consumer payloads. A direct read-only check is:
+The deterministic repository gate checks the Omnigent bundle and this checkout's own deployed
+surface against the source. Direct read-only checks are:
 
 ```bash
-python3 scripts/generate_plugin_modules.py --check
+python3 scripts/sync_omnigent_plugin.py --check --json
+python3 plugins/quenching/assets/bin/cq deploy --target . --check --json
 ```
 
-Exit 0 reports generated modules in lockstep, published versions in agreement and one PATH
-`cq` owner. Drift exits 1; an unsafe or malformed distribution contract refuses with exit 2.
-`--write` refreshes generated payloads only: it does not bump authored version surfaces or
-silently repair a marketplace version disagreement. Release regression fixtures prove a new
-consumer's surfaces move with the set and preexisting disagreement changes no artifact.
+Drift exits 1. Neither `--write` bumps an authored version surface or repairs a marketplace
+version disagreement. Release regression fixtures prove a new consumer's surfaces move
+with the set and preexisting disagreement changes no artifact.
 
 The broader "did I break the shipped skeleton" gate is
 [bundle-verification.md](../quality/bundle-verification.md) and

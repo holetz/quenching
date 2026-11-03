@@ -4,10 +4,10 @@ title: Branch flow — PR onto the primary, deliberate release
 description: One long-lived branch — the primary (main) — where every PR merges and review lives, the release as a deliberate local act that bumps, tags and publishes what the primary accumulated, the trigger on demand and with no cadence, the question that pushes toward grouping when the primary carries a single PR since the last tag, and the transition for anyone coming from the two-branch flow
 resource: .agents/skills/release/SKILL.md, plugins/quenching/assets/bin/quenching/git/**, plugins/quenching/assets/bin/quenching/specs/**, plugins/quenching/commands/specs/execute.md, plugins/quenching/assets/references/align/convergence.md
 tags: [git, branching, release, workflow, main]
-timestamp: 2026-08-17
+timestamp: 2026-11-03
 audience: both
 authority: current
-source: eliminar-branch-de-integracao, 2026-08-17; lineage in ADR 0004
+source: eliminar-branch-de-integracao, 2026-08-17; spec 2160 (install only by deploy); lineage in ADR 0004
 maintainer: quenching
 ---
 
@@ -87,7 +87,7 @@ version.
 
 ## The consumer changes nothing
 
-A marketplace accepts a `ref` — branch, tag or commit — and, in its absence, resolves through the
-repository's default branch. `main` is that default and receives everything the repo publishes;
-whoever already installed (with `ref` or without) keeps receiving what `main` carries, without
-touching anything.
+A consumer deploys from a release tag, and the HUD's marketplace accepts a `ref` — branch, tag or
+commit — resolving through the repository's default branch in its absence. `main` is that default
+and receives everything the repo publishes; whoever already installed keeps receiving what `main`
+carries, without touching anything.

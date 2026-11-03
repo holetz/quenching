@@ -11,7 +11,7 @@ ONE Omnigent agent bundle with no payload, `plugins/omnigent/quenching/`:
   agents/<name>/           one sub-agent per source agent, with its deny-only policy
 
 It also writes `docs/project/model-compat.md`, the per-command model table. The prose is the
-OpenCode translation of `scripts/sync_opencode_plugin.py`, re-rooted: one prose pass exists and no
+OpenCode translation below, re-rooted: one prose pass exists and no
 second harness vocabulary is forked. Sub-agent permissions are deny-only (Omnigent has no
 positional allow list; see docs/standards/architecture/surface-translation.md). `--check` compares
 bytes and validates the generated tree; `--write` regenerates it.
@@ -26,16 +26,15 @@ import sys
 from pathlib import Path
 from urllib.parse import quote as urlquote
 
-sys.path.insert(0, str(Path(__file__).resolve().parent))
-import sync_opencode_plugin as oc  # noqa: E402
+REPO = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(REPO / "plugins/quenching/assets/bin"))
+from quenching.components.commands import translate  # noqa: E402
 
-translate = oc.translate
-REPO = oc.REPO
-SOURCE = oc.SOURCE
+SOURCE = REPO / "plugins/quenching"
 TARGET = REPO / "plugins/omnigent/quenching"
 MODEL_COMPAT = REPO / "docs/project/model-compat.md"
 COMPAT = SOURCE / "assets/translation/omnigent-model-compat.json"
-MANIFEST = oc.MANIFEST
+MANIFEST = ".generated-files.json"
 OMNIGENT_VERSION = "0.19.1"
 VERSION = (SOURCE / "VERSION").read_text(encoding="utf-8").strip()
 MCP_FROM = f"git+https://github.com/holetz/quenching@{VERSION}#subdirectory=plugins/quenching"
@@ -57,6 +56,97 @@ SPAWN_TOOLS = ("sys_session_create", "Task", "Agent", "task")
 CQ_SCOPE = re.compile(r"Bash\(cq(?: ([^:()]+))?:\*\)$")
 ARG_CLASS = "[^;&|<>$`\\\\\\n]"
 SEPARATOR = r"[ \t]*(?:&&|\|\||;)[ \t]*"
+
+
+# The OpenCode vocabulary this bundle is translated through. The OpenCode distribution that
+# shared it was retired with the plugin model (spec 2160); the vocabulary lives here now.
+OC_ROOT = "~/.opencode/quenching"
+AGENT_PREFIX = "quenching-"
+OPENCODE_CQ_WRAPPER = 'cq() { python3 "${QUENCHING_OPENCODE_ROOT:-$HOME/.opencode/quenching}/scripts/cq" "$@"; }'
+
+# Order matters: the longest, most specific prefix first.
+REPLACEMENTS = (
+    ("python3 ${CLAUDE_PLUGIN_ROOT}/assets/bin/cq", "cq"),
+    ("${CLAUDE_PLUGIN_ROOT}/assets/bin/cq", "cq"),
+    ("${CLAUDE_PLUGIN_ROOT}/assets/", OC_ROOT + "/"),
+    ("${CLAUDE_PLUGIN_ROOT}/agents/", OC_ROOT + "/agents/"),
+    ("${CLAUDE_PLUGIN_ROOT}", OC_ROOT),
+    ("${CLAUDE_PROJECT_DIR}", "."),
+    ("plugins/quenching/agents/", OC_ROOT + "/agents/"),
+    (".claude/commands/", ".opencode/commands/"),
+    (".claude/agents/", ".opencode/agents/"),
+    (".claude/skills/", ".opencode/skills/"),
+    ("CLAUDE.md", "AGENTS.md"),
+)
+# Literal strings that name the Claude side on purpose and must survive the word mapping.
+PROTECTED = ("Claude or Codex", ".claude/quenching.json", "~/.claude/projects/",
+             "Claude Code project memory", "Claude Code memory")
+FORBIDDEN = ("${CLAUDE_PLUGIN_ROOT}", "${CLAUDE_PROJECT_DIR}", "CLAUDE_PLUGIN_ROOT",
+             "codex plugin list", "../../scripts/cq")
+
+
+def agent_names() -> list[str]:
+    return sorted(path.stem for path in (SOURCE / "agents").glob("*.md"))
+
+
+def platform(text: str) -> str:
+    """Translate Claude vocabulary, paths and module-qualified ids to their OpenCode form."""
+    masks = {f"\x00P{index}\x00": literal for index, literal in enumerate(PROTECTED)}
+    for marker, literal in masks.items():
+        text = text.replace(literal, marker)
+    for old, new in REPLACEMENTS:
+        text = text.replace(old, new)
+    owners = translate.module_owners()
+
+    def command_id(match: re.Match) -> str:
+        module, ident = match.group(1), match.group(2)
+        if owners.get(ident.split(":", 1)[0]) != module:
+            raise ValueError(f"no module owns /{module}:{ident}")
+        return "quenching-" + ident.replace(":", "-")
+
+    text = re.sub(r"/(quenching-[a-z]+):([A-Za-z0-9:-]+)", command_id, text)
+    agents = "|".join(map(re.escape, agent_names()))
+    text = re.sub(rf"\bquenching-[a-z]+:({agents})\b", lambda m: AGENT_PREFIX + m.group(1), text)
+    text = text.replace("Claude Code", "OpenCode").replace("Claude", "OpenCode")
+    for marker, literal in masks.items():
+        text = text.replace(marker, literal)
+    for marker in FORBIDDEN:
+        if marker in text:
+            raise ValueError(f"untranslated platform marker: {marker}")
+    return text
+
+
+def opencode_markdown(text: str) -> str:
+    """Platform pass, then the per-call `cq` wrapper in every bash block that invokes it."""
+    shelled = translate.transform_codex_shell_blocks(platform(text))
+    return shelled.replace(translate.CODEX_CQ_WRAPPER, OPENCODE_CQ_WRAPPER)
+
+
+def frontmatter(raw: str, path: Path) -> tuple[dict[str, str], str]:
+    """The source's scalar frontmatter fields (folded descriptions joined) and its body."""
+    if not raw.startswith("---\n") or (end := raw.find("\n---\n", 4)) < 0:
+        raise ValueError(f"missing or malformed frontmatter: {path}")
+    fields, lines, index = {}, raw[4:end].splitlines(), 0
+    while index < len(lines):
+        key, _, value = lines[index].partition(":")
+        value, index = value.strip(), index + 1
+        if value in {">", ">-", "|", "|-"}:
+            pieces = []
+            while index < len(lines) and lines[index].startswith((" ", "\t")):
+                pieces.append(lines[index].strip())
+                index += 1
+            value = " ".join(pieces)
+        fields[key.strip()] = value
+    if not fields.get("description"):
+        raise ValueError(f"no description: {path}")
+    return fields, raw[end + len("\n---\n"):]
+
+
+def preferences(fields: dict[str, str]) -> str:
+    text = f"Source model tier: `{fields['model']}`.\n\n" if fields.get("model") else ""
+    return text + (f"Declared effort: `{fields['effort']}`.\n\n" if fields.get("effort") else "")
+
+
 
 
 def mcp_reference_reads(text: str) -> str:
@@ -105,21 +195,21 @@ def mcp_reference_reads(text: str) -> str:
 
 def reroot(text: str) -> str:
     """The OpenCode translation, re-rooted: references become MCP resources, the rest Omnigent paths."""
-    text = text.replace(oc.OPENCODE_CQ_WRAPPER, CQ_WRAPPER)
-    for old, new in ((oc.ROOT + "/references/", REFERENCES_URI), (oc.ROOT, ROOT),
+    text = text.replace(OPENCODE_CQ_WRAPPER, CQ_WRAPPER)
+    for old, new in ((OC_ROOT + "/references/", REFERENCES_URI), (OC_ROOT, ROOT),
                      ("QUENCHING_OPENCODE_ROOT", "QUENCHING_OMNIGENT_ROOT"),
                      (".opencode/", ".omnigent/"), ("OpenCode", "Omnigent")):
         text = text.replace(old, new)
     # The operator registers its sub-agents by their source name and ships their protocols in the
     # bundle, so neither the OpenCode `quenching-<agent>` name nor a payload copy of them survives.
-    agents = "|".join(sorted(oc.agent_names(), key=len, reverse=True))
+    agents = "|".join(sorted(agent_names(), key=len, reverse=True))
     text = re.sub(rf"{re.escape(ROOT)}/agents/({agents})\.md", r"agents/\1/instructions.md", text)
-    text = re.sub(rf"\b{re.escape(oc.AGENT_PREFIX)}({agents})(?![\w/:-])", r"\1", text)
+    text = re.sub(rf"\b{re.escape(AGENT_PREFIX)}({agents})(?![\w/:-])", r"\1", text)
     return mcp_reference_reads(text)
 
 
 def markdown(text: str) -> str:
-    return reroot(oc.markdown(text))
+    return reroot(opencode_markdown(text))
 
 
 def runtime_policy() -> str:
@@ -246,7 +336,7 @@ def operator_config(sub_agents: list[str]) -> str:
 def source_text(source: Path, kind: str, fields: dict[str, str], body: str) -> str:
     origin = f"plugins/quenching/{kind}/" + source.relative_to(SOURCE / kind).as_posix()
     return (f"<!-- GENERATED FROM {origin} -->\n\n<!-- OMNIGENT RUNTIME START -->\n"
-            + oc.preferences(fields) + runtime_policy() + "<!-- OMNIGENT RUNTIME END -->\n\n"
+            + preferences(fields) + runtime_policy() + "<!-- OMNIGENT RUNTIME END -->\n\n"
             + markdown(body))
 
 
@@ -262,9 +352,9 @@ def flow_body(body: str) -> str:
 
 
 def skill(name: str, source: Path) -> str:
-    fields, body = oc.frontmatter(source.read_text(encoding="utf-8"), source)
+    fields, body = frontmatter(source.read_text(encoding="utf-8"), source)
     body = flow_body(body)
-    head = [f"name: {name}", f"description: {quote(reroot(oc.platform(fields['description'])))}"]
+    head = [f"name: {name}", f"description: {quote(reroot(platform(fields['description'])))}"]
     if "allowed-tools" in fields:   # the audit reads this as the source grant, never a missing key
         head.append(f"allowed-tools: {quote(fields['allowed-tools'])}")
     return "---\n" + "\n".join(head) + "\n---\n\n" + source_text(source, "commands", fields, body)
@@ -272,11 +362,11 @@ def skill(name: str, source: Path) -> str:
 
 def sub_agent(name: str) -> tuple[dict[str, str], dict]:
     source = SOURCE / "agents" / f"{name}.md"
-    fields, body = oc.frontmatter(source.read_text(encoding="utf-8"), source)
+    fields, body = frontmatter(source.read_text(encoding="utf-8"), source)
     model = permission_model(fields.get("tools"))
     grant = fields.get("tools")
     head = f"---\ntools: {grant}\n---\n\n" if grant is not None else ""
-    description = reroot(oc.platform(fields["description"]))
+    description = reroot(platform(fields["description"]))
     return {f"agents/{name}/config.yaml": sub_agent_config(name, description, model),
             f"agents/{name}/instructions.md": head + source_text(source, "agents", fields, body)
             }, model
@@ -289,8 +379,8 @@ def skill_ids() -> list[tuple[str, Path]]:
 
 def instructions(skills: list[tuple[str, Path]], agents: list[str]) -> str:
     def line(name: str, path: Path) -> str:
-        fields, _ = oc.frontmatter(path.read_text(encoding="utf-8"), path)
-        return f"- `{name}` — {reroot(oc.platform(fields['description']))}"
+        fields, _ = frontmatter(path.read_text(encoding="utf-8"), path)
+        return f"- `{name}` — {reroot(platform(fields['description']))}"
 
     return ("# quenching operator\n\n"
             "<!-- GENERATED FROM plugins/quenching/ by scripts/sync_omnigent_plugin.py -->\n\n"
@@ -325,7 +415,8 @@ Register this directory as an agent on the Omnigent server, or run it locally:
 omnigent run --agent plugins/omnigent/quenching -p "/quenching-specs-status"
 ```
 
-Do not install the OpenCode distribution on the same machine: it carries the same commands.
+On a host that serves this agent, do not also `cq deploy` quenching skills into the user-level
+skill directories named above: both copies would load.
 
 ## Permissions
 
@@ -390,7 +481,7 @@ def generated_tree() -> dict[str, bytes]:
     skills = skill_ids()
     for name, path in skills:
         out[f"skills/{name}/SKILL.md"] = skill(name, path)
-    agents = oc.agent_names()
+    agents = agent_names()
     for name in agents:
         files, _ = sub_agent(name)
         out.update(files)
@@ -414,7 +505,7 @@ def validate(tree: dict[str, bytes]) -> list[str]:
     if len(skills) != len(list((SOURCE / "commands").rglob("*.md"))):
         problems.append("skill count differs from the source commands")
     configs = [rel for rel in tree if rel.startswith("agents/") and rel.endswith("/config.yaml")]
-    if len(configs) != len(oc.agent_names()):
+    if len(configs) != len(agent_names()):
         problems.append("sub-agent count differs from the source agents")
     operator = tree.get("config.yaml", b"").decode("utf-8")
     for needle in ("spec_version: 1", f"harness: {HARNESS}", "skills: none", "type: mcp",
@@ -441,7 +532,7 @@ def validate(tree: dict[str, bytes]) -> list[str]:
         if rel.endswith(("instructions.md", "SKILL.md")) and re.search(
                 r"opencode|claude_plugin_root", text, re.IGNORECASE):
             problems.append(f"{rel}: carries a foreign harness marker")
-        for marker in oc.FORBIDDEN:
+        for marker in FORBIDDEN:
             if marker in text:
                 problems.append(f"{rel}: carries {marker}")
         for block in re.findall(r"^\s*```bash\n([\s\S]*?)^\s*```", text, re.MULTILINE):

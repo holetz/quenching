@@ -1,4 +1,4 @@
-"""Exercise the real functional harness with a deterministic, contaminated CLI.
+"""Exercise the real functional harness, over deployed boxes, with a deterministic, contaminated CLI.
 
 The fake emits correct tool calls even when an unrelated plugin is loaded: checking
 the expected calls alone cannot prove that a session was isolated.
@@ -18,31 +18,34 @@ SCRIPT = ROOT / "plugins/quenching/assets/checks/functional-checks.sh"
 FAKE = r'''
 import json, os, pathlib, sys
 args = sys.argv[1:]
-dirs = [args[i + 1] for i, a in enumerate(args) if a == "--plugin-dir"]
-plugin = dirs[0]
+cwd = pathlib.Path.cwd()
 isolated = "--setting-sources" in args and args[args.index("--setting-sources") + 1] == "project"
 with open(os.environ["PROBE_LOG"], "a") as log:
-    log.write(json.dumps({"isolated": isolated, "plugins": dirs}) + "\n")
-plugins = [{"name": pathlib.Path(d).name, "path": d} for d in dirs] + [{"name": "cli", "path": "builtin"}]
+    log.write(json.dumps({"isolated": isolated, "plugin_dir": "--plugin-dir" in args,
+                          "deployed": (cwd / ".agents/quenching/assets/bin/cq").is_file()}) + "\n")
+plugins = [{"name": "cli", "path": "builtin"}]
 if not isolated or os.environ.get("FOREIGN_PLUGIN"):
     plugins.append({"name": "unrelated", "path": "/plugins/cache/unrelated/1"})
+skills = sorted(p.name for p in (cwd / ".claude/skills").iterdir()) if (cwd / ".claude/skills").is_dir() else []
 mode = os.environ.get("REGISTRY_MODE", "valid")
 if mode != "missing":
-    print(json.dumps({"type": "system", "subtype": "init", "plugins": plugins if mode == "valid" else [{}]}))
+    print(json.dumps({"type": "system", "subtype": "init",
+                      "plugins": plugins if mode == "valid" else ["not an object"],
+                      "slash_commands": skills}))
 print(json.dumps({"type": "queue-operation", "message": "a string, not an object"}))
 prompt = args[args.index("--setting-sources") + 2] if isolated else args[-1]
-if prompt.startswith("/quenching-align:align"):
-    tool, data = "Skill", {"skill": "quenching-align:knowledge:align"}
+if prompt.startswith("/quenching-align"):
+    tool, data = "Skill", {"skill": "quenching-knowledge-align"}
 elif prompt.startswith("/quenching-"):
-    tool, data = "Read", {"file_path": plugin + "/assets/references/selftest.md"}
+    tool, data = "Read", {"file_path": str(cwd / ".agents/quenching/assets/references/selftest.md")}
 else:
-    target = "quenching-specs:specs:create"
+    target = "quenching-specs-create"
     if prompt.startswith("add a standard"):
-        target = "quenching-align:knowledge:add"
+        target = "quenching-knowledge-add"
     elif prompt.startswith("set up something"):
-        target = "quenching-align:components:agent:new"
+        target = "quenching-components-agent-new"
     elif prompt.startswith("I want something"):
-        target = "quenching-align:components:hook:new"
+        target = "quenching-components-hook-new"
     tool, data = "Skill", {"skill": target}
 print(json.dumps({"message": {"content": [{"type": "tool_use", "name": tool, "input": data}]}}))
 '''
@@ -80,11 +83,8 @@ class FunctionalSessionIsolation(unittest.TestCase):
         self.assertEqual(run.returncode, 0, run.stdout + run.stderr)
         self.assertEqual(len(calls), 9)
         self.assertTrue(all(call["isolated"] for call in calls), calls)
-        modules = sorted(str(ROOT / "plugins" / "claude" / name) for name in (
-            "quenching-specs", "quenching-align", "quenching-design", "quenching-ops",
-            "quenching-proof", "quenching-toolchain", "quenching-delivery", "quenching-security",
-            "quenching-opensource"))
-        self.assertTrue(all(sorted(call["plugins"]) == modules for call in calls), calls)
+        self.assertFalse(any(call["plugin_dir"] for call in calls), calls)
+        self.assertTrue(all(call["deployed"] for call in calls), calls)
 
     def test_foreign_plugin_fails_even_with_the_expected_tool_calls(self):
         run, _ = self.run_harness(foreign=True)

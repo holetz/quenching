@@ -34,8 +34,6 @@ from quenching.components.commands.bridge import add_arguments as add_bridge_arg
 from quenching.components.commands.bridge import cmd_bridge
 from quenching.components.commands.migrate import add_arguments as add_migrate_arguments
 from quenching.components.commands.migrate import cmd_migrate
-from quenching.components.commands.translate import add_arguments as add_translate_arguments
-from quenching.components.commands.translate import cmd_translate
 from quenching.components.sections import RULES_MARKER
 from quenching.components.surface import find_surface_root, load_surface
 from quenching.session.commands.cli import add_subcommands as add_session_subcommands
@@ -88,10 +86,6 @@ def build_parser() -> argparse.ArgumentParser:
                          f"a section with no marker comes back whole and "
                          f"says so")
     add_json(sp)
-
-    sp = sub.add_parser("translate",
-                        help="translate and reconcile the Claude and Codex surfaces")
-    add_translate_arguments(sp)
 
     sp = sub.add_parser("bridge",
                         help="generate the Claude Code copy of .agents/skills in .claude/skills")
@@ -192,7 +186,6 @@ DISPATCH: dict = {
     "status": cmd_status,
     "registry": cmd_registry,
     "read": cmd_read,
-    "translate": cmd_translate,
     "bridge": cmd_bridge,
     "migrate": cmd_migrate,
     "session": cmd_session,
@@ -221,7 +214,7 @@ def main(argv: list[str]) -> int:
         return 0
     if not args.cmd:
         return refuse({"code": finding_code("ct", "no-command"), "message":
-                      "choose `cost`, `lint`, `doctor`, `status`, `registry`, `read`, `translate`, `bridge`, `migrate`, or `session`"},
+                      "choose `cost`, `lint`, `doctor`, `status`, `registry`, `read`, `bridge`, `migrate`, or `session`"},
                       False)
     if not hasattr(args, "json"):
         args.json = False

@@ -340,8 +340,8 @@ def build_tree(source: Path, target: Path, modules: list[str], harnesses: list[s
             _add(tree, f"{CLAUDE_AGENTS}/{translate.agent_name(name)}.md",
                  translate.agent_document(path.read_text(encoding="utf-8"), name).encode(), 0o644)
     if "opencode" in harnesses:
-        # OpenCode reads `.opencode/agents/`, not `.claude/agents/`; a target without the
-        # marketplace plugin would otherwise keep every skill and lose the operator agents.
+        # OpenCode reads `.opencode/agents/`, not `.claude/agents/`; without this copy a target
+        # would keep every skill and lose the operator agents.
         for name, path in _agents(source).items():
             _add(tree, f"{OPENCODE_AGENTS}/{translate.agent_name(name)}.md",
                  translate.opencode_agent_document(path.read_text(encoding="utf-8"), name).encode(),

@@ -4,10 +4,10 @@ title: Deploy mode — install the surface in a target repository
 description: "`cq deploy` materializes the selected quenching modules in a target's generic layer — AGENTS.md, .agents/skills and a vendored runtime — while Claude Code receives only a generated bridge under .claude; install is not alignment and never calls a model."
 resource: plugins/quenching/assets/bin/quenching/deploy/**, plugins/quenching/assets/bin/cq, plugins/quenching/assets/modules.json, plugins/quenching/pyproject.toml
 tags: [architecture, deploy, installation, agents, skills, bridge]
-timestamp: 2026-10-30
+timestamp: 2026-11-03
 audience: both
 authority: current
-source: deploy-mode implementation (2026-10-28); surface facts re-measured on Claude Code 2.1.312; drift redefined as content plus the executable bit (spec 2126, 2026-10-30)
+source: deploy-mode implementation (2026-10-28); surface facts re-measured on Claude Code 2.1.312; drift redefined as content plus the executable bit (spec 2126, 2026-10-30); spec 2160 (install only by deploy)
 maintainer: quenching
 ---
 
@@ -17,10 +17,9 @@ maintainer: quenching
 
 ## Two modes, one source
 
-The plugin remains the first-class mode: a harness loads the published modules and every command
-resolves `cq` through the host. **Deploy mode** materializes the selected surface in a target
-repository so it can operate without a marketplace install. Both modes are generated from
-`plugins/quenching`; neither edits a target's knowledge or code by itself.
+Deploy is the only mode: since [ADR 0017](../../decisions/0017-install-only-by-deploy.md) no
+plugin carries the command surface, and `cq deploy` materializes the selected surface from
+`plugins/quenching` in a target repository. It never edits a target's knowledge or code by itself.
 
 `cq deploy` is a **top-level command**, not a front. `delivery` and `ops` keep their own meaning
 for deployment; this verb installs the tool surface. It never invokes a model, never aligns
@@ -77,8 +76,7 @@ packages and writes `.agents/quenching/bin/cq` as a shim pinned to the release t
 needs network and `uvx` at call time.
 
 Every deployed command body uses the target-local path `.agents/quenching/bin/cq`; the generated
-grant is `Bash(.agents/quenching/bin/cq:*)`. The plugin's bare-`cq` rule remains the rule for a
-plugin installation, not for a deployed target.
+grant is `Bash(.agents/quenching/bin/cq:*)`.
 
 ## MCP registration
 

@@ -346,11 +346,11 @@ never run the gate over a branch you know is behind.
 the ordinary way to be behind, and a `needs-human` there is never relaunched. Run
 `git merge --no-edit origin/<base>` — a merge, never a rebase, so the task shas stay ancestors and
 the spec-verifier's check 7 accepts them — and then the gate over the merged tree. A conflict only in
-generated files (`plugins/claude/quenching-specs-reader/**`) is mechanical: take the base's side
-(`git show :3:<path> > <path>`, `git add <path>`), then **regenerate before concluding the merge** —
-`python3 scripts/sync_specs_reader_plugin.py --write` — `git add` what it rewrote, and conclude
-the merge. A manifest taken from the base alone loses the branch's entries. Then
-`python3 scripts/sync_specs_reader_plugin.py --check` exits 0. A conflict in any other path →
+the deployed surface (`.agents/quenching/**`, `.omnigent/skills/**`, `.agents/.quenching-deploy.json`)
+is mechanical: take the base's side (`git show :3:<path> > <path>`, `git add <path>`), then
+**regenerate before concluding the merge** — `cq deploy --target . --write` — `git add` what it
+rewrote, and conclude the merge. A manifest taken from the base alone loses the branch's entries.
+Then `cq deploy --target . --check` exits 0. A conflict in any other path →
 `git merge --abort` and `needs-human` naming the paths.
 
 **An inconclusive result is not a green one.** A check that cannot tell "this failed" from "this

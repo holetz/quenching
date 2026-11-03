@@ -8,7 +8,7 @@ skill `<a>-<b>`, and a nested `.agents/skills/<a>/<b>/` folder becomes `<a>-<b>/
 sibling files with it.
 
 An `.agents/skills/<path>/` or `.agents/references/<rel>` beside a `.claude/` source is removed as
-the old translation only when its content is what `cq components translate` generates from that
+the old translation only when its content is what the retired `cq components translate` generated from that
 source, at its current text or at any committed version of it, compared in the canonical form
 that ignores what differs between translator versions. Anything else is someone's work: a
 conflict, and nothing is written. There is no manifest to trust; the bytes decide. The legacy

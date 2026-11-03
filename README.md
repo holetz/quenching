@@ -1,29 +1,25 @@
 # quenching
 
-A **Claude Code plugin** for teams that build with AI agents: it keeps a repository's knowledge,
+A command surface for teams that build with AI agents: it keeps a repository's knowledge,
 specs and version-control workflow in one canonical, verifiable shape. It is not a security
 boundary: a command declared read-only does not contain an assistant that has a shell.
 
-This repository contains the **plugin marketplace** and the plugin's source. The plugin itself lives in
-[`plugins/quenching/`](plugins/quenching/).
+quenching reaches a repository only through `cq deploy`, which installs the surface into that
+repository for Claude Code, Codex and OpenCode
+([ADR 0017](docs/decisions/0017-install-only-by-deploy.md)). The single editable source lives in
+[`plugins/quenching/`](plugins/quenching/). Three plugins that install into no repository sit beside
+it: the Claude Code band [`plugins/claude/quenching-hud/`](plugins/claude/quenching-hud/) (the only
+entry of this repository's Claude marketplace), the OpenCode Desktop Specs panel
+[`plugins/opencode/quenching-vitrine/`](plugins/opencode/quenching-vitrine/), and the generated
+Omnigent operator agent under `plugins/omnigent/quenching/`.
 
 **Core fronts** — maintained actively, with reliability, adoption and cost as priorities:
 `knowledge`, `specs`, `git` and `components`. **Non-core fronts** — `design`, `ops`, `proof`,
-`toolchain`, `delivery` and `security`: they stay in the plugin under the same names, are
+`toolchain`, `delivery` and `security`: they stay in the surface under the same names, are
 human-only (`disable-model-invocation: true`) and receive reduced maintenance, meaning defect fixes
 but no new features. Type the command name to use one.
 
 Release history is maintained in the [`CHANGELOG`](CHANGELOG.md).
-
-The generated Codex sibling lives in `plugins/codex/quenching-codex/` and is registered in
-`.agents/plugins/marketplace.json`. Claude remains the editable source; regenerate the plugin with
-`python3 scripts/sync_codex_plugin.py --write`. The repository gate checks translation drift and
-the generated package. To install this checkout locally:
-
-```bash
-codex plugin marketplace add .
-codex plugin add quenching-codex@quenching
-```
 
 The `CI` workflow (`.github/workflows/ci.yml`) runs on pushes to `main` and on pull requests. It installs the locked
 toolchain, runs the repository gate on Python 3.11 and 3.13, lints with ruff and reports the functional checks (exit 2 is inconclusive).
@@ -43,7 +39,7 @@ uv run pytest plugins/quenching/tests -q
 ```
 
 The root `zensical.toml` is only the configuration of this repository's development site;
-artifacts in `site/` and `.cache/` stay out of Git. The payload the plugin installs into a target
+artifacts in `site/` and `.cache/` stay out of Git. The site payload deploy carries into a target
 project remains in `plugins/quenching/assets/zensical/`.
 
 ## What it does
@@ -69,62 +65,40 @@ optional consumer, and `cq design import` is the explicit route for folding its 
 
 ## Install
 
-The paths below install the packaged Claude plugin. Try it first in a disposable repository.
+Try it first in a disposable repository. This repository publishes from the
+single **`main`** branch ([`docs/standards/git/branching.md`](docs/standards/git/branching.md)); a
+deliberate release creates the tag, so install from a tag rather than an in-progress checkout.
 
-This repository publishes from the single **`main`** branch
-([`docs/standards/git/branching.md`](docs/standards/git/branching.md)). Pull requests merge into
-`main`, and a deliberate local release act creates the tag and publishes the accumulated work.
-Installing normally therefore gets the repository's default branch, not an arbitrary in-progress
-checkout.
-
-Published plugin path: inside Claude Code, add this marketplace and install the plugin:
-
-```text
-/plugin marketplace add holetz/claude-quenching
-/plugin install quenching@quenching
-```
-
-Run `/reload-plugins` after installation when Claude Code was already open.
-
-Local development only (no marketplace publish needed):
+From a clone of this repository, deploy the surface into the target:
 
 ```bash
-claude --plugin-dir ./plugins/quenching
+python3 plugins/quenching/assets/bin/cq deploy --target <repo> --write
 ```
 
-`--plugin-dir` loads the working checkout directly for plugin development and testing; it is not
-the normal adoption or upgrade path. A published installation is managed by Claude Code.
-
-Then, inside a target repository, use the `/` menu — every command is
-`/quenching:<front>:<verb>` when installed as a plugin (`/quenching-align:knowledge:align`,
-`/quenching-specs:specs:execute`, `/quenching-align:components:command:new`, …); the bare `/<front>:<verb>`
-form only resolves in a repo that vendored the file into its own `.claude/commands/`. The full,
-current list — one file per entry point — is the
-[plugin README](plugins/quenching/README.md), never duplicated here.
-
-Or add this marketplace and enable the plugin the usual way (see the
-[plugin README](plugins/quenching/README.md)).
-
-### Deploy mode (no harness plugin)
-
-A target can carry the selected surface itself, in the generic layer. The official channel is
-`uvx`; the target needs Python 3.11+ and does not need Node:
+Or, with no clone, through `uvx` (the target needs Python 3.11+ and does not need Node):
 
 ```bash
 uvx --from "git+https://github.com/holetz/quenching@<tag>#subdirectory=plugins/quenching" \
   cq deploy --target . --modules core --write
 ```
 
-This writes `AGENTS.md`, `.agents/skills/`, `.agents/quenching/` (the vendored runtime), and the
+`--modules` takes `core` (the default: specs, git, knowledge and components), `all` or a comma
+list; `--harness` takes `claude`, `codex`, `opencode` or `none`; `--runtime vendor` (default,
+offline) vendors the runtime while `--runtime uvx` writes a pinned shim; `--check` reports drift.
+Deploy writes `AGENTS.md` (only when absent), `.agents/skills/`, `.agents/quenching/` and the
 generated `.claude/skills/` bridge. It does not create `CLAUDE.md` and does not run alignment; the
-target's own `quenching-knowledge-align` skill installs `/docs/` and converges the fronts. `cq deploy --check`
-reports drift, and `--runtime uvx` writes a pinned shim instead of vendoring the runtime. The full
-contract is [deploy-mode.md](docs/standards/architecture/deploy-mode.md).
+target's own `/quenching-knowledge-align` installs `/docs/` and converges the fronts.
 
-> **Succession note.** This plugin reuses the marketplace/plugin **name**
-> `quenching` as the lean, OKF-centric successor of the 15-dimension
-> audit plugin. **Do not enable both at once** (name collision) — this one
-> replaces it.
+In the target, every command is `/quenching-<front>-<verb>` (`/quenching-specs-create`,
+`/quenching-knowledge-align`, …), and the target carries its own `.agents/quenching/bin/cq`. To
+upgrade, run `cq deploy --target <repo> --write` again from a newer checkout or release tag: the
+target's recorded manifest keeps the selected modules, harnesses and runtime. The full contract is
+[deploy-mode.md](docs/standards/architecture/deploy-mode.md); the command manual, uninstall and
+upgrade notes are in the [plugin README](plugins/quenching/README.md#install).
+
+> **Succession note.** A target that still has the retired `quenching` or `quenching-<module>`
+> plugins installed should uninstall them before deploying: they compete with the deployed copy for
+> the same command names.
 
 ## Cost model
 

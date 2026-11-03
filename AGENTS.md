@@ -3,8 +3,8 @@
 Language: pt-BR — the contract is /docs/standards/agents/communication.md.
 Ephemeral writes: .quenching/ — the contract is /docs/standards/agents/ephemeral-writes.md
 
-This repository publishes the `quenching` Claude Code plugin marketplace. It has no application build: command bodies and references are
-executable prose, while a few Python tools provide the local checks. Treat command-body edits like code.
+This repository is the source of quenching, which `cq deploy` installs into target repositories. It
+has no application build: command bodies and references are executable prose, while a few Python tools provide the local checks. Treat command-body edits like code.
 
 ## Operating
 

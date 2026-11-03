@@ -1,20 +1,21 @@
 ---
 type: project
 title: Repository layout
-description: What sits where in this checkout — the marketplace root, the plugin payload and its asset families, the generated specs-reader sibling, and which command owns each surface
+description: What sits where in this checkout — the editable source cq deploy installs, its asset families, the plugins that install into no repository, and which command owns each surface
 resource: plugins/**, scripts/**, docs/**
-tags: [repository, layout, plugin, marketplace]
-timestamp: 2026-10-28
+tags: [repository, layout, plugin, deploy]
+timestamp: 2026-11-03
 audience: both
 authority: current
-source: derived from the checkout itself on 2026-08-29 (`ls` over each directory named below); the ownership column restates each command's own declared write boundary
+source: derived from the checkout itself on 2026-08-29 (`ls` over each directory named below); the ownership column restates each command's own declared write boundary; spec 2160
 maintainer: quenching
 ---
 
 # Repository layout
 
-This repository is a **Claude Code plugin marketplace**, not an application. There is no build
-step: command bodies and references are executable prose, and the local tools provide the local
+This repository is the **source of quenching**, which `cq deploy` installs into target
+repositories ([ADR 0017](../decisions/0017-install-only-by-deploy.md)); it is not an application.
+There is no build step: command bodies and references are executable prose, and the local tools provide the local
 checks. Knowing which directory owns what is therefore the difference between editing the source
 of a behaviour and editing a generated copy of it.
 
@@ -23,24 +24,25 @@ of a behaviour and editing a generated copy of it.
 | Path | What it is | Who writes it |
 | --- | --- | --- |
 | `docs/` | this OKF bundle — the knowledge tree **and** the source of this site | `/quenching-align:knowledge:*` |
-| `plugins/quenching/` | the plugin payload that gets installed | the owning spec |
-| `plugins/claude/quenching-<module>/` | **generated** Claude module plugins, one per module of `assets/modules.json` | `scripts/generate_plugin_modules.py` |
-| `plugins/claude/quenching-specs-reader/` | **generated** read-only sibling of the payload | `scripts/sync_specs_reader_plugin.py` |
-| `plugins/codex/quenching-codex/` | **generated** Codex plugin | `scripts/sync_codex_plugin.py` |
-| `plugins/opencode/quenching-opencode/` | **generated** OpenCode distribution | `scripts/sync_opencode_plugin.py` |
+| `plugins/quenching/` | the single editable source `cq deploy` installs | the owning spec |
 | `plugins/omnigent/quenching/` | **generated** Omnigent operator agent, no payload | `scripts/sync_omnigent_plugin.py` |
+| `plugins/opencode/quenching-vitrine/` | **hand-written** OpenCode Desktop GUI plugin (Specs panel); built with npm, `dist/` committed | the owning spec |
 | `plugins/claude/quenching-hud/` | band above the prompt (active spec, stage, task progress; read with `cq specs status --no-fetch`: local ref only, no fetch, no network); **hand-written**, validated by the gate with `claude plugin validate` | the owning spec |
+| `.agents/skills/`, `.agents/quenching/`, `.claude/skills/` | this repository's own deployed surface, generated from `plugins/quenching/` | `cq deploy --target . --write` |
 | `.claude/` | this repository's own local command surface | `/quenching-align:components:*` |
 | `scripts/` | thin launchers CI calls | the owning spec |
 | `zensical.toml` | the site layer — outside the bundle, on purpose | `/quenching-align:knowledge:documentation:build` |
 | `AGENTS.md` (legacy `CLAUDE.md`) | the harness pointer, kept thin over this bundle | `/quenching-align:components:harness:align` |
 
-Every generated tree under `plugins/<harness>/` is the trap: it is **regenerated wholesale**, so editing it by
-hand produces a change that survives until the next sync and then vanishes without a diff to
-explain it. The first level under `plugins/` is the source or a harness, the second the name that
-harness registers ([plugin-layout.md](../standards/architecture/plugin-layout.md) §One tree per
-harness). The generated Codex skill mirrors under `.agents/` were retired on 2026-10-11;
-`cq components translate` still generates one on demand.
+Every generated tree is the trap: it is **regenerated wholesale**, so editing it by hand produces a
+change that survives until the next sync and then vanishes without a diff to explain it. That holds
+for `plugins/omnigent/quenching/` and for this repository's own deployed surface. The first level
+under `plugins/` is the source or a harness, the second the name that harness registers
+([plugin-layout.md](../standards/architecture/plugin-layout.md) §One tree per harness).
+`plugins/claude/quenching-hud/` and `plugins/opencode/quenching-vitrine/` are the hand-written trees
+under a harness: edit the vitrine's `src/` and rebuild `dist/`, never a generated copy. The Claude
+module plugins, the specs reader, the Codex plugin and the OpenCode user-level distribution were
+retired on 2026-11-03 with their generators.
 
 ## Inside the plugin payload
 
@@ -57,7 +59,7 @@ plugins/quenching/
     templates/          moulds a command fills in
     specs/              spec-backend payloads
     evals/              command evaluation suites
-    translation/        the Codex translation rules
+    translation/        per-file translation rules `cq components migrate` uses
   tests/                the unittest suite the bundle gate runs
 ```
 

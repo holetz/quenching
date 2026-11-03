@@ -1,0 +1,10 @@
+{
+  "name": "quenching-vitrine",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": { ".": "./src/index.ts", "./rpc": "./src/rpc.ts", "./gui-experimental": "./dist/gui-experimental.cjs" },
+  "scripts": { "build": "tsc && vite build" },
+  "dependencies": { "@opencode/plugin": "2.2.5" },
+  "devDependencies": { "@types/node": "^22", "electron": "*", "solid-js": "^1.9", "typescript": "^5", "vite": "^7", "vite-plugin-solid": "^2.11" }
+}

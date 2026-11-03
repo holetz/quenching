@@ -4,12 +4,12 @@ okf_version: "0.2"
 
 # Every repository, the same shape
 
-**quenching** is a Claude Code plugin for teams that build with AI agents. Point it at a repository and its knowledge, its plans, its
+**quenching** is a command surface for teams that build with AI agents, deployed into a repository for Claude Code, Codex and OpenCode. Point it at a repository and its knowledge, its plans, its
 design source, automation, operations and verification each converge onto one canonical, verifiable structure — probed first, planned
 once, changed only on your OK.
 
 In metallurgy, *quenching* is the rapid cooling that fixes a metal's structure and makes it hard.
-This plugin does that to a repository: whatever loose shape your knowledge base, your plans and
+quenching does that to a repository: whatever loose shape your knowledge base, your plans and
 your `.claude/` automation have today, one pass fixes each of them into a canonical structure —
 and keeps it hard against drift, because every front ships a verifier that can prove the shape
 before anyone touches a file.
@@ -55,31 +55,31 @@ writing anything.
 
 | Surface | What converges | The one align |
 | --- | --- | --- |
-| `/docs/` | a canonical **OKF bundle** — standards, concepts, glossary, and this site | `/quenching-align:knowledge:align` |
+| `/docs/` | a canonical **OKF bundle** — standards, concepts, glossary, and this site | `/quenching-knowledge-align` |
 | Specs | a plan cycle stored on the **`quenching` branch**, with GitHub or Azure Boards cards | cycle and status commands |
-| `/.design/` | one DTCG source projected to portable Impeccable and editorial media artifacts | `/quenching-design:design:align` |
-| `.claude/` | one file per entry point, every description audited | `/quenching-align:components:align` |
-| `ops` | a declared operations root, its entry-point inventory, registry and lifecycle/write policy | `/quenching-ops:ops:align` |
-| `proof` | test layers, fixture ownership, gate evidence, measured surfaces and the coverage floor | `/quenching-proof:proof:align` |
-| `toolchain` | manifests, locks, language pins and tool configuration | `/quenching-toolchain:toolchain:align` |
-| `delivery` | provider-equivalent workflows, reachability, provenance and release shape | `/quenching-delivery:delivery:align` |
+| `/.design/` | one DTCG source projected to portable Impeccable and editorial media artifacts | `/quenching-design-align` |
+| `.claude/` | one file per entry point, every description audited | `/quenching-components-align` |
+| `ops` | a declared operations root, its entry-point inventory, registry and lifecycle/write policy | `/quenching-ops-align` |
+| `proof` | test layers, fixture ownership, gate evidence, measured surfaces and the coverage floor | `/quenching-proof-align` |
+| `toolchain` | manifests, locks, language pins and tool configuration | `/quenching-toolchain-align` |
+| `delivery` | provider-equivalent workflows, reachability, provenance and release shape | `/quenching-delivery-align` |
 | `security` | read-only workflow, secret, dependency and access questions | *(none, by design)* |
 | *(git)* | nothing — a pillar that answers questions, converges no tree | *(none, by design)* |
 
-One more command, `/quenching-align:align`, conducts the seven local aligned fronts in dependency order on a single
-OK. Read [the operating model](explanation/operating-model.md) and you know the whole plugin.
+One more command, `/quenching-align`, conducts the seven local aligned fronts in dependency order on a single
+OK. Read [the operating model](explanation/operating-model.md) and you know the whole surface.
 
 ## Quick start
 
 ```bash
-claude --plugin-dir ./plugins/quenching   # load the plugin into Claude Code
-cq --version                              # prints the plugin version — the bundled CLI answers
+python3 plugins/quenching/assets/bin/cq deploy --target <repo> --write   # from a clone: install into <repo>
+python3 <repo>/.agents/quenching/bin/cq --version                        # the deployed CLI answers
 ```
 
 Then, inside the session, ask for a read-only status before you change anything:
 
 ```text
-/quenching-align:knowledge:status
+/quenching-knowledge-status
 ```
 
 The full path — install, probe, first alignment — is the
@@ -129,7 +129,7 @@ skills' `references/`.
 - Contract: seven local fronts (`knowledge`, `design`, `components`, `ops`, `proof`, `toolchain`,
   `delivery`) plus the
   `specs` flow and a `git` pillar; ONE align per local front, probe-first;
-  `/quenching-align:align` conducts the seven aligned fronts on one OK.
+  `/quenching-align` conducts the seven aligned fronts on one OK.
 - Rails: `cq` CLI — `cq knowledge`, `cq specs`, `cq design`, `cq components`, `cq ops`, `cq proof`, `cq toolchain`, `cq delivery`, `cq git`; uniform `--json`;
   exit codes `0` ok · `1` findings · `2` refusal.
 - Invariants: nothing is written before a human OK; blast radius reaching product code

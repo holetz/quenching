@@ -38,9 +38,8 @@ this skill's doctrine. What follows is specific to the automation surface:
   Codex translation under `.agents/`); `.agents/quenching/bin/cq components bridge --target . --check` names the drift
   of the generated `.claude/skills/<name>/` copies. **Conformant means both**: an empty migrate
   plan (`conformant: true`) and `bridge --check` exit 0.
-- **Never run `.agents/quenching/bin/cq components translate` on a target.** The `.claude → .agents` translation is the
-  legacy layout `migrate` retires; on the generic layer it would write the old translation back
-  over the source.
+- **The `.claude → .agents` translation is the legacy layout `migrate` retires.** No verb writes it
+  any more; never hand-copy it back over the `.agents/` source.
 
 ## Resolving the tool
 

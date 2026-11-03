@@ -37,10 +37,9 @@ class Migrate(unittest.TestCase):
         self.git("init", "-q")
         self.write(".claude/commands/bundle/tabela/criar.md", COMMAND)
         self.write(".claude/references/bundle/rules.md", "rules\n")
-        tree = self.translation()
-        self.write(".agents/skills/bundle/tabela/criar/SKILL.md",
-                   tree["skills/bundle/tabela/criar/SKILL.md"].decode())
-        self.write(".agents/references/bundle/rules.md", tree["references/bundle/rules.md"].decode())
+        skill, reference = self.translation()
+        self.write(".agents/skills/bundle/tabela/criar/SKILL.md", skill)
+        self.write(".agents/references/bundle/rules.md", reference)
         self.write(".claude/quenching.json", '{"backend": "github"}\n')
         self.write(".claude/agents/runner.md", "---\nname: runner\n---\n")
         self.write("CLAUDE.md", "# Instructions\n")
@@ -48,8 +47,13 @@ class Migrate(unittest.TestCase):
         self.git("-c", "user.email=t@t", "-c", "user.name=t", "commit", "-qm", "legacy")
 
     def translation(self):
+        """The legacy `.claude → .agents` copies the retired `translate` verb wrote."""
         translate.configure(str(self.repo), str(self.repo))
-        return translate.generated_tree()
+        adaptation = translate.read_adaptation()
+        command = self.repo / ".claude/commands/bundle/tabela/criar.md"
+        reference = self.repo / ".claude/references/bundle/rules.md"
+        return (translate.command_to_skill(command, adaptation),
+                translate.reference_translation(reference, reference.read_text(), adaptation))
 
     def commit(self, message="next"):
         self.git("add", "-A")
