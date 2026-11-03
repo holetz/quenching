@@ -647,7 +647,7 @@ class CodexRuntimeTranslation(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             translate.configure(str(translate.payload_root()), tmp)
             tree = translate.generated_tree()
-        orchestrator = tree["agents/orchestrator.md"].decode()
+        orchestrator = tree["agents/spec-orchestrator.md"].decode()
         autopilot = tree["skills/quenching-specs-autopilot/SKILL.md"].decode()
         memory = tree["skills/quenching-knowledge-import-memory/SKILL.md"].decode()
         self.assertIn("model: gpt-6-astra", orchestrator)

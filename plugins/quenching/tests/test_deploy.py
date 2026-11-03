@@ -192,7 +192,7 @@ class Deploy(unittest.TestCase):
 
     def test_the_opencode_harness_writes_its_subagents(self):
         self.assertEqual(0, self.run_deploy("--modules", "core", "--write")[0])
-        agent = self.target / ".opencode/agents/quenching-verifier.md"
+        agent = self.target / ".opencode/agents/quenching-spec-verifier.md"
         text = agent.read_text(encoding="utf-8")
         self.assertIn("mode: subagent", text)
         self.assertIn('".agents/quenching/bin/cq git audit *": allow', text)

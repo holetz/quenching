@@ -98,6 +98,7 @@ class ContextTests(unittest.TestCase):
     def test_agent_roles_come_from_metadata_and_unknown_refuses(self):
         for kind, role, budget in (("quenching-specs:spec-runner", "worker", 100000),
                                     ("quenching-specs:orchestrator", "conductor", 150000),
+                                    ("quenching-specs:spec-orchestrator", "conductor", 150000),
                                     ("quenching:autopilot", "conductor", 150000),
                                     ("Explore", "unknown", None), (7, "unknown", None)):
             agent = self.base / "session/subagents/agent-worker.jsonl"
@@ -111,6 +112,8 @@ class ContextTests(unittest.TestCase):
         self.assertEqual(bare_agent("quenching-spec-runner"), "spec-runner")
         self.assertEqual(bare_agent("quenching-specs:spec-runner"), "spec-runner")
         self.assertEqual(bare_agent("quenching:orchestrator"), "orchestrator")
+        self.assertEqual(bare_agent("quenching-spec-orchestrator"), "spec-orchestrator")
+        self.assertEqual(bare_agent("quenching-specs:spec-orchestrator"), "spec-orchestrator")
 
     def test_missing_or_invalid_agent_metadata_refuses(self):
         agent = self.base / "session/subagents/agent-a.jsonl"
