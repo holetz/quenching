@@ -15,7 +15,7 @@ state, block reason and assignee. Tasks are clickable and attach to the composer
 - OpenCode Desktop with GUI parts. The panel is a `Panel` in the `side` region plus the `/specs`
   command; a terminal-only OpenCode session has no place to render it.
 - Python 3.11+ and `git`. The plugin brings its own `cq`: the package is installed from a
-  checkout of this repository, and it runs that checkout's `plugins/quenching/assets/bin/cq`
+  checkout of this repository, and it runs that checkout's `quenching/assets/bin/cq`
   through Python (`python3` on Linux and macOS; `py -3`, else `python`, on Windows). `cq` on
   `PATH` is not required.
 - A target where quenching is installed or installable. The **Board** button runs
@@ -47,13 +47,13 @@ Add the package directory to the `plugins` array of the OpenCode configuration â
 ```json
 {
   "$schema": "https://opencode.ai/config.json",
-  "plugins": ["/absolute/path/to/plugins/opencode/quenching-vitrine"]
+  "plugins": ["/absolute/path/to/integrations/opencode-vitrine"]
 }
 ```
 
-The path must be inside a full checkout of this repository (`plugins/opencode/quenching-vitrine/`),
+The path must be inside a full checkout of this repository (`integrations/opencode-vitrine/`),
 because the bundled `cq` lives beside it. On Windows write the path with forward slashes or
-escaped backslashes (`"C:/src/quenching/plugins/opencode/quenching-vitrine"`). Restart the session
+escaped backslashes (`"C:/src/quenching/integrations/opencode-vitrine"`). Restart the session
 after adding or removing the entry. Removing the entry is the uninstall.
 
 Updating is updating the checkout: `git pull` on its primary branch, or `git checkout <tag>` for

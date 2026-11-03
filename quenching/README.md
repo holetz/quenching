@@ -324,13 +324,13 @@ adding grants. The workspace is the launch cwd or launch-time `--root`, never a 
 Run a released version without installing the plugin manually:
 
 ```bash
-uvx --from "git+https://github.com/holetz/quenching@<tag>#subdirectory=plugins/quenching" quenching-mcp
+uvx --from "git+https://github.com/holetz/quenching@<tag>#subdirectory=quenching" quenching-mcp
 ```
 
 Replace `<tag>` with a published release tag. The same package exposes `cq` as a console script;
 its runtime uses only the Python standard library (Python 3.11+). The wheel preserves the plugin's
 asset layout under `quenching_plugin/`. Packaging a local committed HEAD can be checked with
-`bash plugins/quenching/assets/checks/functional-checks.sh --mcp-smoke`; exit 2 is inconclusive.
+`bash quenching/assets/checks/functional-checks.sh --mcp-smoke`; exit 2 is inconclusive.
 
 `quenching://references` lists the shipped reference documents; read one with
 `quenching://references/<path>.md`, or select headings with `?section=<heading>`. Large documents
@@ -593,13 +593,13 @@ quenching is served only by installation into the target repository with `cq dep
 to install for it. Try it first in a disposable repository. From a clone of this repository:
 
 ```bash
-python3 plugins/quenching/assets/bin/cq deploy --target <repo> --write
+python3 quenching/assets/bin/cq deploy --target <repo> --write
 ```
 
 Or, with no clone, from a release tag through `uvx` (Python 3.11+, no Node):
 
 ```bash
-uvx --from "git+https://github.com/holetz/quenching@<tag>#subdirectory=plugins/quenching" \
+uvx --from "git+https://github.com/holetz/quenching@<tag>#subdirectory=quenching" \
   cq deploy --target . --modules core --write
 ```
 
@@ -630,7 +630,7 @@ not deployed is reported `not-installed: <module>`, and `cq <front>` for it exit
 module.
 
 Local development of this repository uses the same path: it runs its own deployed surface, and
-`python3 plugins/quenching/assets/bin/cq deploy --target . --write` refreshes it after a change to
+`python3 quenching/assets/bin/cq deploy --target . --write` refreshes it after a change to
 a command body, a reference or the payload.
 
 ### Migrating from the retired plugins
@@ -661,7 +661,7 @@ reverse an alignment, review and revert the target repository's own commits; rem
 is not a data rollback. If an upgrade is the problem, deploy the previous release tag again.
 
 In a deployed target the CLI is `.agents/quenching/bin/cq`; this checkout runs
-`plugins/quenching/assets/bin/cq`. The resolution rules are in
+`quenching/assets/bin/cq`. The resolution rules are in
 [`assets/references/align/tool-resolution.md`](assets/references/align/tool-resolution.md).
 
 ## Upgrade

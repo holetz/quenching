@@ -81,4 +81,4 @@ Beyond what `app.css` defines: `control-line` (control borders at 3:1), `heat-ti
 
 ## Not synced
 
-From `plugins/quenching/assets/portal/app.css`: `--dur-1`, `--dur-2` and `--ease` stay in `components/bundle.css`, because this format has no motion family. The gradient of `.mark` uses `color-mix()` and stays in the stylesheet. No font files exist to bring. The portal has no component library, so previews are plain HTML over `components/bundle.css`, and there is no `bundle.js`.
+From `quenching/assets/portal/app.css`: `--dur-1`, `--dur-2` and `--ease` stay in `components/bundle.css`, because this format has no motion family. The gradient of `.mark` uses `color-mix()` and stays in the stylesheet. No font files exist to bring. The portal has no component library, so previews are plain HTML over `components/bundle.css`, and there is no `bundle.js`.

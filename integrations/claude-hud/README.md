@@ -38,6 +38,6 @@ do GitHub.
 ## Verificação
 
 ```bash
-claude plugin validate plugins/claude/quenching-hud
-claude plugin test plugins/claude/quenching-hud
+claude plugin validate integrations/claude-hud
+claude plugin test integrations/claude-hud
 ```

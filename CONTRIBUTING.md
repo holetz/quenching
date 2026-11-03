@@ -54,4 +54,4 @@ git config core.hooksPath .agents/quenching/assets/githooks
 ```
 
 Durable knowledge lives in [docs/index.md](docs/index.md); the product manual is
-[plugins/quenching/README.md](plugins/quenching/README.md).
+[quenching/README.md](quenching/README.md).

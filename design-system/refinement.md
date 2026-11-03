@@ -1,6 +1,6 @@
 # From today to the target
 
-The gap between the portal at `main@ba5e2e664` and the `Screen*` cards, read off the running portal at 1440×900 and 390×844, in both themes, over a real store. Line numbers point at `plugins/quenching/assets/portal/`.
+The gap between the portal at `main@ba5e2e664` and the `Screen*` cards, read off the running portal at 1440×900 and 390×844, in both themes, over a real store. Line numbers point at `quenching/assets/portal/`.
 
 | At 1440×900 | Today | Target |
 | --- | --- | --- |

@@ -110,7 +110,7 @@ async function launchFile(file: string, source: Launch["source"]): Promise<Launc
 
 /**
  * O `cq` que vem com o plugin: o pacote é instalado apontando para este checkout, e o
- * checkout carrega `plugins/quenching/assets/bin/cq` dois níveis acima do pacote.
+ * checkout carrega `quenching/assets/bin/cq` dois níveis acima do pacote.
  */
 export function pluginCq(): string | undefined {
   try {
