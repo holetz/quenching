@@ -207,7 +207,7 @@ if want 1; then
   # A FOURTH SCOPE RULE, AND IT IS THE SAME KIND AS THE THREE ABOVE: what is swept is the prose
   # that INSTRUCTS an agent to route — command bodies, the references they cite, and the moulds
   # stamped into an adopting repo. It stops there because outside those trees the same spelling is
-  # not a routing claim. The TRANSLATED surfaces (`plugins/omnigent/**`, `.agents/**`) are
+  # not a routing claim. The TRANSLATED surface (`.agents/**`) is
   # the clearest case: Codex has no `:` namespace, so the hyphenated name IS the real skill
   # directory there, and the translator's own tests govern it. `README.md` is the other: its
   # `## Upgrade` changelog names directories that really existed between releases 0.11 and 0.18 —
@@ -345,9 +345,7 @@ CMD_RE            = re.compile(r"/?(quenching(?:-[a-z]+)?(?::[a-z][a-z0-9-]*){2,
 # that describes another repository correctly. Nothing is uncovered by the move: half 3 measures
 # exactly those two trees against the published skeleton, which is the right base.
 SHIPPED = (plugin + "/assets/knowledge/", plugin + "/assets/templates/", plugin + "/tests/fixtures/",
-           plugin + "/commands/", plugin + "/assets/references/", plugin + "/assets/bin/",
-           # The Omnigent operator agent is generated prose describing the target, re-rooted.
-           "plugins/omnigent/")
+           plugin + "/commands/", plugin + "/assets/references/", plugin + "/assets/bin/")
 
 def unmeasurable(p):
     return (not p) or any(c in p for c in "*?<>${}|") or "..." in p \
