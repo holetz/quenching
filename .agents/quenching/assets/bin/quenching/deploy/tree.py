@@ -297,6 +297,8 @@ def build_tree(source: Path, target: Path, modules: list[str], harnesses: list[s
     _add_tree(tree, source, "assets/references", translate.reference_document)
     _add_tree(tree, source, "assets/templates", translate.reference_document)
     _add_tree(tree, source, "assets/translation")
+    # The identity hooks: inert until a clone points `core.hooksPath` at them.
+    _add_tree(tree, source, "assets/githooks")
     for module in selected:
         for rel in ASSETS_BY_MODULE.get(module["name"], ()):
             _add_tree(tree, source, rel, translate.reference_document)

@@ -6,6 +6,7 @@ nothing is written. Against the previous document only the lines a write adds ar
 legacy spec stays writable. The denylisted term is the test's own, in a temporary denylist."""
 from __future__ import annotations
 
+import json
 import os
 import pathlib
 import sys
@@ -135,6 +136,33 @@ class Git(GuardEnv):
                 backend.create_spec("plans", spec("clean"))
         self.assertLeak(caught.exception, "denylist:1")
         card.create.assert_not_called()
+
+    def declare(self, clone: str, value) -> None:
+        path = pathlib.Path(clone, ".agents", "quenching.json")
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(json.dumps({"backend": "git", "shared": {"gitIdentity": value}}),
+                        encoding="utf-8")
+
+    def test_an_identity_outside_the_allowlist_refuses_the_store_write(self):
+        clone = self.clone("a")
+        self.declare(clone, {"allowedEmails": ["*@example.test"]})
+        GitBackend(clone).create_spec("plans", spec("allowed"))
+        pushed = self.remote_log_or_empty()
+        with mock.patch.dict(os.environ, {"GIT_COMMITTER_EMAIL": "dev@corp.example"}):
+            with self.assertRaises(BackendRefusal) as caught:
+                GitBackend(clone).create_spec("plans", spec("clean"))
+        err = caught.exception.err
+        self.assertEqual((err["code"], err["exit"], err["email"]),
+                         ("sp-identity-not-allowed", 2, "dev@corp.example"))
+        self.assertIn("nothing was written", err["message"])
+        self.assertEqual(self.remote_log_or_empty(), pushed)
+
+    def test_a_malformed_allowlist_refuses_the_store_write(self):
+        clone = self.clone("a")
+        self.declare(clone, {"allowedEmails": []})
+        with self.assertRaises(BackendRefusal) as caught:
+            GitBackend(clone).create_spec("plans", spec("clean"))
+        self.assertEqual(caught.exception.err["code"], "sp-identity-allowlist-invalid")
 
     def remote_log_or_empty(self) -> list[str]:
         try:

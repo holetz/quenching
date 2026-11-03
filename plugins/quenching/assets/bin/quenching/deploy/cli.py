@@ -4,6 +4,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import subprocess
 import sys
 from pathlib import Path
 
@@ -17,12 +18,34 @@ LEGACY = (".claude/commands", ".claude/references", ".agents/.generated-from.jso
 GENERATED_ROOTS = (".agents/quenching/", ".agents/skills/quenching-", ".claude/skills/quenching-",
                    ".claude/agents/quenching-")
 MCP_MOUNTS = {"specs"}
+HOOKS_PATH = deploy_tree.PAYLOAD + "/assets/githooks"
 
 
 def _mcp_refusal(message: str, **extra) -> dict:
     return {"code": "ct-deploy-mcp", "message": message, **extra,
             "remedy": "declare `shared.mcp` as {mount: \"specs\", command: [<python prefix>]}, "
                       "or remove the key"}
+
+
+def _identity_hooks_warnings(target: Path) -> list[str]:
+    """A declared email allowlist with the shipped hooks inactive in this clone. Deploy writes no
+    git configuration: activating the hooks stays a per-machine choice."""
+    document, _info, _refusal = repository_document(str(target))
+    shared = (document or {}).get("shared")
+    block = shared.get("gitIdentity") if isinstance(shared, dict) else None
+    if not isinstance(block, dict) or "allowedEmails" not in block:
+        return []
+    done = subprocess.run(["git", "-C", str(target), "config", "--local", "core.hooksPath"],
+                          capture_output=True, text=True)
+    current = done.stdout.strip().rstrip("/")
+    if done.returncode not in (0, 1) or current == HOOKS_PATH:
+        return []
+    if current:
+        return [f"shared.gitIdentity.allowedEmails is declared and core.hooksPath is {current}: "
+                "call `.agents/quenching/bin/cq git identity --staged` (pre-commit) and "
+                "`--pre-push --remote \"$1\"` (pre-push) from those hooks"]
+    return ["shared.gitIdentity.allowedEmails is declared but the identity hooks are not active "
+            f"in this clone: git config core.hooksPath {HOOKS_PATH}"]
 
 
 def _mcp_option(target: Path) -> tuple[dict | None, dict | None]:
@@ -280,6 +303,7 @@ def main(argv: list[str]) -> int:
                        "remedy": "run deploy from a complete quenching checkout or wheel"},
                       args.json)
     result = plan(target, built, previous)
+    result["warnings"] = [*result.get("warnings", []), *_identity_hooks_warnings(target)]
     if args.write and result["conflicts"]:
         return refuse({"code": "ct-deploy-unowned", "conflicts": result["conflicts"],
                        "message": "the target holds files no deploy manifest owns; nothing was written",

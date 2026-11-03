@@ -8,6 +8,13 @@
       "prBody": "The spec's `Problem`, `Proposal`, `Impact` and `Validation` sections under headings of those names, the `Tasks` summary with counts, and `Closes #<n>` at the end. Nothing beyond what the spec carries.",
       "mergeSubject": "`plan/<id>-<handle>: merge (<strategy>)` for a local merge; a PR merged by GitHub keeps the subject the provider writes."
     },
+    "gitIdentity": {
+      "allowedEmails": [
+        "holetz@gmail.com",
+        "noreply@github.com",
+        "*@users.noreply.github.com"
+      ]
+    },
     "hooks": {
       "after_specs_execute_task": [
         {
