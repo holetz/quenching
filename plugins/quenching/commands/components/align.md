@@ -205,6 +205,12 @@ read-only `Task` collectors — one per slice — that report *what each body co
 its frontmatter, what it cites, where its numbered steps end) and nothing else; every doctrine
 verdict stays with the orchestrator.
 
+**A vertical with many model-invocable entries** (the count the list pays for: three or more routed
+commands under one `/<vertical>:` namespace that conductors call) is a finding too, reported as
+"propose a router": one skill `commands/<vertical>/<vertical>.md` over `assets/references/<vertical>-flows/`,
+the former commands kept as typed-only shortcuts, per
+[skills.md](docs/standards/automation/skills.md) §One router per vertical, shortcuts typed-only. Propose, never apply.
+
 Report each finding as `command · violated rule · one-line evidence · the /quenching-align:components:command:new invocation
 that opens the edit`, labelled **"reported, not applied"**. Skip every legacy `openspec-*` body —
 that surface is out of scope here as everywhere. Never rewrite a body to close a finding.
