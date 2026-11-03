@@ -34,7 +34,6 @@ EVALS_ROOT = ROOT / "plugins/quenching/assets/evals"
 COMMANDS_ROOT = ROOT / "plugins/quenching/commands"
 PROFILES = Path(__file__).resolve().with_name("eval_harnesses.json")
 CQ = ROOT / "plugins/quenching/assets/bin/cq"
-CQ_BIN = ROOT / "plugins/quenching/bin"
 ARMS = ("with", "without")
 RESULTS = ("pass", "fail", "unknown")
 GIT_ENV = {"GIT_AUTHOR_NAME": "Eval fixture", "GIT_AUTHOR_EMAIL": "eval@example.com",
@@ -424,8 +423,6 @@ def run_arm(args, profiles: dict, suite: Path, case: dict, arm: str) -> dict:
                     "error": error, "assertions": [{"assertion": a, "result": "unknown", "evidence": "",
                                                     "reason": error} for a in case["assertions"]]}
         arm_env = dict(env)
-        if arm == "with" and CQ_BIN.is_dir():
-            arm_env["PATH"] = f"{CQ_BIN}{os.pathsep}{env.get('PATH', '')}"
         if arm != "with":
             arm_env.pop("CQ", None)  # the without arm gets no path to the tool or the skill bodies
         values = arm_values(args, case, str(workspace))
