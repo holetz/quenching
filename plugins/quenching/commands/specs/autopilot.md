@@ -108,8 +108,8 @@ that appeared after the round opened is this run's, and the audit of the invaria
 it. For the human's, this session decides as the delegated owner, and the invocation authorizes
 both answers: when a new spec is permitted, the fix spec above absorbs it; when it is not, every
 worktree of the round is cut from `origin/<base>`, which never carries the base's uncommitted
-files, and `cq git branch` accepts that authorized cut with the base still dirty, reporting the
-paths it left in it. With neither answer the round stops before its first launch: `STATE: blocked`,
+files, and the worktree cut proceeds on that authorization with the base still dirty, reporting
+the paths it left in it. With neither answer the round stops before its first launch: `STATE: blocked`,
 the dirty paths named. The answer is written in the round record as `dirty: <n> path(s) — <fix
 spec|cut from origin/<base>>` before anything launches, and step 4 copies it into the epic's
 `## Design`.

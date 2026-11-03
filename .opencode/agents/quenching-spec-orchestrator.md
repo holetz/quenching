@@ -13,6 +13,7 @@ permission:
     ".agents/quenching/bin/cq specs next *": allow
     ".agents/quenching/bin/cq specs record *": allow
     ".agents/quenching/bin/cq components session cost *": allow
+    ".agents/quenching/bin/cq components session cache *": allow
     ".agents/quenching/bin/cq components session context *": allow
     ".agents/quenching/bin/cq git state *": allow
     ".agents/quenching/bin/cq git push *": allow

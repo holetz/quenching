@@ -38,7 +38,7 @@ class DirtyBaseDecision(unittest.TestCase):
         self.assertIn("when a new spec is permitted, the fix spec above absorbs it", body)
         self.assertIn("every worktree of the round is cut from `origin/<base>`, which never "
                       "carries the base's uncommitted files", body)
-        self.assertIn("`cq git branch` accepts that authorized cut with the base still dirty",
+        self.assertIn("the worktree cut proceeds on that authorization with the base still dirty",
                       body)
         self.assertIn("With neither answer the round stops before its first launch", body)
         self.assertIn("`dirty: <n> path(s) — <fix spec|cut from origin/<base>>`", body)

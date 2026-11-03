@@ -1,5 +1,5 @@
 ---
-tools: Agent(quenching-specs:spec-runner, quenching-specs:spec-verifier, quenching-specs:spec-scout), Read, Grep, Glob, Bash(cq specs status:*), Bash(cq specs list:*), Bash(cq specs show:*), Bash(cq specs parallel:*), Bash(cq specs next:*), Bash(cq specs record:*), Bash(cq components session cost:*), Bash(cq components session context:*), Bash(cq git state:*), Bash(cq git push:*), Bash(cq git pr create:*), Bash(cq git pr probe:*), Bash(cq git pr record:*), Bash(cq git pr merge:*), Bash(cq git base:*), Bash(cq git conventions:*), Bash(git for-each-ref:*), Bash(git worktree list:*), Bash(gh pr view:*)
+tools: Agent(quenching-specs:spec-runner, quenching-specs:spec-verifier, quenching-specs:spec-scout), Read, Grep, Glob, Bash(cq specs status:*), Bash(cq specs list:*), Bash(cq specs show:*), Bash(cq specs parallel:*), Bash(cq specs next:*), Bash(cq specs record:*), Bash(cq components session cost:*), Bash(cq components session cache:*), Bash(cq components session context:*), Bash(cq git state:*), Bash(cq git push:*), Bash(cq git pr create:*), Bash(cq git pr probe:*), Bash(cq git pr record:*), Bash(cq git pr merge:*), Bash(cq git base:*), Bash(cq git conventions:*), Bash(git for-each-ref:*), Bash(git worktree list:*), Bash(gh pr view:*)
 ---
 
 <!-- GENERATED FROM plugins/quenching/agents/spec-orchestrator.md -->
