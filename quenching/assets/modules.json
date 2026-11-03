@@ -1,12 +1,12 @@
 {
   "schemaVersion": 2,
-  "source": "plugins/quenching",
+  "source": "quenching",
   "marketplace": ".claude-plugin/marketplace.json",
-  "versionConstant": "plugins/quenching/assets/bin/quenching/common/version.py",
+  "versionConstant": "quenching/assets/bin/quenching/common/version.py",
   "plugins": [
     {
       "name": "quenching-hud",
-      "path": "plugins/claude/quenching-hud",
+      "path": "integrations/claude-hud",
       "marketplace": true
     }
   ],
