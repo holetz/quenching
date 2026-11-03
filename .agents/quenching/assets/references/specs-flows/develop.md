@@ -232,6 +232,15 @@ that would read identically against any spec is a default, not evidence, and it 
 
 Nothing is written. Keep a running list of `(question or drafted answer, its source, target
 section)`.
+
+**The fourth execution question is asked here:** the compose set ends on `[P]`, `files:` and
+`pattern:` ([questions.md](.agents/quenching/assets/references/specs-develop/questions.md)
+§Compose), and this pass asks **which tests does this task touch?** beside them, per task. Every
+test whose diff the task produces belongs in its `files:` —
+[artifacts.md](.agents/quenching/assets/references/specs-develop/artifacts.md) §`## Tasks`
+§Execution metadata owns the rule — and a test left out is the out-of-scope diff the verifier
+charges at the door. Same moment, same evidence: the question is cheap while the task is a draft
+and expensive after its commit.
 **Done when:** the ready set is closed in the draft, or the user called it.
 
 ### 5. Refine — where it runs

@@ -116,7 +116,8 @@ def estimate_build(info: dict, root: str | Path, budget: int = WORKER_BUDGET_TOK
         unresolved = [{"path": row["path"], "reason": row["reason"]}
                       for row in files.values() if row["bytes"] is None and not row.get("writeOnly")]
         unresolved.extend({"task": task["id"], "reason": "no files declared"}
-                          for task in tasks if not task["files"])
+                          for task in tasks
+                          if not task["files"] and not task["operational"])
         if preamble_missing:
             unresolved.append({"path": str(preamble), "reason": "execute preamble unavailable"})
         byte_count = common_bytes + sum(row["bytes"] or 0 for row in files.values()

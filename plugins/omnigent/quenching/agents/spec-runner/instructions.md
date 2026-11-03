@@ -30,13 +30,11 @@ once, and work only there afterwards.
   develop stamps `by=orchestrator-forced` after `ready`. Without `autonomous`, a spec that is not
   developed (status below `approved`) is `STATE: blocked` with `NOTE: needs-human: develop da sessão principal`: the main session answers for it, never you. Never stamp `approved` yourself. Declared
   autonomy writes nothing to `priority`: never change `complexity` to match it.
-- Given `autonomous`, also pass the word `autonomous` to `quenching-specs-specs execute` and `quenching-specs-specs conclude`, so neither loads the report mold and conclude stops at
-  the named PR handoff. You never push and never open the PR in an orchestrated run: the `spec-orchestrator`
-  publishes after the `spec-verifier` PASS, and outside an orchestrated run the main session runs the `quenching-git-*` flow that execute names. Return `STATE: done` with `PR: -`.
+- Given `autonomous`, also pass the word `autonomous` to `quenching-specs-specs execute` and `quenching-specs-specs conclude`, so neither loads the report mold and the conclude opens the PR itself once the gate is green. You never push and never open a PR of your own: the `conclude` you invoke does it through `quenching-git-pr-create <id> autonomous`, and the `spec-orchestrator` ADOPTS that PR after the `spec-verifier` PASS instead of opening a second. Report the url the spec's `pr` record carries on `PR:`, and `-` when no PR was opened.
 - Given `autonomous`, conclude never infers the outcome, so you state it: pass `--outcome done` to
   `quenching-specs-specs conclude` only when execute left every task checked. Open or blocked tasks
   return `STATE: blocked` with `NOTE: needs-human:`; never `--force`, never `abandoned` on your own.
-- **Stamp the `run` record at the end of every step**, once the report is composed and just before you return it, with one call: `cq specs record <id> run --set state=<the STATE you return> --set verifier=<pass|fail|not-run> --set date=<today>`. `verifier` is the verdict of the `spec-verifier` agent for this spec, handed to you in your prompt (for example, a re-spawn after a FAIL carries its evidence). The repository gate (`GATE:` line, `scripts/verify_repo.sh`) is NEVER the source of `verifier`: a green gate does not make `verifier=pass`. On the FIRST stamp, when status shows no `run` record, write `--set verifier=not-run`. On every later stamp, OMIT `--set verifier=` unless a verifier verdict reached you in this prompt; omission lets the record merge preserve the stored value, so the conclude spawn must not overwrite a `pass` or `fail` with `not-run`. Only a verdict in the prompt is written as `pass` or `fail`, and then with `--set by=verifier` in the same call: `cq specs record <id> run` refuses a `pass` or `fail` without it (`sp-run-verdict-unattested`), and you never add it for a verdict that did not reach you. Always set state to the STATE you return and keep `--set date=<today>`. The record carries no `NOTE`, no `TOKENS` and no sha; a failed stamp is retried once and never changes the STATE.
+- **Stamp the `run` record at the end of every step**, once the report is composed and just before you return it, with one call: `cq specs record <id> run --set state=<the STATE you return> --set verifier=<pass|fail|not-run> --set date=<today>`. `verifier` is the verdict of the `spec-verifier` agent for this spec, handed to you in your prompt (for example, a re-spawn after a FAIL carries its evidence). The repository gate (`GATE:`/`GATE_EXIT:` lines, `scripts/verify_repo.sh`) is NEVER the source of `verifier`: a green gate does not make `verifier=pass`. On the FIRST stamp, when status shows no `run` record, write `--set verifier=not-run`. On every later stamp, OMIT `--set verifier=` unless a verifier verdict reached you in this prompt; omission lets the record merge preserve the stored value, so the conclude spawn must not overwrite a `pass` or `fail` with `not-run`. Only a verdict in the prompt is written as `pass` or `fail`, and then with `--set by=verifier` in the same call: `cq specs record <id> run` refuses a `pass` or `fail` without it (`sp-run-verdict-unattested`), and you never add it for a verdict that did not reach you. Always set state to the STATE you return and keep `--set date=<today>`. The record carries no `NOTE`, no `TOKENS` and no sha; a failed stamp is retried once and never changes the STATE.
 - **Execute and conclude are two spawns.** Without the word `conclude`, run develop and execute only: when execute leaves every task checked and the gate green, do not invoke `quenching-specs-specs conclude`; return `STATE: continue` with `NOTE: execute-done: <n>/<n> tasks; conclude pending`. Given the word `conclude`, skip develop and execute (already done) and run only `quenching-specs-specs conclude`, resuming from the stage `cq specs status` reports. A `continue` for budget carries no `execute-done:` in its NOTE.
 - **Take the worktree yourself when your prompt names none.** Run `quenching-git-git branch "<id>"`
   from the checkout you were started in, before anything else: it cuts the worktree from
@@ -92,12 +90,18 @@ STATE: done | continue | blocked | failed
 SHAS: <task commit shas, 7 characters each, oldest first>
 TASKS: <checked>/<total>
 CODEX: <wrote n; fallback n; guard n; skipped n> — ids without a `Codex:` line: <ids or ->
-GATE: pass | fail | not-run — <command and exit code>
-PR: <url or ->
+GATE: pass | fail | not-run — <command>
+GATE_EXIT: <the exit code that command returned, or `not-run`>
+PR: <the url of the spec's `pr` record, or ->
 DISCOVERIES: <count> — <one line each, max 5>
 HOOKS: <event> <command> ran|failed|unresolved|skipped: worktree — one line per declared hook, `-` when none
 GIT AUDIT: stash list <empty|n entries>; status <clean|dirty>; branch <name>
 NOTE: <one line, only if state is not done>
 ```
+
+`GATE:` carries the verdict and the command; `GATE_EXIT:` carries the code in its own field, so
+no reader parses prose to find a number. `GATE:` and `GATE_EXIT:` are present in EVERY STATE,
+`blocked` and `failed` included: a gate that did not run says `GATE_EXIT: not-run`, never an
+omitted line.
 
 Report facts you observed in this run. Never write "done" for something you did not run.

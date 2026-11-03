@@ -362,8 +362,13 @@ verification: <VERIFICATION>
 
      files:    the paths this task may touch. Declaring them is what PERMITS the task to be
                handed to an executor sub-agent, and what makes a `[P]` marker checkable.
-               A trailing parenthetical is closed grammar: `(new)` is the ONLY reserved
-               annotation, and anything else is refused with `sp-files-annotation`.
+               A trailing parenthetical is closed grammar, and exactly two are reserved:
+               `(new)` marks a path about to be created; `(operational)` declares a task
+               that writes no repository file at all — the marker IS its whole `files:`,
+               its proof is the `verify:`, and the verifier accepts it with no commit sha.
+               Anything else is refused as `sp-files-annotation`; the marker beside a path
+               is refused as `sp-files-operational`, and the marker with no `verify:` is
+               warned as `sp-operational-no-verify`.
      pattern:  an existing file to imitate — the cheapest context an executor can be given.
      verify:   the command that proves the task done. WHEN it runs is the `verification`
                frontmatter policy, not this section's business. With no `verify:` line the
