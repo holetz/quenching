@@ -14,15 +14,29 @@ state, block reason and assignee. Tasks are clickable and attach to the composer
 
 - OpenCode Desktop with GUI parts. The panel is a `Panel` in the `side` region plus the `/specs`
   command; a terminal-only OpenCode session has no place to render it.
-- `cq` on `PATH` for the version check and the deploy; the spec reads prefer the target's
-  `.agents/quenching/bin/cq` when it exists.
+- Python 3.11+ and `git`. The plugin brings its own `cq`: the package is installed from a
+  checkout of this repository, and it runs that checkout's `plugins/quenching/assets/bin/cq`
+  through Python (`python3` on Linux and macOS; `py -3`, else `python`, on Windows). `cq` on
+  `PATH` is not required.
 - A target where quenching is installed or installable. The **Board** button runs
   `cq portal serve` (no `--read-only`) and opens the system browser with a fresh `nonce` per
   click.
 
-When the target's quenching is older than the `cq` on `PATH`, or absent, the panel offers
+Which `cq` answers:
+
+| Use | Order |
+| --- | --- |
+| spec reads and the Board | the target's `.agents/quenching/bin/cq`, then the plugin's checkout, then `PATH` |
+| available version and the deploy | `QUENCHING_CQ`, then the plugin's checkout, then `PATH` |
+
+`QUENCHING_CQ` is optional: the path of a `cq` file that should win over the checkout. A Python
+`cq` runs through the interpreter above; on Windows, a `cq` that is not Python (the `--runtime
+uvx` shim) runs through its `cq.cmd` sibling via `cmd.exe`, because Node does not start a `.cmd`
+without a shell.
+
+When the target's quenching is older than that `cq`, or absent, the panel offers
 **Atualizar** / **Instalar** and runs `cq deploy --target <root> --write` after confirmation.
-When it is current, the same place shows a green **OK 6.14.2** chip with the installed version.
+When it is current, the same place shows a green **OK <version>** chip with the installed version.
 A target already installed reuses its manifest; a new target receives `--harness opencode`.
 
 ## Install
@@ -37,8 +51,14 @@ Add the package directory to the `plugins` array of the OpenCode configuration â
 }
 ```
 
-The path may be this checkout's `plugins/opencode/quenching-vitrine/`. Restart the session after
-adding or removing the entry. Removing the entry is the uninstall.
+The path must be inside a full checkout of this repository (`plugins/opencode/quenching-vitrine/`),
+because the bundled `cq` lives beside it. On Windows write the path with forward slashes or
+escaped backslashes (`"C:/src/quenching/plugins/opencode/quenching-vitrine"`). Restart the session
+after adding or removing the entry. Removing the entry is the uninstall.
+
+Updating is updating the checkout: `git pull` on its primary branch, or `git checkout <tag>` for
+a release, then restart OpenCode. The panel's `cq` and the version it offers to install move with
+it.
 
 ## Build
 
@@ -68,5 +88,5 @@ build; keep it in step with `src/` in the same commit. `node_modules/` is never 
 ## Limits
 
 This package is installed by configuration, not by `cq deploy`: a deployed target receives the
-command surface and agents, not this desktop panel. It also does not upgrade the `cq` on
-`PATH`; the button only writes the target's surface.
+command surface and agents, not this desktop panel. It also does not update its own checkout;
+the button only writes the target's surface.
