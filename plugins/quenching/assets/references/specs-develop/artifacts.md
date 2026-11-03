@@ -239,7 +239,7 @@ A checkbox MAY carry indented metadata lines directly beneath it:
 
 | Key | What it carries | Why execute wants it |
 | --- | --- | --- |
-| `files:` | comma-separated paths this task may touch; a comma inside parentheses never separates — a trailing `(…)` that is not the reserved `(new)` is refused with `sp-files-annotation` | bounds the work; **declaring it is what permits the task to be handed to an executor sub-agent**, and it is what makes a `[P]` marker checkable |
+| `files:` | comma-separated paths this task may touch; a comma inside parentheses never separates — a trailing `(…)` that is not a reserved annotation is refused with `sp-files-annotation`. Exactly two are reserved: `(new)` marks a path about to be created, `(operational)` declares a task that writes no repository file and is exclusive | bounds the work; **declaring it is what permits the task to be handed to an executor sub-agent**, and it is what makes a `[P]` marker checkable |
 | `pattern:` | an existing file to imitate | the cheapest context an executor can be given — one path beats three paragraphs of description |
 | `cwd:` | the directory, relative to the repo root, `verify:` runs from | **absent means exactly today's behaviour** — the session's or worktree's root. Write it only when the task's own `verify:` cannot resolve from there (a plugin-internal tool that only resolves from `plugins/quenching/`) |
 | `verify:` | the command that proves the task done | run under the spec's `verification` policy; a task with no `verify:` falls back to `## Validation`. Runs from the task's declared `cwd:`, or the default when absent |
@@ -254,6 +254,18 @@ the task text is noise.
 task — it is the permission. Omit it and the task can never be handed to an executor sub-agent and
 can never carry `[P]`, whichever way the work would actually have gone. Decide that deliberately or
 declare the paths; do not leave it to whether the line felt worth typing.
+
+**Every test whose diff the task produces belongs in its `files:`.** The verifier compares the
+branch's changed paths with the union of the tasks' `files:`, so a test edited beside the code it
+covers and left out of the declaration is an out-of-scope diff and a FAIL — the most common one, and
+the reason the question *which tests does this touch?* belongs beside `[P]`, `files:` and `pattern:`
+while the task is being written. Declare the test beside the implementation it proves.
+
+**A task that writes no repository file declares `files: (operational)`.** The marker IS the whole
+`files:` — never combined with a path, which `validate` refuses as `sp-files-operational` — and its
+only proof is the `verify:`, whose absence is the `sp-operational-no-verify` warning. It is how a
+redeploy, a `systemctl is-active` or the repository gate is declared without inventing a path, and
+the verifier accepts such a task without a commit sha because it has no path to hang one on.
 
 **Declare every generated mirror the diff changes.** A task that edits a translated source also
 rewrites what the generator emits from it. List each such derived output in the task's `files:`
