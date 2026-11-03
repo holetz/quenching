@@ -562,8 +562,9 @@ def _modules(cwd: str, base: str, env: dict[str, str],
     try:
         manifest = json.loads(out)
         source = manifest["source"].strip("/")
+        # A schema-1 manifest (a base before spec 2160) still names published module trees.
         roots = [m["path"].strip("/") for m in manifest["modules"]
-                 if m.get("published") and ("generated" in m or "owned" in m)]
+                 if m.get("published") and m.get("path") and ("generated" in m or "owned" in m)]
         agents: list[str] | None = None
         mapping: dict[str, str] = {}
         for module in manifest["modules"]:
@@ -917,8 +918,9 @@ def _generated(cwd: str, base: str, tip: str, changed: list[str], env: dict[str,
     try:
         manifest = json.loads(out)
         source = manifest["source"].strip("/")
+        # A schema-1 manifest (a base before spec 2160) still names published module trees.
         roots = [m["path"].strip("/") for m in manifest["modules"]
-                 if m.get("published") and ("generated" in m or "owned" in m)]
+                 if m.get("published") and m.get("path") and ("generated" in m or "owned" in m)]
     except (ValueError, KeyError, TypeError, AttributeError) as exc:
         errors.append(_error(("show", MODULES), 0, f"unreadable module manifest: {exc}"))
         return []
