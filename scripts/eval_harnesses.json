@@ -1,23 +1,26 @@
 {
   "version": 1,
-  "about": "Harness profiles for scripts/run_evals.py. `argv` is one host invocation; the standalone tokens {arm} and {extra} expand to the arm's extras and the operator's --extra-arg values, {plugin_dirs} expands to one `--plugin-dir <module>` pair per principal module, and {prompt}, {model}, {workdir}, {max_turns} are substituted inside any token. An arm absent from `arms` cannot run on that profile. The default mode runs each arm in a disposable container: `container.argv` is the command inside the image (its ENTRYPOINT, if any, must exec its arguments) and the standalone token {permission} expands to `container.permission` there and nowhere else. Under --host no profile widens a tool permission: pass one with --extra-arg.",
+  "about": "Harness profiles for scripts/run_evals.py. `argv` is one host invocation; the standalone tokens {arm} and {extra} expand to the arm's extras and the operator's --extra-arg values, and {prompt}, {model}, {workdir}, {max_turns} are substituted inside any token. An arm absent from `arms` cannot run on that profile. `deploy.<arm>` names the harness whose surface `cq deploy --modules all` installs into the fixture before its commit. The default mode runs each arm in a disposable container: `container.argv` is the command inside the image (its ENTRYPOINT, if any, must exec its arguments) and the standalone token {permission} expands to `container.permission` there and nowhere else. Under --host no profile widens a tool permission: pass one with --extra-arg.",
   "profiles": {
     "claude": {
       "argv": ["claude", "-p", "--setting-sources", "project", "--model", "{model}", "--max-turns", "{max_turns}",
                "--output-format", "json", "{arm}", "{extra}", "{prompt}"],
-      "arms": {"with": ["{plugin_dirs}"], "without": []},
+      "arms": {"with": [], "without": []},
+      "deploy": {"with": "claude"},
       "output": "claude-json",
-      "note": "--plugin-dir loads the generated modules for the with arm; the without arm loads none. Run from a fixture whose project settings enable no plugin."
+      "note": "The with arm runs in a fixture where `cq deploy` installed every module (the .claude/skills bridge and .agents/quenching/); the without arm gets no deploy. Run from a fixture whose project settings enable no plugin."
     },
     "codex": {
       "argv": ["codex", "exec", "--json", "--skip-git-repo-check", "-m", "{model}", "-C", "{workdir}", "{arm}", "{extra}", "{prompt}"],
       "arms": {"with": []},
+      "deploy": {"with": "codex"},
       "output": "codex-jsonl",
-      "note": "Codex loads the quenching-codex plugin from its own installation, so only the with arm exists here."
+      "note": "The with arm runs in a fixture where `cq deploy --harness codex` installed the .agents/skills surface; only the with arm exists here."
     },
     "opencode": {
       "argv": ["opencode", "run", "--model", "{model}", "--format", "json", "{arm}", "{extra}", "{prompt}"],
       "arms": {"with": []},
+      "deploy": {"with": "opencode"},
       "container": {"argv": ["opencode", "run", "--model", "{model}", "--format", "json", "{arm}", "{permission}", "{extra}", "{prompt}"],
                     "permission": ["--auto"]},
       "output": "text",

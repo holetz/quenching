@@ -4,6 +4,7 @@ import importlib.util
 import io
 import json
 from pathlib import Path
+import subprocess
 import sys
 import tempfile
 import unittest
@@ -155,7 +156,7 @@ class Runner(unittest.TestCase):
         self.assertEqual(code, 2)
         self.assertIn("no 'without' arm", text)
 
-    def test_dry_run_loads_the_modules_only_in_the_with_arm(self):
+    def test_dry_run_deploys_the_surface_only_in_the_with_arm(self):
         buffer = io.StringIO()
         with contextlib.redirect_stdout(buffer):
             code = runner.main(["--host", "--suite", str(self.suite), "--case", "c1", "--dry-run", "--harness", "claude",
@@ -163,8 +164,9 @@ class Runner(unittest.TestCase):
         self.assertEqual(code, 0)
         lines = [json.loads(line) for line in buffer.getvalue().splitlines()]
         by_arm = {line["arm"]: line["argv"] for line in lines}
-        self.assertIn("--plugin-dir", by_arm["with"])
-        self.assertNotIn("--plugin-dir", by_arm["without"])
+        deploy = {line["arm"]: line["deploy"] for line in lines}
+        self.assertEqual({"with": "claude", "without": None}, deploy)
+        self.assertNotIn("--plugin-dir", by_arm["with"])
         self.assertEqual(by_arm["with"][-1], "Make the file please.")
         for harness in ("codex", "opencode"):
             buffer = io.StringIO()
@@ -172,6 +174,16 @@ class Runner(unittest.TestCase):
                 self.assertEqual(runner.main(["--host", "--suite", str(self.suite), "--case", "c1", "--dry-run",
                                               "--harness", harness, "--model", "m", "--run-id", "r"]), 0)
             self.assertIn(harness, buffer.getvalue())
+
+    def test_a_deployed_arm_commits_the_surface_into_the_fixture_base(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            workspace, env = runner.provision(self.suite, "c1", Path(tmp), deploy="claude")
+            self.assertTrue((workspace / ".agents/quenching/bin/cq").is_file())
+            self.assertTrue((workspace / ".claude/skills/quenching-specs-status/SKILL.md").is_file())
+            status = subprocess.run(["git", "status", "--porcelain"], cwd=workspace,
+                                    capture_output=True, text=True, check=True).stdout
+            self.assertNotIn(".agents", status)
+            self.assertNotIn(".claude", status)
 
     def dry_lines(self, *argv: str) -> list[dict]:
         buffer = io.StringIO()
