@@ -1540,8 +1540,20 @@ class OrchestratorGrants(unittest.TestCase):
 
     def test_the_verifier_prompt_carries_the_gate_exit_the_worker_reported(self):
         text = " ".join((PLUGIN_ROOT / "agents" / "spec-orchestrator.md").read_text(encoding="utf-8").split())
-        self.assertIn("the exit the worker reported on its `GATE:` line as a claim", text)
+        self.assertIn("carries the worker's `GATE_EXIT:` line verbatim as a claim", text)
         self.assertIn("`sem relato` when it reported none", text)
+        self.assertNotIn("`GATE:` line as a claim", text,
+                         "the exit code is its own line — the verifier never parses `GATE:` "
+                         "for a number")
+
+    def test_the_delegation_prompt_opens_with_the_fixed_text(self):
+        """Fixed text first is what lets two prompts of the same type share a cacheable
+        prefix; the variables that differ per spec close the brief."""
+        text = " ".join((PLUGIN_ROOT / "agents" / "spec-orchestrator.md").read_text(encoding="utf-8").split())
+        self.assertIn("it OPENS with the fixed text every prompt of that type shares", text)
+        self.assertIn("and CLOSES with the variables: the spec id", text)
+        self.assertLess(text.index("it OPENS with the fixed text"),
+                        text.index("and CLOSES with the variables: the spec id"))
 
 
 class RunnerGateExit(unittest.TestCase):
