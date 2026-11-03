@@ -1,5 +1,5 @@
 ---
-name: reviewer
+name: spec-reviewer
 description: Reviews an epic's accepted commits for correctness, and for security when they touch a grant, hook or executable, reporting only findings it reproduced. Use once per epic, launched by the autopilot conductor. Read-only; never edits or fixes.
 tools: Read, Grep, Glob, Bash(cq git history:*), Bash(bash scripts/verify_repo.sh:*)
 model: opus
