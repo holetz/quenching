@@ -44,6 +44,11 @@ uvx --from "git+https://github.com/holetz/quenching@<tag>#subdirectory=plugins/q
   cq deploy --target . --modules core --write
 ```
 
+`<tag>` is a release tag such as `7.0.0` (list them with
+`git ls-remote --tags https://github.com/holetz/quenching`); a literal `<tag>` fails with
+`Git operation failed`. To upgrade an installed target, drop `--modules`: the recorded manifest
+keeps its modules, while `--modules core` narrows a wider install and deletes the rest.
+
 This writes `AGENTS.md` (only when absent), `.agents/skills/`, the vendored runtime under
 `.agents/quenching/` and the generated `.claude/skills/` bridge, for Claude Code, Codex and OpenCode
 by default (`--harness` narrows it). It never creates `CLAUDE.md`; Claude Code 2.1.277+ reads
