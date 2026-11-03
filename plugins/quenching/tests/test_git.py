@@ -3489,6 +3489,19 @@ class OrchestratorPublishTools(unittest.TestCase):
             self.assertNotIn(broad, self.tools)
         self.assertIn("Bash(cq git pr merge:*)", self.tools)
 
+    def test_an_existing_pr_is_adopted_never_opened_twice(self):
+        """The `autonomous` conclude opens the PR before the verifier sees the branch, so the
+        orchestrator's publish ADOPTS it: a second `pr create` would be a second PR for one
+        branch, and a FAIL after the PR exists never deletes it."""
+        text = " ".join(self.agent.read_text(encoding="utf-8").split())
+        self.assertIn("an existing PR is ADOPTED", text)
+        self.assertIn("never opened a second", text)
+        self.assertIn("a FAIL after the PR exists never deletes it", text)
+        self.assertIn("Your publish opens the PR when none exists and otherwise pushes the "
+                      "branch so the adopted PR updates itself", text)
+        self.assertNotIn("**Publish after PASS.** A spec the spec-verifier accepted, with no "
+                         "PR yet", text)
+
 
 class OrchestratorPublishGrants(unittest.TestCase):
     """The `spec-orchestrator` acts through `cq git` verbs: no grant of its `tools:` admits the commands
