@@ -6,7 +6,6 @@ never drifts from the script it guards. A marker that disappears fails the test 
 it pass empty.
 """
 
-import json
 import pathlib
 import shutil
 import subprocess
@@ -72,8 +71,8 @@ class SurfaceLoadBlock(unittest.TestCase):
         self.assertEqual(run.returncode, 0, run.stderr)
 
 
-class GeneratedModuleArrangements(unittest.TestCase):
-    """functional-checks loads the generated modules, never the source, and refuses unbuilt trees."""
+class DeployedArrangements(unittest.TestCase):
+    """functional-checks measures boxes deployed from the source, never the source itself."""
 
     def run_checks(self, *args, repo=None):
         argv = [BASH, str(FUNCTIONAL), *args]
@@ -81,42 +80,22 @@ class GeneratedModuleArrangements(unittest.TestCase):
             argv.append(str(repo))
         return subprocess.run(argv, capture_output=True, text=True)
 
-    def test_guards_pass_on_the_module_form(self):
+    def test_guards_pass(self):
         for flag in ("--selfcheck", "--selftest"):
             run = self.run_checks(flag)
             self.assertEqual(run.returncode, 0, run.stdout + run.stderr)
             self.assertNotIn("FAIL", run.stdout)
 
-    def test_selftest_rejects_the_source_and_modules_outside_the_arrangement(self):
+    def test_selftest_rejects_the_source_and_another_box(self):
         run = self.run_checks("--selftest")
-        self.assertIn("rejected the unloaded source path", run.stdout)
-        self.assertIn("rejected a module outside the specs-only arrangement", run.stdout)
+        self.assertIn("rejected the source tree path", run.stdout)
+        self.assertIn("rejected another box payload", run.stdout)
 
-    def test_an_ungenerated_module_tree_is_inconclusive_before_any_session(self):
+    def test_a_repository_without_the_source_is_inconclusive_before_any_session(self):
         with tempfile.TemporaryDirectory() as tmp:
-            repo = pathlib.Path(tmp)
-            assets = repo / "plugins" / "quenching" / "assets"
-            assets.mkdir(parents=True)
-            modules = [
-                {"name": "quenching-align", "path": "plugins/claude/quenching-align", "owned": {}},
-                {"name": "quenching-specs", "path": "plugins/claude/quenching-specs", "owned": {}, "cqPathOwner": True},
-            ]
-            (assets / "modules.json").write_text(json.dumps({"modules": modules}))
-            manifest = repo / "plugins" / "claude" / "quenching-specs" / ".claude-plugin"
-            manifest.mkdir(parents=True)
-            (manifest / "plugin.json").write_text("{}")
-            run = self.run_checks(repo=repo)
+            run = self.run_checks(repo=pathlib.Path(tmp))
         self.assertEqual(run.returncode, 2, run.stdout + run.stderr)
-        self.assertIn("plugins/claude/quenching-align", run.stderr)
-
-    def test_a_manifest_without_principal_modules_is_inconclusive(self):
-        with tempfile.TemporaryDirectory() as tmp:
-            repo = pathlib.Path(tmp)
-            assets = repo / "plugins" / "quenching" / "assets"
-            assets.mkdir(parents=True)
-            (assets / "modules.json").write_text(json.dumps({"modules": [{"name": "quenching", "path": "plugins/quenching"}]}))
-            run = self.run_checks(repo=repo)
-        self.assertEqual(run.returncode, 2, run.stdout + run.stderr)
+        self.assertIn("no quenching source", run.stderr)
 
 
 if __name__ == "__main__":
