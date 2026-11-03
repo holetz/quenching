@@ -1,10 +1,10 @@
 ---
 type: standard
 title: Task execution contract
-description: How a spec's task is executed — the verification policies, `verify:` scoped at authoring, the three causes of a check that can never pass (one of them invisible to the falsification run), `files:` naming the derived artifacts an edit invalidates, the failure budget, one commit per task retained across section boundaries, the two-level review split, the four-event Handoff refresh cadence, and the delegation and [P] disjunction rules
+description: How a spec's task is executed — the verification policies, `verify:` scoped at authoring, the three causes of a check that can never pass (one of them invisible to the falsification run), `files:` naming the derived artifacts an edit invalidates, the failure budget, one commit per task retained across section boundaries, the two-level review split, the four-event Handoff refresh cadence, the decision-and-real-block contract after approval, and the delegation and [P] disjunction rules
 resource: plugins/quenching/commands/specs/execute.md, plugins/quenching/commands/specs/conclude.md, plugins/quenching/assets/references/specs-execute/execution.md, plugins/quenching/assets/references/specs-develop/artifacts.md, plugins/quenching/assets/references/git/commit.md, plugins/quenching/assets/bin/quenching/specs/**, plugins/quenching/assets/specs/templates/spec.md
 tags: [workflows, specs, execution, verification, commits, delegation, handoff]
-timestamp: 2026-11-01
+timestamp: 2026-11-02
 audience: both
 authority: current
 source: refine-and-execute-specs-flow, cut-specs-execute-turns; history in ADR 0002
@@ -503,3 +503,31 @@ reports each group and exits **0** when every marked group is eligible, **1** wh
 lacks `files:`. Two paths conflict when they are the same file or when one is a directory
 containing the other. A group is bounded to one `## N.` section, so a run never straddles two
 independently shippable units.
+
+## After approval, the executor decides, records and stops only on a real block
+
+Once `approved` is stamped, the executor decides everything the evidence answers — the spec, the code,
+the standards declared under `## Impact`, the glossary — and everything the recorded intent covers by
+criterion. It does not ask. Each decision is **one line** in `## Discoveries`:
+
+```bash
+cq specs discover "<id>" "decision: <what> — <evidence or criterion>"
+```
+
+A `decision:` line is not a Handoff event: decisions accumulate for the final report and for the
+`## Outcome` the conclude writes.
+
+The run stops only on a **real block**, a closed list:
+
+1. a task's attempts stop converging;
+2. a task contradicts a standard and the evidence does not choose between revising the standard or the spec;
+3. the plan needs a new grant, an altered frontmatter key or a lowered bar;
+4. the action is irreversible, or is a merge, push or deploy that was not declared;
+5. a proof the spec requires cannot run (missing environment variable, credential or service) — never skipped
+   in silence, never marked as passed;
+6. `approved` is absent under `autonomous`, because approval belongs to develop.
+
+Outside this list the executor decides and goes on. A real block returns `needs-human:` carrying the
+question; it never improvises the answer. Autonomy is recognised only when declared — the literal
+`autonomous`, or the human's own words asking to run to the end without asking — never inferred, and its
+reach is what the declaration names: "up to the PR" does not authorise a merge.

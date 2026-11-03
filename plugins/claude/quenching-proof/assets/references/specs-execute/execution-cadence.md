@@ -62,3 +62,21 @@ Task 3/7 — 3.2 <task title>
     checked 3.2 (subject: plan/<slug>: 3.2 <task title>)
     committed a1b2c3d — subject matches
 ```
+
+## After approval — decide, record, stop on a real block
+
+<!-- rules -->
+
+The contract is `/docs/standards/workflows/task-execution.md` §After approval, the executor decides,
+records and stops only on a real block; this section is its loop-side procedure.
+
+- **Decide what the evidence answers.** The spec, the code, the standards declared under `## Impact`
+  and the glossary answer most questions; the recorded intent covers the rest by criterion. The loop
+  does not ask.
+- **Record each decision as one line.** `cq specs discover "<id>" "decision: <what> — <evidence or
+  criterion>"`. A `decision:` line is not one of the four Handoff events and writes no Handoff.
+- **Stop only on a real block**, the closed list of the standard: attempts stop converging; a task
+  contradicts a standard and the evidence does not choose; the plan needs a new grant, a changed
+  frontmatter key or a lowered bar; an undeclared irreversible, merge, push or deploy action; a
+  required proof that cannot run; `approved` absent under `autonomous`. Outside the list the loop
+  decides and goes on.

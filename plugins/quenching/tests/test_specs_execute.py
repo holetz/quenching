@@ -286,6 +286,17 @@ class TaskExecutionContractTests(unittest.TestCase):
                 ["plan/x: 1.2 second task", "plan/x: 1.1 first task"],
             )
 
+    def test_autonomous_execute_blocks_on_missing_approval_and_a_real_block(self):
+        command = " ".join(COMMAND.read_text(encoding="utf-8").split())
+        runner = " ".join(RUNNER.read_text(encoding="utf-8").split())
+
+        self.assertIn("Under `autonomous`, `approved` unset is a real block", command)
+        self.assertIn("**Under `autonomous`, the pause is the real block**", command)
+        self.assertIn("never skipped in silence", command)
+        self.assertIn("`decision:` line is not a Handoff event", command)
+        self.assertIn('"decision: <what> — <evidence or criterion>"', runner)
+        self.assertIn("needs-human: <the real block and the question>", runner)
+
 
 if __name__ == "__main__":
     unittest.main()

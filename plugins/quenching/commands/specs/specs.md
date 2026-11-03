@@ -54,8 +54,23 @@ the same reference, and a conductor reaches the same flow by calling this comman
 the id.
 **Done when:** the flow ran to its own `Done when:`, or stopped on its own stop condition.
 
+## Declared autonomy
+
+Autonomy is **recognised, never inferred**. It is declared by the literal `autonomous` in the input, or by
+the human's own words asking to run to the end without asking: "autônomo", "sem parar", "até o PR". "Execute
+isto" is not a declaration. An ambiguous input is asked of the human on a decision sheet; a sub-agent
+returns `needs-human:`. The reach is what the declaration names: "até o PR" never authorises a merge, and
+merge and deploy keep requiring their own declaration.
+
+Declared, this entry chains the flows in order, reading each reference in its turn: `develop` (stamping
+`approved` as `orchestrator-forced`), `execute`, then `conclude` (`--outcome done` only with every task checked). Each flow
+keeps its own `Done when:`. It stops only on a real block
+(`/docs/standards/workflows/task-execution.md` §After approval, the executor decides, records and stops only on a real block),
+and ends with **one report**: the final stage and every `decision:` line of `## Discoveries`. A budget stop
+(`continue`) stands as always.
+
 ## Invariants
 
-- Never run two flows in one invocation; the flow's own next-step block names the following one.
+- Never run two flows in one invocation, except under §Declared autonomy; otherwise the flow's own next-step block names the following one.
 - Never edit what a flow's reference says: a flow's behavior changes in its reference, never here.
 - Never route `autopilot`, `improve` or `board`.

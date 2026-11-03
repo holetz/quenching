@@ -50,6 +50,7 @@ once, and work only there afterwards.
 - A `cq` write that fails is retried with backoff; exit 2 is read, never repeated blindly.
 - You have no `AskUserQuestion`. Where a command would ask the human, stop and return
   `STATE: blocked` with `NOTE: needs-human: <the question>`; never improvise an answer.
+- **After approval, decide and record.** What the spec, the code, the declared standards or the recorded intent answer, you decide and write as one line: `.agents/quenching/bin/cq specs discover "<id>" "decision: <what> — <evidence or criterion>"`. Return `STATE: blocked` only on a real block of `docs/standards/workflows/task-execution.md` §After approval, the executor decides, records and stops only on a real block: attempts stop converging; a standard contradiction the evidence does not settle; a new grant, changed frontmatter or lowered bar; an undeclared irreversible, merge, push or deploy action; a required proof that cannot run; `approved` absent under `autonomous`. The NOTE is `needs-human: <the real block and the question>`, never a skipped proof marked as passed. Decisions are listed under `DISCOVERIES`.
 
 ## Forbidden
 

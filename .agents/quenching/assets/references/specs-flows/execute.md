@@ -151,7 +151,9 @@ of [execution-delegation.md](.agents/quenching/assets/references/specs-execute/e
 
 - **`approved` unset** → ask for it inline, in one question showing what the spec commits to, and
   on a yes stamp it `--set by=human` (`.agents/quenching/bin/cq specs record "<id>" approved --set date=<today> --set
-  by=human`). **Never refuse over it.** A no ends the run cleanly.
+  by=human`). **Never refuse over it.** A no ends the run cleanly. **Under `autonomous`, `approved`
+  unset is a real block**: never ask, never stamp — return `STATE: blocked` with `NOTE: needs-human:
+  approval is develop's`.
 - **`next` reports `write_section`** → the ready gate is not met. Name the missing or malformed
   sections and route to `/quenching-specs-develop <id>`, then stop.
 - **Every task already `- [x]`** → say so and offer to chain into `/quenching-specs-conclude` (step 7).
@@ -366,6 +368,16 @@ h. **At a section boundary, keep the task commits, read the session size once, a
 task contradicts a `/docs/standards/` contract (surface it and let the human pick — revise the
 standard via `/quenching-knowledge-add`, or the spec via `/quenching-specs-develop`); attempts stop converging; or the user
 interrupts.
+
+**Under `autonomous`, the pause is the real block**, the closed list of
+`/docs/standards/workflows/task-execution.md` §After approval, the executor decides, records and stops
+only on a real block: attempts stop converging; a standard contradiction the evidence does not
+settle; a new grant, a changed frontmatter key or a lowered bar; an undeclared irreversible, merge, push or deploy
+action; a required proof that cannot run; `approved` absent. A proof the spec requires that cannot
+run for a missing environment variable, credential or service is a real block — never skipped in silence,
+never marked as passed. Anything else the evidence or the recorded intent answers is decided and
+recorded as one line, `.agents/quenching/bin/cq specs discover "<id>" "decision: <what> — <evidence or criterion>"`; a
+`decision:` line is not a Handoff event.
 **Done when:** every task is `- [x]` or `- [!]`, or the run pauses with the reason stated.
 
 ### 6. Refresh `## Handoff` on four events, never on judgment
@@ -481,7 +493,7 @@ each is absolute. The three whose failure is **silent and permanent**:
   post-commit exception and carries that commit's subject and sha; no later history rewrite or
   anchor repair is part of a section close.
 - Never refuse over a missing `approved`; ask inline and stamp it with `.agents/quenching/bin/cq specs record`, never by
-  editing the frontmatter.
+  editing the frontmatter. The one exception is `autonomous`, where it is a real block.
 - Stamp `branch:` once the work ref is resolved, taken or declined (`work` then equals `base`) —
   never over an existing record, through `.agents/quenching/bin/cq specs record`, never the frontmatter.
 - Write **only** the `/docs/` a task explicitly names. Emergent findings are one `.agents/quenching/bin/cq specs discover`
