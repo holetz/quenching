@@ -23,6 +23,16 @@ class SpecsRouter(unittest.TestCase):
             with self.subTest(name=name):
                 self.assertIsNone(re.search(rf"\| `{name}` \|", self.text))
 
+    def test_declared_autonomy_is_explicit_and_the_one_invariant_exception(self):
+        text = " ".join(self.text.split())
+
+        self.assertIn("## Declared autonomy", text)
+        self.assertIn("recognised, never inferred", text)
+        self.assertIn('"Execute isto" is not a declaration', text)
+        self.assertIn("`orchestrator-forced`", text)
+        self.assertIn("ends with **one report**", text)
+        self.assertIn("except under §Declared autonomy", text)
+
 
 if __name__ == "__main__":
     unittest.main()
