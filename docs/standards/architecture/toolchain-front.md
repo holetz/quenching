@@ -44,7 +44,7 @@ The toolchain front adopts the common minimum from
 [`front-mold.md`](front-mold.md). Its applicability signal is a target's declared `toolchain`
 namespace; its future read model and verifier are downstream implementation decisions that must
 preserve the common `status`/`doctor` floor. Its domain-specific reference is
-`quenching/assets/references/toolchain-align/bands.md`.
+`quenching/references/toolchain-align/bands.md`.
 
 The name is `toolchain`, not `config`: `.agents/quenching.json` is the plugin configuration home,
 and treating it as a toolchain artifact would recreate competing sources of truth. The `tc-`

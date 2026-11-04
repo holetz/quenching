@@ -2,7 +2,7 @@
 type: standard
 title: When a command's plan gate may drop
 description: The two protected classes — a code-coupled item, an irreversible cycle action — are the whole test, and a command in which neither occurs has nothing to confirm; what replaces the approval window when the gate goes (the record's URL, announced before any read and repeated in the report), the difference between the confirmation that drops and the consolidation that stays, what still stops the pass either way, the three intermediate forms measured and rejected, and the three conditions under which declared autonomy or the trust criterion replaces the person at the go/no-go
-resource: quenching/commands/**, quenching/assets/references/align/convergence.md, quenching/assets/references/specs-develop/questions.md
+resource: quenching/skills/**, quenching/references/align/convergence.md, quenching/references/specs-develop/questions.md
 tags: [automation, commands, gates, confirmation, cost, turns]
 timestamp: 2026-10-16
 audience: both
@@ -27,7 +27,7 @@ is the test that decides whether that stop is buying anything.
 > nothing on the other side.
 
 The two classes are the same ones
-`quenching/assets/references/align/convergence.md`
+`quenching/references/align/convergence.md`
 §The cycle-authorization contract already protects — this criterion invents no third one, and a
 command does not lose its gate for being cheap, short or "low-risk". It loses it for containing
 neither of the two.
@@ -124,7 +124,7 @@ The pattern across the three is the same: they negotiate *how many* stops, when 
 whether **that** stop protects anything. A stop that does not protect does not get better by being
 rare.
 
-**Merging stages is not the third form.** `/quenching-specs-develop` later came to compose and
+**Merging stages is not the third form.** `/quenching-specs develop` later came to compose and
 refine in a single pass, with one edit — and that does not reopen the table above. The third form
 preserved *each stage's gate*; there has been no stage gate here since this criterion was applied to
 the command (2026-08-16), and what gets merged are crossings and reads, never questions. The command

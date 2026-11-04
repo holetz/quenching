@@ -9,7 +9,7 @@ tags:
 timestamp: 2026-08-28
 audience: human
 authority: current
-source: quenching/README.md §The specs flow; command bodies under quenching/commands/specs/
+source: quenching/README.md §The specs flow; command bodies under quenching/skills/quenching-specs/
 maintainer: Israel Holetz
 ---
 
@@ -39,14 +39,14 @@ flowchart LR
     `github` and `azure-boards` backends still work but are deprecated: `doctor` flags them and
     `cq specs migrate --to git` moves a repository off them.
 
-## 1. Capture — `/quenching-specs-create`
+## 1. Capture — `/quenching-specs create`
 
 Give it a sentence, or a whole Claude Code plan file. Effort is proportional to input — a
 sentence becomes `## Problem` and `summary:`, a plan file becomes every section it actually
 supports, mapped and never invented. One closing screen shows what was resolved (subject, type,
 tags, `complexity`) for you to correct or accept, then offers to hand straight into `develop`.
 
-## 2. Refine and approve — `/quenching-specs-develop`
+## 2. Refine and approve — `/quenching-specs develop`
 
 Two operations in one pass, both derived: **compose** takes the spec to a closed ready set of
 sections, and **refine** argues with it — questions grouped by dependency, each with an inline
@@ -61,7 +61,7 @@ to: `approved: {date, by}` in the spec's frontmatter, where `by` is `human`, `se
     `approved`, `branch`, `reviewed`, `merge`, `outcome`). See
     [The spec lifecycle](../explanation/spec-lifecycle.md) for the full record vocabulary.
 
-## 3. Build — `/quenching-specs-execute`
+## 3. Build — `/quenching-specs execute`
 
 Requires a clean tree; when it starts from the base branch it offers isolation inline — a real
 git branch or worktree, recorded as `branch: {base, work}`. Then the loop, task by task:
@@ -76,7 +76,7 @@ cq specs next --front --table    # the ranked front, one Summary line per spec
 A finding that does not belong to the current task is one `cq specs discover` line, not a
 detour. The command stops at the last commit — closing is a different decision.
 
-## 4. Close — `/quenching-specs-conclude`
+## 4. Close — `/quenching-specs conclude`
 
 Closing is where the plugin is most opinionated: **nothing is written after the thing it
 describes, so the merge is last.** On the work branch, in order: the whole-branch review

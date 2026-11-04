@@ -1,7 +1,7 @@
 ---
 name: commands-tighten
 description: >-
-  Cut dead weight from ONE command body under quenching/commands/ or
+  Cut dead weight from ONE command body under quenching/skills/ or
   .claude/commands/ — justification for a directive already given, sediment from a
   mechanism the surface no longer has, a limit no run could reach, a rule another line
   or an invariant already carries. Triggers: "enxugar esse comando", "revisar essa skill
@@ -9,11 +9,11 @@ description: >-
   justificativas desnecessárias", "tighten this command body", "cut the dead weight from
   this skill". Leaves every trigger and every `Done when:` untouched, reports the
   incoherences the cut exposes instead of fixing them silently, and measures the delta
-  against the working tree it opened. Not for: a file under assets/references/, where
+  against the working tree it opened. Not for: a file under references/, where
   rationale is relocated and never deleted → /references-tighten; minting a command or
-  fixing a body's STRUCTURE → /quenching-components-command-new; the whole surface's
-  descriptions in one sweep → /quenching-components-align; a /docs/ standard →
-  /quenching-knowledge-align.
+  fixing a body's STRUCTURE → /quenching-components command-new; the whole surface's
+  descriptions in one sweep → /quenching-components align; a /docs/ standard →
+  /quenching-knowledge align.
 argument-hint: "[command-path | --all] [--review] [--skip <path>]"
 allowed-tools: Read, Grep, Glob, Edit, Write, Bash(python3:*), Bash(grep:*), Bash(git grep:*),
   Bash(git status:*), Bash(wc:*), Bash(bash quenching/assets/checks/functional-checks.sh:*),
@@ -23,7 +23,7 @@ allowed-tools: Read, Grep, Glob, Edit, Write, Bash(python3:*), Bash(grep:*), Bas
 
 # /commands-tighten — the binding half stays, the dead weight goes, the delta is measured
 
-**Input**: `$ARGUMENTS` — one or more command paths under `quenching/commands/` or
+**Input**: `$ARGUMENTS` — one or more command paths under `quenching/skills/` or
 `.claude/commands/`, or `--all` for the whole surface. `--review` reports the plan and writes
 nothing. `--skip <path>` drops a file from a batch, repeatable.
 
@@ -31,7 +31,7 @@ A command body is re-sent on every turn of every run it governs, so a line that 
 behaviour is billed forever for nothing. This command deletes those lines.
 
 It is the command-body half of a pair. `/references-tighten` owns
-`quenching/assets/references/**`, where rationale is **relocated** under its marker and
+`quenching/references/**`, where rationale is **relocated** under its marker and
 never deleted — a reference is read by `§`-address, and its rationale is the one asset a later
 session cannot reconstruct. A body has no marker convention and no `§` API, so here the no-op
 test **deletes**.
@@ -40,15 +40,15 @@ test **deletes**.
 
 | Rule | Owner |
 | --- | --- |
-| The no-op test; positive prescription; sediment / duplication / sprawl / negation | [doctrine.md](/quenching/assets/references/components-command-new/doctrine.md) §The no-op test, §Positive prescription, §Named failure modes |
-| What a description may carry, and the trigger that is never cut for length | [doctrine.md](/quenching/assets/references/components-command-new/doctrine.md) §The three slots, and the boundary that must be earned |
-| A `Done when:` per numbered step is what `lint` counts | [doctrine.md](/quenching/assets/references/components-command-new/doctrine.md) §Steps carry checkable completion criteria |
+| The no-op test; positive prescription; sediment / duplication / sprawl / negation | [doctrine.md](/quenching/references/components-command-new/doctrine.md) §The no-op test, §Positive prescription, §Named failure modes |
+| What a description may carry, and the trigger that is never cut for length | [doctrine.md](/quenching/references/components-command-new/doctrine.md) §The three slots, and the boundary that must be earned |
+| A `Done when:` per numbered step is what `lint` counts | [doctrine.md](/quenching/references/components-command-new/doctrine.md) §Steps carry checkable completion criteria |
 | The caps, the `sk-*` codes, and what no parser decides | [skills.md](/docs/standards/automation/skills.md) §The verifier |
 | A computed number restated in prose fans out — grep its literal form | [computed-fact-prose-fanout.md](/docs/standards/quality/computed-fact-prose-fanout.md) |
 | Which language the prose is written in | [communication.md](/docs/standards/agents/communication.md) |
 
 Resolve `cq` at `quenching/assets/bin/cq`, invoked by that literal quoted path
-([align/tool-resolution.md](/quenching/assets/references/align/tool-resolution.md)
+([align/tool-resolution.md](/quenching/references/align/tool-resolution.md)
 §Resolving the tool); branch on the **exit code** (0 ok · 1 findings · 2 refusal), never on prose.
 
 **`--root` names the directory that HOLDS the command tree** — `.claude/` here (the parent of
@@ -180,14 +180,14 @@ say why, and the harness ran once over the result.
 ## Invariants to never violate
 
 - **Never cut a quoted trigger from a description.** Only a measured miss retires one —
-  `/quenching-components-command-eval`'s. A trigger that looks like sediment is REPORTED with that
+  `/quenching-components command-eval`'s. A trigger that looks like sediment is REPORTED with that
   command named.
 - **Never cut a `Done when:` marker**, and never leave a numbered step without one — `lint` counts
   that literal string (`sk-step-criterion`).
 - **Never cut a `Not for:` clause to save chars.** The boundary is directional: a command whose
   neighbour stops naming it goes back to competing for the same spoken request, and no `sk-*` code
   sees a one-directional surface.
-- **Never delete rationale from a file under `quenching/assets/references/`** — that tree
+- **Never delete rationale from a file under `quenching/references/`** — that tree
   is `/references-tighten`'s, and there rationale is relocated under its marker, never deleted.
 - **Never fix an incoherence inside a cut.** It is a numbered finding on the plan (step 3),
   answered by the human, and reported as a fix.
@@ -200,4 +200,4 @@ say why, and the harness ran once over the result.
   then regenerate.
 - **Never write during `--review`.**
 - Never edit a `/docs/` standard, a reference, or a file outside a command body from here —
-  report it with the command that owns it (`/quenching-knowledge-add`, `/references-tighten`).
+  report it with the command that owns it (`/quenching-knowledge add`, `/references-tighten`).

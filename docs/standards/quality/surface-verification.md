@@ -2,7 +2,7 @@
 type: standard
 title: Surface verification
 description: How a change to the command surface is proven — a fresh process because the registry is built at session start over a throwaway box the checkout was deployed into, assertions on captured tool_use rather than prose, the five preconditions a functional check must satisfy to measure what it claims, why the harness belongs to the components front rather than the spec cycle and how to scope its cost, and how an ordering property is verified by running a real cycle
-resource: quenching/tests/test_readme_surface.py, quenching/assets/checks/functional-checks.sh, quenching/commands/components/command/new.md, quenching/commands/specs/conclude.md, quenching/commands/**
+resource: quenching/tests/test_readme_surface.py, quenching/assets/checks/functional-checks.sh, quenching/skills/quenching-components/references/command-new.md, quenching/skills/quenching-specs/references/conclude.md, quenching/skills/**
 tags: [quality, verification, automation, commands, functional-tests, cost]
 timestamp: 2026-11-03
 audience: both
@@ -15,7 +15,7 @@ maintainer: quenching
 
 <!-- rules -->
 
-What it takes to claim a change under `commands/**` works. The sibling
+What it takes to claim a change under `skills/**` works. The sibling
 [bundle-verification.md](bundle-verification.md) covers the `docs` front, where a checker reads
 files and reports findings; this standard covers the one front whose correctness **no in-process
 check can observe at all**. `assets/checks/functional-checks.sh` is the implementation.
@@ -23,7 +23,7 @@ check can observe at all**. `assets/checks/functional-checks.sh` is the implemen
 Distinct from [../automation/skill-evaluation.md](../automation/skill-evaluation.md), which asks
 whether a command *teaches* anything. This asks the prior question: whether it **loads**.
 
-## Nothing under `commands/**` is testable in the session that writes it
+## Nothing under `skills/**` is testable in the session that writes it
 
 The command registry is built at **session start**
 ([../../external/tools/claude-code-skill-command-mechanics.md](../../external/tools/claude-code-skill-command-mechanics.md)
@@ -45,7 +45,7 @@ than quoting a linter as if it had loaded anything.
 ## Assert on what the process did, never on what it said
 
 Each check reads `tool_use` events out of `--output-format stream-json --verbose` and asserts on
-their inputs — a `Read` whose path lands under `assets/references/`, a `Skill` whose name is
+their inputs — a `Read` whose path lands under `references/`, a `Skill` whose name is
 `quenching-align:knowledge:align`. It never greps the assistant's prose.
 
 This is the difference between a functional test and a self-report. A model asked *"did you read
@@ -57,7 +57,7 @@ Two consequences worth keeping:
 
 - **The prompt must not name what the check looks for.** Check 1 asks the command to report the
   citations *its own body* gave it and to read the first, without naming a path — so a `Read`
-  under `assets/references/` can only mean the placeholder resolved in production.
+  under `references/` can only mean the placeholder resolved in production.
 - **Assert the negative too.** Every check pairs "the right thing happened" with "the retired thing
   did not" — no `Read` under a `skills/` tree, no `Skill` matching a `quenching-*` name. A missed
   rewrite and a wrong one fail differently, and only the pair catches both.
@@ -74,7 +74,7 @@ claimed:
    and restrict settings sources as precondition 5 requires; enabling an installed plugin in the
    fixture would test that installed copy.
 3. **Satisfy the command's own preconditions, or you measure the precondition.** A spoken-routing
-   probe for `/quenching-knowledge-add` invoked nothing in an empty sandbox — correctly, because there was no OKF
+   probe for `/quenching-knowledge add` invoked nothing in an empty sandbox — correctly, because there was no OKF
    bundle to add to. That reads as a routing failure and is not one. Re-run against a real bundle,
    it routed immediately. A check on a surface whose commands have preconditions must meet them
    before its result means anything.
@@ -134,7 +134,7 @@ measured*, which is neither a pass nor a failure.
 ## The harness belongs to the components front, not to the spec cycle
 
 **The command that changes the surface is the command that proves it still loads.** That is
-`/quenching-components-command-new`, which mints and edits a command here, and `/quenching-components-command-eval`, which tunes a description on
+`/quenching-components command-new`, which mints and edits a command here, and `/quenching-components command-eval`, which tunes a description on
 measured hit rates. The harness is **not** a repo-wide post-change mandate, and it is **not** named
 in a spec's `## Validation` or a task's `verify:`.
 
@@ -148,8 +148,8 @@ the whole `/.specs/archive/` record: **every red run this harness has ever produ
 defect in the harness itself** — the cp1252 read, a hardcoded marketplace ref that made a live
 command read as `Unknown command`, a turn cap that reported working triggers as misses, a probe
 flaky enough to flip verdict on identical runs. **Not one traced to a surface regression.**
-Meanwhile the one real routing defect the repo has recorded — a `/quenching-components-hook-new` trigger that
-measured as a miss — was found by `/quenching-components-command-eval`, and check 3 gained a probe for it only afterwards.
+Meanwhile the one real routing defect the repo has recorded — a `/quenching-components hook-new` trigger that
+measured as a miss — was found by `/quenching-components command-eval`, and check 3 gained a probe for it only afterwards.
 
 **That measurement is scoped to `functional-checks.sh` alone.** It does not extend to
 `citation-check.sh` or the conclude-order check by proximity — no equivalent record exists for
@@ -164,8 +164,8 @@ instead: no dedicated measurement campaign, a red run's cause recorded when one 
 A check that has only ever caught itself earns a narrow trigger. Two things follow:
 
 - **It runs where the surface is edited, once**, not on every spec that happens to reach a merge.
-  A spec whose work never touches `commands/**` was paying eight agent sessions to learn nothing.
-- **`/quenching-components-command-eval` is the instrument for routing, and check 3 is a worse copy of it.** Step 7 of
+  A spec whose work never touches `skills/**` was paying eight agent sessions to learn nothing.
+- **`/quenching-components command-eval` is the instrument for routing, and check 3 is a worse copy of it.** Step 7 of
   that command measures the same property with should-trigger *and* should-not-trigger prompts,
   graded per command, against five hardcoded phrases with no boundary arm. Check 3 is therefore
   **opt-in** (`--only 3`), kept only to re-guard phrases already tuned; the default run is
@@ -192,7 +192,7 @@ what can move them. Making a harness all-or-nothing is what turns a correct rule
 | what changed | what can regress | what to run |
 | --- | --- | --- |
 | a command **body** | placeholder resolution, a stale citation, a conductor's stage names | the default — checks 1, 2, 4 |
-| a `description:` line | spoken routing, and nothing else | **`/quenching-components-command-eval`**; `--only 3` only to re-guard the tuned phrases |
+| a `description:` line | spoken routing, and nothing else | **`/quenching-components command-eval`**; `--only 3` only to re-guard the tuned phrases |
 | a conductor's stage names | the stage reached by registry name | `--only 2,4` |
 
 **A verification tool with no selector will be run too often or not at all.** Give one to any check
@@ -202,7 +202,7 @@ the cheap subset rather than the exhaustive one.
 ## When a process-spawning check *does* gate a merge, it gates before it
 
 Nothing above is specific to this harness: it holds for any check a repo's `## Validation` names
-that costs real resources per run. `/quenching-specs-conclude` step 6 runs that gate on the **work branch,
+that costs real resources per run. `/quenching-specs conclude` step 6 runs that gate on the **work branch,
 before the merge**, and a red check stops the merge.
 
 - Run afterwards, a failure's only repair is a commit on the base — the exact write that command's
@@ -215,7 +215,7 @@ before the merge**, and a red check stops the merge.
   recorded before it.
 
 This ordering became possible only with precondition 5 satisfied. While every probe loaded the
-marketplace's clone, a spec that isolated before editing `commands/**` could not prove its own
+marketplace's clone, a spec that isolated before editing `skills/**` could not prove its own
 change at all — a green run graded the base and a red one indicted code the probe never loaded —
 so the only honest moment left was after the merge, where a failure can be reported and no longer
 fixed.

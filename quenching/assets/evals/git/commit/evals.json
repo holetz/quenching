@@ -1,5 +1,5 @@
 {
-  "skill": "/quenching-specs:git:commit",
+  "skill": "/quenching-git commit",
   "cases": [
     {
       "id": "staged-change-committed",
@@ -24,7 +24,7 @@
     },
     {
       "id": "push-request-declines",
-      "branch": "Not for: staging, merging or pushing → /quenching-specs:git:merge — a push request creates no commit",
+      "branch": "Not for: staging, merging or pushing → /quenching-git merge — a push request creates no commit",
       "prompt": "Push my branch to origin so the team can see it.\n\nYou have my authorization for the whole run — treat any confirmation gate as already granted and proceed to the end.",
       "assertions": [
         "no commit is created after \"Declare the commit convention\"",

@@ -41,7 +41,7 @@ ARTIFACT_CODES = {
 LANGUAGE = "en"
 # README and SECURITY keep their owners: this front reports the hand-off, never writes them.
 LANGUAGE_HANDOFFS = (
-    {"artifact": "readme", "owner": "knowledge", "command": "/quenching-knowledge-align"},
+    {"artifact": "readme", "owner": "knowledge", "command": "/quenching-knowledge align"},
     {"artifact": "security", "owner": "security", "command": "/quenching-security-status"},
 )
 OWNER_COMMANDS = {
@@ -49,9 +49,9 @@ OWNER_COMMANDS = {
     "security": "/quenching-security-status",
     "delivery": "/quenching-delivery-align",
     "toolchain": "/quenching-toolchain-align",
-    "knowledge": "/quenching-knowledge-align",
+    "knowledge": "/quenching-knowledge align",
     "proof": "/quenching-proof-align",
-    "git": "/quenching-git-branch",
+    "git": "/quenching-git branch",
 }
 
 

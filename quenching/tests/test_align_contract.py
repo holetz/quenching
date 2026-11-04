@@ -13,7 +13,7 @@ ALIGN_DECLARATION = ROOT.parent / "docs" / "standards" / "architecture" / "align
 
 class KnowledgeAlignmentContract(unittest.TestCase):
     def test_align_preflights_evidence_and_classifies_residuals(self):
-        align = (ROOT / "assets" / "references" / "knowledge-flows" / "align.md").read_text(encoding="utf-8")
+        align = (ROOT / "skills" / "quenching-knowledge" / "references" / "align.md").read_text(encoding="utf-8")
 
         for marker in (
             "preflight",
@@ -31,7 +31,7 @@ class KnowledgeAlignmentContract(unittest.TestCase):
         self.assertLess(preflight, inventory)
 
     def test_align_convergence_order_is_explicit(self):
-        align = (ROOT / "assets" / "references" / "knowledge-flows" / "align.md").read_text(encoding="utf-8")
+        align = (ROOT / "skills" / "quenching-knowledge" / "references" / "align.md").read_text(encoding="utf-8")
         verify = align.split("### 8. Verify, then decide: loop or stop", 1)[1].split(
             "### 9. Report", 1
         )[0]
@@ -48,9 +48,9 @@ class KnowledgeAlignmentContract(unittest.TestCase):
         self.assertIn("--glossary-term", verify)
 
     def test_align_proposes_a_router_for_local_families(self):
-        align = (ROOT / "assets" / "references" / "components-flows" / "align.md").read_text(encoding="utf-8")
+        align = (ROOT / "skills" / "quenching-components" / "references" / "align.md").read_text(encoding="utf-8")
         doctrine = (
-            ROOT / "assets" / "references" / "components-command-new" / "doctrine.md"
+            ROOT / "references" / "components-command-new" / "doctrine.md"
         ).read_text(encoding="utf-8")
         section = "§A target extends a vertical with its own router"
 
@@ -61,7 +61,7 @@ class KnowledgeAlignmentContract(unittest.TestCase):
         self.assertIn(section, doctrine)
 
     def test_status_collects_the_payload_that_controls_derive_from(self):
-        status = (ROOT / "assets" / "references" / "knowledge-flows" / "status.md").read_text(encoding="utf-8")
+        status = (ROOT / "skills" / "quenching-knowledge" / "references" / "status.md").read_text(encoding="utf-8")
         collect = status.split("### 2. Collect (read-only)", 1)[1].split("### 3.", 1)[0]
         report = status.split("### 4. Report", 1)[1].split("### 5.", 1)[0]
 
@@ -88,7 +88,7 @@ class KnowledgeAlignmentContract(unittest.TestCase):
             declared_order[1:-1],
         )
 
-        align = (ROOT / "commands" / "align.md").read_text(encoding="utf-8")
+        align = (ROOT / "skills" / "quenching-align" / "SKILL.md").read_text(encoding="utf-8")
         execution = align.split("## Execution order", 1)[1].split("## Workflow", 1)[0]
         rows = [line for line in execution.splitlines() if line.startswith("| `")]
         parsed = []
@@ -104,7 +104,8 @@ class KnowledgeAlignmentContract(unittest.TestCase):
         self.assertEqual([front for front, _, _ in parsed], declared_order)
         for index, (front, route, dependency) in enumerate(parsed):
             with self.subTest(front=front):
-                self.assertEqual(route, f"/quenching-{front}-align")
+                routed = front in ("knowledge", "components")
+                self.assertEqual(route, f"/quenching-{front} align" if routed else f"/quenching-{front}-align")
                 self.assertEqual(dependency, "applicability" if index == 0 else parsed[index - 1][0])
 
         workflow = align.split("## Workflow", 1)[1].split("## Invariants", 1)[0]
@@ -116,7 +117,7 @@ class KnowledgeAlignmentContract(unittest.TestCase):
         # not runtime invocation order.
 
     def test_build_gates_catalog_and_glossary_qa(self):
-        build = (ROOT / "assets" / "references" / "knowledge-flows" / "documentation-build.md").read_text(
+        build = (ROOT / "skills" / "quenching-knowledge" / "references" / "documentation-build.md").read_text(
             encoding="utf-8"
         )
 
@@ -127,7 +128,7 @@ class KnowledgeAlignmentContract(unittest.TestCase):
         self.assertIn("--glossary-term", build)
 
     def test_build_checks_all_generated_paths_for_tracking(self):
-        build = (ROOT / "assets" / "references" / "knowledge-flows" / "documentation-build.md").read_text(
+        build = (ROOT / "skills" / "quenching-knowledge" / "references" / "documentation-build.md").read_text(
             encoding="utf-8"
         )
 
@@ -136,10 +137,10 @@ class KnowledgeAlignmentContract(unittest.TestCase):
 
     def test_embedded_documentation_references_use_current_paths(self):
         architecture = (
-            ROOT / "assets" / "references" / "knowledge-documentation" / "architecture.md"
+            ROOT / "skills" / "quenching-knowledge" / "references" / "knowledge-documentation" / "architecture.md"
         ).read_text(encoding="utf-8")
         validation = (
-            ROOT / "assets" / "references" / "knowledge-documentation" / "validation.md"
+            ROOT / "skills" / "quenching-knowledge" / "references" / "knowledge-documentation" / "validation.md"
         ).read_text(encoding="utf-8")
 
         legacy_home = "docs/" + "documentation"
@@ -157,15 +158,15 @@ class KnowledgeAlignmentContract(unittest.TestCase):
             script.parent.mkdir(parents=True)
             shutil.copy2(check, script)
             shutil.copy2(ROOT / "assets" / "modules.json", script.parents[1] / "modules.json")
-            command = repo / "quenching" / "commands" / "knowledge" / "align.md"
+            command = repo / "quenching" / "skills" / "quenching-knowledge" / "references" / "align.md"
             command.parent.mkdir(parents=True)
             command.write_text(
-                "/quenching-knowledge-align\n"
-                "`quenching/commands/knowledge/align.md`\n"
-                "[reference.md](../../assets/references/reference.md) §Inexistente\n",
+                "/quenching-knowledge align\n"
+                "`quenching/skills/quenching-knowledge/references/align.md`\n"
+                "[reference.md](../../../references/reference.md) §Inexistente\n",
                 encoding="utf-8",
             )
-            reference = repo / "quenching" / "assets" / "references" / "reference.md"
+            reference = repo / "quenching" / "references" / "reference.md"
             reference.parent.mkdir(parents=True)
             reference.write_text("# Reference\n\n## Existing\n", encoding="utf-8")
             subprocess.run(["git", "init", "-q"], cwd=repo, check=True)
@@ -193,16 +194,16 @@ class KnowledgeAlignmentContract(unittest.TestCase):
             script.parent.mkdir(parents=True)
             shutil.copy2(check, script)
             shutil.copy2(ROOT / "assets" / "modules.json", script.parents[1] / "modules.json")
-            command = repo / "quenching" / "commands" / "knowledge" / "align.md"
+            command = repo / "quenching" / "skills" / "quenching-knowledge" / "references" / "align.md"
             command.parent.mkdir(parents=True)
-            missing_path = ".agents/quenching/assets/references/" + "missing.md"
+            missing_path = ".agents/quenching/references/" + "missing.md"
             command.write_text(
-                "/quenching-knowledge-align\n"
+                "/quenching-knowledge align\n"
                 f"`{missing_path}`\n"
-                "[reference.md](../../assets/references/reference.md) §Existing\n",
+                "[reference.md](../../../references/reference.md) §Existing\n",
                 encoding="utf-8",
             )
-            reference = repo / "quenching" / "assets" / "references" / "reference.md"
+            reference = repo / "quenching" / "references" / "reference.md"
             reference.parent.mkdir(parents=True)
             reference.write_text("# Reference\n\n## Existing\n", encoding="utf-8")
             subprocess.run(["git", "init", "-q"], cwd=repo, check=True)

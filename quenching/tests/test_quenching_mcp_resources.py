@@ -13,7 +13,8 @@ except ModuleNotFoundError:
     import _paths  # noqa: F401
 from quenching.mcp import catalog, resources, server
 
-ASSETS = pathlib.Path(__file__).resolve().parent.parent / "assets" / "references"
+ASSETS = pathlib.Path(__file__).resolve().parent.parent / "references"
+SKILLS = pathlib.Path(__file__).resolve().parent.parent / "skills"
 
 
 def rpc(request_id, method, params=None):
@@ -27,7 +28,9 @@ def read(uri):
 class Listing(unittest.TestCase):
     def test_every_reference_is_listed_once_beside_the_index(self):
         listed = [r["uri"] for r in resources.list_resources("/x")]
-        on_disk = sorted(p.relative_to(ASSETS).as_posix() for p in ASSETS.rglob("*.md"))
+        on_disk = sorted([p.relative_to(ASSETS).as_posix() for p in ASSETS.rglob("*.md")]
+                         + [p.relative_to(SKILLS).as_posix().replace("/references/", "/", 1)
+                            for p in SKILLS.glob("*/references/**/*.md")])
         self.assertEqual(listed[0], "quenching://references")
         self.assertEqual(sorted(listed[1:]), [f"quenching://references/{p}" for p in on_disk])
 
@@ -67,7 +70,7 @@ class Reading(unittest.TestCase):
     def test_a_served_reference_links_its_siblings_as_resources(self):
         text = resources._read("git/commit.md")
         self.assertIn("quenching://references/git/conventions.md", text)
-        self.assertNotIn(".agents/quenching/assets/references/", text)
+        self.assertNotIn(".agents/quenching/references/", text)
 
     def test_an_absent_section_is_a_refusal_naming_it(self):
         small, _, _ = self.small_and_large()
@@ -94,6 +97,7 @@ class Containment(unittest.TestCase):
             outside.write_text("# secret\n", encoding="utf-8")
             os.symlink(outside, tree / "link.md")
             held, resources.REFERENCES = resources.REFERENCES, str(tree)
+            held_skills, resources.SKILLS = resources.SKILLS, str(pathlib.Path(tmp, "no-skills"))
             try:
                 self.assertEqual(resources.files(), ["real.md"])
                 with self.assertRaises(server.ResourceError) as caught:
@@ -101,6 +105,7 @@ class Containment(unittest.TestCase):
                 self.assertEqual(caught.exception.code, server.NOT_FOUND)
             finally:
                 resources.REFERENCES = held
+                resources.SKILLS = held_skills
 
     def test_another_resource_is_not_found_so_a_composite_passes_it_on(self):
         with self.assertRaises(server.ResourceError) as caught:

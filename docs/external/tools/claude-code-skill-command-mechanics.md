@@ -2,7 +2,7 @@
 type: external
 title: Claude Code skill and command loading mechanics
 description: Measured facts about how Claude Code loads plugin commands vs skills — placeholder substitution, the Skill-tool registry, startup-time discovery, the unified frontmatter schema, and what disable-model-invocation actually closes
-resource: quenching/commands/**
+resource: quenching/skills/**
 tags: [claude-code, plugins, skills, commands, frontmatter, tooling]
 timestamp: 2026-08-11
 audience: both
@@ -39,13 +39,13 @@ been re-confirmed against a version later than the one beside it.
 ### 1–2. Placeholder substitution reaches command bodies
 
 The documented substitution table grants `.agents/quenching` to *"Skill and agent content"*
-and does not name `commands/**`. It nonetheless resolves there: a command body containing the
+and does not name `skills/**`. It nonetheless resolves there: a command body containing the
 placeholder expanded to the absolute plugin root, on **both** invocation paths — typed as a slash
 command, and invoked by name through the Skill tool.
 
 This is what makes a command file able to cite a bundled `references/*.md` the way a skill does.
 
-Corroborated by precedent: Anthropic ships four `commands/**` files using the placeholder, one of
+Corroborated by precedent: Anthropic ships four `skills/**` files using the placeholder, one of
 them (`ralph-wiggum/commands/ralph-loop.md`) load-bearingly **inside `allowed-tools` itself** and
 again in an executing `!` block.
 
@@ -146,8 +146,8 @@ Rows 1, 2 and 4 were re-measured against **Claude Code 2.1.215** immediately bef
 migration moved its first file — see below.
 
 **Row 6 was contradicted before it was ever relied upon.** Three artifacts asserted that a scoped
-`allowed-tools` *was* the enforcement behind a read-only guarantee — the `/quenching-knowledge-status` and
-`/quenching-specs-status` doctrine bullets, and the plugin `README.md`'s `/quenching-knowledge-status` paragraph — which is
+`allowed-tools` *was* the enforcement behind a read-only guarantee — the `/quenching-knowledge status` and
+`/quenching-specs status` doctrine bullets, and the plugin `README.md`'s `/quenching-knowledge status` paragraph — which is
 the contrary of what row 6 observed, claimed without measuring anything.
 `verify-allowed-tools-enforcement` (2026-07-28) deleted all three, and closed the gap that produced
 them: `standards/automation/skills.md` §`allowed-tools` is always scoped and the

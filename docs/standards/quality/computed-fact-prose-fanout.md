@@ -2,7 +2,7 @@
 type: standard
 title: A computed fact's prose fan-out
 description: "Any fact a tool computes and prose restates — a schema's fields, a surface's command count — fans out the moment it changes, and no checker sees it: why the validators are blind by construction, the two independent measurements this rule was set from, the grep on the fact's spelled-out form that finds the sites while the change is still cheap, a doc's own `description` as the nearest instance with its two listing consumers (one hand-maintained, one a GENERATED zone that is stale between sweeps by design), and why it belongs to the task that makes the change rather than to a later sweep"
-resource: quenching/assets/specs/schema.json, quenching/assets/bin/quenching/specs/**, quenching/commands/**, quenching/assets/checks/citation-check.sh
+resource: quenching/assets/specs/schema.json, quenching/assets/bin/quenching/specs/**, quenching/skills/**, quenching/assets/checks/citation-check.sh
 tags: [quality, schema, records, documentation, sweeps]
 timestamp: 2026-08-27
 audience: both
@@ -75,7 +75,7 @@ editing the doc updates neither.
 | Consumer | How it is maintained | What a stale copy looks like |
 | --- | --- | --- |
 | the home's `index.md` (e.g. `standards/automation/index.md`) | by hand, usually a shortened form | a row that summarises a rule the doc no longer states |
-| the GENERATED zone of `standards/index.md` | verbatim, rebuilt only by `/quenching-knowledge-align` | the previous `description`, word for word, until a sweep runs |
+| the GENERATED zone of `standards/index.md` | verbatim, rebuilt only by `/quenching-knowledge align` | the previous `description`, word for word, until a sweep runs |
 
 Neither is caught by `cq knowledge validate` — an out-of-date listing is a well-formed listing.
 Measured on `revisar-fluxo-do-develop-custo-e-gates` (2026-08-16), whose task 1.1 rewrote
@@ -113,7 +113,7 @@ sweep you **ran**, corrupting the sentences that talk *about* the form. This is 
 The section above says historical mentions stay, and it is right about the **fact**. It is not a
 licence to keep the **spelling**. When the thing that went stale is not a field name but a
 *retired command*, a second instrument enters: `assets/checks/citation-check.sh` half 2 asserts
-that every cited `/quenching:<ns>:<cmd>` resolves to a body under `commands/**`. That assertion
+that every cited `/quenching:<ns>:<cmd>` resolves to a body under `skills/**`. That assertion
 and "historical mentions stay, verbatim" cannot both hold — a retired command leaves its name in
 changelogs and in the rationale of standards, and every one of those reads to the check as a
 citation with no body.

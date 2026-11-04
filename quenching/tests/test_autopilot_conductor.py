@@ -7,7 +7,7 @@ from pathlib import Path
 import unittest
 
 ROOT = Path(__file__).resolve().parents[2]
-AUTOPILOT = ROOT / "quenching/commands/specs/autopilot.md"
+AUTOPILOT = ROOT / "quenching/skills/quenching-specs/references/autopilot.md"
 
 
 def text() -> str:

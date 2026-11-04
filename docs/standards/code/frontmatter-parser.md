@@ -19,7 +19,7 @@ maintainer: quenching
 `specs`, `knowledge` and `components` alike. Three hand-written mini-parsers used to hold this
 line, one per shipped script, because each ran self-contained out of a target repo's
 `.claude/hooks/` and could import nothing else
-(`quenching/assets/references/align/tool-resolution.md`
+(`quenching/references/align/tool-resolution.md`
 §Resolving the tool). Nothing installs standalone any more — every pillar resolves through
 `.agents/quenching/assets/bin/cq` — so the premise that forced three copies is gone, and this
 module is what replaced them.

@@ -9,7 +9,7 @@ tags:
 timestamp: 2026-08-28
 audience: both
 authority: current
-source: command bodies under quenching/commands/knowledge/documentation/; references under quenching/assets/references/knowledge-documentation/
+source: command bodies under quenching/skills/quenching-knowledge/references/; references under quenching/skills/quenching-knowledge/references/knowledge-documentation/
 maintainer: Israel Holetz
 ---
 
@@ -35,7 +35,7 @@ flowchart LR
 === "Conducted (recommended)"
 
     ```text
-    /quenching-knowledge-documentation-produce
+    /quenching-knowledge documentation-produce
     ```
 
     One authorization, four stages in order, one final report: coverage over the **whole
@@ -44,10 +44,10 @@ flowchart LR
 === "Stage by stage"
 
     ```text
-    /quenching-knowledge-documentation-plan      # diagnose + publication map + one OK
-    /quenching-knowledge-documentation-write     # sourced pages from the plan
-    /quenching-knowledge-documentation-review    # scores; changes not a byte
-    /quenching-knowledge-documentation-build     # site layer, strict build, rendered QA
+    /quenching-knowledge documentation-plan      # diagnose + publication map + one OK
+    /quenching-knowledge documentation-write     # sourced pages from the plan
+    /quenching-knowledge documentation-review    # scores; changes not a byte
+    /quenching-knowledge documentation-build     # site layer, strict build, rendered QA
     ```
 
     Useful when iterating on one stage — the plan of record persists at

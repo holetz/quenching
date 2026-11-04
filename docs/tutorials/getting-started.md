@@ -9,7 +9,7 @@ tags:
 timestamp: 2026-11-03
 audience: human
 authority: current
-source: quenching/README.md §The seven fronts, the non-converging axes, and the one align per front; command bodies under quenching/commands/; spec 2160
+source: quenching/README.md §The seven fronts, the non-converging axes, and the one align per front; command bodies under quenching/skills/; spec 2160
 maintainer: Israel Holetz
 ---
 
@@ -85,9 +85,9 @@ The status commands are intended as read-only views, and their declared tool gra
 `Write` and `Edit`:
 
 ```text
-/quenching-knowledge-status
+/quenching-knowledge status
 /quenching-design-status
-/quenching-specs-status
+/quenching-specs status
 /quenching-ops-status
 /quenching-proof-status
 /quenching-toolchain-status

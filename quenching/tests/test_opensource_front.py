@@ -75,7 +75,7 @@ class AggregateTest(unittest.TestCase):
                 self.assertFalse(contract["contentVerified"])
                 self.assertEqual([
                     {"artifact": "readme", "owner": "knowledge",
-                     "command": "/quenching-knowledge-align"},
+                     "command": "/quenching-knowledge align"},
                     {"artifact": "security", "owner": "security",
                      "command": "/quenching-security-status"},
                 ], contract["handoffs"])

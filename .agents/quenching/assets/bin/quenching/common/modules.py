@@ -29,7 +29,7 @@ def safe_path(root: Path, value: str) -> Path:
 def load_manifest(root: Path) -> dict:
     """The deploy manifest: the modules `cq deploy` installs, and the few plugins that are not."""
     data = json.loads(safe_path(root, MANIFEST).read_text(encoding="utf-8"))
-    if data.get("schemaVersion") != 2 or not isinstance(data.get("modules"), list):
+    if data.get("schemaVersion") != 3 or not isinstance(data.get("modules"), list):
         raise ValueError("unsupported module manifest schema")
     for field in ("source", "marketplace", "versionConstant"):
         safe_path(root, data[field])
@@ -46,14 +46,15 @@ def load_manifest(root: Path) -> dict:
             if package in planned_owners:
                 raise ValueError(f"duplicate package owner: {package}")
             planned_owners.add(package)
-        for rel in module["owned"]["commands"]:
-            safe_path(root / data["source"] / "commands", rel)
+        for skill in module["owned"]["skills"]:
+            if not safe_path(root / data["source"] / "skills", skill + "/SKILL.md").is_file():
+                raise ValueError(f"missing skill source: {skill}")
         support = module["generatedSupport"]
         for package in [*module["owned"]["packages"], *support["packages"]]:
             if not safe_path(root / data["source"] / "assets/bin/quenching", package).is_dir():
                 raise ValueError(f"missing package source: {package}")
         for reference in support["references"]:
-            if not safe_path(root / data["source"] / "assets/references", reference).is_dir():
+            if not safe_path(root / data["source"] / "references", reference).is_dir():
                 raise ValueError(f"missing reference source: {reference}")
     plugins = data.get("plugins", [])
     if not isinstance(plugins, list):
@@ -111,19 +112,26 @@ def distribution_findings(root: Path, manifest: dict) -> list[str]:
     return findings
 
 
+def skill_heads(name: str) -> list[str]:
+    """The `quenching:<head>` heads one skill answers to: its name without the `quenching-` prefix, and,
+    for a front skill (`quenching-design-align`), the front itself (`design`)."""
+    head = name.removeprefix("quenching-")
+    return [head] if "-" not in head else [head, head.split("-", 1)[0]]
+
+
 def namespace_map(root: Path, manifest: dict) -> dict[str, str]:
-    """Map each `quenching:<head>` id head (a command front, root command or agent) to its module."""
+    """Map each `quenching:<head>` id head (a skill, its front or an agent) to its module."""
     source = root / manifest["source"]
     mapping = {}
     for module in manifest["modules"]:
         owned = module.get("owned")
         if not owned:
             continue
-        heads = [rel.removesuffix(".md") for rel in owned["commands"]]
+        heads = [head for skill in owned["skills"] for head in skill_heads(skill)]
         if owned["agents"]:
             heads += sorted(p.stem for p in (source / "agents").glob("*.md"))
         for head in heads:
-            if head in mapping:
+            if mapping.get(head, module["name"]) != module["name"]:
                 raise ValueError(f"duplicate namespace head: {head}")
             mapping[head] = module["name"]
     return mapping

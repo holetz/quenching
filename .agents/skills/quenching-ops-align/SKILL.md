@@ -17,18 +17,18 @@ disable-model-invocation: true
 This command owns the operations front's convergence pass. It reads the target's declared
 operations root and canonical router, applies only deterministic mechanical and bounded structural
 repairs, and leaves production-risk decisions with the target owner. The disposition rules live in
-[ops-align/bands.md](.agents/quenching/assets/references/ops-align/bands.md); the target tree and
-router contract live in [ops-align/target-structure.md](.agents/quenching/assets/references/ops-align/target-structure.md)
-and [ops-align/entrypoint-contract.md](.agents/quenching/assets/references/ops-align/entrypoint-contract.md).
+[ops-align/bands.md](.agents/quenching/references/ops-align/bands.md); the target tree and
+router contract live in [ops-align/target-structure.md](.agents/quenching/references/ops-align/target-structure.md)
+and [ops-align/entrypoint-contract.md](.agents/quenching/references/ops-align/entrypoint-contract.md).
 The common front contract lives in
-[front-align/mold.md](.agents/quenching/assets/references/front-align/mold.md); these references
+[front-align/mold.md](.agents/quenching/references/front-align/mold.md); these references
 keep the router, registry and entry-point-specific evidence separate from the shared mold.
 
 Set `TARGET_ROOT` to the supplied argument, or to `.` when the argument is omitted, and pass that
 same root to every `.agents/quenching/bin/cq ops` call.
 
 Resolve `cq` per
-[tool-resolution.md](.agents/quenching/assets/references/align/tool-resolution.md)
+[tool-resolution.md](.agents/quenching/references/align/tool-resolution.md)
 §Resolving the tool. Use the resolved path literally and branch on exit code and JSON:
 `0` is clean, `1` reports findings, and `2` is a refusal.
 
@@ -46,7 +46,7 @@ When it exits `0` with no findings, report "ops conformant, nothing to align" an
 run `ops inventory`, ask for confirmation, or write anything. When it exits `2` with
 `op-config-missing`, report the missing `opsRoot` and/or `router` exactly as returned and stop;
 the align never guesses `scripts/`, a router, or an inventory. The probe rule is the operations
-application of [sweep-doctrine.md](.agents/quenching/assets/references/align/sweep-doctrine.md)
+application of [sweep-doctrine.md](.agents/quenching/references/align/sweep-doctrine.md)
 §1. Probe before the inventory.
 
 **Done when:** the clean case or a configuration refusal has stopped without an inventory, or a

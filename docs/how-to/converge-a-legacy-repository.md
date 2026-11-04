@@ -11,7 +11,7 @@ tags:
 timestamp: 2026-08-30
 audience: human
 authority: current
-source: measured migration of the <redacted>-gold target worktree on 2026-08-30; quenching/commands/ops/align.md; quenching/commands/proof/align.md
+source: measured migration of the <redacted>-gold target worktree on 2026-08-30; quenching/skills/quenching-ops-align/SKILL.md; quenching/skills/quenching-proof-align/SKILL.md
 maintainer: Israel Holetz
 ---
 

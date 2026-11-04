@@ -2,7 +2,7 @@
 type: standard
 title: Command authoring and alignment
 description: How the plugin's commands are classified, authored, named, and swept into conformance — one file per entry point, including the admission criterion that decides whether a command's description stays resident in context or goes typed-only, and where a target repository's skill is born and how its Claude bridge is generated and verified
-resource: quenching/commands/**, quenching/assets/references/**, quenching/assets/bin/quenching/components/commands/bridge.py, quenching/assets/bin/quenching/components/commands/migrate.py
+resource: quenching/skills/**, quenching/references/**, quenching/assets/bin/quenching/components/commands/bridge.py, quenching/assets/bin/quenching/components/commands/migrate.py
 tags: [automation, commands, taxonomy, authoring]
 timestamp: 2026-11-03
 audience: both
@@ -17,12 +17,12 @@ maintainer: quenching
 
 The contract for how a command enters and stays in this plugin's automation surface, distilled
 from the skill-authoring + skill-alignment change that first paired a skill with its wrapper.
-`/quenching-components-command-new` mints or edits one command; `/quenching-components-align`
+`/quenching-components command-new` mints or edits one command; `/quenching-components align`
 sweeps the whole surface into conformance. The naming these produce is governed by
 [command-surface.md](../naming/command-surface.md); the layout rule for what may sit under
 `commands/` by [../architecture/plugin-layout.md](../architecture/plugin-layout.md); the
 writing-doctrine detail lives once in
-`quenching/assets/references/components-command-new/` and is cited, never restated.
+`quenching/references/components-command-new/` and is cited, never restated.
 
 **One file per entry point.** Claude Code merged custom commands into skills, so a command file
 carries both the description that routes to it and the body that runs. Where this standard once
@@ -83,7 +83,7 @@ the *verb* differs — a command that waits for a human-stated edit and one that
 questions are opposite directions of initiative and stay apart; two scripts for the same
 interrogation do not.
 
-## Authoring (`/quenching-components-command-new`)
+## Authoring (`/quenching-components command-new`)
 
 - **ONE file** per mint — a `commands/<path>.md` carrying frontmatter and body. Nothing else goes
   under `commands/`.
@@ -103,10 +103,10 @@ interrogation do not.
 - **OKF tail** on every mint: regenerate the derived registry's GENERATED zone, offer a glossary
   entry for any coined term, append a log entry, and self-check.
 
-## Alignment (`/quenching-components-align`)
+## Alignment (`/quenching-components align`)
 
 - **Read-only inventory** of the existing command surface before any plan — plus a `Glob` for any
-  surviving `skills/<name>/SKILL.md`, which the verifier cannot see because it reads `commands/**`
+  surviving `skills/<name>/SKILL.md`, which the verifier cannot see because it reads `skills/**`
   and nothing else.
 - **Collapse a legacy pair** into the one file its wrapper path names: the wrapper's `description`
   and `argument-hint`, the skill's `allowed-tools` and `effort`, the skill's body moved verbatim.
@@ -118,7 +118,7 @@ interrogation do not.
   scaffolding change — existing bodies are preserved. An unclassifiable command is kept and
   reported, never forced.
 - **One surface-wide description review, on its own confirmation.** A body is reported with the
-  `/quenching-components-command-new` that fixes it; a **description** is rewritten here, because its central question —
+  `/quenching-components command-new` that fixes it; a **description** is rewritten here, because its central question —
   does anything else answer to the same request? — is unanswerable one command at a time, and this
   is the only pass holding the whole surface. Prose about *how* a command works is cut, a missing
   concept or trigger is added, an unearned `Not for:` is waived with the competitor set named — and
@@ -134,7 +134,7 @@ In a target repository a skill is born at `.agents/skills/<name>/SKILL.md` — `
 ([command-surface.md](../naming/command-surface.md) §A target's skill name is one segment), the
 frontmatter `name:` equal to it, sibling files in the same folder, references under
 `.agents/references/**` and eval cases under `.agents/evals/<name>/`. That folder is the only
-editable copy. `/quenching-components-command-new` writes there and then runs
+editable copy. `/quenching-components command-new` writes there and then runs
 `cq components bridge --target <repo> --write`, never writing `.claude/skills/` by hand; a subagent
 stays in `.claude/agents/`, because Claude Code 2.1.312 reads no generic home for it.
 
@@ -148,7 +148,7 @@ The bridge is generated, and verified by code:
   copy whose source is gone — and 0 when the copy matches. A `.claude/skills/<name>/` the manifest
   does not list is refused (exit 2, `ct-bridge-unowned`), never overwritten.
 - `cq components migrate --target <repo>` plans the move from the legacy `.claude/commands/` layout;
-  `/quenching-align`, `/quenching-components-align` and `/quenching-components-status`
+  `/quenching-align`, `/quenching-components align` and `/quenching-components status`
   run it with `bridge --check`, and apply a non-empty plan on one confirmation. It trusts no
   manifest: an `.agents/skills/<path>/` or `.agents/references/<rel>` beside a `.claude/` source is
   retired as the old translation only when its content is what `translate` generates from some
@@ -218,8 +218,8 @@ Two consequences that are not obvious from the test itself:
 
 - **"A human might type this" is not a reason to pick typed-only.** Every command can be typed. The
   question is whether anything *else* reaches it, and for a conductor stage the answer is yes even
-  though a human can also type it — which is exactly how `/quenching-components-harness-align`, `/quenching-knowledge-import-memory` and
-  `/quenching-knowledge-glossary-backfill` would be misclassified by intuition.
+  though a human can also type it — which is exactly how `/quenching-components harness-align`, `/quenching-knowledge import-memory` and
+  `/quenching-knowledge glossary-backfill` would be misclassified by intuition.
 - **The name-reachable half is not a judgment call.** `cq components lint` derives it from the command
   bodies and reports `sk-inert-stage` at error for a typed-only command another body reaches by
   name. Classify against the instrument, not against recollection of who calls what.
@@ -228,40 +228,44 @@ The criterion is a floor, not a quota: it says which commands *may* be typed-onl
 must be. On a small surface it may admit nobody, and that is a legitimate outcome rather than a
 failure to economise.
 
-### One router per vertical, shortcuts typed-only
+### One router per vertical, no shortcuts
 
 A vertical with several flows that conductors call (`specs`: create, develop, execute, conclude,
-triage, status, orchestrate) carries **one routed skill** — `/quenching-specs-specs <flow> <id>` —
-and each flow's body lives once in `assets/references/specs-flows/<flow>.md`, loaded with
+triage, status, orchestrate) carries **one routed skill** — `/quenching-specs <flow> <id>` — and
+each flow's body lives once in `skills/quenching-specs/references/<flow>.md`, loaded with
 `cq components read`. The pattern applies to **any vertical**, in the same shape:
-`commands/<vertical>/<vertical>.md` routes, `assets/references/<vertical>-flows/<flow>.md` holds
-each body (`knowledge`, `components` and `git` follow it). A flow already typed-only (a human-only
-command) never enters the router's table.
+`skills/quenching-<vertical>/SKILL.md` routes and `skills/quenching-<vertical>/references/<flow>.md`
+holds each body (`knowledge`, `components` and `git` follow it). A flow's body is cited
+`/quenching-<vertical> <flow>`; a skill with no flows is cited by its own name
+(`/quenching-handoff`, `/quenching-design-align`).
+
+**There are no shortcuts.** The router's description is what takes a request to the flow, so no
+typed-only `/quenching-<vertical>-<flow>` skill sits beside it. A flow that a conductor or a human
+names reaches the router with the `flow` argument and the id; a flow nobody should reach by
+description or by stage (`autopilot`, `push`, `revert`, `cleanup`) runs **only on an explicit
+mention**: the human's request names the flow. A request by stage or by description never picks
+one of those four. The rule is stated in the router's body and as an invariant.
 
 **Which verticals earn a router.** The criterion is the count of model-invocable entries the vertical
 puts in the list: a router replaces N resident descriptions with one, so it pays only where N is large.
 The verticals of one to three commands (`align`, `delivery`, `design`, `ops`, `proof`, `toolchain`,
-`opensource`, `security`) stay as they are, since the saving is smaller than the router's own
-description. `components:align` and `command:new` recognise a vertical with many model-invocable
-entries and *propose* the router; they never apply it unasked. The model's list pays for one description; a flow's text is read only when it
-runs. The router grants only `Bash(cq:*)`, `Bash(cq.cmd:*)` and `Read`, so it widens no flow's tool
-grant; a tool the flow needs beyond that comes from the conductor agent's own tools or a human
-prompt. **The exception is `git`**: its router grants the narrower `Bash(cq components read:*)`,
-`Bash(cq.cmd components read:*)`, `Bash(cq specs status:*)` and `Read`, because the git flows run raw
-`git` and `gh` under the conductor's own grants and the router adds nothing to them. A `hooks:` block
-stays on the typed-only shortcut that declares it (`git/commit.md`); a flow loaded through the router
-does not fire it, and that loss is accepted, since the hook only warns.
+`opensource`, `security`) stay as one skill per command, since the saving is smaller than the
+router's own description. `components` `align` and `command-new` recognise a vertical with many
+model-invocable entries and *propose* the router; they never apply it unasked. The model's list pays
+for one description; a flow's text is read only when it runs.
 
-Each former command stays as a thin **typed-only shortcut**: it declares
-`disable-model-invocation: true`, keeps its exact tool grant and loads the same reference, so
-typing `/quenching-specs-execute` still works while its description leaves every context. A
-shortcut declares no `model:`: a worker's model comes from its agent, the main session's from the
-human.
+**The router's grant is the union of its flows' grants.** Each flow declares its own `allowed-tools`
+in the frontmatter of its reference, copied unchanged from the command it replaces. The router
+grants their union and repeats no scope that a wider one already covers (`Bash(git status:*)` under
+`Bash(git:*)`, everything under `Bash`). Where the union holds an unscoped `Bash`, the router body
+carries the **Why `Bash` is unrestricted here.** line (§`allowed-tools` is always scoped, below). `cq components lint`
+reports `sk-router-grant` at error when a router does not cover a flow's grant, and
+`sk-dangling-citation` checks that `/quenching-<vertical> <flow>` names a flow in the router's table.
+A `hooks:` block cannot ride a flow loaded through the router, so a flow that needs one stays its
+own skill; the `git` router drops the warn-level hook of `commit`, since it only warned.
 
-**The conductor calls the router, never the shortcut.** `disable-model-invocation: true` makes the
-Skill tool refuse the shortcut, so `spec-runner`, `spec-orchestrator` and the translated surfaces
-(Codex, OpenCode) invoke the router with the `flow` argument and the id. Naming the
-shortcut in an agent body would break the conductor silently.
+**The conductor calls the router.** `spec-runner`, `spec-orchestrator` and the translated surfaces
+(Codex, OpenCode) invoke the router with the `flow` argument and the id.
 
 `context: fork` runs the command in a separate context. It is **forbidden** on any command that
 asks the human anything mid-flow — a plan whose OK the run waits on, or a plain question one of its
@@ -270,7 +274,7 @@ The test is the interaction, never the interaction's weight, and that is already
 checks: a fork beside an `AskUserQuestion` grant is `sk-fork-gate`, an error, whatever the command
 does with the grant.
 
-**Dropping a plan gate does not buy a command the fork.** `/quenching-specs-develop` writes its
+**Dropping a plan gate does not buy a command the fork.** `/quenching-specs develop` writes its
 consolidated edit without confirming it and stays forbidden all the same, because every level but
 `low` asks at each stage and its approval close still waits on a go. A command earns the lever by asking nothing at
 all — one that only reads and reports may fork freely, and that is the lever's home: self-contained,
@@ -283,15 +287,13 @@ an agent that came from the plugin (`.claude/agents/quenching-*.md`): the next `
 would overwrite the edit, and the list would swell again. The unit of extension is the target's router:
 
 - **The router** is `.agents/skills/<family>/SKILL.md`, one kebab segment without the `quenching-`
-  prefix, so it never collides with the plugin's `quenching-<vertical>-<vertical>`. Its Claude bridge is
+  prefix, so it never collides with the plugin's `quenching-<vertical>`. Its Claude bridge is
   generated as for any target skill.
-- **The flow bodies** live in `.agents/references/<family>-flows/<flow>.md`, loaded with
+- **The flow bodies** live in `.agents/skills/<family>/references/<flow>.md`, loaded with
   `cq components read`; the router lists one line per flow.
-- **Each former skill stays** as a typed-only shortcut (`disable-model-invocation: true`) with the same
-  tool grant, loading the same reference. Body and grant move verbatim; nothing is deleted without a human
-  word.
-- **The grant** follows the plugin's router (`Bash(cq:*)`, `Bash(cq.cmd:*)`, `Read`) and widens no
-  flow; a flow that needs more keeps asking in its shortcut.
+- **No former skill stays** as a shortcut. Body and grant move verbatim into the flow reference;
+  nothing is deleted without a human word.
+- **The grant** is the union of the flows' grants, as for the plugin's router.
 - **The plugin's agents** keep calling the plugin's router; the target's main session calls the
   target's router.
 
@@ -310,7 +312,7 @@ buy. The five inline `model:` pins on `/quenching-specs-*` (opus: develop, concl
 cache-safe); `paths` binds a domain-bound command's autonomous firing to its folder. Subagents
 are governed by [agents.md](agents.md), hooks by [hooks.md](hooks.md); the pricing doctrine
 lives once in the plugin
-(`quenching/assets/references/components-command-new/capabilities.md`) and is cited, never
+(`quenching/references/components-command-new/capabilities.md`) and is cited, never
 restated.
 
 ### `allowed-tools` is always scoped
@@ -322,7 +324,7 @@ shell for the turn. `cq components lint` reports a bare grant as `sk-unscoped-ba
 One exception, and it must be **stated in the body**: a skill that runs the *target repo's own*
 toolchain — its build, its tests, its linters, its migrations — cannot enumerate those commands in
 advance, because they are the repo's, not the plugin's. Such a command may hold an unscoped `Bash`
-provided its body says so and says why. `/quenching-specs-execute` is the standing example. The
+provided its body says so and says why. `/quenching-specs execute` is the standing example. The
 finding is still reported; what the stated reason buys is a reader who can tell a deliberate grant
 from an unexamined one.
 
@@ -356,7 +358,7 @@ refusal, errors setting the exit code and warnings never doing so.
 
 | Subcommand | Decides |
 | --- | --- |
-| `lint [path]` | one command against this standard — the description caps, trigger position, the `Not for:` boundary, body length, a `**Done when:**` per numbered step, unscoped `Bash`, invocation coherence, and the profile's decidable slice (`sk-fork-gate`, `sk-profile-value`). On a surface carrying `.claude-plugin/plugin.json` it also grades **citation form** (`sk-bare-citation`); on a target's own surface it reports a **dangling citation** (`sk-dangling-citation`, warn) — a `/front:verb` whose front exists there but whose command does not. A surface root brings `assets/references/**` into scope alongside `commands/**` |
+| `lint [path]` | one command against this standard — the description caps, trigger position, the `Not for:` boundary, body length, a `**Done when:**` per numbered step, unscoped `Bash`, invocation coherence, and the profile's decidable slice (`sk-fork-gate`, `sk-profile-value`). On a surface carrying `.claude-plugin/plugin.json` it also grades **citation form** (`sk-bare-citation`); on a target's own surface it reports a **dangling citation** (`sk-dangling-citation`, warn) — a `/front:verb` whose front exists there but whose command does not. A surface root brings `references/**` into scope alongside `skills/**` |
 | `doctor` | the surface invariant — a non-empty `description` on every command, no two resolving to the same `/` path, kebab-case segments, and on a target's own surface no dangling citation (`sk-dangling-citation`) — plus the **report-only** wider surface: `agents/*.md` and the hooks wired in `settings*.json` (`sk-agent-no-description`, `sk-hook-unmatched`, `sk-hook-llm-frequent`, `sk-hook-unparseable`), each routed to its mint, never migrated. A file parked under `commands/` which is not an entry point is exactly this shape — `sk-no-description` — the layout rule's evidence |
 | `registry reindex` | regenerates the registry's GENERATED zone; it **owns** that format |
 | `bridge --target <repo> [--write\|--check]` | a target's `.claude/skills/` copy matches `.agents/skills/` (§Where a target's skill is born) |

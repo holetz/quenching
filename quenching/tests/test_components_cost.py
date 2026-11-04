@@ -14,8 +14,8 @@ from quenching.components.commands.cost import cmd_cost
 def surface() -> tuple[pathlib.Path, pathlib.Path]:
     root = pathlib.Path(tempfile.mkdtemp())
     (root / "commands" / "front").mkdir(parents=True)
-    (root / "assets" / "references" / "front").mkdir(parents=True)
-    return root, root / "assets" / "references" / "front"
+    (root / "references" / "front").mkdir(parents=True)
+    return root, root / "references" / "front"
 
 
 class ComponentsCost(unittest.TestCase):
@@ -25,7 +25,7 @@ class ComponentsCost(unittest.TestCase):
         reference.write_text("## Rule\n\nBinding rule.\n\n## Story\n\nRationale.\n", encoding="utf-8")
         (root / "commands" / "front" / "verb.md").write_text(
             "---\ndescription: do it\n---\n\nBody é.\n\n"
-            "[rules](.agents/quenching/assets/references/" + "front/rules.md) §Rule\n",
+            "[rules](.agents/quenching/references/" + "front/rules.md) §Rule\n",
             encoding="utf-8",
         )
         output = io.StringIO()
@@ -35,9 +35,9 @@ class ComponentsCost(unittest.TestCase):
         self.assertEqual(status, 0)
         self.assertEqual(payload["commandCount"], 1)
         row = payload["commands"][0]
-        self.assertEqual(row["bodyBytes"], len(("\nBody é.\n\n[rules](.agents/quenching/assets/references/" + "front/rules.md) §Rule").encode()))
+        self.assertEqual(row["bodyBytes"], len(("\nBody é.\n\n[rules](.agents/quenching/references/" + "front/rules.md) §Rule").encode()))
         self.assertEqual(row["wholeReferences"], [])
-        self.assertEqual(row["sections"], [{"path": "front/rules.md", "heading": "Rule", "bytes": len("Binding rule.".encode())}])
+        self.assertEqual(row["sections"], [{"path": ".agents/quenching/references/front/rules.md", "heading": "Rule", "bytes": len("Binding rule.".encode())}])
         self.assertEqual(row["totalBytes"], row["bodyBytes"] + row["sections"][0]["bytes"])
         self.assertEqual(payload["totalBytes"], row["totalBytes"])
         self.assertEqual(payload, json.loads(output.getvalue()))
@@ -49,8 +49,8 @@ class ComponentsCost(unittest.TestCase):
         (references / "rules.md").write_text("## Rule\n\nWhole.\n", encoding="utf-8")
         body = "\n".join([
             "Body.",
-            "[one](.agents/quenching/assets/references/" + "front/rules.md)",
-            "[two](.agents/quenching/assets/references/" + "front/rules.md)",
+            "[one](.agents/quenching/references/" + "front/rules.md)",
+            "[two](.agents/quenching/references/" + "front/rules.md)",
             "",
         ])
         (root / "commands" / "front" / "verb.md").write_text(
@@ -68,7 +68,7 @@ class ComponentsCost(unittest.TestCase):
         (references / "rules.md").write_text("## Rule\n\nWhole.\n", encoding="utf-8")
         (root / "commands" / "front" / "verb.md").write_text(
             "---\ndescription: do it\n---\n\n"
-            "[rules](.agents/quenching/assets/references/" + "front/rules.md) §Missing\n",
+            "[rules](.agents/quenching/references/" + "front/rules.md) §Missing\n",
             encoding="utf-8",
         )
         output = io.StringIO()
@@ -103,12 +103,32 @@ class ComponentsCost(unittest.TestCase):
         self.assertEqual(json.loads(output.getvalue())["findings"][0]["code"], "ct-cost-ratchet")
 
 
+class InstalledPathsReadFromTheSource(unittest.TestCase):
+    def test_an_installed_path_that_is_not_on_disk_reads_the_source(self):
+        from quenching.components.commands import read
+        src = pathlib.Path(tempfile.mkdtemp())
+        (src / "skills" / "quenching-x" / "references").mkdir(parents=True)
+        (src / "references" / "a").mkdir(parents=True)
+        own, common = src / "skills" / "quenching-x" / "references" / "f.md", src / "references" / "a" / "b.md"
+        own.write_text("# f\n", encoding="utf-8")
+        common.write_text("# b\n", encoding="utf-8")
+        held, read._SOURCE = read._SOURCE, src
+        try:
+            self.assertEqual(read.resolve_installed(pathlib.Path(".agents/skills/quenching-x/references/f.md")), own)
+            self.assertEqual(read.resolve_installed(pathlib.Path(".agents/quenching/references/a/b.md")), common)
+            gone = pathlib.Path(".agents/skills/quenching-x/references/none.md")
+            self.assertEqual(read.resolve_installed(gone), gone)
+            self.assertEqual(read.resolve_installed(own), own)
+        finally:
+            read._SOURCE = held
+
+
 class CostTargetsThePathItNames(unittest.TestCase):
     def _target(self):
         root, references = surface()
         (references / "r.md").write_text("## Rule\n\nBinding.\n", encoding="utf-8")
         (root / "commands" / "front" / "a.md").write_text(
-            "---\ndescription: a\n---\n\nA body.\n\n[r](assets/references/front/r.md) §Rule\n",
+            "---\ndescription: a\n---\n\nA body.\n\n[r](.agents/quenching/references/front/r.md) §Rule\n",
             encoding="utf-8")
         (root / "commands" / "front" / "b.md").write_text(
             "---\ndescription: b\n---\n\nB.\n", encoding="utf-8")

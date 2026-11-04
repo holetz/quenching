@@ -8,7 +8,7 @@ description: >-
   asks for confirmation before touching anything; when the primary branch carries exactly
   one PR since the last release, asks once whether this is a release or a habit. When it
   finishes: the bump and its tag live on the primary branch's tip, on origin. Not for:
-  concluding or merging ONE spec into the primary branch → /quenching-specs-conclude.
+  concluding or merging ONE spec into the primary branch → /quenching-specs conclude.
 argument-hint: [version — optional, skips the proposal and confirms this exact X.Y.Z]
 allowed-tools: Bash(git:*), Bash(python3:*), Bash(QUENCHING_FUNCTIONAL=1 bash scripts/verify_repo.sh:*), Read, AskUserQuestion
 ---
@@ -59,7 +59,7 @@ git -C <primary checkout from step 1> log --oneline --merges <last-tag>..HEAD
 The first names the last tag; the second lists every PR merged into the primary branch since it —
 "since the last release", without depending on a second branch. **No tag yet** → the range is the
 whole history; treat the count as "since the beginning". **Zero** → nothing to publish; report that
-and stop. **Exactly one** → ask, once, on a decision sheet ([specs-develop/questions.md](/quenching/assets/references/specs-develop/questions.md) §1; A habit-stop recommended, B release): "the primary branch carries one PR
+and stop. **Exactly one** → ask, once, on a decision sheet ([specs-develop/questions.md](/quenching/references/specs-develop/questions.md) §1; A habit-stop recommended, B release): "the primary branch carries one PR
 since the last release — is this a release, or is it habit?" (the mitigation
 [branching.md](/docs/standards/git/branching.md) §The trigger is demand, not cadence names: nothing else
 pushes back on turning every single spec into its own release). Answering habit stops the run

@@ -2,7 +2,7 @@
 type: standard
 title: Context discipline — open less, run for less time, and emit fewer turns
 description: The two halves of a run's integral `tokens × turns remaining` and the three ways to cut it — open less (the declared files rather than the folder, the cited sections rather than the file, N sections in ONE call, the block rather than the section where a section has blocks, and the rules/rationale marker convention), run for less time (the section boundary as a legitimate stopping point, with measured role budgets checked only at existing boundaries), and emit fewer turns per unit of work (the batching contract, and the ban on a turn that exists only to announce the next tool call); plus the two things measured and refused, segmenting the bundle into more files and deleting rationale to compact it
-resource: quenching/commands/**, quenching/assets/references/**, quenching/assets/bin/quenching/components/**, quenching/assets/bin/quenching/specs/**, quenching/agents/**, scripts/measure_context_distribution.py
+resource: quenching/skills/**, quenching/references/**, quenching/assets/bin/quenching/components/**, quenching/assets/bin/quenching/specs/**, quenching/agents/**, scripts/measure_context_distribution.py
 tags: [automation, context, reading, cost, commands, references]
 timestamp: 2026-11-03
 audience: both
@@ -47,7 +47,7 @@ run measures its cut.
    names, are the binding contracts. A `/docs/standards/<subject>/` folder is a location, not a
    claim about relevance.
 2. **A reference citation in a command body IS a `§`-address — never a bare path.** Surface-wide
-   rule, proved on one command: measured on `/quenching-specs-execute`, six of its top-preamble
+   rule, proved on one command: measured on `/quenching-specs execute`, six of its top-preamble
    citations named only a file, and five of its `§`-addresses named a section with no file to
    resolve it in. A citation is resolvable, by a reader and by `cq components` alike, only when four
    halves hold together — the first three about how the address is written, the fourth about how
@@ -80,8 +80,8 @@ run measures its cut.
    `cq specs section <slug> "A,B"` for a spec's fourteen canonical headings. **Only the first
    implements the ladder** — the fourteen canonical headings carry no comma and `cq specs` refuses
    any name outside them, so the defect is unreachable there and the asymmetry is deliberate.
-   Seven command bodies are converted to this shape today — `/quenching-specs-execute`,
-   `/quenching-specs-develop`, and the five `specs/*` commands (`align`, `conclude`,
+   Seven command bodies are converted to this shape today — `/quenching-specs execute`,
+   `/quenching-specs develop`, and the five `specs/*` commands (`align`, `conclude`,
    `create`, `status`, `triage`). Seventeen remain: `docs/` (ten bodies), `skill/` (six bodies),
    and the root `align` command (one body).
 3. **N sections in ONE call.** Turns are the *other* factor. Five sections fetched over five turns
@@ -112,7 +112,7 @@ factor of eleven is not the file being large — it is asking for a file when yo
 
 <!-- rationale -->
 
-Measured on `/quenching-specs-execute` while narrowing it: the preamble it loads before the first
+Measured on `/quenching-specs execute` while narrowing it: the preamble it loads before the first
 task writes a line fell from **263,839 to 174,051 chars (~66.0k → ~43.5k tokens, −35%)**, split as
 the spec read by section rather than whole (35,099 → 18,994, −46%) and the standards read as the
 five declared rather than the four subject folders (126,720 → 53,037, 19 files → 5, −59%). The
@@ -122,7 +122,7 @@ folder rule is the larger of the two and was the one nothing had attacked.
 split every value on the comma before resolving anything, and its own `--help` documented an escape
 by repeating the flag that the code did not implement — so a body citing `§What crosses, what
 stays` got `sk-read-no-section`, which reads to an agent as *the section does not exist*, whose
-fallback is opening the file whole. Measured across `assets/references/`, `/docs/` and
+fallback is opening the file whole. Measured across `references/`, `/docs/` and
 `assets/docs/`: **146 headings carry a comma**. 145 resolved only by the accident that the fragment
 before the comma happened to be unique, and one — `/docs/standards/git/branching.md`
 "Publication, in two halves" (measured while that heading still read "A publicação, em duas
@@ -188,7 +188,7 @@ The measurement, what was reverted, the v1 that failed.
 
 <!-- rationale -->
 
-Measured after applying it to the five references `/quenching-specs-execute` loads: of 76,376 chars
+Measured after applying it to the five references `/quenching-specs execute` loads: of 76,376 chars
 across their level-2 sections, 65,564 are rule and **5,306 are rationale — 7%**, against the
 25–35% the spec had declared as a guess. Reading those five `--rules-only` instead of whole saves
 15%. That is why the convention was **not** extended to the other eighteen references: reading by
@@ -201,7 +201,7 @@ The last rule was not foreseen. Applied to `execution.md` §Delegating an execut
 
 **The two rules above it were not foreseen either, and both were caught by a branch review rather
 than by the task that introduced them.** Measured 2026-08-02 while relocating rationale out of
-`/quenching-specs-execute`: the destination chosen was `execution.md` §Declared versus emergent
+`/quenching-specs execute`: the destination chosen was `execution.md` §Declared versus emergent
 `docs/` — one of the *seven* sections that command's preamble cites on every run. The section went
 1,547 → 2,366 chars, so **819 chars per turn were relocated into the bill they were being moved
 off**. Nothing detected it: the body was correct, the destination file was correct, and the task's
@@ -226,7 +226,7 @@ boundary, and a build offers to stop there.
   applicable role budget from §Measured context budgets at an existing stage end, task-section
   end or worker return. Never stop in the middle of a task because a count crossed a threshold.
 - **The event triggers; the measured threshold decides only the tone — offer or recommendation.**
-  A human-led `/quenching-specs-develop`, `/quenching-specs-execute` or `/quenching-specs-conclude`
+  A human-led `/quenching-specs develop`, `/quenching-specs execute` or `/quenching-specs conclude`
   reads `cq components session context --json` once at its stage end, and `execute` once more at
   each section boundary. Within the main-session budget, or unmeasured, the next stage stays an
   offer; over it, the command recommends the next stage in a new session, with the exact command,
@@ -247,7 +247,7 @@ boundary, and a build offers to stop there.
   yet launched; the autopilot relaunches it in a fresh context, counted in `launches` and only
   while a spec more is `done` or `merged`, else `needs-human`. The budget of the top-level
   conductor (the autopilot in the main session) is still not enforced by code.
-- **The tree-token ceiling is opt-in.** `/quenching-specs-autopilot --max-tree-tokens <n>`
+- **The tree-token ceiling is opt-in.** `/quenching-specs autopilot --max-tree-tokens <n>`
   has no default value; without it nothing is read. With it, before each launch the conductor
   reads `cq components session cost --json` (its default is the most recent session for this cwd, the conductor's own) and compares, per model and
   never summed across tiers, `input + cacheRead + cacheWrite + output` of that model's `byModel`
@@ -439,7 +439,7 @@ own contract and is not negotiable against a turn count.
 **The third rule is the same one applied to a workflow's own crossings.** Where a body traverses
 several stages over one artifact, and no stage's *input* depends on the previous stage's write, the
 stages are one pass and one edit — the same dependency test, raised from the tool call to the
-traversal. `/quenching-specs-develop` is where this was first applied: it crossed three stages with
+traversal. `/quenching-specs develop` is where this was first applied: it crossed three stages with
 an edit, a `validate` and a re-derivation between each, for a spec nobody had finished, and the
 re-derivations answered a question the pass already held. **It changes when a question is asked,
 never whether it is** — which is what keeps it on this side of the limit above, and what its report
@@ -447,7 +447,7 @@ proves by carrying the question count.
 
 <!-- rationale -->
 
-Measured on session `c56cff41-e5b1-43f0-85dc-eca1b17e03d0` — two `/quenching-specs-develop` passes
+Measured on session `c56cff41-e5b1-43f0-85dc-eca1b17e03d0` — two `/quenching-specs develop` passes
 over one spec — by summing `cache_read_input_tokens + cache_creation_input_tokens + input_tokens`
 over the assistant turns of the session's `.jsonl`: **9.73M tokens of context read across 100
 turns**. Of that, **4.44M is a single 44.4k base re-read 100 times** — ~46% of the session spent
@@ -467,7 +467,7 @@ been the thing under attack.
 Neither of these is an available move here, and both come back looking obvious:
 
 - **Do not segment the bundle into more files.** Taking the 50 files of `/docs/standards/**` and
-  `assets/references/**` to their 315 sections would cost **265 new frontmatters × 1,424 chars ≈
+  `references/**` to their 315 sections would cost **265 new frontmatters × 1,424 chars ≈
   371k chars (~93k tokens)**, ~76% growth over the current 488k, in pure header — and it does not
   address the cause, since N sections remain N reads, which is N turns.
 - **Do not delete rationale to compact a document.** It is the one asset a model cannot

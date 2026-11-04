@@ -18,12 +18,12 @@ disable-model-invocation: true
 This command owns the toolchain front's convergence pass. It reads manifests, locks, language pins
 and tool configuration, applies only deterministic or contract-bounded repairs, and leaves build
 policy with the target owner. The common front floor is in
-[front-align/mold.md](.agents/quenching/assets/references/front-align/mold.md), and the
+[front-align/mold.md](.agents/quenching/references/front-align/mold.md), and the
 toolchain finding bands and closure boundary are in
-[toolchain-align/bands.md](.agents/quenching/assets/references/toolchain-align/bands.md).
+[toolchain-align/bands.md](.agents/quenching/references/toolchain-align/bands.md).
 
 Set `TARGET_ROOT` to the supplied argument, or to `.` when the argument is omitted. Resolve `cq`
-per [tool-resolution.md](.agents/quenching/assets/references/align/tool-resolution.md)
+per [tool-resolution.md](.agents/quenching/references/align/tool-resolution.md)
 §Resolving the tool, pass the same root to every call, and branch on the JSON and exit code:
 `0` is a clean answer, `1` carries findings, and `2` is a refusal.
 

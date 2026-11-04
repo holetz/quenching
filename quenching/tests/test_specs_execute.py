@@ -16,10 +16,10 @@ import unittest
 import _paths  # noqa: F401
 
 ROOT = Path(__file__).resolve().parents[2]
-COMMAND = ROOT / "quenching/assets/references/specs-flows/execute.md"
-REFERENCE = ROOT / "quenching/assets/references/specs-execute/execution.md"
-CONCLUDE = ROOT / "quenching/assets/references/specs-flows/conclude.md"
-SCALE = ROOT / "quenching/assets/references/specs-develop/spec-driven.md"
+COMMAND = ROOT / "quenching/skills/quenching-specs/references/execute.md"
+REFERENCE = ROOT / "quenching/references/specs-execute/execution.md"
+CONCLUDE = ROOT / "quenching/skills/quenching-specs/references/conclude.md"
+SCALE = ROOT / "quenching/references/specs-develop/spec-driven.md"
 RUNNER = ROOT / "quenching/agents/spec-runner.md"
 
 
@@ -37,7 +37,7 @@ def git(cwd, *args):
 class TaskExecutionContractTests(unittest.TestCase):
     def test_execute_commits_through_the_deterministic_verb(self):
         command = COMMAND.read_text(encoding="utf-8")
-        commit = (ROOT / "quenching/assets/references/git-flows/commit.md").read_text(encoding="utf-8")
+        commit = (ROOT / "quenching/skills/quenching-git/references/commit.md").read_text(encoding="utf-8")
 
         self.assertIn('cq git commit --subject "<subject>"', command)
         self.assertNotIn('Skill("quenching-specs:git:commit"', command)
@@ -174,11 +174,11 @@ class TaskExecutionContractTests(unittest.TestCase):
         conclude = CONCLUDE.read_text(encoding="utf-8")
         scale = SCALE.read_text(encoding="utf-8")
 
-        self.assertIn('Skill("quenching-git-git", "pr-create <id>")', conclude)
+        self.assertIn('Skill("quenching-git", "pr-create <id>")', conclude)
         self.assertIn("`low` chains the provider handoff", conclude)
         self.assertNotIn('"<id> autonomous")', conclude)
         self.assertIn("do not invoke it", conclude)
-        self.assertIn('Skill("quenching-git-git", "pr-create <id>")', scale)
+        self.assertIn('Skill("quenching-git", "pr-create <id>")', scale)
         self.assertIn("Other builds retain", scale)
 
     def test_autonomous_conclude_answers_every_question_without_inferring_the_outcome(self):
@@ -198,7 +198,7 @@ class TaskExecutionContractTests(unittest.TestCase):
         ):
             self.assertIn(row, conclude)
         self.assertIn("`autonomous` never supplies an outcome", conclude)
-        self.assertIn("pass `--outcome done` to `/quenching-specs-specs conclude` only when execute left every task checked", runner)
+        self.assertIn("pass `--outcome done` to `/quenching-specs conclude` only when execute left every task checked", runner)
         self.assertIn("never `--force`, never `abandoned` on your own", runner)
 
     def test_conclude_runs_in_its_own_spawn(self):
@@ -215,7 +215,7 @@ class TaskExecutionContractTests(unittest.TestCase):
         self.assertIn("call the `spec-verifier` only after it returns", orchestrator)
 
     def test_orchestration_reads_scheduling_records_from_status(self):
-        for carrier in ("agents/spec-orchestrator.md", "assets/references/specs-flows/orchestrate.md"):
+        for carrier in ("agents/spec-orchestrator.md", "skills/quenching-specs/references/orchestrate.md"):
             with self.subTest(carrier=carrier):
                 text = (ROOT / "quenching" / carrier).read_text(encoding="utf-8")
                 flat = " ".join(re.sub(r"[`*_]", "", text).split())

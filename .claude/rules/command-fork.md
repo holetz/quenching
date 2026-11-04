@@ -1,6 +1,6 @@
 ---
 paths:
-  - "quenching/commands/**"
+  - "quenching/skills/**"
 ---
 
 # Command bodies: no `context: fork` beside a mid-flow gate

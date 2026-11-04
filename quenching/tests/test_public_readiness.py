@@ -402,8 +402,8 @@ class CleanCloneTest(ReadinessCase):
         target = self.export()
         command = (target / ".agents/skills/quenching-opensource-readiness/SKILL.md").read_text(encoding="utf-8")
         self.assertIn('.agents/quenching/bin/cq --root "$TARGET_ROOT" opensource readiness --json', command)
-        self.assertIn(".agents/quenching/assets/references/opensource-readiness/report.md", command)
-        self.assertTrue((target / ".agents/quenching/assets/references/opensource-readiness/report.md").is_file())
+        self.assertIn(".agents/quenching/references/opensource-readiness/report.md", command)
+        self.assertTrue((target / ".agents/quenching/references/opensource-readiness/report.md").is_file())
 
     def test_the_module_route_measures_a_clean_fixture_end_to_end(self):
         target = self.export()

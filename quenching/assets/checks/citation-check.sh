@@ -213,21 +213,20 @@ if want 1; then
   # `## Upgrade` changelog names directories that really existed between releases 0.11 and 0.18 —
   # rewriting a dated record falsifies it — and its per-command manual is the whole scope of the
   # rewrite-readme-for-collapsed-surface spec, which promises exactly this rename there.
-  git ls-files -z -- 'quenching/commands' 'quenching/assets/references' \
+  git ls-files -z -- 'quenching/skills' 'quenching/references' \
                      'quenching/assets/templates' | python3 -c '
-import os, re, sys
+import json, os, re, sys
 
-commands_dir = os.path.join("quenching", "commands")
 # The retired spelling: the `:` id, `quenching-<module>:<front>:<verb>` or `quenching:<front>:<verb>`,
 # with or without the slash. The target dialect drops the module and joins the path with hyphens.
-RETIRED_RE = re.compile(r"(?<![\w:/-])quenching(?:-[a-z]+)?((?::[a-z][a-z0-9-]*)+)")
+# A `:` tail followed by `/` is the spec store branch (`quenching:specs/41.md`), a path and no citation.
+RETIRED_RE = re.compile(r"(?<![\w:/-])quenching(?:-[a-z]+)?((?::[a-z][a-z0-9-]*)+)(?![\w/:-])")
 
+# The live names are the skills the modules own, read from the manifest and never from a list here.
 live = set()
-for root, _, names in os.walk(commands_dir):
-    for name in names:
-        if name.endswith(".md"):
-            rel = os.path.relpath(os.path.join(root, name), commands_dir)
-            live.add("quenching-" + rel[:-3].replace(os.sep, "-"))
+with open(os.path.join("quenching", "assets", "modules.json"), encoding="utf-8") as handle:
+    for module in json.load(handle)["modules"]:
+        live.update(module["owned"]["skills"])
 
 findings, checked = [], 0
 for rel in sys.stdin.buffer.read().split(b"\x00"):
@@ -273,7 +272,7 @@ fi
 # Two assertions, both over tracked text:
 #
 #   a. every cited PATH resolves to a file that exists;
-#   b. every cited /quenching-<module>:<ns>:<cmd> corresponds to a body under commands/**.
+#   b. every cited /quenching-<module>:<ns>:<cmd> corresponds to a skill a module owns (`owned.skills`).
 #
 # Candidate extraction is deliberately conservative: a citation carrying a glob, a placeholder or
 # an unresolved variable is not a claim about a file that exists, so it is not measured. What IS
@@ -314,16 +313,17 @@ fi
 if want 2; then
   echo "2. the new names were born"
   git ls-files -z -- . "${GENERATED_EXCLUDE[@]}" | python3 -c '
-import os, re, sys
+import json, os, re, sys
 
 plugin = "quenching"
-commands_dir = os.path.join(plugin, "commands")
 
 # `.agents/quenching/<path>`: the payload path a command body cites, which names a file under the
 # source tree in this checkout.
 PLUGIN_ROOT_RE    = re.compile(r"(?<![A-Za-z0-9_./-])\.agents/quenching/([A-Za-z0-9_./-]+)")
+# `.agents/skills/<name>/<path>`: a skill folder as installed; in the source it is `skills/<name>/<path>`.
+SKILL_PATH_RE     = re.compile(r"(?<![A-Za-z0-9_./-])\.agents/skills/([a-z0-9-]+/[A-Za-z0-9_./-]+)")
 MD_LINK_RE        = re.compile(r"\]\(([^)\s]+)\)")
-REPO_PATH_RE      = re.compile(r"(?<![A-Za-z0-9_./-])(quenching/(?:assets|commands|agents|tests|hooks)/[A-Za-z0-9_./-]+|quenching/(?:VERSION|README\.md))")
+REPO_PATH_RE      = re.compile(r"(?<![A-Za-z0-9_./-])(quenching/(?:assets|skills|references|agents|tests|hooks)/[A-Za-z0-9_./-]+|quenching/(?:VERSION|README\.md))")
 KNOWLEDGE_PATH_RE = re.compile(r"(?<![A-Za-z0-9_./-])/?(docs/[A-Za-z0-9_./-]+)(?![A-Za-z0-9_./-]|\{)")
 # A command is cited by its target-dialect id; the slash form is the one a human types. The bare
 # form the Skill tool takes is a plain word that module, agent and package names also spell.
@@ -332,14 +332,14 @@ CMD_RE            = re.compile(r"(?<![\w:/.-])/(quenching-[a-z0-9]+(?:-[a-z0-9]+
 # Content the plugin ships for a target checkout to hold, plus the fixture data that names files
 # on purpose absent. See the header: these say which repo a tree describes, they exempt no path.
 # Every tree the plugin SHIPS for a target checkout to read. The first three were here from the
-# start; `commands/`, `assets/references/` and `assets/bin/` were added on 2026-08-27, and their
+# start; `skills/`, `references/` and `assets/bin/` (then `commands/` and `assets/references/`) were added on 2026-08-27, and their
 # absence was a defect this half carried since half 3 was written. Half 3 exists precisely BECAUSE those two
 # trees are loaded inside the target, with the target'"'"'s paths — its own header says so — while
 # this half went on resolving their links against THIS checkout and reporting as broken the prose
 # that describes another repository correctly. Nothing is uncovered by the move: half 3 measures
 # exactly those two trees against the published skeleton, which is the right base.
 SHIPPED = (plugin + "/assets/knowledge/", plugin + "/assets/templates/", plugin + "/tests/fixtures/",
-           plugin + "/commands/", plugin + "/assets/references/", plugin + "/assets/bin/")
+           plugin + "/skills/", plugin + "/references/", plugin + "/assets/bin/")
 
 MIRRORS = (".agents/", ".claude/skills/", ".claude/agents/", ".opencode/")
 
@@ -361,13 +361,12 @@ def trim(p):
 
 path_findings, cmd_findings = [], []
 paths_checked = cmds_checked = 0
+# The skills the modules own, read from the manifest. A router shares its name with a module
+# (`quenching-specs`), and both are cited: the name is live when a skill answers to it.
 commands = set()
-
-for root, _, names in os.walk(commands_dir):
-    for n in names:
-        if n.endswith(".md"):
-            rel = os.path.relpath(os.path.join(root, n), commands_dir)
-            commands.add("quenching-" + rel[:-3].replace(os.sep, "-"))
+with open(os.path.join(plugin, "assets", "modules.json"), encoding="utf-8") as handle:
+    for module in json.load(handle)["modules"]:
+        commands.update(module["owned"]["skills"])
 
 FROZEN_DATA = (plugin + "/tests/fixtures/golden/", plugin + "/tests/capture_golden.py",
                # A `files:` case table reproducing a real, historical bug report verbatim — a
@@ -416,6 +415,10 @@ for rel in sys.stdin.buffer.read().split(b"\x00"):
         candidates += [(".agents/quenching/" + m,
                         [os.path.join(plugin, trim(m)), os.path.join(plugin, "assets", trim(m))])
                        for m in PLUGIN_ROOT_RE.findall(text) if trim(m) != "bin/cq.cmd"]
+    if rel.endswith(".md") and not rel.startswith(MIRRORS):
+        candidates += [(".agents/skills/" + m,
+                        [os.path.join(plugin, "skills", trim(m)), os.path.join(".agents", "skills", trim(m))])
+                       for m in SKILL_PATH_RE.findall(text)]
     candidates += [(m, [trim(m)]) for m in REPO_PATH_RE.findall(text)]
     if not in_bundle:
         candidates += [(m, [trim(m)]) for m in KNOWLEDGE_PATH_RE.findall(text)]
@@ -471,7 +474,7 @@ def report(kind, rows, checked, fmt):
 bad = report("cited paths", path_findings, paths_checked,
              lambda r: "         %s: %s -> %s" % (r[0], r[1], r[2]))
 bad += report("cited commands", cmd_findings, cmds_checked,
-              lambda r: "         %s: %s has no body under commands/" % (r[0], r[1]))
+              lambda r: "         %s: %s is no skill of any module" % (r[0], r[1]))
 
 # A run that extracted no candidates measured nothing. Half 2 passes vacuously over an empty
 # corpus, which is the same failure mode the arming proof covers for half 1.
@@ -497,7 +500,7 @@ import sys
 
 repo = sys.argv[1]
 plugin = os.path.join(repo, "quenching")
-source_roots = ("quenching/commands/", "quenching/assets/references/")
+source_roots = ("quenching/skills/", "quenching/references/")
 link_re = re.compile(r"\]\(([^)\s]+)\)")
 bare_path_re = re.compile(
     r"(?<![A-Za-z0-9_./-])/?(?:\.agents/quenching/)?"
@@ -564,6 +567,11 @@ def relative_target(source, raw):
         if any(char in target for char in "*?<>${}|"):
             return None
         return os.path.normpath(os.path.join("quenching", target))
+    if target.startswith(".agents/skills/"):
+        target = target[len(".agents/skills/") :]
+        if any(char in target for char in "*?<>${}|"):
+            return None
+        return os.path.normpath(os.path.join("quenching", "skills", target))
     if any(char in target for char in "*?<>${}|"):
         return None
     if target.startswith("quenching/"):
@@ -823,7 +831,7 @@ fi
 # --------------------------------------------------------------------------- #
 if want 3; then
   echo "3. the shipped prose promises only what the skeleton delivers"
-  git ls-files -z -- 'quenching/commands' 'quenching/assets/references' | python3 -c '
+  git ls-files -z -- 'quenching/skills' 'quenching/references' | python3 -c '
 import os, re, sys
 
 skeleton = "quenching/assets/knowledge"

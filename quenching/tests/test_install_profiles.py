@@ -9,8 +9,8 @@ import _paths  # noqa: F401
 
 REPO_ROOT = pathlib.Path(__file__).resolve().parents[2]
 STANDARD = REPO_ROOT / "docs" / "standards" / "architecture" / "install-profiles.md"
-ALIGN = REPO_ROOT / "quenching" / "commands" / "align.md"
-CONFIG_REFERENCE = (REPO_ROOT / "quenching" / "assets" / "references" /
+ALIGN = REPO_ROOT / "quenching" / "skills" / "quenching-align" / "SKILL.md"
+CONFIG_REFERENCE = (REPO_ROOT / "quenching" / "references" /
                     "specs-align" / "plugin-configuration.md")
 REPO_CONFIG = _paths.repository_config(REPO_ROOT)
 
@@ -29,6 +29,22 @@ class InstallProfileContract(unittest.TestCase):
         for phrase in ("cq specs config --json", "shared.profiles.installed", "skipped by profile",
                        "does not remove commands"):
             self.assertIn(phrase, align)
+
+    def test_manifest_v3_is_one_module_per_vertical_and_front(self):
+        from quenching.common import modules
+        manifest = modules.load_manifest(REPO_ROOT)
+        names = {m["name"] for m in manifest["modules"]}
+        self.assertEqual(3, manifest["schemaVersion"])
+        self.assertLessEqual({"quenching-git", "quenching-knowledge", "quenching-components"}, names)
+        self.assertNotIn("quenching-align", names)
+        heads = modules.namespace_map(REPO_ROOT, manifest)
+        self.assertEqual("quenching-specs", heads["specs"])
+        self.assertEqual("quenching-specs", heads["align"])
+        self.assertEqual("quenching-git", heads["git"])
+        self.assertEqual("quenching-design", heads["design"])
+        installed = sorted(skill for m in manifest["modules"] for skill in m["owned"]["skills"])
+        on_disk = sorted(p.name for p in (REPO_ROOT / "quenching" / "skills").iterdir())
+        self.assertEqual(on_disk, installed)
 
     def test_config_reference_uses_the_same_scope_and_default(self):
         reference = CONFIG_REFERENCE.read_text(encoding="utf-8").lower()

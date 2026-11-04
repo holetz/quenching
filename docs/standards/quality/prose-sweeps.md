@@ -2,7 +2,7 @@
 type: standard
 title: Mechanical sweeps over prose
 description: A find-and-replace over prose corrupts exactly the sentences that talk ABOUT the form being replaced — how to recognise those sites, why the check written to guard the sweep cannot see them, and the mitigation that survives both
-resource: quenching/commands/**, quenching/assets/references/**
+resource: quenching/skills/**, quenching/references/**
 tags: [quality, sweeps, prose, refactoring]
 timestamp: 2026-07-31
 audience: both
@@ -30,7 +30,7 @@ Measured on 2026-07-31: sweeping 519 bare command citations into their plugin-pr
 corrupted **two** sites out of 519, and both were the sentences that *defined the rule the sweep
 was implementing*:
 
-> a bare `/quenching-knowledge-align` is what a human types, not what the Skill tool resolves
+> a bare `/quenching-knowledge align` is what a human types, not what the Skill tool resolves
 
 The sentence names the bare form and then shows a prefixed one. Every other site was correct.
 

@@ -2,7 +2,7 @@
 type: standard
 title: Loading is a call inside the step; citing is preamble prose
 description: A body that needs a reference section at step N loads that section at step N, with the literal, copy-pasteable cq components read invocation — a preamble citation says where the rule lives and does not make the session open the file, and the opposite was measured happening across the eight /quenching-specs-* bodies
-resource: quenching/commands/**/*.md
+resource: quenching/skills/**/*.md
 tags: [architecture, references, commands, skills, cq]
 timestamp: 2026-08-10
 audience: both
@@ -15,7 +15,7 @@ maintainer: quenching
 
 <!-- rules -->
 
-Every `commands/**/*.md` body in this plugin cites references by `§`-address instead of restating
+Every `skills/**/*.md` body in this plugin cites references by `§`-address instead of restating
 them — that is the context saving the whole architecture rests on. But a citation and a load are two
 different acts, and confusing them is how a body ends up obeying half of the very rule it declares
 itself.
@@ -55,7 +55,7 @@ step forced the session to open it before writing.
 The fix was not rewriting the preamble prose — it already told the truth about where the rule lives,
 and deleting it would lose the explanation of why. The fix was to insert, inside each of the eight
 report steps, the call the two bodies that already reported consistently
-(the front's router, since retired, and `/quenching-specs-execute`, before this spec) already
+(the front's router, since retired, and `/quenching-specs execute`, before this spec) already
 contained: the literal invocation, at the exact point where the loaded block is used.
 
 ## Where a preamble citation is still right
@@ -78,6 +78,6 @@ memory.
 - [../automation/skills.md](../automation/skills.md) governs the other side of the same
   scale: why a reference lives outside the preamble in the first place, and the ceiling a `§`-
   address avoids blowing.
-- [plugin-layout.md](plugin-layout.md) establishes that `commands/**` is the only registered tree
+- [plugin-layout.md](plugin-layout.md) establishes that `skills/**` is the only registered tree
   and `assets/` holds what is cited by absolute path — this rule is about the **when** inside the
   body, not about where the reference lives.

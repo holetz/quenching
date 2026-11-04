@@ -248,18 +248,14 @@ class Anomalies(unittest.TestCase):
 
 
 class GitCommandFrontmatter(unittest.TestCase):
-    ROOT = pathlib.Path(__file__).resolve().parent.parent / "commands" / "git"
+    ROOT = pathlib.Path(__file__).resolve().parent.parent / "skills" / "quenching-git"
 
-    def test_git_commands_keep_argument_hint_at_the_top_level(self):
-        paths = [self.ROOT / "merge.md", self.ROOT / "branch.md",
-                 self.ROOT / "pr" / "create.md", self.ROOT / "revert.md"]
-        for path in paths:
-            with self.subTest(path=path):
-                parsed = parse_frontmatter(path.read_text(encoding="utf-8"))
-                self.assertIn("argument-hint", parsed)
+    def test_the_git_router_keeps_argument_hint_at_the_top_level(self):
+        parsed = parse_frontmatter((self.ROOT / "SKILL.md").read_text(encoding="utf-8"))
+        self.assertIn("argument-hint", parsed)
 
     def test_commit_uses_the_canonical_spec_id_placeholder(self):
-        text = (self.ROOT.parent.parent / "assets" / "references" / "git-flows" / "commit.md").read_text(encoding="utf-8")
+        text = (self.ROOT / "references" / "commit.md").read_text(encoding="utf-8")
         self.assertIn("--spec <spec-id>", text)
         self.assertNotIn("唯一", text)
 

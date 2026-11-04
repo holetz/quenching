@@ -2,7 +2,7 @@
 type: standard
 title: Design front
 description: The single DTCG source, its portable and editorial projections, explicit arbitration with Impeccable, and the boundary between web and non-web drift
-resource: quenching/assets/bin/quenching/design/**, quenching/assets/design/**, quenching/commands/design/**
+resource: quenching/assets/bin/quenching/design/**, quenching/assets/design/**, quenching/skills/**
 tags: [architecture, design, dtcg, impeccable, projections]
 timestamp: 2026-11-03
 audience: both
@@ -25,8 +25,8 @@ The design front adopts the common minimum from
 [`front-mold.md`](front-mold.md). Its applicability signal is the presence of the DTCG source at
 `/.design/tokens.json`; its read model is `cq design status`; its verifier is `cq design doctor`,
 with `cq design build --check` proving generated identity. The align and status bodies cite the
-executor projection at `quenching/assets/references/front-align/mold.md` and the design
-disposition map at `quenching/assets/references/design-align/bands.md`.
+executor projection at `quenching/references/front-align/mold.md` and the design
+disposition map at `quenching/references/design-align/bands.md`.
 
 Design's permitted deltas are the DTCG source/projection graph, explicit source arbitration with
 an optional Impeccable proposal, web versus non-web drift, asset and font evidence, contrast policy,

@@ -2,7 +2,7 @@
 type: standard
 title: Security pillar
 description: A read-only pillar that reports workflow permissions, secret and ignore coverage, advisory dependency configuration and access ownership without owning a converged tree
-resource: .github/workflows/**, .gitignore, pyproject.toml, .agents/quenching.json, quenching/commands/security/**, quenching/assets/bin/quenching/security/**, quenching/assets/bin/quenching/controls/**, quenching/assets/bin/quenching/common/leak.py, quenching/assets/bin/quenching/common/identity.py, quenching/assets/bin/quenching/git/identity.py, quenching/assets/githooks/**, scripts/githooks/**
+resource: .github/workflows/**, .gitignore, pyproject.toml, .agents/quenching.json, quenching/skills/**, quenching/assets/bin/quenching/security/**, quenching/assets/bin/quenching/controls/**, quenching/assets/bin/quenching/common/leak.py, quenching/assets/bin/quenching/common/identity.py, quenching/assets/bin/quenching/git/identity.py, quenching/assets/githooks/**, scripts/githooks/**
 tags: [architecture, security, pillar, read-only, permissions]
 timestamp: 2026-11-03
 audience: both

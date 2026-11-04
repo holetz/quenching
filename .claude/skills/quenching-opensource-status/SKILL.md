@@ -16,16 +16,16 @@ disable-model-invocation: true
 **Input**: `$ARGUMENTS` (an optional target repository root; omit to use the current repository).
 
 This command is the read-only view of the open source front. The common front contract is in
-[front-align/mold.md](.agents/quenching/assets/references/front-align/mold.md), the catalog
+[front-align/mold.md](.agents/quenching/references/front-align/mold.md), the catalog
 contract is in
-[opensource-controls/catalog.md](.agents/quenching/assets/references/opensource-controls/catalog.md),
+[opensource-controls/catalog.md](.agents/quenching/references/opensource-controls/catalog.md),
 and the finding-to-owner map is in
-[opensource-align/bands.md](.agents/quenching/assets/references/opensource-align/bands.md).
+[opensource-align/bands.md](.agents/quenching/references/opensource-align/bands.md).
 It aggregates what each owning front already answers; it never probes another owner's control and
 never writes an artifact.
 
 Resolve `cq` per
-[tool-resolution.md](.agents/quenching/assets/references/align/tool-resolution.md)
+[tool-resolution.md](.agents/quenching/references/align/tool-resolution.md)
 §Resolving the tool. Set `TARGET_ROOT` to the supplied argument, or to `.` when omitted, and run:
 
 ```bash

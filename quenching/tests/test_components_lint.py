@@ -50,6 +50,9 @@ from quenching.components.commands.lint import (
     _step_criteria,
     cmd_lint,
     dangling_citations,
+    dangling_flow_citations,
+    router_flows,
+    router_grant_findings,
     lint_agents,
     lint_command,
     marker_present,
@@ -166,44 +169,38 @@ class StrictFrontmatter(unittest.TestCase):
         errors = [f for f in payload["findings"] if f["severity"] == "error"]
         self.assertEqual(errors, [])  # first: a red gate names the finding, not just the status
         self.assertEqual(status, 0)
-        self.assertEqual(payload["commandCount"], 65)
+        self.assertEqual(payload["commandCount"], 23)
 
 
 class ReferenceRoot(unittest.TestCase):
-    """`sk-reference-root`: a reference citation must resolve from the plugin root."""
+    """`sk-reference-root`: a reference citation must resolve from an installed references root."""
 
-    def _codes(self, body: str, base: str = BASE) -> list[str]:
-        return [f["code"] for f in lint_command(command(body), base)
+    COMMON = ".agents/quenching/references/"
+    OWN = ".agents/skills/quenching-specs/references/"
+
+    def _codes(self, body: str, known=None) -> list[str]:
+        return [f["code"] for f in lint_command(command(body), BASE, None, known)
                 if f["code"] == "sk-reference-root"]
 
     def test_a_bare_components_read_target_is_an_error(self):
         body = "Run `cq components read specs-develop/questions.md --sections x`.\n"
-        with tempfile.TemporaryDirectory() as tmp:
-            refs = pathlib.Path(tmp) / "assets" / "references" / "specs-develop"
-            refs.mkdir(parents=True)
-            (refs / "questions.md").write_text("x", encoding="utf-8")
-            self.assertEqual(self._codes(body, tmp), ["sk-reference-root"])
+        known = {self.COMMON + "specs-develop/questions.md"}
+        self.assertEqual(self._codes(body, known), ["sk-reference-root"])
 
-    def test_a_link_to_references_without_the_root_is_an_error(self):
+    def test_a_link_through_the_retired_assets_root_is_an_error(self):
         body = "See [q](assets/references/specs-develop/questions.md).\n"
         self.assertEqual(self._codes(body), ["sk-reference-root"])
 
-    def test_a_root_anchored_link_is_clean_when_no_tree_is_present(self):
-        body = "See [q](.agents/quenching/assets/references/specs-develop/questions.md).\n"
-        self.assertEqual(self._codes(body), [])
+    def test_a_rooted_link_is_clean_when_no_tree_is_present(self):
+        for root in (self.COMMON, self.OWN):
+            self.assertEqual(self._codes(f"See [q]({root}a/questions.md).\n"), [])
 
-    def test_a_root_anchored_link_to_a_missing_file_is_an_error_with_a_tree(self):
-        with tempfile.TemporaryDirectory() as tmp:
-            refs = pathlib.Path(tmp) / "assets" / "references" / "a"
-            refs.mkdir(parents=True)
-            (refs / "real.md").write_text("x", encoding="utf-8")
-            root = ".agents/quenching/" + "assets" + "/references/"
-            ok = f"[r]({root}a/real.md)\n"
-            bad = f"[r]({root}a/gone.md)\n"
-            bare = "[r](a/real.md)\n"
-            self.assertEqual(self._codes(ok, tmp), [])
-            self.assertEqual(self._codes(bad, tmp), ["sk-reference-root"])
-            self.assertEqual(self._codes(bare, tmp), ["sk-reference-root"])
+    def test_a_rooted_link_to_a_missing_file_is_an_error_with_a_tree(self):
+        known = {self.COMMON + "a/real.md", self.OWN + "flow.md"}
+        for ok in (f"[r]({self.COMMON}a/real.md)\n", f"[r]({self.OWN}flow.md)\n"):
+            self.assertEqual(self._codes(ok, known), [])
+        for bad in (f"[r]({self.COMMON}a/gone.md)\n", f"[r]({self.OWN}gone.md)\n", "[r](a/real.md)\n"):
+            self.assertEqual(self._codes(bad, known), ["sk-reference-root"], bad)
 
     def test_a_url_to_a_references_path_is_not_a_finding(self):
         body = "[API](https://example.org/references/api.md) and [b](https://x.io/assets/references/b.md)\n"
@@ -217,8 +214,48 @@ class ReferenceRoot(unittest.TestCase):
         for q in ('"', "'"):
             body = f"Run cq components read {q}assets" + f"/references/a.md{q} --sections x.\n"
             self.assertEqual(self._codes(body), ["sk-reference-root"], q)
-        quoted_ok = 'cq components read ".agents/quenching/assets' + '/references/a.md"\n'
+        quoted_ok = f'cq components read "{self.COMMON}a.md"\n'
         self.assertEqual(self._codes(quoted_ok), [])
+
+
+class RouterChecks(unittest.TestCase):
+    """The router is a table of flows: its grant is their union and a cited flow must be in it."""
+
+    def _router(self, tmp: str, router_tools: str, flow_tools: str) -> dict:
+        skill = pathlib.Path(tmp) / "skills" / "quenching-ops-align"
+        (skill / "references").mkdir(parents=True, exist_ok=True)
+        (skill / "references" / "go.md").write_text(f"---\nallowed-tools: {flow_tools}\n---\n\n# go\n",
+                                                    encoding="utf-8")
+        body = "| Flow | Reference |\n| --- | --- |\n| `go` | [references/go.md](.agents/skills/quenching-ops-align/references/go.md) |\n"
+        return {"command": "/quenching-ops-align", "path": str(skill / "SKILL.md"), "body": body,
+                "frontmatter": {"allowed-tools": router_tools}}
+
+    def test_the_flows_are_read_from_the_table(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            self.assertEqual(list(router_flows(self._router(tmp, "Read", "Read"))), ["go"])
+        self.assertEqual(router_flows(command("No table here.\n")), {})
+
+    def test_a_tool_a_flow_declares_and_the_router_lacks_is_an_error(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            cmd = self._router(tmp, "Read", "Read, Write")
+            found = router_grant_findings(cmd, router_flows(cmd), {"command": "/quenching-ops-align", "path": "x"})
+            self.assertEqual([(f["code"], f["severity"]) for f in found], [("sk-router-grant", "error")])
+            self.assertEqual(found[0]["missing"], ["Write"])
+
+    def test_the_union_is_covered_by_a_wider_or_equal_grant(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            for router_tools, flow_tools in (("Read, Write", "Read, Write"),
+                                             ("Bash, Read", "Bash(git status:*), Read"),
+                                             ("Bash(cq:*), Read", "Bash(cq git base:*), Read")):
+                cmd = self._router(tmp, router_tools, flow_tools)
+                self.assertEqual(router_grant_findings(cmd, router_flows(cmd), {"command": "c", "path": "x"}), [],
+                                 router_tools)
+
+    def test_a_cited_flow_the_table_does_not_list_is_dangling(self):
+        routers = {"quenching-ops-align": {"go"}}
+        self.assertEqual(dangling_flow_citations("run `/quenching-ops-align go` then `/quenching-ops-align stop`.", routers),
+                         ["/quenching-ops-align stop"])
+        self.assertEqual(dangling_flow_citations("`/quenching-proof-align stop`", routers), [])
 
 
 class StepCriterion(unittest.TestCase):
@@ -619,7 +656,7 @@ class DanglingCitation(unittest.TestCase):
 
     def test_live_plugin_and_unknown_front_citations_are_silent(self):
         from quenching.components.commands.doctor import cmd_doctor
-        body = ("See /frente:novo, /quenching-specs-develop and /alheia:coisa, "
+        body = ("See /frente:novo, /quenching-specs develop and /alheia:coisa, "
                 "and the namespace /frente:grupo.")
         with tempfile.TemporaryDirectory() as root:
             self._target(root, {"frente/novo.md": body, "frente/grupo/a.md": "Body."})

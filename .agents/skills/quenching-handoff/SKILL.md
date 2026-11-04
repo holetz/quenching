@@ -88,7 +88,7 @@ Cole numa sessão nova:
     Leia o handoff em
     quenching:specs/artifacts/2138/handoff-2026-11-01-destination.md antes de agir:
     `.agents/quenching/bin/cq specs artifact read --spec 2138 --name handoff-2026-11-01-destination.md`.
-    Ele pertence à spec 2138; siga com `/quenching-specs-execute 2138`.
+    Ele pertence à spec 2138; siga com `/quenching-specs execute 2138`.
 ```
 
 Three substitutions, and nothing else changes:

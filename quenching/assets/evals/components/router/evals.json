@@ -1,5 +1,5 @@
 {
-  "skill": "/quenching-align:components:components",
+  "skill": "/quenching-components",
   "cases": [
     {
       "id": "hook-routes-to-hook-new",
@@ -21,7 +21,7 @@
     },
     {
       "id": "knowledge-request-is-not-routed",
-      "branch": "Not for: knowledge docs → /quenching-align:knowledge:knowledge",
+      "branch": "Not for: knowledge docs → /quenching-knowledge",
       "prompt": "Add the term \"cursor\" to the glossary.\n\nYou have my authorization for the whole run — treat any confirmation gate as already granted and proceed to the end.",
       "assertions": [
         "the reply does not mint a command, an agent or a hook",

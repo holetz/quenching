@@ -26,10 +26,10 @@ class SiteSourceTests(unittest.TestCase):
             (root / "tutorials" / "index.md").write_text("# Tutorials\n")
             (root / "tutorials" / "guide.md").write_text(
                 "# Guide\n\n[private catalogue](../catalog/item.md), [private harness](../CLAUDE.md), "
-                "[plugin note](/quenching/assets/references/note.md), "
+                "[plugin note](/quenching/references/note.md), "
                 "[external note](https://example.test/note), [protocol-relative](//example.test/note), "
                 f"[root]({docs_root}), [glossary]({glossary_route}), and [home](index.md).\n\n"
-                "```md\n[code](/quenching/assets/references/note.md)\n```\n"
+                "```md\n[code](/quenching/references/note.md)\n```\n"
             )
             (root / "tutorials" / "CLAUDE.md").write_text("private harness\n")
             (root / "catalog" / "huge-table.md").write_text("catalogue data\n")
@@ -54,7 +54,7 @@ class SiteSourceTests(unittest.TestCase):
             self.assertIn("//example.test/note", rendered_guide)
             self.assertIn(f"]({docs_root})", rendered_guide)
             self.assertIn(f"]({glossary_route})", rendered_guide)
-            self.assertIn("[code](/quenching/assets/references/note.md)", rendered_guide)
+            self.assertIn("[code](/quenching/references/note.md)", rendered_guide)
             self.assertIn("[home](index.md)", rendered_guide)
             checked, findings = site_source_findings(root, destination)
             self.assertFalse(findings, checked)

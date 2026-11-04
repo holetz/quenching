@@ -29,7 +29,7 @@ prose this repository ships into other people's.
 A rename has two halves. Half 1 measures that the **old** name died — no tracked file still
 matches the retired script, namespace or command. Half 2 measures that the **new** name was
 **born** — every cited path resolves to a file that exists, and every cited
-`quenching:<ns>:<cmd>` corresponds to a body under `commands/**`.
+`quenching:<ns>:<cmd>` corresponds to a body under `skills/**`.
 
 A repository in which every citation points at nothing passes half 1 on its own — that is exactly
 what a half-finished rename produces, and it is silent: the command registry is rebuilt at
@@ -77,8 +77,8 @@ carved out for convenience.
 Halves 1 and 2 ask their question of **this** checkout. Half 3 asks half 2's question of the prose
 this repository **ships**, against the base that prose is actually read from.
 
-A command body under `quenching/commands/**` and a reference under
-`quenching/assets/references/**` are loaded inside a **target** checkout, with the target's
+A command body under `quenching/skills/**` and a reference under
+`quenching/references/**` are loaded inside a **target** checkout, with the target's
 paths. The only bundle content the plugin delivers is the skeleton under
 `quenching/assets/knowledge/` — index files and a single leaf standard. So a markdown link
 to a `/docs/standards/**` the skeleton does not carry resolves here and in no other
@@ -86,8 +86,8 @@ repository.
 
 **Half 2 cannot see this, and is not wrong to miss it.** Its header already states that a shipped
 tree describes another repository, which is why it exempts `assets/knowledge/` and
-`assets/templates/`. It simply never applied that reading to `commands/**` and
-`assets/references/**`, which are shipped the same way — so it resolves their bundle links against
+`assets/templates/`. It simply never applied that reading to `skills/**` and
+`references/**`, which are shipped the same way — so it resolves their bundle links against
 this checkout, where every standard exists. The two halves measure the same text against different
 bases and neither subsumes the other: **half 2 catches a link to a standard that exists nowhere,
 half 3 a link to one that exists only here.**
@@ -121,7 +121,7 @@ reports a repository as clean over nothing.
 
 ### The two halves split the same two trees, and the split is the contract
 
-Half 2 and half 3 both read `commands/**` and `assets/references/**`. They are not redundant, and
+Half 2 and half 3 both read `skills/**` and `references/**`. They are not redundant, and
 the boundary between them is decided by **which repository a path is a claim about**:
 
 | Half | Base it resolves against | What it catches |
@@ -140,8 +140,8 @@ those trees against the base that matters.
 **Manual and documented, not gated automatically** — decided by the human, 2026-08-11 (Open
 Decision 2 of the spec that wrote this standard). Unlike `functional-checks.sh`
 ([surface-verification.md](surface-verification.md) §The harness belongs to the components
-front), `citation-check.sh` is not wired into `/quenching-components-align`, into
-`/quenching-specs-conclude`'s merge gate, or into any spec's `## Validation`. It is run by hand,
+front), `citation-check.sh` is not wired into `/quenching-components align`, into
+`/quenching-specs conclude`'s merge gate, or into any spec's `## Validation`. It is run by hand,
 from the repo root, when a change makes half-finished citations plausible.
 
 **Two shapes of change do, and they are not the same shape.** The first is a **rename or a
@@ -152,8 +152,8 @@ prose**: no rename, no restructuring, and structurally invisible to halves 1 and
 link resolves perfectly *here*. Only half 3 sees it — and it is what a spec that writes a standard
 produces **by default**, since the natural way to cite a rule you just wrote is a markdown link to
 where you wrote it. Measured on `varredura-de-dependencias-antes-do-banco-shape`, whose branch
-review found four such links across `commands/specs/develop.md` and
-`assets/references/specs-develop/questions.md` (2026-08-18).
+review found four such links across `quenching/skills/quenching-specs/references/develop.md` and
+`references/specs-develop/questions.md` (2026-08-18).
 
 **The trigger to revisit the manual decision has therefore arrived — and the decision has not been
 retaken here.** Two dated cases establish *when* the script is needed, not yet where it should be
@@ -162,7 +162,7 @@ schedule that had to catch them. Automating on this much would still be the unme
 generalization §Scoped, not general below refuses to make about the harness's own failure history.
 
 What the second case does settle is **who** needs it: the author who mints a standard and cites it
-from `commands/**` or `assets/references/**` is the one producing the defect, in the same pass, and
+from `skills/**` or `references/**` is the one producing the defect, in the same pass, and
 half 3 is the only instrument that can tell them.
 
 ## Scoped, not general: the "every red is a harness defect" rule does not extend here

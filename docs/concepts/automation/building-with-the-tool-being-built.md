@@ -2,7 +2,7 @@
 type: concept
 title: Building with the tool being built
 description: In this repository the tool that records a task's progress is the same one the task edits, so an edit halfway through can leave `cq` itself unrunnable and the box impossible to tick — which makes certain tasks inseparable and forces capturing, before editing, everything the next step will need to read
-resource: quenching/assets/bin/**, quenching/assets/references/specs-execute/execution.md
+resource: quenching/assets/bin/**, quenching/references/specs-execute/execution.md
 tags: [automation, self-hosting, bootstrapping, specs, execution]
 timestamp: 2026-08-17
 audience: both

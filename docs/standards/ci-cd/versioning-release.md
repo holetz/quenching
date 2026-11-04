@@ -64,7 +64,7 @@ version it does not have.
 
 **Artifact 4 is the *tool identity*, held once.** Every command invokes the deployed `cq` at
 `.agents/quenching/bin/cq` ([deploy-mode.md](../architecture/deploy-mode.md);
-`quenching/assets/references/align/tool-resolution.md` §Resolving the tool), so a bump
+`quenching/references/align/tool-resolution.md` §Resolving the tool), so a bump
 *delivers* nothing by itself. What the one constant still does is answer `--version` for every
 pillar alike. Four scripts each carrying their own copy of this constant was never a design
 choice — it was the shape a self-contained, no-import single file forced, back when each pillar
@@ -97,7 +97,7 @@ changelog entry says so.
 
 The surfaces move **once per release, on the primary branch, as the deliberate act that publishes
 it** — see [branching.md](../git/branching.md). A version bump is never a task in a
-spec's `## Tasks`, `/quenching-specs-execute` never makes one, and `/quenching-specs-conclude` no longer makes one
+spec's `## Tasks`, `/quenching-specs execute` never makes one, and `/quenching-specs conclude` no longer makes one
 either: a spec's own conclude merges into the primary branch with the lockstep untouched, and the
 artifacts move only when the release command runs `cq specs release`.
 

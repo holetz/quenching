@@ -17,15 +17,15 @@ disable-model-invocation: true
 
 This command creates one Python entry point in the target repository's declared operations root.
 The seven-rule contract lives in
-[ops-align/entrypoint-contract.md](.agents/quenching/assets/references/ops-align/entrypoint-contract.md);
+[ops-align/entrypoint-contract.md](.agents/quenching/references/ops-align/entrypoint-contract.md);
 the target tree, lifecycle and router boundary live in
-[ops-align/target-structure.md](.agents/quenching/assets/references/ops-align/target-structure.md)
-and [ops-align/lifecycle.md](.agents/quenching/assets/references/ops-align/lifecycle.md).
+[ops-align/target-structure.md](.agents/quenching/references/ops-align/target-structure.md)
+and [ops-align/lifecycle.md](.agents/quenching/references/ops-align/lifecycle.md).
 The mold is `.agents/quenching/assets/templates/ops/entrypoint.py.tmpl`; router registrations
 come from `.agents/quenching/assets/templates/ops/router-snippets.md`.
 
 Resolve `cq` per
-[align/tool-resolution.md](.agents/quenching/assets/references/align/tool-resolution.md)
+[align/tool-resolution.md](.agents/quenching/references/align/tool-resolution.md)
 §Resolving the tool. Use the resolved path literally, pass the target root to every `.agents/quenching/bin/cq ops` call,
 and branch on exit code and JSON: `0` is clean, `1` carries findings, and `2` is a refusal.
 

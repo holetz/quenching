@@ -10,8 +10,8 @@ from pathlib import Path
 import unittest
 
 ROOT = Path(__file__).resolve().parents[2]
-ARTIFACTS = ROOT / "quenching/assets/references/specs-develop/artifacts.md"
-DEVELOP = ROOT / "quenching/assets/references/specs-flows/develop.md"
+ARTIFACTS = ROOT / "quenching/references/specs-develop/artifacts.md"
+DEVELOP = ROOT / "quenching/skills/quenching-specs/references/develop.md"
 AGENTS = ROOT / "docs/standards/automation/agents.md"
 CONTEXT_DISCIPLINE = ROOT / "docs/standards/automation/context-discipline.md"
 

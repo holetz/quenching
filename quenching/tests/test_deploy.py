@@ -56,8 +56,8 @@ class Deploy(unittest.TestCase):
         self.assertEqual(0, code)
         self.assertTrue(payload["written"])
         for rel in ("AGENTS.md", ".agents/quenching.json", ".agents/.quenching-deploy.json",
-                    ".agents/skills/quenching-specs-create/SKILL.md",
-                    ".agents/quenching/bin/cq", ".claude/skills/quenching-specs-create/SKILL.md"):
+                    ".agents/skills/quenching-specs/SKILL.md",
+                    ".agents/quenching/bin/cq", ".claude/skills/quenching-specs/SKILL.md"):
             self.assertTrue((self.target / rel).exists(), rel)
         for rel in ("CLAUDE.md", ".claude/CLAUDE.md", ".claude/commands", ".claude/references"):
             self.assertFalse((self.target / rel).exists(), rel)
@@ -66,7 +66,7 @@ class Deploy(unittest.TestCase):
         status = self.target_cq("components", "status", "--json")
         self.assertEqual(0, status.returncode, status.stderr)
         document = json.loads(status.stdout)
-        self.assertEqual((0, 48), (document["commands"], document["generated"]))
+        self.assertEqual((0, 6), (document["commands"], document["generated"]))
         template = (self.target / ".agents/quenching/assets/templates/harness/agents-root.md").read_text()
         self.assertIn("quenching-knowledge-add", template)
         self.assertNotIn("quenching-align:knowledge:add", template)
@@ -119,7 +119,7 @@ class Deploy(unittest.TestCase):
 
     def test_generated_skill_grants_both_launchers_and_names_the_platform(self):
         self.assertEqual(0, self.run_deploy("--modules", "core", "--write")[0])
-        skill = (self.target / ".agents/skills/quenching-specs-execute/SKILL.md").read_text()
+        skill = (self.target / ".agents/skills/quenching-components/SKILL.md").read_text()
         self.assertIn("Bash(.agents/quenching/bin/cq:*)", skill)
         self.assertIn("Bash(.agents/quenching/bin/cq.cmd:*)", skill)
         self.assertIn("on Windows it calls `cq.cmd`", skill)
@@ -129,17 +129,17 @@ class Deploy(unittest.TestCase):
 
     def test_check_reports_drift_without_writing(self):
         self.assertEqual(0, self.run_deploy("--modules", "core", "--write")[0])
-        skill = self.target / ".agents/skills/quenching-specs-create/SKILL.md"
+        skill = self.target / ".agents/skills/quenching-specs/SKILL.md"
         skill.write_text(skill.read_text(encoding="utf-8") + "\nlocal edit\n", encoding="utf-8")
         code, payload = self.run_deploy("--modules", "core", "--check")
         self.assertEqual(1, code)
-        self.assertIn({"path": ".agents/skills/quenching-specs-create/SKILL.md",
+        self.assertIn({"path": ".agents/skills/quenching-specs/SKILL.md",
                        "change": "update"}, payload["changes"])
         self.assertIn("local edit", skill.read_text(encoding="utf-8"))
 
     def test_a_group_writable_surface_is_not_drift(self):
         self.assertEqual(0, self.run_deploy("--modules", "core", "--write")[0])
-        skill = self.target / ".agents/skills/quenching-specs-create/SKILL.md"
+        skill = self.target / ".agents/skills/quenching-specs/SKILL.md"
         skill.chmod(0o664)
         code, payload = self.run_deploy("--modules", "core", "--check")
         self.assertEqual((0, []), (code, payload["changes"]))
@@ -152,22 +152,22 @@ class Deploy(unittest.TestCase):
         self.assertIn({"path": ".agents/quenching/bin/cq", "change": "mode"}, payload["changes"])
 
     def test_an_unowned_generated_skill_refuses_and_writes_nothing(self):
-        self.write(".agents/skills/quenching-specs-create/SKILL.md",
+        self.write(".agents/skills/quenching-specs/SKILL.md",
                    "---\ndescription: mine\n---\nkeep me\n")
         code, payload = self.run_deploy("--modules", "core", "--write")
         self.assertEqual(2, code)
-        self.assertEqual(".agents/skills/quenching-specs-create/SKILL.md", payload["conflicts"][0]["path"])
+        self.assertEqual(".agents/skills/quenching-specs/SKILL.md", payload["conflicts"][0]["path"])
         self.assertFalse((self.target / ".agents/quenching").exists())
-        self.assertIn("keep me", (self.target / ".agents/skills/quenching-specs-create/SKILL.md").read_text())
+        self.assertIn("keep me", (self.target / ".agents/skills/quenching-specs/SKILL.md").read_text())
 
     def test_module_selection_limits_skills_and_enabled_pillars(self):
         self.assertEqual(0, self.run_deploy("--modules", "specs", "--write")[0])
-        self.assertTrue((self.target / ".agents/skills/quenching-specs-create/SKILL.md").exists())
-        self.assertFalse((self.target / ".agents/skills/quenching-knowledge-align").exists())
+        self.assertTrue((self.target / ".agents/skills/quenching-specs/SKILL.md").exists())
+        self.assertFalse((self.target / ".agents/skills/quenching-knowledge").exists())
         modules = json.loads(self.target_cq("modules", "--json").stdout)
         enabled = {row["name"]: row["enabled"] for row in modules["modules"]}
         self.assertTrue(enabled["quenching-specs"])
-        self.assertFalse(enabled["quenching-align"])
+        self.assertFalse(enabled["quenching-knowledge"])
         config = json.loads((self.target / ".agents/quenching.json").read_text())
         self.assertEqual(["specs"], config["shared"]["profiles"]["installed"])
         self.assertNotIn("backend", config)
@@ -208,7 +208,7 @@ class Deploy(unittest.TestCase):
                    "---\ndescription: Mine.\n---\n\nread notes\n")
         self.assertEqual(0, self.run_deploy("--modules", "core", "--write")[0])
         status = json.loads(self.target_cq("components", "status", "--json").stdout)
-        self.assertEqual((1, 48), (status["commands"], status["generated"]))
+        self.assertEqual((1, 6), (status["commands"], status["generated"]))
         lint = self.target_cq("components", "lint", "--json")
         self.assertEqual(0, lint.returncode, lint.stderr)
 
@@ -372,7 +372,7 @@ class SourceDialect(unittest.TestCase):
             translate.transform_platform("use /quenching-specs:create")
 
     def test_target_dialect_passes_unchanged(self):
-        text = "use /quenching-specs-create and .agents/quenching/bin/cq specs"
+        text = "use /quenching-specs create and .agents/quenching/bin/cq specs"
         self.assertEqual(text, translate.transform_platform(text))
 
 

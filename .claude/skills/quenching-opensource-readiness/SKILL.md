@@ -21,10 +21,10 @@ This command is the read-only pre-publication assessment of the open source fron
 repository. It reports blockers, warnings and the coverage it could not measure; it never
 publishes, never writes an artifact, never rewrites history and never changes visibility. The
 evidence contract, the finding classes and the disposition of each are in
-[opensource-readiness/report.md](.agents/quenching/assets/references/opensource-readiness/report.md).
+[opensource-readiness/report.md](.agents/quenching/references/opensource-readiness/report.md).
 
 Resolve `cq` per
-[tool-resolution.md](.agents/quenching/assets/references/align/tool-resolution.md)
+[tool-resolution.md](.agents/quenching/references/align/tool-resolution.md)
 §Resolving the tool. Set `TARGET_ROOT` to the supplied root, or to `.` when omitted, and run:
 
 ```bash
@@ -50,7 +50,7 @@ location back is how a secret reaches the transcript.
 ### 2. Report blockers, warnings and coverage separately
 
 Report three tables, in this order, per
-[opensource-readiness/report.md](.agents/quenching/assets/references/opensource-readiness/report.md)
+[opensource-readiness/report.md](.agents/quenching/references/opensource-readiness/report.md)
 §The report:
 
 | Table | Rows |
