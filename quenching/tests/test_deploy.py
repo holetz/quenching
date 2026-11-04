@@ -359,6 +359,80 @@ class Deploy(unittest.TestCase):
         self.assertEqual('{"mcpServers": {"parent": {}}}\n',
                          (parent / ".mcp.json").read_text())
 
+    # --- .claude/settings.json: quenching's own hooks, merged into the user's file -----------
+
+    def settings(self):
+        return json.loads((self.target / ".claude/settings.json").read_text())
+
+    def hook_commands(self):
+        return [h["command"] for g in self.settings().get("hooks", {}).get("PreToolUse", [])
+                for h in g["hooks"]]
+
+    def test_write_merges_the_hooks_and_keeps_the_users_entries(self):
+        user = {"enabledPlugins": {"context7": True},
+                "hooks": {"PreToolUse": [{"matcher": "Bash", "hooks": [{"type": "command", "command": "guard.sh"}]}]}}
+        self.write(".claude/settings.json", json.dumps(user))
+        code, payload = self.run_deploy("--modules", "core", "--write")
+        self.assertEqual(0, code)
+        self.assertIn("settings", [c["change"] for c in payload["changes"]])
+        commands = self.hook_commands()
+        self.assertEqual("guard.sh", commands[0])
+        self.assertEqual(2, len([c for c in commands if ".agents/quenching/assets/hooks/" in c]))
+        self.assertEqual({"commit": "", "pr": ""}, self.settings()["attribution"])
+        self.assertEqual({"context7": True}, self.settings()["enabledPlugins"])
+        for name in ("deny-claude-coauthor", "warn-git-add-all"):
+            script = self.target / f".agents/quenching/assets/hooks/{name}.sh"
+            self.assertTrue(os.access(script, os.X_OK), name)
+        manifest = json.loads((self.target / ".agents/.quenching-deploy.json").read_text())
+        self.assertEqual(["deny-claude-coauthor", "warn-git-add-all"], sorted(manifest["claudeSettings"]["hooks"]))
+        self.assertNotIn(".claude/settings.json", manifest["files"])
+        before = (self.target / ".claude/settings.json").read_text()
+        code, again = self.run_deploy("--modules", "core", "--write")
+        self.assertEqual(0, code)
+        self.assertEqual(before, (self.target / ".claude/settings.json").read_text())
+        self.assertEqual((0, []), (self.run_deploy("--modules", "core", "--check")[0], again["changes"]))
+
+    def test_check_flags_settings_drift(self):
+        self.run_deploy("--modules", "core", "--write")
+        path = self.target / ".claude/settings.json"
+        document = self.settings()
+        document["hooks"] = {}
+        path.write_text(json.dumps(document))
+        code, payload = self.run_deploy("--modules", "core", "--check")
+        self.assertEqual(1, code)
+        self.assertEqual(["settings"], [c["change"] for c in payload["changes"]])
+
+    def test_a_narrower_module_set_or_harness_removes_only_the_own_hooks(self):
+        self.write(".claude/settings.json", json.dumps({"model": "x"}))
+        self.run_deploy("--modules", "specs,git", "--write")
+        self.assertEqual(2, len(self.hook_commands()))
+        self.run_deploy("--modules", "specs", "--write")
+        self.assertEqual(1, len(self.hook_commands()))
+        self.assertIn("deny-claude-coauthor", self.hook_commands()[0])
+        self.assertFalse((self.target / ".agents/quenching/assets/hooks/warn-git-add-all.sh").exists())
+        code, _ = self.run_deploy("--modules", "specs", "--harness", "codex", "--write")
+        self.assertEqual(0, code)
+        self.assertEqual({"model": "x"}, self.settings())
+
+    def test_a_settings_file_the_deploy_created_is_deleted_when_it_empties(self):
+        self.run_deploy("--modules", "core", "--write")
+        self.assertTrue((self.target / ".claude/settings.json").is_file())
+        self.run_deploy("--modules", "core", "--harness", "opencode", "--write")
+        self.assertFalse((self.target / ".claude/settings.json").exists())
+
+    def test_codex_only_writes_no_settings(self):
+        code, payload = self.run_deploy("--modules", "core", "--harness", "codex", "--write")
+        self.assertEqual(0, code)
+        self.assertFalse((self.target / ".claude/settings.json").exists())
+        self.assertFalse((self.target / ".agents/quenching/assets/hooks").exists())
+
+    def test_an_invalid_settings_file_refuses_with_exit_2_and_writes_nothing(self):
+        self.write(".claude/settings.json", "{not json")
+        code, payload = self.run_deploy("--modules", "core", "--write")
+        self.assertEqual(2, code)
+        self.assertFalse((self.target / ".agents/.quenching-deploy.json").exists())
+        self.assertEqual("{not json", (self.target / ".claude/settings.json").read_text())
+
 
 class SourceDialect(unittest.TestCase):
     """The source is written in the target dialect; the deploy refuses what is not."""
