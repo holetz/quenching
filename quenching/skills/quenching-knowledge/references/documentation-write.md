@@ -8,7 +8,7 @@ allowed-tools: Bash(cq:*), Bash(cq.cmd:*), Read, Grep, Glob, Write, Edit, Task, 
 `./.quenching/documentation/plan.md` and write every assigned page).
 
 Reads the accepted plan and writes only the assigned pages in the bundle's **reader-facing
-quadrants** — `./docs/{tutorials,how-to,explanation,project}/` and the root
+quadrants** — `./docs/{tutorials,how-to,documentation,project}/` and the root
 `index.md`. `standards/`, `concepts/`, `external/`, `catalog/`, `vision/` and `glossary.md` belong
 to the knowledge front and are written under its contract, never here. The Zensical site stages
 only the allowlisted homes plus the root glossary; raw `external/` and `catalog/` content is never
