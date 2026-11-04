@@ -67,7 +67,7 @@ Acts on the `/docs/` OKF bundle.
 ## The specs front
 
 Acts on specs stored on the `quenching` branch, with GitHub or Azure Boards cards. The lifecycle these
-commands share is explained in [The spec lifecycle](../explanation/spec-lifecycle.md).
+commands share is explained in [The spec lifecycle](../documentation/spec-lifecycle.md).
 
 | Command | Does |
 | --- | --- |

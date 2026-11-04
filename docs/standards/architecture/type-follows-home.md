@@ -43,7 +43,9 @@ restamped every doc under it from `type: knowledge` to `type: concept` in the sa
 moved the files — never as a follow-up sweep. The same discipline applied to `external/**`
 (`type: external`), and again on 2026-08-29 when the `documentation/` wrapper home dissolved: its
 ten docs were restamped `tutorial`, `how-to`, `explanation` and `project` in the commit that moved
-them, and `documentation` left the type vocabulary with the home it named. No doc was left holding a home's old name in its own frontmatter.
+them, and `documentation` left the type vocabulary with the home it named. On 2026-11-04 the
+`explanation/` home renamed to `documentation/` (spec 2176) — the name came back as a flat home —
+and its pages were restamped `type: documentation` in the commit that moved them. No doc was left holding a home's old name in its own frontmatter.
 
 ## The enforcement gap
 

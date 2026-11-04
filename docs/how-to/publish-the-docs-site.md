@@ -117,5 +117,5 @@ and a known glossary term actually rendered as `<abbr>`. For a local-only config
       pages; run `zensical serve` unattended; commit `site/`.
 
 **Next:** how the conductor fits the plugin's wider ownership rules is in
-[the operating model](../explanation/operating-model.md); exact command signatures are in the
+[the operating model](../documentation/operating-model.md); exact command signatures are in the
 [command catalog](../project/commands.md).

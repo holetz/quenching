@@ -1,10 +1,10 @@
 ---
-type: explanation
+type: documentation
 title: The operating model
 description: The map the whole plugin fits on — seven local fronts, the specs axis, the read-only security and git pillars, and conductor-shaped commands that never reimplement what they conduct.
 resource: quenching/README.md
 tags:
-  - explanation
+  - documentation
   - architecture
 timestamp: 2026-08-31
 audience: both
