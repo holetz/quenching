@@ -132,10 +132,10 @@ def validate_tree(bundle_root: str, deadline: float | None = None,
     # detecta por estrutura, sítio a sítio — nunca por versão)
     root_entries = {p.name for p in root.iterdir() if p.is_dir()}
     findings.extend(check_legacy_home(root_entries))
-    findings.extend(check_legacy_documentation_home(root_entries))
     doc_dir = root / "documentation"
-    if doc_dir.is_dir():
-        quadrant_entries = {p.name for p in doc_dir.iterdir() if p.is_dir()}
+    quadrant_entries = {p.name for p in doc_dir.iterdir() if p.is_dir()} if doc_dir.is_dir() else set()
+    findings.extend(check_legacy_documentation_home(root_entries, quadrant_entries))
+    if quadrant_entries:
         findings.extend(check_legacy_doc_quadrant(quadrant_entries))
     glossary_rels = sorted({
         os.path.relpath(p, bundle_root).replace(os.sep, "/")

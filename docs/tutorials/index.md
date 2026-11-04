@@ -18,4 +18,4 @@ command reuses — so the [how-to guides](../how-to/index.md) read as variations
 have already run.
 
 **Already know the basics?** Jump to the [how-to guides](../how-to/index.md); the model behind
-the commands is in [Concepts](../explanation/index.md).
+the commands is in [Concepts](../documentation/index.md).

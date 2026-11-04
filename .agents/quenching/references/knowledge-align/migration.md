@@ -27,8 +27,8 @@ then in place, and what changes is the shape inside it.
 | `VISION.md`, `ROADMAP.md`, `docs/direcao/` | `vision/` |
 | `docs/catalogo_dados/`, `docs/dominio/`, `docs/data/` | `catalog/` |
 | `docs/normativos/`, `docs/regulamentos/` | `external/regulations/` (content) |
-| `docs/guias/`, `docs/howto/`, `docs/how-to/` | `documentation/how-to/` |
-| `docs/tutoriais/`, `docs/tutorials/`, `docs/getting-started/` | `documentation/tutorials/` |
+| `docs/guias/`, `docs/howto/`, `docs/how-to/` | `how-to/` |
+| `docs/tutoriais/`, `docs/tutorials/`, `docs/getting-started/` | `tutorials/` |
 | `docs/documentacao/`, `docs/user-docs/`, `docs/site/`, `docs/manual/`, `docs/wiki/` | `documentation/` |
 
 ### 1a. Subfolder-level map (inside `standards/`)
@@ -87,24 +87,31 @@ Without this rule `align` would read a conformant `guides/` and never migrate it
 
 `documentation/` held the four Diátaxis quadrants one level below the bundle root. It existed
 because the site generator needed a non-hidden subtree to point at; the bundle root itself became
-`docs_dir`, and a level whose only job was that stopped earning it. A target still carrying the
-wrapper reports **ERROR `okf-legacy-documentation-home`** — structural, one site, idempotent.
+`docs_dir`, and a level whose only job was that stopped earning it. Since 2026-11-04
+`documentation/` is a canonical home again (§1c-ter), so the wrapper is recognised **by
+structure**: a `documentation/` that still holds a quadrant subfolder (`tutorials/`, `how-to/`,
+`explanation/`, `project/`, `getting-started/`, `concepts/`) reports **ERROR
+`okf-legacy-documentation-home`** — structural, one site, idempotent. A flat `documentation/` is
+the home and is silent.
 
 Resolve it in this order:
 
-1. `documentation/tutorials/`, `documentation/how-to/` and `documentation/explanation/` move to the
-   bundle root under the same names. Run §1c. FIRST if the target still has a `guides/` home: a
+1. `documentation/tutorials/` and `documentation/how-to/` move to the bundle root under the same
+   names; the pages of `documentation/explanation/` flatten into `documentation/` itself, the
+   canonical home. Run §1c. FIRST if the target still has a `guides/` home: a
    quadrant has to exist before it can be promoted.
 2. `documentation/reference/` becomes **`project/`** — this repository's own manual. **Never
    `reference/`**: that is a retired home name `okf-legacy-home` still claims, and reclaiming it
    would make an already-migrated bundle report as unmigrated
    (`docs/standards/architecture/retiring-a-reserved-artifact.md`).
-3. **Restamp `type:` in the same commit as the move** — `tutorial`, `how-to`, `explanation`,
+3. **Restamp `type:` in the same commit as the move** — `tutorial`, `how-to`, `documentation`,
    `project`. `docs/standards/architecture/type-follows-home.md` is the rule and it is not
    advisory: a home's name and its docs' `type:` are two spellings of one fact, and leaving the old
    value recreates the naming complaint one level down, in the most greppable field of the bundle.
-4. `documentation/index.md` merges into the bundle's root `index.md`, which then serves the site's
-   front door and the bundle map on one page — the `audience: both` every doc already declares.
+4. The wrapper's `documentation/index.md` content that mapped the bundle merges into the root
+   `index.md`, which then serves the site's front door and the bundle map on one page — the
+   `audience: both` every doc already declares; `documentation/index.md` stays as the home's own
+   listing of its pages.
 5. A generated `documentation/reference/glossary.md` is **deleted**, not moved. It was a copy that
    existed only because the canonical glossary sat outside `docs_dir`; the canonical file now
    publishes itself, and a second copy is exactly the `okf-legacy-glossary` the validator forbids.
@@ -121,6 +128,19 @@ complete bundle.
 Without this rule `align` would read a conformant `documentation/` — every quadrant correctly
 named, every doc correctly stamped — and never migrate it, because nothing about it is misspelled.
 The home is not wrong; it is retired, which no name check can see.
+
+### 1c-ter. Renamed home — `explanation/` → `documentation/`
+
+<!-- rules -->
+
+On 2026-11-04 the reader-facing explanation home renamed to `documentation/`: the readers of
+business-rule pages outside engineering look for that name. The home still covers the Diátaxis
+**explanation** quadrant; the name diverges from OKF v0.2, which calls it `explanation/`. A bundle
+on the old name reports **ERROR `okf-legacy-home`** with the rename as its remedy.
+
+`git mv explanation documentation`, restamp every page `type: explanation` → `type: documentation`
+in the same commit (`docs/standards/architecture/type-follows-home.md`), then sweep the links and
+the nav like any rename (§3).
 
 ### 1d. Renamed backlog item — `idea` → `task`
 
@@ -209,7 +229,7 @@ since the rename, each looking at only its own site:
 | Finding | Fires when |
 | --- | --- |
 | `okf-legacy-root` | the new root is absent and a pre-rename root (`.docs/`, `.knowledge/`) sits where it should be — one finding per former name present |
-| `okf-legacy-home` | a pre-rename home name (`knowledge/`, `reference/`) sits at the bundle root |
+| `okf-legacy-home` | a pre-rename home name (`knowledge/`, `reference/`, `explanation/`) sits at the bundle root |
 | `okf-legacy-doc-quadrant` | a pre-rename Diátaxis quadrant sits under `documentation/` |
 | `okf-legacy-glossary` | `glossary.md` sits inside a home instead of at the bundle root |
 

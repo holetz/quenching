@@ -23,7 +23,7 @@ Ask **"what IS this, relative to us?"**:
 | the **history** behind a rule (measurement, dated evidence, spec chain) | `decisions/` | `decision` | `concept-front.md` | `NNNN-<slug>.md` |
 | a **how-to / task recipe** (product usage) | `how-to/` | `how-to` | `concept-front.md` | `how-to/<slug>.md` |
 | a **tutorial** (learning-oriented) | `tutorials/` | `tutorial` | `concept-front.md` | `tutorials/<slug>.md` |
-| **an explanation** (site page, the reader's why) | `explanation/` | `explanation` | `concept-front.md` | `<slug>.md` |
+| **documentation** (site page, the reader's why — business rules included; the Diátaxis explanation quadrant) | `documentation/` | `documentation` | `concept-front.md` | `<slug>.md` |
 | **this repository's own manual** (commands, automation, layout) | `project/` | `project` | `concept-front.md` | `<slug>.md` |
 | **generic understanding we hold** (concept / explanation / learning) | `concepts/<subject>/` | `concept` | `concept-front.md` | `<subject>/<slug>.md` |
 | a **fact about an external** tool/lib/regulation | `external/{tools,libraries,regulations}/` | `external` | `concept-front.md` | `<slug>.md` |

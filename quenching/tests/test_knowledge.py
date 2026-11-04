@@ -355,6 +355,28 @@ class LegacyHomeDetector(unittest.TestCase):
         legacy = {(rel, code) for sev, rel, code, msg in findings if code == "okf-legacy-home"}
         self.assertEqual(legacy, {("knowledge/", "okf-legacy-home"), ("reference/", "okf-legacy-home")})
 
+    def test_explanation_home_is_told_to_become_documentation(self):
+        # 2026-11-04: the `explanation/` home renamed to `documentation/`. A bundle still on the
+        # old name gets `okf-legacy-home` with the rename as its remedy.
+        fixture = {
+            "index.md": '---\nokf_version: "0.1"\n---\n\n# Bundle\n',
+            "explanation/index.md": "# Explanation\n",
+        }
+        legacy = [(rel, msg) for sev, rel, code, msg in _validated(fixture) if code == "okf-legacy-home"]
+        self.assertEqual(len(legacy), 1)
+        rel, msg = legacy[0]
+        self.assertEqual(rel, "explanation/")
+        self.assertIn("rename it to `documentation/`", msg)
+
+    def test_a_flat_documentation_home_validates(self):
+        fixture = {
+            "index.md": '---\nokf_version: "0.1"\n---\n\n# Bundle\n',
+            "documentation/index.md": "# Documentation\n",
+        }
+        codes = {code for sev, rel, code, msg in _validated(fixture)}
+        self.assertFalse(codes & {"okf-legacy-home", "okf-legacy-documentation-home",
+                                  "okf-legacy-doc-quadrant"})
+
     def test_silent_once_renamed(self):
         fixture = {
             "index.md": '---\nokf_version: "0.1"\n---\n\n# Bundle\n',
@@ -384,18 +406,25 @@ class LegacyDocumentationHomeDetector(unittest.TestCase):
         fixture = {"index.md": self.BUNDLE,
                    "how-to/index.md": "# How-to\n",
                    "tutorials/index.md": "# Tutorials\n",
-                   "explanation/index.md": "# Explanation\n",
+                   "documentation/index.md": "# Documentation\n",
                    "project/index.md": "# Project\n"}
         codes = {code for sev, rel, code, msg in _validated(fixture)}
         self.assertNotIn("okf-legacy-documentation-home", codes)
 
+    def test_fires_on_a_wrapper_that_still_holds_the_old_explanation_quadrant(self):
+        fixture = {"index.md": self.BUNDLE,
+                   "documentation/index.md": "# Documentation\n",
+                   "documentation/explanation/index.md": "# Explanation\n"}
+        codes = {code for sev, rel, code, msg in _validated(fixture)}
+        self.assertIn("okf-legacy-documentation-home", codes)
+
     def test_a_canonical_concepts_home_is_never_read_as_a_quadrant(self):
-        # `LEGACY_QUADRANTS` maps `concepts` -> `explanation`. Re-aiming the quadrant check at the
+        # `LEGACY_QUADRANTS` names `concepts`. Re-aiming the quadrant check at the
         # bundle root — the obvious move once the quadrants live there — would report the bundle's
         # own canonical `concepts/` home as pre-rename debt. This is the guard on that.
         fixture = {"index.md": self.BUNDLE,
                    "concepts/index.md": "# Concepts\n",
-                   "explanation/index.md": "# Explanation\n"}
+                   "documentation/index.md": "# Documentation\n"}
         codes = {code for sev, rel, code, msg in _validated(fixture)}
         self.assertNotIn("okf-legacy-doc-quadrant", codes)
 

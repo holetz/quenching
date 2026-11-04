@@ -59,7 +59,7 @@ to: `approved: {date, by}` in the spec's frontmatter, where `by` is `human`, `se
     Nowhere — and that is the point. `ready` is a **derived** stage, computed from the document
     and its records; frontmatter records only human judgments (`priority`, `refined`,
     `approved`, `branch`, `reviewed`, `merge`, `outcome`). See
-    [The spec lifecycle](../explanation/spec-lifecycle.md) for the full record vocabulary.
+    [The spec lifecycle](../documentation/spec-lifecycle.md) for the full record vocabulary.
 
 ## 3. Build — `/quenching-specs execute`
 
@@ -99,5 +99,5 @@ spec document, branch and per-task commits for each spec separate so their decis
 traceable.
 
 **Next:** the reasoning behind records-versus-derived-state is in
-[The spec lifecycle](../explanation/spec-lifecycle.md); every command's one-line contract is in
+[The spec lifecycle](../documentation/spec-lifecycle.md); every command's one-line contract is in
 the [command catalog](../project/commands.md).

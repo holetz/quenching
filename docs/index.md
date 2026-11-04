@@ -21,7 +21,7 @@ before anyone touches a file.
 - **Do a task** — adopt quenching in a repo, drive one spec to merge, publish a docs site:
   [the how-to guides](how-to/index.md).
 - **Understand why** — the seven local fronts, the OKF bundle, the DTCG design source, and the provider-owned spec lifecycle:
-  [the explanations](explanation/index.md).
+  [the explanations](documentation/index.md).
 - **Look it up** — the complete command catalog, release history and local automation registry:
   [this project's reference](project/index.md), the [changelog](project/changelog.md), and the
   [glossary](glossary.md).
@@ -67,7 +67,7 @@ writing anything.
 | *(git)* | nothing — a pillar that answers questions, converges no tree | *(none, by design)* |
 
 One more command, `/quenching-align`, conducts the seven local aligned fronts in dependency order on a single
-OK. Read [the operating model](explanation/operating-model.md) and you know the whole surface.
+OK. Read [the operating model](documentation/operating-model.md) and you know the whole surface.
 
 ## Quick start
 
@@ -101,7 +101,7 @@ destinations by [standards/agents/ephemeral-writes.md](standards/agents/ephemera
 * [vision/](vision/index.md) — direction segmented by area, no deadline
 * [tutorials/](tutorials/index.md) — learning-oriented pages, the Diátaxis tutorial quadrant
 * [how-to/](how-to/index.md) — task recipes for a reader with a goal
-* [explanation/](explanation/index.md) — why the product works the way it does
+* [documentation/](documentation/index.md) — why the product works the way it does (the Diátaxis explanation quadrant)
 * [project/](project/index.md) — the manual for *this* repository: its commands, its automation, its layout
 * [concepts/](concepts/index.md) — generic knowledge we hold (domain concepts, explanations, learnings); ships the fixed [glossary.md](glossary.md) term lookup
 * [external/](external/index.md) — facts about what **WE CONSUME** (external, background)
@@ -113,7 +113,7 @@ destinations by [standards/agents/ephemeral-writes.md](standards/agents/ephemera
 - `concepts/` = "generic **understanding** we hold" (concepts/explanations; non-binding).
 - `external/` = "facts about what **WE CONSUME** (external, background)".
 - `catalog/` = "our **data** / domain".
-- `tutorials/` `how-to/` `explanation/` `project/` = the **reader-facing** quadrants; a published page belongs here, internal team understanding in `concepts/`, a current contract in `standards/`.
+- `tutorials/` `how-to/` `documentation/` `project/` = the **reader-facing** quadrants; a published page belongs here, internal team understanding in `concepts/`, a current contract in `standards/`.
 - The **task inbox** lives at `/.specs/backlog/`, **outside** this bundle (quenching-managed).
 - `patterns` **is not a silo** — it dissolves into `standards/architecture/`.
 

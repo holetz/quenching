@@ -57,7 +57,7 @@ re-verification is **this** skill.
   ask an author to edit the derived snippet or a duplicate term list. A non-empty canonical glossary is required by default;
   only an accepted `do not publish` map row can exclude it.
 - **The whole bundle is the knowledge inventory, not the generator input.** Inventory every `docs` home —
-  `tutorials/`, `how-to/`, `explanation/`, `project/`, `standards/`, `concepts/`, `external/`,
+  `tutorials/`, `how-to/`, `documentation/`, `project/`, `standards/`, `concepts/`, `external/`,
   `catalog/`, `vision/` and the root glossary — and compare coverage **document by document** in the
   staged tree, never per home or by the pages the plan selected. Raw `catalog/` and `external/`
   files are inventoried as knowledge but excluded from this denominator.
@@ -165,7 +165,7 @@ Never choose a runner from `PATH` alone when a project-managed runner is availab
 ### 1. Preflight — the bundle and the home
 Confirm `/docs/index.md` carries `okf_version`. **No bundle → stop** and offer
 `/quenching-knowledge align` first; there is nothing to render. Bundle
-but **no reader-facing quadrant** (`tutorials/`, `how-to/`, `explanation/`, `project/`) → stop and
+but **no reader-facing quadrant** (`tutorials/`, `how-to/`, `documentation/`, `project/`) → stop and
 offer `/quenching-knowledge align`; never scaffold a home here.
 **Done when:** the bundle and documentation home are confirmed, or the handoff is reported.
 

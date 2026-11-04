@@ -138,5 +138,5 @@ probe → plan → OK → apply → verify loop is the plugin's one interface �
 **Next:** reproduce the bounded workflow in a disposable fixture with
 [First workflow study](first-workflow-study.md), then read the full workflow in an existing repository with
 [Adopt quenching in a repository](../how-to/adopt-quenching.md), or read
-[the operating model](../explanation/operating-model.md#the-operating-model) to see why the local fronts feed each
+[the operating model](../documentation/operating-model.md#the-operating-model) to see why the local fronts feed each
 other.

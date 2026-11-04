@@ -26,10 +26,10 @@
       "how-to/publish-the-docs-site.md",
     ] },
     { "Concepts" = [
-      "explanation/index.md",
-      "explanation/okf-bundle.md",
-      "explanation/operating-model.md",
-      "explanation/spec-lifecycle.md",
+      "documentation/index.md",
+      "documentation/okf-bundle.md",
+      "documentation/operating-model.md",
+      "documentation/spec-lifecycle.md",
     ] },
     { "This project" = [
       "project/index.md",

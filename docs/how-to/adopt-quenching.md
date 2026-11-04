@@ -144,7 +144,7 @@ looping to a fixpoint until a pass changes nothing.
     The same tree in every adopted repository (a repo without data simply gets no `catalog/`):
     a root `/docs/index.md` with `okf_version: "0.2"`, a fixed `glossary.md`, and the
     homes `standards/`, `concepts/`, `external/`, `documentation/`, `vision/`, `catalog/`.
-    The full anatomy is in [The OKF bundle](../explanation/okf-bundle.md).
+    The full anatomy is in [The OKF bundle](../documentation/okf-bundle.md).
 
 ## Verify
 

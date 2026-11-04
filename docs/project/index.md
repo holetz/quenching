@@ -2,7 +2,7 @@
 
 The manual for *this* repository, optimized for Ctrl-F: the full command surface and the local
 automation it registers. Nothing here teaches — that is what [tutorials](../tutorials/index.md)
-and [explanations](../explanation/index.md) are for; these pages answer precise questions with
+and [explanations](../documentation/index.md) are for; these pages answer precise questions with
 stable headings. The vocabulary lives one level up, in the bundle's own
 [glossary](../glossary.md).
 

@@ -62,7 +62,7 @@ Use `navigation.indexes` and relative links. Every section index carries a routi
 | If you want to… | Go to |
 | --- | --- |
 | See it run in 30 seconds | [Quick start](../../../../assets/references/how-to/quick-start.md) |
-| Understand why it is shaped this way | [Concepts](../../../../assets/references/explanation/index.md) |
+| Understand why it is shaped this way | [Documentation](../../../../assets/references/documentation/index.md) |
 | Look up an exact option | [Reference](../../../../assets/references/reference/index.md) |
 
 <!-- rationale -->

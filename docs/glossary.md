@@ -231,7 +231,7 @@ Fifteen terms to read first; each has its full entry under *Terms*.
 - [**Normalized script pattern**](standards/architecture/ops-front.md) — a stable vocabulary for
   routine project operations, derived from GitHub's pattern so contributors can use predictable
   names without learning each repository's internal layout.
-- [**OKF**](explanation/okf-bundle.md) — Open Knowledge Format, the fixed-shape `/docs/` bundle
+- [**OKF**](documentation/okf-bundle.md) — Open Knowledge Format, the fixed-shape `/docs/` bundle
   (homes, `index.md` listings, typed concept docs) this plugin ships and validates.
 - [**Ops front**](standards/architecture/ops-front.md) — the plugin front that defines the canonical
   operations surface a target repository can converge toward, including its router, entry-point
