@@ -17,7 +17,7 @@ home boundaries.
 <!-- rules -->
 `AGENTS.md` is the navigation pointer every harness auto-loads — the root `AGENTS.md`
 repo-wide, a subfolder `AGENTS.md` only when working under its folder. the host 2.1.277+
-reads `AGENTS.md` directly; `AGENTS.md` is the legacy fallback of older hosts and is removed by
+reads `AGENTS.md` directly; `CLAUDE.md` is the legacy fallback of older hosts and is removed by
 the migration, never created.
 OKF-strict point 7 ([knowledge-align/okf-spec.md](.agents/quenching/references/knowledge-align/okf-spec.md))
 says they are **not** OKF concepts, and the validator (`.agents/quenching/bin/cq knowledge validate`) **skips them entirely**
@@ -93,7 +93,7 @@ The validator won't check harness files, so this skill does:
 ## 6. Nesting rules
 
 - **Root `AGENTS.md`** = repo-wide operations + the `knowledge/` home map, loaded on every turn.
-  There is no root `AGENTS.md` in a conformant target (§7).
+  There is no root `CLAUDE.md` in a conformant target (§7).
 - **Subfolder `AGENTS.md`** = nearest-file navigation (auto-loads only under that folder): the
   folder's local commands/quirks + a pointer to the home that **covers** it. **Never duplicate the
   root.**
@@ -117,19 +117,19 @@ The validator won't check harness files, so this skill does:
   output earns no harness.
 - `/quenching-knowledge align`'s skeleton already owns `docs/standards/AGENTS.md`.
 
-## 7. AGENTS.md is the root source; AGENTS.md is legacy
+## 7. AGENTS.md is the root source; CLAUDE.md is legacy
 
 <!-- rules -->
 The root `AGENTS.md` carries the repo-wide KEEP residue and pointers, and every harness reads it.
-A root `AGENTS.md` that carries its own instructions is consolidated into `AGENTS.md` — moved with
+A root `CLAUDE.md` that carries its own instructions is consolidated into `AGENTS.md` — moved with
 `git mv` when `AGENTS.md` is absent, unit by unit when both exist, with a fact present in both a
 **FLAG** — and the pointer-only residue (`@AGENTS.md`) is **removed**, never recreated.
 
 **Fact, and the version it was verified on.** the host 2.1.312 (2026-10-28) reads `AGENTS.md`
-directly when there is no `AGENTS.md`/`CLAUDE.local.md` in the working directory or above it
+directly when there is no `CLAUDE.md`/`CLAUDE.local.md` in the working directory or above it
 (default `claude-md-or-agents-md`, added in 2.1.277). With both files side by side, only
-`AGENTS.md` loads unless the setting is `claude-md-and-agents-md`. OpenCode 1.18.35 and Codex read
-`AGENTS.md`. A host before 2.1.277 still needs the one-line `AGENTS.md` import; that is a legacy
+`CLAUDE.md` loads unless the setting is `claude-md-and-agents-md`. OpenCode 1.18.35 and Codex read
+`AGENTS.md`. A host before 2.1.277 still needs the one-line `CLAUDE.md` import; that is a legacy
 fallback, not the conformant layout.
 
 <!-- rationale -->

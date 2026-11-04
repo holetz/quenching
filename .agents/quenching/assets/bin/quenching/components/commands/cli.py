@@ -34,6 +34,7 @@ from quenching.components.commands.bridge import add_arguments as add_bridge_arg
 from quenching.components.commands.bridge import cmd_bridge
 from quenching.components.commands.migrate import add_arguments as add_migrate_arguments
 from quenching.components.commands.migrate import cmd_migrate
+from quenching.components.families import compute_families
 from quenching.components.sections import RULES_MARKER
 from quenching.components.surface import find_surface_root, load_surface
 from quenching.session.commands.cli import add_subcommands as add_session_subcommands
@@ -118,28 +119,6 @@ def cmd_session(args, root: str) -> int:
     return args.func(args)
 
 
-FAMILY_MIN = 3
-
-
-def _families(commands: list[dict]) -> dict:
-    """Local skills grouped by the first kebab segment of their name: how many, how many the
-    model list carries, and whether the family earns a router (`skills.md` §One router per
-    vertical). Read-only: it never feeds `ok` or `state`."""
-    families: dict[str, dict] = {}
-    for command in commands:
-        name = command["command"].lstrip("/")
-        if "-" not in name:
-            continue
-        entry = families.setdefault(name.split("-", 1)[0], {"skills": 0, "invocable": 0})
-        entry["skills"] += 1
-        flag = str(command["frontmatter"].get("disable-model-invocation", "")).lower()
-        if flag != "true":
-            entry["invocable"] += 1
-    for entry in families.values():
-        entry["candidate"] = entry["invocable"] >= FAMILY_MIN
-    return dict(sorted(families.items()))
-
-
 def cmd_status(args, root: str) -> int:
     """Report the command surface without writing or duplicating the doctor output."""
     surface = load_surface(root)
@@ -163,7 +142,7 @@ def cmd_status(args, root: str) -> int:
             "generated": len(surface.get("generated", [])),
             "fronts": dict(sorted(fronts.items())),
             "findings": codes,
-            "families": _families(surface["commands"]),
+            "families": compute_families(surface["commands"]),
             "errors": sum(item.get("severity") == "error" for item in findings),
             "warnings": sum(item.get("severity") != "error" for item in findings),
             "ok": not findings,
@@ -173,7 +152,7 @@ def cmd_status(args, root: str) -> int:
              + (f"  generated: {payload['generated']}\n" if payload.get("generated") else "")
              + f"  state: {payload['state']}\n"
              f"  findings: {', '.join(f'{key}={value}' for key, value in payload['findings'].items()) or '(none)'}"
-             + "".join(f"\n  router candidate: {name} ({entry['invocable']} model-invocable of {entry['skills']})"
+             + "".join(f"\n  router candidate ({entry['kind']}): {name} ({entry['skills']} skills)"
                        for name, entry in payload.get("families", {}).items() if entry["candidate"]))
     emit(args.json, payload, human)
     return 0 if payload["ok"] else 1
