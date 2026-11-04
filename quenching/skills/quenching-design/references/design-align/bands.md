@@ -3,7 +3,7 @@
 <!-- rules -->
 
 This file owns design's finding codes and closures. The common disposition axis is defined in
-[`front-align/mold.md`](../front-align/mold.md) §Disposition bands.
+[`front-align/mold.md`](.agents/quenching/references/front-align/mold.md) §Disposition bands.
 
 ## Mechanical findings
 

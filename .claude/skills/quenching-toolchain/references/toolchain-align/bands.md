@@ -4,7 +4,7 @@
 
 This file owns only the toolchain finding codes, their disposition bands and the manifest, lock,
 runtime and shared-key-specific closure shapes. The common axis is defined in
-[`front-align/mold.md`](../front-align/mold.md) §Disposition bands. This reference currently has
+[`front-align/mold.md`](.agents/quenching/references/front-align/mold.md) §Disposition bands. This reference currently has
 no judgement finding; the boundary is explicit below.
 
 ## Mechanical findings

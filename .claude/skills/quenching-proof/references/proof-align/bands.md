@@ -4,7 +4,7 @@
 
 This file owns only proof finding codes, their disposition bands and the layer, fixture,
 measurement, floor, CI and order-specific closures. The common axis is defined in
-[`front-align/mold.md`](../front-align/mold.md) §Disposition bands.
+[`front-align/mold.md`](.agents/quenching/references/front-align/mold.md) §Disposition bands.
 
 ## Mechanical findings
 
