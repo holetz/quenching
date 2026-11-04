@@ -104,10 +104,12 @@ class KnowledgeAlignmentContract(unittest.TestCase):
         self.assertEqual([front for front, _, _ in parsed], declared_order)
         for index, (front, route, dependency) in enumerate(parsed):
             with self.subTest(front=front):
-                routed = front in ("knowledge", "components")
-                self.assertEqual(route, f"/quenching-{front} align" if routed else f"/quenching-{front}-align")
+                self.assertEqual(route, f"/quenching-{front} align")
                 self.assertEqual(dependency, "applicability" if index == 0 else parsed[index - 1][0])
 
+        self.assertIn(".agents/skills/quenching-<front>/references/align.md", align)
+        for front, _, _ in parsed:
+            self.assertTrue((ROOT / "skills" / f"quenching-{front}" / "references" / "align.md").is_file(), front)
         workflow = align.split("## Workflow", 1)[1].split("## Invariants", 1)[0]
         stage_positions = [workflow.index(f"### Front: `{front}`") for front, _, _ in parsed]
         self.assertEqual(stage_positions, sorted(stage_positions))

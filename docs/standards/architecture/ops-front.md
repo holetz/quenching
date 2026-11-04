@@ -27,7 +27,7 @@ The ops front adopts the common minimum from
 `.agents/quenching.json`; its read model is `cq ops status`, and its verifier is `cq ops doctor`.
 The align and status bodies cite the executor projection at
 `quenching/references/front-align/mold.md`, while this front keeps the ops-specific
-disposition map in `quenching/references/ops-align/bands.md`.
+disposition map in `quenching/skills/quenching-ops/references/ops-align/bands.md`.
 
 Ops retains its domain deltas: `opsRoot`, `router` and `registry` ownership, inventory and generated
 registry freshness, lifecycle and entry-point reachability, typed exits, output channels and

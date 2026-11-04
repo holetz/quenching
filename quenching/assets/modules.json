@@ -172,9 +172,7 @@
         ],
         "agents": false,
         "skills": [
-          "quenching-design-align",
-          "quenching-design-genre-new",
-          "quenching-design-status"
+          "quenching-design"
         ]
       },
       "generatedSupport": {
@@ -192,7 +190,6 @@
           "specs-conclude",
           "specs-develop",
           "specs-execute",
-          "design-align",
           "front-align"
         ],
         "router": true
@@ -206,9 +203,7 @@
         ],
         "agents": false,
         "skills": [
-          "quenching-ops-align",
-          "quenching-ops-entrypoint-new",
-          "quenching-ops-status"
+          "quenching-ops"
         ]
       },
       "generatedSupport": {
@@ -226,7 +221,6 @@
           "specs-conclude",
           "specs-develop",
           "specs-execute",
-          "ops-align",
           "front-align"
         ],
         "router": true
@@ -240,9 +234,7 @@
         ],
         "agents": false,
         "skills": [
-          "quenching-proof-align",
-          "quenching-proof-layer-new",
-          "quenching-proof-status"
+          "quenching-proof"
         ]
       },
       "generatedSupport": {
@@ -262,7 +254,6 @@
           "specs-conclude",
           "specs-develop",
           "specs-execute",
-          "proof-align",
           "front-align"
         ],
         "router": true
@@ -276,8 +267,7 @@
         ],
         "agents": false,
         "skills": [
-          "quenching-toolchain-align",
-          "quenching-toolchain-status"
+          "quenching-toolchain"
         ]
       },
       "generatedSupport": {
@@ -296,7 +286,6 @@
           "specs-conclude",
           "specs-develop",
           "specs-execute",
-          "toolchain-align",
           "front-align"
         ],
         "router": true
@@ -310,8 +299,7 @@
         ],
         "agents": false,
         "skills": [
-          "quenching-delivery-align",
-          "quenching-delivery-status"
+          "quenching-delivery"
         ]
       },
       "generatedSupport": {
@@ -330,7 +318,6 @@
           "specs-conclude",
           "specs-develop",
           "specs-execute",
-          "delivery-align",
           "front-align"
         ],
         "router": true
@@ -344,9 +331,7 @@
         ],
         "agents": false,
         "skills": [
-          "quenching-opensource-align",
-          "quenching-opensource-readiness",
-          "quenching-opensource-status"
+          "quenching-opensource"
         ]
       },
       "generatedSupport": {
@@ -365,10 +350,7 @@
           "specs-conclude",
           "specs-develop",
           "specs-execute",
-          "front-align",
-          "opensource-controls",
-          "opensource-align",
-          "opensource-readiness"
+          "front-align"
         ],
         "router": true
       }
@@ -381,7 +363,7 @@
         ],
         "agents": false,
         "skills": [
-          "quenching-security-status"
+          "quenching-security"
         ]
       },
       "generatedSupport": {

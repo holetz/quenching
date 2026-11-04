@@ -2,7 +2,7 @@
 type: standard
 title: Align surface — one align per front, probe first
 description: The aligned-front column — one align per local front carrying its content stages, the `security` and `git` pillars declared outside the conductor, the probe-before-inventory rule that makes a no-op align cost a couple of tool calls, the rule that no sweep records itself, and the conductor categories sharing the cycle-authorization contract — `/align` conducts the eight local fronts (`knowledge`, `design`, `components`, `ops`, `proof`, `toolchain`, `delivery`, `opensource`); none reimplements what it conducts
-resource: quenching/skills/quenching-align/SKILL.md, quenching/skills/quenching-knowledge/references/align.md, quenching/skills/quenching-design-align/SKILL.md, quenching/skills/quenching-components/references/align.md, quenching/skills/quenching-ops-align/SKILL.md, quenching/skills/quenching-proof-align/SKILL.md, quenching/skills/quenching-toolchain-align/SKILL.md, quenching/skills/quenching-delivery-align/SKILL.md, quenching/skills/quenching-opensource-align/SKILL.md, quenching/skills/quenching-security-status/SKILL.md, quenching/assets/bin/quenching/design/**, quenching/assets/bin/quenching/git/**, quenching/assets/bin/quenching/toolchain/**, quenching/assets/bin/quenching/delivery/**, quenching/assets/bin/quenching/security/**, quenching/references/align/**, quenching/references/proof-align/**
+resource: quenching/skills/quenching-align/SKILL.md, quenching/skills/quenching-knowledge/references/align.md, quenching/skills/quenching-design/references/align.md, quenching/skills/quenching-components/references/align.md, quenching/skills/quenching-ops/references/align.md, quenching/skills/quenching-proof/references/align.md, quenching/skills/quenching-toolchain/references/align.md, quenching/skills/quenching-delivery/references/align.md, quenching/skills/quenching-opensource/references/align.md, quenching/skills/quenching-security/references/status.md, quenching/assets/bin/quenching/design/**, quenching/assets/bin/quenching/git/**, quenching/assets/bin/quenching/toolchain/**, quenching/assets/bin/quenching/delivery/**, quenching/assets/bin/quenching/security/**, quenching/references/align/**, quenching/skills/quenching-proof/references/proof-align/**
 tags: [architecture, aligns, commands, probe, convergence]
 timestamp: 2026-08-31
 audience: both
@@ -90,13 +90,13 @@ conductor boundary; it does not transfer ownership between toolchain, delivery o
 | --- | --- |
 | `/docs/` | `/quenching-knowledge align` |
 | `/.specs/` | **none** — see §The specs front lost its align with its backend, below |
-| `/.design/` | `/quenching-design-align` |
+| `/.design/` | `/quenching-design align` |
 | `.claude/` | `/quenching-components align` |
-| `ops` | `/quenching-ops-align` |
-| `proof` | `/quenching-proof-align` |
-| `toolchain` | `/quenching-toolchain-align` |
-| `delivery` | `/quenching-delivery-align` |
-| `opensource` | `/quenching-opensource-align` |
+| `ops` | `/quenching-ops align` |
+| `proof` | `/quenching-proof align` |
+| `toolchain` | `/quenching-toolchain align` |
+| `delivery` | `/quenching-delivery align` |
+| `opensource` | `/quenching-opensource align` |
 | `security` | **none** — read-only pillar; see §The security subject is pillar-shaped, above |
 | `git` | **none** — see §The git pillar has no align, below |
 | all eight aligned fronts | `/align` — conducts them in dependency order, on one nested OK |
@@ -167,11 +167,11 @@ categories).
 ### The proof front has its own align
 
 The proof front now has a local tree to converge: the target's declared test root, gate, measured
-surfaces, fixtures, layers, and CI evidence. `/quenching-proof-align` probes `cq proof doctor`
+surfaces, fixtures, layers, and CI evidence. `/quenching-proof align` probes `cq proof doctor`
 before reading that tree, applies only bounded structural repairs, and reports layer taxonomy,
 measurement scope, CI installation, and operations-entry-point coverage to the target owner. Its
 floor-deferral rule keeps a new coverage promise from being written while the measured surface is
-still changing; `/quenching-proof-status` remains the read-only view.
+still changing; `/quenching-proof status` remains the read-only view.
 
 ## The conductor categories
 

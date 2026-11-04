@@ -40,14 +40,14 @@ and one root command spans the eight aligned fronts. The `security` and `git` ax
 | --- | --- | --- |
 | `/docs/` — the OKF bundle | `/quenching-knowledge` | `/quenching-knowledge align` |
 | specs — the `quenching` branch, with GitHub or Azure Boards cards | `/quenching-specs` | lifecycle and status commands |
-| `/.design/` — the DTCG design source | `/quenching-design-*` | `/quenching-design-align` |
+| `/.design/` — the DTCG design source | `/quenching-design` | `/quenching-design align` |
 | `.claude/` — the automation surface | `/quenching-components` | `/quenching-components align` |
-| target-declared operations root | `/quenching-ops-*` | `/quenching-ops-align` |
-| target-declared verification root | `/quenching-proof-*` | `/quenching-proof-align` |
-| target-declared toolchain surface | `/quenching-toolchain-*` | `/quenching-toolchain-align` |
-| target-declared delivery surface | `/quenching-delivery-*` | `/quenching-delivery-align` |
-| license, community and governance artifacts | `/quenching-opensource-*` | `/quenching-opensource-align` |
-| *(pillar)* — read-only security questions | `/quenching-security-*` | **none** |
+| target-declared operations root | `/quenching-ops` | `/quenching-ops align` |
+| target-declared verification root | `/quenching-proof` | `/quenching-proof align` |
+| target-declared toolchain surface | `/quenching-toolchain` | `/quenching-toolchain align` |
+| target-declared delivery surface | `/quenching-delivery` | `/quenching-delivery align` |
+| license, community and governance artifacts | `/quenching-opensource` | `/quenching-opensource align` |
+| *(pillar)* — read-only security questions | `/quenching-security` | **none** |
 | *(pillar)* — a repository's own git facts | `/quenching-git` | **none** |
 | **all eight aligned fronts** | *(root)* | **`/quenching-align`** |
 
@@ -83,22 +83,30 @@ confirms on its own, always — and inside a conducted run, so does every **irre
 That contract lives once, in
 [`align/convergence.md`](references/align/convergence.md).
 
-## The 23 skills
+## The 13 skills
 
 **One folder per skill** — each `skills/<name>/SKILL.md` carries both the description that routes to
-it and the body that runs. A vertical router (`quenching-specs`, `quenching-git`, `quenching-knowledge`,
-`quenching-components`) keeps its flows in its own `references/`, so its rows below are flows, not
+it and the body that runs. A front router (`quenching-specs`, `quenching-git`, `quenching-knowledge`,
+`quenching-components`, and the non-core `quenching-design`, `quenching-ops`, `quenching-proof`,
+`quenching-toolchain`, `quenching-delivery`, `quenching-security`, `quenching-opensource`) keeps its flows in its own `references/`, so its rows below are flows, not
 extra skills. The tables below are the manual, and the count is a property of their rows rather than a
-second structural inventory: the `23` in this heading is the manual's canonical displayed total, while
+second structural inventory: the `13` in this heading is the manual's canonical displayed total, while
 [`tests/test_readme_surface.py`](tests/test_readme_surface.py) reads it and fails the suite whenever
 these tables and `skills/**` disagree
 ([`quality/surface-verification.md`](../docs/standards/quality/surface-verification.md)
 §A hand-written inventory of the surface needs a machine holding its lockstep).
 
+**The listing cost.** All thirteen descriptions are resident in every session, so the descriptions are
+the always-on cost of the plugin. Each router's description is a map of intent per flow with pt-BR and
+English triggers, at most 1,024 characters (the Agent Skills limit Codex and OpenCode read; Claude's own
+cap is 1,536). Today the thirteen total about 6.4 thousand characters (about 1.6 thousand tokens); the
+ceiling is 13 × 1,024 = 13.3 thousand characters (about 3.3 thousand tokens). Before the non-core fronts
+had routers, the six resident descriptions were about 1.4 thousand characters.
+
 The split is by front and pillar: `/quenching-knowledge` acts on the OKF `/docs/` bundle,
-`/quenching-specs` on the specs branch and its cards, `/quenching-design-*` on the DTCG
+`/quenching-specs` on the specs branch and its cards, `/quenching-design` on the DTCG
 source and its projections, `/quenching-components` on the target's `.claude/` automation surface,
-`/quenching-ops-*` on the target's operations surface, `/quenching-proof-*` on the target's verification surface, `/quenching-toolchain-*` on the target's toolchain surface, `/quenching-delivery-*` on the target's delivery surface, `/quenching-opensource-*` on its license, community and governance artifacts, and `/quenching-git-*` on a repository's own git facts. Two commands sit at the root. Claude auto-routes to a command by its `description`; typing the command is
+`/quenching-ops` on the target's operations surface, `/quenching-proof` on the target's verification surface, `/quenching-toolchain` on the target's toolchain surface, `/quenching-delivery` on the target's delivery surface, `/quenching-opensource` on its license, community and governance artifacts, and `/quenching-git-*` on a repository's own git facts. Two commands sit at the root. Claude auto-routes to a command by its `description`; typing the command is
 the explicit entry point.
 
 ### The `knowledge` front — the OKF `/docs/` bundle
@@ -124,9 +132,10 @@ the explicit entry point.
 
 | Command | Does |
 | --- | --- |
-| `/quenching-design-align` | Installs or converges the brand pack, preserves source truth, arbitrates external DESIGN.md proposals, and rebuilds every projection. |
-| `/quenching-design-status` | Reports DTCG validity, generated identity, sidecar/assets, genres, adapters, and optional Impeccable detector state without writing. |
-| `/quenching-design-genre-new` | Mints ONE editorial genre contract with fields, register, and HTML/Typst/PDF destinations. |
+| `/quenching-design` | The single entry point of the design flows: picks `align`, `status`, `genre-new` by the flow you name or by the words of the request. |
+| `/quenching-design align` | Installs or converges the brand pack, preserves source truth, arbitrates external DESIGN.md proposals, and rebuilds every projection. |
+| `/quenching-design status` | Reports DTCG validity, generated identity, sidecar/assets, genres, adapters, and optional Impeccable detector state without writing. |
+| `/quenching-design genre-new` | Mints ONE editorial genre contract with fields, register, and HTML/Typst/PDF destinations. |
 
 `cq design build` and `cq design import` are the deterministic rails used by these commands. The
 source is DTCG 2025.10; `DESIGN.md` is a deliberately lossy portable projection, while rich
@@ -150,45 +159,51 @@ motion, shadows, breakpoints, and snippets remain in the source and sidecar.
 
 | Command | Does |
 | --- | --- |
-| `/quenching-ops-align` | Probes the declared operations root and router, applies mechanical and structural drift under one plan, and reports judgement findings without driving them. |
-| `/quenching-ops-status` | Reports the root, router, packages, lifecycle, findings by band, and registry freshness without writing. |
-| `/quenching-ops-entrypoint-new` | Mints ONE Python entry point from the contract, registers it in the declared router, and regenerates the operations registry. |
+| `/quenching-ops` | The single entry point of the ops flows: picks `align`, `status`, `entrypoint-new` by the flow you name or by the words of the request. |
+| `/quenching-ops align` | Probes the declared operations root and router, applies mechanical and structural drift under one plan, and reports judgement findings without driving them. |
+| `/quenching-ops status` | Reports the root, router, packages, lifecycle, findings by band, and registry freshness without writing. |
+| `/quenching-ops entrypoint-new` | Mints ONE Python entry point from the contract, registers it in the declared router, and regenerates the operations registry. |
 
 ### The proof front — the target's declared verification surface
 
 | Command | Does |
 | --- | --- |
-| `/quenching-proof-align` | Probes the proof gate, applies mechanical and bounded structural repairs under one plan, defers a floor when the measured surface changes, and reports judgement findings without driving them. |
-| `/quenching-proof-status` | Reports layers, fixtures, measured roots, floors, CI evidence, findings by band, and the explicit fact that the suite was not run — without writing. |
-| `/quenching-proof-layer-new` | Mints one named layer with its marker, reach, budget, fixture home and collection rule, then proposes test moves for a separate confirmation. |
+| `/quenching-proof` | The single entry point of the proof flows: picks `align`, `status`, `layer-new` by the flow you name or by the words of the request. |
+| `/quenching-proof align` | Probes the proof gate, applies mechanical and bounded structural repairs under one plan, defers a floor when the measured surface changes, and reports judgement findings without driving them. |
+| `/quenching-proof status` | Reports layers, fixtures, measured roots, floors, CI evidence, findings by band, and the explicit fact that the suite was not run — without writing. |
+| `/quenching-proof layer-new` | Mints one named layer with its marker, reach, budget, fixture home and collection rule, then proposes test moves for a separate confirmation. |
 
 ### The toolchain front — manifests, locks, pins and tool configuration
 
 | Command | Does |
 | --- | --- |
-| `/quenching-toolchain-align` | Probes applicability, inventories the target's toolchain artifacts, applies only mechanical and bounded structural repairs, and reports target-owned build policy. |
-| `/quenching-toolchain-status` | Reports applicability, manifests, locks, language pins, tool configuration and `tc-*` findings without writing. |
+| `/quenching-toolchain` | The single entry point of the toolchain flows: picks `align`, `status` by the flow you name or by the words of the request. |
+| `/quenching-toolchain align` | Probes applicability, inventories the target's toolchain artifacts, applies only mechanical and bounded structural repairs, and reports target-owned build policy. |
+| `/quenching-toolchain status` | Reports applicability, manifests, locks, language pins, tool configuration and `tc-*` findings without writing. |
 
 ### The delivery front — workflows, reachability and release shape
 
 | Command | Does |
 | --- | --- |
-| `/quenching-delivery-align` | Probes provider-equivalent workflows, applies bounded pipeline-shape repairs under one plan, and reports provider and release policy without choosing it. |
-| `/quenching-delivery-status` | Reports applicability, workflow inventory, reachability, provenance and `delivery-*` findings without writing or running a pipeline. |
+| `/quenching-delivery` | The single entry point of the delivery flows: picks `align`, `status` by the flow you name or by the words of the request. |
+| `/quenching-delivery align` | Probes provider-equivalent workflows, applies bounded pipeline-shape repairs under one plan, and reports provider and release policy without choosing it. |
+| `/quenching-delivery status` | Reports applicability, workflow inventory, reachability, provenance and `delivery-*` findings without writing or running a pipeline. |
 
 ### The opensource front — license, community and governance artifacts
 
 | Command | Does |
 | --- | --- |
-| `/quenching-opensource-align` | Probes applicability, plans the license, contributing, conduct, support, governance, owners and template artifacts on one OK, and writes each through `cq opensource apply` from a pinned template, never choosing the owner's license, maintainers, contact or funding. |
-| `/quenching-opensource-status` | Reports every owner's catalog answers, the OSPS baseline level reached and `os-*` findings without writing. |
-| `/quenching-opensource-readiness` | Assesses secrets in tree and history, internal identifiers, attribution and the owner's license and consent evidence before a repository goes public, read-only; reports blockers, warnings and unmeasured coverage and never approves publication. |
+| `/quenching-opensource` | The single entry point of the opensource flows: picks `align`, `status`, `readiness` by the flow you name or by the words of the request. |
+| `/quenching-opensource align` | Probes applicability, plans the license, contributing, conduct, support, governance, owners and template artifacts on one OK, and writes each through `cq opensource apply` from a pinned template, never choosing the owner's license, maintainers, contact or funding. |
+| `/quenching-opensource status` | Reports every owner's catalog answers, the OSPS baseline level reached and `os-*` findings without writing. |
+| `/quenching-opensource readiness` | Assesses secrets in tree and history, internal identifiers, attribution and the owner's license and consent evidence before a repository goes public, read-only; reports blockers, warnings and unmeasured coverage and never approves publication. |
 
 ### The security pillar — read-only repository security questions
 
 | Command | Does |
 | --- | --- |
-| `/quenching-security-status` | Reports security questions and ownership findings without aligning, repairing or writing repository values. |
+| `/quenching-security` | The single entry point of the security flows: picks `status` by the flow you name or by the words of the request. |
+| `/quenching-security status` | Reports security questions and ownership findings without aligning, repairing or writing repository values. |
 
 ### The `git` pillar — a repository's own git facts
 
@@ -207,18 +222,14 @@ motion, shadows, breakpoints, and snippets remain in the source and sidecar.
 | `/quenching-git cleanup` | Prunes branches merged or gone and worktrees git still registers with no directory on disk — nothing pruned the human did not pick from that report. |
 | `/quenching-git pr-review` | Works through a PR's unresolved review threads, one confirmation per thread. |
 
-**The hooks deploy installs.** `quenching-specs` declares `deny-claude-coauthor` in `owned.hooks` of
-`assets/modules.json`, and `cq deploy` merges it into the target's `.claude/settings.json` (Claude
-only, with `$CLAUDE_PROJECT_DIR` paths under `.agents/quenching/assets/hooks/`), together with the
-`attribution` keys below. `quenching-git` declares `warn-git-add-all` the same way, a warning on
-blanket `git add`. `deny-claude-coauthor` is a `PreToolUse` hook on
+**The one plugin-wide hook.** `quenching-specs` ships `hooks/hooks.json`: a `PreToolUse` hook on
 `Bash` that **denies** any `git commit`/`merge`/`tag`/`notes`, `gh pr` or `cq git` command whose
 message carries Claude's co-authorship (`Co-Authored-By: Claude …`, `noreply@anthropic.com`,
 `Generated with Claude Code`), so Claude reruns it without the attribution. It never rewrites the
 command (`updatedInput` only applies paired with `allow`, which would auto-approve whatever the
 command chains), fails open without `python3`, and is off when `QUENCHING_ALLOW_CLAUDE_COAUTHOR=1`.
-Deploy also writes `"attribution": {"commit": "", "pr": ""}` in the same file (only the keys that
-are absent) so the trailer is never written in the first place.
+Pair it with `"attribution": {"commit": "", "pr": ""}` in the target's settings so the trailer is
+never written in the first place.
 
 The `security` and `git` pillars carry no `align`: they converge no tree, only answer read-only
 questions about the target's live evidence, so there is nothing a probe could find drifted
@@ -681,7 +692,7 @@ updates the published artifacts in lockstep. See
 contract.
 
 <!-- quenching-proof-readme-start -->
-<!-- quenching-proof-readme-sha256 38b8e8431fbb78fd51f38547ff148f25239d3d8e07f65e56f19e748c202c59a3 -->
+<!-- quenching-proof-readme-sha256 d231797002f53a459d5907f0ea86654001174f80c92a1fdadb47b9dd227dcc4d -->
 ## Declared proof layers
 
 ### tests
@@ -690,6 +701,6 @@ contract.
 - Reach: tree
 - Budget: not declared
 - Required: yes
-- Test modules: 153
+- Test modules: 154
 - Fixture modules: none
 <!-- quenching-proof-readme-end -->
