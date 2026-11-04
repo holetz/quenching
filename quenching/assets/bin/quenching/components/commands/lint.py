@@ -633,7 +633,9 @@ def lint_command(cmd: dict, base: str, named_by: set[str] | None = None,
                            "command is not portable outside Claude Code",
                            characters=len(description), cap=CAP_DESCRIPTION_PORTABLE, **where))
 
-    if len(description) > CAP_DESCRIPTION_BUDGET:
+    # A router's description is a map of intent per flow, so the 250 budget contradicts it:
+    # the budget binds only a skill with no table of flows (`sk-router-description` binds the rest).
+    if len(description) > CAP_DESCRIPTION_BUDGET and not FLOW_ROW_RE.search(body):
         out.append(finding("sk-description-budget", "warn",
                            f"description is {len(description)} characters, over the "
                            f"{CAP_DESCRIPTION_BUDGET} budget — put the key use case first and "
@@ -881,6 +883,23 @@ def router_grant_findings(cmd: dict, flows: dict[str, str], where: dict) -> list
                     **where)]
 
 
+def router_description_findings(cmd: dict, flows: dict[str, str], where: dict) -> list[dict]:
+    """`sk-router-description` (error): a flow of the router's table that the description does not
+    name. The description is the only text always in context, so a flow it omits is a flow the
+    user's wording cannot reach."""
+    description = str(cmd["frontmatter"].get("description", ""))
+    missing = [f for f in flows
+               if not re.search(r"(?<![a-z0-9-])" + re.escape(f) + r"(?![a-z0-9-])", description)]
+    if not missing:
+        return []
+    shown = ", ".join(f"`{f}`" for f in missing)
+    return [finding("sk-router-description", "error",
+                    f"the description does not name {shown} from the table of flows — the router "
+                    "can only route the flows its description maps",
+                    missing=missing, remedy="name every flow of the table in the description",
+                    **where)]
+
+
 def dangling_flow_citations(body: str, routers: dict[str, set[str]]) -> list[str]:
     """The `` `/quenching-<vertical> <flow>` `` citations whose vertical is a router of this
     surface but whose flow is not in its table."""
@@ -1080,6 +1099,7 @@ def cmd_lint(args, root: str) -> int:
         flows = surface_flows.get(cmd["command"].lstrip("/")) or {}
         if flows:
             findings.extend(router_grant_findings(cmd, flows, where))
+            findings.extend(router_description_findings(cmd, flows, where))
     if base == surface:
         findings.extend(lint_agents(base, base))
 

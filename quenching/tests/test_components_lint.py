@@ -52,6 +52,7 @@ from quenching.components.commands.lint import (
     dangling_citations,
     dangling_flow_citations,
     router_flows,
+    router_description_findings,
     router_grant_findings,
     lint_agents,
     lint_command,
@@ -169,7 +170,7 @@ class StrictFrontmatter(unittest.TestCase):
         errors = [f for f in payload["findings"] if f["severity"] == "error"]
         self.assertEqual(errors, [])  # first: a red gate names the finding, not just the status
         self.assertEqual(status, 0)
-        self.assertEqual(payload["commandCount"], 23)
+        self.assertEqual(payload["commandCount"], 13)
 
 
 class ReferenceRoot(unittest.TestCase):
@@ -222,12 +223,12 @@ class RouterChecks(unittest.TestCase):
     """The router is a table of flows: its grant is their union and a cited flow must be in it."""
 
     def _router(self, tmp: str, router_tools: str, flow_tools: str) -> dict:
-        skill = pathlib.Path(tmp) / "skills" / "quenching-ops-align"
+        skill = pathlib.Path(tmp) / "skills" / "quenching-ops"
         (skill / "references").mkdir(parents=True, exist_ok=True)
         (skill / "references" / "go.md").write_text(f"---\nallowed-tools: {flow_tools}\n---\n\n# go\n",
                                                     encoding="utf-8")
-        body = "| Flow | Reference |\n| --- | --- |\n| `go` | [references/go.md](.agents/skills/quenching-ops-align/references/go.md) |\n"
-        return {"command": "/quenching-ops-align", "path": str(skill / "SKILL.md"), "body": body,
+        body = "| Flow | Reference |\n| --- | --- |\n| `go` | [references/go.md](.agents/skills/quenching-ops/references/go.md) |\n"
+        return {"command": "/quenching-ops", "path": str(skill / "SKILL.md"), "body": body,
                 "frontmatter": {"allowed-tools": router_tools}}
 
     def test_the_flows_are_read_from_the_table(self):
@@ -238,7 +239,7 @@ class RouterChecks(unittest.TestCase):
     def test_a_tool_a_flow_declares_and_the_router_lacks_is_an_error(self):
         with tempfile.TemporaryDirectory() as tmp:
             cmd = self._router(tmp, "Read", "Read, Write")
-            found = router_grant_findings(cmd, router_flows(cmd), {"command": "/quenching-ops-align", "path": "x"})
+            found = router_grant_findings(cmd, router_flows(cmd), {"command": "/quenching-ops", "path": "x"})
             self.assertEqual([(f["code"], f["severity"]) for f in found], [("sk-router-grant", "error")])
             self.assertEqual(found[0]["missing"], ["Write"])
 
@@ -251,11 +252,33 @@ class RouterChecks(unittest.TestCase):
                 self.assertEqual(router_grant_findings(cmd, router_flows(cmd), {"command": "c", "path": "x"}), [],
                                  router_tools)
 
+    def test_a_flow_the_description_does_not_name_is_an_error(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            cmd = self._router(tmp, "Read", "Read")
+            where = {"command": "/quenching-ops", "path": "x"}
+            cmd["frontmatter"]["description"] = "Run one flow: status. Not for: x."
+            found = router_description_findings(cmd, router_flows(cmd), where)
+            self.assertEqual([(f["code"], f["severity"]) for f in found], [("sk-router-description", "error")])
+            self.assertEqual(found[0]["missing"], ["go"])
+            cmd["frontmatter"]["description"] = "Run one flow: go, status. Not for: x."
+            self.assertEqual(router_description_findings(cmd, router_flows(cmd), where), [])
+
+    def test_the_250_budget_binds_only_a_skill_without_a_table_of_flows(self):
+        long = 'Trigger on "x". ' + "y" * 400 + " Not for: z."
+        with tempfile.TemporaryDirectory() as tmp:
+            cmd = self._router(tmp, "Read", "Read")
+            cmd["frontmatter"]["description"] = long
+            cmd["anomalies"], cmd["hooks"], cmd["hooksParsed"], cmd["bodyLines"] = [], {}, True, 3
+            self.assertNotIn("sk-description-budget", [f["code"] for f in lint_command(cmd, BASE)])
+        plain = command("No table.\n")
+        plain["frontmatter"]["description"] = long
+        self.assertIn("sk-description-budget", [f["code"] for f in lint_command(plain, BASE)])
+
     def test_a_cited_flow_the_table_does_not_list_is_dangling(self):
-        routers = {"quenching-ops-align": {"go"}}
-        self.assertEqual(dangling_flow_citations("run `/quenching-ops-align go` then `/quenching-ops-align stop`.", routers),
-                         ["/quenching-ops-align stop"])
-        self.assertEqual(dangling_flow_citations("`/quenching-proof-align stop`", routers), [])
+        routers = {"quenching-ops": {"go"}}
+        self.assertEqual(dangling_flow_citations("run `/quenching-ops go` then `/quenching-ops stop`.", routers),
+                         ["/quenching-ops stop"])
+        self.assertEqual(dangling_flow_citations("`/quenching-proof stop`", routers), [])
 
 
 class StepCriterion(unittest.TestCase):
