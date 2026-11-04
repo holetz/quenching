@@ -107,16 +107,17 @@ class Runner(unittest.TestCase):
     def test_the_commands_own_model_is_recorded_beside_the_run_model(self):
         with tempfile.TemporaryDirectory() as tmp:
             commands = Path(tmp)
-            (commands / "pinned.md").write_text("---\ndescription: d\nmodel: opus\n---\n\nBody.\n", encoding="utf-8")
-            (commands / "free.md").write_text("---\ndescription: d\n---\n\nBody.\n", encoding="utf-8")
-            original, runner.COMMANDS_ROOT = runner.COMMANDS_ROOT, commands
+            (commands / "quenching-specs/references").mkdir(parents=True)
+            (commands / "quenching-specs/references/pinned.md").write_text("---\ndescription: d\nmodel: opus\n---\n\nBody.\n", encoding="utf-8")
+            (commands / "quenching-specs/references/free.md").write_text("---\ndescription: d\n---\n\nBody.\n", encoding="utf-8")
+            original, runner.SKILLS_ROOT = runner.SKILLS_ROOT, commands
             try:
-                self.assertEqual(runner.command_model("/quenching-specs:pinned"), "opus")
-                self.assertIsNone(runner.command_model("/quenching-specs:free"))
+                self.assertEqual(runner.command_model("/quenching-specs pinned"), "opus")
+                self.assertIsNone(runner.command_model("/quenching-specs free"))
             finally:
-                runner.COMMANDS_ROOT = original
-        self.assertIsNone(runner.command_model("/quenching-specs:specs:create"))
-        self.assertIsNone(runner.command_model("/quenching-specs:git:commit"))
+                runner.SKILLS_ROOT = original
+        self.assertIsNone(runner.command_model("/quenching-specs create"))
+        self.assertIsNone(runner.command_model("/quenching-git commit"))
         self.assertIsNone(runner.command_model("/fake:skill"))
         out = self.full_run("fake")
         bench = json.loads((out / "suite/benchmark.json").read_text())
@@ -179,7 +180,7 @@ class Runner(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             workspace, env = runner.provision(self.suite, "c1", Path(tmp), deploy="claude")
             self.assertTrue((workspace / ".agents/quenching/bin/cq").is_file())
-            self.assertTrue((workspace / ".claude/skills/quenching-specs-status/SKILL.md").is_file())
+            self.assertTrue((workspace / ".claude/skills/quenching-specs/SKILL.md").is_file())
             status = subprocess.run(["git", "status", "--porcelain"], cwd=workspace,
                                     capture_output=True, text=True, check=True).stdout
             self.assertNotIn(".agents", status)

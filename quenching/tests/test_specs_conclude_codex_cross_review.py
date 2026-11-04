@@ -4,7 +4,7 @@ from __future__ import annotations
 import pathlib
 import unittest
 
-CONCLUDE = (pathlib.Path(__file__).resolve().parent.parent / "assets" / "references" / "specs-flows" / "conclude.md").read_text()
+CONCLUDE = (pathlib.Path(__file__).resolve().parent.parent / "skills" / "quenching-specs" / "references" / "conclude.md").read_text()
 
 
 def step2() -> str:

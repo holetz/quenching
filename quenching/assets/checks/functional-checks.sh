@@ -23,8 +23,8 @@
 #           2 nothing could be measured — no verdict, do not read it as a pass
 #
 # WHO RUNS THIS, AND WHEN. It belongs to the **components front**: the commands that change the surface
-# are the ones that prove it still loads — `/quenching-components-command-new` after minting or editing a command here,
-# and `/quenching-components-command-eval` when it tunes a description. It is NOT a repo-wide post-change mandate and it
+# are the ones that prove it still loads — `/quenching-components command-new` after minting or editing a command here,
+# and `/quenching-components command-eval` when it tunes a description. It is NOT a repo-wide post-change mandate and it
 # does NOT belong in a spec's `## Validation` or a task's `verify:`. Measured 2026-07-29 over the
 # whole archive: every red run this harness ever produced traced to a defect in THIS SCRIPT — a
 # cp1252 read, a hardcoded marketplace ref, a turn cap, a flaky probe — and not one to a surface
@@ -59,11 +59,11 @@
 # marketplace and source-tree paths remains correct whatever the host canonicalizes, while the
 # positive deployed-payload prefix stays diagnostic.
 #
-# CHECK 3 IS OPT-IN, AND `/quenching-components-command-eval` IS THE BETTER INSTRUMENT. Check 3 is five of the seven
+# CHECK 3 IS OPT-IN, AND `/quenching-components command-eval` IS THE BETTER INSTRUMENT. Check 3 is five of the seven
 # sessions, the only NON-DETERMINISTIC one (recorded twice: same tree, opposite verdicts on
 # identical runs), and a strictly worse duplicate of `/quenching-components command-eval` step 7 — which measures the
 # same thing with should-trigger AND should-not-trigger prompts, graded, per command, instead of
-# five hardcoded phrases with no boundary arm. Reach for `/quenching-components-command-eval` when a description changed;
+# five hardcoded phrases with no boundary arm. Reach for `/quenching-components command-eval` when a description changed;
 # reach for `--only 3` only to re-guard the five phrases already tuned here.
 #
 # Established by the `collapse-skills-into-commands` spec, task 7.1; re-based on `cq deploy` by spec 2160.
@@ -283,11 +283,11 @@ selftest () {
 
   LOADED=("$WORK/box-a/.agents/quenching")
   cat > "$fixture" <<EOF
-{"message":{"content":[{"type":"tool_use","name":"Read","input":{"file_path":"$WORK/box-a/.agents/quenching/assets/references/selftest.md"}}]}}
+{"message":{"content":[{"type":"tool_use","name":"Read","input":{"file_path":"$WORK/box-a/.agents/quenching/references/selftest.md"}}]}}
 {"message":{"content":[{"type":"tool_use","name":"Read","input":{"file_path":"/plugins/cache/quenching/3.0.0/assets/references/selftest.md"}}]}}
 {"message":{"content":[{"type":"tool_use","name":"Read","input":{"file_path":"$SOURCE/assets/references/selftest.md"}}]}}
-{"message":{"content":[{"type":"tool_use","name":"Read","input":{"file_path":"$WORK/box-b/.agents/quenching/assets/references/selftest.md"}}]}}
-{"message":{"content":[{"type":"tool_use","name":"Bash","input":{"command":"cat .agents/quenching/assets/references/selftest.md"}}]}}
+{"message":{"content":[{"type":"tool_use","name":"Read","input":{"file_path":"$WORK/box-b/.agents/quenching/references/selftest.md"}}]}}
+{"message":{"content":[{"type":"tool_use","name":"Bash","input":{"command":"cat .agents/quenching/references/selftest.md"}}]}}
 EOF
   mapfile -t inputs < <(tools Read "$fixture"; tools Bash "$fixture")
 
@@ -429,7 +429,7 @@ echo
 # 1. a deployed command loads and cites a reference of its payload
 #
 # The prompt never names a path: the command must report the citations IT was given, so a
-# Read landing under the box's `.agents/quenching/assets/references/` proves the deployed body
+# Read landing under the box's `.agents/quenching/references/` proves the deployed body
 # points at the deployed payload. `/quenching-knowledge status` cites a reference of its own skill folder, and the common
 # set, which the knowledge-flow consolidation owns, so a stale citation fails here rather than reading nothing.
 # --------------------------------------------------------------------------- #

@@ -656,7 +656,7 @@ class DanglingCitation(unittest.TestCase):
 
     def test_live_plugin_and_unknown_front_citations_are_silent(self):
         from quenching.components.commands.doctor import cmd_doctor
-        body = ("See /frente:novo, /quenching-specs-develop and /alheia:coisa, "
+        body = ("See /frente:novo, /quenching-specs develop and /alheia:coisa, "
                 "and the namespace /frente:grupo.")
         with tempfile.TemporaryDirectory() as root:
             self._target(root, {"frente/novo.md": body, "frente/grupo/a.md": "Body."})

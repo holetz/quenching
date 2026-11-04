@@ -158,15 +158,15 @@ class KnowledgeAlignmentContract(unittest.TestCase):
             script.parent.mkdir(parents=True)
             shutil.copy2(check, script)
             shutil.copy2(ROOT / "assets" / "modules.json", script.parents[1] / "modules.json")
-            command = repo / "quenching" / "commands" / "knowledge" / "align.md"
+            command = repo / "quenching" / "skills" / "quenching-knowledge" / "references" / "align.md"
             command.parent.mkdir(parents=True)
             command.write_text(
-                "/quenching-knowledge-align\n"
-                "`quenching/commands/knowledge/align.md`\n"
-                "[reference.md](../../assets/references/reference.md) §Inexistente\n",
+                "/quenching-knowledge align\n"
+                "`quenching/skills/quenching-knowledge/references/align.md`\n"
+                "[reference.md](../../../references/reference.md) §Inexistente\n",
                 encoding="utf-8",
             )
-            reference = repo / "quenching" / "assets" / "references" / "reference.md"
+            reference = repo / "quenching" / "references" / "reference.md"
             reference.parent.mkdir(parents=True)
             reference.write_text("# Reference\n\n## Existing\n", encoding="utf-8")
             subprocess.run(["git", "init", "-q"], cwd=repo, check=True)
@@ -194,16 +194,16 @@ class KnowledgeAlignmentContract(unittest.TestCase):
             script.parent.mkdir(parents=True)
             shutil.copy2(check, script)
             shutil.copy2(ROOT / "assets" / "modules.json", script.parents[1] / "modules.json")
-            command = repo / "quenching" / "commands" / "knowledge" / "align.md"
+            command = repo / "quenching" / "skills" / "quenching-knowledge" / "references" / "align.md"
             command.parent.mkdir(parents=True)
-            missing_path = ".agents/quenching/assets/references/" + "missing.md"
+            missing_path = ".agents/quenching/references/" + "missing.md"
             command.write_text(
-                "/quenching-knowledge-align\n"
+                "/quenching-knowledge align\n"
                 f"`{missing_path}`\n"
-                "[reference.md](../../assets/references/reference.md) §Existing\n",
+                "[reference.md](../../../references/reference.md) §Existing\n",
                 encoding="utf-8",
             )
-            reference = repo / "quenching" / "assets" / "references" / "reference.md"
+            reference = repo / "quenching" / "references" / "reference.md"
             reference.parent.mkdir(parents=True)
             reference.write_text("# Reference\n\n## Existing\n", encoding="utf-8")
             subprocess.run(["git", "init", "-q"], cwd=repo, check=True)

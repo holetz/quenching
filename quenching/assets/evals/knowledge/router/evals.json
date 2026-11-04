@@ -1,5 +1,5 @@
 {
-  "skill": "/quenching-align:knowledge:knowledge",
+  "skill": "/quenching-knowledge",
   "cases": [
     {
       "id": "define-routes-to-define",
@@ -21,7 +21,7 @@
     },
     {
       "id": "specs-request-is-not-routed",
-      "branch": "Not for: specs → /quenching-specs:specs:specs",
+      "branch": "Not for: specs → /quenching-specs",
       "prompt": "Build spec 12 task by task.\n\nYou have my authorization for the whole run — treat any confirmation gate as already granted and proceed to the end.",
       "assertions": [
         "the reply does not load a knowledge flow",

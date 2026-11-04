@@ -31,7 +31,7 @@ import time
 
 ROOT = Path(__file__).resolve().parents[1]
 EVALS_ROOT = ROOT / "quenching/assets/evals"
-COMMANDS_ROOT = ROOT / "quenching/commands"
+SKILLS_ROOT = ROOT / "quenching/skills"
 PROFILES = Path(__file__).resolve().with_name("eval_harnesses.json")
 CQ = ROOT / "quenching/assets/bin/cq"
 ARMS = ("with", "without")
@@ -84,10 +84,10 @@ def suite_name(directory: Path) -> str:
 
 def command_model(skill: str) -> str | None:
     """The `model:` the evaluated command pins in its own frontmatter, or None when it pins none."""
-    _, _, path = skill.lstrip("/").partition(":")
-    if not path:
+    name, _, flow = skill.lstrip("/").partition(" ")
+    if not name.startswith("quenching-"):
         return None
-    file = COMMANDS_ROOT / (path.replace(":", "/") + ".md")
+    file = SKILLS_ROOT / name / ("references/" + flow + ".md" if flow else "SKILL.md")
     try:
         lines = file.read_text(encoding="utf-8").splitlines()
     except OSError:

@@ -13,7 +13,7 @@ import unittest.mock
 
 PLUGIN_ROOT = pathlib.Path(__file__).resolve().parent.parent
 CQ = str(PLUGIN_ROOT / "assets" / "bin" / "cq")
-AUTOPILOT = PLUGIN_ROOT / "commands" / "specs" / "autopilot.md"
+AUTOPILOT = PLUGIN_ROOT / "skills" / "quenching-specs" / "references" / "autopilot.md"
 
 FAKE_GH = """#!/bin/sh
 case "$1 $2" in

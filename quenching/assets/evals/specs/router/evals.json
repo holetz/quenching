@@ -1,5 +1,5 @@
 {
-  "skill": "/quenching-specs:specs:specs",
+  "skill": "/quenching-specs",
   "cases": [
     {
       "id": "capture-routes-to-create",
@@ -26,7 +26,7 @@
       "prompt": "Run the autopilot until 7am on this repository.\n\nYou have my authorization for the whole run — treat any confirmation gate as already granted and proceed to the end.",
       "assertions": [
         "the reply does not start an improvement round through this router",
-        "the reply points to /quenching-specs:specs:autopilot as the command to type, or declines",
+        "the reply points to /quenching-specs autopilot as the command to type, or declines",
         "no spec exists in the store after the run, as listed by the inspect.sh output"
       ]
     }

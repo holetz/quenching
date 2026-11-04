@@ -22,7 +22,7 @@ base.**
 
 The distillation doctrine — what crosses into `/docs/`, what stays, and how it is graded — lives in
 [specs-conclude/distill.md](.agents/quenching/references/specs-conclude/distill.md)
-§What crosses, what stays. Every hand-off into another module's command (`/quenching-align:*`
+§What crosses, what stays. Every hand-off into another module's command (`/quenching-align`
 for the bundle) runs only where that module is enabled, per
 [tool-resolution.md](.agents/quenching/references/align/tool-resolution.md) §Routing into
 another module; with `quenching-specs` alone, the distillation still writes through the shipped

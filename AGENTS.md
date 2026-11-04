@@ -30,7 +30,7 @@ lockstep` check is what refuses a stale install.
 - Do not add `context: fork` beside a command's mid-flow gate; the minimal building cycle is the
   only documented exception, and its review lives in the PR.
 - Never downgrade classification or executor sub-agents to `haiku` in
-  `/quenching-knowledge-import-memory`.
+  `/quenching-knowledge import-memory`.
 
 Both rules are also scoped in `.claude/rules/` so they load when those files are touched.
 
@@ -39,5 +39,5 @@ Both rules are also scoped in `.claude/rules/` so they load when those files are
 Durable knowledge lives in [/docs/index.md](/docs/index.md); resolve unfamiliar terms in
 [/docs/glossary.md](/docs/glossary.md). The product manual, command catalog, cost model and install
 path live in [quenching/README.md](quenching/README.md). The registered sources are
-`quenching/commands/**` and `quenching/assets/references/**`. Do not replicate
+`quenching/skills/**` and `quenching/references/**`. Do not replicate
 durable knowledge in this file.

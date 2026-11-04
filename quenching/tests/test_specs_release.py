@@ -57,7 +57,10 @@ class Lockstep(unittest.TestCase):
             for package in [*module["owned"]["packages"], *support["packages"]]:
                 (source / "bin/quenching" / package).mkdir(parents=True, exist_ok=True)
             for reference in support["references"]:
-                (source / "references" / reference).mkdir(parents=True, exist_ok=True)
+                (source.parent / "references" / reference).mkdir(parents=True, exist_ok=True)
+            for skill in module["owned"]["skills"]:
+                (source.parent / "skills" / skill).mkdir(parents=True, exist_ok=True)
+                (source.parent / "skills" / skill / "SKILL.md").write_text("x\n")
         marketplace = [p for p in manifest["plugins"] if p["marketplace"]]
         for plugin in marketplace:
             (Path(self.tmp) / plugin["path"] / ".claude-plugin/plugin.json").write_text(

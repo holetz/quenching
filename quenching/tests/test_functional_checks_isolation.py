@@ -37,7 +37,7 @@ prompt = args[args.index("--setting-sources") + 2] if isolated else args[-1]
 if prompt.startswith("/quenching-align"):
     tool, data = "Skill", {"skill": "quenching-knowledge", "args": "align — inherited authorization"}
 elif prompt.startswith("/quenching-"):
-    tool, data = "Read", {"file_path": str(cwd / ".agents/quenching/assets/references/selftest.md")}
+    tool, data = "Read", {"file_path": str(cwd / ".agents/quenching/references/selftest.md")}
 else:
     target = "quenching-specs"
     if prompt.startswith("add a standard"):

@@ -1,5 +1,5 @@
 {
-  "skill": "/quenching-align:knowledge:define",
+  "skill": "/quenching-knowledge define",
   "cases": [
     {
       "id": "new-term-added",
@@ -25,11 +25,11 @@
     },
     {
       "id": "standard-request-declines",
-      "branch": "Not for: concept docs → /quenching-align:knowledge:learn — a request for a standard leaves the glossary untouched",
+      "branch": "Not for: concept docs → /quenching-knowledge learn — a request for a standard leaves the glossary untouched",
       "prompt": "Write a standard for how our pager service paginates results, covering cursors, page sizes and the retry policy.\n\nYou have my authorization for the whole run — treat any confirmation gate as already granted and proceed to the end.",
       "assertions": [
         "docs/glossary.md is unchanged after the run",
-        "the reply routes the request to another command, such as /quenching-align:knowledge:add or /quenching-align:knowledge:learn, rather than writing a glossary entry"
+        "the reply routes the request to another command, such as /quenching-knowledge add or /quenching-knowledge learn, rather than writing a glossary entry"
       ]
     }
   ],
