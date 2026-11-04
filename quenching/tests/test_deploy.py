@@ -221,7 +221,7 @@ class Deploy(unittest.TestCase):
 
     def test_an_upgrade_keeps_the_selection_the_manifest_recorded(self):
         self.assertEqual(0, self.run_deploy("--modules", "all", "--write")[0])
-        design = self.target / ".agents/skills/quenching-design-align/SKILL.md"
+        design = self.target / ".agents/skills/quenching-design/SKILL.md"
         self.assertTrue(design.exists())
         code, payload = self.run_deploy("--write")
         self.assertEqual(0, code)
@@ -234,9 +234,9 @@ class Deploy(unittest.TestCase):
         self.assertEqual(0, self.run_deploy("--modules", "all", "--write")[0])
         code, payload = self.run_deploy("--modules", "core", "--write")
         self.assertEqual(0, code)
-        self.assertIn({"path": ".agents/skills/quenching-design-align/SKILL.md",
+        self.assertIn({"path": ".agents/skills/quenching-design/SKILL.md",
                        "change": "delete"}, payload["changes"])
-        self.assertFalse((self.target / ".agents/skills/quenching-design-align").exists())
+        self.assertFalse((self.target / ".agents/skills/quenching-design").exists())
 
     def test_the_opencode_harness_writes_its_subagents(self):
         self.assertEqual(0, self.run_deploy("--modules", "core", "--write")[0])

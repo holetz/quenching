@@ -11,7 +11,7 @@ tags:
 timestamp: 2026-08-30
 audience: human
 authority: current
-source: measured migration of the <redacted>-gold target worktree on 2026-08-30; quenching/skills/quenching-ops-align/SKILL.md; quenching/skills/quenching-proof-align/SKILL.md
+source: measured migration of the <redacted>-gold target worktree on 2026-08-30; quenching/skills/quenching-ops/references/align.md; quenching/skills/quenching-proof/references/align.md
 maintainer: Israel Holetz
 ---
 
@@ -91,7 +91,7 @@ Keep the same distinction between bounded repair and owner judgement. The proof 
 stop-first ordering, loose fixture ownership, an unmarked gate, or another explicitly structural
 finding. It must report — never infer — unlayered tests, empty layers, an unmeasured surface, absent
 CI, untested operations entry points, and unresolved order evidence. Use
-`/quenching-proof-layer-new` when the owner is ready to choose a layer; do not create placeholder
+`/quenching-proof layer-new` when the owner is ready to choose a layer; do not create placeholder
 layers just to make the doctor quiet.
 
 The target suite remains outside this alignment pass. Run it with the repository's own supported

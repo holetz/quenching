@@ -1,6 +1,6 @@
 ---
 name: quenching-handoff
-description: "Compact the current conversation into a handoff stored beside its spec, ready for another agent to continue. Use for \"generate a handoff\" or \"prepare a handoff for the next session\". Not for: implementing → the owning command."
+description: "Compact the conversation into a handoff stored beside its spec. Use for \"gerar um handoff\", \"preparar a próxima sessão\", \"generate a handoff\". Not for: implementing → the owning command."
 argument-hint: "What will the next session be used for?"
 allowed-tools: Bash(.agents/quenching/bin/cq specs artifact:*), Bash(.agents/quenching/bin/cq specs find:*), Bash(.agents/quenching/bin/cq specs push:*), Read, Write
 ---

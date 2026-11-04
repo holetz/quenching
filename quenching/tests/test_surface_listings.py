@@ -94,13 +94,13 @@ class ManifestSurfaceTests(unittest.TestCase):
         expected = {
             "knowledge": 14,
             "specs": 11,
-            "design": 3,
+            "design": 4,
             "components": 9,
-            "ops": 3,
-            "proof": 3,
-            "toolchain": 2,
-            "delivery": 2,
-            "security": 1,
+            "ops": 4,
+            "proof": 4,
+            "toolchain": 3,
+            "delivery": 3,
+            "security": 2,
             "git": 12,
         }
         actual = {

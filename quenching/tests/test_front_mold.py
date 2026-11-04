@@ -92,12 +92,12 @@ class FrontMoldContract(unittest.TestCase):
         execution = order.split("## Execution order", 1)[1].split("## Workflow", 1)[0]
         expected = {
             "knowledge": "/quenching-knowledge align",
-            "design": "/quenching-design-align",
+            "design": "/quenching-design align",
             "components": "/quenching-components align",
-            "ops": "/quenching-ops-align",
-            "proof": "/quenching-proof-align",
-            "toolchain": "/quenching-toolchain-align",
-            "delivery": "/quenching-delivery-align",
+            "ops": "/quenching-ops align",
+            "proof": "/quenching-proof align",
+            "toolchain": "/quenching-toolchain align",
+            "delivery": "/quenching-delivery align",
         }
         for front, route in expected.items():
             with self.subTest(front=front):

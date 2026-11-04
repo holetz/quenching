@@ -90,9 +90,10 @@ adapter artifacts.
 
 | Command | Does |
 | --- | --- |
-| `/quenching-design-align` | Installs or converges the brand pack, arbitrates external DESIGN.md proposals, and rebuilds every projection. |
-| `/quenching-design-status` | Reports source validity, generated identity, sidecar/assets, genres, adapters, and optional Impeccable detector state without writing. |
-| `/quenching-design-genre-new` | Mints ONE editorial genre contract with fields, register, and HTML/Typst/PDF destinations. |
+| `/quenching-design` | The single entry point of the design flows: picks `align`, `status`, `genre-new` by the flow you name or by the words of the request. |
+| `/quenching-design align` | Installs or converges the brand pack, arbitrates external DESIGN.md proposals, and rebuilds every projection. |
+| `/quenching-design status` | Reports source validity, generated identity, sidecar/assets, genres, adapters, and optional Impeccable detector state without writing. |
+| `/quenching-design genre-new` | Mints ONE editorial genre contract with fields, register, and HTML/Typst/PDF destinations. |
 
 `cq design build` is deterministic and byte-checked; `cq design import` is the explicit route for
 folding an Impeccable proposal back into the source. The portable DESIGN.md boundary is lossy by
@@ -120,9 +121,10 @@ Acts on the target repository's declared operations root and canonical router.
 
 | Command | Does |
 | --- | --- |
-| `/quenching-ops-align` | Probes the operations surface, applies mechanical and structural drift under one plan, and reports judgement findings without driving them. |
-| `/quenching-ops-status` | Reports root, router, packages, lifecycle, findings by band, and registry freshness without writing. |
-| `/quenching-ops-entrypoint-new` | Mints ONE Python entry point from the contract, registers it in the declared router, and regenerates the operations registry. |
+| `/quenching-ops` | The single entry point of the ops flows: picks `align`, `status`, `entrypoint-new` by the flow you name or by the words of the request. |
+| `/quenching-ops align` | Probes the operations surface, applies mechanical and structural drift under one plan, and reports judgement findings without driving them. |
+| `/quenching-ops status` | Reports root, router, packages, lifecycle, findings by band, and registry freshness without writing. |
+| `/quenching-ops entrypoint-new` | Mints ONE Python entry point from the contract, registers it in the declared router, and regenerates the operations registry. |
 
 ## The proof front
 
@@ -130,9 +132,10 @@ Acts on the target repository's declared verification surface.
 
 | Command | Does |
 | --- | --- |
-| `/quenching-proof-align` | Probes the proof gate, applies bounded repairs under one plan, defers an unsafe floor write, and reports judgement findings without driving them. |
-| `/quenching-proof-status` | Reports layers, fixtures, measured roots, floors, CI evidence, and findings by band without writing; it states that the suite was not run. |
-| `/quenching-proof-layer-new` | Mints one named layer with its marker, reach, budget, fixture home and collection rule, then proposes test moves for a separate confirmation. |
+| `/quenching-proof` | The single entry point of the proof flows: picks `align`, `status`, `layer-new` by the flow you name or by the words of the request. |
+| `/quenching-proof align` | Probes the proof gate, applies bounded repairs under one plan, defers an unsafe floor write, and reports judgement findings without driving them. |
+| `/quenching-proof status` | Reports layers, fixtures, measured roots, floors, CI evidence, and findings by band without writing; it states that the suite was not run. |
+| `/quenching-proof layer-new` | Mints one named layer with its marker, reach, budget, fixture home and collection rule, then proposes test moves for a separate confirmation. |
 
 ## The toolchain front
 
@@ -140,8 +143,9 @@ Acts on the target repository's manifests, locks, language pins and tool configu
 
 | Command | Does |
 | --- | --- |
-| `/quenching-toolchain-align` | Probes applicability, inventories the target's toolchain artifacts, applies only mechanical and bounded structural repairs, and reports target-owned build policy. |
-| `/quenching-toolchain-status` | Reports applicability, manifests, locks, language pins, tool configuration and `tc-*` findings without writing. |
+| `/quenching-toolchain` | The single entry point of the toolchain flows: picks `align`, `status` by the flow you name or by the words of the request. |
+| `/quenching-toolchain align` | Probes applicability, inventories the target's toolchain artifacts, applies only mechanical and bounded structural repairs, and reports target-owned build policy. |
+| `/quenching-toolchain status` | Reports applicability, manifests, locks, language pins, tool configuration and `tc-*` findings without writing. |
 
 ## The delivery front
 
@@ -149,8 +153,9 @@ Acts on the target repository's provider-equivalent workflows and release shape.
 
 | Command | Does |
 | --- | --- |
-| `/quenching-delivery-align` | Probes provider-equivalent workflows, applies bounded pipeline-shape repairs under one plan, and reports provider and release policy without choosing it. |
-| `/quenching-delivery-status` | Reports applicability, workflow inventory, reachability, provenance and `delivery-*` findings without writing or running a pipeline. |
+| `/quenching-delivery` | The single entry point of the delivery flows: picks `align`, `status` by the flow you name or by the words of the request. |
+| `/quenching-delivery align` | Probes provider-equivalent workflows, applies bounded pipeline-shape repairs under one plan, and reports provider and release policy without choosing it. |
+| `/quenching-delivery status` | Reports applicability, workflow inventory, reachability, provenance and `delivery-*` findings without writing or running a pipeline. |
 
 ## The opensource front
 
@@ -159,9 +164,10 @@ owner's open source catalog answers.
 
 | Command | Does |
 | --- | --- |
-| `/quenching-opensource-align` | Plans the license, community and governance artifacts on one OK and writes each from a pinned template through `cq opensource apply`, never choosing the owner's answers. |
-| `/quenching-opensource-status` | Reports every owner's catalog answers, the baseline level reached and `os-*` findings without writing. |
-| `/quenching-opensource-readiness` | Assesses tree and history before publication and reports blockers, warnings and unmeasured coverage, read-only; never approves publication. |
+| `/quenching-opensource` | The single entry point of the opensource flows: picks `align`, `status`, `readiness` by the flow you name or by the words of the request. |
+| `/quenching-opensource align` | Plans the license, community and governance artifacts on one OK and writes each from a pinned template through `cq opensource apply`, never choosing the owner's answers. |
+| `/quenching-opensource status` | Reports every owner's catalog answers, the baseline level reached and `os-*` findings without writing. |
+| `/quenching-opensource readiness` | Assesses tree and history before publication and reports blockers, warnings and unmeasured coverage, read-only; never approves publication. |
 
 ## The security pillar
 
@@ -169,7 +175,8 @@ Answers read-only repository security questions; it converges no tree and carrie
 
 | Command | Does |
 | --- | --- |
-| `/quenching-security-status` | Reports workflow permissions, secret and ignore coverage, advisory dependency configuration and access ownership without writing repository values. |
+| `/quenching-security` | The single entry point of the security flows: picks `status` by the flow you name or by the words of the request. |
+| `/quenching-security status` | Reports workflow permissions, secret and ignore coverage, advisory dependency configuration and access ownership without writing repository values. |
 
 ## The git pillar
 

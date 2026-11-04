@@ -237,7 +237,7 @@ each flow's body lives once in `skills/quenching-specs/references/<flow>.md`, lo
 `skills/quenching-<vertical>/SKILL.md` routes and `skills/quenching-<vertical>/references/<flow>.md`
 holds each body (`knowledge`, `components` and `git` follow it). A flow's body is cited
 `/quenching-<vertical> <flow>`; a skill with no flows is cited by its own name
-(`/quenching-handoff`, `/quenching-design-align`).
+(`/quenching-handoff`, `/quenching-align`).
 
 **There are no shortcuts.** The router's description is what takes a request to the flow, so no
 typed-only `/quenching-<vertical>-<flow>` skill sits beside it. A flow that a conductor or a human
@@ -246,26 +246,49 @@ description or by stage (`autopilot`, `push`, `revert`, `cleanup`) runs **only o
 mention**: the human's request names the flow. A request by stage or by description never picks
 one of those four. The rule is stated in the router's body and as an invariant.
 
-**Which verticals earn a router.** The criterion is the count of model-invocable entries the vertical
-puts in the list: a router replaces N resident descriptions with one, so it pays only where N is large.
-The verticals of one to three commands (`align`, `delivery`, `design`, `ops`, `proof`, `toolchain`,
-`opensource`, `security`) stay as one skill per command, since the saving is smaller than the
-router's own description. `components` `align` and `command-new` recognise a vertical with many
-model-invocable entries and *propose* the router; they never apply it unasked. The model's list pays
-for one description; a flow's text is read only when it runs.
+**Every front with flows has a router, core or not.** `specs`, `git`, `knowledge` and `components`
+were first; `design`, `ops`, `proof`, `toolchain`, `delivery`, `security` and `opensource` follow the
+same shape, so a request in natural language reaches any front without a typed shortcut. The cost is
+residency, not flows: each router adds one description to the list, and the README's cost model
+records the total. `components` `align` and `command-new` recognise a vertical with many
+model-invocable entries and *propose* the router; they never apply it unasked. A reference that only
+one router cites lives inside it (`skills/quenching-<front>/references/<front>-align/`); a reference
+that more than one skill cites stays under `references/` (`front-align`).
 
 **The router's grant is the union of its flows' grants.** Each flow declares its own `allowed-tools`
 in the frontmatter of its reference, copied unchanged from the command it replaces. The router
 grants their union and repeats no scope that a wider one already covers (`Bash(git status:*)` under
 `Bash(git:*)`, everything under `Bash`). Where the union holds an unscoped `Bash`, the router body
 carries the **Why `Bash` is unrestricted here.** line (§`allowed-tools` is always scoped, below). `cq components lint`
-reports `sk-router-grant` at error when a router does not cover a flow's grant, and
+reports `sk-router-grant` at error when a router does not cover a flow's grant, `sk-router-description` at error when its description omits a flow of the table, and
 `sk-dangling-citation` checks that `/quenching-<vertical> <flow>` names a flow in the router's table.
 A `hooks:` block cannot ride a flow loaded through the router, so a flow that needs one stays its
 own skill; the `git` router drops the warn-level hook of `commit`, since it only warned.
 
 **The conductor calls the router.** `spec-runner`, `spec-orchestrator` and the translated surfaces
 (Codex, OpenCode) invoke the router with the `flow` argument and the id.
+
+### The description of a router
+
+The description is a **map of intent per flow**, and the rule is that **what routes comes first and
+the limit comes last**, so the description keeps working if the host truncates it:
+
+1. **First sentence, in English:** the domain and every flow of the table by name
+   (`Run one design flow: align, status, genre-new.`). It survives any truncation, and
+   `sk-router-description` (error) reports a flow of the table the description does not name.
+2. **Then the map:** one clause per flow, `<flow>: "<pt-BR trigger>", "<English trigger>"`, separated
+   by `;`, with at least one trigger of each language per flow. A trigger is a phrase the user says,
+   never the flow name repeated. A flow reached only by explicit mention carries `(only when named)`.
+   No full stop sits inside a clause, so the sentence splitter of `sk-trigger-position` does not cut
+   the map.
+3. **Last:** `Not for: <the likeliest neighbour> → /quenching-<x> <flow>.`
+4. **At most 1,024 characters** of the parsed value — the Agent Skills limit that Codex and OpenCode
+   read. The 1,536 Claude cap is slack, not a target.
+
+The 250-character `sk-description-budget` binds only a skill **without a table of flows**
+(`quenching-align`, `quenching-handoff`): on a router it would contradict the map. The language of
+the triggers is not a lint check; `test_router_descriptions.py` proves a pt-BR and an English
+candidate exist for every flow by a heuristic declared in the test.
 
 `context: fork` runs the command in a separate context. It is **forbidden** on any command that
 asks the human anything mid-flow — a plan whose OK the run waits on, or a plain question one of its

@@ -42,15 +42,15 @@ LANGUAGE = "en"
 # README and SECURITY keep their owners: this front reports the hand-off, never writes them.
 LANGUAGE_HANDOFFS = (
     {"artifact": "readme", "owner": "knowledge", "command": "/quenching-knowledge align"},
-    {"artifact": "security", "owner": "security", "command": "/quenching-security-status"},
+    {"artifact": "security", "owner": "security", "command": "/quenching-security status"},
 )
 OWNER_COMMANDS = {
-    "opensource": "/quenching-opensource-align",
-    "security": "/quenching-security-status",
-    "delivery": "/quenching-delivery-align",
-    "toolchain": "/quenching-toolchain-align",
+    "opensource": "/quenching-opensource align",
+    "security": "/quenching-security status",
+    "delivery": "/quenching-delivery align",
+    "toolchain": "/quenching-toolchain align",
     "knowledge": "/quenching-knowledge align",
-    "proof": "/quenching-proof-align",
+    "proof": "/quenching-proof align",
     "git": "/quenching-git branch",
 }
 

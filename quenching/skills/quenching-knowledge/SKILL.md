@@ -1,6 +1,6 @@
 ---
 description: >-
-  Run one knowledge flow on the OKF bundle (add, learn, define, import, align, status, documentation). Use for "add a standard", "define this term", "align the docs". Not for: specs → /quenching-specs.
+  Run one knowledge flow on the OKF bundle: add, learn, define, glossary-backfill, import, import-memory, align, status, documentation-plan, documentation-write, documentation-review, documentation-build, documentation-produce. add: "adicionar um padrão", "add a standard"; learn: "registrar o que aprendemos", "capture this insight"; define: "definir este termo", "define this term"; glossary-backfill: "preencher o glossário", "backfill the glossary"; import: "importar esta fonte", "import this source"; import-memory: "importar a memória", "drain the memory"; align: "alinhar os docs", "align the docs"; status: "como estão os docs", "docs status"; documentation-plan: "planejar a documentação", "plan the docs"; documentation-write: "escrever as páginas", "write the pages"; documentation-review: "revisar a documentação", "review the docs"; documentation-build: "montar o site", "build the docs site"; documentation-produce: "produzir a documentação", "produce the docs". Not for: specs → /quenching-specs.
 argument-hint: "[add|learn|define|import|import-memory|glossary-backfill|align|status|documentation-build|documentation-plan|documentation-write|documentation-review|documentation-produce] [input]"
 allowed-tools: Bash, Read, Grep, Glob, Write, Edit, Task, Skill, WebFetch, AskUserQuestion
 ---

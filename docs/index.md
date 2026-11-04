@@ -57,12 +57,12 @@ writing anything.
 | --- | --- | --- |
 | `/docs/` | a canonical **OKF bundle** — standards, concepts, glossary, and this site | `/quenching-knowledge align` |
 | Specs | a plan cycle stored on the **`quenching` branch**, with GitHub or Azure Boards cards | cycle and status commands |
-| `/.design/` | one DTCG source projected to portable Impeccable and editorial media artifacts | `/quenching-design-align` |
+| `/.design/` | one DTCG source projected to portable Impeccable and editorial media artifacts | `/quenching-design align` |
 | `.claude/` | one file per entry point, every description audited | `/quenching-components align` |
-| `ops` | a declared operations root, its entry-point inventory, registry and lifecycle/write policy | `/quenching-ops-align` |
-| `proof` | test layers, fixture ownership, gate evidence, measured surfaces and the coverage floor | `/quenching-proof-align` |
-| `toolchain` | manifests, locks, language pins and tool configuration | `/quenching-toolchain-align` |
-| `delivery` | provider-equivalent workflows, reachability, provenance and release shape | `/quenching-delivery-align` |
+| `ops` | a declared operations root, its entry-point inventory, registry and lifecycle/write policy | `/quenching-ops align` |
+| `proof` | test layers, fixture ownership, gate evidence, measured surfaces and the coverage floor | `/quenching-proof align` |
+| `toolchain` | manifests, locks, language pins and tool configuration | `/quenching-toolchain align` |
+| `delivery` | provider-equivalent workflows, reachability, provenance and release shape | `/quenching-delivery align` |
 | `security` | read-only workflow, secret, dependency and access questions | *(none, by design)* |
 | *(git)* | nothing — a pillar that answers questions, converges no tree | *(none, by design)* |
 
