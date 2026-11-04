@@ -13,7 +13,7 @@ import re
 import unittest
 
 REPO = pathlib.Path(__file__).resolve().parents[2]
-BODY = REPO / "quenching/commands/handoff.md"
+BODY = REPO / "quenching/skills/quenching-handoff/SKILL.md"
 LOCATOR = re.compile(r"quenching:specs/artifacts/(?P<owner>[^/\s]+)/(?P<name>[\w.-]+\.md)")
 READ = re.compile(r"cq specs artifact read (?:--spec (?P<spec>\d+) )?--name (?P<name>[\w.-]+)")
 
@@ -97,7 +97,7 @@ class TheDirectionBlock(unittest.TestCase):
         read = READ.search(self.block)
         self.assertIsNotNone(locator, self.block)
         self.assertIsNotNone(read, self.block)
-        self.assertIn("/quenching-specs-execute", self.block)
+        self.assertIn("/quenching-specs execute", self.block)
 
     def test_all_three_fields_name_the_same_artifact(self):
         locator = LOCATOR.search(self.block)

@@ -1,6 +1,6 @@
 ---
 description: >-
-  Align the whole repository (docs, design, .agents, ops, proof, toolchain, delivery, opensource) on one confirmation. Use for "align the repo", "align everything", "set up quenching here". Not for: one front → its /quenching-<module>:<front>:align.
+  Align the whole repository (docs, design, .agents, ops, proof, toolchain, delivery, opensource) on one confirmation. Use for "align the repo", "align everything", "set up quenching here". Not for: one front → its `/quenching-<front>-align`, or `/quenching-knowledge align` and `/quenching-components align`.
 argument-hint: [optional-scope]
 allowed-tools: Bash(cq:*), Bash(cq.cmd:*), Read, Grep, Glob, Bash(python3:*), Bash(py:*), Skill
 ---
@@ -17,9 +17,9 @@ front named in that cell has completed its inherited authorization.
 
 | Front | Route | Depends on |
 | --- | --- | --- |
-| `knowledge` — `/docs/` | `/quenching-knowledge-align` | applicability |
+| `knowledge` — `/docs/` | `/quenching-knowledge align` | applicability |
 | `design` — `/.design/` | `/quenching-design-align` | `knowledge` |
-| `components` — `.agents/` and the Claude bridge | `/quenching-components-align` | `design` |
+| `components` — `.agents/` and the Claude bridge | `/quenching-components align` | `design` |
 | `ops` — operations surface | `/quenching-ops-align` | `components` |
 | `proof` — verification surface | `/quenching-proof-align` | `ops` |
 | `toolchain` — toolchain surface | `/quenching-toolchain-align` | `proof` |
@@ -27,24 +27,23 @@ front named in that cell has completed its inherited authorization.
 | `opensource` — community, license and governance artifacts | `/quenching-opensource-align` | `delivery` |
 
 **Only deployed modules are conducted.** Before the first front, read `cq modules --json` once
-([tool-resolution.md](.agents/quenching/assets/references/align/tool-resolution.md) §Routing into
+([tool-resolution.md](.agents/quenching/references/align/tool-resolution.md) §Routing into
 another module). A front whose module reports `enabled: false` is `not-installed: <module>`: it is
 skipped, named in the report, and its dependants depend on the nearest earlier front that ran.
 
-**How a front is run.** `knowledge` and `components` are model-invocable: invoke them through the
-Skill tool. `design`, `ops`, `proof`, `toolchain`, `delivery` and `opensource` are typed-only
-commands (`disable-model-invocation: true`), so the Skill tool refuses them. For those six, Read the
-front's own body at `<root>/commands/<front>/align.md`, where `<root>` is the `root` that
-`cq modules --json` reports for the front's module, and follow it inline, substituting that same
-`<root>` for any `.agents/quenching` it cites, with the same inherited authorization and the
-same stages; its `cq <front> …` verbs run as written.
+**How a front is run.** `knowledge` and `components` are routed flows: invoke them through the
+Skill tool, `quenching-knowledge` and `quenching-components` with the flow `align`. `design`, `ops`,
+`proof`, `toolchain`, `delivery` and `opensource` are typed-only skills
+(`disable-model-invocation: true`), so the Skill tool refuses them. For those six, Read the
+front's installed skill at `.agents/skills/quenching-<front>-align/SKILL.md` and follow it inline,
+with the same inherited authorization and the same stages; its `cq <front> …` verbs run as written.
 
 The `specs` provider flow has no row because it owns no local tree, while the `security` and `git`
 pillars have no row because they answer live questions without a converging front tree. Their
 commands remain available through their own namespaces.
 
 Every applicable front must expose the common front mold at
-`.agents/quenching/assets/references/front-align/mold.md`. The conductor sequences and reports;
+`.agents/quenching/references/front-align/mold.md`. The conductor sequences and reports;
 it never reimplements a front's verifier or repair logic.
 
 Before probing, read `.agents/quenching/bin/cq specs config --json`. An absent `shared.profiles.installed` means all eight
@@ -110,7 +109,7 @@ Wait for one OK. A decline writes nothing.
 
 ### Front: `knowledge`
 
-Invoke the router `/quenching-knowledge-knowledge` through the Skill tool under its registry name, with the
+Invoke the router `/quenching-knowledge` through the Skill tool under its registry name, with the
 flow `align` and the inherited authorization:
 
 > Running under `/align` authorization granted at run start — skip your plan-confirmation pause;
@@ -131,7 +130,7 @@ remain human choices. A hard failure establishing valid DTCG stops later fronts.
 ### Front: `components`
 
 When the automation surface is empty, skip it rather than scaffolding a taxonomy. Otherwise invoke
-`/quenching-components-align` with the inherited authorization after `design` has completed. The
+`/quenching-components align` with the inherited authorization after `design` has completed. The
 run-start OK covers the migration plan shown in Authorization: the front applies `migrate --write`
 and then `bridge --write` without asking again; a migrate conflict is never covered and stays the
 human's. Its rule and registry changes belong to the knowledge bundle; its doctrine findings remain
@@ -193,9 +192,9 @@ writes nothing of its own; each front owns its writes and its report is the acco
 - Never run a front before its dependency in the declaration table has completed.
 - Never ask for a second authorization or suppress an interruption the front contract still owns.
 - Never reimplement a front's stages, verifier or repairs here; run its align: through Skill for `knowledge` and `components`, by reading its body for the typed-only fronts.
-- Never act on residue owned by `/quenching-knowledge-add`, `/quenching-knowledge-learn`,
-  `/quenching-knowledge-define`, `/quenching-specs-develop`, `/quenching-specs-conclude`,
-  `/quenching-design-genre-new`, or `/quenching-components-command-new`.
+- Never act on residue owned by `/quenching-knowledge add`, `/quenching-knowledge learn`,
+  `/quenching-knowledge define`, `/quenching-specs develop`, `/quenching-specs conclude`,
+  `/quenching-design-genre-new`, or `/quenching-components command-new`.
 - Never scaffold an empty `.claude/` surface or silently install a visual world.
 - Never loop past 3 passes or widen scope to force a clean number.
 - Never hand this command `context: fork`; the gate and nested confirmations are mid-flow.
