@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # functional-checks.sh — the checks nothing in-process can make.
 #
-# The command registry is built at SESSION START, so no change under commands/** is testable
+# The command registry is built at SESSION START, so no change under skills/** is testable
 # in the session that writes it. Each check below therefore runs its own fresh `claude -p`.
 #
 # Every assertion reads the emitted `tool_use` events from `--output-format stream-json`, so it
@@ -61,7 +61,7 @@
 #
 # CHECK 3 IS OPT-IN, AND `/quenching-components-command-eval` IS THE BETTER INSTRUMENT. Check 3 is five of the seven
 # sessions, the only NON-DETERMINISTIC one (recorded twice: same tree, opposite verdicts on
-# identical runs), and a strictly worse duplicate of `/quenching-components-command-eval` step 7 — which measures the
+# identical runs), and a strictly worse duplicate of `/quenching-components command-eval` step 7 — which measures the
 # same thing with should-trigger AND should-not-trigger prompts, graded, per command, instead of
 # five hardcoded phrases with no boundary arm. Reach for `/quenching-components-command-eval` when a description changed;
 # reach for `--only 3` only to re-guard the five phrases already tuned here.
@@ -263,7 +263,7 @@ anchored () {
   for dir in "${LOADED[@]}"; do
     if grep -qF "$dir/" <<<"$observed"; then inside=yes; fi
   done
-  if grep -qE '(^|[" =])\.agents/quenching/' <<<"$observed"; then inside=yes; fi
+  if grep -qE '(^|[" =])\.agents/(quenching|skills)/' <<<"$observed"; then inside=yes; fi
   if [ "$inside" = no ]; then
     printf 'FAIL anchor: observed path is outside the deployed payload\n'
     printf '  observed: %s\n' "$observed"
@@ -342,7 +342,7 @@ fi
 
 # Did the session act at all? Zero tool_use events of ANY name means the capture carries no
 # evidence — the process died, the stream was unreadable, or nothing ran. Every assertion here
-# must be gated on this, because the NEGATIVE halves ("read nothing under a skills/ tree") pass
+# must be gated on this, because the NEGATIVE halves ("read nothing under the .claude/skills bridge") pass
 # vacuously over an empty stream: an unreadable capture would report a clean surface.
 # No evidence is reported as INCONCLUSIVE. It is never a pass and never a failure.
 # The startup inventory is independent of the calls we grade: a correct call must not hide a
@@ -400,7 +400,7 @@ print(n)
 #     not exist the session correctly challenges the premise instead of routing.
 #   - a phrase whose command wants an OKF bundle ("add a standard") spends its turns looking
 #     for one.
-#   - a command that reports on a workspace (`/quenching-knowledge-status`) wants one to report on.
+#   - a command that reports on a workspace (`/quenching-knowledge status`) wants one to report on.
 # So every box gets a migration, a minimal bundle and an empty `specs/plans/`: the smallest repo
 # every prompt below can be answered in without exploring to find out its subject is missing.
 newbox () {
@@ -418,7 +418,7 @@ newbox () {
     cat "$1.deploy.log" >&2
     exit 2
   fi
-  LOADED=("$1/.agents/quenching")
+  LOADED=("$1/.agents/quenching" "$1/.agents/skills")
 }
 
 echo "functional-checks — $SOURCE deployed into throwaway targets"
@@ -430,13 +430,13 @@ echo
 #
 # The prompt never names a path: the command must report the citations IT was given, so a
 # Read landing under the box's `.agents/quenching/assets/references/` proves the deployed body
-# points at the deployed payload. `/quenching-knowledge-status` cites a reference directory the
-# knowledge-flow consolidation owns, so a stale citation fails here rather than reading nothing.
+# points at the deployed payload. `/quenching-knowledge status` cites a reference of its own skill folder, and the common
+# set, which the knowledge-flow consolidation owns, so a stale citation fails here rather than reading nothing.
 # --------------------------------------------------------------------------- #
 if want 1; then
 echo "1. a deployed command loads and cites its reference"
 newbox "$WORK/sandbox1"
-( cd "$WORK/sandbox1" && claude -p --setting-sources project "/quenching-knowledge-status
+( cd "$WORK/sandbox1" && claude -p --setting-sources project "/quenching-knowledge status
 
 Before the report: list the path of every reference file THIS COMMAND'S OWN BODY tells
 you to consult, exactly as the body spells them. Then Read the first one. Do not guess a path —
@@ -444,12 +444,12 @@ copy it from the body you were given." \
   --max-turns 10 --output-format stream-json --verbose < /dev/null > "$WORK/1.jsonl" 2>&1 )
 if evidence "$WORK/1.jsonl"; then
   if anchored "$(reference_reads "$WORK/1.jsonl")"; then r=yes; else r=no; fi
-  check "$r" "read a file under the deployed assets/references/"
-  if grep -q '/skills/' <<<"$(reference_reads "$WORK/1.jsonl")"; then r=no; else r=yes; fi
-  check "$r" "read nothing under a skills/ tree"
+  check "$r" "read a file under the deployed references"
+  if grep -q '/\.claude/skills/' <<<"$(reference_reads "$WORK/1.jsonl")"; then r=no; else r=yes; fi
+  check "$r" "read nothing under the .claude/skills bridge"
 else
-  inconc "read a file under the deployed assets/references/" "missing tool activity or verifiable skill inventory"
-  inconc "read nothing under a skills/ tree" "missing tool activity or verifiable skill inventory"
+  inconc "read a file under the deployed references" "missing tool activity or verifiable skill inventory"
+  inconc "read nothing under the .claude/skills bridge" "missing tool activity or verifiable skill inventory"
 fi
 fi
 
@@ -474,11 +474,11 @@ copy it from the body you were given." \
   if evidence "$WORK/front-$id.jsonl"; then
     if anchored "$(reference_reads "$WORK/front-$id.jsonl")"; then r=yes; else r=no; fi
     check "$r" "$command loaded from the deployed payload"
-    if grep -q '/skills/' <<<"$(reference_reads "$WORK/front-$id.jsonl")"; then r=no; else r=yes; fi
-    check "$r" "$command read nothing under a skills/ tree"
+    if grep -q '/\.claude/skills/' <<<"$(reference_reads "$WORK/front-$id.jsonl")"; then r=no; else r=yes; fi
+    check "$r" "$command read nothing under the .claude/skills bridge"
   else
     inconc "$command loaded from the deployed payload" "missing tool activity or verifiable skill inventory"
-    inconc "$command read nothing under a skills/ tree" "missing tool activity or verifiable skill inventory"
+    inconc "$command read nothing under the .claude/skills bridge" "missing tool activity or verifiable skill inventory"
   fi
 }
 front_probe ops /quenching-ops-status
@@ -504,14 +504,13 @@ You have my authorization for the whole run — treat the plan gate as granted a
 need you to reach and INVOKE Front 1 via the Skill tool; stop right after that stage is invoked." \
   --max-turns 12 --output-format stream-json --verbose < /dev/null > "$WORK/2.jsonl" 2>&1 )
 if evidence "$WORK/2.jsonl"; then
-  # The conductor reaches Front 1 through the knowledge router with the `align` flow; the leaf
-  # skill by its own name is the same stage.
+  # The conductor reaches Front 1 through the knowledge router with the `align` flow.
   if python3 -c '
 import json,sys
 for line in sys.stdin:
     call=json.loads(line)
     skill,args=call.get("skill",""),str(call.get("args","")).lstrip()
-    if skill=="quenching-knowledge-align" or (skill=="quenching-knowledge-knowledge" and args.startswith("align")): sys.exit(0)
+    if skill=="quenching-knowledge" and args.startswith("align"): sys.exit(0)
 sys.exit(1)' <<<"$(tools Skill "$WORK/2.jsonl")"; then r=yes
   elif grep -q '"subtype":"error_max_turns"' "$WORK/2.jsonl"; then r=cap
   else r=no; fi
@@ -533,11 +532,11 @@ fi
 #
 # Each probe runs in its OWN throwaway repo, never in REPO: these commands write when they fire.
 # The probe measures the Skill call, which happens before the routed body acts, so it denies the
-# write tools: a probe that routes to /quenching-specs-create must never be able to land a spec.
-# A family router (`quenching-<family>-<family>`) that the phrase reaches first counts as routed.
+# write tools: a probe that routes to /quenching-specs create must never be able to land a spec.
+# The family router (`quenching-<family>`) is the skill a spoken phrase reaches; the flow rides in its args.
 #
 # OPT-IN, AND NOT THE FIRST CHOICE: five sessions, non-deterministic, and duplicating what
-# `/quenching-components-command-eval` step 7 measures properly. See the COST note at the top.
+# `/quenching-components command-eval` step 7 measures properly. See the COST note at the top.
 # --------------------------------------------------------------------------- #
 if want 3; then
 echo "3. a spoken trigger routes with no / typed"
@@ -571,11 +570,11 @@ probe () {
     check no "\"$phrase\" -> $want"
   fi
 }
-probe a "park a spec for later: the export CSV endpoint times out on large accounts" "quenching-specs-create" "quenching-specs-specs"
-probe b "capture this for the backlog — we should look at retry logic on the webhook sender"  "quenching-specs-create" "quenching-specs-specs"
-probe c "add a standard: we always use snake_case for database columns"                       "quenching-knowledge-add" "quenching-knowledge-knowledge"
-probe d "set up something that audits our migrations and reports back"                        "quenching-components-agent-new" "quenching-components-components"
-probe e "I want something to catch it automatically whenever a migration lands"               "quenching-components-hook-new" "quenching-components-components"
+probe a "park a spec for later: the export CSV endpoint times out on large accounts" "quenching-specs" "quenching-specs"
+probe b "capture this for the backlog — we should look at retry logic on the webhook sender"  "quenching-specs" "quenching-specs"
+probe c "add a standard: we always use snake_case for database columns"                       "quenching-knowledge" "quenching-knowledge"
+probe d "set up something that audits our migrations and reports back"                        "quenching-components" "quenching-components"
+probe e "I want something to catch it automatically whenever a migration lands"               "quenching-components" "quenching-components"
 if [ "$(store_tips)" = "$TIPS_BEFORE" ]; then r=yes; else r=no; fi
 check "$r" "the routing probes left the spec store branch untouched"
 fi
@@ -583,13 +582,13 @@ fi
 # --------------------------------------------------------------------------- #
 # 5. the core arrangement: a spec body loads from the smallest deploy
 #
-# `cq deploy --modules core` is the smallest install there is. Its specs commands must load and
+# `cq deploy --modules core` is the smallest install there is. Its specs router must load and
 # read their own payload, and no skill the box does not carry may be invoked.
 # --------------------------------------------------------------------------- #
 if want 5; then
 echo "5. the core arrangement loads a specs body from the smallest deploy"
 newbox "$WORK/sandbox5" core
-( cd "$WORK/sandbox5" && claude -p --setting-sources project "/quenching-specs-status
+( cd "$WORK/sandbox5" && claude -p --setting-sources project "/quenching-specs status
 
 Before the report: list the path of every reference file THIS COMMAND'S OWN BODY tells
 you to consult, exactly as the body spells them. Then Read the first one. Do not guess a path —
@@ -597,7 +596,7 @@ copy it from the body you were given." \
   --max-turns 10 --output-format stream-json --verbose < /dev/null > "$WORK/5.jsonl" 2>&1 )
 if evidence "$WORK/5.jsonl"; then
   if anchored "$(reference_reads "$WORK/5.jsonl")"; then r=yes; else r=no; fi
-  check "$r" "/quenching-specs-status read only the core payload"
+  check "$r" "/quenching-specs status read only the core payload"
   r=yes
   while IFS= read -r skill; do
     [ -z "$skill" ] && continue
@@ -606,7 +605,7 @@ if evidence "$WORK/5.jsonl"; then
 for line in sys.stdin: print(json.loads(line).get("skill",""))')
   check "$r" "invoked no skill the core deploy does not carry"
 else
-  inconc "/quenching-specs-status read only the core payload" "missing tool activity or verifiable skill inventory"
+  inconc "/quenching-specs status read only the core payload" "missing tool activity or verifiable skill inventory"
   inconc "invoked no skill the core deploy does not carry" "missing tool activity or verifiable skill inventory"
 fi
 fi
