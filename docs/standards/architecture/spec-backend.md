@@ -2,7 +2,7 @@
 type: standard
 title: Spec backend interface
 description: The spec store is a git branch holding the canonical documents, with thin tracker cards as a projection written at lifecycle transitions; five document primitives, one ID identity and one refusal boundary keep every backend identical, and the deprecated tracker backends keep their serialisation rules
-resource: quenching/assets/bin/quenching/specs/backends/**, quenching/assets/bin/quenching/specs/commands/**, quenching/assets/references/specs-develop/spec-driven.md, quenching/assets/bin/quenching/common/leak.py
+resource: quenching/assets/bin/quenching/specs/backends/**, quenching/assets/bin/quenching/specs/commands/**, quenching/references/specs-develop/spec-driven.md, quenching/assets/bin/quenching/common/leak.py
 tags: [architecture, specs, backend, interface, serialization]
 timestamp: 2026-11-01
 audience: both

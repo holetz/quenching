@@ -2,7 +2,7 @@
 type: standard
 title: Opensource front
 description: The target repository's license, community and governance artifacts, written only from pinned templates through cq opensource apply, and the read-only aggregate of every owner's open source catalog answers into a conservative baseline level with stable os-* findings
-resource: quenching/commands/opensource/**, quenching/assets/bin/quenching/opensource/**, quenching/assets/opensource/templates/**, quenching/assets/references/opensource-align/**
+resource: quenching/skills/quenching-opensource-*/**, quenching/assets/bin/quenching/opensource/**, quenching/assets/opensource/templates/**, quenching/references/opensource-align/**
 tags: [architecture, opensource, governance, community, license]
 timestamp: 2026-11-03
 audience: both
@@ -25,7 +25,7 @@ fronts own.
 
 The front adopts the common minimum from [`front-mold.md`](front-mold.md): a stable `doctor` and
 `status`, typed exits (0 clean, 1 findings, 2 refusal) and one disposition band per code, mapped in
-`quenching/assets/references/opensource-align/bands.md`. Its name is `opensource` and its
+`quenching/references/opensource-align/bands.md`. Its name is `opensource` and its
 finding prefix `os-` is reserved to it. New open source questions land in this front; the
 `security`, `delivery`, `toolchain` and `proof` fronts keep only the catalog answers they already
 own.

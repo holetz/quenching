@@ -72,11 +72,11 @@ the stdio loop on a credential prompt.
 ## Bounded resources
 
 `quenching://references` indexes the shipped references. A resource
-`quenching://references/<path>.md` resolves only inside `assets/references/`, including after
+`quenching://references/<path>.md` resolves only inside `references/`, including after
 symlink resolution. Documents at or below `DOC_WHOLE` (24,000 characters) can be returned whole;
 larger documents return an outline. Repeated `?section=<heading>` parameters select sections
 using the same section reader as `components read`. A served reference rewrites its
-`.agents/quenching/assets/references/` links to `quenching://references/`, so its sibling
+`.agents/quenching/references/` links to `quenching://references/`, so its sibling
 citations resolve inside the MCP surface rather than to a checkout path. The shared
 60,000-character response guard marks oversized replies as truncated and supplies a narrower-read
 hint.

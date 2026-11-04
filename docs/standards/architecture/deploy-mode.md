@@ -100,11 +100,11 @@ because a `uvx` runtime omits the vendored entry point the generated command cal
 ## What deploy does not do
 
 - It does not install `/docs/` or call an align; the target runs its own
-  `quenching-knowledge-align` skill after the surface exists. `AGENTS.md` names that next step when the bundle is absent.
+  `quenching-knowledge` skill (flow `align`) after the surface exists. `AGENTS.md` names that next step when the bundle is absent.
 - It does not install hooks or rewrite `.claude/settings*.json`.
 - It does not choose the specs backend, license, release provider or any product policy.
 - It does not merge a content-bearing `CLAUDE.md`; the target's
-  `quenching-components-harness-align` skill owns that, and a pointer-only file is removed only on
+  `quenching-components` skill (flow `harness-align`) owns that, and a pointer-only file is removed only on
   `--prune-legacy`.
 
 ## Verify

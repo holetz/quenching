@@ -2,7 +2,7 @@
 type: standard
 title: Extension points contract
 description: The extension point — an event a command declares for the repository that installed the plugin to attach its own work; the three-part contract (the declaration lives in config the core reads and never interprets; the body announces name, command and prompt and moves on; `condition` is never evaluated by whoever announces); the declared shape; and why the extension lives in config rather than in a command
-resource: .agents/quenching.json, quenching/commands/specs/execute.md, quenching/assets/bin/quenching/specs/**
+resource: .agents/quenching.json, quenching/skills/quenching-specs/references/execute.md, quenching/assets/bin/quenching/specs/**
 tags: [automation, extension, configuration, plugin]
 timestamp: 2026-08-11
 audience: both
@@ -26,7 +26,7 @@ A point of extension is an **event** in a command's run — `before_<command>` a
 named after the command whose flow carries the event. The command that owns the event is the one
 that **announces** it; the hooks are what the declaring repository attached to the event.
 
-The one event this plugin ships today is `after_specs_execute_task` on `/quenching-specs-execute` — a hook
+The one event this plugin ships today is `after_specs_execute_task` on `/quenching-specs execute` — a hook
 runs after each task the spec cycle commits. Nothing here is specific to it: the contract is the
 same for every event a command declares.
 

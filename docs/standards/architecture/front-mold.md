@@ -2,7 +2,7 @@
 type: standard
 title: Front mold
 description: The one binding minimum for a local front declaration, route, align/status surface, disposition bands, with measured domain-specific deltas
-resource: docs/standards/architecture/{design-front.md,ops-front.md,proof-front.md,toolchain-front.md,delivery-front.md,security-pillar.md}, quenching/commands/{design,ops,proof,toolchain,delivery,security}/**
+resource: docs/standards/architecture/{design-front.md,ops-front.md,proof-front.md,toolchain-front.md,delivery-front.md,security-pillar.md}, quenching/skills/quenching-{design,ops,proof,toolchain,delivery,security}-*/**
 tags: [architecture, front, mold, design, ops, proof, toolchain, delivery, security]
 timestamp: 2026-08-31
 audience: both

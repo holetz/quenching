@@ -2,7 +2,7 @@
 type: standard
 title: Retiring a reserved artifact — drop the checker, keep the reservation
 description: A reserved filename that is retired keeps its slot in RESERVED and its skip in the hard block; only its checker goes, because unreserving it silently converts every surviving file into a malformed concept doc — plus the one departure this house made knowingly, and the three things that made it payable
-resource: quenching/assets/bin/quenching/knowledge/**, quenching/assets/references/knowledge-align/conformance.md, quenching/assets/references/knowledge-align/okf-spec.md
+resource: quenching/assets/bin/quenching/knowledge/**, quenching/references/knowledge-align/conformance.md, quenching/references/knowledge-align/okf-spec.md
 tags: [architecture, okf, validator, reserved-names, deprecation]
 timestamp: 2026-08-10
 audience: both
@@ -78,9 +78,9 @@ What made the departure payable, and what a future one has to match:
 ## The consequence for disposition
 
 Because the reservation survives, a retired artifact is **legible and writable forever**, and
-`/quenching-knowledge-align` neither creates nor deletes one. Whether to keep or delete a surviving file is
+`/quenching-knowledge align` neither creates nor deletes one. Whether to keep or delete a surviving file is
 the target repo's call, not the sweep's — a sweep that deleted it would be destroying content
-it never owned. `/quenching-knowledge-status` reports it as a **figure with no finding code**, in the same
+it never owned. `/quenching-knowledge status` reports it as a **figure with no finding code**, in the same
 register as the density table: informative, never something to chase, with no owning command
 to name.
 

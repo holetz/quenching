@@ -2,7 +2,7 @@
 type: standard
 title: Generated listings — a derived listing only pays for itself when a program can prove it is fresh
 description: A listing regenerated from disk is a second source of a fact something else already derives, so it earns its keep only where nothing else derives that fact and a checker can decide freshness; the decision criterion is whether a command already answers the same question on demand, the /docs/ bundle index.md files are the counterexample that bounds the rule, and a convergence condition may name only what a checker decides
-resource: quenching/assets/knowledge/**/index.md, quenching/assets/bin/quenching/knowledge/structure.py, quenching/assets/bin/quenching/components/**, quenching/assets/bin/quenching/specs/**, quenching/assets/references/specs-align/conformance.md, quenching/assets/references/align/convergence.md, quenching/README.md
+resource: quenching/assets/knowledge/**/index.md, quenching/assets/bin/quenching/knowledge/structure.py, quenching/assets/bin/quenching/components/**, quenching/assets/bin/quenching/specs/**, quenching/references/specs-align/conformance.md, quenching/references/align/convergence.md, quenching/README.md
 tags: [architecture, listings, derived-state, verification, convergence]
 timestamp: 2026-11-03
 audience: both

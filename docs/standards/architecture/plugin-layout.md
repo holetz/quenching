@@ -1,8 +1,8 @@
 ---
 type: standard
 title: Plugin layout — what may live under commands/
-description: one editable source, quenching, reaches a repository only through cq deploy, and two plugins that install into no repository sit beside it under integrations/<name>/; in the source, commands/** is the only tree Claude Code registers, so everything that is not an entry point lives under assets/ and is cited by absolute path
-resource: quenching/commands/**, quenching/assets/**, integrations/claude-hud/**, integrations/opencode-vitrine/**
+description: one editable source, quenching, reaches a repository only through cq deploy, and two plugins that install into no repository sit beside it under integrations/<name>/; in the source, skills/** is the only tree Claude Code registers, so everything that is not an entry point lives under assets/ and is cited by absolute path
+resource: quenching/skills/**, quenching/assets/**, integrations/claude-hud/**, integrations/opencode-vitrine/**
 tags: [architecture, plugin, commands, layout, claude-code]
 timestamp: 2026-11-03
 audience: both
@@ -81,10 +81,10 @@ the payload under `.agents/quenching/`, never this repository's root `scripts/`;
 
 The rule the collapse to one file per entry point created, and that nothing previously stated.
 
-## `commands/**` is the only tree Claude Code registers
+## `skills/**` is the only tree Claude Code registers
 
 Every `.md` under `commands/` **is** a command. Not "is treated as one if it looks right" — the
-path is the identity, so `commands/knowledge/align/references/conformance.md` would register as a
+path is the identity, so `quenching/skills/quenching-knowledge/references/align-references-conformance.md` would register as a
 four-segment `knowledge:align:references:conformance` command and appear in the surface a session
 pays for.
 
@@ -111,7 +111,7 @@ shim there with `--runtime uvx`). Two properties of the generated launcher are l
   ships.
 
 The order between the launcher and the entry point is
-`quenching/assets/references/align/tool-resolution.md` §Resolving the tool.
+`quenching/references/align/tool-resolution.md` §Resolving the tool.
 
 ## Where it goes instead: `assets/`
 
@@ -195,12 +195,12 @@ what a command reads *while running inside a target*: procedure, not a fact abou
 
 Two standards already sit on that line and delegate across it. [skills.md](../automation/skills.md)
 states the command taxonomy rule and leaves the writing doctrine to
-`assets/references/components-command-new/`; [plan-artifacts.md](../workflows/plan-artifacts.md)
+`references/components-command-new/`; [plan-artifacts.md](../workflows/plan-artifacts.md)
 states what a spec must contain and leaves the per-section authoring to `specs-develop/`. Both keep
 a standard because both **have** a rule this repo is graded against, separable from the procedure.
 
 **Where a contract is entirely runtime procedure, there is no standard left to shrink** — it moves
-whole into `assets/references/` and the standard is **retired**, under
+whole into `references/` and the standard is **retired**, under
 [retiring-a-standard.md](../workflows/retiring-a-standard.md), never kept as a stub. A stub that
 restates the reference is the second copy the delegation existed to prevent, now with the two
 halves graded by different validators. The retired orchestration standard is the worked case:
@@ -227,7 +227,7 @@ one side, the runtime procedure on the other — and the branch review stops bei
 Every citation of a bundled reference is:
 
 ```
-.agents/quenching/assets/references/<name>/<file>.md
+.agents/quenching/references/<name>/<file>.md
 ```
 
 `.agents/quenching` substitutes inside a command body — measured, not assumed
@@ -235,13 +235,13 @@ Every citation of a bundled reference is:
 rows 1–2, re-measured 2026-07-26 on Claude Code 2.1.215).
 
 Relative paths are not merely inconvenient here, they are **wrong**: a relative path encodes the
-depth of the *citing* file, so `commands/knowledge/documentation/build.md` and `commands/align.md`
+depth of the *citing* file, so `quenching/skills/quenching-knowledge/references/documentation-build.md` and `quenching/skills/quenching-align/SKILL.md`
 would need different strings for the same target. The absolute form is one string everywhere,
 which is what makes the citation set mechanically rewritable and mechanically checkable.
 
 ### `<name>` is the owning command's path, flattened
 
-`commands/knowledge/add.md` owns `references/knowledge-add/`; `commands/align.md` owns
+`quenching/skills/quenching-knowledge/references/add.md` owns `references/knowledge-add/`; `quenching/skills/quenching-align/SKILL.md` owns
 `references/align/`. The path, with `/` → `-`, and nothing else — which is why
 `references/align-all/`, carrying the name of the retired `quenching-align-all` skill, was
 renamed: a directory name that lies is forbidden by
@@ -254,10 +254,10 @@ the procedure, not for every command that reads it — that is what keeps a sing
 when a rule has several readers.
 
 **`evals/` encodes the same source differently, and the difference is deliberate.** An eval tree
-keeps the slashes — `commands/components/hook/new.md` ↔ `evals/components/hook/new/` — because it
+keeps the slashes — `quenching/skills/quenching-components/references/hook-new.md` ↔ `evals/components/hook/new/` — because it
 mirrors exactly one command 1:1 and is renamed in the same mechanical step as that command, so the
 two paths differ by one prefix and a reviewer finds it without searching
-(`quenching/assets/references/components-command-eval/evaluation.md`
+(`quenching/skills/quenching-components/references/components-command-eval/evaluation.md`
 §Where the artifacts live). A reference folder is shared, has no 1:1 to preserve, and gains a flat
 listing from being flattened. Same input, two encodings, two jobs — do not reconcile them.
 
@@ -278,7 +278,7 @@ pasted by a human into a raw terminal dangles a `.agents/quenching` citation ins
 blocks the moment a human reads that block verbatim — before the file is copied anywhere, and
 regardless of whether the plugin is loaded in the session doing the reading. Three trees still
 answer the wider test today — `assets/templates/**` (the harness and front-matter molds),
-`assets/knowledge/**` (the OKF skeleton, copied by `/quenching-knowledge-align`) and `assets/specs/templates/**`; a
+`assets/knowledge/**` (the OKF skeleton, copied by `/quenching-knowledge align`) and `assets/specs/templates/**`; a
 fourth surface added later inherits the rule without amending this list. Naming one folder was how
 a `.agents/quenching` citation reached `assets/docs/` unnoticed: the reasoning covered it, the
 wording did not, and nothing else checks. **No validator catches this** — a path that fails to
@@ -319,14 +319,14 @@ citing a path in the target's own bundle — needs its own rule, because nothing
 `/docs/standards/<subject>/<file>.md` is a **fixed string**
 ([bundle-root.md](bundle-root.md)), never a variable, so it reads as a well-formed link in every
 repo whether or not the named file actually exists there. Existence is not syntax: a target only
-carries that file if `/quenching-knowledge-align` installs it — that is, only if it exists under
+carries that file if `/quenching-knowledge align` installs it — that is, only if it exists under
 `quenching/assets/knowledge/**` in this very plugin.
 
-**A command body or a reference in `commands/**` or `assets/references/**` links a `/docs/` path
+**A command body or a reference in `skills/**` or `references/**` links a `/docs/` path
 only when that path exists under `quenching/assets/knowledge/**`.** Where it does not, the body
 names the target in backticks, without a markdown link, and states the rule the citation would
 have carried directly in its own prose — the citation was never load-bearing there, only
-provenance, and the statement survives its removal. `commands/specs/create.md` is the didactic
+provenance, and the statement survives its removal. `quenching/skills/quenching-specs/references/create.md` is the didactic
 case, two halves of the same rule in the same file: the line citing
 [agents/communication.md](../agents/communication.md), which the align installs, stays linked; the
 line that cited `workflows/plugin-configuration.md`, which it does not, loses the link and keeps
@@ -356,7 +356,7 @@ the slug stays English, the prose around it follows the tag. Their whole value i
 at the instant a slug is written, which a citation spends a tool call to destroy.
 
 **The ownership test** — is a reminder legitimate at all? A boundary reminder states the edge of a
-rule the citing place **already owns**, seen from the other side. `/quenching-knowledge-add` owns where a doc goes
+rule the citing place **already owns**, seen from the other side. `/quenching-knowledge add` owns where a doc goes
 and what its slug looks like, so "the slug is canonical English, the body may follow the repo's
 language" is that command's own rule at its border, not a second copy of somebody else's. A
 restatement states a fact the citing place neither owns nor can change.
