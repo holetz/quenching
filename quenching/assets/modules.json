@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 2,
+  "schemaVersion": 3,
   "source": "quenching",
   "marketplace": ".claude-plugin/marketplace.json",
   "versionConstant": "quenching/assets/bin/quenching/common/version.py",
@@ -14,11 +14,6 @@
     {
       "name": "quenching-specs",
       "owned": {
-        "commands": [
-          "specs",
-          "git",
-          "handoff.md"
-        ],
         "hooks": true,
         "mcp": true,
         "packages": [
@@ -31,7 +26,12 @@
           "mcp",
           "deploy"
         ],
-        "agents": true
+        "agents": true,
+        "skills": [
+          "quenching-specs",
+          "quenching-handoff",
+          "quenching-align"
+        ]
       },
       "generatedSupport": {
         "packages": [
@@ -49,23 +49,80 @@
           "specs-conclude",
           "specs-develop",
           "specs-execute",
-          "specs-create",
-          "specs-flows",
-          "git-flows"
+          "front-align"
         ],
         "router": true
       }
     },
     {
-      "name": "quenching-align",
+      "name": "quenching-git",
       "owned": {
-        "commands": [
-          "knowledge",
-          "components",
-          "align.md"
+        "skills": [
+          "quenching-git"
+        ],
+        "packages": [],
+        "agents": false
+      },
+      "generatedSupport": {
+        "packages": [
+          "common"
+        ],
+        "references": [
+          "align",
+          "components-command-new",
+          "git",
+          "knowledge-add",
+          "knowledge-align",
+          "knowledge-import",
+          "specs-align",
+          "specs-conclude",
+          "specs-develop",
+          "specs-execute",
+          "front-align"
+        ],
+        "router": true
+      }
+    },
+    {
+      "name": "quenching-knowledge",
+      "owned": {
+        "skills": [
+          "quenching-knowledge"
         ],
         "packages": [
-          "knowledge",
+          "knowledge"
+        ],
+        "agents": false
+      },
+      "generatedSupport": {
+        "packages": [
+          "common",
+          "session",
+          "controls"
+        ],
+        "references": [
+          "align",
+          "components-command-new",
+          "git",
+          "knowledge-add",
+          "knowledge-align",
+          "knowledge-import",
+          "specs-align",
+          "specs-conclude",
+          "specs-develop",
+          "specs-execute",
+          "front-align"
+        ],
+        "router": true
+      }
+    },
+    {
+      "name": "quenching-components",
+      "owned": {
+        "skills": [
+          "quenching-components"
+        ],
+        "packages": [
           "components"
         ],
         "agents": false
@@ -87,13 +144,7 @@
           "specs-conclude",
           "specs-develop",
           "specs-execute",
-          "components-command-eval",
-          "components-harness-align",
-          "front-align",
-          "knowledge-documentation",
-          "knowledge-import-memory",
-          "knowledge-flows",
-          "components-flows"
+          "front-align"
         ],
         "router": true
       }
@@ -101,13 +152,15 @@
     {
       "name": "quenching-design",
       "owned": {
-        "commands": [
-          "design"
-        ],
         "packages": [
           "design"
         ],
-        "agents": false
+        "agents": false,
+        "skills": [
+          "quenching-design-align",
+          "quenching-design-genre-new",
+          "quenching-design-status"
+        ]
       },
       "generatedSupport": {
         "packages": [
@@ -133,13 +186,15 @@
     {
       "name": "quenching-ops",
       "owned": {
-        "commands": [
-          "ops"
-        ],
         "packages": [
           "ops"
         ],
-        "agents": false
+        "agents": false,
+        "skills": [
+          "quenching-ops-align",
+          "quenching-ops-entrypoint-new",
+          "quenching-ops-status"
+        ]
       },
       "generatedSupport": {
         "packages": [
@@ -165,13 +220,15 @@
     {
       "name": "quenching-proof",
       "owned": {
-        "commands": [
-          "proof"
-        ],
         "packages": [
           "proof"
         ],
-        "agents": false
+        "agents": false,
+        "skills": [
+          "quenching-proof-align",
+          "quenching-proof-layer-new",
+          "quenching-proof-status"
+        ]
       },
       "generatedSupport": {
         "packages": [
@@ -199,13 +256,14 @@
     {
       "name": "quenching-toolchain",
       "owned": {
-        "commands": [
-          "toolchain"
-        ],
         "packages": [
           "toolchain"
         ],
-        "agents": false
+        "agents": false,
+        "skills": [
+          "quenching-toolchain-align",
+          "quenching-toolchain-status"
+        ]
       },
       "generatedSupport": {
         "packages": [
@@ -232,13 +290,14 @@
     {
       "name": "quenching-delivery",
       "owned": {
-        "commands": [
-          "delivery"
-        ],
         "packages": [
           "delivery"
         ],
-        "agents": false
+        "agents": false,
+        "skills": [
+          "quenching-delivery-align",
+          "quenching-delivery-status"
+        ]
       },
       "generatedSupport": {
         "packages": [
@@ -263,46 +322,17 @@
       }
     },
     {
-      "name": "quenching-security",
-      "owned": {
-        "commands": [
-          "security"
-        ],
-        "packages": [
-          "security"
-        ],
-        "agents": false
-      },
-      "generatedSupport": {
-        "packages": [
-          "common",
-          "controls"
-        ],
-        "references": [
-          "align",
-          "components-command-new",
-          "git",
-          "knowledge-add",
-          "knowledge-align",
-          "knowledge-import",
-          "specs-align",
-          "specs-conclude",
-          "specs-develop",
-          "specs-execute"
-        ],
-        "router": true
-      }
-    },
-    {
       "name": "quenching-opensource",
       "owned": {
-        "commands": [
-          "opensource"
-        ],
         "packages": [
           "opensource"
         ],
-        "agents": false
+        "agents": false,
+        "skills": [
+          "quenching-opensource-align",
+          "quenching-opensource-readiness",
+          "quenching-opensource-status"
+        ]
       },
       "generatedSupport": {
         "packages": [
@@ -324,6 +354,37 @@
           "opensource-controls",
           "opensource-align",
           "opensource-readiness"
+        ],
+        "router": true
+      }
+    },
+    {
+      "name": "quenching-security",
+      "owned": {
+        "packages": [
+          "security"
+        ],
+        "agents": false,
+        "skills": [
+          "quenching-security-status"
+        ]
+      },
+      "generatedSupport": {
+        "packages": [
+          "common",
+          "controls"
+        ],
+        "references": [
+          "align",
+          "components-command-new",
+          "git",
+          "knowledge-add",
+          "knowledge-align",
+          "knowledge-import",
+          "specs-align",
+          "specs-conclude",
+          "specs-develop",
+          "specs-execute"
         ],
         "router": true
       }
