@@ -140,10 +140,12 @@ class ComponentsStatusFamilies(unittest.TestCase):
             with contextlib.redirect_stdout(output):
                 components_cli.main(["--root", tmp, "status", "--json"])
         payload = json.loads(output.getvalue())
-        self.assertEqual(payload["families"]["bundle"],
-                         {"skills": 3, "invocable": 3, "candidate": True})
-        self.assertEqual(payload["families"]["bi"],
-                         {"skills": 3, "invocable": 2, "candidate": False})
+        bundle, bi = payload["families"]["bundle"], payload["families"]["bi"]
+        self.assertEqual((3, 3, True, "new", "bundle"),
+                         (bundle["skills"], bundle["invocable"], bundle["candidate"],
+                          bundle["kind"], bundle["router"]))
+        self.assertEqual((3, 2, True), (bi["skills"], bi["invocable"], bi["candidate"]))
+        self.assertEqual(["a", "b", "c"], bundle["flows"])
         self.assertEqual(payload["state"], "conformant")
         self.assertTrue(payload["ok"])
 
