@@ -7,8 +7,9 @@ boundary: a command declared read-only does not contain an assistant that has a 
 quenching reaches a repository only through `cq deploy`, which installs the surface into that
 repository for Claude Code, Codex and OpenCode
 ([ADR 0017](docs/decisions/0017-install-only-by-deploy.md)). The single editable source lives in
-[`quenching/`](quenching/). Two plugins that install into no repository sit beside
-it: the Claude Code band [`integrations/claude-hud/`](integrations/claude-hud/) (the only
+[`quenching/`](quenching/) ([source-layout](docs/standards/architecture/source-layout.md); the
+deploy contract is [deploy-mode](docs/standards/architecture/deploy-mode.md)). Two satellites that
+install into no repository sit beside it: the Claude Code band [`integrations/claude-hud/`](integrations/claude-hud/) (the only
 entry of this repository's Claude marketplace) and the OpenCode Desktop Specs panel
 [`integrations/opencode-vitrine/`](integrations/opencode-vitrine/).
 
