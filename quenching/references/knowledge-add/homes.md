@@ -3,11 +3,11 @@
 **This file is the single owner of the insert procedure** — stamp (§The frontmatter stamp) →
 index (§Updating `index.md`) → glossary (§Enriching the glossary) → self-check (§Self-check).
 The full home boundaries and tree live in
-`.agents/quenching/assets/references/knowledge-align/taxonomy.md`.
+`.agents/quenching/references/knowledge-align/taxonomy.md`.
 
 ## Contents
 
-`.agents/quenching/bin/cq components read .agents/quenching/assets/references/knowledge-add/homes.md` returns the heading
+`.agents/quenching/bin/cq components read .agents/quenching/references/knowledge-add/homes.md` returns the heading
 index; `--sections <name>` addresses one.
 
 ## Classification — one question decides the home
@@ -50,9 +50,9 @@ Ask **"what IS this, relative to us?"**:
   the change is active, and its durable outcome lands as a `standard` at archive time.
 - **spec vs vision:** a **parked unit of work** is a **spec** and does **not** belong in this
   bundle at all — it lives at `specs/plans/`, outside it, so route the capture to
-  `/quenching-specs-create`. A **settled direction** with no deadline is a `vision` and stays here. The
+  `/quenching-specs create`. A **settled direction** with no deadline is a `vision` and stays here. The
   full `specs/` ↔ `knowledge/` boundary is owned once by
-  [`specs-develop/spec-driven.md`](.agents/quenching/assets/references/specs-develop/spec-driven.md)
+  [`specs-develop/spec-driven.md`](.agents/quenching/references/specs-develop/spec-driven.md)
   §Boundary.
 - **standards vs catalog:** the *rule* for modeling data (grain/keys) is a `standard`
   (`data-modeling/`); the *actual tables* are `catalog/`.
@@ -85,9 +85,9 @@ source: <origin/author>
 maintainer: <owner>
 ```
 
-**Not in the mold, deliberately:** `source_uri:` — written by `/quenching-knowledge-import` alone, never invented
+**Not in the mold, deliberately:** `source_uri:` — written by `/quenching-knowledge import` alone, never invented
 by the commands citing this block, and simply absent on a doc with no external origin. Its
-contract is [sources.md](.agents/quenching/assets/references/knowledge-import/sources.md)
+contract is [sources.md](.agents/quenching/references/knowledge-import/sources.md)
 §Attribution.
 
 ## Updating `index.md` (the listing)
@@ -100,7 +100,7 @@ contract is [sources.md](.agents/quenching/assets/references/knowledge-import/so
   listing) and link it from the parent — a folder of concepts without one is a `dir-no-index`
   gap, and an unlisted doc is an `index-orphan`.
 - **Never** add frontmatter to an `index.md` (the root's `okf_version` is the only exception,
-  and `/quenching-knowledge-align` owns it).
+  and `/quenching-knowledge align` owns it).
 - **`standards/index.md`** has a DERIVED zone: rebuild only what is between
   `<!-- BEGIN GENERATED -->` / `<!-- END GENERATED -->` by scanning `standards/**/*.md`
   (`title`/`description`/`generated.at` or legacy `timestamp`/`type`), grouped by subject
@@ -133,7 +133,7 @@ term that belongs in the glossary** and, if so, enrich it:
 
 <!-- rules -->
 
-Apply `.agents/quenching/assets/references/knowledge-align/conformance.md`: the new concept has parseable frontmatter +
+Apply `.agents/quenching/references/knowledge-align/conformance.md`: the new concept has parseable frontmatter +
 a non-empty `type`; every `index.md` you touched is still frontmatter-free; the new doc's folder
 has an `index.md` that **links** it (no `dir-no-index`, no `index-orphan`, no
 `index-broken-link`).

@@ -7,7 +7,7 @@ loaded by the time this contract is read; it is deliberately **not** repeated he
 linked from here.
 
 The sweep-side peer of this contract — how one align behaves standalone — is its sibling
-[`sweep-doctrine.md`](.agents/quenching/assets/references/align/sweep-doctrine.md), which
+[`sweep-doctrine.md`](.agents/quenching/references/align/sweep-doctrine.md), which
 states the cycle-authorized case in full rather than deferring back here.
 
 <!-- rationale -->
@@ -25,10 +25,10 @@ saying the same thing, not by pointing at each other.
 An align asks for ONE human confirmation, at run start, that authorizes the entire run — up to
 the pass cap or convergence. Every command
 an align invokes as a stage carries **one** exception sentence pointing here and never restates
-it: the `knowledge/` stages (`/quenching-knowledge-import-memory`, `/quenching-components-harness-align`, `/quenching-knowledge-glossary-backfill`), the
-`specs/` stages (`/quenching-specs-conclude`, `/quenching-specs-triage`), the five front aligns when `/align`
+it: the `knowledge/` stages (`/quenching-knowledge import-memory`, `/quenching-components harness-align`, `/quenching-knowledge glossary-backfill`), the
+`specs/` stages (`/quenching-specs conclude`, `/quenching-specs triage`), the five front aligns when `/align`
 invokes them, and — under the low mode only —
-`/quenching-git-pr-create`, the one stage this contract's grantor is a conductor rather than an
+`/quenching-git pr-create`, the one stage this contract's grantor is a conductor rather than an
 align.
 
 **What the authorization covers** — every routine write a stage performs: frontmatter stamps,
@@ -64,7 +64,7 @@ gate.
 table before writing; the user watching the session sees everything and types nothing.
 
 **A command with no plan gate has nothing to dispense, and the sentence is not sent to it.**
-`/quenching-specs-develop` is the standing case: it narrates its consolidated plan and writes,
+`/quenching-specs develop` is the standing case: it narrates its consolidated plan and writes,
 waiting on nobody, whether an align invoked it or a human typed it. Declaring the exception at it
 would announce the waiver of a gate that does not exist — noise in the invocation, and a reader
 left believing the command has a stop it never had. This is not an exemption from the contract:
@@ -93,7 +93,7 @@ spec whose tasks are all checked may still be waiting on a deploy.
 The low mode differs from the contract in exactly one point, and pays for it outside the
 session. The contract requires a code-coupled item and an irreversible cycle action to stop the
 run, always; under the cycle's low mode
-([spec-driven.md](.agents/quenching/assets/references/specs-develop/spec-driven.md) §The scale binds the two
+([spec-driven.md](.agents/quenching/references/specs-develop/spec-driven.md) §The scale binds the two
 names — *low mode* here is that file's `low`) neither stops — the building half runs in one session on its own
 authorization and ends opening a pull request, so the human review the gates would have hosted
 moves to the PR instead: opened against the repository's primary branch, where the merge waits
@@ -103,7 +103,7 @@ is what the level re-evaluation exists to bound, as a run that outgrows the low 
 back into a run with gates before it reaches the PR.
 
 The route already exists — nothing new is built for it. `conclude` reviews, distils, archives and
-proves the pre-merge gate green, then stops, naming `/quenching-git-pr-create` as the human's own
+proves the pre-merge gate green, then stops, naming `/quenching-git pr-create` as the human's own
 next command; under this gear alone, the workflow invokes that command itself, under
 the same authorization, rather than leaving the name for a human to act on. `git:pr:create` stamps
 the write-many `pr` record the moment the PR is opened — the fact the base branch's history cannot
@@ -165,30 +165,30 @@ that keeps producing follow-on work, worth reporting.
 
 <!-- rules -->
 A command that acts on **ONE item a human states** is never a loop stage, because a conducted pass
-has **no fresh human input**: `/quenching-knowledge-add`, `/quenching-knowledge-learn`, `/quenching-knowledge-define`,
-`/quenching-knowledge-import`, `/quenching-components-command-new`, `/quenching-specs-create`, `/quenching-specs-develop`,
-`/quenching-specs-execute`, `/quenching-specs-conclude`.
+has **no fresh human input**: `/quenching-knowledge add`, `/quenching-knowledge learn`, `/quenching-knowledge define`,
+`/quenching-knowledge import`, `/quenching-components command-new`, `/quenching-specs create`, `/quenching-specs develop`,
+`/quenching-specs execute`, `/quenching-specs conclude`.
 
-`/quenching-specs-status` is not a stage either: it writes nothing, so it can
+`/quenching-specs status` is not a stage either: it writes nothing, so it can
 never close a finding.
 
 They enter a run only **indirectly**, as the tools a sweep stage delegates to
-(`/quenching-components-harness-align` MOVEs a durable fact via `/quenching-knowledge-add`). When the assessment finds a gap
+(`/quenching-components harness-align` MOVEs a durable fact via `/quenching-knowledge add`). When the assessment finds a gap
 only a per-item command could fill, the align **names the gap and the command that would close
 it** in its report — the user then invokes that command with the missing input, and the next run
 picks the work up. This is the plugin's **anti-fabrication boundary**: an align closes only what a
 sweep can close deterministically from what the repo already contains.
 
 <!-- rationale -->
-`/quenching-specs-conclude` is the sharpest case: it is not merely un-stageable for lack of input,
+`/quenching-specs conclude` is the sharpest case: it is not merely un-stageable for lack of input,
 it is un-stageable **in principle**. Abandonment is a judgment no repo state implies — a change
 untouched for a year may be waiting on a vendor. An align that inferred it from staleness
 would be fabricating a decision, which is exactly what this boundary exists to prevent.
 
-**`/quenching-specs-status`.** Its place is **before** a conducted run, as the preview of what the OK
+**`/quenching-specs status`.** Its place is **before** a conducted run, as the preview of what the OK
 would authorize — the assessment an align performs internally, made visible on its own.
 
 The same split runs through the whole plugin: the whole-bundle glossary sweep
-(`/quenching-knowledge-glossary-backfill`) IS a stage, the single-term capture (`/quenching-knowledge-define`) is not;
-the whole-front ranking sweep (`/quenching-specs-triage`) IS a stage, the single-spec capture
-(`/quenching-specs-create`) is not.
+(`/quenching-knowledge glossary-backfill`) IS a stage, the single-term capture (`/quenching-knowledge define`) is not;
+the whole-front ranking sweep (`/quenching-specs triage`) IS a stage, the single-spec capture
+(`/quenching-specs create`) is not.

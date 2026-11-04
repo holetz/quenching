@@ -2,8 +2,8 @@
 
 <!-- rules -->
 
-The plugin has **two** aligns: `/quenching-knowledge-align` (`knowledge/`) and
-`/quenching-components-align` (`.agents/` and the Claude bridge) — plus `/align`, which conducts both. The specs front is
+The plugin has **two** aligns: `/quenching-knowledge align` (`knowledge/`) and
+`/quenching-components align` (`.agents/` and the Claude bridge) — plus `/align`, which conducts both. The specs front is
 provider-owned and has no align.
 Everything about **how** the operation behaves is identical across them and lives here; only a
 front's own deltas (what it inventories, which findings it produces, what its verifier is) stay in
@@ -12,7 +12,7 @@ its command body and its own `references/`.
 This file is **self-contained**: an align reads it and needs nothing else. Its conductor-side
 peer — authorization across a whole run, convergence to a fixpoint, the anti-spin guards — is its
 sibling
-[`convergence.md`](.agents/quenching/assets/references/align/convergence.md), and the one
+[`convergence.md`](.agents/quenching/references/align/convergence.md), and the one
 place the two touch (a cycle-authorized run) is stated here in full at §3 rather than deferred.
 
 <!-- rationale -->
@@ -162,8 +162,8 @@ resolves nowhere.
 | Plugin-prefixed slash | `/<plugin>:<front>:<verb>` | a human types it wherever the plugin is installed **as a plugin** |
 | Bare slash | `/<name>` | **only** where that skill lives in the target repo's own `.agents/skills/<name>/SKILL.md` (on a legacy layout not yet migrated, `/<front>:<verb>` where `.agents/skills/` holds the file) |
 
-So an align invokes its stage as `quenching-knowledge-import-memory` and tells a human to run
-`/quenching-knowledge-import-memory`. An align that cannot see the target's `.agents/skills/` (or legacy
+So an align invokes its stage as `quenching-knowledge import-memory` and tells a human to run
+`/quenching-knowledge import-memory`. An align that cannot see the target's `.agents/skills/` (or legacy
 `.agents/skills/`) has no grounds to emit the bare form.
 
 **Write the shapes, not instances, whenever the sentence is *about* the forms.**
@@ -185,8 +185,8 @@ it deliberately did not close, each with the command that closes it.
 
 | Front | Align | Verifier |
 | --- | --- | --- |
-| `knowledge/` | `/quenching-knowledge-align` | `.agents/quenching/bin/cq knowledge validate <knowledge-dir>` — exit 0 **and** no `dir-no-index` / `index-broken-link` / `index-orphan` (they are WARN; read the findings) |
-| `.agents/` + bridge | `/quenching-components-align` | `.agents/quenching/bin/cq components lint` + `.agents/quenching/bin/cq components doctor`, `.agents/quenching/bin/cq components migrate --target .` reporting `conformant: true` (empty plan) and `.agents/quenching/bin/cq components bridge --target . --check` exit 0, plus `.agents/quenching/bin/cq components registry reindex` reporting `changed: false` for the zone |
+| `knowledge/` | `/quenching-knowledge align` | `.agents/quenching/bin/cq knowledge validate <knowledge-dir>` — exit 0 **and** no `dir-no-index` / `index-broken-link` / `index-orphan` (they are WARN; read the findings) |
+| `.agents/` + bridge | `/quenching-components align` | `.agents/quenching/bin/cq components lint` + `.agents/quenching/bin/cq components doctor`, `.agents/quenching/bin/cq components migrate --target .` reporting `conformant: true` (empty plan) and `.agents/quenching/bin/cq components bridge --target . --check` exit 0, plus `.agents/quenching/bin/cq components registry reindex` reporting `changed: false` for the zone |
 
 All three verifiers read the same contract — `--json` on every subcommand and exit **0** ok · **1**
 findings · **2** refusal — so an align branches on data it did not have to interpret. Warnings are

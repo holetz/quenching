@@ -1,11 +1,11 @@
 # Migration — variant → canonical, with blast-radius safety
 
-In an existing repo with variant names, `/quenching-knowledge-align` **proposes convergence to the canonical
+In an existing repo with variant names, `/quenching-knowledge align` **proposes convergence to the canonical
 name**.
 
 ## Contents
 
-`.agents/quenching/bin/cq components read assets/references/knowledge-align/migration.md` returns the heading index;
+`.agents/quenching/bin/cq components read .agents/quenching/references/knowledge-align/migration.md` returns the heading index;
 `--sections` addresses one.
 
 ## 1. Map variant → canonical
@@ -44,7 +44,7 @@ is written in is owned by the bundle's `docs/standards/agents/communication.md`.
 ### 1b. File-slug translation + prefix-cluster folding
 
 Convergence reaches the **filename** too — a non-English concept-doc slug and a prefix-cluster
-are both smells `/quenching-knowledge-align` resolves as renames (each swept for its blast radius, ⇒ §3–4).
+are both smells `/quenching-knowledge align` resolves as renames (each swept for its blast radius, ⇒ §3–4).
 
 - **Translate non-English slugs** on the technical homes (`standards/`, `vision/`,
   `documentation/`, `external/` non-identifier) to canonical English describing the concept:
@@ -147,7 +147,7 @@ OKF v0.13 moved parked work out of the `docs/` bundle, and it now lands in the `
 
 The move is two hops, and this sweep performs only the first:
 
-1. **`/quenching-knowledge-align` moves the files.** Every task doc under the bundle's
+1. **`/quenching-knowledge align` moves the files.** Every task doc under the bundle's
    `backlog/*.md` moves into the **legacy `backlog/` folder inside `specs/`**,
    applying the `idea`→`task` restamp (§1d) on the way. That folder is a staging area for hop 2,
    not a destination. This is its **own** confirmation, blast-radius swept (§3–4): the move rewrites
@@ -155,10 +155,10 @@ The move is two hops, and this sweep performs only the first:
 2. **`.agents/quenching/bin/cq specs migrate` converts them.** That legacy folder is exactly the tool's input: each task
    file becomes a **captured-stage spec** in `specs/plans/`, with its `priority` / `tags` /
    `complexity` preserved as a line in `## Problem`. Name that second hop in the report and leave
-   it to `/quenching-specs-create` — **never hand-convert a task into a spec here**, which would be
+   it to `/quenching-specs create` — **never hand-convert a task into a spec here**, which would be
    this sweep authoring content.
 
-After both hops, `/quenching-specs-create` and `/quenching-specs-triage` own that work.
+After both hops, `/quenching-specs create` and `/quenching-specs triage` own that work.
 
 ### 1f. Retired home — `decisions/` → `standards/`
 
@@ -243,7 +243,7 @@ A variant name enters the plan's migration list with its proposed canonical dest
 ## 3. Measure and SURFACE the blast radius BEFORE executing
 
 The procedure is the shared one in
-[`align/sweep-doctrine.md`](.agents/quenching/assets/references/align/sweep-doctrine.md)
+[`align/sweep-doctrine.md`](.agents/quenching/references/align/sweep-doctrine.md)
 §The blast-radius sweep. Never run a scan per rename.
 
 **This front's delta:** a variant *path* is often load-bearing beyond `docs/` in a way a bare
@@ -262,8 +262,8 @@ A migration whose blast radius reaches **product code**, or is otherwise irrever
 **distinct confirmation item** with its scope shown — never folded into a bulk "align all"
 opt-in. A rename that resolves to a code constant is a **refactor of the target's product**, not
 a docs move: alert the user, never perform it silently. **Exception — cycle-authorized runs:** a run invoked as a stage of
-`/quenching-knowledge-align`'s cycle (or of `/align`) under the cycle-authorization contract
-([convergence.md](.agents/quenching/assets/references/align/convergence.md) §The cycle-authorization contract) replaces only the batch gate
+`/quenching-knowledge align`'s cycle (or of `/align`) under the cycle-authorization contract
+([convergence.md](.agents/quenching/references/align/convergence.md) §The cycle-authorization contract) replaces only the batch gate
 with narration — a code-coupled rename still confirms on its own, always.
 
 ## 5. Frontmatter migration (field renames)
@@ -275,7 +275,7 @@ While aligning legacy docs, migrate field names to OKF (MERGE, never clobber):
   `timestamp` (a v0.2 consumer reads it as the fallback). Never invent a `by`.
 - a legacy `timestamp` stays readable; upgrade it to `generated.at` on the next substantive
   edit, when the actor is evidenced.
-- add non-empty `type:` (from the home's vocabulary in [taxonomy.md](.agents/quenching/assets/references/knowledge-align/taxonomy.md))
+- add non-empty `type:` (from the home's vocabulary in [taxonomy.md](.agents/quenching/references/knowledge-align/taxonomy.md))
 - rename the retired type `type: guide` → `type: documentation` (§1c.)
 - rename the retired type `type: idea` → `type: task` (§1d; the files then leave the bundle per §1e)
 - rename the retired type `type: decision` → `type: standard` (§1f; stamp `authority: background`, or `current` if implemented)

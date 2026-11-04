@@ -2,7 +2,7 @@
 
 The **per-doc** procedure (classify → stamp → index → log → glossary → self-check) is **not**
 here — it lives once in
-[`docs-add/homes.md`](.agents/quenching/assets/references/knowledge-add/homes.md), which this
+[`docs-add/homes.md`](.agents/quenching/references/knowledge-add/homes.md), which this
 skill cites.
 
 ## What a source can be
@@ -66,7 +66,7 @@ questions** — one written to be searched, one written to be read:
 - **`source:`** — unchanged, and still prose: which spec, person, or body of work originated the
   rule.
 
-**Only `/quenching-knowledge-import` writes `source_uri:`.** No other command mints it, infers it, or backfills
+**Only `/quenching-knowledge import` writes `source_uri:`.** No other command mints it, infers it, or backfills
 it, and a doc with no external origin simply has no such key.
 
 The body keeps its attribution line when the source is a stable URL, and that line carries **the
@@ -92,7 +92,7 @@ must not overload one key with two meanings.
 
 Inventing a `source_uri:` where there is no external origin fabricates a provenance that never
 existed. The shared frontmatter mold in
-[`docs-add/homes.md`](.agents/quenching/assets/references/knowledge-add/homes.md) deliberately
+[`docs-add/homes.md`](.agents/quenching/references/knowledge-add/homes.md) deliberately
 does not carry it, so the commands citing that mold are never invited to fill it in.
 
 A URI with no age ages badly: a reader deciding whether a dead link matters needs to know how old
@@ -148,5 +148,5 @@ See the model policy in [README.md §model-policy](.agents/quenching/README.md#m
 <!-- rationale -->
 
 A cheap model is safe here because enrich deletes nothing, so a misclassification only misfiles a
-doc (a correctable move), unlike `/quenching-knowledge-import-memory` where a misclassification deletes
+doc (a correctable move), unlike `/quenching-knowledge import-memory` where a misclassification deletes
 a memory.

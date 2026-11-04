@@ -13,7 +13,7 @@ steps **cite this file** rather than restating the rules. Severities: **ERROR** 
 | --- | --- | --- |
 | `index.md` | reserved listing | `check_index` |
 | `log.md` | reserved, **retired** | nothing — recognized, never judged (see below) |
-| `AGENTS.md` (legacy `AGENTS.md`) | harness pointer | **exempt** (skipped; honesty checked by `/quenching-components-harness-align`, not the validator) |
+| `AGENTS.md` (legacy `AGENTS.md`) | harness pointer | **exempt** (skipped; honesty checked by `/quenching-components harness-align`, not the validator) |
 | `README.md` | migration nudge | WARN "convert to index.md" |
 | any other `*.md` | concept doc | `check_concept` |
 
@@ -88,9 +88,9 @@ gate. `RetiredLogChecker` in `tests/test_knowledge.py` holds the line with a fix
 
 <!-- rules -->
 
-A target that has not run `/quenching-knowledge-align` since a plugin release renamed one of its own
+A target that has not run `/quenching-knowledge align` since a plugin release renamed one of its own
 declared roots (the bundle root moved twice: `.docs/` → `.knowledge/` → `docs/` — see
-[migration.md](.agents/quenching/assets/references/knowledge-align/migration.md) §1g). Each
+[migration.md](.agents/quenching/references/knowledge-align/migration.md) §1g). Each
 finding looks at exactly one site and is **idempotent** — migrating that one site clears it, whether
 or not the others have migrated yet. **ERROR**, decided in `renomear-docs-para-knowledge` `##
 Open Decisions`: nothing enforces it as a block — the plugin's self-installed enforcement hook, the
@@ -205,7 +205,7 @@ Config block `okfValidate` in `hooks-config.json` (`warnAsError`, plus `ignoreGl
 tunes the CLI's own behaviour — treating a warning as a failure, and pruning regenerable/vendored
 paths from the scan.
 
-## Verify gate (Step 5 of /quenching-knowledge-align)
+## Verify gate (Step 5 of /quenching-knowledge align)
 
 <!-- rules -->
 

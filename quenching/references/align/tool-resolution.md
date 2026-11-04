@@ -31,7 +31,7 @@ generated grant is `Bash(.agents/quenching/bin/cq:*)`. This is a **generated** c
 `.agents/.quenching-deploy.json`, never a hand-installed third rung: upgrade it with
 `cq deploy --write` from a new release, and never copy a `cq` into `.claude/hooks/` or edit the
 user's `PATH`. The reference `.agents/quenching/bin/cq components read` remains the same; the local payload carries the
-references under `.agents/quenching/assets/references/`.
+shared references under `.agents/quenching/references/`.
 
 ### Modules: one `cq`, the fronts of the deployed modules
 

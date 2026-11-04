@@ -1,8 +1,8 @@
 # Canonical taxonomy — the tree, homes, `type` vocabulary, boundaries
 
-The single source of the tree `/quenching-knowledge-align` installs and `/quenching-knowledge-add` files into. Every repo
+The single source of the tree `/quenching-knowledge align` installs and `/quenching-knowledge add` files into. Every repo
 **converges to this same tree of identical names**; a variant name is a non-convergence smell
-(→ [migration.md](.agents/quenching/assets/references/knowledge-align/migration.md)).
+(→ [migration.md](.agents/quenching/references/knowledge-align/migration.md)).
 
 ## Contents
 
@@ -71,7 +71,7 @@ computation is generic knowledge with an executable contract, not a home of its 
   Internal boundary: `code/` governs **symbols**, `naming/` governs **data**.
 - **`vision/`** — direction segmented by area (`<area>.md`, `type: vision`), **no deadline**.
   A raw unit of work toward it → a spec in `specs/plans/` (**outside** this OKF bundle —
-  see `/quenching-specs-create`); what became reality → `standards/`.
+  see `/quenching-specs create`); what became reality → `standards/`.
 - **The reader-facing quadrants** — `tutorials/` (`type: tutorial`), `how-to/` (`type: how-to`,
   absorbs the former `guides/`), `explanation/` (`type: explanation`) and `project/`
   (`type: project`, this repository's own manual — commands, automation, layout). They are homes
@@ -90,7 +90,7 @@ computation is generic knowledge with an executable contract, not a home of its 
   `standards/` and leaves. Ships **one fixed file** — the bundle-root `glossary.md`, the repo's
   A–Z term lookup (a flat, alphabetically sorted bullet list in the same syntax every `index.md`
   uses — the one deliberate exception to "one concept per file", and the one place an
-  unlinked entry is a valid permanent state). `/quenching-knowledge-align` installs the seed.
+  unlinked entry is a valid permanent state). `/quenching-knowledge align` installs the seed.
 - **`external/`** — external facts we consume (`type: external`, usually
   `authority: background`); a regulation's PDF lives here via a **sidecar**, while *our*
   implementation of it lives in `standards/`.

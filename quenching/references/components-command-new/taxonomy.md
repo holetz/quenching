@@ -30,7 +30,7 @@ fits; it is never forced.**
 - **Category, no single real folder tied to the skill** — e.g. `git` for a `commit`
   skill: a subject, not a repo folder. The skill nests flat under the category. **This
   example stays valid even in a repo that also has this plugin installed** — a target's own
-  bare-cited `git`-category `commit` command and this plugin's `/quenching-git-commit` coexist
+  bare-cited `git`-category `commit` command and this plugin's `/quenching-git commit` coexist
   rather than collide, because the citation forms already separate them
   (`naming/command-surface.md` §Three citation forms): the example is about the target's own
   category, and this plugin's commands are never bare-cited in a repo that did not vendor them.
@@ -91,7 +91,7 @@ top level is repo-wide by declaration.
 
 **A skill's folder holds only that skill**: `SKILL.md` and the files it alone reads. Shared
 procedure lives in `.agents/references/<name>/` and eval cases in `.agents/evals/<name>/`, cited
-by path. A legacy `.agents/skills/` surface is `/quenching-components-align`'s to migrate
+by path. A legacy `.agents/skills/` surface is `/quenching-components align`'s to migrate
 (`.agents/quenching/bin/cq components migrate`); the mint never writes into it.
 
 **Accepted variation (documented, never generated):** directory-scoped surfaces
@@ -131,8 +131,8 @@ This file owns, because no tool decides it:
   and only that: the zone lists the repo's **own** surface. Commands contributed by
   installed plugins (`/quenching-specs-*`, marketplace plugins) stay out of it and may be pointed
   at from the curated prose.
-- **Who may run the regeneration.** `/quenching-components-command-new` (in its OKF tail) and
-  `/quenching-components-align` (in its verify step). Neither writes between the markers by
+- **Who may run the regeneration.** `/quenching-components command-new` (in its OKF tail) and
+  `/quenching-components align` (in its verify step). Neither writes between the markers by
   hand, and neither composes the table itself. Both end their run on a second
   `registry reindex` reporting `changed: false`.
 

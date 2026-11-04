@@ -56,8 +56,8 @@ silently swallowed.
 
 <!-- rationale -->
 
-`/quenching-components-command-new` applies this doctrine to every command it mints or edits;
-`/quenching-components-align` cites it when judging conformance gaps. Adapted from mattpocock/skills'
+`/quenching-components command-new` applies this doctrine to every command it mints or edits;
+`/quenching-components align` cites it when judging conformance gaps. Adapted from mattpocock/skills'
 `writing-great-skills`, folded into this plugin's own constraints (the description caps, the
 bundled-reference pattern, the plan → OK gate).
 
@@ -124,9 +124,9 @@ with this" is a claim about the whole surface and only a reader holding all of i
 
 **A quoted trigger is never cut for length.** Shortening a description by deleting a trigger is how
 a command quietly stops firing for the user who worded it differently, and only a measured miss
-retires one — `/quenching-components-command-eval`'s, and that measured retirement is the one edit
+retires one — `/quenching-components command-eval`'s, and that measured retirement is the one edit
 measurement authorizes. A trigger that looks like sediment is **reported** with the
-`/quenching-components-command-eval <command>` that decides it.
+`/quenching-components command-eval <command>` that decides it.
 
 ## The loading hierarchy
 
@@ -138,9 +138,9 @@ level that still reaches it in time:
 2. **In-body reference** — sections after the workflow (`## Special cases`,
    `## Invariants`) consulted when a step points at them.
 3. **A bundled reference file** — doctrine, tables, and formats loaded only when a step reads
-   them. It lives OUTSIDE `commands/`, because that tree is the only one the host registers
-   and a reference parked in it becomes a phantom command; cite it by absolute path
-   (`.agents/quenching/assets/references/<name>/<file>.md` in a plugin). Shared procedure
+   them. It lives beside the skill, in `references/` inside the skill's own folder, and is
+   cited by absolute path (`.agents/skills/<name>/references/<file>.md`); one read by two
+   skills or more lives in the shared `.agents/quenching/references/<name>/<file>.md`. Shared procedure
    lives **once**, in its owning file; every other command cites the owner and never restates
    it (restatement is how copies drift).
 
