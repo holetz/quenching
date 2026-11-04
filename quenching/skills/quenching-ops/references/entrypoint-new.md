@@ -1,21 +1,17 @@
 ---
-description: >-
-  Mint ONE Python ops entry point, register it in the router and regenerate the registry. Use for "mint an ops entry point", "add a command to the ops router". Not for: repairs → /quenching-ops-align.
-disable-model-invocation: true
-argument-hint: <entry-point-name-or-purpose>
 allowed-tools: Bash(cq:*), Bash(cq.cmd:*), Read, Grep, Glob, Bash(python3:*), AskUserQuestion, Write, Edit
 ---
 
-# /quenching-ops-entrypoint-new — mint one operations entry point
+# /quenching-ops entrypoint-new — mint one operations entry point
 
 **Input**: `$ARGUMENTS` (one proposed operation name or a short description of the entry point).
 
 This command creates one Python entry point in the target repository's declared operations root.
 The seven-rule contract lives in
-[ops-align/entrypoint-contract.md](.agents/quenching/references/ops-align/entrypoint-contract.md);
+[ops-align/entrypoint-contract.md](.agents/skills/quenching-ops/references/ops-align/entrypoint-contract.md);
 the target tree, lifecycle and router boundary live in
-[ops-align/target-structure.md](.agents/quenching/references/ops-align/target-structure.md)
-and [ops-align/lifecycle.md](.agents/quenching/references/ops-align/lifecycle.md).
+[ops-align/target-structure.md](.agents/skills/quenching-ops/references/ops-align/target-structure.md)
+and [ops-align/lifecycle.md](.agents/skills/quenching-ops/references/ops-align/lifecycle.md).
 The mold is `.agents/quenching/assets/templates/ops/entrypoint.py.tmpl`; router registrations
 come from `.agents/quenching/assets/templates/ops/router-snippets.md`.
 
@@ -130,7 +126,7 @@ selected write/non-write shape has a captured help, preview or JSON proof.
 
 Report the invocation, created path, purpose, domain, lifecycle, router, registry path, write
 policy, verification payloads and any target-owned residue. State explicitly when the command
-refused before writing or when a judgement finding remains for `/quenching-ops-align`.
+refused before writing or when a judgement finding remains for `/quenching-ops align`.
 
 **Done when:** one new entry point and its proof are fully accounted for, with no claim beyond the
 captured verifier output.

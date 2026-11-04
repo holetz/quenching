@@ -1,12 +1,8 @@
 ---
-description: >-
-  Report workflow permissions, secret and ignore coverage, advisory dependency config and access ownership, read-only. Use for "security status", "security audit". Not for: changing policy.
-disable-model-invocation: true
-argument-hint: [optional-target-root]
 allowed-tools: Bash(cq:*), Bash(cq.cmd:*), Read, Grep, Glob, Bash(python3:*)
 ---
 
-# /quenching-security-status — read the security pillar
+# /quenching-security status — read the security pillar
 
 **Input**: `$ARGUMENTS` (an optional target repository root; omit to use the current repository).
 

@@ -3,7 +3,7 @@
 <!-- rules -->
 
 This file owns the `pr-*` codes of `.agents/quenching/bin/cq opensource readiness`, the evidence each class accepts and
-the shape of the report `/quenching-opensource-readiness` builds from it. Readiness is a
+the shape of the report `/quenching-opensource readiness` builds from it. Readiness is a
 separate assessment from the baseline: it never converts into an OSPS level, and the catalog in
 [`opensource-controls/catalog.md`](../opensource-controls/catalog.md) never reads it.
 

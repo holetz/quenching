@@ -1,22 +1,18 @@
 ---
-description: >-
-  Assess whether a repository is ready to become public: secrets in tree and history, internal identifiers, attribution, license and consent evidence, read-only. Use for "can we open this repo", "pre-publication readiness", "scan before making it public". Not for: writing artifacts → /quenching-opensource-align; the baseline level → /quenching-opensource-status.
-disable-model-invocation: true
-argument-hint: [optional-target-root] [--evidence <path>]
 allowed-tools: Bash(cq:*), Bash(cq.cmd:*), Read, Grep, Glob, Bash(python3:*)
 ---
 
-# /quenching-opensource-readiness — assess a repository before it goes public
+# /quenching-opensource readiness — assess a repository before it goes public
 
 **Input**: `$ARGUMENTS` (an optional target repository root, and an optional `--evidence <path>`
 to the owner's reviewed license and consent evidence; omit the root to use the current repository).
 
 This command is the read-only pre-publication assessment of the open source front. It runs
-**before** `/quenching-opensource-align` when the owner wants to open a private
+**before** `/quenching-opensource align` when the owner wants to open a private
 repository. It reports blockers, warnings and the coverage it could not measure; it never
 publishes, never writes an artifact, never rewrites history and never changes visibility. The
 evidence contract, the finding classes and the disposition of each are in
-[opensource-readiness/report.md](.agents/quenching/references/opensource-readiness/report.md).
+[opensource-readiness/report.md](.agents/skills/quenching-opensource/references/opensource-readiness/report.md).
 
 Resolve `cq` per
 [tool-resolution.md](.agents/quenching/references/align/tool-resolution.md)
@@ -45,7 +41,7 @@ location back is how a secret reaches the transcript.
 ### 2. Report blockers, warnings and coverage separately
 
 Report three tables, in this order, per
-[opensource-readiness/report.md](.agents/quenching/references/opensource-readiness/report.md)
+[opensource-readiness/report.md](.agents/skills/quenching-opensource/references/opensource-readiness/report.md)
 §The report:
 
 | Table | Rows |
@@ -64,7 +60,7 @@ install the owner may choose, never installed here.
 
 State that this command wrote nothing and that remediation and publication are the owner's: the
 `remediation` of each row is a route for the owner, never an action this command takes. After the
-owner clears the blockers, name `/quenching-opensource-align` for the community
+owner clears the blockers, name `/quenching-opensource align` for the community
 artifacts and this command again to reassess.
 
 **Done when:** the report states its read-only boundary, the observed exit code and that no

@@ -1,19 +1,15 @@
 ---
-description: >-
-  Report the toolchain front: manifests, locks, language pins, tool config and findings, read-only. Use for "toolchain status", "check the toolchain surface". Not for: converging → /quenching-toolchain-align.
-disable-model-invocation: true
-argument-hint: [optional-target-root]
 allowed-tools: Bash(cq:*), Bash(cq.cmd:*), Read, Grep, Glob, Bash(python3:*)
 ---
 
-# /quenching-toolchain-status — read the toolchain front
+# /quenching-toolchain status — read the toolchain front
 
 **Input**: `$ARGUMENTS` (an optional target repository root; omit to use the current repository).
 
 This command is the read-only view of the toolchain front. The common front contract is in
 [front-align/mold.md](.agents/quenching/references/front-align/mold.md), and the
 finding-to-owner map is in
-[toolchain-align/bands.md](.agents/quenching/references/toolchain-align/bands.md).
+[toolchain-align/bands.md](.agents/skills/quenching-toolchain/references/toolchain-align/bands.md).
 It reports capability and evidence without repairing a manifest, lock, pin, tool configuration or
 target policy.
 
@@ -66,7 +62,7 @@ disposition, and absent policy remains unmeasured.
 ### 3. Hand back control
 
 State that this command wrote nothing. For mechanical or bounded structural residue, name
-`/quenching-toolchain-align` as the closing command. For a target-owned build decision, retain the
+`/quenching-toolchain align` as the closing command. For a target-owned build decision, retain the
 evidence and name the owner action from `toolchain-align/bands.md`; status never runs it.
 
 **Done when:** the report states its read-only boundary and observed exit code.

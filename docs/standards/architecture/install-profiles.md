@@ -29,14 +29,14 @@ uses the same entry names, while `/align` can conduct only the eight local front
 | --- | --- | --- | --- |
 | `knowledge` | `/quenching-knowledge-*` | front | `quenching-align` |
 | `specs` | `/quenching-specs-*` | provider-owned axis | `quenching-specs` |
-| `design` | `/quenching-design-*` | front | `quenching-design` |
+| `design` | `/quenching-design` | front | `quenching-design` |
 | `components` | `/quenching-components-*` | front | `quenching-align` |
-| `ops` | `/quenching-ops-*` | front | `quenching-ops` |
-| `proof` | `/quenching-proof-*` | front | `quenching-proof` |
-| `toolchain` | `/quenching-toolchain-*` | front | `quenching-toolchain` |
-| `delivery` | `/quenching-delivery-*` | front | `quenching-delivery` |
-| `opensource` | `/quenching-opensource-*` | front | `quenching-opensource` |
-| `security` | `/quenching-security-*` | pillar | `quenching-security` |
+| `ops` | `/quenching-ops` | front | `quenching-ops` |
+| `proof` | `/quenching-proof` | front | `quenching-proof` |
+| `toolchain` | `/quenching-toolchain` | front | `quenching-toolchain` |
+| `delivery` | `/quenching-delivery` | front | `quenching-delivery` |
+| `opensource` | `/quenching-opensource` | front | `quenching-opensource` |
+| `security` | `/quenching-security` | pillar | `quenching-security` |
 | `git` | `/quenching-git-*` | pillar | `quenching-specs` |
 
 `specs` has no local tree, and `security` and `git` have no conductor row. Their commands remain

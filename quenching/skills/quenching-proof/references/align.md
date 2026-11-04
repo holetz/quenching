@@ -1,12 +1,8 @@
 ---
-description: >-
-  Converge a repository's proof surface from its test gate with bounded structural repairs. Use for "align the proof front", "fix proof drift". Not for: read-only → /quenching-proof-status.
-disable-model-invocation: true
-argument-hint: [optional-target-root]
 allowed-tools: Bash(cq:*), Bash(cq.cmd:*), Read, Grep, Glob, Bash(python3:*), AskUserQuestion, Write, Edit
 ---
 
-# /quenching-proof-align — converge the verification surface
+# /quenching-proof align — converge the verification surface
 
 **Input**: `$ARGUMENTS` (an optional target repository root; omit to use the current repository).
 
@@ -14,10 +10,10 @@ This command owns one convergence pass over a target's declared proof surface. I
 static test inventory and gate, applies only mechanical and bounded structural repairs, and leaves
 layer taxonomy, measured-surface scope, CI installation, and operations coverage with the target
 owner. The disposition rules live in
-[proof-align/bands.md](.agents/quenching/references/proof-align/bands.md); the gate and
+[proof-align/bands.md](.agents/skills/quenching-proof/references/proof-align/bands.md); the gate and
 layer contracts live in
-[proof-align/gate-contract.md](.agents/quenching/references/proof-align/gate-contract.md)
-and [proof-align/layer-contract.md](.agents/quenching/references/proof-align/layer-contract.md).
+[proof-align/gate-contract.md](.agents/skills/quenching-proof/references/proof-align/gate-contract.md)
+and [proof-align/layer-contract.md](.agents/skills/quenching-proof/references/proof-align/layer-contract.md).
 The common front contract lives in
 [front-align/mold.md](.agents/quenching/references/front-align/mold.md); these references
 keep the layer, fixture, measurement and gate evidence separate from the shared mold.

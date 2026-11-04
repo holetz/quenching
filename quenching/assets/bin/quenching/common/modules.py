@@ -114,7 +114,7 @@ def distribution_findings(root: Path, manifest: dict) -> list[str]:
 
 def skill_heads(name: str) -> list[str]:
     """The `quenching:<head>` heads one skill answers to: its name without the `quenching-` prefix, and,
-    for a front skill (`quenching-design-align`), the front itself (`design`)."""
+    for a front router (`quenching-design`), the front itself (`design`)."""
     head = name.removeprefix("quenching-")
     return [head] if "-" not in head else [head, head.split("-", 1)[0]]
 

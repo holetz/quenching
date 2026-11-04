@@ -1,12 +1,8 @@
 ---
-description: >-
-  Converge a repository's delivery surface from its workflow tree, preserving provider and permission policy. Use for "align the delivery front", "fix delivery drift". Not for: read-only → /quenching-delivery-status.
-disable-model-invocation: true
-argument-hint: [optional-target-root]
 allowed-tools: Bash(cq:*), Bash(cq.cmd:*), Read, Grep, Glob, Bash(python3:*), AskUserQuestion, Write, Edit
 ---
 
-# /quenching-delivery-align — converge the delivery front
+# /quenching-delivery align — converge the delivery front
 
 **Input**: `$ARGUMENTS` (an optional target repository root; omit to use the current repository).
 
@@ -14,7 +10,7 @@ This command owns the delivery front's bounded convergence pass. It probes the w
 classifies static pipeline findings, applies only authorized mechanical or structural shape
 repairs, and leaves provider, environment, promotion, publication and permission choices with the
 target owner. The finding bands live in
-[delivery-align/bands.md](.agents/quenching/references/delivery-align/bands.md); the common
+[delivery-align/bands.md](.agents/skills/quenching-delivery/references/delivery-align/bands.md); the common
 front floor lives in [front-align/mold.md](.agents/quenching/references/front-align/mold.md).
 
 Set `TARGET_ROOT` to the supplied argument, or to `.` when omitted, and pass that same root to

@@ -26,7 +26,7 @@ The design front adopts the common minimum from
 `/.design/tokens.json`; its read model is `cq design status`; its verifier is `cq design doctor`,
 with `cq design build --check` proving generated identity. The align and status bodies cite the
 executor projection at `quenching/references/front-align/mold.md` and the design
-disposition map at `quenching/references/design-align/bands.md`.
+disposition map at `quenching/skills/quenching-design/references/design-align/bands.md`.
 
 Design's permitted deltas are the DTCG source/projection graph, explicit source arbitration with
 an optional Impeccable proposal, web versus non-web drift, asset and font evidence, contrast policy,

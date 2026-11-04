@@ -1,12 +1,8 @@
 ---
-description: >-
-  Write the open source artifacts (license, contributing, conduct, governance, templates) from pinned molds. Use for "align the opensource front", "prepare this repo to be open sourced". Not for: read-only → /quenching-opensource-status.
-disable-model-invocation: true
-argument-hint: [optional-target-root]
 allowed-tools: Bash(cq:*), Bash(cq.cmd:*), Read, Grep, Glob, Bash(python3:*), AskUserQuestion, Write, Edit
 ---
 
-# /quenching-opensource-align — converge the open source front
+# /quenching-opensource align — converge the open source front
 
 **Input**: `$ARGUMENTS` (an optional target repository root; omit to use the current repository).
 
@@ -16,9 +12,9 @@ text is byte-identical to the published one, and leaves every choice — license
 contact, funding — with the target owner. The common front floor is in
 [front-align/mold.md](.agents/quenching/references/front-align/mold.md), the catalog
 contract is in
-[opensource-controls/catalog.md](.agents/quenching/references/opensource-controls/catalog.md),
+[opensource-controls/catalog.md](.agents/skills/quenching-opensource/references/opensource-controls/catalog.md),
 and the finding bands and closure boundary are in
-[opensource-align/bands.md](.agents/quenching/references/opensource-align/bands.md).
+[opensource-align/bands.md](.agents/skills/quenching-opensource/references/opensource-align/bands.md).
 
 Set `TARGET_ROOT` to the supplied argument, or to `.` when the argument is omitted. Resolve `cq`
 per [tool-resolution.md](.agents/quenching/references/align/tool-resolution.md)

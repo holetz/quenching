@@ -20,11 +20,13 @@ How the `quenching` plugin names its commands.
 ## The folder IS the identity
 
 **One folder per skill.** `skills/<name>/SKILL.md` carries both the description that routes to it
-and the body that runs; the folder name is the skill name, never derived from a path. A vertical with
-many flows (`specs`, `git`, `knowledge`, `components`) is **one router skill** whose flows live in its
-own `references/<flow>.md`, so a flow has no skill of its own and no shortcut. The other fronts keep
-one skill per command, named `quenching-<front>-<verb>` (`quenching-design-genre-new` for the one
-nested verb).
+and the body that runs; the folder name is the skill name, never derived from a path. A front with
+more than one flow is **one router skill** whose flows live in its own `references/<flow>.md`, so a
+flow has no skill of its own and no shortcut. That holds for the core fronts (`specs`, `git`,
+`knowledge`, `components`) and for the non-core ones (`design`, `ops`, `proof`, `toolchain`,
+`delivery`, `security`, `opensource`): a non-core front flow is cited `/quenching-<front> <flow>`,
+for example `/quenching-design align` or `/quenching-proof layer-new`, and never as one hyphenated
+token. A skill with no flows (`quenching-align`, `quenching-handoff`) is cited by its folder name.
 
 ### Two citation forms, and the condition on each
 
@@ -32,8 +34,8 @@ The axis is **where the skill comes from**, never who is reading:
 
 | Form | Example | Correct when |
 | --- | --- | --- |
-| Router and flow | `/quenching-specs develop` | the skill is a router of this plugin: the router id, a space, the flow named in its table |
-| Skill name | `/quenching-handoff`, `/quenching-design-align` | the skill has no flows: its own folder name |
+| Router and flow | `/quenching-specs develop`, `/quenching-design align` | the skill is a router of this plugin, core or not: the router id, a space, the flow named in its table |
+| Skill name | `/quenching-handoff`, `/quenching-align` | the skill has no flows: its own folder name |
 | Target skill | `/commands-tighten` | the skill lives in the target repo's own `.agents/skills/commands-tighten/` (§A target's skill name is one segment) |
 
 The `Skill` tool takes the router name and the flow as its argument:
@@ -74,13 +76,13 @@ exactly one module:
 | `quenching-git` | `/quenching-git` | — |
 | `quenching-knowledge` | `/quenching-knowledge` | — |
 | `quenching-components` | `/quenching-components` | — |
-| `quenching-design` | `/quenching-design-*` | — |
-| `quenching-ops` | `/quenching-ops-*` | — |
-| `quenching-proof` | `/quenching-proof-*` | — |
-| `quenching-toolchain` | `/quenching-toolchain-*` | — |
-| `quenching-delivery` | `/quenching-delivery-*` | — |
-| `quenching-security` | `/quenching-security-*` | — |
-| `quenching-opensource` | `/quenching-opensource-*` | — |
+| `quenching-design` | `/quenching-design` | — |
+| `quenching-ops` | `/quenching-ops` | — |
+| `quenching-proof` | `/quenching-proof` | — |
+| `quenching-toolchain` | `/quenching-toolchain` | — |
+| `quenching-delivery` | `/quenching-delivery` | — |
+| `quenching-security` | `/quenching-security` | — |
+| `quenching-opensource` | `/quenching-opensource` | — |
 
 `quenching-specs` also owns the root `align`, because it is the mandatory module and `align` only
 conducts the modules that are installed.

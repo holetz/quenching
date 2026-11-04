@@ -82,6 +82,11 @@ Two exclusions, and only two:
 bodies, the root `AGENTS.md`, configuration descriptions and command bodies. The conversation with
 the owner stays in the `Language:` tag above, which is `pt-BR` here.
 
+**One exception: the trigger phrases of a router's description.** A router's `description` quotes
+the phrases a user says, in pt-BR and in English, one of each per flow, because the description is
+what takes a request in either language to the flow. The rest of the artifact stays English; only the
+quoted triggers are pt-BR (`skills.md` §The description of a router).
+
 **A target repository decides its own.** It declares its artifact language in one of two places:
 
 - a **standard** under its own `/docs/standards/` that names the language its artifacts use; or

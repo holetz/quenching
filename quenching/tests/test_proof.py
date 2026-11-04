@@ -21,7 +21,7 @@ from quenching.proof.readme import render_readme_document, write_readme
 HERE = Path(__file__).resolve().parent
 GOLDEN = HERE / "fixtures" / "golden"
 PLUGIN_ROOT = HERE.parent
-LAYER_COMMAND = PLUGIN_ROOT / "skills" / "quenching-proof-layer-new" / "SKILL.md"
+LAYER_COMMAND = PLUGIN_ROOT / "skills" / "quenching-proof" / "references" / "layer-new.md"
 HOOK_TEMPLATE = PLUGIN_ROOT / "assets" / "templates" / "proof" / "collection-hook.py.tmpl"
 FIXTURE_TEMPLATE = PLUGIN_ROOT / "assets" / "templates" / "proof" / "layer-fixtures.py.tmpl"
 

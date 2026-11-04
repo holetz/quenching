@@ -1,19 +1,15 @@
 ---
-description: >-
-  Report the operations front: root, router, entry points, lifecycle and findings, read-only. Use for "ops status", "report operations drift". Not for: converging → /quenching-ops-align.
-disable-model-invocation: true
-argument-hint: [optional-target-root]
 allowed-tools: Bash(cq:*), Bash(cq.cmd:*), Read, Grep, Glob, Bash(python3:*)
 ---
 
-# /quenching-ops-status — read the operations front
+# /quenching-ops status — read the operations front
 
 **Input**: `$ARGUMENTS` (an optional target repository root; omit to use the current repository).
 
 The common front contract is in
 [front-align/mold.md](.agents/quenching/references/front-align/mold.md), and the ops
 disposition map is in
-[ops-align/bands.md](.agents/quenching/references/ops-align/bands.md). This read-only
+[ops-align/bands.md](.agents/skills/quenching-ops/references/ops-align/bands.md). This read-only
 view preserves the router, registry and entry-point deltas owned by the ops front.
 
 This command is the read-only view of the operations front. It reports the configuration, router,
@@ -22,9 +18,9 @@ freshness. It never repairs a finding, writes a registry, or turns an absent opt
 a healthy one.
 
 The payload and target tree are defined by
-[ops-align/target-structure.md](.agents/quenching/references/ops-align/target-structure.md),
-[ops-align/lifecycle.md](.agents/quenching/references/ops-align/lifecycle.md), and
-[ops-align/bands.md](.agents/quenching/references/ops-align/bands.md). Resolve `cq` per
+[ops-align/target-structure.md](.agents/skills/quenching-ops/references/ops-align/target-structure.md),
+[ops-align/lifecycle.md](.agents/skills/quenching-ops/references/ops-align/lifecycle.md), and
+[ops-align/bands.md](.agents/skills/quenching-ops/references/ops-align/bands.md). Resolve `cq` per
 [tool-resolution.md](.agents/quenching/references/align/tool-resolution.md)
 §Resolving the tool. Use the resolved path literally and branch on exit code and JSON:
 `0` is a clean report, `1` carries findings, and `2` is a refusal.
@@ -70,7 +66,7 @@ and every finding keeps its code and disposition.
 ### 3. Hand back control
 
 State that this command wrote nothing. For an actionable mechanical or structural finding, name
-`/quenching-ops-align` as the command that can converge it. For a judgement finding, retain its
+`/quenching-ops align` as the command that can converge it. For a judgement finding, retain its
 evidence and name the target owner's closing command from `bands.md`; status never runs it.
 
 **Done when:** the report ends with the appropriate owner for each finding and no repair has been

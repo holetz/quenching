@@ -1,21 +1,17 @@
 ---
-description: >-
-  Report the open source front: every owner's catalog answers and the baseline level, read-only. Use for "opensource status", "which baseline level do we reach". Not for: writing artifacts → /quenching-opensource-align.
-disable-model-invocation: true
-argument-hint: [optional-target-root]
 allowed-tools: Bash(cq:*), Bash(cq.cmd:*), Read, Grep, Glob, Bash(python3:*)
 ---
 
-# /quenching-opensource-status — read the open source front
+# /quenching-opensource status — read the open source front
 
 **Input**: `$ARGUMENTS` (an optional target repository root; omit to use the current repository).
 
 This command is the read-only view of the open source front. The common front contract is in
 [front-align/mold.md](.agents/quenching/references/front-align/mold.md), the catalog
 contract is in
-[opensource-controls/catalog.md](.agents/quenching/references/opensource-controls/catalog.md),
+[opensource-controls/catalog.md](.agents/skills/quenching-opensource/references/opensource-controls/catalog.md),
 and the finding-to-owner map is in
-[opensource-align/bands.md](.agents/quenching/references/opensource-align/bands.md).
+[opensource-align/bands.md](.agents/skills/quenching-opensource/references/opensource-align/bands.md).
 It aggregates what each owning front already answers; it never probes another owner's control and
 never writes an artifact.
 
@@ -65,7 +61,7 @@ disposition, and an unmeasured requirement remains unmeasured.
 ### 3. Hand back control
 
 State that this command wrote nothing. For an `os-*` finding or advisory, name
-`/quenching-opensource-align` as the closing command. For another owner's residue, name
+`/quenching-opensource align` as the closing command. For another owner's residue, name
 the `command` its owner block returned; status never runs it.
 
 **Done when:** the report states its read-only boundary and observed exit code.

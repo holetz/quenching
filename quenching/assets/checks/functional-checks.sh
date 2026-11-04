@@ -481,8 +481,8 @@ copy it from the body you were given." \
     inconc "$command read nothing under the .claude/skills bridge" "missing tool activity or verifiable skill inventory"
   fi
 }
-front_probe ops /quenching-ops-status
-front_probe proof /quenching-proof-status
+front_probe ops /quenching-ops status
+front_probe proof /quenching-proof status
 fi
 
 # --------------------------------------------------------------------------- #

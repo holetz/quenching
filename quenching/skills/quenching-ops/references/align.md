@@ -1,21 +1,17 @@
 ---
-description: >-
-  Converge a repository's operations surface from its declared root and router under one plan. Use for "align the ops front", "fix operational drift". Not for: read-only → /quenching-ops-status.
-disable-model-invocation: true
-argument-hint: [optional-target-root]
 allowed-tools: Bash(cq:*), Bash(cq.cmd:*), Read, Grep, Glob, Bash(python3:*), AskUserQuestion, Write, Edit
 ---
 
-# /quenching-ops-align — converge the operations surface
+# /quenching-ops align — converge the operations surface
 
 **Input**: `$ARGUMENTS` (an optional target repository root; omit to use the current repository).
 
 This command owns the operations front's convergence pass. It reads the target's declared
 operations root and canonical router, applies only deterministic mechanical and bounded structural
 repairs, and leaves production-risk decisions with the target owner. The disposition rules live in
-[ops-align/bands.md](.agents/quenching/references/ops-align/bands.md); the target tree and
-router contract live in [ops-align/target-structure.md](.agents/quenching/references/ops-align/target-structure.md)
-and [ops-align/entrypoint-contract.md](.agents/quenching/references/ops-align/entrypoint-contract.md).
+[ops-align/bands.md](.agents/skills/quenching-ops/references/ops-align/bands.md); the target tree and
+router contract live in [ops-align/target-structure.md](.agents/skills/quenching-ops/references/ops-align/target-structure.md)
+and [ops-align/entrypoint-contract.md](.agents/skills/quenching-ops/references/ops-align/entrypoint-contract.md).
 The common front contract lives in
 [front-align/mold.md](.agents/quenching/references/front-align/mold.md); these references
 keep the router, registry and entry-point-specific evidence separate from the shared mold.
