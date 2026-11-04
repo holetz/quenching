@@ -37,7 +37,7 @@ Every generated tree is the trap: it is **regenerated wholesale**, so editing it
 change that survives until the next sync and then vanishes without a diff to explain it. That holds
 for this repository's own deployed surface. The source is
 `quenching/` and the trees that install into no repository sit under `integrations/`
-([plugin-layout.md](../standards/architecture/plugin-layout.md) §One tree per harness).
+([source-layout.md](../standards/architecture/source-layout.md) §One source and two satellites).
 `integrations/claude-hud/` and `integrations/opencode-vitrine/` are the hand-written trees
 under a harness: edit the vitrine's `src/` and rebuild `dist/`, never a generated copy. The Claude
 module plugins, the specs reader, the Codex plugin and the OpenCode user-level distribution were

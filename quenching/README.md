@@ -113,7 +113,7 @@ the explicit entry point.
 
 | Command | Does |
 | --- | --- |
-| `/quenching-knowledge` | The single entry point of the knowledge flows: picks one of the thirteen flows (add, align, define, learn, import, import-memory, glossary-backfill, status, documentation build, plan, produce, review, write) by the flow you name and loads that flow's reference; each typed shortcut stays. |
+| `/quenching-knowledge` | The single entry point of the knowledge flows: picks one of the thirteen flows (add, align, define, learn, import, import-memory, glossary-backfill, status, documentation build, plan, produce, review, write) by the flow you name and loads that flow's reference; no alias entry stands for a flow. |
 | `/quenching-knowledge align` | Forces `/docs/` into the canonical OKF bundle and pulls in the content sitting out-of-band — probe first, then ONE confirmed plan, looped to a fixpoint. |
 | `/quenching-knowledge status` | The front's only **read-only** view: where the bundle stands, what is conformant, what drifted. Writes nothing. |
 | `/quenching-knowledge add` | Inserts ONE concept doc — right home, right type, honest stamp. |
@@ -145,7 +145,7 @@ motion, shadows, breakpoints, and snippets remain in the source and sidecar.
 
 | Command | Does |
 | --- | --- |
-| `/quenching-components` | The single entry point of the components flows: picks `command-new`, `agent-new`, `hook-new`, `align`, `status` or `harness-align` by the flow you name and loads that flow's reference; each typed shortcut stays. |
+| `/quenching-components` | The single entry point of the components flows: picks `command-new`, `agent-new`, `hook-new`, `align`, `status` or `harness-align` by the flow you name and loads that flow's reference; no alias entry stands for a flow. |
 | `/quenching-components align` | Converges the whole `.claude/` surface onto one file per entry point, then audits every body and rewrites every description against the writing doctrine. |
 | `/quenching-components status` | Reports the command count, fronts and finding codes for the target's automation surface without writing. |
 | `/quenching-components command-new` | Mints or edits ONE command — the structural half, including its `description`. |
@@ -209,7 +209,7 @@ motion, shadows, breakpoints, and snippets remain in the source and sidecar.
 
 | Command | Does |
 | --- | --- |
-| `/quenching-git` | The single entry point of the git flows: picks `branch`, `commit`, `merge`, `sync`, `pr-create`, `pr-review` or `pr-status` by the flow you name and loads that flow's reference; each typed shortcut stays. |
+| `/quenching-git` | The single entry point of the git flows: picks `branch`, `commit`, `merge`, `sync`, `pr-create`, `pr-review` or `pr-status` by the flow you name and loads that flow's reference; no alias entry stands for a flow. |
 | `/quenching-git branch` | Takes isolation for a build: a worktree by default and unasked, a plain branch only when the human asks, stating the cost and stamping the `branch:` record. |
 | `/quenching-git commit` | Commits what is already staged, under the target's own convention when one is declared. Never `git add -A`. |
 | `/quenching-git commit-incremental` | Turns the current worktree's pending changes into cohesive commits with explicit paths and safe stop conditions. |
@@ -313,7 +313,7 @@ With `QUENCHING_SPECS_SYNC=1` and the `azure-boards` backend, every read is answ
 
 | Command | Role |
 | --- | --- |
-| `/quenching-specs` | The single entry point of the specs flows: picks `create`, `develop`, `execute`, `conclude`, `triage`, `status` or `orchestrate` by the flow you name or the spec's stage, and loads that flow's reference. The seven typed commands stay as thin shortcuts. |
+| `/quenching-specs` | The single entry point of the specs flows: picks `create`, `develop`, `execute`, `conclude`, `triage`, `status` or `orchestrate` by the flow you name or the spec's stage, and loads that flow's reference. No alias entry stands for a flow. |
 | `/quenching-specs status` | The front's only **read-only** view: specs by derived stage with task progress, the frontmatter records as the history they narrate, the verifier results, and provider configuration findings. |
 | `/quenching-specs create` | ONE spec in `plans/`, ONE call, ONE closing screen — effort proportional to input, never an interrogation. A sentence becomes `## Problem` and `summary:`; a Claude Code plan file becomes every section it actually supports, mapped and never invented. Subject, type, tags and `complexity` are resolved and written with the capture, then shown — corrected or not — on the one screen at the end, which also offers to hand straight into `/quenching-specs develop` — whether that pass asks anything is the `complexity` the same screen shows. |
 | `/quenching-specs develop` | Two operations in ONE pass, both derived and neither offered as a choice: **compose** takes the spec from wherever its derived stage leaves it to a closed ten-section ready set, and **refine** argues with the composed spec and may overturn anything in it, the proposal included. Discovery resolution opens the pass, the approval close ends it — recommending approve, refine, or refine with the premortem against the spec's own signals. Questions grouped by dependency, each with an inline recommendation; one edit per pass, records `refined:`. Never edits code. |
@@ -637,16 +637,17 @@ Deploy writes `AGENTS.md` and `.agents/quenching.json` only when absent, plus th
 `.claude/skills/` bridge and, per selected harness, the Claude and OpenCode subagents. It records
 what it owns in `.agents/.quenching-deploy.json`. `CLAUDE.md` is not created. Deploy installs the
 surface only: the target's `/quenching-knowledge align` installs `/docs/` and converges the fronts.
-The full contract is [deploy-mode.md](../docs/standards/architecture/deploy-mode.md).
+The full contract, including the surface translation, is [deploy-mode.md](../docs/standards/architecture/deploy-mode.md).
 
-In a deployed target every command is `/quenching-<front>-<verb>` — this manual's
-`/quenching-specs create` is `/quenching-specs create` there. A route into a module that was
+A deployed target runs the same ids this manual writes: `/quenching-<vertical> <flow>`, for
+example `/quenching-specs create`, with the source written in that dialect
+([source-layout.md](../docs/standards/architecture/source-layout.md)). A route into a module that was
 not deployed is reported `not-installed: <module>`, and `cq <front>` for it exits 2 naming the
 module.
 
 Local development of this repository uses the same path: it runs its own deployed surface, and
 `python3 quenching/assets/bin/cq deploy --target . --write` refreshes it after a change to
-a command body, a reference or the payload.
+a skill body, a reference or the payload.
 
 ### Migrating from the retired plugins
 
@@ -660,7 +661,7 @@ the deployed one for the same command names. Migrate a target once:
 2. Run `cq deploy --target <repo> --write` as above.
 3. Rename every typed or cited command in the target's own files — `.agents/skills/**`,
    `AGENTS.md` (legacy `CLAUDE.md`), hooks and scripts — from `/quenching-<module>:<front>:<verb>`
-   to `/quenching-<front>-<verb>`.
+   to `/quenching-<vertical> <flow>`.
 
 Nothing in the target's `/docs/`, `.agents/quenching.json` (or legacy `.claude/quenching.json`) or
 spec store changes. A project that only read another project's specs through the retired reader

@@ -78,6 +78,6 @@ memory.
 - [../automation/skills.md](../automation/skills.md) governs the other side of the same
   scale: why a reference lives outside the preamble in the first place, and the ceiling a `§`-
   address avoids blowing.
-- [plugin-layout.md](plugin-layout.md) establishes that `skills/**` is the only registered tree
-  and `assets/` holds what is cited by absolute path — this rule is about the **when** inside the
+- [source-layout.md](source-layout.md) establishes that `skills/<name>/SKILL.md` is the only entry point
+  and that a reference is cited by absolute path — this rule is about the **when** inside the
   body, not about where the reference lives.
