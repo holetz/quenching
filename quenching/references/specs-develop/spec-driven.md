@@ -5,7 +5,7 @@ canonical sections, gates, derived stages, the executor contract and the boundar
 bundle. The `.agents/quenching/bin/cq specs` tool surface and the report shape live in focused references, and every
 `/quenching-specs-*` command cites the smallest owner instead of loading this file whole. The OKF
 bridge (what durable knowledge crosses from a spec into `knowledge/` and how) lives with the close-out command
-([specs-conclude/distill.md](.agents/quenching/assets/references/specs-conclude/distill.md)).
+([specs-conclude/distill.md](.agents/quenching/references/specs-conclude/distill.md)).
 
 **A spec is a document on the `quenching` branch** (the git store), with an optional thin tracker
 card (GitHub issue or Azure Boards work item) as its human-facing projection. The document carries
@@ -45,7 +45,7 @@ Autonomy is never inferred, and it covers only what the human declared: widening
 
 **Building is the same on every path:** every stage runs in one session and crosses section boundaries without pausing. The loop stops only for a question that requires a human answer or for an actual blocker. Depth selects the definition mode, never the execution mode.
 
-At the end of an unattended build, the close-out command carries the PR handoff by `Skill` after its green gate: `Skill("quenching-git-git", "pr-create <id>")`. The PR command keeps its own confirmation, push and provider record. Other builds retain `conclude`'s named handoff for the human.
+At the end of an unattended build, the close-out command carries the PR handoff by `Skill` after its green gate: `Skill("quenching-git", "pr-create <id>")`. The PR command keeps its own confirmation, push and provider record. Other builds retain `conclude`'s named handoff for the human.
 
 **Defining is never isolated in a sub-agent while it may ask.** Isolation means only the summary returns, which is incompatible with stopping to ask. The simple path could be isolated and is not: it is one pass landing one edit, so the returned summary would be as large as the work.
 
@@ -184,11 +184,11 @@ the body prose is written in is owned by the bundle's `docs/standards/agents/com
 
 **Every section declares its moment, and that is load-bearing.** `## Proposal` / `## Out of Scope`
 / `## Design` / `## Impact` / `## Handoff` / `## Tasks` are the `build` set — exactly what
-`/quenching-specs-execute` step 4 sends an executor (`.agents/quenching/bin/cq specs section <id> --moment build`).
+`/quenching-specs execute` step 4 sends an executor (`.agents/quenching/bin/cq specs section <id> --moment build`).
 `## Problem` / `## Alternatives Considered` / `## Open Decisions` / `## Risks` are
 `decision` — the human's, weighing whether to build at all. `## Validation` / `## Outcome` are
-`close` — `/quenching-specs-conclude`'s. `## Discoveries` carries no moment: captured
-indiscriminately while building, it is resolved later by `/quenching-specs-develop`'s triage sweep, on its own
+`close` — `/quenching-specs conclude`'s. `## Discoveries` carries no moment: captured
+indiscriminately while building, it is resolved later by `/quenching-specs develop`'s triage sweep, on its own
 schedule.
 
 - **`## Validation`** is the fallback for a task with no `verify:` line.
@@ -216,7 +216,7 @@ omission; it is a *not-yet*.
 
 **`ready` is a derived stage, not a folder, and it refuses nothing.** Filling those ten sections is
 what makes a spec ready; no file moves, so there is nothing to refuse. It is a **floor** that
-`/quenching-specs-execute` reports against — and the tool simply has no task to hand out until the ten are
+`/quenching-specs execute` reports against — and the tool simply has no task to hand out until the ten are
 filled, which is where the old promote's teeth went. The OK to build is a separate fact,
 `approved:`, asked for inline rather than encoded in a folder — or, on the simple path alone,
 stamped by the session itself once the trust criterion (§The scale) closes — or `by: orchestrator-forced` when the human declared autonomy.
@@ -306,7 +306,7 @@ A bullet may carry a `§`address beside its path —
 `docs/standards/automation/skills.md §The verifier` — naming exactly which sections of that
 standard the task must honor. `parse_impact_standards()` already tolerates it: the regex matches
 only the `docs/standards/**.md` path and ignores the rest of the line, addressed or not. Without an
-address, `/quenching-specs-execute` step 4 reads the file whole — the address is an
+address, `/quenching-specs execute` step 4 reads the file whole — the address is an
 assertion the spec's own author makes, never an economy the executor infers on its own.
 
 ## `## Tasks` and the `[!]` blocked marker
@@ -323,7 +323,7 @@ than as a trailer inside the commit message, which leaves the target repo's mess
 entirely its own. The task is checked after the local commit because the spec lives outside the code
 branch and its write cannot be part of that commit; the recorded commit facts let a failed remote
 write be retried without rebuilding or amending it
-([execution.md](.agents/quenching/assets/references/specs-execute/execution.md) §The commit).
+([execution.md](.agents/quenching/references/specs-execute/execution.md) §The commit).
 A spec built before this change may carry only `subject:` or only `commit:`; both forms are read and
 neither is backfilled.
 `## Tasks` is the file's churn zone by design — its boxes already flip — so the low-churn doctrine
@@ -372,7 +372,7 @@ a structured result — status, diff summary, `verify:` output, discoveries, han
 
 Discoveries are **captured indiscriminately**; whether one is worth acting on is a later judgment,
 not the executor's. They are born in the origin spec's `## Discoveries` and resolved in place by
-`/quenching-specs-develop`'s discoveries stage — `promoted: <new-slug>`, `folded: <section>`, or
+`/quenching-specs develop`'s discoveries stage — `promoted: <new-slug>`, `folded: <section>`, or
 `dismissed: <reason>` — so provenance is never lost and the human pays the decision cost in batch.
 
 `## Handoff` refresh is **bound to events, not judgment**: the orchestrator rewrites it on four of
@@ -402,9 +402,9 @@ this section.
   it is concluded.
 - `docs/standards/` — **how WE build** (binding contracts: naming, architecture, code);
   `docs/concepts/` — generic understanding. A spec writes its durable rule **directly** into
-  `docs/standards/` (`authority`-graded) **when a task explicitly names it**, and `/quenching-specs-conclude`
+  `docs/standards/` (`authority`-graded) **when a task explicitly names it**, and `/quenching-specs conclude`
   routes what the work merely *revealed*
-  ([distill.md](.agents/quenching/assets/references/specs-conclude/distill.md)) — never by bulk
+  ([distill.md](.agents/quenching/references/specs-conclude/distill.md)) — never by bulk
   copy.
 
 The spec **is** the change: what it proves out lands in `knowledge/` as it is built, honestly graded

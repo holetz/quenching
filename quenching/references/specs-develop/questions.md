@@ -1,6 +1,6 @@
 # Composing and refining — what `develop` asks, and how
 
-The owner of **what** `/quenching-specs-develop` asks and **when it stops**. The command body owns
+The owner of **what** `/quenching-specs develop` asks and **when it stops**. The command body owns
 the loop (resolve → derive the pass → ask → one edit → verify); this file owns the two operations,
 the stages around them and the mechanics they share, and the body never restates it.
 
@@ -131,7 +131,7 @@ each of those buys nothing — every turn re-sends the whole conversation, so a 
 costs the preamble again.
 
 Measured on this repository's own transcripts, question turns are **not** where this command's
-tokens go: real `/quenching-specs-develop` runs made 2–5 `AskUserQuestion` calls, against whole-file
+tokens go: real `/quenching-specs develop` runs made 2–5 `AskUserQuestion` calls, against whole-file
 reference reads worth ~900k token-turns in a single run. Grouping is here because the old rule
 overreached, not because it closes a leak.
 
@@ -208,7 +208,7 @@ classifies each as **resolved by evidence** (the spec, the codebase, the `/docs/
 `## Impact` declares and `/docs/glossary.md` answer it), **dependent on the human** (appetite, a
 policy, a choice of direction no evidence settles) or **very costly to undo** (irreversible, or of
 wide blast radius). `priority.complexity` records the depth the calculation reached
-([spec-driven.md](.agents/quenching/assets/references/specs-develop/spec-driven.md) §The scale);
+([spec-driven.md](.agents/quenching/references/specs-develop/spec-driven.md) §The scale);
 it informs the calculation and never replaces it. Absent reads as `high`.
 
 | Calculation | Track | Who answers | Stamp |
@@ -317,7 +317,7 @@ The questions come from the gap itself, in the spec's own terms:
 - a term the spec uses in a sense the repo's glossary does not.
 
 **And the three questions only this moment can answer** — every one of them is a decision
-`/quenching-specs-execute` is forbidden to make for itself, so a spec that leaves them unasked is
+`/quenching-specs execute` is forbidden to make for itself, so a spec that leaves them unasked is
 built with the cheap options closed:
 
 - **which task groups touch provably disjoint `files:`** → mark them `[P]` now. Execution **never
@@ -574,7 +574,7 @@ question later.
 
 Every stage that reads the codebase or `docs/` to answer its own questions — compose's
 "read it, do not theorize" included, not only what follows below — does so under
-[align/evidence-doctrine.md](.agents/quenching/assets/references/align/evidence-doctrine.md):
+[align/evidence-doctrine.md](.agents/quenching/references/align/evidence-doctrine.md):
 the aggregate a `grep`/`gh`/`cq` call produces, never the raw dump; `.agents/quenching/bin/cq components read <path>
 --sections "§X"` for `docs/standards/` and `knowledge/glossary.md`, the same way this
 plugin's own references already address a section instead of a whole file.
@@ -621,7 +621,7 @@ never answers substituted for them.
 
 Two things that look like this and are not available. **`context: fork` cannot ask a question** —
 `sk-fork-gate` is an error, and a fork beside an `AskUserQuestion` grant is incoherent by
-construction ([capabilities.md](.agents/quenching/assets/references/components-command-new/capabilities.md)
+construction ([capabilities.md](.agents/quenching/references/components-command-new/capabilities.md)
 §`context: fork`); the complex track is nothing but questions. And a sub-agent **does not share
 the session's prompt cache** — it runs on a cold context and pays the full first read of every file
 it touches, so delegation here is never a cache play.

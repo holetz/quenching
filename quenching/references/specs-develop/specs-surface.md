@@ -60,6 +60,6 @@ and HTML comments, with any example inside a comment or written as a `<placehold
 ### Resolving the tool
 
 Owned by
-[align/tool-resolution.md](.agents/quenching/assets/references/align/tool-resolution.md)
+[align/tool-resolution.md](.agents/quenching/references/align/tool-resolution.md)
 §Resolving the tool: bare `.agents/quenching/bin/cq specs`, with `Bash(cq:*)` in the body's `allowed-tools` — **one
 form, no second door**.

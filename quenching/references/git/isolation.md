@@ -3,7 +3,7 @@
 How a checkout gets onto its own branch or worktree before code is written, and what gets recorded
 once it has — the default form, the names, and the two records that survive it: the
 `branch:` frontmatter record and the branch's own description line. Read
-[conventions.md](.agents/quenching/assets/references/git/conventions.md) first: the read-if-present
+[conventions.md](.agents/quenching/references/git/conventions.md) first: the read-if-present
 rule and the two prohibitions bind here too.
 
 ## Contents
@@ -15,7 +15,7 @@ rule and the two prohibitions bind here too.
 <!-- rules -->
 
 Isolation was a command of its own for one release, offered at any stage. It is now a **step inside**
-`/quenching-specs-execute`, taken once, before the first task is written — and taken only when the
+`/quenching-specs execute`, taken once, before the first task is written — and taken only when the
 session is standing on the repository's base branch:
 
 | Where the session stands | What `execute` does |
@@ -46,16 +46,16 @@ onto the base, which is precisely what the isolation is for. The work ref itself
 `work` when one is stamped, else `plan/<id>-<handle>`; a live ref held by another worktree is a **stop**,
 not a cut, because two checkouts building one spec fork it.
 
-`/quenching-specs-create` and `/quenching-specs-develop` take no branch at all — they write into
+`/quenching-specs create` and `/quenching-specs develop` take no branch at all — they write into
 `plans/` and stay wherever they were run. That is a narrowing from the retired command, and the
 trade is deliberate: the isolation costs a worktree, and the stage where it reliably pays is the one
 about to write code.
 
 **Asking "am I isolated?" writes nothing and is answered elsewhere.** `.agents/quenching/bin/cq specs next --front`
 reads the live ref and reports it, and demotes a spec whose branch is checked out somewhere else.
-`/quenching-specs-status` reads the frontmatter records and deliberately never asks git.
+`/quenching-specs status` reads the frontmatter records and deliberately never asks git.
 
-**Merging is not here.** It stays inside `/quenching-specs-conclude`, behind that command's review and
+**Merging is not here.** It stays inside `/quenching-specs conclude`, behind that command's review and
 archive gates — a merge invocable on its own could run against a spec nobody reviewed and nothing
 archived, and would have to duplicate every refusal `conclude` already owns.
 
@@ -89,7 +89,7 @@ the new worktree's path, which `.agents/quenching/bin/cq specs` is never told.
 
 **On stamping `branch:` for a branch this plugin never cut.** A human may have checked one out by
 hand before running `execute`, and a spec built there with nothing stamped leaves
-`/quenching-specs-conclude` unable to say what it merges into.
+`/quenching-specs conclude` unable to say what it merges into.
 
 **On removing the worktree after a merge.** Isolation nobody cleans up accumulates: directories
 beside the repo, each pointing at an already integrated branch, none of them obviously safe to
@@ -110,7 +110,7 @@ back. `.agents/quenching/bin/cq specs next --front` ranks on whether `plan/<id>-
 to the default is what tells that ranking this spec is already under way without a stamped `branch`
 record.
 
-**The name is a default, never a contract.** When `/quenching-specs-execute` starts on a branch that is not
+**The name is a default, never a contract.** When `/quenching-specs execute` starts on a branch that is not
 the repository's base — whatever it is named — that branch is **adopted** as `work` outright: no
 rename, no refusal, and no requirement that it match `plan/<id>-<handle>`.
 
@@ -124,7 +124,7 @@ git worktree add ../<repo>-<handle> -b plan/<id>-<handle>
 
 <!-- rules -->
 
-`/quenching-specs-execute` takes a **worktree**, unconditionally and unasked, whenever the
+`/quenching-specs execute` takes a **worktree**, unconditionally and unasked, whenever the
 build starts from the base. No heuristic sniffs the target for `package.json` or `.venv/`: what the
 report states is the **cost** — a fresh checkout carries only what git tracks, no installed
 dependencies, no `.env`, no venv, no build output — and the `worktreeSetup` command that closes it
@@ -157,7 +157,7 @@ before the setup command runs. A setup script must not re-create, replace or rem
 in `sharedPaths`; the link command owns that path for every checkout.
 
 See
-[plugin-configuration.md](.agents/quenching/assets/references/specs-align/plugin-configuration.md)
+[plugin-configuration.md](.agents/quenching/references/specs-align/plugin-configuration.md)
 §The envelope and recognised namespaces.
 
 Read by `.agents/quenching/bin/cq specs config --json` (exit 0 whether or not anything is declared) and run **once** by
@@ -200,7 +200,7 @@ decided yet, versus a human declined isolation.
 **`work == base` means no isolation was taken, and every consumer must read it that way.** It is
 not a work ref that happens to be alive: the base is always alive, so anything ranking, diffing or
 merging on the mere PRESENCE of the record gets the in-place case backwards. `.agents/quenching/bin/cq specs next` guards
-it explicitly, and `/quenching-specs-conclude` branches on `work != base` rather than on the record
+it explicitly, and `/quenching-specs conclude` branches on `work != base` rather than on the record
 existing — there is no branch diff to review and nothing to merge when the work never left the base.
 
 **For a branch this plugin cuts, `base` is an observed fact** — it was what stood checked out the
@@ -230,7 +230,7 @@ ref — the record only supplies the ref's name when it is not the default.
 
 <!-- rules -->
 
-Beside the `branch:` frontmatter record, `/quenching-specs-execute` also marks the branch itself, in a
+Beside the `branch:` frontmatter record, `/quenching-specs execute` also marks the branch itself, in a
 form that survives outside the spec's own file — a recognizable line in the branch's own
 description:
 
@@ -249,7 +249,7 @@ Any other text already in the description — a line a human wrote by hand — i
 above and below it. A second spec built on the same branch appends its native ID to the same line
 rather than writing a second one, and the line is rewritten on every task commit, which is what keeps it
 current with HEAD without a separate cleanup pass. The read-merge-write, run by
-`/quenching-specs-execute` after every task's commit:
+`/quenching-specs execute` after every task's commit:
 
 ```bash
 .agents/quenching/bin/cq git specs <work> --add <id> --json
@@ -262,7 +262,7 @@ carries no mark, because the base is shared and was never this command's to desc
 The description is tied to the **ref**, not to a worktree's physical directory, so it reads back
 identically whether the isolation taken was **Worktree** or the explicit plain **Branch** override.
 
-`/quenching-specs-conclude`, without a `--spec` argument, reads this same line to resolve which spec(s)
+`/quenching-specs conclude`, without a `--spec` argument, reads this same line to resolve which spec(s)
 built the branch it is closing — the record git alone cannot reproduce once the branch is merged and
 deleted.
 
@@ -272,5 +272,5 @@ The branch description was chosen over a dedicated `git config` key, a branch-na
 versioned file in the branch: it needs no new git plumbing, ties to the ref rather than a directory
 or a name a human might rename, and never leaks into the branch's own tree. Its cost is symmetric
 with its simplicity — the description is local to the `.git` that wrote it and does not survive a
-clone or fetch, which `/quenching-specs-conclude`'s own fallback exists to cover when it does not
+clone or fetch, which `/quenching-specs conclude`'s own fallback exists to cover when it does not
 resolve.

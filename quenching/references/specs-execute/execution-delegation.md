@@ -20,9 +20,9 @@ of — costs **one line and no authoring**:
 .agents/quenching/bin/cq specs discover "<id>" "<what was found, one line>"
 ```
 
-It is captured **indiscriminately**. The lines are resolved by `/quenching-specs-develop`'s
+It is captured **indiscriminately**. The lines are resolved by `/quenching-specs develop`'s
 discoveries stage, and the doc an emergent finding deserves is written by
-`/quenching-specs-conclude` at distillation.
+`/quenching-specs conclude` at distillation.
 
 A task that writes into `knowledge/` is not delegated — §Delegating an executor.
 
@@ -42,7 +42,7 @@ executable `verify:` whose tests sit outside the task's `files:` (`oracleProtect
 `haiku` for ONE attempt. A failed `verify:` returns the task to the session model, which corrects on
 the diff; a second failure goes to the human. The self-review (5d) reads the diff on the session
 model before the tick. `smallTierEligible: false`, or no estimate → the session model. Judgment
-never descends, and `/quenching-knowledge-import-memory`'s classifiers stay never-`haiku`:
+never descends, and `/quenching-knowledge import-memory`'s classifiers stay never-`haiku`:
 they authorize a deletion and have no oracle.
 
 **The orchestrator keeps, without exception:** spec selection, the isolation, every

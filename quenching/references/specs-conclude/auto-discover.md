@@ -1,8 +1,8 @@
 # Auto-discover — resolving which spec `conclude` closes without `--spec`
 
-How `/quenching-specs-conclude` resolves the ID to close when it is called with none: reading the
-current branch's own `quenching-specs:` marking — written by `/quenching-specs-execute`, per
-[isolation.md](.agents/quenching/assets/references/git/isolation.md) §Marking the branch with the
+How `/quenching-specs conclude` resolves the ID to close when it is called with none: reading the
+current branch's own `quenching-specs:` marking — written by `/quenching-specs execute`, per
+[isolation.md](.agents/quenching/references/git/isolation.md) §Marking the branch with the
 specs it built — filtering it to what still resolves, and falling back to a diff-based offer when
 nothing does. The marking exists because it is the fact the base branch's history cannot reproduce
 once the branch is gone.
@@ -16,7 +16,7 @@ git config branch.<current>.description
 ```
 
 Parse the `quenching-specs: <id1>,<id2>` line, if the description carries one — the format is
-[isolation.md](.agents/quenching/assets/references/git/isolation.md) §Marking the branch with the
+[isolation.md](.agents/quenching/references/git/isolation.md) §Marking the branch with the
 specs it built, not restated here. No branch, no description, or no such line → treated exactly as
 **no marking**, which is §The fallback below.
 
@@ -45,7 +45,7 @@ surfaced as a choice, and never assumed to be the answer because it was the only
 <!-- rules -->
 
 1. **Measure the diff.** `git diff <base>...HEAD --stat`, where `<base>` resolves the same chain
-   [isolation.md](.agents/quenching/assets/references/git/isolation.md) §Recording the isolation
+   [isolation.md](.agents/quenching/references/git/isolation.md) §Recording the isolation
    already uses: the branch's own `branch.base` record if one exists, else `origin/HEAD`, else
    `init.defaultBranch`, else `main`.
 2. **Always ask — never a size threshold.** Show the measurement and ask, on a
@@ -66,6 +66,6 @@ surfaced as a choice, and never assumed to be the answer because it was the only
 - Never skip or auto-decide the minimal-spec offer on diff size — it is asked every time the
   fallback is reached, and the human's answer is what decides, never a threshold.
 - Never write the marking from here — reading it is this file's whole job; writing it is
-  [isolation.md](.agents/quenching/assets/references/git/isolation.md) §Marking the branch with
-  the specs it built, owned by `/quenching-specs-execute`.
+  [isolation.md](.agents/quenching/references/git/isolation.md) §Marking the branch with
+  the specs it built, owned by `/quenching-specs execute`.
 - The headless path never fabricates a spec file just to have something to conclude.

@@ -94,7 +94,7 @@ artifact, per §The declared-directive layer's table.
 
 **Never install a git standard into a target.** Not as a fixup, not as a suggestion applied, not
 "so the next run has something to read". If a human wants their conventions written down, that is
-`/quenching-knowledge-add`, on their word.
+`/quenching-knowledge add`, on their word.
 
 An `authority: background` git standard in the target still wins over these defaults. It is an
 agreed-but-unproven rule someone wrote on purpose; that beats a plugin's opinion either way.
@@ -120,14 +120,14 @@ This file owns three prohibitions, and all are about **whose** conventions win:
 Commit hygiene is not this file's to state: `--no-verify`, `--no-gpg-sign`, amending a commit,
 force-pushing, `git init` on the human's behalf, and `git add -A` over a task's declared files are
 all forbidden by
-[specs-execute/execution.md](.agents/quenching/assets/references/specs-execute/execution.md) §The commit and
+[specs-execute/execution.md](.agents/quenching/references/specs-execute/execution.md) §The commit and
 §The precondition, which own them. They bind every command that touches git here, including the
 ones in this pillar.
 
 <!-- rationale -->
 
 Writing `docs/standards/git/**` into a repository that
-never asked for it is `/quenching-specs-*` reaching into `/quenching-knowledge-align`'s territory, and it converts a default
+never asked for it is `/quenching-specs-*` reaching into `/quenching-knowledge align`'s territory, and it converts a default
 this file *offers* into a rule the repo now *declares* — which then wins over this file forever,
 without anyone having agreed to it.
 
