@@ -5,5 +5,29 @@
   "attribution": {
     "commit": "",
     "pr": ""
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "test -f \"$CLAUDE_PROJECT_DIR/.agents/quenching/assets/hooks/deny-claude-coauthor.sh\" || exit 0; bash \"$CLAUDE_PROJECT_DIR/.agents/quenching/assets/hooks/deny-claude-coauthor.sh\"",
+            "timeout": 5
+          }
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "test -f \"$CLAUDE_PROJECT_DIR/.agents/quenching/assets/hooks/warn-git-add-all.sh\" || exit 0; bash \"$CLAUDE_PROJECT_DIR/.agents/quenching/assets/hooks/warn-git-add-all.sh\"",
+            "timeout": 5
+          }
+        ]
+      }
+    ]
   }
 }
