@@ -433,6 +433,19 @@ class Deploy(unittest.TestCase):
         self.assertFalse((self.target / ".agents/.quenching-deploy.json").exists())
         self.assertEqual("{not json", (self.target / ".claude/settings.json").read_text())
 
+    def test_a_settings_path_that_is_a_directory_refuses_before_any_write(self):
+        (self.target / ".claude/settings.json").mkdir(parents=True)
+        code, _ = self.run_deploy("--modules", "core", "--write")
+        self.assertEqual(2, code)
+        self.assertFalse((self.target / ".agents/.quenching-deploy.json").exists())
+
+    def test_the_attribution_warning_survives_an_unchanged_merge(self):
+        self.write(".claude/settings.json", json.dumps({"attribution": {"commit": "mine"}}))
+        self.run_deploy("--modules", "core", "--write")
+        code, payload = self.run_deploy("--modules", "core", "--json")
+        self.assertEqual(0, code)
+        self.assertIn("attribution.commit", json.dumps(payload.get("warnings", payload)))
+
 
 class SourceDialect(unittest.TestCase):
     """The source is written in the target dialect; the deploy refuses what is not."""

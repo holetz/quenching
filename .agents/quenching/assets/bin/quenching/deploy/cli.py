@@ -173,8 +173,9 @@ def plan(target: Path, built: dict, previous: dict | None) -> dict:
     seed_changes, warnings = _seed_plan(target, seeds)
     changes.extend(seed_changes)
     merged = built.get("merged")
-    if merged and merged["changed"]:
-        changes.append(_change("settings", SETTINGS))
+    if merged:
+        if merged["changed"]:
+            changes.append(_change("settings", SETTINGS))
         warnings = [*warnings, *merged["warnings"]]
     if (target / MANIFEST).exists():
         try:
@@ -201,6 +202,8 @@ def _settings_merge(target: Path, built: dict, previous: dict | None) -> dict | 
     if wanted is None and recorded is None:
         return None
     path = target / SETTINGS
+    if path.exists() and not path.is_file():
+        raise claude_settings.SettingsRefusal("the path is not a regular file")
     current = path.read_text(encoding="utf-8") if path.is_file() else None
     keys = recorded.get("attribution") if recorded else []
     keys = keys if isinstance(keys, list) else []
