@@ -13,6 +13,39 @@ owner: [`ci-cd/versioning-release.md`](docs/standards/ci-cd/versioning-release.m
 short version for a consumer: the version is published once, deliberately, as a release — never at a
 spec's own conclude — and `cq --version` is what answers which one you are running.
 
+## 7.1.0
+
+**Uma skill roteadora por vertical ou front, e a invocação `/quenching-<vertical> <fluxo>`.**
+  Cada fluxo é uma reference da skill da vertical (`quenching-specs`, `quenching-git`,
+  `quenching-knowledge`, `quenching-components` e uma por front), que escolhe o fluxo pela própria
+  tabela e concede a união dos grants dos fluxos. **O deploy do tag `7.1.0` reescreve a superfície do
+  alvo**; num repositório que ainda carrega a família antiga de comandos,
+  `cq components migrate --write --router` agrupa a família sob o roteador com as references dentro
+  (ADR 0019).
+
+**A fonte é escrita no dialeto do alvo, nas raízes `quenching/` e `integrations/`.** `plugins/` sai.
+  O `cq deploy` reescreve só o frontmatter, o cabeçalho gerado, os grants e o launcher, e recusa uma
+  fonte que ainda carregue marcador de plugin; o HUD do Claude e o vitrine do OpenCode passam a viver
+  em `integrations/`. Os módulos acompanham: `quenching-git`, `quenching-knowledge` e
+  `quenching-components` entram, e `quenching-align` vira apelido de `knowledge,components`. O layout,
+  o modo de deploy e os perfis de instalação estão em `source-layout.md`, `deploy-mode.md` e
+  `install-profiles.md`.
+
+**O deploy instala os hooks.** Cada módulo declara seus hooks em `assets/modules.json` e o `deploy`
+  mescla o `.claude/settings.json` do alvo, preservando as linhas de atribuição; um `settings.json`
+  que não é arquivo é recusado em vez de sobrescrito.
+
+**Allowlist de identidade no git.** `shared.gitIdentity.allowedEmails` recusa em exit 2 o commit ou o
+  push cujo autor não casa a lista exata ou o padrão `fnmatch` declarado. Ausente a chave, nada é
+  julgado.
+
+**O orçamento de 100k do worker vira estimativa de tamanho.** O `spec-runner` não devolve mais
+  `STATE: continue` com `NOTE: budget:`: ele termina a spec e reporta o pico, e `execute` sob
+  `autonomous` imprime e segue. O orçamento do conductor (150k) continua o único stop, entre waves; o
+  da sessão principal (200k) continua oferta. `context-discipline.md` §Measured context budgets passa
+  a separar estimativa de tamanho de limite de parada, e `cq specs estimate --worker-budget` continua
+  usando o número para recomendar decomposição.
+
 ## 7.0.2
 
 **A cor transparente dos tokens vira cor Typst.** O `tokens.typ` projeta `srgb`, `srgb-linear`,
