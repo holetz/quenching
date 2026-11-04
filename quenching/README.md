@@ -549,7 +549,8 @@ The OKF contract lives in the skills' `references/`; the installable payload is 
 declared files and Impact standards, plus the execute command body and spec build sections, using
 UTF-8 bytes / 4 rounded upward. Files repeated in one section count once; a new section counts its
 reads again. Missing/new files and tasks without declared files remain `unresolved`. The default
-worker policy is **100000 input-context tokens** (S2); `--worker-budget` declares an explicit override.
+worker **size estimate** is **100000 input-context tokens** (S2): it says how much reading a spec of
+that size fits, and it never stops a build; `--worker-budget` declares an explicit override.
 The estimate **never proves** a full build fits: system/harness overhead, conditional references,
 future code, tool/test output, iteration count and growing history are excluded. Total reading
 volume is not a context peak. Develop compares the largest section before approval and proposes

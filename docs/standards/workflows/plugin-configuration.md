@@ -4,10 +4,10 @@ title: Plugin configuration contract
 description: "`.agents/quenching.json` is the plugin's single configuration home, with `.claude/quenching.json` read as legacy; provider selection is derived from the repository remote, while placement, Azure mappings, lifecycle hooks, profiles, proposal catalogues and the `git` pillar's per-artifact writing directives remain explicit target settings"
 resource: .agents/quenching.json, quenching/assets/bin/quenching/common/config.py, quenching/assets/bin/quenching/specs/config.py, quenching/assets/bin/quenching/specs/store.py, quenching/assets/bin/quenching/ops/**, quenching/assets/bin/quenching/proof/**, quenching/assets/bin/quenching/git/base.py, quenching/assets/bin/quenching/git/conventions.py, quenching/assets/bin/quenching/config/**, quenching/assets/bin/quenching/common/identity.py
 tags: [workflows, specs, configuration, provider, plugin]
-timestamp: 2026-11-03
+timestamp: 2026-11-04
 audience: both
 authority: current
-source: specs 1065, 1075, 1405, 1907, 1908, 1909, 1910, 1911, 1912, 2092, 2118, 2164, 1020213 — lineage in decision 0004
+source: specs 1065, 1075, 1405, 1907, 1908, 1909, 1910, 1911, 1912, 2092, 2118, 2164, 2175, 1020213 — lineage in decision 0004
 maintainer: quenching
 ---
 
@@ -245,7 +245,7 @@ explicit flag wins over the key.
 | Key | Values | Default | Read by |
 | --- | --- | --- | --- |
 | `shared.okfValidate` | `{warnAsError: boolean, ignoreGlobs: list of strings}` | `false`, `[]` | `cq knowledge validate`; wins key by key over `.claude/hooks/hooks-config.local.json` and `hooks-config.json` |
-| `shared.contextBudgets` | `{main, worker, conductor}`, positive integers | `200000` / `100000` / `150000` | `cq session context` per role; `cq specs estimate --worker-budget` uses `worker` |
+| `shared.contextBudgets` | `{main, worker, conductor}`, positive integers | `200000` / `100000` / `150000` | `cq session context` per role: the worker number is a **size estimate**, measured and never a stop, the conductor's is a stop checked between waves, and the main number is an offer; `cq specs estimate --worker-budget` uses `worker` |
 | `shared.autonomy.maxLaunches` | integer ≥ 1 | `40` | `/quenching-specs autopilot` (see the autonomy block); the launch ceiling lives only there |
 | `shared.workHost` | `{target, dockerContext, runner, remoteRoot, syncFlags, syncExclude, pullBack, protectedPaths, minFreeGb}` | disabled | `cq config host --plan`; see [work-host.md](work-host.md) |
 | `shared.mcp` | `{mount: "specs", command: [strings]}` | absent; no MCP file is generated | `cq deploy`; read from the repository document only, never the merged envelope |
