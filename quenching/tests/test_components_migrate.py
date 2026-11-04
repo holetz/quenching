@@ -238,6 +238,35 @@ class Migrate(unittest.TestCase):
         self.assertEqual({".agents/skills/quenching-mine", ".agents/skills/quenching-other"}, reserved)
         self.assertEqual(2, self.run_cli("--write")[0])
 
+    def add_family(self, family="bi", flows=("alfa", "beta", "gama")):
+        for flow in flows:
+            self.write(f".claude/commands/{family}/{flow}.md",
+                       f"---\ndescription: Run {flow} now. It does more.\n"
+                       f"allowed-tools: Read, Bash(git add:*)\n---\nBody of {flow}.\n")
+        self.commit()
+
+    def test_the_plan_names_the_router_candidates_and_writes_nothing(self):
+        self.add_family()
+        code, payload = self.run_cli()
+        self.assertEqual(1, code)
+        (router,) = [r for r in payload["routers"] if r["family"] == "bi"]
+        self.assertEqual(("new", "bi"), (router["kind"], router["router"]))
+        self.assertEqual(["bi-alfa", "bi-beta", "bi-gama"], router["members"])
+        self.assertEqual(["alfa", "beta", "gama"], router["flows"])
+        self.assertEqual(["Read", "Bash(git add:*)"], router["grant"])
+        self.assertEqual([], router["conflicts"])
+        self.assertEqual("", self.git("status", "--porcelain"))
+
+    def test_two_skills_do_not_make_a_router_candidate(self):
+        self.add_family("bi", ("alfa", "beta"))
+        self.assertEqual([r["family"] for r in self.run_cli()[1]["routers"]], [])
+
+    def test_a_router_named_for_no_candidate_is_refused(self):
+        self.add_family()
+        code, payload = self.run_cli("--write", "--router", "nope")
+        self.assertEqual((2, "ct-migrate-router-unknown"), (code, payload["code"]))
+        self.assertFalse((self.repo / ".agents").exists())
+
     def test_outside_git_refuses(self):
         with tempfile.TemporaryDirectory() as plain:
             out = io.StringIO()

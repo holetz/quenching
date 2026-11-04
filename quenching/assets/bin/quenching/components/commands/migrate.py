@@ -27,7 +27,10 @@ from pathlib import Path
 
 from quenching.common.deploy import generated_skills, read_manifest
 from quenching.common.output import FINDINGS, OK, emit, refuse
+from quenching.common.frontmatter import parse_frontmatter
 from quenching.components.commands.bridge import MANIFEST as BRIDGE_MANIFEST
+from quenching.components.commands.lint import _split_tools
+from quenching.components.families import compute_families
 
 CLAUDE = Path(".claude")
 AGENTS = Path(".agents")
@@ -208,6 +211,86 @@ def build_plan(repo: Path) -> Plan:
     return plan
 
 
+def _grant_union(tool_lists: list[list[str]]) -> list[str]:
+    """The router's `allowed-tools`: every tool of every flow once, a bare `Bash` standing for
+    each scoped `Bash(...)` — the calculation `sk-router-grant` checks."""
+    tools = [tool for tools in tool_lists for tool in tools]
+    bash_open = "Bash" in tools
+    out: list[str] = []
+    for tool in tools:
+        if tool in out or (bash_open and tool.startswith("Bash(")):
+            continue
+        out.append(tool)
+    return out
+
+
+def _final_files(plan: Plan) -> dict[str, str]:
+    """`{path after the layout plan: path today}` for every tracked file that survives it."""
+    moved = {op["from"]: op["to"] for op in plan.ops if op["op"] == "move"}
+    return {moved.get(rel, rel): rel for rel in sorted(plan.tracked) if rel not in plan.removed}
+
+
+def build_routers(plan: Plan) -> list[dict]:
+    """The families of the target's own skills that earn a router, read off the layout the plan
+    leaves: per family its `kind` (`new` or `existing`), `router`, `members`, `flows`, the `grant`
+    union of the members' `allowed-tools`, and the `conflicts` that would stop applying it."""
+    final = _final_files(plan)
+    skills = SKILLS.as_posix() + "/"
+    commands = (CLAUDE / "commands").as_posix() + "/"
+    entries = []
+    for dst, src in final.items():
+        if not (dst.startswith(skills) and dst.endswith("/SKILL.md")
+                and dst.count("/") == skills.count("/") + 1):
+            continue
+        name = dst[len(skills):].split("/", 1)[0]
+        text = (plan.repo / src).read_text(encoding="utf-8") if (plan.repo / src).is_file() else ""
+        entries.append({"command": "/" + name, "path": src, "text": text,
+                        "relpath": src[len(commands):] if src.startswith(commands) else f"{name}/SKILL.md",
+                        "frontmatter": parse_frontmatter(text)})
+    by_name = {entry["command"].lstrip("/"): entry for entry in entries}
+    routers = []
+    for family, item in compute_families(entries).items():
+        if not item["candidate"]:
+            continue
+        members = item["members"]
+        conflicts = []
+        table = _table_flows(by_name[family]["text"]) if item["kind"] == "existing" else set()
+        refs = _existing_refs(final, family)
+        for member, flow in zip(members, item["flows"]):
+            target = f"{skills}{family}/references/{flow}.md"
+            if item["kind"] == "new":
+                if target in final or any(path.startswith(target[:-3] + "/") for path in final):
+                    conflicts.append({"path": target, "with": member, "why": "two editable copies"})
+            elif flow not in table or target not in refs:
+                conflicts.append({"path": f"{skills}{member}", "with": family,
+                                  "why": "shortcut without a reference in the router"})
+        grant = _grant_union([_split_tools(str(by_name[m]["frontmatter"].get("allowed-tools", "")))
+                              for m in members])
+        routers.append({"family": family, "kind": item["kind"], "router": family,
+                        "members": members, "flows": item["flows"], "grant": grant,
+                        "conflicts": conflicts})
+    return routers
+
+
+TABLE_ROW_RE = re.compile(r"^\|\s*`([a-z0-9-]+)`\s*\|", re.MULTILINE)
+
+
+def _table_flows(router_text: str) -> set[str]:
+    return set(TABLE_ROW_RE.findall(router_text))
+
+
+def _existing_refs(final: dict[str, str], family: str) -> set[str]:
+    """Where the family's references end up: beside the router, wherever they are today."""
+    out = set()
+    for path in final:
+        for old in (f".agents/references/{family}-flows/", f".claude/references/{family}-flows/"):
+            if path.startswith(old):
+                out.add(f"{SKILLS.as_posix()}/{family}/references/{path[len(old):]}")
+        if path.startswith(f"{SKILLS.as_posix()}/{family}/references/"):
+            out.add(path)
+    return out
+
+
 def invocation(path: str) -> str | None:
     """`.claude/commands/a/b.md` -> `/a:b`, the name the moved command answered to."""
     prefix = (CLAUDE / "commands").as_posix() + "/"
@@ -281,6 +364,9 @@ def apply(plan: Plan) -> None:
 def add_arguments(sp) -> None:
     sp.add_argument("--target", default=".", help="the repository to migrate")
     sp.add_argument("--write", action="store_true", help="apply the plan with git mv / git rm")
+    sp.add_argument("--router", action="append", default=[], metavar="FAMILY",
+                    help="with --write, group this family's skills under one router "
+                         "(repeatable; a family not named is not touched)")
     sp.add_argument("--json", action="store_true", help="machine-readable output")
 
 
@@ -292,6 +378,13 @@ def cmd_migrate(args, _root: str) -> int:
                        "message": f"{repo} is not a git checkout; the migration moves files "
                                   "with git mv to keep their history"}, args.json)
     plan = build_plan(repo)
+    routers = build_routers(plan)
+    unknown = sorted(set(args.router) - {entry["family"] for entry in routers})
+    if unknown:
+        return refuse({"code": "ct-migrate-router-unknown", "families": unknown,
+                       "message": "no router candidate with that name: "
+                                  + ", ".join(unknown),
+                       "remedy": "name a family listed in `routers` of the plan"}, args.json)
     if args.write and plan.conflicts:
         return refuse({"code": "ct-migrate-conflict", "conflicts": plan.conflicts,
                        "message": "the plan has conflicts; nothing was written",
@@ -308,13 +401,16 @@ def cmd_migrate(args, _root: str) -> int:
     payload = {"ok": not plan.conflicts, "target": str(repo),
                "conformant": not plan.ops and not plan.conflicts,
                "operations": plan.ops, "conflicts": plan.conflicts,
-               "renames": plan.renames, "written": bool(args.write and plan.ops)}
+               "renames": plan.renames, "routers": routers, "written": bool(args.write and plan.ops)}
     lines = [f"components migrate — {repo}",
              "  conformant, nothing to align" if payload["conformant"] else
              f"  operations: {len(plan.ops)}  conflicts: {len(plan.conflicts)}"
              + ("  (written)" if payload["written"] else "")]
     for op in plan.ops:
         lines.append("  " + " ".join(f"{k}={v}" for k, v in op.items()))
+    for entry in routers:
+        lines.append(f"  router {entry['kind']}: {entry['router']} ({len(entry['members'])} members;"
+                     f" apply with --write --router {entry['family']})")
     for conflict in plan.conflicts:
         lines.append(f"  conflict: {conflict['path']} vs {conflict['with']} — {conflict['why']}")
     emit(args.json, payload, "\n".join(lines))
