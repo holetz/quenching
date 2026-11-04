@@ -9,7 +9,7 @@ import re
 PLUGIN_PREFIX = re.compile(r"^quenching(?:-[a-z]+)?:")
 
 def normalize(name: str) -> str:
-    """`/quenching-specs:specs:develop` and `quenching-specs:specs:develop` are one command."""
+    """`/quenching-specs-develop` and `quenching-specs:specs:develop` are one command."""
     return name.strip().lstrip("/").strip()
 
 

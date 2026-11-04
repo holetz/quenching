@@ -2,7 +2,7 @@
 type: decision
 title: Deploy mode — a vendored surface in the target generic layer
 description: "Why quenching gained a deterministic deploy command instead of a second harness plugin: the target keeps AGENTS.md and .agents as its editable source, the payload is vendored or pinned by uvx, and Claude receives only a generated bridge because it does not discover .agents/skills."
-resource: plugins/quenching/assets/bin/quenching/deploy/**, docs/standards/architecture/deploy-mode.md
+resource: quenching/assets/bin/quenching/deploy/**, docs/standards/architecture/deploy-mode.md
 tags: [decision, deploy, agents, skills, installation]
 timestamp: 2026-10-30
 audience: both

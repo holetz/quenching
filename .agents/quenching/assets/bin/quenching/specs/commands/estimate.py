@@ -67,7 +67,7 @@ def _is_generated_mirror(root: Path, entry: str) -> bool:
                    for marker in (".generated-from.json", ".generated-files.json")):
             continue
         try:
-            manifest = json.loads((root / "plugins/quenching/assets/modules.json")
+            manifest = json.loads((root / "quenching/assets/modules.json")
                                   .read_text(encoding="utf-8"))
         except (OSError, ValueError, UnicodeError):
             manifest = {}

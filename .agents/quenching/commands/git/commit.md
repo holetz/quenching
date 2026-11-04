@@ -7,7 +7,7 @@ hooks:
 PreToolUse: 
 - matcher: Bash
 - type: command
-command: test -f "${CLAUDE_PLUGIN_ROOT}/assets/hooks/warn-git-add-all.sh" || exit 0; bash "${CLAUDE_PLUGIN_ROOT}/assets/hooks/warn-git-add-all.sh"
+command: test -f ".agents/quenching/assets/hooks/warn-git-add-all.sh" || exit 0; bash ".agents/quenching/assets/hooks/warn-git-add-all.sh"
 timeout: 5
 ---
 

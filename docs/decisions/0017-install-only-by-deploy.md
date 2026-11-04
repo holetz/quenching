@@ -2,7 +2,7 @@
 type: decision
 title: quenching reaches a repository only through cq deploy; the plugin distributions are retired
 description: Why the eight Claude module plugins, the read-only specs reader, the Codex plugin and the OpenCode user-level distribution were removed, and which plugins stay because they install into no repository
-resource: plugins/quenching/assets/modules.json, plugins/quenching/assets/bin/quenching/common/modules.py, plugins/quenching/assets/bin/quenching/specs/release.py, plugins/quenching/assets/checks/functional-checks.sh, .claude-plugin/marketplace.json
+resource: quenching/assets/modules.json, quenching/assets/bin/quenching/common/modules.py, quenching/assets/bin/quenching/specs/release.py, quenching/assets/checks/functional-checks.sh, .claude-plugin/marketplace.json
 tags: [decision, architecture, plugin, deploy, distribution]
 timestamp: 2026-11-03
 audience: both
@@ -62,10 +62,10 @@ verbs.
 
 - A target that installed the plugins keeps a frozen version until it runs `cq deploy`. The release
   that ships this is a major one and its changelog entry says so.
-- The source keeps its path, `plugins/quenching/`: the Omnigent bundle pins its MCP server with
+- The source keeps its path, `quenching/`: the Omnigent bundle pins its MCP server with
   `#subdirectory=plugins/quenching` on published tags, and the command ids keep their
   `/quenching-<module>:<front>:<verb>` spelling in the source, which `cq deploy` translates to
   `quenching-<front>-<verb>`.
-- The release lockstep moves `plugins/quenching/VERSION`, the source `plugin.json`, the HUD
+- The release lockstep moves `quenching/VERSION`, the source `plugin.json`, the HUD
   `plugin.json`, the Claude marketplace and `common/version.py`; regeneration runs only the Omnigent
   generator and the repository's own deploy.

@@ -13,7 +13,6 @@ import tomllib
 import unittest
 
 import _paths  # noqa: F401
-from quenching.common.modules import load_manifest
 from quenching.knowledge.site_source import _selected_files
 
 REPO_ROOT = pathlib.Path(__file__).resolve().parents[2]

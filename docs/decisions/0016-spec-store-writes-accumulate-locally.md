@@ -2,7 +2,7 @@
 type: decision
 title: Spec store writes accumulate locally and the store branch keeps a single commit
 description: "Why every git-store write stopped being its own push: writes accumulate in one local pending commit, reach the remote only at sync points, and each sync replaces the store branch with one parentless commit under a lease"
-resource: plugins/quenching/assets/bin/quenching/specs/backends/git.py, plugins/quenching/assets/bin/quenching/specs/commands/push.py, docs/standards/architecture/spec-backend.md
+resource: quenching/assets/bin/quenching/specs/backends/git.py, quenching/assets/bin/quenching/specs/commands/push.py, docs/standards/architecture/spec-backend.md
 tags: [decision, architecture, specs, git]
 timestamp: 2026-10-29
 audience: both

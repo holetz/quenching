@@ -101,7 +101,7 @@ belongs to exactly one module, and so does every agent:
   survives only as the source's own unpublished registration and in history (`docs/decisions/`,
   `CHANGELOG.md`).
 - **Nested, not flattened.** The front keeps its own segment inside the module
-  (`/quenching-knowledge-add`, not `/quenching-add`), so the path below the module is
+  (`/quenching-knowledge-add`, never the front dropped), so the path below the module is
   still the file's path under `commands/` and §The path IS the identity holds unchanged.
 - **A route into another module is conditional.** A `Not for:` hand-off, an offer or a `Skill`
   call naming another module's command runs only when that module is enabled; otherwise it is
