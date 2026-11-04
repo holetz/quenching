@@ -58,9 +58,10 @@ class SectionBoundaryContractTests(unittest.TestCase):
         step = body[body.index("h. **At a section boundary"):body.index("**Pause if:**")]
         self.assertIn("keep the task commits", step)
         self.assertIn("cq components session context --self <id> --json", step)
-        self.assertIn("**Under `autonomous`, exit 1 asks nothing: stop at this boundary**", step)
+        self.assertIn("**Under `autonomous`, exit 1 asks nothing and stops nothing**", step)
+        self.assertIn("a worker's budget is a size estimate, not a stop limit", step)
         self.assertIn("Exit 0 or 2 → continue to the next task: the boundary is not a question", step)
-        self.assertIn("Exit 1 → ask once", step)
+        self.assertIn("In a human-led run, exit 1 → ask once", step)
         self.assertIn("in a new session", step)
         self.assertIn("as option A (recommended)", step)
         self.assertNotIn("section-boundary offer", body)
