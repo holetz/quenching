@@ -26,7 +26,7 @@ import unittest
 
 import _paths  # noqa: F401  — must precede the `quenching` import; see its docstring
 from quenching.components.commands.lint import named_by_bodies
-from quenching.components.surface import COMMANDS_DIR, discover_commands
+from quenching.components.surface import discover_skills
 
 PLUGIN_ROOT = pathlib.Path(__file__).resolve().parent.parent
 FACTOR = 10                 # the synthetic corpus, as a multiple of the real one
@@ -60,11 +60,11 @@ def fastest(commands: list[dict]) -> float:
 class NamedByBodiesScales(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.real = discover_commands(str(PLUGIN_ROOT / COMMANDS_DIR))
+        cls.real = discover_skills(str(PLUGIN_ROOT / "skills"))
 
     def test_the_real_corpus_is_not_empty(self):
         """A corpus of zero commands would make every assertion below pass in no time at all."""
-        self.assertGreater(len(self.real), 1, "the plugin's own commands/ tree read as empty")
+        self.assertGreater(len(self.real), 1, "the plugin skills/ tree read as empty")
 
     @unittest.skipUnless(os.environ.get("QUENCHING_BENCH") == "1",
                          "wall-clock ratio: opt in with QUENCHING_BENCH=1 (it is noise on shared runners)")

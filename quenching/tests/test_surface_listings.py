@@ -1,6 +1,6 @@
 """Keep published surface listings derived from the structures they describe.
 
-Counts come from ``commands/**/*.md`` and the site set comes from the same allow-list used by the
+Counts come from ``skills/*/SKILL.md`` and the flow tables of the routers and the site set comes from the same allow-list used by the
 site-source staging rail. The prose remains hand-written, but a changed population or nav cannot
 silently leave its consumers stale.
 """
@@ -13,23 +13,29 @@ import tomllib
 import unittest
 
 import _paths  # noqa: F401
+from quenching.components.commands.lint import router_flows
+from quenching.components.surface import discover_skills
 from quenching.knowledge.site_source import _selected_files
 
 REPO_ROOT = pathlib.Path(__file__).resolve().parents[2]
 PLUGIN_ROOT = REPO_ROOT / "quenching"
-COMMANDS = PLUGIN_ROOT / "commands"
+SKILLS = PLUGIN_ROOT / "skills"
 DOCS = REPO_ROOT / "docs"
 README = REPO_ROOT / "README.md"
 PROJECT_COMMANDS = DOCS / "project" / "commands.md"
 MARKETPLACE = REPO_ROOT / ".claude-plugin" / "marketplace.json"
 ZENSICAL = REPO_ROOT / "zensical.toml"
 
-INVOCABLE = re.compile(r"`(/[a-z][a-z:-]*)`")
+INVOCABLE = re.compile(r"`(/[a-z][a-z:-]*(?: [a-z][a-z-]*)?)`")
 
 
 def _commands_on_disk() -> set[str]:
-    return {"/quenching-" + path.relative_to(COMMANDS).with_suffix("").as_posix().replace("/", "-")
-            for path in COMMANDS.rglob("*.md")}
+    """Every skill (`/quenching-specs`) and every flow its router table names (`/quenching-specs create`)."""
+    found: set[str] = set()
+    for skill in discover_skills(str(SKILLS)):
+        found.add(skill["command"])
+        found.update(f"{skill['command']} {flow}" for flow in router_flows(skill))
+    return found
 
 
 def _published_docs_on_disk() -> set[str]:
@@ -65,8 +71,8 @@ class ManifestSurfaceTests(unittest.TestCase):
     def test_manifest_counts_match_the_command_population(self):
         commands = _commands_on_disk()
         counts = {
-            "local fronts": len({command[len("/quenching-"):].split("-")[0] for command in commands
-                                  if command[len("/quenching-"):].split("-")[0] in {
+            "local fronts": len({command[len("/quenching-"):].split("-")[0].split(" ")[0] for command in commands
+                                  if command[len("/quenching-"):].split("-")[0].split(" ")[0] in {
                                       "knowledge", "design", "components", "ops", "proof",
                                       "toolchain", "delivery",
                                   }}),
@@ -98,7 +104,8 @@ class ManifestSurfaceTests(unittest.TestCase):
             "git": 12,
         }
         actual = {
-            namespace: sum(command.startswith(f"/quenching-{namespace}-") for command in commands)
+            namespace: sum(command == f"/quenching-{namespace}" or command.startswith(f"/quenching-{namespace}-")
+                           or command.startswith(f"/quenching-{namespace} ") for command in commands)
             for namespace in expected
         }
         self.assertEqual(actual, expected)
