@@ -1,10 +1,14 @@
-# /quenching-specs-status — read the specs front
+---
+allowed-tools: Bash(cq:*), Bash(cq.cmd:*), Bash(python3:*), Read
+---
+
+# /quenching-specs status — read the specs front
 
 The canonical documents live on the `quenching` branch (the git store), or in a deprecated tracker
 backend. There is no local `/.specs/` root.
 
 The recognised configuration envelope and its defaults live in
-[specs-align/plugin-configuration.md](.agents/quenching/assets/references/specs-align/plugin-configuration.md)
+[specs-align/plugin-configuration.md](.agents/quenching/references/specs-align/plugin-configuration.md)
 §The envelope and recognised namespaces. This command reports that state; it does
 not create a local specs store or infer missing configuration.
 
@@ -27,5 +31,5 @@ not create a local specs store or infer missing configuration.
 - Never write, scaffold, align, migrate or repair anything.
 - Never treat an absent local `/.specs/` directory as a finding; external backends do not use it.
 - Never call `FilesBackend`, infer `backend: files`, or offer a local fallback.
-- Use `/quenching-specs-develop`, `/quenching-specs-execute`, or `/quenching-specs-conclude` for
+- Use `/quenching-specs develop`, `/quenching-specs execute`, or `/quenching-specs conclude` for
   lifecycle work on one named provider-owned spec.

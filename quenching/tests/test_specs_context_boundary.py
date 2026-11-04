@@ -10,9 +10,9 @@ import unittest
 
 
 ROOT = Path(__file__).resolve().parents[2]
-SPECS = ROOT / "quenching/assets/references/specs-flows"
-MOLD = ROOT / "quenching/assets/references/specs-develop/report-mold.md"
-CADENCE = ROOT / "quenching/assets/references/specs-execute/execution-cadence.md"
+SPECS = ROOT / "quenching/skills/quenching-specs/references"
+MOLD = ROOT / "quenching/references/specs-develop/report-mold.md"
+CADENCE = ROOT / "quenching/references/specs-execute/execution-cadence.md"
 
 
 def text(path):
@@ -49,7 +49,7 @@ class StageEndContractTests(unittest.TestCase):
 
     def test_execute_offer_recommends_a_new_session_over_budget(self):
         body = text(SPECS / "execute.md")
-        self.assertIn("(A, recommended) is to run `/quenching-specs-conclude <id>` in a new session", body)
+        self.assertIn("(A, recommended) is to run `/quenching-specs conclude <id>` in a new session", body)
 
 
 class SectionBoundaryContractTests(unittest.TestCase):

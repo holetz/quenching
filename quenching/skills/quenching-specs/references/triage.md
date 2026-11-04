@@ -1,4 +1,8 @@
-# /quenching-specs-triage — rank the front, once, on one confirmation
+---
+allowed-tools: Bash(cq:*), Bash(cq.cmd:*), Read, Grep, Glob, Bash(python3:*), Bash(py:*), AskUserQuestion
+---
+
+# /quenching-specs triage — rank the front, once, on one confirmation
 
 **Input**: `$ARGUMENTS` — optionally one ID to limit the sweep; omit to rank everything in
 the open (`plans`) phase.
@@ -9,24 +13,24 @@ writes each spec's `priority` record.
 **This is the only command that ranks.** `.agents/quenching/bin/cq specs next --front` consumes what this writes; with no
 `priority` anywhere its ordering falls back to age alone.
 
-**It ranks and nothing else.** Closing out is `/quenching-specs-conclude`'s, resolving
-`## Discoveries` is `/quenching-specs-develop`'s discoveries stage.
+**It ranks and nothing else.** Closing out is `/quenching-specs conclude`'s, resolving
+`## Discoveries` is `/quenching-specs develop`'s discoveries stage.
 
 The layout, the derived stages and the front's on-write check live in
-[specs-develop/spec-driven.md](.agents/quenching/assets/references/specs-develop/spec-driven.md)
+[specs-develop/spec-driven.md](.agents/quenching/references/specs-develop/spec-driven.md)
 §The spec document §Derived stages. The `.agents/quenching/bin/cq specs` surface lives in
-[specs-surface.md](.agents/quenching/assets/references/specs-develop/specs-surface.md)
+[specs-surface.md](.agents/quenching/references/specs-develop/specs-surface.md)
 §The `.agents/quenching/bin/cq specs` tool surface; the report mold, which owns the shape of both the step 2 table and
 the step 6 report, lives in
-[report-mold.md](.agents/quenching/assets/references/specs-develop/report-mold.md)
+[report-mold.md](.agents/quenching/references/specs-develop/report-mold.md)
 §The report mold. How the tool is resolved and its path written lives in
-[align/tool-resolution.md](.agents/quenching/assets/references/align/tool-resolution.md)
+[align/tool-resolution.md](.agents/quenching/references/align/tool-resolution.md)
 §Resolving the tool §Write the resolved path literally on every invocation.
 
 ## Resolving the tool
 
 Resolve `cq` per
-[align/tool-resolution.md](.agents/quenching/assets/references/align/tool-resolution.md)
+[align/tool-resolution.md](.agents/quenching/references/align/tool-resolution.md)
 §Resolving the tool. Branch on the **exit code** (0 ok · 1 findings · 2 refusal) and the `--json`,
 never on prose.
 
@@ -51,7 +55,7 @@ The record is `writeOnce: false`: a later sweep re-ranks, and each write restamp
 command writes it.
 
 **`complexity` answers a different question than `level`.** Propose it against the criterion
-[spec-driven.md](.agents/quenching/assets/references/specs-develop/spec-driven.md) §The scale
+[spec-driven.md](.agents/quenching/references/specs-develop/spec-driven.md) §The scale
 states: how much a human needs to be part of the process, from `low` (the LLM can carry it with
 close to no supervision) to `xhigh` (a judgment stage joins the plan). A spec too thin to judge — a
 `captured` one with a `## Problem` and no `## Proposal` — leaves this sweep carrying `medium`.
@@ -100,7 +104,7 @@ Rules for the table:
 ### 3. One OK
 Present the table and **wait for a single confirmation**. Adjustments → adjust and re-present;
 rejection → write nothing and stop. Put a choice between two orderings on a decision sheet
-([questions.md](.agents/quenching/assets/references/specs-develop/questions.md) §The four shared mechanics §1)
+([questions.md](.agents/quenching/references/specs-develop/questions.md) §The four shared mechanics §1)
 rather than asking it open-ended.
 **Done when:** the human has approved, adjusted, or rejected the whole table.
 
@@ -133,7 +137,7 @@ record; nothing else is written and nothing goes into the `/docs/` bundle.
 ### 6. Report
 
 ```bash
-.agents/quenching/bin/cq components read .agents/quenching/assets/references/specs-develop/report-mold.md \
+.agents/quenching/bin/cq components read .agents/quenching/references/specs-develop/report-mold.md \
   --sections "§The report mold" --rules-only
 ```
 
@@ -156,7 +160,7 @@ Emit §The report mold. Two body blocks:
    row's `Recommended action` **runnable as printed**: the command with its real argument
    substituted, never a bare command name the reader has to complete.
 
-Then §The next-step block, whose recommended line is `/quenching-specs-execute <id>` for the
+Then §The next-step block, whose recommended line is `/quenching-specs execute <id>` for the
 spec the approved ranking put first — the first thing the `priority` this just wrote decides.
 **Done when:** both blocks and the next-step block are shown.
 

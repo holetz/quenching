@@ -1,8 +1,12 @@
-# /quenching-specs-orchestrate — conduct an epic or a queue
+---
+allowed-tools: Bash(cq:*), Bash(cq.cmd:*), Read, Agent, Task
+---
+
+# /quenching-specs orchestrate — conduct an epic or a queue
 
 **Input**: `$ARGUMENTS` — a composite id (any spec whose `## Tasks` names members) or a list of spec
 ids, and optionally `--autonomous`. Empty or ambiguous → run
-`.agents/quenching/bin/cq specs list --json` and ask which on a decision sheet ([questions.md](.agents/quenching/assets/references/specs-develop/questions.md) §The four shared mechanics §1).
+`.agents/quenching/bin/cq specs list --json` and ask which on a decision sheet ([questions.md](.agents/quenching/references/specs-develop/questions.md) §The four shared mechanics §1).
 
 This command is a launcher. The protocol (waves, routing, budgets, acceptance, audit) lives in the
 `spec-orchestrator` agent definition, `quenching/agents/spec-orchestrator.md`; do not restate it.
@@ -10,7 +14,7 @@ This command is a launcher. The protocol (waves, routing, budgets, acceptance, a
 ## Workflow
 
 ### 1. Resolve the set
-Resolve `cq` per [align/tool-resolution.md](.agents/quenching/assets/references/align/tool-resolution.md)
+Resolve `cq` per [align/tool-resolution.md](.agents/quenching/references/align/tool-resolution.md)
 §Resolving the tool; branch on the exit code. Confirm each id exists with `.agents/quenching/bin/cq specs show --spec <id> --json`.
 **Done when:** the composite id or the list of spec ids is verified to exist.
 
@@ -24,11 +28,11 @@ a `complexity` at or below `runAloneUpTo` (`none` leaves only the approved ones)
 is any other spec with no `approved`. Nothing needs a
 human → go to step 3. Otherwise ask once on a decision sheet, naming the specs on each side:
 
-- **Develop now** — run `/quenching-specs-develop <id>` in this session, one spec after another,
+- **Develop now** — run `/quenching-specs develop <id>` in this session, one spec after another,
   for the specs that need a human, then launch everything. A develop of a `medium` spec costs about
   40k tokens of this session (its body and references alone are about 17k), so this is offered
   only for **two specs or fewer**; for more, end the run by listing one
-  `/quenching-specs-develop <id>` line per spec and `/quenching-specs-orchestrate` again after.
+  `/quenching-specs develop <id>` line per spec and `/quenching-specs orchestrate` again after.
 - **Launch the independent subset** — only the specs that run alone and depend on none of the
   ones that need a human.
 - **Force it** — `--autonomous`: every spec runs, and the approval is stamped

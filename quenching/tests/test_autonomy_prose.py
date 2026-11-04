@@ -15,7 +15,7 @@ def text(rel):
 
 class AutonomyProseTests(unittest.TestCase):
     def test_orchestrate_reads_its_keys_from_the_effective_config(self):
-        body = text("quenching/assets/references/specs-flows/orchestrate.md")
+        body = text("quenching/skills/quenching-specs/references/orchestrate.md")
         self.assertIn("cq config show --effective --json", body)
         for key in ("runAloneUpTo", "merge", "maxWorkers"):
             self.assertIn(f"shared.autonomy.{key}", body)
@@ -27,7 +27,7 @@ class AutonomyProseTests(unittest.TestCase):
         self.assertIn(CANONICAL, body)
 
     def test_autopilot_reads_its_keys_and_the_flag_wins(self):
-        body = text("quenching/commands/specs/autopilot.md")
+        body = text("quenching/skills/quenching-specs/references/autopilot.md")
         self.assertIn("shared.autonomy.maxLaunches", body)
         self.assertIn("shared.autonomy.livenessMinutes", body)
         self.assertIn("the flag wins over the key", body)

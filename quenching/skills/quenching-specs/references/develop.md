@@ -1,4 +1,8 @@
-# /quenching-specs-develop — compose a spec, argue with it, and settle its go
+---
+allowed-tools: Bash(cq:*), Bash(cq.cmd:*), Read, Grep, Glob, Edit, Bash(python3:*), Bash(py:*), AskUserQuestion, Task
+---
+
+# /quenching-specs develop — compose a spec, argue with it, and settle its go
 
 **Input**: `$ARGUMENTS` — a spec id, or a description of what to work on.
 
@@ -24,14 +28,14 @@ so, where it does not.
 **Load now, and nothing else:**
 
 - what runs and in what order, and the mechanics every stage shares —
-  [specs-develop/questions.md](.agents/quenching/assets/references/specs-develop/questions.md)
+  [specs-develop/questions.md](.agents/quenching/references/specs-develop/questions.md)
   §The pass §The four shared mechanics;
 - the spec-driven facts —
-  [specs-develop/spec-driven.md](.agents/quenching/assets/references/specs-develop/spec-driven.md)
+  [specs-develop/spec-driven.md](.agents/quenching/references/specs-develop/spec-driven.md)
   §Derived stages §The gates.
 
 The stages' own sections, the per-section authoring doctrine in
-[specs-develop/artifacts.md](.agents/quenching/assets/references/specs-develop/artifacts.md),
+[specs-develop/artifacts.md](.agents/quenching/references/specs-develop/artifacts.md),
 §Writing a section through stdin §The explicit-none rule §The nine definition sections
 §`## Impact` — the parsed sub-heading §`## Tasks`
 §Execution metadata — optional, indented, additive,
@@ -43,7 +47,7 @@ the same way.
 
 Resolve `cq` (`.agents/quenching/bin/cq components read` is the section reader every `§X` citation above resolves through)
 per
-[align/tool-resolution.md](.agents/quenching/assets/references/align/tool-resolution.md)
+[align/tool-resolution.md](.agents/quenching/references/align/tool-resolution.md)
 §Resolving the tool, §Write the resolved path literally on every invocation; branch on the **exit
 code** (0 ok · 1 findings · 2 refusal) and the `--json`, never on prose.
 
@@ -62,7 +66,7 @@ code** (0 ok · 1 findings · 2 refusal) and the `--json`, never on prose.
 - **Nothing shortens a stage that runs.** The same axes, lenses and gate symptoms are worked on
   every track, and what changes is who answers them.
   Everything about *how* a stage runs is owned by
-  [questions.md](.agents/quenching/assets/references/specs-develop/questions.md) §The four
+  [questions.md](.agents/quenching/references/specs-develop/questions.md) §The four
   shared mechanics §Who answers.
 - **A pass lands ONE edit.** Compose and refine accumulate and write together, so the spec never
   holds a half-composed state and never holds a draft refine already superseded. An abandoned pass
@@ -70,11 +74,11 @@ code** (0 ok · 1 findings · 2 refusal) and the `--json`, never on prose.
 - **Apply the explicit-none rule on every write.** A section with nothing in it is
   `- none — <reason>`, a present-but-empty heading is malformed, and an absent heading before its
   own gate is legal —
-  [spec-driven.md](.agents/quenching/assets/references/specs-develop/spec-driven.md)
+  [spec-driven.md](.agents/quenching/references/specs-develop/spec-driven.md)
   §The gates.
 - **Read `/docs/` before writing — in step 3b, by section.** The relevant
   `/docs/standards/` and `/docs/glossary.md` are binding on wording. Read it per
-[align/evidence-doctrine.md](.agents/quenching/assets/references/align/evidence-doctrine.md)
+[align/evidence-doctrine.md](.agents/quenching/references/align/evidence-doctrine.md)
 §1. Extract the aggregate; never paste the raw dump
 §2. Section-address any markdown — a target's `/docs/` included
 — `.agents/quenching/bin/cq components read <path> --sections "§X"`, not the whole file, when only a rule or two
@@ -83,7 +87,7 @@ code** (0 ok · 1 findings · 2 refusal) and the `--json`, never on prose.
 - **`complexity` is re-evaluated at the close, never mid-pass.** The close's own recommendation IS
   that re-evaluation where it names a raise; where the pass merely outgrew its size, the evidence
   that moved it is named and the depth proposed. A pass that changed no size proposes nothing.
-- **Every pass reviews `tags` in silence** — `/quenching-specs-create` presumes them. The review is
+- **Every pass reviews `tags` in silence** — `/quenching-specs create` presumes them. The review is
   narrated in step 6's consolidated plan and applied in step 7's single edit, with no screen of its
   own.
 
@@ -110,10 +114,10 @@ that carries content stays: the pass and its stop conditions (step 3), the conso
 
 **A recommendation rides inside the question, never in a turn before it.** Where a choice is
 genuinely the human's, the recommendation and the reasoning behind it go on the **decision sheet**
-([questions.md](.agents/quenching/assets/references/specs-develop/questions.md) §The four shared mechanics §1) — option A, recommended, the reasoning in its own text — so the human answers in one word and no turn was spent setting the question up.
+([questions.md](.agents/quenching/references/specs-develop/questions.md) §The four shared mechanics §1) — option A, recommended, the reasoning in its own text — so the human answers in one word and no turn was spent setting the question up.
 A sub-agent does not ask: return `STATE: blocked` with `NOTE: needs-human:` carrying the decision sheet.
 **This contract stops at the edge of how questions are grouped.**
-[questions.md](.agents/quenching/assets/references/specs-develop/questions.md) §The four shared
+[questions.md](.agents/quenching/references/specs-develop/questions.md) §The four shared
 mechanics §1 is the only authority there: a question travels with the ones whose answers cannot
 change it, and alone otherwise.
 
@@ -140,7 +144,7 @@ the input or was inferred, and the payload answers both steps at once.
 
 **The payload also carries the depth on record and the gap.** `records.priority.complexity` is the depth
 last recorded; absent, or no `priority` record at all, reads as `high`
-([spec-driven.md](.agents/quenching/assets/references/specs-develop/spec-driven.md) §The scale). So does
+([spec-driven.md](.agents/quenching/references/specs-develop/spec-driven.md) §The scale). So does
 `ready: {ok, missing, malformed}`, which is the list compose owes.
 
 That is the whole of this step. **No section body is pulled here.**
@@ -149,7 +153,7 @@ are in hand.
 
 ### 3. Derive the pass, and name it
 Look the derived stage up, and calculate the decisions still open, in
-[questions.md](.agents/quenching/assets/references/specs-develop/questions.md) §The pass —
+[questions.md](.agents/quenching/references/specs-develop/questions.md) §The pass —
 already loaded. The pass is up to four stages, always in this order:
 
 | Stage | Runs when |
@@ -173,7 +177,7 @@ Now that the pass is known, and in **one call** — §The batching contract's se
 commands together, every stage at once:
 
 ```bash
-.agents/quenching/bin/cq components read .agents/quenching/assets/references/specs-develop/questions.md \
+.agents/quenching/bin/cq components read .agents/quenching/references/specs-develop/questions.md \
   --sections "§Compose" --sections "§Approval"      # + "§Refine" where refine runs,
                                                     # + "§Who answers", + "§Gathering the evidence"
 .agents/quenching/bin/cq specs section <id> "<every heading this pass reads or writes>"     # the union, once
@@ -234,10 +238,10 @@ Nothing is written. Keep a running list of `(question or drafted answer, its sou
 section)`.
 
 **The fourth execution question is asked here:** the compose set ends on `[P]`, `files:` and
-`pattern:` ([questions.md](.agents/quenching/assets/references/specs-develop/questions.md)
+`pattern:` ([questions.md](.agents/quenching/references/specs-develop/questions.md)
 §Compose), and this pass asks **which tests does this task touch?** beside them, per task. Every
 test whose diff the task produces belongs in its `files:` —
-[artifacts.md](.agents/quenching/assets/references/specs-develop/artifacts.md) §`## Tasks`
+[artifacts.md](.agents/quenching/references/specs-develop/artifacts.md) §`## Tasks`
 §Execution metadata owns the rule — and a test left out is the out-of-scope diff the verifier
 charges at the door. Same moment, same evidence: the question is cheap while the task is a draft
 and expensive after its commit.
@@ -263,7 +267,7 @@ pass did not reach this stage at all.
 Load the authoring doctrine now — the union of `artifacts.md` sections this pass needs, in one call:
 
 ```bash
-.agents/quenching/bin/cq components read .agents/quenching/assets/references/specs-develop/artifacts.md \
+.agents/quenching/bin/cq components read .agents/quenching/references/specs-develop/artifacts.md \
   --sections "§Writing a section through stdin" --sections "§The explicit-none rule" \
   --sections "§The nine definition sections" --sections "§`## Impact`" --sections "§`## Tasks`" \
   --sections "§Execution metadata"
@@ -312,14 +316,14 @@ the singular form. The N splices land as ONE write.
 
 Every follow-up the plan parked is written in this same edit — `.agents/quenching/bin/cq specs discover <id>
 "<finding>"`, one call per line — and never mid-stage, which
-[questions.md](.agents/quenching/assets/references/specs-develop/questions.md) §The four shared
+[questions.md](.agents/quenching/references/specs-develop/questions.md) §The four shared
 mechanics forbids. The call creates `## Discoveries` when the heading is absent, and a filled
 `## Discoveries` moves no derived stage.
 
 Then the frontmatter records this command owns — read
-[questions.md](.agents/quenching/assets/references/specs-develop/questions.md) §Recording the
+[questions.md](.agents/quenching/references/specs-develop/questions.md) §Recording the
 pass for which stage earns which, and
-[spec-driven.md](.agents/quenching/assets/references/specs-develop/spec-driven.md) §Frontmatter
+[spec-driven.md](.agents/quenching/references/specs-develop/spec-driven.md) §Frontmatter
 for the write-once semantics, in one call. Each is stamped through `.agents/quenching/bin/cq specs record`:
 
 | Record | When | Call |
@@ -406,7 +410,7 @@ Then report:
 **When this run's input carried `autonomous`, skip the read below and the mold with it** — a conductor presents the report, not this run; return the content in the fixed shape the caller specified. Otherwise:
 
 ```bash
-.agents/quenching/bin/cq components read .agents/quenching/assets/references/specs-develop/report-mold.md \
+.agents/quenching/bin/cq components read .agents/quenching/references/specs-develop/report-mold.md \
   --sections "§The report mold" --rules-only
 ```
 
@@ -424,32 +428,32 @@ blocks:
 
 Print §The session-size line before the block — `.agents/quenching/bin/cq components session context --json`, read once; exit 1 turns the `→` line into a recommendation to run the next stage **in a new session**, exit 0 and 2 leave it an offer.
 
-Close on §The next-step block — `/quenching-git-branch <id>` once `approved` is stamped, naming it
-the natural moment to isolate before `/quenching-specs-execute <id>` writes any code;
-`/quenching-specs-develop <id>` again to refine a spec that is already `ready`; or
-`/quenching-specs-execute <id>` to carry it to the end task by task.
+Close on §The next-step block — `/quenching-git branch <id>` once `approved` is stamped, naming it
+the natural moment to isolate before `/quenching-specs execute <id>` writes any code;
+`/quenching-specs develop <id>` again to refine a spec that is already `ready`; or
+`/quenching-specs execute <id>` to carry it to the end task by task.
 
-**Isolation is named, never taken** — `/quenching-git-branch <id>` appears once, in the next-step
+**Isolation is named, never taken** — `/quenching-git branch <id>` appears once, in the next-step
 block, and is never asked as a question mid-pass.
 **Done when:** the pass closed or re-entered, and the summary is shown.
 
 ## Invariants to never violate
 
 - **NEVER edit implementation code.** If the spec implies code changes, stop and name
-  `/quenching-specs-execute`.
-- **Never write into `/docs/`.** A durable rule a question surfaces routes to `/quenching-knowledge-add`, an
-  understanding to `/quenching-knowledge-learn`, a term to `/quenching-knowledge-define` — **offered, never
+  `/quenching-specs execute`.
+- **Never write into `/docs/`.** A durable rule a question surfaces routes to `/quenching-knowledge add`, an
+  understanding to `/quenching-knowledge learn`, a term to `/quenching-knowledge define` — **offered, never
   auto-written**. The rules a spec *proves* are written during execution, not during definition.
 - **Never write into `## Tasks` what the merge owns.** A version bump, a changelog entry, a manifest
   re-stamp; the `/docs/` the work *revealed* rather than declared; the cycle's own closing actions
-  (review, archive, distil, merge, open the PR) — all three belong to `/quenching-specs-conclude`,
+  (review, archive, distil, merge, open the PR) — all three belong to `/quenching-specs conclude`,
   which settles them once what the release *is* is knowable. A standard this spec **declares** under
   `## Impact` still gets its own checkbox and still must: the axis is declared versus revealed,
   never docs versus code.
 - **Park an out-of-scope follow-up; never mint a spec for it.** A finding this pass raised that does
   not belong to the spec being developed becomes ONE line of `## Discoveries` on that same spec —
   `.agents/quenching/bin/cq specs discover <id> "<finding>"` — landed inside the step 7 edit, never as a loose call
-  mid-stage. Turning a follow-up into its own spec stays `/quenching-specs-conclude`'s. This route
+  mid-stage. Turning a follow-up into its own spec stays `/quenching-specs conclude`'s. This route
   is not an offer: nothing is created, so there is nothing to ask for.
 - **Inside a develop pass, `.agents/quenching/bin/cq specs new` runs only as the discoveries stage's `promoted:`
   resolution.** Nothing else here mints a spec.
@@ -457,7 +461,7 @@ block, and is never asked as a question mid-pass.
   human settled; refine may, and a change to `## Proposal` is always put to the human rather than
   taken. Where no human is present the pass never reached refine, so the licence never runs
   unattended — and a request that replaces the spec's subject outright is still a fresh
-  `/quenching-specs-create`, not a rewrite of what was already agreed.
+  `/quenching-specs create`, not a rewrite of what was already agreed.
 - **Never write a section that was not narrated first.** The consolidated plan is shown in full
   (step 6) and then applied.
 - Never write anything mid-stage — accumulate across the whole pass, then apply once.

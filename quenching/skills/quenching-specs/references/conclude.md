@@ -1,4 +1,8 @@
-# /quenching-specs-conclude — review, archive, distil — and hand off
+---
+allowed-tools: Bash(cq:*), Bash(cq.cmd:*), Bash, Read, Glob, Grep, Write, Edit, AskUserQuestion, Skill
+---
+
+# /quenching-specs conclude — review, archive, distil — and hand off
 
 **Input**: `$ARGUMENTS` — the spec id, and optionally its outcome. A conductor launched with
 `--autonomous` adds the word `autonomous`; for a `done` outcome the run then opens the PR itself
@@ -8,32 +12,32 @@ instead of opening a second.
 Closes ONE spec out, short of the merge itself. Four things happen, in this order, and each is a
 separate decision: the whole branch is **reviewed**, the `/docs/` the work *revealed* is
 **written**, the spec is **archived and distilled** into the OKF bundle, and the pre-merge gate is
-**proven green** — then the run **stops**, naming `/quenching-git-pr-create` or
-`/quenching-git-merge` as the human's own next command — except that a spec recorded at `low` complexity chains directly
-to `/quenching-git-pr-create` through `Skill` after the green gate; under `autonomous` that same
+**proven green** — then the run **stops**, naming `/quenching-git pr-create` or
+`/quenching-git merge` as the human's own next command — except that a spec recorded at `low` complexity chains directly
+to `/quenching-git pr-create` through `Skill` after the green gate; under `autonomous` that same
 invocation carries the word `autonomous` and runs unasked.
 
 **Done work ends on the work branch; abandoned close-out writes land in the checkout holding the
 base.**
 
 The distillation doctrine — what crosses into `/docs/`, what stays, and how it is graded — lives in
-[specs-conclude/distill.md](.agents/quenching/assets/references/specs-conclude/distill.md)
+[specs-conclude/distill.md](.agents/quenching/references/specs-conclude/distill.md)
 §What crosses, what stays. Every hand-off into another module's command (`/quenching-align:*`
 for the bundle) runs only where that module is enabled, per
-[tool-resolution.md](.agents/quenching/assets/references/align/tool-resolution.md) §Routing into
+[tool-resolution.md](.agents/quenching/references/align/tool-resolution.md) §Routing into
 another module; with `quenching-specs` alone, the distillation still writes through the shipped
 insert procedure and only the offers into `quenching-align` drop. The layout and the gates live in
-[specs-develop/spec-driven.md](.agents/quenching/assets/references/specs-develop/spec-driven.md)
+[specs-develop/spec-driven.md](.agents/quenching/references/specs-develop/spec-driven.md)
 §The spec document §The gates and the stage-scoped explicit-none rule. The `.agents/quenching/bin/cq specs`
 surface lives in
-[specs-surface.md](.agents/quenching/assets/references/specs-develop/specs-surface.md)
+[specs-surface.md](.agents/quenching/references/specs-develop/specs-surface.md)
 §The `.agents/quenching/bin/cq specs` tool surface; the report shape lives in
-[report-mold.md](.agents/quenching/assets/references/specs-develop/report-mold.md)
+[report-mold.md](.agents/quenching/references/specs-develop/report-mold.md)
 §The report mold.
 ## Resolving the tool
 
 Resolve `.agents/quenching/bin/cq specs` per
-[align/tool-resolution.md](.agents/quenching/assets/references/align/tool-resolution.md)
+[align/tool-resolution.md](.agents/quenching/references/align/tool-resolution.md)
 §Resolving the tool. Branch on the **exit code** (0 ok · 1 findings · 2 refusal) and the `--json`,
 never on prose.
 
@@ -53,9 +57,9 @@ never on prose.
 - **An abandoned spec's branch is offered for deletion, never handed off toward a merge.** Partial
   work on a branch nobody adopted is history, not a change; offer to keep it or delete it, and
   default to keeping. This is the one branch-disposal decision that stays inline here rather than
-  in `/quenching-git-cleanup`.
+  in `/quenching-git cleanup`.
 - **Everything `abandoned` writes lands in the checkout holding `<base>`, never this branch** — see
-  [specs-conclude/abandoned.md](.agents/quenching/assets/references/specs-conclude/abandoned.md)
+  [specs-conclude/abandoned.md](.agents/quenching/references/specs-conclude/abandoned.md)
   §Locating the checkout and writing into it §The branch-delete offer, informed rather than defensive.
 - **Declared rules were already written.** The `/docs/standards/` a task explicitly named went in
   during execution, honestly graded. What lands here is what the work *revealed*.
@@ -75,7 +79,7 @@ is already set is **reported and skipped**, not repeated:
 | distil | no record — it is offered once per conclude | offer it; an empty harvest is a valid answer |
 | release obligations | the branch diff already carries what the standard requires | report it satisfied; re-read the standard only if the diff grew |
 | validation gate | no record — it is a verdict on the tree as it stands *now* | always re-run it; a green run from before the last commit proves nothing |
-| already merged | `git branch --merged <base>` lists the work branch, or a `merge`/`pr` record already exists | report that a later `/quenching-git-merge` or `/quenching-git-pr-create` run already finished this — there is nothing left to hand off |
+| already merged | `git branch --merged <base>` lists the work branch, or a `merge`/`pr` record already exists | report that a later `/quenching-git merge` or `/quenching-git pr-create` run already finished this — there is nothing left to hand off |
 
 `reviewed` is `writeOnce: false`: a diff read again is a new fact. `outcome` is `writeOnce: true` —
 if it is already set and reality disagrees, that is a **finding to report**, never a value to
@@ -111,7 +115,7 @@ for `abandoned` there is no handoff to make.
 ### 1. Resolve the spec, the outcome, and what already happened
 An ID in the input → use it. **No ID given → try auto-discovery first**, off the current
 branch's own marking:
-[auto-discover.md](.agents/quenching/assets/references/specs-conclude/auto-discover.md)
+[auto-discover.md](.agents/quenching/references/specs-conclude/auto-discover.md)
 §Reading the marking §Filtering to valid IDs §Resolving what remains, cited rather than
 restated. One valid id resolves it silently, naming the marking as the source; more than one asks
 which, on a decision sheet. No valid marking → §The fallback there measures the diff and always
@@ -177,9 +181,9 @@ task. What lands **here** is what the work revealed and nobody declared: the `##
 worth a doc, and whatever the branch review just surfaced.
 
 Decide what crosses with the table in
-[distill.md](.agents/quenching/assets/references/specs-conclude/distill.md)
+[distill.md](.agents/quenching/references/specs-conclude/distill.md)
 §What crosses, what stays; write each through the insert procedure in
-[knowledge-add/homes.md](.agents/quenching/assets/references/knowledge-add/homes.md)
+[knowledge-add/homes.md](.agents/quenching/references/knowledge-add/homes.md)
 §The frontmatter stamp §Updating `index.md` §Enriching the glossary §Self-check, stamping
 `authority` honestly. Present them as ONE plan and take one confirmation (under `autonomous`,
 §Under `autonomous` answers it).
@@ -261,7 +265,7 @@ This is the last writing step, and everything it writes lands on the **work bran
 `abandoned`, the base checkout (Doctrine above). Two things happen here, in this order.
 
 **First, the distillation pass** — the single bridge into `/docs/`, per
-[distill.md](.agents/quenching/assets/references/specs-conclude/distill.md)
+[distill.md](.agents/quenching/references/specs-conclude/distill.md)
 §The procedure (one confirmation), **branching on the outcome**:
 
 - **`done`** — the full pass over what is *left*: a decision still sitting in `## Design`, a generic
@@ -272,14 +276,14 @@ This is the last writing step, and everything it writes lands on the **work bran
   distil nothing, and that is the correct result.
 
 One plan, one OK (under `autonomous`, §Under `autonomous` gives it). Every write goes through
-[knowledge-add/homes.md](.agents/quenching/assets/references/knowledge-add/homes.md)
+[knowledge-add/homes.md](.agents/quenching/references/knowledge-add/homes.md)
 §The frontmatter stamp §Updating `index.md` §Enriching the glossary §Self-check. No bundle → skip
 silently, landing per Doctrine: the work branch for `done`, the base checkout for `abandoned`.
 
 **Then settle the release obligations the repo's standards attach to the merge itself.** With an
 OKF bundle present, derive which standards the branch diff's own paths answer to — an aggregate in
 the shell, never a walk of `/docs/standards/<subject>/` — and read exactly those, per
-[align/evidence-doctrine.md](.agents/quenching/assets/references/align/evidence-doctrine.md)
+[align/evidence-doctrine.md](.agents/quenching/references/align/evidence-doctrine.md)
 §1 §2. Apply what they require *of the merge* rather than of any one task — a version bumped across
 artifacts a standard says must move together, a changelog entry, a manifest re-stamped. This is the
 only correct moment for it: the whole branch is written, so what the release *is* is knowable.
@@ -322,7 +326,7 @@ lacks a merged dependency. A fetch error is reported and stops the handoff; it i
 zero.
 
 Non-zero → **say so and stop before the gate**, naming the count. Bringing the branch up to date is
-a write, and it is the human's call which way — merging the base in, or `/quenching-git-sync`'s own
+a write, and it is the human's call which way — merging the base in, or `/quenching-git sync`'s own
 rebase, which carries the recorded task subjects through the rewrite. Never do it unasked, and
 never run the gate over a branch you know is behind.
 
@@ -355,31 +359,31 @@ may never exist: the same verb the `low` path chains, with the word `autonomous`
 pre-answer to its confirmation.
 
 ```text
-Skill("quenching-git-git", "pr-create <id> autonomous")
+Skill("quenching-git", "pr-create <id> autonomous")
 ```
 
-`/quenching-git-pr-create <id> autonomous` owns its own push, confirmation and `pr` record;
-report the url it stamps on `PR:`, and never a second handoff — `/quenching-git-merge` is not
+`/quenching-git pr-create <id> autonomous` owns its own push, confirmation and `pr` record;
+report the url it stamps on `PR:`, and never a second handoff — `/quenching-git merge` is not
 invoked from here under any outcome. **Outside `autonomous`, `low` chains the provider handoff
 now:**
 
 ```text
-Skill("quenching-git-git", "pr-create <id>")
+Skill("quenching-git", "pr-create <id>")
 ```
 
-Invoke it with the spec id; `/quenching-git-pr-create` owns its own confirmation, push and PR
-record. Do not offer a second handoff or invoke `/quenching-git-merge` on the low path.
+Invoke it with the spec id; `/quenching-git pr-create` owns its own confirmation, push and PR
+record. Do not offer a second handoff or invoke `/quenching-git merge` on the low path.
 **For `medium`, `high` and `xhigh`, do not invoke it: name the handoff and stop:**
 
 Use the provider configuration already read in step 1 to name the next command: recommend
-`/quenching-git-pr-create` when the configured provider supports the PR route, otherwise
-`/quenching-git-merge`. The human picks, and neither is invoked from here. Name the branch and the
-base so the recommendation is copy-pasteable. Add one line: once the merge lands, `/quenching-git-cleanup` removes finished work branches and worktrees, listing the ones that must stay (open PR, checked-out worktree, unmerged commits) with the reason; nothing is deleted without the human's confirmation. For an `abandoned` outcome, skip this handoff and
+`/quenching-git pr-create` when the configured provider supports the PR route, otherwise
+`/quenching-git merge`. The human picks, and neither is invoked from here. Name the branch and the
+base so the recommendation is copy-pasteable. Add one line: once the merge lands, `/quenching-git cleanup` removes finished work branches and worktrees, listing the ones that must stay (open PR, checked-out worktree, unmerged commits) with the reason; nothing is deleted without the human's confirmation. For an `abandoned` outcome, skip this handoff and
 follow the branch-disposal path below.
 
 For `abandoned`, there is nothing to hand off toward — do not remove any worktree; frame and make
 the branch-delete offer per
-[specs-conclude/abandoned.md](.agents/quenching/assets/references/specs-conclude/abandoned.md)
+[specs-conclude/abandoned.md](.agents/quenching/references/specs-conclude/abandoned.md)
 §The branch-delete offer, informed rather than defensive, default **keep** (taken unasked under
 `autonomous`), and record the choice and fate in the report.
 **Done when:** the gate ran green on the branch and the handoff was named, or the run recorded why
@@ -390,7 +394,7 @@ nothing could be handed off — a red gate, or (abandoned) the branch's own fate
 **When this run's input carried `autonomous`, skip the read below and the mold with it** — a conductor presents the report, not this run; return the content in the fixed shape the caller specified. Otherwise:
 
 ```bash
-.agents/quenching/bin/cq components read .agents/quenching/assets/references/specs-develop/report-mold.md \
+.agents/quenching/bin/cq components read .agents/quenching/references/specs-develop/report-mold.md \
   --sections "§The report mold" --rules-only
 ```
 
@@ -404,13 +408,13 @@ body blocks:
    result, which means **a check that came back inconclusive is named as such, never counted as
    passed**.
 3. **Unresolved `## Discoveries`** — optional, each line named. They are
-   `/quenching-specs-develop`'s discoveries stage to close, and they are easiest to lose at exactly
+   `/quenching-specs develop`'s discoveries stage to close, and they are easiest to lose at exactly
    this moment.
 
 Print §The session-size line before the block — `.agents/quenching/bin/cq components session context --json`, read once; exit 1 turns the `→` line into a recommendation to run that handoff **in a new session**, exit 0 and 2 leave it an offer.
 
-Close on §The next-step block, its recommended line naming step 6's handoff — `/quenching-git-pr-create`
-or `/quenching-git-merge`, whichever was recommended, or `/quenching-specs-develop <id>` when
+Close on §The next-step block, its recommended line naming step 6's handoff — `/quenching-git pr-create`
+or `/quenching-git merge`, whichever was recommended, or `/quenching-specs develop <id>` when
 block 3 has rows and that needs settling first.
 **Done when:** path, outcome, records, both `/docs/` passes and the next-step block are all
 reported.
@@ -432,7 +436,7 @@ reported.
   the base is merged in (step 6), never rebased.
 - **This command's own commits end at step 5.** Nothing it does writes to the branch after the gate
   in step 6, except the base merge `autonomous` runs before that gate — the merge, the PR, and whatever they each commit belong entirely to
-  `/quenching-git-merge` and `/quenching-git-pr-create`, run separately, on the human's own word.
+  `/quenching-git merge` and `/quenching-git pr-create`, run separately, on the human's own word.
 - Never overwrite the `writeOnce` `outcome` record to make reality fit — report the disagreement
   instead, and never edit the frontmatter to get past `.agents/quenching/bin/cq specs record`'s refusal.
 - Never re-run a stage whose signal is already set without saying so and being asked to.

@@ -1,19 +1,15 @@
 ---
-description: >-
-  Run ONE improvement round (triage, map, epic, orchestrate, review, gate); `--until-dry` or `--until` repeat rounds until a dry queue or a deadline. Use for "run the autopilot until 7am". Not for: ONE epic → /quenching-specs-orchestrate; owner-decided map → /quenching-specs-improve.
-disable-model-invocation: true
-argument-hint: "[--until <ISO-8601 date-time with offset>] [--until-dry] [--max-launches <n>] [--max-tree-tokens <n>] [focus areas]"
 allowed-tools: Bash(cq:*), Bash(cq.cmd:*), Bash(git:*), Bash, Read, Grep, Glob, Agent, Task, TaskStop, SendMessage
 ---
 
-# /quenching-specs-autopilot — one round of improvement; more only on request
+# /quenching-specs autopilot — one round of improvement; more only on request
 
 **Input**: `$ARGUMENTS` — no flag runs **ONE round** (steps 1–8) and stops. `--until-dry` repeats
 rounds until the queue runs dry; `--until <date-time with offset>` (e.g. `2026-10-09T07:00-03:00`)
 repeats them until the deadline (and still stops at a dry queue). `--max-launches <n>` sets the
 launch ceiling; without it the ceiling is `shared.autonomy.maxLaunches` from `.agents/quenching/bin/cq config show --effective --json`
 (default **40**, provisional: it is fixed only after the human reads the measurement of the last three runs), and the flag wins over the key. `--max-tree-tokens <n>` sets an opt-in ceiling on the tokens measured per
-model across the tree, with **no default**: without it nothing is read or compared. Optionally focus areas as in `/quenching-specs-improve`.
+model across the tree, with **no default**: without it nothing is read or compared. Optionally focus areas as in `/quenching-specs improve`.
 Typed by the human only: **the invocation is the human's delegation** for the whole run — every
 forced execution, push, PR and merge below is authorized by it, and by nothing else.
 
@@ -35,7 +31,7 @@ non-`cq`, non-`git` command is run.
   "decide with the human" — one per run, created on first need — and the round continues without
   it. **Narrowing** a grant is not widening it.
 - **Relevance over activity.** A spec enters the run only with evidence (`path:line`, a command's
-  output, a measurement) and a concrete consequence — the bar of `/quenching-specs-improve`. "Nothing
+  output, a measurement) and a concrete consequence — the bar of `/quenching-specs improve`. "Nothing
   left to polish" is never a reason to invent work.
 - **Findings become specs, never hot fixes.** What the correctness review finds is a spec of the
   next round; the conductor never patches `main` itself.
@@ -95,7 +91,7 @@ non-`cq`, non-`git` command is run.
 ## Workflow
 
 ### 1. Health
-Resolve `cq` per [align/tool-resolution.md](.agents/quenching/assets/references/align/tool-resolution.md)
+Resolve `cq` per [align/tool-resolution.md](.agents/quenching/references/align/tool-resolution.md)
 §Resolving the tool; branch on the exit code. Read the root harness for the gate command and the
 ephemeral area. Check, on `main`: `git stash list` is empty, `git worktree list` holds only this
 run's worktrees, and the gate is green. Anything red there → this round's first spec is fixing it
@@ -140,7 +136,7 @@ it is still relevant against the current code:
 
 ### 3. Map
 Only when the queue is short (fewer than three specs): run the mapping of
-`/quenching-specs-improve` steps 1–3 — read-only `quenching-spec-scout` agents per area, evidence plus
+`/quenching-specs improve` steps 1–3 — read-only `quenching-spec-scout` agents per area, evidence plus
 consequence, no duplicate of an open spec, at most 15 candidates, every `high` re-checked — with
 this session deciding the owner's questions as the delegated owner, except those on the
 **never forced** list, which go to the human epic. Focus areas from `$ARGUMENTS` narrow the areas.
@@ -158,7 +154,7 @@ Exit 2 is read, never repeated blindly. The model restrictions on code and class
 they are.
 **Decomposition, by this session.** Members not yet decided, a spec over the worker budget, or waves
 that need reading file overlap are decomposed here, as the develop flow's decomposition step does
-(`/quenching-specs-specs develop`): propose the slices from the queue and the kept candidates,
+(`/quenching-specs develop`): propose the slices from the queue and the kept candidates,
 then create the composite and the members with the same `.agents/quenching/bin/cq specs new` and `.agents/quenching/bin/cq specs link add`.
 Either way, write the composite's `## Design` — and write it as a READ, AN APPEND AND ONE WRITE,
 because `.agents/quenching/bin/cq specs section --write` REPLACES the section: `.agents/quenching/bin/cq specs section <composite> Design
@@ -177,7 +173,7 @@ this round's decisions, and `validate` raises no `sp-link-*` finding.
 **Economy mode.** An epic with **at most 2 members, every one `low` or `medium`**, runs without
 `quenching-spec-orchestrator`: this session launches `quenching-spec-runner` →
 `quenching-spec-verifier` for each member and, after the PASS, publishes it itself
-(`/quenching-git-git pr-create autonomous`, then `.agents/quenching/bin/cq git pr merge` on green CI), with the acceptance rules
+(`/quenching-git pr-create autonomous`, then `.agents/quenching/bin/cq git pr merge` on green CI), with the acceptance rules
 of the spec-orchestrator's protocol, cited and not restated — steps 3 (budget, `budget:` relaunch), 4
 (acceptance only on a spec-verifier PASS, the `execute-done:`/`conclude` two spawns, publish after the PASS,
 one re-spawn) and 5 (retry, idempotency) of `quenching/agents/spec-orchestrator.md`.
@@ -247,7 +243,7 @@ Neither → without `--until-dry`/`--until`, close the round record (`closed`), 
 **fresh context**: launch one sub-agent that follows this body from step 1 with the record as its
 only input (counted as a launch). If a sub-agent cannot launch sub-agents, stop instead, with the
 record `closed` and the next step printed as the invocation to resume in a new session
-(`/quenching-specs-autopilot --until-dry`).
+(`/quenching-specs autopilot --until-dry`).
 **Done when:** the gate and the audit were read, and the run either stops or starts the next round
 the flags asked for.
 

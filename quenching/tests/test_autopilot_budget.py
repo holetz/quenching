@@ -6,7 +6,7 @@ import unittest
 
 
 ROOT = Path(__file__).resolve().parents[2]
-AUTOPILOT = ROOT / "quenching/commands/specs/autopilot.md"
+AUTOPILOT = ROOT / "quenching/skills/quenching-specs/references/autopilot.md"
 ORCHESTRATOR = ROOT / "quenching/agents/spec-orchestrator.md"
 
 
@@ -30,7 +30,7 @@ class OrchestratorBudgetTests(unittest.TestCase):
 class AutopilotTreeCeilingTests(unittest.TestCase):
     def test_flag_is_opt_in_without_default(self):
         body = text(AUTOPILOT)
-        self.assertIn("[--max-tree-tokens <n>]", body)
+        self.assertIn("`--max-tree-tokens <n>` sets an opt-in ceiling", body)
         self.assertIn("with **no default**", body)
         self.assertIn("without it nothing is read or compared", body)
 

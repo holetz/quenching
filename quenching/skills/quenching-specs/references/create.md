@@ -1,18 +1,22 @@
-# /quenching-specs-create — capture one spec, one screen, one turn
+---
+allowed-tools: Bash(cq:*), Bash(cq.cmd:*), Read, Grep, Glob, Bash(python3:*), Bash(py:*), AskUserQuestion, Skill
+---
+
+# /quenching-specs create — capture one spec, one screen, one turn
 
 **Input**: `$ARGUMENTS` — a short description of the problem, a path to a Claude or Codex plan
 file, or a plan already developed in this session (including a `<proposed_plan>` block). With no
 argument and no identifiable plan in the conversation, ask what to capture.
 
-Creates ONE spec: `/quenching-specs-develop` fills its sections, `/quenching-specs-execute` builds
-it, and `/quenching-specs-conclude` closes it out under the same identity.
+Creates ONE spec: `/quenching-specs develop` fills its sections, `/quenching-specs execute` builds
+it, and `/quenching-specs conclude` closes it out under the same identity.
 
 The layout, the thirteen canonical sections, the gates and the front's on-write check live in
-[specs-develop/spec-driven.md](.agents/quenching/assets/references/specs-develop/spec-driven.md)
+[specs-develop/spec-driven.md](.agents/quenching/references/specs-develop/spec-driven.md)
 §The thirteen sections §The gates and the stage-scoped explicit-none rule. The `.agents/quenching/bin/cq specs` surface
-lives in [specs-surface.md](.agents/quenching/assets/references/specs-develop/specs-surface.md)
+lives in [specs-surface.md](.agents/quenching/references/specs-develop/specs-surface.md)
 §The `.agents/quenching/bin/cq specs` tool surface; the report shape lives in
-[report-mold.md](.agents/quenching/assets/references/specs-develop/report-mold.md)
+[report-mold.md](.agents/quenching/references/specs-develop/report-mold.md)
 §The report mold.
 
 ## The one rule: effort proportional to input
@@ -34,7 +38,7 @@ file already answered most of them. The develop pass re-evaluates the level when
 ## Resolving the tool
 
 Resolve `.agents/quenching/bin/cq specs` per
-[align/tool-resolution.md](.agents/quenching/assets/references/align/tool-resolution.md)
+[align/tool-resolution.md](.agents/quenching/references/align/tool-resolution.md)
 §Resolving the tool; branch on the **exit code** (0 ok · 1 findings · 2 refusal), never on prose.
 
 ## Workflow
@@ -61,7 +65,7 @@ number when a card is configured, else the branch's counter, assigned when the s
 ### 3. Plan-source path only — read it, and read the bundle
 
 Read the whole plan file, or the complete plan content from the current session, then read
-[specs-create/plan-mapping.md](.agents/quenching/assets/references/specs-create/plan-mapping.md)
+[specs-create/plan-mapping.md](.agents/skills/quenching-specs/references/specs-create/plan-mapping.md)
 §The mapping and classify the plan's parts against it. When the plan is inside
 `<proposed_plan>`, use that block as the plan source and ignore the wrapper itself.
 
@@ -95,7 +99,7 @@ whatever was resolved to step 5's `--tags`; the subject's own fixed tags need no
 **sentence path and the plan-source path yield `medium`**, and `low` only where the input explicitly
 asks for an unattended pass. The level answers how much a human needs to be part of the process,
 never the size or difficulty of the input — the four levels and what each buys are
-[spec-driven.md](.agents/quenching/assets/references/specs-develop/spec-driven.md) §The scale, never
+[spec-driven.md](.agents/quenching/references/specs-develop/spec-driven.md) §The scale, never
 transcribed here.
 
 **A capture presumes `medium`**: it puts a human on every question of the definition and then
@@ -123,7 +127,7 @@ record>`. Never fabricate.
 
 Everything step 4 resolved, everything above, and the closing `validate` — **one Bash block**,
 chained with `&&` per
-[align/tool-resolution.md](.agents/quenching/assets/references/align/tool-resolution.md)
+[align/tool-resolution.md](.agents/quenching/references/align/tool-resolution.md)
 §Resolving the tool:
 
 ```bash
@@ -170,7 +174,7 @@ returned is in hand.
 ### 6. The one screen — capture, correction and direction
 
 ```bash
-.agents/quenching/bin/cq components read .agents/quenching/assets/references/specs-develop/report-mold.md \
+.agents/quenching/bin/cq components read .agents/quenching/references/specs-develop/report-mold.md \
   --sections "§The report mold" --rules-only
 ```
 
@@ -182,10 +186,10 @@ presumed and why — the shape differs by path:
 | sentence | the descriptive title and drafted `## Problem` text **in full**, exactly what a human wants to check about the capture. Plus subject, type, tags and `complexity`, each with its one-line reason |
 | plan source | subject, type, tags and `complexity` (each reasoned), and the **list** of sections filled with the task count. **Never the bodies** — the plan is large and the human just wrote it |
 
-Then the next-step block — `/quenching-specs-develop <id>` as the forward candidate — and **one**
-decision sheet ([questions.md](.agents/quenching/assets/references/specs-develop/questions.md) §The four shared mechanics §1), immediately after. Two options, labelled in the declared language:
+Then the next-step block — `/quenching-specs develop <id>` as the forward candidate — and **one**
+decision sheet ([questions.md](.agents/quenching/references/specs-develop/questions.md) §The four shared mechanics §1), immediately after. Two options, labelled in the declared language:
 
-A. **Develop now (recommended)** — narrate, then invoke `quenching-specs-develop <id>` through
+A. **Develop now (recommended)** — narrate, then invoke `quenching-specs develop <id>` through
    the **Skill** tool, with no sentence declared. Whether that pass asks anything is the
    `complexity` shown on this sheet: `high` and `xhigh` ask, `low` and `medium` answer from
    evidence and park the rest in `## Open Decisions`; correcting it in the reply is how the human
@@ -211,12 +215,12 @@ both — has been fully honoured.
 - **Never carry a plan's merge obligations into `## Tasks`.** On the plan-source path a native plan's
   "Etapas" routinely end in a version bump, a changelog entry or *update the docs*; none of them
   converts, because what the release *is* is unknowable until the last task lands.
-  `/quenching-specs-conclude` owns them, along with the `/docs/` the work *reveals* and the cycle's
+  `/quenching-specs conclude` owns them, along with the `/docs/` the work *reveals* and the cycle's
   own closing actions. A standard the plan declares the spec will write still becomes a checkbox.
 - Never accept a generated title or a `titleize` fallback when the input lacks a descriptive title.
 - **Never ask for a metadata field before the spec exists.** Subject, type, tags and `complexity`
   are resolved and written in step 5; the human is asked only after, on the closing screen.
-- **Never invoke `/quenching-specs-develop` without the human having chosen a direction** on the
+- **Never invoke `/quenching-specs develop` without the human having chosen a direction** on the
   closing screen — a correction alone, with no direction named, ends the run at option B.
 - **Never print the closing screen without naming what was presumed and why** — every subject,
   type, tag and `complexity` level carries its reason.

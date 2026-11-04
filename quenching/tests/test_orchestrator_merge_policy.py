@@ -21,12 +21,12 @@ class MergePolicyTests(unittest.TestCase):
         self.assertNotIn("carries the dated autonomy policy", body)
 
     def test_improve_records_the_canonical_text_only_when_forced_execution_is_chosen(self):
-        body = text("quenching/commands/specs/improve.md")
+        body = text("quenching/skills/quenching-specs/references/improve.md")
         self.assertIn(CANONICAL, body)
         self.assertIn("no forced execution, no push, no merge", body)
 
     def test_autopilot_still_records_the_canonical_text(self):
-        self.assertIn(CANONICAL, text("quenching/commands/specs/autopilot.md"))
+        self.assertIn(CANONICAL, text("quenching/skills/quenching-specs/references/autopilot.md"))
 
 
 if __name__ == "__main__":
