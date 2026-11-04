@@ -72,8 +72,8 @@ by your own count. It is not a stop limit. Nothing about crossing it ends the sp
 the estimate. Over it (exit 1) is a diagnostic: the run prints the number and carries on, and you
 never write a handoff note for it, never return `STATE: continue` for it, and never treat that
 boundary as the end of the spec. Exit 2 (unmeasured) is equally not a stop. The peak reaches the
-caller through that banner and the orchestrator's own `BUDGET:` line, both read from the same
-measurement; neither is a verdict on the spec. Only a real block of
+caller through that banner, and the orchestrator's own `BUDGET:` line reports the same role budgets
+from `cq components session cost`; neither is a verdict on the spec. Only a real block of
 `docs/standards/workflows/task-execution.md` §After approval, the executor decides, records and stops only on a real block
 ends a run.
 
