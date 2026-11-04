@@ -149,25 +149,26 @@ folder needed was the fourth reason **named and given its own subtree**, which i
 
 The rule that decides where an executable sits, made explicit by the same move: **by how it is
 invoked, not by whether it ships.** It placed by invocation only as long as each invocation kind
-had its own file: while the plugin still shipped `hooks/hooks.json`, the knowledge checker sat in
+had its own file: while the plugin still shipped a hook manifest, the knowledge checker sat in
 `hooks/` because it was the one tool a **hook event** fired rather than a command body, and the
 specs/components tools sat in `bin/` because commands were what invoked them. One entry point
 serving both kinds was the case that rule did not anticipate.
 
 **The rule as amended: `hooks/` would hold a handler dedicated to a hook event; an entry that
-serves both a command body and a hook lives in `bin/`.** `cq` answered `hooks/hooks.json`'s
+serves both a command body and a hook lives in `bin/`.** `cq` answered the manifest's
 `PostToolUse`/`Stop` wiring (`cq knowledge hook`) *and* every pillar's own command bodies (`cq
 specs …`, `cq components …`), so it sat in `bin/` — the invocation that was not exclusive to the
-hook path won the placement. `hooks/hooks.json` was later retired outright, along with the `hook`
-event it wired, and `cq` stays in `bin/` on the same invocation reasoning. `hooks/hooks.json`
-returned on 2026-10-18 holding only the wiring of `deny-claude-coauthor`, a handler dedicated to
-that one event; the handler itself sits in `assets/hooks/` beside `warn-git-add-all.sh`.
+hook path won the placement. That manifest was later retired outright, along with the `hook`
+event it wired, and `cq` stays in `bin/` on the same invocation reasoning. On 2026-10-18 a manifest
+returned holding only the wiring of `deny-claude-coauthor`, a handler dedicated to that one event;
+it is now declared in `assets/modules.json` and installed by `cq deploy`, and the handler sits in
+`assets/hooks/` beside `warn-git-add-all.sh`.
 
 **The adjacency that used to justify a hook handler sitting beside its config was already gone
 before that retirement.** The original reasoning was that the knowledge checker had to sit beside
 the `hooks-config.json` it loaded *from its own directory*, so separating the pair would break
 config loading in every installed copy. Both halves were already false by the time
-`hooks/hooks.json` was retired: the knowledge pillar reads the **target's**
+that manifest was retired: the knowledge pillar reads the **target's**
 `.claude/hooks/hooks-config.json` and nothing else — the bundle root it validates is the fixed
 `/docs/` convention, which no configuration names ([bundle-root.md](bundle-root.md)) — and
 there were no installed copies left to break.

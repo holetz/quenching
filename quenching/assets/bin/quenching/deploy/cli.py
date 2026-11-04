@@ -12,12 +12,14 @@ from quenching.common.deploy import MANIFEST, read_manifest
 from quenching.common.config import repository_document
 from quenching.common.output import FINDINGS, OK, REFUSAL, NoAbbrevParser, emit, refuse
 from quenching.common.version import VERSION
+from quenching.deploy import settings as claude_settings
 from quenching.deploy import tree as deploy_tree
 
 LEGACY = (".claude/commands", ".claude/references", ".agents/.generated-from.json")
 GENERATED_ROOTS = (".agents/quenching/", ".agents/skills/quenching-", ".claude/skills/quenching-",
                    ".claude/agents/quenching-")
 MCP_MOUNTS = {"specs"}
+SETTINGS = ".claude/settings.json"
 HOOKS_PATH = deploy_tree.PAYLOAD + "/assets/githooks"
 
 
@@ -170,6 +172,11 @@ def plan(target: Path, built: dict, previous: dict | None) -> dict:
             changes.append(_change("delete", rel))
     seed_changes, warnings = _seed_plan(target, seeds)
     changes.extend(seed_changes)
+    merged = built.get("merged")
+    if merged:
+        if merged["changed"]:
+            changes.append(_change("settings", SETTINGS))
+        warnings = [*warnings, *merged["warnings"]]
     if (target / MANIFEST).exists():
         try:
             current = json.loads((target / MANIFEST).read_text(encoding="utf-8"))
@@ -180,6 +187,34 @@ def plan(target: Path, built: dict, previous: dict | None) -> dict:
     else:
         changes.append(_change("create", MANIFEST))
     return {"changes": changes, "conflicts": conflicts, "warnings": warnings}
+
+
+def _settings_merge(target: Path, built: dict, previous: dict | None) -> dict | None:
+    """Merge quenching's own hooks into the user's `.claude/settings.json` without writing.
+
+    Returns None when there is nothing to do, else `{"text": <new text or None>, "delete": bool,
+    "warnings": [...]}`; raises `SettingsRefusal` on a file that cannot be merged safely. With no
+    Claude harness the wanted set is empty, so only entries a past deploy wrote leave.
+    """
+    wanted = built.get("settings")
+    recorded = (previous or {}).get("claudeSettings")
+    recorded = recorded if isinstance(recorded, dict) else None
+    if wanted is None and recorded is None:
+        return None
+    path = target / SETTINGS
+    if path.exists() and not path.is_file():
+        raise claude_settings.SettingsRefusal("the path is not a regular file")
+    current = path.read_text(encoding="utf-8") if path.is_file() else None
+    keys = recorded.get("attribution") if recorded else []
+    keys = keys if isinstance(keys, list) else []
+    merged = claude_settings.merge(current, wanted["hooks"] if wanted else [],
+                                   wanted["attribution"] if wanted else None, keys)
+    if wanted is not None:
+        built["manifest"]["claudeSettings"]["attribution"] = sorted(merged.attribution)
+    delete = (wanted is None and current is not None and recorded is not None
+              and json.loads(merged.text if merged.text is not None else current) == {})
+    return {"text": merged.text, "delete": delete, "warnings": merged.warnings,
+            "changed": delete or (merged.text is not None and merged.text != current)}
 
 
 def _safe_relative(rel: str) -> bool:
@@ -215,6 +250,14 @@ def write(target: Path, built: dict, result: dict, prune_legacy: bool) -> None:
         if not path.exists():
             path.parent.mkdir(parents=True, exist_ok=True)
             path.write_text(text, encoding="utf-8")
+    merged = built.get("merged")
+    if merged and merged["changed"]:
+        path = target / SETTINGS
+        if merged["delete"]:
+            path.unlink()
+        else:
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text(merged["text"], encoding="utf-8")
     if prune_legacy:
         pointer = target / "CLAUDE.md"
         if pointer.is_file() and pointer.read_text(encoding="utf-8").strip() == "@AGENTS.md":
@@ -301,6 +344,13 @@ def main(argv: list[str]) -> int:
     except (OSError, ValueError) as exc:
         return refuse({"code": "ct-deploy-source", "message": str(exc),
                        "remedy": "run deploy from a complete quenching checkout or wheel"},
+                      args.json)
+    try:
+        built["merged"] = _settings_merge(target, built, previous)
+    except claude_settings.SettingsRefusal as exc:
+        return refuse({"code": "ct-deploy-settings", "path": SETTINGS,
+                       "message": f"{target / SETTINGS} cannot be merged: {exc}; nothing was written",
+                       "remedy": "fix the file by hand, or remove it, then rerun `cq deploy`"},
                       args.json)
     result = plan(target, built, previous)
     result["warnings"] = [*result.get("warnings", []), *_identity_hooks_warnings(target)]

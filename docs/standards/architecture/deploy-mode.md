@@ -94,14 +94,36 @@ hand edit is drift, not a second owner, and a file present at that path without 
 refused (`ct-deploy-unowned`). Turning the key off removes the files through the normal `delete`
 flow, and selecting fewer harnesses writes fewer files. The option requires `--runtime vendor`,
 because a `uvx` runtime omits the vendored entry point the generated command calls.
-`cq deploy` never edits `.claude/settings*.json`; approving a generated `.mcp.json` server
-(`enabledMcpjsonServers`) stays a human step in the harness.
+Approving a generated `.mcp.json` server (`enabledMcpjsonServers`) stays a human step in the
+harness; deploy never writes it.
+
+## The `.claude/settings.json` merge
+
+With `claude` among the harnesses, deploy installs the hooks of the selected modules into the
+target's `.claude/settings.json`, and unlike `.mcp.json` the file stays the user's: it is merged,
+never owned, so it is not in the manifest's `files`.
+
+- **Own entries only.** An entry is quenching's when its `command` points under
+  `.agents/quenching/assets/hooks/`; that path is the marker, valid even without a manifest.
+  Everything else in the file (keys, groups, hooks, order) is left as written. A wanted entry that
+  already exists is updated in place; a missing one is appended in a new `{matcher, hooks}` group.
+- **`attribution`.** Deploy writes `commit: ""` and `pr: ""` only for keys that are absent. A value
+  the user set stays and becomes a warning, not drift. Removal deletes only the keys that are still
+  `""` and that the manifest records (`claudeSettings.attribution`) as written by deploy.
+- **`--check`.** The merge result differing from the file is `settings` drift (exit 1).
+- **Removal.** Selecting fewer modules drops the hooks of the module that left; a harness list
+  without `claude` (`codex`, `opencode`, `none`) wants nothing, so only deploy's own entries leave.
+  A file reduced to `{}` by that removal is deleted.
+- **Refusal.** Invalid JSON, a root that is not an object, or `hooks` / `hooks.<event>` of the
+  wrong type is `ct-deploy-settings` (exit 2) and nothing is written. A successful merge rewrites
+  the file once with two-space indentation; later runs are idempotent.
 
 ## What deploy does not do
 
 - It does not install `/docs/` or call an align; the target runs its own
   `quenching-knowledge` skill (flow `align`) after the surface exists. `AGENTS.md` names that next step when the bundle is absent.
-- It does not install hooks or rewrite `.claude/settings*.json`.
+- It does not touch `.claude/settings.local.json` or the user's `~/.claude`, and edits
+  `.claude/settings.json` only through the merge above.
 - It does not choose the specs backend, license, release provider or any product policy.
 - It does not merge a content-bearing `CLAUDE.md`; the target's
   `quenching-components` skill (flow `harness-align`) owns that, and a pointer-only file is removed only on
