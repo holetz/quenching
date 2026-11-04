@@ -4,10 +4,10 @@ title: Context discipline — open less, run for less time, and emit fewer turns
 description: The two halves of a run's integral `tokens × turns remaining` and the three ways to cut it — open less (the declared files rather than the folder, the cited sections rather than the file, N sections in ONE call, the block rather than the section where a section has blocks, and the rules/rationale marker convention), run for less time (the section boundary as a legitimate stopping point, with measured role budgets checked only at existing boundaries), and emit fewer turns per unit of work (the batching contract, and the ban on a turn that exists only to announce the next tool call); plus the two things measured and refused, segmenting the bundle into more files and deleting rationale to compact it
 resource: quenching/skills/**, quenching/references/**, quenching/assets/bin/quenching/components/**, quenching/assets/bin/quenching/specs/**, quenching/agents/**, scripts/measure_context_distribution.py
 tags: [automation, context, reading, cost, commands, references]
-timestamp: 2026-11-03
+timestamp: 2026-11-04
 audience: both
 authority: background
-source: read-by-section-not-by-file, narrow-the-execute-preamble, extensible-surface-and-budget-retirement, 2026-08-06, 2026-08-04, scope-the-handoff-rewrite; specs 1629 (2026-10-13), 1631, 1633 (2026-10-14), 1754 (2026-10-16), 1632, 1875 (2026-10-17); cross-harness cache measurement (2026-11-02); spec 2163 (2026-11-03); lineage in ADR 0004
+source: read-by-section-not-by-file, narrow-the-execute-preamble, extensible-surface-and-budget-retirement, 2026-08-06, 2026-08-04, scope-the-handoff-rewrite; specs 1629 (2026-10-13), 1631, 1633 (2026-10-14), 1754 (2026-10-16), 1632, 1875 (2026-10-17); cross-harness cache measurement (2026-11-02); spec 2163 (2026-11-03), 2175 (2026-11-04); lineage in ADR 0004
 maintainer: quenching
 ---
 
@@ -231,12 +231,12 @@ boundary, and a build offers to stop there.
   each section boundary. Within the main-session budget, or unmeasured, the next stage stays an
   offer; over it, the command recommends the next stage in a new session, with the exact command,
   inside the payload of a question it already asks or in the `→` line. Nothing is stopped and
-  nothing is recorded. **The worker budget is enforced by code:** under `autonomous`, `execute`
-  measures its own transcript with `cq components session context --self <id> --json` at each
-  section boundary and, over budget (exit 1), stops there; the `spec-runner` returns
-  `STATE: continue` with `NOTE: budget: <peak>/<budget> after section <N>`, the orchestrator
-  re-spawns a fresh worker without counting it as a failure re-spawn, and its totals line reports
-  `BUDGET:` from `cq components session cost --json`'s `overBudget`. Exit 2 never stops a run. On
+  nothing is recorded. **The worker budget is a size estimate, not a stop limit:** under
+  `autonomous`, `execute` measures its own transcript with `cq components session context --self
+  <id> --json` at each section boundary, prints the peak against the estimate and carries on; a
+  worker over it finishes the spec, and the `spec-runner` never returns `budget:`. The
+  orchestrator's totals line still reports `BUDGET:` from `cq components session cost --json`'s
+  `overBudget`, as telemetry that blocks no acceptance. Exit 2 never stops a run. On
   OpenCode the same command measures the session named by `OPENCODE_SESSION_ID`, which a subagent
   has of its own, so `--self` needs no marker there; `session cost` does not read OpenCode, so the
   `BUDGET:` line stays Claude-only. **The
@@ -291,7 +291,7 @@ counts the shared files again. A declared file under a generated mirror director
 `.generated-from.json` or `.generated-files.json`, except the files its module lists as `authored`)
 is write-only: a generator writes it and no task reads it, so it is listed with `writeOnly` but adds
 no bytes and is never unresolved. Missing/new files and undeclared task inputs remain unresolved.
-The largest section is compared with the worker policy budget above. Total reading volume is
+The largest section is compared with the worker size estimate above. Total reading volume is
 not a context peak, and even complete declared-input coverage never proves the build fits:
 host/harness overhead, conditional references, outputs, generated code and iterations are excluded.
 
@@ -324,9 +324,9 @@ Use these selected policy budgets in input-context tokens, measured by code from
 
 | Role | Budget | Applies to |
 | --- | --- | --- |
-| Main session | 200000 | Human-led spec stages and the top-level conversation |
-| Worker | 100000 | The spec-runner building one spec in its isolated context |
-| Conductor | 150000 | Orchestrator and autopilot coordination contexts |
+| Main session | 200000 | Human-led spec stages and the top-level conversation; an offer at the stage end |
+| Worker | 100000 | The spec-runner building one spec in its isolated context; a size estimate, never a stop |
+| Conductor | 150000 | Orchestrator and autopilot coordination contexts; a stop, checked between waves |
 
 Role comes from topology/agent metadata, independently of command attribution. A conductor
 uses its conductor budget even when its transcript is a subagent. A new role or missing
@@ -353,8 +353,9 @@ Do not count a changed sample or model mix as demonstrated causal savings.
 Keep context changes at the existing boundaries described in §Run for less time. Preserve
 `## Handoff` and task commits. Do not treat fresh-context preparation as free, split one task
 because of its window, or extrapolate the worker restart sample to a measured main/conductor
-restart cost. Only the worker budget is enforced, by the section-boundary stop of §Run for less
-time; the conductor and main-session budgets remain policy until a verb enforces them.
+restart cost. Only the conductor budget is enforced, by the between-wave stop of §Run for less
+time; the worker's number is the size estimate the section boundary measures and reports, and the
+main-session budget remains an offer until a verb enforces it.
 
 <!-- rationale -->
 

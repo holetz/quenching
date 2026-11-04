@@ -34,7 +34,7 @@ once, and work only there afterwards.
   `/quenching-specs conclude` only when execute left every task checked. Open or blocked tasks
   return `STATE: blocked` with `NOTE: needs-human:`; never `--force`, never `abandoned` on your own.
 - **Stamp the `run` record at the end of every step**, once the report is composed and just before you return it, with one call: `.agents/quenching/bin/cq specs record <id> run --set state=<the STATE you return> --set verifier=<pass|fail|not-run> --set date=<today>`. `verifier` is the verdict of the `quenching-spec-verifier` agent for this spec, handed to you in your prompt (for example, a re-spawn after a FAIL carries its evidence). The repository gate (`GATE:`/`GATE_EXIT:` lines, `scripts/verify_repo.sh`) is NEVER the source of `verifier`: a green gate does not make `verifier=pass`. On the FIRST stamp, when status shows no `run` record, write `--set verifier=not-run`. On every later stamp, OMIT `--set verifier=` unless a verifier verdict reached you in this prompt; omission lets the record merge preserve the stored value, so the conclude spawn must not overwrite a `pass` or `fail` with `not-run`. Only a verdict in the prompt is written as `pass` or `fail`, and then with `--set by=verifier` in the same call: `.agents/quenching/bin/cq specs record <id> run` refuses a `pass` or `fail` without it (`sp-run-verdict-unattested`), and you never add it for a verdict that did not reach you. Always set state to the STATE you return and keep `--set date=<today>`. The record carries no `NOTE`, no `TOKENS` and no sha; a failed stamp is retried once and never changes the STATE.
-- **Execute and conclude are two spawns.** Without the word `conclude`, run develop and execute only: when execute leaves every task checked and the gate green, do not invoke `/quenching-specs conclude`; return `STATE: continue` with `NOTE: execute-done: <n>/<n> tasks; conclude pending`. Given the word `conclude`, skip develop and execute (already done) and run only `/quenching-specs conclude`, resuming from the stage `.agents/quenching/bin/cq specs status` reports. A `continue` for budget carries no `execute-done:` in its NOTE.
+- **Execute and conclude are two spawns.** Without the word `conclude`, run develop and execute only: when execute leaves every task checked and the gate green, do not invoke `/quenching-specs conclude`; return `STATE: continue` with `NOTE: execute-done: <n>/<n> tasks; conclude pending`. Given the word `conclude`, skip develop and execute (already done) and run only `/quenching-specs conclude`, resuming from the stage `.agents/quenching/bin/cq specs status` reports.
 - **Take the worktree yourself when your prompt names none.** Run `/quenching-git branch "<id>"`
   from the checkout you were started in, before anything else: it cuts the worktree from
   `origin/<base>`, runs the declared `worktreeSetup` and stamps the `branch:` record. This is the
@@ -72,13 +72,19 @@ retirement of the spec's worktree. If the remove refuses, return `STATE: blocked
 
 ## Budget
 
-Your budget is the worker budget of `docs/standards/automation/context-discipline.md` §Measured
-context budgets, measured by code, never by your own count. `/quenching-specs execute` reads
-it at each section boundary with `.agents/quenching/bin/cq components session context --self <id> --json`; under
-`autonomous`, over budget (exit 1) it stops there. Then write a handoff note (what is done, what is
-next, open questions) through `.agents/quenching/bin/cq specs discover` and return `STATE: continue` with
-`NOTE: budget: <peak>/<budget> after section <N>`. Exit 2 (unmeasured) never stops the run. A
-budget stop never happens mid-task.
+Your budget is the size estimate of `docs/standards/automation/context-discipline.md` §Measured
+context budgets: how much reading a spec of this size is expected to cost, measured by code, never
+by your own count. It is not a stop limit. Nothing about crossing it ends the spec.
+
+`/quenching-specs execute` measures at each section boundary with
+`.agents/quenching/bin/cq components session context --self <id> --json` and prints the peak against
+the estimate. Over it (exit 1) is a diagnostic: the run prints the number and carries on, and you
+never write a handoff note for it, never return `STATE: continue` for it, and never treat that
+boundary as the end of the spec. Exit 2 (unmeasured) is equally not a stop. The peak reaches the
+caller through that banner, and the orchestrator's own `BUDGET:` line reports the same role budgets
+from `cq components session cost`; neither is a verdict on the spec. Only a real block of
+`docs/standards/workflows/task-execution.md` §After approval, the executor decides, records and stops only on a real block
+ends a run.
 
 ## Return format (fixed; no prose around it)
 

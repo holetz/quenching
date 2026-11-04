@@ -69,8 +69,8 @@ Declared, this entry chains the flows in order, reading each reference in its tu
 `approved` as `orchestrator-forced`), `execute`, then `conclude` (`--outcome done` only with every task checked). Each flow
 keeps its own `Done when:`. It stops only on a real block
 (`/docs/standards/workflows/task-execution.md` §After approval, the executor decides, records and stops only on a real block),
-and ends with **one report**: the final stage and every `decision:` line of `## Discoveries`. A budget stop
-(`continue`) stands as always.
+and ends with **one report**: the final stage and every `decision:` line of `## Discoveries`. A conductor
+budget stop (`continue`) stands as always; a worker's size estimate never stops a spec.
 
 ## Invariants
 
