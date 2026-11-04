@@ -9,7 +9,7 @@ tags:
 timestamp: 2026-11-03
 audience: human
 authority: current
-source: quenching/README.md §The seven fronts, the non-converging axes, and the one align per front; command bodies under quenching/commands/{knowledge,design,components,ops,proof,toolchain,delivery}/ and align.md; spec 2160
+source: quenching/README.md §The seven fronts, the non-converging axes, and the one align per front; command bodies under quenching/skills/{quenching-knowledge,quenching-components,quenching-design-*,quenching-ops-*,quenching-proof-*,quenching-toolchain-*,quenching-delivery-*,quenching-align}/; spec 2160
 maintainer: Israel Holetz
 ---
 
@@ -46,7 +46,7 @@ keeps its modules, while `--modules core` narrows a wider install and deletes th
 `opencode` or `none`; `--runtime uvx` writes a pinned shim instead of vendoring the runtime. The
 target keeps `AGENTS.md` and `.agents/` as its source; `.agents/quenching/` and `.claude/skills/`
 are generated, and every command is `/quenching-<front>-<verb>`. Deploy is installation, not
-alignment: run `/quenching-knowledge-align` or `/quenching-align` after it. To upgrade, run the
+alignment: run `/quenching-knowledge align` or `/quenching-align` after it. To upgrade, run the
 same deploy from a newer checkout or tag; `--check` reports drift. See
 [deploy-mode.md](../standards/architecture/deploy-mode.md).
 
@@ -80,8 +80,8 @@ flowchart LR
 
 | You want | Run | It converges |
 | --- | --- | --- |
-| Just the knowledge base | `/quenching-knowledge-align` | `/docs/` into the OKF bundle, pulling in out-of-band content |
-| Just the automation surface | `/quenching-components-align` | `.claude/` onto one file per entry point, bodies audited |
+| Just the knowledge base | `/quenching-knowledge align` | `/docs/` into the OKF bundle, pulling in out-of-band content |
+| Just the automation surface | `/quenching-components align` | `.claude/` onto one file per entry point, bodies audited |
 | Just the design source | `/quenching-design-align` | `/.design/` source, projections, and genres |
 | Just the operations surface | `/quenching-ops-align` | the declared root, router, registry and bounded structural drift |
 | Just the verification surface | `/quenching-proof-align` | the declared test gate, fixtures, layers and bounded structural drift |

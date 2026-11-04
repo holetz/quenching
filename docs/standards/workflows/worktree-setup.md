@@ -2,7 +2,7 @@
 type: standard
 title: Worktree setup contract
 description: The `worktreeSetup` hook prepares a code-isolation worktree from `.agents/quenching.json`; its absence is normal, the declaration is displayed verbatim before it runs, and provider-owned specs never use this hook as persistent storage
-resource: quenching/assets/bin/quenching/specs/**, quenching/commands/specs/execute.md, quenching/commands/git/branch.md, quenching/assets/references/git/isolation.md
+resource: quenching/assets/bin/quenching/specs/**, quenching/skills/quenching-specs/references/execute.md, quenching/skills/quenching-git/references/branch.md, quenching/references/git/isolation.md
 tags: [workflows, specs, worktree, configuration, consent]
 timestamp: 2026-10-30
 audience: both
@@ -62,7 +62,7 @@ check belongs where the answer exists.
 
 **A failing setup never undoes the worktree.** The worktree exists either way; whether it is usable
 is a fact to report, not a reason to tear down a tree that may already hold the human's chosen
-isolation. `/quenching-specs-execute` reports the output and the exit code, and says plainly which of the two
+isolation. `/quenching-specs execute` reports the output and the exit code, and says plainly which of the two
 happened. A command whose first token does not resolve is reported as not run, for that reason,
 rather than executed and blamed on the shell.
 

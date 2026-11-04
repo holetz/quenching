@@ -91,10 +91,10 @@ list; `--harness` takes `claude`, `codex`, `opencode` or `none`; `--runtime vend
 offline) vendors the runtime while `--runtime uvx` writes a pinned shim; `--check` reports drift.
 Deploy writes `AGENTS.md` (only when absent), `.agents/skills/`, `.agents/quenching/` and the
 generated `.claude/skills/` bridge. It does not create `CLAUDE.md` and does not run alignment; the
-target's own `/quenching-knowledge-align` installs `/docs/` and converges the fronts.
+target's own `/quenching-knowledge align` installs `/docs/` and converges the fronts.
 
-In the target, every command is `/quenching-<front>-<verb>` (`/quenching-specs-create`,
-`/quenching-knowledge-align`, …), and the target carries its own `.agents/quenching/bin/cq`. To
+In the target, every command is `/quenching-<front>-<verb>` (`/quenching-specs create`,
+`/quenching-knowledge align`, …), and the target carries its own `.agents/quenching/bin/cq`. To
 upgrade, run `cq deploy --target <repo> --write` again from a newer checkout or release tag: the
 target's recorded manifest keeps the selected modules, harnesses and runtime. The full contract is
 [deploy-mode.md](docs/standards/architecture/deploy-mode.md); the command manual, uninstall and

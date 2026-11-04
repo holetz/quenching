@@ -2,7 +2,7 @@
 type: standard
 title: Branch flow — PR onto the primary, deliberate release
 description: One long-lived branch — the primary (main) — where every PR merges and review lives, the release as a deliberate local act that bumps, tags and publishes what the primary accumulated, the trigger on demand and with no cadence, the question that pushes toward grouping when the primary carries a single PR since the last tag, and the transition for anyone coming from the two-branch flow
-resource: .agents/skills/release/SKILL.md, quenching/assets/bin/quenching/git/**, quenching/assets/bin/quenching/specs/**, quenching/commands/specs/execute.md, quenching/assets/references/align/convergence.md
+resource: .agents/skills/release/SKILL.md, quenching/assets/bin/quenching/git/**, quenching/assets/bin/quenching/specs/**, quenching/skills/quenching-specs/references/execute.md, quenching/references/align/convergence.md
 tags: [git, branching, release, workflow, main]
 timestamp: 2026-11-03
 audience: both
@@ -30,7 +30,7 @@ init.defaultBranch → main` ([plan-git-record.md](../workflows/plan-git-record.
 ## The PR is the entry route
 
 All work enters `main` through a pull request: the spec execution route followed by
-`/quenching-git-pr-create` opens the PR against the primary branch and human review lives in the PR.
+`/quenching-git pr-create` opens the PR against the primary branch and human review lives in the PR.
 There is no local merge of specs — each change is reviewed before it enters, not after.
 
 ## The trigger is demand, not cadence
@@ -48,7 +48,7 @@ block, one question only, at the single moment where it fits.
 
 | What | Where | Consumers |
 | --- | --- | --- |
-| The policy in prose | this document | `/quenching-specs-execute` and `/quenching-specs-conclude`, as read-if-present |
+| The policy in prose | this document | `/quenching-specs execute` and `/quenching-specs conclude`, as read-if-present |
 | The version bump | [versioning-release.md](../ci-cd/versioning-release.md) | the release verb |
 | The `base` inference chain | [plan-git-record.md](../workflows/plan-git-record.md) | the unstamped spec |
 

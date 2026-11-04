@@ -55,10 +55,10 @@ writing anything.
 
 | Surface | What converges | The one align |
 | --- | --- | --- |
-| `/docs/` | a canonical **OKF bundle** — standards, concepts, glossary, and this site | `/quenching-knowledge-align` |
+| `/docs/` | a canonical **OKF bundle** — standards, concepts, glossary, and this site | `/quenching-knowledge align` |
 | Specs | a plan cycle stored on the **`quenching` branch**, with GitHub or Azure Boards cards | cycle and status commands |
 | `/.design/` | one DTCG source projected to portable Impeccable and editorial media artifacts | `/quenching-design-align` |
-| `.claude/` | one file per entry point, every description audited | `/quenching-components-align` |
+| `.claude/` | one file per entry point, every description audited | `/quenching-components align` |
 | `ops` | a declared operations root, its entry-point inventory, registry and lifecycle/write policy | `/quenching-ops-align` |
 | `proof` | test layers, fixture ownership, gate evidence, measured surfaces and the coverage floor | `/quenching-proof-align` |
 | `toolchain` | manifests, locks, language pins and tool configuration | `/quenching-toolchain-align` |
@@ -79,7 +79,7 @@ python3 <repo>/.agents/quenching/bin/cq --version                        # the d
 Then, inside the session, ask for a read-only status before you change anything:
 
 ```text
-/quenching-knowledge-status
+/quenching-knowledge status
 ```
 
 The full path — install, probe, first alignment — is the

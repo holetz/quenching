@@ -146,7 +146,7 @@ either being merely out of date, which is why a rename's blast-radius sweep belo
 standards and not only the code.
 
 A command's namespace MUST match what it touches: a command that mints commands lives under
-`/quenching-components-`, never `/quenching-knowledge-`; a command that reads or writes the bundle
+`/quenching-components`, never `/quenching-knowledge`; a command that reads or writes the bundle
 lives under `/quenching-knowledge`.
 
 ## `components` — four contexts, each named for the artifact it mints

@@ -2,7 +2,7 @@
 type: standard
 title: Task execution contract
 description: How a spec's task is executed — the verification policies, `verify:` scoped at authoring, the three causes of a check that can never pass (one of them invisible to the falsification run), `files:` naming the derived artifacts an edit invalidates, the failure budget, one commit per task retained across section boundaries, the two-level review split, the four-event Handoff refresh cadence, the decision-and-real-block contract after approval, and the delegation and [P] disjunction rules
-resource: quenching/commands/specs/execute.md, quenching/commands/specs/conclude.md, quenching/assets/references/specs-execute/execution.md, quenching/assets/references/specs-develop/artifacts.md, quenching/assets/references/git/commit.md, quenching/assets/bin/quenching/specs/**, quenching/assets/specs/templates/spec.md
+resource: quenching/skills/quenching-specs/references/execute.md, quenching/skills/quenching-specs/references/conclude.md, quenching/references/specs-execute/execution.md, quenching/references/specs-develop/artifacts.md, quenching/references/git/commit.md, quenching/assets/bin/quenching/specs/**, quenching/assets/specs/templates/spec.md
 tags: [workflows, specs, execution, verification, commits, delegation, handoff]
 timestamp: 2026-11-03
 audience: both
@@ -17,7 +17,7 @@ maintainer: quenching
 
 A task is not done when the code is written. It is done when it **ran**, its diff was
 **reviewed**, and it is **committed on its own, with its own checkbox inside that commit**. This standard is the contract;
-`assets/references/specs-execute/execution.md` is the procedure that implements it, and
+`references/specs-execute/execution.md` is the procedure that implements it, and
 [plan-git-record.md](plan-git-record.md) is what the resulting commits are recorded as.
 
 ## The precondition: a clean tree
@@ -82,7 +82,7 @@ same rule as *scoped at authoring time, never filtered at the gate* below, seen 
 side.
 
 **A phrase the target file's own language standard forbids.** A task declared
-``verify: test "$(grep -c 'campo `path`' quenching/commands/specs/develop.md)" -ge 1`` —
+``verify: test "$(grep -c 'campo `path`' quenching/skills/quenching-specs/references/develop.md)" -ge 1`` —
 a pt-BR literal demanded of a command body that
 [/docs/standards/agents/communication.md](../agents/communication.md) §What it governs forces
 to be English. No correct implementation could satisfy it: greening the check meant breaking the
@@ -246,7 +246,7 @@ that edits the file is the task that re-captures the golden. Declare it in `file
 `## Impact`, where the spec names what it touches — the same way the edited file itself is declared.
 
 Measured on `revisar-fluxo-do-develop-custo-e-gates` (task 2.2, 2026-08-16): a section added to
-`assets/references/align/convergence.md` broke
+`references/align/convergence.md` broke
 the golden fixture that froze that reference's per-section character counts (retired since, with
 the local backend — the path is deliberately not spelled out, because it resolves nowhere now). The re-capture was correct and sanctioned by `test_golden.py`'s own
 docstring, but the fixture appeared in no task's `files:` and in no `## Impact` line, so the task
@@ -311,7 +311,7 @@ A blocked marker replaced a hidden attempt counter: the reason now sits in the l
 | | Per-task self-review | Branch review |
 | --- | --- | --- |
 | Scope | one task's diff | the whole branch, `<base>...HEAD` |
-| Owner | `/quenching-specs-execute`, inside the task | `/quenching-specs-conclude`, step 2 |
+| Owner | `/quenching-specs execute`, inside the task | `/quenching-specs conclude`, step 2 |
 | When | before every commit | once, before the merge |
 | Looks for | reuse · useless defense · obvious comment · dead code | coherence, layering, whether the parts add up |
 
@@ -402,7 +402,7 @@ If the commit fails, **undo the tick** so no box claims a commit that does not e
 `cq specs task --check <id> --spec <slug>`, without `git add` or `git commit`.
 
 The trigger is the task's own `files:`, never the configured backend, because `files:` is already a
-deliberate declaration and not a convenience (`quenching/assets/references/specs-develop/artifacts.md`
+deliberate declaration and not a convenience (`quenching/references/specs-develop/artifacts.md`
 §Execution metadata). A checkbox-only task has no commit to anchor, whether its backend stores the
 spec in the working tree or outside git.
 
@@ -482,8 +482,8 @@ present the mid-flow confirmations every sweep depends on — the conversation c
 OK would be out of reach.
 
 Dispatching a sub-agent for a bounded, file-scoped unit of work does the opposite: the
-orchestrator **stays in the live conversation**, exactly as `/quenching-knowledge-glossary-backfill` and
-`/quenching-knowledge-import` already dispatch. One moves the decision-maker out of reach; the other
+orchestrator **stays in the live conversation**, exactly as `/quenching-knowledge glossary-backfill` and
+`/quenching-knowledge import` already dispatch. One moves the decision-maker out of reach; the other
 sends a worker out and keeps the decision-maker in place. They are different mechanisms about
 different things, and no future sweep may "fix" one into the other.
 
