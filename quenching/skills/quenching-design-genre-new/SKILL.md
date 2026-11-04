@@ -18,7 +18,7 @@ This command mints one stable editorial contract. It does not produce an instanc
 ### 1. Prove the front exists
 
 Resolve `cq` per
-[tool-resolution.md](.agents/quenching/assets/references/align/tool-resolution.md)
+[tool-resolution.md](.agents/quenching/references/align/tool-resolution.md)
 §Resolving the tool and run `design status --json`. An absent or invalid front routes to
 `/quenching-design-align` and stops. Read existing genres and medium templates for name/path
 collisions.

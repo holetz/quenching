@@ -14,10 +14,10 @@ runtime evidence, release reachability and findings. It never edits a workflow, 
 provider or invokes a deployment.
 
 The delivery finding map is in
-[delivery-align/bands.md](.agents/quenching/assets/references/delivery-align/bands.md); the common
-front floor is in [front-align/mold.md](.agents/quenching/assets/references/front-align/mold.md).
+[delivery-align/bands.md](.agents/quenching/references/delivery-align/bands.md); the common
+front floor is in [front-align/mold.md](.agents/quenching/references/front-align/mold.md).
 Resolve `cq` per
-[tool-resolution.md](.agents/quenching/assets/references/align/tool-resolution.md)
+[tool-resolution.md](.agents/quenching/references/align/tool-resolution.md)
 §Resolving the tool. Set `TARGET_ROOT` to `$ARGUMENTS`, or `.` when omitted, and run:
 
 ```bash

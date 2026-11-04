@@ -11,14 +11,14 @@ allowed-tools: Bash(cq:*), Bash(cq.cmd:*), Read, Grep, Glob, Bash(python3:*)
 **Input**: `$ARGUMENTS` (an optional target repository root; omit to use the current repository).
 
 This command is the read-only view of the toolchain front. The common front contract is in
-[front-align/mold.md](.agents/quenching/assets/references/front-align/mold.md), and the
+[front-align/mold.md](.agents/quenching/references/front-align/mold.md), and the
 finding-to-owner map is in
-[toolchain-align/bands.md](.agents/quenching/assets/references/toolchain-align/bands.md).
+[toolchain-align/bands.md](.agents/quenching/references/toolchain-align/bands.md).
 It reports capability and evidence without repairing a manifest, lock, pin, tool configuration or
 target policy.
 
 Resolve `cq` per
-[tool-resolution.md](.agents/quenching/assets/references/align/tool-resolution.md)
+[tool-resolution.md](.agents/quenching/references/align/tool-resolution.md)
 §Resolving the tool. Set `TARGET_ROOT` to the supplied argument, or to `.` when omitted, and run:
 
 ```bash

@@ -14,14 +14,14 @@ This command owns the open source front's convergence pass. It writes only the a
 catalog gives to `opensource`, each through `.agents/quenching/bin/cq opensource apply` from a template whose upstream
 text is byte-identical to the published one, and leaves every choice — license, maintainers,
 contact, funding — with the target owner. The common front floor is in
-[front-align/mold.md](.agents/quenching/assets/references/front-align/mold.md), the catalog
+[front-align/mold.md](.agents/quenching/references/front-align/mold.md), the catalog
 contract is in
-[opensource-controls/catalog.md](.agents/quenching/assets/references/opensource-controls/catalog.md),
+[opensource-controls/catalog.md](.agents/quenching/references/opensource-controls/catalog.md),
 and the finding bands and closure boundary are in
-[opensource-align/bands.md](.agents/quenching/assets/references/opensource-align/bands.md).
+[opensource-align/bands.md](.agents/quenching/references/opensource-align/bands.md).
 
 Set `TARGET_ROOT` to the supplied argument, or to `.` when the argument is omitted. Resolve `cq`
-per [tool-resolution.md](.agents/quenching/assets/references/align/tool-resolution.md)
+per [tool-resolution.md](.agents/quenching/references/align/tool-resolution.md)
 §Resolving the tool, pass the same root to every call, and branch on the JSON and exit code:
 `0` is a clean answer, `1` carries findings, and `2` is a refusal.
 

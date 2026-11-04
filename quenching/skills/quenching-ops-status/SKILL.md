@@ -11,9 +11,9 @@ allowed-tools: Bash(cq:*), Bash(cq.cmd:*), Read, Grep, Glob, Bash(python3:*)
 **Input**: `$ARGUMENTS` (an optional target repository root; omit to use the current repository).
 
 The common front contract is in
-[front-align/mold.md](.agents/quenching/assets/references/front-align/mold.md), and the ops
+[front-align/mold.md](.agents/quenching/references/front-align/mold.md), and the ops
 disposition map is in
-[ops-align/bands.md](.agents/quenching/assets/references/ops-align/bands.md). This read-only
+[ops-align/bands.md](.agents/quenching/references/ops-align/bands.md). This read-only
 view preserves the router, registry and entry-point deltas owned by the ops front.
 
 This command is the read-only view of the operations front. It reports the configuration, router,
@@ -22,10 +22,10 @@ freshness. It never repairs a finding, writes a registry, or turns an absent opt
 a healthy one.
 
 The payload and target tree are defined by
-[ops-align/target-structure.md](.agents/quenching/assets/references/ops-align/target-structure.md),
-[ops-align/lifecycle.md](.agents/quenching/assets/references/ops-align/lifecycle.md), and
-[ops-align/bands.md](.agents/quenching/assets/references/ops-align/bands.md). Resolve `cq` per
-[tool-resolution.md](.agents/quenching/assets/references/align/tool-resolution.md)
+[ops-align/target-structure.md](.agents/quenching/references/ops-align/target-structure.md),
+[ops-align/lifecycle.md](.agents/quenching/references/ops-align/lifecycle.md), and
+[ops-align/bands.md](.agents/quenching/references/ops-align/bands.md). Resolve `cq` per
+[tool-resolution.md](.agents/quenching/references/align/tool-resolution.md)
 §Resolving the tool. Use the resolved path literally and branch on exit code and JSON:
 `0` is a clean report, `1` carries findings, and `2` is a refusal.
 

@@ -7,9 +7,9 @@ import unittest
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
 DOC = ROOT / "docs" / "standards" / "architecture" / "front-mold.md"
-COMMANDS = ROOT / "quenching" / "commands"
-SOURCE_REFS = ROOT / "quenching" / "assets" / "references"
-CONDUCTOR = COMMANDS / "align.md"
+SKILLS = ROOT / "quenching" / "skills"
+SOURCE_REFS = ROOT / "quenching" / "references"
+CONDUCTOR = SKILLS / "quenching-align" / "SKILL.md"
 
 
 class FrontMoldContract(unittest.TestCase):
@@ -63,7 +63,7 @@ class FrontMoldContract(unittest.TestCase):
                 self.assertIn(term, route)
 
         self.assertIn("This file is the canonical host", self.document)
-        self.assertIn("quenching/assets/references/front-align/mold.md", self.document)
+        self.assertIn("quenching/references/front-align/mold.md", self.document)
 
     def test_front_specific_deltas_and_bands_are_explicit(self):
         deltas = self.document.split("## Explicit front deltas", 1)[1]
@@ -91,9 +91,9 @@ class FrontMoldContract(unittest.TestCase):
         order = CONDUCTOR.read_text(encoding="utf-8")
         execution = order.split("## Execution order", 1)[1].split("## Workflow", 1)[0]
         expected = {
-            "knowledge": "/quenching-knowledge-align",
+            "knowledge": "/quenching-knowledge align",
             "design": "/quenching-design-align",
-            "components": "/quenching-components-align",
+            "components": "/quenching-components align",
             "ops": "/quenching-ops-align",
             "proof": "/quenching-proof-align",
             "toolchain": "/quenching-toolchain-align",

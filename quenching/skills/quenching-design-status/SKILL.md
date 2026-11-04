@@ -10,13 +10,13 @@ allowed-tools: Bash(cq:*), Bash(cq.cmd:*), Read, Grep, Glob, Bash(python3:*)
 **Input**: `$ARGUMENTS` (optional focus; omission reads the whole front).
 
 The common front contract is in
-[front-align/mold.md](.agents/quenching/assets/references/front-align/mold.md), and the
+[front-align/mold.md](.agents/quenching/references/front-align/mold.md), and the
 design-specific disposition map is in
-[design-align/bands.md](.agents/quenching/assets/references/design-align/bands.md). This
+[design-align/bands.md](.agents/quenching/references/design-align/bands.md). This
 read-only view preserves design's source arbitration, projection and optional-detector deltas.
 
 Resolve `cq` per
-[tool-resolution.md](.agents/quenching/assets/references/align/tool-resolution.md)
+[tool-resolution.md](.agents/quenching/references/align/tool-resolution.md)
 §Resolving the tool, then run:
 
 ```bash

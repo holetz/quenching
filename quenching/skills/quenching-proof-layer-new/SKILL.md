@@ -17,10 +17,10 @@ the derived marker, its reach and budget, the collection hook, the optional shar
 and the generated proof README as one operation. Existing tests that might belong there are a
 proposal only; moving them changes what evidence a gate collects and needs its own confirmation.
 
-Read [proof-align/layer-contract.md](.agents/quenching/assets/references/proof-align/layer-contract.md),
-[proof-align/target-structure.md](.agents/quenching/assets/references/proof-align/target-structure.md),
+Read [proof-align/layer-contract.md](.agents/quenching/references/proof-align/layer-contract.md),
+[proof-align/target-structure.md](.agents/quenching/references/proof-align/target-structure.md),
 and the two templates under `.agents/quenching/assets/templates/proof/` before writing. Resolve
-`cq` per [tool-resolution.md](.agents/quenching/assets/references/align/tool-resolution.md),
+`cq` per [tool-resolution.md](.agents/quenching/references/align/tool-resolution.md),
 and branch on exit code and JSON: `0` is clean, `1` carries findings, and `2` is a refusal.
 
 ## Workflow
