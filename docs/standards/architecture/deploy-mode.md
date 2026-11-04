@@ -50,8 +50,9 @@ is present. A repository therefore never authors `.claude` for quenching.
 
 ## Selection and the manifest
 
-`--modules` selects principal modules, not fronts. `core` means `quenching-specs` plus
-`quenching-align` (specs, git, knowledge and components); `specs` is always included because it
+`--modules` selects principal modules, not fronts. `core` means `specs,git,knowledge,components`
+(the modules `quenching-specs`, `quenching-git`, `quenching-knowledge` and `quenching-components`; the
+alias `align` is `knowledge,components`); `specs` is always included because it
 owns the one `cq`. `--profiles` overrides the `shared.profiles.installed` seed; otherwise the
 fronts of the selected modules are derived. `specs` is kept in that list as the provider axis.
 
