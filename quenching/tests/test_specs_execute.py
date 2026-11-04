@@ -208,11 +208,17 @@ class TaskExecutionContractTests(unittest.TestCase):
 
         self.assertIn("`NOTE: execute-done:", runner)
         self.assertIn("Given the word `conclude`, skip develop and execute", runner)
-        self.assertIn("A `continue` for budget carries no `execute-done:`", runner)
         self.assertIn("NOTE starting `execute-done:`", orchestrator)
         self.assertIn("whose prompt carries the word `conclude`", orchestrator)
         self.assertIn("with `model` passed explicitly", orchestrator)
         self.assertIn("call the `spec-verifier` only after it returns", orchestrator)
+
+    def test_worker_budget_is_a_size_estimate_not_a_stop(self):
+        runner = " ".join(RUNNER.read_text(encoding="utf-8").split())
+
+        self.assertIn("size estimate", runner)
+        self.assertIn("It is not a stop limit", runner)
+        self.assertNotIn("NOTE: budget:", runner)
 
     def test_orchestration_reads_scheduling_records_from_status(self):
         for carrier in ("agents/spec-orchestrator.md", "skills/quenching-specs/references/orchestrate.md"):
