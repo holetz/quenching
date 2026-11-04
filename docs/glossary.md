@@ -83,16 +83,16 @@ Fifteen terms to read first; each has its full entry under *Terms*.
   it.
 - [**Boundary reminder**](standards/architecture/plugin-layout.md) — a one-clause line that states
   the *edge* of a rule the citing place already owns, seen from the other side
-  (`/quenching-align:knowledge:add` saying a heading is canonical English while the body prose follows
+  (`/quenching-knowledge-add` saying a heading is canonical English while the body prose follows
   whatever language the repo declared), as opposed to a restatement, which repeats a fact the citing
   place neither owns nor can change.
 - [**Branch record**](standards/workflows/plan-git-record.md) — the `branch: {base, work}`
 - **Bridge** — the generated `.claude/skills/` copy of a target's `.agents/skills/`; Claude Code does not discover the generic directory itself.
-  frontmatter entry stamped by `/quenching-specs:specs:execute` once the work ref is resolved, write-once
+  frontmatter entry stamped by `/quenching-specs-execute` once the work ref is resolved, write-once
   — for **any** branch that is not the repo's base (the one it cut and the one a human already had
   open alike), and for work done in place, where `work` equals `base`.
 - [**Bundle density**](standards/quality/bundle-verification.md) — the figures
-  `/quenching-align:knowledge:status` prints alongside conformance (concept docs per home, empty homes
+  `/quenching-knowledge-status` prints alongside conformance (concept docs per home, empty homes
   shown as `0`, glossary size, which `standards/` subjects hold anything), carrying **no finding
   code** by design: coding them would make permanent noise of a repo that legitimately has no
   `mlops/`, omitting them would hide a bundle passing every check while knowing nothing.
@@ -100,7 +100,7 @@ Fifteen terms to read first; each has its full entry under *Terms*.
   target's OKF bundle, and `/.specs/` for a files-backend specs workspace, a convention no
   configuration file names because an LLM executor runs command bodies literally and a root it must
   resolve from config is a root it can resolve wrong.
-- **Cache trap** (`plugins/quenching/assets/references/components-command-new/capabilities.md`) —
+- **Cache trap** (`quenching/assets/references/components-command-new/capabilities.md`) —
   the standing cost of an inline `model:`/`effort:` pin in a command's frontmatter: the pin is part
   of the session's prompt-cache key, so changing it makes the next request recompute every input
   token.
@@ -114,15 +114,15 @@ Fifteen terms to read first; each has its full entry under *Terms*.
   completed task line, written mechanically by `cq specs task --check --subject`, that links the
   checkbox to the commit implementing it by naming that commit's **subject** and resolving with `git
   log --grep --fixed-strings`.
-- **Compose** (`plugins/quenching/assets/references/specs-develop/questions.md`) — the monotonic
-  half of a `/quenching-specs:specs:develop` pass: it takes a spec from wherever its derived stage leaves
+- **Compose** (`quenching/assets/references/specs-develop/questions.md`) — the monotonic
+  half of a `/quenching-specs-develop` pass: it takes a spec from wherever its derived stage leaves
   it to a closed ten-section ready set, filling what is absent and sharpening what is thin, and it
   never overturns what a human settled.
 - [**Context (components)**](standards/naming/command-surface.md) — one of the four sibling contexts
   under the `components` front — `command/`, `agent/`, `hook/`, `harness/` — each named for the
   artifact it mints, none a sub-type of another. A front-level verb sits at the front's own root
-  (`/quenching-align:components:align`); an artifact-level verb sits under its context
-  (`/quenching-align:components:command:new`).
+  (`/quenching-components-align`); an artifact-level verb sits under its context
+  (`/quenching-components-command-new`).
 - [**Context integral**](standards/automation/context-discipline.md) — a run's true cost, `tokens ×
   turns remaining`, not `tokens`: every turn re-sends the whole conversation, so a block loaded once
   is paid once for each turn that follows it.
@@ -131,10 +131,10 @@ Fifteen terms to read first; each has its full entry under *Terms*.
 - [**Coverage ratchet**](standards/architecture/proof-front.md) — a per-source-root floor that a
   verification gate may raise after a successful run but may never lower, preserving progress
   without forcing tests toward a fixed percentage target.
-- [**cq**](/plugins/quenching/assets/references/align/tool-resolution.md) — the plugin's one entry
-  point, `${CLAUDE_PLUGIN_ROOT}/assets/bin/cq`, replacing the self-contained scripts each pillar
+- [**cq**](/quenching/assets/references/align/tool-resolution.md) — the plugin's one entry
+  point, `.agents/quenching/assets/bin/cq`, replacing the self-contained scripts each pillar
   used to ship separately.
-- [**Decision sheet**](/plugins/quenching/assets/references/specs-develop/questions.md) — the
+- [**Decision sheet**](/quenching/assets/references/specs-develop/questions.md) — the
   default form of every question put to the human: a reply-format line (`D1 A · D2 B …`), one
   `### D<n>` per independent decision with options `A (recommended)` / `B` / `C`, each with its
   consequence, and a closing block of fixes made unless vetoed. It ends the turn.
@@ -146,7 +146,7 @@ Fifteen terms to read first; each has its full entry under *Terms*.
   `## Design` and **dated**: it names every file the proposal's area touches or is touched by, and
   what breaks or goes orphaned if it changes.
 - [**Dependency sweep**](standards/automation/dependency-sweep.md) — the read-only sub-agent read
-  `/quenching-specs:specs:develop` runs **before** the bank asks, so the right question has something to
+  `/quenching-specs-develop` runs **before** the bank asks, so the right question has something to
   be answered with; it fires on selecting the *shape* bank, and on the first entry into the
   *adversarial* bank for a spec that was born `proposed` and never swept.
 - **Deploy mode** — installing the quenching surface in a target's generic layer with `cq deploy`; `AGENTS.md` and `.agents/` stay editable, while the runtime and the Claude bridge are generated.
@@ -214,14 +214,14 @@ Fifteen terms to read first; each has its full entry under *Terms*.
   verification gate actually measures, with an unmeasured shipped root reported as drift rather than
   hidden behind an honest percentage.
 - [**Merge record**](standards/workflows/plan-git-record.md) — the `merge: {strategy, subject, pr}`
-  frontmatter entry stamped by `/quenching-specs:specs:conclude`, write-once, **on the work branch before
+  frontmatter entry stamped by `/quenching-specs-conclude`, write-once, **on the work branch before
   the merge** — which is what makes the merge that command's last action and leaves nothing to be
   committed to the base after it.
 - [**Mold**](standards/architecture/shared-mold-keys.md) — the fixed shape (frontmatter keys and
   sections) a kind of file is minted from; shared molds keep several fronts consistent.
 - [**Moment**](standards/workflows/plan-artifacts.md) — the point on a spec's timeline a canonical
   section is read at, one value per section: `decision` (the human, weighing whether to build),
-  `build` (the executor), `close` (`/quenching-specs:specs:conclude`).
+  `build` (the executor), `close` (`/quenching-specs-conclude`).
 - [**Normalized script pattern**](standards/architecture/ops-front.md) — a stable vocabulary for
   routine project operations, derived from GitHub's pattern so contributors can use predictable
   names without learning each repository's internal layout.
@@ -235,13 +235,13 @@ Fifteen terms to read first; each has its full entry under *Terms*.
   can hide.
 - [**Origin key** (`source_uri`)](standards/quality/bundle-verification.md) — the frontmatter key
   holding the **exact** URI or path of the source unit an imported doc was minted from, written by
-  `/quenching-align:knowledge:import` and by no other command; a doc with no external origin simply does
+  `/quenching-knowledge-import` and by no other command; a doc with no external origin simply does
   not have it.
 - [**`[P]` marker**](standards/workflows/task-execution.md) — the opt-in flag set on a task when the
   tasks are written, declaring it may run concurrently with its group; honoured only when `cq specs
   parallel` proves the group's `files:` sets disjoint, and never inferred while building.
 - [**Package**](standards/architecture/plugin-layout.md) — the Python package under
-  `plugins/quenching/assets/bin/quenching/`, the directory that replaced the four self-contained
+  `quenching/assets/bin/quenching/`, the directory that replaced the four self-contained
   scripts the plugin used to ship. Split into `common/`, `specs/`, `knowledge/` and `components/`,
   with no file too large to be read whole in one tool call; `cq` is the only entry point that
   exposes it.
@@ -301,10 +301,10 @@ Fifteen terms to read first; each has its full entry under *Terms*.
   one branch that takes the deliberate `develop → main` merge, the one moment the version lockstep
   moves and a tag is created.
 - **Published skeleton** — the OKF bundle the plugin SHIPS, at
-  `plugins/quenching/assets/knowledge/`: index files plus a single leaf standard
+  `quenching/assets/knowledge/`: index files plus a single leaf standard
   (`standards/agents/communication.md`).
-- **Refine** (`plugins/quenching/assets/references/specs-develop/questions.md`) — the non-monotonic
-  half of a `/quenching-specs:specs:develop` pass, and the only operation licensed to overturn what the
+- **Refine** (`quenching/assets/references/specs-develop/questions.md`) — the non-monotonic
+  half of a `/quenching-specs-develop` pass, and the only operation licensed to overturn what the
   spec already says, the `## Proposal` included.
 - [**Refinement record**](standards/workflows/plan-artifacts.md) — the `refined: {mode, date}` entry
   a spec's **frontmatter** gains once it has been interrogated, whose absence raises the non-gating
@@ -384,7 +384,7 @@ Fifteen terms to read first; each has its full entry under *Terms*.
   words, so no grep finds the set.
 - [**Worktree setup**](standards/workflows/worktree-setup.md) — the single key `worktreeSetup` in
   `.agents/quenching.json` (or the legacy `.claude/quenching.json`), holding a command
-  `/quenching-specs:specs:execute` runs once inside a newly
+  `/quenching-specs-execute` runs once inside a newly
   created worktree so a repo with installed dependencies gets a usable tree rather than one that
   breaks at the first `verify:`.
 - [**Zensical**](external/tools/zensical-measured-behaviour.md) — the static site generator the

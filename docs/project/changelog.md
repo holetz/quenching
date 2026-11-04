@@ -9,7 +9,7 @@ tags:
 timestamp: 2026-09-02
 audience: both
 authority: current
-source: CHANGELOG.md, extracted from the historical upgrade record in plugins/quenching/README.md
+source: CHANGELOG.md, extracted from the historical upgrade record in quenching/README.md
 maintainer: Israel Holetz
 ---
 

@@ -1,0 +1,302 @@
+"""Regression contract for task-level execution commits.
+
+The execution command is prose, so the fixture checks its boundary language and then exercises
+the git history shape that language promises: two tasks remain two commits after their section
+finishes.
+"""
+
+import json
+from pathlib import Path
+import re
+import shlex
+import subprocess
+import tempfile
+import unittest
+
+import _paths  # noqa: F401
+
+ROOT = Path(__file__).resolve().parents[2]
+COMMAND = ROOT / "quenching/assets/references/specs-flows/execute.md"
+REFERENCE = ROOT / "quenching/assets/references/specs-execute/execution.md"
+CONCLUDE = ROOT / "quenching/assets/references/specs-flows/conclude.md"
+SCALE = ROOT / "quenching/assets/references/specs-develop/spec-driven.md"
+RUNNER = ROOT / "quenching/agents/spec-runner.md"
+
+
+def git(cwd, *args):
+    return subprocess.run(
+        ["git", *args],
+        cwd=cwd,
+        check=True,
+        text=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+    ).stdout.strip()
+
+
+class TaskExecutionContractTests(unittest.TestCase):
+    def test_execute_commits_through_the_deterministic_verb(self):
+        command = COMMAND.read_text(encoding="utf-8")
+        commit = (ROOT / "quenching/assets/references/git-flows/commit.md").read_text(encoding="utf-8")
+
+        self.assertIn('cq git commit --subject "<subject>"', command)
+        self.assertNotIn('Skill("quenching-specs:git:commit"', command)
+        self.assertIn("single commit boundary", commit)
+        self.assertNotIn("git commit -m", command)
+        self.assertNotIn('--subject "plan/<id>-<handle>', command)
+
+    def test_red_is_measured_in_a_base_worktree_without_stash(self):
+        for text in (REFERENCE.read_text(encoding="utf-8"), RUNNER.read_text(encoding="utf-8")):
+            flat = " ".join(text.split())
+            self.assertIn("copied test, base worktree", flat)
+            self.assertNotIn("(git apply -R", flat)
+            self.assertIn("RED: <test> fails without <fix>", flat)
+            self.assertIn("worktree of the base", flat.replace("base worktree", "worktree of the base"))
+
+    def test_red_worktree_is_removed_before_returning(self):
+        for text in (REFERENCE.read_text(encoding="utf-8"), RUNNER.read_text(encoding="utf-8")):
+            flat = " ".join(text.split())
+            self.assertIn("git worktree add --detach .quenching/red <base>", flat)
+            self.assertIn("git worktree remove .quenching/red", flat)
+            self.assertIn("rmdir .quenching", flat)
+            self.assertNotIn("worktree remove --force", flat)
+
+    def test_red_cleanup_restores_tracked_file_from_base(self):
+        for text in (REFERENCE.read_text(encoding="utf-8"), RUNNER.read_text(encoding="utf-8")):
+            flat = " ".join(text.split())
+            self.assertIn("git -C .quenching/red cat-file --filters HEAD:<file>", flat)
+            self.assertNotIn("git -C .quenching/red show HEAD:<file>", flat)
+            self.assertIn("already exists in the base", flat)
+            self.assertNotIn("git -C .quenching/red checkout", flat)
+            self.assertNotIn("git -C .quenching/red restore", flat)
+
+    def test_red_cleanup_restores_checkout_bytes_and_removes_worktree(self):
+        test_path = "tests/test_x.py"
+        for carrier in (REFERENCE, RUNNER):
+            text = carrier.read_text(encoding="utf-8")
+            restore = re.search(
+                r"`(git -C \.quenching/red [^`]+ HEAD:<file>) > \.quenching/red/<file>`",
+                text,
+            )
+            self.assertIsNotNone(restore, carrier)
+            argv = shlex.split(restore.group(1).replace("<file>", test_path))
+            for mode in ("attributes", "autocrlf", "plain-lf"):
+                with self.subTest(carrier=carrier.name, mode=mode):
+                    with tempfile.TemporaryDirectory() as directory:
+                        root = Path(directory)
+                        git(root, "init", "-q", "-b", "main")
+                        git(root, "config", "maintenance.auto", "false")
+                        git(root, "config", "gc.auto", "0")
+                        git(root, "config", "user.email", "red-check@example.invalid")
+                        git(root, "config", "user.name", "RED cleanup check")
+                        git(root, "config", "core.autocrlf", "false")
+                        git(root, "config", "core.eol", "lf")
+                        original = b"def test_base():\n    assert True\n"
+                        source = root / test_path
+                        source.parent.mkdir()
+                        source.write_bytes(original)
+                        if mode == "attributes":
+                            (root / ".gitattributes").write_text("*.py text eol=crlf\n")
+                        git(root, "add", ".")
+                        git(root, "commit", "-qm", "base test")
+                        if mode == "autocrlf":
+                            git(root, "config", "core.autocrlf", "true")
+                        red = root / ".quenching/red"
+                        git(root, "worktree", "add", "--detach", str(red), "HEAD")
+                        target = red / test_path
+                        checkout = target.read_bytes()
+                        expected = (original if mode == "plain-lf"
+                                    else original.replace(b"\n", b"\r\n"))
+                        self.assertEqual(checkout, expected)
+                        target.write_bytes(b"def test_new():\n    assert False\n")
+                        with target.open("wb") as output:
+                            subprocess.run(argv, cwd=root, stdout=output,
+                                           stderr=subprocess.PIPE, check=True)
+                        self.assertEqual(target.read_bytes(), checkout)
+                        self.assertEqual(git(red, "status", "--short"), "")
+                        git(root, "worktree", "remove", str(red))
+                        self.assertFalse(red.exists())
+
+    def test_external_backend_records_task_after_the_commit(self):
+        command = COMMAND.read_text(encoding="utf-8")
+        reference = REFERENCE.read_text(encoding="utf-8")
+
+        self.assertLess(command.index("git add <the task's declared files>"),
+                        command.index('cq git commit --subject "<subject>"'))
+        self.assertLess(command.index('cq git commit --subject "<subject>"'),
+                        command.index("cq specs task --check <task-id>"))
+        self.assertIn('--commit "<sha reported by .agents/quenching/bin/cq git commit>"', command)
+        self.assertIn("spec tick **fails**", reference)
+        self.assertIn("preserve the commit", reference)
+        self.assertNotIn("<the spec file>", reference)
+
+    def test_execute_runs_enabled_hooks_and_reports_optional_failures(self):
+        command = COMMAND.read_text(encoding="utf-8")
+        config = json.loads(_paths.repository_config(ROOT).read_text(encoding="utf-8"))
+
+        self.assertIn('Skill("<declared hook command>",', command)
+        self.assertIn("optional: true", command)
+        self.assertIn("condition", command)
+        self.assertIn("enabled: false", command)
+        self.assertIn("An optional hook failure is reported", command)
+        self.assertNotIn("set-head origin", command)
+        self.assertIn("Never write `refs/remotes/origin/HEAD`", command)
+        self.assertIn("origin/<base>...HEAD", command)
+        self.assertIn("Name the work checkout and the diff in that context", command)
+        self.assertIn("git -C <toplevel> diff", command)
+        hooks = config["shared"]["hooks"]["after_specs_execute_task"]
+        self.assertEqual([h["command"] for h in hooks], ["/security-review"])
+        self.assertTrue(hooks[0]["optional"])
+        self.assertTrue(hooks[0]["condition"])
+        self.assertIn("unresolved", command)
+
+    def test_execute_skips_the_hook_when_the_build_runs_in_a_worktree(self):
+        command = " ".join(COMMAND.read_text(encoding="utf-8").split())
+
+        self.assertIn("skipped: worktree", command)
+        self.assertIn("git rev-parse --path-format=absolute --git-dir", command)
+        self.assertIn("git rev-parse --path-format=absolute --git-common-dir", command)
+        self.assertIn("never invoked", command)
+
+    def test_resume_reruns_the_last_checked_verify_before_any_code(self):
+        command = " ".join(COMMAND.read_text(encoding="utf-8").split())
+
+        self.assertIn("On a resume, re-run the last checked task's `verify:`", command)
+        self.assertIn("Red → **stop**", command)
+        self.assertIn("Nothing checked yet → run nothing", command)
+
+    def test_runner_hooks_line_accepts_the_worktree_skip(self):
+        runner = " ".join(RUNNER.read_text(encoding="utf-8").split())
+
+        self.assertIn("ran|failed|unresolved|skipped: worktree", runner)
+
+    def test_low_complexity_chains_conclude_to_the_provider_pr_skill(self):
+        conclude = CONCLUDE.read_text(encoding="utf-8")
+        scale = SCALE.read_text(encoding="utf-8")
+
+        self.assertIn('Skill("quenching-git-git", "pr-create <id>")', conclude)
+        self.assertIn("`low` chains the provider handoff", conclude)
+        self.assertNotIn('"<id> autonomous")', conclude)
+        self.assertIn("do not invoke it", conclude)
+        self.assertIn('Skill("quenching-git-git", "pr-create <id>")', scale)
+        self.assertIn("Other builds retain", scale)
+
+    def test_autonomous_conclude_answers_every_question_without_inferring_the_outcome(self):
+        conclude = " ".join(CONCLUDE.read_text(encoding="utf-8").split())
+        runner = " ".join(RUNNER.read_text(encoding="utf-8").split())
+
+        self.assertIn("## Under `autonomous`", conclude)
+        for row in (
+            "| Step 1 — the outcome | taken **only** from the input's `--outcome`",
+            "| Step 3 — the emergent `/docs/` plan |",
+            "| Step 4 — the `## Outcome` draft | written unconfirmed",
+            "| Step 5 — the distillation plan |",
+            "| Step 5 — the release obligations |",
+            "| Step 6 — branch behind its base | the base merged in",
+            "| Step 6 — an inconclusive check | `needs-human`",
+            "| Step 6 — the abandoned branch-delete offer | keep",
+        ):
+            self.assertIn(row, conclude)
+        self.assertIn("`autonomous` never supplies an outcome", conclude)
+        self.assertIn("pass `--outcome done` to `/quenching-specs-specs conclude` only when execute left every task checked", runner)
+        self.assertIn("never `--force`, never `abandoned` on your own", runner)
+
+    def test_conclude_runs_in_its_own_spawn(self):
+        runner = " ".join(RUNNER.read_text(encoding="utf-8").split())
+        orchestrator = " ".join(
+            (ROOT / "quenching/agents/spec-orchestrator.md").read_text(encoding="utf-8").split())
+
+        self.assertIn("`NOTE: execute-done:", runner)
+        self.assertIn("Given the word `conclude`, skip develop and execute", runner)
+        self.assertIn("A `continue` for budget carries no `execute-done:`", runner)
+        self.assertIn("NOTE starting `execute-done:`", orchestrator)
+        self.assertIn("whose prompt carries the word `conclude`", orchestrator)
+        self.assertIn("with `model` passed explicitly", orchestrator)
+        self.assertIn("call the `spec-verifier` only after it returns", orchestrator)
+
+    def test_orchestration_reads_scheduling_records_from_status(self):
+        for carrier in ("agents/spec-orchestrator.md", "assets/references/specs-flows/orchestrate.md"):
+            with self.subTest(carrier=carrier):
+                text = (ROOT / "quenching" / carrier).read_text(encoding="utf-8")
+                flat = " ".join(re.sub(r"[`*_]", "", text).split())
+                self.assertIn("cq specs status --spec <id> --json", flat)
+                self.assertIn("records.priority.complexity", flat)
+                self.assertIn("records.approved", flat)
+                self.assertIn("cq specs show --spec <id> --json", flat)
+                self.assertNotRegex(flat, r"Read complexity and approved from each spec's show")
+                self.assertNotIn("Split the set from the show payloads", flat)
+                self.assertNotIn("show --full", flat)
+
+    def test_explicit_subject_commits_only_staged_files(self):
+        with tempfile.TemporaryDirectory() as directory:
+            git(directory, "init", "-q", "-b", "main")
+            git(directory, "config", "maintenance.auto", "false")
+            git(directory, "config", "gc.auto", "0")
+            git(directory, "config", "user.email", "execute-check@example.invalid")
+            git(directory, "config", "user.name", "task execution check")
+            Path(directory, "README.md").write_text("seed\n", encoding="utf-8")
+            git(directory, "add", "README.md")
+            git(directory, "commit", "-qm", "seed")
+
+            Path(directory, "staged.txt").write_text("staged\n", encoding="utf-8")
+            Path(directory, "unstaged.txt").write_text("unstaged\n", encoding="utf-8")
+            git(directory, "add", "staged.txt")
+            git(directory, "commit", "-qm", "explicit subject wins")
+
+            self.assertEqual(git(directory, "log", "-1", "--format=%s"),
+                             "explicit subject wins")
+            self.assertEqual(git(directory, "show", "--format=", "--name-only", "HEAD"),
+                             "staged.txt")
+            self.assertEqual(git(directory, "status", "--short"), "?? unstaged.txt")
+
+    def test_boundary_keeps_each_task_commit_and_has_no_reset_contract(self):
+        command = COMMAND.read_text(encoding="utf-8").lower()
+        reference = REFERENCE.read_text(encoding="utf-8").lower()
+
+        for text in (command, reference):
+            self.assertNotIn("section squash", text)
+            self.assertNotIn("git reset --soft", text)
+            self.assertNotIn("re-stamped onto the section", text)
+        self.assertIn("keep the task commits", command)
+        self.assertIn("one per task", reference)
+
+        with tempfile.TemporaryDirectory() as directory:
+            git(directory, "init", "-q", "-b", "main")
+            git(directory, "config", "maintenance.auto", "false")
+            git(directory, "config", "gc.auto", "0")
+            git(directory, "config", "user.email", "execute-check@example.invalid")
+            git(directory, "config", "user.name", "task execution check")
+            Path(directory, "README.md").write_text("seed\n", encoding="utf-8")
+            git(directory, "add", "README.md")
+            git(directory, "commit", "-qm", "seed")
+            base = git(directory, "rev-parse", "HEAD")
+
+            for filename, subject in (
+                ("task-one.txt", "plan/x: 1.1 first task"),
+                ("task-two.txt", "plan/x: 1.2 second task"),
+            ):
+                Path(directory, filename).write_text(filename + "\n", encoding="utf-8")
+                git(directory, "add", filename)
+                git(directory, "commit", "-qm", subject)
+
+            self.assertEqual(git(directory, "rev-list", "--count", f"{base}..HEAD"), "2")
+            subjects = git(directory, "log", "--format=%s", f"{base}..HEAD").splitlines()
+            self.assertEqual(
+                subjects,
+                ["plan/x: 1.2 second task", "plan/x: 1.1 first task"],
+            )
+
+    def test_autonomous_execute_blocks_on_missing_approval_and_a_real_block(self):
+        command = " ".join(COMMAND.read_text(encoding="utf-8").split())
+        runner = " ".join(RUNNER.read_text(encoding="utf-8").split())
+
+        self.assertIn("Under `autonomous`, `approved` unset is a real block", command)
+        self.assertIn("**Under `autonomous`, the pause is the real block**", command)
+        self.assertIn("never skipped in silence", command)
+        self.assertIn("`decision:` line is not a Handoff event", command)
+        self.assertIn('"decision: <what> — <evidence or criterion>"', runner)
+        self.assertIn("needs-human: <the real block and the question>", runner)
+
+
+if __name__ == "__main__":
+    unittest.main()

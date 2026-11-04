@@ -2,7 +2,7 @@
 type: decision
 title: Split the plugin into eight generated-core modules
 description: The measured go decision for eight generated-core plugin modules, preserving full-install parity and reducing the specs-only install payload against a front-hiding single plugin
-resource: plugins/quenching
+resource: quenching
 tags: [decision, plugin, modules, measured]
 timestamp: 2026-10-13
 audience: both

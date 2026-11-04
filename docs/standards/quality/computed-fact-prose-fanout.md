@@ -2,7 +2,7 @@
 type: standard
 title: A computed fact's prose fan-out
 description: "Any fact a tool computes and prose restates — a schema's fields, a surface's command count — fans out the moment it changes, and no checker sees it: why the validators are blind by construction, the two independent measurements this rule was set from, the grep on the fact's spelled-out form that finds the sites while the change is still cheap, a doc's own `description` as the nearest instance with its two listing consumers (one hand-maintained, one a GENERATED zone that is stale between sweeps by design), and why it belongs to the task that makes the change rather than to a later sweep"
-resource: plugins/quenching/assets/specs/schema.json, plugins/quenching/assets/bin/quenching/specs/**, plugins/quenching/commands/**, plugins/quenching/assets/checks/citation-check.sh
+resource: quenching/assets/specs/schema.json, quenching/assets/bin/quenching/specs/**, quenching/commands/**, quenching/assets/checks/citation-check.sh
 tags: [quality, schema, records, documentation, sweeps]
 timestamp: 2026-08-27
 audience: both
@@ -41,7 +41,7 @@ file.
 **A second, independent measurement on the same branch, from a different trigger.** The same change
 **retired a command**, and the count of commands is the same kind of fact as the shape of a record —
 written once in code, described many times in prose. Ten sites still said *twenty-six commands* and
-*nine `/quenching-specs:specs:*` commands*, across four files, while `cq components doctor` reported the true figure of
+*nine `/quenching-specs-*` commands*, across four files, while `cq components doctor` reported the true figure of
 25 with no findings and every grep the spec's own gate ran came back empty. The trigger differs; the
 failure and the mitigation do not.
 
@@ -54,7 +54,7 @@ fact is precisely the one that cannot see the restatements.
 The mitigation is cheap and has to happen while the change is still open:
 
 ```bash
-grep -rn "merge: {strategy" --include='*.md' /docs/ plugins/ README.md
+grep -rn "merge: {strategy" --include='*.md' /docs/ quenching/ README.md
 ```
 
 Search for the **spelled-out form** — the brace list, the field names in sequence — not for the
@@ -75,7 +75,7 @@ editing the doc updates neither.
 | Consumer | How it is maintained | What a stale copy looks like |
 | --- | --- | --- |
 | the home's `index.md` (e.g. `standards/automation/index.md`) | by hand, usually a shortened form | a row that summarises a rule the doc no longer states |
-| the GENERATED zone of `standards/index.md` | verbatim, rebuilt only by `/quenching-align:knowledge:align` | the previous `description`, word for word, until a sweep runs |
+| the GENERATED zone of `standards/index.md` | verbatim, rebuilt only by `/quenching-knowledge-align` | the previous `description`, word for word, until a sweep runs |
 
 Neither is caught by `cq knowledge validate` — an out-of-date listing is a well-formed listing.
 Measured on `revisar-fluxo-do-develop-custo-e-gates` (2026-08-16), whose task 1.1 rewrote

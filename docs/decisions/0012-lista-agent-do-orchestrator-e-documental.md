@@ -2,7 +2,7 @@
 type: decision
 title: The orchestrator's Agent(...) list is documentary
 description: Why the Agent(type) allowlist in the orchestrator's tools restricts nothing when it runs as a subagent, and the accepted decision to document it and audit the launched types instead of blocking them
-resource: plugins/quenching/agents/spec-orchestrator.md
+resource: quenching/agents/spec-orchestrator.md
 tags: [decision, agents, orchestrator, security]
 timestamp: 2026-10-11
 audience: both

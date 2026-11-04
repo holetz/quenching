@@ -2,12 +2,12 @@
 type: standard
 title: Design front
 description: The single DTCG source, its portable and editorial projections, explicit arbitration with Impeccable, and the boundary between web and non-web drift
-resource: plugins/quenching/assets/bin/quenching/design/**, plugins/quenching/assets/design/**, plugins/quenching/commands/design/**
+resource: quenching/assets/bin/quenching/design/**, quenching/assets/design/**, quenching/commands/design/**
 tags: [architecture, design, dtcg, impeccable, projections]
 timestamp: 2026-11-03
 audience: both
 authority: current
-source: design-front architecture proposal revision 2, confirmed by the implementation and plugins/quenching/tests/test_design.py
+source: design-front architecture proposal revision 2, confirmed by the implementation and quenching/tests/test_design.py
 maintainer: quenching
 ---
 
@@ -25,8 +25,8 @@ The design front adopts the common minimum from
 [`front-mold.md`](front-mold.md). Its applicability signal is the presence of the DTCG source at
 `/.design/tokens.json`; its read model is `cq design status`; its verifier is `cq design doctor`,
 with `cq design build --check` proving generated identity. The align and status bodies cite the
-executor projection at `plugins/quenching/assets/references/front-align/mold.md` and the design
-disposition map at `plugins/quenching/assets/references/design-align/bands.md`.
+executor projection at `quenching/assets/references/front-align/mold.md` and the design
+disposition map at `quenching/assets/references/design-align/bands.md`.
 
 Design's permitted deltas are the DTCG source/projection graph, explicit source arbitration with
 an optional Impeccable proposal, web versus non-web drift, asset and font evidence, contrast policy,
@@ -39,7 +39,7 @@ owner rather than being disguised as mechanical repairs.
 
 `/.design/tokens.json` is a DTCG 2025.10 document. Quenching-specific values occupy only the
 `org.quenching` extension; free-form component properties do not pretend to be tokens of a
-`string` type that DTCG does not have ([model.py](../../../plugins/quenching/assets/bin/quenching/design/model.py)).
+`string` type that DTCG does not have ([model.py](../../../quenching/assets/bin/quenching/design/model.py)).
 
 `cq design build` projects this source into three classes:
 
@@ -50,7 +50,7 @@ owner rather than being disguised as mechanical repairs.
 | Internal adapters | `tokens.css`, `tokens.typ`, `tokens.py`, `brand-api.md` | values from the same DTCG graph at runtime |
 
 The executable list and in-memory calculation live in
-[build.py](../../../plugins/quenching/assets/bin/quenching/design/build.py):70. A pointer is not a
+[build.py](../../../quenching/assets/bin/quenching/design/build.py):70. A pointer is not a
 valid projection because consumers read the artifact's content.
 
 `tokens.typ` projects each color the Typst language expresses — `srgb`, `srgb-linear`, `hsl`,
@@ -62,7 +62,7 @@ string; the adapter never converts wide-gamut color on its own.
 
 `DESIGN.md` emits only `colors`, `typography`, `rounded`, `spacing`, and components limited to
 eight properties — the closed set is in
-[model.py](../../../plugins/quenching/assets/bin/quenching/design/model.py):29. Motion, shadows,
+[model.py](../../../quenching/assets/bin/quenching/design/model.py):29. Motion, shadows,
 breakpoints, ramps, and complete snippets stay in DTCG and sidecar schema 2. An import never
 removes DTCG tokens omitted by the projection; it names them as retained.
 
@@ -76,16 +76,16 @@ detector.
 An `DESIGN.md` written by `/impeccable document` is a proposed change. `cq design import` folds its
 portable subset into `tokens.json`; `cq design build` makes the current source win. The doctor
 reports byte-level divergence and does not choose taste — the fold implementation is in
-[importer.py](../../../plugins/quenching/assets/bin/quenching/design/importer.py):27.
+[importer.py](../../../quenching/assets/bin/quenching/design/importer.py):27.
 
 The GENERATED header declares provenance, not arbitration. A first align preserves an external
 `DESIGN.md` until it creates and imports the source; only then does it build the projections
-([align.py](../../../plugins/quenching/assets/bin/quenching/design/align.py):68).
+([align.py](../../../quenching/assets/bin/quenching/design/align.py):68).
 
 ## Verification split by competence
 
 `cq design doctor` decides source validity, generated identity, orphaned assets, and repeated
-literals in non-web primitives ([doctor.py](../../../plugins/quenching/assets/bin/quenching/design/doctor.py):21).
+literals in non-web primitives ([doctor.py](../../../quenching/assets/bin/quenching/design/doctor.py):21).
 The Impeccable detector decides web drift in color, font, radius, and size when installed. Its
 absence never fails the build or becomes an invented green result.
 
@@ -94,7 +94,7 @@ absence never fails the build or becomes an invented green result.
 A contract under `/.design/genres/` declares fields, registry, and media. `cq design render` applies
 the same tokens to HTML or Typst; PDF is a compilation of the Typst projection, not a second
 template. The two operations and their gates live in
-[genre.py](../../../plugins/quenching/assets/bin/quenching/design/genre.py):23. Button, input,
+[genre.py](../../../quenching/assets/bin/quenching/design/genre.py):23. Button, input,
 navigation, chip, and card form the interoperable vocabulary; eyebrow, rule, and frame are the
 editorial extension of the brand pack.
 
@@ -104,4 +104,4 @@ The `/align` root command conducts `/docs/` → `/.design/` → `.claude/`. Desi
 because it projects product truth and installs standards; it comes before components because the
 consolidated report must describe the final surface. The deterministic entry point for the new
 pillar is in
-[cq](../../../plugins/quenching/assets/bin/cq):66.
+[cq](../../../quenching/assets/bin/cq):66.

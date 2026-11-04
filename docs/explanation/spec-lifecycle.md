@@ -2,14 +2,14 @@
 type: explanation
 title: The spec lifecycle
 description: Why the unit of work is one document on the specs branch, why ready is computed and never written, and why the merge is always the last action.
-resource: plugins/quenching/README.md
+resource: quenching/README.md
 tags:
   - explanation
   - specs
 timestamp: 2026-08-28
 audience: both
 authority: current
-source: plugins/quenching/README.md §The specs flow
+source: quenching/README.md §The specs flow
 maintainer: Israel Holetz
 ---
 

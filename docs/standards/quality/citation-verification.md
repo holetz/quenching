@@ -2,7 +2,7 @@
 type: standard
 title: Citation verification
 description: How citation-check.sh proves a citation resolves against the base it claims — half 1 that the old name died and half 2 that the new name was born, blind and with no allowlist, and half 3 that the prose the plugin SHIPS promises only what the published skeleton delivers, since a command body and a reference are read inside a target checkout where our standards do not exist — the three scope rules read from the script's own header (the instrument does not measure itself, .specs/ is out of scope, golden/eval fixtures are frozen data), the spelling rule half 3 rests on (a markdown link promises a destination, a bare inline-code path names a doc the target may not have), that it runs manually and is documented rather than gated automatically (Open Decision 2, with a second real use case as the trigger to revisit), and why the "every red is a harness defect" precedent stays scoped to functional-checks.sh alone until citation-check.sh earns its own evidence (Open Decision 3, opportunistic)
-resource: plugins/quenching/assets/checks/citation-check.sh
+resource: quenching/assets/checks/citation-check.sh
 tags: [quality, verification, citations, automation]
 timestamp: 2026-10-11
 audience: both
@@ -77,10 +77,10 @@ carved out for convenience.
 Halves 1 and 2 ask their question of **this** checkout. Half 3 asks half 2's question of the prose
 this repository **ships**, against the base that prose is actually read from.
 
-A command body under `plugins/quenching/commands/**` and a reference under
-`plugins/quenching/assets/references/**` are loaded inside a **target** checkout, with the target's
+A command body under `quenching/commands/**` and a reference under
+`quenching/assets/references/**` are loaded inside a **target** checkout, with the target's
 paths. The only bundle content the plugin delivers is the skeleton under
-`plugins/quenching/assets/knowledge/` — index files and a single leaf standard. So a markdown link
+`quenching/assets/knowledge/` — index files and a single leaf standard. So a markdown link
 to a `/docs/standards/**` the skeleton does not carry resolves here and in no other
 repository.
 
@@ -140,8 +140,8 @@ those trees against the base that matters.
 **Manual and documented, not gated automatically** — decided by the human, 2026-08-11 (Open
 Decision 2 of the spec that wrote this standard). Unlike `functional-checks.sh`
 ([surface-verification.md](surface-verification.md) §The harness belongs to the components
-front), `citation-check.sh` is not wired into `/quenching-align:components:align`, into
-`/quenching-specs:specs:conclude`'s merge gate, or into any spec's `## Validation`. It is run by hand,
+front), `citation-check.sh` is not wired into `/quenching-components-align`, into
+`/quenching-specs-conclude`'s merge gate, or into any spec's `## Validation`. It is run by hand,
 from the repo root, when a change makes half-finished citations plausible.
 
 **Two shapes of change do, and they are not the same shape.** The first is a **rename or a

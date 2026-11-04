@@ -2,7 +2,7 @@
 type: standard
 title: Windows without administrator rights — the supported prerequisites and what the port covers
 description: What "supported on Windows without administrator rights" means for the cq tool, the user-scope prerequisites, the three code paths that were POSIX-only (process groups, symlinks, the PATH launcher) and the one CI job that exercises them
-resource: plugins/quenching/assets/bin/quenching/codex/probe.py, plugins/quenching/assets/bin/quenching/common/tools.py, plugins/quenching/assets/bin/quenching/session/live.py, plugins/quenching/assets/bin/quenching/git/worktree.py, plugins/quenching/assets/bin/quenching/deploy/tree.py, .github/workflows/ci.yml
+resource: quenching/assets/bin/quenching/codex/probe.py, quenching/assets/bin/quenching/common/tools.py, quenching/assets/bin/quenching/session/live.py, quenching/assets/bin/quenching/git/worktree.py, quenching/assets/bin/quenching/deploy/tree.py, .github/workflows/ci.yml
 tags: [windows, platform, prerequisites, junction, process-group]
 timestamp: 2026-11-03
 audience: both

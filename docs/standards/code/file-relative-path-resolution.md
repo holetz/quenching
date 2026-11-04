@@ -2,7 +2,7 @@
 type: standard
 title: A `__file__`-relative path encodes a depth, and packaging changes it
 description: Every `__file__`-relative expression silently encodes how deep its module sits; moving a script into a package re-evaluates it somewhere else without erroring, and the two instances this repo measured failed in opposite directions — one turned a lockstep check off and exited 0, the other made a subcommand refuse forever
-resource: plugins/quenching/assets/bin/quenching/specs/schema.py, plugins/quenching/tests/test_specs_assets.py
+resource: quenching/assets/bin/quenching/specs/schema.py, quenching/tests/test_specs_assets.py
 tags: [code, packaging, paths, verification, refactoring]
 timestamp: 2026-08-11
 audience: both

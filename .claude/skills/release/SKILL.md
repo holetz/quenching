@@ -22,16 +22,16 @@ from what accumulated and confirms it with you).
 This repository publishes from a single long-lived branch —
 [docs/standards/git/branching.md](/docs/standards/git/branching.md): every spec lands on the
 primary branch (`main`) through a reviewed pull request, and the release is the one deliberate act
-that moves the version-carrying artifacts (the source `VERSION`, the marketplace's and the HUD's `plugins/claude/quenching-hud/.claude-plugin/plugin.json`)
+that moves the version-carrying artifacts (the source `VERSION`, the marketplace's and the HUD's `integrations/claude-hud/.claude-plugin/plugin.json`)
 ([docs/standards/ci-cd/versioning-release.md](/docs/standards/ci-cd/versioning-release.md))
 and creates a tag. This command is that deliberate act. The mechanical half — the artifact
-bump, the commit, the tag — is `plugins/quenching/assets/bin/cq specs release <version>`, already
+bump, the commit, the tag — is `quenching/assets/bin/cq specs release <version>`, already
 implemented and self-tested; this command judges *whether* and *what*, gets it confirmed, and
 publishes the result.
 
 **Always the LOCAL source of the tool, never the deployed copy.** Every git command and every
 `cq specs` call below uses the path **relative to this repository's own root**
-(`plugins/quenching/assets/bin/cq`) — never `.agents/quenching/bin/cq`. A release packages what
+(`quenching/assets/bin/cq`) — never `.agents/quenching/bin/cq`. A release packages what
 is actually on this checkout's primary branch; the deployed copy could run the tool from a
 different, possibly older, copy than the one being released.
 
@@ -39,8 +39,8 @@ different, possibly older, copy than the one being released.
 
 ### 1. Resolve the primary branch and where its checkout lives
 ```bash
-python3 plugins/quenching/assets/bin/cq specs config --json
-python3 plugins/quenching/assets/bin/cq git base --json
+python3 quenching/assets/bin/cq specs config --json
+python3 quenching/assets/bin/cq git base --json
 git worktree list --porcelain
 ```
 The primary branch is the `base` `cq git base` resolves (`origin/HEAD`, else
@@ -59,7 +59,7 @@ git -C <primary checkout from step 1> log --oneline --merges <last-tag>..HEAD
 The first names the last tag; the second lists every PR merged into the primary branch since it —
 "since the last release", without depending on a second branch. **No tag yet** → the range is the
 whole history; treat the count as "since the beginning". **Zero** → nothing to publish; report that
-and stop. **Exactly one** → ask, once, on a decision sheet ([specs-develop/questions.md](/plugins/quenching/assets/references/specs-develop/questions.md) §1; A habit-stop recommended, B release): "the primary branch carries one PR
+and stop. **Exactly one** → ask, once, on a decision sheet ([specs-develop/questions.md](/quenching/assets/references/specs-develop/questions.md) §1; A habit-stop recommended, B release): "the primary branch carries one PR
 since the last release — is this a release, or is it habit?" (the mitigation
 [branching.md](/docs/standards/git/branching.md) §The trigger is demand, not cadence names: nothing else
 pushes back on turning every single spec into its own release). Answering habit stops the run
@@ -67,7 +67,7 @@ cleanly — nothing is written. Two or more → proceed without asking.
 **Done when:** the count is known and, if it was exactly one, answered.
 
 ### 3. Propose the version, show the whole plan, gate on ONE confirmation
-Read `plugins/quenching/VERSION` for the current version. Show the merge commit subjects from step
+Read `quenching/VERSION` for the current version. Show the merge commit subjects from step
 2 to the human, propose a patch/minor/major bump with the reasoning drawn from what actually
 changed (a new command or a new capability → minor; a fix or a doc/prose-only change → patch; a
 breaking change to an installed consumer's contract → major) — **never invent a versioning
@@ -96,7 +96,7 @@ makes the release one atomic fact on the branch that publishes
 The `cd` in the subshell is what picks the repository — `cq specs` resolves it from the cwd, and
 refuses (exit 2, `sp-release-wrong-branch`) any checkout not on the primary branch.
 ```bash
-( cd <primary checkout from step 1> && python3 plugins/quenching/assets/bin/cq specs release <version> --json )
+( cd <primary checkout from step 1> && python3 quenching/assets/bin/cq specs release <version> --json )
 git -C <primary checkout from step 1> push origin <primary-branch> <version>
 ```
 Exit **0** on `cq specs release` → the artifacts moved, the bump commit landed on the primary

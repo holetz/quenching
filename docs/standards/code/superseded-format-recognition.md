@@ -2,7 +2,7 @@
 type: standard
 title: Recognising a superseded format
 description: How a recogniser is changed when the format it reads is superseded — the new pattern must be asserted against the OLD form, because a pattern that describes the new one correctly often matches the old one whole and yields a confident wrong answer with no finding; and a store's recogniser must separate "not mine" from "mine, but stale", because sending both to the same discard makes a half-migrated front vanish in silence
-resource: plugins/quenching/assets/bin/quenching/specs/**, plugins/quenching/assets/specs/schema.json
+resource: quenching/assets/bin/quenching/specs/**, quenching/assets/specs/schema.json
 tags: [code, parsing, migration, recognisers, findings, selftest]
 timestamp: 2026-08-10
 audience: both

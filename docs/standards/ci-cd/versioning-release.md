@@ -2,7 +2,7 @@
 type: standard
 title: Versioning and release — the version lockstep
 description: The version surfaces cq specs release bumps together — the source VERSION, the HUD plugin manifest, every Claude marketplace entry and the bundled cq identity — and the copies it regenerates before the release commit
-resource: plugins/quenching/assets/modules.json, plugins/quenching/VERSION, plugins/claude/quenching-hud/**, .claude-plugin/marketplace.json, plugins/quenching/assets/bin/quenching/common/version.py, plugins/quenching/assets/bin/quenching/common/modules.py, plugins/quenching/assets/bin/quenching/specs/release.py
+resource: quenching/assets/modules.json, quenching/VERSION, integrations/claude-hud/**, .claude-plugin/marketplace.json, quenching/assets/bin/quenching/common/version.py, quenching/assets/bin/quenching/common/modules.py, quenching/assets/bin/quenching/specs/release.py
 tags: [release, versioning, lockstep, plugin, distribution]
 timestamp: 2026-11-03
 audience: both
@@ -25,7 +25,7 @@ the set, and a partial bump makes one of them wrong.
 The release commit is self-contained: the verb refuses (exit 2, nothing written) when the tree
 has changes beyond `CHANGELOG.md`, bumps, **regenerates the copy** — only
 where `.agents/.quenching-deploy.json` exists, the bundled
-`plugins/quenching/assets/bin/cq deploy --target . --write`, so the gate's deployed surface lockstep
+`quenching/assets/bin/cq deploy --target . --write`, so the gate's deployed surface lockstep
 holds at the new version — and commits everything with the `CHANGELOG.md` entry, so
 `verify_repo.sh` is already green on the tag. A failed regeneration leaves the bump uncommitted and
 makes no commit or tag. The `/release` command runs `QUENCHING_FUNCTIONAL=1 bash scripts/verify_repo.sh`
@@ -33,15 +33,15 @@ before the bump, so the surface-load checks are measured, not skipped.
 
 ## The version set
 
-`plugins/quenching/assets/modules.json` is the declarative source, and `release_artifacts` in
+`quenching/assets/modules.json` is the declarative source, and `release_artifacts` in
 `common/modules.py` derives the set from it:
 
 | # | Artifact | Read by |
 | --- | --- | --- |
-| 1 | `plugins/quenching/VERSION` (the unpublished source; it carries no `plugin.json`) | `cq deploy`, which records the version in a target's `.agents/.quenching-deploy.json` |
-| 2 | `.claude-plugin/plugin.json` of every entry of `plugins` with `marketplace: true` — today only `plugins/claude/quenching-hud` | Claude Code, to detect and apply the HUD upgrade |
+| 1 | `quenching/VERSION` (the unpublished source; it carries no `plugin.json`) | `cq deploy`, which records the version in a target's `.agents/.quenching-deploy.json` |
+| 2 | `.claude-plugin/plugin.json` of every entry of `plugins` with `marketplace: true` — today only `integrations/claude-hud` | Claude Code, to detect and apply the HUD upgrade |
 | 3 | `.claude-plugin/marketplace.json` → **every** entry's `version` | the marketplace listing |
-| 4 | `plugins/quenching/assets/bin/quenching/common/version.py` → `VERSION` | every pillar's own `--version` (`cq specs`, `cq knowledge`, `cq components`) |
+| 4 | `quenching/assets/bin/quenching/common/version.py` → `VERSION` | every pillar's own `--version` (`cq specs`, `cq knowledge`, `cq components`) |
 
 Adding a marketplace plugin to `plugins` changes the derived set without editing the release code.
 `cq specs release` loads the **target repository's** manifest; `RELEASE_ARTIFACTS` in `release.py`
@@ -64,7 +64,7 @@ version it does not have.
 
 **Artifact 4 is the *tool identity*, held once.** Every command invokes the deployed `cq` at
 `.agents/quenching/bin/cq` ([deploy-mode.md](../architecture/deploy-mode.md);
-`plugins/quenching/assets/references/align/tool-resolution.md` §Resolving the tool), so a bump
+`quenching/assets/references/align/tool-resolution.md` §Resolving the tool), so a bump
 *delivers* nothing by itself. What the one constant still does is answer `--version` for every
 pillar alike. Four scripts each carrying their own copy of this constant was never a design
 choice — it was the shape a self-contained, no-import single file forced, back when each pillar
@@ -97,7 +97,7 @@ changelog entry says so.
 
 The surfaces move **once per release, on the primary branch, as the deliberate act that publishes
 it** — see [branching.md](../git/branching.md). A version bump is never a task in a
-spec's `## Tasks`, `/quenching-specs:specs:execute` never makes one, and `/quenching-specs:specs:conclude` no longer makes one
+spec's `## Tasks`, `/quenching-specs-execute` never makes one, and `/quenching-specs-conclude` no longer makes one
 either: a spec's own conclude merges into the primary branch with the lockstep untouched, and the
 artifacts move only when the release command runs `cq specs release`.
 
@@ -141,7 +141,7 @@ The deterministic repository gate checks this checkout's own deployed
 surface against the source. Direct read-only checks are:
 
 ```bash
-python3 plugins/quenching/assets/bin/cq deploy --target . --check --json
+python3 quenching/assets/bin/cq deploy --target . --check --json
 ```
 
 Drift exits 1. Neither `--write` bumps an authored version surface or repairs a marketplace

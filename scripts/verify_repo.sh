@@ -33,8 +33,8 @@ COVERAGE_DIR=".quenching/coverage"
 COVERAGE_JSON="$COVERAGE_DIR/coverage.json"
 mkdir -p "$COVERAGE_DIR"
 export COVERAGE_FILE="$ROOT/$COVERAGE_DIR/.coverage"
-pytest_args=(plugins/quenching/tests -q -p randomly -n auto
-             --cov=plugins/quenching/assets/bin/quenching
+pytest_args=(quenching/tests -q -p randomly -n auto
+             --cov=quenching/assets/bin/quenching
              --cov-report="json:$COVERAGE_JSON")
 if [ -n "${PYTEST_RANDOMLY_SEED:-}" ]; then
   pytest_args+=("--randomly-seed=$PYTEST_RANDOMLY_SEED")
@@ -43,19 +43,19 @@ if uv run python -c "import pytest, pytest_randomly, xdist, pytest_cov" >/dev/nu
   run_check "unit tests (randomized order, parallel, measured)" \
     uv run python -m pytest "${pytest_args[@]}"
   run_check "coverage floor" \
-    python3 plugins/quenching/assets/bin/cq proof ratchet --check --artifact "$COVERAGE_JSON"
+    python3 quenching/assets/bin/cq proof ratchet --check --artifact "$COVERAGE_JSON"
 elif python3 -c "import coverage" >/dev/null 2>&1; then
   printf '\n==> unit tests\nSKIPPED: pytest-xdist/pytest-cov are not installed (run `uv sync --all-groups`); the suite runs serially under coverage, without the randomized-order evidence.\n'
   run_check "unit tests (measured, serial fallback)" \
-    python3 -m coverage run -m unittest discover -s plugins/quenching/tests
+    python3 -m coverage run -m unittest discover -s quenching/tests
   run_check "coverage report" \
     python3 -m coverage json -q -o "$COVERAGE_JSON"
   run_check "coverage floor" \
-    python3 plugins/quenching/assets/bin/cq proof ratchet --check --artifact "$COVERAGE_JSON"
+    python3 quenching/assets/bin/cq proof ratchet --check --artifact "$COVERAGE_JSON"
 else
   printf '\n==> coverage floor\nSKIPPED: the `coverage` package is not installed (run `uv sync --all-groups`); the floor in .coverage-floor.json was not checked.\n'
   run_check "unit tests" \
-    python3 -m unittest discover -s plugins/quenching/tests
+    python3 -m unittest discover -s quenching/tests
 fi
 # The CI `lint` job runs this exact command; the local gate must not pass what the CI refuses.
 run_check "ruff" \
@@ -63,15 +63,15 @@ run_check "ruff" \
 # The leak gate's generic patterns, the same the hooks in scripts/githooks/ run locally (there is no
 # private denylist since 2026-10-27).
 run_check "leak gate (generic patterns)" \
-  python3 plugins/quenching/assets/bin/cq security leak --all --generic-only
+  python3 quenching/assets/bin/cq security leak --all --generic-only
 run_check "open source controls catalog" \
   python3 scripts/check_opensource_controls.py
 run_check "proof doctor" \
-  python3 plugins/quenching/assets/bin/cq proof doctor
+  python3 quenching/assets/bin/cq proof doctor
 # The ops front is not adopted here (no `ops.opsRoot`/`ops.router`): `op-config-missing` is expected
 # and exits 2, which is inconclusive and reported, never green. Any other outcome must be clean.
 printf '\n==> ops doctor\n'
-ops_out="$(python3 plugins/quenching/assets/bin/cq ops doctor 2>&1)" && ops_rc=0 || ops_rc=$?
+ops_out="$(python3 quenching/assets/bin/cq ops doctor 2>&1)" && ops_rc=0 || ops_rc=$?
 if [ "$ops_rc" -eq 2 ] && [[ "$ops_out" == *"opsRoot"* ]]; then
   printf 'INCONCLUSIVE: ops front not adopted in this repository (op-config-missing is expected).\n'
 elif [ "$ops_rc" -ne 0 ]; then
@@ -81,41 +81,41 @@ else
   printf '%s\n' "$ops_out"
 fi
 run_check "components doctor" \
-  python3 plugins/quenching/assets/bin/cq --root plugins/quenching components doctor --json
+  python3 quenching/assets/bin/cq --root quenching components doctor --json
 run_check "components lint" \
-  python3 plugins/quenching/assets/bin/cq --root plugins/quenching components lint --json
+  python3 quenching/assets/bin/cq --root quenching components lint --json
 run_check "harness (AGENTS.md)" \
   python3 scripts/check_claude_harness.py
 run_check "docs bundle" \
-  python3 plugins/quenching/assets/bin/cq knowledge validate docs
+  python3 quenching/assets/bin/cq knowledge validate docs
 run_check "docs doctor" \
-  python3 plugins/quenching/assets/bin/cq knowledge doctor docs
+  python3 quenching/assets/bin/cq knowledge doctor docs
 # A checkout that installed the surface with `cq deploy` keeps it in lockstep with this source;
 # `--check` with no flags reuses the manifest's recorded selection. A checkout that never adopted
 # deploy mode has nothing to compare, and says so instead of reporting a green it did not measure.
 if [ -f .agents/.quenching-deploy.json ]; then
   run_check "deployed surface lockstep" \
-    python3 plugins/quenching/assets/bin/cq deploy --target . --check --json
+    python3 quenching/assets/bin/cq deploy --target . --check --json
 else
   printf '\n==> deployed surface lockstep\nSKIPPED: this checkout does not use deploy mode (no .agents/.quenching-deploy.json).\n'
 fi
 run_check "citation checks" \
-  bash plugins/quenching/assets/checks/citation-check.sh
+  bash quenching/assets/checks/citation-check.sh
 run_check "documentation site source" \
-  python3 plugins/quenching/assets/bin/cq knowledge site-source docs site-source --write
+  python3 quenching/assets/bin/cq knowledge site-source docs site-source --write
 run_check "Zensical strict build" \
   uv run zensical build --clean --strict
 run_check "built-site checks" \
-  python3 plugins/quenching/assets/checks/documentation-site-check.py site --local --remote-policy error
+  python3 quenching/assets/checks/documentation-site-check.py site --local --remote-policy error
 
 # The quenching-hud mod is validated by the host's own validator. Without `claude` the skip is
 # stated loudly, as with `coverage`: a local gate must not demand an install, but the release has it.
 if command -v claude >/dev/null 2>&1; then
   run_check "quenching-hud plugin" \
-    claude plugin validate plugins/claude/quenching-hud
+    claude plugin validate integrations/claude-hud
 else
   printf '\n==> quenching-hud plugin\n'
-  printf 'SKIPPED: `claude` is not on PATH; plugins/claude/quenching-hud was not validated.\n'
+  printf 'SKIPPED: `claude` is not on PATH; integrations/claude-hud was not validated.\n'
 fi
 
 # Surface-load checks spawn billed `claude -p` sessions, so they are opt-in: without
@@ -128,9 +128,9 @@ elif ! command -v claude >/dev/null 2>&1; then
   printf 'FAILED: surface-load checks — QUENCHING_FUNCTIONAL=1 but `claude` is not on PATH.\n' >&2
   exit 1
 else
-  printf '+ bash plugins/quenching/assets/checks/functional-checks.sh\n'
+  printf '+ bash quenching/assets/checks/functional-checks.sh\n'
   functional_rc=0
-  bash plugins/quenching/assets/checks/functional-checks.sh || functional_rc=$?
+  bash quenching/assets/checks/functional-checks.sh || functional_rc=$?
   if [ "$functional_rc" -ne 0 ]; then
     printf 'FAILED: surface-load checks (exit %s; 2 is inconclusive and does not pass when the measurement was requested)\n' "$functional_rc" >&2
     exit 1

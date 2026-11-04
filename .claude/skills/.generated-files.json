@@ -3,7 +3,7 @@
   "source": ".agents/skills",
   "verifiedClaudeCode": "2.1.312",
   "files": {
-    "commands-tighten/SKILL.md": "218a4df9033cc9504ba72f0ce4ef04d0815fafb59b345d9ee757b96485135d12",
+    "commands-tighten/SKILL.md": "fe56865a5e97836ac6636e17440ecd49c63ca5964fdc161db9607c87de61f2c1",
     "quenching-align/SKILL.md": "de1abf502bc4b7822e49664fb70314e26af50456979a44539fe1c40759f17a0d",
     "quenching-components-agent-new/SKILL.md": "1f2c2d2f174e2ddc4d2130fb66a116e814da47ed80622a86997e67ad13132131",
     "quenching-components-align/SKILL.md": "2bdcd9df36bfdc789e0f702a7121d24c672623a122195528d22f7ff5cddfe534",
@@ -56,7 +56,7 @@
     "quenching-proof-layer-new/SKILL.md": "0030e2a0136cba954018537edc27fcf7710bee8d4cbf06116ff6c44733db0f26",
     "quenching-proof-status/SKILL.md": "83c33a1c26e99558b58de19f518ae42889c10877f3cdc0bdf5154e24fee04f25",
     "quenching-security-status/SKILL.md": "50af4ff0c8638f77c4c8084a645d70a7b6f8d46acb84fa2dbb3b6c0b647b79d7",
-    "quenching-specs-autopilot/SKILL.md": "ec9bca2f5e49be4aa0f44f898c77dc362519aa5302eab077ea618bf44eefe400",
+    "quenching-specs-autopilot/SKILL.md": "d55924575184ec1b82e17c71218bae2a06e3c7c78f7a27296027a1b76a1d4103",
     "quenching-specs-board/SKILL.md": "cea178df70ab36aaad966064af5506ee84245f48a7b4de00453d6e866e14ea6b",
     "quenching-specs-conclude/SKILL.md": "77315fee3e03989c6ab28725d06967c2cea8e6eced01735fa932d3fd0d5e0273",
     "quenching-specs-create/SKILL.md": "edd5c395774db05264e923ccf4b04d73ecde37a4df618e940babb6bbf936213b",
@@ -69,8 +69,8 @@
     "quenching-specs-triage/SKILL.md": "393992daf0d7990f41b066b51df3d6ef7524855ef90aa38bbf82b82aef31acba",
     "quenching-toolchain-align/SKILL.md": "cbb3745a249b16424f741b2cf694d9a08e8ecda64a2de397529982667b9c561d",
     "quenching-toolchain-status/SKILL.md": "9c82effee73e91ed8be7a01cf6322b85097468d47ba1560e9947c53a0f5a3415",
-    "references-tighten/SKILL.md": "4c35e68e5f19f30e491f75fa70867295c0ab8fc83caec97ef5a5160bcd3266a2",
-    "release/SKILL.md": "6a52415dfc7ba8f8990f9451f0e8698e5f514e96933a2ec02912e0775fba88a9",
+    "references-tighten/SKILL.md": "2d20045bf347178da2d86c703cd84cd7e6e916d33ab8a04eb69b0380dd4f5eda",
+    "release/SKILL.md": "83421db35d2856c28c9b00dbb8c64334d180c6022ad226af4e52fe2624e76a6d",
     "skill-map/SKILL.md": "eb309cf9d098a5daccbabff27d97f3da24a967c888bbde88f0400cc6af09b5be"
   }
 }

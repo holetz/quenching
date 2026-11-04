@@ -28,14 +28,14 @@ REQUIRED_AGENTS = {
 }
 STALE = ("stale-doc` is advisory", "This size check measures CLAUDE.md only")
 SCOPED_RULES = {
-    "command-fork.md": ("plugins/quenching/commands/**", "context: fork"),
+    "command-fork.md": ("quenching/commands/**", "context: fork"),
     "import-memory-models.md": (
-        "plugins/quenching/commands/knowledge/import-memory.md",
+        "quenching/commands/knowledge/import-memory.md",
         "haiku",
     ),
 }
 CITED = re.compile(
-    r"\]\((?!https?:|#)([^)#\s]+)|`((?:plugins|docs|scripts)/[^`\s*]+)`|`(/docs/[^`\s*]+)`"
+    r"\]\((?!https?:|#)([^)#\s]+)|`((?:quenching|integrations|docs|scripts)/[^`\s*]+)`|`(/docs/[^`\s*]+)`"
 )
 
 

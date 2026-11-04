@@ -2,7 +2,7 @@
 type: standard
 title: Opensource front
 description: The target repository's license, community and governance artifacts, written only from pinned templates through cq opensource apply, and the read-only aggregate of every owner's open source catalog answers into a conservative baseline level with stable os-* findings
-resource: plugins/quenching/commands/opensource/**, plugins/quenching/assets/bin/quenching/opensource/**, plugins/quenching/assets/opensource/templates/**, plugins/quenching/assets/references/opensource-align/**
+resource: quenching/commands/opensource/**, quenching/assets/bin/quenching/opensource/**, quenching/assets/opensource/templates/**, quenching/assets/references/opensource-align/**
 tags: [architecture, opensource, governance, community, license]
 timestamp: 2026-11-03
 audience: both
@@ -25,7 +25,7 @@ fronts own.
 
 The front adopts the common minimum from [`front-mold.md`](front-mold.md): a stable `doctor` and
 `status`, typed exits (0 clean, 1 findings, 2 refusal) and one disposition band per code, mapped in
-`plugins/quenching/assets/references/opensource-align/bands.md`. Its name is `opensource` and its
+`quenching/assets/references/opensource-align/bands.md`. Its name is `opensource` and its
 finding prefix `os-` is reserved to it. New open source questions land in this front; the
 `security`, `delivery`, `toolchain` and `proof` fronts keep only the catalog answers they already
 own.
@@ -64,7 +64,7 @@ requirement. An optional control and an artifact no control names produce an `in
 never changes the exit code. `doctor` reports `applicable` when the root carries a `LICENSE*` or
 `COPYING*` file or `shared.profiles.installed` names `opensource`, and `not-applicable` otherwise;
 the root conductor reports and skips a `not-applicable` front, while
-`/quenching-opensource:opensource:align` invoked directly runs anyway. No configuration namespace
+`/quenching-opensource-align` invoked directly runs anyway. No configuration namespace
 exists: the owner's answers live in the align plan and in the written artifacts.
 
 ## Writing through the route, from pinned templates

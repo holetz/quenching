@@ -11,7 +11,7 @@ body:
     id: version
     attributes:
       label: Plugin version
-      description: Output of `cq --version`, or the version in `plugins/quenching/VERSION`.
+      description: Output of `cq --version`, or the version in `quenching/VERSION`.
     validations:
       required: true
   - type: input

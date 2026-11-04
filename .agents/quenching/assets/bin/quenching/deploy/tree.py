@@ -187,7 +187,7 @@ def _seed_config(target: Path, profiles: list[str]) -> str:
 
 
 def _uvx_shim(version: str) -> tuple[bytes, bytes]:
-    source = f"git+https://github.com/holetz/quenching@{version}#subdirectory=plugins/quenching"
+    source = f"git+https://github.com/holetz/quenching@{version}#subdirectory=quenching"
     sh = ("#!/usr/bin/env sh\n"
           f"exec uvx --from \"{source}\" cq \"$@\"\n")
     cmd = ("@echo off\r\n"
@@ -390,7 +390,7 @@ def build_tree(source: Path, target: Path, modules: list[str], harnesses: list[s
     document = {
         "generator": "cq deploy",
         "version": VERSION,
-        "source": "plugins/quenching",
+        "source": "quenching",
         "modules": modules,
         "profiles": profiles or profiles_for(modules),
         "harnesses": harnesses,

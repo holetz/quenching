@@ -15,7 +15,7 @@ Two shapes are conformant and both resolve here:
 
 ONE FILE PER ENTRY POINT. A command file carries its own description AND its own body; a
 command's path IS its invocation and its identity: `commands/specs/develop.md` is
-`/quenching-specs:specs:develop`, one `:` per path segment. There is nothing to mirror.
+`/quenching-specs-develop`, one `:` per path segment. There is nothing to mirror.
 
 `commands/**` is the ONLY tree Claude Code registers, which is why nothing else may live
 there: a `references/` folder beside a command file would surface every reference as a
@@ -126,11 +126,12 @@ def find_surface_root(root_arg: str | None) -> str:
 # --------------------------------------------------------------------------- #
 # the surface model — what every subcommand reads
 # --------------------------------------------------------------------------- #
-def command_invocation(relpath: str) -> str:
-    """`specs/develop.md` -> `/quenching-specs:specs:develop` — one `:` per path segment. The path IS
-    the identity, so this is the whole naming rule; nothing derives a second name to
-    compare it against."""
-    return "/" + ":".join(relpath[:-3].split("/"))
+def command_invocation(relpath: str, prefix: str | None = None) -> str:
+    """`specs/develop.md` -> `/quenching-specs-develop` on the source surface (the `prefix` is
+    `quenching`), `/front:verb` on a target's own `.claude/commands/`. The path IS the identity,
+    so this is the whole naming rule; nothing derives a second name to compare it against."""
+    parts = relpath[:-3].split("/")
+    return "/" + "-".join([prefix, *parts]) if prefix else "/" + ":".join(parts)
 
 
 def discover_commands(commands_dir: str) -> list[dict]:
@@ -141,6 +142,7 @@ def discover_commands(commands_dir: str) -> list[dict]:
     registered entry point and must be reported as one, never filtered out here."""
     if not os.path.isdir(commands_dir):
         return []
+    prefix = plugin_prefix(os.path.dirname(os.path.abspath(commands_dir)))
     out = []
     for dirpath, _dirnames, filenames in os.walk(commands_dir):
         for fn in sorted(filenames):
@@ -152,7 +154,7 @@ def discover_commands(commands_dir: str) -> list[dict]:
             body = body_after_frontmatter(text)
             hooks, hooks_parsed = parse_frontmatter_hooks(text)
             out.append({
-                "command": command_invocation(relpath),
+                "command": command_invocation(relpath, prefix),
                 "path": path,
                 "relpath": relpath,
                 "frontmatter": parse_frontmatter(text),

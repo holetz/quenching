@@ -2,7 +2,7 @@
 type: decision
 title: The Omnigent operator agent, the source plugin manifest, the source launcher and cq components translate are retired
 description: Why the plugin-model remnants left after ADR 0017 were removed — the generated Omnigent bundle, the source plugin.json, the duplicate bin/cq of the source and the cq components translate verb — and what identifies the source instead
-resource: plugins/quenching/assets/bin/cq, plugins/quenching/assets/bin/quenching/components/surface.py, plugins/quenching/assets/bin/quenching/deploy/tree.py, plugins/quenching/assets/bin/quenching/common/modules.py, plugins/quenching/assets/bin/quenching/components/commands/migrate.py
+resource: quenching/assets/bin/cq, quenching/assets/bin/quenching/components/surface.py, quenching/assets/bin/quenching/deploy/tree.py, quenching/assets/bin/quenching/common/modules.py, quenching/assets/bin/quenching/components/commands/migrate.py
 tags: [decision, architecture, plugin, deploy, cleanup]
 timestamp: 2026-11-03
 audience: both
@@ -50,6 +50,6 @@ supersedes the part of 0017 that kept the Omnigent operator agent as a plugin th
 ## Consequences
 
 - A release no longer regenerates anything but the repository's own deployed surface.
-- The source keeps its path, `plugins/quenching/`; the published-tag subdirectory pin that justified
+- The source keeps its path, `quenching/`; the published-tag subdirectory pin that justified
   it in 0017 no longer applies.
 - The wheel and `uvx` keep working: they enter through `quenching_launch.py` and `assets/bin/cq`.

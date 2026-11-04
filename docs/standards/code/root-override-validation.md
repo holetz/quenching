@@ -2,7 +2,7 @@
 type: standard
 title: Specs commands must not accept a repository-root override
 description: Specs are provider-owned, so a root override cannot redirect them to a repository store; provider selection comes from the repository remote, unsupported legacy root settings refuse, and diagnostics report the same configuration fact without inventing a local tree
-resource: plugins/quenching/assets/bin/quenching/specs/config.py, plugins/quenching/assets/bin/quenching/specs/backends/__init__.py, plugins/quenching/assets/bin/quenching/specs/commands/doctor.py
+resource: quenching/assets/bin/quenching/specs/config.py, quenching/assets/bin/quenching/specs/backends/__init__.py, quenching/assets/bin/quenching/specs/commands/doctor.py
 tags: [code, cli, validation, provider-selection, findings, refusals]
 timestamp: 2026-08-19
 audience: both

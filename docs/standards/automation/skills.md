@@ -2,7 +2,7 @@
 type: standard
 title: Command authoring and alignment
 description: How the plugin's commands are classified, authored, named, and swept into conformance — one file per entry point, including the admission criterion that decides whether a command's description stays resident in context or goes typed-only, and where a target repository's skill is born and how its Claude bridge is generated and verified
-resource: plugins/quenching/commands/**, plugins/quenching/assets/references/**, plugins/quenching/assets/bin/quenching/components/commands/bridge.py, plugins/quenching/assets/bin/quenching/components/commands/migrate.py
+resource: quenching/commands/**, quenching/assets/references/**, quenching/assets/bin/quenching/components/commands/bridge.py, quenching/assets/bin/quenching/components/commands/migrate.py
 tags: [automation, commands, taxonomy, authoring]
 timestamp: 2026-11-03
 audience: both
@@ -17,12 +17,12 @@ maintainer: quenching
 
 The contract for how a command enters and stays in this plugin's automation surface, distilled
 from the skill-authoring + skill-alignment change that first paired a skill with its wrapper.
-`/quenching-align:components:command:new` mints or edits one command; `/quenching-align:components:align`
+`/quenching-components-command-new` mints or edits one command; `/quenching-components-align`
 sweeps the whole surface into conformance. The naming these produce is governed by
 [command-surface.md](../naming/command-surface.md); the layout rule for what may sit under
 `commands/` by [../architecture/plugin-layout.md](../architecture/plugin-layout.md); the
 writing-doctrine detail lives once in
-`plugins/quenching/assets/references/components-command-new/` and is cited, never restated.
+`quenching/assets/references/components-command-new/` and is cited, never restated.
 
 **One file per entry point.** Claude Code merged custom commands into skills, so a command file
 carries both the description that routes to it and the body that runs. Where this standard once
@@ -83,7 +83,7 @@ the *verb* differs — a command that waits for a human-stated edit and one that
 questions are opposite directions of initiative and stay apart; two scripts for the same
 interrogation do not.
 
-## Authoring (`/quenching-align:components:command:new`)
+## Authoring (`/quenching-components-command-new`)
 
 - **ONE file** per mint — a `commands/<path>.md` carrying frontmatter and body. Nothing else goes
   under `commands/`.
@@ -103,7 +103,7 @@ interrogation do not.
 - **OKF tail** on every mint: regenerate the derived registry's GENERATED zone, offer a glossary
   entry for any coined term, append a log entry, and self-check.
 
-## Alignment (`/quenching-align:components:align`)
+## Alignment (`/quenching-components-align`)
 
 - **Read-only inventory** of the existing command surface before any plan — plus a `Glob` for any
   surviving `skills/<name>/SKILL.md`, which the verifier cannot see because it reads `commands/**`
@@ -118,7 +118,7 @@ interrogation do not.
   scaffolding change — existing bodies are preserved. An unclassifiable command is kept and
   reported, never forced.
 - **One surface-wide description review, on its own confirmation.** A body is reported with the
-  `/quenching-align:components:command:new` that fixes it; a **description** is rewritten here, because its central question —
+  `/quenching-components-command-new` that fixes it; a **description** is rewritten here, because its central question —
   does anything else answer to the same request? — is unanswerable one command at a time, and this
   is the only pass holding the whole surface. Prose about *how* a command works is cut, a missing
   concept or trigger is added, an unearned `Not for:` is waived with the competitor set named — and
@@ -134,7 +134,7 @@ In a target repository a skill is born at `.agents/skills/<name>/SKILL.md` — `
 ([command-surface.md](../naming/command-surface.md) §A target's skill name is one segment), the
 frontmatter `name:` equal to it, sibling files in the same folder, references under
 `.agents/references/**` and eval cases under `.agents/evals/<name>/`. That folder is the only
-editable copy. `/quenching-align:components:command:new` writes there and then runs
+editable copy. `/quenching-components-command-new` writes there and then runs
 `cq components bridge --target <repo> --write`, never writing `.claude/skills/` by hand; a subagent
 stays in `.claude/agents/`, because Claude Code 2.1.312 reads no generic home for it.
 
@@ -148,7 +148,7 @@ The bridge is generated, and verified by code:
   copy whose source is gone — and 0 when the copy matches. A `.claude/skills/<name>/` the manifest
   does not list is refused (exit 2, `ct-bridge-unowned`), never overwritten.
 - `cq components migrate --target <repo>` plans the move from the legacy `.claude/commands/` layout;
-  `/quenching-align:align`, `/quenching-align:components:align` and `/quenching-align:components:status`
+  `/quenching-align`, `/quenching-components-align` and `/quenching-components-status`
   run it with `bridge --check`, and apply a non-empty plan on one confirmation. It trusts no
   manifest: an `.agents/skills/<path>/` or `.agents/references/<rel>` beside a `.claude/` source is
   retired as the old translation only when its content is what `translate` generates from some
@@ -218,8 +218,8 @@ Two consequences that are not obvious from the test itself:
 
 - **"A human might type this" is not a reason to pick typed-only.** Every command can be typed. The
   question is whether anything *else* reaches it, and for a conductor stage the answer is yes even
-  though a human can also type it — which is exactly how `/quenching-align:components:harness:align`, `/quenching-align:knowledge:import-memory` and
-  `/quenching-align:knowledge:glossary-backfill` would be misclassified by intuition.
+  though a human can also type it — which is exactly how `/quenching-components-harness-align`, `/quenching-knowledge-import-memory` and
+  `/quenching-knowledge-glossary-backfill` would be misclassified by intuition.
 - **The name-reachable half is not a judgment call.** `cq components lint` derives it from the command
   bodies and reports `sk-inert-stage` at error for a typed-only command another body reaches by
   name. Classify against the instrument, not against recollection of who calls what.
@@ -231,7 +231,7 @@ failure to economise.
 ### One router per vertical, shortcuts typed-only
 
 A vertical with several flows that conductors call (`specs`: create, develop, execute, conclude,
-triage, status, orchestrate) carries **one routed skill** — `/quenching-specs:specs:specs <flow> <id>` —
+triage, status, orchestrate) carries **one routed skill** — `/quenching-specs-specs <flow> <id>` —
 and each flow's body lives once in `assets/references/specs-flows/<flow>.md`, loaded with
 `cq components read`. The pattern applies to **any vertical**, in the same shape:
 `commands/<vertical>/<vertical>.md` routes, `assets/references/<vertical>-flows/<flow>.md` holds
@@ -254,7 +254,7 @@ does not fire it, and that loss is accepted, since the hook only warns.
 
 Each former command stays as a thin **typed-only shortcut**: it declares
 `disable-model-invocation: true`, keeps its exact tool grant and loads the same reference, so
-typing `/quenching-specs:specs:execute` still works while its description leaves every context. A
+typing `/quenching-specs-execute` still works while its description leaves every context. A
 shortcut declares no `model:`: a worker's model comes from its agent, the main session's from the
 human.
 
@@ -270,7 +270,7 @@ The test is the interaction, never the interaction's weight, and that is already
 checks: a fork beside an `AskUserQuestion` grant is `sk-fork-gate`, an error, whatever the command
 does with the grant.
 
-**Dropping a plan gate does not buy a command the fork.** `/quenching-specs:specs:develop` writes its
+**Dropping a plan gate does not buy a command the fork.** `/quenching-specs-develop` writes its
 consolidated edit without confirming it and stays forbidden all the same, because every level but
 `low` asks at each stage and its approval close still waits on a go. A command earns the lever by asking nothing at
 all — one that only reads and reports may fork freely, and that is the lever's home: self-contained,
@@ -306,11 +306,11 @@ names its skills by suffix, or with no convention, gets no candidate and falls b
 Every further capability a command uses — `context: fork` with `agent`/`background`, a
 `model`/`effort` pin, `paths`, frontmatter `hooks:` — is an **authored, priced decision**: the
 default profile is all levers off, and each departure enters the mint's plan with its stated
-buy. The five inline `model:` pins on `/quenching-specs:specs:*` (opus: develop, conclude, triage; sonnet: create, execute) are that decision made on purpose — a pinned model is a price the spec lifecycle pays for judgment or throughput — and are recorded in [ADR 0007](../../decisions/0007-native-claude-code-features.md). An inline pin invalidates the session's prompt cache (a pin inside a fork or an agent is
+buy. The five inline `model:` pins on `/quenching-specs-*` (opus: develop, conclude, triage; sonnet: create, execute) are that decision made on purpose — a pinned model is a price the spec lifecycle pays for judgment or throughput — and are recorded in [ADR 0007](../../decisions/0007-native-claude-code-features.md). An inline pin invalidates the session's prompt cache (a pin inside a fork or an agent is
 cache-safe); `paths` binds a domain-bound command's autonomous firing to its folder. Subagents
 are governed by [agents.md](agents.md), hooks by [hooks.md](hooks.md); the pricing doctrine
 lives once in the plugin
-(`plugins/quenching/assets/references/components-command-new/capabilities.md`) and is cited, never
+(`quenching/assets/references/components-command-new/capabilities.md`) and is cited, never
 restated.
 
 ### `allowed-tools` is always scoped
@@ -322,7 +322,7 @@ shell for the turn. `cq components lint` reports a bare grant as `sk-unscoped-ba
 One exception, and it must be **stated in the body**: a skill that runs the *target repo's own*
 toolchain — its build, its tests, its linters, its migrations — cannot enumerate those commands in
 advance, because they are the repo's, not the plugin's. Such a command may hold an unscoped `Bash`
-provided its body says so and says why. `/quenching-specs:specs:execute` is the standing example. The
+provided its body says so and says why. `/quenching-specs-execute` is the standing example. The
 finding is still reported; what the stated reason buys is a reader who can tell a deliberate grant
 from an unexamined one.
 

@@ -15,14 +15,14 @@ bash scripts/verify_repo.sh
 ```
 
 The gate is zero errors. Surface-load checks live at
-`plugins/quenching/assets/checks/functional-checks.sh`; exit 2 is inconclusive, not green. The spec
+`quenching/assets/checks/functional-checks.sh`; exit 2 is inconclusive, not green. The spec
 store is the git branch `quenching` (`cq specs config` prints `backend: git`), so there is no local
 `/.specs/` workspace and the GitHub issues are a pre-migration copy `cq` does not read.
 
 This repository runs its own deployed surface: `.agents/quenching/`, `.agents/skills/`, the Claude
-bridge and the OpenCode subagents are generated from `plugins/quenching/`. After changing a command
+bridge and the OpenCode subagents are generated from `quenching/`. After changing a command
 body, a reference or the shipped payload, refresh it with
-`python3 plugins/quenching/assets/bin/cq deploy --target . --write`; the gate's `deployed surface
+`python3 quenching/assets/bin/cq deploy --target . --write`; the gate's `deployed surface
 lockstep` check is what refuses a stale install.
 
 ## Safety that must stay visible
@@ -30,7 +30,7 @@ lockstep` check is what refuses a stale install.
 - Do not add `context: fork` beside a command's mid-flow gate; the minimal building cycle is the
   only documented exception, and its review lives in the PR.
 - Never downgrade classification or executor sub-agents to `haiku` in
-  `/quenching-align:knowledge:import-memory`.
+  `/quenching-knowledge-import-memory`.
 
 Both rules are also scoped in `.claude/rules/` so they load when those files are touched.
 
@@ -38,6 +38,6 @@ Both rules are also scoped in `.claude/rules/` so they load when those files are
 
 Durable knowledge lives in [/docs/index.md](/docs/index.md); resolve unfamiliar terms in
 [/docs/glossary.md](/docs/glossary.md). The product manual, command catalog, cost model and install
-path live in [plugins/quenching/README.md](plugins/quenching/README.md). The registered sources are
-`plugins/quenching/commands/**` and `plugins/quenching/assets/references/**`. Do not replicate
+path live in [quenching/README.md](quenching/README.md). The registered sources are
+`quenching/commands/**` and `quenching/assets/references/**`. Do not replicate
 durable knowledge in this file.

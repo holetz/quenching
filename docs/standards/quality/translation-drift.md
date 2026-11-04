@@ -2,7 +2,7 @@
 type: standard
 title: Translation drift is a finding
 description: Translation divergence is a named, repairable finding with exit 1; refusal remains exit 2 and neither result is a silent success
-resource: plugins/quenching/assets/bin/quenching/deploy/cli.py, plugins/quenching/assets/bin/quenching/components/commands/bridge.py, plugins/quenching/commands/components/align.md
+resource: quenching/assets/bin/quenching/deploy/cli.py, quenching/assets/bin/quenching/components/commands/bridge.py, quenching/commands/components/align.md
 tags: [quality, translation, drift, ci, findings]
 timestamp: 2026-11-03
 audience: both
@@ -22,7 +22,7 @@ copy, a new source or an orphan. Exit 1 means the check ran and found a repairab
 difference, not that translation was unable to run.
 
 A caller that wants to reconcile the generated copy runs the same command with `--write` and then
-checks again. `/quenching-align:components:align` reports the same findings; it does not write the
+checks again. `/quenching-components-align` reports the same findings; it does not write the
 generated surface as a side effect of its taxonomy sweep. This repository checks its own
 deployed surface in `scripts/verify_repo.sh`.
 

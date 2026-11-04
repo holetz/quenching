@@ -2,7 +2,7 @@
 type: standard
 title: Empty-response honesty
 description: An empty response from a third-party transport is two states — one that never arrived and one that legitimately has nothing — and only one of them can be proved; the rule to refuse at the choke point where the proof is structural, to warn where there is only corroborated suspicion, and to never let the diagnostic refuse
-resource: plugins/quenching/assets/bin/quenching/specs/backends/**, plugins/quenching/assets/bin/quenching/specs/commands/doctor.py
+resource: quenching/assets/bin/quenching/specs/backends/**, quenching/assets/bin/quenching/specs/commands/doctor.py
 tags: [quality, verification, backends, findings, severity, transport]
 timestamp: 2026-08-17
 audience: both

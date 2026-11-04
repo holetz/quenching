@@ -53,7 +53,7 @@ manufacture the command it would have run.
 
 This repository deploys its own surface, so `.agents/quenching/bin/cq` runs the copy last deployed
 rather than the code being written. When editing this repository, run the checkout's own file
-explicitly — `python3 plugins/quenching/assets/bin/cq …` — as the author's check. That is a
+explicitly — `python3 quenching/assets/bin/cq …` — as the author's check. That is a
 developer invocation, never something a command body or reference writes for a target.
 
 ### `.agents/quenching` in the source

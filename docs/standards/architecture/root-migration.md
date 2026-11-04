@@ -1,8 +1,8 @@
 ---
 type: standard
 title: A declared root migrates by structural detection, never by `okf_version`
-description: When a plugin release renames a root it itself declares — the bundle root moved from `/.docs/` to `/docs/` once — the migration is detected site by site from what sits on disk, never gated on a version bump, and resolved through exactly one route, `/quenching-align:knowledge:align`
-resource: plugins/quenching/assets/bin/quenching/knowledge/checks.py, plugins/quenching/assets/bin/quenching/knowledge/validate.py, plugins/quenching/assets/references/knowledge-align/migration.md
+description: When a plugin release renames a root it itself declares — the bundle root moved from `/.docs/` to `/docs/` once — the migration is detected site by site from what sits on disk, never gated on a version bump, and resolved through exactly one route, `/quenching-knowledge-align`
+resource: quenching/assets/bin/quenching/knowledge/checks.py, quenching/assets/bin/quenching/knowledge/validate.py, quenching/assets/references/knowledge-align/migration.md
 tags: [architecture, bundle, okf, migration, convention]
 timestamp: 2026-08-13
 audience: both
@@ -29,14 +29,14 @@ yet: `okf-legacy-root` (the new root absent, the pre-rename one present), `okf-l
 pre-rename home name at the bundle root), `okf-legacy-doc-quadrant` (a pre-rename Diátaxis
 quadrant under `documentation/`), `okf-legacy-glossary` (`glossary.md` sitting inside a home
 instead of at the bundle root). The exact severities and messages are
-`plugins/quenching/assets/references/knowledge-align/conformance.md`
+`quenching/assets/references/knowledge-align/conformance.md`
 §Pre-rename layout's, cited rather than restated here.
 
 ## Resolution is exactly one route
 
-`/quenching-align:knowledge:align` is the only command that resolves an `okf-legacy-*` finding — never a
+`/quenching-knowledge-align` is the only command that resolves an `okf-legacy-*` finding — never a
 hand `git mv`, never a target improvising its own path. The procedure —
-`plugins/quenching/assets/references/knowledge-align/migration.md` §1g —
+`quenching/assets/references/knowledge-align/migration.md` §1g —
 renames the root first, then the homes, quadrants and glossary underneath it, each swept for
 blast radius and each gated on its **own** confirmation the moment it reaches product code (a
 path default, a docstring, a hook's own root constant): a root rename is never a bare `git mv`

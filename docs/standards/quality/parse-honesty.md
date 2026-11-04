@@ -2,7 +2,7 @@
 type: standard
 title: Parse honesty
 description: A verifier names its own parse failure instead of reporting it as a content gap — the sidecar shape that adds the signal without changing a return type, why the finding is a warn rather than an error, and the rule that a checker never gains a lossy transform without the diagnostic that reports it
-resource: plugins/quenching/assets/bin/quenching/common/frontmatter.py, plugins/quenching/assets/bin/cq
+resource: quenching/assets/bin/quenching/common/frontmatter.py, quenching/assets/bin/cq
 tags: [quality, verification, parsing, findings, severity]
 timestamp: 2026-08-10
 audience: both

@@ -2,7 +2,7 @@
 type: standard
 title: Configuration arbitration by key
 description: A shared configuration artifact has one writer for each semantic key, separate reader metadata, and no arbiter row for a read-only pillar, with a generated declaration first applied to pyproject.toml
-resource: pyproject.toml, plugins/quenching/assets/bin/quenching/ops/**, plugins/quenching/assets/bin/quenching/proof/**, .github/workflows/**
+resource: pyproject.toml, quenching/assets/bin/quenching/ops/**, quenching/assets/bin/quenching/proof/**, .github/workflows/**
 tags: [architecture, configuration, ownership, arbitration, ops, proof]
 timestamp: 2026-08-31
 audience: both
@@ -42,9 +42,9 @@ The first application has these ownership rows:
 
 | Configuration key or section | Arbiter | Evidence / readers | Status |
 | --- | --- | --- | --- |
-| `[project.scripts]` (`project.scripts`) | `ops` | `plugins/quenching/assets/bin/quenching/ops/inventory.py:32,140` | current owner |
-| pytest configuration (`tool.pytest`) | `proof` | `plugins/quenching/assets/bin/quenching/proof/inventory.py:123-131,177-180` | current owner |
-| coverage configuration (`tool.coverage`) | `proof` | `plugins/quenching/assets/bin/quenching/proof/inventory.py:123-131,177-180` | current owner |
+| `[project.scripts]` (`project.scripts`) | `ops` | `quenching/assets/bin/quenching/ops/inventory.py:32,140` | current owner |
+| pytest configuration (`tool.pytest`) | `proof` | `quenching/assets/bin/quenching/proof/inventory.py:123-131,177-180` | current owner |
+| coverage configuration (`tool.coverage`) | `proof` | `quenching/assets/bin/quenching/proof/inventory.py:123-131,177-180` | current owner |
 | dependencies, lock, language version, lint and build backend | future `toolchain` front | admitted future boundary; no unbuilt front is claimed | pending future owner |
 
 ## Read-only pillars have no arbiter

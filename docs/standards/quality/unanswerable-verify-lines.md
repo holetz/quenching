@@ -2,7 +2,7 @@
 type: standard
 title: Unanswerable verify lines
 description: A `verify:` whose verdict does not come from the state of the code — the pattern the shell mangles before it compares, the YAML scalar the parser truncates before it reads, the entry point that exited 0 without running anything — and the rule of exercising the line in both directions at the moment it is written, never at the moment it has to close
-resource: plugins/quenching/assets/references/specs-execute/execution.md, plugins/quenching/assets/references/specs-develop/*.md, docs/standards/workflows/task-execution.md
+resource: quenching/assets/references/specs-execute/execution.md, quenching/assets/references/specs-develop/*.md, docs/standards/workflows/task-execution.md
 tags: [quality, verification, verify, authoring, shell-quoting, frontmatter]
 timestamp: 2026-08-17
 audience: both

@@ -2,7 +2,7 @@
 type: decision
 title: Spec backend measurements and history
 description: The measured costs and false-for-a-year sentences behind the spec backend interface rules, moved out of the standard
-resource: plugins/quenching/assets/bin/quenching/specs/backends/**
+resource: quenching/assets/bin/quenching/specs/backends/**
 tags: [decision, history, architecture]
 timestamp: 2026-10-07
 audience: both

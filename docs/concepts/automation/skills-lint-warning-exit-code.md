@@ -2,7 +2,7 @@
 type: concept
 title: cq components lint exits 0 with warning-severity findings still present
 description: "cq components lint's exit code alone never proves a warning-severity finding closed, and a single-file invocation re-roots the command path — both need naming so a verify: written against this tool does not pass in silence"
-resource: plugins/quenching/assets/bin/quenching/components/commands/lint.py
+resource: quenching/assets/bin/quenching/components/commands/lint.py
 tags: [automation, cq, components, lint, verification, gotcha]
 timestamp: 2026-08-10
 audience: both
@@ -29,8 +29,8 @@ code is not the signal for anything below `error`.
 
 Given one file, `lint` resolves its root to that file's own directory, so a finding for
 `commands/knowledge/add.md` reports back as `"command": "/add", "path": "add.md"` — not
-`/quenching-align:knowledge:add` and not the full repo-relative path. A filter written against the full
-command path (`/quenching-align:knowledge:add`) matches nothing against that output, silently.
+`/quenching-knowledge-add` and not the full repo-relative path. A filter written against the full
+command path (`/quenching-knowledge-add`) matches nothing against that output, silently.
 
 **Consequence.** Run `lint` against the **whole surface** (`cq --root . components lint --json`)
 and filter the returned `findings` array by `path` (repo-relative) and `code`, rather than
@@ -41,7 +41,7 @@ invoking `lint` on one file and trusting its own idea of that file's path. Re-me
 ## The combined check
 
 ```bash
-cd plugins/quenching && python3 assets/bin/cq --root . components lint --json \
+cd quenching && python3 assets/bin/cq --root . components lint --json \
 | python3 -c "import json,sys; P='commands/knowledge/add.md'; \
 F=json.load(sys.stdin)['findings']; \
 B=[f for f in F if f['path']==P and f['code'] in ('sk-trigger-position','sk-no-boundary')]; \

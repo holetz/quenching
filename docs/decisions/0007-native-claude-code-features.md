@@ -2,7 +2,7 @@
 type: decision
 title: Native Claude Code features
 description: Adopt, defer or reject verdicts for the Claude Code features the plugin had reinvented or not yet used (spike S26)
-resource: plugins/quenching
+resource: quenching
 tags: [decision, platform, hooks, agents, evals]
 timestamp: 2026-10-07
 audience: both

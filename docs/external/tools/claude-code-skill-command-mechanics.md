@@ -2,7 +2,7 @@
 type: external
 title: Claude Code skill and command loading mechanics
 description: Measured facts about how Claude Code loads plugin commands vs skills — placeholder substitution, the Skill-tool registry, startup-time discovery, the unified frontmatter schema, and what disable-model-invocation actually closes
-resource: plugins/quenching/commands/**
+resource: quenching/commands/**
 tags: [claude-code, plugins, skills, commands, frontmatter, tooling]
 timestamp: 2026-08-11
 audience: both
@@ -28,7 +28,7 @@ been re-confirmed against a version later than the one beside it.
 
 | # | Behavior | Status |
 | --- | --- | --- |
-| 1 | `${CLAUDE_PLUGIN_ROOT}` **substitutes inside a `commands/*.md` body**, exactly as it does in `SKILL.md` | Observed |
+| 1 | `.agents/quenching` **substitutes inside a `commands/*.md` body**, exactly as it does in `SKILL.md` | Observed |
 | 2 | A **command is invocable by name through the Skill tool**, and its body expands with substitution intact | Observed |
 | 3 | A command is registered in the Skill-tool listing under its **command path** (`plugin:docs:add`), carrying its own frontmatter `description` | Observed |
 | 4 | The command/skill registry is built **at session start** — a file created mid-session is not discoverable until a new process | Observed |
@@ -38,7 +38,7 @@ been re-confirmed against a version later than the one beside it.
 
 ### 1–2. Placeholder substitution reaches command bodies
 
-The documented substitution table grants `${CLAUDE_PLUGIN_ROOT}` to *"Skill and agent content"*
+The documented substitution table grants `.agents/quenching` to *"Skill and agent content"*
 and does not name `commands/**`. It nonetheless resolves there: a command body containing the
 placeholder expanded to the absolute plugin root, on **both** invocation paths — typed as a slash
 command, and invoked by name through the Skill tool.
@@ -135,7 +135,7 @@ records who ignored that advice and who did not.
 
 | Row | Relied on by | How load-bearing |
 | --- | --- | --- |
-| 1 — `${CLAUDE_PLUGIN_ROOT}` substitutes in a command body | `collapse-skills-into-commands` (2026-07-26) | **Total.** All 351 citations in the collapsed surface are `${CLAUDE_PLUGIN_ROOT}` absolute paths. If this row is false, every command body instructs a future session to read a file it cannot resolve — silently, since a bad path does not error. |
+| 1 — `.agents/quenching` substitutes in a command body | `collapse-skills-into-commands` (2026-07-26) | **Total.** All 351 citations in the collapsed surface are `.agents/quenching` absolute paths. If this row is false, every command body instructs a future session to read a file it cannot resolve — silently, since a bad path does not error. |
 | 2 — a command is invocable by name through the Skill tool | `collapse-skills-into-commands` (2026-07-26) | **Total.** All five conductors invoke their stages this way (`quenching-align:knowledge:align`). If false, a conductor runs and does nothing. |
 | 4 — the registry is built at session start | `collapse-skills-into-commands` (2026-07-26) | **Methodological.** It is why that spec's `verification` is `per-section` and why its three functional checks each need a fresh `claude -p`: nothing it wrote was testable in the session that wrote it. |
 | 7 — the field closes both doors | `route-commands-without-always-on-descriptions` (2026-08-02) | **Total.** It sizes the typed-only class: every command a conductor reaches by name is excluded from it by this row. The row was measured *by* that spec, before it classified anything — which is the ordering this table exists to encourage. |
@@ -146,8 +146,8 @@ Rows 1, 2 and 4 were re-measured against **Claude Code 2.1.215** immediately bef
 migration moved its first file — see below.
 
 **Row 6 was contradicted before it was ever relied upon.** Three artifacts asserted that a scoped
-`allowed-tools` *was* the enforcement behind a read-only guarantee — the `/quenching-align:knowledge:status` and
-`/quenching-specs:specs:status` doctrine bullets, and the plugin `README.md`'s `/quenching-align:knowledge:status` paragraph — which is
+`allowed-tools` *was* the enforcement behind a read-only guarantee — the `/quenching-knowledge-status` and
+`/quenching-specs-status` doctrine bullets, and the plugin `README.md`'s `/quenching-knowledge-status` paragraph — which is
 the contrary of what row 6 observed, claimed without measuring anything.
 `verify-allowed-tools-enforcement` (2026-07-28) deleted all three, and closed the gap that produced
 them: `standards/automation/skills.md` §`allowed-tools` is always scoped and the
@@ -169,7 +169,7 @@ rests on rows 1 and 2, immediately before its first file moved. A throwaway comm
 twice in fresh `claude -p` processes — once typed as `/quenching:zzprobe`, once by name
 through the Skill tool — and each run reported both the **resolved absolute path** it had been
 given and a **token readable only through that path**. Substitution failing would have surfaced a
-literal `${CLAUDE_PLUGIN_ROOT}` and a failed read; neither run did. Row 4 rode along, since both
+literal `.agents/quenching` and a failed read; neither run did. Row 4 rode along, since both
 processes discovered a command file created after they were last running. Probe files reverted.
 
 Rows 3, 5 and 6 were not re-measured: rows 3 and 5 are corroborating rather than load-bearing for

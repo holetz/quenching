@@ -1,6 +1,6 @@
 ---
 paths:
-  - "plugins/quenching/commands/**"
+  - "quenching/commands/**"
 ---
 
 # Command bodies: no `context: fork` beside a mid-flow gate

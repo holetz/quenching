@@ -1,6 +1,6 @@
 ---
 paths:
-  - "plugins/quenching/commands/knowledge/import-memory.md"
+  - "quenching/commands/knowledge/import-memory.md"
 ---
 
 # import-memory: never downgrade sub-agents to `haiku`

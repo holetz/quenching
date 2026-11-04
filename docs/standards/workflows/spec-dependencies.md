@@ -2,7 +2,7 @@
 type: standard
 title: Spec dependencies contract
 description: A spec may declare the specs it depends on with a first-level `dependsOn` key written only by `cq specs depends`; `cq specs schedule` derives start, finish, slip and the critical path from that graph and the existing `start`/`target`, and validate raises four dependency findings
-resource: plugins/quenching/assets/bin/quenching/specs/parse/deps.py, plugins/quenching/assets/bin/quenching/specs/commands/deps.py, plugins/quenching/assets/bin/quenching/specs/commands/validate.py, plugins/quenching/assets/specs/schema.json
+resource: quenching/assets/bin/quenching/specs/parse/deps.py, quenching/assets/bin/quenching/specs/commands/deps.py, quenching/assets/bin/quenching/specs/commands/validate.py, quenching/assets/specs/schema.json
 tags: [workflows, specs, dependencies, schedule]
 timestamp: 2026-10-24
 audience: both

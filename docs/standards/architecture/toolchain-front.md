@@ -2,7 +2,7 @@
 type: standard
 title: Toolchain front
 description: The target repository's toolchain surface — manifests, locks, language pins and tool configuration, with explicit ownership boundaries and stable tc-* findings
-resource: .agents/quenching.json, pyproject.toml, uv.lock, AGENTS.md, .github/workflows/**, plugins/quenching/assets/zensical/ci-github-pages.yml
+resource: .agents/quenching.json, pyproject.toml, uv.lock, AGENTS.md, .github/workflows/**, quenching/assets/zensical/ci-github-pages.yml
 tags: [architecture, toolchain, dependencies, build, configuration]
 timestamp: 2026-08-31
 audience: both
@@ -26,7 +26,7 @@ This front was admitted from measured seams in the current repository, not from 
 future implementation:
 
 - `pyproject.toml` declares Python `>=3.11`, while `.github/workflows/ci.yml` runs a Python 3.11 and 3.13 matrix and
-  `plugins/quenching/assets/zensical/ci-github-pages.yml` uses the open-ended `3.x` runtime; no
+  `quenching/assets/zensical/ci-github-pages.yml` uses the open-ended `3.x` runtime; no
   `.python-version` is present.
 - The development dependency group declares `pytest>=8.0`, while the repository harness in
   `AGENTS.md` runs `unittest` discovery.
@@ -44,7 +44,7 @@ The toolchain front adopts the common minimum from
 [`front-mold.md`](front-mold.md). Its applicability signal is a target's declared `toolchain`
 namespace; its future read model and verifier are downstream implementation decisions that must
 preserve the common `status`/`doctor` floor. Its domain-specific reference is
-`plugins/quenching/assets/references/toolchain-align/bands.md`.
+`quenching/assets/references/toolchain-align/bands.md`.
 
 The name is `toolchain`, not `config`: `.agents/quenching.json` is the plugin configuration home,
 and treating it as a toolchain artifact would recreate competing sources of truth. The `tc-`

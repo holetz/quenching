@@ -2,7 +2,7 @@
 type: decision
 title: Specs move from tracker bodies to a git store with thin cards
 description: Why the canonical spec document moved from the issue or work-item body to the quenching branch, the measurements behind it, and the migration result
-resource: plugins/quenching/assets/bin/quenching/specs/**
+resource: quenching/assets/bin/quenching/specs/**
 tags: [decision, history, architecture, specs]
 timestamp: 2026-10-07
 audience: both

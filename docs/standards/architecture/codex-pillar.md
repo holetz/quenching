@@ -2,7 +2,7 @@
 type: standard
 title: Codex pillar
 description: A pillar that reads the Codex quota, runs the Codex CLI as an independent reviewer that must change nothing, and lets it write one eligible spec task inside a worktree — app-server quota first, exit 0/1/2 failing closed, Codex's native sandbox never asked for, both runs under the bypass bounded by a git guard (the review's proves the tree unchanged, the executor's proves its diff inside `files:`), a stop-loss, and argv that never inherits the user's Codex configuration
-resource: plugins/quenching/assets/bin/quenching/codex/**, plugins/quenching/tests/test_codex_probe.py, plugins/quenching/tests/test_codex_review.py, plugins/quenching/tests/test_codex_eligible.py, plugins/quenching/tests/test_codex_implement.py, plugins/quenching/tests/fixtures/codex/**, .agents/quenching.json
+resource: quenching/assets/bin/quenching/codex/**, quenching/tests/test_codex_probe.py, quenching/tests/test_codex_review.py, quenching/tests/test_codex_eligible.py, quenching/tests/test_codex_implement.py, quenching/tests/fixtures/codex/**, .agents/quenching.json
 tags: [architecture, codex, pillar, git-guard, quota, review, executor]
 timestamp: 2026-10-18
 audience: both
@@ -152,7 +152,7 @@ body runs, in order:
    `codex-git-guard` it stops the build and names the changed paths for the human.
 
 - **The hook is `optional: true`:** an absent `codex`, a spent quota or a timeout never pauses the build.
-- **Worktree limit.** `/quenching-specs:specs:execute` never invokes a hook in a linked worktree
+- **Worktree limit.** `/quenching-specs-execute` never invokes a hook in a linked worktree
   (it reports `skipped: worktree`), so this review runs only in the main checkout, never in an
   orchestrated build.
 - **Findings are reported, never acted on:** `findingsNeedReproduction` holds, so a Codex finding
@@ -160,7 +160,7 @@ body runs, in order:
 
 ## The executor
 
-`/quenching-specs:specs:execute` step 5b hands one task at a time to Codex when the code admits it.
+`/quenching-specs-execute` step 5b hands one task at a time to Codex when the code admits it.
 
 `cq codex eligible --spec <id> --task <tid> [--json]` decides, exit `0` eligible, `1` not, `2`
 refusal (unknown spec or task). A task is eligible when `executor.enabled` holds, it declares

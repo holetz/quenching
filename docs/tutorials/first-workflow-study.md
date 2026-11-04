@@ -2,7 +2,7 @@
 type: tutorial
 title: First workflow study
 description: Reproduce one disposable Quenching workflow and inspect what its deterministic evidence does and does not prove.
-resource: plugins/quenching/README.md
+resource: quenching/README.md
 tags:
   - tutorial
   - experiment

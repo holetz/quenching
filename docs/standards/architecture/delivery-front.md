@@ -2,7 +2,7 @@
 type: standard
 title: Delivery front
 description: The target repository's delivery surface — bounded pipeline shape, release reachability and ownership boundaries across workflow, proof, ops, toolchain and security
-resource: .github/workflows/**, .agents/quenching.json, plugins/quenching/assets/bin/quenching/delivery/**
+resource: .github/workflows/**, .agents/quenching.json, quenching/assets/bin/quenching/delivery/**
 tags: [architecture, delivery, ci, pipelines, release]
 timestamp: 2026-08-31
 audience: both
@@ -96,10 +96,10 @@ into a target delivery contract:
 | Evidence | Boundary it demonstrates |
 | --- | --- |
 | `.github/workflows/ci.yml` | A workflow tree exposes triggers, jobs and permissions; delivery owns its shape, while permission meaning remains with the security pillar. |
-| `plugins/quenching/assets/bin/quenching/proof/` | The bundled proof front owns test-layer, CI-evidence and gate semantics; delivery may invoke that evidence but does not claim it. |
-| `plugins/quenching/assets/bin/quenching/ops/` | The bundled ops front owns router, entry-point and deploy semantics; delivery may name a reachable `deploy` entry point without absorbing its lifecycle. |
+| `quenching/assets/bin/quenching/proof/` | The bundled proof front owns test-layer, CI-evidence and gate semantics; delivery may invoke that evidence but does not claim it. |
+| `quenching/assets/bin/quenching/ops/` | The bundled ops front owns router, entry-point and deploy semantics; delivery may name a reachable `deploy` entry point without absorbing its lifecycle. |
 | `docs/standards/architecture/toolchain-front.md` | Runtime and tool declarations remain toolchain-owned even when a workflow consumes them. |
-| `plugins/quenching/assets/bin/quenching/common/config.py` | The shared loader reads the configuration envelope; each namespace adapter remains the owner of its semantic keys. |
+| `quenching/assets/bin/quenching/common/config.py` | The shared loader reads the configuration envelope; each namespace adapter remains the owner of its semantic keys. |
 | `security` pillar | Workflow permissions are read-only security evidence; no local delivery tree or automatic permission repair is invented. |
 
 This evidence is an ownership map, not an assertion that the plugin repository already has a

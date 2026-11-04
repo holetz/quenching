@@ -2,7 +2,7 @@
 type: standard
 title: Applicability of a finding's remedy
 description: A declared remedy names an action the surface that emitted the finding actually offers — the measured case where the same CLI refused both actions it advised, why an inapplicable remedy teaches readers to ignore the whole findings output and not just that one item, and the refusal of its own that a case with no path still owes
-resource: plugins/quenching/assets/bin/quenching/specs/commands/validate.py, plugins/quenching/assets/bin/quenching/specs/commands/doctor.py, plugins/quenching/assets/bin/quenching/components/commands/doctor.py, plugins/quenching/assets/bin/quenching/components/commands/lint.py, plugins/quenching/assets/bin/quenching/components/commands/registry.py, plugins/quenching/assets/bin/quenching/components/hooks.py
+resource: quenching/assets/bin/quenching/specs/commands/validate.py, quenching/assets/bin/quenching/specs/commands/doctor.py, quenching/assets/bin/quenching/components/commands/doctor.py, quenching/assets/bin/quenching/components/commands/lint.py, quenching/assets/bin/quenching/components/commands/registry.py, quenching/assets/bin/quenching/components/hooks.py
 tags: [quality, findings, remedy, cli, surface]
 timestamp: 2026-08-27
 audience: both

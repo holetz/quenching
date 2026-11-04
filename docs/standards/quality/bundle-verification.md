@@ -2,7 +2,7 @@
 type: standard
 title: Bundle verification
 description: What the knowledge front machine-checks versus what it leaves to a skill's prose self-check, when an invariant is owed a deterministic check, where an accepted gap is recorded, and the resource glob-set format
-resource: plugins/quenching/assets/bin/quenching/knowledge/**, plugins/quenching/assets/references/knowledge-align/conformance.md, plugins/quenching/commands/knowledge/status.md
+resource: quenching/assets/bin/quenching/knowledge/**, quenching/assets/references/knowledge-align/conformance.md, quenching/commands/knowledge/status.md
 tags: [quality, verification, okf, validator, conformance]
 timestamp: 2026-08-27
 audience: both
@@ -25,7 +25,7 @@ This standard is the rule *behind* both.
 The rule this front learned the hard way. The glossary tail step — "after a capture, check whether
 the new concept introduced a term that belongs in `glossary.md`" — is specified in **six**
 places: `homes.md` §Enriching the glossary, `quenching-align:knowledge:add`, `quenching-align:knowledge:learn`,
-`quenching-align:knowledge:import-memory`, `quenching-align:knowledge:define`, and `/quenching-specs:specs:conclude`'s
+`quenching-align:knowledge:import-memory`, `quenching-align:knowledge:define`, and `/quenching-specs-conclude`'s
 `distill.md`. Across two real distillation runs it produced **zero** entries.
 
 An invariant written six times and executed zero times is not under-specified. It is evidence that
@@ -48,14 +48,14 @@ reports the gap — the command exits 0 either way.
 
 Measured 2026-07-31 on the language-clause census. The invariant read *"returns **exactly** the
 fourteen places in the table"* and was implemented as
-`grep -rn -A1 "repo.s language" --include='*.md' --include='*.py' plugins/ docs/`. It returned 14.
+`grep -rn -A1 "repo.s language" --include='*.md' --include='*.py' quenching/ docs/`. It returned 14.
 The real population was **19 hits across 17 files**. Three whole files were unreachable, for two
 different mechanical reasons:
 
 - **Line wrap.** One occurrence had `the repo's` and `language` on separate lines. A single-line
   pattern cannot match it, and `-A1` does not help: it extends a hit already found, so where there
   is no hit there is nothing to extend. The spec had written `-A1` believing it did.
-- **Declared scope.** Two files sat outside `plugins/ docs/` — one of them the installed copy of a
+- **Declared scope.** Two files sat outside `quenching/ docs/` — one of them the installed copy of a
   manual, the exact artifact class the sweep existed to keep in sync.
 
 **The number agreed by arithmetic coincidence**, which is the part worth fearing. One file counted
@@ -84,7 +84,7 @@ The other honest option above, and the one that needs a home — an accepted gap
 no deterministic check can reach it, and when the reason is **structural rather than unfinished
 work**.
 
-**Import provenance is an identity, not a derivation anything here can verify.** `/quenching-align:knowledge:import`
+**Import provenance is an identity, not a derivation anything here can verify.** `/quenching-knowledge-import`
 stamps `source_uri:` — the exact URI of the source unit — on every doc it creates, and that key is
 what a later run greps to find the doc it already minted for that unit. Nothing checks it, and
 nothing in this front can:
@@ -115,7 +115,7 @@ nothing in this front can:
 <!-- rationale -->
 
 What was done instead is the cut the corollary demands. The rule that an imported doc records where
-it came from used to be written in **four** places — `sources.md`, `/quenching-align:knowledge:import` twice over, and
+it came from used to be written in **four** places — `sources.md`, `/quenching-knowledge-import` twice over, and
 an installed payload. It now has one owner, `sources.md` §Attribution, and the other three cite it.
 Removing three restatements is worth more than a fifth would have been, and this entry is what
 makes the remaining hole *known* rather than merely unfilled.
@@ -163,7 +163,7 @@ makes it say *what the doc governs* — so what the comparison detects is **acti
 the glob**, never drift of the content. Two measurements, three weeks apart, say the same thing
 from different directions:
 
-- 2026-07-30: a branch editing only `plugins/quenching/**` took this bundle from 12 warnings to 14
+- 2026-07-30: a branch editing only `quenching/**` took this bundle from 12 warnings to 14
   without one doc becoming wrong. The resource moved; the rule did not. This is structural — a
   branch cannot touch code a standard governs without ageing that standard by this measure.
 - 2026-08-27: **50 of the 95 docs** carried it. A signal more than half the corpus raises is not
@@ -194,7 +194,7 @@ Machine checks answer *shape*. They cannot answer:
   actually does.
 
 These stay with the skills, and the front reports them as **figures rather than findings** where it
-can: bundle density (concept docs per home, glossary size, empty homes) appears in `/quenching-align:knowledge:status`
+can: bundle density (concept docs per home, glossary size, empty homes) appears in `/quenching-knowledge-status`
 as a table with **no finding code**. Coding it would make permanent noise of a repo that
 legitimately has no `mlops/`; omitting it would hide a bundle that passes every check while knowing
 nothing. A figure informs without accumulating as a defect to chase.
@@ -227,7 +227,7 @@ repo's own bundle are lists.
 
 | Mode | Runs | Notes |
 | --- | --- | --- |
-| CLI | every check, plus `--activity` as a separate output | the on-demand sweep; `/quenching-align:knowledge:status` reads both |
+| CLI | every check, plus `--activity` as a separate output | the on-demand sweep; `/quenching-knowledge-status` reads both |
 | `PostToolUse` | one file's per-doc checks | never structural |
 | `Stop` | whole tree, dirty-gated | never the activity figure |
 | `PreToolUse` | the two hard violations, opt-in | `hardBlock: true` only |

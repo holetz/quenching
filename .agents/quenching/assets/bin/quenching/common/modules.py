@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 from pathlib import Path, PurePosixPath
 
-MANIFEST = "plugins/quenching/assets/modules.json"
+MANIFEST = "quenching/assets/modules.json"
 
 
 def safe_path(root: Path, value: str) -> Path:

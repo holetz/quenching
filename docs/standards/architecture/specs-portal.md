@@ -2,7 +2,7 @@
 type: standard
 title: The specs portal reads one store and widens nothing without a decision
 description: The local spec portal (cq specs serve) reads only the specs store open_backend reads, exposes a fixed set of GET and POST routes plus, under --chat, a read-only claude -p chat polled by job, keeps its loopback, token, Host/Origin and CSP guarantees, builds every node with textContent, carries the design system's tokens verbatim in a delimited block pinned by test, reuses cockpit UX patterns but never its code, shows the spec-runner's run record on the card, and redeploys the surface with every change
-resource: plugins/quenching/assets/bin/quenching/specs/portal.py, plugins/quenching/assets/bin/quenching/specs/chat.py, plugins/quenching/assets/portal/**, plugins/quenching/assets/bin/quenching/portal/**, plugins/quenching/assets/bin/quenching/common/lent.py, plugins/quenching/assets/bin/quenching/session/portal.py
+resource: quenching/assets/bin/quenching/specs/portal.py, quenching/assets/bin/quenching/specs/chat.py, quenching/assets/portal/**, quenching/assets/bin/quenching/portal/**, quenching/assets/bin/quenching/common/lent.py, quenching/assets/bin/quenching/session/portal.py
 tags: [architecture, portal, specs, security, ux]
 timestamp: 2026-11-03
 audience: both
@@ -302,7 +302,7 @@ Every change to `portal.py` or `assets/portal/**` regenerates the deployed surfa
 refuses a stale install:
 
 ```bash
-python3 plugins/quenching/assets/bin/cq deploy --target . --write
+python3 quenching/assets/bin/cq deploy --target . --write
 ```
 
 <!-- rationale -->

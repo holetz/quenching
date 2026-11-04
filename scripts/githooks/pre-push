@@ -4,4 +4,4 @@
 set -Eeuo pipefail
 ROOT="$(git rev-parse --show-toplevel)"
 # Generic patterns only: there is no private denylist (retired on 2026-10-27; see CONTRIBUTING.md).
-exec python3 "$ROOT/plugins/quenching/assets/bin/cq" security leak --pre-push --generic-only --remote "$1" --root "$ROOT"
+exec python3 "$ROOT/quenching/assets/bin/cq" security leak --pre-push --generic-only --remote "$1" --root "$ROOT"

@@ -2,7 +2,7 @@
 type: standard
 title: Warning about an unproven capability
 description: Where a caveat about a capability that ships without end-to-end proof belongs — the two failure shapes that decide it, the standing fact as a verifier finding and the moment-of-risk line once per process on stderr, why a per-operation warning is a permanent context tax and silence is not the alternative, and the one edit that retires both together
-resource: plugins/quenching/assets/bin/quenching/specs/**, plugins/quenching/assets/bin/quenching/components/**, plugins/quenching/assets/bin/quenching/knowledge/**
+resource: quenching/assets/bin/quenching/specs/**, quenching/assets/bin/quenching/components/**, quenching/assets/bin/quenching/knowledge/**
 tags: [quality, verification, findings, warnings, unproven, context]
 timestamp: 2026-08-10
 audience: both

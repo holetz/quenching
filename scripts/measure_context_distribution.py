@@ -17,7 +17,7 @@ import re
 import statistics
 import sys
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "plugins/quenching/assets/bin"))
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "quenching/assets/bin"))
 from quenching.session.model import Command, bare_agent, normalize  # noqa: E402
 from quenching.session.parse import blocks, close_attribution, COMMAND_NAME_RE  # noqa: E402
 

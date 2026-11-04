@@ -26,7 +26,7 @@ This session is the **conductor**. It decides as the owner's delegate, keeps onl
 never builds: reading, mapping, decomposing, building and reviewing are agents
 (`quenching-spec-scout`, `quenching-spec-orchestrator` or, in economy mode, the spec-runner/spec-verifier pair with this session publishing, and the read-only opus
 `quenching-spec-reviewer`, which this conductor launches at step 6). Decomposition is a step of develop, run in this session, never an agent. The spec-orchestrator's protocol (waves, workers, spec-verifier, acceptance, publication) lives in
-`plugins/quenching/agents/spec-orchestrator.md`; do not restate it.
+`quenching/agents/spec-orchestrator.md`; do not restate it.
 
 **Why `Bash` is unrestricted here.** Step 1 and step 7 run the gate the target's root harness
 declares in its operating section (`AGENTS.md`; legacy `AGENTS.md`), whose command no fixed grant can name. No other
@@ -185,7 +185,7 @@ this round's decisions, and `validate` raises no `sp-link-*` finding.
 (`/quenching-git-git pr-create autonomous`, then `.agents/quenching/bin/cq git pr merge` on green CI), with the acceptance rules
 of the spec-orchestrator's protocol, cited and not restated — steps 3 (budget, `budget:` relaunch), 4
 (acceptance only on a spec-verifier PASS, the `execute-done:`/`conclude` two spawns, publish after the PASS,
-one re-spawn) and 5 (retry, idempotency) of `plugins/quenching/agents/spec-orchestrator.md`.
+one re-spawn) and 5 (retry, idempotency) of `quenching/agents/spec-orchestrator.md`.
 Each prompt is ≤ 1,500 characters, and it OPENS with the fixed text every prompt of that type
 shares — the word `autonomous`, the base, the model passed explicitly and the sentence "No git
 stash, checkout or reset; work only in your worktree." — and CLOSES with the variables: the spec

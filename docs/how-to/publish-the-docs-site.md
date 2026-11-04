@@ -2,14 +2,14 @@
 type: how-to
 title: Publish the documentation site
 description: Turn the /docs/ bundle into a rendered Diátaxis site — planned against a closed publication map, sourced, reviewed and gated by a strict build.
-resource: plugins/quenching/README.md
+resource: quenching/README.md
 tags:
   - how-to
   - documentation
 timestamp: 2026-08-28
 audience: both
 authority: current
-source: command bodies under plugins/quenching/commands/knowledge/documentation/; references under plugins/quenching/assets/references/knowledge-documentation/
+source: command bodies under quenching/commands/knowledge/documentation/; references under quenching/assets/references/knowledge-documentation/
 maintainer: Israel Holetz
 ---
 
@@ -35,7 +35,7 @@ flowchart LR
 === "Conducted (recommended)"
 
     ```text
-    /quenching-align:knowledge:documentation:produce
+    /quenching-knowledge-documentation-produce
     ```
 
     One authorization, four stages in order, one final report: coverage over the **whole
@@ -44,10 +44,10 @@ flowchart LR
 === "Stage by stage"
 
     ```text
-    /quenching-align:knowledge:documentation:plan      # diagnose + publication map + one OK
-    /quenching-align:knowledge:documentation:write     # sourced pages from the plan
-    /quenching-align:knowledge:documentation:review    # scores; changes not a byte
-    /quenching-align:knowledge:documentation:build     # site layer, strict build, rendered QA
+    /quenching-knowledge-documentation-plan      # diagnose + publication map + one OK
+    /quenching-knowledge-documentation-write     # sourced pages from the plan
+    /quenching-knowledge-documentation-review    # scores; changes not a byte
+    /quenching-knowledge-documentation-build     # site layer, strict build, rendered QA
     ```
 
     Useful when iterating on one stage — the plan of record persists at
@@ -92,7 +92,7 @@ python3 <plugin>/assets/checks/documentation-site-check.py site --local \
 ```
 
 (`<plugin>` is the quenching plugin root; inside a session the command bodies resolve it as
-`${CLAUDE_PLUGIN_ROOT}` — in a plain shell that variable is empty, so spell the path out.)
+`.agents/quenching` — in a plain shell that variable is empty, so spell the path out.)
 
 The strict build fails on broken links and unresolved references; the site checker runs
 **always, immediately after every build** — even a green one — and proves what a build cannot:

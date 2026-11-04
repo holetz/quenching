@@ -2,7 +2,7 @@
 type: external
 title: Zensical measured behaviour
 description: Measured facts about the Zensical static site generator — that it runs no MkDocs plugin at all, that its CLI has three commands and a build with no output flag, that a config resolves every path relative to the config file rather than the working directory, that a dot-prefixed `docs_dir` silently builds an empty site and symlinks are no escape from it, that `site_dir` may not leave the project root, that `.cache/` ignores itself, which Material theme features survived and which one did not, and how publishing changed from a deploy subcommand to a Pages artifact
-resource: plugins/quenching/assets/zensical/**, plugins/quenching/commands/knowledge/documentation/**, plugins/quenching/assets/references/knowledge-documentation/**
+resource: quenching/assets/zensical/**, quenching/commands/knowledge/documentation/**, quenching/assets/references/knowledge-documentation/**
 tags: [zensical, mkdocs, static-site-generator, documentation, tooling]
 timestamp: 2026-08-28
 audience: both
@@ -16,7 +16,7 @@ maintainer: quenching
 Facts about **how Zensical actually behaves**, measured by building this plugin's own
 `documentation/` payload with it rather than read from a summary. External tool behaviour, not our
 contract — how this plugin stamps and verifies the site layer is
-`/quenching-align:knowledge:documentation:build` and its `knowledge-documentation/` references.
+`/quenching-knowledge-documentation-build` and its `knowledge-documentation/` references.
 
 Zensical is written by the Material for MkDocs team and is where that team now ships. It reads
 `mkdocs.yml` natively and states it always will, so an existing MkDocs project is not forced to

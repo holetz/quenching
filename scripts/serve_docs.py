@@ -20,8 +20,8 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 SITE = ROOT / "site"
-CHECKER = ROOT / "plugins" / "quenching" / "assets" / "checks" / "documentation-site-check.py"
-CQ = ROOT / "plugins" / "quenching" / "assets" / "bin" / "cq"
+CHECKER = ROOT / "quenching" / "assets" / "checks" / "documentation-site-check.py"
+CQ = ROOT / "quenching" / "assets" / "bin" / "cq"
 HOST = "127.0.0.1"
 
 

@@ -72,7 +72,7 @@ OK. Read [the operating model](explanation/operating-model.md) and you know the 
 ## Quick start
 
 ```bash
-python3 plugins/quenching/assets/bin/cq deploy --target <repo> --write   # from a clone: install into <repo>
+python3 quenching/assets/bin/cq deploy --target <repo> --write   # from a clone: install into <repo>
 python3 <repo>/.agents/quenching/bin/cq --version                        # the deployed CLI answers
 ```
 
