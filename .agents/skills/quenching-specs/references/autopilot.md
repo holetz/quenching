@@ -61,7 +61,8 @@ non-`cq`, non-`git` command is run.
   conductor writes the record (`open`, next step) and reports `continue`. What is in flight or
   unmeasured is declared, never estimated.
 - **A `budget:` continue is relaunched, not retried.** When the orchestrator returns `continue`
-  with `NOTE: budget: …`, the conductor launches it again in a fresh context on the same epic. The
+  with `NOTE: budget: …` — its own conductor budget, measured between waves, never a worker's size
+  estimate — the conductor launches it again in a fresh context on the same epic. The
   relaunch counts in `launches` and is not a failure, but needs progress: at least one more spec
   `done` or `merged` than at the previous return. Without progress the epic goes to the report as
   `needs-human`.
@@ -152,7 +153,7 @@ itself: search by title in `.agents/quenching/bin/cq specs list --json` first
 earlier `link add` calls), serializing any two members that touch the same files with `after:`.
 Exit 2 is read, never repeated blindly. The model restrictions on code and classification stay as
 they are.
-**Decomposition, by this session.** Members not yet decided, a spec over the worker budget, or waves
+**Decomposition, by this session.** Members not yet decided, a spec over the worker size estimate, or waves
 that need reading file overlap are decomposed here, as the develop flow's decomposition step does
 (`/quenching-specs develop`): propose the slices from the queue and the kept candidates,
 then create the composite and the members with the same `.agents/quenching/bin/cq specs new` and `.agents/quenching/bin/cq specs link add`.
@@ -174,7 +175,7 @@ this round's decisions, and `validate` raises no `sp-link-*` finding.
 `quenching-spec-orchestrator`: this session launches `quenching-spec-runner` →
 `quenching-spec-verifier` for each member and, after the PASS, publishes it itself
 (`/quenching-git pr-create autonomous`, then `.agents/quenching/bin/cq git pr merge` on green CI), with the acceptance rules
-of the spec-orchestrator's protocol, cited and not restated — steps 3 (budget, `budget:` relaunch), 4
+of the spec-orchestrator's protocol, cited and not restated — steps 3 (delegation briefs), 4
 (acceptance only on a spec-verifier PASS, the `execute-done:`/`conclude` two spawns, publish after the PASS,
 one re-spawn) and 5 (retry, idempotency) of `quenching/agents/spec-orchestrator.md`.
 Each prompt is ≤ 1,500 characters, and it OPENS with the fixed text every prompt of that type
@@ -196,8 +197,8 @@ Apply **Liveness** to every worker, in either mode. A spec returned `blocked` wi
 note takes the resume rule of the invariants: answered inside the measured window, it goes back to
 the same agent by `SendMessage`; otherwise it moves to the human epic. `failed` or `continue` is
 carried to the report with its note, never
-retried in this round; a `continue` whose note starts with `budget:` is the exception, relaunched as
-the invariant above says.
+retried in this round; a `continue` whose note starts with `budget:` — the orchestrator's conductor
+budget, never a runner's size estimate — is the exception, relaunched as the invariant above says.
 **Done when:** every member is `done` or placed (economy mode), or the orchestrator returned its
 fixed report and every non-`done` spec is placed.
 

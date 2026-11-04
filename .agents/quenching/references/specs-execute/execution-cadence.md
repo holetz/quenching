@@ -32,7 +32,10 @@ the loop keeps the task commits and continues with the next task.
 - **The trigger is that event, never a window size; the measured size decides only the tone.** The
   boundary reads `.agents/quenching/bin/cq components session context --json` once. Within the budget, or unmeasured
   (exit 2), the loop continues and the boundary is not a question. Over it (exit 1), the loop asks
-  once, recommending a new session; continuing stays an option. A count never stops a task midway.
+  once, recommending a new session; continuing stays an option. **A worker's number is a size
+  estimate, not a stop limit:** under `autonomous`, exit 1 asks nothing and stops nothing — the peak
+  is printed and the next task starts; the conductor budget, measured by the orchestrator between
+  waves, is the one that ends an autonomous run. A count never stops a task midway.
 - **Nothing extra is written.** `## Handoff`, `git log`, and the `subjects` `.agents/quenching/bin/cq specs status`
   returns already carry everything a fresh session needs; the boundary adds no record and no fifth
   Handoff event.

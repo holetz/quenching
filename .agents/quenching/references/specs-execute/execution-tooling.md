@@ -199,4 +199,6 @@ The window size came back once it was measured rather than invented: `.agents/qu
 context` reads the recorded peak against the role budget of
 `docs/standards/automation/context-discipline.md` §Measured context budgets. It still triggers
 nothing — the section boundary does — and it only turns the boundary from silent into a
-recommendation.
+recommendation. For the worker that number is a size estimate and the run never stops on it; the
+conductor's budget is the one stop that survives, and the orchestrator checks it between waves,
+never at this boundary.
