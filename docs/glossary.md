@@ -81,7 +81,7 @@ Fifteen terms to read first; each has its full entry under *Terms*.
   blocked: <reason>` line implementation writes when attempts stop converging, replacing the earlier
   hidden attempt counter; `cq specs next` skips it and the reason stays legible to whoever unblocks
   it.
-- [**Boundary reminder**](standards/architecture/plugin-layout.md) — a one-clause line that states
+- [**Boundary reminder**](standards/architecture/source-layout.md) — a one-clause line that states
   the *edge* of a rule the citing place already owns, seen from the other side
   (`/quenching-knowledge add` saying a heading is canonical English while the body prose follows
   whatever language the repo declared), as opposed to a restatement, which repeats a fact the citing
@@ -176,6 +176,9 @@ Fifteen terms to read first; each has its full entry under *Terms*.
 - **Fixpoint** — the state an align reaches when one more pass changes nothing; the loop ends there.
 - [**Fixture library**](standards/architecture/proof-front.md) — the shared home for fixtures needed
   by more than one test module, keeping reusable setup from becoming duplicated module definitions.
+- [**Flow**](standards/architecture/source-layout.md) — one reference of a router skill, a file under
+  the skill's `references/` that the router's table picks and that is cited `/quenching-<vertical> <flow>`;
+  it is never a skill of its own.
 - [**Front**](standards/architecture/front-mold.md) — one local surface of a repository (knowledge,
   specs, design, ops, proof, toolchain, delivery) that has its own probe, align and status command.
 - [**Gate**](standards/automation/plan-gates.md) — a point where a command stops for a human
@@ -217,6 +220,9 @@ Fifteen terms to read first; each has its full entry under *Terms*.
   frontmatter entry stamped by `/quenching-specs conclude`, write-once, **on the work branch before
   the merge** — which is what makes the merge that command's last action and leaves nothing to be
   committed to the base after it.
+- [**Module**](standards/architecture/install-profiles.md) — the unit of `assets/modules.json` that
+  `cq deploy --modules` installs: one vertical or one front, named with the `quenching-` prefix;
+  `core` is `specs,git,knowledge,components`.
 - [**Mold**](standards/architecture/shared-mold-keys.md) — the fixed shape (frontmatter keys and
   sections) a kind of file is minted from; shared molds keep several fronts consistent.
 - [**Moment**](standards/workflows/plan-artifacts.md) — the point on a spec's timeline a canonical
@@ -240,7 +246,7 @@ Fifteen terms to read first; each has its full entry under *Terms*.
 - [**`[P]` marker**](standards/workflows/task-execution.md) — the opt-in flag set on a task when the
   tasks are written, declaring it may run concurrently with its group; honoured only when `cq specs
   parallel` proves the group's `files:` sets disjoint, and never inferred while building.
-- [**Package**](standards/architecture/plugin-layout.md) — the Python package under
+- [**Package**](standards/architecture/source-layout.md) — the Python package under
   `quenching/assets/bin/quenching/`, the directory that replaced the four self-contained
   scripts the plugin used to ship. Split into `common/`, `specs/`, `knowledge/` and `components/`,
   with no file too large to be read whole in one tool call; `cq` is the only entry point that
@@ -250,12 +256,12 @@ Fifteen terms to read first; each has its full entry under *Terms*.
   minting a spec for it.
 - [**Parse honesty**](standards/quality/parse-honesty.md) — the obligation that a verifier names its
   own parse failure rather than reporting it as a content gap.
-- [**Payload**](standards/architecture/plugin-layout.md) — everything the plugin carries for use
+- [**Payload**](standards/architecture/source-layout.md) — everything the plugin carries for use
   **inside a target repo**, as opposed to a fact about this repo.
-- [**Phantom command**](standards/architecture/plugin-layout.md) — a non-entry-point file left under
-  `commands/`, which registers as a real `/` entry that does nothing; it does not error, so the only
-  thing that catches it is `sk-no-description`, and it is why shared procedure lives under
-  `assets/`.
+- [**Phantom command**](standards/architecture/source-layout.md) — a non-entry-point file left in a
+  skill folder's entry position, which registers as a real `/` entry that does nothing; it does not
+  error, so the only thing that catches it is `sk-no-description`, and it is why shared procedure
+  lives under `assets/` or `references/`.
 - [**Phase gate**](standards/workflows/plan-artifacts.md) — the set of sections a spec must have
   filled before a heading counts as required, which is what makes the explicit-none rule
   stage-scoped rather than absolute.
@@ -340,6 +346,9 @@ Fifteen terms to read first; each has its full entry under *Terms*.
 - [**Router**](standards/architecture/ops-front.md) — the single canonical declaration that maps
   normalized operation names to their implementations, while convenience wrappers delegate rather
   than duplicate domain logic.
+- [**Router skill**](standards/architecture/source-layout.md) — a skill whose body carries a table of
+  flows, reads the chosen flow's reference and grants the union of the flows' `allowed-tools`; one
+  exists per vertical or front, and it replaced one entry per command.
 - [**Rules/rationale markers**](standards/automation/context-discipline.md) — the pair of HTML
   comments, `<!-- rules -->` and `<!-- rationale -->`, that split a normative section's binding half
   from the measurement and history behind it, so `cq components read --rules-only` can return the
@@ -365,6 +374,8 @@ Fifteen terms to read first; each has its full entry under *Terms*.
 - [**Shared mold**](standards/architecture/shared-mold-keys.md) — a frontmatter key block owned once
   and cited by several commands, so each mints a doc from the same stamp instead of restating it
   (`docs-add/homes.md` §The frontmatter stamp, cited by four).
+- [**Shortcut**](standards/architecture/source-layout.md) — an alias entry that stood for another
+  entry to save typing; retired, so the router's table is the one place a flow is named.
 - [**Spec backend**](standards/architecture/spec-backend.md) — where a repository's specs actually
   live: markdown files on a dedicated branch, GitHub issues, or Azure Boards work items, declared by
   `backend` in [the plugin config](standards/workflows/plugin-configuration.md).
