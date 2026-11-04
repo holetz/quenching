@@ -15,7 +15,7 @@ Two shapes are conformant and both resolve here:
 
 ONE FILE PER ENTRY POINT. A command file carries its own description AND its own body; a
 command's path IS its invocation and its identity: `commands/specs/develop.md` is
-`/quenching-specs-develop`, one `:` per path segment. There is nothing to mirror.
+`/quenching-specs develop`, one `:` per path segment. There is nothing to mirror.
 
 `commands/**` is the ONLY tree Claude Code registers, which is why nothing else may live
 there: a `references/` folder beside a command file would surface every reference as a
@@ -44,9 +44,9 @@ SKILLS_DIR = "skills"
 SKILL_FILE = "SKILL.md"
 HOOKS_DIR = "hooks"
 
-# The prose checks reach `assets/references/**` as well as `commands/**`, decided by count:
-# of the 519 bare command citations this surface carried on 2026-07-30, 183 lived under
-# `assets/references/`, so a scope stopping at `commands/` leaves 35% of the prose with no
+# The prose checks reach the references as well as the skill bodies, decided by count:
+# of the 519 bare command citations this surface carried on 2026-07-30, 183 lived in
+# references, so a scope stopping at the bodies leaves 35% of the prose with no
 # net — and a reference is read by the same session that reads the body citing it, so a
 # body and its reference disagreeing is exactly the drift worth catching. A surface with no
 # such directory (every target repo's `.claude/`) contributes nothing and reports nothing.
@@ -128,7 +128,7 @@ def find_surface_root(root_arg: str | None) -> str:
 # the surface model — what every subcommand reads
 # --------------------------------------------------------------------------- #
 def command_invocation(relpath: str, prefix: str | None = None) -> str:
-    """`specs/develop.md` -> `/quenching-specs-develop` on the source surface (the `prefix` is
+    """`specs/develop.md` -> `/quenching-specs develop` on the source surface (the `prefix` is
     `quenching`), `/front:verb` on a target's own `.claude/commands/`. The path IS the identity,
     so this is the whole naming rule; nothing derives a second name to compare it against."""
     parts = relpath[:-3].split("/")

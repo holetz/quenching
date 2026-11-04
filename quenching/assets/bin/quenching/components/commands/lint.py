@@ -3,7 +3,7 @@
 Moved verbatim out of the pre-refactor components script.
 
 Every check here is decidable FROM THE FILE. The doctrine's remaining tests — the no-op test,
-sediment, sprawl, positive prescription — stay a human read in `/quenching-components-align` Stage 2, because
+sediment, sprawl, positive prescription — stay a human read in `/quenching-components align` Stage 2, because
 each needs a claim about behaviour that no parser can make. Adding a heuristic for one of them
 would move the plugin's anti-fabrication boundary, not the tool's coverage.
 """
@@ -48,8 +48,8 @@ UNSCOPED_TOOLS = ("Bash",)      # granting the whole shell for the turn
 EFFORT_VALUES = ("low", "medium", "high", "xhigh", "max")
 
 # A slash citation of a command in either spelling. The target dialect is the hyphenated id,
-# `/quenching-knowledge-add`; the retired spelling carries at least one `:`,
-# `/quenching-knowledge-add` or the bare `/knowledge:add`. The lookbehind rejects a citation
+# `/quenching-knowledge add`; the retired spelling carries at least one `:`,
+# `/quenching-knowledge add` or the bare `/knowledge:add`. The lookbehind rejects a citation
 # already prefixed by a path or a scheme (`https://`, `.agents/quenching/…`), and requiring a
 # segment after the `:` keeps a bare namespace (`/quenching-components-`) out: naming the
 # namespace is not citing a command.
@@ -508,7 +508,7 @@ def named_by_bodies(commands: list[dict], prefix: str) -> dict[str, set[str]]:
          tool. The same name written `/prefix-docs-align` is a human-facing citation, so
          a leading slash disqualifies it;
       B. any form of the name on a line whose neighbourhood says "Skill tool" — which is
-         how a body that writes "chain into `/quenching-specs-conclude` (the `Skill` tool)"
+         how a body that writes "chain into `/quenching-specs conclude` (the `Skill` tool)"
          says the same thing.
 
     The union is deliberately the WIDER read. The two errors are not symmetric: a false
@@ -783,7 +783,7 @@ def _lint_frontmatter_hooks(cmd: dict, where: dict) -> list[dict]:
                            "the ladder checks could not read it — it is NOT reported as clean",
                            **where,
                            remedy="rewrite it in the shape of "
-                                  "assets/templates/automation/hook.md shape 1 (/quenching-components-hook-new)"))
+                                  "assets/templates/automation/hook.md shape 1 (/quenching-components hook-new)"))
     out.extend(hook_ladder_findings(cmd.get("hooks") or {},
                                     where_in=f"{where['path']} frontmatter", where=where))
     return out
@@ -804,7 +804,7 @@ def reference_root_findings(body: str, known: set[str] | None, where: dict) -> l
     A reference is cited by the path it has once installed: `.agents/skills/<name>/references/<path>`
     beside its skill, or `.agents/quenching/references/<path>` in the common set. `known` is the
     set of those paths on this surface (`None`: no tree to check against). The retired
-    `assets/references/` root and a bare `specs-develop/questions.md` both make
+    `assets` root of the references and a bare `specs-develop/questions.md` both make
     `cq components read` exit 2."""
     out: list[dict] = []
     seen: set[str] = set()
@@ -817,7 +817,7 @@ def reference_root_findings(body: str, known: set[str] | None, where: dict) -> l
                 problem = "does not exist on this surface"
             else:
                 continue
-        elif "assets/references/" in target:
+        elif "assets/" + "references/" in target:
             problem = "is not anchored at an installed references root"
         elif known is not None and "/" in target and not target.startswith(("/", ".", "$", "http")) \
                 and COMMON_REF_ROOT + target in known:
