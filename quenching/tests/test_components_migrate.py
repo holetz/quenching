@@ -257,6 +257,81 @@ class Migrate(unittest.TestCase):
         self.assertEqual([], router["conflicts"])
         self.assertEqual("", self.git("status", "--porcelain"))
 
+    def lint_codes(self):
+        out = io.StringIO()
+        with contextlib.redirect_stdout(out), contextlib.redirect_stderr(io.StringIO()):
+            components_main(["--root", str(self.repo / ".agents"), "lint", "--json"])
+        return {item["code"] for item in json.loads(out.getvalue()).get("findings", [])}
+
+    def test_writing_a_router_groups_the_family_with_history_and_a_second_pass_is_clean(self):
+        self.add_family()
+        self.write(".agents/references/note.md", "Call /bi:alfa then /bi-beta, never /bi-alfa-x.\n")
+        self.write(".agents/references/other.md", "See /bi-gama and .agents/skills/bi-alfa/SKILL.md.\n")
+        self.commit()
+        self.assertEqual(0, self.run_cli("--write", "--router", "bi")[0])
+        home = self.repo / ".agents/skills/bi"
+        self.assertEqual({"SKILL.md", "references/alfa.md", "references/beta.md",
+                          "references/gama.md"},
+                         {p.relative_to(home).as_posix() for p in home.rglob("*") if p.is_file()})
+        reference = (home / "references/alfa.md").read_text()
+        self.assertTrue(reference.startswith("---\ndescription: Run alfa now."))
+        self.assertNotIn("name:", reference.split("---")[1])
+        self.assertIn("Body of alfa.", reference)
+        router = (home / "SKILL.md").read_text()
+        self.assertIn("allowed-tools: Read, Bash(git add:*)", router)
+        self.assertIn("| `beta` | [references/beta.md](.agents/skills/bi/references/beta.md) |", router)
+        self.assertFalse((self.repo / ".agents/skills/bi-alfa").exists())
+        self.assertIn("Call /bi alfa then /bi beta, never /bi-alfa-x.",
+                      (self.repo / ".agents/references/note.md").read_text())
+        self.assertIn("See /bi gama and .agents/skills/bi/references/alfa.md.",
+                      (self.repo / ".agents/references/other.md").read_text())
+        self.assertNotIn("sk-router-grant", self.lint_codes())
+        self.assertNotIn("sk-router-description", self.lint_codes())
+        code, payload = self.run_cli()
+        self.assertEqual((0, True, []), (code, payload["conformant"], payload["routers"]))
+        self.commit("grouped")
+        log = self.git("log", "--follow", "--oneline", "--", ".agents/skills/bi/references/alfa.md")
+        self.assertIn("next", log)
+
+    def test_only_the_named_family_is_touched(self):
+        self.add_family("bi")
+        self.add_family("ops", ("um", "dois", "tres"))
+        self.assertEqual(0, self.run_cli("--write", "--router", "bi")[0])
+        self.assertTrue((self.repo / ".agents/skills/ops-um/SKILL.md").is_file())
+        self.assertEqual(["ops"], [r["family"] for r in self.run_cli()[1]["routers"]])
+
+    def test_an_existing_router_drops_its_shortcuts_when_the_reference_is_there(self):
+        self.add_family("bi")
+        self.assertEqual(0, self.run_cli("--write", "--router", "bi")[0])
+        # the old mold: router + .agents/references/bi-flows + typed-only shortcuts
+        for flow in ("alfa", "beta", "gama"):
+            self.write(f".agents/skills/bi-{flow}/SKILL.md",
+                       f"---\nname: bi-{flow}\ndescription: Shortcut {flow}.\n"
+                       "disable-model-invocation: true\n---\nRead .agents/references/bi-flows/"
+                       f"{flow}.md\n")
+            self.git("rm", "-q", "-f", f".agents/skills/bi/references/{flow}.md")
+            self.write(f".agents/references/bi-flows/{flow}.md", f"flow {flow}\n")
+        self.commit()
+        code, payload = self.run_cli()
+        (router,) = payload["routers"]
+        self.assertEqual(("existing", []), (router["kind"], router["conflicts"]))
+        self.assertEqual(0, self.run_cli("--write", "--router", "bi")[0])
+        self.assertFalse((self.repo / ".agents/skills/bi-alfa").exists())
+        self.assertEqual("flow beta\n", (self.repo / ".agents/skills/bi/references/beta.md").read_text())
+        self.assertEqual((0, []), (lambda r: (r[0], r[1]["routers"]))(self.run_cli()))
+
+    def test_a_shortcut_without_a_reference_is_a_conflict(self):
+        self.add_family("bi")
+        self.assertEqual(0, self.run_cli("--write", "--router", "bi")[0])
+        for flow in ("alfa", "beta", "gama"):
+            self.write(f".agents/skills/bi-{flow}/SKILL.md", f"---\nname: bi-{flow}\ndescription: S.\n---\n")
+        self.git("rm", "-q", "-f", ".agents/skills/bi/references/alfa.md")
+        self.commit()
+        code, payload = self.run_cli("--write", "--router", "bi")
+        self.assertEqual(2, code)
+        self.assertIn("shortcut without a reference in the router",
+                      {c["why"] for c in payload["conflicts"]})
+
     def test_two_skills_do_not_make_a_router_candidate(self):
         self.add_family("bi", ("alfa", "beta"))
         self.assertEqual([r["family"] for r in self.run_cli()[1]["routers"]], [])

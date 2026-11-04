@@ -23,6 +23,7 @@ import json
 import os
 import re
 import subprocess
+import textwrap
 from pathlib import Path
 
 from quenching.common.deploy import generated_skills, read_manifest
@@ -361,6 +362,133 @@ def apply(plan: Plan) -> None:
             _git(repo, "add", "--", path.relative_to(repo).as_posix())
 
 
+DESCRIPTION_MAX = 1024
+ROUTER_DROPPED_KEYS = ("name", "disable-model-invocation")
+
+
+def _first_sentence(description: str) -> str:
+    flat = " ".join(str(description).split())
+    return re.split(r"(?<=[.!?])\s", flat, maxsplit=1)[0].rstrip(".")
+
+
+def _flow_frontmatter(text: str) -> str:
+    """A member becomes a reference: `description`, `allowed-tools` and `argument-hint` stay,
+    `name` and `disable-model-invocation` go; the body is untouched."""
+    nl = "\r\n" if text.startswith("---\r\n") else "\n"
+    if not text.startswith("---" + nl):
+        return text
+    end = text.find(nl + "---", 3)
+    if end < 0:
+        return text
+    head = text[len("---" + nl):end + len(nl)]
+    kept = [line for line in head.splitlines(keepends=True)
+            if not any(line.startswith(key + ":") for key in ROUTER_DROPPED_KEYS)]
+    return "---" + nl + "".join(kept) + text[end + len(nl):]
+
+
+def _router_skill(family: str, flows: list[tuple[str, dict]], grant: list[str]) -> str:
+    """The router's `SKILL.md`: a mechanical description that names every flow, the union
+    grant, and the table of flows each pointing at its reference."""
+    names = ", ".join(flow for flow, _ in flows)
+    description = f"Run one {family} flow: {names}."
+    for flow, fm in flows:
+        piece = _first_sentence(fm.get("description", ""))
+        if piece and len(description) + len(flow) + len(piece) + 4 <= DESCRIPTION_MAX:
+            description += f" {flow}: {piece}."
+    rows = "\n".join(
+        f"| `{flow}` | [references/{flow}.md](.agents/skills/{family}/references/{flow}.md) | "
+        f"{_first_sentence(fm.get('description', '')) or flow} |" for flow, fm in flows)
+    folded = "\n".join("  " + line for line in
+                       textwrap.wrap(description, 96, break_long_words=False) or [description])
+    return (f"---\nname: {family}\ndescription: >-\n{folded}\n"
+            f"argument-hint: \"[{'|'.join(flow for flow, _ in flows)}] [input]\"\n"
+            f"allowed-tools: {', '.join(grant)}\n---\n\n"
+            f"# /{family} — one entry point for the {family} flows\n\n"
+            "**Input**: `$ARGUMENTS` — an optional flow name, then what that flow takes. The "
+            "remaining words go to the flow untouched.\n\n"
+            "This skill carries no flow of its own. It picks ONE flow, loads that flow's reference "
+            "and follows it as if it were this body.\n\n"
+            "**Grant.** The router grants the union of its flows' `allowed-tools`, each declared "
+            "in the flow's own reference.\n\n## Workflow\n\n### 1. Pick the flow\n"
+            "The first word of `$ARGUMENTS` naming a flow in the table picks it; no flow named, "
+            "the request's own words pick it. An input that fits two flows is asked, never "
+            "guessed.\n\n| Flow | Reference | Picked when |\n| --- | --- | --- |\n"
+            f"{rows}\n\n**Done when:** exactly one flow is chosen, with its input.\n\n"
+            "### 2. Load the flow and follow it\n"
+            f"Read the chosen flow's reference under `.agents/skills/{family}/references/` whole, "
+            "once, and follow it with the input from step 1.\n"
+            "**Done when:** the flow ran to its own `Done when:`, or stopped on its own stop "
+            "condition.\n\n## Invariants\n\n"
+            "- Never run two flows in one invocation.\n"
+            "- Never edit what a flow's reference says here: a flow changes in its reference.\n")
+
+
+def _rewrite_citations(repo: Path, family: str, members: list[str], flows: list[str],
+                       paths: dict[str, str]) -> None:
+    """`/<family>-<flow>` and `/<family>:<flow>` become `/<family> <flow>`, and a moved path
+    becomes its new one, in every `.md` the target wrote — never a file the deploy owns."""
+    deployed_files, deployed_skills = _deployed(repo)
+    listed = subprocess.run(["git", "-C", str(repo), "ls-files", "-z", "--",
+                             SKILLS.as_posix(), (AGENTS / "references").as_posix(), "AGENTS.md"],
+                            check=True, capture_output=True, text=True).stdout.split("\0")
+    ordered = sorted(zip(members, flows), key=lambda pair: -len(pair[0]))
+    for rel in sorted(name for name in listed if name.endswith(".md")):
+        if _owned_by_deploy(rel, deployed_files, deployed_skills):
+            continue
+        path = repo / rel
+        text = new = path.read_text(encoding="utf-8")
+        for old, dst in sorted(paths.items(), key=lambda item: -len(item[0])):
+            new = new.replace(old, dst)
+        for member, flow in ordered:
+            for form in {f"/{member}", f"/{family}:{flow}", f"/{family}:{flow.replace('-', ':')}"}:
+                new = re.sub(r"(?<![\w/.:-])" + re.escape(form) + r"(?![\w:-])",
+                             f"/{family} {flow}", new)
+        if new != text:
+            path.write_text(new, encoding="utf-8")
+            _git(repo, "add", "--", rel)
+
+
+def apply_router(repo: Path, entry: dict) -> None:
+    """Group one family under its router with `git mv`, so history follows every member."""
+    family, members, flows = entry["family"], entry["members"], entry["flows"]
+    home = f"{SKILLS.as_posix()}/{family}"
+    paths: dict[str, str] = {}
+    if entry["kind"] == "existing":
+        for old in (f".agents/references/{family}-flows/", f".claude/references/{family}-flows/"):
+            for rel in _tracked(repo, Path(old)):
+                dst = f"{home}/references/{rel[len(old):]}"
+                (repo / dst).parent.mkdir(parents=True, exist_ok=True)
+                _git(repo, "mv", "--", rel, dst)
+            paths[old] = f"{home}/references/"
+        for member in members:
+            _git(repo, "rm", "-q", "-r", "--", f"{SKILLS.as_posix()}/{member}")
+    else:
+        described: list[tuple[str, dict]] = []
+        for member, flow in zip(members, flows):
+            src = f"{SKILLS.as_posix()}/{member}"
+            described.append((flow, parse_frontmatter((repo / src / "SKILL.md").read_text(
+                encoding="utf-8"))))
+            for rel in _tracked(repo, Path(src)):
+                inner = rel[len(src) + 1:]
+                dst = (f"{home}/references/{flow}.md" if inner == "SKILL.md"
+                       else f"{home}/references/{flow}/{inner}")
+                (repo / dst).parent.mkdir(parents=True, exist_ok=True)
+                _git(repo, "mv", "--", rel, dst)
+                paths[rel] = dst
+            reference = repo / f"{home}/references/{flow}.md"
+            reference.write_text(_flow_frontmatter(reference.read_text(encoding="utf-8")),
+                                 encoding="utf-8")
+            _git(repo, "add", "--", reference.relative_to(repo).as_posix())
+            leftover = repo / src
+            while leftover != repo / SKILLS and leftover.is_dir() and not any(leftover.iterdir()):
+                leftover.rmdir()
+                leftover = leftover.parent
+        router = repo / home / "SKILL.md"
+        router.write_text(_router_skill(family, described, entry["grant"]), encoding="utf-8")
+        _git(repo, "add", "--", router.relative_to(repo).as_posix())
+    _rewrite_citations(repo, family, members, flows, paths)
+
+
 def add_arguments(sp) -> None:
     sp.add_argument("--target", default=".", help="the repository to migrate")
     sp.add_argument("--write", action="store_true", help="apply the plan with git mv / git rm")
@@ -385,13 +513,18 @@ def cmd_migrate(args, _root: str) -> int:
                        "message": "no router candidate with that name: "
                                   + ", ".join(unknown),
                        "remedy": "name a family listed in `routers` of the plan"}, args.json)
+    chosen = [entry for entry in routers if entry["family"] in args.router]
+    if args.write:
+        plan.conflicts += [c for entry in chosen for c in entry["conflicts"]]
     if args.write and plan.conflicts:
         return refuse({"code": "ct-migrate-conflict", "conflicts": plan.conflicts,
                        "message": "the plan has conflicts; nothing was written",
                        "remedy": "settle each pair by hand, then rerun"}, args.json)
-    if args.write and plan.ops:
+    if args.write and (plan.ops or chosen):
         try:
             apply(plan)
+            for entry in chosen:
+                apply_router(repo, entry)
         except subprocess.CalledProcessError as error:
             return refuse({"code": "ct-migrate-git", "command": " ".join(error.cmd),
                            "message": f"git failed mid-migration: {error.stderr.strip()}",
@@ -401,7 +534,10 @@ def cmd_migrate(args, _root: str) -> int:
     payload = {"ok": not plan.conflicts, "target": str(repo),
                "conformant": not plan.ops and not plan.conflicts,
                "operations": plan.ops, "conflicts": plan.conflicts,
-               "renames": plan.renames, "routers": routers, "written": bool(args.write and plan.ops)}
+               "renames": plan.renames, "routers": routers, "written": bool(args.write and (plan.ops or chosen))}
+    if args.write:
+        payload["routers"] = [entry for entry in routers if entry not in chosen]
+        payload["applied"] = [entry["family"] for entry in chosen]
     lines = [f"components migrate — {repo}",
              "  conformant, nothing to align" if payload["conformant"] else
              f"  operations: {len(plan.ops)}  conflicts: {len(plan.conflicts)}"
