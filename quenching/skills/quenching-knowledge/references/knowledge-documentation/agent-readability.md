@@ -4,7 +4,7 @@ Rules for the second audience: agents that search, lift, reconstruct and cite a 
 
 ## Contents
 
-`.agents/quenching/bin/cq components read .agents/quenching/assets/references/knowledge-documentation/agent-readability.md`
+`.agents/quenching/bin/cq components read .agents/skills/quenching-knowledge/references/knowledge-documentation/agent-readability.md`
 returns the heading index; `--sections <name>` addresses one.
 
 <!-- rules -->

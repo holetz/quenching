@@ -1,13 +1,17 @@
-# /quenching-knowledge-add — add new knowledge, OKF-conformant
+---
+allowed-tools: Bash(cq:*), Bash(cq.cmd:*), Read, Grep, Glob, Write, Edit, AskUserQuestion
+---
+
+# /quenching-knowledge add — add new knowledge, OKF-conformant
 
 **Input**: `$ARGUMENTS` (the piece of information to file — a standard, catalog table, announcement, external asset, …).
 
 Files one new piece of knowledge into the canonical OKF bundle so it lands in the right home
-with a complete stamp. Assumes the bundle already exists (run `/quenching-knowledge-align` first if not).
-The routing table and procedure are in [knowledge-add/homes.md](.agents/quenching/assets/references/knowledge-add/homes.md). The home boundaries, `type`
-vocabulary, and conformance rules are shared with `/quenching-knowledge-align`
-(`.agents/quenching/assets/references/knowledge-align/taxonomy.md`,
-`.agents/quenching/assets/references/knowledge-align/conformance.md`).
+with a complete stamp. Assumes the bundle already exists (run `/quenching-knowledge align` first if not).
+The routing table and procedure are in [knowledge-add/homes.md](.agents/quenching/references/knowledge-add/homes.md). The home boundaries, `type`
+vocabulary, and conformance rules are shared with `/quenching-knowledge align`
+(`.agents/quenching/references/knowledge-align/taxonomy.md`,
+`.agents/quenching/references/knowledge-align/conformance.md`).
 
 ## Doctrine
 
@@ -38,7 +42,7 @@ vocabulary, and conformance rules are shared with `/quenching-knowledge-align`
 ## Workflow
 
 ### 1. Classify → home + `type` + mold
-Apply the boundary rules ([knowledge-add/homes.md](.agents/quenching/assets/references/knowledge-add/homes.md)):
+Apply the boundary rules ([knowledge-add/homes.md](.agents/quenching/references/knowledge-add/homes.md)):
 `standards` = "how **we** do it" · `external` = "what we **consume**" · `catalog` = "our
 **data**" · `documentation` = a product-facing explanation or announcement. Pick the home, its
 `type`, and the matching mold. **Done when:** the home, type, and mold are named.
@@ -72,13 +76,13 @@ index lists the new file and remains frontmatter-free.
 
 ### 6. Enrich the glossary
 If the new concept introduced a **repo-specific term**, add or sharpen its entry in
-`glossary.md` per **Enriching the glossary** in [knowledge-add/homes.md](.agents/quenching/assets/references/knowledge-add/homes.md)
-(`/quenching-knowledge-define` handles one term; `/quenching-knowledge-glossary-backfill` handles a bulk sweep).
+`glossary.md` per **Enriching the glossary** in [knowledge-add/homes.md](.agents/quenching/references/knowledge-add/homes.md)
+(`/quenching-knowledge define` handles one term; `/quenching-knowledge glossary-backfill` handles a bulk sweep).
 **Done when:** every introduced repo-specific term is linked or explicitly left for a glossary command.
 
 ### 7. Self-check against the conformance core
 Verify every file you touched against
-[knowledge-align/conformance.md](.agents/quenching/assets/references/knowledge-align/conformance.md).
+[knowledge-align/conformance.md](.agents/quenching/references/knowledge-align/conformance.md).
 **Done when:** the conformance result and touched-file list are reported.
 
 ## Special cases

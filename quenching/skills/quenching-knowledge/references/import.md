@@ -1,16 +1,20 @@
-# /quenching-knowledge-import — import an external source into the OKF bundle
+---
+allowed-tools: Bash(cq:*), Bash(cq.cmd:*), Read, Grep, Glob, WebFetch, Bash(python3:*), Write, Edit, Task, AskUserQuestion
+---
+
+# /quenching-knowledge import — import an external source into the OKF bundle
 
 **Input**: `$ARGUMENTS` (the source to ingest — local file/folder paths, or URLs).
 
 A Claude-native analogue of the OKF reference implementation's `enrich` command — **without**
 BigQuery or heavy dependencies. It reads an external source (local files/folders, or URLs)
 and mints **multiple** conformant OKF concept docs from it. It is a **batch fan-out of
-`/quenching-knowledge-add`**: [`knowledge-add/homes.md`](.agents/quenching/assets/references/knowledge-add/homes.md)
+`/quenching-knowledge add`**: [`knowledge-add/homes.md`](.agents/quenching/references/knowledge-add/homes.md)
 is the **single owner** of the per-doc procedure (classify → stamp → index → glossary →
 self-check); this skill **cites** it and adds only the ingestion-safety deltas below. Source
 scoping, the bounded-crawl rules, unit extraction, dedup, and attribution are in
-[knowledge-import/sources.md](.agents/quenching/assets/references/knowledge-import/sources.md). Requires an existing OKF bundle — run
-`/quenching-knowledge-align` first if `/docs/` is not one.
+[knowledge-import/sources.md](.agents/quenching/references/knowledge-import/sources.md). Requires an existing OKF bundle — run
+`/quenching-knowledge align` first if `/docs/` is not one.
 
 ## Doctrine (own deltas; the per-doc procedure is homes.md)
 
@@ -34,19 +38,19 @@ scoping, the bounded-crawl rules, unit extraction, dedup, and attribution are in
   ephemeral chatter — they are not durable knowledge. A secret is **referenced, never copied**.
 - **Additive only.** Enrich never deletes a source or a bundle doc; it mints and merges.
 
-## Workflow (force-with-1-confirmation, like `/quenching-knowledge-align`)
+## Workflow (force-with-1-confirmation, like `/quenching-knowledge align`)
 
 ### 1. Scope the source (read-only)
 Identify the inputs: local files/folders (`Read`/`Glob`/`Grep`) or URLs (`WebFetch`). For a
 web source, fix the **seed list**, **page cap**, and **host allowlist** *before* fetching
-anything, and fetch nothing outside them ([knowledge-import/sources.md](.agents/quenching/assets/references/knowledge-import/sources.md)).
+anything, and fetch nothing outside them ([knowledge-import/sources.md](.agents/quenching/references/knowledge-import/sources.md)).
 Read the source; write nothing yet. **Done when:** the bounded input set and web policy are fixed.
 
 ### 2. Extract → classify → dedup
 Break the source into **knowledge units** (one concept each). Classify every unit into
 home + `type` + mold via homes.md §Classification.
 
-Then **dedup** exactly as [sources.md](.agents/quenching/assets/references/knowledge-import/sources.md)
+Then **dedup** exactly as [sources.md](.agents/quenching/references/knowledge-import/sources.md)
 §Dedup fixes it — within the source, then against the bundle, and against the bundle **by exact
 `source_uri` before resemblance**. What this step owes step 3 is the verdict that ordering
 produces: every unit leaves here labelled **new**, **already imported** (an exact URI hit — the
@@ -56,7 +60,7 @@ doc, with the passage from each side), carrying the URI or the term that decided
 slice** out to return **compact unit candidates** (home / `type` / path / one-line + source
 anchor + its `source_uri`), never full bodies; the orchestrator merges and judges. Extraction sub-agents may run
 on a **cheap model/effort** — enrich **deletes nothing**, so a misclassification only misfiles
-a doc (correctable), unlike `/quenching-knowledge-import-memory` (see the model policy in
+a doc (correctable), unlike `/quenching-knowledge import-memory` (see the model policy in
   [README.md §model-policy](.agents/quenching/README.md#model-policy)). **Done when:** every unit
   has a new/imported/resemblance/contradicts verdict with its source anchor.
 
@@ -78,7 +82,7 @@ residue.
 
 A single OK executes the whole batch. A
 minted/edited doc whose change reaches the target's **product code** is its **own**
-confirmation item (mirrors `/quenching-knowledge-align`) — never folded into the batch OK.
+confirmation item (mirrors `/quenching-knowledge align`) — never folded into the batch OK.
 **Done when:** the complete mint/enrich table and every separate code-coupled item are presented.
 
 ### 4. Execute on OK — mint each doc via the insert procedure
@@ -92,19 +96,19 @@ each `index.md` honest and resolves cross-slice dedup.
 Stamp `source_uri:` on every doc this run **creates** — the unit's exact URI, the one key
 homes.md's mold deliberately leaves out — and, when the source is a stable URL, write the body
 line naming it **with the date it was read**, exactly as
-[sources.md](.agents/quenching/assets/references/knowledge-import/sources.md) specifies. A doc
+[sources.md](.agents/quenching/references/knowledge-import/sources.md) specifies. A doc
 being **enriched** already carries the `source_uri:` that found it; MERGE never rewrites it.
 **Done when:** every approved unit is written, indexed, and glossary-checked or its failure is
 reported.
 
 ### 5. Self-check + validate
 Self-check every touched file against homes.md §Self-check /
-[knowledge-align/conformance.md](.agents/quenching/assets/references/knowledge-align/conformance.md),
+[knowledge-align/conformance.md](.agents/quenching/references/knowledge-align/conformance.md),
 then run `.agents/quenching/bin/cq knowledge validate docs` over the
 bundle: **zero errors**, and the structural WARNs (`dir-no-index` / `index-broken-link` /
 `index-orphan`) cleared. Close the report with a **Residue** block — units deferred, sources left unfetched, MERGE
 targets skipped, contradictions without a decision — one line per item, each with what resuming
-it needs (the seed list of a fresh run). Offer it to the human as a `/quenching-specs-create`
+it needs (the seed list of a fresh run). Offer it to the human as a `/quenching-specs create`
 capture; never create the spec unasked, never write the residue into the repo.
 **Done when:** validation has run and the Residue block is reported.
 

@@ -5,7 +5,7 @@ seven intermediate contracts that make a documentation run reproducible.
 
 ## Contents
 
-`.agents/quenching/bin/cq components read .agents/quenching/assets/references/knowledge-documentation/architecture.md`
+`.agents/quenching/bin/cq components read .agents/skills/quenching-knowledge/references/knowledge-documentation/architecture.md`
 returns the heading index; `--sections <name>` addresses one.
 
 <!-- rules -->
@@ -61,9 +61,9 @@ Use `navigation.indexes` and relative links. Every section index carries a routi
 
 | If you want to… | Go to |
 | --- | --- |
-| See it run in 30 seconds | [Quick start](../how-to/quick-start.md) |
-| Understand why it is shaped this way | [Concepts](../explanation/index.md) |
-| Look up an exact option | [Reference](../reference/index.md) |
+| See it run in 30 seconds | [Quick start](../../../../assets/references/how-to/quick-start.md) |
+| Understand why it is shaped this way | [Concepts](../../../../assets/references/explanation/index.md) |
+| Look up an exact option | [Reference](../../../../assets/references/reference/index.md) |
 
 <!-- rationale -->
 

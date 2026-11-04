@@ -1,20 +1,24 @@
-# /quenching-knowledge-learn — capture generic knowledge, OKF-conformant
+---
+allowed-tools: Bash(cq:*), Bash(cq.cmd:*), Read, Grep, Glob, Write, Edit, AskUserQuestion
+---
+
+# /quenching-knowledge learn — capture generic knowledge, OKF-conformant
 
 **Input**: `$ARGUMENTS` (the generic understanding to capture — a concept, mental model, explanation, or learning).
 
 Files one piece of understanding the human gives you into the canonical OKF bundle's
-[`concepts/`](.agents/quenching/assets/knowledge/concepts/index.md) home. Assumes the bundle already exists (run `/quenching-knowledge-align` first if not). The home boundaries are shared with `/quenching-knowledge-add`
-([knowledge-add/homes.md](.agents/quenching/assets/references/knowledge-add/homes.md)); the `type` vocabulary
-and conformance rules with `/quenching-knowledge-align`
-([knowledge-align/taxonomy.md](.agents/quenching/assets/references/knowledge-align/taxonomy.md),
-[knowledge-align/conformance.md](.agents/quenching/assets/references/knowledge-align/conformance.md)).
+[`concepts/`](.agents/quenching/assets/knowledge/concepts/index.md) home. Assumes the bundle already exists (run `/quenching-knowledge align` first if not). The home boundaries are shared with `/quenching-knowledge add`
+([knowledge-add/homes.md](.agents/quenching/references/knowledge-add/homes.md)); the `type` vocabulary
+and conformance rules with `/quenching-knowledge align`
+([knowledge-align/taxonomy.md](.agents/quenching/references/knowledge-align/taxonomy.md),
+[knowledge-align/conformance.md](.agents/quenching/references/knowledge-align/conformance.md)).
 
 ## Workflow
 
 ### 1. Confirm the home
 Read the knowledge the human stated. Confirm it is **generic understanding** (not a contract /
 decision / procedure / external-asset fact). If it belongs in another home, say so and hand off
-to `/quenching-knowledge-add`. Otherwise proceed under `concepts/`. **Done when:** the home is
+to `/quenching-knowledge add`. Otherwise proceed under `concepts/`. **Done when:** the home is
 confirmed or the item is routed away.
 
 ### 2. Determine identity (path)
@@ -48,21 +52,21 @@ place.
 ### 6. Enrich the glossary
 If the concept introduced a **repo-specific term**, add or sharpen its entry in
 `glossary.md` per **Enriching the glossary** in
-[knowledge-add/homes.md](.agents/quenching/assets/references/knowledge-add/homes.md) (the tail step
-every capture runs; on-demand counterpart `/quenching-knowledge-define`, bulk counterpart
-`/quenching-knowledge-glossary-backfill`). **Done when:** every repo-specific term is linked or
+[knowledge-add/homes.md](.agents/quenching/references/knowledge-add/homes.md) (the tail step
+every capture runs; on-demand counterpart `/quenching-knowledge define`, bulk counterpart
+`/quenching-knowledge glossary-backfill`). **Done when:** every repo-specific term is linked or
 explicitly left for a glossary command.
 
 ### 7. Self-check against the conformance core
 Verify every file you touched against
-[knowledge-align/conformance.md](.agents/quenching/assets/references/knowledge-align/conformance.md) —
+[knowledge-align/conformance.md](.agents/quenching/references/knowledge-align/conformance.md) —
 the same checks `.agents/quenching/bin/cq knowledge validate` machine-verifies. **Done when:** validation and the touched
 file list are reported.
 
 ## Invariants to never violate
 
 - Never file a **contract / decision / procedure / external-asset fact** under `concepts/` —
-  route it to its home via `/quenching-knowledge-add`.
+  route it to its home via `/quenching-knowledge add`.
 - Never write an empty or self-pointing `resource`, and never fabricate a `source`.
 - Never add frontmatter to an `index.md`; never leave a new subfolder without one.
 - Never overwrite a filled key on merge; never leave the index un-updated.

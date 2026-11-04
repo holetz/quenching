@@ -5,7 +5,7 @@ skeletons. Exact component syntax lives in [visual.md](visual.md).
 
 ## Contents
 
-`.agents/quenching/bin/cq components read .agents/quenching/assets/references/knowledge-documentation/craft.md`
+`.agents/quenching/bin/cq components read .agents/skills/quenching-knowledge/references/knowledge-documentation/craft.md`
 returns the heading index; `--sections <name>` addresses one.
 
 <!-- rules -->

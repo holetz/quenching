@@ -5,7 +5,7 @@ The runbook for validating the generated site. It builds into the gitignored `si
 
 ## Contents
 
-`.agents/quenching/bin/cq components read .agents/quenching/assets/references/knowledge-documentation/validation.md`
+`.agents/quenching/bin/cq components read .agents/skills/quenching-knowledge/references/knowledge-documentation/validation.md`
 returns the heading index; `--sections <name>` addresses one.
 
 <!-- rules -->

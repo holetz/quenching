@@ -1,17 +1,21 @@
-# /quenching-knowledge-import-memory — drain project memory into the OKF bundle
+---
+allowed-tools: Bash(cq:*), Bash(cq.cmd:*), Read, Grep, Glob, Bash(python3:*), Bash(py:*), Bash(rm:*), Write, Edit, Task, AskUserQuestion
+---
+
+# /quenching-knowledge import-memory — drain project memory into the OKF bundle
 
 **Input**: `$ARGUMENTS` (an optional subset or scope; omit to drain all project memory).
 
 Promotes the durable facts in **project memory** (`~/.claude/projects/<cwd>/memory/`) into the
-canonical OKF `/docs/` bundle, then clears them from memory. Assumes the bundle already exists (run `/quenching-knowledge-align` first if not). The memory-type → home routing
-and the deletion contract are in [knowledge-import-memory/memory-routing.md](.agents/quenching/assets/references/knowledge-import-memory/memory-routing.md)
+canonical OKF `/docs/` bundle, then clears them from memory. Assumes the bundle already exists (run `/quenching-knowledge align` first if not). The memory-type → home routing
+and the deletion contract are in [knowledge-import-memory/memory-routing.md](.agents/skills/quenching-knowledge/references/knowledge-import-memory/memory-routing.md)
 §Routing table — memory `type` → likely home (content overrides) §Deletion contract;
 the home boundaries, `type` vocabulary, and molds are shared with
-`/quenching-knowledge-add` ([knowledge-add/homes.md](.agents/quenching/assets/references/knowledge-add/homes.md)
+`/quenching-knowledge add` ([knowledge-add/homes.md](.agents/quenching/references/knowledge-add/homes.md)
 §Classification — one question decides the home §Boundary tie-breakers §The frontmatter stamp) and
-`/quenching-knowledge-align` ([knowledge-align/taxonomy.md](.agents/quenching/assets/references/knowledge-align/taxonomy.md)
+`/quenching-knowledge align` ([knowledge-align/taxonomy.md](.agents/quenching/references/knowledge-align/taxonomy.md)
 §The canonical tree §The `type` vocabulary §Boundary rules,
-[knowledge-align/conformance.md](.agents/quenching/assets/references/knowledge-align/conformance.md)
+[knowledge-align/conformance.md](.agents/quenching/references/knowledge-align/conformance.md)
 §Concept docs (`check_concept`) §Resource integrity (per-doc — every mode)). Molds live at
 `.agents/quenching/assets/templates/`.
 
@@ -20,15 +24,15 @@ the home boundaries, `type` vocabulary, and molds are shared with
 - **Plan first, execute on one confirmation.** Cover **every** memory, classify each, and present
   ONE table — every memory → its target home + doc path + whether it will be deleted. Execute the
   whole batch on a single OK. **Exception — cycle-authorized runs:**
-  invoked as a stage of `/quenching-knowledge-align`'s cycle (or of `/align`) under the cycle-authorization contract
-  ([align/convergence.md](.agents/quenching/assets/references/align/convergence.md)
+  invoked as a stage of `/quenching-knowledge align`'s cycle (or of `/align`) under the cycle-authorization contract
+  ([align/convergence.md](.agents/quenching/references/align/convergence.md)
   §The cycle-authorization contract), the plan is
   presented as narration, not a gate — the write-then-verify-then-delete contract is unchanged.
 - **Three destinations only.** This skill writes into exactly two `/docs/` homes — `standards/`
   and `concepts/` — plus the provider-owned `plans` phase for a **unit of work**
   outside the OKF bundle. A memory whose natural fit is a
   `vision`, `documentation`, or `external` doc is **re-routed to the nearest of the three** per the routing
-  table ([knowledge-import-memory/memory-routing.md](.agents/quenching/assets/references/knowledge-import-memory/memory-routing.md)
+  table ([knowledge-import-memory/memory-routing.md](.agents/skills/quenching-knowledge/references/knowledge-import-memory/memory-routing.md)
   §Routing table — memory `type` → likely home (content overrides)); a memory that fits none of
   them **stays** in memory and is flagged (like a `user`/unroutable fact). Never create a
   `vision/`, a reader-facing quadrant, `external/`, or `catalog/` doc from a
@@ -46,7 +50,7 @@ the home boundaries, `type` vocabulary, and molds are shared with
   **MAY** split it into disjoint slices (~10–15 memories per agent, or by filename type-prefix
   `feedback_*` / `project_*` / `reference_*`) and dispatch a sub-agent per slice (via `Task`) to
   read the full bodies and classify against
-  [knowledge-import-memory/memory-routing.md](.agents/quenching/assets/references/knowledge-import-memory/memory-routing.md)
+  [knowledge-import-memory/memory-routing.md](.agents/skills/quenching-knowledge/references/knowledge-import-memory/memory-routing.md)
   §Routing table — memory `type` → likely home, each returning a partial table. The
   orchestrator stays metadata-first — it only reads `MEMORY.md` + frontmatter to draw the slice
   boundaries and merge partials; the sub-agents are the only readers of full bodies. Dispatch
@@ -63,8 +67,8 @@ the home boundaries, `type` vocabulary, and molds are shared with
   docs — flag it and ask; migrate only a durable, team-relevant fact. Any memory with no
   documentary home **stays** in memory and is reported.
 - **Content decides the home; `metadata.type` is a hint.** Route by what the fact IS
-  ([knowledge-import-memory/memory-routing.md](.agents/quenching/assets/references/knowledge-import-memory/memory-routing.md)
-  §Routing table — memory `type` → likely home (content overrides)), reusing `/quenching-knowledge-add`'s home
+  ([knowledge-import-memory/memory-routing.md](.agents/skills/quenching-knowledge/references/knowledge-import-memory/memory-routing.md)
+  §Routing table — memory `type` → likely home (content overrides)), reusing `/quenching-knowledge add`'s home
   boundaries. Split a memory that carries several facts into one concept per file.
 - **Salvage, don't transcribe.** A memory is terse; the doc is structured. Keep the
   `**Why:**`/`**How to apply:**` prose in the body, derive `resource` honestly (never invent),
@@ -74,14 +78,14 @@ the home boundaries, `type` vocabulary, and molds are shared with
   `authority: background`.
 - **Feed the glossary.** When a migrated memory introduces a repo-specific term, add its entry to
   `glossary.md` (the fixed A–Z lookup) as the tail of that memory's insert — the same
-  step `/quenching-knowledge-add`/`/quenching-knowledge-learn` run — so the term is resolvable once the doc lands.
+  step `/quenching-knowledge add`/`/quenching-knowledge learn` run — so the term is resolvable once the doc lands.
 - **One resolver, both platforms.** The memory directory is derived from the **native** working
   directory in Python, never from `pwd` or shell string-munging (Windows Git Bash reports the MSYS
   form `/c/Users/…`, whose encoding names no directory). Resolution is by data — exact match, then
   nearest ancestor, then the candidate list — and **case-insensitive**.
 
 Resolve `cq` per
-[align/tool-resolution.md](.agents/quenching/assets/references/align/tool-resolution.md)
+[align/tool-resolution.md](.agents/quenching/references/align/tool-resolution.md)
 §Resolving the tool; branch on the **exit code** (0 ok · 1 findings · 2 refusal), never on prose.
 
 ## Workflow
@@ -154,7 +158,7 @@ overflow the session):
 - `Glob` — `/docs/standards/*/index.md` and `/docs/concepts/*/index.md` for the existing subject
   folders, so a new concept path does not collide. One level only, and never a recursive file dump.
 
-Then apply [knowledge-import-memory/memory-routing.md](.agents/quenching/assets/references/knowledge-import-memory/memory-routing.md)
+Then apply [knowledge-import-memory/memory-routing.md](.agents/skills/quenching-knowledge/references/knowledge-import-memory/memory-routing.md)
 §Routing table — memory `type` → likely home (content overrides): map by content to its
 destination, `type`, and mold, within the three destinations (Doctrine). Split multi-fact
 memories. Mark `user` memories and any
@@ -170,22 +174,22 @@ will dangle. **Wait for a single confirmation** before writing anything.
 ### 5. Per memory: write, verify, then delete
 For each **migrate** row that lands in `/docs/` (`standards/` / `concepts/`), run the full insert
 procedure exactly as
-[knowledge-add/homes.md](.agents/quenching/assets/references/knowledge-add/homes.md)
+[knowledge-add/homes.md](.agents/quenching/references/knowledge-add/homes.md)
 §The frontmatter stamp §Updating `index.md` (the listing) §Enriching the glossary (tail step, every capture) §Self-check before finishing specifies it —
 stamp → index → glossary → self-check (against
-[knowledge-align/conformance.md](.agents/quenching/assets/references/knowledge-align/conformance.md)
+[knowledge-align/conformance.md](.agents/quenching/references/knowledge-align/conformance.md)
 §Concept docs (`check_concept`) §Resource integrity (per-doc — every mode)) —
 with this skill's deltas kept inline:
 - `source` defaults to "project memory"; salvage the terse body into a structured doc.
-- A **unit of work** row instead follows the `/quenching-specs-create` path: run `.agents/quenching/bin/cq specs new
+- A **unit of work** row instead follows the `/quenching-specs create` path: run `.agents/quenching/bin/cq specs new
   <name>` and write the memory's content into `## Problem` and nothing else, then `.agents/quenching/bin/cq specs
   validate --spec <id>` — the ID the create reported — as the self-check per
-  [specs-develop/spec-driven.md](.agents/quenching/assets/references/specs-develop/spec-driven.md)
+  [specs-develop/spec-driven.md](.agents/quenching/references/specs-develop/spec-driven.md)
   §The spec document §The gates and the stage-scoped explicit-none rule
   (`.agents/quenching/bin/cq knowledge validate` never covers the specs front); carry the memory source in the spec's
   own record.
   **Never stamp an OKF `type:` on it** — a spec is not a concept doc, and never invent a
-  `priority`: an unranked spec is `/quenching-specs-triage`'s to place.
+  `priority`: an unranked spec is `/quenching-specs triage`'s to place.
 - **Only after the self-check passes:** delete the memory `.md` (`rm` — the one destructive shell
   this command runs, and the only reason `Bash(rm:*)` is granted) and prune its `- [..](..)` line
   from `MEMORY.md` with `Edit`. Pass the path the Step 1 resolver printed, quoted. A failed write

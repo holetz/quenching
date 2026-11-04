@@ -1,4 +1,8 @@
-# /quenching-knowledge-documentation-write — draft pages from the accepted plan
+---
+allowed-tools: Bash(cq:*), Bash(cq.cmd:*), Read, Grep, Glob, Write, Edit, Task, Bash(python3:*), Bash(py:*), AskUserQuestion
+---
+
+# /quenching-knowledge documentation-write — draft pages from the accepted plan
 
 **Input**: `$ARGUMENTS` (an optional page slice or plan path; omit to use
 `./.quenching/documentation/plan.md` and write every assigned page).
@@ -9,10 +13,10 @@ quadrants** — `./docs/{tutorials,how-to,explanation,project}/` and the root
 to the knowledge front and are written under its contract, never here. The Zensical site stages
 only the allowlisted homes plus the root glossary; raw `external/` and `catalog/` content is never
 published by this site. Apply
-[knowledge-documentation/craft.md](.agents/quenching/assets/references/knowledge-documentation/craft.md),
-[knowledge-documentation/visual.md](.agents/quenching/assets/references/knowledge-documentation/visual.md)
+[knowledge-documentation/craft.md](.agents/skills/quenching-knowledge/references/knowledge-documentation/craft.md),
+[knowledge-documentation/visual.md](.agents/skills/quenching-knowledge/references/knowledge-documentation/visual.md)
 and
-[knowledge-documentation/agent-readability.md](.agents/quenching/assets/references/knowledge-documentation/agent-readability.md)
+[knowledge-documentation/agent-readability.md](.agents/skills/quenching-knowledge/references/knowledge-documentation/agent-readability.md)
 in one pass per page.
 
 ## Doctrine

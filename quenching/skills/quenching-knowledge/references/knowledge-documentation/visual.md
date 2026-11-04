@@ -5,7 +5,7 @@ heroes, tables and callouts. Components are information-bearing, not decoration.
 
 ## Contents
 
-`.agents/quenching/bin/cq components read .agents/quenching/assets/references/knowledge-documentation/visual.md`
+`.agents/quenching/bin/cq components read .agents/skills/quenching-knowledge/references/knowledge-documentation/visual.md`
 returns the heading index; `--sections <name>` addresses one.
 
 <!-- rules -->

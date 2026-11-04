@@ -1,4 +1,8 @@
-# /quenching-knowledge-documentation-plan — diagnose sources and record the documentation plan
+---
+allowed-tools: Bash(cq:*), Bash(cq.cmd:*), Read, Grep, Glob, Bash(python3:*), Bash(py:*), Bash(rg:*), Write, AskUserQuestion
+---
+
+# /quenching-knowledge documentation-plan — diagnose sources and record the documentation plan
 
 **Input**: `$ARGUMENTS` (optional source paths or a scope; omit to inspect the target repository's
 README, legacy docs, code, specs and `/docs/standards/`).
@@ -6,9 +10,9 @@ README, legacy docs, code, specs and `/docs/standards/`).
 This planning pass reads sources across the bundle and writes only the plan-of-record at
 `./.quenching/documentation/plan.md`. The seven contracts, the architecture rules
 and reader journeys live in
-[knowledge-documentation/architecture.md](.agents/quenching/assets/references/knowledge-documentation/architecture.md);
+[knowledge-documentation/architecture.md](.agents/skills/quenching-knowledge/references/knowledge-documentation/architecture.md);
 source provenance is defined by
-[knowledge-documentation/quality.md](.agents/quenching/assets/references/knowledge-documentation/quality.md).
+[knowledge-documentation/quality.md](.agents/skills/quenching-knowledge/references/knowledge-documentation/quality.md).
 
 ## Doctrine
 
@@ -29,7 +33,7 @@ Resolve the repository root and verify `/docs/index.md`, then inventory `tutoria
 paths, heading skeletons, links, existing nav/config and relevant code/specs with read-only tools.
 The inventory is the whole bundle even when the requested editorial slice is small. **Done when:**
 the source inventory names each home, its paths and audience, or records the missing bundle as a
-handoff to `/quenching-knowledge-align`.
+handoff to `/quenching-knowledge align`.
 
 ### 2. Diagnose faults and truth risks
 

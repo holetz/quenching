@@ -17,6 +17,8 @@ def covered(tool, granted):
         return True
     if not tool.startswith("Bash("):
         return False
+    if "Bash" in entries:
+        return True
     cmd = tool[len("Bash("):-1]
     for entry in entries:
         if entry.startswith("Bash(") and entry.endswith(":*)"):
