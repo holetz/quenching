@@ -73,6 +73,23 @@ npm run build
 `npm run build` runs `tsc` and Vite. `dist/` is committed so a fresh checkout works without a
 build; keep it in step with `src/` in the same commit. `node_modules/` is never committed.
 
+`npm run bench` loads the server half into a fake host with a ~400k-token session, bursts of
+tools and a fake `cq` with latency, and fails when the event loop stays blocked over 50 ms, a hook
+returns a promise, more than two `cq` reads run at once, or the in-flight reads are not shared.
+
+## Load budget
+
+The plugin runs inside `opencode-cli serve`, so it must never hold the service:
+
+- the `execute.before`, `execute.after` and `prompt` hooks return immediately; recording, the
+  panel notice and any `cq` run detached, with errors swallowed;
+- panel notices are coalesced (one `changed` per session per 500 ms, one `updated` per second);
+- the conversation scan resumes from a per-session cursor and yields the event loop every 8 ms;
+- at most two `cq` reads run at once, the same read in flight is shared, reads time out at 15 s,
+  and a process that prints more than 8 MB is killed;
+- opening the panel reads at most 12 specs outside `plans` (three `cq` each); the rest enter on
+  the next openings.
+
 ## Layout
 
 | Path | What it is |
@@ -83,6 +100,7 @@ build; keep it in step with `src/` in the same commit. `node_modules/` is never 
 | `src/quenching.ts` | installed/available version check and `cq deploy` |
 | `src/cq.ts` | process and path helpers |
 | `src/gui.tsx` | the Specs panel and its `/specs` command |
+| `bench/load.ts` | the load benchmark behind `npm run bench` |
 | `dist/gui-experimental.cjs` | built GUI entry, loaded by OpenCode Desktop |
 
 ## Limits
