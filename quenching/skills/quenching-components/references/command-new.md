@@ -87,7 +87,7 @@ convention reads **nest** → `<categoria>-<subfolder>-<verb>`. The file is
 `.agents/skills/<name>/SKILL.md`, its frontmatter `name:` equals `<name>` (OpenCode requires the
 match), and the invocation is `/<name>`. There is no second name to derive. `Glob`
 `.agents/skills/*/SKILL.md` for collisions — an existing path is a MERGE target (edit), never
-silently overwritten. A target still on the legacy `.agents/skills/` layout is
+silently overwritten. A target still on the legacy `.claude/commands/` layout is
 `/quenching-components align`'s to migrate first; never mint into it. Shared procedure lives in
 `.agents/references/<name>/` or beside `SKILL.md` in the skill's folder, cited by path.
 

@@ -27,7 +27,7 @@ Read [align/sweep-doctrine.md](.agents/quenching/references/align/sweep-doctrine
 this skill's doctrine. What follows is specific to the automation surface:
 
 - **The legacy `openspec-*` surface is not this sweep's.** `.claude/skills/openspec-*/` and
-  `.agents/skills/opsx/` are left by a prior `openspec init`; clearing them is a human's call
+  `.claude/commands/opsx/` are left by a prior `openspec init`; clearing them is a human's call
   ([specs-align/conformance.md](.agents/quenching/references/specs-align/conformance.md)
   §Finding policy). Inventory them only to **note** them; never classify them onto the axis,
   rename them, or remove them here.
@@ -38,7 +38,7 @@ this skill's doctrine. What follows is specific to the automation surface:
 - **`.agents/` is the source; `.claude/skills/` is the generated bridge.** A target's skills live
   in `.agents/skills/<name>/SKILL.md` (one segment, `/<name>`), its references in
   `.agents/references/**`, its instructions in `AGENTS.md`. `.agents/quenching/bin/cq components migrate --target .`
-  plans the move off the legacy layout (`.agents/skills/**`, `.claude/references/**`, the old
+  plans the move off the legacy layout (`.claude/commands/**`, `.claude/references/**`, the old
   Codex translation under `.agents/`); `.agents/quenching/bin/cq components bridge --target . --check` names the drift
   of the generated `.claude/skills/<name>/` copies. **Conformant means both**: an empty migrate
   plan (`conformant: true`) and `bridge --check` exit 0.
@@ -115,7 +115,7 @@ the rule and the registry (`/docs/project/automation.md`) exist.
 
 **Where an item classifies with an evident category, also read the nest-vs-replace convention**
 already established for that category in this repo (taxonomy.md §Reading the nest-vs-replace
-convention): `Glob` `.agents/skills/<categoria>-*/` (legacy: `.agents/skills/<categoria>/**`) and infer it from what already sits there.
+convention): `Glob` `.agents/skills/<categoria>-*/` (legacy: `.claude/commands/<categoria>/**`) and infer it from what already sits there.
 Derive the canonical path the classification produces and diff it against the item's current
 path — a mismatch is a relocation candidate, fed into §4's existing renames row like any other,
 never a new plan section or a new confirmation of its own.
