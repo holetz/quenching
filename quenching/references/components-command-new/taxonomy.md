@@ -94,6 +94,11 @@ procedure lives in `.agents/references/<name>/` and eval cases in `.agents/evals
 by path. A legacy `.agents/skills/` surface is `/quenching-components align`'s to migrate
 (`.agents/quenching/bin/cq components migrate`); the mint never writes into it.
 
+**A family is a router, not a set of skills.** Three or more skills of the target sharing the first
+kebab segment are one vertical: `.agents/skills/<family>/SKILL.md` with the flow table and
+`references/<flow>.md` inside the skill. The mint adds a flow to an existing router; the grouping of
+loose skills is `/quenching-components align`'s, with the human's answer per family.
+
 **Accepted variation (documented, never generated):** directory-scoped surfaces
 (`<folder>/.agents/skills/`) also bind a command to a folder — the sweep classifies them in
 place. The mint always writes into the repo-root `.agents/`, keeping the surface auditable in

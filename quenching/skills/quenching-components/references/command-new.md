@@ -91,6 +91,13 @@ silently overwritten. A target still on the legacy `.agents/skills/` layout is
 `/quenching-components align`'s to migrate first; never mint into it. Shared procedure lives in
 `.agents/references/<name>/` or beside `SKILL.md` in the skill's folder, cited by path.
 
+**A name inside a family adds a flow, not a skill.** When the first kebab segment of the name is a
+router of the target (`.agents/skills/<family>/SKILL.md`), the mint writes
+`.agents/skills/<family>/references/<flow>.md` and adds one line to the router's flow table (and the
+flow's scoped grant to the router's union); it never writes a loose `<family>-<flow>` skill and never
+a shortcut. With no router yet, the mint writes the loose skill and `/quenching-components align`
+asks the human about the family once three exist.
+
 **Rename sweep (an edit whose derived path differs from the old path).** The path is the name:
 `Grep` the old `/<name>` and the old path in `.agents/skills/**`, `.agents/references/**`,
 `AGENTS.md`, `docs/`, `.claude/settings*.json` and `.agents/evals/`. Each hit is a plan entry with a
