@@ -26,6 +26,9 @@ def safe_path(root: Path, value: str) -> Path:
     return path
 
 
+HOOK_FIELDS = {"name", "event", "matcher", "timeout"}
+
+
 def load_manifest(root: Path) -> dict:
     """The deploy manifest: the modules `cq deploy` installs, and the few plugins that are not."""
     data = json.loads(safe_path(root, MANIFEST).read_text(encoding="utf-8"))
@@ -35,6 +38,7 @@ def load_manifest(root: Path) -> dict:
         safe_path(root, data[field])
     names = set()
     planned_owners = set()
+    planned_hooks = set()
     for module in data["modules"]:
         name = module["name"]
         if not isinstance(name, str) or not name or name in names:
@@ -42,6 +46,24 @@ def load_manifest(root: Path) -> dict:
         names.add(name)
         if not isinstance(module["owned"].get("mcp", False), bool):
             raise ValueError(f"{name}: owned.mcp must be boolean")
+        hook_names = set()
+        hooks = module["owned"].get("hooks", [])
+        if not isinstance(hooks, list):
+            raise ValueError(f"{name}: owned.hooks must be a list")
+        for hook in hooks:
+            if not isinstance(hook, dict) or set(hook) != HOOK_FIELDS:
+                raise ValueError(f"{name}: a hook declares exactly {sorted(HOOK_FIELDS)}")
+            hook_name = hook["name"]
+            if not all(isinstance(hook[k], str) and hook[k] for k in ("name", "event", "matcher")):
+                raise ValueError(f"{name}: invalid hook declaration: {hook_name}")
+            if not isinstance(hook["timeout"], int) or isinstance(hook["timeout"], bool) or hook["timeout"] <= 0:
+                raise ValueError(f"{name}: hook {hook_name} needs a positive integer timeout")
+            if hook_name in hook_names or hook_name in planned_hooks:
+                raise ValueError(f"duplicate hook owner: {hook_name}")
+            hook_names.add(hook_name)
+            if not safe_path(root / data["source"] / "assets/hooks", hook_name + ".sh").is_file():
+                raise ValueError(f"missing hook script: {hook_name}")
+        planned_hooks |= hook_names
         for package in module["owned"]["packages"]:
             if package in planned_owners:
                 raise ValueError(f"duplicate package owner: {package}")

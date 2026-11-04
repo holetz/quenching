@@ -13,7 +13,7 @@ import unittest
 
 PLUGIN_ROOT = pathlib.Path(__file__).resolve().parent.parent
 HANDLER = PLUGIN_ROOT / "assets" / "hooks" / "deny-claude-coauthor.sh"
-WIRING = PLUGIN_ROOT / "hooks" / "hooks.json"
+MODULES = PLUGIN_ROOT / "assets" / "modules.json"
 
 
 def run(command, raw=None, **env):
@@ -51,12 +51,11 @@ class TheCoauthorHook(unittest.TestCase):
         self.assertEqual({}, run('git commit -m x -m "Co-Authored-By: Claude <noreply@anthropic.com>"',
                                  QUENCHING_ALLOW_CLAUDE_COAUTHOR="1"))
 
-    def test_the_wiring_points_at_the_handler_behind_its_guard(self):
-        hook = json.loads(WIRING.read_text())["hooks"]["PreToolUse"][0]
-        self.assertEqual("Bash", hook["matcher"])
-        command = hook["hooks"][0]["command"]
-        self.assertTrue(command.startswith('test -f "${CLAUDE_PLUGIN_ROOT}/assets/hooks/deny-claude-coauthor.sh" || exit 0;'))
-        self.assertIn("timeout", hook["hooks"][0])
+    def test_the_module_declares_the_hook_with_a_timeout(self):
+        modules = {m["name"]: m for m in json.loads(MODULES.read_text())["modules"]}
+        hook, = modules["quenching-specs"]["owned"]["hooks"]
+        self.assertEqual({"name": "deny-claude-coauthor", "event": "PreToolUse", "matcher": "Bash", "timeout": 5}, hook)
+        self.assertTrue((HANDLER.parent / (hook["name"] + ".sh")).is_file())
 
 
 if __name__ == "__main__":
