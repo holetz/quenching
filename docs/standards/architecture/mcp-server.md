@@ -25,7 +25,7 @@ The Claude plugin registers `quenching` from its own `.mcp.json`
 `cq deploy` when it declares `shared.mcp`
 ([deploy-mode.md](deploy-mode.md#mcp-registration)). A harness that reads neither manifest launches
 `cq mcp` itself.
-The `mcp` package belongs to `quenching-specs`, under [plugin-layout.md](plugin-layout.md).
+The `mcp` package belongs to `quenching-specs`, under [source-layout.md](source-layout.md).
 
 The workspace is the launch cwd or launch-time `--root`. It is never a tool argument.
 Each call isolates stdin and captures stdout/stderr, restores cwd and stdin in `finally`, and turns

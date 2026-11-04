@@ -35,7 +35,7 @@ Read-only that depends on the model honouring an instruction is not read-only; i
 
 Splitting the command moves the guarantee out of the prose and into the grant, where the failure
 mode is impossible rather than merely discouraged. This is the same argument as
-[plugin-layout.md](plugin-layout.md)'s — a structural rule beats a remembered one — applied to
+[source-layout.md](source-layout.md)'s — a structural rule beats a remembered one — applied to
 tool grants instead of to the directory tree.
 
 ## What the read command therefore owns, and does not

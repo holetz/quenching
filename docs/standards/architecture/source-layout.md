@@ -7,7 +7,7 @@ tags: [architecture, source, skills, layout, deploy]
 timestamp: 2026-11-03
 audience: both
 authority: current
-source: collapse-skills-into-commands, 2026-07-26, self-contained-mold, verify-allowed-tools-enforcement, 2026-07-28, collapse-remaining-language-clause-restatements, spec 1635 (module extraction), spec 2115 (layout per harness), spec 2124 (bin marker), spec 2160 (install only by deploy), spec 2170 (source in the target dialect), spec 2171 (router skills), spec 2172 (routers per front), spec 2174 (renamed from plugin-layout.md); retired with specs-reader-plugin.md (spec 2160, 2026-11-03); lineage in ADR 0004, ADR 0013, ADR 0017 and ADR 0019
+source: collapse-skills-into-commands, 2026-07-26, self-contained-mold, verify-allowed-tools-enforcement, 2026-07-28, collapse-remaining-language-clause-restatements, spec 1635 (module extraction), spec 2115 (layout per harness), spec 2124 (bin marker), spec 2160 (install only by deploy), spec 2170 (source in the target dialect), spec 2171 (router skills), spec 2172 (routers per front), spec 2174 (renamed from plugin-layout); retired with specs-reader-plugin.md (spec 2160, 2026-11-03); lineage in ADR 0004, ADR 0013, ADR 0017 and ADR 0019
 maintainer: quenching
 ---
 

@@ -35,7 +35,7 @@ the withdrawn contract, in five different wordings:
 | 2 | `quenching/skills/quenching-align/SKILL.md` | named findings the change deleted, and told the human an INSTALL offer belonged in the plan | execution |
 | 3 | embedded manuals | `.agents/quenching` line citations | execution |
 | 4 | `assets/README.md` | "Installed into a target? **yes, by the docs align**", plus four more rows | branch review |
-| 5 | `/docs/standards/architecture/plugin-layout.md` | a placement justified by an adjacency the same branch removed | branch review |
+| 5 | the layout standard under `/docs/standards/architecture/` (since renamed `source-layout.md`) | a placement justified by an adjacency the same branch removed | branch review |
 
 None of the five shared a substring with any other. A grep for the class would have had to guess
 "install", "installed", "copies", "merges", "offers the overwrite", "beside the config it loads" —
@@ -72,7 +72,7 @@ is the property the enumeration never had.
 
 ## Naming the file is not enough
 
-Miss #5 is the one that bounds the rule. `plugin-layout.md` **was** named in `## Impact`, and the
+Miss #5 is the one that bounds the rule. The layout standard **was** named in `## Impact`, and the
 task did edit it — the paragraph the author was thinking of. Three other paragraphs in the same
 file rested on the same withdrawn contract and survived, including the justification for a file's
 location that the very same branch had invalidated.

@@ -16,7 +16,7 @@ maintainer: quenching
 > Superseded in part by [ADR 0018](0018-retire-omnigent-and-source-manifest.md): the Omnigent operator
 > agent, the source `plugin.json`, the source `bin/cq` and `cq components translate` were later removed.
 
-The rules live in [plugin-layout](../standards/architecture/plugin-layout.md),
+The rules live in [source-layout](../standards/architecture/source-layout.md),
 [deploy-mode](../standards/architecture/deploy-mode.md) and
 [versioning-release](../standards/ci-cd/versioning-release.md); this records why they changed. It
 supersedes [ADR 0013](0013-plugin-module-split.md), which split the published plugin into eight

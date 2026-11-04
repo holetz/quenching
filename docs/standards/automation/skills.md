@@ -20,7 +20,7 @@ from the skill-authoring + skill-alignment change that first paired a skill with
 `/quenching-components command-new` mints or edits one command; `/quenching-components align`
 sweeps the whole surface into conformance. The naming these produce is governed by
 [command-surface.md](../naming/command-surface.md); the layout rule for what may sit under
-`commands/` by [../architecture/plugin-layout.md](../architecture/plugin-layout.md); the
+`skills/` by [../architecture/source-layout.md](../architecture/source-layout.md); the
 writing-doctrine detail lives once in
 `quenching/references/components-command-new/` and is cited, never restated.
 
@@ -156,7 +156,7 @@ The bridge is generated, and verified by code:
   carries), so a hand-made skill of the same name is a conflict and nothing is written. A nested
   skill folder flattens whole, sibling files with it; `openspec-*` and `opsx/` stay put.
 - A target is conformant when `migrate` reports `conformant: true` and `bridge --check` exits 0
-  ([surface-translation.md](../architecture/surface-translation.md) §Target repositories).
+  ([deploy-mode.md](../architecture/deploy-mode.md) §Surface translation).
 
 ## Invocation and permission are authored decisions
 

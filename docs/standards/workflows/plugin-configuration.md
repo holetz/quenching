@@ -29,7 +29,7 @@ Every projection reads:
 ```
 
 The file sits in the target repository's generic layer, beside `.agents/skills/`
-([surface-translation.md](../architecture/surface-translation.md) §Target repositories). The loader
+([deploy-mode.md](../architecture/deploy-mode.md) §Surface translation). The loader
 (`common/config.py`, `config_path`) resolves exactly one repository file:
 
 - `.claude/quenching.json` present → the legacy file is read, unchanged, exactly as before the

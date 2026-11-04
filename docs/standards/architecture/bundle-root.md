@@ -31,7 +31,7 @@ recognises no key that is a path
 ([plugin-configuration.md](../workflows/plugin-configuration.md)); nor by the target's
 `.claude/hooks/hooks-config.json`, which carries only the checker's behaviour knobs. The
 validator's `_load_config` reads just that one file — the bundle root is a constant of the
-checker, not a value it loads ([plugin-layout.md](plugin-layout.md)).
+checker, not a value it loads ([source-layout.md](source-layout.md)).
 
 ## Why a fixed root, and why it is never a config key
 
@@ -93,7 +93,7 @@ Three contracts were checked against this rule, and all three hold after the cha
 - [plugin-configuration.md](../workflows/plugin-configuration.md) recognises **six** keys; the
   key that named the bundle root and the section that explained why a second tool read the file
   were removed together.
-- [plugin-layout.md](plugin-layout.md) rests `cq`'s placement in `bin/` on the invocation rule
+- [source-layout.md](source-layout.md) rests `cq`'s placement in `bin/` on the invocation rule
   alone — `_load_config` reads one file, and the root is not a value it loads.
 - [bundle-verification.md](../quality/bundle-verification.md) §The `resource` glob-set format
   keeps its rules; only the aggregate example moves to the fixed root (`resource: /docs/**`).

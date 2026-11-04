@@ -57,15 +57,15 @@ In a target repository a skill lives at `.agents/skills/<name>/SKILL.md`, and `<
 segment**: `<front>-<verb>`, or `<front>-<object>-<verb>`, joined by `-`. The `SKILL.md` frontmatter
 `name:` equals the folder name, and the skill is invoked as `/<name>`. Claude Code 2.1.312 does not
 discover a nested `.claude/skills/<a>/<b>/SKILL.md` (only the flat sibling is listed), and the Claude
-bridge is a byte copy of `.agents/skills/` ([surface-translation.md](../architecture/surface-translation.md)
-§Target repositories), so a nested source would vanish from Claude. The legacy
+bridge is a byte copy of `.agents/skills/` ([deploy-mode.md](../architecture/deploy-mode.md)
+§Surface translation), so a nested source would vanish from Claude. The legacy
 `.claude/commands/<a>/<b>.md` (`/a:b`) migrates to `.agents/skills/<a>-<b>/SKILL.md` (`/a-b`), and
 `cq components migrate` rewrites the `/a:b` invocations in the bodies it moves. The plugin's own
 commands keep their `:` identity: this rule governs a target's surface, not the package.
 
 ## The plugin prefix is the module
 
-The source is split into modules ([../architecture/plugin-layout.md](../architecture/plugin-layout.md)
+The source is split into modules ([../architecture/source-layout.md](../architecture/source-layout.md)
 §One editable source, installed by deploy), and each module owns a list of skills in the `owned.skills`
 record of `quenching/assets/modules.json` (`schemaVersion` 3). Every skill and every agent belongs to
 exactly one module:
@@ -202,7 +202,7 @@ holding no skills: a name that lies is forbidden of the surface this standard go
   stale the first time a command is minted. This standard once said "27 skills, 27 wrappers" while
   the surface carried 28, which is the whole argument.
 - **`skills/**` is the only tree Claude Code registers**, so nothing that is not an entry point
-  lives under it — see [../architecture/plugin-layout.md](../architecture/plugin-layout.md).
+  lives under it — see [../architecture/source-layout.md](../architecture/source-layout.md).
 - A rename is **clean** — no compatibility aliases, no dual-registered names. A blast-radius sweep
   updates every reference (branch names, CI, scripts) and a rename reaching product code gets its
   own confirmation. The collapse took this literally at the largest scale the repo has seen: no
