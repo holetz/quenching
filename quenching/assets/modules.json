@@ -14,7 +14,14 @@
     {
       "name": "quenching-specs",
       "owned": {
-        "hooks": true,
+        "hooks": [
+          {
+            "name": "deny-claude-coauthor",
+            "event": "PreToolUse",
+            "matcher": "Bash",
+            "timeout": 5
+          }
+        ],
         "mcp": true,
         "packages": [
           "specs",
@@ -61,7 +68,15 @@
           "quenching-git"
         ],
         "packages": [],
-        "agents": false
+        "agents": false,
+        "hooks": [
+          {
+            "name": "warn-git-add-all",
+            "event": "PreToolUse",
+            "matcher": "Bash",
+            "timeout": 5
+          }
+        ]
       },
       "generatedSupport": {
         "packages": [

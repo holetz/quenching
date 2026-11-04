@@ -68,9 +68,15 @@ deterministic 95% may share a matcher with a `prompt` rung for the judgment tail
 
 ## What this repo's own surface does under it
 
-**The plugin wires one hook of its own: `deny-claude-coauthor`.** `quenching-specs` ships
-`hooks/hooks.json` with one rung-2 `PreToolUse` hook matched to `Bash`, running
-`assets/hooks/deny-claude-coauthor.sh` (5-second timeout, absence-guarded). It denies a
+**The source declares its hooks in `modules.json`; deploy installs them.** A module lists its hooks
+in `owned.hooks` (`name`, `event`, `matcher`, `timeout`; the script is
+`assets/hooks/<name>.sh`), and `cq deploy` merges them into the target's `.claude/settings.json`
+with the command `test -f "$CLAUDE_PROJECT_DIR/.agents/quenching/assets/hooks/<name>.sh" || exit 0;
+bash "$CLAUDE_PROJECT_DIR/.agents/quenching/assets/hooks/<name>.sh"` — Claude only. The owner of a
+hook is the module that declares it.
+
+**`deny-claude-coauthor`.** `quenching-specs` declares one rung-2 `PreToolUse` hook matched to
+`Bash`, running `assets/hooks/deny-claude-coauthor.sh` (5-second timeout, absence-guarded). It denies a
 message-writing command (`git commit`/`merge`/`tag`/`notes`, `gh pr`, `cq git`) that carries Claude's
 co-authorship trailer or `Generated with Claude Code` line — a block chosen by the owner on
 2026-10-18. Rung 1 does not suffice: a skill-scoped hook misses every commit made outside
@@ -78,6 +84,10 @@ co-authorship trailer or `Generated with Claude Code` line — a block chosen by
 tokens on no-match; `python3` runs only when the raw input names a co-author. It denies rather than
 rewrites, because `updatedInput` applies only paired with `allow`, which would auto-approve the
 whole command. Opt-out: `QUENCHING_ALLOW_CLAUDE_COAUTHOR=1`.
+
+**`warn-git-add-all`.** `quenching-git` declares a rung-2 `PreToolUse` hook on `Bash` that warns
+(never blocks) on `git add -A`, `--all` and `.`, citing `/quenching-git commit`. A skill-scoped
+rung 1 does not exist for it: the skill bridge is a byte copy and carries no frontmatter hook.
 
 **Before it, this repo wired no hook of its own.** It once wired the OKF checker itself, at rungs 2 and
 3, via a `hooks.json` shipped under this plugin's own `hooks/` — a `PostToolUse` hook matched to `Write|Edit` and a

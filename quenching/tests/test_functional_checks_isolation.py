@@ -7,6 +7,7 @@ the expected calls alone cannot prove that a session was isolated.
 import json
 import os
 import pathlib
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -72,7 +73,14 @@ class FunctionalSessionIsolation(unittest.TestCase):
             env.pop("FOREIGN_PLUGIN", None)
             if foreign:
                 env["FOREIGN_PLUGIN"] = "1"
-            run = subprocess.run(["bash", str(SCRIPT), "--only", "1,2,3,4", str(ROOT)],
+            # The harness compares the spec-store refs of the repository it measures before and
+            # after the routing probes. Pointing it at the shared checkout would race with any
+            # parallel test (pytest-xdist) that moves a ref there, so measure a private copy.
+            repo = folder / "repo"
+            shutil.copytree(ROOT / "quenching", repo / "quenching",
+                            ignore=shutil.ignore_patterns("__pycache__", ".pytest_cache"))
+            subprocess.run(["git", "init", "-q", str(repo)], env=env, check=True)
+            run = subprocess.run(["bash", str(SCRIPT), "--only", "1,2,3,4", str(repo)],
                                  env=env, capture_output=True, text=True)
             calls = [json.loads(line) for line in log.read_text().splitlines()]
             self.assertEqual(settings.read_text(encoding="utf-8"), original)

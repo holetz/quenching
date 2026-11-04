@@ -13,6 +13,7 @@ from pathlib import Path, PurePosixPath
 
 from quenching.common.version import VERSION
 from quenching.components.commands import bridge
+from quenching.deploy import settings as claude_settings
 from quenching.deploy import translate
 
 PAYLOAD = ".agents/quenching"
@@ -305,6 +306,10 @@ def _mcp_tree(tree: dict, mcp: dict, harnesses: list[str]) -> None:
              (json.dumps(document, indent=2, ensure_ascii=False) + "\n").encode())
 
 
+def _declared_hooks(selected: list[dict]) -> list[dict]:
+    return [hook for module in selected for hook in module.get("owned", {}).get("hooks", [])]
+
+
 def build_tree(source: Path, target: Path, modules: list[str], harnesses: list[str],
                runtime: str = "vendor", profiles: list[str] | None = None,
                mcp: dict | None = None) -> dict:
@@ -339,6 +344,11 @@ def build_tree(source: Path, target: Path, modules: list[str], harnesses: list[s
     for module in selected:
         for rel in ASSETS_BY_MODULE.get(module["name"], ()):
             _add_tree(tree, source, rel, translate.reference_document)
+    # The hooks the selected modules declare, installed in `.claude/settings.json` by `cli`; only
+    # Claude reads them, so the scripts travel only with that harness.
+    hooks = _declared_hooks(selected) if "claude" in harnesses else []
+    for hook in hooks:
+        _add_tree(tree, source, f"assets/hooks/{hook['name']}.sh")
 
     for name, path in _agents(source).items():
         _add(tree, f"{PAYLOAD}/agents/{name}.md",
@@ -410,4 +420,12 @@ def build_tree(source: Path, target: Path, modules: list[str], harnesses: list[s
     }
     if mcp:
         document["mcp"] = mcp
-    return {"tree": tree, "seeds": seeds, "manifest": document}
+    settings = None
+    if "claude" in harnesses:
+        # `.claude/settings.json` is the user's file: it is merged by `cli`, never listed in `files`.
+        # `attribution` holds the keys this deploy wrote; `cli` replaces it once the merge ran.
+        settings = {"hooks": claude_settings.desired_entries(hooks),
+                    "attribution": dict(claude_settings.ATTRIBUTION)}
+        document["claudeSettings"] = {"hooks": [hook["name"] for hook in hooks],
+                                      "attribution": sorted(claude_settings.ATTRIBUTION)}
+    return {"tree": tree, "seeds": seeds, "manifest": document, "settings": settings}
