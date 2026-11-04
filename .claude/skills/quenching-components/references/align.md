@@ -27,7 +27,7 @@ Read [align/sweep-doctrine.md](.agents/quenching/references/align/sweep-doctrine
 this skill's doctrine. What follows is specific to the automation surface:
 
 - **The legacy `openspec-*` surface is not this sweep's.** `.claude/skills/openspec-*/` and
-  `.agents/skills/opsx/` are left by a prior `openspec init`; clearing them is a human's call
+  `.claude/commands/opsx/` are left by a prior `openspec init`; clearing them is a human's call
   ([specs-align/conformance.md](.agents/quenching/references/specs-align/conformance.md)
   §Finding policy). Inventory them only to **note** them; never classify them onto the axis,
   rename them, or remove them here.
@@ -38,10 +38,16 @@ this skill's doctrine. What follows is specific to the automation surface:
 - **`.agents/` is the source; `.claude/skills/` is the generated bridge.** A target's skills live
   in `.agents/skills/<name>/SKILL.md` (one segment, `/<name>`), its references in
   `.agents/references/**`, its instructions in `AGENTS.md`. `.agents/quenching/bin/cq components migrate --target .`
-  plans the move off the legacy layout (`.agents/skills/**`, `.claude/references/**`, the old
+  plans the move off the legacy layout (`.claude/commands/**`, `.claude/references/**`, the old
   Codex translation under `.agents/`); `.agents/quenching/bin/cq components bridge --target . --check` names the drift
   of the generated `.claude/skills/<name>/` copies. **Conformant means both**: an empty migrate
   plan (`conformant: true`) and `bridge --check` exit 0.
+- **A family is a router, with no shortcuts.** Three or more skills of the target sharing the first
+  kebab segment are one vertical: `.agents/skills/<family>/SKILL.md` with a flow table, each flow
+  in `references/<flow>.md` inside the skill, the grant the union of the flows'. The migrate's
+  `routers` block lists the candidates; `migrate --write --router <family>` applies the ones the
+  human names in §4. What the deploy installed (`quenching-*`, listed in
+  `.agents/.quenching-deploy.json`) is never grouped, moved or rewritten.
 - **The `.claude → .agents` translation is the legacy layout `migrate` retires.** No verb writes it
   any more; never hand-copy it back over the `.agents/` source.
 
@@ -76,10 +82,11 @@ plus one `Glob` for the legacy pairs the tool cannot see (below). Branch as
 
 | Probe result | What happens |
 | --- | --- |
-| all four exit 0 with no findings (`migrate` `conformant: true`, the bridge in step) and no legacy pair | **STOP.** Report "`.agents/` conformant, N skills, bridge in step, nothing to align" and end. No inventory, no plan, no confirmation. |
-| all four exit 0 and the only findings are the report-only wider surface (`sk-agent-*`, `sk-hook-*`) | STOP the same way, then list them with the mint that closes each. Nothing here is this sweep's to write. |
+| all four exit 0 with no findings (`migrate` `conformant: true` and `routers` empty, the bridge in step) and no legacy pair | **STOP.** Report "`.agents/` conformant, N skills, bridge in step, nothing to align" and end. No inventory, no plan, no confirmation. |
+| all four exit 0, `routers` empty, and the only findings are the report-only wider surface (`sk-agent-*`, `sk-hook-*`) | STOP the same way, then list them with the mint that closes each. Nothing here is this sweep's to write. |
 | the only findings are description codes (`sk-metadata-cap`, `sk-description-portable`, `sk-trigger-position`, `sk-no-boundary`) | **Skip to §8.** There is nothing to migrate, and an inventory, a plan and a confirmation for zero renames is ceremony — §8 carries its own gate. |
 | `migrate` exit 1 (a non-empty plan) or `bridge --check` exit 1 (drift), and nothing else | **Skip to §4** with only that block: the `operations`, `conflicts` and `renames` of the plan and the bridge's `changes`. |
+| everything exits 0 but `migrate` `routers` lists a family | **Skip to §4** with only the family decisions: `routers` never moves `conformant`, so the layout is green and the grouping is still the human's to answer. |
 | `migrate` or `bridge` exit 2 | Report the refusal with its code (`ct-bridge-unowned`: a `.claude/skills/<name>/` the bridge did not generate) and stop; it is a human's call. |
 | anything else exits 1 or 2, or a legacy pair exists | Continue to step 2. |
 
@@ -108,7 +115,7 @@ the rule and the registry (`/docs/project/automation.md`) exist.
 
 **Where an item classifies with an evident category, also read the nest-vs-replace convention**
 already established for that category in this repo (taxonomy.md §Reading the nest-vs-replace
-convention): `Glob` `.agents/skills/<categoria>-*/` (legacy: `.agents/skills/<categoria>/**`) and infer it from what already sits there.
+convention): `Glob` `.agents/skills/<categoria>-*/` (legacy: `.claude/commands/<categoria>/**`) and infer it from what already sits there.
 Derive the canonical path the classification produces and diff it against the item's current
 path — a mismatch is a relocation candidate, fed into §4's existing renames row like any other,
 never a new plan section or a new confirmation of its own.
@@ -138,6 +145,12 @@ from the molds when missing (rule born `authority: background`), unroutables kep
 with reasons, obsolete-suspect flags (no deletion proposed without the human's word), and —
 labelled **"reported, not applied"** — the wider-surface findings (`sk-agent-*`, `sk-hook-*`),
 each with the mint that closes it.
+**One decision per family** from the migrate's `routers` block (the same candidates `families` with
+`candidate: true` names in `status --json`): the family, its `kind` (`new` or
+`existing`), the members and the flows, with **A** (group under `.agents/skills/<family>/`,
+recommended) and **B** (keep the skills loose). A declined family is not touched and is offered
+again on the next pass. A family with `conflicts` (a `quenching-*` name, a taken destination, a
+shortcut with no reference) is listed and cannot be answered A until the human settles it.
 A migrate **conflict** (two editable copies that disagree) is listed and never confirmed: `--write`
 refuses while one stands, so it is a human's to settle first.
 Wait for the single confirmation; code-coupled items each await their own.
@@ -145,7 +158,8 @@ Wait for the single confirmation; code-coupled items each await their own.
 
 ### 5. Apply
 Execute the confirmed plan: **the migration first** — `.agents/quenching/bin/cq components migrate --target . --write
---json`, which leaves every `openspec-*` skill and `opsx/` command where it stands — then
+--json` plus one `--router <family>` per family answered A, which leaves every `openspec-*`
+skill and `opsx/` command where it stands — then
 **collapse each pair per §6**, rename command paths, create/rewrite
 commands from `automation/command.md`, fix frontmatter gaps per the doctrine (description within
 the cap, triggers second sentence — bodies untouched), write rule and registry from their molds
@@ -201,20 +215,10 @@ read-only `Task` collectors — one per slice — that report *what each body co
 its frontmatter, what it cites, where its numbered steps end) and nothing else; every doctrine
 verdict stays with the orchestrator.
 
-**A vertical with many model-invocable entries** (the count the list pays for: three or more routed
-commands under one `/<vertical>:` namespace that conductors call) is a finding too, reported as
-"propose a router": one skill `commands/<vertical>/<vertical>.md` over `assets/references/<vertical>-flows/`,
-the former commands kept as typed-only shortcuts, per
-`/docs/standards/automation/skills.md` §One router per vertical, shortcuts typed-only. Propose, never apply.
-
-**A local family.** Read `families` from `.agents/quenching/bin/cq components status --json` in the probe: each entry with
-`candidate: true` (three or more model-invocable skills sharing the first kebab segment) is reported as
-"propose a router", never as a finding, and `ok` and `state` stay as they are. The proposal names the
-router `.agents/skills/<family>/SKILL.md`, the flows `.agents/references/<family>-flows/<flow>.md` and
-the migration that keeps every skill: the body moves verbatim into its reference, the skill stays as a
-typed-only shortcut with the same grant, and the router carries one line per flow. Nothing is deleted
-and no `quenching-*` agent is edited; per `/docs/standards/automation/skills.md`
-§A target extends a vertical with its own router. Propose, never apply.
+**A local family** is no finding of §7: `families` from `.agents/quenching/bin/cq components status --json`
+and `routers` from `migrate --json` are decided in §4 and applied in §5, per
+`/docs/standards/automation/skills.md` §A target extends a vertical with its own router.
+A family the human answered B stays as loose skills and is not reported as a defect.
 
 Report each finding as `command · violated rule · one-line evidence · the /quenching-components command-new invocation
 that opens the edit`, labelled **"reported, not applied"**. Skip every legacy `openspec-*` body —
@@ -229,8 +233,9 @@ Read **frontmatter only**. Judge descriptions against the other descriptions, no
 `doctor` payload counts the surface, and its `lint` payload names the description codes:
 `sk-metadata-cap`, `sk-description-portable`, `sk-trigger-position`, `sk-no-boundary`.
 
-**Which class a description is in decides which verdicts apply.** A typed-only command
-(`disable-model-invocation: true`) has left the routing surface: `lint` reports neither routing code
+**Which class a description is in decides which verdicts apply.** A router's description is routed
+like any other; the flows inside its `references/` carry no description of their own to review.
+A command or skill with `disable-model-invocation: true` has left the routing surface: `lint` reports neither routing code
 against it, so there is nothing to buy by shortening it and no trigger to demand. Its description
 keeps all three slots at full length for the human picking it from the `/` menu
 (`/docs/standards/automation/skills.md` §The admission criterion). The class is read from the

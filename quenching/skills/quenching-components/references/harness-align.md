@@ -4,7 +4,7 @@ allowed-tools: Bash(cq:*), Bash(cq.cmd:*), Read, Grep, Glob, Bash(find:*), Bash(
 
 # /quenching-components harness-align — make AGENTS.md a thin, honest pointer into the bundle
 
-**Input**: `$ARGUMENTS` (an optional specific harness file; omit to sweep every AGENTS.md/AGENTS.md).
+**Input**: `$ARGUMENTS` (an optional specific harness file; omit to sweep every AGENTS.md/CLAUDE.md).
 
 Refactors a repo's **harness files** (the root `AGENTS.md`, every subfolder `AGENTS.md`) into thin
 navigation pointers over the OKF `/docs/` bundle: operational rules stay;
@@ -22,8 +22,8 @@ molds live at `.agents/quenching/assets/templates/harness/`.
 
 ## Doctrine
 
-- **`AGENTS.md` is the source; there is no root `AGENTS.md`** — the host 2.1.277+ reads
-  `AGENTS.md` directly when no `AGENTS.md`/`CLAUDE.local.md` exists (routing §7 has the verified fact).
+- **`AGENTS.md` is the source; there is no root `CLAUDE.md`** — the host 2.1.277+ reads
+  `AGENTS.md` directly when no `CLAUDE.md`/`CLAUDE.local.md` exists (routing §7 has the verified fact).
 - **Commands and etiquette stay; knowledge moves.** The one test: would the agent need this on
   **EVERY** task under this file's folder (keep) — or only when working on **that subject** (move +
   pointer)?
@@ -55,10 +55,10 @@ Resolve `cq` per
 ## Workflow
 
 ### 1. Inventory the harness surface (read-only)
-`Glob` `**/AGENTS.md`, `**/AGENTS.md` (legacy), and `CLAUDE.local.md`; add a `grep --no-ignore` sweep to
+`Glob` `**/AGENTS.md`, `**/CLAUDE.md` (legacy), and `CLAUDE.local.md`; add a `grep --no-ignore` sweep to
 catch gitignored ones. Confirm `/docs/index.md` carries `okf_version` — if there is no OKF bundle,
 **stop** and offer `/quenching-knowledge align` first. List every harness file found, and
-the **root harness state** — conformant (`AGENTS.md` only), legacy (`AGENTS.md` content or pointer), or doubled
+the **root harness state** — conformant (`AGENTS.md` only), legacy (`CLAUDE.md` content or pointer), or doubled
 (routing §7).
 
 Then **discover greenfield candidates** (read-only), swept **repo-wide from the repository
@@ -139,7 +139,7 @@ cover it.
 
 ### 7. Rewrite each harness file
 Root `AGENTS.md` from `.agents/quenching/assets/templates/harness/agents-root.md`, a subfolder from
-`.../harness/agents-subfolder.md`. A legacy `AGENTS.md` that holds only `@AGENTS.md` is removed;
+`.../harness/agents-subfolder.md`. A legacy `CLAUDE.md` that holds only `@AGENTS.md` is removed;
 content-bearing legacy files are consolidated first. Structure and links are canonical English; prose may follow the
 repo's language. The root file's language declaration line is carried through **verbatim**. UNROUTABLE and
 FLAG-pending units stay under a clearly marked residue section. **No frontmatter, ever.**
@@ -167,4 +167,4 @@ is still restated inline; run `.agents/quenching/bin/cq knowledge validate` over
   cycle-authorized run (convergence.md §The cycle-authorization contract) replaces the batch gate with narration — never the
   product-code item's own OK — and a pre-collected table is delta-rechecked before any write.
 - Never blanket-create subfolder `AGENTS.md`s — creation is evidence-gated per harness-routing.md §6.
-- Never recreate the pointer-only `AGENTS.md`; the host 2.1.277+ reads `AGENTS.md`.
+- Never recreate the pointer-only `CLAUDE.md`; the host 2.1.277+ reads `AGENTS.md`.

@@ -314,17 +314,29 @@ would overwrite the edit, and the list would swell again. The unit of extension 
   generated as for any target skill.
 - **The flow bodies** live in `.agents/skills/<family>/references/<flow>.md`, loaded with
   `cq components read`; the router lists one line per flow.
-- **No former skill stays** as a shortcut. Body and grant move verbatim into the flow reference;
-  nothing is deleted without a human word.
+- **No former skill stays** as a shortcut. Body and grant move verbatim into the flow reference,
+  after the human's confirmation of the family.
 - **The grant** is the union of the flows' grants, as for the plugin's router.
 - **The plugin's agents** keep calling the plugin's router; the target's main session calls the
   target's router.
 
-**Which families earn a router.** The family is the first kebab segment of a local skill's name, and the
-criterion is the plugin's: three or more model-invocable entries. `cq components status` reports it as
-`families` (`skills`, `invocable`, `candidate`), a signal and never a finding, so `ok` and `state` do not
-change. `components:align` reads it and proposes; the human confirms before anything moves. A target that
-names its skills by suffix, or with no convention, gets no candidate and falls back to the manual report.
+**Which families earn a router.** The family is the first kebab segment of a skill the target wrote
+(under `.claude/commands/`, the folder), and the criterion is the plugin's: three or more skills.
+`cq components status` reports it as `families` (`skills`, `invocable`, `candidate`) and
+`cq components migrate --json` as `routers`, a signal and never a finding, so `ok`, `state` and
+`conformant` do not change. A target that names its skills by suffix, or with no convention, gets no
+candidate.
+
+**Who applies it.** `components:align` presents one decision per family (group, recommended, or keep the
+skills loose) and the human answers before anything moves. Only then does
+`cq components migrate --write --router <family>` (repeatable) move each member by `git mv` into
+`references/<flow>.md`, generate the router's `SKILL.md` with the union grant, drop the shortcuts of an
+existing family whose reference exists, and rewrite `/<family>-<flow>` to `/<family> <flow>` in the
+target's own files. A family not named is not touched, and align offers it again next pass.
+
+**What is never grouped.** Whatever `.agents/.quenching-deploy.json` lists, and any name with the
+`quenching-` prefix, which belongs to the installed modules: the migrate reports it as a conflict and
+writes nothing for that family.
 
 ## The execution profile
 

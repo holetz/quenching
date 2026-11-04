@@ -47,7 +47,7 @@ class KnowledgeAlignmentContract(unittest.TestCase):
         self.assertEqual(positions, sorted(positions))
         self.assertIn("--glossary-term", verify)
 
-    def test_align_proposes_a_router_for_local_families(self):
+    def test_align_asks_per_family_and_applies_the_router(self):
         align = (ROOT / "skills" / "quenching-components" / "references" / "align.md").read_text(encoding="utf-8")
         doctrine = (
             ROOT / "references" / "components-command-new" / "doctrine.md"
@@ -56,7 +56,10 @@ class KnowledgeAlignmentContract(unittest.TestCase):
 
         self.assertIn("`families`", align)
         self.assertIn("`candidate: true`", align)
-        self.assertIn("typed-only shortcut", align)
+        self.assertIn("`routers`", align)
+        self.assertIn("--router <family>", align)
+        self.assertNotIn("typed-only shortcut", align)
+        self.assertNotIn("Propose, never apply", align)
         self.assertIn(section, align)
         self.assertIn(section, doctrine)
 

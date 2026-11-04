@@ -39,7 +39,9 @@ Report one compact table with the target root and applicability state, command c
 front, finding codes with their error/warning totals, and the overall `ok` state; then one
 conformance line: the migrate plan (`conformant: true`, or its operation and conflict counts) and
 the bridge (in step, or its change count). Conformant is both: an empty plan and `bridge --check`
-exit 0; anything else routes to `/quenching-components align`. Preserve every
+exit 0; anything else routes to `/quenching-components align`. A family candidate (`families` with
+`candidate: true`) does not change that state: name it on its own line, with `/quenching-components align`
+as the route that asks the human whether to group it under a router. Preserve every
 returned code and message; an empty surface is an explicit state, not a reason to invent commands.
 For an actionable finding, name `/quenching-components align` as the bounded repair route; for a
 single command body or description, name `/quenching-components command-new` as the focused edit

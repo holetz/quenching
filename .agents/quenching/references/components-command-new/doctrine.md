@@ -82,12 +82,10 @@ skill fires and what will exist when it finishes**.
 The routing story lives in the description, not in a shared router doc; but a boundary naming
 nobody routes nothing and pays always-on rent forever.
 
-A vertical whose namespace already holds three or more model-invocable commands is the case for one
-router skill over per-flow references with typed-only shortcuts; `command:new` proposes it when minting
-the third such entry and never applies it unasked.
-
-A target's own family of three or more model-invocable skills is the same case: `command:new` proposes the
-target's router and never edits a plugin agent, per `/docs/standards/automation/skills.md`
+A vertical holding three or more skills is the case for one router skill over per-flow references
+inside it, with no shortcuts. In a target, `/quenching-components align` asks the human per family and
+`cq components migrate --write --router` applies it; `command:new` adds a flow to an existing router
+and never edits a plugin agent or a `quenching-*` skill, per `/docs/standards/automation/skills.md`
 §A target extends a vertical with its own router.
 
 ### The three slots, and the boundary that must be earned
