@@ -82,8 +82,8 @@ plus one `Glob` for the legacy pairs the tool cannot see (below). Branch as
 
 | Probe result | What happens |
 | --- | --- |
-| all four exit 0 with no findings (`migrate` `conformant: true`, the bridge in step) and no legacy pair | **STOP.** Report "`.agents/` conformant, N skills, bridge in step, nothing to align" and end. No inventory, no plan, no confirmation. |
-| all four exit 0 and the only findings are the report-only wider surface (`sk-agent-*`, `sk-hook-*`) | STOP the same way, then list them with the mint that closes each. Nothing here is this sweep's to write. |
+| all four exit 0 with no findings (`migrate` `conformant: true` and `routers` empty, the bridge in step) and no legacy pair | **STOP.** Report "`.agents/` conformant, N skills, bridge in step, nothing to align" and end. No inventory, no plan, no confirmation. |
+| all four exit 0, `routers` empty, and the only findings are the report-only wider surface (`sk-agent-*`, `sk-hook-*`) | STOP the same way, then list them with the mint that closes each. Nothing here is this sweep's to write. |
 | the only findings are description codes (`sk-metadata-cap`, `sk-description-portable`, `sk-trigger-position`, `sk-no-boundary`) | **Skip to §8.** There is nothing to migrate, and an inventory, a plan and a confirmation for zero renames is ceremony — §8 carries its own gate. |
 | `migrate` exit 1 (a non-empty plan) or `bridge --check` exit 1 (drift), and nothing else | **Skip to §4** with only that block: the `operations`, `conflicts` and `renames` of the plan and the bridge's `changes`. |
 | everything exits 0 but `migrate` `routers` lists a family | **Skip to §4** with only the family decisions: `routers` never moves `conformant`, so the layout is green and the grouping is still the human's to answer. |
