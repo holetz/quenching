@@ -7,7 +7,7 @@ tags: [architecture, install, profiles, fronts, configuration]
 timestamp: 2026-11-03
 audience: both
 authority: current
-source: spec 1111 — a fresh Claude Code 2.1.258 session showed no observable profile-controlled context difference, so the profile contract is limited to `/align` conduction scope; spec 1635 intersected it with the enabled modules; spec 1637 (opensource); spec 2160 (deploy only); spec 2171 and spec 2172 (a module per vertical and per front); spec 2174
+source: spec 1111, spec 1635, spec 1637, spec 2160, spec 2171, spec 2172, spec 2174; lineage in ADR 0017 and ADR 0019
 maintainer: quenching
 ---
 

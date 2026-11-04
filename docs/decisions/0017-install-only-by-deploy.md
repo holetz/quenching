@@ -15,6 +15,9 @@ maintainer: quenching
 
 > Superseded in part by [ADR 0018](0018-retire-omnigent-and-source-manifest.md): the Omnigent operator
 > agent, the source `plugin.json`, the source `bin/cq` and `cq components translate` were later removed.
+>
+> Superseded in part by [ADR 0019](0019-router-skills-and-target-dialect-source.md): the satellites no
+> longer sit under `plugins/<harness>/<name>/` but under `integrations/<name>/`, and the source is `quenching/`.
 
 The rules live in [source-layout](../standards/architecture/source-layout.md),
 [deploy-mode](../standards/architecture/deploy-mode.md) and
