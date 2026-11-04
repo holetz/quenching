@@ -80,26 +80,74 @@ export default Plugin.define({
       void ctx.storage.set(`specs.${sessionID}`, Object.fromEntries(ledger)).catch(() => undefined)
     }
 
+    /**
+     * Um aviso ao painel por sessão a cada 500 ms, no máximo. Uma orquestração dispara dezenas
+     * de `cq specs …` por minuto; cada aviso faz o painel reler a sessão.
+     */
+    const pendingChanged = new Map<string, ReturnType<typeof setTimeout>>()
+    function announce(sessionID: string): void {
+      if (pendingChanged.has(sessionID)) return
+      const timer = setTimeout(() => {
+        pendingChanged.delete(sessionID)
+        void Promise.resolve(rpc.events.emit("changed", { sessionID })).catch(() => undefined)
+      }, 500)
+      timer.unref?.()
+      pendingChanged.set(sessionID, timer)
+    }
+
+    let pendingUpdated: ReturnType<typeof setTimeout> | undefined
+    function announceCounters(): void {
+      if (pendingUpdated) return
+      pendingUpdated = setTimeout(() => {
+        pendingUpdated = undefined
+        void Promise.resolve(rpc.events.emit("updated", { ...counters })).catch(() => undefined)
+      }, 1_000)
+      pendingUpdated.unref?.()
+    }
+
     async function record(sessionID: string, hits: { id: number; kind: specs.Kind }[]): Promise<void> {
       if (hits.length === 0) return
       const ledger = await ledgerFor(sessionID)
       for (const hit of hits) specs.touch(ledger, hit.id, hit.kind)
       remember(sessionID, ledger)
-      await rpc.events.emit("changed", { sessionID })
+      announce(sessionID)
     }
 
-    /** A conversa da sessão é a fonte da verdade: o painel varre ao abrir, sem depender de hook. */
-    async function harvestSession(sessionID: string, directory: string): Promise<void> {
+    /**
+     * Fora do caminho da tool: o hook devolve na hora e o trabalho segue em segundo plano.
+     * Um erro aqui nunca chega ao serviço.
+     */
+    function detach(work: () => Promise<unknown>): void {
+      void Promise.resolve().then(work).catch(() => undefined)
+    }
+
+    const cursors = new Map<string, specs.Cursor>()
+    const harvesting = new Map<string, Promise<void>>()
+
+    /**
+     * A conversa da sessão é a fonte da verdade: o painel varre ao abrir, sem depender de hook.
+     * Só as mensagens novas desde a última varredura, em fatias, e uma varredura por sessão de cada vez.
+     */
+    function harvestSession(sessionID: string, directory: string): Promise<void> {
+      const running = harvesting.get(sessionID)
+      if (running) return running
       const at = harvested.get(sessionID) ?? 0
-      if (Date.now() - at < 5_000) return
+      if (Date.now() - at < 5_000) return Promise.resolve()
       harvested.set(sessionID, Date.now())
-      const messages = await ctx.session.context({ sessionID }).catch(() => undefined)
-      if (!messages || messages.length === 0) return
-      const found = specs.harvest(messages, await specs.known(directory))
-      if (found.hits.length === 0) return
-      const ledger = specs.ledger(sessionID)
-      for (const hit of found.hits) specs.touch(ledger, hit.id, hit.kind)
-      remember(sessionID, ledger)
+      const work = (async () => {
+        const messages = await ctx.session.context({ sessionID }).catch(() => undefined)
+        if (!messages || messages.length === 0) return
+        const start = specs.resumeAt(messages, cursors.get(sessionID))
+        cursors.set(sessionID, specs.cursorOf(messages))
+        if (start >= messages.length) return
+        const found = await specs.harvestSliced(messages.slice(start), await specs.known(directory))
+        if (found.hits.length === 0) return
+        const ledger = specs.ledger(sessionID)
+        for (const hit of found.hits) specs.touch(ledger, hit.id, hit.kind)
+        remember(sessionID, ledger)
+      })().catch(() => undefined).finally(() => { harvesting.delete(sessionID) })
+      harvesting.set(sessionID, work)
+      return work
     }
 
     async function directoryOf(sessionID: string): Promise<string | undefined> {
@@ -111,40 +159,48 @@ export default Plugin.define({
       return directory
     }
 
-    // Hook: cada tool executada por qualquer sessão atualiza o painel ao vivo.
-    await ctx.tool.hook("execute.after", async (event) => {
+    // Os três hooks rodam em toda tool e todo prompt de toda sessão: nenhum espera (await)
+    // registro, aviso ou `cq`. A tool segue na hora; o painel atualiza quando o trabalho termina.
+
+    // Hook: cada tool executada por qualquer sessão conta no painel.
+    await ctx.tool.hook("execute.after", (event) => {
       counters.tools += 1
       counters.last = event.tool
-      await rpc.events.emit("updated", { ...counters })
+      announceCounters()
       if (!specs.isShell(event.tool) || event.status !== "completed") return
       const command = specs.commandOf(event.input)
       if (!command || !/\bcq\s+git\s+commit\b/.test(command)) return
-      const directory = await directoryOf(event.sessionID)
-      if (!directory) return
-      const id = await specs.commitSpec(directory)
-      if (id) await record(event.sessionID, [{ id, kind: "commit" }])
+      const sessionID = event.sessionID
+      detach(async () => {
+        const directory = await directoryOf(sessionID)
+        if (!directory) return
+        const id = await specs.commitSpec(directory)
+        if (id) await record(sessionID, [{ id, kind: "commit" }])
+      })
     })
 
     // Hook: o ledger nasce do comando `cq` já no instante em que ele roda.
-    await ctx.tool.hook("execute.before", async (event) => {
+    await ctx.tool.hook("execute.before", (event) => {
       if (!specs.isShell(event.tool)) return
       const command = specs.commandOf(event.input)
       if (!command) return
-      const parsed = specs.parse(command)
-      await record(event.sessionID, parsed.hits)
+      const hits = specs.parse(command).hits
+      if (hits.length === 0) return
+      const sessionID = event.sessionID
+      detach(() => record(sessionID, hits))
     })
 
     // Hook: o que o humano escreve na sessão também é evidência.
-    await ctx.session.hook("prompt", async (event) => {
+    await ctx.session.hook("prompt", (event) => {
       const text = event.prompt?.text
       if (!text) return
-      // Fora do caminho do envio: o painel atualiza quando a varredura termina.
-      void (async () => {
-        const directory = await directoryOf(event.sessionID)
+      const sessionID = event.sessionID
+      detach(async () => {
+        const directory = await directoryOf(sessionID)
         if (!directory) return
         const ids = specs.mentions(text, await specs.known(directory))
-        await record(event.sessionID, ids.map((id) => ({ id, kind: "mention" as const })))
-      })().catch(() => undefined)
+        await record(sessionID, ids.map((id) => ({ id, kind: "mention" as const })))
+      })
     })
 
     // Tool: o agente passa a poder chamar `vitrine_saudacao`.
@@ -158,5 +214,12 @@ export default Plugin.define({
         }),
       })
     })
+
+    return () => {
+      for (const timer of pendingChanged.values()) clearTimeout(timer)
+      pendingChanged.clear()
+      if (pendingUpdated) clearTimeout(pendingUpdated)
+      pendingUpdated = undefined
+    }
   },
 })

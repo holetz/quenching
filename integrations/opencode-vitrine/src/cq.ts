@@ -20,6 +20,12 @@ export type Launch = {
 
 const WINDOWS = process.platform === "win32"
 
+/** Uma leitura do `cq` responde em 0,5–2 s; 15 s já é um processo preso, não um lento. */
+export const READ_TIMEOUT = 15_000
+
+/** Teto da saída guardada por processo: um `cq` que despeja mais que isso é morto, não acumulado. */
+const OUTPUT_CAP = 8 * 1024 * 1024
+
 function runProcess(command: string, args: string[], cwd: string, timeout: number, extra: SpawnOptions = {}): Promise<Run> {
   return new Promise((done) => {
     let child: ChildProcess
@@ -31,31 +37,99 @@ function runProcess(command: string, args: string[], cwd: string, timeout: numbe
     }
     let stdout = ""
     let stderr = ""
-    const timer = setTimeout(() => child.kill(), timeout)
-    child.stdout?.setEncoding("utf8").on("data", (chunk: string) => { stdout += chunk })
-    child.stderr?.setEncoding("utf8").on("data", (chunk: string) => { stderr += chunk })
+    // SIGKILL depois do SIGTERM: um filho que ignora o primeiro não pode sobreviver ao plugin.
+    const kill = () => {
+      child.kill()
+      setTimeout(() => { if (child.exitCode === null && child.signalCode === null) child.kill("SIGKILL") }, 2_000).unref()
+    }
+    const timer = setTimeout(kill, timeout)
+    child.stdout?.setEncoding("utf8").on("data", (chunk: string) => {
+      stdout += chunk
+      if (stdout.length > OUTPUT_CAP) kill()
+    })
+    child.stderr?.setEncoding("utf8").on("data", (chunk: string) => {
+      if (stderr.length < 64 * 1024) stderr += chunk
+    })
     child.once("error", (error) => { clearTimeout(timer); done({ code: -1, stdout, stderr: String(error) }) })
     child.once("close", (code) => { clearTimeout(timer); done({ code: code ?? -1, stdout, stderr }) })
   })
 }
 
-export function exec(command: string, args: string[], cwd: string, timeout = 30_000): Promise<Run> {
+// ── teto de processos ────────────────────────────────────────────────────────
+
+/**
+ * Um semáforo simples: no máximo `limit` tarefas ao mesmo tempo, o resto espera em fila.
+ * O plugin roda dentro do serviço do OpenCode; uma rajada de hooks não pode virar uma
+ * rajada de processos Python.
+ */
+export function limiter(limit: number): <T>(task: () => Promise<T>) => Promise<T> {
+  let active = 0
+  const queue: (() => void)[] = []
+  const next = () => {
+    if (active >= limit) return
+    const start = queue.shift()
+    if (start) start()
+  }
+  return <T>(task: () => Promise<T>) => new Promise<T>((resolveTask, rejectTask) => {
+    queue.push(() => {
+      active += 1
+      task().then(resolveTask, rejectTask).finally(() => {
+        active -= 1
+        next()
+      })
+    })
+    next()
+  })
+}
+
+/** `cq` de leitura simultâneos. O deploy (`upgrade`) e o portal não passam por aqui. */
+export const CQ_CONCURRENCY = 2
+const cqSlot = limiter(CQ_CONCURRENCY)
+const gitSlot = limiter(4)
+
+/** Quantos processos `cq` de leitura estão rodando agora e o pico desde que o módulo subiu. */
+export const cqStats = { running: 0, peak: 0, spawned: 0 }
+
+/**
+ * Uma promessa por chave enquanto ela está em voo: quem pede o mesmo durante a execução
+ * espera a mesma resposta em vez de subir outro processo.
+ */
+export function singleFlight<T>(): (key: string, task: () => Promise<T>) => Promise<T> {
+  const flying = new Map<string, Promise<T>>()
+  return (key, task) => {
+    const current = flying.get(key)
+    if (current) return current
+    const promise = task().finally(() => { flying.delete(key) })
+    flying.set(key, promise)
+    return promise
+  }
+}
+
+export function exec(command: string, args: string[], cwd: string, timeout = READ_TIMEOUT): Promise<Run> {
   return runProcess(command, args, cwd, timeout)
 }
 
 export async function git(cwd: string, args: string[]): Promise<string | undefined> {
-  const run = await exec("git", args, cwd, 10_000)
+  const run = await gitSlot(() => exec("git", args, cwd, 10_000))
   return run.code === 0 ? run.stdout.trim() : undefined
 }
 
+const roots = new Map<string, { at: number; value: Promise<string | undefined> }>()
+
 /**
  * O checkout principal do repositório. `--git-common-dir` é o mesmo para todas as worktrees;
- * o diretório pai dele é o checkout que hospeda `.git`.
+ * o diretório pai dele é o checkout que hospeda `.git`. Muda só quando a worktree some, então
+ * fica em cache por 10 min: antes cada leitura do `cq` subia um `git` só para isto.
  */
-export async function mainRoot(cwd: string): Promise<string | undefined> {
-  const common = await git(cwd, ["rev-parse", "--git-common-dir"])
-  if (!common) return undefined
-  return dirname(isAbsolute(common) ? common : resolve(cwd, common))
+export function mainRoot(cwd: string): Promise<string | undefined> {
+  const hit = roots.get(cwd)
+  if (hit && Date.now() - hit.at < 600_000) return hit.value
+  const value = git(cwd, ["rev-parse", "--git-common-dir"]).then((common) =>
+    common ? dirname(isAbsolute(common) ? common : resolve(cwd, common)) : undefined)
+  roots.set(cwd, { at: Date.now(), value })
+  // Uma falha não fica em cache: a próxima chamada tenta de novo.
+  void value.then((root) => { if (!root && roots.get(cwd)?.value === value) roots.delete(cwd) })
+  return value
 }
 
 // ── o interpretador Python ───────────────────────────────────────────────────
@@ -148,8 +222,19 @@ export async function toolCq(): Promise<Launch> {
 
 /** O `cq` do repositório quando existe; senão o disponível (`toolCq`). */
 export async function cqBinary(cwd: string): Promise<{ launch: Launch; root?: string }> {
+  const hit = binaries.get(cwd)
+  if (hit && Date.now() - hit.at < 60_000) return hit.value
   const root = await mainRoot(cwd)
-  return { launch: (await projectCq(root)) ?? (await toolCq()), root }
+  const value = { launch: (await projectCq(root)) ?? (await toolCq()), root }
+  binaries.set(cwd, { at: Date.now(), value })
+  return value
+}
+
+const binaries = new Map<string, { at: number; value: { launch: Launch; root?: string } }>()
+
+/** Depois de um deploy, o `cq` do projeto pode ter mudado de lugar. */
+export function forgetBinaries(): void {
+  binaries.clear()
 }
 
 /** Os argumentos finais do `spawn` e as opções que o lançamento exige. */
@@ -161,19 +246,42 @@ export function spawnArgs(launch: Launch, args: string[]): { command: string; ar
   return { command: launch.command, args: [...launch.prefix, ...args], options: {} }
 }
 
-export function runCq(launch: Launch, args: string[], cwd: string, timeout = 30_000): Promise<Run> {
+export function runCq(launch: Launch, args: string[], cwd: string, timeout = READ_TIMEOUT): Promise<Run> {
   const call = spawnArgs(launch, args)
   return runProcess(call.command, call.args, cwd, timeout, call.options)
 }
 
-/** Uma leitura `--json` do `cq`; `undefined` quando o comando recusa ou não devolve JSON. */
-export async function cqJson<T>(cwd: string, args: string[], timeout = 30_000): Promise<T | undefined> {
-  const { launch } = await cqBinary(cwd)
-  const run = await runCq(launch, [...args, "--json"], cwd, timeout)
-  if (run.code !== 0) return undefined
-  try {
-    return JSON.parse(run.stdout) as T
-  } catch {
-    return undefined
-  }
+/** O processo de leitura em si; trocável nos testes para medir fila e deduplicação sem Python. */
+export let readRunner: (launch: Launch, args: string[], cwd: string, timeout: number) => Promise<Run> = runCq
+
+export function setReadRunner(runner: typeof readRunner): void {
+  readRunner = runner
+}
+
+const reads = singleFlight<unknown>()
+
+/**
+ * Uma leitura `--json` do `cq`; `undefined` quando o comando recusa ou não devolve JSON.
+ * A mesma leitura em voo é compartilhada e no máximo `CQ_CONCURRENCY` rodam ao mesmo tempo.
+ */
+export function cqJson<T>(cwd: string, args: string[], timeout = READ_TIMEOUT): Promise<T | undefined> {
+  return reads(`${cwd}\0${args.join("\0")}`, async () => {
+    const { launch } = await cqBinary(cwd)
+    const run = await cqSlot(async () => {
+      cqStats.running += 1
+      cqStats.spawned += 1
+      cqStats.peak = Math.max(cqStats.peak, cqStats.running)
+      try {
+        return await readRunner(launch, [...args, "--json"], cwd, timeout)
+      } finally {
+        cqStats.running -= 1
+      }
+    })
+    if (run.code !== 0) return undefined
+    try {
+      return JSON.parse(run.stdout) as T
+    } catch {
+      return undefined
+    }
+  }) as Promise<T | undefined>
 }
