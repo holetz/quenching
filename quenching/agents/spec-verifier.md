@@ -107,7 +107,7 @@ matches (`--root` is an option of the granted verb). Without a worktree, `--work
 10. Ruler: the payload's `lowered` lists how the branch lowers the bar the gate measures, each entry
    `{path, severity, kind, detail}`. Any `severity: fail` entry (`test-deleted`, `test-lost-asserts`,
    `gate-shrunk`: a test file deleted or left with no assert, a step removed from
-   `scripts/verify_repo.sh` or `plugins/quenching/assets/checks/**`) is FAIL with
+   `scripts/verify_repo.sh` or `quenching/assets/checks/**`) is FAIL with
    `needs-human: régua rebaixada`, quoting each `path` and `detail`. When the spec's own `## Problem` or
    `## Proposal` declares that removal as its objective, the FAIL quotes that declaration for the
    conductor; it never dispenses the FAIL by itself. `severity: warn` entries (`suppression-added`: a new

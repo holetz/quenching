@@ -5,7 +5,7 @@ ids, and optionally `--autonomous`. Empty or ambiguous → run
 `.agents/quenching/bin/cq specs list --json` and ask which on a decision sheet ([questions.md](.agents/quenching/assets/references/specs-develop/questions.md) §The four shared mechanics §1).
 
 This command is a launcher. The protocol (waves, routing, budgets, acceptance, audit) lives in the
-`spec-orchestrator` agent definition, `plugins/quenching/agents/spec-orchestrator.md`; do not restate it.
+`spec-orchestrator` agent definition, `quenching/agents/spec-orchestrator.md`; do not restate it.
 
 ## Workflow
 

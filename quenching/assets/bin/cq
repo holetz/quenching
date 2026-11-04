@@ -2,7 +2,7 @@
 """cq — quenching's one entry point, and the only thing that knows the pillar names.
 
     .agents/quenching/bin/cq [--root PATH] <pillar> <subcommand> ...   (a deployed target)
-    python3 plugins/quenching/assets/bin/cq --version                  (this repository's source)
+    python3 quenching/assets/bin/cq --version                  (this repository's source)
 
 The registered pillars, each answering with the same contract its launcher answered with — the
 subcommands, the `--json` payloads and the exit codes (0 ok · 1 findings · 2 refusal · 3 usage) are
