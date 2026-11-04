@@ -212,6 +212,32 @@ class Migrate(unittest.TestCase):
         self.assertEqual("#!/bin/sh\necho ok\n", (copy / "scripts/run.sh").read_text())
         self.assertEqual("notes\n", (copy / "references/notes.md").read_text())
 
+    def test_what_the_deploy_installed_is_never_the_migrations(self):
+        self.write(".agents/skills/quenching-git/SKILL.md", "---\nname: quenching-git\n---\n")
+        self.write(".agents/skills/quenching-git/references/nested/x.md", "x\n")
+        self.write(".agents/quenching/agents/runner.md", "runner\n")
+        self.write(".claude/skills/quenching-git/SKILL.md", "---\nname: quenching-git\n---\n")
+        self.write(".agents/.quenching-deploy.json", json.dumps({
+            "skills": ["quenching-git"],
+            "files": {".agents/quenching/agents/runner.md": "h",
+                      ".claude/skills/quenching-git/SKILL.md": "h"}}))
+        self.commit()
+        code, payload = self.run_cli()
+        touched = json.dumps(payload["operations"]) + json.dumps(payload["conflicts"])
+        self.assertNotIn("quenching-git", touched)
+        self.assertNotIn("runner", touched)
+        self.assertEqual([], payload["conflicts"])
+
+    def test_a_skill_of_the_target_with_the_reserved_prefix_is_a_conflict(self):
+        self.write(".claude/commands/quenching-mine.md", "---\ndescription: Mine.\n---\nbody\n")
+        self.write(".agents/skills/quenching-other/SKILL.md", "---\nname: quenching-other\n---\n")
+        self.commit()
+        code, payload = self.run_cli()
+        self.assertEqual(1, code)
+        reserved = {c["path"] for c in payload["conflicts"] if c["why"] == "reserved prefix"}
+        self.assertEqual({".agents/skills/quenching-mine", ".agents/skills/quenching-other"}, reserved)
+        self.assertEqual(2, self.run_cli("--write")[0])
+
     def test_outside_git_refuses(self):
         with tempfile.TemporaryDirectory() as plain:
             out = io.StringIO()

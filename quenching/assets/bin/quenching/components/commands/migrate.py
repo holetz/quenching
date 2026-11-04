@@ -25,6 +25,7 @@ import re
 import subprocess
 from pathlib import Path
 
+from quenching.common.deploy import generated_skills, read_manifest
 from quenching.common.output import FINDINGS, OK, emit, refuse
 from quenching.components.commands.bridge import MANIFEST as BRIDGE_MANIFEST
 
@@ -32,6 +33,7 @@ CLAUDE = Path(".claude")
 AGENTS = Path(".agents")
 SKILLS = AGENTS / "skills"
 POINTER = "@AGENTS.md\n"
+RESERVED_PREFIX = "quenching-"
 TRANSLATION_MANIFESTS = (AGENTS / ".generated-from.json", AGENTS / ".generated-files.json")
 
 
@@ -70,6 +72,20 @@ def _bridged(repo: Path) -> set[str]:
     return {rel.split("/", 1)[0] for rel in files}
 
 
+def _deployed(repo: Path) -> tuple[set[str], set[str]]:
+    """What `cq deploy` owns, from `.agents/.quenching-deploy.json`: its file paths and its
+    skill names. The migration only moves what the target wrote."""
+    files = (read_manifest(str(repo)) or {}).get("files")
+    return (set(files) if isinstance(files, dict) else set()), generated_skills(str(repo))
+
+
+def _owned_by_deploy(rel: str, files: set[str], skills: set[str]) -> bool:
+    if rel in files:
+        return True
+    prefix = SKILLS.as_posix() + "/"
+    return rel.startswith(prefix) and rel[len(prefix):].split("/", 1)[0] in skills
+
+
 def _skill_dirs(paths: list[str]) -> set[tuple[str, ...]]:
     return {tuple(rel.split("/")[:-1]) for rel in paths if rel.split("/")[-1] == "SKILL.md"}
 
@@ -94,7 +110,19 @@ class Plan:
             self.removed.add(rel)
             self.ops.append({"op": "remove", "path": rel, "why": why})
 
+    def reserve(self, src: str, name: str) -> None:
+        """`quenching-` belongs to the installed modules: a skill of the target's own that
+        carries it is a conflict for the human, never moved or grouped."""
+        path = f"{SKILLS.as_posix()}/{name}"
+        if not any(c["path"] == path and c["why"] == "reserved prefix" for c in self.conflicts):
+            self.conflicts.append({"path": path, "with": src, "why": "reserved prefix"})
+
     def move(self, src: str, dst: str) -> None:
+        skills = SKILLS.as_posix() + "/"
+        name = dst[len(skills):].split("/", 1)[0] if dst.startswith(skills) else ""
+        if name.startswith(RESERVED_PREFIX):
+            self.reserve(src, name)
+            return
         if dst in self.claimed or (dst in self.tracked and dst not in self.removed):
             self.conflicts.append({"path": dst, "with": src, "why": "two editable copies"})
             return
@@ -104,8 +132,10 @@ class Plan:
 
 def build_plan(repo: Path) -> Plan:
     """The `.claude/` source moves into `.agents/`; a copy already there is a conflict."""
+    deployed_files, deployed_skills = _deployed(repo)
     tracked = [rel for rel in _tracked(repo, CLAUDE, AGENTS, Path("CLAUDE.md"), Path("AGENTS.md"))
-               if not legacy_openspec(rel)]
+               if not legacy_openspec(rel) and not _owned_by_deploy(rel, deployed_files,
+                                                                    deployed_skills)]
     plan = Plan(repo, set(tracked))
     commands = (CLAUDE / "commands").as_posix() + "/"
     references = (CLAUDE / "references").as_posix() + "/"
@@ -131,6 +161,11 @@ def build_plan(repo: Path) -> Plan:
             plan.renames[claude_skills + inner] = dst
         plan.move(claude_skills + inner, dst)
     agents_skills = SKILLS.as_posix() + "/"
+    for rel in tracked:
+        if rel.startswith(agents_skills):
+            name = rel[len(agents_skills):].split("/", 1)[0]
+            if name.startswith(RESERVED_PREFIX):
+                plan.reserve(rel, name)
     nested = [rel[len(agents_skills):] for rel in tracked if rel.startswith(agents_skills)
               and rel not in plan.removed]
     dirs = {d for d in _skill_dirs(nested) if len(d) > 1}
