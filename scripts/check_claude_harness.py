@@ -28,9 +28,9 @@ REQUIRED_AGENTS = {
 }
 STALE = ("stale-doc` is advisory", "This size check measures CLAUDE.md only")
 SCOPED_RULES = {
-    "command-fork.md": ("quenching/commands/**", "context: fork"),
+    "command-fork.md": ("quenching/skills/**", "context: fork"),
     "import-memory-models.md": (
-        "quenching/commands/knowledge/import-memory.md",
+        "quenching/skills/quenching-knowledge/references/import-memory.md",
         "haiku",
     ),
 }
