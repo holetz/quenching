@@ -44,7 +44,7 @@ vocabulary, and conformance rules are shared with `/quenching-knowledge align`
 ### 1. Classify → home + `type` + mold
 Apply the boundary rules ([knowledge-add/homes.md](.agents/quenching/references/knowledge-add/homes.md)):
 `standards` = "how **we** do it" · `external` = "what we **consume**" · `catalog` = "our
-**data**" · `documentation` = a product-facing explanation or announcement. Pick the home, its
+**data**" · `documentation` = a product-facing explanation (the reader's why, business rules included) or announcement. Pick the home, its
 `type`, and the matching mold. **Done when:** the home, type, and mold are named.
 
 ### 2. Determine identity (path)

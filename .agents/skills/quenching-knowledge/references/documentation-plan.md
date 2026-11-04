@@ -28,7 +28,7 @@ source provenance is defined by
 ### 1. Confirm the target and inventory sources
 
 Resolve the repository root and verify `/docs/index.md`, then inventory `tutorials/`, `how-to/`,
-`explanation/`, `project/`, `standards/`, `concepts/`, `external/`, `catalog/`, `vision/` and root
+`documentation/`, `project/`, `standards/`, `concepts/`, `external/`, `catalog/`, `vision/` and root
 `glossary.md` — **listing every `.md`**, because the coverage denominator is documents, not homes. Collect source
 paths, heading skeletons, links, existing nav/config and relevant code/specs with read-only tools.
 The inventory is the whole bundle even when the requested editorial slice is small. **Done when:**

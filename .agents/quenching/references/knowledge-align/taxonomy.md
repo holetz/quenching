@@ -24,7 +24,7 @@ knowledge/                     # OKF bundle root
   vision/                      # direction by area — <area>.md (type: vision)
   tutorials/                   # learning-oriented pages (type: tutorial)
   how-to/                      # task recipes (type: how-to)
-  explanation/                 # why it works this way, for the site's reader (type: explanation)
+  documentation/               # why it works this way, for the site's reader (type: documentation)
   project/                     # the manual for THIS repository (type: project)
   concepts/                    # generic knowledge we hold — subject subfolders (type: concept)
   external/                    # what we consume — tools/ libraries/ regulations/ (type: external; PDFs via sidecar)
@@ -43,7 +43,7 @@ knowledge/                     # OKF bundle root
 | `vision/` | `vision` | `<area>.md` |
 | `tutorials/` | `tutorial` | learning-oriented pages |
 | `how-to/` | `how-to` | one recipe per file |
-| `explanation/` | `explanation` | the site's reader-facing why |
+| `documentation/` | `documentation` | the site's reader-facing why |
 | `project/` | `project` | this repo's own manual (commands, automation, layout) |
 | `concepts/` | `concept` | subject subfolders |
 | `external/` | `external` | `tools/`·`libraries/`·`regulations/` |
@@ -73,8 +73,12 @@ computation is generic knowledge with an executable contract, not a home of its 
   A raw unit of work toward it → a spec in `specs/plans/` (**outside** this OKF bundle —
   see `/quenching-specs create`); what became reality → `standards/`.
 - **The reader-facing quadrants** — `tutorials/` (`type: tutorial`), `how-to/` (`type: how-to`,
-  absorbs the former `guides/`), `explanation/` (`type: explanation`) and `project/`
-  (`type: project`, this repository's own manual — commands, automation, layout). They are homes
+  absorbs the former `guides/`), `documentation/` (`type: documentation`) and `project/`
+  (`type: project`, this repository's own manual — commands, automation, layout).
+  `documentation/` covers the Diátaxis **explanation** quadrant — the reader's why, business
+  rules included. **Declared divergence from OKF v0.2**, which names this home `explanation/`: the
+  name is the one readers outside engineering look for (2026-11-04), and `explanation/` is now a
+  retired home name `okf-legacy-home` reports. They are homes
   at the bundle root, not subfolders of a wrapper. The Zensical input is the generated bounded
   `site-source/` sibling; the complete bundle is never its `docs_dir`. `reference/`
   is deliberately NOT among them — it is a retired home name that `okf-legacy-home` still claims.
