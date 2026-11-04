@@ -20,13 +20,13 @@ the owner of screen craft: its `document` flow may propose a new `DESIGN.md`, bu
 source only through the explicit import choice below.
 
 The common front contract is in
-[front-align/mold.md](.agents/quenching/assets/references/front-align/mold.md); this command
+[front-align/mold.md](.agents/quenching/references/front-align/mold.md); this command
 keeps the design delta in
-[design-align/bands.md](.agents/quenching/assets/references/design-align/bands.md). The mold
+[design-align/bands.md](.agents/quenching/references/design-align/bands.md). The mold
 does not choose a DTCG source winner or turn visual policy into an automatic repair.
 
 Resolve `cq` per
-[tool-resolution.md](.agents/quenching/assets/references/align/tool-resolution.md)
+[tool-resolution.md](.agents/quenching/references/align/tool-resolution.md)
 §Resolving the tool. Use the resolved path literally and branch on exit codes
 (0 ok · 1 findings · 2 refusal) and JSON, never prose.
 

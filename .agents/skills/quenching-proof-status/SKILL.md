@@ -15,9 +15,9 @@ disable-model-invocation: true
 **Input**: `$ARGUMENTS` (an optional target repository root; omit to use the current repository).
 
 The common front contract is in
-[front-align/mold.md](.agents/quenching/assets/references/front-align/mold.md), and the proof
+[front-align/mold.md](.agents/quenching/references/front-align/mold.md), and the proof
 disposition map is in
-[proof-align/bands.md](.agents/quenching/assets/references/proof-align/bands.md). This
+[proof-align/bands.md](.agents/quenching/references/proof-align/bands.md). This
 read-only view preserves proof's layer, fixture, measurement, floor, CI and order deltas.
 
 This command is the read-only view of the proof front. It reports the declared proof root, layers
@@ -27,11 +27,11 @@ absent floor or artifact as absent, never as healthy, and states plainly that th
 not run.
 
 The payload is produced by `.agents/quenching/bin/cq proof status`; the finding and disposition rules live in
-[proof-align/bands.md](.agents/quenching/assets/references/proof-align/bands.md),
-[proof-align/gate-contract.md](.agents/quenching/assets/references/proof-align/gate-contract.md),
-and [proof-align/layer-contract.md](.agents/quenching/assets/references/proof-align/layer-contract.md).
+[proof-align/bands.md](.agents/quenching/references/proof-align/bands.md),
+[proof-align/gate-contract.md](.agents/quenching/references/proof-align/gate-contract.md),
+and [proof-align/layer-contract.md](.agents/quenching/references/proof-align/layer-contract.md).
 Resolve `cq` per
-[tool-resolution.md](.agents/quenching/assets/references/align/tool-resolution.md) and branch
+[tool-resolution.md](.agents/quenching/references/align/tool-resolution.md) and branch
 on exit code and JSON: `0` is a clean report, `1` carries findings, and `2` is a refusal.
 
 ## Workflow

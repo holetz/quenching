@@ -38,7 +38,7 @@ The axis is **where the skill comes from**, never who is reading:
 
 The `Skill` tool takes the router name and the flow as its argument:
 `Skill("quenching-specs", "develop <id>")`. A flow written as one hyphenated token
-(`/quenching-specs-develop`) names a skill that does not exist, and `sk-dangling-citation` reports
+(`quenching-specs-develop`) names a skill that does not exist, and `sk-dangling-citation` reports
 it. Bare slash forms with a `:` separator (`/commands:tighten`) belong only to a repo that keeps the
 legacy `.claude/commands/` layout.
 

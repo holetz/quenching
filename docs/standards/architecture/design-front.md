@@ -2,7 +2,7 @@
 type: standard
 title: Design front
 description: The single DTCG source, its portable and editorial projections, explicit arbitration with Impeccable, and the boundary between web and non-web drift
-resource: quenching/assets/bin/quenching/design/**, quenching/assets/design/**, quenching/skills/quenching-design-*/**
+resource: quenching/assets/bin/quenching/design/**, quenching/assets/design/**, quenching/skills/**
 tags: [architecture, design, dtcg, impeccable, projections]
 timestamp: 2026-11-03
 audience: both

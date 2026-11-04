@@ -2,7 +2,7 @@
 type: standard
 title: Install profiles — the front is the unit of alignment
 description: A profile declares which of the eight local fronts a repository asks the root align to conduct; provider-owned specs and the security and git pillars remain available axes, and the profile does not alter command files or host invocation behavior; the root align conducts the intersection of the profile with the enabled modules
-resource: .agents/quenching.json, quenching/assets/modules.json, quenching/skills/quenching-align/SKILL.md, quenching/references/align/tool-resolution.md, quenching/skills/quenching-knowledge/**, quenching/skills/quenching-specs/**, quenching/skills/quenching-design-*/**, quenching/skills/quenching-components/**, quenching/skills/quenching-ops-*/**, quenching/skills/quenching-proof-*/**, quenching/skills/quenching-toolchain-*/**, quenching/skills/quenching-delivery-*/**, quenching/skills/quenching-opensource-*/**, quenching/skills/quenching-security-*/**, quenching/skills/quenching-git/**
+resource: .agents/quenching.json, quenching/assets/modules.json, quenching/skills/quenching-align/SKILL.md, quenching/references/align/tool-resolution.md, quenching/skills/quenching-knowledge/**, quenching/skills/quenching-specs/**, quenching/skills/**, quenching/skills/quenching-components/**, quenching/skills/**, quenching/skills/**, quenching/skills/**, quenching/skills/**, quenching/skills/**, quenching/skills/**, quenching/skills/quenching-git/**
 tags: [architecture, install, profiles, fronts, configuration]
 timestamp: 2026-11-03
 audience: both

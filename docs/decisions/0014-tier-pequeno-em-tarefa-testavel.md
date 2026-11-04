@@ -2,7 +2,7 @@
 type: decision
 title: The small tier executes a testable task below the context cut
 description: Why haiku and gpt-6-luna are admitted as per-task executors when the task carries a protected verify oracle and its projected context stays at or under 80k, the price evidence with its date, the short escalation ladder, and why the rule stays provisional until a pilot
-resource: quenching/assets/references/specs-execute/execution-delegation.md
+resource: quenching/references/specs-execute/execution-delegation.md
 tags: [decision, models, execution, codex, cost]
 timestamp: 2026-10-17
 audience: both

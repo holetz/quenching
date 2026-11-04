@@ -43,9 +43,9 @@ verification: <VERIFICATION>
 
      MOMENT. Each section belongs to one of three moments on the spec's timeline: `decision`
      (the human, deciding whether to build), `build` (the executor, in step 4 of
-     `/quenching-specs-execute`), `close` (`/quenching-specs-conclude`, at archive time). `## Discoveries` belongs
+     `/quenching-specs execute`), `close` (`/quenching-specs conclude`, at archive time). `## Discoveries` belongs
      to none of them — captured indiscriminately while building, resolved later by
-     `/quenching-specs-develop`'s triage sweep on its own schedule. An orchestrator sends an executor
+     `/quenching-specs develop`'s triage sweep on its own schedule. An orchestrator sends an executor
      exactly the `build` set; that is what lets one file serve every moment without bloating
      agent context. -->
 
@@ -232,7 +232,7 @@ verification: <VERIFICATION>
 
 ## Discoveries
 
-<!-- MOMENT: none — triage, resolved by `/quenching-specs-develop`'s discoveries bank whenever it runs,
+<!-- MOMENT: none — triage, resolved by `/quenching-specs develop`'s discoveries bank whenever it runs,
      not tied to one of the three. No gate — appended during execution.
 
      One line per discovery, appended by `.agents/quenching/bin/cq specs discover <id> "<text>"` while building.

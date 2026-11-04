@@ -9,7 +9,7 @@ tags:
 timestamp: 2026-08-28
 audience: both
 authority: current
-source: command bodies under quenching/skills/quenching-knowledge/documentation/; references under quenching/skills/quenching-knowledge/references/knowledge-documentation/
+source: command bodies under quenching/skills/quenching-knowledge/references/; references under quenching/skills/quenching-knowledge/references/knowledge-documentation/
 maintainer: Israel Holetz
 ---
 

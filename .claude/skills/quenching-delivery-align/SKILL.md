@@ -19,12 +19,12 @@ This command owns the delivery front's bounded convergence pass. It probes the w
 classifies static pipeline findings, applies only authorized mechanical or structural shape
 repairs, and leaves provider, environment, promotion, publication and permission choices with the
 target owner. The finding bands live in
-[delivery-align/bands.md](.agents/quenching/assets/references/delivery-align/bands.md); the common
-front floor lives in [front-align/mold.md](.agents/quenching/assets/references/front-align/mold.md).
+[delivery-align/bands.md](.agents/quenching/references/delivery-align/bands.md); the common
+front floor lives in [front-align/mold.md](.agents/quenching/references/front-align/mold.md).
 
 Set `TARGET_ROOT` to the supplied argument, or to `.` when omitted, and pass that same root to
 every `.agents/quenching/bin/cq delivery` call. Resolve `cq` per
-[tool-resolution.md](.agents/quenching/assets/references/align/tool-resolution.md)
+[tool-resolution.md](.agents/quenching/references/align/tool-resolution.md)
 §Resolving the tool. Branch on JSON and exit code: `0` is conformant, `1` carries findings, and
 `2` is a refusal.
 

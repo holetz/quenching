@@ -27,11 +27,6 @@ PLUGIN_ID = re.compile(r"(?<![\w-])/?quenching-[a-z]+:[A-Za-z0-9-]")
 CQ_GRANT = re.compile(r"Bash\(((?:cq|" + re.escape(CQ) + r")(?:\.cmd)?)(?: ([^:()]+))?:\*\)$")
 
 
-def skill_name(relpath: str) -> str:
-    """`specs/create.md` -> `quenching-specs-create`."""
-    return "quenching-" + relpath[:-3].replace("/", "-")
-
-
 def agent_name(name: str) -> str:
     return "quenching-" + name
 
@@ -135,12 +130,11 @@ def _with_launcher_note(body: str) -> str:
     return LAUNCHER_NOTE + body
 
 
-def skill_document(raw: str, relpath: str) -> str:
+def skill_document(raw: str, name: str) -> str:
     fields, body = split_frontmatter(raw)
     description = scalar_value(fields.get("description", ""))
     if not description:
-        raise ValueError(f"command has no description: {relpath}")
-    name = skill_name(relpath)
+        raise ValueError(f"skill has no description: {name}")
     out: list[tuple[str, str]] = [("name", name),
                                   ("description", json.dumps(transform_platform(description),
                                                              ensure_ascii=False))]
@@ -151,23 +145,6 @@ def skill_document(raw: str, relpath: str) -> str:
                         if key == "argument-hint" else transform_platform(value)))
     return (_frontmatter(out) + HEADER + "\n\n"
             + _with_launcher_note(transform_platform(_body(body))))
-
-
-def command_document(raw: str) -> str:
-    """A vendored command body the conductor reads from ``<payload>/commands``."""
-    fields, body = split_frontmatter(raw)
-    if not fields:
-        return transform_platform(raw)
-    out: list[tuple[str, str]] = []
-    for key, value in fields.items():
-        if key == "description":
-            value = json.dumps(transform_platform(scalar_value(value)), ensure_ascii=False)
-        elif key == "allowed-tools":
-            value = transform_tools(value)
-        elif key == "argument-hint":
-            value = json.dumps(transform_platform(scalar_value(value)), ensure_ascii=False)
-        out.append((key, value))
-    return _frontmatter(out) + transform_platform(_body(body))
 
 
 def reference_document(raw: str) -> str:

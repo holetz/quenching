@@ -23,7 +23,9 @@ OPENCODE_AGENTS = ".opencode/agents"
 OPENCODE_CONFIG = "opencode.json"
 MODULE_SHORT = {
     "quenching-specs": "specs",
-    "quenching-align": "align",
+    "quenching-git": "git",
+    "quenching-knowledge": "knowledge",
+    "quenching-components": "components",
     "quenching-design": "design",
     "quenching-ops": "ops",
     "quenching-proof": "proof",
@@ -32,9 +34,14 @@ MODULE_SHORT = {
     "quenching-security": "security",
     "quenching-opensource": "opensource",
 }
+CORE = "specs,git,knowledge,components"
+# A manifest recorded before the split names `quenching-align`: it stood for the two verticals now apart.
+MODULE_ALIAS = {"align": "knowledge,components", "quenching-align": "knowledge,components"}
 FRONT_BY_MODULE = {
     "quenching-specs": ("specs",),
-    "quenching-align": ("knowledge", "components"),
+    "quenching-git": ("git",),
+    "quenching-knowledge": ("knowledge",),
+    "quenching-components": ("components",),
     "quenching-design": ("design",),
     "quenching-ops": ("ops",),
     "quenching-proof": ("proof",),
@@ -45,11 +52,11 @@ FRONT_BY_MODULE = {
 }
 ASSETS_BY_MODULE = {
     "quenching-specs": ("assets/specs", "assets/portal"),
-    "quenching-align": ("assets/knowledge", "assets/zensical"),
+    "quenching-knowledge": ("assets/knowledge", "assets/zensical"),
     "quenching-design": ("assets/design",),
     "quenching-opensource": ("assets/opensource",),
 }
-MARKDOWN_DIRS = ("assets/references", "assets/templates", "assets/knowledge", "assets/zensical",
+MARKDOWN_DIRS = ("references", "assets/templates", "assets/knowledge", "assets/zensical",
                  "assets/design", "assets/opensource", "assets/specs")
 IGNORE = {"__pycache__", "tests", "evals", "checks"}
 MCP_NAME = "quenching"
@@ -60,7 +67,7 @@ class DeployError(ValueError):
 
 
 def source_root() -> Path:
-    """The installed plugin root that carries `assets/` and `commands/`."""
+    """The installed plugin root that carries `assets/`, `skills/` and `references/`."""
     return Path(__file__).resolve().parents[4]
 
 
@@ -103,10 +110,13 @@ def normalize_modules(values: list[str] | None, manifest: dict) -> list[str]:
         if not token:
             continue
         if token == "core":
-            token = "specs,align"
+            token = CORE
         elif token == "all":
             token = ",".join(MODULE_SHORT[name] for name in known)
+        parts = []
         for part in token.split(","):
+            parts += MODULE_ALIAS.get(part.strip(), part).split(",")
+        for part in parts:
             part = part.strip()
             if not part:
                 continue
@@ -147,12 +157,6 @@ def _packages(selected: list[dict]) -> list[str]:
     return packages
 
 
-def _commands(source: Path) -> dict[str, Path]:
-    root = source / "commands"
-    return {path.relative_to(root).as_posix(): path
-            for path in sorted(root.rglob("*.md")) if path.is_file()}
-
-
 def _agents(source: Path) -> dict[str, Path]:
     return {path.stem: path for path in sorted((source / "agents").glob("*.md"))}
 
@@ -160,7 +164,7 @@ def _agents(source: Path) -> dict[str, Path]:
 def _agents_md(target: Path) -> str:
     docs = target / "docs" / "index.md"
     knowledge = ("- Durable knowledge: [`docs/index.md`](docs/index.md).\n" if docs.is_file()
-                 else "- Durable knowledge: run `/quenching-knowledge-align` to install the "
+                 else "- Durable knowledge: run `/quenching-knowledge align` to install the "
                       "`/docs/` bundle.\n")
     return (
         "# AGENTS.md\n\n"
@@ -179,7 +183,7 @@ def _seed_config(target: Path, profiles: list[str]) -> str:
     from quenching.config.seed import seed_document
     document = seed_document(str(target))
     # Deploy installs the surface; it does not choose a specs backend. The target's own
-    # `/quenching-knowledge-align` (or `cq doctor --setup`) records that decision.
+    # `/quenching-knowledge align` (or `cq doctor --setup`) records that decision.
     document.pop("backend", None)
     shared = document.setdefault("shared", {})
     shared["profiles"] = {"installed": profiles}
@@ -232,12 +236,12 @@ _VENDOR_CMD = (
 def _bridge_tree(tree: dict, target: Path) -> None:
     """Every skill gets the marked Claude copy: generated ones and the target's own."""
     skill_files = {rel: (data, mode) for rel, (data, mode) in tree.items()
-                   if rel.startswith(SKILLS + "/") and rel.endswith("/SKILL.md")}
+                   if rel.startswith(SKILLS + "/")}
     for rel, (data, mode) in sorted(skill_files.items()):
         name = rel[len(SKILLS) + 1:].split("/", 1)[0]
-        text = bridge.with_marker(data.decode("utf-8"), name)
-        destination = CLAUDE_SKILLS + rel[len(SKILLS):]
-        _add(tree, destination, text.encode("utf-8"), mode)
+        if rel == f"{SKILLS}/{name}/SKILL.md":
+            data = bridge.with_marker(data.decode("utf-8"), name).encode("utf-8")
+        _add(tree, CLAUDE_SKILLS + rel[len(SKILLS):], data, mode)
 
     # A target may already carry its own skills. They are not deploy-owned source, but the
     # bridge is a byte copy of every skill; generating it here keeps the contract coherent.
@@ -327,7 +331,7 @@ def build_tree(source: Path, target: Path, modules: list[str], harnesses: list[s
         _add(tree, PAYLOAD + "/bin/cq.cmd", _VENDOR_CMD.encode(), 0o644)
     _add_tree(tree, source, "assets/modules.json")
     _add_tree(tree, source, "VERSION")
-    _add_tree(tree, source, "assets/references", translate.reference_document)
+    _add_tree(tree, source, "references", translate.reference_document)
     _add_tree(tree, source, "assets/templates", translate.reference_document)
     _add_tree(tree, source, "assets/translation")
     # The identity hooks: inert until a clone points `core.hooksPath` at them.
@@ -336,11 +340,6 @@ def build_tree(source: Path, target: Path, modules: list[str], harnesses: list[s
         for rel in ASSETS_BY_MODULE.get(module["name"], ()):
             _add_tree(tree, source, rel, translate.reference_document)
 
-    # Every command body stays in the payload for the root conductor; only selected commands
-    # become skills.
-    for rel, path in _commands(source).items():
-        _add(tree, f"{PAYLOAD}/commands/{rel}",
-             translate.command_document(path.read_text(encoding="utf-8")).encode(), _mode(path))
     for name, path in _agents(source).items():
         _add(tree, f"{PAYLOAD}/agents/{name}.md",
              translate.agent_document(path.read_text(encoding="utf-8"), name).encode(), _mode(path))
@@ -352,23 +351,34 @@ def build_tree(source: Path, target: Path, modules: list[str], harnesses: list[s
     if mcp:
         _mcp_tree(tree, mcp, harnesses)
 
-    # Skills are generated only from the selected modules' commands.
-    selected_commands: list[str] = []
-    for module in selected:
-        for rel in module["owned"]["commands"]:
-            base = source / "commands" / rel
-            paths = [base] if base.is_file() else sorted(base.rglob("*.md"))
-            for path in paths:
-                if path.is_file():
-                    relative = path.relative_to(source / "commands").as_posix()
-                    if relative not in selected_commands:
-                        selected_commands.append(relative)
+    # A skill is its whole folder: the `SKILL.md` and the `references/` beside it.
     skill_names: list[str] = []
-    for rel in sorted(selected_commands):
-        raw = (source / "commands" / rel).read_text(encoding="utf-8")
-        name = translate.skill_name(rel)
-        skill_names.append(name)
-        _add(tree, f"{SKILLS}/{name}/SKILL.md", translate.skill_document(raw, rel).encode(), 0o644)
+    for module in selected:
+        for name in module["owned"]["skills"]:
+            if name in skill_names:
+                continue
+            skill_names.append(name)
+            root = source / "skills" / name
+            # A vendored payload carries no skill source: the installed folder is already the
+            # generated form, so it is re-asserted byte for byte.
+            installed = not root.is_dir()
+            if installed:
+                root = target / SKILLS / name
+            if not root.is_dir():
+                continue
+            for path in sorted(root.rglob("*")):
+                if not path.is_file() or _is_build(path):
+                    continue
+                rel = path.relative_to(root).as_posix()
+                if installed:
+                    data = path.read_bytes()
+                elif rel == "SKILL.md":
+                    data = translate.skill_document(path.read_text(encoding="utf-8"), name).encode("utf-8")
+                elif path.suffix == ".md":
+                    data = translate.reference_document(path.read_text(encoding="utf-8")).encode("utf-8")
+                else:
+                    data = path.read_bytes()
+                _add(tree, f"{SKILLS}/{name}/{rel}", data, _mode(path))
 
     if "claude" in harnesses:
         _bridge_tree(tree, target)

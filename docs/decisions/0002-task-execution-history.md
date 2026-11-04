@@ -2,7 +2,7 @@
 type: decision
 title: Task execution contract history
 description: Why the blocked marker replaced the attempt counter, the Handoff cadence measurement and an unresolvable archived subject
-resource: quenching/commands/specs/execute.md, quenching/assets/references/specs-execute/execution.md
+resource: quenching/skills/quenching-specs/references/execute.md, quenching/references/specs-execute/execution.md
 tags: [decision, history, workflows]
 timestamp: 2026-10-07
 audience: both

@@ -222,12 +222,12 @@ class RouterChecks(unittest.TestCase):
     """The router is a table of flows: its grant is their union and a cited flow must be in it."""
 
     def _router(self, tmp: str, router_tools: str, flow_tools: str) -> dict:
-        skill = pathlib.Path(tmp) / "skills" / "quenching-demo"
+        skill = pathlib.Path(tmp) / "skills" / "quenching-ops-align"
         (skill / "references").mkdir(parents=True, exist_ok=True)
         (skill / "references" / "go.md").write_text(f"---\nallowed-tools: {flow_tools}\n---\n\n# go\n",
                                                     encoding="utf-8")
-        body = "| Flow | Reference |\n| --- | --- |\n| `go` | [references/go.md](.agents/skills/quenching-demo/references/go.md) |\n"
-        return {"command": "/quenching-demo", "path": str(skill / "SKILL.md"), "body": body,
+        body = "| Flow | Reference |\n| --- | --- |\n| `go` | [references/go.md](.agents/skills/quenching-ops-align/references/go.md) |\n"
+        return {"command": "/quenching-ops-align", "path": str(skill / "SKILL.md"), "body": body,
                 "frontmatter": {"allowed-tools": router_tools}}
 
     def test_the_flows_are_read_from_the_table(self):
@@ -238,7 +238,7 @@ class RouterChecks(unittest.TestCase):
     def test_a_tool_a_flow_declares_and_the_router_lacks_is_an_error(self):
         with tempfile.TemporaryDirectory() as tmp:
             cmd = self._router(tmp, "Read", "Read, Write")
-            found = router_grant_findings(cmd, router_flows(cmd), {"command": "/quenching-demo", "path": "x"})
+            found = router_grant_findings(cmd, router_flows(cmd), {"command": "/quenching-ops-align", "path": "x"})
             self.assertEqual([(f["code"], f["severity"]) for f in found], [("sk-router-grant", "error")])
             self.assertEqual(found[0]["missing"], ["Write"])
 
@@ -252,10 +252,10 @@ class RouterChecks(unittest.TestCase):
                                  router_tools)
 
     def test_a_cited_flow_the_table_does_not_list_is_dangling(self):
-        routers = {"quenching-demo": {"go"}}
-        self.assertEqual(dangling_flow_citations("run `/quenching-demo go` then `/quenching-demo stop`.", routers),
-                         ["/quenching-demo stop"])
-        self.assertEqual(dangling_flow_citations("`/quenching-other stop`", routers), [])
+        routers = {"quenching-ops-align": {"go"}}
+        self.assertEqual(dangling_flow_citations("run `/quenching-ops-align go` then `/quenching-ops-align stop`.", routers),
+                         ["/quenching-ops-align stop"])
+        self.assertEqual(dangling_flow_citations("`/quenching-proof-align stop`", routers), [])
 
 
 class StepCriterion(unittest.TestCase):

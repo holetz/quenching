@@ -17,7 +17,7 @@ disable-model-invocation: true
 
 This command is the read-only status/audit view of the security pillar. It reports live evidence
 without owning a security tree, selecting a target policy or repairing a finding. Resolve `cq` per
-[tool-resolution.md](.agents/quenching/assets/references/align/tool-resolution.md)
+[tool-resolution.md](.agents/quenching/references/align/tool-resolution.md)
 §Resolving the tool. Set `TARGET_ROOT` to `$ARGUMENTS`, or `.` when omitted, and run:
 
 ```bash

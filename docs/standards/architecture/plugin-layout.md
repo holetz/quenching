@@ -84,7 +84,7 @@ The rule the collapse to one file per entry point created, and that nothing prev
 ## `skills/**` is the only tree Claude Code registers
 
 Every `.md` under `commands/` **is** a command. Not "is treated as one if it looks right" — the
-path is the identity, so `quenching/skills/quenching-knowledge/references/align-references-conformance.md` would register as a
+path is the identity, so `commands/knowledge/align/references/conformance.md` would register as a
 four-segment `knowledge:align:references:conformance` command and appear in the surface a session
 pays for.
 

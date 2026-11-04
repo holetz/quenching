@@ -2,7 +2,7 @@
 type: decision
 title: Plan git record history
 description: "Measurements behind the git record contract: the host-link default-branch rule, the in-place liveness exception and the unproven azure-boards assumption"
-resource: quenching/commands/git/**, quenching/assets/bin/quenching/git/**
+resource: quenching/skills/quenching-git/**, quenching/assets/bin/quenching/git/**
 tags: [decision, history, workflows]
 timestamp: 2026-10-07
 audience: both

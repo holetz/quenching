@@ -19,17 +19,17 @@ This command owns one convergence pass over a target's declared proof surface. I
 static test inventory and gate, applies only mechanical and bounded structural repairs, and leaves
 layer taxonomy, measured-surface scope, CI installation, and operations coverage with the target
 owner. The disposition rules live in
-[proof-align/bands.md](.agents/quenching/assets/references/proof-align/bands.md); the gate and
+[proof-align/bands.md](.agents/quenching/references/proof-align/bands.md); the gate and
 layer contracts live in
-[proof-align/gate-contract.md](.agents/quenching/assets/references/proof-align/gate-contract.md)
-and [proof-align/layer-contract.md](.agents/quenching/assets/references/proof-align/layer-contract.md).
+[proof-align/gate-contract.md](.agents/quenching/references/proof-align/gate-contract.md)
+and [proof-align/layer-contract.md](.agents/quenching/references/proof-align/layer-contract.md).
 The common front contract lives in
-[front-align/mold.md](.agents/quenching/assets/references/front-align/mold.md); these references
+[front-align/mold.md](.agents/quenching/references/front-align/mold.md); these references
 keep the layer, fixture, measurement and gate evidence separate from the shared mold.
 
 Set `TARGET_ROOT` to the supplied argument, or to `.` when the argument is omitted, and pass that
 same root to every `.agents/quenching/bin/cq proof` call. Resolve `cq` per
-[tool-resolution.md](.agents/quenching/assets/references/align/tool-resolution.md) and branch
+[tool-resolution.md](.agents/quenching/references/align/tool-resolution.md) and branch
 on exit code and JSON: `0` is clean, `1` carries findings, and `2` is a refusal.
 
 ## Workflow

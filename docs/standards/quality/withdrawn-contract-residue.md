@@ -31,7 +31,7 @@ the withdrawn contract, in five different wordings:
 
 | # | Site | How it said it | Caught by |
 | --- | --- | --- | --- |
-| 1 | `quenching/skills/quenching-specs/references/isolate.md` | a citation to the section that carried the fallback | execution |
+| 1 | `commands/specs/isolate.md` | a citation to the section that carried the fallback | execution |
 | 2 | `quenching/skills/quenching-align/SKILL.md` | named findings the change deleted, and told the human an INSTALL offer belonged in the plan | execution |
 | 3 | embedded manuals | `.agents/quenching` line citations | execution |
 | 4 | `assets/README.md` | "Installed into a target? **yes, by the docs align**", plus four more rows | branch review |

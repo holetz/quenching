@@ -31,14 +31,14 @@ forced.
 
 - **No category** — **domain-bound** when the command serves ONE folder subtree of this repo,
   pathed after that folder plus a verb (`communications/teams/` + create →
-  `.agents/skills/communications/teams/create.md`, invocable as
+  `.claude/commands/communications/teams/create.md`, invocable as
   `/communications:teams:create`); **generic** when it serves the repo as a whole, a flat
   command named verb-object (`.agents/skills/release-notes.md` → `/release-notes`);
   **neither** (kept as-is and reported, never forced onto the axis) when several unrelated
   folders answer at once.
 - **Category, no single real folder tied to the command** — e.g. `git` for a `commit` command:
   a subject, not a repo folder. The command nests flat under the category
-  (`.agents/skills/git/commit.md` → `/git:commit`).
+  (`.claude/commands/git/commit.md` → `/git:commit`).
 - **Category, and a real folder tied to the command** — the folder either **nests** inside the
   category (`.agents/skills/<categoria>/<folder-path>/<verb>.md`) or is **replaced** by it
   (`.agents/skills/<categoria>/<verb>.md`), per the convention already established for that

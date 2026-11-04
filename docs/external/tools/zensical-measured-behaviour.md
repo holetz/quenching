@@ -2,7 +2,7 @@
 type: external
 title: Zensical measured behaviour
 description: Measured facts about the Zensical static site generator — that it runs no MkDocs plugin at all, that its CLI has three commands and a build with no output flag, that a config resolves every path relative to the config file rather than the working directory, that a dot-prefixed `docs_dir` silently builds an empty site and symlinks are no escape from it, that `site_dir` may not leave the project root, that `.cache/` ignores itself, which Material theme features survived and which one did not, and how publishing changed from a deploy subcommand to a Pages artifact
-resource: quenching/assets/zensical/**, quenching/skills/quenching-knowledge/documentation/**, quenching/skills/quenching-knowledge/references/knowledge-documentation/**
+resource: quenching/assets/zensical/**, quenching/skills/quenching-knowledge/references/**, quenching/skills/quenching-knowledge/references/knowledge-documentation/**
 tags: [zensical, mkdocs, static-site-generator, documentation, tooling]
 timestamp: 2026-08-28
 audience: both
