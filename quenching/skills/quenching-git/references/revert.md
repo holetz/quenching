@@ -1,18 +1,14 @@
 ---
-description: >-
-  Revert one known commit into a new commit, preserving history. Use for "revert this commit", "undo a task safely", "back out this change". Not for: rewriting history; publishing → /quenching-git-push.
-disable-model-invocation: true
-argument-hint: "[commit:ref|spec:id task:id [mainline:n]]"
 allowed-tools: Bash(cq:*), Bash(cq.cmd:*), Bash(git status:*), Bash(git branch --show-current:*), Bash(git rev-parse:*), Bash(git rev-list:*), Bash(git merge-base:*), Bash(git log:*), Bash(git show:*), Bash(git diff:*), Bash(git revert:*), Bash(python3:*), Read, AskUserQuestion
 ---
 
-# /quenching-git-revert — compensate one commit without rewriting history
+# /quenching-git revert — compensate one commit without rewriting history
 
 **Input**: `$ARGUMENTS` — `commit:<ref>` names a commit or tag; `spec:<id> task:<id>` resolves the
 recorded task subject to exactly one commit; append `mainline:<n>` when the target is a merge commit.
 No input, an ambiguous subject or a missing target refuses without touching the index or history.
 
-The commit contract in `.agents/quenching/assets/references/git/commit.md` owns task subjects
+The commit contract in `.agents/quenching/references/git/commit.md` owns task subjects
 and their anchor semantics. A successful revert of a task's implementing commit also reopens that
 task with a reason: the task anchor is no longer true, and the explanation belongs in the spec's
 `## Discoveries` section.
@@ -55,7 +51,7 @@ explicit `mainline:<n>` naming one valid parent; never choose a mainline by posi
 ### 4. Show the revert and ask once
 
 Show the branch, target SHA, original subject, author/date, files, selected mainline, expected
-inverse effect and the native `git revert` command. Put a decision sheet ([specs-develop/questions.md](.agents/quenching/assets/references/specs-develop/questions.md) §1; A confirm, B decline) for confirmation of
+inverse effect and the native `git revert` command. Put a decision sheet ([specs-develop/questions.md](.agents/quenching/references/specs-develop/questions.md) §1; A confirm, B decline) for confirmation of
 that exact new commit, and end the turn. Before confirmation, do not alter spec records, task checkboxes, remote refs
 or the target commit. **Done when:** the human confirms or declines the exact revert.
 
@@ -84,7 +80,7 @@ or the conflict/failure is reported without a recovery action.
 State the original target, new revert commit, branch, whether a mainline was used, files affected,
 and, for a task selector, the `--uncheck --reason` write to `## Discoveries`; for a direct commit
 selector, state that no spec record was selected. In either case no remote was changed. Name
-`/quenching-git-push` only as a later human action; do not invoke it. **Done when:** the compensating
+`/quenching-git push` only as a later human action; do not invoke it. **Done when:** the compensating
 commit or the unchanged conflict state is fully reported.
 
 ## Invariants

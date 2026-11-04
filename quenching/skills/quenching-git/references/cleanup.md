@@ -1,14 +1,8 @@
 ---
-description: >-
-  Prune merged or gone branches and orphan worktrees from `.agents/quenching/bin/cq git stale`. Use for "clean up old branches", "prune stale branches". Not for: isolation → /quenching-git-branch.
-disable-model-invocation: true
-argument-hint: [remote:<name>]
-allowed-tools: >-
-  Bash(cq:*), Bash(cq.cmd:*),
-  Bash(python3:*), Read, AskUserQuestion
+allowed-tools: Bash(cq:*), Bash(cq.cmd:*), Bash(python3:*), Read, AskUserQuestion 
 ---
 
-# /quenching-git-cleanup — prune what `.agents/quenching/bin/cq git stale` already found
+# /quenching-git cleanup — prune what `.agents/quenching/bin/cq git stale` already found
 
 **Input**: `$ARGUMENTS` — optional `remote:<name>`; omitted → `origin`. This command always starts
 from a fresh report for the selected remote.
@@ -40,7 +34,7 @@ date, and expand an entry only when it stands alone. A group resolves to the `id
 never to a target discovered later — and every selected item has its exact action available on
 request (`git branch -d <branch>`, `git worktree remove <path>`; `.agents/quenching/bin/cq git prune` runs them).
 
-Put ONE decision sheet ([specs-develop/questions.md](.agents/quenching/assets/references/specs-develop/questions.md) §1) that ends the turn; its decision lists the local
+Put ONE decision sheet ([specs-develop/questions.md](.agents/quenching/references/specs-develop/questions.md) §1) that ends the turn; its decision lists the local
 groups and items as numbered choices and accepts several in the reply (`D1 1,3`), or `none`.
 Option A (recommended) is the `recommended` subset when the report marks one, else `none`; never
 "all". A recommendation never authorizes anything. An unclear reply is asked again. **Done when:**

@@ -1,10 +1,14 @@
-# /quenching-git-pr-status — read one pull request snapshot
+---
+allowed-tools: Bash(cq:*), Bash(cq.cmd:*), Bash(python3:*), Bash(git remote get-url:*), Bash(git branch:*), Bash(gh repo view:*), Bash(gh pr view:*), Bash(gh api graphql:*), Bash(az repos pr:*), Bash(az devops invoke:*), Read
+---
+
+# /quenching-git pr-status — read one pull request snapshot
 
 **Input**: `$ARGUMENTS` — `spec:<id>`, a provider PR number or URL, or omitted for the current
 branch's PR.
 
 Read the provider and field contract in
-`.agents/quenching/assets/references/git/pr.md`; it owns the query shapes, unknown-state
+`.agents/quenching/references/git/pr.md`; it owns the query shapes, unknown-state
 rules and recommendation vocabulary used below.
 
 ## Workflow
@@ -53,7 +57,7 @@ as Link para revisão; if no safe browser link can be derived, report it as `unk
 ### 4. Choose the textual next step
 
 Apply the reference's recommendation rules to the normalized facts. Point to
-`/quenching-git-pr-review`, `/quenching-git-sync`, `/quenching-git-merge` or no action as the facts
+`/quenching-git pr-review`, `/quenching-git sync`, `/quenching-git merge` or no action as the facts
 warrant; recommendations are prose only. **Done when:** one next step is stated with the fact that
 caused it, or the refusal is the next step.
 

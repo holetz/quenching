@@ -1,4 +1,8 @@
-# /quenching-git-branch — take isolation before writing code
+---
+allowed-tools: Bash(cq git base:*), Bash(cq git conventions:*), Bash(cq git specs:*), Bash(cq git state:*), Bash(cq git worktree add:*), Bash(cq specs config:*), Bash(cq specs status:*), Bash(cq components read:*), Read, AskUserQuestion
+---
+
+# /quenching-git branch — take isolation before writing code
 
 **Input**: `$ARGUMENTS` — optionally a spec id (stamps that spec's `branch:` record and its
 `quenching-specs:` marking) or a short name for standalone work with no spec behind it. Omitted →
@@ -7,7 +11,7 @@ ask what the isolation is for.
 Cuts a **worktree** before the first line of code — the form is the default and is taken unasked; a
 plain branch in the current checkout only when the human asks for it. The mechanics — the names,
 `worktreeSetup`, `sharedPaths` and the two records a taken isolation leaves behind — are owned by
-[git/isolation.md](.agents/quenching/assets/references/git/isolation.md), cited below rather
+[git/isolation.md](.agents/quenching/references/git/isolation.md), cited below rather
 than restated; this command is its standalone entry point for a caller with no build loop of its own.
 
 **Grants.** `allowed-tools` holds only the `cq` verbs a caller that holds no `Skill` also holds, so the body stays followable from a `tools:` list of `cq` verbs and a call outside them here would leave the step blocked. A `worktreeSetup`, `git checkout -b` and the `.agents/quenching/bin/cq specs record` stamps go through the normal permission prompt.
@@ -16,10 +20,10 @@ than restated; this command is its standalone entry point for a caller with no b
 
 ### 1. Load the rules and the state in one read
 ```bash
-.agents/quenching/bin/cq components read .agents/quenching/assets/references/git/isolation.md \
+.agents/quenching/bin/cq components read .agents/quenching/references/git/isolation.md \
   --sections "§Isolation happens on the way into a build" --sections "§Branch and worktree names" \
   --sections "§Recording the isolation"
-.agents/quenching/bin/cq components read .agents/quenching/assets/references/git/conventions.md \
+.agents/quenching/bin/cq components read .agents/quenching/references/git/conventions.md \
   --sections "§The declared-directive layer" --sections "§The read-if-present rule"
 .agents/quenching/bin/cq git conventions --json   # `config.branchName`, or absent
 .agents/quenching/bin/cq git state --json           # `branch`, `status` (porcelain), `staged`, `remotes`

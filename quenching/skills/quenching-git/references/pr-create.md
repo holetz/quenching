@@ -1,11 +1,15 @@
-# /quenching-git-pr-create — push and open the pull request
+---
+allowed-tools: Bash(cq git base:*), Bash(cq git conventions:*), Bash(cq git state:*), Bash(cq git push:*), Bash(cq git pr create:*), Bash(cq git pr probe:*), Bash(cq git pr record:*), Bash(cq specs config:*), Bash(cq specs status:*), Bash(cq specs show:*), Bash(cq components read:*), Bash(gh repo view:*), Read, AskUserQuestion
+---
+
+# /quenching-git pr-create — push and open the pull request
 
 **Input**: `$ARGUMENTS` — a spec id (derives title, body and the provider's issue/work-item
 link), or free text to use as the PR title. Append `remote:<name>` to select a remote; omitted
 → `origin`. Omitted title → ask. The word `autonomous` is the human's pre-answer to step 4's
 confirmation, given by a conductor launched with `--autonomous`: see step 4.
 
-Opens the PR and **stops there** — merging is `/quenching-git-merge`'s, on its own confirmation,
+Opens the PR and **stops there** — merging is `/quenching-git merge`'s, on its own confirmation,
 except in an `autonomous` orchestrated run, where the `spec-orchestrator` merges the PR
 of a spec the next wave depends on.
 The route follows `.agents/quenching/bin/cq specs config --json`, and both go through `.agents/quenching/bin/cq git pr` verbs with a fixed argv:
@@ -18,7 +22,7 @@ as a GitHub repository.
 ### 1. Confirm the route exists, and resolve the base
 ```bash
 .agents/quenching/bin/cq specs config --json
-.agents/quenching/bin/cq components read .agents/quenching/assets/references/git/conventions.md \
+.agents/quenching/bin/cq components read .agents/quenching/references/git/conventions.md \
   --sections "§The declared-directive layer"
 .agents/quenching/bin/cq git conventions --json   # `config.prTitle`, `config.prBody`
 .agents/quenching/bin/cq git state --json   # `remotes`: every remote and its URL
@@ -79,7 +83,7 @@ else: never add `--delete-source-branch`, and an absent title or a missing spec 
 asked, never invented. Without the token, the confirmation below stands.
 
 Show the remote, the branch name it pushes under, and the title/body, and put them on a
-decision sheet ([specs-develop/questions.md](.agents/quenching/assets/references/specs-develop/questions.md) §1; A confirm, B decline) that ends the turn — and a sub-agent holds no `AskUserQuestion`, so without `autonomous` it returns `STATE: blocked`, `NOTE: needs-human:` carrying the sheet (§1):
+decision sheet ([specs-develop/questions.md](.agents/quenching/references/specs-develop/questions.md) §1; A confirm, B decline) that ends the turn — and a sub-agent holds no `AskUserQuestion`, so without `autonomous` it returns `STATE: blocked`, `NOTE: needs-human:` carrying the sheet (§1):
 For Azure, show the work item id, whether the separate source-branch deletion offer was accepted
 (`--delete-source-branch`), and whether `--transition-work-items` is included in the
 command the human is confirming. The deletion offer defaults to preserve the branch.

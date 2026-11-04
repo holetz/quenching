@@ -1,6 +1,10 @@
-# /quenching-git-commit — commit what is staged, under the target's own convention
+---
+allowed-tools: Bash(cq git commit:*), Bash(cq git conventions:*), Bash(cq git specs:*), Bash(cq git state:*), Bash(cq specs next:*), Bash(cq components read:*), Read
+---
 
-This command is the single commit boundary for standalone commits. `/quenching-specs-execute` does
+# /quenching-git commit — commit what is staged, under the target's own convention
+
+This command is the single commit boundary for standalone commits. `/quenching-specs execute` does
 not delegate here per task: it commits each task through `.agents/quenching/bin/cq git commit --subject`. This command
 resolves the subject, commits the existing index and reports the subject actually written. It never receives a request to stage an unrelated path.
 
@@ -14,7 +18,7 @@ never a guess at which files belong together.
 
 ### 1. Read-if-present, and the staged diff
 ```bash
-.agents/quenching/bin/cq components read .agents/quenching/assets/references/git/conventions.md \
+.agents/quenching/bin/cq components read .agents/quenching/references/git/conventions.md \
   --sections "§The declared-directive layer" --sections "§The read-if-present rule"
 .agents/quenching/bin/cq git conventions --json
 .agents/quenching/bin/cq git state --json   # `staged` is the index, `branch` the current branch
@@ -30,7 +34,7 @@ list are both known.
 step 1 wins where it is declared; else a target doc naming a subject format wins outright, and a doc
 covering only part of it governs that part. With neither declared:
 ```bash
-.agents/quenching/bin/cq components read .agents/quenching/assets/references/git/commit.md --sections "§Commit messages"
+.agents/quenching/bin/cq components read .agents/quenching/references/git/commit.md --sections "§Commit messages"
 ```
 `$ARGUMENTS` given → use it verbatim, wrapped rather than truncated past 72 characters where the
 title allows; an explicit subject always wins. When it is omitted, resolve the current branch and

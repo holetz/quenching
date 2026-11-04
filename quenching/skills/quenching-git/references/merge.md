@@ -1,19 +1,23 @@
-# /quenching-git-merge — bring a branch home, on the human's own strategy
+---
+allowed-tools: Bash(cq:*), Bash(cq.cmd:*), Bash(git worktree:*), Bash(git merge:*), Bash(git rebase:*), Bash(git branch:*), Bash(python3:*), Read, AskUserQuestion
+---
+
+# /quenching-git merge — bring a branch home, on the human's own strategy
 
 **Input**: `$ARGUMENTS` — a spec id (its `branch.work`/`branch.base` records name the branch and
 target) or a bare branch name to merge into the resolved base. Omitted → ask.
 
 The four strategies, the squash caveat and the post-merge worktree removal are in
-[git/merge.md](.agents/quenching/assets/references/git/merge.md).
+[git/merge.md](.agents/quenching/references/git/merge.md).
 
 ## Workflow
 
 ### 1. Load the rules and resolve branch, base and checkout
 ```bash
-.agents/quenching/bin/cq components read .agents/quenching/assets/references/git/merge.md \
+.agents/quenching/bin/cq components read .agents/quenching/references/git/merge.md \
   --sections "§Merge strategies" --sections "§The squash caveat" \
   --sections "§The worktree is removed after a successful merge"
-.agents/quenching/bin/cq components read .agents/quenching/assets/references/git/conventions.md \
+.agents/quenching/bin/cq components read .agents/quenching/references/git/conventions.md \
   --sections "§The declared-directive layer"
 .agents/quenching/bin/cq git conventions --json   # `config.mergeSubject`, or absent
 .agents/quenching/bin/cq git base --json
@@ -28,7 +32,7 @@ outside this command). Never check out the base here.
 stopped for lack of one.
 
 ### 2. Offer the strategy, and the branch's fate under squash
-Show the trade in one line each, from §Merge strategies, and put it on ONE decision sheet ([specs-develop/questions.md](.agents/quenching/assets/references/specs-develop/questions.md) §1) that ends the turn; the options
+Show the trade in one line each, from §Merge strategies, and put it on ONE decision sheet ([specs-develop/questions.md](.agents/quenching/references/specs-develop/questions.md) §1) that ends the turn; the options
 of `D1`, with A the recommended one:
 
 - **A (recommended) merge commit** — every per-task commit stays on the base, one extra commit.
@@ -44,7 +48,7 @@ branch-survival preference is recorded.
 ### 3. Run it in the base's own checkout
 The subject the strategy writes follows §The declared-directive layer's table:
 `config.mergeSubject` from step 1 where declared, else the target's docs, else
-`plan/<id>-<handle>: merge (<strategy>)` from [git/commit.md](.agents/quenching/assets/references/git/commit.md)
+`plan/<id>-<handle>: merge (<strategy>)` from [git/commit.md](.agents/quenching/references/git/commit.md)
 §Commit messages. `fast-forward` writes no commit, so it has no subject to govern.
 ```bash
 git -C <the checkout from step 1> <the chosen strategy's command>

@@ -36,17 +36,17 @@ from quenching.git.worktree import _is_codex_artifact
 
 PLUGIN_ROOT = pathlib.Path(__file__).resolve().parent.parent
 CQ = str(PLUGIN_ROOT / "assets" / "bin" / "cq")
-PR_CREATE = PLUGIN_ROOT / "assets" / "references" / "git-flows" / "pr-create.md"
-PR_STATUS = PLUGIN_ROOT / "assets" / "references" / "git-flows" / "pr-status.md"
-PUSH_COMMAND = PLUGIN_ROOT / "commands" / "git" / "push.md"
-REVERT_COMMAND = PLUGIN_ROOT / "commands" / "git" / "revert.md"
-PR_STATUS_SHORTCUT = PLUGIN_ROOT / "commands" / "git" / "pr" / "status.md"
-PR_REFERENCE = PLUGIN_ROOT / "assets" / "references" / "git" / "pr.md"
-MERGE_REFERENCE = PLUGIN_ROOT / "assets" / "references" / "git" / "merge.md"
-COMMIT_COMMAND = PLUGIN_ROOT / "assets" / "references" / "git-flows" / "commit.md"
-COMMIT_INCREMENTAL_COMMAND = PLUGIN_ROOT / "commands" / "git" / "commit-incremental.md"
-CLEANUP_COMMAND = PLUGIN_ROOT / "commands" / "git" / "cleanup.md"
-SYNC_COMMAND = PLUGIN_ROOT / "assets" / "references" / "git-flows" / "sync.md"
+PR_CREATE = PLUGIN_ROOT / "skills" / "quenching-git" / "references" / "pr-create.md"
+PR_STATUS = PLUGIN_ROOT / "skills" / "quenching-git" / "references" / "pr-status.md"
+PUSH_COMMAND = PLUGIN_ROOT / "skills" / "quenching-git" / "references" / "push.md"
+REVERT_COMMAND = PLUGIN_ROOT / "skills" / "quenching-git" / "references" / "revert.md"
+PR_STATUS_SHORTCUT = PLUGIN_ROOT / "skills" / "quenching-git" / "references" / "pr-status.md"
+PR_REFERENCE = PLUGIN_ROOT / "references" / "git" / "pr.md"
+MERGE_REFERENCE = PLUGIN_ROOT / "references" / "git" / "merge.md"
+COMMIT_COMMAND = PLUGIN_ROOT / "skills" / "quenching-git" / "references" / "commit.md"
+COMMIT_INCREMENTAL_COMMAND = PLUGIN_ROOT / "skills" / "quenching-git" / "references" / "commit-incremental.md"
+CLEANUP_COMMAND = PLUGIN_ROOT / "skills" / "quenching-git" / "references" / "cleanup.md"
+SYNC_COMMAND = PLUGIN_ROOT / "skills" / "quenching-git" / "references" / "sync.md"
 
 
 def _normalise_prose(text: str) -> str:
@@ -1303,7 +1303,7 @@ class Audit(RepoCase):
         self.assertEqual(fresh["changed"], ["c.txt"])
 
     def test_bodies_name_origin_base(self):
-        for rel in ("agents/spec-verifier.md", "agents/spec-orchestrator.md", "assets/references/specs-flows/conclude.md"):
+        for rel in ("agents/spec-verifier.md", "agents/spec-orchestrator.md", "skills/quenching-specs/references/conclude.md"):
             text = (PLUGIN_ROOT / rel).read_text(encoding="utf-8")
             self.assertIn("origin/<base>", text, rel)
         verifier = (PLUGIN_ROOT / "agents" / "spec-verifier.md").read_text(encoding="utf-8")
@@ -1589,7 +1589,7 @@ class BranchDirtyCut(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.text = " ".join((PLUGIN_ROOT / "assets" / "references" / "git-flows" / "branch.md")
+        cls.text = " ".join((PLUGIN_ROOT / "skills" / "quenching-git" / "references" / "branch.md")
                             .read_text(encoding="utf-8").split())
 
     def test_an_authorized_cut_proceeds_and_names_what_stays_behind(self):
@@ -1968,10 +1968,6 @@ class PullRequestPayload(unittest.TestCase):
         combined = f"{command}\n{reference}"
         for phrase in (
             "read-only",
-            "not for:",
-            "/quenching-git-pr-create",
-            "/quenching-git-pr-review",
-            "/quenching-git-merge",
             "authentication",
             "permission",
             "not-found",
@@ -2011,7 +2007,7 @@ class PullRequestPayload(unittest.TestCase):
             "detached head",
             "divergent",
             "no commits ahead",
-            "/quenching-git-pr-create",
+            "/quenching-git pr-create",
         ):
             self.assertIn(phrase.lower(), lower)
 
@@ -2071,13 +2067,13 @@ class PullRequestPayload(unittest.TestCase):
         for forbidden in (
             "git reset",
             "git rebase",
-            "git push",
             "git add",
             "--force",
             "--no-verify",
             "cq specs record",
         ):
             self.assertNotIn(forbidden, command)
+        self.assertIsNone(re.search(r"(?<!quenching-)git push", command))
         self.assertIn("new revert commit", command)
         self.assertIn("never resolve a conflict", command)
         self.assertIn("only after", command)
@@ -2188,7 +2184,7 @@ class SyncContract(unittest.TestCase):
 
     def test_sync_hands_rebased_publication_to_push_with_a_lease(self):
         self.assertIn("force-with-lease", self.lower)
-        self.assertIn("git-push", self.lower)
+        self.assertIn("quenching-git push", self.lower)
         self.assertIn("do not publish", self.lower)
 
 
@@ -2219,7 +2215,7 @@ class IncrementalCommitContract(unittest.TestCase):
                        "one short imperative subject", "resolved english subject"):
             self.assertIn(phrase.lower(), self.lower)
         self.assertIn("askuserquestion", self.lower)
-        self.assertIn("with one confirmation", self.lower)
+        self.assertIn("confirmation", self.lower)
         self.assertNotIn("without confirmation", self.lower)
 
     def test_content_guards_have_bounded_reads_and_do_not_report_secret_values(self):
@@ -3587,7 +3583,7 @@ class OrchestratorPublishGrants(unittest.TestCase):
 
     def test_the_cleanup_is_not_granted_and_the_note_hands_it_to_the_vertical(self):
         text = " ".join((PLUGIN_ROOT / "agents" / "spec-orchestrator.md").read_text(encoding="utf-8").split())
-        self.assertIn("cleanup pending: /quenching-git-cleanup", text)
+        self.assertIn("cleanup pending: /quenching-git cleanup", text)
         self.assertNotIn("cq git worktree retire", text)
 
 

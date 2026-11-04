@@ -1,4 +1,8 @@
-# /quenching-git-pr-review — work through a PR's unresolved threads
+---
+allowed-tools: Bash(cq:*), Bash(cq.cmd:*), Bash(gh pr view:*), Bash(gh repo view:*), Bash(gh api graphql:*), Bash(az repos pr:*), Bash(az devops invoke:*), Bash(az rest:*), Bash(git branch:*), Bash(git remote get-url:*), Bash(git add:*), Bash(python3:*), Read, Edit, AskUserQuestion, Skill
+---
+
+# /quenching-git pr-review — work through a PR's unresolved threads
 
 **Input**: `$ARGUMENTS` — a provider PR number/id. Omitted → the active PR open for the current
 branch.
@@ -57,7 +61,7 @@ a fix (or ask what the human wants instead), and apply it only on a yes. **Done 
 thread has either been fixed and staged, or explicitly skipped with a stated reason.
 
 ### 4. Commit and resolve
-Once at least one thread's fix is staged, invoke `/quenching-git-git commit` to commit it (the command
+Once at least one thread's fix is staged, invoke `/quenching-git commit` to commit it (the command
 must be available; otherwise stop before resolving anything). Then, per
 thread actually fixed:
 ```bash

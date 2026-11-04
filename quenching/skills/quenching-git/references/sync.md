@@ -1,4 +1,8 @@
-# /quenching-git-sync — rebase onto the latest base, refs and all
+---
+allowed-tools: Bash(cq:*), Bash(cq.cmd:*), Bash(git status:*), Bash(git remote get-url:*), Bash(git fetch:*), Bash(git rebase:*), Bash(git for-each-ref:*), Bash(python3:*), Read
+---
+
+# /quenching-git sync — rebase onto the latest base, refs and all
 
 **Input**: `$ARGUMENTS` — the branch to sync. Omitted → the current branch.
 
@@ -46,7 +50,7 @@ git for-each-ref --format='%(refname:short) %(objectname)' refs/heads
 Diff against step 1's snapshot — every ref whose object changed besides the branch being synced is
 one `--update-refs` carried along; name each. State whether a remote was available and whether the
 base fetch succeeded. If the synced branch had a remote tip before the rebase, report that its next
-publication belongs to `/quenching-git-push`'s confirmed `--force-with-lease` path; do not publish
+publication belongs to `/quenching-git push`'s confirmed `--force-with-lease` path; do not publish
 from this command. **Done when:** the moved-refs list (possibly empty), the fetch outcome and any
 required lease publication are stated alongside the rebase's own outcome.
 
