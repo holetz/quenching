@@ -34,13 +34,12 @@ because a relative path encodes the depth of the *citing* file and `commands/ali
 | `zensical/` | the **site layer** payload — `zensical.toml.tmpl`, `requirements.txt`, opt-in `ci-github-pages.yml` (the nav ships inside the config, not as sidecar files) | the target's repo **root**, outside `/docs/` |
 
 Two files under `hooks/` used to belong to this table and no longer do — **nothing copies or
-merges them into a target any more**, since the plugin's own `hooks/hooks.json` wires the checker
-and `${CLAUDE_PLUGIN_ROOT}` resolves it:
+merges them into a target any more**; the hooks a target gets are the ones modules declare in
+`modules.json`, which `cq deploy` merges into its `.claude/settings.json`:
 
 | Path | What it is | Reaches a target? |
 | --- | --- | --- |
 | `hooks/hooks-config.json` | the checker's config (block `okfValidate`) — the shipped copy is the **defaults reference**; the settings the checker actually reads come from the *target's* own `.claude/hooks/hooks-config.json`, if a human writes one | **no** |
-| `hooks/settings.snippet.json` | a **reference copy** of what `hooks/hooks.json` declares, kept for reading | **no** — zero consumers |
 
 `specs/schema.json` and `specs/templates/spec.md` sit in this tree but are a hybrid: they ship
 *and* they are read at runtime by `cq specs`, whose `specs/schema.py` carries a byte-identical
@@ -62,7 +61,7 @@ copy of the same standard legitimately differ in wording.
 
 | Path | Role | Installed into a target? |
 | --- | --- | --- |
-| `bin/cq` | every pillar's deterministic rails — `specs`, `knowledge` (the OKF v0.1 conformance checker, CLI **and** hook) and `components` (the `.claude/` front's `doctor` / `lint` / `drift`), plus `components session`, which reads a session transcript as evidence for `/quenching-components command-retro` and, with `cost`, a session's subagent spend per agent type, model and window; `context [transcript-or-session-id] --agent ID --json` reports recorded executor-window peak, request turns, exposure integral and role budget distance (default selector: `CLAUDE_CODE_SESSION_ID`). Missing iteration coverage yields a null peak and exit 2, with request exposure upper bound separate; the in-flight request is excluded, and native Codex usage without compatible telemetry is unmeasured | **no** — the plugin's own `hooks/hooks.json` and every command body invoke it by `${CLAUDE_PLUGIN_ROOT}` |
+| `bin/cq` | every pillar's deterministic rails — `specs`, `knowledge` (the OKF v0.1 conformance checker, CLI **and** hook) and `components` (the `.claude/` front's `doctor` / `lint` / `drift`), plus `components session`, which reads a session transcript as evidence for `/quenching-components command-retro` and, with `cost`, a session's subagent spend per agent type, model and window; `context [transcript-or-session-id] --agent ID --json` reports recorded executor-window peak, request turns, exposure integral and role budget distance (default selector: `CLAUDE_CODE_SESSION_ID`). Missing iteration coverage yields a null peak and exit 2, with request exposure upper bound separate; the in-flight request is excluded, and native Codex usage without compatible telemetry is unmeasured | **no** — every command body invokes it by `${CLAUDE_PLUGIN_ROOT}`, and the declared hooks call their scripts under `.agents/quenching/assets/hooks/` |
 
 **`cq` is not installed anywhere in plugin mode.** Resolution is plugin-first with **no third
 rung** ([references/align/tool-resolution.md](../references/align/tool-resolution.md)): bare, through
@@ -74,7 +73,7 @@ the payload at `.agents/quenching/`, with `.agents/quenching/bin/cq` owned by
 the matching align, never overwritten.
 
 **One entry point now serves every event.** A hook event and a command body both shell out to
-`bin/cq`; `hooks/hooks.json` names `cq knowledge hook` at `PostToolUse` and `Stop`, and every
+`bin/cq`; no declared hook calls `cq knowledge hook` any more, and every
 command body reaches the same file for its own pillar. The four scripts this package replaced
 still sit byte-for-byte under `hooks/` and `bin/` — unwired, invoked by nothing — until they are
 retired.
