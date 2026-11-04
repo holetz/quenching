@@ -2,7 +2,7 @@
 type: standard
 title: Command surface naming
 description: How the plugin's commands are named and namespaced — one file per entry point, where the path is the identity; the module prefix each front publishes under and the full command and agent mapping; the design namespace for DTCG source and projections; the proof namespace for the verification surface rather than its test artifact; the seventh namespace (`git`, a pillar rather than a front) and its coexistence with a target's own `git` category; the components front's four sibling contexts, each named for the artifact it mints, and the rule that keeps a front-level verb off an artifact-level context; and the one-segment skill name of a target repository
-resource: quenching/commands/**, quenching/agents/**, quenching/assets/modules.json
+resource: quenching/skills/**, quenching/agents/**, quenching/assets/modules.json
 tags: [naming, commands, taxonomy]
 timestamp: 2026-11-03
 audience: both
@@ -17,49 +17,37 @@ maintainer: quenching
 
 How the `quenching` plugin names its commands.
 
-## The path IS the identity
+## The folder IS the identity
 
-**One file per entry point.** Claude Code merged custom commands into skills, so
-`commands/<front>/[<object>/]<verb>.md` carries both the description that routes to it and the
-body that runs. The path `<front>/[<object>/]<verb>` is the identity — the `:` separator, one per
-path segment — and everything below is how that one identity is *spelled* at a call site.
+**One folder per skill.** `skills/<name>/SKILL.md` carries both the description that routes to it
+and the body that runs; the folder name is the skill name, never derived from a path. A vertical with
+many flows (`specs`, `git`, `knowledge`, `components`) is **one router skill** whose flows live in its
+own `references/<flow>.md`, so a flow has no skill of its own and no shortcut. The other fronts keep
+one skill per command, named `quenching-<front>-<verb>` (`quenching-design-genre-new` for the one
+nested verb).
 
-### Three citation forms, and the condition on each
+### Two citation forms, and the condition on each
 
-The axis is **where the command comes from**, never who is reading. Same file, three spellings,
-and only one of them is unconditionally correct for this repo's commands:
+The axis is **where the skill comes from**, never who is reading:
 
 | Form | Example | Correct when |
 | --- | --- | --- |
-| Registry name (no `/`) | `quenching-specs:specs:develop` | the `Skill` tool resolves it — always, for a plugin command |
-| Plugin-prefixed slash | `/quenching-specs-develop` | a human types it wherever `quenching` is installed **as a plugin** |
-| Bare slash | `/commands:tighten` | **only** where that command file lives in the target repo's own `.claude/commands/` (legacy layout) |
+| Router and flow | `/quenching-specs develop` | the skill is a router of this plugin: the router id, a space, the flow named in its table |
+| Skill name | `/quenching-handoff`, `/quenching-design-align` | the skill has no flows: its own folder name |
 | Target skill | `/commands-tighten` | the skill lives in the target repo's own `.agents/skills/commands-tighten/` (§A target's skill name is one segment) |
 
-So `commands/specs/develop.md` is cited as `quenching-specs:specs:develop` for the tool and
-`/quenching-specs-develop` for the human — and bare **only** by a repo that vendored the file into
-its own `.claude/commands/`. Re-measured in this tree on 2026-08-26: that directory does exist
-here, and holds four commands of this repo's own — `/release`, `/skill-map`, `/commands:tighten`
-and `/references:tighten` — which is why the bare row's example is one of them. Not one plugin
-command is vendored there, so every bare citation of a **plugin** command in this repo's prose
-still names a form that resolves nowhere.
+The `Skill` tool takes the router name and the flow as its argument:
+`Skill("quenching-specs", "develop <id>")`. A flow written as one hyphenated token
+(`/quenching-specs-develop`) names a skill that does not exist, and `sk-dangling-citation` reports
+it. Bare slash forms with a `:` separator (`/commands:tighten`) belong only to a repo that keeps the
+legacy `.claude/commands/` layout.
 
 That distinction is the reason `assets/checks/citation-check.sh` spells its dead set as each
 retired front's **verbs** rather than as a bare prefix. A verb list asserts what was retired; a
-prefix reserves a namespace, and would condemn any bare command that later lands under it — which
-is not hypothetical, because until 2026-08-26 the four above included a `/docs:`-prefixed local
-command that had nothing to do with the plugin's retired `docs` front.
+prefix reserves a namespace, and would condemn any bare command that later lands under it.
 
-This mapping is what every command body copies, which is why it states the condition rather than
-the shorthand. The prose form of the same rule used to live in `commands/docs/align.md`, declaring
-two forms and calling the bare one "what a human types"; that claim authorised 687 bare citations
-across the repo before it was corrected.
-
-There is **no second name**. The `quenching-<front>-<object>-<verb>` skill name this standard once
-mandated existed to be *mirrored* by a command path; with nothing to mirror, it is retired, and
-with it the bijection rule, the mirroring requirement, and the two root exceptions that needed
-`sk-path-mismatch` recorded as intended. Nothing derives a name that could disagree with the path,
-so nothing checks that they agree.
+There is **no second name**. Nothing derives a name that could disagree with the folder, so nothing
+checks that they agree.
 
 ### A target's skill name is one segment
 
@@ -75,16 +63,17 @@ commands keep their `:` identity: this rule governs a target's surface, not the 
 
 ## The plugin prefix is the module
 
-The source is split into nine modules ([../architecture/plugin-layout.md](../architecture/plugin-layout.md)
-§One editable source, installed by deploy), so the segment before the first `:` names the
-**module** that owns the command, and the rest is the command's path inside it; `cq deploy`
-translates `/quenching-<module>:<front>:<verb>` to the target's one-segment `quenching-<front>-<verb>`. Every front
-belongs to exactly one module, and so does every agent:
+The source is split into modules ([../architecture/plugin-layout.md](../architecture/plugin-layout.md)
+§One editable source, installed by deploy), and each module owns a list of skills in the `owned.skills`
+record of `quenching/assets/modules.json` (`schemaVersion` 3). Every skill and every agent belongs to
+exactly one module:
 
-| Module | Commands it registers | Agents |
+| Module | Skills it registers | Agents |
 | --- | --- | --- |
-| `quenching-specs` | `/quenching-specs-*`, `/quenching-git-*`, `/quenching-handoff` | `quenching-specs:spec-orchestrator`, `:spec-reviewer`, `:spec-runner`, `:spec-scout`, `:spec-verifier` |
-| `quenching-align` | `/quenching-align`, `/quenching-knowledge-*`, `/quenching-components-*` | — |
+| `quenching-specs` | `/quenching-specs`, `/quenching-handoff`, `/quenching-align` | `quenching-spec-orchestrator`, `-reviewer`, `-runner`, `-scout`, `-verifier` |
+| `quenching-git` | `/quenching-git` | — |
+| `quenching-knowledge` | `/quenching-knowledge` | — |
+| `quenching-components` | `/quenching-components` | — |
 | `quenching-design` | `/quenching-design-*` | — |
 | `quenching-ops` | `/quenching-ops-*` | — |
 | `quenching-proof` | `/quenching-proof-*` | — |
@@ -93,38 +82,41 @@ belongs to exactly one module, and so does every agent:
 | `quenching-security` | `/quenching-security-*` | — |
 | `quenching-opensource` | `/quenching-opensource-*` | — |
 
+`quenching-specs` also owns the root `align`, because it is the mandatory module and `align` only
+conducts the modules that are installed.
+
 - **The map has one home.** The front-to-module assignment is the `owned` record of each module in
   `quenching/assets/modules.json`; `quenching.common.modules.namespace_map` derives the
   table above from it. The table is a reading of that record, never a second source.
 - **The published name is written in the source.** Bodies, agents, references, the README and the
-  Python literals that recognize ids spell `quenching-<module>:…`; the bare `quenching:` prefix
+  Python literals that recognize ids spell `/quenching-<vertical> <flow>` or the skill name; the bare `quenching:` prefix
   survives only as the source's own unpublished registration and in history (`docs/decisions/`,
   `CHANGELOG.md`).
-- **Nested, not flattened.** The front keeps its own segment inside the module
-  (`/quenching-knowledge-add`, never the front dropped), so the path below the module is
-  still the file's path under `commands/` and §The path IS the identity holds unchanged.
+- **Flows stay inside their router.** A flow keeps its name (`/quenching-knowledge add`, never
+  the router dropped), so the reference below the router is
+  still the folder under `skills/` and §The folder IS the identity holds unchanged.
 - **A route into another module is conditional.** A `Not for:` hand-off, an offer or a `Skill`
   call naming another module's command runs only when that module is enabled; otherwise it is
   reported `not-installed: <module>` and never invoked
-  (`quenching/assets/references/align/tool-resolution.md` §Routing into another module).
-  A wildcard such as `/quenching-align:*` names every command of one module and carries the same
+  (`quenching/references/align/tool-resolution.md` §Routing into another module).
+  A wildcard such as `/quenching-knowledge *` names every flow of one router and carries the same
   condition.
 
 ## Namespaces are honest by front
 
 The surface is partitioned by the artifact each front's commands touch:
 
-- **`/quenching-knowledge-`** — the OKF `/docs/` bundle.
-- **`/quenching-specs-`** — provider-owned spec documents and their lifecycle.
+- **`/quenching-knowledge`** — the OKF `/docs/` bundle.
+- **`/quenching-specs`** — provider-owned spec documents and their lifecycle.
 - **`/quenching-design-`** — the `/.design/` DTCG source, projections, and editorial genres.
-- **`/quenching-components-`** — the target repo's `.claude/` automation surface.
+- **`/quenching-components`** — the target repo's `.claude/` automation surface.
 - **`/quenching-ops-`** — the target repository's canonical operations surface. It is the fifth
   local aligned-front namespace; its contract and command bodies are now published.
 - **`/quenching-proof-`** — the target repository's verification surface: its layers, fixtures,
   gates, and CI. It is the sixth plugin namespace and the fifth local aligned-front namespace. The front is named `proof`, not `tests`, because
   `tests` would name an artifact inside the surface rather than what the surface produces; the
   same front-versus-artifact distinction is why `components` replaced `skill`.
-- **`/quenching-git-`** — the seventh namespace, and the odd one out: it names a **pillar**, not a
+- **`/quenching-git`** — the seventh namespace, and the odd one out: it names a **pillar**, not a
   front. The other six namespaces name fronts or the provider-owned specs flow; only the five
   local fronts converge a tree toward a canonical shape. `git` answers questions about the target
   repository's own live git state instead, which is why it carries no `align` verb of its own —
@@ -142,7 +134,7 @@ by `/align`; `specs` remains provider-owned and `git` remains a pillar without a
 A target may mint its own `/git:commit` or `/git:cleanup` under its own `.claude/commands/git/` —
 `components-command-new/taxonomy.md`'s own canonical category example — naming a convention that
 repo declared for itself. §Three citation forms is what keeps the two apart: the plugin's own
-`git` commands are always spelled `/quenching-git-<verb>` (or bare, only inside this repo's own
+`git` commands are always spelled `/quenching-git <verb>` (or bare, only inside this repo's own
 `.claude/commands/`, which does not hold one), so a target's bare `/git:<verb>` names its own
 command and nothing this plugin ships, on every repo that installs it.
 
@@ -155,7 +147,7 @@ standards and not only the code.
 
 A command's namespace MUST match what it touches: a command that mints commands lives under
 `/quenching-components-`, never `/quenching-knowledge-`; a command that reads or writes the bundle
-lives under `/quenching-knowledge-`.
+lives under `/quenching-knowledge`.
 
 ## `components` — four contexts, each named for the artifact it mints
 
@@ -170,20 +162,20 @@ holds **four sibling contexts, each named for the artifact it mints, none a sub-
 
 | Context | Mints | Front-level verb | Artifact-level verbs |
 | --- | --- | --- | --- |
-| *(front root)* | — | `/quenching-components-align` | — |
-| `command/` | a command | — | `/quenching-components-command-new`, `/quenching-components-command-eval`, `/quenching-components-command-retro` |
-| `agent/` | a subagent | — | `/quenching-components-agent-new` |
-| `hook/` | a hook | — | `/quenching-components-hook-new` |
-| `harness/` | — | — | `/quenching-components-harness-align` |
+| *(front root)* | — | `/quenching-components align` | — |
+| `command/` | a command | — | `/quenching-components command-new`, `/quenching-components command-eval`, `/quenching-components command-retro` |
+| `agent/` | a subagent | — | `/quenching-components agent-new` |
+| `hook/` | a hook | — | `/quenching-components hook-new` |
+| `harness/` | — | — | `/quenching-components harness-align` |
 
 **The rule: a front-level verb sits at the front's own root; an artifact-level verb sits under its
-context.** `/quenching-components-align` is the front's own sweep — it has no artifact of its own
-to sit under, so it stays at the root, exactly as `/quenching-knowledge-align` does for its
+context.** `/quenching-components align` is the front's own sweep — it has no artifact of its own
+to sit under, so it stays at the root, exactly as `/quenching-knowledge align` does for its
 front. `command:new`, `command:eval` and `command:retro` are three verbs that all act
 on the same artifact (a command), so they share the `command/` context rather than each claiming a
 piece of the front root the way the old front's `new`/`eval` verbs used to.
 
-`/quenching-components-harness-align` is the one entry that **changed front**, not merely name:
+`/quenching-components harness-align` is the one entry that **changed front**, not merely name:
 `AGENTS.md` is the file Claude Code and the other harnesses read as instruction; `CLAUDE.md` is legacy, which makes the harness an
 artifact of `components` — the front that owns everything Claude Code loads as automation — never
 a `knowledge` document, even though refactoring them moves durable knowledge *into* the bundle as a
@@ -207,7 +199,7 @@ holding no skills: a name that lies is forbidden of the surface this standard go
   decides it; the **count is not written down here**, because a number transcribed into prose goes
   stale the first time a command is minted. This standard once said "27 skills, 27 wrappers" while
   the surface carried 28, which is the whole argument.
-- **`commands/**` is the only tree Claude Code registers**, so nothing that is not an entry point
+- **`skills/**` is the only tree Claude Code registers**, so nothing that is not an entry point
   lives under it — see [../architecture/plugin-layout.md](../architecture/plugin-layout.md).
 - A rename is **clean** — no compatibility aliases, no dual-registered names. A blast-radius sweep
   updates every reference (branch names, CI, scripts) and a rename reaching product code gets its
@@ -246,7 +238,7 @@ Both are warnings, so no gate catches it — which is why it is recorded here in
 **Spoken routing was measured, not assumed, and it survived.** On 2026-07-26, three natural
 phrases with no `/` typed each reached their command by description alone in a fresh `claude -p`:
 *"park a spec for later…"* and *"capture this for the backlog…"* both reached `/specs:capture`,
-and *"add a standard: we always use snake_case…"* reached `/quenching-knowledge-add`. So a
+and *"add a standard: we always use snake_case…"* reached `/quenching-knowledge add`. So a
 description naming only the action **does** still route — the claim that it would not is
 contradicted by the measurement.
 
