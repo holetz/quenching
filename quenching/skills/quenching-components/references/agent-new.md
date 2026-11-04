@@ -1,4 +1,8 @@
-# /quenching-components-agent-new — mint ONE subagent definition
+---
+allowed-tools: Bash(cq:*), Bash(cq.cmd:*), Bash(python3:*), Bash(py:*), Read, Grep, Glob, Write, Edit, AskUserQuestion
+---
+
+# /quenching-components agent-new — mint ONE subagent definition
 
 **Input**: `$ARGUMENTS` (the agent to create or edit — a name or a description of the work
 to delegate).
@@ -6,7 +10,7 @@ to delegate).
 Creates or edits **ONE FILE** in the target repo's agent surface — `.claude/agents/<name>.md`,
 a definition whose description routes delegation to it and whose body is its system prompt.
 The delegation economics and the definition contract live in
-[components-command-new/capabilities.md](.agents/quenching/assets/references/components-command-new/capabilities.md)
+[components-command-new/capabilities.md](.agents/quenching/references/components-command-new/capabilities.md)
 §Subagents. The mold is
 `.agents/quenching/assets/templates/automation/agent.md`.
 
@@ -23,7 +27,7 @@ written where Claude reads it, with no bridge copy.
   Absent + OKF bundle present → the plan offers creating it from
   `automation/agents-standard.md`, born `authority: background`; never created without the OK.
 - **No bundle, no tail — but the mint proceeds.** `/docs/index.md` without `okf_version` (or
-  absent) means: write the definition only, skip the OKF tail silently, suggest `/quenching-knowledge-align`
+  absent) means: write the definition only, skip the OKF tail silently, suggest `/quenching-knowledge align`
   **once**.
 - **One plan, one OK, nothing before.** The delegation buy, the name, the profile, every
   file, and the tail appear in ONE plan; a declined plan writes nothing.
@@ -33,7 +37,7 @@ written where Claude reads it, with no bridge copy.
   on the parsed value.
 
 Resolve `cq` per
-[align/tool-resolution.md](.agents/quenching/assets/references/align/tool-resolution.md)
+[align/tool-resolution.md](.agents/quenching/references/align/tool-resolution.md)
 §Resolving the tool; branch on the **exit code** (0 ok · 1 findings · 2 refusal), never on prose.
 
 ## Workflow
@@ -42,15 +46,15 @@ Resolve `cq` per
 Read `/docs/standards/automation/agents.md` and confirm the bundle (`/docs/index.md` carries
 `okf_version`). Rule present → it governs. Rule absent, bundle present → add "create the rule
 from `automation/agents-standard.md`" to the plan. No bundle → note the tail as skipped and
-plan the `/quenching-knowledge-align` suggestion. **Done when:** the governing rule (or its planned
+plan the `/quenching-knowledge align` suggestion. **Done when:** the governing rule (or its planned
 creation, or the no-bundle note) is fixed.
 
 ### 2. Apply the delegation test
-Per [capabilities.md](.agents/quenching/assets/references/components-command-new/capabilities.md)
+Per [capabilities.md](.agents/quenching/references/components-command-new/capabilities.md)
 §Subagents: the work qualifies when its returned summary is much smaller than the work
 itself, when slices run in parallel, or when its tool set must be narrower than the
 conversation's. Work that fails the test is a command or an inline step — say so and route
-to `/quenching-components-command-new`. **Done when:** the delegation
+to `/quenching-components command-new`. **Done when:** the delegation
 buy is stated in one line, or the request is rerouted.
 
 ### 3. Derive the name, check collisions
@@ -66,7 +70,7 @@ downgrades; a pin here is cache-safe); `skills`, `memory` only with a
 stated reason. The body is a **system prompt in second person**. Inspection work takes the
 verifier shape: numbered check areas, a "not checked here" list, if-present guards, a fixed
 report format — and it never edits. **Done when:** the draft passes
-[capabilities.md](.agents/quenching/assets/references/components-command-new/capabilities.md)
+[capabilities.md](.agents/quenching/references/components-command-new/capabilities.md)
 §Subagents read top to bottom.
 
 ### 5. Present ONE plan → gate on the OK
@@ -81,7 +85,7 @@ with its planned content.
 
 ### 7. OKF tail (bundle present)
 The registry's GENERATED zone lists commands only. Offer, as follow-up commands rather than writes
-in this run, one curated registry-prose line for the agent surface and `/quenching-knowledge-define`
+in this run, one curated registry-prose line for the agent surface and `/quenching-knowledge define`
 for a coined repo-specific term; the user decides both. **Done when:** each offer is answered.
 
 ### 8. Self-check

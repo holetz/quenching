@@ -1,12 +1,8 @@
 ---
-description: >-
-  Mine ONE session for what it shows about the command that ran in it: cost, redundancy, bugs, manual fixes. Use for "retro this session", "what did this command cost". Reads transcripts; applies nothing.
-argument-hint: "[session id or transcript path — omit for this session; optionally a command name]"
 allowed-tools: Bash(cq:*), Bash(cq.cmd:*), Read, AskUserQuestion, Bash(python3:*), Bash(py:*)
-disable-model-invocation: true
 ---
 
-# /quenching-components-command-retro — what one session proves about the command that drove it
+# /quenching-components command-retro — what one session proves about the command that drove it
 
 **Input**: `$ARGUMENTS` — optionally a session id or transcript path, and optionally the
 command to analyse. Omitted → this session, and the command that opened it.
@@ -18,7 +14,7 @@ misfired and what the human had to fix. This command reads it back.
 reads the transcript JSONL and returns a bounded digest; you read the digest and judge it. It
 resolves the transcript itself (explicit path, bare session id, or the newest session for this
 cwd). Resolve `cq` per
-[align/tool-resolution.md](.agents/quenching/assets/references/align/tool-resolution.md)
+[align/tool-resolution.md](.agents/quenching/references/align/tool-resolution.md)
 §Resolving the tool §Write the resolved path literally on every invocation, and branch on the
 **exit code** — 0 read clean · 1 read with an anomaly against it · 2 refusal — never on prose.
 
@@ -40,8 +36,8 @@ reported as a session with nothing to improve.
 **Done when:** the transcript is resolved and its commands are in hand, or the refusal is shown.
 
 ### 2. Choose ONE command
-One command per run keeps the output actionable by a single `/quenching-components-command-new`. A command named in
-`$ARGUMENTS` → take it. Otherwise one command found → take it; several → a decision sheet ([specs-develop/questions.md](.agents/quenching/assets/references/specs-develop/questions.md) §1),
+One command per run keeps the output actionable by a single `/quenching-components command-new`. A command named in
+`$ARGUMENTS` → take it. Otherwise one command found → take it; several → a decision sheet ([specs-develop/questions.md](.agents/quenching/references/specs-develop/questions.md) §1),
 one option per command showing its `attributedRun` line range and its `toolCalls`, defaulting
 to the session opener.
 **Done when:** exactly one command is chosen and named back to the user.
@@ -92,9 +88,9 @@ did not count is offered as an observation in plain words, never dressed as a fi
 **Done when:** each finding carries either a count with its quoted turn, or no number at all.
 
 ### 6. Hand each finding to the command that closes it
-End every finding with the `/quenching-components-command-new` invocation that would fix the body, phrased so it can
+End every finding with the `/quenching-components command-new` invocation that would fix the body, phrased so it can
 be run as-is. Where a finding is about the target repo's contracts rather than the command's
-wording, name `/quenching-knowledge-add` instead.
+wording, name `/quenching-knowledge add` instead.
 **Done when:** each finding names the one command that closes it.
 
 ### 7. Self-check
@@ -113,5 +109,5 @@ unchanged.
 - Speak an unclosed command's counts as an upper bound, always naming the conductor whose
   turns they may include.
 - Report a refusal with its reason. An empty run is never presented as a clean one.
-- Report findings; apply none. Editing a command body is `/quenching-components-command-new`'s, and a measured
-  with/without delta is `/quenching-components-command-eval`'s.
+- Report findings; apply none. Editing a command body is `/quenching-components command-new`'s, and a measured
+  with/without delta is `/quenching-components command-eval`'s.

@@ -1,11 +1,11 @@
 # Harness routing — from an AGENTS.md unit to its OKF home
 
-How `/quenching-components-harness-align` decides, for each unit of a harness file, whether it **stays** (harness-
+How `/quenching-components harness-align` decides, for each unit of a harness file, whether it **stays** (harness-
 operational) or **moves** into an OKF home (durable knowledge). Once a unit is routed to a home it
-is filed exactly as `/quenching-knowledge-add` would — see
-[knowledge-add/homes.md](.agents/quenching/assets/references/knowledge-add/homes.md) for the
+is filed exactly as `/quenching-knowledge add` would — see
+[knowledge-add/homes.md](.agents/quenching/references/knowledge-add/homes.md) for the
 `type`/mold/path shape and the index/log procedure, and
-[knowledge-align/taxonomy.md](.agents/quenching/assets/references/knowledge-align/taxonomy.md) for the
+[knowledge-align/taxonomy.md](.agents/quenching/references/knowledge-align/taxonomy.md) for the
 home boundaries.
 
 ## Contents
@@ -19,7 +19,7 @@ home boundaries.
 repo-wide, a subfolder `AGENTS.md` only when working under its folder. the host 2.1.277+
 reads `AGENTS.md` directly; `AGENTS.md` is the legacy fallback of older hosts and is removed by
 the migration, never created.
-OKF-strict point 7 ([knowledge-align/okf-spec.md](.agents/quenching/assets/references/knowledge-align/okf-spec.md))
+OKF-strict point 7 ([knowledge-align/okf-spec.md](.agents/quenching/references/knowledge-align/okf-spec.md))
 says they are **not** OKF concepts, and the validator (`.agents/quenching/bin/cq knowledge validate`) **skips them entirely**
 — including link checks (`index-broken-link` runs only on `index.md`). The target shape is the
 shipped exemplar [docs/standards/AGENTS.md](.agents/quenching/assets/knowledge/standards/AGENTS.md)
@@ -58,7 +58,7 @@ units.
 | architecture description / module map | **MOVE** | `standards/architecture/` (`standard`; unproven ⇒ `authority: background`), or `concepts/<subject>/` (`concept`) if non-binding |
 | coding / naming conventions | **MOVE** | `standards/code/` · `standards/naming/` (`standard`) |
 | "we chose X because Y" — agreed / proven | **MOVE** | `standards/` (`standard`; agreed-but-unproven ⇒ `authority: background`, proven ⇒ `current`) — no separate decision home |
-| roadmap / TODO / next-steps item (raw, unscoped) | **MOVE** | a spec in `specs/plans/` (via `/quenching-specs-create`, outside the OKF bundle — unranked until `/quenching-specs-triage` says otherwise), or `vision/` (`vision`) for settled direction with no deadline |
+| roadmap / TODO / next-steps item (raw, unscoped) | **MOVE** | a spec in `specs/plans/` (via `/quenching-specs create`, outside the OKF bundle — unranked until `/quenching-specs triage` says otherwise), or `vision/` (`vision`) for settled direction with no deadline |
 | step-by-step procedure / onboarding | **MOVE** | `how-to/` (`documentation`) |
 | facts about an external tool / lib / service | **MOVE** | `external/{tools,libraries,regulations}/` (`external`) |
 | domain concept / glossary term | **MOVE** | `concepts/<subject>/` (`concept`) |
@@ -73,8 +73,8 @@ line beginning `Ephemeral writes:` and carrying exactly one path plus this citat
 `Ephemeral writes: <path> — the contract is /docs/standards/agents/ephemeral-writes.md`.
 Preserve it verbatim; never classify it MOVE or DEDUPE.
 
-**Tie-breakers** are `/quenching-knowledge-add`'s — see
-[knowledge-add/homes.md](.agents/quenching/assets/references/knowledge-add/homes.md).
+**Tie-breakers** are `/quenching-knowledge add`'s — see
+[knowledge-add/homes.md](.agents/quenching/references/knowledge-add/homes.md).
 
 ## 5. Pointer-honesty checklist (the step-8 verify gate)
 
@@ -115,7 +115,7 @@ The validator won't check harness files, so this skill does:
   `site-packages`/vendored dependency trees, and anything gitignored as a build artifact (verify
   with `git check-ignore`). A folder that only holds data or
   output earns no harness.
-- `/quenching-knowledge-align`'s skeleton already owns `docs/standards/AGENTS.md`.
+- `/quenching-knowledge align`'s skeleton already owns `docs/standards/AGENTS.md`.
 
 ## 7. AGENTS.md is the root source; AGENTS.md is legacy
 
