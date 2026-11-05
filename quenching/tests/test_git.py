@@ -3586,6 +3586,90 @@ class PullRequestVerbs(RepoCase):
         (sets,) = seen
         self.assertEqual(sets[:2], ["number=7", f"url={self.AZURE_WEB}"])
 
+    def _azure_create_long(self, body, comment_rc=0):
+        """`pr create` on Azure through a fake `_az`: the create call answers a PR carrying its
+        repository and project ids, the invoke call reads the thread payload from --in-file."""
+        from quenching.git import pull
+        calls = []
+
+        def fake(*argv):
+            entry = {"argv": list(argv)}
+            calls.append(entry)
+            if argv[:2] == ("devops", "invoke"):
+                path = next(a for a in argv if a.startswith("--in-file="))[len("--in-file="):]
+                entry["thread"] = json.loads(pathlib.Path(path).read_text(encoding="utf-8"))
+                entry["path"] = path
+                return (comment_rc, json.dumps({"id": 11}) if comment_rc == 0 else "",
+                        "" if comment_rc == 0 else "TF401179: boom")
+            return 0, json.dumps({"pullRequestId": 7,
+                                  "url": "https://dev.azure.com/o/p/_apis/git/pullRequests/7",
+                                  "repository": {"id": "repo-guid",
+                                                 "project": {"name": "Proj X", "id": "proj-guid"},
+                                                 "webUrl": "https://dev.azure.com/o/p/_git/r"}}), ""
+        with mock.patch.object(pull, "_provider", return_value="azure-boards"), \
+                mock.patch.object(pull, "_az", side_effect=fake), \
+                mock.patch.object(pull, "sync_store", return_value={}), \
+                mock.patch.object(pull, "_branch_ok", return_value=True), \
+                contextlib.redirect_stdout(io.StringIO()) as out:
+            code = pull.cmd_pr(SimpleNamespace(action="create", base="main", head="plan/1-x",
+                                               title="t", body=body, spec=None, json=True,
+                                               **NO_AZURE_FLAGS))
+        return code, json.loads(out.getvalue()), calls
+
+    @staticmethod
+    def _long_body():
+        return "\n".join(f"## Seção {i}\n\n" + "x" * 900 for i in range(6))
+
+    def test_azure_long_body_is_cut_at_a_section_and_posted_whole_as_a_thread(self):
+        from quenching.git import pull
+        body = self._long_body()
+        self.assertGreater(len(body), 4000)
+        code, payload, calls = self._azure_create_long(body)
+        self.assertEqual(code, 0, payload)
+        create, invoke = calls
+        (description,) = [a[len("--description="):] for a in create["argv"]
+                          if a.startswith("--description=")]
+        self.assertLessEqual(len(description), 4000)
+        self.assertTrue(description.endswith("\n\nCorpo completo no primeiro comentário deste PR."))
+        kept = description.removesuffix("\n\n" + pull.AZURE_BODY_NOTE)
+        self.assertTrue(body.startswith(kept))
+        self.assertTrue(body[len(kept):].startswith("\n## "), "cut off a section boundary")
+        self.assertEqual(invoke["argv"][:2], ["devops", "invoke"])
+        for expected in ("--area=git", "--resource=pullRequestThreads", "--route-parameters",
+                         "project=Proj X", "repositoryId=repo-guid", "pullRequestId=7",
+                         "--http-method=POST"):
+            self.assertIn(expected, invoke["argv"])
+        self.assertEqual(invoke["thread"], {"comments": [{"parentCommentId": 0, "content": body,
+                                                          "commentType": 1}], "status": 4})
+        self.assertFalse(os.path.exists(invoke["path"]), "the payload file is removed")
+        self.assertEqual((payload["ok"], payload["descriptionTruncated"],
+                          payload["bodyComment"]), (True, True, {"ok": True, "threadId": 11}))
+        self.assertNotIn("findings", payload)
+
+    def test_azure_short_body_goes_whole_with_no_thread(self):
+        code, payload, calls = self._azure_create_long("## Problem\n\ncurto")
+        self.assertEqual(code, 0, payload)
+        (create,) = calls
+        self.assertIn("--description=## Problem\n\ncurto", create["argv"])
+        self.assertNotIn("descriptionTruncated", payload)
+
+    def test_azure_body_with_no_boundary_that_fits_is_cut_at_the_limit(self):
+        from quenching.git import pull
+        body = "x" * 5000
+        cut = pull._azure_description(body)
+        self.assertEqual(len(cut), 4000)
+        self.assertTrue(cut.startswith("x" * 3900))
+
+    def test_azure_failed_thread_is_a_finding_and_the_pr_stands(self):
+        code, payload, calls = self._azure_create_long(self._long_body(), comment_rc=1)
+        self.assertEqual(code, 0, payload)
+        self.assertEqual(len(calls), 2)
+        self.assertEqual((payload["ok"], payload["number"], payload["bodyComment"]["ok"]),
+                         (True, 7, False))
+        (finding,) = payload["findings"]
+        self.assertEqual(finding["code"], "git-pr-azure-comment-failed")
+        self.assertIn("TF401179: boom", finding["message"])
+
     def test_azure_only_flags_are_refused_on_github(self):
         proc = _cq(self.repo, "pr", "create", "--base", "main", "--head", "plan/1-x",
                    "--title", "t", "--delete-source-branch", "--json", env=self.env)
