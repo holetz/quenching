@@ -57,11 +57,6 @@ def _store_names(repo: str, relative: str) -> tuple[str, str] | None:
     return f"{base}.{name}", f"{base}.{legacy}"
 
 
-def _store_for(repo: str, relative: str) -> str | None:
-    names = _store_names(repo, relative)
-    return names[0] if names else None
-
-
 def _migrate_store(store: str, legacy: str) -> str | None:
     """Rename the legacy sibling store to its new name, when only the legacy one exists; the
     path it came from, or None when there was nothing to move. Both present → FileExistsError,
