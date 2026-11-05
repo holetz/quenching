@@ -11,6 +11,7 @@ import os
 import shutil
 import stat
 import subprocess
+import sys
 from types import SimpleNamespace
 
 from quenching.common.git import _git, _git_run
@@ -169,6 +170,25 @@ def _stamp_branch(spec: str, base: str, work: str) -> dict:
     return {"ok": True, "value": quiet.seen.get("value")}
 
 
+def _setup(path: str) -> dict | None:
+    """Run the new worktree's declared `worktreeSetup` once, with cwd inside it.
+
+    The declaration is read from the worktree just cut — the fetched base, not the caller's tree —
+    and is its own consent (git/isolation.md): it is printed verbatim before it runs, its output
+    goes to stderr so `--json` stays parseable, and a failure is reported, never undone."""
+    command = namespace(load_config(path), "shared").get("worktreeSetup")
+    if not isinstance(command, str) or not command.strip():
+        return None
+    command = command.strip()
+    print(f"setup: {command}", file=sys.stderr, flush=True)
+    try:
+        code = subprocess.run(command, shell=True, cwd=path, stdin=subprocess.DEVNULL,
+                              stdout=sys.stderr, stderr=sys.stderr).returncode
+    except OSError as exc:
+        return {"command": command, "exit": None, "ok": False, "message": str(exc)}
+    return {"command": command, "exit": code, "ok": code == 0}
+
+
 def _add(args) -> int:
     """Cut `--branch` from `<remote>/<base>` into a new worktree at `--path`, then link it.
 
@@ -222,12 +242,16 @@ def _add(args) -> int:
                        "message": f"git worktree add failed: {err.strip()}"}, args.json)
     results, refusal = _link(path)
     stamp = _stamp_branch(args.spec, args.base, args.branch) if args.spec else None
-    payload = {"ok": refusal is None and (stamp is None or stamp["ok"]), "path": path, "branch": args.branch, "base": args.base,
+    setup = None if refusal or args.no_setup else _setup(path)
+    payload = {"ok": refusal is None and (stamp is None or stamp["ok"])
+                     and (setup is None or setup["ok"]),
+               "path": path, "branch": args.branch, "base": args.base,
                "start": f"{args.remote}/{args.base}" if has_remote else args.base,
                "fromRemote": has_remote, "startSha": sha, "paths": results or [],
                "linkRefusal": refusal}
     if stamp:
         payload["branchRecord"] = stamp
+    payload["setup"] = setup
     human = [f"worktree: {path}", f"branch: {args.branch} from {payload['start']} ({sha[:12]})"]
     if not has_remote:
         human.append(f"NO-REMOTE: {args.remote} is not configured; cut from the local {args.base}")
@@ -237,6 +261,12 @@ def _add(args) -> int:
     if stamp:
         human.append(f"`branch` record stamped for spec {args.spec}" if stamp["ok"]
                      else f"`branch` record not stamped: {stamp['message']}")
+    if setup:
+        human.append(f"setup ran: {setup['command']}" if setup["ok"]
+                     else f"setup failed (exit {setup['exit']}), the worktree stands: "
+                          f"{setup['command']}")
+    elif args.no_setup:
+        human.append("setup skipped (--no-setup)")
     emit(args.json, payload, "\n".join(human))
     return 0 if payload["ok"] else FINDINGS
 

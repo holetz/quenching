@@ -14,7 +14,7 @@ plain branch in the current checkout only when the human asks for it. The mechan
 [git/isolation.md](.agents/quenching/references/git/isolation.md), cited below rather
 than restated; this command is its standalone entry point for a caller with no build loop of its own.
 
-**Grants.** `allowed-tools` holds only the `cq` verbs a caller that holds no `Skill` also holds, so the body stays followable from a `tools:` list of `cq` verbs and a call outside them here would leave the step blocked. A `worktreeSetup`, `git checkout -b` and the `.agents/quenching/bin/cq specs record` stamps go through the normal permission prompt.
+**Grants.** `allowed-tools` holds only the `cq` verbs a caller that holds no `Skill` also holds, so the body stays followable from a `tools:` list of `cq` verbs and a call outside them here would leave the step blocked. `git checkout -b` and the `.agents/quenching/bin/cq specs record` stamps go through the normal permission prompt. The declared `worktreeSetup` runs inside `cq git worktree add`, so its grant covers it: the declaration in the target's tracked configuration is the consent ([git/isolation.md](.agents/quenching/references/git/isolation.md)).
 
 ## Workflow
 
@@ -85,9 +85,11 @@ the branch has no upstream and a push without an explicit destination never targ
 and links the declared shared paths inside the new worktree. A fetch error is exit 2 and stops the
 run; only a missing `origin` falls back to the local `<base>` (`fromRemote: false`, the
 `NO-REMOTE` line), and the report says so. A link failure is exit 1 with `linkRefusal`: it does not
-undo the worktree, and it stops this flow before running `worktreeSetup`. When the
-link succeeds, run a declared `worktreeSetup` once with cwd inside the new worktree; a failing
-setup does not undo the worktree — report both facts separately. **A worktree outside the project
+undo the worktree, and the verb does not run `worktreeSetup`. When the link succeeds, the verb
+runs a declared `worktreeSetup` once with cwd inside the new worktree, printing the command
+verbatim and its output on stderr (`setup` in the payload: `command`, `exit`, `ok`); a failing setup
+is exit 1 and does not undo the worktree — report it apart from the cut. Do not run the setup a
+second time; `--no-setup` skips it only when the human asks. **A worktree outside the project
 directory is not the shell's cwd:** the harness may return the cwd to the base checkout after every
 command, so from here on each command carries the worktree explicitly — `cd <worktree> && …` in
 the same call, `git -C <worktree>`, `.agents/quenching/bin/cq --root <worktree>` — or a cwd-dependent tool (`cq` without

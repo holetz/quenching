@@ -74,7 +74,8 @@ def build_parser() -> argparse.ArgumentParser:
     sp = sub.add_parser("worktree", help="materialise declared shared paths in this checkout, or "
                                           "cut a branch from the remote base into a new worktree")
     sp.add_argument("action", choices=("link", "add", "retire"),
-                    help="link: link each declared shared path; add: fetch, cut and link; "
+                    help="link: link each declared shared path; add: fetch, cut, link and run the "
+                         "declared `worktreeSetup`; "
                          "retire: remove a merged spec's worktree and `branch -d` its branch")
     sp.add_argument("--path", metavar="PATH", help="add: the new worktree's directory; "
                                                     "retire: the worktree to remove")
@@ -88,6 +89,9 @@ def build_parser() -> argparse.ArgumentParser:
     sp.add_argument("--spec", metavar="ID",
                     help="add: stamp this spec's `branch` record (base, work) once the worktree "
                          "is cut; refused before any write when the spec does not own --branch")
+    sp.add_argument("--no-setup", action="store_true",
+                    help="add: do not run the declared `worktreeSetup` in the new worktree "
+                         "(it runs by default, once, after the link)")
     sp.add_argument("--discard-ignored", action="store_true",
                     help="retire: remove the worktree even though it holds ignored files "
                          "that are not symlinks")
