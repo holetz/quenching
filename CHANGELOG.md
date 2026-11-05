@@ -13,6 +13,17 @@ owner: [`ci-cd/versioning-release.md`](docs/standards/ci-cd/versioning-release.m
 short version for a consumer: the version is published once, deliberately, as a release — never at a
 spec's own conclude — and `cq --version` is what answers which one you are running.
 
+## 7.2.0
+
+**`cq git worktree add` roda o `worktreeSetup` declarado.** Logo depois do corte e do link, o
+  próprio verbo executa uma vez o setup declarado em `.agents/quenching.json`, com cwd dentro do
+  worktree novo, e todo chamador (skill, subagente, humano) recebe um worktree pronto. A declaração
+  é lida da base cortada, nunca da árvore de quem chama. O comando é impresso literalmente e a saída
+  vai para stderr, de modo que `--json` segue parseável (`setup`: `command`, `exit`, `ok`). Uma falha
+  do setup é exit 1 e não desfaz o worktree. `--no-setup` pula a etapa.
+  **Segurança:** quem tem o grant do verbo passa a rodar o setup do repositório sem novo prompt; a
+  declaração rastreada é o consentimento (`git/isolation.md`).
+
 ## 7.1.0
 
 **Uma skill roteadora por vertical ou front, e a invocação `/quenching-<vertical> <fluxo>`.**
