@@ -67,11 +67,14 @@ ISO_DATETIME = re.compile(r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[
 # Types for which `resource` is deliberately absent, so its WARN would be permanent noise.
 # A `task` is parked work — nothing is built yet to point at (the backlog task mold omits
 # the key on purpose). An `Attested Computation` anchors to its `executor`/`attester`
-# instead of a single asset. Every other type anchors to code, an asset, or a URI.
+# instead of a single asset. A `communication` is a notice already sent and archived for
+# the record — often an operational one ("the dashboard is down") with no asset behind it;
+# where a dossier or a spec originated the notice, that origin IS the resource, and where
+# none exists the key is honestly absent. Every other type anchors to code, an asset, or a URI.
 # The sibling case — a doc that HAS a resource whose honest scope is the whole bundle — is
 # handled by the bundle-aggregate exemption in `check_resource`, the same mechanism
 # generalized rather than a second one.
-TYPES_WITHOUT_RESOURCE = ("task", "Attested Computation")
+TYPES_WITHOUT_RESOURCE = ("task", "Attested Computation", "communication")
 # Glob metacharacters `parse_resource` does not implement. An entry carrying one is
 # classified `unknown` and never reported as a violation — see `parse_resource`.
 UNSUPPORTED_GLOB_CHARS = ("{", "}", "[", "]", "?")

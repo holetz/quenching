@@ -25,6 +25,7 @@ knowledge/                     # OKF bundle root
   tutorials/                   # learning-oriented pages (type: tutorial)
   how-to/                      # task recipes (type: how-to)
   documentation/               # why it works this way, for the site's reader (type: documentation)
+  communications/              # notices already sent to an audience — <year>/<date>-<slug>.md (type: communication)
   project/                     # the manual for THIS repository (type: project)
   concepts/                    # generic knowledge we hold — subject subfolders (type: concept)
   external/                    # what we consume — tools/ libraries/ regulations/ (type: external; PDFs via sidecar)
@@ -44,6 +45,7 @@ knowledge/                     # OKF bundle root
 | `tutorials/` | `tutorial` | learning-oriented pages |
 | `how-to/` | `how-to` | one recipe per file |
 | `documentation/` | `documentation` | the site's reader-facing why |
+| `communications/` | `communication` | the notice already sent, dated — `<year>/<aaaa-mm-dd>-<slug>.md` |
 | `project/` | `project` | this repo's own manual (commands, automation, layout) |
 | `concepts/` | `concept` | subject subfolders |
 | `external/` | `external` | `tools/`·`libraries/`·`regulations/` |
@@ -83,8 +85,17 @@ computation is generic knowledge with an executable contract, not a home of its 
   `site-source/` sibling; the complete bundle is never its `docs_dir`. `reference/`
   is deliberately NOT among them — it is a retired home name that `okf-legacy-home` still claims.
   Boundary: a published-site page → the fitting quadrant; internal team understanding →
-  `concepts/`; a current contract → `standards/`. `audience: human`, `authority: current` by
-  default.
+  `concepts/`; a current contract → `standards/`; a notice already sent to an audience →
+  `communications/`. `audience: human`, `authority: current` by default.
+- **`communications/`** — what the team told an audience, archived (`type: communication`): one
+  page per notice, dated in the path (`<year>/<aaaa-mm-dd>-<slug>.md`) and in the frontmatter, the
+  body exactly as it was sent, and a reserved `index.md` per folder — the home and each year — so
+  the notices stay listable. It is a **record**, not `documentation/` (the rule explained) and not
+  a report kept in a work dossier. `resource` is optional here, the one reader-facing exception:
+  an operational notice often has no asset behind it, and where a dossier or a spec originated the
+  notice that origin is the resource. `publicacao` — not `status`, which OKF reserves for
+  `draft|stable|deprecated` — carries the publication state. A correction is a **new** notice,
+  never an edit to one already sent. `audience: human`, `authority: current` by default.
 - **`concepts/`** — generic, cross-cutting understanding the team holds (`type: concept`):
   domain concepts, glossaries, mental models, explanations, learnings — the Diátaxis
   **explanation** quadrant raised to a home, subject subfolders welcome. Non-binding and

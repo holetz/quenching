@@ -211,5 +211,30 @@ class AttestedComputation(unittest.TestCase):
         self.assertEqual(codes, set())
 
 
+class CommunicationType(unittest.TestCase):
+    """A sent notice is kept as a record and often points at no asset, so `resource` is exempt;
+    a resource it DOES carry is still resolved like any other."""
+
+    def _doc(self, extra: str) -> str:
+        return ("---\n"
+                "type: communication\n"
+                "title: Indicator recovery\n"
+                "description: What changes for the cooperative.\n"
+                f"{extra}\n"
+                "---\n\nSent on 2026-11-04.\n")
+
+    def test_a_notice_without_a_resource_is_silent(self):
+        codes = _codes(_bundle({"a.md": self._doc(
+            "generated: { by: human:a, at: 2026-06-20T22:53:05Z }")}))
+        self.assertNotIn("missing-resource", codes)
+        self.assertEqual(codes, set())
+
+    def test_the_exemption_does_not_skip_a_resource_that_is_there(self):
+        codes = _codes(_bundle({"a.md": self._doc(
+            "resource: nowhere/notice.md\n"
+            "generated: { by: human:a, at: 2026-06-20T22:53:05Z }")}))
+        self.assertIn("resource-unresolved", codes)
+
+
 if __name__ == "__main__":
     unittest.main()
