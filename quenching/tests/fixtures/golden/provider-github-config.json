@@ -15,6 +15,7 @@
   "unknownProvider": null,
   "unknownBackend": null,
   "worktreeSetup": null,
+  "sharedPaths": [],
   "azureStates": null,
   "hooks": {},
   "profiles": null,

@@ -1705,6 +1705,86 @@ class Worktree(RepoCase):
         self.assertEqual((before.st_dev, before.st_ino), (after.st_dev, after.st_ino))
 
 
+class WorktreeDottedStore(RepoCase):
+    """A shared path that starts with a dot names its sibling store without the dot
+    (`.tmp` → `<repo>.tmp`, never `<repo>..tmp`); the legacy store is renamed on `link`."""
+
+    def setUp(self):
+        super().setUp()
+        config = pathlib.Path(self.repo) / ".claude" / "quenching.json"
+        config.parent.mkdir()
+        config.write_text(json.dumps({"shared": {"sharedPaths": [".tmp", "a/b"]}}) + "\n",
+                          encoding="utf-8")
+        pathlib.Path(self.repo, ".gitignore").write_text("/.tmp\n/a/b\n", encoding="utf-8")
+        _run(self.repo, "add", ".claude/quenching.json", ".gitignore")
+        _run(self.repo, "commit", "-q", "-m", "declare shared paths")
+        common = subprocess.run(
+            ["git", "rev-parse", "--path-format=absolute", "--git-common-dir"],
+            cwd=self.repo, check=True, capture_output=True, text=True).stdout.strip()
+        self.base = str(pathlib.Path(common).parent)
+        self.store = pathlib.Path(f"{self.base}.tmp")
+        self.legacy = pathlib.Path(f"{self.base}..tmp")
+        self.link = pathlib.Path(self.repo, ".tmp")
+
+    def _link(self):
+        return subprocess.run([sys.executable, CQ, "git", "worktree", "link", "--json"],
+                              cwd=self.repo, capture_output=True, text=True)
+
+    def test_the_leading_dot_is_dropped_and_a_nested_path_keeps_its_name(self):
+        proc = self._link()
+        self.assertEqual(proc.returncode, 0, proc.stdout + proc.stderr)
+        stores = [item["store"] for item in json.loads(proc.stdout)["paths"]]
+        self.assertEqual(stores, [str(self.store), f"{self.base}.a.b"])
+        self.assertEqual(self.link.resolve(), self.store.resolve())
+        self.assertFalse(self.legacy.exists())
+
+    def test_the_legacy_store_is_renamed_and_its_link_repointed(self):
+        self.legacy.mkdir()
+        (self.legacy / "keep").write_text("dado\n", encoding="utf-8")
+        self.link.symlink_to(self.legacy)
+        proc = self._link()
+        self.assertEqual(proc.returncode, 0, proc.stdout + proc.stderr)
+        item = json.loads(proc.stdout)["paths"][0]
+        self.assertEqual((item["state"], item["migratedFrom"]), ("repointed", str(self.legacy)))
+        self.assertFalse(self.legacy.exists())
+        self.assertEqual((self.store / "keep").read_text(encoding="utf-8"), "dado\n")
+        self.assertEqual(self.link.resolve(), self.store.resolve())
+        self.assertEqual((self.link / "keep").read_text(encoding="utf-8"), "dado\n")
+
+    def test_both_stores_present_is_refused_and_nothing_moves(self):
+        self.legacy.mkdir()
+        (self.legacy / "old").write_text("velho\n", encoding="utf-8")
+        self.store.mkdir()
+        (self.store / "new").write_text("novo\n", encoding="utf-8")
+        self.link.symlink_to(self.legacy)
+        proc = self._link()
+        self.assertEqual(proc.returncode, 2, proc.stdout)
+        payload = json.loads(proc.stdout)
+        self.assertEqual(payload["code"], "git-worktree-store-conflict")
+        self.assertEqual((payload["store"], payload["legacy"]), (str(self.store), str(self.legacy)))
+        self.assertEqual((self.legacy / "old").read_text(encoding="utf-8"), "velho\n")
+        self.assertEqual((self.store / "new").read_text(encoding="utf-8"), "novo\n")
+        self.assertEqual(os.readlink(self.link), str(self.legacy))
+
+
+class SpecsConfigSharedPaths(RepoCase):
+    """`cq specs config` shows the declared `sharedPaths`, beside `worktreeSetup`."""
+
+    def test_config_prints_and_returns_the_shared_paths(self):
+        config = pathlib.Path(self.repo) / ".agents" / "quenching.json"
+        config.parent.mkdir()
+        config.write_text(json.dumps({"backend": "git",
+                                      "shared": {"sharedPaths": [".tmp", " ", "a/b"]}}) + "\n",
+                          encoding="utf-8")
+        proc = subprocess.run([sys.executable, CQ, "specs", "config", "--json"],
+                              cwd=self.repo, capture_output=True, text=True)
+        self.assertEqual(proc.returncode, 0, proc.stdout + proc.stderr)
+        self.assertEqual(json.loads(proc.stdout)["sharedPaths"], [".tmp", "a/b"])
+        proc = subprocess.run([sys.executable, CQ, "specs", "config"],
+                              cwd=self.repo, capture_output=True, text=True)
+        self.assertIn("  sharedPaths: .tmp, a/b", proc.stdout)
+
+
 class LifecycleBehavior(RepoCase):
     """The lifecycle cases that prose-only command tests cannot prove.
 
@@ -3505,6 +3585,90 @@ class PullRequestVerbs(RepoCase):
         self.assertEqual(code, 0, out.getvalue())
         (sets,) = seen
         self.assertEqual(sets[:2], ["number=7", f"url={self.AZURE_WEB}"])
+
+    def _azure_create_long(self, body, comment_rc=0):
+        """`pr create` on Azure through a fake `_az`: the create call answers a PR carrying its
+        repository and project ids, the invoke call reads the thread payload from --in-file."""
+        from quenching.git import pull
+        calls = []
+
+        def fake(*argv):
+            entry = {"argv": list(argv)}
+            calls.append(entry)
+            if argv[:2] == ("devops", "invoke"):
+                path = next(a for a in argv if a.startswith("--in-file="))[len("--in-file="):]
+                entry["thread"] = json.loads(pathlib.Path(path).read_text(encoding="utf-8"))
+                entry["path"] = path
+                return (comment_rc, json.dumps({"id": 11}) if comment_rc == 0 else "",
+                        "" if comment_rc == 0 else "TF401179: boom")
+            return 0, json.dumps({"pullRequestId": 7,
+                                  "url": "https://dev.azure.com/o/p/_apis/git/pullRequests/7",
+                                  "repository": {"id": "repo-guid",
+                                                 "project": {"name": "Proj X", "id": "proj-guid"},
+                                                 "webUrl": "https://dev.azure.com/o/p/_git/r"}}), ""
+        with mock.patch.object(pull, "_provider", return_value="azure-boards"), \
+                mock.patch.object(pull, "_az", side_effect=fake), \
+                mock.patch.object(pull, "sync_store", return_value={}), \
+                mock.patch.object(pull, "_branch_ok", return_value=True), \
+                contextlib.redirect_stdout(io.StringIO()) as out:
+            code = pull.cmd_pr(SimpleNamespace(action="create", base="main", head="plan/1-x",
+                                               title="t", body=body, spec=None, json=True,
+                                               **NO_AZURE_FLAGS))
+        return code, json.loads(out.getvalue()), calls
+
+    @staticmethod
+    def _long_body():
+        return "\n".join(f"## Seção {i}\n\n" + "x" * 900 for i in range(6))
+
+    def test_azure_long_body_is_cut_at_a_section_and_posted_whole_as_a_thread(self):
+        from quenching.git import pull
+        body = self._long_body()
+        self.assertGreater(len(body), 4000)
+        code, payload, calls = self._azure_create_long(body)
+        self.assertEqual(code, 0, payload)
+        create, invoke = calls
+        (description,) = [a[len("--description="):] for a in create["argv"]
+                          if a.startswith("--description=")]
+        self.assertLessEqual(len(description), 4000)
+        self.assertTrue(description.endswith("\n\nCorpo completo no primeiro comentário deste PR."))
+        kept = description.removesuffix("\n\n" + pull.AZURE_BODY_NOTE)
+        self.assertTrue(body.startswith(kept))
+        self.assertTrue(body[len(kept):].startswith("\n## "), "cut off a section boundary")
+        self.assertEqual(invoke["argv"][:2], ["devops", "invoke"])
+        for expected in ("--area=git", "--resource=pullRequestThreads", "--route-parameters",
+                         "project=Proj X", "repositoryId=repo-guid", "pullRequestId=7",
+                         "--http-method=POST"):
+            self.assertIn(expected, invoke["argv"])
+        self.assertEqual(invoke["thread"], {"comments": [{"parentCommentId": 0, "content": body,
+                                                          "commentType": 1}], "status": 4})
+        self.assertFalse(os.path.exists(invoke["path"]), "the payload file is removed")
+        self.assertEqual((payload["ok"], payload["descriptionTruncated"],
+                          payload["bodyComment"]), (True, True, {"ok": True, "threadId": 11}))
+        self.assertNotIn("findings", payload)
+
+    def test_azure_short_body_goes_whole_with_no_thread(self):
+        code, payload, calls = self._azure_create_long("## Problem\n\ncurto")
+        self.assertEqual(code, 0, payload)
+        (create,) = calls
+        self.assertIn("--description=## Problem\n\ncurto", create["argv"])
+        self.assertNotIn("descriptionTruncated", payload)
+
+    def test_azure_body_with_no_boundary_that_fits_is_cut_at_the_limit(self):
+        from quenching.git import pull
+        body = "x" * 5000
+        cut = pull._azure_description(body)
+        self.assertEqual(len(cut), 4000)
+        self.assertTrue(cut.startswith("x" * 3900))
+
+    def test_azure_failed_thread_is_a_finding_and_the_pr_stands(self):
+        code, payload, calls = self._azure_create_long(self._long_body(), comment_rc=1)
+        self.assertEqual(code, 0, payload)
+        self.assertEqual(len(calls), 2)
+        self.assertEqual((payload["ok"], payload["number"], payload["bodyComment"]["ok"]),
+                         (True, 7, False))
+        (finding,) = payload["findings"]
+        self.assertEqual(finding["code"], "git-pr-azure-comment-failed")
+        self.assertIn("TF401179: boom", finding["message"])
 
     def test_azure_only_flags_are_refused_on_github(self):
         proc = _cq(self.repo, "pr", "create", "--base", "main", "--head", "plan/1-x",

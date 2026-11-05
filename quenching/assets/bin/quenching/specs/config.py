@@ -210,6 +210,9 @@ def _read_scalars(out: dict, values: dict) -> None:
     val = values.get("worktreeSetup")
     if isinstance(val, str) and val.strip():
         out["worktreeSetup"] = val.strip()
+    paths = values.get("sharedPaths")
+    if isinstance(paths, list):
+        out["sharedPaths"] = [v.strip() for v in paths if isinstance(v, str) and v.strip()]
 
 
 def _read_azure_states(out: dict, values: dict) -> None:
@@ -387,7 +390,7 @@ def load_config(root: str, *, detect_provider_info: bool = True) -> dict:
            "backend": provider, "provider": provider, "backendDeclared": False,
            "unknownProvider": provider_host if provider is None else None,
            "unknownBackend": None,
-           "worktreeSetup": None,
+           "worktreeSetup": None, "sharedPaths": [],
            "azureStates": None, "hooks": {}, "profiles": None,
            "azurePlacement": {}, "azureColumns": {}, "subjects": {}, "tagCatalog": {},
            "workItemTypes": {},

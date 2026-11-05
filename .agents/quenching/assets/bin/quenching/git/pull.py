@@ -5,7 +5,9 @@ pattern on the command text never fenced `-d`, `-s`, `-r`, an alias, or Azure's
 `--bypass-policy`/`--auto-complete`. Here every `gh` and `az` argv is built in this module, and
 the route is the `provider` `cq specs config --json` prints. `create` names the base and the head
 explicitly — on GitHub the body goes on stdin; on Azure it opens the PR with no completion
-option at all, so no policy is bypassed and nothing completes on its own. `probe` reads the
+option at all, so no policy is bypassed and nothing completes on its own, and a body past
+Azure's 4000-character description limit goes in cut at a section boundary and whole as the PR's
+first comment thread (`az devops invoke`, argv built here too). `probe` reads the
 provider's route and `view` one PR's state, base and head; neither writes. `merge` dispatches
 Azure web URLs to `azure_pull` (build validation policies, pinned head, no-fast-forward,
 no policy bypass). On GitHub it reads `gh pr checks`
@@ -24,6 +26,7 @@ import os
 import re
 import subprocess
 import sys
+import tempfile
 import time
 from types import SimpleNamespace
 
@@ -46,6 +49,9 @@ RED = {"fail", "cancel"}
 POLL_S = 20
 WAIT_MAX_S = 540
 GH_TIMEOUT_S = 120
+# Azure DevOps refuses a PR description longer than this, in characters, markdown or not.
+AZURE_DESCRIPTION_MAX = 4000
+AZURE_BODY_NOTE = "Corpo completo no primeiro comentário deste PR."
 
 
 def _tool(tool: str, *argv: str, stdin: str | None = None) -> tuple[int, str, str]:
@@ -342,12 +348,65 @@ def _open_github(args) -> tuple[int, str, dict] | str:
     return int(PR_URL.fullmatch(url).group(1)), url, {}
 
 
+def _azure_description(body: str) -> str:
+    """The body as Azure's description, which the API refuses past `AZURE_DESCRIPTION_MAX`
+    characters (markdown does not change the count): a longer body is cut at the last `\\n## `
+    section boundary that fits beside the note, or at the raw limit when none does."""
+    if len(body) <= AZURE_DESCRIPTION_MAX:
+        return body
+    note = f"\n\n{AZURE_BODY_NOTE}"
+    room = AZURE_DESCRIPTION_MAX - len(note)
+    cut = body.rfind("\n## ", 0, room + len("\n## "))
+    head = body[:cut] if 0 < cut <= room else body[:room]
+    return head.rstrip() + note
+
+
+def _azure_comment(raw: dict, number: int, body: str) -> dict:
+    """Publish the whole body as the PR's first thread (markdown, status closed) through
+    `az devops invoke`; the result, never an exception — a failure here never undoes the PR."""
+    repository = raw.get("repository") if isinstance(raw.get("repository"), dict) else {}
+    project = repository.get("project") if isinstance(repository.get("project"), dict) else {}
+    project_ref = project.get("name") or project.get("id")
+    repository_id = repository.get("id")
+    if not project_ref or not repository_id:
+        return {"ok": False, "message": "az returned no repository/project id for the comment"}
+    thread = {"comments": [{"parentCommentId": 0, "content": body, "commentType": 1}],
+              "status": 4}
+    try:
+        handle, path = tempfile.mkstemp(prefix="cq-pr-thread-", suffix=".json")
+        with os.fdopen(handle, "w", encoding="utf-8") as stream:
+            json.dump(thread, stream, ensure_ascii=False)
+    except OSError as e:
+        return {"ok": False, "message": f"could not write the comment payload: {e}"}
+    try:
+        code, out, err = _az("devops", "invoke", "--detect=true", "--area=git",
+                             "--resource=pullRequestThreads", "--route-parameters",
+                             f"project={project_ref}", f"repositoryId={repository_id}",
+                             f"pullRequestId={number}", "--http-method=POST",
+                             f"--in-file={path}", "--output=json")
+    finally:
+        try:
+            os.unlink(path)
+        except OSError:
+            pass
+    if code != 0:
+        return {"ok": False, "message": (err or out).strip() or f"az exited {code}"}
+    try:
+        thread_id = json.loads(out).get("id")
+    except (json.JSONDecodeError, AttributeError):
+        thread_id = None
+    return {"ok": True, "threadId": thread_id}
+
+
 def _open_azure(args) -> tuple[int, str, dict] | str:
-    """`az repos pr create` with no `--auto-complete`, `--bypass-policy` or merge option."""
+    """`az repos pr create` with no `--auto-complete`, `--bypass-policy` or merge option. A body
+    past Azure's description limit goes in cut (`_azure_description`) and, once the PR exists,
+    whole as its first comment thread; a comment that fails is a finding, the PR stands."""
     argv = ["repos", "pr", "create", "--detect=true", f"--source-branch={args.head}",
             f"--target-branch={args.base}", f"--title={args.title}"]
-    if args.body:
-        argv.append(f"--description={args.body}")
+    description = _azure_description(args.body) if args.body else ""
+    if description:
+        argv.append(f"--description={description}")
     if args.work_item:
         argv.append(f"--work-items={args.work_item}")
     if args.transition_work_items:
@@ -356,12 +415,24 @@ def _open_azure(args) -> tuple[int, str, dict] | str:
         argv.append("--delete-source-branch=true")
     code, out, err = _az(*argv, "--output=json")
     try:
-        pr = normalize_azure_pull_request(json.loads(out)) if code == 0 else None
+        raw = json.loads(out) if code == 0 else None
+        pr = normalize_azure_pull_request(raw) if raw is not None else None
     except (json.JSONDecodeError, AttributeError):
-        pr = None
+        raw = pr = None
     if not pr or not pr["webUrl"] or not str(pr["id"]).isdigit():
         return (err or out).strip() or "az returned no pull request"
-    return int(pr["id"]), pr["webUrl"], {"apiUrl": pr["apiUrl"]}
+    number = int(pr["id"])
+    extra: dict = {"apiUrl": pr["apiUrl"]}
+    if description != (args.body or ""):
+        extra["descriptionTruncated"] = True
+        comment = _azure_comment(raw, number, args.body)
+        extra["bodyComment"] = comment
+        if not comment["ok"]:
+            extra["findings"] = [{"code": "git-pr-azure-comment-failed",
+                                  "message": "the PR stands with a cut description; the whole "
+                                             f"body was not posted as a comment: "
+                                             f"{comment['message']}"}]
+    return number, pr["webUrl"], extra
 
 
 def _create(args) -> int:
@@ -413,7 +484,8 @@ def _create(args) -> int:
                                      f"{stamp['message']}")
             return FINDINGS
     payload["specs"] = specs = sync_store(find_repo_root(os.getcwd()))
-    emit(args.json, payload, f"PR #{number}: {url}" + _specs_note(specs))
+    notes = "".join(f"\nfinding: {f['message']}" for f in payload.get("findings", []))
+    emit(args.json, payload, f"PR #{number}: {url}" + _specs_note(specs) + notes)
     return OK
 
 

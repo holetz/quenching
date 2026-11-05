@@ -45,12 +45,28 @@ def _declared_paths(config: dict) -> list[str]:
     return paths
 
 
-def _store_for(repo: str, relative: str) -> str | None:
+def _store_names(repo: str, relative: str) -> tuple[str, str] | None:
+    """`(store, legacy)`: the sibling store of `relative` and the name it had before the leading
+    dots were dropped (`.tmp` was `<repo>..tmp`, is `<repo>.tmp`); equal when nothing changed."""
     common = _git(repo, "rev-parse", "--path-format=absolute", "--git-common-dir").strip()
     if not common:
         return None
-    name = relative.replace(os.sep, ".")
-    return f"{os.path.dirname(common)}.{name}"
+    legacy = relative.replace(os.sep, ".")
+    name = legacy.lstrip(".") or legacy
+    base = os.path.dirname(common)
+    return f"{base}.{name}", f"{base}.{legacy}"
+
+
+def _migrate_store(store: str, legacy: str) -> str | None:
+    """Rename the legacy sibling store to its new name, when only the legacy one exists; the
+    path it came from, or None when there was nothing to move. Both present → FileExistsError,
+    and nothing is touched."""
+    if legacy == store or not os.path.lexists(legacy):
+        return None
+    if os.path.lexists(store):
+        raise FileExistsError(store)
+    os.rename(legacy, store)
+    return legacy
 
 
 def _link_path(repo: str, relative: str) -> str:
@@ -129,16 +145,31 @@ def _link(repo: str) -> tuple[list[dict] | None, dict | None]:
         return None, config["migrationRefusal"]
     results = []
     for relative in _declared_paths(config):
-        store = _store_for(repo, relative)
-        if store is None:
+        names = _store_names(repo, relative)
+        if names is None:
             return None, {"code": "git-worktree-no-common-dir", "path": relative,
                           "message": "git could not resolve the repository's common directory"}
+        store, legacy = names
+        try:
+            migrated = _migrate_store(store, legacy)
+        except FileExistsError:
+            return None, {"code": "git-worktree-store-conflict", "path": relative,
+                          "store": store, "legacy": legacy,
+                          "message": f"both the shared store '{store}' and its legacy name "
+                                     f"'{legacy}' exist; merge them into '{store}' by hand and "
+                                     "remove the legacy one, then link again"}
+        except OSError as exc:
+            return None, {"code": "git-worktree-store-migrate-failed", "path": relative,
+                          "store": store, "legacy": legacy,
+                          "message": f"could not rename '{legacy}' to '{store}': {exc}"}
         try:
             item = _materialise(repo, relative, store)
         except FileExistsError:
             return None, {"code": "git-worktree-path-not-empty", "path": relative,
                           "message": f"'{relative}' is a real path with content; merge it into "
                                      "the shared store by hand before linking it"}
+        if migrated:
+            item["migratedFrom"] = migrated
         warning = _ignore_warning(repo, relative)
         if warning:
             item["warning"] = warning
@@ -150,6 +181,8 @@ def _link_lines(results: list[dict]) -> list[str]:
     human = []
     for item in results:
         line = f"{item['path']}: {item['state']} -> {item['store']}"
+        if item.get("migratedFrom"):
+            line += f" (renamed from {item['migratedFrom']})"
         if item.get("warning"):
             line += f" [warning: {item['warning']}]"
         human.append(line)
