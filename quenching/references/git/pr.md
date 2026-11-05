@@ -38,6 +38,15 @@ not promote the `url` field into a human link. GitHub accepts its browser `url`/
 REST `url` separately, deriving the API endpoint from the repository and PR number only when the
 provider did not return one.
 
+## The Azure description limit
+
+Azure DevOps refuses a pull-request description longer than 4000 characters, whatever the
+markdown. `cq git pr create` sends a longer body cut at the last `\n## ` section boundary that
+fits beside the note "Corpo completo no primeiro comentário deste PR." (raw cut when none fits),
+then posts the whole body as the PR's first thread with `az devops invoke --area git --resource
+pullRequestThreads` (`status` closed), the argv built in the module. A failed thread is a
+`git-pr-azure-comment-failed` finding in the payload; the PR stands.
+
 ## Selection and provider route
 
 Read `.agents/quenching/bin/cq specs config --json` and the `origin` URL before
