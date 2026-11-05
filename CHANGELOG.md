@@ -13,6 +13,17 @@ owner: [`ci-cd/versioning-release.md`](docs/standards/ci-cd/versioning-release.m
 short version for a consumer: the version is published once, deliberately, as a release — never at a
 spec's own conclude — and `cq --version` is what answers which one you are running.
 
+## 7.3.0
+
+**A home `communications/` entra na árvore canônica e `type: communication` dispensa `resource`.**
+  O aviso já enviado a um público — incidente, mudança, release — passa a ter casa própria no
+  bundle: uma página por aviso, datada no caminho (`<ano>/<aaaa-mm-dd>-<slug>.md`) e na ficha, com
+  `index.md` reservado na home e em cada ano. O tipo `communication` entra na tabela por home e em
+  `TYPES_WITHOUT_RESOURCE`: um aviso operacional muitas vezes não aponta para ativo nenhum, e o
+  `resource` que ele **tem** continua sendo resolvido. O roteiro do `/quenching-knowledge add`
+  ganha a linha e o desempate contra `documentation/`; o caminho do `/quenching-knowledge align`
+  deixa de tratar a home como fora da árvore.
+
 ## 7.2.0
 
 **`cq git worktree add` roda o `worktreeSetup` declarado.** Logo depois do corte e do link, o
