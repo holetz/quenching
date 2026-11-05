@@ -2563,6 +2563,57 @@ class WorktreeAdd(RepoCase):
         self.assertEqual([p["state"] for p in payload["paths"]], ["created"])
         self.assertTrue(os.path.islink(os.path.join(self.path, "shared")))
 
+    def _declare_setup(self, command: str) -> None:
+        config = pathlib.Path(self.repo, ".claude", "quenching.json")
+        config.parent.mkdir(exist_ok=True)
+        config.write_text(json.dumps({"shared": {"worktreeSetup": command}}) + "\n",
+                          encoding="utf-8")
+        _run(self.repo, "add", ".claude/quenching.json")
+        _run(self.repo, "commit", "-q", "-m", "declare setup")
+        _run(self.repo, "push", "-q", "origin", "main:main", "--force")
+
+    def test_runs_the_declared_setup_once_inside_the_new_worktree(self):
+        self._declare_setup("pwd > setup-ran.txt")
+        payload = _cq_json(self.repo, "worktree", "add", "--path", self.path,
+                           "--branch", "plan/1-x", "--base", "main")
+        self.assertEqual(payload["setup"], {"command": "pwd > setup-ran.txt", "exit": 0,
+                                            "ok": True})
+        ran = pathlib.Path(self.path, "setup-ran.txt").read_text(encoding="utf-8").strip()
+        self.assertEqual(os.path.realpath(ran), os.path.realpath(self.path))
+        self.assertFalse(pathlib.Path(self.repo, "setup-ran.txt").exists())
+
+    def test_a_failing_setup_is_exit_1_and_leaves_the_worktree(self):
+        self._declare_setup("exit 3")
+        proc = _cq(self.repo, "worktree", "add", "--path", self.path,
+                   "--branch", "plan/1-x", "--base", "main")
+        self.assertEqual(proc.returncode, 1, proc.stdout + proc.stderr)
+        payload = json.loads(proc.stdout)
+        self.assertEqual((payload["ok"], payload["setup"]["exit"]), (False, 3))
+        self.assertIn("setup: exit 3", proc.stderr)
+        self.assertTrue(os.path.isdir(self.path))
+
+    def test_no_setup_skips_the_declared_setup(self):
+        self._declare_setup("touch setup-ran.txt")
+        payload = _cq_json(self.repo, "worktree", "add", "--path", self.path,
+                           "--branch", "plan/1-x", "--base", "main", "--no-setup")
+        self.assertIsNone(payload["setup"])
+        self.assertFalse(pathlib.Path(self.path, "setup-ran.txt").exists())
+
+    def test_without_a_declaration_nothing_runs(self):
+        payload = _cq_json(self.repo, "worktree", "add", "--path", self.path,
+                           "--branch", "plan/1-x", "--base", "main")
+        self.assertIsNone(payload["setup"])
+
+    def test_the_setup_is_read_from_the_cut_base_not_the_callers_tree(self):
+        config = pathlib.Path(self.repo, ".claude", "quenching.json")
+        config.parent.mkdir(exist_ok=True)
+        config.write_text(json.dumps({"shared": {"worktreeSetup": "touch pwn"}}) + "\n",
+                          encoding="utf-8")
+        payload = _cq_json(self.repo, "worktree", "add", "--path", self.path,
+                           "--branch", "plan/1-x", "--base", "main")
+        self.assertIsNone(payload["setup"])
+        self.assertFalse(pathlib.Path(self.path, "pwn").exists())
+
     def _store_spec(self) -> tuple[str, list]:
         os.makedirs(os.path.join(self.repo, ".claude"), exist_ok=True)
         pathlib.Path(self.repo, ".claude", "quenching.json").write_text(

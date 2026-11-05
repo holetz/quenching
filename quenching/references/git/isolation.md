@@ -161,9 +161,12 @@ See
 §The envelope and recognised namespaces.
 
 Read by `.agents/quenching/bin/cq specs config --json` (exit 0 whether or not anything is declared) and run **once** by
-the isolation, immediately after the worktree is cut, with **cwd inside the new worktree** — the
-tree lacking the dependencies is the tree that must install them. `.agents/quenching/bin/cq specs` reads the value and
-never executes it.
+`.agents/quenching/bin/cq git worktree add`, immediately after the worktree is cut and linked, with **cwd inside the
+new worktree** — the tree lacking the dependencies is the tree that must install them. The verb
+reads the declaration from the worktree it just cut, the fetched base, never from the caller's
+tree, so an uncommitted edit cannot choose what runs; `--no-setup` skips it. A raw
+`git worktree add` (a second worktree inside a build) runs it by hand, the same way.
+`.agents/quenching/bin/cq specs` reads the value and never executes it.
 
 No file, no key, or a command that does not resolve all mean **no setup**, and none of them is a
 finding — most repos declare nothing, and declaring nothing must cost nothing. `.agents/quenching/bin/cq specs doctor`
