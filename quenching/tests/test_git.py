@@ -1767,6 +1767,24 @@ class WorktreeDottedStore(RepoCase):
         self.assertEqual(os.readlink(self.link), str(self.legacy))
 
 
+class SpecsConfigSharedPaths(RepoCase):
+    """`cq specs config` shows the declared `sharedPaths`, beside `worktreeSetup`."""
+
+    def test_config_prints_and_returns_the_shared_paths(self):
+        config = pathlib.Path(self.repo) / ".agents" / "quenching.json"
+        config.parent.mkdir()
+        config.write_text(json.dumps({"backend": "git",
+                                      "shared": {"sharedPaths": [".tmp", " ", "a/b"]}}) + "\n",
+                          encoding="utf-8")
+        proc = subprocess.run([sys.executable, CQ, "specs", "config", "--json"],
+                              cwd=self.repo, capture_output=True, text=True)
+        self.assertEqual(proc.returncode, 0, proc.stdout + proc.stderr)
+        self.assertEqual(json.loads(proc.stdout)["sharedPaths"], [".tmp", "a/b"])
+        proc = subprocess.run([sys.executable, CQ, "specs", "config"],
+                              cwd=self.repo, capture_output=True, text=True)
+        self.assertIn("  sharedPaths: .tmp, a/b", proc.stdout)
+
+
 class LifecycleBehavior(RepoCase):
     """The lifecycle cases that prose-only command tests cannot prove.
 

@@ -28,6 +28,7 @@ def cmd_config(args, root: str, out: Emitter) -> int:
              f"  backend: {cfg['backend']}"
              + (" (default)" if not cfg["present"] else ""),
              "  worktreeSetup: " + (cfg["worktreeSetup"] or "(none declared)"),
+             "  sharedPaths: " + (", ".join(cfg["sharedPaths"]) or "(none declared)"),
              "  azureStates: " + (", ".join(f"{p}={s}" for p, s in cfg["azureStates"].items())
                                   if cfg["azureStates"] else "(none declared)"),
              "  hooks: " + (", ".join(f"{event}: {len(entries)}" for event, entries in cfg["hooks"].items())
