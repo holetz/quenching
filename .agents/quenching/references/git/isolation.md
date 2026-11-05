@@ -156,6 +156,13 @@ The isolation displays the declared list **verbatim** before it links anything. 
 before the setup command runs. A setup script must not re-create, replace or remove a path declared
 in `sharedPaths`; the link command owns that path for every checkout.
 
+The sibling store sits beside the primary checkout: `<repo>.<path>`, the path's separators turned
+into dots and its leading dots dropped (`.tmp` → `<repo>.tmp`, `a/b` → `<repo>.a.b`). A store left
+under the older name with the dot kept (`<repo>..tmp`) is renamed to the new name by the next
+`link` when the new one does not exist yet. A link pointing at the old name is then repointed. When
+both exist, `link` refuses with `git-worktree-store-conflict` and moves nothing; the human merges
+them.
+
 See
 [plugin-configuration.md](.agents/quenching/references/specs-align/plugin-configuration.md)
 §The envelope and recognised namespaces.
