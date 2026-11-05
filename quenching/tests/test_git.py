@@ -1705,6 +1705,68 @@ class Worktree(RepoCase):
         self.assertEqual((before.st_dev, before.st_ino), (after.st_dev, after.st_ino))
 
 
+class WorktreeDottedStore(RepoCase):
+    """A shared path that starts with a dot names its sibling store without the dot
+    (`.tmp` → `<repo>.tmp`, never `<repo>..tmp`); the legacy store is renamed on `link`."""
+
+    def setUp(self):
+        super().setUp()
+        config = pathlib.Path(self.repo) / ".claude" / "quenching.json"
+        config.parent.mkdir()
+        config.write_text(json.dumps({"shared": {"sharedPaths": [".tmp", "a/b"]}}) + "\n",
+                          encoding="utf-8")
+        pathlib.Path(self.repo, ".gitignore").write_text("/.tmp\n/a/b\n", encoding="utf-8")
+        _run(self.repo, "add", ".claude/quenching.json", ".gitignore")
+        _run(self.repo, "commit", "-q", "-m", "declare shared paths")
+        common = subprocess.run(
+            ["git", "rev-parse", "--path-format=absolute", "--git-common-dir"],
+            cwd=self.repo, check=True, capture_output=True, text=True).stdout.strip()
+        self.base = str(pathlib.Path(common).parent)
+        self.store = pathlib.Path(f"{self.base}.tmp")
+        self.legacy = pathlib.Path(f"{self.base}..tmp")
+        self.link = pathlib.Path(self.repo, ".tmp")
+
+    def _link(self):
+        return subprocess.run([sys.executable, CQ, "git", "worktree", "link", "--json"],
+                              cwd=self.repo, capture_output=True, text=True)
+
+    def test_the_leading_dot_is_dropped_and_a_nested_path_keeps_its_name(self):
+        proc = self._link()
+        self.assertEqual(proc.returncode, 0, proc.stdout + proc.stderr)
+        stores = [item["store"] for item in json.loads(proc.stdout)["paths"]]
+        self.assertEqual(stores, [str(self.store), f"{self.base}.a.b"])
+        self.assertEqual(self.link.resolve(), self.store.resolve())
+        self.assertFalse(self.legacy.exists())
+
+    def test_the_legacy_store_is_renamed_and_its_link_repointed(self):
+        self.legacy.mkdir()
+        (self.legacy / "keep").write_text("dado\n", encoding="utf-8")
+        self.link.symlink_to(self.legacy)
+        proc = self._link()
+        self.assertEqual(proc.returncode, 0, proc.stdout + proc.stderr)
+        item = json.loads(proc.stdout)["paths"][0]
+        self.assertEqual((item["state"], item["migratedFrom"]), ("repointed", str(self.legacy)))
+        self.assertFalse(self.legacy.exists())
+        self.assertEqual((self.store / "keep").read_text(encoding="utf-8"), "dado\n")
+        self.assertEqual(self.link.resolve(), self.store.resolve())
+        self.assertEqual((self.link / "keep").read_text(encoding="utf-8"), "dado\n")
+
+    def test_both_stores_present_is_refused_and_nothing_moves(self):
+        self.legacy.mkdir()
+        (self.legacy / "old").write_text("velho\n", encoding="utf-8")
+        self.store.mkdir()
+        (self.store / "new").write_text("novo\n", encoding="utf-8")
+        self.link.symlink_to(self.legacy)
+        proc = self._link()
+        self.assertEqual(proc.returncode, 2, proc.stdout)
+        payload = json.loads(proc.stdout)
+        self.assertEqual(payload["code"], "git-worktree-store-conflict")
+        self.assertEqual((payload["store"], payload["legacy"]), (str(self.store), str(self.legacy)))
+        self.assertEqual((self.legacy / "old").read_text(encoding="utf-8"), "velho\n")
+        self.assertEqual((self.store / "new").read_text(encoding="utf-8"), "novo\n")
+        self.assertEqual(os.readlink(self.link), str(self.legacy))
+
+
 class LifecycleBehavior(RepoCase):
     """The lifecycle cases that prose-only command tests cannot prove.
 
