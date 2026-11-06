@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import contextlib
 import io
+import json
 import os
 import pathlib
 import subprocess
@@ -36,6 +37,18 @@ class Assessment(RepoCase):
         _run(self.repo, "worktree", "add", "-q", "-b", branch, path)
         return os.path.realpath(path)
 
+    def _exclude(self, *patterns):
+        """Ignore patterns every worktree of this throwaway repo shares."""
+        exclude = pathlib.Path(self.repo, ".git", "info", "exclude")
+        exclude.parent.mkdir(parents=True, exist_ok=True)
+        exclude.write_text("\n".join(patterns) + "\n", encoding="utf-8")
+
+    def _declare(self, *paths):
+        config = pathlib.Path(self.repo, ".claude", "quenching.json")
+        config.parent.mkdir(parents=True, exist_ok=True)
+        config.write_text(json.dumps({"shared": {"regenerablePaths": list(paths)}}) + "\n",
+                          encoding="utf-8")
+
     def _report(self):
         with NO_PRS:
             return stale_report(self.repo)
@@ -43,18 +56,58 @@ class Assessment(RepoCase):
     def _row(self, report, path):
         return next(w for w in report["worktrees"] if w["path"] == path)
 
-    def test_a_clean_merged_linked_worktree_is_a_candidate_but_never_recommended(self):
+    def test_a_clean_merged_linked_worktree_is_a_candidate_and_recommended(self):
         path = self._worktree()
         report = self._report()
-        self.assertTrue(self._row(report, path)["eligible"])
+        row = self._row(report, path)
+        self.assertTrue(row["eligible"])
+        self.assertEqual(row["ignored"], {"regenerable": [], "unrecognized": []})
         entry = next(e for e in report["manifest"] if e["kind"] == "worktree")
         self.assertEqual(entry["status"], "candidate")
-        self.assertFalse(entry["recommended"])
+        self.assertTrue(entry["recommended"])
         self.assertEqual(entry["action"]["argv"], ["git", "worktree", "remove", "--", path])
         self.assertIn("--confirm-inactive", entry["action"]["cq"])
         self.assertEqual(entry["id"], entry_id("worktree", path))
 
-    def test_dirty_ignored_locked_and_unmerged_worktrees_are_preserved_with_reasons(self):
+    def test_ignored_cache_only_worktree_is_candidate_and_recommended(self):
+        self._exclude(".venv/")
+        path = self._worktree()
+        marker = pathlib.Path(path, ".venv", "lib", "marker")
+        marker.parent.mkdir(parents=True)
+        marker.write_text("x\n", encoding="utf-8")
+        report = self._report()
+        row = self._row(report, path)
+        self.assertTrue(row["eligible"], row["blockers"])
+        self.assertEqual(row["ignored"], {"regenerable": [".venv/"], "unrecognized": []})
+        entry = next(e for e in report["manifest"] if e["kind"] == "worktree")
+        self.assertTrue(entry["recommended"])
+        self.assertEqual(entry["ignored"], row["ignored"])
+
+    def test_a_declared_regenerable_path_is_silent(self):
+        self._exclude("generated/")
+        path = self._worktree()
+        target = pathlib.Path(path, "generated", "report.json")
+        target.parent.mkdir(parents=True)
+        target.write_text("{}\n", encoding="utf-8")
+        self._declare("generated")
+        report = self._report()
+        row = self._row(report, path)
+        self.assertTrue(row["eligible"], row["blockers"])
+        self.assertEqual(row["ignored"], {"regenerable": ["generated/"], "unrecognized": []})
+
+    def test_undeclared_ignored_content_is_listed_and_preserved(self):
+        self._exclude("*.tmp")
+        path = self._worktree()
+        pathlib.Path(path, "notes.tmp").write_text("x\n", encoding="utf-8")
+        report = self._report()
+        row = self._row(report, path)
+        self.assertFalse(row["eligible"])
+        self.assertIn("ignored-content-unrecognized", row["blockers"])
+        self.assertEqual(row["ignored"], {"regenerable": [], "unrecognized": ["notes.tmp"]})
+        entry = next(e for e in report["manifest"] if e["kind"] == "worktree")
+        self.assertFalse(entry["recommended"])
+
+    def test_dirty_untracked_locked_and_unmerged_worktrees_are_preserved_with_reasons(self):
         dirty = self._worktree("dirty", "dirty-b")
         pathlib.Path(dirty, "x.txt").write_text("x\n", encoding="utf-8")
         locked = self._worktree("locked", "locked-b")
@@ -64,10 +117,16 @@ class Assessment(RepoCase):
         _run(ahead, "add", "y.txt")
         _run(ahead, "commit", "-q", "-m", "ahead")
         report = self._report()
-        self.assertIn("dirty-or-ignored-content", self._row(report, dirty)["blockers"])
+        self.assertIn("untracked-files", self._row(report, dirty)["blockers"])
         self.assertIn("locked", self._row(report, locked)["blockers"])
         self.assertIn("unmerged-head", self._row(report, ahead)["blockers"])
         self.assertFalse(any(w["eligible"] for w in report["worktrees"]))
+
+    def test_a_tracked_change_blocks_with_its_own_reason(self):
+        path = self._worktree()
+        pathlib.Path(path, "a.txt").write_text("changed\n", encoding="utf-8")
+        report = self._report()
+        self.assertIn("tracked-changes", self._row(report, path)["blockers"])
 
     def test_unavailable_pr_lookup_blocks_worktrees_and_recommends_nothing(self):
         path = self._worktree()
