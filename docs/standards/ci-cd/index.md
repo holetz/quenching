@@ -58,8 +58,11 @@ otherwise it is the system temp dir and the gate prints a `NOTICE`. Each run cre
 otherwise delete the worker data before the report is combined and `cq proof ratchet` reads it.
 `QUENCHING_TEST_TMPDIR` overrides the root, and `QUENCHING_TEST_WORKERS` sets the worker count
 (`auto` by default) so concurrent gates can share the cores. A pytest spawned from inside a test
-inherits its parent's slots and runs serially instead of queuing behind them. A direct `pytest` run
-gets the same root from `quenching/tests/_paths.py`.
+inherits its parent's slots and runs serially instead of queuing behind them. The same bootstrap
+gives every `git` the run's own configuration file, written under that temp root and exported as
+`GIT_CONFIG_GLOBAL`: a developer's hooks, signing and `init.defaultBranch` cannot reach a test,
+while the repository's own config still outranks it. A direct `pytest` run gets the same root and
+the same git isolation from `quenching/tests/_paths.py`.
 
 ## Three tiers of test runs
 
