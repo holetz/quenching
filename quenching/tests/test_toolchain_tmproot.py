@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import contextlib
 import io
+import os
 import pathlib
 import sys
 import tempfile
@@ -22,6 +23,11 @@ if str(REPO_ROOT) not in sys.path:
 from scripts.toolchain import tmproot  # noqa: E402
 
 GIGABYTE = 2**30
+
+
+# The Linux matrix decides by /proc/mounts and /dev/shm, which Windows does not have; its own
+# cases below are the Windows half and run everywhere.
+POSIX = unittest.skipUnless(os.name == "posix", "the Linux temp-root matrix needs POSIX mount semantics")
 
 
 class TempRootCase(unittest.TestCase):
@@ -61,23 +67,27 @@ class TempRootCase(unittest.TestCase):
         self.assertIn(tmproot.OVERRIDE, str(caught.exception))
         self.assertIn("does not exist", str(caught.exception))
 
+    @POSIX
     def test_xdg_runtime_dir_is_preferred_when_it_is_a_tmpfs_with_room(self):
         with self.mounts((str(self.xdg), "tmpfs"), ("/dev/shm", "tmpfs")), self.room():
             got = tmproot.resolve({"XDG_RUNTIME_DIR": str(self.xdg)}, platform="linux")
         self.assertEqual((got.path, got.kind, got.label), (self.xdg, "ram", "XDG_RUNTIME_DIR"))
         self.assertIsNone(got.notice)
 
+    @POSIX
     def test_a_disk_backed_xdg_runtime_dir_falls_through_to_dev_shm(self):
         with self.mounts((str(self.xdg), "ext4"), ("/dev/shm", "tmpfs")), self.room():
             got = tmproot.resolve({"XDG_RUNTIME_DIR": str(self.xdg)}, platform="linux")
         self.assertEqual(got.label, "/dev/shm")
 
+    @POSIX
     def test_a_tmpfs_without_room_is_refused(self):
         with self.mounts((str(self.xdg), "tmpfs"), ("/dev/shm", "tmpfs")), \
                 mock.patch.object(tmproot, "_free_bytes", return_value=tmproot.MIN_FREE_BYTES - 1):
             got = tmproot.resolve({"XDG_RUNTIME_DIR": str(self.xdg)}, platform="linux")
         self.assertNotEqual(got.path, self.xdg)
 
+    @POSIX
     def test_no_ram_candidate_falls_back_to_disk_with_a_notice(self):
         system = pathlib.Path(tempfile.gettempdir())
         with self.mounts((str(self.xdg), "ext4"), ("/dev/shm", "ext4")):
@@ -115,6 +125,7 @@ class TempRootCase(unittest.TestCase):
                          {key: str(self.local) for key in tmproot.ENV_KEYS})
         self.assertEqual(tempfile.tempdir, str(self.local))
 
+    @POSIX
     def test_apply_prints_the_notice_once(self):
         stream = io.StringIO()
         with self.mounts((str(self.xdg), "ext4"), ("/dev/shm", "ext4")):
