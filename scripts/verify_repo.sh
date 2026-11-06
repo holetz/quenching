@@ -100,7 +100,13 @@ for test in doc["tests"]:
     print("TARGET\t" + test)
 ')
     case "$MODE" in
-      affected) printf 'scope: affected against %s — %d test file(s)\n' "$TEST_SCOPE_BASE" "${#TARGETS[@]}" ;;
+      affected)
+        if [ "${#TARGETS[@]}" -eq 0 ]; then
+          SUITE_SKIP="the diff reaches no test"
+        else
+          printf 'scope: affected against %s — %d test file(s)\n' "$TEST_SCOPE_BASE" "${#TARGETS[@]}"
+        fi
+        ;;
       skip) SUITE_SKIP="the diff reaches no test" ;;
       *) TARGETS=(quenching/tests); printf 'scope: affected — whole suite, see the reason above\n' ;;
     esac
