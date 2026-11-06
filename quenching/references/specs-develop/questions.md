@@ -462,7 +462,53 @@ Both land in the pass's single edit, so the spec never holds the superseded vers
 table exists and the human has chosen — and the spec's biggest remaining risk is one they
 explicitly accepted.
 
+## Surface refinement
+
+**A second subject, never a stage.** The definition pass plans the spec's objective and the
+process surface together; both land in `## Tasks`.
+
+**Explicit input only.** The human asks — "refine the workflow too", "change the process alongside
+the objective" — or supplies `--with-surface`. Like `autonomous`, this is a declaration in the
+input, never a reading of the state: `## Impact`, a missing section and the pass's own judgment
+cannot trigger it.
+
+**It plans; it does not edit.** Definition writes the spec and nothing else: no workflow, skill,
+reference, structure or code file. `/quenching-specs execute` writes the surface files one task
+at a time, each with its own commit and `verify:`. That boundary lets the pass obey the doctrine
+it is changing.
+
+**Enumerate with the ask.** Account for every process-surface opportunity found while forming the
+objective — a workflow, a skill, a reference, their structure or an automation. Fold each into
+the task group or park it as one `## Discoveries` line (§Discoveries); nothing is dropped or edited.
+
+**The task group.** Use the grammar of [spec-driven.md](spec-driven.md) §`## Tasks`:
+
+| Contract | Required shape |
+| --- | --- |
+| Position | `### 1. Process surface` is the FIRST group of `## Tasks`, ahead of the objective's tasks that rely on the new behaviour: the dependency is real and serial. |
+| Items | Every item carries `files:` and `verify:`. `files:` names the surface paths declared under `## Impact` §`Process surface this spec expects to touch` ([artifacts.md](artifacts.md) §`## Impact`), plus any generated `.agents/**` / `.claude/**` mirrors and deploy manifest the source edit rewrites, declared in the same task. |
+| Coverage | Every path under that `## Impact` sub-heading is named by a task in the group; a declared path without a task is a review finding. |
+| Order | No `[P]` crosses the group: its tasks share the surface and land in order. |
+| Timing | Plan the group during definition; execution never infers it. |
+
+**Current practice.** Where the plan needs it, delegate the reading to the read-only sub-agent of
+`docs/standards/automation/agents.md` §The research profile. It returns one table — source,
+publication date, retrieval date, claim, what it would change — into `## Alternatives Considered`
+or `## Design`. A web source may support an alternative or a rationale; it never grounds a binding
+rule alone (`quenching/references/align/evidence-doctrine.md` §3).
+
+**Stop when** every declared surface path is named by a task carrying `files:` and `verify:`,
+`.agents/quenching/bin/cq specs parallel` exits 0, and nothing outside the spec was written.
+
 ## Discoveries
+
+**Park the process surface, always.** Every pass — with or without the surface ask, on every
+track — parks a finding that the workflow, a skill, a reference, the structure or an automation
+around the spec is the constraint as ONE `## Discoveries` line carrying `path:line` and the
+consequence. A cost finding is one kind of it, and it carries a counted figure — tokens, round
+trips or whole-file reads — read from `cq components session context` or
+`cq components session cost`, never from the pass's recollection. Parking is not an offer and
+mints nothing.
 
 **Runs when** `## Discoveries` holds a line with no resolution on it — stage 0 of the pass, before
 compose, at any derived stage.
@@ -578,6 +624,11 @@ Every stage that reads the codebase or `docs/` to answer its own questions — c
 the aggregate a `grep`/`gh`/`cq` call produces, never the raw dump; `.agents/quenching/bin/cq components read <path>
 --sections "§X"` for `docs/standards/` and `knowledge/glossary.md`, the same way this
 plugin's own references already address a section instead of a whole file.
+
+**Park at the read.** A reading that exposes a constraint in the workflow, a skill, a reference,
+the structure or an automation around the spec parks it on the spot, under §Discoveries' own
+always-park rule — one line, `path:line` and the consequence, a counted figure for a cost
+finding. The reading never becomes the edit.
 
 Two uses delegate that reading to a sub-agent, and they do not share one tool profile.
 
