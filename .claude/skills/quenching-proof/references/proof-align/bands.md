@@ -43,6 +43,9 @@ The command named in the table is a hand-off, not an instruction for the align t
 | `pf-unmeasured-surface` | Each product surface outside measured roots or exclusions, with the consequence for the coverage number. | The target owner's reviewed measurement or exclusion change, then `/quenching-proof align`. |
 | `pf-no-ci` | The CI providers searched and the missing invocation of the proof gate. | The target owner's reviewed CI workflow, then `/quenching-proof align`. |
 | `pf-untested-entrypoint` | The active operations entry point, its path, and the missing test or explicit not-applicable record. | The target owner's reviewed test or applicability declaration, then `/quenching-proof align`. |
+| `pf-cost-undeclared` | The cost contract as declared (whole or absent, the missing keys named), and the measured cost a run pays without it. | The target owner's `proof.cost` declaration in `.agents/quenching.json`, guided by `/docs/standards/ci-cd/test-cost.md`, then `/quenching-proof align`. |
+| `pf-temp-shared` | The declared `tempRoot: system` and where the target's runner writes its temporary files. | The target owner's runner change to a root outside the repository, removed when the run ends; then the declaration and `cq proof readme --write`. |
+| `pf-scope-wide` | The close scope and the CI scope as declared, and the consequence for a one-line change. | The target owner's narrower local tier, keeping the full run in CI; then the declaration and `cq proof readme --write`. |
 
 ## The floor-deferral rule
 

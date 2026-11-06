@@ -123,6 +123,22 @@ class CIInvocation:
 
 
 @dataclass(frozen=True)
+class CostContract:
+    """What the target declares about the cost of a run: temp root, workers and tier scopes."""
+
+    temp_root: str | None = None
+    workers: str | int | None = None
+    scopes: dict[str, str] = field(default_factory=dict)
+
+    def __post_init__(self) -> None:
+        object.__setattr__(self, "scopes", dict(sorted(self.scopes.items())))
+
+    def as_dict(self) -> dict[str, Any]:
+        return {"tempRoot": self.temp_root, "workers": self.workers,
+                "scopes": dict(self.scopes)}
+
+
+@dataclass(frozen=True)
 class ProofInventory:
     repo_root: str
     proof_root: str
@@ -132,6 +148,8 @@ class ProofInventory:
     conftests: tuple[Conftest, ...] = ()
     gate: GateConfig = field(default_factory=GateConfig)
     ci: tuple[CIInvocation, ...] = ()
+    cost: CostContract | None = None
+    config_path: str | None = None
     measured_roots: tuple[str, ...] = ()
     exclusions: tuple[str, ...] = ()
     source_surfaces: tuple[str, ...] = ()
@@ -159,6 +177,8 @@ class ProofInventory:
             "conftests": [item.as_dict() for item in self.conftests],
             "gate": self.gate.as_dict(),
             "ci": [item.as_dict() for item in self.ci],
+            "cost": self.cost.as_dict() if self.cost else None,
+            "config": self.config_path,
             "measuredRoots": list(self.measured_roots),
             "exclusions": list(self.exclusions),
             "sourceSurfaces": list(self.source_surfaces),
