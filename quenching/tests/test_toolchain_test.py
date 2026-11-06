@@ -35,6 +35,21 @@ class Build(unittest.TestCase):
         argv = runner.build(["quenching/tests"], True, [])
         self.assert_no_marker_filter(argv)
 
+    def test_the_workers_default_to_auto_and_do_not_duplicate_a_choice(self):
+        with mock.patch.dict("os.environ", {}, clear=True):
+            argv = runner.build(["a"], True, [])
+        self.assertEqual("auto", argv[argv.index("-n") + 1])
+        explicit = runner.build(["a"], True, ["-n", "4"])
+        self.assertEqual(1, explicit.count("-n"))
+        self.assertNotIn("auto", explicit)
+
+    def test_the_worker_count_can_be_overridden_by_the_environment(self):
+        with mock.patch.dict("os.environ", {runner.WORKERS_ENV: "3"}, clear=True):
+            argv = runner.build(["a"], True, [])
+        self.assertEqual("3", argv[argv.index("-n") + 1])
+        with mock.patch.dict("os.environ", {runner.WORKERS_ENV: ""}, clear=True):
+            self.assertNotIn("-n", runner.build(["a"], True, []))
+
     def test_the_targets_come_before_the_forwarded_arguments(self):
         argv = runner.build(["quenching/tests/test_a.py", "quenching/tests/test_b.py"], True, ["-k", "x"])
         self.assertEqual(["quenching/tests/test_a.py", "quenching/tests/test_b.py", "-k", "x"],

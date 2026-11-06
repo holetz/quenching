@@ -23,6 +23,7 @@ Usage::
 from __future__ import annotations
 
 import argparse
+import os
 import pathlib
 import subprocess
 import sys
@@ -31,11 +32,22 @@ from scripts.toolchain import affected
 
 TESTS = "quenching/tests"
 FALLBACK_BASE = "origin/main"
+WORKERS_ENV = "QUENCHING_TEST_WORKERS"
+
+
+def _asks_for_workers(extra: list[str]) -> bool:
+    """Whether the caller already chose xdist's worker count."""
+    return any(arg == "--numprocesses" or arg.startswith("--numprocesses=")
+               or arg == "-n" or (arg.startswith("-n") and arg[2:].isdigit())
+               for arg in extra)
 
 
 def build(targets: list[str], with_integration: bool, extra: list[str]) -> list[str]:
     """The pytest argv for one run; `targets` is already the scoped set or the whole suite."""
     argv = [sys.executable, "-m", "pytest", "-p", "scripts.toolchain.layers"]
+    workers = os.environ.get(WORKERS_ENV, "auto")
+    if workers not in ("", "0") and not _asks_for_workers(extra):
+        argv += ["-n", workers]
     if not with_integration:
         argv += ["-m", "not integration"]
     return [*argv, *targets, *extra]
