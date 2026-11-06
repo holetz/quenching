@@ -373,6 +373,19 @@ class ProofFixtureTrees(unittest.TestCase):
                 self.assertIn(code, self._codes(**bad))
                 self.assertNotIn(code, self._codes(**good))
 
+    def test_malformed_cost_is_refused_before_any_finding(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / ".claude").mkdir()
+            (root / ".claude" / "quenching.json").write_text(json.dumps({
+                "proof": {"proofRoot": "tests", "cost": {"tempRoot": "ram"}}}), encoding="utf-8")
+            (root / "tests" / "unit").mkdir(parents=True)
+            inventory, err = build_inventory(str(root))
+        self.assertIsNone(inventory)
+        self.assertEqual("pf-config-invalid", err["code"])
+        self.assertEqual(2, err["exit"])
+        self.assertIn("tempRoot", err["message"])
+
     def test_each_supported_ci_provider_can_invoke_the_gate(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
