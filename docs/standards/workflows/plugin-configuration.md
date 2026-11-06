@@ -134,7 +134,12 @@ The root-level envelope is deliberately small:
     "layers": {},
     "measuredRoots": ["src"],
     "proofExclusions": [],
-    "ratchetPath": null
+    "ratchetPath": null,
+    "cost": {
+      "tempRoot": "isolated",
+      "workers": "auto",
+      "scopes": {"task": "…", "close": "…", "ci": "…"}
+    }
   }
 }
 ```
@@ -167,7 +172,7 @@ Ownership follows the meaning of the key, not the module that happens to read it
 | `specs` | Azure state and placement mappings, `subjects`, `tagCatalog`, `workItemTypes`, `chat`, `artifactLanguage`, `card`, `cardAt` | provider-owned plan lifecycle and proposal conventions |
 | `delivery` | `provider` | the delivery front's explicit provider declaration; it chooses no pipeline policy |
 | `ops` | `opsRoot`, `router`, `registry` | operations inventory, router and generated registry |
-| `proof` | `proofRoot`, `layers`, `measuredRoots`, `proofExclusions`, `ratchetPath` | verification inventory, layers and coverage evidence |
+| `proof` | `proofRoot`, `layers`, `measuredRoots`, `proofExclusions`, `ratchetPath`, `cost` | verification inventory, layers, coverage evidence and the run's declared cost |
 
 The shared loader discovers the home, parses JSON, derives provider metadata, and classifies the
 envelope. It does not interpret a front's values. Each adapter validates and resolves only its own
