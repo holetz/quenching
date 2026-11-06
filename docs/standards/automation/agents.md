@@ -65,6 +65,28 @@ The full pricing doctrine lives once, in
 `quenching/references/components-command-new/capabilities.md`
 §Subagents; this standard is the repo-side projection of it.
 
+## The research profile
+
+The research sub-agent answers one kind of question: what current practice says, when the plan a
+spec's definition depends on it. It is the delegation
+`quenching/references/specs-develop/questions.md` §Gathering the evidence names, and the citation
+rule in `quenching/references/align/evidence-doctrine.md` §3 governs it.
+
+- **Read-only, and wider than a verifier.** `Read, Grep, Glob, WebSearch, WebFetch` — never `Edit`,
+  `Write` or `NotebookEdit`, and never `Bash`. It inspects and reports, like every verifier-shaped
+  agent.
+- **One table, no trail.** Per row: source URL, publication date, retrieval date, the claim, and
+  what it would change in this spec. A source with no publication date says `undated`; a claim that
+  cannot carry the three source facts is dropped rather than hedged.
+- **Never writes and never decides.** The table is material for the orchestrator's own questions:
+  the orchestrator writes the spec, chooses the alternative and cites the row. A web source grounds
+  an alternative or a rationale; it never grounds a binding rule alone.
+- **The return stays bounded** — the table, an explicit *not checked here* list, and no raw page
+  text.
+
+The definition pass consumes it in `## Alternatives Considered` or `## Design`, carrying the same
+three facts beside the claim it supports.
+
 ## Plugin-shipped agents
 
 The plugin ships exactly five agents in `quenching/agents/`, all prefixed `spec-` (as opposed
