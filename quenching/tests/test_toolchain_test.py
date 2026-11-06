@@ -26,7 +26,7 @@ class Build(unittest.TestCase):
         self.assertNotIn("not integration", filters, argv)
 
     def test_the_integration_layer_is_filtered_and_the_plugin_loaded(self):
-        argv = runner.build(["quenching/tests/test_x.py"], False, ["-q"])
+        argv = runner.build(["quenching/tests/test_git.py"], False, ["-q"])
         self.assertIn("scripts.toolchain.layers", argv)
         self.assertIn("not integration", argv)
         self.assertEqual("-q", argv[-1])
@@ -51,8 +51,8 @@ class Build(unittest.TestCase):
             self.assertNotIn("-n", runner.build(["a"], True, []))
 
     def test_the_targets_come_before_the_forwarded_arguments(self):
-        argv = runner.build(["quenching/tests/test_a.py", "quenching/tests/test_b.py"], True, ["-k", "x"])
-        self.assertEqual(["quenching/tests/test_a.py", "quenching/tests/test_b.py", "-k", "x"],
+        argv = runner.build(["quenching/tests/test_git.py", "quenching/tests/test_deploy.py"], True, ["-k", "x"])
+        self.assertEqual(["quenching/tests/test_git.py", "quenching/tests/test_deploy.py", "-k", "x"],
                          argv[-4:])
 
 

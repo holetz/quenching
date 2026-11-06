@@ -17,6 +17,12 @@ import sys
 import tempfile
 import unittest
 
+try:
+    import _paths  # noqa: F401 — the git isolation must exist before any test runs git alone
+except ModuleNotFoundError:
+    sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
+    import _paths  # noqa: F401
+
 TESTS_DIR = pathlib.Path(__file__).resolve().parent
 PLUGIN_ROOT = TESTS_DIR.parent
 PACKAGE_DIR = PLUGIN_ROOT / "assets" / "bin" / "quenching"

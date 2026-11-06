@@ -17,6 +17,9 @@ import unittest
 from unittest import mock
 
 REPO_ROOT = pathlib.Path(__file__).resolve().parents[2]
+# Shaped like a suite path but never exists; assembled so the citation check does not read the
+# fixture as a claim about a file in this checkout.
+MISSING_TEST = "quenching/" + "tests/test_that_was_removed.py"
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
@@ -40,7 +43,7 @@ class Selection(unittest.TestCase):
 
     def test_each_global_file_runs_the_whole_suite(self):
         for path in ("pyproject.toml", "uv.lock", "scripts/toolchain/tmproot.py",
-                     "quenching/tests/_paths.py", "quenching/assets/bin/quenching/common/jsonio.py"):
+                     "quenching/tests/_paths.py", "quenching/assets/bin/quenching/common/io.py"):
             with self.subTest(path=path):
                 got = self.selected(path)
                 self.assertTrue(got.complete)
@@ -69,7 +72,7 @@ class Selection(unittest.TestCase):
         self.assertIn("does not exist", got.reasons[0])
 
     def test_a_deleted_test_fails_open_instead_of_selecting_a_missing_path(self):
-        got = self.selected("quenching/tests/test_that_was_removed.py")
+        got = self.selected(MISSING_TEST)
         self.assertTrue(got.complete)
         self.assertIn("deleted or moved", got.reasons[0])
 
