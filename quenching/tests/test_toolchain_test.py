@@ -95,7 +95,6 @@ class Plan(unittest.TestCase):
         self.assertIsNone(reason)
 
 
-@unittest.skipUnless(HAS_PYTEST, "the end-to-end case runs pytest")
 class Forwarding(unittest.TestCase):
     def test_everything_after_the_separator_goes_to_pytest(self):
         head, extra = runner.split_forwarded(["--affected", "--", "-q", "-k", "audit"])
@@ -116,6 +115,7 @@ class Forwarding(unittest.TestCase):
         self.assertEqual("HEAD", select.call_args.args[1])
 
 
+@unittest.skipUnless(HAS_PYTEST, "the end-to-end case runs pytest")
 class EndToEnd(unittest.TestCase):
     def test_a_real_run_reports_the_deferred_layer(self):
         proc = subprocess.run(
