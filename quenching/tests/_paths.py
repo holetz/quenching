@@ -10,6 +10,13 @@ for it once.
 It also points `$QUENCHING_DENYLIST_FILE` at an empty file, so no test reads the machine's private
 denylist: a test that needs denylist terms writes a fixture of its own.
 
+**The temp root.** A run that did not come through the gate (`scripts/verify_repo.sh`) resolves one
+here, through the same `scripts.toolchain.tmproot` the gate calls, and points `TMPDIR`/`TEMP`/`TMP`
+at a per-run directory under it so workers, `git` children and every `tempfile` call share it. The
+gate's own directory is adopted untouched: it exports :data:`tmproot.GATE_MARKER`, because it owns
+the trap that removes it. This is the module every test imports first, so it runs before `tempfile`
+caches its answer.
+
 `repository_config` resolves this repository's own configuration the way the tool does: the
 generic `.agents/quenching.json` first, then the legacy `.claude/quenching.json`.
 
@@ -23,7 +30,21 @@ import shutil
 import sys
 import tempfile
 
+_REPO_ROOT = pathlib.Path(__file__).resolve().parents[2]
+if str(_REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(_REPO_ROOT))  # `scripts.toolchain` resolves however the suite was started
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent.parent / "assets" / "bin"))
+
+from scripts.toolchain import tmproot  # noqa: E402
+
+if not os.environ.get(tmproot.GATE_MARKER):
+    _resolution = tmproot.resolve()
+    if _resolution.notice:
+        print(_resolution.notice, file=sys.stderr, flush=True)
+    _run_root = pathlib.Path(tempfile.mkdtemp(prefix=f"quenching-tests-{os.getpid()}-",
+                                              dir=_resolution.path))
+    atexit.register(shutil.rmtree, str(_run_root), True)
+    tmproot.export(_run_root)
 
 _denylist_dir = tempfile.mkdtemp(prefix="quenching-test-denylist-")
 atexit.register(shutil.rmtree, _denylist_dir, True)

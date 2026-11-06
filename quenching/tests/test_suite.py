@@ -19,13 +19,15 @@ PLUGIN_ROOT = TESTS_DIR.parent
 PACKAGE_DIR = PLUGIN_ROOT / "assets" / "bin" / "quenching"
 
 def first_party() -> set[str]:
-    """Names that resolve only because `discover` puts this directory on `sys.path`.
+    """Names that resolve only because the suite runs from this repository.
 
+    `tests/` joins `sys.path` through `discover`, and the repository root through `_paths.py`, which
+    every test module imports first — `scripts` is this repository's own tooling, not a dependency.
     Derived from disk rather than listed: a hard-coded allowlist makes every new helper in
     `tests/` look like an external dependency, and the cheapest way out of that is to reach the
     helper through `importlib` — evading this check instead of satisfying it.
     """
-    return {"quenching"} | {path.stem for path in TESTS_DIR.glob("*.py")}
+    return {"quenching", "scripts"} | {path.stem for path in TESTS_DIR.glob("*.py")}
 
 
 def top_level_imports(source: str) -> set[str]:
