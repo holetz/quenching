@@ -10,7 +10,7 @@ description: >-
   finishes: the bump and its tag live on the primary branch's tip, on origin. Not for:
   concluding or merging ONE spec into the primary branch → /quenching-specs conclude.
 argument-hint: [version — optional, skips the proposal and confirms this exact X.Y.Z]
-allowed-tools: Bash(git:*), Bash(python3:*), Bash(QUENCHING_FUNCTIONAL=1 bash scripts/verify_repo.sh:*), Read, AskUserQuestion
+allowed-tools: Bash(git:*), Bash(python3:*), Bash(QUENCHING_FULL_GATE=1 QUENCHING_FUNCTIONAL=1 bash scripts/verify_repo.sh:*), Read, AskUserQuestion
 ---
 
 # /release — publish what the primary branch accumulated
@@ -84,7 +84,7 @@ or declined — a decline stops the run with nothing written.
 Before the bump, from the primary branch's checkout, run the surface-load measurement that the
 ordinary local gate keeps opt-in:
 ```bash
-( cd <primary checkout from step 1> && QUENCHING_FUNCTIONAL=1 bash scripts/verify_repo.sh )
+( cd <primary checkout from step 1> && QUENCHING_FULL_GATE=1 QUENCHING_FUNCTIONAL=1 bash scripts/verify_repo.sh )
 ```
 Any exit other than **0** — a failed check, an inconclusive exit 2, or `claude` missing from PATH —
 blocks the release: report what failed and stop without bumping. The measurement deploys this

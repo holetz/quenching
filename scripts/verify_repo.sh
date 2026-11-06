@@ -32,19 +32,113 @@ run_check() {
 COVERAGE_DIR=".quenching/coverage"
 COVERAGE_JSON="$COVERAGE_DIR/coverage.json"
 mkdir -p "$COVERAGE_DIR"
+# `COVERAGE_FILE` stays here, outside the per-gate temp directory: the EXIT trap removes that
+# directory, and it would take the worker data with it before the report is combined.
 export COVERAGE_FILE="$ROOT/$COVERAGE_DIR/.coverage"
-pytest_args=(quenching/tests -q -p randomly -n auto
-             --cov=quenching/assets/bin/quenching
-             --cov-report="json:$COVERAGE_JSON")
+
+# One temp root for the whole run. `scripts.toolchain.tmproot` prefers a RAM-backed candidate and
+# falls back to the disk with a NOTICE on stderr; it prints the chosen root on stdout. The
+# `quenching-gate-*` directory under it is per run and removed on exit — normal, failed, SIGINT or
+# SIGTERM — so a killed gate leaves nothing in RAM. Exporting all three variables is what makes
+# every `tempfile` call, every xdist worker and every `git` child share the root with no test
+# edited; `QUENCHING_TEST_TMPROOT` marks it as already resolved for `quenching/tests/_paths.py`.
+TMPROOT="$(python3 -m scripts.toolchain.tmproot)" || exit 1
+GATE_TMP="$(mktemp -d "$TMPROOT/quenching-gate-$$-XXXXXX")"
+export TMPDIR="$GATE_TMP" TEMP="$GATE_TMP" TMP="$GATE_TMP"
+export QUENCHING_TEST_TMPROOT="$GATE_TMP"
+cleanup_gate_tmp() { rm -rf "$GATE_TMP"; }
+trap cleanup_gate_tmp EXIT
+trap 'exit 130' INT
+trap 'exit 143' TERM
+
+# `QUENCHING_TEST_WORKERS` bounds the suite's parallelism (`auto` by default). A machine running
+# several gates at once sets it lower so the gates share the cores instead of thrashing.
+TEST_WORKERS="${QUENCHING_TEST_WORKERS:-auto}"
+printf '\ntemp root: %s\nworkers: %s\n' "$GATE_TMP" "$TEST_WORKERS"
+
+# `QUENCHING_TEST_SCOPE` picks how much of the suite this gate runs. `full` is the contract: CI and
+# `/release` always run it. `affected` is the close of a spec on a working machine — the tests the
+# branch's diff reaches, with the whole suite as the safe answer whenever
+# `scripts.toolchain.affected` cannot be sure. A subset cannot prove the coverage floor, so that
+# check is skipped here and enforced by the full gate.
+TEST_SCOPE="${QUENCHING_TEST_SCOPE:-full}"
+# `QUENCHING_FULL_GATE=1` is the release's promise, not a second scope: an exported
+# `QUENCHING_TEST_SCOPE=affected` in the shell must not narrow the gate that decides a tag.
+if [ -n "${QUENCHING_FULL_GATE:-}" ] && [ "$TEST_SCOPE" != full ]; then
+  printf 'scope: QUENCHING_FULL_GATE=1 forces the full suite (QUENCHING_TEST_SCOPE was %s)\n' "$TEST_SCOPE"
+  TEST_SCOPE=full
+fi
+case "$TEST_SCOPE" in
+  full|affected) ;;
+  *) printf 'FAILED: QUENCHING_TEST_SCOPE must be full or affected, got "%s"\n' "$TEST_SCOPE" >&2; exit 2 ;;
+esac
+TEST_SCOPE_BASE="${QUENCHING_TEST_BASE:-origin/main}"
+TARGETS=(quenching/tests)
+WITH_COVERAGE=1
+SUITE_SKIP=""
+if [ "$TEST_SCOPE" = affected ]; then
+  WITH_COVERAGE=0
+  SELECTION_JSON="$(python3 -m scripts.toolchain.affected --json --base "$TEST_SCOPE_BASE")" || SELECTION_JSON=""
+  if [ -z "$SELECTION_JSON" ]; then
+    printf 'scope: affected — the selector failed, so the gate runs the whole suite\n'
+  else
+    MODE=full
+    TARGETS=()
+    if SELECTION_LINES="$(printf '%s' "$SELECTION_JSON" | python3 -c '
+import json, sys
+doc = json.load(sys.stdin)
+print("MODE\tfull" if doc["complete"] else ("MODE\tskip" if not doc["tests"] else "MODE\taffected"))
+for reason in doc["reasons"]:
+    print("REASON\t" + reason)
+for test in doc["tests"]:
+    print("TARGET\t" + test)
+')"; then
+      while IFS=$'\t' read -r tag value; do
+        case "$tag" in
+          MODE) MODE="$value" ;;
+          TARGET) TARGETS+=("$value") ;;
+          REASON) printf 'scope: %s\n' "$value" ;;
+        esac
+      done <<< "$SELECTION_LINES"
+      case "$MODE" in
+        affected)
+          if [ "${#TARGETS[@]}" -eq 0 ]; then
+            TARGETS=(quenching/tests)
+            printf 'scope: affected — the selection parsed no target, running the whole suite\n'
+          else
+            printf 'scope: affected against %s — %d test file(s)\n' "$TEST_SCOPE_BASE" "${#TARGETS[@]}"
+          fi
+          ;;
+        skip) SUITE_SKIP="the diff reaches no test" ;;
+        *) TARGETS=(quenching/tests); printf 'scope: affected — whole suite, see the reason above\n' ;;
+      esac
+    else
+      TARGETS=(quenching/tests)
+      printf 'scope: affected — the selection could not be parsed, running the whole suite\n'
+    fi
+  fi
+fi
+
+pytest_args=("${TARGETS[@]}" -q -p randomly -p scripts.toolchain.slots -n "$TEST_WORKERS")
+if [ "$WITH_COVERAGE" = 1 ]; then
+  pytest_args+=(--cov=quenching/assets/bin/quenching --cov-report="json:$COVERAGE_JSON")
+fi
 if [ -n "${PYTEST_RANDOMLY_SEED:-}" ]; then
   pytest_args+=("--randomly-seed=$PYTEST_RANDOMLY_SEED")
 fi
-if uv run python -c "import pytest, pytest_randomly, xdist, pytest_cov" >/dev/null 2>&1; then
+if [ -n "$SUITE_SKIP" ]; then
+  printf '\n==> unit tests\nSKIPPED: %s (QUENCHING_TEST_SCOPE=affected).\n' "$SUITE_SKIP"
+  printf '\n==> coverage floor\nSKIPPED: QUENCHING_TEST_SCOPE=affected runs a subset; the full gate checks the floor.\n'
+elif [ "$WITH_COVERAGE" = 1 ] && uv run python -c "import pytest, pytest_randomly, xdist, pytest_cov" >/dev/null 2>&1; then
   run_check "unit tests (randomized order, parallel, measured)" \
     uv run python -m pytest "${pytest_args[@]}"
   run_check "coverage floor" \
     python3 quenching/assets/bin/cq proof ratchet --check --artifact "$COVERAGE_JSON"
-elif python3 -c "import coverage" >/dev/null 2>&1; then
+elif [ "$WITH_COVERAGE" = 0 ] && uv run python -c "import pytest, pytest_randomly, xdist" >/dev/null 2>&1; then
+  run_check "unit tests (randomized order, parallel, affected scope)" \
+    uv run python -m pytest "${pytest_args[@]}"
+  printf '\n==> coverage floor\nSKIPPED: QUENCHING_TEST_SCOPE=affected runs a subset; the full gate (CI and /release) checks the floor.\n'
+elif [ "$WITH_COVERAGE" = 1 ] && python3 -c "import coverage" >/dev/null 2>&1; then
   printf '\n==> unit tests\nSKIPPED: pytest-xdist/pytest-cov are not installed (run `uv sync --all-groups`); the suite runs serially under coverage, without the randomized-order evidence.\n'
   run_check "unit tests (measured, serial fallback)" \
     python3 -m coverage run -m unittest discover -s quenching/tests
@@ -54,12 +148,19 @@ elif python3 -c "import coverage" >/dev/null 2>&1; then
     python3 quenching/assets/bin/cq proof ratchet --check --artifact "$COVERAGE_JSON"
 else
   printf '\n==> coverage floor\nSKIPPED: the `coverage` package is not installed (run `uv sync --all-groups`); the floor in .coverage-floor.json was not checked.\n'
+  if [ "$WITH_COVERAGE" = 0 ]; then
+    printf 'NOTE: pytest-xdist is not installed, so the affected scope is ignored and the whole suite runs serially.\n'
+  fi
   run_check "unit tests" \
     python3 -m unittest discover -s quenching/tests
 fi
 # The CI `lint` job runs this exact command; the local gate must not pass what the CI refuses.
 run_check "ruff" \
   uv run ruff check .
+# The suite's temp root is one environment decision; a test that pins its own path escapes it
+# silently. The guard reads the AST, so it costs milliseconds.
+run_check "temp root guard" \
+  python3 -m scripts.toolchain.check_tmp
 # The leak gate's generic patterns, the same the hooks in scripts/githooks/ run locally (there is no
 # private denylist since 2026-10-27).
 run_check "leak gate (generic patterns)" \
