@@ -491,14 +491,21 @@ the task group or park it as one `## Discoveries` line (§Discoveries); nothing 
 | Order | No `[P]` crosses the group: its tasks share the surface and land in order. |
 | Timing | Plan the group during definition; execution never infers it. |
 
-**Current practice.** Where the plan needs it, delegate the reading to the read-only sub-agent of
-`docs/standards/automation/agents.md` §The research profile. It returns one table — source,
-publication date, retrieval date, claim, what it would change — into `## Alternatives Considered`
-or `## Design`. A web source may support an alternative or a rationale; it never grounds a binding
-rule alone (`quenching/references/align/evidence-doctrine.md` §3).
+**The research profile.** Where the plan needs what current practice says, delegate the reading to
+a read-only research sub-agent: `Read`, `Grep`, `Glob`, `WebSearch`, `WebFetch` — never `Edit`,
+`Write`, `NotebookEdit` or `Bash`. It returns one table and no raw page text — per row the source
+URL, the publication date (`undated` when none), the retrieval date, the claim, and what it would
+change in this spec; a claim that cannot carry the three source facts is dropped rather than
+hedged. It never decides: the pass chooses the alternative and cites the row in
+`## Alternatives Considered` or `## Design`. A web source may support an alternative or a
+rationale; it never grounds a binding rule alone
+(`quenching/references/align/evidence-doctrine.md` §3). A target that carries its own profile under
+`docs/standards/automation/agents.md` §The research profile uses that grant, which never narrows
+this one.
 
 **Stop when** every declared surface path is named by a task carrying `files:` and `verify:`,
-`.agents/quenching/bin/cq specs parallel` exits 0, and nothing outside the spec was written.
+`.agents/quenching/bin/cq specs parallel --spec <id>` exits 0, and nothing outside the spec was
+written.
 
 ## Discoveries
 

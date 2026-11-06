@@ -103,8 +103,9 @@ run whose output is quoted. A page changes without notice and disappears; the ru
 it does. Remove the URL: the rule still has to be defensible from what the repository carries.
 
 Reading current practice is delegated to the read-only research sub-agent of
-`docs/standards/automation/agents.md` §The research profile. Its table carries the same three facts
-per row; a claim without them is dropped rather than cited.
+[specs-develop/questions.md](.agents/quenching/references/specs-develop/questions.md) §Surface
+refinement. Its table carries the same three facts per row; a claim without them is dropped
+rather than cited.
 
 <!-- rationale -->
 

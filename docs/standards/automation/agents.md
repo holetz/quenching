@@ -67,10 +67,11 @@ The full pricing doctrine lives once, in
 
 ## The research profile
 
-The research sub-agent answers one kind of question: what current practice says, when the plan a
-spec's definition depends on it. It is the delegation
-`quenching/references/specs-develop/questions.md` §Gathering the evidence names, and the citation
-rule in `quenching/references/align/evidence-doctrine.md` §3 governs it.
+The operative profile lives once, in
+`quenching/references/specs-develop/questions.md` §Surface refinement — the distributed contract
+every target carries. This standard is the repo-side projection of it: the research sub-agent
+answers one kind of question, what current practice says when the plan a spec's definition depends
+on it, and the citation rule in `quenching/references/align/evidence-doctrine.md` §3 governs it.
 
 - **Read-only, and wider than a verifier.** `Read, Grep, Glob, WebSearch, WebFetch` — never `Edit`,
   `Write` or `NotebookEdit`, and never `Bash`. It inspects and reports, like every verifier-shaped

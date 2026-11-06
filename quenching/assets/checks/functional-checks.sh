@@ -646,6 +646,9 @@ PYSET
 mkdir -p "$box/quenching/skills/quenching-specs/references"
 printf '# develop\n\nThe flow this probe declares as its process surface.\n' \
   > "$box/quenching/skills/quenching-specs/references/develop.md"
+# The declared path is untracked, and `git status --short` cannot see a content edit inside one
+# `??` line. Commit it so an edit by the pass shows as ` M` instead of passing unseen.
+( cd "$box" && git add -A && git commit -qm "probe: seed the declared surface path" )
 BEFORE="$( cd "$box" && git status --short )"
 probe_id="$( cd "$box" && ./.agents/quenching/bin/cq specs new probe-surface --title "Probe: the surface rides the spec" --json 2>/dev/null | python3 -c 'import json,sys; print(json.load(sys.stdin).get("id",""))' )"
 ( cd "$box" && ./.agents/quenching/bin/cq specs section "$probe_id" \
@@ -752,6 +755,32 @@ def key(task, name):
     return any(line.strip().startswith(name) for line in task)
 sys.exit(0 if all(key(t, "files:") and key(t, "verify:") for t in tasks) else 1)'; then r=yes; else r=no; fi
   check "$r" "every task in the group carries files: and verify:"
+  if printf '%s' "$tasks_json" | python3 -c '
+import json, re, sys
+body = json.load(sys.stdin).get("body") or ""
+lines = body.splitlines()
+start = next((i for i, line in enumerate(lines) if line.strip() == "### 1. Process surface"), None)
+if start is None:
+    sys.exit(1)
+end = next((i for i in range(start + 1, len(lines)) if lines[i].lstrip().startswith("### ")), len(lines))
+group = "\n".join(lines[start + 1:end])
+decl = next((i for i, line in enumerate(lines) if line.strip() == "### Process surface this spec expects to touch"), None)
+if decl is None:
+    sys.exit(1)
+decl_end = next((i for i in range(decl + 1, len(lines)) if lines[i].lstrip().startswith("### ")), len(lines))
+paths = re.findall(r"`([^`]+)`", "\n".join(lines[decl + 1:decl_end]))
+sys.exit(0 if paths and all(p in group for p in paths) else 1)'; then r=yes; else r=no; fi
+  check "$r" "every declared surface path is named by the group"
+  if printf '%s' "$tasks_json" | python3 -c '
+import json, sys
+body = json.load(sys.stdin).get("body") or ""
+lines = body.splitlines()
+start = next((i for i, line in enumerate(lines) if line.strip() == "### 1. Process surface"), None)
+if start is None:
+    sys.exit(1)
+end = next((i for i in range(start + 1, len(lines)) if lines[i].lstrip().startswith("### ")), len(lines))
+sys.exit(0 if not any("[P]" in line for line in lines[start + 1:end] if line.strip().startswith("- [")) else 1)'; then r=yes; else r=no; fi
+  check "$r" "no [P] crosses the group"
   ( cd "$box" && ./.agents/quenching/bin/cq specs parallel --spec "$probe_id" >/dev/null 2>&1 ); parallel_rc=$?
   check "$([ "$parallel_rc" -eq 0 ] && echo yes || echo no)" "cq specs parallel accepts the plan"
   AFTER="$( cd "$box" && git status --short )"
@@ -759,6 +788,8 @@ sys.exit(0 if all(key(t, "files:") and key(t, "verify:") for t in tasks) else 1)
 else
   inconc "planned ### 1. Process surface as the first task group" "missing tool activity or verifiable skill inventory"
   inconc "every task in the group carries files: and verify:" "missing tool activity or verifiable skill inventory"
+  inconc "every declared surface path is named by the group" "missing tool activity or verifiable skill inventory"
+  inconc "no [P] crosses the group" "missing tool activity or verifiable skill inventory"
   inconc "cq specs parallel accepts the plan" "missing tool activity or verifiable skill inventory"
   inconc "the pass wrote nothing outside the spec store" "missing tool activity or verifiable skill inventory"
 fi
