@@ -33,10 +33,9 @@ class TempRootCase(unittest.TestCase):
         self.xdg.mkdir()
         self.local = self.base / "local"
         self.local.mkdir()
-        self._saved_tempdir = tempfile.tempdir
-
-    def tearDown(self):
-        tempfile.tempdir = self._saved_tempdir
+        restore = mock.patch.object(tempfile, "tempdir", tempfile.tempdir)
+        restore.start()
+        self.addCleanup(restore.stop)
 
     def mounts(self, *rows):
         return mock.patch.object(tmproot, "_mounts", return_value=list(rows))
@@ -71,7 +70,7 @@ class TempRootCase(unittest.TestCase):
     def test_a_disk_backed_xdg_runtime_dir_falls_through_to_dev_shm(self):
         with self.mounts((str(self.xdg), "ext4"), ("/dev/shm", "tmpfs")), self.room():
             got = tmproot.resolve({"XDG_RUNTIME_DIR": str(self.xdg)}, platform="linux")
-        self.assertEqual(got.path, pathlib.Path("/dev/shm"))
+        self.assertEqual(got.label, "/dev/shm")
 
     def test_a_tmpfs_without_room_is_refused(self):
         with self.mounts((str(self.xdg), "tmpfs"), ("/dev/shm", "tmpfs")), \
