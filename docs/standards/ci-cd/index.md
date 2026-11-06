@@ -58,3 +58,29 @@ directory, because the trap would otherwise delete the worker data before the re
 `cq proof ratchet` reads it. `QUENCHING_TEST_TMPDIR` overrides the root, and `QUENCHING_TEST_WORKERS`
 sets the worker count (`auto` by default) so concurrent gates can share the cores. A direct
 `pytest` run gets the same root from `quenching/tests/_paths.py`.
+
+## Three tiers of test runs
+
+The gate stays the only gate; what changes is how much of the suite it runs at each stage. A
+narrower scope never replaces CI: `quenching/assets/bin/quenching/git/pull.py` reads every check and
+refuses to merge anything but green, so the full run happens before the merge even when the local
+close was scoped.
+
+| Stage | Command | Suite |
+| --- | --- | --- |
+| a task | `python3 -m scripts.toolchain.test --affected` | the diff's tests; the `integration` layer is deferred and counted |
+| a spec's close | `QUENCHING_TEST_SCOPE=affected bash scripts/verify_repo.sh` | the same selection inside the whole gate; the coverage floor reports `SKIPPED` |
+| CI and `/release` | `bash scripts/verify_repo.sh` with `QUENCHING_FULL_GATE=1` | everything, `integration` included, the floor enforced |
+
+`scripts/toolchain/affected.py` maps each source surface to the tests that cover it, adds the tests
+whose direct imports reach a changed module, and takes the diff from the merge base plus the working
+tree plus untracked files. It answers "the whole suite" whenever it cannot be sure — a global file
+(`pyproject.toml`, `scripts/toolchain/`, `quenching/assets/bin/quenching/common/`), a path no rule
+covers, a rule naming a test that no longer exists, a deleted test, an unresolvable base — and prints
+the reason instead of guessing. A change under `docs/` selects nothing: the close prints `the diff
+reaches no test` rather than a green over an empty run.
+
+`QUENCHING_TEST_BASE` moves the merge base of either mode (default `origin/main`), which is what a
+task lane points at `HEAD` to measure its own working tree. `QUENCHING_TEST_SCOPE` accepts only
+`full` and `affected`; `QUENCHING_FULL_GATE=1` overrides a scope that leaked into the shell and is
+what `/release` passes, so a tag is never decided on a subset.

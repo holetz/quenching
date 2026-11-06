@@ -62,6 +62,12 @@ printf '\ntemp root: %s\nworkers: %s\n' "$GATE_TMP" "$TEST_WORKERS"
 # `scripts.toolchain.affected` cannot be sure. A subset cannot prove the coverage floor, so that
 # check is skipped here and enforced by the full gate.
 TEST_SCOPE="${QUENCHING_TEST_SCOPE:-full}"
+# `QUENCHING_FULL_GATE=1` is the release's promise, not a second scope: an exported
+# `QUENCHING_TEST_SCOPE=affected` in the shell must not narrow the gate that decides a tag.
+if [ -n "${QUENCHING_FULL_GATE:-}" ] && [ "$TEST_SCOPE" != full ]; then
+  printf 'scope: QUENCHING_FULL_GATE=1 forces the full suite (QUENCHING_TEST_SCOPE was %s)\n' "$TEST_SCOPE"
+  TEST_SCOPE=full
+fi
 case "$TEST_SCOPE" in
   full|affected) ;;
   *) printf 'FAILED: QUENCHING_TEST_SCOPE must be full or affected, got "%s"\n' "$TEST_SCOPE" >&2; exit 2 ;;
