@@ -243,6 +243,34 @@ already-agreed spec is not filing a follow-up: the alternative there is damaging
 exists, so `/quenching-specs develop`'s intent-change route still names `/quenching-specs create`. Parking is for what
 the pass surfaced on its own.
 
+### Refining the process surface alongside a spec
+
+The workflow, a skill, a reference, the structure that holds them or an automation can be the
+constraint a spec's objective exposes. Without an ask it is a follow-up like any other, and the
+table above applies: one `## Discoveries` line carrying `path:line` and the consequence, minted or
+not by the close-out harvest.
+
+**An explicit ask makes it the spec's own work instead.** The input asks for it — the human's own
+words, or `--with-surface` — and the definition pass plans the process surface in the same spec, as
+`### 1. Process surface`, the first group of `## Tasks`, ahead of the objective's tasks that rely
+on the new behaviour. `/quenching-specs execute` writes it then, one task at a time, exactly like
+any other task; the definition pass writes the spec and nothing else. The trigger is a declaration
+in the input, never a reading of `## Impact`, a missing section or the pass's own judgment.
+
+The axis is unchanged. Declared work is a task — the fourth `## Impact` sub-heading,
+`### Process surface this spec expects to touch`, names the paths and every one of them is named by
+a task; what the work merely reveals still parks as a line and still crosses to `/docs/` at
+close-out, never at definition.
+
+<!-- rationale -->
+
+The objective and the instrument that carries it ship together: a workflow change requested beside
+a spec is part of that spec's answer, and a companion spec captured at definition time is a bet
+placed before anyone knows whether the parent ships — the same bet
+`specs-conclude/distill.md` defers to close-out. Planning it as tasks rather than editing it in the
+pass keeps one property intact: the pass that is running obeys the doctrine it is changing, and the
+change is proven by the pass that runs after it.
+
 ## The v2→v3 migration
 
 `cq specs migrate` performs the fold exactly once per workspace: every file in `backlog/` and
