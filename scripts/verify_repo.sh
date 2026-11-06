@@ -83,6 +83,10 @@ fi
 # The CI `lint` job runs this exact command; the local gate must not pass what the CI refuses.
 run_check "ruff" \
   uv run ruff check .
+# The suite's temp root is one environment decision; a test that pins its own path escapes it
+# silently. The guard reads the AST, so it costs milliseconds.
+run_check "temp root guard" \
+  python3 -m scripts.toolchain.check_tmp
 # The leak gate's generic patterns, the same the hooks in scripts/githooks/ run locally (there is no
 # private denylist since 2026-10-27).
 run_check "leak gate (generic patterns)" \
