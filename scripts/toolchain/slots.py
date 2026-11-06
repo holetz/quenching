@@ -29,6 +29,7 @@ from __future__ import annotations
 import atexit
 import contextlib
 import dataclasses
+import importlib.util
 import os
 import pathlib
 import re
@@ -42,6 +43,7 @@ TIMEOUT_ENV = "QUENCHING_TEST_SLOT_TIMEOUT"
 # Set by a run that already holds slots; a pytest it spawns from inside a test is nested and must
 # not queue behind its own parent. It runs within the parent's share instead.
 HELD_ENV = "QUENCHING_TEST_SLOTS_HELD"
+HAS_XDIST = importlib.util.find_spec("xdist") is not None
 DEFAULT_TIMEOUT = 300.0
 _POLL = 0.2
 
@@ -92,7 +94,7 @@ def _unlock(fd: int) -> None:
 
 
 def _open(path: pathlib.Path) -> int:
-    flag = os.O_RDWR | os.O_CREAT
+    flag = os.O_RDWR | os.O_CREAT | getattr(os, "O_BINARY", 0)
     fd = os.open(str(path), flag, 0o600)
     if os.fstat(fd).st_size == 0:
         os.write(fd, b"0")
@@ -318,20 +320,26 @@ def _budget(config) -> int:
     return len(config._quenching_held)
 
 
-def pytest_xdist_auto_num_workers(config) -> int:  # pragma: no cover - exercised by real runs
+def xdist_auto_num_workers(config) -> int:  # pragma: no cover - exercised by real runs
     if hasattr(config, "workerinput"):
         return 0
     return _budget(config)
 
 
+# Without xdist the hookspec does not exist and pluggy refuses an unknown hook at collection. A
+# serial run needs no budget either, so both the hook and the acquisition are absent there.
+if HAS_XDIST:
+    pytest_xdist_auto_num_workers = xdist_auto_num_workers
+
+
 def pytest_configure(config) -> None:  # pragma: no cover - exercised by real runs
-    if hasattr(config, "workerinput"):
+    if hasattr(config, "workerinput") or not HAS_XDIST:
         return
     budget = _budget(config)
-    requested = config.option.numprocesses
+    requested = getattr(config.option, "numprocesses", None)
     if isinstance(requested, int) and requested > budget:
         config.option.numprocesses = budget
-        if config.option.tx:
+        if getattr(config.option, "tx", None):
             config.option.tx = ["popen"] * budget
 
 

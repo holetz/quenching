@@ -7,6 +7,7 @@ silently larger than promised, which is the failure this file is here to catch.
 
 from __future__ import annotations
 
+import importlib.util
 import pathlib
 import subprocess
 import sys
@@ -21,6 +22,7 @@ if str(REPO_ROOT) not in sys.path:
 from scripts.toolchain import layers  # noqa: E402
 
 TESTS_DIR = pathlib.Path(__file__).resolve().parent
+HAS_PYTEST = importlib.util.find_spec("pytest") is not None
 
 
 class Marker(unittest.TestCase):
@@ -45,6 +47,7 @@ class Marker(unittest.TestCase):
             with self.subTest(name=name):
                 self.assertTrue((TESTS_DIR / name).is_file())
 
+    @unittest.skipUnless(HAS_PYTEST, "pytest is not installed in this interpreter")
     def test_collection_selects_only_the_listed_modules(self):
         proc = subprocess.run(
             [sys.executable, "-m", "pytest", "quenching/tests", "-q", "--collect-only",

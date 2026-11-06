@@ -23,6 +23,7 @@ Usage::
 from __future__ import annotations
 
 import argparse
+import importlib.util
 import os
 import pathlib
 import subprocess
@@ -33,6 +34,7 @@ from scripts.toolchain import affected
 TESTS = "quenching/tests"
 FALLBACK_BASE = "origin/main"
 WORKERS_ENV = "QUENCHING_TEST_WORKERS"
+HAS_XDIST = importlib.util.find_spec("xdist") is not None
 
 
 def _asks_for_workers(extra: list[str]) -> bool:
@@ -47,7 +49,7 @@ def build(targets: list[str], with_integration: bool, extra: list[str]) -> list[
     argv = [sys.executable, "-m", "pytest", "-p", "scripts.toolchain.layers",
             "-p", "scripts.toolchain.slots"]
     workers = os.environ.get(WORKERS_ENV, "auto")
-    if workers not in ("", "0") and not _asks_for_workers(extra):
+    if HAS_XDIST and workers not in ("", "0") and not _asks_for_workers(extra):
         argv += ["-n", workers]
     if not with_integration:
         argv += ["-m", "not integration"]

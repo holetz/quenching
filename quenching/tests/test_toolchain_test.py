@@ -7,6 +7,7 @@ than in a task lane.
 
 from __future__ import annotations
 
+import importlib.util
 import pathlib
 import subprocess
 import sys
@@ -14,6 +15,8 @@ import unittest
 from unittest import mock
 
 REPO_ROOT = pathlib.Path(__file__).resolve().parents[2]
+HAS_PYTEST = importlib.util.find_spec("pytest") is not None
+HAS_XDIST = importlib.util.find_spec("xdist") is not None
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
@@ -35,6 +38,7 @@ class Build(unittest.TestCase):
         argv = runner.build(["quenching/tests"], True, [])
         self.assert_no_marker_filter(argv)
 
+    @unittest.skipUnless(HAS_XDIST, "the runner adds -n only when pytest-xdist is installed")
     def test_the_workers_default_to_auto_and_do_not_duplicate_a_choice(self):
         with mock.patch.dict("os.environ", {}, clear=True):
             argv = runner.build(["a"], True, [])
@@ -43,6 +47,7 @@ class Build(unittest.TestCase):
         self.assertEqual(1, explicit.count("-n"))
         self.assertNotIn("auto", explicit)
 
+    @unittest.skipUnless(HAS_XDIST, "the runner adds -n only when pytest-xdist is installed")
     def test_the_worker_count_can_be_overridden_by_the_environment(self):
         with mock.patch.dict("os.environ", {runner.WORKERS_ENV: "3"}, clear=True):
             argv = runner.build(["a"], True, [])
@@ -84,6 +89,7 @@ class Plan(unittest.TestCase):
         self.assertIsNone(reason)
 
 
+@unittest.skipUnless(HAS_PYTEST, "the end-to-end case runs pytest")
 class EndToEnd(unittest.TestCase):
     def test_a_real_run_reports_the_deferred_layer(self):
         proc = subprocess.run(

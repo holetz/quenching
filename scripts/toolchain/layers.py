@@ -14,8 +14,6 @@ from __future__ import annotations
 
 import pathlib
 
-import pytest
-
 INTEGRATION_MODULES = frozenset({
     "test_deploy.py",
     "test_git.py",
@@ -28,6 +26,8 @@ INTEGRATION_MODULES = frozenset({
 
 def pytest_collection_modifyitems(config, items):
     """Mark every item of a listed module; the file name is the unit, not the test function."""
+    import pytest
+
     for item in items:
         if pathlib.Path(str(item.path)).name in INTEGRATION_MODULES:
             item.add_marker(pytest.mark.integration)

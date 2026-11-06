@@ -136,7 +136,7 @@ class Acquisition(unittest.TestCase):
 class Plugin(unittest.TestCase):
     def test_auto_workers_are_the_held_slots(self):
         config = SimpleNamespace(_quenching_held=slots.Held([slots.Slot(i, -1) for i in range(3)]))
-        self.assertEqual(3, slots.pytest_xdist_auto_num_workers(config))
+        self.assertEqual(3, slots.xdist_auto_num_workers(config))
 
     def test_the_budget_is_acquired_once_per_process(self):
         config = SimpleNamespace()
@@ -147,6 +147,7 @@ class Plugin(unittest.TestCase):
             self.assertEqual(2, slots._budget(config))
         self.assertEqual(1, budget.call_count)
 
+    @unittest.skipUnless(slots.HAS_XDIST, "xdist owns the worker count")
     def test_an_explicit_worker_count_is_clamped_and_the_worker_list_rebuilt(self):
         config = SimpleNamespace(
             _quenching_held=slots.Held([slots.Slot(0, -1), slots.Slot(1, -1)]),
@@ -162,9 +163,16 @@ class Plugin(unittest.TestCase):
             self.assertEqual(3, slots._budget(config))
         budget.assert_not_called()
 
+    def test_a_serial_run_takes_no_budget(self):
+        config = SimpleNamespace(option=SimpleNamespace(numprocesses=None, tx=None))
+        with mock.patch.object(slots, "HAS_XDIST", False), \
+                mock.patch.object(slots, "acquire") as budget:
+            slots.pytest_configure(config)
+        budget.assert_not_called()
+
     def test_a_worker_never_takes_a_budget(self):
         config = SimpleNamespace(workerinput={"workerid": "gw0"})
-        self.assertEqual(0, slots.pytest_xdist_auto_num_workers(config))
+        self.assertEqual(0, slots.xdist_auto_num_workers(config))
         self.assertFalse(hasattr(config, "_quenching_held"))
 
 
