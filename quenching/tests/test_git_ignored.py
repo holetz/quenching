@@ -15,7 +15,7 @@ class RegenerableRulesTests(unittest.TestCase):
     def test_default_list(self):
         self.assertEqual(ignored.DEFAULT_REGENERABLE, (
             ".venv", "venv", "__pycache__", "*.py[cod]", ".pytest_cache", ".ruff_cache",
-            ".mypy_cache", ".pyright", ".tox", ".nox", "htmlcov", ".coverage*",
+            ".mypy_cache", ".pyright", ".tox", ".nox", "htmlcov", ".coverage", ".coverage.*",
             "*.egg-info", ".eggs", "pip-wheel-metadata", ".cache", ".ipynb_checkpoints",
             ".hypothesis", "node_modules",
         ))
@@ -23,6 +23,15 @@ class RegenerableRulesTests(unittest.TestCase):
         for entry in ("build/", "dist/", "nested/build/manual.txt", "nested/dist/manual.txt"):
             with self.subTest(entry=entry):
                 self.assertFalse(ignored.is_regenerable(entry, rules))
+
+    def test_a_hand_written_coverage_config_is_not_a_cache(self):
+        rules = ignored.declared_regenerable({})
+        for entry in (".coveragerc", "pkg/.coveragerc", "output/.coveragerc"):
+            with self.subTest(entry=entry):
+                self.assertFalse(ignored.is_regenerable(entry, rules))
+        for entry in (".coverage", "pkg/.coverage", "pkg/.coverage.worker"):
+            with self.subTest(entry=entry):
+                self.assertTrue(ignored.is_regenerable(entry, rules))
 
     def test_defaults_match_at_any_depth(self):
         rules = ignored.declared_regenerable({})
@@ -145,6 +154,16 @@ class UndeclaredTests(unittest.TestCase):
     @mock.patch.object(ignored.os, "walk", return_value=[])
     def test_unknown_empty_directory_is_preserved(self, walk):
         self.assertEqual(ignored.undeclared("repo", ["unknown/"], []), ["unknown/"])
+
+    @mock.patch.object(ignored.os, "walk")
+    def test_classify_names_a_cache_inside_an_undeclared_directory(self, walk):
+        walk.return_value = [
+            (os.path.join("repo", "output"), [], [".coverage", "notes.txt"]),
+        ]
+        rules = ignored.declared_regenerable({})
+        self.assertEqual(ignored.classify("repo", ["output/"], rules),
+                         ([os.path.join("output", ".coverage")],
+                          [os.path.join("output", "notes.txt")]))
 
 
 if __name__ == "__main__":

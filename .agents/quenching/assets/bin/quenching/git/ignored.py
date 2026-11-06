@@ -17,7 +17,7 @@ from quenching.git.audit import SAFE
 
 DEFAULT_REGENERABLE = (
     ".venv", "venv", "__pycache__", "*.py[cod]", ".pytest_cache", ".ruff_cache",
-    ".mypy_cache", ".pyright", ".tox", ".nox", "htmlcov", ".coverage*",
+    ".mypy_cache", ".pyright", ".tox", ".nox", "htmlcov", ".coverage", ".coverage.*",
     "*.egg-info", ".eggs", "pip-wheel-metadata", ".cache", ".ipynb_checkpoints",
     ".hypothesis", "node_modules",
 )
@@ -88,22 +88,29 @@ def ignored_entries(path: str) -> list[str] | None:
     return [e for e in entries if not _is_link(os.path.join(path, e.rstrip("/")))]
 
 
-def undeclared(path: str, entries: list[str], rules: list[str]) -> list[str]:
-    """The ignored entries no rule covers; a wholly ignored directory is opened to its files.
+def classify(path: str, entries: list[str], rules: list[str]) -> tuple[list[str], list[str]]:
+    """Split `entries` into the two classes the report names: covered and left over.
 
-    git reports such a directory as one entry, so a directory that merely contains a declared
-    path is walked to the file that is and is not covered."""
-    left = []
+    A wholly ignored directory is opened to its files, so a cache inside a directory nobody
+    declared — `output/.coverage` — is reported as regenerable instead of vanishing from both
+    lists, and an unrecognized file inside it is named by its own path."""
+    regenerable, unrecognized = [], []
     for entry in entries:
         if is_regenerable(entry, rules):
-            continue
-        if entry.endswith("/"):
+            regenerable.append(entry)
+        elif entry.endswith("/"):
             files = [os.path.relpath(os.path.join(root, name), path)
                      for root, _dirs, names in os.walk(os.path.join(path, entry))
                      for name in names]
-            left += [f for f in files if not is_regenerable(f, rules)]
             if not files:
-                left.append(entry)
+                unrecognized.append(entry)
+            for name in files:
+                (regenerable if is_regenerable(name, rules) else unrecognized).append(name)
         else:
-            left.append(entry)
-    return left
+            unrecognized.append(entry)
+    return regenerable, unrecognized
+
+
+def undeclared(path: str, entries: list[str], rules: list[str]) -> list[str]:
+    """The ignored entries no rule covers — the view `worktree retire` refuses on."""
+    return classify(path, entries, rules)[1]

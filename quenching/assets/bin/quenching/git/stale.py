@@ -15,8 +15,7 @@ from quenching.common.git import _git, _git_run
 from quenching.common.output import emit
 from quenching.common.tools import spawn_argv
 from quenching.git.base import resolve_base
-from quenching.git.ignored import (declared_regenerable, ignored_entries, is_regenerable,
-                                   undeclared)
+from quenching.git.ignored import classify, declared_regenerable, ignored_entries
 from quenching.session.worktrees import worktree_branch as _worktree_branch
 from quenching.session.worktrees import worktree_gitdir as _worktree_gitdir
 
@@ -245,10 +244,9 @@ def _assess_worktrees(cwd: str, base: str, open_prs: set[str] | None) -> list[di
             if "inspection-failed" not in blockers:
                 blockers.append("inspection-failed")
         else:
-            ignored["regenerable"] = [entry for entry in entries
-                                      if is_regenerable(entry, rules)]
-            ignored["unrecognized"] = undeclared(path, entries, rules)
-            if ignored["unrecognized"]:
+            regenerable, unrecognized = classify(path, entries, rules)
+            ignored = {"regenerable": regenerable, "unrecognized": unrecognized}
+            if unrecognized:
                 blockers.append("ignored-content-unrecognized")
         assessed.append({"path": real, "branch": row["branch"], "detached": row["branch"] is None,
                          "tip": tip, "eligible": not blockers, "blockers": blockers,

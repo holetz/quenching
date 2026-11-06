@@ -107,6 +107,18 @@ class Assessment(RepoCase):
         entry = next(e for e in report["manifest"] if e["kind"] == "worktree")
         self.assertFalse(entry["recommended"])
 
+    def test_a_cache_inside_an_undeclared_directory_is_reported_as_regenerable(self):
+        self._exclude("output/")
+        path = self._worktree()
+        target = pathlib.Path(path, "output", ".coverage")
+        target.parent.mkdir(parents=True)
+        target.write_text("x\n", encoding="utf-8")
+        report = self._report()
+        row = self._row(report, path)
+        self.assertTrue(row["eligible"], row["blockers"])
+        self.assertEqual(row["ignored"], {
+            "regenerable": [os.path.join("output", ".coverage")], "unrecognized": []})
+
     def test_dirty_untracked_locked_and_unmerged_worktrees_are_preserved_with_reasons(self):
         dirty = self._worktree("dirty", "dirty-b")
         pathlib.Path(dirty, "x.txt").write_text("x\n", encoding="utf-8")
