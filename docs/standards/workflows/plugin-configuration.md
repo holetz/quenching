@@ -2,12 +2,12 @@
 type: standard
 title: Plugin configuration contract
 description: "`.agents/quenching.json` is the plugin's single configuration home, with `.claude/quenching.json` read as legacy; provider selection is derived from the repository remote, while placement, Azure mappings, lifecycle hooks, profiles, proposal catalogues and the `git` pillar's per-artifact writing directives remain explicit target settings"
-resource: .agents/quenching.json, quenching/assets/bin/quenching/common/config.py, quenching/assets/bin/quenching/specs/config.py, quenching/assets/bin/quenching/specs/store.py, quenching/assets/bin/quenching/ops/**, quenching/assets/bin/quenching/proof/**, quenching/assets/bin/quenching/git/base.py, quenching/assets/bin/quenching/git/conventions.py, quenching/assets/bin/quenching/config/**, quenching/assets/bin/quenching/common/identity.py
+resource: .agents/quenching.json, quenching/assets/bin/quenching/common/config.py, quenching/assets/bin/quenching/specs/config.py, quenching/assets/bin/quenching/specs/store.py, quenching/assets/bin/quenching/ops/**, quenching/assets/bin/quenching/proof/**, quenching/assets/bin/quenching/git/base.py, quenching/assets/bin/quenching/git/conventions.py, quenching/assets/bin/quenching/git/ignored.py, quenching/assets/bin/quenching/config/**, quenching/assets/bin/quenching/common/identity.py
 tags: [workflows, specs, configuration, provider, plugin]
-timestamp: 2026-11-04
+timestamp: 2026-11-06
 audience: both
 authority: current
-source: specs 1065, 1075, 1405, 1907, 1908, 1909, 1910, 1911, 1912, 2092, 2118, 2164, 2175, 1020213 — lineage in decision 0004
+source: specs 1065, 1075, 1405, 1907, 1908, 1909, 1910, 1911, 1912, 2092, 2118, 2164, 2175, 2022, 1020213 — lineage in decision 0004
 maintainer: quenching
 ---
 
@@ -139,10 +139,24 @@ The root-level envelope is deliberately small:
 }
 ```
 
-`shared.regenerablePaths` lists the ignored paths the repo regenerates on its own. `cq git worktree
-retire` discards them without `--discard-ignored` and still stands on any other ignored file, such as
-a `.env`. An entry without a slash matches that name at any depth; an entry with a slash matches that
-path from the repo root, itself or anything under it. An absent key declares nothing.
+`shared.regenerablePaths` is read by two verbs: `cq git worktree retire` discards the ignored paths
+it covers without `--discard-ignored`, and `cq git stale` classifies them as `ignored.regenerable`
+and keeps the worktree eligible for pruning. Any other ignored file — a `.env`, a `.tmp`, an
+ignored notebook — is `ignored.unrecognized` and blocks both.
+
+A built-in list of unambiguous Python caches applies before the key and cannot be removed by it:
+`.venv`, `venv`, `__pycache__`, `*.py[cod]`, `.pytest_cache`, `.ruff_cache`, `.mypy_cache`,
+`.pyright`, `.tox`, `.nox`, `htmlcov`, `.coverage`, `.coverage.*`, `*.egg-info`, `.eggs`,
+`pip-wheel-metadata`, `.cache`, `.ipynb_checkpoints`, `.hypothesis` and `node_modules`. `build/` and
+`dist/` are deliberately absent because they can hold a file written by hand; a target that
+regenerates them declares them. The key adds to the defaults and never replaces them, so an absent
+key still lets the built-in caches go.
+
+An entry without a slash names a component at any depth, and a `*` in it matches with `fnmatch`
+(`*.egg-info`). An entry with a slash, inner or trailing, anchors at the repository root and stays
+literal — itself or anything under it. An absolute entry, or one carrying `..`, is dropped. A
+shared path `cq git worktree link` materialised is a symlink into a store that survives the
+worktree's removal, so it is never counted as ignored content.
 
 Ownership follows the meaning of the key, not the module that happens to read it:
 

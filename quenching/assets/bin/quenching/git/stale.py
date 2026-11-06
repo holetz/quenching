@@ -10,11 +10,12 @@ import json
 import os
 import subprocess
 
-from quenching.common.config import detect_provider
+from quenching.common.config import detect_provider, load_config
 from quenching.common.git import _git, _git_run
 from quenching.common.output import emit
 from quenching.common.tools import spawn_argv
 from quenching.git.base import resolve_base
+from quenching.git.ignored import classify, declared_regenerable, ignored_entries
 from quenching.session.worktrees import worktree_branch as _worktree_branch
 from quenching.session.worktrees import worktree_gitdir as _worktree_gitdir
 
@@ -206,6 +207,7 @@ def _assess_worktrees(cwd: str, base: str, open_prs: set[str] | None) -> list[di
     guarded removal, never evidence of inactivity: the owner confirms that separately."""
     registered = _registered_worktrees(cwd)
     here = os.path.realpath(_git(cwd, "rev-parse", "--show-toplevel").strip() or cwd)
+    rules = declared_regenerable(load_config(cwd))
     assessed = []
     for index, row in enumerate(registered):
         path = row["path"]
@@ -226,14 +228,29 @@ def _assess_worktrees(cwd: str, base: str, open_prs: set[str] | None) -> list[di
         tip = row["head"]
         if not tip or _git_run(cwd, "merge-base", "--is-ancestor", tip, base)[0] != 0:
             blockers.append("unmerged-head")
-        code, status, _err = _git_run(path, "status", "--porcelain", "--ignored",
-                                      "--untracked-files=all")
+        code, status, _err = _git_run(path, "status", "--porcelain",
+                                      "--untracked-files=normal")
         if code != 0:
             blockers.append("inspection-failed")
-        elif status.strip():
-            blockers.append("dirty-or-ignored-content")
+        else:
+            lines = [line for line in status.splitlines() if line.strip()]
+            if any(not line.startswith("?? ") for line in lines):
+                blockers.append("tracked-changes")
+            if any(line.startswith("?? ") for line in lines):
+                blockers.append("untracked-files")
+        ignored = {"regenerable": [], "unrecognized": []}
+        entries = ignored_entries(path)
+        if entries is None:
+            if "inspection-failed" not in blockers:
+                blockers.append("inspection-failed")
+        else:
+            regenerable, unrecognized = classify(path, entries, rules)
+            ignored = {"regenerable": regenerable, "unrecognized": unrecognized}
+            if unrecognized:
+                blockers.append("ignored-content-unrecognized")
         assessed.append({"path": real, "branch": row["branch"], "detached": row["branch"] is None,
-                         "tip": tip, "eligible": not blockers, "blockers": blockers})
+                         "tip": tip, "eligible": not blockers, "blockers": blockers,
+                         "ignored": ignored})
     return assessed
 
 
@@ -242,12 +259,14 @@ def _manifest(cwd: str, remote: str, report: dict, worktrees: list[dict]) -> lis
     entries = []
 
     def add(kind, identity, scope, ref, tip, status, reasons, argv, cq, recommended):
-        entries.append({
+        entry = {
             "id": entry_id(kind, identity), "kind": kind, "scope": scope, "ref": ref,
             "tip": tip, "tipDate": _tip_date(cwd, tip, cache),
             "dateSource": DATE_SOURCE if tip else None, "status": status,
             "reasons": reasons, "action": {"argv": argv, "cq": cq} if argv else None,
-            "recommended": recommended})
+            "recommended": recommended}
+        entries.append(entry)
+        return entry
 
     lookup_ok = report["prLookup"] == "ok"
 
@@ -272,11 +291,12 @@ def _manifest(cwd: str, remote: str, report: dict, worktrees: list[dict]) -> lis
              "--expect-tip", tip or ""], lookup_ok and tip is not None)
     for w in worktrees:
         ok = w["eligible"]
-        add("worktree", w["path"], "local", w["path"], w["tip"],
-            "candidate" if ok else "preserved", ["merged-clean"] if ok else w["blockers"],
-            ["git", "worktree", "remove", "--", w["path"]] if ok else None,
-            ["cq", "git", "prune", "--worktree", w["path"], "--expect-tip", w["tip"] or "",
-             "--confirm-inactive"] if ok else None, False)
+        entry = add("worktree", w["path"], "local", w["path"], w["tip"],
+                    "candidate" if ok else "preserved", ["merged-clean"] if ok else w["blockers"],
+                    ["git", "worktree", "remove", "--", w["path"]] if ok else None,
+                    ["cq", "git", "prune", "--worktree", w["path"], "--expect-tip", w["tip"] or "",
+                     "--confirm-inactive"] if ok else None, ok)
+        entry["ignored"] = w["ignored"]
     for w in report["orphanWorktrees"]:
         add("orphan-worktree", w["path"], "local", w["path"], None, "candidate",
             ["directory-missing"], ["git", "worktree", "remove", "--", w["path"]],
@@ -373,6 +393,10 @@ def cmd_stale(args) -> int:
     for w in report["worktrees"]:
         state = "candidate" if w["eligible"] else "kept: " + ", ".join(w["blockers"])
         lines.append(f"  {w['path']} ({w['branch'] or 'detached'}, {state})")
+        for classification in ("regenerable", "unrecognized"):
+            paths = w["ignored"][classification]
+            if paths:
+                lines.append(f"    ignored.{classification}: {', '.join(paths)}")
     lines.append("unregistered worktrees (repository siblings):"
                  if unregistered_worktrees
                  else "unregistered worktrees (repository siblings): none")
