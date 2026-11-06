@@ -148,6 +148,12 @@ class Acquisition(unittest.TestCase):
         self.assertEqual(1, len(rest))
         self.assertLess(elapsed, 2, "a partial acquisition waited with a slot in hand")
 
+    def test_releasing_the_last_hold_clears_the_exported_count(self):
+        held = slots.acquire(root=self.root, total=2, limit=1, timeout=1)
+        self.assertEqual("1", os.environ.get(slots.HELD_ENV))
+        held.release()
+        self.assertIsNone(os.environ.get(slots.HELD_ENV))
+
 
 class Plugin(unittest.TestCase):
     def test_auto_workers_are_the_held_slots(self):
@@ -175,8 +181,9 @@ class Plugin(unittest.TestCase):
     @unittest.skipUnless(slots.HAS_XDIST, "xdist owns the worker count")
     def test_one_explicit_worker_reserves_one_slot_not_the_whole_share(self):
         config = SimpleNamespace(option=SimpleNamespace(numprocesses=1, tx=["popen"]))
-        with mock.patch.object(slots, "acquire",
-                               return_value=slots.Held([slots.Slot(0, -1)])) as budget:
+        with mock.patch.dict(os.environ, {slots.HELD_ENV: ""}), \
+                mock.patch.object(slots, "acquire",
+                                  return_value=slots.Held([slots.Slot(0, -1)])) as budget:
             slots.pytest_configure(config)
         self.assertEqual(1, budget.call_args.kwargs["limit"])
 

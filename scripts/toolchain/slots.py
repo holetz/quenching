@@ -247,6 +247,7 @@ class Held:
 
     slots: list[Slot]
     gate: Gate | None = None
+    exported: str | None = None
 
     def __len__(self) -> int:
         return len(self.slots)
@@ -256,6 +257,8 @@ class Held:
             slot.release()
         if self.gate is not None:
             self.gate.release()
+        if self.exported is not None and os.environ.get(HELD_ENV) == self.exported:
+            os.environ.pop(HELD_ENV, None)
 
 
 def acquire(limit: int | None = None, root: pathlib.Path | None = None, total: int | None = None,
@@ -300,7 +303,8 @@ def acquire(limit: int | None = None, root: pathlib.Path | None = None, total: i
     print(f"[slots] {len(held)} of {total} slot(s) under {root}", file=out, flush=True)
     held_result = Held(held, gate)
     if held:
-        os.environ[HELD_ENV] = str(len(held))
+        held_result.exported = str(len(held))
+        os.environ[HELD_ENV] = held_result.exported
         atexit.register(held_result.release)
     return held_result
 
