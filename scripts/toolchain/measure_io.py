@@ -137,7 +137,10 @@ def run_variant(name: str, extra: list[str], tmp_root: pathlib.Path, out: pathli
     tmp = tmp_root / f"tmp-{name}"
     shutil.rmtree(tmp, ignore_errors=True)
     tmp.mkdir(parents=True)
-    env = dict(os.environ, TMPDIR=str(tmp), TEMP=str(tmp), TMP=str(tmp))
+    # `QUENCHING_TEST_TMPDIR` pins the resolver to this variant's directory, so the sampler below
+    # measures the tree the suite actually wrote, in RAM or on disk, at the root the run chose.
+    env = dict(os.environ, TMPDIR=str(tmp), TEMP=str(tmp), TMP=str(tmp),
+               QUENCHING_TEST_TMPDIR=str(tmp))
     cmd = [*VARIANTS[name], *extra]
     # The disk measured is the checkout's physical disk: with TMPDIR on tmpfs the temp root has no
     # block device, and what still reaches the SSD (coverage data, .venv reads) is the point.
