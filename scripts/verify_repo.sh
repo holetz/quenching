@@ -32,8 +32,31 @@ run_check() {
 COVERAGE_DIR=".quenching/coverage"
 COVERAGE_JSON="$COVERAGE_DIR/coverage.json"
 mkdir -p "$COVERAGE_DIR"
+# `COVERAGE_FILE` stays here, outside the per-gate temp directory: the EXIT trap removes that
+# directory, and it would take the worker data with it before the report is combined.
 export COVERAGE_FILE="$ROOT/$COVERAGE_DIR/.coverage"
-pytest_args=(quenching/tests -q -p randomly -n auto
+
+# One temp root for the whole run. `scripts.toolchain.tmproot` prefers a RAM-backed candidate and
+# falls back to the disk with a NOTICE on stderr; it prints the chosen root on stdout. The
+# `quenching-gate-*` directory under it is per run and removed on exit — normal, failed, SIGINT or
+# SIGTERM — so a killed gate leaves nothing in RAM. Exporting all three variables is what makes
+# every `tempfile` call, every xdist worker and every `git` child share the root with no test
+# edited; `QUENCHING_TEST_TMPROOT` marks it as already resolved for `quenching/tests/_paths.py`.
+TMPROOT="$(python3 -m scripts.toolchain.tmproot)" || exit 1
+GATE_TMP="$(mktemp -d "$TMPROOT/quenching-gate-$$-XXXXXX")"
+export TMPDIR="$GATE_TMP" TEMP="$GATE_TMP" TMP="$GATE_TMP"
+export QUENCHING_TEST_TMPROOT="$GATE_TMP"
+cleanup_gate_tmp() { rm -rf "$GATE_TMP"; }
+trap cleanup_gate_tmp EXIT
+trap 'exit 130' INT
+trap 'exit 143' TERM
+
+# `QUENCHING_TEST_WORKERS` bounds the suite's parallelism (`auto` by default). A machine running
+# several gates at once sets it lower so the gates share the cores instead of thrashing.
+TEST_WORKERS="${QUENCHING_TEST_WORKERS:-auto}"
+printf '\ntemp root: %s\nworkers: %s\n' "$GATE_TMP" "$TEST_WORKERS"
+
+pytest_args=(quenching/tests -q -p randomly -n "$TEST_WORKERS"
              --cov=quenching/assets/bin/quenching
              --cov-report="json:$COVERAGE_JSON")
 if [ -n "${PYTEST_RANDOMLY_SEED:-}" ]; then

@@ -44,3 +44,17 @@ Per-subject ledger the verify gate reads. A subject is "done" only when every ca
   `functional-checks.sh --selfcheck` and `--selftest`; CI has no `claude` CLI and measures no surface
   load, which runs under `QUENCHING_FUNCTIONAL=1 bash scripts/verify_repo.sh` and is required by `/release`).
   Actions are pinned by full commit SHA with the tag in a comment.
+
+## The gate's temp root and worker count
+
+The suite writes several hundred megabytes of temporary files per run. `scripts/verify_repo.sh`
+resolves one root through `scripts/toolchain/tmproot.py` and exports it as `TMPDIR`/`TEMP`/`TMP`
+before pytest starts, so every `tempfile` call, every xdist worker and every `git` child inherits it
+with no test edited. The root is `$XDG_RUNTIME_DIR`, `/dev/shm` or a Windows Dev Drive when one of
+them is a writable tmpfs with at least 512 MB free; otherwise it is the system temp dir and the gate
+prints a `NOTICE`. Each run creates `quenching-gate-<pid>-XXXXXX` under the root and removes it on
+exit, including SIGINT and SIGTERM. `COVERAGE_FILE` stays in `.quenching/coverage/`, outside that
+directory, because the trap would otherwise delete the worker data before the report is combined and
+`cq proof ratchet` reads it. `QUENCHING_TEST_TMPDIR` overrides the root, and `QUENCHING_TEST_WORKERS`
+sets the worker count (`auto` by default) so concurrent gates can share the cores. A direct
+`pytest` run gets the same root from `quenching/tests/_paths.py`.

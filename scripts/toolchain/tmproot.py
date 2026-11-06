@@ -32,6 +32,7 @@ import tempfile
 MIN_FREE_BYTES = 512 * 2**20
 ENV_KEYS = ("TMPDIR", "TEMP", "TMP")
 OVERRIDE = "QUENCHING_TEST_TMPDIR"
+GATE_MARKER = "QUENCHING_TEST_TMPROOT"  # the gate's per-run directory, already exported by the gate
 _SYNCED = ("onedrive", "dropbox", "google drive", "icloud")
 
 
