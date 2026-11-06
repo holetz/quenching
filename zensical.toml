@@ -24,6 +24,7 @@
       "how-to/converge-a-legacy-repository.md",
       "how-to/drive-a-spec.md",
       "how-to/publish-the-docs-site.md",
+      "how-to/set-up-a-machine-for-the-test-suite.md",
     ] },
     { "Concepts" = [
       "documentation/index.md",
