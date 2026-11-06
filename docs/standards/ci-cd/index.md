@@ -77,8 +77,9 @@ whose direct imports reach a changed module, and takes the diff from the merge b
 tree plus untracked files. It answers "the whole suite" whenever it cannot be sure — a global file
 (`pyproject.toml`, `scripts/toolchain/`, `quenching/assets/bin/quenching/common/`), a path no rule
 covers, a rule naming a test that no longer exists, a deleted test, an unresolvable base — and prints
-the reason instead of guessing. A change under `docs/` selects nothing: the close prints `the diff
-reaches no test` rather than a green over an empty run.
+the reason instead of guessing. A change under `site/` selects nothing: the close prints `the diff
+reaches no test` rather than a green over an empty run, and a `docs/` change runs the tests that
+read the navigation.
 
 `QUENCHING_TEST_BASE` moves the merge base of either mode (default `origin/main`), which is what a
 task lane points at `HEAD` to measure its own working tree. `QUENCHING_TEST_SCOPE` accepts only

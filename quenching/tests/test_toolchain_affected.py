@@ -59,8 +59,8 @@ class Selection(unittest.TestCase):
         self.assertTrue(got.complete)
         self.assertIn("no rule covers", got.reasons[0])
 
-    def test_documentation_alone_selects_nothing_and_is_not_a_failure(self):
-        got = self.selected("docs/index.md")
+    def test_a_generated_tree_alone_selects_nothing_and_is_not_a_failure(self):
+        got = self.selected("site/index.html")
         self.assertEqual((), got.tests)
         self.assertFalse(got.complete)
 
@@ -75,6 +75,11 @@ class Selection(unittest.TestCase):
         got = self.selected(MISSING_TEST)
         self.assertTrue(got.complete)
         self.assertIn("deleted or moved", got.reasons[0])
+
+    def test_a_docs_page_change_reaches_the_surface_listing(self):
+        got = self.selected("docs/standards/ci-cd/index.md")
+        self.assertFalse(got.complete)
+        self.assertIn("quenching/tests/test_surface_listings.py", got.tests)
 
     def test_a_workflow_change_reaches_the_proof_tests(self):
         got = self.selected(".github/workflows/ci.yml")

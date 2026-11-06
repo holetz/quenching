@@ -42,7 +42,6 @@ GLOBAL = (
     "scripts/toolchain/",
 )
 IRRELEVANT = (
-    "docs/",
     "site/",
     "site-source/",
     ".agents/",
@@ -129,6 +128,7 @@ RULES: tuple[Rule, ...] = (
          ("test_readme_surface", "test_deploy*", "test_specs_release", "test_opensource_controls",
           "test_public_readiness")),
     Rule(("AGENTS.md",), ("test_deploy", "test_components_migrate")),
+    Rule(("docs/",), ("test_surface_listings", "test_zensical_*")),
     Rule((".github/",), ("test_proof", "test_public_readiness", "test_opensource_controls")),
     Rule(("scripts/",),
          ("test_toolchain_*", "test_verify_repo_functional", "test_opensource_controls",
