@@ -100,6 +100,7 @@ generate list). The **agent-facing pointer** for this home is [AGENTS.md](AGENTS
 | Doc | Covers |
 | --- | --- |
 | [versioning-release.md](ci-cd/versioning-release.md) | The version surfaces cq specs release bumps together — the source VERSION, the HUD plugin manifest, every Claude marketplace entry and the bundled cq identity — and the copies it regenerates before the release commit |
+| [test-cost.md](ci-cd/test-cost.md) | What a run may write, how many workers it may take and how much of the suite each tier runs — one temp root outside the repository, a git configuration of the run's own, a shared worker budget and three scopes, with a narrow local gate that never replaces CI |
 
 ### code/
 
