@@ -91,6 +91,9 @@ class Acquisition(unittest.TestCase):
         self._tmp = tempfile.TemporaryDirectory()
         self.addCleanup(self._tmp.cleanup)
         self.root = pathlib.Path(self._tmp.name)
+        saved = os.environ.pop(slots.HELD_ENV, None)
+        self.addCleanup(lambda: os.environ.__setitem__(slots.HELD_ENV, saved)
+                        if saved is not None else os.environ.pop(slots.HELD_ENV, None))
 
     def test_a_second_process_takes_the_complement_not_the_same_slots(self):
         mine = slots.acquire(root=self.root, total=6, timeout=1)
@@ -137,6 +140,7 @@ class Plugin(unittest.TestCase):
 
     def test_the_budget_is_acquired_once_per_process(self):
         config = SimpleNamespace()
+        os.environ.pop(slots.HELD_ENV, None)
         held = slots.Held([slots.Slot(0, -1), slots.Slot(1, -1)])
         with mock.patch.object(slots, "acquire", return_value=held) as budget:
             self.assertEqual(2, slots._budget(config))
@@ -150,6 +154,13 @@ class Plugin(unittest.TestCase):
         slots.pytest_configure(config)
         self.assertEqual(2, config.option.numprocesses)
         self.assertEqual(["popen", "popen"], config.option.tx)
+
+    def test_a_nested_run_uses_the_inherited_share_without_acquiring(self):
+        config = SimpleNamespace()
+        with mock.patch.dict(os.environ, {slots.HELD_ENV: "3"}), \
+                mock.patch.object(slots, "acquire") as budget:
+            self.assertEqual(3, slots._budget(config))
+        budget.assert_not_called()
 
     def test_a_worker_never_takes_a_budget(self):
         config = SimpleNamespace(workerinput={"workerid": "gw0"})

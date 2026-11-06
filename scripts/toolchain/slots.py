@@ -39,6 +39,9 @@ import time
 SLOTS_ENV = "QUENCHING_TEST_SLOTS"
 ROOT_ENV = "QUENCHING_TEST_SLOT_ROOT"
 TIMEOUT_ENV = "QUENCHING_TEST_SLOT_TIMEOUT"
+# Set by a run that already holds slots; a pytest it spawns from inside a test is nested and must
+# not queue behind its own parent. It runs within the parent's share instead.
+HELD_ENV = "QUENCHING_TEST_SLOTS_HELD"
 DEFAULT_TIMEOUT = 300.0
 _POLL = 0.2
 
@@ -293,6 +296,7 @@ def acquire(limit: int | None = None, root: pathlib.Path | None = None, total: i
     print(f"[slots] {len(held)} of {total} slot(s) under {root}", file=out, flush=True)
     held_result = Held(held, gate)
     if held:
+        os.environ[HELD_ENV] = str(len(held))
         atexit.register(held_result.release)
     return held_result
 
@@ -306,6 +310,10 @@ def _budget(config) -> int:
     cached = getattr(config, "_quenching_held", None)
     if cached is not None:
         return len(cached)
+    inherited = os.environ.get(HELD_ENV, "")
+    if inherited.isdigit() and int(inherited) > 0:
+        config._quenching_slots = int(inherited)
+        return config._quenching_slots
     config._quenching_held = acquire()
     return len(config._quenching_held)
 
