@@ -13,6 +13,24 @@ owner: [`ci-cd/versioning-release.md`](docs/standards/ci-cd/versioning-release.m
 short version for a consumer: the version is published once, deliberately, as a release — never at a
 spec's own conclude — and `cq --version` is what answers which one you are running.
 
+## 7.4.0
+
+**`cq git stale` separa cache regenerável de ignorado que pode guardar trabalho.** Cada worktree
+  avaliado passa a carregar `ignored: {regenerable, unrecognized}` e motivos granulares
+  (`tracked-changes`, `untracked-files`, `ignored-content-unrecognized`) no lugar do rótulo único
+  `dirty-or-ignored-content`. O conteúdo que o repositório recompõe — a lista embutida de caches de
+  Python somada ao `shared.regenerablePaths` declarado — não bloqueia nem alerta; qualquer outro
+  ignorado é listado por caminho e mantém o worktree preservado. Um worktree mesclado, limpo,
+  destravado e sem ignorado não declarado vira `candidate` e `recommended: true`; a remoção continua
+  exigindo a confirmação do dono e nunca usa `--force`.
+  **`worktree retire` lê a mesma fonte** (`quenching/git/ignored.py`), então o `.venv` que travava o
+  cleanup orquestrado também deixa de travar o `retire`. A lista embutida cobre caches inequívocos
+  (`.venv`, `__pycache__`, `.pytest_cache`, `.ruff_cache`, `*.egg-info`, `.coverage`, `.coverage.*`,
+  `node_modules`, …) e deixa `build/` e `dist/` para o alvo declarar. O `cleanup.md` ganha a decisão
+  D3, separada das branches, com as duas classes e os caminhos exatos.
+  **Compatibilidade:** o rótulo `dirty-or-ignored-content` sai de `blockers` — quem casava a string
+  passa a ver `tracked-changes`, `untracked-files` ou `ignored-content-unrecognized`.
+
 ## 7.3.0
 
 **A home `communications/` entra na árvore canônica e `type: communication` dispensa `resource`.**
