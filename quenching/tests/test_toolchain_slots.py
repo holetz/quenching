@@ -19,6 +19,12 @@ import unittest
 from types import SimpleNamespace
 from unittest import mock
 
+try:
+    import _paths  # noqa: F401 — the suite's temp root and git isolation, before any test runs
+except ModuleNotFoundError:
+    sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
+    import _paths  # noqa: F401
+
 REPO_ROOT = pathlib.Path(__file__).resolve().parents[2]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
@@ -44,7 +50,7 @@ def child(slot_root: pathlib.Path, total: int = 6, timeout: float = 5, sleep: fl
 
 class Paths(unittest.TestCase):
     def test_linux_follows_xdg_then_home(self):
-        self.assertEqual(pathlib.Path("/cache"), slots.cache_root({"XDG_CACHE_HOME": "/cache"}))
+        self.assertEqual(pathlib.Path("/cache"), slots.cache_root({"XDG_CACHE_HOME": "/cache"}, platform="linux"))
         self.assertEqual(pathlib.Path("/home/u/.cache"), slots.cache_root({"HOME": "/home/u"},
                                                                           platform="linux"))
 
@@ -132,6 +138,16 @@ class Acquisition(unittest.TestCase):
         self.assertIn("no free slot", out.getvalue())
         self.assertIn("pid", out.getvalue())
 
+    def test_a_partial_share_does_not_hold_a_slot_while_waiting(self):
+        first = slots.acquire(root=self.root, total=2, limit=1, timeout=1)
+        self.addCleanup(first.release)
+        started = time.monotonic()
+        rest = slots.acquire(root=self.root, total=2, limit=2, timeout=5, stream=io.StringIO())
+        elapsed = time.monotonic() - started
+        self.addCleanup(rest.release)
+        self.assertEqual(1, len(rest))
+        self.assertLess(elapsed, 2, "a partial acquisition waited with a slot in hand")
+
 
 class Plugin(unittest.TestCase):
     def test_auto_workers_are_the_held_slots(self):
@@ -156,12 +172,20 @@ class Plugin(unittest.TestCase):
         self.assertEqual(2, config.option.numprocesses)
         self.assertEqual(["popen", "popen"], config.option.tx)
 
-    def test_a_nested_run_uses_the_inherited_share_without_acquiring(self):
+    def test_a_nested_run_goes_serial_without_acquiring(self):
         config = SimpleNamespace()
         with mock.patch.dict(os.environ, {slots.HELD_ENV: "3"}), \
                 mock.patch.object(slots, "acquire") as budget:
-            self.assertEqual(3, slots._budget(config))
+            self.assertEqual(0, slots._budget(config))
         budget.assert_not_called()
+
+    def test_a_serial_run_never_acquires_even_with_xdist(self):
+        config = SimpleNamespace(option=SimpleNamespace(numprocesses=None, tx=None))
+        with mock.patch.object(slots, "HAS_XDIST", True), \
+                mock.patch.object(slots, "acquire") as budget:
+            slots.pytest_configure(config)
+        budget.assert_not_called()
+
 
     def test_a_serial_run_takes_no_budget(self):
         config = SimpleNamespace(option=SimpleNamespace(numprocesses=None, tx=None))

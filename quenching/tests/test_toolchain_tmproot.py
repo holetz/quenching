@@ -16,6 +16,12 @@ import tempfile
 import unittest
 from unittest import mock
 
+try:
+    import _paths  # noqa: F401 — the suite's temp root and git isolation, before any test runs
+except ModuleNotFoundError:
+    sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
+    import _paths  # noqa: F401
+
 REPO_ROOT = pathlib.Path(__file__).resolve().parents[2]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
@@ -81,6 +87,24 @@ class TempRootCase(unittest.TestCase):
         self.assertEqual(got.label, "/dev/shm")
 
     @POSIX
+    @POSIX
+    def test_a_tmpfs_that_cannot_execute_is_refused(self):
+        candidate = tmproot.Candidate(self.xdg, "ram", "XDG_RUNTIME_DIR", tmpfs=True)
+        with self.mounts((str(self.xdg), "tmpfs")), self.room(), \
+                mock.patch.object(tmproot, "_can_exec", return_value=False):
+            reason = tmproot._rejection(candidate, [(str(self.xdg), "tmpfs")])
+        self.assertIn("noexec", reason)
+
+    @POSIX
+    def test_a_noexec_tmpfs_falls_through_to_the_next_candidate(self):
+        with self.mounts((str(self.xdg), "tmpfs"), ("/dev/shm", "tmpfs")), self.room(), \
+                mock.patch.object(tmproot, "_can_exec", side_effect=lambda path: path != self.xdg):
+            got = tmproot.resolve({"XDG_RUNTIME_DIR": str(self.xdg)}, platform="linux")
+        self.assertEqual(got.label, "/dev/shm")
+
+    def test_the_probe_accepts_this_repositorys_temp_dir(self):
+        self.assertTrue(tmproot._can_exec(pathlib.Path(tempfile.gettempdir())))
+
     def test_a_tmpfs_without_room_is_refused(self):
         with self.mounts((str(self.xdg), "tmpfs"), ("/dev/shm", "tmpfs")), \
                 mock.patch.object(tmproot, "_free_bytes", return_value=tmproot.MIN_FREE_BYTES - 1):

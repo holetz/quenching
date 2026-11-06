@@ -14,6 +14,12 @@ import sys
 import unittest
 from unittest import mock
 
+try:
+    import _paths  # noqa: F401 — the suite's temp root and git isolation, before any test runs
+except ModuleNotFoundError:
+    sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
+    import _paths  # noqa: F401
+
 REPO_ROOT = pathlib.Path(__file__).resolve().parents[2]
 HAS_PYTEST = importlib.util.find_spec("pytest") is not None
 HAS_XDIST = importlib.util.find_spec("xdist") is not None
@@ -90,11 +96,31 @@ class Plan(unittest.TestCase):
 
 
 @unittest.skipUnless(HAS_PYTEST, "the end-to-end case runs pytest")
+class Forwarding(unittest.TestCase):
+    def test_everything_after_the_separator_goes_to_pytest(self):
+        head, extra = runner.split_forwarded(["--affected", "--", "-q", "-k", "audit"])
+        self.assertEqual(["--affected"], head)
+        self.assertEqual(["-q", "-k", "audit"], extra)
+
+    def test_an_option_the_runner_does_not_know_is_an_error_not_a_target(self):
+        with self.assertRaises(SystemExit):
+            runner.main(["--affected", "-n", "2"])
+
+    def test_the_base_can_come_from_the_environment(self):
+        selection = runner.affected.Selection("main", ("a.py",), ("quenching/tests/test_git.py",), (), False)
+        with mock.patch.dict("os.environ", {runner.BASE_ENV: "HEAD"}), \
+                mock.patch.object(runner.affected, "select", return_value=selection) as select, \
+                mock.patch.object(runner.subprocess, "call", return_value=0), \
+                mock.patch.object(runner, "count_integration", return_value=0):
+            runner.main(["--affected"])
+        self.assertEqual("HEAD", select.call_args.args[1])
+
+
 class EndToEnd(unittest.TestCase):
     def test_a_real_run_reports_the_deferred_layer(self):
         proc = subprocess.run(
             [sys.executable, "-m", "scripts.toolchain.test",
-             "quenching/tests/test_toolchain_layers.py", "-q"],
+             "quenching/tests/test_toolchain_layers.py", "--", "-q"],
             cwd=REPO_ROOT, capture_output=True, text=True)
         self.assertEqual(0, proc.returncode, proc.stdout + proc.stderr)
         self.assertIn("target(s) given", proc.stderr)

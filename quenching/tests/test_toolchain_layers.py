@@ -15,6 +15,12 @@ import tomllib
 import unittest
 from types import SimpleNamespace
 
+try:
+    import _paths  # noqa: F401 — the suite's temp root and git isolation, before any test runs
+except ModuleNotFoundError:
+    sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
+    import _paths  # noqa: F401
+
 REPO_ROOT = pathlib.Path(__file__).resolve().parents[2]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
@@ -31,6 +37,7 @@ class Marker(unittest.TestCase):
         markers = config["tool"]["pytest"]["ini_options"]["markers"]
         self.assertTrue(any(entry.startswith("integration:") for entry in markers), markers)
 
+    @unittest.skipUnless(HAS_PYTEST, "the hook imports pytest")
     def test_only_the_listed_modules_get_the_marker(self):
         marked: list[str] = []
 

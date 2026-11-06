@@ -16,8 +16,11 @@ paths win over the diff — a caller who named a test meant it.
 Usage::
 
     python -m scripts.toolchain.test --affected
-    python -m scripts.toolchain.test --affected --with-integration -q
-    python -m scripts.toolchain.test -q quenching/tests/test_git.py
+    python -m scripts.toolchain.test --affected -- -q -k audit
+    python -m scripts.toolchain.test quenching/tests/test_git.py -- -q
+
+Arguments after `--` go to pytest untouched; without it, an option the runner does not know is an
+error rather than a target it guesses.
 """
 
 from __future__ import annotations
@@ -33,6 +36,7 @@ from scripts.toolchain import affected
 
 TESTS = "quenching/tests"
 FALLBACK_BASE = "origin/main"
+BASE_ENV = "QUENCHING_TEST_BASE"
 WORKERS_ENV = "QUENCHING_TEST_WORKERS"
 HAS_XDIST = importlib.util.find_spec("xdist") is not None
 
@@ -80,21 +84,33 @@ def plan(root: pathlib.Path, base: str | None, use_affected: bool,
     return list(selection.tests), None
 
 
+def split_forwarded(argv: list[str]) -> tuple[list[str], list[str]]:
+    """The runner's own arguments, and the pytest ones after `--`."""
+    if "--" not in argv:
+        return argv, []
+    split = argv.index("--")
+    return argv[:split], argv[split + 1:]
+
+
 def main(argv: list[str] | None = None) -> int:
+    raw = list(sys.argv[1:] if argv is None else argv)
+    head, extra = split_forwarded(raw)
     parser = argparse.ArgumentParser(description=(__doc__ or "").splitlines()[0])
     parser.add_argument("--affected", action="store_true", help="scope the run to the diff")
     parser.add_argument("--with-integration", action="store_true", help="keep the heavy layer")
-    parser.add_argument("--base", default=FALLBACK_BASE, help=f"merge-base reference (default: {FALLBACK_BASE})")
+    parser.add_argument("--base", default=None,
+                        help=f"merge-base reference (default: {FALLBACK_BASE} or {BASE_ENV})")
     parser.add_argument("targets", nargs="*", help="explicit test paths; without them the diff decides")
-    args, extra = parser.parse_known_args(argv)
+    args = parser.parse_args(head)
+    base = args.base or os.environ.get(BASE_ENV, FALLBACK_BASE)
     root = affected.import_root()
-    targets, fallback = plan(root, args.base, args.affected, args.targets)
+    targets, fallback = plan(root, base, args.affected, args.targets)
     if fallback:
         print(f"[test] whole suite: {fallback}", file=sys.stderr)
     elif args.targets:
         print(f"[test] {len(targets)} target(s) given", file=sys.stderr)
     else:
-        print(f"[test] {len(targets)} target(s) from the diff against {args.base}", file=sys.stderr)
+        print(f"[test] {len(targets)} target(s) from the diff against {base}", file=sys.stderr)
     if not args.with_integration:
         deferred = count_integration(root, targets)
         print(f"[test] integration: {deferred} test(s) deferred to the close", file=sys.stderr)

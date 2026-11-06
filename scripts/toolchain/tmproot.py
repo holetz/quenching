@@ -22,6 +22,7 @@ Stdlib only, and importable from `quenching/tests/_paths.py` — the module a te
 from __future__ import annotations
 
 import dataclasses
+import contextlib
 import os
 import pathlib
 import shutil
@@ -99,6 +100,27 @@ def _has_room(path: pathlib.Path) -> bool:
     return _free_bytes(path) >= MIN_FREE_BYTES
 
 
+def _can_exec(path: pathlib.Path) -> bool:
+    """Whether a program written here can run: a `noexec` mount refuses every script under it.
+
+    A few tests write a fake executable and run it; `os.access` on the directory only proves
+    traversal. The probe is skipped off POSIX, where the X_OK bit means something else.
+    """
+    if os.name != "posix":
+        return True
+    try:
+        fd, name = tempfile.mkstemp(prefix=".quenching-exec-", dir=path)
+    except OSError:
+        return False
+    try:
+        os.close(fd)
+        os.chmod(name, 0o700)
+        return os.access(name, os.X_OK)
+    finally:
+        with contextlib.suppress(OSError):
+            os.unlink(name)
+
+
 def _dev_drives() -> list[pathlib.Path]:
     """Drives `fsutil devdrv query` reports, or none when the command is absent or refused."""
     try:
@@ -161,6 +183,8 @@ def _rejection(candidate: Candidate, mounts=None) -> str | None:
         return "is not a tmpfs mount"
     if candidate.kind == "ram" and not _has_room(candidate.path):
         return f"has less than {MIN_FREE_BYTES // 2**20} MB free"
+    if not _can_exec(candidate.path):
+        return "is mounted noexec, so the suite's temporary programs cannot run"
     return None
 
 

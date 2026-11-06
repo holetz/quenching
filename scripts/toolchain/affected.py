@@ -38,6 +38,9 @@ GLOBAL = (
     "zensical.toml",
     "quenching/assets/modules.json",
     "quenching/assets/bin/quenching/common/",
+    # Reference prose is read by tests through `cq components read`; no import names it, so the
+    # safe answer is the whole suite.
+    "quenching/references/",
     "scripts/verify_repo.sh",
     "scripts/toolchain/",
 )
@@ -112,9 +115,6 @@ RULES: tuple[Rule, ...] = (
     Rule(("quenching/skills/quenching-toolchain/",), ("test_toolchain*",)),
     Rule(("quenching/skills/quenching-handoff/",), ("test_handoff_command",)),
     Rule(("quenching/skills/quenching-align/",), ("test_align_contract",)),
-    Rule(("quenching/references/",),
-         ("test_commands_catalog", "test_surface_listings", "test_readme_surface",
-          "test_align_contract", "test_frontmatter*")),
     Rule(("quenching/agents/",),
          ("test_components*", "test_opensource_controls", "test_public_readiness")),
     Rule(("quenching/assets/knowledge/",),
@@ -253,6 +253,8 @@ def _resolve_tests(root: pathlib.Path, stems: tuple[str, ...]) -> tuple[list[str
     for stem in stems:
         if stem.endswith("*"):
             matches = sorted(directory.glob(stem + ".py"))
+            if not matches:
+                return [], f"rule names {TESTS_DIR}/{stem}, which matches nothing"
         else:
             matches = [directory / f"{stem}.py"]
             if not matches[0].is_file():
@@ -302,6 +304,7 @@ def select(root: pathlib.Path, base: str | None = None,
                 return Selection(base, changed, (), (f"fail-open: {path} sustains the whole suite",), True)
             selected.add(path)
             reasons.append(f"{path} -> itself")
+            modules.add(name[:-3])
             covered += 1
             continue
         rule = _rule_for(path)

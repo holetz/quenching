@@ -41,11 +41,12 @@ SLOTS_ENV = "QUENCHING_TEST_SLOTS"
 ROOT_ENV = "QUENCHING_TEST_SLOT_ROOT"
 TIMEOUT_ENV = "QUENCHING_TEST_SLOT_TIMEOUT"
 # Set by a run that already holds slots; a pytest it spawns from inside a test is nested and must
-# not queue behind its own parent. It runs within the parent's share instead.
+# not queue behind its own parent, nor add workers the parent did not budget for. It runs serially.
 HELD_ENV = "QUENCHING_TEST_SLOTS_HELD"
 HAS_XDIST = importlib.util.find_spec("xdist") is not None
 DEFAULT_TIMEOUT = 300.0
 _POLL = 0.2
+_STALE_SECONDS = 5.0
 
 
 @dataclasses.dataclass
@@ -227,7 +228,8 @@ def live_gates(root: pathlib.Path) -> int:
             _unlock(fd)
             os.close(fd)
             with contextlib.suppress(OSError):
-                path.unlink()
+                if time.time() - path.stat().st_mtime > _STALE_SECONDS:
+                    path.unlink()
             continue
         live += 1
         os.close(fd)
@@ -270,7 +272,7 @@ def acquire(limit: int | None = None, root: pathlib.Path | None = None, total: i
     deadline = time.monotonic() + timeout
     held: list[Slot] = []
     waited = False
-    while len(held) < want:
+    while True:
         for index in range(total):
             if len(held) >= want:
                 break
@@ -287,7 +289,7 @@ def acquire(limit: int | None = None, root: pathlib.Path | None = None, total: i
                 held.append(Slot(index, fd))
             else:
                 os.close(fd)
-        if len(held) >= want or time.monotonic() >= deadline:
+        if held or time.monotonic() >= deadline:
             break
         if not waited:
             holders = ", ".join(f"pid {pid}" for pid in _holders(root)) or "unknown"
@@ -314,8 +316,8 @@ def _budget(config) -> int:
         return len(cached)
     inherited = os.environ.get(HELD_ENV, "")
     if inherited.isdigit() and int(inherited) > 0:
-        config._quenching_slots = int(inherited)
-        return config._quenching_slots
+        config._quenching_slots = 0
+        return 0
     config._quenching_held = acquire()
     return len(config._quenching_held)
 
@@ -335,8 +337,10 @@ if HAS_XDIST:
 def pytest_configure(config) -> None:  # pragma: no cover - exercised by real runs
     if hasattr(config, "workerinput") or not HAS_XDIST:
         return
-    budget = _budget(config)
     requested = getattr(config.option, "numprocesses", None)
+    if requested in (None, 0):
+        return  # a serial run asks for no workers, so it reserves no budget
+    budget = _budget(config)
     if isinstance(requested, int) and requested > budget:
         config.option.numprocesses = budget
         if getattr(config.option, "tx", None):

@@ -16,6 +16,12 @@ import tempfile
 import unittest
 from unittest import mock
 
+try:
+    import _paths  # noqa: F401 — the suite's temp root and git isolation, before any test runs
+except ModuleNotFoundError:
+    sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
+    import _paths  # noqa: F401
+
 REPO_ROOT = pathlib.Path(__file__).resolve().parents[2]
 # Shaped like a suite path but never exists; assembled so the citation check does not read the
 # fixture as a claim about a file in this checkout.
@@ -75,6 +81,23 @@ class Selection(unittest.TestCase):
         got = self.selected(MISSING_TEST)
         self.assertTrue(got.complete)
         self.assertIn("deleted or moved", got.reasons[0])
+
+    def test_reference_prose_runs_the_whole_suite(self):
+        got = self.selected("quenching/references/git/merge.md")
+        self.assertTrue(got.complete)
+        self.assertIn("is global", got.reasons[0])
+
+    def test_a_changed_test_selects_the_tests_that_import_it(self):
+        got = self.selected("quenching/tests/test_specs_git_backend.py")
+        self.assertFalse(got.complete)
+        self.assertIn("quenching/tests/test_leak_store_guard.py", got.tests)
+
+    def test_a_glob_that_matches_nothing_fails_open(self):
+        broken = (affected.Rule(("mystery/",), ("test_git", "test_vanished_*")),)
+        with mock.patch.object(affected, "RULES", broken):
+            got = self.selected("mystery/thing.py")
+        self.assertTrue(got.complete)
+        self.assertIn("matches nothing", got.reasons[0])
 
     def test_a_docs_page_change_reaches_the_surface_listing(self):
         got = self.selected("docs/standards/ci-cd/index.md")

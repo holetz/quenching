@@ -102,7 +102,8 @@ for test in doc["tests"]:
     case "$MODE" in
       affected)
         if [ "${#TARGETS[@]}" -eq 0 ]; then
-          SUITE_SKIP="the diff reaches no test"
+          TARGETS=(quenching/tests)
+          printf 'scope: affected — the selection parser returned no target, running the whole suite\n'
         else
           printf 'scope: affected against %s — %d test file(s)\n' "$TEST_SCOPE_BASE" "${#TARGETS[@]}"
         fi
