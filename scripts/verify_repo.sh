@@ -56,18 +56,71 @@ trap 'exit 143' TERM
 TEST_WORKERS="${QUENCHING_TEST_WORKERS:-auto}"
 printf '\ntemp root: %s\nworkers: %s\n' "$GATE_TMP" "$TEST_WORKERS"
 
-pytest_args=(quenching/tests -q -p randomly -n "$TEST_WORKERS"
-             --cov=quenching/assets/bin/quenching
-             --cov-report="json:$COVERAGE_JSON")
+# `QUENCHING_TEST_SCOPE` picks how much of the suite this gate runs. `full` is the contract: CI and
+# `/release` always run it. `affected` is the close of a spec on a working machine — the tests the
+# branch's diff reaches, with the whole suite as the safe answer whenever
+# `scripts.toolchain.affected` cannot be sure. A subset cannot prove the coverage floor, so that
+# check is skipped here and enforced by the full gate.
+TEST_SCOPE="${QUENCHING_TEST_SCOPE:-full}"
+case "$TEST_SCOPE" in
+  full|affected) ;;
+  *) printf 'FAILED: QUENCHING_TEST_SCOPE must be full or affected, got "%s"\n' "$TEST_SCOPE" >&2; exit 2 ;;
+esac
+TEST_SCOPE_BASE="${QUENCHING_TEST_BASE:-origin/main}"
+TARGETS=(quenching/tests)
+WITH_COVERAGE=1
+SUITE_SKIP=""
+if [ "$TEST_SCOPE" = affected ]; then
+  WITH_COVERAGE=0
+  SELECTION_JSON="$(python3 -m scripts.toolchain.affected --json --base "$TEST_SCOPE_BASE")" || SELECTION_JSON=""
+  if [ -z "$SELECTION_JSON" ]; then
+    printf 'scope: affected — the selector failed, so the gate runs the whole suite\n'
+  else
+    MODE=full
+    TARGETS=()
+    while IFS=$'\t' read -r tag value; do
+      case "$tag" in
+        MODE) MODE="$value" ;;
+        TARGET) TARGETS+=("$value") ;;
+        REASON) printf 'scope: %s\n' "$value" ;;
+      esac
+    done < <(printf '%s' "$SELECTION_JSON" | python3 -c '
+import json, sys
+doc = json.load(sys.stdin)
+print("MODE\tfull" if doc["complete"] else ("MODE\tskip" if not doc["tests"] else "MODE\taffected"))
+for reason in doc["reasons"]:
+    print("REASON\t" + reason)
+for test in doc["tests"]:
+    print("TARGET\t" + test)
+')
+    case "$MODE" in
+      affected) printf 'scope: affected against %s — %d test file(s)\n' "$TEST_SCOPE_BASE" "${#TARGETS[@]}" ;;
+      skip) SUITE_SKIP="the diff reaches no test" ;;
+      *) TARGETS=(quenching/tests); printf 'scope: affected — whole suite, see the reason above\n' ;;
+    esac
+  fi
+fi
+
+pytest_args=("${TARGETS[@]}" -q -p randomly -n "$TEST_WORKERS")
+if [ "$WITH_COVERAGE" = 1 ]; then
+  pytest_args+=(--cov=quenching/assets/bin/quenching --cov-report="json:$COVERAGE_JSON")
+fi
 if [ -n "${PYTEST_RANDOMLY_SEED:-}" ]; then
   pytest_args+=("--randomly-seed=$PYTEST_RANDOMLY_SEED")
 fi
-if uv run python -c "import pytest, pytest_randomly, xdist, pytest_cov" >/dev/null 2>&1; then
+if [ -n "$SUITE_SKIP" ]; then
+  printf '\n==> unit tests\nSKIPPED: %s (QUENCHING_TEST_SCOPE=affected).\n' "$SUITE_SKIP"
+  printf '\n==> coverage floor\nSKIPPED: QUENCHING_TEST_SCOPE=affected runs a subset; the full gate checks the floor.\n'
+elif [ "$WITH_COVERAGE" = 1 ] && uv run python -c "import pytest, pytest_randomly, xdist, pytest_cov" >/dev/null 2>&1; then
   run_check "unit tests (randomized order, parallel, measured)" \
     uv run python -m pytest "${pytest_args[@]}"
   run_check "coverage floor" \
     python3 quenching/assets/bin/cq proof ratchet --check --artifact "$COVERAGE_JSON"
-elif python3 -c "import coverage" >/dev/null 2>&1; then
+elif [ "$WITH_COVERAGE" = 0 ] && uv run python -c "import pytest, pytest_randomly, xdist" >/dev/null 2>&1; then
+  run_check "unit tests (randomized order, parallel, affected scope)" \
+    uv run python -m pytest "${pytest_args[@]}"
+  printf '\n==> coverage floor\nSKIPPED: QUENCHING_TEST_SCOPE=affected runs a subset; the full gate (CI and /release) checks the floor.\n'
+elif [ "$WITH_COVERAGE" = 1 ] && python3 -c "import coverage" >/dev/null 2>&1; then
   printf '\n==> unit tests\nSKIPPED: pytest-xdist/pytest-cov are not installed (run `uv sync --all-groups`); the suite runs serially under coverage, without the randomized-order evidence.\n'
   run_check "unit tests (measured, serial fallback)" \
     python3 -m coverage run -m unittest discover -s quenching/tests
@@ -77,6 +130,9 @@ elif python3 -c "import coverage" >/dev/null 2>&1; then
     python3 quenching/assets/bin/cq proof ratchet --check --artifact "$COVERAGE_JSON"
 else
   printf '\n==> coverage floor\nSKIPPED: the `coverage` package is not installed (run `uv sync --all-groups`); the floor in .coverage-floor.json was not checked.\n'
+  if [ "$WITH_COVERAGE" = 0 ]; then
+    printf 'NOTE: pytest-xdist is not installed, so the affected scope is ignored and the whole suite runs serially.\n'
+  fi
   run_check "unit tests" \
     python3 -m unittest discover -s quenching/tests
 fi
