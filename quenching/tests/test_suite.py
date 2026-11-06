@@ -10,8 +10,11 @@ collects zero tests exits 0 and reads exactly like a run where everything passed
 """
 
 import ast
+import os
 import pathlib
+import subprocess
 import sys
+import tempfile
 import unittest
 
 TESTS_DIR = pathlib.Path(__file__).resolve().parent
@@ -57,6 +60,38 @@ class SuiteIntegrity(unittest.TestCase):
         suite = unittest.defaultTestLoader.discover(str(TESTS_DIR), top_level_dir=str(TESTS_DIR))
         self.assertGreater(suite.countTestCases(), 0)
         self.assertEqual([], unittest.defaultTestLoader.errors)
+
+
+class GitIsolation(unittest.TestCase):
+    """The suite reads this configuration instead of the machine's — and proves it with git."""
+
+    def test_the_global_file_replaces_the_machines(self):
+        import _paths  # noqa: F401  — the import is what exports it
+
+        global_file = pathlib.Path(os.environ["GIT_CONFIG_GLOBAL"])
+        text = global_file.read_text(encoding="utf-8")
+        self.assertEqual("1", os.environ.get("GIT_CONFIG_NOSYSTEM"))
+        self.assertIn("defaultBranch = main", text)
+        self.assertIn("fsync = none", text)
+        self.assertNotIn("user", text)  # identity stays per repository, never command scope
+
+    def test_a_fresh_repository_inherits_it(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            subprocess.run(["git", "init", "-q", tmp], check=True)
+            head = subprocess.run(["git", "-C", tmp, "symbolic-ref", "--short", "HEAD"],
+                                  check=True, capture_output=True, text=True).stdout.strip()
+            fsync = subprocess.run(["git", "-C", tmp, "config", "--get", "core.fsync"],
+                                   check=True, capture_output=True, text=True).stdout.strip()
+        self.assertEqual("main", head)
+        self.assertEqual("none", fsync)
+
+    def test_a_repository_setting_beats_the_global_file(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            subprocess.run(["git", "init", "-q", tmp], check=True)
+            subprocess.run(["git", "-C", tmp, "config", "init.defaultBranch", "trunk"], check=True)
+            read = subprocess.run(["git", "-C", tmp, "config", "--get", "init.defaultBranch"],
+                                  check=True, capture_output=True, text=True).stdout.strip()
+        self.assertEqual("trunk", read)
 
 
 if __name__ == "__main__":

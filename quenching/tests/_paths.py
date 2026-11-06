@@ -20,6 +20,14 @@ caches its answer.
 `repository_config` resolves this repository's own configuration the way the tool does: the
 generic `.agents/quenching.json` first, then the legacy `.claude/quenching.json`.
 
+**Git isolation.** Every `git` this suite starts reads this run's configuration and nothing of the
+machine's: `GIT_CONFIG_GLOBAL` points at a file written under the temp root, the system file is
+skipped, and the repository's own settings still win. Without it a developer's hooks,
+`commit.gpgsign`, `init.defaultBranch` or `diff.external` leaks into a test; with it, a test that
+needs a different value sets it on the repository it creates. Identity deliberately stays out of the
+file: the suite sets `user.name`/`user.email` per repository, and a command-scope value would hide
+what `test_identity_allowlist` is exercising.
+
 Not named `test*.py`, therefore never collected as a test.
 """
 
@@ -36,6 +44,32 @@ if str(_REPO_ROOT) not in sys.path:
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent.parent / "assets" / "bin"))
 
 from scripts.toolchain import tmproot  # noqa: E402
+
+# Throwaway repositories do not need durability, and a suite that ran one `fsync` per loose object
+# measured 1,146 sync calls in the whole tree. The settings live in a *global file* of this run, not
+# in `GIT_CONFIG_COUNT` pairs: command-scope configuration outranks a repository's own, and two
+# tests set `core.autocrlf`/`init.defaultBranch` locally and read the value back. A global file is
+# overridden by the repository, which is the precedence a test expects.
+_GIT_CONFIG = """[core]
+\tfsync = none
+\tfsyncMethod = batch
+[gc]
+\tauto = 0
+[init]
+\tdefaultBranch = main
+[commit]
+\tgpgsign = false
+[tag]
+\tgpgsign = false
+"""
+_git_config = pathlib.Path(tempfile.mkdtemp(prefix="quenching-gitconfig-"), "gitconfig")
+_git_config.write_text(_GIT_CONFIG, encoding="utf-8")
+os.environ["GIT_CONFIG_GLOBAL"] = str(_git_config)
+os.environ["GIT_CONFIG_NOSYSTEM"] = "1"
+# A caller's command-scope pairs would outrank the file and every repository's own config.
+for _key in [key for key in os.environ
+             if key == "GIT_CONFIG_COUNT" or key.startswith(("GIT_CONFIG_KEY_", "GIT_CONFIG_VALUE_"))]:
+    del os.environ[_key]
 
 if not os.environ.get(tmproot.GATE_MARKER):
     _resolution = tmproot.resolve()
