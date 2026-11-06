@@ -120,7 +120,7 @@
     ".agents/quenching/assets/bin/quenching/design/markdown.py": "fe65c5fee7173906019bc1b06a7d15aa4fcabdb78c1f69622e16daecb112640a",
     ".agents/quenching/assets/bin/quenching/design/model.py": "c5eadfaabaad3e3959cd77e7d58fd19b007ecac8ff2ed026f73e774efe4bcb42",
     ".agents/quenching/assets/bin/quenching/git/__init__.py": "c1935a80d15d8a22d1f3ed02f0dd36045fbcc2b953d01e6ea32b35c56de5087a",
-    ".agents/quenching/assets/bin/quenching/git/audit.py": "9ebb9f10690c07f21860d3a49fddb1629e88fd1dbffdab8be480fa9e5338ff89",
+    ".agents/quenching/assets/bin/quenching/git/audit.py": "fc9b10f13686e6872a573258b5ea1d5b2c930d883d190b6e56f93f19e000bda9",
     ".agents/quenching/assets/bin/quenching/git/azure_pull.py": "81fef94a9cf89cc82da3a2707662cfadffd368fd219a97971e777c41c2814e94",
     ".agents/quenching/assets/bin/quenching/git/base.py": "ac67a17a3c5193e572b02532b20407df9890e96d1af780f726cee900fdadb3c2",
     ".agents/quenching/assets/bin/quenching/git/commit.py": "bd8f94d161c906bab76ad286f4f3df71ee7b9b6b9b7733f4270da033b80f1e55",
