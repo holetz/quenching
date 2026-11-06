@@ -42,7 +42,7 @@ returns `STATE: blocked` with `NOTE: needs-human:` carrying it.
 | Flow | Reference | Picked when |
 | --- | --- | --- |
 | `create` | [references/create.md](.agents/skills/quenching-specs/references/create.md) | a problem, plan or idea to capture; no spec id |
-| `develop` | [references/develop.md](.agents/skills/quenching-specs/references/develop.md) | stage `captured`, `proposed` or `designed`, or a refine request |
+| `develop` | [references/develop.md](.agents/skills/quenching-specs/references/develop.md) | stage `captured`, `proposed` or `designed`, a refine request, or a surface refinement ask |
 | `execute` | [references/execute.md](.agents/skills/quenching-specs/references/execute.md) | stage `ready` or `approved`, or a build with tasks still open |
 | `conclude` | [references/conclude.md](.agents/skills/quenching-specs/references/conclude.md) | every task checked, or an explicit close or abandon |
 | `triage` | [references/triage.md](.agents/skills/quenching-specs/references/triage.md) | a ranking of the open front |
