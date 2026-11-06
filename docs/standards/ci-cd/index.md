@@ -51,13 +51,15 @@ The suite writes several hundred megabytes of temporary files per run. `scripts/
 resolves one root through `scripts/toolchain/tmproot.py` and exports it as `TMPDIR`/`TEMP`/`TMP`
 before pytest starts, so every `tempfile` call, every xdist worker and every `git` child inherits it
 with no test edited. The root is `$XDG_RUNTIME_DIR`, `/dev/shm` or a Windows Dev Drive when one of
-them is a writable tmpfs with at least 512 MB free; otherwise it is the system temp dir and the gate
-prints a `NOTICE`. Each run creates `quenching-gate-<pid>-XXXXXX` under the root and removes it on
-exit, including SIGINT and SIGTERM. `COVERAGE_FILE` stays in `.quenching/coverage/`, outside that
-directory, because the trap would otherwise delete the worker data before the report is combined and
-`cq proof ratchet` reads it. `QUENCHING_TEST_TMPDIR` overrides the root, and `QUENCHING_TEST_WORKERS`
-sets the worker count (`auto` by default) so concurrent gates can share the cores. A direct
-`pytest` run gets the same root from `quenching/tests/_paths.py`.
+them is a writable tmpfs that allows executing a temporary program and has at least 512 MB free;
+otherwise it is the system temp dir and the gate prints a `NOTICE`. Each run creates
+`quenching-gate-<pid>-XXXXXX` under the root and removes it on exit, including SIGINT and SIGTERM.
+`COVERAGE_FILE` stays in `.quenching/coverage/`, outside that directory, because the trap would
+otherwise delete the worker data before the report is combined and `cq proof ratchet` reads it.
+`QUENCHING_TEST_TMPDIR` overrides the root, and `QUENCHING_TEST_WORKERS` sets the worker count
+(`auto` by default) so concurrent gates can share the cores. A pytest spawned from inside a test
+inherits its parent's slots and runs serially instead of queuing behind them. A direct `pytest` run
+gets the same root from `quenching/tests/_paths.py`.
 
 ## Three tiers of test runs
 
@@ -75,11 +77,11 @@ close was scoped.
 `scripts/toolchain/affected.py` maps each source surface to the tests that cover it, adds the tests
 whose direct imports reach a changed module, and takes the diff from the merge base plus the working
 tree plus untracked files. It answers "the whole suite" whenever it cannot be sure — a global file
-(`pyproject.toml`, `scripts/toolchain/`, `quenching/assets/bin/quenching/common/`), a path no rule
-covers, a rule naming a test that no longer exists, a deleted test, an unresolvable base — and prints
-the reason instead of guessing. A change under `site/` selects nothing: the close prints `the diff
-reaches no test` rather than a green over an empty run, and a `docs/` change runs the tests that
-read the navigation.
+(`pyproject.toml`, `scripts/toolchain/`, `quenching/assets/bin/quenching/common/`,
+`quenching/references/`), a path no rule covers, a rule naming a test that no longer exists, a
+deleted test, an unresolvable base — and prints the reason instead of guessing. A change under
+`site/` selects nothing: the close prints `the diff reaches no test` rather than a green over an
+empty run, and a `docs/` change runs the tests that read the navigation.
 
 `QUENCHING_TEST_BASE` moves the merge base of either mode (default `origin/main`), which is what a
 task lane points at `HEAD` to measure its own working tree. `QUENCHING_TEST_SCOPE` accepts only

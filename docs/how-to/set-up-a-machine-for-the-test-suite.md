@@ -31,8 +31,8 @@ workers a run takes.
 it as `TMPDIR`/`TEMP`/`TMP` before pytest starts. In order, it accepts:
 
 1. `QUENCHING_TEST_TMPDIR`, when you set it;
-2. Linux: `$XDG_RUNTIME_DIR`, then `/dev/shm`, each only while it is a tmpfs, writable and has at
-   least 512 MB free;
+2. Linux: `$XDG_RUNTIME_DIR`, then `/dev/shm`, each only while it is a tmpfs, writable, allows
+   executing a temporary program and has at least 512 MB free;
 3. Windows: an existing Dev Drive, then `%LOCALAPPDATA%` when it is not inside a synced folder;
 4. the system temp dir, with a `NOTICE` on stderr.
 
@@ -65,8 +65,9 @@ If you want a specific location, set the override for one run:
 QUENCHING_TEST_TMPDIR=/dev/shm/quenching bash scripts/verify_repo.sh
 ```
 
-An override that does not exist or is not writable fails the run loudly instead of silently falling
-back — a typo must not put 700 MB somewhere you were trying to protect.
+An override that does not exist, is not writable or cannot execute a temporary program fails the
+run loudly instead of silently falling back — a typo must not put 700 MB somewhere you were trying
+to protect.
 
 ## Linux, with admin (optional)
 

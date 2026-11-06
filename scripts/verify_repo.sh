@@ -84,13 +84,7 @@ if [ "$TEST_SCOPE" = affected ]; then
   else
     MODE=full
     TARGETS=()
-    while IFS=$'\t' read -r tag value; do
-      case "$tag" in
-        MODE) MODE="$value" ;;
-        TARGET) TARGETS+=("$value") ;;
-        REASON) printf 'scope: %s\n' "$value" ;;
-      esac
-    done < <(printf '%s' "$SELECTION_JSON" | python3 -c '
+    if SELECTION_LINES="$(printf '%s' "$SELECTION_JSON" | python3 -c '
 import json, sys
 doc = json.load(sys.stdin)
 print("MODE\tfull" if doc["complete"] else ("MODE\tskip" if not doc["tests"] else "MODE\taffected"))
@@ -98,19 +92,30 @@ for reason in doc["reasons"]:
     print("REASON\t" + reason)
 for test in doc["tests"]:
     print("TARGET\t" + test)
-')
-    case "$MODE" in
-      affected)
-        if [ "${#TARGETS[@]}" -eq 0 ]; then
-          TARGETS=(quenching/tests)
-          printf 'scope: affected — the selection parser returned no target, running the whole suite\n'
-        else
-          printf 'scope: affected against %s — %d test file(s)\n' "$TEST_SCOPE_BASE" "${#TARGETS[@]}"
-        fi
-        ;;
-      skip) SUITE_SKIP="the diff reaches no test" ;;
-      *) TARGETS=(quenching/tests); printf 'scope: affected — whole suite, see the reason above\n' ;;
-    esac
+')"; then
+      while IFS=$'\t' read -r tag value; do
+        case "$tag" in
+          MODE) MODE="$value" ;;
+          TARGET) TARGETS+=("$value") ;;
+          REASON) printf 'scope: %s\n' "$value" ;;
+        esac
+      done <<< "$SELECTION_LINES"
+      case "$MODE" in
+        affected)
+          if [ "${#TARGETS[@]}" -eq 0 ]; then
+            TARGETS=(quenching/tests)
+            printf 'scope: affected — the selection parsed no target, running the whole suite\n'
+          else
+            printf 'scope: affected against %s — %d test file(s)\n' "$TEST_SCOPE_BASE" "${#TARGETS[@]}"
+          fi
+          ;;
+        skip) SUITE_SKIP="the diff reaches no test" ;;
+        *) TARGETS=(quenching/tests); printf 'scope: affected — whole suite, see the reason above\n' ;;
+      esac
+    else
+      TARGETS=(quenching/tests)
+      printf 'scope: affected — the selection could not be parsed, running the whole suite\n'
+    fi
   fi
 fi
 

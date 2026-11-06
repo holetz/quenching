@@ -310,7 +310,7 @@ def acquire(limit: int | None = None, root: pathlib.Path | None = None, total: i
 # `pytest_xdist_auto_num_workers` is where the budget is taken; an explicit `-n N` is clamped in
 # `pytest_configure`, including the worker list xdist already materialised.
 # --------------------------------------------------------------------------- #
-def _budget(config) -> int:
+def _budget(config, want: int | None = None) -> int:
     cached = getattr(config, "_quenching_held", None)
     if cached is not None:
         return len(cached)
@@ -318,7 +318,7 @@ def _budget(config) -> int:
     if inherited.isdigit() and int(inherited) > 0:
         config._quenching_slots = 0
         return 0
-    config._quenching_held = acquire()
+    config._quenching_held = acquire(limit=want)
     return len(config._quenching_held)
 
 
@@ -340,7 +340,7 @@ def pytest_configure(config) -> None:  # pragma: no cover - exercised by real ru
     requested = getattr(config.option, "numprocesses", None)
     if requested in (None, 0):
         return  # a serial run asks for no workers, so it reserves no budget
-    budget = _budget(config)
+    budget = _budget(config, want=requested if isinstance(requested, int) else None)
     if isinstance(requested, int) and requested > budget:
         config.option.numprocesses = budget
         if getattr(config.option, "tx", None):

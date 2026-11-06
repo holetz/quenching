@@ -9,7 +9,6 @@ from __future__ import annotations
 
 import contextlib
 import io
-import os
 import pathlib
 import sys
 import tempfile
@@ -31,9 +30,10 @@ from scripts.toolchain import tmproot  # noqa: E402
 GIGABYTE = 2**30
 
 
-# The Linux matrix decides by /proc/mounts and /dev/shm, which Windows does not have; its own
-# cases below are the Windows half and run everywhere.
-POSIX = unittest.skipUnless(os.name == "posix", "the Linux temp-root matrix needs POSIX mount semantics")
+# The Linux matrix decides by /proc/mounts and /dev/shm; its own cases below are the Windows half
+# and run everywhere.
+POSIX = unittest.skipUnless(sys.platform.startswith("linux"),
+                            "the Linux temp-root matrix needs /proc/mounts and /dev/shm")
 
 
 class TempRootCase(unittest.TestCase):

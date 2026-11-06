@@ -172,6 +172,14 @@ class Plugin(unittest.TestCase):
         self.assertEqual(2, config.option.numprocesses)
         self.assertEqual(["popen", "popen"], config.option.tx)
 
+    @unittest.skipUnless(slots.HAS_XDIST, "xdist owns the worker count")
+    def test_one_explicit_worker_reserves_one_slot_not_the_whole_share(self):
+        config = SimpleNamespace(option=SimpleNamespace(numprocesses=1, tx=["popen"]))
+        with mock.patch.object(slots, "acquire",
+                               return_value=slots.Held([slots.Slot(0, -1)])) as budget:
+            slots.pytest_configure(config)
+        self.assertEqual(1, budget.call_args.kwargs["limit"])
+
     def test_a_nested_run_goes_serial_without_acquiring(self):
         config = SimpleNamespace()
         with mock.patch.dict(os.environ, {slots.HELD_ENV: "3"}), \
