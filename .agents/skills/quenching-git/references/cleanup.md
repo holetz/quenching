@@ -15,7 +15,11 @@ from a fresh report for the selected remote.
 ```
 The report contains local `staleBranches` (removable), `keptBranches` (staying, with reasons), fetched `remoteBranches` from `<remote>`, registered
 `orphanWorktrees`, assessed `worktrees`, the `manifest` and its `groups`, and unregistered `unregisteredWorktrees` siblings with their path, branch and
-size. `manifest` empty → say so and stop; there is nothing to prune. The `manifest` is the complete list, so a candidate that sits in no legacy list (a detached worktree) still keeps the run going. Do not fetch or run `git
+size. Each assessed worktree and its `manifest` entry carries
+`ignored: {regenerable: [...], unrecognized: [...]}`. An otherwise eligible worktree with only
+regenerable ignored content is `candidate` and `recommended: true`; unrecognized ignored content
+makes it `preserved`, with blocker `ignored-content-unrecognized` and the exact paths listed.
+`manifest` empty → say so and stop; there is nothing to prune. The `manifest` is the complete list, so a candidate that sits in no legacy list (a detached worktree) still keeps the run going. Do not fetch or run `git
 remote prune` here: if the caller needs newer remote facts, it must fetch explicitly and start a
 fresh cleanup run. The report's `remote` must equal the selected remote. **Done when:** the manifest and the selected remote are in hand.
 
@@ -28,26 +32,35 @@ worktrees) with its reasons as information under "kept — not removable", and d
 prune choices. Show each `unregisteredWorktrees` finding with its path, branch and size as
 information too.
 
-Present concise choices, not one line per entry: summarize the report's `groups` (homogeneous
+For branches, present concise choices, not one line per entry: summarize the report's `groups` (homogeneous
 candidates by scope, kind, reasons and date provenance) with their count and `oldest`–`newest` tip
 date, and expand an entry only when it stands alone. A group resolves to the `ids` it displays —
 never to a target discovered later — and every selected item has its exact action available on
 request (`git branch -d <branch>`, `git worktree remove <path>`; `.agents/quenching/bin/cq git prune` runs them).
 
-Put ONE decision sheet ([specs-develop/questions.md](.agents/quenching/references/specs-develop/questions.md) §1) that ends the turn; its decision lists the local
-groups and items as numbered choices and accepts several in the reply (`D1 1,3`), or `none`.
-Option A (recommended) is the `recommended` subset when the report marks one, else `none`; never
-"all". A recommendation never authorizes anything. An unclear reply is asked again. **Done when:**
-the local selection is settled.
+Put ONE decision sheet ([specs-develop/questions.md](.agents/quenching/references/specs-develop/questions.md) §1) that ends the turn, with three separate decisions:
+**D1**, the local selection of branches; **D2**, the remote selection; and **D3**, the worktree
+selection. Each lists numbered choices and accepts several in the reply (`D1 1,3`), or `none`:
 
-A live `worktrees` candidate is eligibility only: it is merged, clean and unlocked, which is not
-evidence that nobody uses it. Ask for the owner's explicit confirmation that each selected worktree
-is inactive, separate from the local selection; without it, drop that worktree.
+- **D1 — local branches:** list the local branch groups and items. Option A (recommended) is the
+  `recommended` subset when the report marks one, else `none`; never "all".
+- **D2 — remote branches:** list the branch groups and items from the fresh `remoteBranches`
+  list, with the same recommendation rule. Show each branch's exact destructive action
+  `git push <remote> --delete <branch>`, which `.agents/quenching/bin/cq git prune --remote-branch`
+  runs. A remote branch is never included in the local selection.
+- **D3 — worktrees:** list eligible (`candidate`) worktrees separately from branches; Option A
+  (recommended) is this eligible subset, else `none`. Show each worktree's exact path and both
+  ignored classes: `ignored.regenerable`, the paths removal would discard, and
+  `ignored.unrecognized`. Show preserved worktrees under "kept — not removable" with their exact
+  paths, blockers and both classes; never offer them for pruning.
 
-For any remote branch in the fresh `remoteBranches` list, show its exact destructive action
-`git push <remote> --delete <branch>`, which `.agents/quenching/bin/cq git prune --remote-branch` runs, and put it as its own decision on the sheet (`D2`, same recommendation rule). A remote branch is never
-included in the local confirmation. **Done when:** the remote selection is settled and every selected
-item has one explicit action.
+A recommendation never authorizes anything. Ask again on an unclear reply. A live `worktrees`
+candidate is eligibility only: it is merged, clean and unlocked, which is not evidence that nobody
+uses it. Ask for the owner's explicit confirmation that each selected worktree is inactive,
+separate from the D3 selection; selecting it in D3 is not that confirmation. Without it, drop that
+worktree. **Done when:** the local selection, the remote selection and the D3 selection are
+settled, every selected item has one explicit action, and each selected live worktree has its own
+inactivity confirmation or is dropped.
 
 ### 3. Delete the chosen branches
 ```bash
@@ -85,6 +98,7 @@ the three outcome classes are named.
 
 - Never prune a branch or worktree `.agents/quenching/bin/cq git stale` did not report.
 - Never offer `keptBranches` or `preserved` manifest entries for pruning: each is listed with the reason it stays.
+- Never offer a worktree with unrecognized ignored content for pruning.
 - Never remove a live worktree without the owner's explicit inactivity confirmation, the displayed `id` and the approved tip.
 - Never offer `unregisteredWorktrees` for pruning: `git worktree remove` does not act on an
   unregistered directory, and this class carries no action.
