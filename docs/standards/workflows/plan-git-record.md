@@ -4,10 +4,10 @@ title: Plan git record contract
 description: How a spec records the git facts that cannot be derived later — per-task commit subjects, branch, pull request and merge records, branch marks for conclude discovery, base inference, merge routes, and safe local and remote branch cleanup
 resource: quenching/references/git/**, quenching/references/specs-execute/execution.md, quenching/references/specs-conclude/auto-discover.md, quenching/assets/bin/quenching/specs/**, quenching/assets/bin/quenching/git/**, quenching/skills/quenching-specs/references/execute.md, quenching/skills/quenching-specs/references/conclude.md, quenching/skills/quenching-git/references/merge.md, quenching/skills/quenching-git/references/pr-create.md
 tags: [workflows, specs, git, commits, records]
-timestamp: 2026-10-29
+timestamp: 2026-11-06
 audience: both
 authority: background
-source: abandonar-slug-por-id-nativo, vincular-spec-a-branch-commits-e-pr; history in ADR 0003
+source: abandonar-slug-por-id-nativo, vincular-spec-a-branch-commits-e-pr, spec 2022; history in ADR 0003
 maintainer: quenching
 ---
 
@@ -384,11 +384,15 @@ date, `git show -s --format=%cI`, never creation or last use; `null` with a name
 unknown), the reasons, the exact action and a `recommended` flag. The legacy
 `staleBranches`/`keptBranches`/`remoteBranches`/`orphanWorktrees` lists keep their shape. A linked
 worktree is a candidate only when inspection succeeded, its HEAD is merged into the base, it holds no
-tracked, untracked or ignored content, is not locked, is not the main or current checkout or the base
-branch, and has no open PR with the PR lookup available. That is eligibility, not evidence of
-inactivity. Homogeneous candidates are summarized in `groups` by scope, kind, reasons and date
-provenance, always resolving to the displayed ids. The recommendation is the evidenced subset, or
-none when the PR lookup is unavailable, and it never grants execution.
+tracked or untracked content and no ignored content outside the regenerable class, is not locked, is
+not the main or current checkout or the base branch, and has no open PR with the PR lookup available.
+The ignored content is reported per worktree as `ignored: {regenerable, unrecognized}`: a path the
+built-in cache list or `shared.regenerablePaths` covers is regenerable and does not block, while any
+other ignored file is unrecognized, is named by path and blocks with `ignored-content-unrecognized`.
+That is eligibility, not evidence of inactivity. Homogeneous candidates are summarized in `groups` by scope, kind, reasons and date
+provenance, always resolving to the displayed ids. The recommendation is the evidenced subset — for
+a worktree, its eligibility — or none when the PR lookup is unavailable, and it never grants
+execution.
 
 `/quenching-git cleanup` presents concise grouped choices over that manifest, local and remote
 decisions kept separate, and a live worktree needs the owner's own confirmation that it is inactive.

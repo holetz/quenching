@@ -9,7 +9,6 @@ from __future__ import annotations
 
 import os
 import shutil
-import stat
 import subprocess
 import sys
 from types import SimpleNamespace
@@ -18,6 +17,7 @@ from quenching.common.git import _git, _git_run
 from quenching.common.config import load_config, namespace
 from quenching.common.output import FINDINGS, emit, refuse
 from quenching.git.audit import SAFE, _branch_ok, _commit, _run
+from quenching.git.ignored import _is_link, declared_regenerable, ignored_entries, undeclared
 from quenching.git.push import remote_probe
 from quenching.git.pull import _Quiet, _spec_vs_head
 from quenching.specs.commands.fields import cmd_record
@@ -55,20 +55,6 @@ def _store_for(repo: str, relative: str) -> str | None:
 
 def _link_path(repo: str, relative: str) -> str:
     return os.path.join(repo, relative)
-
-
-def _is_link(path: str) -> bool:
-    """A symlink, or on Windows a directory junction (a reparse point `islink` misses before 3.12)."""
-    if os.path.islink(path):
-        return True
-    isjunction = getattr(os.path, "isjunction", None)
-    if isjunction is not None:
-        return isjunction(path)
-    try:
-        attrs = getattr(os.lstat(path), "st_file_attributes", 0)
-    except OSError:
-        return False
-    return bool(attrs & getattr(stat, "FILE_ATTRIBUTE_REPARSE_POINT", 0x400))
 
 
 def _make_link(store: str, link: str) -> None:
@@ -287,66 +273,11 @@ def _registered_worktrees(cwd: str) -> list[tuple[str, str | None]]:
     return found
 
 
-def _ignored_files(path: str) -> list[str] | None:
-    """Ignored entries the worktree holds that are not symlinks: the shared paths `worktree link`
-    materialises are symlinks into a store and survive the removal, anything else is deleted.
-    None when `git status` fails: the caller refuses, an unread worktree is not an empty one."""
-    code, out, _err = _git_run(path, *SAFE, "status", "--porcelain", "--untracked-files=normal",
-                               "--ignored=matching")
-    if code != 0:
-        return None
-    entries = [line[3:] for line in out.splitlines() if line.startswith("!! ")]
-    return [e for e in entries if not _is_link(os.path.join(path, e.rstrip("/")))]
-
-
-def _regenerable_paths(config: dict) -> list[str]:
-    values = namespace(config, "shared").get("regenerablePaths")
-    if not isinstance(values, list):
-        return []
-    return [os.path.normpath(v.strip()) + ("/" if v.strip().endswith("/") else "")
-            for v in values if isinstance(v, str) and v.strip()
-            and not os.path.isabs(v.strip()) and ".." not in v.strip().split("/")]
-
-
-def _is_regenerable(entry: str, declared: list[str]) -> bool:
-    """A declared entry without a slash names a component at any depth; one with a slash, inner
-    or trailing, names a path from the repo root, itself or anything under it."""
-    parts = os.path.normpath(entry.rstrip("/")).split(os.sep)
-    for rule in declared:
-        if os.sep in rule:
-            anchored = rule.rstrip(os.sep)
-            width = len(anchored.split(os.sep))
-            if os.sep.join(parts[:width]) == anchored:
-                return True
-        elif rule in parts:
-            return True
-    return False
-
-
 def _is_codex_artifact(entry: str, sep: str = os.sep) -> bool:
     """Whether an ignored entry is `.quenching/codex` or sits under it; `os.walk` entries carry
     the platform separator, so it is normalized to `/` before the comparison."""
     entry = entry.replace(sep, "/")
     return entry == ".quenching/codex" or entry.startswith(".quenching/codex/")
-
-
-def _undeclared(path: str, entries: list[str], declared: list[str]) -> list[str]:
-    """The ignored entries no declaration covers; git reports a wholly ignored directory as one
-    entry, so a directory that merely contains a declared path is opened to its files."""
-    left = []
-    for entry in entries:
-        if _is_regenerable(entry, declared):
-            continue
-        if entry.endswith("/"):
-            files = [os.path.relpath(os.path.join(root, name), path)
-                     for root, _dirs, names in os.walk(os.path.join(path, entry))
-                     for name in names]
-            left += [f for f in files if not _is_regenerable(f, declared)]
-            if not files:
-                left.append(entry)
-        else:
-            left.append(entry)
-    return left
 
 
 def _retire(args) -> int:
@@ -415,10 +346,10 @@ def _retire(args) -> int:
                       args.json)
     payload = {"ok": False, "path": path, "branch": args.branch, "base": target,
                "worktreeRemoved": False, "branchDeleted": False, "archived": None}
-    ignored = [] if args.discard_ignored else _ignored_files(path)
+    ignored = [] if args.discard_ignored else ignored_entries(path)
     if ignored:
-        declared = _regenerable_paths(load_config(_repo_root(cwd)))
-        ignored = _undeclared(path, ignored, declared)
+        declared = declared_regenerable(load_config(_repo_root(cwd)))
+        ignored = undeclared(path, ignored, declared)
     if ignored is None:
         return refuse({"code": "git-worktree-retire-status-failed",
                        "message": f"git status failed in {path}; nothing was removed"}, args.json)

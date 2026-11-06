@@ -2879,13 +2879,12 @@ class WorktreeRetire(RepoCase):
         self.assertEqual(proc.returncode, 0, proc.stdout + proc.stderr)
         self.assertFalse(os.path.exists(self.wt))
 
-    def test_pytest_cache_blocks_retire_when_not_declared(self):
+    def test_pytest_cache_is_discarded_by_the_built_in_list(self):
         self._merge_through_gh()
         self._seed_pytest_cache()
         proc = self._retire()
-        self.assertEqual(proc.returncode, 1, proc.stdout)
-        self.assertIn(".pytest_cache", json.loads(proc.stdout)["ignored"][0])
-        self.assertTrue(os.path.isdir(self.wt))
+        self.assertEqual(proc.returncode, 0, proc.stdout + proc.stderr)
+        self.assertFalse(os.path.exists(self.wt))
 
     def test_repo_config_declares_pytest_cache_regenerable(self):
         root = pathlib.Path(__file__).resolve().parents[2]
