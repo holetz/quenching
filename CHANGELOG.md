@@ -13,6 +13,22 @@ owner: [`ci-cd/versioning-release.md`](docs/standards/ci-cd/versioning-release.m
 short version for a consumer: the version is published once, deliberately, as a release — never at a
 spec's own conclude — and `cq --version` is what answers which one you are running.
 
+## 7.5.0
+
+**A suíte e o gate deixam de escrever centenas de megabytes no disco.** O gate resolve um único
+  temp root em RAM (`$XDG_RUNTIME_DIR`, `/dev/shm` ou um Dev Drive no Windows, com o temp do sistema
+  como último recurso e um `NOTICE`) e o remove no fim, inclusive em SIGINT/SIGTERM; a suíte com
+  `-n auto` caiu de 688,6 MB e 54.538 escritas para 1,7 MB e 1.536, e o gate inteiro de 723,2 MB para
+  36,3 MB. O mesmo bootstrap dá a todo `git` um arquivo de configuração do run
+  (`GIT_CONFIG_GLOBAL`), então hooks, assinatura e `init.defaultBranch` da máquina não entram num
+  teste. Um orçamento de workers em arquivos com lock de kernel divide os núcleos entre gates
+  concorrentes, e uma execução aninhada roda serial dentro da cota do pai em vez de enfileirar.
+  **Três camadas, um gate:** `scripts.toolchain.test --affected` para a task, o gate com
+  `QUENCHING_TEST_SCOPE=affected` no fechamento (piso de cobertura `SKIPPED`) e a suíte inteira no CI
+  e no `/release`; `QUENCHING_FULL_GATE=1` força a camada completa mesmo com um escopo exportado no
+  shell, e a skill de release passa essa flag para que uma tag nunca seja decidida sobre um
+  subconjunto. Os testes das próprias ferramentas rodam no job Windows.
+
 ## 7.4.0
 
 **`cq git stale` separa cache regenerável de ignorado que pode guardar trabalho.** Cada worktree
