@@ -242,10 +242,10 @@ mirrors each source edit rewrites — the deployed `.agents/**` and `.claude/**`
 in a task; let no `[P]` cross the group.
 Declare the paths per [specs-develop/artifacts.md](.agents/quenching/references/specs-develop/artifacts.md) §`## Impact` — the parsed sub-heading.
 
-Where the plan needs current practice, delegate to the read-only sub-agent of
-`docs/standards/automation/agents.md` §The research profile.
-Keep one table — source, publication date, retrieval date, claim, what it would change — in
-`## Alternatives Considered` or `## Design`. A web source may support an alternative or a rationale;
+Where the plan needs current practice, delegate to the read-only research sub-agent of
+[specs-develop/questions.md](.agents/quenching/references/specs-develop/questions.md) §Surface
+refinement. Keep one table — source, publication date, retrieval date, claim, what it would
+change — in `## Alternatives Considered` or `## Design`. A web source may support an alternative or a rationale;
 it never grounds a binding rule alone —
 [align/evidence-doctrine.md](.agents/quenching/references/align/evidence-doctrine.md) §3.
 

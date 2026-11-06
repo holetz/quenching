@@ -58,8 +58,8 @@ class QuestionsTests(unittest.TestCase):
     def test_it_names_the_stop_condition(self):
         self.assertIn(
             "**Stop when** every declared surface path is named by a task carrying "
-            "`files:` and `verify:`, `.agents/quenching/bin/cq specs parallel` exits 0, "
-            "and nothing outside the spec was written.",
+            "`files:` and `verify:`, `.agents/quenching/bin/cq specs parallel --spec <id>` "
+            "exits 0, and nothing outside the spec was written.",
             text(QUESTIONS),
         )
 
@@ -152,7 +152,17 @@ class LifecycleTests(unittest.TestCase):
 
 
 class ResearchProfileTests(unittest.TestCase):
-    """`agents.md` §The research profile — read-only, one dated table, never decides."""
+    """The profile ships with the payload; `agents.md` is this repo's projection of it."""
+
+    def test_the_distributed_reference_owns_the_profile(self):
+        self.assertIn("**The research profile.**", text(QUESTIONS))
+
+    def test_the_distributed_profile_is_read_only(self):
+        self.assertIn("`Read`, `Grep`, `Glob`, `WebSearch`, `WebFetch`", text(QUESTIONS))
+        self.assertIn("never `Edit`, `Write`, `NotebookEdit` or `Bash`", text(QUESTIONS))
+
+    def test_the_standard_is_a_projection_of_the_reference(self):
+        self.assertIn("This standard is the repo-side projection of it", text(AGENTS))
 
     def test_the_section_exists(self):
         self.assertTrue(heading(AGENTS, "## The research profile"))
