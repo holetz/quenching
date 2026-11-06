@@ -44,7 +44,8 @@ def _asks_for_workers(extra: list[str]) -> bool:
 
 def build(targets: list[str], with_integration: bool, extra: list[str]) -> list[str]:
     """The pytest argv for one run; `targets` is already the scoped set or the whole suite."""
-    argv = [sys.executable, "-m", "pytest", "-p", "scripts.toolchain.layers"]
+    argv = [sys.executable, "-m", "pytest", "-p", "scripts.toolchain.layers",
+            "-p", "scripts.toolchain.slots"]
     workers = os.environ.get(WORKERS_ENV, "auto")
     if workers not in ("", "0") and not _asks_for_workers(extra):
         argv += ["-n", workers]

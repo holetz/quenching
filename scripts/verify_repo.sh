@@ -107,7 +107,7 @@ for test in doc["tests"]:
   fi
 fi
 
-pytest_args=("${TARGETS[@]}" -q -p randomly -n "$TEST_WORKERS")
+pytest_args=("${TARGETS[@]}" -q -p randomly -p scripts.toolchain.slots -n "$TEST_WORKERS")
 if [ "$WITH_COVERAGE" = 1 ]; then
   pytest_args+=(--cov=quenching/assets/bin/quenching --cov-report="json:$COVERAGE_JSON")
 fi
