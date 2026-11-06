@@ -80,6 +80,8 @@ class GitIsolation(unittest.TestCase):
         self.assertIn("defaultBranch = main", text)
         self.assertIn("fsync = none", text)
         self.assertNotIn("user", text)  # identity stays per repository, never command scope
+        run_root = os.environ.get("QUENCHING_TEST_TMPROOT") or os.environ["TMPDIR"]
+        self.assertTrue(global_file.is_relative_to(pathlib.Path(run_root)), global_file)
 
     def test_a_fresh_repository_inherits_it(self):
         with tempfile.TemporaryDirectory() as tmp:

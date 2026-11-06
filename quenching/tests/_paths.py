@@ -21,7 +21,7 @@ caches its answer.
 generic `.agents/quenching.json` first, then the legacy `.claude/quenching.json`.
 
 **Git isolation.** Every `git` this suite starts reads this run's configuration and nothing of the
-machine's: `GIT_CONFIG_GLOBAL` points at a file written under the temp root, the system file is
+machine's: `GIT_CONFIG_GLOBAL` points at a file written under this run's temp root, the system file is
 skipped, and the repository's own settings still win. Without it a developer's hooks,
 `commit.gpgsign`, `init.defaultBranch` or `diff.external` leaks into a test; with it, a test that
 needs a different value sets it on the repository it creates. Identity deliberately stays out of the
@@ -62,16 +62,9 @@ _GIT_CONFIG = """[core]
 [tag]
 \tgpgsign = false
 """
-_git_config = pathlib.Path(tempfile.mkdtemp(prefix="quenching-gitconfig-"), "gitconfig")
-_git_config.write_text(_GIT_CONFIG, encoding="utf-8")
-os.environ["GIT_CONFIG_GLOBAL"] = str(_git_config)
-os.environ["GIT_CONFIG_NOSYSTEM"] = "1"
-# A caller's command-scope pairs would outrank the file and every repository's own config.
-for _key in [key for key in os.environ
-             if key == "GIT_CONFIG_COUNT" or key.startswith(("GIT_CONFIG_KEY_", "GIT_CONFIG_VALUE_"))]:
-    del os.environ[_key]
-
-if not os.environ.get(tmproot.GATE_MARKER):
+if os.environ.get(tmproot.GATE_MARKER):
+    _run_root = pathlib.Path(os.environ[tmproot.GATE_MARKER])
+else:
     _resolution = tmproot.resolve()
     if _resolution.notice:
         print(_resolution.notice, file=sys.stderr, flush=True)
@@ -79,6 +72,17 @@ if not os.environ.get(tmproot.GATE_MARKER):
                                               dir=_resolution.path))
     atexit.register(shutil.rmtree, str(_run_root), True)
     tmproot.export(_run_root)
+
+# Under the run root, so the gate's trap or this module's own atexit removes it with everything
+# else the run wrote. It is written after the root resolves for exactly that reason.
+_git_config = pathlib.Path(tempfile.mkdtemp(prefix="quenching-gitconfig-", dir=_run_root), "gitconfig")
+_git_config.write_text(_GIT_CONFIG, encoding="utf-8")
+os.environ["GIT_CONFIG_GLOBAL"] = str(_git_config)
+os.environ["GIT_CONFIG_NOSYSTEM"] = "1"
+# A caller's command-scope pairs would outrank the file and every repository's own config.
+for _key in [key for key in os.environ
+             if key == "GIT_CONFIG_COUNT" or key.startswith(("GIT_CONFIG_KEY_", "GIT_CONFIG_VALUE_"))]:
+    del os.environ[_key]
 
 _denylist_dir = tempfile.mkdtemp(prefix="quenching-test-denylist-")
 atexit.register(shutil.rmtree, _denylist_dir, True)
