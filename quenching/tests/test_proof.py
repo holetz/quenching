@@ -8,6 +8,7 @@ import random
 import subprocess
 import tempfile
 import unittest
+from dataclasses import replace
 from pathlib import Path
 from unittest import mock
 
@@ -417,6 +418,20 @@ class ProofFixtureTrees(unittest.TestCase):
 
     def test_cost_is_not_asked_of_a_target_without_layers(self):
         self.assertNotIn("pf-cost-undeclared", self._codes(layers={}, cost=None))
+
+    def test_readme_carries_the_declared_cost_contract(self):
+        with self._target() as inventory:
+            document = render_readme_document("", inventory)
+        self.assertIn("### Declared cost contract", document)
+        self.assertIn("`isolated`", document)
+        self.assertIn("QUENCHING_TEST_SCOPE=affected bash gate.sh", document)
+
+    def test_a_cost_change_makes_the_readme_stale(self):
+        with self._target() as inventory:
+            document = render_readme_document("", inventory)
+            changed = replace(inventory, cost=CostContract(
+                "system", "auto", {"close": "bash gate.sh", "ci": "bash gate.sh"}))
+            self.assertNotEqual(document, render_readme_document(document, changed))
 
     def test_malformed_cost_is_refused_before_any_finding(self):
         with tempfile.TemporaryDirectory() as directory:

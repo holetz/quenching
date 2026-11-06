@@ -694,7 +694,7 @@ updates the published artifacts in lockstep. See
 contract.
 
 <!-- quenching-proof-readme-start -->
-<!-- quenching-proof-readme-sha256 1e6a040aaf38582461922f527ac674b4406d60fa31971babffd8500880caa0f2 -->
+<!-- quenching-proof-readme-sha256 17d0180689453e8820144d2679ddd082d400b1aa8296523ef1e4e95707bdd3ea -->
 ## Declared proof layers
 
 ### tests
@@ -705,4 +705,11 @@ contract.
 - Required: yes
 - Test modules: 162
 - Fixture modules: none
+
+### Declared cost contract
+- Temp root: `isolated` — outside the repository, removed when the run ends
+- Workers: `auto`
+- Task scope: `python3 -m scripts.toolchain.test --affected`
+- Close scope: `QUENCHING_TEST_SCOPE=affected bash scripts/verify_repo.sh`
+- CI scope: `bash scripts/verify_repo.sh`
 <!-- quenching-proof-readme-end -->
