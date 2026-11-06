@@ -215,6 +215,12 @@ class CommandBody(unittest.TestCase):
         self.assertIn("`manifest` empty", text)
         self.assertNotIn("All four lists", text)
 
+    def test_cleanup_gives_worktrees_their_own_decision_and_shows_both_ignored_classes(self):
+        text = " ".join(CLEANUP_COMMAND.read_text(encoding="utf-8").split())
+        for needle in ("D1", "D2", "D3", "ignored.regenerable", "ignored.unrecognized",
+                       "ignored-content-unrecognized", "kept — not removable"):
+            self.assertIn(needle, text)
+
 
 if __name__ == "__main__":
     unittest.main()
