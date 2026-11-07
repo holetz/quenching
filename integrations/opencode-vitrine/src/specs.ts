@@ -1,6 +1,8 @@
 import { spawn, type ChildProcess } from "node:child_process"
 import { createInterface } from "node:readline"
-import { cqBinary, cqJson, forgetBinaries, git, mainRoot, singleFlight, spawnArgs, type Launch } from "./cq.js"
+import {
+  cqBinary, cqJson, cqJsonPartial, forgetBinaries, git, mainRoot, singleFlight, spawnArgs, type Launch,
+} from "./cq.js"
 
 /** Uma linha de `cq specs list`, normalizada para a GUI. */
 export type SpecRow = {
@@ -25,6 +27,20 @@ const RANK: Record<Kind, number> = { mention: 0, read: 1, command: 2, commit: 3,
 export type TouchRow = SpecRow & { kind: Kind; at: number }
 
 export type Section = { heading: string; body: string }
+
+/** Uma spec vizinha no grafo de dependências, como o `schedule` a descreve. */
+export type Neighbor = {
+  id: number
+  title: string
+  phase: string
+  critical: boolean
+  slip: number
+  start: string
+  target: string
+}
+
+/** Quem está acima (o que ela espera), abaixo (quem espera por ela) e o ciclo que trava tudo. */
+export type Dependencies = { up: Neighbor[]; down: Neighbor[]; cycle: string[] }
 
 export type Detail = {
   id: number
@@ -52,6 +68,7 @@ export type Detail = {
   work: string
   sections: Section[]
   tasks: { id: string; state: string; text: string; blocked: boolean }[]
+  deps: Dependencies
 }
 
 export type TaskInfo = { text: string; files: string; verify: string; subject: string }
@@ -135,6 +152,7 @@ export function forget(): void {
   details.clear()
   catalogues.clear()
   snapshots.clear()
+  graphs.clear()
   homes.clear()
   offRows.clear()
   forgetBinaries()
@@ -206,6 +224,75 @@ export function priorityOf(record: any): { label: string; hint: string } {
   return { label: "", hint: "" }
 }
 
+type ScheduleNode = {
+  id?: string
+  title?: string
+  phase?: string
+  dependsOn?: string[]
+  critical?: boolean
+  slipDays?: number
+  start?: string | null
+  target?: string | null
+}
+
+type Schedule = { nodes?: ScheduleNode[]; cycle?: string[] }
+
+type Graph = { at: number; nodes: Map<string, ScheduleNode>; cycle: string[] }
+
+const graphs = new Map<string, Graph>()
+const graphing = singleFlight<Graph>()
+
+/**
+ * O grafo de dependências inteiro numa leitura só. `--all` inclui as specs sem aresta e as
+ * arquivadas: quem está ABAIXO de uma spec é o nó que a nomeia, e um dependente arquivado fica
+ * fora da seleção padrão do `schedule`. Um `cq` anterior ao `--all` recusa o pedido; aí vale o
+ * grafo aberto, menor, e o painel mostra o que ele tem em vez de mentir que não há aresta.
+ * Um ciclo sai do `cq` com exit 1 e ainda assim traz o payload: é ele que o painel precisa.
+ */
+async function dependencyGraph(cwd: string): Promise<Graph> {
+  const root = (await mainRoot(cwd)) ?? cwd
+  const hit = graphs.get(root)
+  if (hit && Date.now() - hit.at < TTL) return hit
+  return graphing(root, async () => {
+    const payload = await cqJsonPartial<Schedule>(cwd, ["specs", "schedule", "--all"])
+      ?? await cqJson<Schedule>(cwd, ["specs", "schedule"])
+    const nodes = new Map<string, ScheduleNode>()
+    for (const node of payload?.nodes ?? []) {
+      if (node?.id !== undefined) nodes.set(String(node.id), node)
+    }
+    const value: Graph = { at: Date.now(), nodes, cycle: (payload?.cycle ?? []).map(String) }
+    // Uma falha do `cq` não pode apagar o grafo que já se sabia.
+    if (payload || !hit) graphs.set(root, value)
+    return payload ? value : (hit ?? value)
+  })
+}
+
+function neighborOf(node: ScheduleNode): Neighbor {
+  return {
+    id: Number(node.id ?? 0),
+    title: String(node.title ?? ""),
+    phase: String(node.phase ?? ""),
+    critical: Boolean(node.critical),
+    slip: Number(node.slipDays ?? 0),
+    start: String(node.start ?? ""),
+    target: String(node.target ?? ""),
+  }
+}
+
+/** As arestas que tocam `id`, nas duas direções: as declaradas por ela e as que a nomeiam. */
+function neighbors(graph: Graph, id: number): Dependencies {
+  const key = String(id)
+  const up = (graph.nodes.get(key)?.dependsOn ?? [])
+    .map((dep) => graph.nodes.get(dep))
+    .filter((node): node is ScheduleNode => Boolean(node))
+    .map(neighborOf)
+  const down = [...graph.nodes.values()]
+    .filter((node) => String(node.id) !== key && (node.dependsOn ?? []).includes(key))
+    .map(neighborOf)
+    .sort((a, b) => a.id - b.id)
+  return { up, down, cycle: graph.cycle }
+}
+
 export async function detail(cwd: string, id: number): Promise<Detail> {
   const root = (await mainRoot(cwd)) ?? cwd
   const key = `${root}:${id}`
@@ -215,10 +302,11 @@ export async function detail(cwd: string, id: number): Promise<Detail> {
 }
 
 async function readDetail(cwd: string, id: number, key: string): Promise<Detail> {
-  const [status, show, full] = await Promise.all([
+  const [status, show, full, graph] = await Promise.all([
     cqJson<any>(cwd, ["specs", "status", "--spec", String(id)]),
     cqJson<any>(cwd, ["specs", "show", "--spec", String(id)]),
     cqJson<any>(cwd, ["specs", "show", "--spec", String(id), "--full"]),
+    dependencyGraph(cwd),
   ])
   const blocked = new Set<string>(
     (status?.tasks?.blockedTasks ?? []).map((task: any) => String(task?.id ?? task?.task ?? "")),
@@ -262,6 +350,7 @@ async function readDetail(cwd: string, id: number, key: string): Promise<Detail>
       text: String(task?.text ?? ""),
       blocked: blocked.has(String(task?.id ?? "")),
     })),
+    deps: neighbors(graph, id),
   }
   details.set(key, { at: Date.now(), value })
   return value

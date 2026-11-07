@@ -51,6 +51,32 @@ const task = {
   additionalProperties: false,
 } as const
 
+const neighbor = {
+  type: "object",
+  properties: {
+    id: { type: "number" },
+    title: { type: "string" },
+    phase: { type: "string" },
+    critical: { type: "boolean" },
+    slip: { type: "number" },
+    start: { type: "string" },
+    target: { type: "string" },
+  },
+  required: ["id", "title", "phase", "critical", "slip", "start", "target"],
+  additionalProperties: false,
+} as const
+
+const dependencies = {
+  type: "object",
+  properties: {
+    up: { type: "array", items: neighbor },
+    down: { type: "array", items: neighbor },
+    cycle: { type: "array", items: { type: "string" } },
+  },
+  required: ["up", "down", "cycle"],
+  additionalProperties: false,
+} as const
+
 const detail = {
   type: "object",
   properties: {
@@ -79,11 +105,12 @@ const detail = {
     work: { type: "string" },
     sections: { type: "array", items: section },
     tasks: { type: "array", items: task },
+    deps: dependencies,
   },
   required: [
     "id", "title", "stage", "phase", "date", "priority", "priorityHint", "complexity",
     "subject", "assignee", "tags", "ready", "missing", "checked", "blocked", "blockedTask",
-    "blockedReason", "total", "run", "verifier", "pr", "prUrl", "work", "sections", "tasks",
+    "blockedReason", "total", "run", "verifier", "pr", "prUrl", "work", "sections", "tasks", "deps",
   ],
   additionalProperties: false,
 } as const
@@ -155,6 +182,16 @@ export type Row = {
   run: string
 }
 export type Touch = Row & { kind: string; at: number }
+export type Neighbor = {
+  id: number
+  title: string
+  phase: string
+  critical: boolean
+  slip: number
+  start: string
+  target: string
+}
+export type Dependencies = { up: Neighbor[]; down: Neighbor[]; cycle: string[] }
 export type Detail = {
   id: number
   title: string
@@ -181,6 +218,7 @@ export type Detail = {
   work: string
   sections: { heading: string; body: string }[]
   tasks: { id: string; state: string; text: string; blocked: boolean }[]
+  deps: Dependencies
 }
 export type TaskInfo = { text: string; files: string; verify: string; subject: string }
 export type Quenching = {
