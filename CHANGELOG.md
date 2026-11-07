@@ -13,6 +13,21 @@ owner: [`ci-cd/versioning-release.md`](docs/standards/ci-cd/versioning-release.m
 short version for a consumer: the version is published once, deliberately, as a release — never at a
 spec's own conclude — and `cq --version` is what answers which one you are running.
 
+## 7.6.0
+
+**O alvo declara o custo do run, e o doutor cobra a diferença entre as três provas.** O
+  `proof.cost` em `.agents/quenching.json` nomeia a raiz temporária (`isolated` ou `system`), o
+  orçamento de workers (`auto` ou um inteiro) e os três escopos — o que uma task paga, o que o
+  fechamento paga e o que o CI paga. O `cq proof doctor` reporta `pf-cost-undeclared` para a chave
+  que falta, `pf-temp-shared` para raiz no disco da máquina, `pf-scope-wide` quando o fechamento é o
+  CI e `pf-task-wide` quando a task é o fechamento: uma task paga a prova **dirigida** — o arquivo ou
+  diretório que ela tocou —, o fechamento paga a **seletiva** do diff dentro do gate, e o CI e o
+  release pagam a **inteira**. Como a cadência não mora no comando, ela continua onde já morava: na
+  política `verification` da spec (`per-task`, `per-section` ou `end-of-plan`). A declaração é
+  renderizada na zona gerada do README de provas, então o que o alvo lê e o que ele declara não
+  divergem; a norma `ci-cd/test-cost.md` acompanha o plugin e explica a adoção sem os helpers deste
+  repositório. Nada disso instala runner: a frente ensina o contrato e gradua a declaração.
+
 ## 7.5.0
 
 **A suíte e o gate deixam de escrever centenas de megabytes no disco.** O gate resolve um único
