@@ -7,7 +7,7 @@ tags: [tests, performance, gate, temp, workers, ci]
 timestamp: 2026-11-06
 audience: both
 authority: current
-source: spec 2181 — the measured baseline, the temp-root matrix and the three tiers
+source: spec 2181 — the measured baseline, the temp-root matrix and the three tiers; spec 2183 — the three tiers as three different proofs
 maintainer: Israel Holetz
 ---
 
@@ -50,14 +50,19 @@ the workers were bounded.
 
 ## Three tiers, one gate
 
-The gate stays the only gate; what changes is how much of the suite it runs at each stage. A
-narrower scope never replaces CI: the merge still waits for a green full run.
+The gate stays the only gate; what changes is what each stage proves. A task pays for the evidence
+its own change needs, the close pays for the branch, and CI pays for the whole suite. A narrower
+scope never replaces CI: the merge still waits for a green full run.
 
-| Stage | Suite |
-| --- | --- |
-| a task | the diff's tests, with the expensive layer deferred and counted |
-| a spec's close | the same selection inside the whole gate, the coverage floor reported `SKIPPED` |
-| CI and the release | everything, the floor enforced |
+| Stage | Proof | Suite |
+| --- | --- | --- |
+| a task | targeted — the file or directory the task touched | that file or directory's tests, with the expensive layer deferred and counted |
+| a spec's close | the branch — the diff's selection | the same selection inside the whole gate, the coverage floor reported `SKIPPED` |
+| CI and the release | the whole suite | everything, the floor enforced |
+
+A task's `verify:` is not the repository gate. The gate is the close's proof and the branch's
+contract; the cadence it runs at is the spec's `verification` policy — `per-task`, `per-section` or
+`end-of-plan`, declared once per spec — never encoded in a task's command.
 
 The selector maps each source surface to the tests that cover it, adds the tests whose direct
 imports reach a changed module, and takes the diff from the merge base plus the working tree plus
@@ -88,9 +93,10 @@ contract, in `.agents/quenching.json`:
 `tempRoot` is `isolated` (outside the repository, removed when the run ends) or `system`; `workers`
 is `auto` or a positive integer; `scopes` names the three commands. `cq proof doctor` grades the
 declaration and reports `pf-cost-undeclared` for what is missing, `pf-temp-shared` for a `system`
-root and `pf-scope-wide` when the close scope is the CI scope. The values are rendered into the
-generated proof README, so the declaration and the file a reader opens cannot drift apart.
+root, `pf-scope-wide` when the close scope is the CI scope, and `pf-task-wide` when the task scope is
+the close scope. The values are rendered into the generated proof README, so the declaration and the
+file a reader opens cannot drift apart.
 
-These are judgement findings, not repairs: moving a temp root, adding a diff selector and choosing a
-narrower close scope are changes to the target's runner, and the align reports them with the command
-that closes them instead of editing the runner.
+These are judgement findings, not repairs: moving a temp root, adding a diff selector, choosing a
+narrower close scope and narrowing a task scope are changes to the target's runner, and the align
+reports them with the command that closes them instead of editing the runner.
