@@ -65,6 +65,9 @@ export type Composition = {
   items: Member[]
 }
 
+/** Onde uma spec é membro: o composite que a nomeia, o título dele e o rótulo que ele lhe deu. */
+export type Composite = { epic: number; title: string; label: string; group: number }
+
 export type Detail = {
   id: number
   title: string
@@ -94,6 +97,7 @@ export type Detail = {
   workItemType: string
   deps: Dependencies
   composition?: Composition
+  epics: Composite[]
 }
 
 export type TaskInfo = { text: string; files: string; verify: string; subject: string }
@@ -261,9 +265,20 @@ type ScheduleNode = {
   target?: string | null
 }
 
-type Schedule = { nodes?: ScheduleNode[]; cycle?: string[] }
+type CompositeRef = { epic?: string; label?: string; group?: number }
 
-type Graph = { at: number; nodes: Map<string, ScheduleNode>; cycle: string[] }
+type Schedule = {
+  nodes?: ScheduleNode[]
+  cycle?: string[]
+  composites?: Record<string, CompositeRef[]>
+}
+
+type Graph = {
+  at: number
+  nodes: Map<string, ScheduleNode>
+  cycle: string[]
+  composites: Map<string, CompositeRef[]>
+}
 
 const graphs = new Map<string, Graph>()
 const graphing = singleFlight<Graph>()
@@ -286,7 +301,11 @@ async function dependencyGraph(cwd: string): Promise<Graph> {
     for (const node of payload?.nodes ?? []) {
       if (node?.id !== undefined) nodes.set(String(node.id), node)
     }
-    const value: Graph = { at: Date.now(), nodes, cycle: (payload?.cycle ?? []).map(String) }
+    const composites = new Map<string, CompositeRef[]>()
+    for (const [member, list] of Object.entries(payload?.composites ?? {})) {
+      if (Array.isArray(list)) composites.set(String(member), list)
+    }
+    const value: Graph = { at: Date.now(), nodes, cycle: (payload?.cycle ?? []).map(String), composites }
     // Uma falha do `cq` não pode apagar o grafo que já se sabia.
     if (payload || !hit) graphs.set(root, value)
     return payload ? value : (hit ?? value)
@@ -303,6 +322,25 @@ function neighborOf(node: ScheduleNode): Neighbor {
     start: String(node.start ?? ""),
     target: String(node.target ?? ""),
   }
+}
+
+/**
+ * Os composites que nomeiam `id`, com o título vindo do grafo e o rótulo que o composite deu ao
+ * membro. Um id que o grafo não conhece é descartado: uma referência quebrada é achado do
+ * `validate`, não uma linha que aponta para lugar nenhum.
+ */
+function membershipOf(graph: Graph, id: number): Composite[] {
+  return (graph.composites.get(String(id)) ?? [])
+    .map((ref) => {
+      const node = graph.nodes.get(String(ref.epic ?? ""))
+      return {
+        epic: Number(ref.epic ?? 0),
+        title: String(node?.title ?? ""),
+        label: String(ref.label ?? ""),
+        group: Number(ref.group ?? 0),
+      }
+    })
+    .filter((ref) => ref.epic > 0)
 }
 
 /** As arestas que tocam `id`, nas duas direções: as declaradas por ela e as que a nomeiam. */
@@ -414,6 +452,7 @@ async function readDetail(cwd: string, id: number, key: string): Promise<Detail>
     })),
     workItemType: fm.workItemType ? fm.workItemType.replace(/^["']|["']$/g, "") : "",
     deps: neighbors(graph, id),
+    epics: membershipOf(graph, id),
     ...(composition ? { composition } : {}),
   }
   details.set(key, { at: Date.now(), value })

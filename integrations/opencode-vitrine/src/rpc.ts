@@ -129,6 +129,18 @@ const composition = {
   additionalProperties: false,
 } as const
 
+const composite = {
+  type: "object",
+  properties: {
+    epic: { type: "number" },
+    title: { type: "string" },
+    label: { type: "string" },
+    group: { type: "number" },
+  },
+  required: ["epic", "title", "label", "group"],
+  additionalProperties: false,
+} as const
+
 const detail = {
   type: "object",
   properties: {
@@ -160,12 +172,13 @@ const detail = {
     workItemType: { type: "string" },
     deps: dependencies,
     composition,
+    epics: { type: "array", items: composite },
   },
   required: [
     "id", "title", "stage", "phase", "date", "priority", "priorityHint", "complexity",
     "subject", "assignee", "tags", "ready", "missing", "checked", "blocked", "blockedTask",
     "blockedReason", "total", "run", "verifier", "pr", "prUrl", "work", "sections", "tasks",
-    "workItemType", "deps",
+    "workItemType", "deps", "epics",
   ],
   additionalProperties: false,
 } as const
@@ -263,6 +276,7 @@ export type Composition = {
   groups: { group: number; title: string; done: number; blocked: number; total: number }[]
   items: Member[]
 }
+export type Composite = { epic: number; title: string; label: string; group: number }
 export type Detail = {
   id: number
   title: string
@@ -292,6 +306,7 @@ export type Detail = {
   workItemType: string
   deps: Dependencies
   composition?: Composition
+  epics: Composite[]
 }
 export type TaskInfo = { text: string; files: string; verify: string; subject: string }
 export type Quenching = {
