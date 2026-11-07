@@ -1,5 +1,6 @@
 """Executable properties for the proof front, starting with the ratchet invariant."""
 
+import contextlib
 import json
 import importlib
 import os
@@ -7,6 +8,7 @@ import random
 import subprocess
 import tempfile
 import unittest
+from dataclasses import replace
 from pathlib import Path
 from unittest import mock
 
@@ -14,12 +16,21 @@ import _paths  # noqa: F401 — must precede the `quenching` import
 from quenching.proof.ci import discover_ci
 from quenching.proof.checks import conditional_status, run_checks
 from quenching.proof.inventory import build_inventory
-from quenching.proof.model import Fixture, Layer, ProofInventory, TestModule
+from quenching.proof.model import CostContract, Fixture, Layer, ProofInventory, TestModule
 from quenching.proof.ratchet import evaluate, measured_percentages
 from quenching.proof.readme import render_readme_document, write_readme
 
 HERE = Path(__file__).resolve().parent
 GOLDEN = HERE / "fixtures" / "golden"
+DEFAULT_COST = {
+    "tempRoot": "isolated",
+    "workers": "auto",
+    "scopes": {
+        "task": "python -m test --affected",
+        "close": "QUENCHING_TEST_SCOPE=affected bash gate.sh",
+        "ci": "bash gate.sh",
+    },
+}
 PLUGIN_ROOT = HERE.parent
 LAYER_COMMAND = PLUGIN_ROOT / "skills" / "quenching-proof" / "references" / "layer-new.md"
 HOOK_TEMPLATE = PLUGIN_ROOT / "assets" / "templates" / "proof" / "collection-hook.py.tmpl"
@@ -226,9 +237,11 @@ class ProofLayerBodyContracts(unittest.TestCase):
 
 
 class ProofFixtureTrees(unittest.TestCase):
+    @contextlib.contextmanager
     def _target(self, *, layers=None, measured=None, addopts="--strict-markers",
                 markers=("unit",), coverage_floor=80, ci=True,
-                randomized=True, extra_surfaces=(), extra_tests=None, conftest=None, ops=False):
+                randomized=True, extra_surfaces=(), extra_tests=None, conftest=None, ops=False,
+                cost=DEFAULT_COST):
         raw_layers = layers if layers is not None else {
             "unit": {"reach": "nothing", "budget": 2, "required": True}}
         with tempfile.TemporaryDirectory() as directory:
@@ -236,6 +249,8 @@ class ProofFixtureTrees(unittest.TestCase):
             (root / ".claude").mkdir()
             config = {"proof": {"proofRoot": "tests", "layers": raw_layers,
                                  "measuredRoots": list(measured or ("src",))}}
+            if cost is not None:
+                config["proof"]["cost"] = cost
             if ops:
                 config["ops"] = {"opsRoot": "scripts", "router": "pyproject.toml"}
             (root / ".claude" / "quenching.json").write_text(
@@ -279,10 +294,14 @@ class ProofFixtureTrees(unittest.TestCase):
             self.assertEqual({}, err)
             assert inventory is not None
             write_readme(inventory)
-            return {item.code for item in run_checks(inventory)}
+            yield inventory
+
+    def _findings(self, **kwargs):
+        with self._target(**kwargs) as inventory:
+            return run_checks(inventory)
 
     def _codes(self, **kwargs):
-        return self._target(**kwargs)
+        return {item.code for item in self._findings(**kwargs)}
 
     def test_clean_tree_has_no_findings(self):
         self.assertEqual(set(), self._codes())
@@ -303,6 +322,10 @@ class ProofFixtureTrees(unittest.TestCase):
                 "unit": {"reach": "nothing", "budget": 2, "required": True},
                 "data": {"reach": "tree", "budget": 5, "required": True},
             }},
+            "pf-cost-undeclared": {"cost": None},
+            "pf-temp-shared": {"cost": {**DEFAULT_COST, "tempRoot": "system"}},
+            "pf-scope-wide": {"cost": {**DEFAULT_COST,
+                                       "scopes": {"close": "bash gate.sh", "ci": "bash gate.sh"}}},
         }
         for code, kwargs in cases.items():
             with self.subTest(code=code):
@@ -361,6 +384,13 @@ class ProofFixtureTrees(unittest.TestCase):
                 "unit": {"reach": "nothing", "budget": 2, "required": True},
                 "data": {"reach": "tree", "budget": 5, "required": True},
             }}, {}),
+            "pf-cost-undeclared": ({"cost": None}, {"cost": DEFAULT_COST}),
+            "pf-temp-shared": ({"cost": {**DEFAULT_COST, "tempRoot": "system"}},
+                               {"cost": DEFAULT_COST}),
+            "pf-scope-wide": (
+                {"cost": {**DEFAULT_COST,
+                          "scopes": {"close": "bash gate.sh", "ci": "bash gate.sh"}}},
+                {"cost": DEFAULT_COST}),
             "pf-no-ci": ({"ci": False}, {}),
             "pf-order-unproven": ({"randomized": False}, {}),
             "pf-untested-entrypoint": (
@@ -372,6 +402,49 @@ class ProofFixtureTrees(unittest.TestCase):
             with self.subTest(code=code):
                 self.assertIn(code, self._codes(**bad))
                 self.assertNotIn(code, self._codes(**good))
+
+    def test_undeclared_cost_names_every_missing_key(self):
+        findings = [item for item in self._findings(cost={}) if item.code == "pf-cost-undeclared"]
+        self.assertEqual(1, len(findings))
+        for key in ("tempRoot", "workers", "scopes.close", "scopes.ci"):
+            self.assertIn(key, findings[0].message)
+
+    def test_partial_cost_names_only_the_missing_keys(self):
+        findings = [item for item in self._findings(cost={"tempRoot": "isolated"})
+                    if item.code == "pf-cost-undeclared"]
+        self.assertEqual(1, len(findings))
+        self.assertIn("workers", findings[0].message)
+        self.assertNotIn("tempRoot", findings[0].message)
+
+    def test_cost_is_not_asked_of_a_target_without_layers(self):
+        self.assertNotIn("pf-cost-undeclared", self._codes(layers={}, cost=None))
+
+    def test_readme_carries_the_declared_cost_contract(self):
+        with self._target() as inventory:
+            document = render_readme_document("", inventory)
+        self.assertIn("### Declared cost contract", document)
+        self.assertIn("`isolated`", document)
+        self.assertIn("QUENCHING_TEST_SCOPE=affected bash gate.sh", document)
+
+    def test_a_cost_change_makes_the_readme_stale(self):
+        with self._target() as inventory:
+            document = render_readme_document("", inventory)
+            changed = replace(inventory, cost=CostContract(
+                "system", "auto", {"close": "bash gate.sh", "ci": "bash gate.sh"}))
+            self.assertNotEqual(document, render_readme_document(document, changed))
+
+    def test_malformed_cost_is_refused_before_any_finding(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / ".claude").mkdir()
+            (root / ".claude" / "quenching.json").write_text(json.dumps({
+                "proof": {"proofRoot": "tests", "cost": {"tempRoot": "ram"}}}), encoding="utf-8")
+            (root / "tests" / "unit").mkdir(parents=True)
+            inventory, err = build_inventory(str(root))
+        self.assertIsNone(inventory)
+        self.assertEqual("pf-config-invalid", err["code"])
+        self.assertEqual(2, err["exit"])
+        self.assertIn("tempRoot", err["message"])
 
     def test_each_supported_ci_provider_can_invoke_the_gate(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -407,6 +480,7 @@ class ProofFixtureTrees(unittest.TestCase):
                     "proofRoot": "tests",
                     "layers": {"unit": {"reach": "nothing", "required": True}},
                     "measuredRoots": ["src"],
+                    "cost": DEFAULT_COST,
                 },
             }), encoding="utf-8")
             (root / "pyproject.toml").write_text(

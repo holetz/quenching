@@ -35,11 +35,38 @@ def _layers_payload(inventory: ProofInventory) -> list[dict[str, Any]]:
     return result
 
 
+def _cost_payload(inventory: ProofInventory) -> dict[str, Any]:
+    """Serialize the declared cost contract so the README cannot drift from it."""
+    cost = inventory.cost
+    if cost is None:
+        return {"declared": False}
+    return {"declared": True, "tempRoot": cost.temp_root, "workers": cost.workers,
+            "scopes": dict(cost.scopes)}
+
+
 def readme_digest(inventory: ProofInventory) -> str:
     """Return the stable digest for the generated layer data."""
-    canonical = json.dumps(_layers_payload(inventory), ensure_ascii=False,
-                           sort_keys=True, separators=(",", ":")).encode("utf-8")
+    canonical = json.dumps({"layers": _layers_payload(inventory),
+                            "cost": _cost_payload(inventory)},
+                           ensure_ascii=False, sort_keys=True,
+                           separators=(",", ":")).encode("utf-8")
     return hashlib.sha256(canonical).hexdigest()
+
+
+def _cost_lines(inventory: ProofInventory) -> list[str]:
+    cost = inventory.cost
+    if cost is None:
+        return ["No cost contract is declared; `pf-cost-undeclared` names the missing keys."]
+    temp_root = {"isolated": "`isolated` — outside the repository, removed when the run ends",
+                 "system": "`system` — the machine's temp directory",
+                 }.get(cost.temp_root, "not declared")
+    lines = [f"- Temp root: {temp_root}"]
+    lines.append(f"- Workers: `{cost.workers}`" if cost.workers is not None
+                 else "- Workers: not declared")
+    for name, label in (("task", "Task"), ("close", "Close"), ("ci", "CI")):
+        command = cost.scopes.get(name)
+        lines.append(f"- {label} scope: {f'`{command}`' if command else 'not declared'}")
+    return lines
 
 
 def render_readme_block(inventory: ProofInventory) -> str:
@@ -64,6 +91,7 @@ def render_readme_block(inventory: ProofInventory) -> str:
             f"- Test modules: {layer['tests']}",
             f"- Fixture modules: {', '.join(f'`{path}`' for path in layer['fixtures']) or 'none'}",
         ])
+    lines.extend(["", "### Declared cost contract", *_cost_lines(inventory)])
     lines.append(README_END)
     return "\n".join(lines)
 

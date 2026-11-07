@@ -148,6 +148,59 @@ def check_untested_entrypoint(inventory: ProofInventory) -> list[Finding]:
     return findings
 
 
+COST_REQUIRED = ("tempRoot", "workers", "scopes.close", "scopes.ci")
+
+
+def _cost_missing(inventory: ProofInventory) -> list[str]:
+    """Name the keys the cost contract still needs, in the order the contract reads them."""
+    cost = inventory.cost
+    if cost is None:
+        return list(COST_REQUIRED)
+    missing: list[str] = []
+    if cost.temp_root is None:
+        missing.append("tempRoot")
+    if cost.workers is None:
+        missing.append("workers")
+    for name in ("close", "ci"):
+        if name not in cost.scopes:
+            missing.append(f"scopes.{name}")
+    return missing
+
+
+def check_cost_undeclared(inventory: ProofInventory) -> list[Finding]:
+    """Ask a target that declared layers what a run costs, like the generated README check."""
+    if not inventory.layers:
+        return []
+    missing = _cost_missing(inventory)
+    if not missing:
+        return []
+    return [_error("pf-cost-undeclared",
+                   f"the cost contract is undeclared; missing: {', '.join(missing)}",
+                   path=inventory.config_path)]
+
+
+def check_temp_shared(inventory: ProofInventory) -> list[Finding]:
+    cost = inventory.cost
+    if cost is None or cost.temp_root != "system":
+        return []
+    return [_error("pf-temp-shared",
+                   "`cost.tempRoot` is `system`: every run writes the machine's disk",
+                   path=inventory.config_path)]
+
+
+def check_scope_wide(inventory: ProofInventory) -> list[Finding]:
+    cost = inventory.cost
+    if cost is None:
+        return []
+    close = cost.scopes.get("close")
+    ci = cost.scopes.get("ci")
+    if not close or not ci or close != ci:
+        return []
+    return [_error("pf-scope-wide",
+                   "the close scope is the CI scope: every local run pays the whole suite",
+                   path=inventory.config_path)]
+
+
 def check_readme_stale(inventory: ProofInventory) -> list[Finding]:
     """Check the generated README only when the target declares layers to describe."""
     if not inventory.layers:
@@ -183,6 +236,9 @@ CHECK_REGISTRY = register_checks(
     ("no-ci", check_no_ci),
     ("order-unproven", check_order_unproven),
     ("untested-entrypoint", check_untested_entrypoint),
+    ("cost-undeclared", check_cost_undeclared),
+    ("temp-shared", check_temp_shared),
+    ("scope-wide", check_scope_wide),
     ("readme-stale", check_readme_stale),
 )
 

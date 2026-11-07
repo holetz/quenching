@@ -16,6 +16,8 @@ from quenching.common.config import CONFIG_FILE, find_repo_root, load_config, na
 DEFAULT_PROOF_ROOT = "tests"
 DEFAULT_RATCHET_NAME = ".coverage-floor.json"
 REACHES = ("nothing", "tree", "session", "workspace")
+TEMP_ROOTS = ("isolated", "system")
+COST_SCOPES = ("task", "close", "ci")
 
 
 def _repo_root(root: str) -> str:
@@ -50,6 +52,57 @@ def _layers(raw: Any) -> dict[str, dict[str, Any]]:
             layer["required"] = value["required"]
         result[name.strip()] = layer
     return dict(sorted(result.items()))
+
+
+def _refusal(message: str) -> tuple[None, dict]:
+    return None, {
+        "code": "pf-config-invalid",
+        "exit": 2,
+        "config": CONFIG_FILE,
+        "message": message,
+    }
+
+
+def _cost(raw: Any) -> tuple[dict | None, dict]:
+    """Resolve `proof.cost`, or refuse a shape the front cannot grade.
+
+    Every key is optional: an absent key is reported by the doctor, never defaulted into a pass.
+    A value of the wrong shape is a refusal, so a typo cannot read back as an honest declaration.
+    """
+    if raw is None:
+        return None, {}
+    if not isinstance(raw, dict):
+        return _refusal("`cost` must be an object when declared")
+    result: dict[str, Any] = {}
+    temp_root = raw.get("tempRoot")
+    if temp_root is not None:
+        if not isinstance(temp_root, str) or temp_root.strip() not in TEMP_ROOTS:
+            return _refusal(f"`cost.tempRoot` must be one of {', '.join(TEMP_ROOTS)}")
+        result["tempRoot"] = temp_root.strip()
+    workers = raw.get("workers")
+    if workers is not None:
+        if workers == "auto":
+            result["workers"] = "auto"
+        elif isinstance(workers, int) and not isinstance(workers, bool) and workers > 0:
+            result["workers"] = workers
+        else:
+            return _refusal("`cost.workers` must be `auto` or a positive integer")
+    scopes = raw.get("scopes")
+    if scopes is not None:
+        if not isinstance(scopes, dict):
+            return _refusal("`cost.scopes` must be an object of tier commands")
+        resolved: dict[str, str] = {}
+        for key, value in scopes.items():
+            if key not in COST_SCOPES:
+                return _refusal(f"`cost.scopes.{key}` is not one of {', '.join(COST_SCOPES)}")
+            if not isinstance(value, str) or not value.strip():
+                return _refusal(f"`cost.scopes.{key}` must be a non-empty command")
+            resolved[key] = value.strip()
+        result["scopes"] = dict(sorted(resolved.items()))
+    unknown = sorted(set(raw) - {"tempRoot", "workers", "scopes"})
+    if unknown:
+        return _refusal(f"`cost.{unknown[0]}` is not a key of the cost contract")
+    return result, {}
 
 
 def load_proof_config(root: str) -> tuple[dict | None, dict]:
@@ -97,6 +150,9 @@ def load_proof_config(root: str) -> tuple[dict | None, dict]:
          "relative": _relative(repo_root, _resolve(repo_root, value))}
         for value in exclusions if isinstance(value, str) and value.strip()
     ]
+    cost, cost_error = _cost(proof.get("cost"))
+    if cost_error:
+        return None, cost_error
     return {
         "config": cfg.get("path"),
         "repoRoot": repo_root,
@@ -107,6 +163,7 @@ def load_proof_config(root: str) -> tuple[dict | None, dict]:
         "proofExclusions": excluded,
         "ratchetPath": ratchet_path,
         "declaredRatchetPath": ratchet_relative,
+        "cost": cost,
     }, {}
 
 

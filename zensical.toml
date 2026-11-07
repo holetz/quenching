@@ -89,6 +89,7 @@
       ] },
       { "Ci Cd" = [
         "standards/ci-cd/index.md",
+        "standards/ci-cd/test-cost.md",
         "standards/ci-cd/versioning-release.md",
       ] },
       { "Code" = [
