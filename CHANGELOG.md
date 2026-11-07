@@ -13,6 +13,24 @@ owner: [`ci-cd/versioning-release.md`](docs/standards/ci-cd/versioning-release.m
 short version for a consumer: the version is published once, deliberately, as a release — never at a
 spec's own conclude — and `cq --version` is what answers which one you are running.
 
+## 7.7.0
+
+**O painel do OpenCode mostra onde uma spec está: o que ela espera, quem espera por ela, o que o
+  épico compõe e de que épico ela é membro.** A aba **Dependências** do detalhe lê o grafo inteiro
+  numa chamada só — `cq specs schedule --all`, que agora alarga a seleção para todo o store,
+  arquivadas e sem aresta incluídas, e recusa `--spec` junto com ela (`sp-conflicting-selection`) —
+  e lista, acima, as specs que o `dependsOn` nomeia e, abaixo, as que nomeiam esta, cada linha
+  clicável, com a etapa de arquivo, o caminho crítico, o atraso e a janela que o `schedule` já
+  derivava. Num épico, a mesma aba mostra o bloco **Specs deste épico**: os membros na ordem
+  declarada, com o estado de cada um, o que ele espera dentro do épico e o progresso do conjunto,
+  sem uma leitura a mais — a composição já vinha no `status --spec` que o painel lia e descartava. A
+  outra ponta veio junto: o `schedule --all` passa a emitir `composites`, o índice inverso de quem
+  nomeia quem, e um membro ganha o bloco **Parte de** com o épico e o rótulo que ele lhe deu —
+  composição lida de trás para frente, porque o `epic:` do frontmatter é depreciado e o vínculo mora
+  no `## Tasks` do composto. Um grafo é uma leitura em massa por checkout, em cache por 30 s e
+  compartilhada em voo; um `cq` anterior degrada para o grafo aberto em vez de falhar, e a lista
+  marca com o chip `épico` a linha cujo `workItemType` é épico.
+
 ## 7.6.0
 
 **O alvo declara o custo do run, e o doutor cobra a diferença entre as três provas.** O
