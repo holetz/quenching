@@ -4,7 +4,7 @@ title: Spec dependencies contract
 description: A spec may declare the specs it depends on with a first-level `dependsOn` key written only by `cq specs depends`; `cq specs schedule` derives start, finish, slip and the critical path from that graph and the existing `start`/`target`, and validate raises four dependency findings
 resource: quenching/assets/bin/quenching/specs/parse/deps.py, quenching/assets/bin/quenching/specs/commands/deps.py, quenching/assets/bin/quenching/specs/commands/validate.py, quenching/assets/specs/schema.json
 tags: [workflows, specs, dependencies, schedule]
-timestamp: 2026-10-24
+timestamp: 2026-11-06
 audience: both
 authority: current
 source: spec 2039 (dependencies between any specs and a derived schedule)
@@ -34,23 +34,30 @@ epic members.
   removing an id not in `dependsOn` is a no-op with no write. The cycle refusal is scoped: only a
   cycle that passes through the edited spec blocks the edit, so self-edges and cycles among other
   specs never block an edit of an unrelated spec.
-- `cq specs schedule [--spec <id>] [--json]` prints the derived schedule: per spec the planned
-  `start` and `target`, `earliestStart`, `earliestFinish`, `slipDays` (only when positive) and
-  `critical`, plus `criticalPath` as an id list and `cycle` when one exists. Exit 1 on a cycle,
-  0 otherwise. It writes nothing; the portal's Gantt view consumes the JSON.
+- `cq specs schedule [--spec <id> | --all] [--json]` prints the derived schedule: per spec the
+  planned `start` and `target`, `earliestStart`, `earliestFinish`, `slipDays` (only when positive)
+  and `critical`, plus `criticalPath` as an id list and `cycle` when one exists. Exit 1 on a cycle,
+  0 otherwise. It writes nothing; the portal's Gantt view consumes the JSON. `--all` schedules every
+  spec in the store, archived and edge-less included: it is the read for a consumer that needs both
+  directions of the graph, since the specs waiting for a node are the nodes that name it, and the
+  default selection leaves out an archived one. `--all` with `--spec` refuses
+  (`sp-conflicting-selection`, exit 2).
 
 ## The derivation
 
 Nodes are the open specs that declare an edge plus their transitive dependencies, archived ones
-included as fixed inputs. In topological order, `earliestStart` is the latest `earliestFinish`
-among the dependencies, never earlier than the spec's own `start`; `earliestFinish` is
-`earliestStart` plus the days between `start` and `target`, or the spec's `target` when only that is
-set. An unknown stays `null` and propagates as unknown, never as zero. A dependency archived `done`
-finishes at its `target` when it has one, even when one of its own dependencies is open and
-undated; else it constrains nothing. `slipDays` is
-`earliestFinish` minus `target` when positive. A dependency archived with an outcome other than `done` (dropped) stays in `nodes` but is left
-out of the critical path. The critical path follows, from the latest known
-`earliestFinish`, the dependency that fixed each `earliestStart`. Durations are calendar days.
+included as fixed inputs; `--all` takes every spec in the store instead, edge-less ones included.
+The graph itself has one direction: `dependsOn`. Who waits for a spec is answered by inverting it
+over the nodes the reader holds, which is why a view that shows both sides asks for `--all`. In
+topological order, `earliestStart` is the latest `earliestFinish` among the dependencies, never
+earlier than the spec's own `start`; `earliestFinish` is `earliestStart` plus the days between
+`start` and `target`, or the spec's `target` when only that is set. An unknown stays `null` and
+propagates as unknown, never as zero. A dependency archived `done` finishes at its `target` when it
+has one, even when one of its own dependencies is open and undated; else it constrains nothing.
+`slipDays` is `earliestFinish` minus `target` when positive. A dependency archived with an outcome
+other than `done` (dropped) stays in `nodes` but is left out of the critical path. The critical path
+follows, from the latest known `earliestFinish`, the dependency that fixed each `earliestStart`.
+Durations are calendar days.
 
 ## The findings
 
