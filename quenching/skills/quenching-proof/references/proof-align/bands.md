@@ -46,6 +46,7 @@ The command named in the table is a hand-off, not an instruction for the align t
 | `pf-cost-undeclared` | The cost contract as declared (whole or absent, the missing keys named), and the measured cost a run pays without it. | The target owner's `proof.cost` declaration in `.agents/quenching.json`, guided by `/docs/standards/ci-cd/test-cost.md`, then `/quenching-proof align`. |
 | `pf-temp-shared` | The declared `tempRoot: system` and where the target's runner writes its temporary files. | The target owner's runner change to a root outside the repository, removed when the run ends; then the declaration and `cq proof readme --write`. |
 | `pf-scope-wide` | The close scope and the CI scope as declared, and the consequence for a one-line change. | The target owner's narrower local tier, keeping the full run in CI; then the declaration and `cq proof readme --write`. |
+| `pf-task-wide` | The task scope and the close scope as declared, and the consequence for every task of the spec. | The target owner's narrower `scopes.task` — the file or directory the task touches — keeping the gate at the close; then the declaration and `cq proof readme --write`. |
 
 ## The floor-deferral rule
 
@@ -74,13 +75,13 @@ absence of a declaration is not evidence for a taxonomy.
 
 ## The complete mapping
 
-The eleven codes have one and only one disposition:
+The fifteen codes have one and only one disposition:
 
 | Band | Codes |
 | --- | --- |
 | Mechanical | none — no proof artifact has a deterministic repair in this contract |
 | Structural | `pf-unmarked`, `pf-stop-first`, `pf-loose-fixture`, `pf-fat-conftest`, `pf-no-floor`, `pf-order-unproven` when its non-blocking condition is met |
-| Judgement | `pf-unlayered`, `pf-empty-layer`, `pf-unmeasured-surface`, `pf-no-ci`, `pf-untested-entrypoint`, and `pf-order-unproven` when its structural condition is not met |
+| Judgement | `pf-unlayered`, `pf-empty-layer`, `pf-unmeasured-surface`, `pf-no-ci`, `pf-untested-entrypoint`, `pf-cost-undeclared`, `pf-temp-shared`, `pf-scope-wide`, `pf-task-wide`, and `pf-order-unproven` when its structural condition is not met |
 
 <!-- rationale -->
 
