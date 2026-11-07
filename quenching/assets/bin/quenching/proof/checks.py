@@ -201,6 +201,19 @@ def check_scope_wide(inventory: ProofInventory) -> list[Finding]:
                    path=inventory.config_path)]
 
 
+def check_task_wide(inventory: ProofInventory) -> list[Finding]:
+    cost = inventory.cost
+    if cost is None:
+        return []
+    task = cost.scopes.get("task")
+    close = cost.scopes.get("close")
+    if not task or not close or task != close:
+        return []
+    return [_error("pf-task-wide",
+                   "the task scope is the close scope: every task pays the close's selection",
+                   path=inventory.config_path)]
+
+
 def check_readme_stale(inventory: ProofInventory) -> list[Finding]:
     """Check the generated README only when the target declares layers to describe."""
     if not inventory.layers:
@@ -239,6 +252,7 @@ CHECK_REGISTRY = register_checks(
     ("cost-undeclared", check_cost_undeclared),
     ("temp-shared", check_temp_shared),
     ("scope-wide", check_scope_wide),
+    ("task-wide", check_task_wide),
     ("readme-stale", check_readme_stale),
 )
 

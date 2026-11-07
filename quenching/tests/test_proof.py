@@ -326,6 +326,10 @@ class ProofFixtureTrees(unittest.TestCase):
             "pf-temp-shared": {"cost": {**DEFAULT_COST, "tempRoot": "system"}},
             "pf-scope-wide": {"cost": {**DEFAULT_COST,
                                        "scopes": {"close": "bash gate.sh", "ci": "bash gate.sh"}}},
+            "pf-task-wide": {"cost": {**DEFAULT_COST,
+                                      "scopes": {"task": "bash gate.sh",
+                                                 "close": "bash gate.sh",
+                                                 "ci": "bash gate.sh --full"}}},
         }
         for code, kwargs in cases.items():
             with self.subTest(code=code):
@@ -391,6 +395,12 @@ class ProofFixtureTrees(unittest.TestCase):
                 {"cost": {**DEFAULT_COST,
                           "scopes": {"close": "bash gate.sh", "ci": "bash gate.sh"}}},
                 {"cost": DEFAULT_COST}),
+            "pf-task-wide": (
+                {"cost": {**DEFAULT_COST,
+                          "scopes": {"task": "bash gate.sh",
+                                     "close": "bash gate.sh",
+                                     "ci": "bash gate.sh --full"}}},
+                {"cost": DEFAULT_COST}),
             "pf-no-ci": ({"ci": False}, {}),
             "pf-order-unproven": ({"randomized": False}, {}),
             "pf-untested-entrypoint": (
@@ -420,6 +430,21 @@ class ProofFixtureTrees(unittest.TestCase):
                    if item.code == "pf-cost-undeclared"]
         self.assertIn("missing: workers, scopes.task, scopes.close, scopes.ci",
                       ordered[0].message)
+
+    def test_task_wide_fires_once_at_the_config_path(self):
+        cost = {**DEFAULT_COST,
+                "scopes": {"task": "bash gate.sh", "close": "bash gate.sh",
+                           "ci": "bash gate.sh --full"}}
+        with self._target(cost=cost) as inventory:
+            findings = [item for item in run_checks(inventory) if item.code == "pf-task-wide"]
+            self.assertEqual(1, len(findings))
+            self.assertEqual(inventory.config_path, findings[0].path)
+
+    def test_task_wide_stays_silent_when_the_task_scope_is_absent(self):
+        cost = {**DEFAULT_COST,
+                "scopes": {"close": "bash gate.sh", "ci": "bash gate.sh --full"}}
+        self.assertNotIn("pf-task-wide", self._codes(cost=cost))
+        self.assertIn("pf-cost-undeclared", self._codes(cost=cost))
 
     def test_partial_cost_names_only_the_missing_keys(self):
         findings = [item for item in self._findings(cost={"tempRoot": "isolated"})
