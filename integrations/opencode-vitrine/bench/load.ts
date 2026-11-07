@@ -89,7 +89,9 @@ cq.setReadRunner(async (_launch, args) => {
       dependsOn: index ? [String(IDS[index - 1])] : [], critical: index % 7 === 0,
       slipDays: index % 11, start: "2026-10-01", target: "2026-10-20",
     }))
-    return { code: 0, stdout: JSON.stringify({ cycle: null, nodes, criticalPath: [] }), stderr: "" }
+    // A outra ponta da composição: quem nomeia quem, no mesmo payload do grafo.
+    const composites = { [String(MEMBERS[0])]: [{ epic: String(EPIC), label: "S1", group: 1 }] }
+    return { code: 0, stdout: JSON.stringify({ cycle: null, nodes, criticalPath: [], composites }), stderr: "" }
   }
   return { code: 0, stdout: "{}", stderr: "" }
 })
@@ -205,7 +207,12 @@ check(detail.deps.cycle.length === 0, "o ciclo apareceu num grafo limpo")
 // ── 7. o épico: a composição, sem uma leitura a mais ─────────────────────────
 
 type Member = { label: string; spec: number; status: string; after: string[] }
-type Epic = { deps: { up: unknown[]; down: unknown[] }; composition?: { items: Member[] } }
+type Composite = { epic: number; title: string; label: string; group: number }
+type Epic = {
+  deps: { up: unknown[]; down: unknown[] }
+  composition?: { items: Member[] }
+  epics: Composite[]
+}
 const before = calls.get("specs status --spec " + EPIC + " --json") ?? 0
 const epic = (await handlers.detail({ directory, id: EPIC })) as Epic
 check(epic.composition?.items.length === 8, "o épico não mostrou os oito membros")
@@ -219,6 +226,18 @@ check((calls.get("specs status --spec " + EPIC + " --json") ?? 0) === before + 1
   "a composição custou uma leitura a mais do `cq`")
 const plain = (await handlers.detail({ directory, id: IDS[40] })) as Epic
 check(plain.composition === undefined, "uma spec comum ganhou uma composição vazia")
+check(plain.epics.length === 0, "uma spec fora do épico ganhou uma membresia")
+
+// ── 8. o membro: quem o nomeia, e de que lado ────────────────────────────────
+
+const member = (await handlers.detail({ directory, id: MEMBERS[0] })) as Epic
+check(member.epics.length === 1 && member.epics[0].epic === EPIC,
+  "o membro não disse a que épico pertence")
+check(member.epics[0].label === "S1", "o membro não carregou o rótulo que o épico lhe deu")
+check(member.epics[0].title === `Spec ${EPIC}`, "o título do épico não veio do grafo")
+check(epic.epics.length === 0, "o épico apareceu como membro de si mesmo")
+check(member.deps.up.length === 1 && member.deps.down.length === 1,
+  "a membresia mexeu nas arestas de dependência do membro")
 
 // ── o veredito ───────────────────────────────────────────────────────────────
 

@@ -6,6 +6,7 @@ import json
 from quenching.specs.backends import open_backend
 from quenching.specs.commands.output import Emitter, read_one
 from quenching.specs.parse.deps import dep_findings, deps_of, find_cycle_through, schedule
+from quenching.specs.parse.epics import reverse_index
 from quenching.specs.parse.fields import set_frontmatter_key
 
 
@@ -90,5 +91,10 @@ def cmd_schedule(args, root: str, out: Emitter) -> int:
         for node in result["nodes"])
     if not cycle:
         human += "\ncriticalPath: " + " -> ".join(result["criticalPath"])
-    out.emit(args.json, {"ok": not bool(cycle), **result}, human)
+    payload = {"ok": not bool(cycle), **result}
+    # The reverse of composition, over the same bulk read: a member asking which composites name it
+    # has no cheaper answer, and an index over a subset of the store would lie about the whole.
+    if every:
+        payload["composites"] = reverse_index(infos)
+    out.emit(args.json, payload, human)
     return 1 if cycle else 0
