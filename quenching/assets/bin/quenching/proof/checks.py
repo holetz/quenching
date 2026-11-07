@@ -148,7 +148,7 @@ def check_untested_entrypoint(inventory: ProofInventory) -> list[Finding]:
     return findings
 
 
-COST_REQUIRED = ("tempRoot", "workers", "scopes.close", "scopes.ci")
+COST_REQUIRED = ("tempRoot", "workers", "scopes.task", "scopes.close", "scopes.ci")
 
 
 def _cost_missing(inventory: ProofInventory) -> list[str]:
@@ -161,7 +161,7 @@ def _cost_missing(inventory: ProofInventory) -> list[str]:
         missing.append("tempRoot")
     if cost.workers is None:
         missing.append("workers")
-    for name in ("close", "ci"):
+    for name in ("task", "close", "ci"):
         if name not in cost.scopes:
             missing.append(f"scopes.{name}")
     return missing

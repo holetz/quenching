@@ -406,8 +406,20 @@ class ProofFixtureTrees(unittest.TestCase):
     def test_undeclared_cost_names_every_missing_key(self):
         findings = [item for item in self._findings(cost={}) if item.code == "pf-cost-undeclared"]
         self.assertEqual(1, len(findings))
-        for key in ("tempRoot", "workers", "scopes.close", "scopes.ci"):
+        for key in ("tempRoot", "workers", "scopes.task", "scopes.close", "scopes.ci"):
             self.assertIn(key, findings[0].message)
+
+    def test_the_task_scope_is_required_and_named_in_contract_order(self):
+        declared = {**DEFAULT_COST,
+                    "scopes": {"close": "bash gate.sh", "ci": "bash gate.sh"}}
+        findings = [item for item in self._findings(cost=declared)
+                    if item.code == "pf-cost-undeclared"]
+        self.assertEqual(1, len(findings))
+        self.assertIn("missing: scopes.task", findings[0].message)
+        ordered = [item for item in self._findings(cost={"tempRoot": "isolated"})
+                   if item.code == "pf-cost-undeclared"]
+        self.assertIn("missing: workers, scopes.task, scopes.close, scopes.ci",
+                      ordered[0].message)
 
     def test_partial_cost_names_only_the_missing_keys(self):
         findings = [item for item in self._findings(cost={"tempRoot": "isolated"})
@@ -434,17 +446,24 @@ class ProofFixtureTrees(unittest.TestCase):
             self.assertNotEqual(document, render_readme_document(document, changed))
 
     def test_malformed_cost_is_refused_before_any_finding(self):
-        with tempfile.TemporaryDirectory() as directory:
-            root = Path(directory)
-            (root / ".claude").mkdir()
-            (root / ".claude" / "quenching.json").write_text(json.dumps({
-                "proof": {"proofRoot": "tests", "cost": {"tempRoot": "ram"}}}), encoding="utf-8")
-            (root / "tests" / "unit").mkdir(parents=True)
-            inventory, err = build_inventory(str(root))
-        self.assertIsNone(inventory)
-        self.assertEqual("pf-config-invalid", err["code"])
-        self.assertEqual(2, err["exit"])
-        self.assertIn("tempRoot", err["message"])
+        cases = {
+            "tempRoot": {"tempRoot": "ram"},
+            "scopes.task": {"tempRoot": "isolated", "workers": "auto",
+                            "scopes": {"task": "", "close": "bash gate.sh",
+                                       "ci": "bash gate.sh"}},
+        }
+        for key, cost in cases.items():
+            with self.subTest(key=key), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory)
+                (root / ".claude").mkdir()
+                (root / ".claude" / "quenching.json").write_text(json.dumps({
+                    "proof": {"proofRoot": "tests", "cost": cost}}), encoding="utf-8")
+                (root / "tests" / "unit").mkdir(parents=True)
+                inventory, err = build_inventory(str(root))
+            self.assertIsNone(inventory)
+            self.assertEqual("pf-config-invalid", err["code"])
+            self.assertEqual(2, err["exit"])
+            self.assertIn(key, err["message"])
 
     def test_each_supported_ci_provider_can_invoke_the_gate(self):
         with tempfile.TemporaryDirectory() as directory:
