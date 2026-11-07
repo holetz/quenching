@@ -41,7 +41,11 @@ epic members.
   spec in the store, archived and edge-less included: it is the read for a consumer that needs both
   directions of the graph, since the specs waiting for a node are the nodes that name it, and the
   default selection leaves out an archived one. `--all` with `--spec` refuses
-  (`sp-conflicting-selection`, exit 2).
+  (`sp-conflicting-selection`, exit 2). With `--all` the payload also carries `composites`, the
+  reverse of composition: member id → the composites whose `## Tasks` name it, each entry with the
+  composite's id, the label it gave the member and its wave. It is the only way to answer which
+  composite a member belongs to, because the link lives in the composite's document; the index is
+  derived from the same bulk read, and an id the store does not hold is skipped.
 
 ## The derivation
 
