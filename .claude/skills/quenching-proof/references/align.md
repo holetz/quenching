@@ -65,7 +65,7 @@ Build one plan grouped by the three bands in `bands.md`:
 | --- | --- | --- |
 | Mechanical | none in the current contract | report that no generated proof artifact is owned by this band |
 | Structural | `pf-unmarked`, `pf-stop-first`, `pf-loose-fixture`, `pf-fat-conftest`, `pf-no-floor`, and conditionally `pf-order-unproven` | make bounded gate or fixture-ownership edits; use `.agents/quenching/bin/cq proof ratchet --raise --json` only when the measured surface is unchanged and an artifact exists |
-| Judgement | `pf-unlayered`, `pf-empty-layer`, `pf-unmeasured-surface`, `pf-no-ci`, `pf-untested-entrypoint`, `pf-cost-undeclared`, `pf-temp-shared`, `pf-scope-wide`, and conditional `pf-order-unproven` | report evidence and the command that closes it; never drive the change |
+| Judgement | `pf-unlayered`, `pf-empty-layer`, `pf-unmeasured-surface`, `pf-no-ci`, `pf-untested-entrypoint`, `pf-cost-undeclared`, `pf-temp-shared`, `pf-scope-wide`, `pf-task-wide`, and conditional `pf-order-unproven` | report evidence and the command that closes it; never drive the change |
 
 When no layers are declared, keep every unlayered test as judgement residue and do not infer a
 taxonomy or create placeholder directories. When `pf-unmeasured-surface` is open, defer every

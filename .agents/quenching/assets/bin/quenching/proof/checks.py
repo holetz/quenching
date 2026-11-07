@@ -148,7 +148,7 @@ def check_untested_entrypoint(inventory: ProofInventory) -> list[Finding]:
     return findings
 
 
-COST_REQUIRED = ("tempRoot", "workers", "scopes.close", "scopes.ci")
+COST_REQUIRED = ("tempRoot", "workers", "scopes.task", "scopes.close", "scopes.ci")
 
 
 def _cost_missing(inventory: ProofInventory) -> list[str]:
@@ -161,7 +161,7 @@ def _cost_missing(inventory: ProofInventory) -> list[str]:
         missing.append("tempRoot")
     if cost.workers is None:
         missing.append("workers")
-    for name in ("close", "ci"):
+    for name in ("task", "close", "ci"):
         if name not in cost.scopes:
             missing.append(f"scopes.{name}")
     return missing
@@ -198,6 +198,19 @@ def check_scope_wide(inventory: ProofInventory) -> list[Finding]:
         return []
     return [_error("pf-scope-wide",
                    "the close scope is the CI scope: every local run pays the whole suite",
+                   path=inventory.config_path)]
+
+
+def check_task_wide(inventory: ProofInventory) -> list[Finding]:
+    cost = inventory.cost
+    if cost is None:
+        return []
+    task = cost.scopes.get("task")
+    close = cost.scopes.get("close")
+    if not task or not close or task != close:
+        return []
+    return [_error("pf-task-wide",
+                   "the task scope is the close scope: every task pays the close's selection",
                    path=inventory.config_path)]
 
 
@@ -239,6 +252,7 @@ CHECK_REGISTRY = register_checks(
     ("cost-undeclared", check_cost_undeclared),
     ("temp-shared", check_temp_shared),
     ("scope-wide", check_scope_wide),
+    ("task-wide", check_task_wide),
     ("readme-stale", check_readme_stale),
 )
 
