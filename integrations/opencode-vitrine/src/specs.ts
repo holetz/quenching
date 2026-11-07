@@ -16,6 +16,7 @@ export type SpecRow = {
   total: number
   work: string
   run: string
+  workItemType: string
 }
 
 /** O que a sessão fez com uma spec. `worktree` é o checkout em que ela está; `command` é escrita. */
@@ -41,6 +42,28 @@ export type Neighbor = {
 
 /** Quem está acima (o que ela espera), abaixo (quem espera por ela) e o ciclo que trava tudo. */
 export type Dependencies = { up: Neighbor[]; down: Neighbor[]; cycle: string[] }
+
+/** Uma spec que compõe um épico, como o documento do épico a declara. */
+export type Member = {
+  label: string
+  spec: number
+  title: string
+  group: number
+  status: string
+  stage: string
+  after: string[]
+  waitingOn: string[]
+}
+
+/**
+ * A composição de um épico: quanto dele já saiu, os grupos declarados e os membros na ordem em que
+ * o documento os lista. É o que o épico é feito, não o que ele espera — a aresta `dependsOn` é outra.
+ */
+export type Composition = {
+  progress: { done: number; total: number; blocked: number; ready: number }
+  groups: { group: number; title: string; done: number; blocked: number; total: number }[]
+  items: Member[]
+}
 
 export type Detail = {
   id: number
@@ -68,7 +91,9 @@ export type Detail = {
   work: string
   sections: Section[]
   tasks: { id: string; state: string; text: string; blocked: boolean }[]
+  workItemType: string
   deps: Dependencies
+  composition?: Composition
 }
 
 export type TaskInfo = { text: string; files: string; verify: string; subject: string }
@@ -87,6 +112,7 @@ function normalizeRow(row: any): SpecRow {
     total: Number(row?.tasks?.total ?? 0),
     work: String(row?.records?.branch?.work ?? ""),
     run: String(row?.records?.run?.state ?? ""),
+    workItemType: String(row?.workItemType ?? ""),
   }
 }
 
@@ -293,6 +319,41 @@ function neighbors(graph: Graph, id: number): Dependencies {
   return { up, down, cycle: graph.cycle }
 }
 
+/**
+ * A composição que o `status` já entrega para um épico. Uma spec que não é épico não traz a chave,
+ * e aí `undefined` é a resposta certa — não é uma composição vazia, é a ausência de composição.
+ */
+function compositionOf(raw: any): Composition | undefined {
+  if (!raw || !Array.isArray(raw.items)) return undefined
+  const count = (value: unknown) => Number(value ?? 0)
+  const labels = (value: unknown) => (Array.isArray(value) ? value.map(String) : [])
+  return {
+    progress: {
+      done: count(raw.progress?.done),
+      total: count(raw.progress?.total),
+      blocked: count(raw.progress?.blocked),
+      ready: count(raw.progress?.ready),
+    },
+    groups: (raw.groups ?? []).map((group: any) => ({
+      group: count(group?.group),
+      title: String(group?.title ?? ""),
+      done: count(group?.done),
+      blocked: count(group?.blocked),
+      total: count(group?.total),
+    })),
+    items: raw.items.map((item: any) => ({
+      label: String(item?.label ?? ""),
+      spec: Number(item?.spec ?? 0),
+      title: String(item?.title ?? ""),
+      group: count(item?.group),
+      status: String(item?.status ?? ""),
+      stage: String(item?.stage ?? ""),
+      after: labels(item?.after),
+      waitingOn: labels(item?.waitingOn),
+    })),
+  }
+}
+
 export async function detail(cwd: string, id: number): Promise<Detail> {
   const root = (await mainRoot(cwd)) ?? cwd
   const key = `${root}:${id}`
@@ -316,6 +377,7 @@ async function readDetail(cwd: string, id: number, key: string): Promise<Detail>
     : (show?.sections ?? []).map((section: any) => ({ heading: String(section?.heading ?? ""), body: "" }))
   const fm = full?.document ? frontmatter(String(full.document)) : {}
   const priority = priorityOf(status?.records?.priority)
+  const composition = compositionOf(status?.composition)
   const blockedTask = (status?.tasks?.blockedTasks ?? [])[0] as any
   const blockedText = String(blockedTask?.text ?? "")
   const reason = blockedText.split(/—\s*blocked:\s*/i)[1] ?? blockedText
@@ -350,7 +412,9 @@ async function readDetail(cwd: string, id: number, key: string): Promise<Detail>
       text: String(task?.text ?? ""),
       blocked: blocked.has(String(task?.id ?? "")),
     })),
+    workItemType: fm.workItemType ? fm.workItemType.replace(/^["']|["']$/g, "") : "",
     deps: neighbors(graph, id),
+    ...(composition ? { composition } : {}),
   }
   details.set(key, { at: Date.now(), value })
   return value
@@ -603,6 +667,7 @@ function rowOf(spec: Detail): SpecRow {
     total: spec.total,
     work: spec.work,
     run: spec.run,
+    workItemType: spec.workItemType,
   }
 }
 

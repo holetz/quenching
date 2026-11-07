@@ -20,8 +20,9 @@ const row = {
     total: { type: "number" },
     work: { type: "string" },
     run: { type: "string" },
+    workItemType: { type: "string" },
   },
-  required: ["id", "title", "stage", "phase", "date", "checked", "blocked", "total", "work", "run"],
+  required: ["id", "title", "stage", "phase", "date", "checked", "blocked", "total", "work", "run", "workItemType"],
   additionalProperties: false,
 } as const
 
@@ -77,6 +78,57 @@ const dependencies = {
   additionalProperties: false,
 } as const
 
+const member = {
+  type: "object",
+  properties: {
+    label: { type: "string" },
+    spec: { type: "number" },
+    title: { type: "string" },
+    group: { type: "number" },
+    status: { type: "string" },
+    stage: { type: "string" },
+    after: { type: "array", items: { type: "string" } },
+    waitingOn: { type: "array", items: { type: "string" } },
+  },
+  required: ["label", "spec", "title", "group", "status", "stage", "after", "waitingOn"],
+  additionalProperties: false,
+} as const
+
+const composition = {
+  type: "object",
+  properties: {
+    progress: {
+      type: "object",
+      properties: {
+        done: { type: "number" },
+        total: { type: "number" },
+        blocked: { type: "number" },
+        ready: { type: "number" },
+      },
+      required: ["done", "total", "blocked", "ready"],
+      additionalProperties: false,
+    },
+    groups: {
+      type: "array",
+      items: {
+        type: "object",
+        properties: {
+          group: { type: "number" },
+          title: { type: "string" },
+          done: { type: "number" },
+          blocked: { type: "number" },
+          total: { type: "number" },
+        },
+        required: ["group", "title", "done", "blocked", "total"],
+        additionalProperties: false,
+      },
+    },
+    items: { type: "array", items: member },
+  },
+  required: ["progress", "groups", "items"],
+  additionalProperties: false,
+} as const
+
 const detail = {
   type: "object",
   properties: {
@@ -105,12 +157,15 @@ const detail = {
     work: { type: "string" },
     sections: { type: "array", items: section },
     tasks: { type: "array", items: task },
+    workItemType: { type: "string" },
     deps: dependencies,
+    composition,
   },
   required: [
     "id", "title", "stage", "phase", "date", "priority", "priorityHint", "complexity",
     "subject", "assignee", "tags", "ready", "missing", "checked", "blocked", "blockedTask",
-    "blockedReason", "total", "run", "verifier", "pr", "prUrl", "work", "sections", "tasks", "deps",
+    "blockedReason", "total", "run", "verifier", "pr", "prUrl", "work", "sections", "tasks",
+    "workItemType", "deps",
   ],
   additionalProperties: false,
 } as const
@@ -180,6 +235,7 @@ export type Row = {
   total: number
   work: string
   run: string
+  workItemType: string
 }
 export type Touch = Row & { kind: string; at: number }
 export type Neighbor = {
@@ -192,6 +248,21 @@ export type Neighbor = {
   target: string
 }
 export type Dependencies = { up: Neighbor[]; down: Neighbor[]; cycle: string[] }
+export type Member = {
+  label: string
+  spec: number
+  title: string
+  group: number
+  status: string
+  stage: string
+  after: string[]
+  waitingOn: string[]
+}
+export type Composition = {
+  progress: { done: number; total: number; blocked: number; ready: number }
+  groups: { group: number; title: string; done: number; blocked: number; total: number }[]
+  items: Member[]
+}
 export type Detail = {
   id: number
   title: string
@@ -218,7 +289,9 @@ export type Detail = {
   work: string
   sections: { heading: string; body: string }[]
   tasks: { id: string; state: string; text: string; blocked: boolean }[]
+  workItemType: string
   deps: Dependencies
+  composition?: Composition
 }
 export type TaskInfo = { text: string; files: string; verify: string; subject: string }
 export type Quenching = {
