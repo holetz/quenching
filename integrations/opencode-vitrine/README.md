@@ -21,6 +21,12 @@ for inside the epic, one click away. Composition is not a dependency edge — it
 `up`/`down` lists — and it costs no extra read, because `cq specs status --spec <id>` already ships
 it. A list row whose `workItemType` is `epic` carries an `épico` badge.
 
+A **member** answers the other end: a **Parte de** block names every epic whose document lists it,
+with the label the epic gave it (`1025689 · S1`), one click away. Membership is composition read
+backwards — the reverse index rides `cq specs schedule --all` (key `composites`), so it costs no
+extra read; a spec that belongs to several epics lists all of them, and an epic nesting in another
+shows both.
+
 ## Requirements
 
 - OpenCode Desktop with GUI parts. The panel is a `Panel` in the `side` region plus the `/specs`

@@ -10,7 +10,7 @@ import {
   type PanelTab,
 } from "@opencode/plugin/gui"
 import {
-  Vitrine, type Composition, type Detail, type Member, type Neighbor, type Quenching,
+  Vitrine, type Composite, type Composition, type Detail, type Member, type Neighbor, type Quenching,
   type QuenchingUpdate, type Row, type TaskInfo, type Touch,
 } from "./rpc.js"
 
@@ -229,9 +229,33 @@ function CompositionView(props: { composition: Composition; onPick: (id: number)
   )
 }
 
+/** Onde esta spec é membro: o épico que a declara no próprio documento, com o rótulo que ele lhe deu. */
+function MembershipView(props: { epics: Composite[]; onPick: (id: number) => void }) {
+  return (
+    <div class="qs-dep-group">
+      <div class="qs-dep-label" title="os épicos que nomeiam esta spec no `## Tasks` deles">
+        Parte de
+      </div>
+      <div class="qs-dep-list">
+        <For each={props.epics}>{(epic) => (
+          <button
+            class="qs-dep"
+            title={`${epic.epic} — ${epic.title}`}
+            onClick={() => props.onPick(epic.epic)}
+          >
+            <span class="qs-dep-id">{epic.label || "·"}</span>
+            <span class="qs-dep-title">{epic.epic} · {epic.title}</span>
+            <Show when={epic.group > 0}>{(group) => <span class="qs-dep-meta">onda {group()}</span>}</Show>
+          </button>
+        )}</For>
+      </div>
+    </div>
+  )
+}
+
 function hasView(spec: Detail): boolean {
   return spec.deps.up.length > 0 || spec.deps.down.length > 0 || spec.deps.cycle.length > 0
-    || Boolean(spec.composition)
+    || Boolean(spec.composition) || spec.epics.length > 0
 }
 
 function DependencyGroup(props: {
@@ -269,6 +293,9 @@ function DependencyView(props: { spec: Detail; onPick: (id: number) => void }) {
   const edges = () => props.spec.deps.up.length > 0 || props.spec.deps.down.length > 0
   return (
     <div class="qs-deps">
+      <Show when={props.spec.epics.length > 0}>
+        <MembershipView epics={props.spec.epics} onPick={props.onPick} />
+      </Show>
       <Show when={props.spec.composition}>
         {(composition) => <CompositionView composition={composition()} onPick={props.onPick} />}
       </Show>
@@ -278,8 +305,8 @@ function DependencyView(props: { spec: Detail; onPick: (id: number) => void }) {
           <span>ciclo: {props.spec.deps.cycle.join(" → ")} — nada é agendado enquanto ele existir</span>
         </div>
       </Show>
-      {/* Num épico sem aresta as duas listas não têm o que dizer: a composição acima é a resposta. */}
-      <Show when={edges() || !props.spec.composition}>
+      {/* Sem aresta, e com composição ou membresia acima, as duas listas não têm o que dizer. */}
+      <Show when={edges() || (!props.spec.composition && props.spec.epics.length === 0)}>
         <DependencyGroup
           label="Acima — esta spec espera por"
           hint="as specs nomeadas no dependsOn desta"
