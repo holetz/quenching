@@ -49,6 +49,24 @@ console.log(`sessão sintética: ${messages.length} mensagens, ${(chars / 1e6).t
 
 const LATENCY = 150
 const calls = new Map<string, number>()
+
+// Um épico de oito membros numa cadeia declarada: S1 pronto, S3 abandonado, S4 esperando S1 e S2.
+const EPIC = IDS[120]
+const MEMBERS = IDS.slice(200, 208)
+const composition = {
+  progress: { done: 1, total: 8, blocked: 1, ready: 2 },
+  groups: [{ group: 1, title: "1", done: 1, blocked: 0, total: 3 }],
+  items: MEMBERS.map((spec, index) => ({
+    label: `S${index + 1}`,
+    spec,
+    title: `Spec ${spec}`,
+    group: 1,
+    status: index === 0 ? "done" : index === 2 ? "dropped" : "waiting",
+    stage: index === 0 ? "archive" : "approved",
+    after: index >= 2 ? ["S1"] : [],
+    waitingOn: index >= 2 ? ["S1"] : [],
+  })),
+}
 cq.setReadRunner(async (_launch, args) => {
   const key = args.join(" ")
   calls.set(key, (calls.get(key) ?? 0) + 1)
@@ -59,7 +77,10 @@ cq.setReadRunner(async (_launch, args) => {
   }
   if (args[0] === "specs" && (args[1] === "status" || args[1] === "show")) {
     const id = Number(args[args.indexOf("--spec") + 1])
-    return { code: 0, stdout: JSON.stringify({ id, title: `Spec ${id}`, stage: "approved", phase: "archive", tasks: [] }), stderr: "" }
+    const payload: Record<string, unknown> = { id, title: `Spec ${id}`, stage: "approved", phase: "archive", tasks: [] }
+    // Um épico: a composição vem no `status --spec` que o painel já lê, sem uma segunda chamada.
+    if (args[1] === "status" && id === EPIC) payload.composition = composition
+    return { code: 0, stdout: JSON.stringify(payload), stderr: "" }
   }
   if (args[0] === "specs" && args[1] === "schedule") {
     // Uma cadeia de 400 nós: o grafo que a aba de dependências lê de uma vez, com `--all`.
@@ -180,6 +201,24 @@ check(JSON.stringify(detail.deps.up.map((node) => node.id)) === JSON.stringify([
 check(JSON.stringify(detail.deps.down.map((node) => node.id)) === JSON.stringify([IDS[41]]),
   "a visão de dependências não achou quem está abaixo")
 check(detail.deps.cycle.length === 0, "o ciclo apareceu num grafo limpo")
+
+// ── 7. o épico: a composição, sem uma leitura a mais ─────────────────────────
+
+type Member = { label: string; spec: number; status: string; after: string[] }
+type Epic = { deps: { up: unknown[]; down: unknown[] }; composition?: { items: Member[] } }
+const before = calls.get("specs status --spec " + EPIC + " --json") ?? 0
+const epic = (await handlers.detail({ directory, id: EPIC })) as Epic
+check(epic.composition?.items.length === 8, "o épico não mostrou os oito membros")
+check(epic.composition?.items[0].spec === MEMBERS[0], "o primeiro membro do épico não é o S1 declarado")
+check(JSON.stringify(epic.composition?.items[3].after) === JSON.stringify(["S1"]),
+  "o membro que espera não nomeou o que espera")
+const leaked = ([...epic.deps.up, ...epic.deps.down] as { id: number }[])
+  .filter((node) => MEMBERS.includes(node.id))
+check(leaked.length === 0, "a composição vazou para as arestas de dependência")
+check((calls.get("specs status --spec " + EPIC + " --json") ?? 0) === before + 1,
+  "a composição custou uma leitura a mais do `cq`")
+const plain = (await handlers.detail({ directory, id: IDS[40] })) as Epic
+check(plain.composition === undefined, "uma spec comum ganhou uma composição vazia")
 
 // ── o veredito ───────────────────────────────────────────────────────────────
 

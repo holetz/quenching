@@ -15,6 +15,12 @@ and who waits for it (below), each neighbour one click away, with the archive st
 path and the days of slip that `cq specs schedule` derives. It reads the whole graph in one call
 (`cq specs schedule --all`), so a dependent already archived is not lost.
 
+An **epic** shows its **Specs deste épico** block at the top of that tab: the members the epic's own
+document declares, in their declared order, each with its status, its stage and the members it waits
+for inside the epic, one click away. Composition is not a dependency edge — it never enters the
+`up`/`down` lists — and it costs no extra read, because `cq specs status --spec <id>` already ships
+it. A list row whose `workItemType` is `epic` carries an `épico` badge.
+
 ## Requirements
 
 - OpenCode Desktop with GUI parts. The panel is a `Panel` in the `side` region plus the `/specs`

@@ -9,7 +9,10 @@ import {
   type PanelProps,
   type PanelTab,
 } from "@opencode/plugin/gui"
-import { Vitrine, type Detail, type Neighbor, type Quenching, type QuenchingUpdate, type Row, type TaskInfo, type Touch } from "./rpc.js"
+import {
+  Vitrine, type Composition, type Detail, type Member, type Neighbor, type Quenching,
+  type QuenchingUpdate, type Row, type TaskInfo, type Touch,
+} from "./rpc.js"
 
 const specsTab: PanelTab = { id: "specs", title: "Specs", closable: "hover" }
 const EVIDENCE: Record<string, string> = {
@@ -162,6 +165,9 @@ const css = `
 .qs-dep.critical .qs-dep-id { opacity: 1; font-weight: 600; color: color-mix(in srgb, #a86f00 78%, currentColor); }
 .qs-dep-title { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .qs-dep-meta { grid-column: 1 / -1; font-size: 11px; opacity: .55; }
+.qs-member.dropped .qs-dep-id, .qs-member.dropped .qs-dep-title { opacity: .45; text-decoration: line-through; }
+.qs-member.done .qs-dep-id { opacity: 1; color: color-mix(in srgb, #2f8f4e 78%, currentColor); }
+.qs-member.waiting .qs-dep-id { opacity: 1; color: color-mix(in srgb, #a86f00 78%, currentColor); }
 `
 
 /** O que o `schedule` sabe de uma vizinha, numa linha: entrega, caminho crítico, atraso e janela. */
@@ -174,8 +180,58 @@ function depMeta(node: Neighbor): string {
   return bits.join(" · ")
 }
 
-function hasDeps(spec: Detail): boolean {
+const MEMBER_MARK: Record<string, string> = { done: "✓", dropped: "×", "in-progress": "▸", waiting: "!" }
+
+/** O que o épico já sabe de um membro: o estado dele, a etapa da spec e o que ele espera dentro do épico. */
+function memberMeta(member: Member): string {
+  const bits: string[] = []
+  if (member.stage) bits.push(STAGE_LABEL[member.stage] ?? member.stage)
+  if (member.after.length > 0) bits.push(`espera ${member.after.join(", ")}`)
+  return bits.join(" · ")
+}
+
+function memberClass(member: Member): string {
+  if (member.status === "done") return "done"
+  if (member.status === "dropped") return "dropped"
+  return member.waitingOn.length > 0 ? "waiting" : ""
+}
+
+/** Os membros do épico, na ordem declarada: o que ele é feito, e não o que ele espera. */
+function CompositionView(props: { composition: Composition; onPick: (id: number) => void }) {
+  const progress = () => props.composition.progress
+  return (
+    <div class="qs-dep-group">
+      <div
+        class="qs-dep-label"
+        title="as specs que este épico declara no próprio documento, na ordem em que ele as lista"
+      >
+        Specs deste épico
+        <span class="qs-dep-count">
+          <span>{progress().done}/{progress().total} concluídas</span>
+          <Show when={progress().blocked > 0}><span>· {progress().blocked} bloqueada{progress().blocked > 1 ? "s" : ""}</span></Show>
+        </span>
+      </div>
+      <div class="qs-dep-list">
+        <For each={props.composition.items}>{(member) => (
+          <button
+            class="qs-dep qs-member"
+            classList={{ done: memberClass(member) === "done", dropped: memberClass(member) === "dropped", waiting: memberClass(member) === "waiting" }}
+            title={`${member.spec} — ${member.title}`}
+            onClick={() => props.onPick(member.spec)}
+          >
+            <span class="qs-dep-id">{MEMBER_MARK[member.status] ?? "·"} {member.label}</span>
+            <span class="qs-dep-title">{member.spec} · {member.title}</span>
+            <Show when={memberMeta(member)}>{(meta) => <span class="qs-dep-meta">{meta()}</span>}</Show>
+          </button>
+        )}</For>
+      </div>
+    </div>
+  )
+}
+
+function hasView(spec: Detail): boolean {
   return spec.deps.up.length > 0 || spec.deps.down.length > 0 || spec.deps.cycle.length > 0
+    || Boolean(spec.composition)
 }
 
 function DependencyGroup(props: {
@@ -210,28 +266,35 @@ function DependencyGroup(props: {
 
 /** A aba de dependências: as specs que esta espera e as que esperam por ela, ambas clicáveis. */
 function DependencyView(props: { spec: Detail; onPick: (id: number) => void }) {
+  const edges = () => props.spec.deps.up.length > 0 || props.spec.deps.down.length > 0
   return (
     <div class="qs-deps">
+      <Show when={props.spec.composition}>
+        {(composition) => <CompositionView composition={composition()} onPick={props.onPick} />}
+      </Show>
       <Show when={props.spec.deps.cycle.length > 0}>
         <div class="qs-why" title="ciclo de dependência">
           <span>⚠</span>
           <span>ciclo: {props.spec.deps.cycle.join(" → ")} — nada é agendado enquanto ele existir</span>
         </div>
       </Show>
-      <DependencyGroup
-        label="Acima — esta spec espera por"
-        hint="as specs nomeadas no dependsOn desta"
-        nodes={props.spec.deps.up}
-        empty="nada acima: nenhuma dependência declarada"
-        onPick={props.onPick}
-      />
-      <DependencyGroup
-        label="Abaixo — esperam por esta"
-        hint="as specs que nomeiam esta no dependsOn delas"
-        nodes={props.spec.deps.down}
-        empty="nada abaixo: nenhuma spec declara que depende desta"
-        onPick={props.onPick}
-      />
+      {/* Num épico sem aresta as duas listas não têm o que dizer: a composição acima é a resposta. */}
+      <Show when={edges() || !props.spec.composition}>
+        <DependencyGroup
+          label="Acima — esta spec espera por"
+          hint="as specs nomeadas no dependsOn desta"
+          nodes={props.spec.deps.up}
+          empty="nada acima: nenhuma dependência declarada"
+          onPick={props.onPick}
+        />
+        <DependencyGroup
+          label="Abaixo — esperam por esta"
+          hint="as specs que nomeiam esta no dependsOn delas"
+          nodes={props.spec.deps.down}
+          empty="nada abaixo: nenhuma spec declara que depende desta"
+          onPick={props.onPick}
+        />
+      </Show>
     </div>
   )
 }
@@ -468,7 +531,10 @@ function SpecsPanel(props: PanelProps) {
             <button class="qs-row" classList={{ picked: picked() === row.id }} onClick={() => pick(row.id)}>
               <span class="qs-id"><span class={`qs-dot ${row.kind}`} />{row.id}</span>
               <span class="qs-title">{row.title}</span>
-              <span class="qs-meta">{EVIDENCE[row.kind] ?? row.kind} · {STAGE_LABEL[row.stage] ?? row.stage} · {row.checked}/{row.total}</span>
+              <span class="qs-meta">
+                <Show when={row.workItemType === "epic"}><span class="qs-chip">épico</span> </Show>
+                {EVIDENCE[row.kind] ?? row.kind} · {STAGE_LABEL[row.stage] ?? row.stage} · {row.checked}/{row.total}
+              </span>
             </button>
           )}</For>
           <Show when={touched().length === 0}>
@@ -485,7 +551,10 @@ function SpecsPanel(props: PanelProps) {
             <button class="qs-row" classList={{ picked: picked() === row.id }} onClick={() => pick(row.id)}>
               <span class="qs-id">{row.id}</span>
               <span class="qs-title">{row.title}</span>
-              <span class="qs-meta">{STAGE_LABEL[row.stage] ?? row.stage} · {row.checked}/{row.total}</span>
+              <span class="qs-meta">
+                <Show when={row.workItemType === "epic"}><span class="qs-chip">épico</span> </Show>
+                {STAGE_LABEL[row.stage] ?? row.stage} · {row.checked}/{row.total}
+              </span>
             </button>
           )}</For>
           <Show when={rows().length === 0}><div class="qs-mute" style={{ padding: "8px" }}>nenhuma spec</div></Show>
@@ -569,15 +638,18 @@ function SpecsPanel(props: PanelProps) {
                 {section.heading}
               </button>
             )}</For>
-            <Show when={hasDeps(spec)}>
+            <Show when={hasView(spec)}>
               <button
                 class="qs-tab"
                 classList={{ active: tab() === spec.sections.length }}
-                title="quem esta spec espera e quem espera por ela"
+                title="quem esta spec espera, quem espera por ela e, num épico, as specs que ele compõe"
                 onClick={() => setTab(spec.sections.length)}
               >
                 Dependências
                 <span class="qs-dep-count">
+                  <Show when={spec.composition}>{(composition) => (
+                    <span title="specs deste épico">{composition().items.length}</span>
+                  )}</Show>
                   <Show when={spec.deps.up.length}><span>↑{spec.deps.up.length}</span></Show>
                   <Show when={spec.deps.down.length}><span>↓{spec.deps.down.length}</span></Show>
                 </span>
@@ -588,7 +660,7 @@ function SpecsPanel(props: PanelProps) {
             <Show
               when={spec.sections[tab()]}
               keyed
-              fallback={<Show when={hasDeps(spec)}><DependencyView spec={spec} onPick={pick} /></Show>}
+              fallback={<Show when={hasView(spec)}><DependencyView spec={spec} onPick={pick} /></Show>}
             >
               {(section) => (
                 <>
