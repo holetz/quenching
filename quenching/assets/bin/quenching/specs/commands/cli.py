@@ -401,6 +401,10 @@ def build_parser() -> tuple[argparse.ArgumentParser, argparse._SubParsersAction]
 
     sp = add_json(sub.add_parser("schedule", help="derive dates and the critical path"))
     add_spec(sp, False)
+    sp.add_argument("--all", action="store_true",
+                    help="schedule every spec in the store, archived and edge-less included "
+                         "(the default selects the open specs that declare an edge plus their "
+                         "transitive dependencies); refuses with --spec")
 
     _add_new(sub)
     _add_read(sub)

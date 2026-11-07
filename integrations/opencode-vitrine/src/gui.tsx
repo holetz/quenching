@@ -9,7 +9,7 @@ import {
   type PanelProps,
   type PanelTab,
 } from "@opencode/plugin/gui"
-import { Vitrine, type Detail, type Quenching, type QuenchingUpdate, type Row, type TaskInfo, type Touch } from "./rpc.js"
+import { Vitrine, type Detail, type Neighbor, type Quenching, type QuenchingUpdate, type Row, type TaskInfo, type Touch } from "./rpc.js"
 
 const specsTab: PanelTab = { id: "specs", title: "Specs", closable: "hover" }
 const EVIDENCE: Record<string, string> = {
@@ -150,7 +150,91 @@ const css = `
 .qs-task.blocked .qs-state { color: #f87171; }
 .qs-state { width: 10px; flex: none; }
 .qs-task-text { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.qs-dep-count { display: inline-flex; gap: 3px; margin-left: 5px; font-variant-numeric: tabular-nums; opacity: .75; }
+.qs-deps { display: flex; flex-direction: column; gap: 10px; padding-bottom: 6px; }
+.qs-dep-group { display: flex; flex-direction: column; gap: 4px; }
+.qs-dep-label { font-size: 10px; text-transform: uppercase; letter-spacing: .08em; opacity: .6; }
+.qs-dep-list { display: flex; flex-direction: column; border: 1px solid var(--border); border-radius: 6px; overflow: hidden; }
+.qs-dep { display: grid; grid-template-columns: auto 1fr; gap: 2px 8px; width: 100%; padding: 5px 8px; border: 0; border-bottom: 1px solid var(--border); background: transparent; color: inherit; font: inherit; text-align: left; cursor: pointer; }
+.qs-dep:last-child { border-bottom: 0; }
+.qs-dep:hover { background: color-mix(in srgb, currentColor 6%, transparent); }
+.qs-dep-id { font-variant-numeric: tabular-nums; opacity: .6; }
+.qs-dep.critical .qs-dep-id { opacity: 1; font-weight: 600; color: color-mix(in srgb, #a86f00 78%, currentColor); }
+.qs-dep-title { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.qs-dep-meta { grid-column: 1 / -1; font-size: 11px; opacity: .55; }
 `
+
+/** O que o `schedule` sabe de uma vizinha, numa linha: entrega, caminho crítico, atraso e janela. */
+function depMeta(node: Neighbor): string {
+  const bits: string[] = []
+  if (node.phase === "archive") bits.push("arquivada")
+  if (node.critical) bits.push("caminho crítico")
+  if (node.slip > 0) bits.push(`+${node.slip}d`)
+  if (node.start || node.target) bits.push(`${node.start || "?"} → ${node.target || "?"}`)
+  return bits.join(" · ")
+}
+
+function hasDeps(spec: Detail): boolean {
+  return spec.deps.up.length > 0 || spec.deps.down.length > 0 || spec.deps.cycle.length > 0
+}
+
+function DependencyGroup(props: {
+  label: string
+  hint: string
+  nodes: Neighbor[]
+  empty: string
+  onPick: (id: number) => void
+}) {
+  return (
+    <div class="qs-dep-group">
+      <div class="qs-dep-label" title={props.hint}>{props.label}</div>
+      <Show when={props.nodes.length > 0} fallback={<div class="qs-mute">{props.empty}</div>}>
+        <div class="qs-dep-list">
+          <For each={props.nodes}>{(node) => (
+            <button
+              class="qs-dep"
+              classList={{ critical: node.critical }}
+              title={`${node.id} — ${node.title}`}
+              onClick={() => props.onPick(node.id)}
+            >
+              <span class="qs-dep-id">{node.id}</span>
+              <span class="qs-dep-title">{node.title}</span>
+              <Show when={depMeta(node)}>{(meta) => <span class="qs-dep-meta">{meta()}</span>}</Show>
+            </button>
+          )}</For>
+        </div>
+      </Show>
+    </div>
+  )
+}
+
+/** A aba de dependências: as specs que esta espera e as que esperam por ela, ambas clicáveis. */
+function DependencyView(props: { spec: Detail; onPick: (id: number) => void }) {
+  return (
+    <div class="qs-deps">
+      <Show when={props.spec.deps.cycle.length > 0}>
+        <div class="qs-why" title="ciclo de dependência">
+          <span>⚠</span>
+          <span>ciclo: {props.spec.deps.cycle.join(" → ")} — nada é agendado enquanto ele existir</span>
+        </div>
+      </Show>
+      <DependencyGroup
+        label="Acima — esta spec espera por"
+        hint="as specs nomeadas no dependsOn desta"
+        nodes={props.spec.deps.up}
+        empty="nada acima: nenhuma dependência declarada"
+        onPick={props.onPick}
+      />
+      <DependencyGroup
+        label="Abaixo — esperam por esta"
+        hint="as specs que nomeiam esta no dependsOn delas"
+        nodes={props.spec.deps.down}
+        empty="nada abaixo: nenhuma spec declara que depende desta"
+        onPick={props.onPick}
+      />
+    </div>
+  )
+}
 
 function SpecsPanel(props: PanelProps) {
   const ctx = usePlugin()
@@ -485,24 +569,48 @@ function SpecsPanel(props: PanelProps) {
                 {section.heading}
               </button>
             )}</For>
+            <Show when={hasDeps(spec)}>
+              <button
+                class="qs-tab"
+                classList={{ active: tab() === spec.sections.length }}
+                title="quem esta spec espera e quem espera por ela"
+                onClick={() => setTab(spec.sections.length)}
+              >
+                Dependências
+                <span class="qs-dep-count">
+                  <Show when={spec.deps.up.length}><span>↑{spec.deps.up.length}</span></Show>
+                  <Show when={spec.deps.down.length}><span>↓{spec.deps.down.length}</span></Show>
+                </span>
+              </button>
+            </Show>
           </div>
           <div class="qs-section">
-            <Show when={spec.sections[tab()]?.heading === "Tasks"}>
-              <div class="qs-task-list">
-                <For each={spec.tasks}>{(item) => (
-                  <button
-                    class="qs-task"
-                    classList={{ done: item.state === "x", blocked: item.blocked }}
-                    title={item.text}
-                    onClick={() => void attach(spec.id, item.id)}
-                  >
-                    <span class="qs-state">{item.state === "x" ? "✓" : item.blocked ? "!" : "·"}</span>
-                    <span class="qs-task-text">{item.text}</span>
-                  </button>
-                )}</For>
-              </div>
+            <Show
+              when={spec.sections[tab()]}
+              keyed
+              fallback={<Show when={hasDeps(spec)}><DependencyView spec={spec} onPick={pick} /></Show>}
+            >
+              {(section) => (
+                <>
+                  <Show when={section.heading === "Tasks"}>
+                    <div class="qs-task-list">
+                      <For each={spec.tasks}>{(item) => (
+                        <button
+                          class="qs-task"
+                          classList={{ done: item.state === "x", blocked: item.blocked }}
+                          title={item.text}
+                          onClick={() => void attach(spec.id, item.id)}
+                        >
+                          <span class="qs-state">{item.state === "x" ? "✓" : item.blocked ? "!" : "·"}</span>
+                          <span class="qs-task-text">{item.text}</span>
+                        </button>
+                      )}</For>
+                    </div>
+                  </Show>
+                  <ctx.ui.Markdown text={section.body || "_sem conteúdo_"} class="qs-md" />
+                </>
+              )}
             </Show>
-            <ctx.ui.Markdown text={spec.sections[tab()]?.body || "_sem conteúdo_"} class="qs-md" />
           </div>
         </div>
       )}</Show>

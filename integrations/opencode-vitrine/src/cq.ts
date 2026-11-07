@@ -260,11 +260,7 @@ export function setReadRunner(runner: typeof readRunner): void {
 
 const reads = singleFlight<unknown>()
 
-/**
- * Uma leitura `--json` do `cq`; `undefined` quando o comando recusa ou não devolve JSON.
- * A mesma leitura em voo é compartilhada e no máximo `CQ_CONCURRENCY` rodam ao mesmo tempo.
- */
-export function cqJson<T>(cwd: string, args: string[], timeout = READ_TIMEOUT): Promise<T | undefined> {
+function readJson<T>(cwd: string, args: string[], timeout: number, accept: (code: number) => boolean) {
   return reads(`${cwd}\0${args.join("\0")}`, async () => {
     const { launch } = await cqBinary(cwd)
     const run = await cqSlot(async () => {
@@ -277,11 +273,27 @@ export function cqJson<T>(cwd: string, args: string[], timeout = READ_TIMEOUT): 
         cqStats.running -= 1
       }
     })
-    if (run.code !== 0) return undefined
+    if (!accept(run.code)) return undefined
     try {
       return JSON.parse(run.stdout) as T
     } catch {
       return undefined
     }
   }) as Promise<T | undefined>
+}
+
+/**
+ * Uma leitura `--json` do `cq`; `undefined` quando o comando recusa ou não devolve JSON.
+ * A mesma leitura em voo é compartilhada e no máximo `CQ_CONCURRENCY` rodam ao mesmo tempo.
+ */
+export function cqJson<T>(cwd: string, args: string[], timeout = READ_TIMEOUT): Promise<T | undefined> {
+  return readJson<T>(cwd, args, timeout, (code) => code === 0)
+}
+
+/**
+ * A mesma leitura, mas um exit 1 ainda entrega o payload: o `schedule` sai 1 num ciclo de
+ * dependência, e o ciclo é justamente o dado que o painel precisa mostrar.
+ */
+export function cqJsonPartial<T>(cwd: string, args: string[], timeout = READ_TIMEOUT): Promise<T | undefined> {
+  return readJson<T>(cwd, args, timeout, (code) => code === 0 || code === 1)
 }

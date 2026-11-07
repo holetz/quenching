@@ -69,10 +69,19 @@ def cmd_schedule(args, root: str, out: Emitter) -> int:
         return out.emit_err(args.json, err)
     infos = _infos(backend)
     spec = str(args.spec) if args.spec is not None else None
+    every = getattr(args, "all", False)
+    if spec is not None and every:
+        return out.emit_err(args.json, {
+            "code": "sp-conflicting-selection", "exit": 2,
+            "message": "pass --spec or --all, not both"})
     if spec is not None and spec not in infos:
         return out.emit_err(args.json, {"code": "sp-unknown-id", "exit": 2, "id": spec,
                                        "message": f"no spec with id '{spec}'"})
-    result = schedule(infos, [spec] if spec is not None else None)
+    # `--all` is the reader that needs both directions of the graph: the specs waiting for a
+    # node are the nodes that name it, and an archived dependent or a spec with no edge of
+    # its own is outside the default selection.
+    selected = list(infos) if every else ([spec] if spec is not None else None)
+    result = schedule(infos, selected)
     cycle = result["cycle"]
     human = ("dependency cycle: " + " -> ".join(cycle)) if cycle else "\n".join(
         f"{node['id']} — start: {node['start']}, target: {node['target']}; "
