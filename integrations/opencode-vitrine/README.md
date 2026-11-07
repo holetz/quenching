@@ -10,6 +10,11 @@ list. The detail shows the whole spec document in tabs (Overview, Problem, Propo
 header repeats the board signals: stage, priority (P1–P4), complexity, age, task progress, runner
 state, block reason and assignee. Tasks are clickable and attach to the composer.
 
+A **Dependências** tab carries the spec's place in the dependency graph: who it waits for (above)
+and who waits for it (below), each neighbour one click away, with the archive state, the critical
+path and the days of slip that `cq specs schedule` derives. It reads the whole graph in one call
+(`cq specs schedule --all`), so a dependent already archived is not lost.
+
 ## Requirements
 
 - OpenCode Desktop with GUI parts. The panel is a `Panel` in the `side` region plus the `/specs`
@@ -88,7 +93,7 @@ The plugin runs inside `opencode-cli serve`, so it must never hold the service:
 - at most two `cq` reads run at once, the same read in flight is shared, reads time out at 15 s,
   and a process that prints more than 8 MB is killed;
 - opening the panel reads at most 12 specs outside `plans` (three `cq` each); the rest enter on
-  the next openings.
+  the next openings. The dependency graph is one further read, shared in flight and kept 30 s.
 
 ## Layout
 
@@ -108,3 +113,7 @@ The plugin runs inside `opencode-cli serve`, so it must never hold the service:
 This package is installed by configuration, not by `cq deploy`: a deployed target receives the
 command surface and agents, not this desktop panel. It also does not update its own checkout;
 the button only writes the target's surface.
+
+A `cq` older than `schedule --all` still fills the **Dependências** tab: the read falls back to the
+default schedule, which holds the open specs that declare an edge and their dependencies, so a
+dependent archived before the target is updated may be missing until it is.

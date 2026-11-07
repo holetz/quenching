@@ -61,6 +61,15 @@ cq.setReadRunner(async (_launch, args) => {
     const id = Number(args[args.indexOf("--spec") + 1])
     return { code: 0, stdout: JSON.stringify({ id, title: `Spec ${id}`, stage: "approved", phase: "archive", tasks: [] }), stderr: "" }
   }
+  if (args[0] === "specs" && args[1] === "schedule") {
+    // Uma cadeia de 400 nós: o grafo que a aba de dependências lê de uma vez, com `--all`.
+    const nodes = IDS.map((id, index) => ({
+      id: String(id), title: `Spec ${id}`, phase: index % 13 === 0 ? "archive" : "plans",
+      dependsOn: index ? [String(IDS[index - 1])] : [], critical: index % 7 === 0,
+      slipDays: index % 11, start: "2026-10-01", target: "2026-10-20",
+    }))
+    return { code: 0, stdout: JSON.stringify({ cycle: null, nodes, criticalPath: [] }), stderr: "" }
+  }
   return { code: 0, stdout: "{}", stderr: "" }
 })
 
@@ -160,6 +169,17 @@ check(specs.resumeAt(messages.slice(0, 10), cursor) === 0, "uma conversa que enc
 const rewritten = messages.slice()
 rewritten[cursor.count - 1] = { id: "outra" }
 check(specs.resumeAt(rewritten, cursor) === 0, "uma conversa reescrita não recomeça do zero")
+
+// ── 6. dependências: um grafo, as duas direções ──────────────────────────────
+
+type Neighbour = { id: number }
+const detail = (await handlers.detail({ directory, id: IDS[40] })) as
+  { deps: { up: Neighbour[]; down: Neighbour[]; cycle: string[] } }
+check(JSON.stringify(detail.deps.up.map((node) => node.id)) === JSON.stringify([IDS[39]]),
+  "a visão de dependências não achou quem está acima")
+check(JSON.stringify(detail.deps.down.map((node) => node.id)) === JSON.stringify([IDS[41]]),
+  "a visão de dependências não achou quem está abaixo")
+check(detail.deps.cycle.length === 0, "o ciclo apareceu num grafo limpo")
 
 // ── o veredito ───────────────────────────────────────────────────────────────
 
