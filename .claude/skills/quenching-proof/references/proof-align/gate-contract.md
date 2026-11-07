@@ -65,10 +65,10 @@ record. Without an operations front, the code is not applicable.
 ### 6. The gate is cheap without being narrower
 
 A run costs what it writes and what it runs. The gate declares where its temporary files live, how
-many workers it takes, the git configuration it inherits, and the scope of each tier: a task runs
-the diff's tests, a close runs the same selection inside the whole gate, and CI and the release run
-everything. A narrower local scope never replaces CI — it is the same gate, run on less, and the
-merge still waits for the full one.
+many workers it takes, the git configuration it inherits, and the scope of each tier: a task runs a
+targeted proof — the file or directory it touched; a close runs the diff's selection inside the
+whole gate; and CI and the release run everything. A narrower local scope never replaces CI — it is
+the same gate, run on less, and the merge still waits for the full one.
 
 Those four facts are a declaration because this front grades structure, never execution:
 `proof.cost` in `.agents/quenching.json` names the temp root (`isolated` or `system`), the worker
@@ -77,9 +77,10 @@ declaration is a `pf-config-invalid` refusal, so a typo never reads back as an h
 
 `pf-cost-undeclared` is raised when a target that declares layers leaves the contract whole or in
 part undeclared; the message names the missing keys. `pf-temp-shared` is raised when the declared
-temp root is `system`, and `pf-scope-wide` when the close scope is the CI scope. All three are
-judgement: moving a temp root, choosing a scope and bounding workers are changes to the target's
-own runner, and the align never edits a runner.
+temp root is `system`, `pf-scope-wide` when the close scope is the CI scope, and `pf-task-wide` when
+the task scope is the close scope. All four are judgement: moving a temp root, choosing a scope,
+narrowing a task and bounding workers are changes to the target's own runner, and the align never
+edits a runner.
 
 ## Finding codes
 
@@ -96,6 +97,7 @@ The gate contract owns these codes and no other reference defines them:
 | `pf-cost-undeclared` | A target that declares layers leaves the cost contract whole or in part undeclared. | `error` | judgement |
 | `pf-temp-shared` | The declared temp root is the machine's directory, so each run writes the disk. | `error` | judgement |
 | `pf-scope-wide` | The close scope equals the CI scope, so every local run pays the whole suite. | `error` | judgement |
+| `pf-task-wide` | The task scope equals the close scope, so every task pays the close's selection. | `error` | judgement |
 | `pf-coverage-missing` | `.agents/quenching/bin/cq proof ratchet` found no coverage artifact; the target's gate has not produced one. | refusal (exit 2) | refusal |
 | `pf-coverage-invalid` | The coverage artifact exists but cannot be read. | refusal (exit 2) | refusal |
 | `pf-coverage-no-measured-root` | The coverage artifact measures none of the declared measured roots. | refusal (exit 2) | refusal |
