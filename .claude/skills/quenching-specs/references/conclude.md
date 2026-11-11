@@ -2,17 +2,19 @@
 allowed-tools: Bash(cq:*), Bash(cq.cmd:*), Bash, Read, Glob, Grep, Write, Edit, AskUserQuestion, Skill
 ---
 
-# /quenching-specs conclude — review, archive, distil — and hand off
+# /quenching-specs conclude — review, archive, distil, sweep — and hand off
 
 **Input**: `$ARGUMENTS` — the spec id, and optionally its outcome. A conductor launched with
 `--autonomous` adds the word `autonomous`; for a `done` outcome the run then opens the PR itself
 after the green gate, and the `spec-orchestrator` adopts that PR on the `spec-verifier` PASS
 instead of opening a second.
 
-Closes ONE spec out, short of the merge itself. Four things happen, in this order, and each is a
+Closes ONE spec out, short of the merge itself. Five things happen, in this order, and each is a
 separate decision: the whole branch is **reviewed**, the `/docs/` the work *revealed* is
-**written**, the spec is **archived and distilled** into the OKF bundle, and the pre-merge gate is
-**proven green** — then the run **stops**, naming `/quenching-git pr-create` or
+**written**, the spec is **archived and distilled** into the OKF bundle, the project's own
+automation is **swept** for what the run revealed about it — every real defect captured as its own
+spec, for another session — and the pre-merge gate is **proven green** — then the run **stops**,
+naming `/quenching-git pr-create` or
 `/quenching-git merge` as the human's own next command — except that a spec recorded at `low` complexity chains directly
 to `/quenching-git pr-create` through `Skill` after the green gate; under `autonomous` that same
 invocation carries the word `autonomous` and runs unasked.
@@ -78,6 +80,7 @@ is already set is **reported and skipped**, not repeated:
 | archive | the file is in `archive/` with `outcome:` stamped | skip the move; go to distil |
 | distil | no record — it is offered once per conclude | offer it; an empty harvest is a valid answer |
 | release obligations | the branch diff already carries what the standard requires | report it satisfied; re-read the standard only if the diff grew |
+| flow sweep | no record — it is offered once per conclude; the specs it captured are their own evidence | read the front for the captured ids and report them; re-sweep only when this run revealed a new defect |
 | validation gate | no record — it is a verdict on the tree as it stands *now* | always re-run it; a green run from before the last commit proves nothing |
 | already merged | `git branch --merged <base>` lists the work branch, or a `merge`/`pr` record already exists | report that a later `/quenching-git merge` or `/quenching-git pr-create` run already finished this — there is nothing left to hand off |
 
@@ -103,11 +106,12 @@ stops the run with `STATE: blocked` and `NOTE: needs-human: <the question>`.
 | Step 4 — the `## Outcome` draft | written unconfirmed; an exit 2 from `promote` → `needs-human` with the refusal quoted, never `--force` |
 | Step 5 — the distillation plan | as step 3: applied on the work branch for `done`, declined and named for `abandoned` |
 | Step 5 — the release obligations | `done`: applied on the work branch as narrated, the standard quoted in the report |
-| Step 6 — branch behind its base | the base merged in (`git merge --no-edit origin/<base>`, never a rebase), then the gate; a conflict outside the generated mirrors → `git merge --abort` and `needs-human` with the paths |
-| Step 6 — an inconclusive check | `needs-human`, the check named |
-| Step 6 — the abandoned branch-delete offer | keep, recorded in the report |
+| Step 6 — the flow sweep | `done` and `abandoned`: every evidenced candidate is captured unasked with `.agents/quenching/bin/cq specs new`, one spec per candidate, its `## Problem` carrying the inputs; none is developed, and the ids are named in the report |
+| Step 7 — branch behind its base | the base merged in (`git merge --no-edit origin/<base>`, never a rebase), then the gate; a conflict outside the generated mirrors → `git merge --abort` and `needs-human` with the paths |
+| Step 7 — an inconclusive check | `needs-human`, the check named |
+| Step 7 — the abandoned branch-delete offer | keep, recorded in the report |
 
-A red gate is `STATE: failed`, never a question. For a `done` outcome step 6 opens the PR itself;
+A red gate is `STATE: failed`, never a question. For a `done` outcome step 7 opens the PR itself;
 for `abandoned` there is no handoff to make.
 
 ## Workflow
@@ -143,11 +147,19 @@ can choose between finishing them, forcing, or switching to `abandoned`.
 ```bash
 git diff origin/<base>...HEAD   # <base> is the branch record's `base`; NO-REMOTE: git diff <base>...HEAD
 ```
-Against `origin/<base>` because a PR merged through `gh` moves no local ref (step 6 fetches it); the
+Against `origin/<base>` because a PR merged through `gh` moves no local ref (step 7 fetches it); the
 three-dot form keeps the diff to this spec even when the remote base advanced after the cut. This reads
 the whole change for **coherence**, beyond execute's per-task self-review — two tasks that solved the same problem differently, an abstraction that wanted
 extracting once the third caller appeared, a `## Impact` path nothing ever wrote, a standard the
 diff contradicts.
+
+**A rename widens the read from the diff to the corpus.** When the change renames a column, a
+struct, a field or a domain term, grep the whole tree for the old names — `/docs/` included — and
+treat every hit as a finding: fixed on this branch, or named as a deliberate remainder with its
+reason. The three-dot diff cannot show what a sibling branch merged after this one was cut: a
+document generated by another spec's conclude never appears in it, which is exactly how `MOB`
+survived its own rename in a concept written by another spec (11/11/2026). A grep scoped to the
+folders the diff touched is not proof of the corpus.
 
 **Independent Codex review, in parallel, by default when there is quota.** Before reading, run
 `cq codex probe --json`: exit 0 (available) or 2 (unknown) → write the prompt (the diff range
@@ -185,7 +197,15 @@ Decide what crosses with the table in
 §What crosses, what stays; write each through the insert procedure in
 [knowledge-add/homes.md](.agents/quenching/references/knowledge-add/homes.md)
 §The frontmatter stamp §Updating `index.md` §Enriching the glossary §Self-check, stamping
-`authority` honestly. Present them as ONE plan and take one confirmation (under `autonomous`,
+`authority` honestly.
+
+**The names it writes are the branch's, not the spec's.** A column, a table or a term that lands in
+a document is spelled from the registry, the `table_schema` and the standard as they stand on this
+branch — never copied from the spec's own prose, which was written before the branch renamed
+anything. A document that quotes the spec instead of the code lands teaching the vocabulary of the
+day the spec was defined.
+
+Present them as ONE plan and take one confirmation (under `autonomous`,
 §Under `autonomous` answers it).
 
 These land on the branch, in their own commit — or, for `abandoned`, the base checkout (Doctrine).
@@ -298,8 +318,72 @@ history should not carry. The distillation above still runs.
 **Done when:** the distillation offer was made and applied or declined, and the release obligations
 were applied, reported as already satisfied, or reported as none.
 
-### 6. Prove the gate green, then hand off
-Nothing after this point writes anything — the last commit this run makes is step 5's.
+### 6. Sweep the flow itself, and capture what it owes
+The change is finished; the way it was made is evidence too. This step judges the run itself — the
+skills, flow references, agents, standards, harness and deploy surface that carried it — and turns
+each real defect into a spec of its own, captured with the problem and the evidence it needs, for
+another session to develop. The project's automation evolves because its runs leave the defects
+written down instead of carrying them to the next session's memory.
+
+**A candidate is a defect of the project's own automation, evidenced by this run.** All three must
+hold:
+
+1. it is about **how the work was carried**, not what it delivered — the delivered change is the
+   branch's and is already handled here;
+2. this run produced the evidence, quotable: a step that had to be improvised, a reference that
+   contradicted another, a gate that could not see a class of defect, a command whose failure the
+   flow does not anticipate, a rule the run had to invent because no standard had it;
+3. no open spec already covers it — check the front first
+   (`.agents/quenching/bin/cq specs list --json`, matched on the title and on the defect it names)
+   and add a `## Discoveries` line there instead of opening a duplicate.
+
+**What does not qualify matters as much**: a defect of the delivered product, a nit in one file, a
+preference of this session, or an improvement no fact from this run supports. Zero is the normal
+result; a sweep that finds something every time is inventing.
+
+**One spec per candidate, captured and not designed** — the design costs a session, and the session
+that takes it should be the one that argues with the defect:
+
+```bash
+.agents/quenching/bin/cq specs new "<the defect, in one line>" --complexity medium <<'EOF'
+## Problem
+
+<what happened, in this run's own facts: the step, the command and its output, the file:line of the
+reference that misled, the spec and the date — and what the improvement has to make impossible>
+
+**Insumos**
+
+- <path:line of the reference, the standard, the agent definition>
+- <the command that failed, with its exit code and its output quoted>
+- <the spec id and the step of this run where it happened>
+EOF
+```
+
+The problem carries the **inputs** — the paths, the command and its output, the spec id — because
+the session that develops it will not have this conversation. **Never develop the captured spec
+here**: its design and its go belong to whoever takes it, unless the human asks for that improvement
+in this same run, and then it is a new `create` and not a task of this spec.
+
+**Where the improvement lives decides what the spec says.** A defect of a `quenching-*` skill, flow,
+agent or runtime is fixed in the quenching checkout and reaches the repository by `cq deploy`, so
+the `## Problem` names the source path in that checkout and the deploy step, never the generated
+copy in this repository. A defect of this repository's own skill, standard, harness or script is
+fixed here, and the spec says so.
+
+Present the candidates as ONE plan and take one confirmation (under `autonomous`, §Under
+`autonomous` answers it): each candidate with its evidence, and for each the choice between
+capturing it now — the default — and declining it. A declined candidate is named in the report with
+its reason, never silently dropped, and a resumed run re-reads the front instead of opening a second
+spec for the same defect.
+
+For `abandoned`, the sweep is about how the flow carried a spec nobody built; most abandonments
+teach nothing, and that is the correct result.
+**Done when:** every evidenced candidate is captured as its own spec or declined in the report, and
+none was developed in this run.
+
+### 7. Prove the gate green, then hand off
+Nothing after this point writes anything — the last commit this run makes is step 5's, and step 6
+writes only the spec store.
 
 **First the gate: re-run whatever the repo's `## Validation` names — on the WORK BRANCH, before
 merging.** Run it from the checkout that carries the work (the worktree or branch this run is
@@ -389,7 +473,7 @@ the branch-delete offer per
 **Done when:** the gate ran green on the branch and the handoff was named, or the run recorded why
 nothing could be handed off — a red gate, or (abandoned) the branch's own fate decided instead.
 
-### 7. Report
+### 8. Report
 
 **When this run's input carried `autonomous`, skip the read below and the mold with it** — a conductor presents the report, not this run; return the content in the fixed shape the caller specified. Otherwise:
 
@@ -404,7 +488,8 @@ body blocks:
 1. **At close** — fixed. Task progress, `reviewed` / `branch` as they now stand, and — for an
    abandonment — that nothing was adopted and what became of the branch.
 2. **The review** — fixed. What it found and what was done about it (and the Codex line: `Codex: reviewed (<n> findings, <m> reproduced)` or `Codex: fallback (<reason>)`), the docs written in step 3 and
-   step 5, and what the pre-merge gate returned. §Quoting a tool's own output governs the gate's
+   step 5, **what the sweep captured in step 6** — the ids it opened and the candidate it declined,
+   with the reason — and what the pre-merge gate returned. §Quoting a tool's own output governs the gate's
    result, which means **a check that came back inconclusive is named as such, never counted as
    passed**.
 3. **Unresolved `## Discoveries`** — optional, each line named. They are
@@ -413,11 +498,11 @@ body blocks:
 
 Print §The session-size line before the block — `.agents/quenching/bin/cq components session context --json`, read once; exit 1 turns the `→` line into a recommendation to run that handoff **in a new session**, exit 0 and 2 leave it an offer.
 
-Close on §The next-step block, its recommended line naming step 6's handoff — `/quenching-git pr-create`
+Close on §The next-step block, its recommended line naming step 7's handoff — `/quenching-git pr-create`
 or `/quenching-git merge`, whichever was recommended, or `/quenching-specs develop <id>` when
 block 3 has rows and that needs settling first.
-**Done when:** path, outcome, records, both `/docs/` passes and the next-step block are all
-reported.
+**Done when:** path, outcome, records, both `/docs/` passes, what the sweep captured and the
+next-step block are all reported.
 
 ## Invariants to never violate
 
@@ -433,10 +518,17 @@ reported.
   green one.
 - **Never run the gate over a branch that is behind its base.** Report the count and stop; bringing
   it up to date is a write, and which way is the human's call. Under `autonomous` the call is made:
-  the base is merged in (step 6), never rebased.
+  the base is merged in (step 7), never rebased.
 - **This command's own commits end at step 5.** Nothing it does writes to the branch after the gate
-  in step 6, except the base merge `autonomous` runs before that gate — the merge, the PR, and whatever they each commit belong entirely to
+  in step 7, except the base merge `autonomous` runs before that gate — the merge, the PR, and whatever they each commit belong entirely to
   `/quenching-git merge` and `/quenching-git pr-create`, run separately, on the human's own word.
+- **Never develop a swept candidate in the run that found it.** Step 6 captures; the design and the
+  go belong to the session that takes the spec, and only the human asking for that improvement in
+  this same run makes it a new `create`. Never open a sweep spec without the evidence that named
+  it, and never open a second one for a defect an open spec already covers.
+- **Never let the sweep judge the delivered change.** The product's defects are the branch's, and
+  the review already owns them; a candidate that is really the change's own defect belongs to
+  `## Discoveries`, not to a new spec.
 - Never overwrite the `writeOnce` `outcome` record to make reality fit — report the disagreement
   instead, and never edit the frontmatter to get past `.agents/quenching/bin/cq specs record`'s refusal.
 - Never re-run a stage whose signal is already set without saying so and being asked to.
