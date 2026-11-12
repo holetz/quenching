@@ -82,7 +82,7 @@ is already set is **reported and skipped**, not repeated:
 | release obligations | the branch diff already carries what the standard requires | report it satisfied; re-read the standard only if the diff grew |
 | flow sweep | no record — it is offered once per conclude; the specs it captured are their own evidence | read the front for the captured ids and report them; re-sweep only when this run revealed a new defect |
 | validation gate | no record — it is a verdict on the tree as it stands *now* | always re-run it; a green run from before the last commit proves nothing |
-| already merged | `git branch --merged <base>` lists the work branch, or a `merge`/`pr` record already exists | report that a later `/quenching-git merge` or `/quenching-git pr-create` run already finished this — there is nothing left to hand off |
+| already merged | `git branch --merged <base>` lists the work branch, or a `merge`/`pr` record already exists | report that a later `/quenching-git merge` or `/quenching-git pr-create` run already finished this — there is nothing left to hand off but retiring the worktree (step 7) |
 
 `reviewed` is `writeOnce: false`: a diff read again is a new fact. `outcome` is `writeOnce: true` —
 if it is already set and reality disagrees, that is a **finding to report**, never a value to
@@ -110,6 +110,7 @@ stops the run with `STATE: blocked` and `NOTE: needs-human: <the question>`.
 | Step 7 — branch behind its base | the base merged in (`git merge --no-edit origin/<base>`, never a rebase), then the gate; a conflict outside the generated mirrors → `git merge --abort` and `needs-human` with the paths |
 | Step 7 — an inconclusive check | `needs-human`, the check named |
 | Step 7 — the abandoned branch-delete offer | keep, recorded in the report |
+| Step 7 — retiring the worktree of a `done` spec | no question exists: `retire` runs as written, a refusal is reported and never forced |
 
 A red gate is `STATE: failed`, never a question. For a `done` outcome step 7 opens the PR itself;
 for `abandoned` there is no handoff to make.
@@ -470,8 +471,33 @@ the branch-delete offer per
 [specs-conclude/abandoned.md](.agents/quenching/references/specs-conclude/abandoned.md)
 §The branch-delete offer, informed rather than defensive, default **keep** (taken unasked under
 `autonomous`), and record the choice and fate in the report.
-**Done when:** the gate ran green on the branch and the handoff was named, or the run recorded why
-nothing could be handed off — a red gate, or (abandoned) the branch's own fate decided instead.
+
+**Then, for `done`, retire the spec's worktree once the merge is confirmed.** A finished spec's
+worktree is dead weight (a venv and thousands of files), so the run that knows the merge happened
+removes it, with no question and no extra flag. The recorded fact is the `branch` record
+(`work`, `base`) already in hand and the worktree path from `git worktree list`; skip silently
+when the work was done in the base checkout or in a plain branch. Run it from the base's
+checkout, never from the worktree it removes:
+
+```bash
+cd <the base's checkout> && .agents/quenching/bin/cq git worktree retire --path <the spec's worktree> \
+  --branch <branch.work> --base <branch.base> --json
+```
+
+`retire` is the whole rule and this step adds no removal logic of its own: it fetches the remote
+base, requires the branch tip to be an ancestor of it, refuses a dirty tree, and runs
+`git worktree remove` and `git branch -d` without `--force`. **Never pass `--force` or
+`--discard-ignored`.** A refusal is information, not an obstacle — report the `code` or `message`
+it printed and leave the worktree standing: `git-worktree-retire-not-merged` is the ordinary
+answer right after `pr-create`, the PR not being merged yet, and it is reported as "the worktree
+stays until the merge lands; re-run `/quenching-specs conclude <id>` after it, or
+`/quenching-git cleanup`". Exit 1 (ignored files that no `shared.regenerablePaths` entry covers, a
+dirty tree, a branch that stands) is reported with its `ignored` list or message and never retried
+with a stronger flag. A conclude resumed after the merge (the "already merged" row of §Resuming)
+runs only this step.
+**Done when:** the gate ran green on the branch and the handoff was named, the worktree was
+retired or the refusal reported, or the run recorded why nothing could be handed off — a red
+gate, or (abandoned) the branch's own fate decided instead.
 
 ### 8. Report
 
