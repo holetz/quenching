@@ -33,8 +33,11 @@ def covered(key: str) -> bool:
 
 
 def table_keys() -> list[str]:
-    section = TABLE[TABLE.index("| Key |"):]
-    rows = [line for line in section.splitlines()[2:] if line.startswith("| ")]
+    rows = []
+    for line in TABLE[TABLE.index("| Key |"):].splitlines()[2:]:
+        if not line.startswith("| "):
+            break
+        rows.append(line)
     keys = []
     for row in rows:
         first = row.split(" | ")[0]

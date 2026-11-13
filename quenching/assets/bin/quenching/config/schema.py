@@ -192,6 +192,10 @@ for _name, _en, _pt in (
     _k(f"shared.gitConventions.{_name}", "prose", None, "git", "project", "cq git conventions",
        (_en, "A prose directive the git pillar follows, never a template."),
        (_pt, "Uma diretiva em prosa que o pilar git segue, nunca um template."))
+_k("shared.gitIdentity.allowedEmails", "strings", None, "git", "project",
+   "cq git commit, the identity gate",
+   ("Allowed emails", "Who may author or commit here: exact addresses or patterns."),
+   ("E-mails permitidos", "Quem pode ser autor ou committer aqui: endereços ou padrões."))
 _k("delivery.provider", "string", None, "git", "project", "the delivery front",
    ("Delivery provider", "The CI provider, declared explicitly."),
    ("Provedor de entrega", "O provedor de CI, declarado explicitamente."))
@@ -272,6 +276,10 @@ _k("ops.router", "string", None, "ops", "project", "cq ops",
 _k("ops.registry", "string", None, "ops", "project", "cq ops registry",
    ("Ops registry", "The registry of operational commands."),
    ("Registro de operações", "O registro dos comandos operacionais."))
+
+_k("shared.mcp", "object", None, "ops", "project", "cq deploy",
+   ("MCP registration", "Whether deploy registers the quenching MCP server; edit in the file."),
+   ("Registro do MCP", "Se o deploy registra o servidor MCP do quenching; edite no arquivo."))
 
 # — Knowledge —
 _k("shared.okfValidate.warnAsError", "boolean", False, "knowledge", "either",

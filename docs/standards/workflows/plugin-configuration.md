@@ -69,14 +69,62 @@ With root `"backend": "git"`, a third file counts: `quenching.json` on the `quen
 replaces the same key from the other layers, whole. Any other key on the branch is ignored, and
 with any other `backend` the branch is not read at all.
 
-The precedence, lowest to highest, is `default` < `user` < `repository` < `branch`.
+The precedence, lowest to highest, is `default` < `user` < `repository` < `branch`, with the
+`local` layer placed per key by its scope (below).
 `cq config show --effective [--json]` prints every key with its effective value and the layer that
 supplied it, plus each layer's path, `present` and `unparseable` state (the branch layer also
 carries `applies`). A key is one row per `namespace.key`, because layers replace a key whole; the
-exception is a key whose default lives in code as data (`shared.codex` and `shared.autonomy`), shown leaf by leaf
+exception is a key whose default lives in code as data (`shared.codex`, `shared.autonomy`,
+`shared.worktreeSlots`, `shared.workHost` and `shared.contextBudgets`), shown leaf by leaf
 with `default` where no layer declares the leaf. A key absent from every layer and without a
 default in code does not appear. The verb only reads: an unreadable layer is reported on its row of
 `layers` and never fatal.
+
+## The local layer and the key scopes
+
+`.agents/quenching.local.json` is a fourth file: this repository on this machine. It holds the same
+envelope (namespaces only) and stays out of git through `.git/info/exclude`, which
+`cq config set --layer local` writes on its first write — no tracked `.gitignore` changes. A missing
+file is a no-op; an unreadable one is reported in `localConfig.unparseable` and never fatal.
+
+Where a local value lands depends on the key's **scope**, declared once in the key registry
+(`quenching/config/schema.py`, printed by `cq config schema`):
+
+- `project` — the team's contract (`backend`, `shared.worktreeSetup`, `shared.gitConventions`,
+  `shared.hooks`, every `specs`, `ops` and `proof` key, …). A local value is ignored and listed in
+  `localConfig.ignored`, and `show --effective` names it in `warnings`; an editor shows the key
+  locked to the project layer.
+- `machine` — a property of the machine the checkout runs on: `shared.worktreeSlots` (all but
+  `setupIdempotent`), `shared.workHost`, `shared.contextBudgets` and the Codex quota ceilings. The
+  local value wins over every file.
+- `either` — a preference the team may fix: `shared.autonomy`, the rest of `shared.codex`,
+  `shared.okfValidate`, `specs.chat`. The repository wins; the local value fills a leaf the
+  repository leaves out, and beats the user layer.
+
+The local layer merges **leaf by leaf** at the registry's granularity — a local
+`shared.worktreeSlots.max` changes that leaf and keeps the repository's `min` — unlike the user
+layer, whose key the repository replaces whole.
+
+## Writing a key
+
+`cq config set <key> <value> --layer project|local` and `cq config unset <key> --layer …` are the
+only writers. The value is JSON when it parses (`6`, `true`, `["a"]`) and text otherwise; it is
+validated against the registry's type, range and choices (`cq-config-value-invalid`), an unknown key
+is refused (`cq-config-key-unknown`), and a `project` key is refused in the local layer
+(`cq-config-scope-project`). Every other key keeps its value and its place; `unset` also removes
+the blocks it leaves empty. A structured catalog (`specs.subjects`, `shared.hooks`, …) is edited in
+the file. `cq config schema --values` adds each key's effective value and source layer, which is
+what the OpenCode settings page reads.
+
+## The `shared.worktreeSlots` block
+
+`{min, max, waitMinutes, pollSeconds}`, positive integers, and `setupIdempotent: boolean` —
+defaults `4`, `12`, `30`, `30`, `false`, completed leaf by leaf; `max` never drops below `min`.
+`max` is the ceiling `cq git worktree acquire` never cuts past, `min` the floor of free slots
+`cq git stale` keeps out of cleanup, and the wait pair paces `acquire --wait`. `setupIdempotent`
+is the target's word that its `worktreeSetup` survives a second run in a reused slot, which
+silences `cq specs doctor`'s `sp-config-setup-idempotence`. See
+[isolation.md](../../../quenching/references/git/isolation.md) §Worktrees are slots.
 
 ## The seed and the missing-keys check
 

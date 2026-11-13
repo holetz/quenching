@@ -31,6 +31,8 @@ tree. Other namespaces are read by their owning front.
 | `shared.okfValidate` | `{warnAsError: boolean, ignoreGlobs: list of strings}` | `{warnAsError: false, ignoreGlobs: []}`, key by key; wins over `.claude/hooks/hooks-config*.json` | `.agents/quenching/bin/cq knowledge validate` |
 | `shared.contextBudgets` | `{main, worker, conductor}`, positive integers | `{main: 200000, worker: 100000, conductor: 150000}` | `.agents/quenching/bin/cq session context`: `worker` is a **size estimate**, never a stop, and `conductor` is the stop checked between waves; `worker` is also the default of `.agents/quenching/bin/cq specs estimate --worker-budget` |
 | `shared.codex` | `{crossReview: auto \| off, maxUsedPercent: {primary, secondary}, timeoutSeconds, model, executor}` — a bad leaf falls back to its default and is named in `warnings` | `{auto, {80, 90}, 900, gpt-6-astra}`, leaf by leaf | `cq codex` |
+| `shared.gitIdentity` | `{allowedEmails: [address or fnmatch pattern, …]}` | none — nothing is judged | the identity gate (`cq git commit`), failing closed on a malformed value |
+| `shared.mcp` | `{mount: "specs", command: [strings]}` | none — no MCP file is generated | `cq deploy`, from the repository document only |
 | `delivery.provider` | a provider name, declared explicitly | none — absent declares no provider; it chooses no pipeline policy | the delivery front (`delivery/config.py`) |
 | `specs.artifactLanguage` | a non-empty string | none | `.agents/quenching/bin/cq specs`, on the branch or here |
 | `specs.cardAt` | the sibling spelling of `specs.card.at` | none | the card layer, on the branch or here |
@@ -69,5 +71,25 @@ stays the layer below, and the bundle root is the fixed `/docs/` convention no c
 `autonomy`, `contextBudgets`, `okfValidate` and `workHost` blocks and `specs.chat`); `.agents/quenching/bin/cq config check`
 and `cq doctor` list the seeded keys a file lacks. They only report: an existing file is never
 rewritten.
+
+## The local layer, the scopes and the one writer
+
+<!-- rules -->
+
+`.agents/quenching.local.json` is this repository on this machine: the same envelope, kept out of
+git through `.git/info/exclude`. Each key carries a **scope** in the registry
+(`.agents/quenching/bin/cq config schema` prints it), and the scope places the local value:
+
+| Scope | The local layer | Keys |
+| --- | --- | --- |
+| `machine` | wins over every file | `shared.worktreeSlots` (but `setupIdempotent`), `shared.workHost`, `shared.contextBudgets`, the Codex quota ceilings |
+| `either` | fills a key the project leaves out; the project wins | `shared.autonomy`, the rest of `shared.codex`, `shared.okfValidate`, `specs.chat` |
+| `project` | ignored and named in `localConfig.ignored` | everything else — the team's contract |
+
+`.agents/quenching/bin/cq config set <key> <value> --layer project|local` and `unset <key> --layer …`
+are the only writers: each validates the value against the registry, refuses a `project` key in
+the local layer (`cq-config-scope-project`), keeps every other key and its order, and adds the
+local file to `.git/info/exclude` on its first write. `.agents/quenching/bin/cq config show
+--effective` names the layer each value came from, `local` included.
 
 `cq doctor --setup` previews a minimal file from the detected provider and `--write` confirms it; it records the deprecated root `backend`, so prefer `.agents/quenching/bin/cq config init`.
