@@ -46,7 +46,7 @@ class ConcludeFlowSweep(unittest.TestCase):
         self.assertIn("cq deploy", text)
 
     def test_the_sweep_reports_through_the_report_block(self):
-        self.assertIn("what the sweep captured in step 6", step(8))
+        self.assertIn("what the sweep captured in step 6", step(9))
 
     def test_the_invariants_keep_the_sweep_out_of_the_delivered_change(self):
         invariants = CONCLUDE[CONCLUDE.index("## Invariants to never violate"):]
@@ -56,3 +56,29 @@ class ConcludeFlowSweep(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class ConcludeArchivesAfterTheMerge(unittest.TestCase):
+    """The store is a git ref every reader sees at once, so a `done` archive before the merge
+    publishes a close over a PR that can still stall (specs 1518, 1028798, 1030888)."""
+
+    def test_no_done_archive_before_the_hand_off(self):
+        before_merge = CONCLUDE[:CONCLUDE.index("### 8. ")]
+        commands = [line for block in before_merge.split("```")[1::2]
+                    for line in block.splitlines() if "specs promote" in line]
+        self.assertTrue(commands)
+        for line in commands:
+            self.assertIn("--outcome abandoned", line)
+            self.assertNotIn("--outcome done", line)
+
+    def test_step_four_writes_the_outcome_and_archives_only_an_abandonment(self):
+        text = step(4)
+        self.assertIn("### 4. Write `## Outcome`", text)
+        self.assertIn("Do not archive it here", text)
+        self.assertIn("--outcome abandoned", text)
+
+    def test_the_post_merge_close_follows_the_hand_off(self):
+        self.assertLess(CONCLUDE.index("### 7. Prove the gate green"),
+                        CONCLUDE.index("### 8. After the merge: archive and release the worktree"))
+        self.assertIn("cq specs reconcile --write", step(8))
+        self.assertIn("Never archive a `done` spec before its merge", CONCLUDE)

@@ -15,7 +15,9 @@ This command is a launcher. The protocol (waves, routing, budgets, acceptance, a
 
 ### 1. Resolve the set
 Resolve `cq` per [align/tool-resolution.md](.agents/quenching/references/align/tool-resolution.md)
-§Resolving the tool; branch on the exit code. Confirm each id exists with `.agents/quenching/bin/cq specs show --spec <id> --json`.
+§Resolving the tool; branch on the exit code. Close what already merged first —
+`.agents/quenching/bin/cq specs reconcile --write --json` archives every merged spec carrying `## Outcome`, and a
+`needs-human` row is relayed to the human. Confirm each id exists with `.agents/quenching/bin/cq specs show --spec <id> --json`.
 **Done when:** the composite id or the list of spec ids is verified to exist.
 
 ### 2. Check who can run alone

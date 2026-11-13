@@ -11,7 +11,8 @@ Builds the `## Tasks` of ONE spec: writing each task, verifying it under the spe
 policy, reviewing its diff, committing it alone, and recording the spec task after that commit.
 
 **This command stops at the last commit.** Reviewing the whole branch, writing the `/docs/` the work
-revealed, merging, and archiving belong to `/quenching-specs conclude`.
+revealed, merging, and archiving belong to `/quenching-specs conclude` — the archive only after the
+merge.
 
 `Bash` is unrestricted: the verification, `.agents/quenching/bin/cq specs` and Git commands are resolved from the live
 spec. The commit itself is one `.agents/quenching/bin/cq git commit` call, which commits the existing index.
@@ -39,10 +40,11 @@ is under way, or run `.agents/quenching/bin/cq specs list --json` and pick on a 
   --sections "§The precondition"
 ```
 
-The rest of this step is read in **one call** — the tree, the isolation ref, the spec's own state,
-and the environment probe below:
+The rest of this step is read in **one call** — the post-merge close of whatever already merged,
+the tree, the isolation ref, the spec's own state, and the environment probe below:
 
 ```bash
+.agents/quenching/bin/cq specs reconcile --write --json   # archives merged specs carrying ## Outcome
 git status --porcelain
 git branch --list "plan/<id>-<handle>"
 git branch --show-current

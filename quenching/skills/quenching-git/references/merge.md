@@ -67,7 +67,14 @@ commit; send it, with every other pending write, in the same call:
 ```bash
 .agents/quenching/bin/cq specs push
 ```
-**Done when:** the record is stamped and pushed (with an ID) or explicitly skipped (without one).
+Then close the spec, now that its work is merged — the archive waits for the merge, and this is
+the merge:
+```bash
+.agents/quenching/bin/cq specs reconcile --write --json
+```
+A `needs-human` row (`## Outcome` not written, a task still open) is reported and never forced.
+**Done when:** the record is stamped and pushed and the spec archived or its `needs-human` row
+reported (with an ID), or explicitly skipped (without one).
 
 ### 5. Remove the worktree, only after a verified merge
 Only when step 1's worktree list held a **separate** worktree for the merged branch (not the base's

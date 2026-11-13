@@ -2,22 +2,32 @@
 allowed-tools: Bash(cq:*), Bash(cq.cmd:*), Bash, Read, Glob, Grep, Write, Edit, AskUserQuestion, Skill
 ---
 
-# /quenching-specs conclude — review, archive, distil, sweep — and hand off
+# /quenching-specs conclude — review, distil, sweep, hand off — and archive after the merge
 
 **Input**: `$ARGUMENTS` — the spec id, and optionally its outcome. A conductor launched with
 `--autonomous` adds the word `autonomous`; for a `done` outcome the run then opens the PR itself
 after the green gate, and the `spec-orchestrator` adopts that PR on the `spec-verifier` PASS
 instead of opening a second.
 
-Closes ONE spec out, short of the merge itself. Five things happen, in this order, and each is a
-separate decision: the whole branch is **reviewed**, the `/docs/` the work *revealed* is
-**written**, the spec is **archived and distilled** into the OKF bundle, the project's own
-automation is **swept** for what the run revealed about it — every real defect captured as its own
-spec, for another session — and the pre-merge gate is **proven green** — then the run **stops**,
-naming `/quenching-git pr-create` or
-`/quenching-git merge` as the human's own next command — except that a spec recorded at `low` complexity chains directly
-to `/quenching-git pr-create` through `Skill` after the green gate; under `autonomous` that same
-invocation carries the word `autonomous` and runs unasked.
+Closes ONE spec out in two moments, split by the merge. **Before the merge**, five things happen,
+in this order, and each is a separate decision: the whole branch is **reviewed**, the `/docs/` the
+work *revealed* is **written**, `## Outcome` is **written** and the spec **distilled** into the OKF
+bundle, the project's own automation is **swept** for what the run revealed about it — every real
+defect captured as its own spec, for another session — and the pre-merge gate is **proven green** —
+then the run **stops**, naming `/quenching-git pr-create` or `/quenching-git merge` as the human's
+own next command — except that a spec recorded at `low` complexity chains directly to
+`/quenching-git pr-create` through `Skill` after the green gate; under `autonomous` that same
+invocation carries the word `autonomous` and runs unasked. **After the merge**, and only then, the
+spec is **archived** and its worktree released (step 8).
+
+**A `done` spec is archived after its merge, never before.** The spec store is a git ref, not a
+folder inside the PR: an archive is visible to every reader the moment it is written, while the PR
+it describes can still stall, fail its checks or be closed. `cq specs promote --to archive
+--outcome done` refuses while the work ref is not in `origin/<base>`, and `--force` does not reach
+that refusal. The post-merge close is one verb, `cq specs reconcile --write`, and every route to a
+merge ends in it: this command resumed after the merge, `/quenching-git merge`, the
+`spec-orchestrator` after `cq git pr merge`, and the reconciliation at the open of
+`/quenching-specs execute`, `orchestrate` and this command.
 
 **Done work ends on the work branch; abandoned close-out writes land in the checkout holding the
 base.**
@@ -77,12 +87,13 @@ is already set is **reported and skipped**, not repeated:
 | --- | --- | --- |
 | review | `reviewed: {date}` in frontmatter | skip; offer a re-read only if the diff grew since |
 | emergent `/docs/` | it rides with the review — same stage, same commit | skipped with the review |
-| archive | the file is in `archive/` with `outcome:` stamped | skip the move; go to distil |
+| `## Outcome` | the section is filled | skip the draft; go to distil |
 | distil | no record — it is offered once per conclude | offer it; an empty harvest is a valid answer |
 | release obligations | the branch diff already carries what the standard requires | report it satisfied; re-read the standard only if the diff grew |
 | flow sweep | no record — it is offered once per conclude; the specs it captured are their own evidence | read the front for the captured ids and report them; re-sweep only when this run revealed a new defect |
 | validation gate | no record — it is a verdict on the tree as it stands *now* | always re-run it; a green run from before the last commit proves nothing |
-| already merged | `git branch --merged <base>` lists the work branch, or a `merge`/`pr` record already exists | report that a later `/quenching-git merge` or `/quenching-git pr-create` run already finished this — there is nothing left to hand off but retiring the worktree (step 7) |
+| already merged | the work ref is in `origin/<base>`, or a `merge` record exists, or the `pr` record's PR is merged | the hand-off is done: run only step 8, the post-merge close |
+| archived | the spec is in `archive/` with `outcome:` stamped | report it closed; nothing is left to run |
 
 `reviewed` is `writeOnce: false`: a diff read again is a new fact. `outcome` is `writeOnce: true` —
 if it is already set and reality disagrees, that is a **finding to report**, never a value to
@@ -103,14 +114,14 @@ stops the run with `STATE: blocked` and `NOTE: needs-human: <the question>`.
 | Step 1 — open tasks under `done` | `needs-human`; never `--force`, never a switch to `abandoned` |
 | Step 2 — the Codex review | no question exists: probe, review and fallback run as written; a Codex-only finding not reproduced goes to the report, never to a fix |
 | Step 3 — the emergent `/docs/` plan | `done`: the narrated plan is applied on the work branch, unconfirmed — the PR is its human review. `abandoned`: declined; the candidates are named in the report |
-| Step 4 — the `## Outcome` draft | written unconfirmed; an exit 2 from `promote` → `needs-human` with the refusal quoted, never `--force` |
+| Step 4 — the `## Outcome` draft | written unconfirmed; for `abandoned`, an exit 2 from `promote` → `needs-human` with the refusal quoted, never `--force` |
 | Step 5 — the distillation plan | as step 3: applied on the work branch for `done`, declined and named for `abandoned` |
 | Step 5 — the release obligations | `done`: applied on the work branch as narrated, the standard quoted in the report |
 | Step 6 — the flow sweep | `done` and `abandoned`: every evidenced candidate is captured unasked with `.agents/quenching/bin/cq specs new`, one spec per candidate, its `## Problem` carrying the inputs; none is developed, and the ids are named in the report |
 | Step 7 — branch behind its base | the base merged in (`git merge --no-edit origin/<base>`, never a rebase), then the gate; a conflict outside the generated mirrors → `git merge --abort` and `needs-human` with the paths |
 | Step 7 — an inconclusive check | `needs-human`, the check named |
 | Step 7 — the abandoned branch-delete offer | keep, recorded in the report |
-| Step 7 — retiring the worktree of a `done` spec | no question exists: `retire` runs as written, a refusal is reported and never forced |
+| Step 8 — the post-merge close | no question exists: `reconcile --write` and the worktree's release run as written; a `needs-human` row or a refusal is reported and never forced |
 
 A red gate is `STATE: failed`, never a question. For a `done` outcome step 7 opens the PR itself;
 for `abandoned` there is no handoff to make.
@@ -134,8 +145,11 @@ return `STATE: blocked` with `NOTE: needs-human:` carrying the decision sheet.
 ```bash
 .agents/quenching/bin/cq specs status --spec "<id>" --json
 ```
-Read task progress, the `## Outcome` state, and the records — `branch`, `reviewed`, `merge`, `pr`,
-`outcome` — from that payload. Then, for the `## Discoveries` lines themselves, the one body this
+**First close what is already merged:** `.agents/quenching/bin/cq specs reconcile --write --json` archives every
+spec of the front whose work is merged and whose `## Outcome` is written, this one included. A row
+for this spec with `action: archived` → report it closed and run only step 8's worktree release; a
+`needs-human` row is carried to the report. Then read task progress, the `## Outcome` state, and the
+records — `branch`, `reviewed`, `merge`, `pr`, `outcome` — from that payload. Then, for the `## Discoveries` lines themselves, the one body this
 step needs: `.agents/quenching/bin/cq specs section "<id>" Discoveries --json`. Then read git: the
 current branch, whether the work branch exists, and whether it is already merged. Announce the
 outcome and, per §Resuming, which stages this run will actually perform.
@@ -214,7 +228,7 @@ A `## Discoveries` line that gets a doc is resolved in place. No OKF bundle → 
 **Done when:** the emergent docs are written and committed, or the offer was declined, or there is
 no bundle.
 
-### 4. Write `## Outcome` and archive
+### 4. Write `## Outcome`
 **First preserve observed build cost, with provenance.** This is independent of the derived
 `.agents/quenching/bin/cq specs estimate` reading heuristic. Inspect `records.buildCost` from step 1: a valid measured
 record already covers the build and survives a resumed conclude; do not replace it with missing
@@ -245,7 +259,7 @@ Set `source` to runtime, explicit directory/agent ids, measurement command/exit 
 `measurements` contains only observed values, and `reason` is empty. An unknown model/agent
 attribution does not justify a measured whole-build claim.
 
-Write the conclude-owned record **before archive**, through the generic record writer:
+Write the conclude-owned record **before `## Outcome`**, through the generic record writer:
 
 ```bash
 .agents/quenching/bin/cq specs record "<id>" buildCost --set status=measured --set date=<today> \
@@ -262,24 +276,29 @@ For unavailable evidence write no numeric stand-in; an empty scalar is absence, 
 ```
 
 Read the write's exit code; retry a transport failure with backoff, and read an exit-2 refusal
-without repeating it blindly. A failed write stops this step before archive. Report the record's
+without repeating it blindly. A failed write stops this step before `## Outcome`. Report the record's
 status, provenance, per-model values or unavailable reason; calibration is future evidence work,
 not an inference this conclude makes.
 
-`## Outcome` is the archive gate — the spec cannot move without it. Draft it, confirm it (under `autonomous`, §Under `autonomous`), write it:
+`## Outcome` is the archive gate — the post-merge close cannot archive without it, so it is written
+now, while the run still knows what shipped. Draft it, confirm it (under `autonomous`, §Under
+`autonomous`), write it:
 ```bash
 .agents/quenching/bin/cq specs section "<id>" Outcome --write     # body on stdin
-.agents/quenching/bin/cq specs promote "<id>" --to archive --outcome done|abandoned [--force]
 ```
 For `done`: what shipped, what was left out, what the next reader needs — **reviewed, distilled,
-ready for merge**; name neither a merge strategy nor a PR. For `abandoned`: the reason it will not be built is the
-whole content.
+ready for merge**; name neither a merge strategy nor a PR. **Do not archive it here** — the spec
+stays in `plans/` until step 8 runs after the merge.
 
-A refusal (exit 2) lists exactly what is missing or which boxes are open — surface it verbatim and
-let the human decide; **never pass `--force` on your own initiative.** Commit the move on the
-branch — or, for `abandoned`, computed here but committed into the base checkout (Doctrine).
-**Done when:** the file is in `archive/` with its `outcome:` stamped and committed, or the run
-stopped at a refusal the human declined to override.
+For `abandoned`: the reason it will not be built is the whole content, and nothing will merge, so
+the archive happens now:
+```bash
+.agents/quenching/bin/cq specs promote "<id>" --to archive --outcome abandoned
+```
+A refusal (exit 2) lists exactly what is missing — surface it verbatim and let the human decide;
+**never pass `--force` on your own initiative.**
+**Done when:** `## Outcome` is written — and, for `abandoned`, the spec is in `archive/` with its
+`outcome:` stamped — or the run stopped at a refusal the human declined to override.
 
 ### 5. Distil, and settle the release obligations
 This is the last writing step, and everything it writes lands on the **work branch** for `done` — or, for
@@ -437,7 +456,7 @@ When the repo's `## Validation` names
 the scope, follow it; when it does not, run what it says and report the cost as a finding worth a
 selector.
 
-The gate passed — the branch is reviewed, distilled, archived, and proven. For a `done` outcome,
+The gate passed — the branch is reviewed, distilled, its `## Outcome` written, and proven. For a `done` outcome,
 read the complexity from the status payload already in hand. **Under `autonomous` the run opens the
 PR itself, whatever the complexity**, because publication cannot depend on an orchestrator that
 may never exist: the same verb the `low` path chains, with the word `autonomous` as the human's
@@ -463,7 +482,7 @@ record. Do not offer a second handoff or invoke `/quenching-git merge` on the lo
 Use the provider configuration already read in step 1 to name the next command: recommend
 `/quenching-git pr-create` when the configured provider supports the PR route, otherwise
 `/quenching-git merge`. The human picks, and neither is invoked from here. Name the branch and the
-base so the recommendation is copy-pasteable. Add one line: once the merge lands, `/quenching-git cleanup` removes finished work branches and worktrees, listing the ones that must stay (open PR, checked-out worktree, unmerged commits) with the reason; nothing is deleted without the human's confirmation. For an `abandoned` outcome, skip this handoff and
+base so the recommendation is copy-pasteable. Add one line: once the merge lands, `/quenching-specs conclude <id>` archives the spec and releases its worktree (step 8). For an `abandoned` outcome, skip this handoff and
 follow the branch-disposal path below.
 
 For `abandoned`, there is nothing to hand off toward — do not remove any worktree; frame and make
@@ -472,34 +491,44 @@ the branch-delete offer per
 §The branch-delete offer, informed rather than defensive, default **keep** (taken unasked under
 `autonomous`), and record the choice and fate in the report.
 
-**Then, for `done`, retire the spec's worktree once the merge is confirmed.** A finished spec's
-worktree is dead weight (a venv and thousands of files), so the run that knows the merge happened
-removes it, with no question and no extra flag. The recorded fact is the `branch` record
-(`work`, `base`) already in hand and the worktree path from `git worktree list`; skip silently
-when the work was done in the base checkout or in a plain branch. Run it from the base's
-checkout, never from the worktree it removes:
+**Done when:** the gate ran green on the branch and the handoff was named, or the run recorded
+why nothing could be handed off — a red gate, or (abandoned) the branch's own fate decided instead.
+
+### 8. After the merge: archive and release the worktree
+This step runs only once the work is merged — a conclude resumed after the merge (the "already
+merged" row of §Resuming), or right after a `low` or `autonomous` hand-off whose merge already
+landed. Right after `pr-create` the PR is open, nothing here applies, and the run ends at step 9.
+
+```bash
+.agents/quenching/bin/cq specs reconcile --write --json
+```
+
+`reconcile` is the whole archive rule and this step adds none of its own: it fetches, finds every
+spec whose work is merged, and archives as `done` each one carrying `## Outcome` through the same
+gate `promote` applies. A row with `action: needs-human` (`## Outcome` missing, a task still open)
+is reported with its `why` and never forced.
+
+**Then retire the spec's worktree.** A finished spec's worktree is dead weight (a venv and thousands
+of files), so the run that knows the merge happened removes it, with no question and no extra flag.
+The recorded fact is the `branch` record (`work`, `base`) already in hand and the worktree path from
+`git worktree list`; skip silently when the work was done in the base checkout or in a plain
+branch. Run it from the base's checkout, never from the worktree it removes:
 
 ```bash
 cd <the base's checkout> && .agents/quenching/bin/cq git worktree retire --path <the spec's worktree> \
   --branch <branch.work> --base <branch.base> --json
 ```
 
-`retire` is the whole rule and this step adds no removal logic of its own: it fetches the remote
-base, requires the branch tip to be an ancestor of it, refuses a dirty tree, and runs
-`git worktree remove` and `git branch -d` without `--force`. **Never pass `--force` or
-`--discard-ignored`.** A refusal is information, not an obstacle — report the `code` or `message`
-it printed and leave the worktree standing: `git-worktree-retire-not-merged` is the ordinary
-answer right after `pr-create`, the PR not being merged yet, and it is reported as "the worktree
-stays until the merge lands; re-run `/quenching-specs conclude <id>` after it, or
-`/quenching-git cleanup`". Exit 1 (ignored files that no `shared.regenerablePaths` entry covers, a
-dirty tree, a branch that stands) is reported with its `ignored` list or message and never retried
-with a stronger flag. A conclude resumed after the merge (the "already merged" row of §Resuming)
-runs only this step.
-**Done when:** the gate ran green on the branch and the handoff was named, the worktree was
-retired or the refusal reported, or the run recorded why nothing could be handed off — a red
-gate, or (abandoned) the branch's own fate decided instead.
+`retire` fetches the remote base, requires the branch tip to be an ancestor of it, refuses a dirty
+tree, and runs `git worktree remove` and `git branch -d` without `--force`. **Never pass `--force`
+or `--discard-ignored`.** A refusal is information, not an obstacle — report the `code` or
+`message` it printed and leave the worktree standing. Exit 1 (ignored files that no
+`shared.regenerablePaths` entry covers, a dirty tree, a branch that stands) is reported with its
+`ignored` list or message and never retried with a stronger flag.
+**Done when:** the spec is in `archive/` with `outcome: done`, or its `needs-human` row is reported;
+and the worktree was retired or its refusal reported.
 
-### 8. Report
+### 9. Report
 
 **When this run's input carried `autonomous`, skip the read below and the mold with it** — a conductor presents the report, not this run; return the content in the fixed shape the caller specified. Otherwise:
 
@@ -508,7 +537,8 @@ gate, or (abandoned) the branch's own fate decided instead.
   --sections "§The report mold" --rules-only
 ```
 
-Emit §The report mold. The single-spec header line carries the archived locator and the outcome; three
+Emit §The report mold. The single-spec header line carries the locator, its phase (`plans` until the
+post-merge close, `archive` after it) and the outcome; three
 body blocks:
 
 1. **At close** — fixed. Task progress, `reviewed` / `branch` as they now stand, and — for an
@@ -545,6 +575,8 @@ next-step block are all reported.
 - **Never run the gate over a branch that is behind its base.** Report the count and stop; bringing
   it up to date is a write, and which way is the human's call. Under `autonomous` the call is made:
   the base is merged in (step 7), never rebased.
+- **Never archive a `done` spec before its merge.** Step 4 writes `## Outcome`; only step 8, after
+  the merge, archives — and `promote`'s own refusal is the second barrier, not the first.
 - **This command's own commits end at step 5.** Nothing it does writes to the branch after the gate
   in step 7, except the base merge `autonomous` runs before that gate — the merge, the PR, and whatever they each commit belong entirely to
   `/quenching-git merge` and `/quenching-git pr-create`, run separately, on the human's own word.
@@ -564,9 +596,8 @@ next-step block are all reported.
   states.
 - Never bulk-copy a spec into `/docs/`; only what outlives it crosses.
 - Never distil an abandoned spec's decisions as adopted knowledge; `background` is the ceiling.
-- Never edit or delete anything already in `archive/`, with exactly one exception, onto the spec
-  this run is closing: the distillation's `## Outcome` append, which records a fact that did not
-  exist at the archive move and revises nothing the spec claimed. Never touch a spec other than
-  that one, nor an archived spec from an earlier run.
+- Never edit or delete anything already in `archive/`. The distillation's `## Outcome` append
+  lands before the archive, on the spec this run is closing; never touch a spec other than that
+  one, nor an archived spec from an earlier run.
 - Never rewrite history: no amend of a task commit, no force-push, no `--no-verify` and no
   `--no-gpg-sign` on the commits this command makes.

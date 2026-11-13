@@ -237,11 +237,13 @@ questions about the target's live evidence, so there is nothing a probe could fi
 security subject is pillar-shaped and §The git pillar has no align). The `specs` axis hands off to
 the git pillar rather than executing git
 itself — `/quenching-specs execute` invokes `/quenching-git branch` for isolation, and
-`/quenching-specs conclude` reviews, distils, archives, sweeps its own flow — each defect of the
-project's automation becomes its own captured spec, never a task of this one — and proves the
+`/quenching-specs conclude` reviews, writes `## Outcome`, distils, sweeps its own flow — each defect
+of the project's automation becomes its own captured spec, never a task of this one — and proves the
 pre-merge gate green, then
 **names** `/quenching-git pr-create` or `/quenching-git merge` as the human's own next command
-instead of running either.
+instead of running either. The archive waits for the merge: `cq specs reconcile --write` closes every
+merged spec, and `conclude`, `execute`, `orchestrate`, `/quenching-git merge` and the orchestrator
+all run it.
 
 ### The two root commands
 
@@ -392,8 +394,8 @@ only on a spec that met the ready gate (`mcp-not-ready` otherwise, before the qu
 
 What the flow concludes after that approval writes without asking: the `reviewed`, `merge` and
 `outcome` records and `specs_promote` run as the CLI verbs do. The archive is refused (exit 2) only
-by its own content gate — an empty `## Outcome`, or an open task under `done` — never by a
-confirmation; `outcome` is not a `specs_record` at all, because `specs_promote` is its one writer.
+by its own gate — an empty `## Outcome`, an open task under `done`, or `done` work not yet merged
+into `origin/<base>` — never by a confirmation; `outcome` is not a `specs_record` at all, because `specs_promote` is its one writer.
 
 Size policy: no tool returns a whole spec; reads go by section and by task, listings are paged, and any
 answer above 60,000 characters is cut with `truncated: true` and a `hint` naming the narrower call.
