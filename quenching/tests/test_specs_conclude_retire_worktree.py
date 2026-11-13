@@ -20,7 +20,9 @@ def step(number: int) -> str:
 class ConcludeRetiresTheWorktree(unittest.TestCase):
     def test_step_eight_calls_the_existing_retire_verb_from_the_base_checkout(self):
         text = step(8)
-        self.assertIn("Then retire the spec's worktree", text)
+        self.assertIn("Then give the worktree back", text)
+        self.assertIn("`reconcile` already released it", text)
+        self.assertIn("never `retire` a slot", text)
         self.assertIn("cd <the base's checkout> && .agents/quenching/bin/cq git worktree retire", text)
         self.assertIn("--branch <branch.work> --base <branch.base>", text)
 

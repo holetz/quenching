@@ -128,8 +128,13 @@ def _fetch_base(cwd: str, remote: str, base: str) -> tuple[str | None, str, dict
         return None, "", {"code": "git-worktree-remote-unreadable",
                           "message": f"git could not read the remote: {remote}"}
     if has_remote:
-        code, _out, err = _git_run(cwd, *SAFE, "fetch", "--no-recurse-submodules", "--",
-                                   remote, f"refs/heads/{base}")
+        for attempt in range(5):
+            # Concurrent takers fetch into the same repository; the loser of a ref lock retries.
+            code, _out, err = _git_run(cwd, *SAFE, "fetch", "--no-recurse-submodules", "--",
+                                       remote, f"refs/heads/{base}")
+            if code == 0 or ".lock" not in err:
+                break
+            time.sleep(0.2 * (attempt + 1))
         if code != 0:
             return None, "", {"code": "git-worktree-fetch-failed",
                               "message": f"git fetch {remote} {base} failed: {err.strip()}"}

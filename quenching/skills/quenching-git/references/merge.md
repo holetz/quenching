@@ -78,7 +78,9 @@ reported (with an ID), or explicitly skipped (without one).
 
 ### 5. Remove the worktree, only after a verified merge
 Only when step 1's worktree list held a **separate** worktree for the merged branch (not the base's
-own checkout) and step 3 exited 0:
+own checkout) and step 3 exited 0. A **slot** (`../<repo>-slot-<n>`) is never removed here: step 4's
+`reconcile` already released it (its row's `slot`), and a slot it could not release stays held
+with the reason reported. Any other worktree:
 ```bash
 git -C <the base's checkout> worktree remove <the worktree path>
 ```

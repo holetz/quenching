@@ -508,11 +508,16 @@ spec whose work is merged, and archives as `done` each one carrying `## Outcome`
 gate `promote` applies. A row with `action: needs-human` (`## Outcome` missing, a task still open)
 is reported with its `why` and never forced.
 
-**Then retire the spec's worktree.** A finished spec's worktree is dead weight (a venv and thousands
-of files), so the run that knows the merge happened removes it, with no question and no extra flag.
-The recorded fact is the `branch` record (`work`, `base`) already in hand and the worktree path from
-`git worktree list`; skip silently when the work was done in the base checkout or in a plain
-branch. Run it from the base's checkout, never from the worktree it removes:
+**Then give the worktree back.** A spec built in a **slot** (`../<repo>-slot-<n>`) needs nothing
+more: `reconcile` already released it in the row it archived (`slot.released`) — detached at the
+remote base, unlocked, its `.venv` kept warm for the next spec. A `slot.released: false` row keeps
+the slot held and carries its reason (a dirty tree, ignored files no `shared.regenerablePaths`
+entry covers): report it and leave the slot standing.
+
+A spec built in a worktree that is **not** a slot (cut before slots existed) is retired instead,
+with no question and no extra flag. The recorded fact is the `branch` record (`work`, `base`) and
+the worktree path from `git worktree list`; skip silently when the work was done in the base
+checkout or in a plain branch. Run it from the base's checkout, never from the worktree it removes:
 
 ```bash
 cd <the base's checkout> && .agents/quenching/bin/cq git worktree retire --path <the spec's worktree> \
@@ -521,12 +526,12 @@ cd <the base's checkout> && .agents/quenching/bin/cq git worktree retire --path 
 
 `retire` fetches the remote base, requires the branch tip to be an ancestor of it, refuses a dirty
 tree, and runs `git worktree remove` and `git branch -d` without `--force`. **Never pass `--force`
-or `--discard-ignored`.** A refusal is information, not an obstacle — report the `code` or
-`message` it printed and leave the worktree standing. Exit 1 (ignored files that no
-`shared.regenerablePaths` entry covers, a dirty tree, a branch that stands) is reported with its
-`ignored` list or message and never retried with a stronger flag.
+or `--discard-ignored`, and never `retire` a slot** — a slot is released, never removed, except by
+`/quenching-git cleanup` above the floor. A refusal is information, not an obstacle — report the
+`code` or `message` it printed and leave the worktree standing; it is never retried with a stronger
+flag.
 **Done when:** the spec is in `archive/` with `outcome: done`, or its `needs-human` row is reported;
-and the worktree was retired or its refusal reported.
+and its slot was released, its legacy worktree retired, or the refusal reported.
 
 ### 9. Report
 
