@@ -11,7 +11,8 @@ Builds the `## Tasks` of ONE spec: writing each task, verifying it under the spe
 policy, reviewing its diff, committing it alone, and recording the spec task after that commit.
 
 **This command stops at the last commit.** Reviewing the whole branch, writing the `/docs/` the work
-revealed, merging, and archiving belong to `/quenching-specs conclude`.
+revealed, merging, and archiving belong to `/quenching-specs conclude` — the archive only after the
+merge.
 
 `Bash` is unrestricted: the verification, `.agents/quenching/bin/cq specs` and Git commands are resolved from the live
 spec. The commit itself is one `.agents/quenching/bin/cq git commit` call, which commits the existing index.
@@ -39,10 +40,11 @@ is under way, or run `.agents/quenching/bin/cq specs list --json` and pick on a 
   --sections "§The precondition"
 ```
 
-The rest of this step is read in **one call** — the tree, the isolation ref, the spec's own state,
-and the environment probe below:
+The rest of this step is read in **one call** — the post-merge close of whatever already merged,
+the tree, the isolation ref, the spec's own state, and the environment probe below:
 
 ```bash
+.agents/quenching/bin/cq specs reconcile --write --json   # archives merged specs carrying ## Outcome
 git status --porcelain
 git branch --list "plan/<id>-<handle>"
 git branch --show-current
@@ -87,12 +89,15 @@ checkout. Show the inference on the same line as the confirmation, before stampi
 Never derive `base` from `git merge-base` or `--fork-point`; they answer a commit, not a branch
 name.
 
-**On the base with the work ref alive and unclaimed → cut a worktree over it, unasked, never a
-second branch.** `git worktree add ../<repo>-<id> <work ref>` beside this checkout, then
-`cd <worktree> && .agents/quenching/bin/cq git worktree link` to materialise the declared shared paths, and the declared
-`worktreeSetup` — displayed verbatim, as every cut does — run inside the new tree, exactly as a
-fresh cut would. **Nothing is stamped** — a `branch` record, where one exists, is write-once and
-already true.
+**On the base with the work ref alive and unclaimed → take a slot over it, unasked, never a
+second branch.** `.agents/quenching/bin/cq git worktree acquire --branch <work ref> --base <base> --json`
+switches a free slot (or a new one under `shared.worktreeSlots.max`) to the work ref, links the
+declared shared paths and runs the declared `worktreeSetup` — displayed verbatim, as every cut does —
+inside it. A ref already checked out in a slot returns that slot. **Nothing is stamped** — a
+`branch` record, where one exists, is write-once and already true. At the ceiling the verb refuses
+`git-worktree-slots-full` with each holder named: wait with `--wait`, and on
+`git-worktree-slots-timeout` stop and tell the human the limit was reached — never cut a worktree
+outside the slots.
 
 **On the base branch, with nothing to check out → hand off to `/quenching-git branch`**, which
 cuts the worktree from the remote base (its cost stated, `worktreeSetup`, the `branch:` record and

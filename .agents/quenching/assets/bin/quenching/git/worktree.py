@@ -1,5 +1,6 @@
 """`cq git worktree link` — materialise the target's declared shared paths; `cq git worktree add`
-— cut a branch from the fetched remote base into a new worktree, then link it.
+— cut a branch from the fetched remote base into a new worktree, then link it. The reusable slots
+(`acquire`, `release`, `slots`) live in `slots.py`.
 
 The store is derived from git's common directory rather than from the checkout path.  Asking
 for an absolute common directory is essential: a primary checkout otherwise answers with a
@@ -392,6 +393,9 @@ def _retire(args) -> int:
 
 
 def cmd_worktree(args) -> int:
+    if args.action in ("acquire", "release", "slots"):
+        from quenching.git import slots
+        return getattr(slots, args.action)(args)
     if args.action == "add":
         return _add(args)
     if args.action == "retire":

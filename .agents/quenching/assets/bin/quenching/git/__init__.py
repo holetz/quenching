@@ -71,26 +71,39 @@ def build_parser() -> argparse.ArgumentParser:
                                              "plugin's defaults govern")
     sp.add_argument("--json", action="store_true", help="machine-readable output")
 
-    sp = sub.add_parser("worktree", help="materialise declared shared paths in this checkout, or "
-                                          "cut a branch from the remote base into a new worktree")
-    sp.add_argument("action", choices=("link", "add", "retire"),
-                    help="link: link each declared shared path; add: fetch, cut, link and run the "
-                         "declared `worktreeSetup`; "
+    sp = sub.add_parser("worktree", help="take or give back a reusable worktree slot, materialise "
+                                          "declared shared paths, or cut and retire a worktree")
+    sp.add_argument("action", choices=("acquire", "release", "slots", "link", "add", "retire"),
+                    help="acquire: lock a free slot (or a new one under shared.worktreeSlots.max), "
+                         "switch it to --branch, link and run `worktreeSetup`; release: detach a "
+                         "clean slot at the remote base and unlock it; slots: list the slots and "
+                         "who holds each; link: link each declared shared path; add: fetch, cut, "
+                         "link and run the declared `worktreeSetup` in a one-off worktree; "
                          "retire: remove a merged spec's worktree and `branch -d` its branch")
     sp.add_argument("--path", metavar="PATH", help="add: the new worktree's directory; "
-                                                    "retire: the worktree to remove")
-    sp.add_argument("--branch", metavar="BRANCH", help="add: the branch to create; "
-                                                        "retire: the branch it holds")
-    sp.add_argument("--base", metavar="BASE", help="add: the base branch to cut from; "
-                                                    "retire: the base it must be merged into")
+                                                    "retire/release: the worktree to give back")
+    sp.add_argument("--branch", metavar="BRANCH", help="acquire/add: the branch to switch to or "
+                                                        "create; retire/release: the branch it holds")
+    sp.add_argument("--base", metavar="BASE", help="acquire/add: the base branch to cut from; "
+                                                    "retire/release: the base it must be merged into "
+                                                    "(release: default the remote's HEAD)")
     sp.add_argument("--remote", default="origin", metavar="REMOTE",
                     help="add/retire: the remote whose base is fetched (default: origin); a remote "
                          "that does not exist falls back to the local base")
     sp.add_argument("--spec", metavar="ID",
                     help="add: stamp this spec's `branch` record (base, work) once the worktree "
                          "is cut; refused before any write when the spec does not own --branch")
+    sp.add_argument("--wait", action="store_true",
+                    help="acquire: at the limit, retry every shared.worktreeSlots.pollSeconds "
+                         "until a slot frees or the wait times out (then needs-human)")
+    sp.add_argument("--timeout-minutes", type=int, dest="timeout_minutes", metavar="N",
+                    help="acquire --wait: give up after N minutes (default "
+                         "shared.worktreeSlots.waitMinutes, 30)")
+    sp.add_argument("--session", metavar="ID",
+                    help="acquire: the session named in the lock reason (default "
+                         "$OPENCODE_SESSION_ID or $CLAUDE_SESSION_ID)")
     sp.add_argument("--no-setup", action="store_true",
-                    help="add: do not run the declared `worktreeSetup` in the new worktree "
+                    help="acquire/add: do not run the declared `worktreeSetup` in the new worktree "
                          "(it runs by default, once, after the link)")
     sp.add_argument("--discard-ignored", action="store_true",
                     help="retire: remove the worktree even though it holds ignored files "

@@ -58,3 +58,37 @@ def missing_keys(document: dict, root: str) -> list[str]:
 def read_repository(root: str) -> dict | None:
     """The repository document through the active provider, `None` when absent or not a JSON object."""
     return repository_document(root)[0]
+
+
+def set_leaf(document: dict, key: str, value) -> object:
+    """Set `key` (dotted) in `document` in place, creating the blocks on its path; every other
+    key keeps its place. Returns the previous value (None when absent)."""
+    parts = key.split(".")
+    node = document
+    for part in parts[:-1]:
+        if not isinstance(node.get(part), dict):
+            node[part] = {}
+        node = node[part]
+    previous = node.get(parts[-1])
+    node[parts[-1]] = value
+    return previous
+
+
+def unset_leaf(document: dict, key: str) -> tuple[bool, object]:
+    """Remove `key` from `document` in place, then every block it leaves empty.
+    `(removed, previous)`."""
+    parts = key.split(".")
+    trail, node = [], document
+    for part in parts[:-1]:
+        if not isinstance(node.get(part), dict):
+            return False, None
+        trail.append((node, part))
+        node = node[part]
+    if parts[-1] not in node:
+        return False, None
+    previous = node.pop(parts[-1])
+    for parent, part in reversed(trail):
+        if parent[part]:
+            break
+        del parent[part]
+    return True, previous
