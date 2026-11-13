@@ -20,6 +20,7 @@ tree. Other namespaces are read by their owning front.
 | `backend` | `git` · `github` · `azure-boards` (the last two deprecated) | derived from the repository remote | store selection and legacy-value refusal |
 | `specs.card` | `{provider: github \| azure-boards \| none, at: capture}` | `github` on a GitHub remote, else `none` | the card layer, on the branch or here |
 | `shared.worktreeSetup` | a shell command, run as written | none | the isolation cut, after `git worktree add` |
+| `shared.worktreeSlots` | `{min, max, waitMinutes, pollSeconds}`, positive integers, and `setupIdempotent: boolean` | `{min: 4, max: 12, waitMinutes: 30, pollSeconds: 30, setupIdempotent: false}`, key by key; `max` never below `min` | `.agents/quenching/bin/cq git worktree acquire`, `slots` and `cq git stale` (the floor); `setupIdempotent` silences `cq specs doctor`'s `sp-config-setup-idempotence` |
 | `shared.sharedPaths` | a list of repo-relative paths | none — an absent or empty list declares no shared area | `.agents/quenching/bin/cq git worktree link`, from the isolation flow |
 | `shared.regenerablePaths` | a list of repo-relative paths added to the built-in Python caches (`.venv`, `venv`, `__pycache__`, `*.py[cod]`, `.pytest_cache`, `.ruff_cache`, `.mypy_cache`, `.pyright`, `.tox`, `.nox`, `htmlcov`, `.coverage`, `.coverage.*`, `*.egg-info`, `.eggs`, `pip-wheel-metadata`, `.cache`, `.ipynb_checkpoints`, `.hypothesis`, `node_modules`); a slash-less entry matches that name at any depth and a `*` in it matches with `fnmatch`; an entry with a slash (or a trailing slash, `data/`) anchors literally at the root | none — the built-in list still applies, and `build/` and `dist/` stay out on purpose | `.agents/quenching/bin/cq git worktree retire`, which discards matching ignored files without `--discard-ignored`, and `.agents/quenching/bin/cq git stale`, which classifies them as `ignored.regenerable` |
 | `shared.hooks` | `{"<event>": [{"command": "<cmd>", ...}]}` | none — an absent key declares no events | the command that owns the event |
@@ -43,7 +44,7 @@ tree. Other namespaces are read by their owning front.
 | `ops.opsRoot`, `ops.router` | repository-relative paths | none — `op-config-missing` when absent | `.agents/quenching/bin/cq ops` |
 | `ops.registry` | a repository-relative path | `<ops.opsRoot>/README.md` | `.agents/quenching/bin/cq ops registry` |
 | `proof.proofRoot` | a repository-relative path | `tests` | `.agents/quenching/bin/cq proof` |
-| `proof.layers`, `proof.measuredRoots`, `proof.proofExclusions`, `proof.ratchetPath` | proof declarations | documented proof defaults | `.agents/quenching/bin/cq proof` |
+| `proof.layers`, `proof.measuredRoots`, `proof.proofExclusions`, `proof.ratchetPath`, `proof.cost` | proof declarations | documented proof defaults | `.agents/quenching/bin/cq proof` |
 
 `specs.azureStates` is the one key whose absence is a refusal rather than a
 default — a guessed state mapping would not fail loudly, it would read every archived spec as

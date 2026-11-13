@@ -19,6 +19,7 @@ from quenching.common.output import FINDINGS, OK, REFUSAL, NoAbbrevParser, emit,
 from quenching.common.version import VERSION
 from quenching.config.effective import effective
 from quenching.config.host import build_plan, load_settings
+from quenching.config.schema import schema as key_schema
 from quenching.config.seed import missing_keys, read_repository, seed_document
 
 
@@ -151,6 +152,19 @@ def cmd_check(args) -> int:
     return FINDINGS if missing else OK
 
 
+def cmd_schema(args) -> int:
+    payload = {"ok": True, **key_schema()}
+    lines = []
+    for cat in payload["categories"]:
+        lines.append(cat["title"]["en"])
+        for row in (k for k in payload["keys"] if k["category"] == cat["id"]):
+            lock = "" if row["editable"] else "  (read-only)"
+            lines.append(f"  {row['key']:<44} {row['type']:<8} {row['scope']:<8}"
+                         f" default={json.dumps(row['default'], ensure_ascii=False)}{lock}")
+    emit(args.json, payload, "\n".join(lines))
+    return OK
+
+
 def build_parser() -> argparse.ArgumentParser:
     p = NoAbbrevParser(prog="cq config", description="the configuration layers, read-only")
     p.add_argument("--version", action="store_true", help="print the version and exit")
@@ -170,6 +184,9 @@ def build_parser() -> argparse.ArgumentParser:
     ip = sub.add_parser("init", help="seed .agents/quenching.json with every adjustable default")
     ip.add_argument("--write", action="store_true", help="create the file (default: preview)")
     ip.add_argument("--json", action="store_true", help="machine-readable output")
+    sc = sub.add_parser("schema", help="every key with its type, default, category, scope and "
+                                       "copy (English and pt-BR)")
+    sc.add_argument("--json", action="store_true", help="machine-readable output")
     kp = sub.add_parser("check", help="list the seeded keys the file lacks")
     kp.add_argument("--json", action="store_true", help="machine-readable output")
     return p
@@ -184,4 +201,5 @@ def main(argv: list[str]) -> int:
     if not args.cmd:
         parser.print_usage(sys.stderr)
         return REFUSAL
-    return {"host": cmd_host, "export": cmd_export, "init": cmd_init, "check": cmd_check}.get(args.cmd, cmd_show)(args)
+    return {"host": cmd_host, "export": cmd_export, "init": cmd_init, "check": cmd_check,
+            "schema": cmd_schema}.get(args.cmd, cmd_show)(args)
