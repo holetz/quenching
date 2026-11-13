@@ -37,9 +37,13 @@ each row has a tooltip with the full description, the default, the reader and th
 naming the layer the value came from (Project, Local, User, Branch or Default) and, when a layer
 holds it, **Restore default**. A **Write to** selector sends changes to the project file or to
 the local one; a `project` key always goes to the project. Structured catalogs (`specs.subjects`,
-`shared.hooks`, …) are read-only, with **Open in editor**. Settings search finds every key. The
-page registers only on a host whose GUI SDK has `SettingsLayout` (2.3.0 and later); an older
-Desktop keeps the panel and loses only the page.
+`shared.hooks`, …) are read-only, with **Open in editor**. Settings search finds every key. Settings
+leaves the session tab, so the page does not read the project from the session on screen: the Specs
+panel remembers its session's project in window memory, and a **Project** selector at the top of the
+page switches between the projects opened in this window. The Specs panel's header has a settings
+button, and the command palette a **quenching: configurações** command, that open the page on the
+current project. The page and both shortcuts register only on a host whose GUI SDK has
+`SettingsLayout` (2.3.0 and later); an older Desktop keeps the panel and loses only those.
 
 ## Requirements
 
