@@ -13,6 +13,28 @@ owner: [`ci-cd/versioning-release.md`](docs/standards/ci-cd/versioning-release.m
 short version for a consumer: the version is published once, deliberately, as a release — never at a
 spec's own conclude — and `cq --version` is what answers which one you are running.
 
+## 7.8.0
+
+**A spec só é arquivada depois do merge, as worktrees viram slots reaproveitáveis e a configuração
+  se edita pelo OpenCode.** O `cq specs promote --to archive --outcome done` recusa
+  `sp-not-merged`, sem `--force`, até o trabalho estar provadamente mergeado (tip ancestral de
+  `origin/<base>`, registro `merge:` ou PR MERGED). O novo `cq specs reconcile [--write]` é o único
+  verbo pós-merge: busca uma vez, arquiva cada spec mergeada que já tem `## Outcome`, aponta
+  `needs-human` para as demais e libera o slot da spec. O `conclude` escreve o `## Outcome` antes do
+  PR e arquiva no passo 8, depois do merge, e o `next --front` lista `mergedNotArchived`. O
+  `cq git worktree acquire | release | slots` mantém worktrees reaproveitáveis em
+  `../<repo>-slot-<n>`: a spec troca de branch numa árvore já aquecida, com a `.venv` intacta, em vez
+  de o antivírus reescanear uma árvore nova. O `git worktree lock` é o mutex. O
+  `shared.worktreeSlots.max` (12) é o teto, que recusa nomeando quem segura cada slot ou espera com
+  `--wait`. O `min` (4) é o piso que o `stale`/`prune` mantêm. O `worktreeSetup` roda a cada acquire
+  e precisa ser idempotente (`sp-config-setup-idempotence`). A configuração ganhou um registro único
+  de chaves (`cq config schema [--values]`) e uma camada local `.agents/quenching.local.json`, fora do
+  git, aplicada por escopo. O `cq config set|unset --layer project|local` é o escritor. A vitrine do
+  OpenCode, agora no SDK 2.3.0, traz uma página **quenching** nas Configurações, com categorias,
+  tooltips, selo da camada de origem e "restaurar padrão". O gate faz o typecheck da vitrine. Também
+  entram neste release: o `conclude` retira a worktree da spec depois de confirmado o merge (#101), e
+  uma renomeação passa a varrer o corpus e o `conclude` revisa o próprio fluxo (#100).
+
 ## 7.7.0
 
 **O painel do OpenCode mostra onde uma spec está: o que ela espera, quem espera por ela, o que o
