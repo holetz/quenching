@@ -47,6 +47,13 @@ def limits(repo: str) -> dict:
     return out
 
 
+def setup_idempotent(repo: str) -> bool:
+    """`shared.worktreeSlots.setupIdempotent: true` — the target's word that its `worktreeSetup`
+    survives running again over a slot that already holds its dependencies."""
+    raw = namespace(load_config(repo), "shared").get("worktreeSlots")
+    return isinstance(raw, dict) and raw.get("setupIdempotent") is True
+
+
 def _worktrees(cwd: str) -> list[dict]:
     """Every registered worktree, the primary first, read NUL-separated so a lock reason arrives
     unquoted."""

@@ -52,8 +52,9 @@ other command still works. Neither it nor a truncated JSON file is ever raised a
 
 ## Who runs it, and where
 
-The isolation cut runs it — **once**, immediately after `git worktree add`, with **cwd inside the newly
-created worktree**. The cwd is the entire point: the tree that lacks
+The isolation cut runs it — `cq git worktree acquire`, on **every** acquire of a worktree slot,
+immediately after the slot is switched to the spec's branch and linked, with **cwd inside the
+slot** (`cq git worktree add`, the one-off form, runs it once after the cut). The cwd is the entire point: the tree that lacks
 the dependencies is the tree that must install them.
 
 `cq specs` reads the value and never executes it. That split is not ceremony — whether the command
@@ -66,8 +67,25 @@ isolation. `/quenching-specs execute` reports the output and the exit code, and 
 happened. A command whose first token does not resolve is reported as not run, for that reason,
 rather than executed and blamed on the shell.
 
-Only the isolation cut runs it, and only on creation. Re-running setup over a worktree that already
-exists is a second entry point for the same hook and is deliberately not offered.
+Only the isolation cut runs it; there is no second entry point for the same hook.
+
+## The setup must be idempotent
+
+A slot outlives its spec: the next `acquire` switches it to another branch and runs the setup again
+over a tree that already holds the `.venv`, the installed dependencies and whatever the last run
+created. **A declared `worktreeSetup` must be safe to run again** — install into an existing
+environment instead of creating it, skip what is already present, and never fail because a
+directory or a link it makes already exists.
+
+`cq specs doctor` warns `sp-config-setup-idempotence` while `worktreeSetup` is declared and the
+target has not said so. The target says so once, after checking its script:
+
+```json
+{"shared": {"worktreeSlots": {"setupIdempotent": true}}}
+```
+
+The declaration silences the warning and changes nothing else: the setup runs on every acquire
+either way.
 
 **This hook prepares only the code-isolation worktree.** Specs live on the `quenching` branch (or,
 deprecated, in the selected tracker), so no persistent specs worktree exists and this command is

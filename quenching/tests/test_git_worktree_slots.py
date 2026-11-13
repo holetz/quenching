@@ -209,6 +209,31 @@ class CleanupKeepsTheFloor(SlotRepo):
         self.assertEqual(entry["reasons"], ["merged-clean", "slot-above-floor"])
 
 
+class DoctorAsksForAnIdempotentSetup(SlotRepo):
+    def _codes(self, worktree_slots):
+        from quenching.specs.commands.doctor import cmd_doctor
+        from quenching.specs.commands.output import Emitter
+
+        script = os.path.join(self.main, "setup.sh")
+        with open(script, "w") as fh:
+            fh.write("#!/bin/sh\n")
+        os.chmod(script, 0o755)
+        with open(os.path.join(self.main, ".agents", "quenching.json"), "w") as fh:
+            json.dump({"backend": "git", "shared": {"worktreeSetup": "./setup.sh",
+                                                     "worktreeSlots": worktree_slots}}, fh)
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf):
+            cmd_doctor(argparse.Namespace(json=True), self.main, Emitter())
+        return {f["code"]: f for f in json.loads(buf.getvalue())["findings"]}
+
+    def test_a_declared_setup_warns_until_the_target_says_it_is_idempotent(self):
+        found = self._codes({"max": 3})
+        self.assertEqual(found["sp-config-setup-idempotence"]["severity"], "warn")
+        self.assertIn("idempotent", found["sp-config-setup-idempotence"]["message"])
+        self.assertNotIn("sp-config-setup-idempotence",
+                         self._codes({"max": 3, "setupIdempotent": True}))
+
+
 class Limits(unittest.TestCase):
     def test_defaults_and_a_ceiling_never_below_the_floor(self):
         with mock.patch.object(slots, "load_config", return_value={}):
