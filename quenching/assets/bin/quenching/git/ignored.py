@@ -99,11 +99,16 @@ def classify(path: str, entries: list[str], rules: list[str]) -> tuple[list[str]
         if is_regenerable(entry, rules):
             regenerable.append(entry)
         elif entry.endswith("/"):
+            walked = list(os.walk(os.path.join(path, entry)))
             files = [os.path.relpath(os.path.join(root, name), path)
-                     for root, _dirs, names in os.walk(os.path.join(path, entry))
-                     for name in names]
+                     for root, _dirs, names in walked for name in names]
             if not files:
-                unrecognized.append(entry)
+                # No file to lose: the directory is regenerable when every empty leaf it holds is
+                # (`.quenching/` holding only an emptied `.quenching/coverage`); an empty unknown
+                # directory is still a leaf nobody declared.
+                leaves = [os.path.relpath(root, path) for root, dirs, _names in walked if not dirs]
+                covered = bool(leaves) and all(is_regenerable(leaf, rules) for leaf in leaves)
+                (regenerable if covered else unrecognized).append(entry)
             for name in files:
                 (regenerable if is_regenerable(name, rules) else unrecognized).append(name)
         else:

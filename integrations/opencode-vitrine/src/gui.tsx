@@ -1,9 +1,10 @@
-import { createEffect, createSignal, For, onCleanup, Show } from "solid-js"
+import { createEffect, createMemo, createSignal, For, onCleanup, Show } from "solid-js"
 import {
   Command,
   MenuItem,
   Panel,
   Plugin,
+  SettingsPage,
   Style,
   usePlugin,
   type PanelProps,
@@ -12,6 +13,7 @@ import {
 import {
   Vitrine, type Composite, type Composition, type Detail, type Member, type Neighbor, type Quenching,
   type QuenchingUpdate, type Row, type TaskInfo, type Touch,
+  type ConfigKey, type ConfigLayer, type ConfigRead, type ConfigSchema, type ConfigWrite,
 } from "./rpc.js"
 
 const specsTab: PanelTab = { id: "specs", title: "Specs", closable: "hover" }
@@ -717,6 +719,261 @@ function SpecsPanel(props: PanelProps) {
   )
 }
 
+type Lang = "en" | "pt-BR"
+
+const SETTINGS_COPY: Record<Lang, Record<string, string>> = {
+  "pt-BR": {
+    title: "quenching",
+    description: "A configuração do quenching deste projeto. Projeto é .agents/quenching.json, o contrato do time; Local é .agents/quenching.local.json, só esta máquina, fora do git.",
+    noSession: "Abra uma sessão num projeto para ver a configuração dele.",
+    loading: "Lendo a configuração…",
+    writeTo: "Gravar em",
+    writeToHint: "Para onde vão as alterações. Uma chave de projeto vai sempre para o projeto.",
+    project: "Projeto",
+    local: "Local",
+    default: "Padrão",
+    user: "Usuário",
+    repository: "Projeto",
+    branch: "Branch",
+    restore: "Restaurar padrão",
+    open: "Abrir no editor",
+    reload: "Recarregar",
+    save: "Enter salva",
+    defaultIs: "Padrão",
+    readBy: "Lido por",
+    scope: "Escopo",
+    scopeProject: "projeto — contrato do time; a camada local não vale",
+    scopeMachine: "máquina — o valor local vence o do projeto",
+    scopeEither: "qualquer — o projeto vence; o local preenche o que falta",
+    none: "nenhum",
+    saved: "Configuração gravada",
+    refused: "Não gravado",
+  },
+  en: {
+    title: "quenching",
+    description: "This project's quenching configuration. Project is .agents/quenching.json, the team's contract; Local is .agents/quenching.local.json, this machine only, out of git.",
+    noSession: "Open a session in a project to see its configuration.",
+    loading: "Reading the configuration…",
+    writeTo: "Write to",
+    writeToHint: "Where changes go. A project key always goes to the project.",
+    project: "Project",
+    local: "Local",
+    default: "Default",
+    user: "User",
+    repository: "Project",
+    branch: "Branch",
+    restore: "Restore default",
+    open: "Open in editor",
+    reload: "Reload",
+    save: "Enter saves",
+    defaultIs: "Default",
+    readBy: "Read by",
+    scope: "Scope",
+    scopeProject: "project — the team's contract; the local layer does not count",
+    scopeMachine: "machine — the local value wins over the project",
+    scopeEither: "either — the project wins; local fills what it leaves out",
+    none: "none",
+    saved: "Configuration saved",
+    refused: "Not saved",
+  },
+}
+
+function shown(value: unknown): string {
+  if (value === null || value === undefined) return ""
+  if (Array.isArray(value)) return value.join(", ")
+  if (typeof value === "object") return JSON.stringify(value)
+  return String(value)
+}
+
+/** O texto de um campo, como JSON que o `cq config set` valida. */
+function encode(entry: ConfigKey, text: string): string {
+  const raw = text.trim()
+  if (entry.type === "paths" || entry.type === "strings") {
+    return JSON.stringify(raw ? raw.split(",").map((item) => item.trim()).filter(Boolean) : [])
+  }
+  if (entry.type === "integer" || entry.type === "number") return raw
+  return JSON.stringify(raw)
+}
+
+const settingsCss = `
+.qcfg-badge { display: inline-flex; align-items: center; margin-left: 6px; padding: 0 6px; height: 16px; border-radius: 999px; font-size: 10px; border: 1px solid color-mix(in srgb, currentColor 18%, transparent); opacity: .75; vertical-align: middle; }
+.qcfg-badge.local { color: color-mix(in srgb, #2f6fd0 78%, currentColor); opacity: 1; }
+.qcfg-badge.repository, .qcfg-badge.branch { color: color-mix(in srgb, #1f6f43 78%, currentColor); opacity: 1; }
+.qcfg-lock { margin-left: 4px; opacity: .55; font-size: 10px; }
+.qcfg-control { display: inline-flex; align-items: center; gap: 4px; }
+.qcfg-input { width: 220px; }
+.qcfg-tip { max-width: 360px; white-space: pre-line; }
+.qcfg-error { color: #f87171; font-size: 12px; }
+`
+
+function QuenchingSettings(props: { target?: string; onEntries: (entries: { id: string; title: string; description: string; keywords: string }[]) => void }) {
+  const ctx = usePlugin()
+  const rpc = () => ctx.client.rpc(Vitrine)
+  const lang = (): Lang => (ctx.locale.locale().toLowerCase().startsWith("pt") ? "pt-BR" : "en")
+  const t = (key: string) => SETTINGS_COPY[lang()][key] ?? key
+  const directory = () => ctx.sessions.current()?.directory
+  const [schema, setSchema] = createSignal<ConfigSchema>()
+  const [error, setError] = createSignal("")
+  const [layer, setLayer] = createSignal<ConfigLayer>("project")
+  const [drafts, setDrafts] = createSignal<Record<string, string>>({})
+
+  const load = async () => {
+    const dir = directory()
+    if (!dir) return
+    setError("")
+    try {
+      const read = await rpc().config({ directory: dir }) as ConfigRead
+      if (!read.ok) return setError(read.error)
+      const parsed = JSON.parse(read.json) as ConfigSchema
+      setSchema(parsed)
+      setDrafts({})
+      props.onEntries(parsed.keys.map((entry) => ({
+        id: `quenching.${entry.key}`,
+        title: entry.copy[lang()].title,
+        description: entry.copy[lang()].summary,
+        keywords: `${entry.key} ${entry.copy.en.title} quenching`,
+      })))
+    } catch (cause) {
+      setError(String(cause))
+    }
+  }
+  createEffect(() => {
+    directory()
+    void load()
+  })
+
+  const write = async (entry: ConfigKey, value: string, unset = false, into?: ConfigLayer) => {
+    const dir = directory()
+    if (!dir) return
+    const target = into ?? (entry.scope === "project" ? "project" : layer())
+    const result = await rpc().configWrite({ directory: dir, key: entry.key, layer: target, value, unset }) as ConfigWrite
+    if (!result.ok) {
+      ctx.toast.show({ title: t("refused"), description: result.message })
+      return
+    }
+    ctx.toast.show({ title: t("saved"), description: `${entry.key} → ${target === "local" ? t("local") : t("project")}` })
+    await load()
+  }
+
+  const valueOf = (entry: ConfigKey) => schema()?.values[entry.key]
+  const sourceOf = (entry: ConfigKey) => valueOf(entry)?.source ?? "default"
+  const tooltip = (entry: ConfigKey) => {
+    const scope = { project: t("scopeProject"), machine: t("scopeMachine"), either: t("scopeEither") }[entry.scope]
+    return [
+      entry.copy[lang()].summary,
+      `${t("defaultIs")}: ${shown(entry.default) || t("none")}`,
+      `${t("readBy")}: ${entry.reader}`,
+      `${t("scope")}: ${scope}`,
+      entry.key,
+    ].join("\n")
+  }
+  const restore = (entry: ConfigKey) => {
+    const source = sourceOf(entry)
+    if (source === "local") void write(entry, "", true, "local")
+    else if (source === "repository") void write(entry, "", true, "project")
+  }
+
+  const control = (entry: ConfigKey) => {
+    const current = () => valueOf(entry)?.value
+    const locked = () => entry.scope === "project" && layer() === "local"
+    const restorable = () => ["local", "repository"].includes(sourceOf(entry))
+    const menu = () => (
+      <Show when={restorable()}>
+        <ctx.ui.Menu label={t("restore")} items={[{ label: t("restore"), onSelect: () => restore(entry) }]} />
+      </Show>
+    )
+    if (!entry.editable) {
+      return (
+        <ctx.ui.Button size="small" onClick={() => {
+          const path = schema()?.layerPaths.project
+          if (path) ctx.system.openExternal(`file://${path}`)
+        }}>{t("open")}</ctx.ui.Button>
+      )
+    }
+    if (entry.type === "boolean") {
+      return (
+        <span class="qcfg-control">
+          <ctx.ui.Switch checked={current() === true} label={entry.copy[lang()].title} hideLabel
+            onChange={(checked) => void write(entry, JSON.stringify(checked))} />
+          {menu()}
+        </span>
+      )
+    }
+    if (entry.type === "enum") {
+      return (
+        <span class="qcfg-control">
+          <ctx.ui.Select label={entry.copy[lang()].title}
+            options={(entry.choices ?? []).map((choice) => ({ value: choice, label: choice }))}
+            value={typeof current() === "string" ? current() as string : undefined}
+            onChange={(choice) => void write(entry, JSON.stringify(choice))} />
+          {menu()}
+        </span>
+      )
+    }
+    const text = () => drafts()[entry.key] ?? shown(current())
+    return (
+      <span class="qcfg-control">
+        <ctx.ui.TextInput class="qcfg-input" label={entry.copy[lang()].title} value={text()}
+          placeholder={shown(entry.default) || t("save")} disabled={false}
+          onInput={(value) => setDrafts({ ...drafts(), [entry.key]: value })}
+          onSubmit={(value) => void write(entry, encode(entry, value))} />
+        <Show when={locked()}><span class="qcfg-lock" title={t("scopeProject")}>🔒</span></Show>
+        {menu()}
+      </span>
+    )
+  }
+
+  const sections = createMemo(() => {
+    const value = schema()
+    if (!value) return []
+    return value.categories.map((category) => ({
+      id: category.id,
+      title: category.title[lang()],
+      keys: value.keys.filter((entry) => entry.category === category.id),
+    })).filter((section) => section.keys.length > 0)
+  })
+
+  return (
+    <ctx.ui.SettingsLayout title={t("title")} description={t("description")}
+      actions={<ctx.ui.Button size="small" onClick={() => void load()}>{t("reload")}</ctx.ui.Button>}>
+      <Show when={directory()} fallback={<ctx.ui.SettingsSection><div class="qcfg-error">{t("noSession")}</div></ctx.ui.SettingsSection>}>
+        <Show when={error()}>
+          <ctx.ui.SettingsSection><div class="qcfg-error">{error()}</div></ctx.ui.SettingsSection>
+        </Show>
+        <Show when={schema()} fallback={<Show when={!error()}><ctx.ui.SettingsSection><div>{t("loading")}</div></ctx.ui.SettingsSection></Show>}>
+          <ctx.ui.SettingsSection>
+            <ctx.ui.SettingsRow title={t("writeTo")} description={t("writeToHint")}>
+              <ctx.ui.Select label={t("writeTo")} value={layer()}
+                options={[{ value: "project", label: t("project") }, { value: "local", label: t("local") }]}
+                onChange={(value) => setLayer(value as ConfigLayer)} />
+            </ctx.ui.SettingsRow>
+          </ctx.ui.SettingsSection>
+          <For each={sections()}>{(section) => (
+            <ctx.ui.SettingsSection title={section.title}>
+              <For each={section.keys}>{(entry) => (
+                <ctx.ui.SettingsRow
+                  id={`quenching.${entry.key}`}
+                  title={
+                    <ctx.ui.Tooltip value={<span class="qcfg-tip">{tooltip(entry)}</span>}>
+                      <span>
+                        {entry.copy[lang()].title}
+                        <span class={`qcfg-badge ${sourceOf(entry)}`}>{t(sourceOf(entry))}</span>
+                      </span>
+                    </ctx.ui.Tooltip>
+                  }
+                  description={entry.copy[lang()].summary}
+                >
+                  {control(entry)}
+                </ctx.ui.SettingsRow>
+              )}</For>
+            </ctx.ui.SettingsSection>
+          )}</For>
+        </Show>
+      </Show>
+    </ctx.ui.SettingsLayout>
+  )
+}
+
 export default Plugin.define({
   setup(ctx) {
     const openSpecs = () => {
@@ -726,6 +983,21 @@ export default Plugin.define({
     }
 
     ctx.add(Style, css)
+
+    // The page needs SettingsLayout/Section/Row (SDK 2.3.0); an older host keeps every other part.
+    if (typeof (ctx.ui as { SettingsLayout?: unknown }).SettingsLayout === "function") {
+      const [entries, setEntries] = createSignal<{ id: string; title: string; description: string; keywords: string }[]>([])
+      ctx.add(Style, settingsCss)
+      ctx.add(SettingsPage, {
+        id: "quenching",
+        title: "quenching",
+        icon: "sliders",
+        get entries() {
+          return entries()
+        },
+        render: (input) => <QuenchingSettings target={input.target} onEntries={setEntries} />,
+      })
+    }
 
     ctx.add(Panel, {
       id: "specs",

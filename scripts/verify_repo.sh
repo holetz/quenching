@@ -219,6 +219,17 @@ else
   printf 'SKIPPED: `claude` is not on PATH; integrations/claude-hud was not validated.\n'
 fi
 
+# The OpenCode vitrine is TypeScript against the GUI SDK it pins; a type error there ships a page
+# that fails only inside Desktop. Its dependencies are a local `npm install`, so without
+# `node_modules` the skip is stated, as with `claude` above.
+if [ -d integrations/opencode-vitrine/node_modules ] && command -v npx >/dev/null 2>&1; then
+  run_check "opencode-vitrine typecheck" \
+    npx --prefix integrations/opencode-vitrine tsc --noEmit -p integrations/opencode-vitrine
+else
+  printf '\n==> opencode-vitrine typecheck\n'
+  printf 'SKIPPED: integrations/opencode-vitrine/node_modules is absent (run `npm ci` there); the vitrine was not typechecked.\n'
+fi
+
 # Surface-load checks spawn billed `claude -p` sessions, so they are opt-in: without
 # QUENCHING_FUNCTIONAL=1 the skip is stated and the gate stays deterministic. When asked for, an
 # inconclusive run (exit 2) or a missing `claude` is a measurement that did not happen, so it fails.

@@ -35,6 +35,7 @@ from quenching.specs.commands.next import cmd_next
 from quenching.specs.commands.output import Emitter
 from quenching.specs.commands.parallel import cmd_parallel
 from quenching.specs.commands.promote import cmd_promote
+from quenching.specs.commands.reconcile import cmd_reconcile
 from quenching.specs.commands.push import cmd_push
 from quenching.specs.commands.read import cmd_export, cmd_list, cmd_status
 from quenching.specs.commands.release import cmd_release
@@ -194,6 +195,10 @@ def _add_record_promote_task(sub) -> None:
     sp.add_argument("--force", action="store_true",
                     help="archive as done despite open tasks")
     sp.add_argument("--dry-run", action="store_true", dest="dry_run")
+
+    sp = add_json(sub.add_parser("reconcile", help="close every merged spec: archive it after the merge"))
+    sp.add_argument("--write", action="store_true")
+    sp.add_argument("--remote", default="origin")
 
     sp = add_json(sub.add_parser("task", help="check, reopen or block a checkbox"))
     sp.add_argument("--spec", required=True)
@@ -439,6 +444,7 @@ DISPATCH: dict = {
     "target": cmd_field,
     "record": cmd_record,
     "promote": cmd_promote,
+    "reconcile": cmd_reconcile,
     "task": cmd_task,
     "next": cmd_next,
     "parallel": cmd_parallel,

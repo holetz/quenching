@@ -27,6 +27,20 @@ backwards — the reverse index rides `cq specs schedule --all` (key `composites
 extra read; a spec that belongs to several epics lists all of them, and an epic nesting in another
 shows both.
 
+A **quenching** page in OpenCode's Settings edits the current project's configuration. It reads
+`cq config schema --values --json` — every key with its type, default, category, scope, copy in
+English and pt-BR, and the effective value with the layer that supplied it — and writes through
+`cq config set|unset --layer project|local`, the only writers, so a value the registry refuses is
+refused here too and shown in a toast. Keys are grouped by task (Worktrees and isolation, Autonomy
+and orchestration, Specs and cards, Git and PR, Review, Proof and tests, Operations, Knowledge);
+each row has a tooltip with the full description, the default, the reader and the scope, a badge
+naming the layer the value came from (Project, Local, User, Branch or Default) and, when a layer
+holds it, **Restore default**. A **Write to** selector sends changes to the project file or to
+the local one; a `project` key always goes to the project. Structured catalogs (`specs.subjects`,
+`shared.hooks`, …) are read-only, with **Open in editor**. Settings search finds every key. The
+page registers only on a host whose GUI SDK has `SettingsLayout` (2.3.0 and later); an older
+Desktop keeps the panel and loses only the page.
+
 ## Requirements
 
 - OpenCode Desktop with GUI parts. The panel is a `Panel` in the `side` region plus the `/specs`
@@ -115,8 +129,8 @@ The plugin runs inside `opencode-cli serve`, so it must never hold the service:
 | `src/rpc.ts` | the RPC contract the server and the GUI share |
 | `src/specs.ts` | spec ledger, conversation harvest, `cq specs` reads, cache |
 | `src/quenching.ts` | installed/available version check and `cq deploy` |
-| `src/cq.ts` | process and path helpers |
-| `src/gui.tsx` | the Specs panel and its `/specs` command |
+| `src/cq.ts` | process and path helpers, and the `cq config` read and write behind the Settings page |
+| `src/gui.tsx` | the Specs panel, its `/specs` command and the quenching Settings page |
 | `bench/load.ts` | the load benchmark behind `npm run bench` |
 | `dist/gui-experimental.cjs` | built GUI entry, loaded by OpenCode Desktop |
 
@@ -125,6 +139,9 @@ The plugin runs inside `opencode-cli serve`, so it must never hold the service:
 This package is installed by configuration, not by `cq deploy`: a deployed target receives the
 command surface and agents, not this desktop panel. It also does not update its own checkout;
 the button only writes the target's surface.
+
+The Settings page needs a target `cq` that has `config schema` and `config set` (quenching 7.8.0
+and later); against an older one it shows the refusal and edits nothing.
 
 A `cq` older than `schedule --all` still fills the **Dependências** tab: the read falls back to the
 default schedule, which holds the open specs that declare an edge and their dependencies, so a

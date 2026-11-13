@@ -91,9 +91,11 @@ matches (`--root` is an option of the granted verb). Without a worktree, `--work
    entry, so this check cannot see them. An empty `reflog` list marks that half `n/a`; a `false`
    ancestry is still FAIL.
 
-8. Conclusion: `.agents/quenching/bin/cq specs status --spec <id> --json` shows `phase: archive` and a recorded `Outcome`
-   (`records.outcome` not null). A spec still in `plans/` or without an Outcome is FAIL: the
-   worker's `conclude` did not run, whatever its report says. `n/a` only when the worker reported
+8. Conclusion: `.agents/quenching/bin/cq specs status --spec <id> --json` shows `## Outcome` filled. Before the
+   merge the spec stays in `plans/` — the archive waits for the merge — and that is PASS. A spec
+   without a filled `## Outcome` is FAIL: the worker's `conclude` did not run, whatever its report
+   says. A spec already in `archive/` with `outcome: done` whose work ref is not an ancestor of
+   `origin/<base>` is FAIL too: it was archived before the merge. `n/a` only when the worker reported
    `STATE: continue` or `blocked`.
 
 9. Grants: the payload's `grants` lists every entry the branch ADDS to an agent's `tools:`, a command's

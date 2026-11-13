@@ -1,5 +1,5 @@
 ---
-allowed-tools: Bash(cq git base:*), Bash(cq git conventions:*), Bash(cq git specs:*), Bash(cq git state:*), Bash(cq git worktree add:*), Bash(cq specs config:*), Bash(cq specs status:*), Bash(cq components read:*), Read, AskUserQuestion
+allowed-tools: Bash(cq git base:*), Bash(cq git conventions:*), Bash(cq git specs:*), Bash(cq git state:*), Bash(cq git worktree acquire:*), Bash(cq git worktree add:*), Bash(cq specs config:*), Bash(cq specs status:*), Bash(cq components read:*), Read, AskUserQuestion
 ---
 
 # /quenching-git branch — take isolation before writing code
@@ -54,11 +54,14 @@ existing `branch:` record are resolved.
 ### 3. Take the worktree — only from the base, and with nothing to ask
 If the current branch is already different from the resolved base, report that the checkout is
 already isolated and carry it forward; do not cut a second branch or worktree. If it is the base,
-the form is **Worktree**, unasked. State the base branch (from step 1), the branch name that will be
+the form is **Worktree**, unasked, and the worktree is a **slot**: a reusable `../<repo>-slot-<n>`
+that outlives the spec, so its `.venv` and caches are not rebuilt — or rescanned by an on-access
+antivirus — for every spec. State the base branch (from step 1), the branch name that will be
 cut — `config.branchName` from step 1 governs it where declared, else the target's docs, else
 `plan/<id>-<handle>` with an ID and a kebab-case name derived from `$ARGUMENTS` or asked for without
 one — and the worktree path, with its cost in the same block: a fresh checkout carries only what
-git tracks — no installed dependencies, no `.env`, no venv, no build output. `worktreeSetup`
+git tracks — no installed dependencies, no `.env`, no venv, no build output; a reused slot already
+holds them, and only a new slot pays that cost. `worktreeSetup`
 non-null is displayed **verbatim** there and runs as part of the cut; `sharedPaths` non-empty is
 displayed verbatim too. There is no decision sheet on the form.
 
@@ -70,19 +73,28 @@ choice, never pick Branch because the target looks awkward, and never fall back 
 branch would leave the build in the main checkout. **Done when:** the form is resolved — Worktree by
 default, Branch only on an explicit request — or the run stops on a git error.
 
-### 4. Cut it, run the setup, and stamp
-Run the worktree cut; a failure (name taken, dirty path, locked worktree) is
-reported verbatim and nothing is stamped. **The cut starts from the remote base**, because
-a PR merged through `gh` moves no local ref and the local `<base>` may miss the dependency the run
-waited on:
+### 4. Take a slot, run the setup, and stamp
+Take a slot; a failure is reported verbatim and nothing is stamped. **The branch starts from the
+remote base**, because a PR merged through `gh` moves no local ref and the local `<base>` may miss
+the dependency the run waited on:
 ```bash
-.agents/quenching/bin/cq git worktree add --path <path> --branch <branch> --base <base> [--spec "<id>"] --json
+.agents/quenching/bin/cq git worktree acquire --branch <branch> --base <base> [--spec "<id>"] --json
 ```
+`acquire` locks a free clean slot (`git worktree lock` is the mutex, its reason naming spec,
+session, host and date), else cuts a new one while fewer than `shared.worktreeSlots.max` (12) exist,
+else frees a held slot whose branch is already merged; any other worktree is never counted and
+never taken. At the ceiling it refuses `git-worktree-slots-full` and names every holder with the
+`release` command that frees it: rerun with `--wait` (it polls every `pollSeconds` up to
+`waitMinutes`), and on `git-worktree-slots-timeout` (`needsHuman: true`) **stop and tell the human
+the limit was reached** — never fall back to a one-off worktree or a branch. The payload's `path`
+is the worktree from here on. `add` (`--path <path>` instead of a slot) cuts a one-off worktree
+only when the human asks for one by path.
 With an ID from step 2, pass `--spec`: the verb refuses (exit 2, nothing cut) a spec that does not
 exist or does not own `<branch>`, and after the cut stamps the `branch:` record itself
-(`branchRecord` in the payload; a failed stamp is exit 1 and leaves the worktree). The verb fetches `origin <base>`, cuts `<branch>` from the fetched tip resolved to a commit — so
+(`branchRecord` in the payload; a failed stamp is exit 1 and leaves the worktree). The verb fetches `origin <base>`, switches the slot to `<branch>` — an existing one, or one cut from
+the fetched tip resolved to a commit — so
 the branch has no upstream and a push without an explicit destination never targets the base —
-and links the declared shared paths inside the new worktree. A fetch error is exit 2 and stops the
+and links the declared shared paths inside the slot. A fetch error is exit 2 and stops the
 run; only a missing `origin` falls back to the local `<base>` (`fromRemote: false`, the
 `NO-REMOTE` line), and the report says so. A link failure is exit 1 with `linkRefusal`: it does not
 undo the worktree, and the verb does not run `worktreeSetup`. When the link succeeds, the verb

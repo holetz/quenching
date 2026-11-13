@@ -1,6 +1,9 @@
 """The effective configuration: every key with its value and the layer it came from.
 
-Precedence, lowest to highest: `default` < `user` < `repository` < `branch`. The user and the
+Precedence, lowest to highest: `default` < `user` < `repository` < `branch`, with the `local`
+layer (`.agents/quenching.local.json`) placed per key by its registry scope: a `machine` key's
+local value wins over every file, an `either` key's only fills a key the repository leaves out,
+and a `project` key's is ignored and named in `warnings`. The user and the
 repository files are read raw, never through the merged envelope, because the merged result no
 longer knows which file a key came from. The `branch` layer is the `quenching` branch's
 `quenching.json`; it only counts when the repository declares `backend: git`, and only for
@@ -9,12 +12,18 @@ longer knows which file a key came from. The `branch` layer is the `quenching` b
 from __future__ import annotations
 
 from quenching.codex.config import DEFAULTS as CODEX_DEFAULTS
-from quenching.common.config import NAMESPACES, _load_user_layer, repository_document
+from quenching.common.config import (NAMESPACES, _load_local_layer, _load_user_layer,
+                                     find_repo_root, repository_document)
 from quenching.config.autonomy import DEFAULTS as AUTONOMY_DEFAULTS, coerce as coerce_autonomy
+from quenching.config.host import DEFAULTS as WORK_HOST_DEFAULTS
+from quenching.config.schema import SLOTS, local_decision, registry_leaves
+from quenching.session.commands.context import BUDGETS
 
 # Namespace keys whose defaults live in code as data: the key is shown leaf by leaf, because the
 # owning front completes a partial block leaf by leaf.
-DEFAULT_BLOCKS = {("shared", "codex"): CODEX_DEFAULTS, ("shared", "autonomy"): AUTONOMY_DEFAULTS}
+DEFAULT_BLOCKS = {("shared", "codex"): CODEX_DEFAULTS, ("shared", "autonomy"): AUTONOMY_DEFAULTS,
+                  ("shared", "worktreeSlots"): SLOTS, ("shared", "workHost"): WORK_HOST_DEFAULTS,
+                  ("shared", "contextBudgets"): BUDGETS}
 
 
 def _read_repository(root: str) -> tuple[dict, dict]:
@@ -85,6 +94,16 @@ def effective(root: str) -> dict:
         for leaf, given, default in _leaves(base, block, defaults):
             rows[leaf] = ({"key": leaf, "value": given, "source": layer} if given is not None
                           else {"key": leaf, "value": default, "source": "default"})
+    local = _load_local_layer(find_repo_root(root))
+    local_info = {"name": "local", "path": local["path"], "present": local["present"],
+                  "unparseable": local["unparseable"]}
+    for key, value in registry_leaves(local["namespaces"]):
+        declared_here = rows.get(key, {}).get("source") in ("repository", "branch")
+        ok, why = local_decision(key, declared_here)
+        if ok:
+            rows[key] = {"key": key, "value": value, "source": "local"}
+        elif why:
+            warnings.append(f"local layer: {why} (ignored)")
     return {"layers": [{"name": "default", "path": None, "present": True, "unparseable": None},
-                       user_info, repo_info, branch_info],
+                       user_info, repo_info, local_info, branch_info],
             "values": [rows[key] for key in sorted(rows)], "warnings": warnings}

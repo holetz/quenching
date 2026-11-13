@@ -100,5 +100,29 @@ class EffectiveConfig(unittest.TestCase):
             self.assertEqual(3, main(["--root", str(self.repo), "show"]))
 
 
+
+class LocalProvenance(EffectiveConfig):
+    def _local(self, doc):
+        (self.repo / ".agents").mkdir(exist_ok=True)
+        (self.repo / ".agents" / "quenching.local.json").write_text(json.dumps(doc))
+
+    def test_each_value_names_the_layer_that_won_it(self):
+        self._repo({"shared": {"worktreeSlots": {"max": 12}, "autonomy": {"merge": "never"},
+                               "worktreeSetup": "make"}})
+        self._local({"shared": {"worktreeSlots": {"max": 6}, "worktreeSetup": "other",
+                                "autonomy": {"merge": "all", "maxWorkers": 5}}})
+        rows, payload = self._rows()
+        self.assertEqual((6, "local"), (rows["shared.worktreeSlots.max"]["value"],
+                                        rows["shared.worktreeSlots.max"]["source"]))
+        self.assertEqual("default", rows["shared.worktreeSlots.min"]["source"])
+        self.assertEqual(("never", "repository"), (rows["shared.autonomy.merge"]["value"],
+                                                   rows["shared.autonomy.merge"]["source"]))
+        self.assertEqual((5, "local"), (rows["shared.autonomy.maxWorkers"]["value"],
+                                        rows["shared.autonomy.maxWorkers"]["source"]))
+        self.assertEqual("repository", rows["shared.worktreeSetup"]["source"])
+        self.assertTrue(any("shared.worktreeSetup" in w for w in payload["warnings"]))
+        self.assertIn("local", [layer["name"] for layer in payload["layers"]])
+
+
 if __name__ == "__main__":
     unittest.main()

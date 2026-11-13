@@ -156,6 +156,30 @@ class UndeclaredTests(unittest.TestCase):
         self.assertEqual(ignored.undeclared("repo", ["unknown/"], []), ["unknown/"])
 
     @mock.patch.object(ignored.os, "walk")
+    def test_a_directory_holding_only_empty_regenerable_leaves_is_regenerable(self, walk):
+        walk.return_value = [
+            (os.path.join("repo", ".quenching"), ["coverage"], []),
+            (os.path.join("repo", ".quenching", "coverage"), [], []),
+        ]
+        rules = ignored.declared_regenerable({
+            "namespaces": {"shared": {"regenerablePaths": [".quenching/coverage"]}},
+        })
+        self.assertEqual(ignored.classify("repo", [".quenching/"], rules),
+                         ([".quenching/"], []))
+
+    @mock.patch.object(ignored.os, "walk")
+    def test_an_empty_leaf_nobody_declared_still_refuses(self, walk):
+        walk.return_value = [
+            (os.path.join("repo", ".quenching"), ["coverage", "notes"], []),
+            (os.path.join("repo", ".quenching", "coverage"), [], []),
+            (os.path.join("repo", ".quenching", "notes"), [], []),
+        ]
+        rules = ignored.declared_regenerable({
+            "namespaces": {"shared": {"regenerablePaths": [".quenching/coverage"]}},
+        })
+        self.assertEqual(ignored.undeclared("repo", [".quenching/"], rules), [".quenching/"])
+
+    @mock.patch.object(ignored.os, "walk")
     def test_classify_names_a_cache_inside_an_undeclared_directory(self, walk):
         walk.return_value = [
             (os.path.join("repo", "output"), [], [".coverage", "notes.txt"]),
