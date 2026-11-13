@@ -1,4 +1,4 @@
-import { createEffect, createMemo, createSignal, For, onCleanup, Show } from "solid-js"
+import { createEffect, createMemo, createSignal, For, onCleanup, Show, untrack } from "solid-js"
 import {
   Command,
   MenuItem,
@@ -342,6 +342,7 @@ function SpecsPanel(props: PanelProps) {
   const [quench, setQuench] = createSignal<Quenching>()
   const [upgrading, setUpgrading] = createSignal(false)
   const directory = () => props.session.directory
+  createEffect(() => rememberProject(ctx, directory()))
   const searching = () => query().trim().length > 0
   // Só existe botão quando há o que consertar: ausente ou atrás do cq do PATH.
   const stale = () => {
@@ -551,6 +552,10 @@ function SpecsPanel(props: PanelProps) {
           )}
         </Show>
         <ctx.ui.Button size="small" busy={busy()} onClick={() => void openBoard()}>Board</ctx.ui.Button>
+        <Show when={hasSettingsPage(ctx)}>
+          <ctx.ui.IconButton icon="sliders" label="Configurações do quenching" size="small" variant="ghost"
+            onClick={() => openQuenchingSettings(ctx, directory())} />
+        </Show>
       </div>
       <Show when={error()}><div class="qs-error">{error()}</div></Show>
       <Show when={!searching()}>
@@ -721,11 +726,48 @@ function SpecsPanel(props: PanelProps) {
 
 type Lang = "en" | "pt-BR"
 
+type PluginCtx = Pick<ReturnType<typeof usePlugin>, "storage" | "sessions" | "layout" | "ui">
+
+/**
+ * The project the Settings page edits. Settings leaves the session tab, so `ctx.sessions.current()` is empty there;
+ * the Specs panel and the shortcuts remember the session's directory in window memory, with the recent ones.
+ */
+function settingsTarget(ctx: PluginCtx) {
+  return ctx.storage.memory("settings-target", { initial: { directory: "", recent: [] as string[] } })
+}
+
+function rememberProject(ctx: PluginCtx, directory: string | undefined) {
+  if (!directory) return
+  const [target, update] = settingsTarget(ctx)
+  // Untracked: a caller's effect must depend on the session's directory, never on the page's choice.
+  if (untrack(() => target.directory === directory && target.recent[0] === directory)) return
+  update((draft) => {
+    draft.directory = directory
+    draft.recent = [directory, ...draft.recent.filter((item) => item !== directory)].slice(0, 8)
+  })
+}
+
+/** Remembers the current session's project, then opens the quenching Settings page. */
+function openQuenchingSettings(ctx: PluginCtx, directory?: string) {
+  rememberProject(ctx, directory ?? ctx.sessions.current()?.directory)
+  ctx.layout.settings("quenching")
+}
+
+const hasSettingsPage = (ctx: PluginCtx) =>
+  typeof (ctx.ui as { SettingsLayout?: unknown }).SettingsLayout === "function"
+
+function projectLabel(path: string): string {
+  const parts = path.split(/[\\/]/).filter(Boolean)
+  return parts[parts.length - 1] ?? path
+}
+
 const SETTINGS_COPY: Record<Lang, Record<string, string>> = {
   "pt-BR": {
     title: "quenching",
     description: "A configuração do quenching deste projeto. Projeto é .agents/quenching.json, o contrato do time; Local é .agents/quenching.local.json, só esta máquina, fora do git.",
-    noSession: "Abra uma sessão num projeto para ver a configuração dele.",
+    noSession: "Nenhum projeto escolhido. Abra o painel Specs numa sessão do projeto e use o botão de configurações dele, ou o comando \"quenching: configurações\".",
+    projectRow: "Projeto",
+    projectHint: "O projeto cuja configuração esta página lê e grava. A lista guarda os projetos abertos nesta janela.",
     loading: "Lendo a configuração…",
     writeTo: "Gravar em",
     writeToHint: "Para onde vão as alterações. Uma chave de projeto vai sempre para o projeto.",
@@ -752,7 +794,9 @@ const SETTINGS_COPY: Record<Lang, Record<string, string>> = {
   en: {
     title: "quenching",
     description: "This project's quenching configuration. Project is .agents/quenching.json, the team's contract; Local is .agents/quenching.local.json, this machine only, out of git.",
-    noSession: "Open a session in a project to see its configuration.",
+    noSession: "No project chosen. Open the Specs panel in one of the project's sessions and use its settings button, or the \"quenching: configurações\" command.",
+    projectRow: "Project",
+    projectHint: "The project whose configuration this page reads and writes. The list keeps the projects opened in this window.",
     loading: "Reading the configuration…",
     writeTo: "Write to",
     writeToHint: "Where changes go. A project key always goes to the project.",
@@ -811,7 +855,9 @@ function QuenchingSettings(props: { target?: string; onEntries: (entries: { id: 
   const rpc = () => ctx.client.rpc(Vitrine)
   const lang = (): Lang => (ctx.locale.locale().toLowerCase().startsWith("pt") ? "pt-BR" : "en")
   const t = (key: string) => SETTINGS_COPY[lang()][key] ?? key
-  const directory = () => ctx.sessions.current()?.directory
+  const [target, updateTarget] = settingsTarget(ctx)
+  rememberProject(ctx, ctx.sessions.current()?.directory)
+  const directory = () => target.directory || undefined
   const [schema, setSchema] = createSignal<ConfigSchema>()
   const [error, setError] = createSignal("")
   const [layer, setLayer] = createSignal<ConfigLayer>("project")
@@ -942,6 +988,13 @@ function QuenchingSettings(props: { target?: string; onEntries: (entries: { id: 
         </Show>
         <Show when={schema()} fallback={<Show when={!error()}><ctx.ui.SettingsSection><div>{t("loading")}</div></ctx.ui.SettingsSection></Show>}>
           <ctx.ui.SettingsSection>
+            <ctx.ui.SettingsRow title={t("projectRow")} description={t("projectHint")}>
+              <span title={directory()}>
+                <ctx.ui.Select label={t("projectRow")} value={directory()}
+                  options={target.recent.map((path) => ({ value: path, label: projectLabel(path) }))}
+                  onChange={(value) => updateTarget((draft) => { draft.directory = value as string })} />
+              </span>
+            </ctx.ui.SettingsRow>
             <ctx.ui.SettingsRow title={t("writeTo")} description={t("writeToHint")}>
               <ctx.ui.Select label={t("writeTo")} value={layer()}
                 options={[{ value: "project", label: t("project") }, { value: "local", label: t("local") }]}
@@ -985,7 +1038,7 @@ export default Plugin.define({
     ctx.add(Style, css)
 
     // The page needs SettingsLayout/Section/Row (SDK 2.3.0); an older host keeps every other part.
-    if (typeof (ctx.ui as { SettingsLayout?: unknown }).SettingsLayout === "function") {
+    if (hasSettingsPage(ctx)) {
       const [entries, setEntries] = createSignal<{ id: string; title: string; description: string; keywords: string }[]>([])
       ctx.add(Style, settingsCss)
       ctx.add(SettingsPage, {
@@ -1016,5 +1069,14 @@ export default Plugin.define({
       slash: { name: "specs" },
       run: openSpecs,
     }))
+    if (hasSettingsPage(ctx)) {
+      ctx.add(Command, () => ({
+        id: "quenching-settings",
+        title: "quenching: configurações",
+        description: "Abrir a configuração do quenching deste projeto",
+        keywords: "quenching config configuração configurações settings worktree slots",
+        run: () => openQuenchingSettings(ctx),
+      }))
+    }
   },
 })
