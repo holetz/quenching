@@ -9,6 +9,7 @@ import argparse
 import contextlib
 import io
 import json
+import os
 import subprocess
 
 from quenching.specs.backends import open_backend
@@ -16,6 +17,32 @@ from quenching.specs.backends.base import BackendRefusal
 from quenching.specs.commands import promote
 from quenching.specs.commands.output import Emitter
 from quenching.specs.parse.sections import section_state
+
+
+def _release_slot(root: str, branch: dict, remote: str) -> dict | None:
+    """Give back the slot holding the archived spec's work branch, through `release` itself, so
+    a dirty slot stays held and is reported. None when no slot holds it (a legacy worktree is
+    conclude's `retire`)."""
+    from quenching.git import slots
+
+    held = [s for s in slots.survey(root)["slots"] if s["branch"] == branch.get("work")]
+    if not held:
+        return None
+    ns = argparse.Namespace(json=True, path=held[0]["path"], branch=None,
+                            base=branch.get("base"), remote=remote)
+    buf, cwd = io.StringIO(), os.getcwd()
+    try:
+        os.chdir(root)
+        with contextlib.redirect_stdout(buf):
+            slots.release(ns)
+    finally:
+        os.chdir(cwd)
+    try:
+        got = json.loads(buf.getvalue())
+    except ValueError:
+        got = {"released": False, "message": buf.getvalue().strip()}
+    return {"path": held[0]["path"], "released": bool(got.get("released")),
+            "message": got.get("message", "")}
 
 
 def cmd_reconcile(args, root: str, out: Emitter) -> int:
@@ -55,6 +82,7 @@ def cmd_reconcile(args, root: str, out: Emitter) -> int:
                 code, result = 2, refusal.err
             if code == 0:
                 row["action"] = "archived"
+                row["slot"] = _release_slot(root, fm["branch"], remote)
             else:
                 row.update(action="needs-human", why=result["message"])
         rows.append(row)

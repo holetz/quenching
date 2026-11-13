@@ -189,6 +189,26 @@ class TheCeiling(SlotRepo):
         self.assertTrue(out["needsHuman"])
 
 
+class CleanupKeepsTheFloor(SlotRepo):
+    def test_free_slots_up_to_min_are_preserved_and_the_rest_are_candidates(self):
+        from quenching.git.stale import stale_report
+
+        self.config({"min": 2, "max": 4})
+        taken = [self.run_verb("acquire", branch=f"plan/{n}-x")[1]["path"] for n in range(1, 5)]
+        for path in taken[:3]:
+            self.assertEqual(self.run_verb("release", path=path)[0], 0)
+        with mock.patch("quenching.git.stale._open_pr_heads", return_value=set()):
+            report = stale_report(self.main)
+        rows = {os.path.basename(w["path"]): w for w in report["worktrees"]}
+        self.assertIn("slot-floor", rows["repo-slot-1"]["blockers"])
+        self.assertIn("slot-floor", rows["repo-slot-2"]["blockers"])
+        self.assertTrue(rows["repo-slot-3"]["eligible"])
+        self.assertIn("locked", rows["repo-slot-4"]["blockers"])
+        entry = next(e for e in report["manifest"]
+                     if e["kind"] == "worktree" and e["ref"].endswith("repo-slot-3"))
+        self.assertEqual(entry["reasons"], ["merged-clean", "slot-above-floor"])
+
+
 class Limits(unittest.TestCase):
     def test_defaults_and_a_ceiling_never_below_the_floor(self):
         with mock.patch.object(slots, "load_config", return_value={}):

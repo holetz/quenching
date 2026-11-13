@@ -3,6 +3,7 @@ import argparse
 import contextlib
 import io
 import json
+import os
 import subprocess
 import tempfile
 import unittest
@@ -125,3 +126,26 @@ class Reconcile(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class ReconcileReleasesTheSlot(Reconcile):
+    def test_an_archived_spec_gives_its_slot_back(self):
+        from quenching.git import slots
+
+        self.git("checkout", "-q", "main")
+        slot = os.path.join(os.path.dirname(self.root),
+                            os.path.basename(self.root) + "-slot-1")
+        self.addCleanup(subprocess.run, ["rm", "-rf", slot])
+        self.git("worktree", "add", "-q", "--lock", "--reason", "quenching: 1 · s · h · d",
+                 slot, "plan/1-x")
+        self.spec()
+        row = self.run_reconcile(write=True)["specs"][0]
+        self.assertEqual(row["action"], "archived")
+        self.assertTrue(row["slot"]["released"], row)
+        state = slots.survey(self.root)["slots"][0]
+        self.assertEqual(state["state"], "free")
+        self.assertIsNone(state["branch"])
+
+    def test_a_spec_built_outside_a_slot_releases_nothing(self):
+        self.spec()
+        self.assertIsNone(self.run_reconcile(write=True)["specs"][0]["slot"])
