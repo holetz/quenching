@@ -19,15 +19,24 @@ from quenching.specs.parse.sections import duplicate_headings, gate_report, sect
 from quenching.specs.schema import OUTCOMES, canonical_headings
 
 
-def merge_evidence(info: dict, root: str, remote: str = "origin") -> tuple[bool, str]:
-    """The store is the quenching ref: an archive is visible at once while its PR can still stall."""
+def isolated(info: dict) -> bool:
+    """Whether the spec's `branch` record names a work ref distinct from its base."""
     rec = info["frontmatter"].get("branch")
     if not isinstance(rec, dict):
-        return True, "no isolated work ref"
+        return False
     work = str(rec.get("work") or "").strip()
-    base = str(rec.get("base") or "").strip()
-    if not work or work == base:
+    return bool(work) and work != str(rec.get("base") or "").strip()
+
+
+def merge_evidence(info: dict, root: str, remote: str = "origin", *, fetch: bool = True,
+                   ask_pr: bool = True) -> tuple[bool, str]:
+    """The store is the quenching ref: an archive is visible at once while its PR can still stall.
+    `fetch=False` and `ask_pr=False` keep the answer offline, for a caller that already fetched."""
+    if not isolated(info):
         return True, "no isolated work ref"
+    rec = info["frontmatter"]["branch"]
+    work = str(rec["work"]).strip()
+    base = str(rec.get("base") or "").strip()
     merge = info["frontmatter"].get("merge")
     if isinstance(merge, dict) and str(merge.get("strategy") or "").strip():
         return True, "merge record"
@@ -39,7 +48,8 @@ def merge_evidence(info: dict, root: str, remote: str = "origin") -> tuple[bool,
         except (OSError, subprocess.SubprocessError):
             return None
 
-    git("fetch", "--quiet", remote, base)
+    if fetch:
+        git("fetch", "--quiet", remote, base)
     work_tip = None
     for ref in (f"refs/heads/{work}", f"refs/remotes/{remote}/{work}"):
         resolved = git("rev-parse", "--verify", f"{ref}^{{commit}}")
@@ -56,7 +66,7 @@ def merge_evidence(info: dict, root: str, remote: str = "origin") -> tuple[bool,
         ancestor = git("merge-base", "--is-ancestor", work_tip, base_ref)
         if ancestor is not None and ancestor.returncode == 0:
             return True, f"work ref is in {base_ref}"
-    number = epic.pr_number(info)
+    number = epic.pr_number(info) if ask_pr else None
     if number:
         pr = epic._pr_view(info, epic._provider(root), root, 15)
         if pr and pr[0] == "MERGED":
