@@ -288,6 +288,46 @@ def entry(key: str) -> dict | None:
     return REGISTRY.get(key)
 
 
+def registry_leaves(document: dict) -> list[tuple[str, object]]:
+    """`(key, value)` for every leaf of a layer document, cut at registry granularity: a registry
+    key is a leaf even when its value is an object (a catalog), and anything the registry does not
+    know is a leaf at the deepest path that holds a non-object."""
+    out: list[tuple[str, object]] = []
+
+    def walk(prefix: str, value) -> None:
+        if prefix in REGISTRY or not isinstance(value, dict) or not value:
+            out.append((prefix, value))
+            return
+        for name, sub in value.items():
+            walk(f"{prefix}.{name}" if prefix else name, sub)
+
+    for name, value in document.items():
+        walk(name, value)
+    return out
+
+
+def scope_of(key: str) -> str | None:
+    """The scope of `key`, or of the catalog that holds it; None for a key the registry lacks."""
+    parts = key.split(".")
+    for n in range(len(parts), 0, -1):
+        found = REGISTRY.get(".".join(parts[:n]))
+        if found:
+            return found["scope"]
+    return None
+
+
+def local_decision(key: str, project_declares: bool) -> tuple[bool, str | None]:
+    """Whether a local-layer `key` applies, and why not when it does not."""
+    scope = scope_of(key)
+    if scope is None:
+        return False, f"{key} is not a known key"
+    if scope == "project":
+        return False, f"{key} is a project key; the local layer cannot set it"
+    if scope == "either" and project_declares:
+        return False, None
+    return True, None
+
+
 def path_of(key: str) -> tuple[str, ...]:
     """`shared.autonomy.maxWorkers` → `("shared", "autonomy", "maxWorkers")`; `backend` stays
     top-level."""

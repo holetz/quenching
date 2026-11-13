@@ -23,6 +23,7 @@ CLAUDE_CONFIG_FILE = os.path.join(".claude", "quenching.json")
 CONFIG_FILES = (CONFIG_FILE, CLAUDE_CONFIG_FILE)
 LEGACY_CONFIG_FILE = "config.json"
 USER_CONFIG_ENV = "QUENCHING_USER_CONFIG"
+LOCAL_CONFIG_FILE = os.path.join(".agents", "quenching.local.json")
 NAMESPACES = ("shared", "specs", "ops", "proof", "delivery")
 PROVIDER_ENV = "QUENCHING_CONFIG_PROVIDER"
 DEFAULT_PROVIDER = "file"
@@ -266,6 +267,69 @@ def _load_user_layer() -> dict:
     return out
 
 
+def local_config_path(repo_root: str) -> str:
+    """The local layer: this repository on this machine, kept out of git."""
+    return os.path.join(repo_root, LOCAL_CONFIG_FILE)
+
+
+def _load_local_layer(repo_root: str) -> dict:
+    """Read `.agents/quenching.local.json`: namespaces only, an unreadable file reported."""
+    path = local_config_path(repo_root)
+    out = {"path": path, "present": os.path.isfile(path), "unparseable": None, "namespaces": {}}
+    if not out["present"]:
+        return out
+    try:
+        obj = json.loads(read_text(path) or "")
+    except json.JSONDecodeError as exc:
+        out["unparseable"] = str(exc)
+        return out
+    if not isinstance(obj, dict):
+        out["unparseable"] = f"top level is {type(obj).__name__}, not an object"
+        return out
+    out["namespaces"] = {k: v for k, v in obj.items() if k in NAMESPACES and isinstance(v, dict)}
+    out["ignoredKeys"] = sorted(k for k in obj if k not in out["namespaces"])
+    return out
+
+
+def _has_path(document: dict, parts: list[str]) -> bool:
+    node = document
+    for part in parts:
+        if not isinstance(node, dict) or part not in node:
+            return False
+        node = node[part]
+    return True
+
+
+def _apply_local_layer(out: dict, layer: dict, repo: dict) -> None:
+    """Set each local leaf the key's scope lets through: `machine` over everything, `either` only
+    where the repository is silent, `project` never (listed in `localConfig.ignored`)."""
+    from quenching.config.schema import local_decision, registry_leaves   # registry imports this
+
+    applied, ignored = [], []
+    for name, values in layer.items():
+        if name in out["invalidNamespaces"]:
+            continue
+        for key, value in registry_leaves({name: values}):
+            parts = key.split(".")
+            ok, why = local_decision(key, _has_path(repo, parts))
+            if not ok:
+                if why:
+                    ignored.append({"key": key, "reason": why})
+                continue
+            merged = dict(out[name])
+            node = merged
+            for part in parts[1:-1]:
+                node[part] = dict(node[part]) if isinstance(node.get(part), dict) else {}
+                node = node[part]
+            node[parts[-1]] = value
+            out[name] = merged
+            out["namespaces"][name] = merged
+            if isinstance(out["data"], dict):
+                out["data"] = {**out["data"], name: merged}
+            applied.append(key)
+    out["localConfig"].update(applied=sorted(applied), ignored=ignored)
+
+
 def load_config(root: str, *, detect_provider_info: bool = True) -> dict:
     """Return the parsed envelope and metadata without interpreting any namespace."""
     repo = find_repo_root(root)
@@ -296,7 +360,12 @@ def load_config(root: str, *, detect_provider_info: bool = True) -> dict:
         if os.path.isfile(os.path.join(root, LEGACY_CONFIG_FILE)) else None,
         "userConfig": {"path": None, "present": False, "unparseable": None,
                        "ignoredKeys": [], "keys": {}},
+        "localConfig": {"path": None, "present": False, "unparseable": None,
+                        "applied": [], "ignored": []},
     }
+    local = _load_local_layer(repo)
+    out["localConfig"].update(path=local["path"], present=local["present"],
+                              unparseable=local["unparseable"])
     user = _load_user_layer()
     out["userConfig"] = {"path": user["path"], "present": user["present"],
                          "unparseable": user["unparseable"],
@@ -315,6 +384,7 @@ def load_config(root: str, *, detect_provider_info: bool = True) -> dict:
     if obj is None:
         if not info["unparseable"]:
             _apply_user_layer(out, user["namespaces"], {})
+            _apply_local_layer(out, local["namespaces"], {})
         return out
 
     out["data"] = obj
@@ -326,6 +396,7 @@ def load_config(root: str, *, detect_provider_info: bool = True) -> dict:
         elif name in obj:
             out["invalidNamespaces"].append(name)
     _apply_user_layer(out, user["namespaces"], obj)
+    _apply_local_layer(out, local["namespaces"], obj)
     out["legacyKeys"] = sorted(key for key in obj if key in LEGACY_KEYS)
     envelope_keys = {"backend", *NAMESPACES}
     out["unknownKeys"] = sorted(

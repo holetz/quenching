@@ -4,6 +4,7 @@ from __future__ import annotations
 import json
 import os
 import pathlib
+import subprocess
 import sys
 import tempfile
 import unittest
@@ -62,6 +63,53 @@ class UserConfigLayer(unittest.TestCase):
         cfg = self._load()
         self.assertTrue(cfg["userConfig"]["unparseable"])
         self.assertIsNone(cfg["unparseable"])
+
+
+
+class LocalLayer(UserConfigLayer):
+    """`.agents/quenching.local.json`: placed per key by the registry scope."""
+
+    def _local(self, doc):
+        (self.repo / ".agents").mkdir(exist_ok=True)
+        (self.repo / ".agents" / "quenching.local.json").write_text(json.dumps(doc))
+
+    def test_a_machine_key_in_the_local_layer_beats_the_project(self):
+        self._repo({"shared": {"worktreeSlots": {"max": 12, "min": 4}}})
+        self._local({"shared": {"worktreeSlots": {"max": 6}}})
+        cfg = self._load()
+        self.assertEqual({"max": 6, "min": 4}, namespace(cfg, "shared")["worktreeSlots"])
+        self.assertEqual(["shared.worktreeSlots.max"], cfg["localConfig"]["applied"])
+
+    def test_an_either_key_only_fills_what_the_project_leaves_out(self):
+        self.user.write_text(json.dumps({"shared": {"autonomy": {"maxWorkers": 2}}}))
+        self._repo({"shared": {"autonomy": {"merge": "never"}}})
+        self._local({"shared": {"autonomy": {"merge": "all", "maxWorkers": 5}}})
+        block = namespace(self._load(), "shared")["autonomy"]
+        self.assertEqual("never", block["merge"])
+        self.assertEqual(5, block["maxWorkers"])
+
+    def test_a_project_key_in_the_local_layer_is_flagged_and_ignored(self):
+        self._repo({"shared": {"worktreeSetup": "make"}})
+        self._local({"shared": {"worktreeSetup": "rm -rf /", "gitConventions": {"prTitle": "x"}},
+                     "specs": {"subjects": {"a": {}}}})
+        cfg = self._load()
+        self.assertEqual("make", namespace(cfg, "shared")["worktreeSetup"])
+        self.assertNotIn("gitConventions", namespace(cfg, "shared"))
+        self.assertEqual({"shared.worktreeSetup", "shared.gitConventions.prTitle",
+                          "specs.subjects"},
+                         {row["key"] for row in cfg["localConfig"]["ignored"]})
+
+    def test_a_local_layer_without_a_repository_file_still_applies(self):
+        (self.repo / ".claude").rmdir()
+        subprocess.run(["git", "init", "-q", str(self.repo)], check=True)
+        self._local({"shared": {"contextBudgets": {"main": 1000}}})
+        self.assertEqual({"main": 1000}, namespace(self._load(), "shared")["contextBudgets"])
+
+    def test_an_unreadable_local_file_is_reported_not_fatal(self):
+        self._repo({})
+        (self.repo / ".agents").mkdir(exist_ok=True)
+        (self.repo / ".agents" / "quenching.local.json").write_text("{nope")
+        self.assertTrue(self._load()["localConfig"]["unparseable"])
 
 
 if __name__ == "__main__":
