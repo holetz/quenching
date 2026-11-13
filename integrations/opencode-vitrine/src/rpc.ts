@@ -229,6 +229,20 @@ const quenchingUpdate = {
   additionalProperties: false,
 } as const
 
+const configRead = {
+  type: "object",
+  properties: { ok: { type: "boolean" }, json: { type: "string" }, error: { type: "string" } },
+  required: ["ok", "json", "error"],
+  additionalProperties: false,
+} as const
+
+const configWrite = {
+  type: "object",
+  properties: { ok: { type: "boolean" }, message: { type: "string" } },
+  required: ["ok", "message"],
+  additionalProperties: false,
+} as const
+
 const changed = {
   type: "object",
   properties: { sessionID: { type: "string" } },
@@ -319,6 +333,29 @@ export type Quenching = {
   error: string
 }
 export type QuenchingUpdate = { ok: boolean; version: string; available: string; output: string }
+export type ConfigRead = { ok: boolean; json: string; error: string }
+export type ConfigWrite = { ok: boolean; message: string }
+export type ConfigLayer = "project" | "local"
+/** Uma chave do registro, como `cq config schema --json` a imprime. */
+export type ConfigKey = {
+  key: string
+  type: "string" | "integer" | "number" | "boolean" | "enum" | "paths" | "strings" | "prose" | "object"
+  default: unknown
+  category: string
+  scope: "project" | "machine" | "either"
+  reader: string
+  editable: boolean
+  choices?: string[]
+  minimum?: number
+  maximum?: number
+  copy: Record<"en" | "pt-BR", { title: string; summary: string }>
+}
+export type ConfigSchema = {
+  categories: { id: string; title: Record<"en" | "pt-BR", string> }[]
+  keys: ConfigKey[]
+  values: Record<string, { value: unknown; source: string }>
+  layerPaths: Record<ConfigLayer, string>
+}
 
 const empty = { type: "object", properties: {}, additionalProperties: false } as const
 
@@ -384,6 +421,30 @@ export const Vitrine = Rpc.define({
         additionalProperties: false,
       },
       output: quenchingHealth,
+    },
+    config: {
+      input: {
+        type: "object",
+        properties: { directory: { type: "string" } },
+        required: ["directory"],
+        additionalProperties: false,
+      },
+      output: configRead,
+    },
+    configWrite: {
+      input: {
+        type: "object",
+        properties: {
+          directory: { type: "string" },
+          key: { type: "string" },
+          layer: { type: "string", enum: ["project", "local"] },
+          value: { type: "string" },
+          unset: { type: "boolean" },
+        },
+        required: ["directory", "key", "layer", "value", "unset"],
+        additionalProperties: false,
+      },
+      output: configWrite,
     },
     upgrade: {
       input: {
