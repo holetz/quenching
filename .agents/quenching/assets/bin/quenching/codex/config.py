@@ -1,25 +1,26 @@
 """The `shared.codex` block of `.agents/quenching.json`, with its defaults.
 
-The block is optional: absent, every default holds and `crossReview` is `auto`. `"off"` is the
-explicit opt-out. A value of the wrong shape falls back to its default and is named in
-`warnings`, so a typo never silently changes the threshold a caller relies on.
+The block is optional: absent, every default holds and Codex is off — `crossReview` is `off` and
+`executor.enabled` is `false`. A repository opts in by declaring `crossReview: "auto"`. A value of
+the wrong shape falls back to its default and is named in `warnings`, so a typo never silently
+changes the threshold a caller relies on.
 
 `executor` configures Codex writing one task's code inside `/quenching-specs execute`. It is
-on by default and independent of `crossReview`: `crossReview: "off"` turns off the review, never
-the executor. Codex's native sandbox is not configurable: the executor always runs with the
-bypass, inside the worktree, under the git guard.
+off by default (`executor.enabled: true` opts in) and independent of `crossReview`:
+`crossReview: "off"` turns off the review, never the executor. Codex's native sandbox is not
+configurable: the executor always runs with the bypass, inside the worktree, under the git guard.
 """
 from __future__ import annotations
 
 from quenching.common.config import load_config, namespace
 
 DEFAULTS = {
-    "crossReview": "auto",
+    "crossReview": "off",
     "maxUsedPercent": {"primary": 80, "secondary": 90},
     "timeoutSeconds": 900,
     "model": "gpt-6-astra",
     "executor": {
-        "enabled": True,
+        "enabled": False,
         "modelSmall": "gpt-6.1-sol",
         "modelVerified": "gpt-6.1-sol",
         "modelSmallTier": "gpt-6-luna",
@@ -54,7 +55,8 @@ def load_settings(root: str) -> tuple[dict, list[str]]:
         if block["crossReview"] in CROSS_REVIEW:
             settings["crossReview"] = block["crossReview"]
         else:
-            warnings.append("shared.codex.crossReview must be 'auto' or 'off'; 'auto' applies")
+            warnings.append("shared.codex.crossReview must be 'auto' or 'off'; "
+                            f"{DEFAULTS['crossReview']!r} applies")
     ceilings = block.get("maxUsedPercent", {})
     if isinstance(ceilings, dict):
         for window in ("primary", "secondary"):
