@@ -66,8 +66,8 @@ class SeedDocument(unittest.TestCase):
             self.assertEqual(context_mod.BUDGETS[role], context_mod.effective_budgets(root)[role])
 
     def test_seed_is_a_copy_not_the_owner_dict(self):
-        seed.seed_document(str(self.repo))["shared"]["codex"]["executor"]["enabled"] = False
-        self.assertTrue(codex_config.DEFAULTS["executor"]["enabled"])
+        seed.seed_document(str(self.repo))["shared"]["codex"]["executor"]["enabled"] = True
+        self.assertFalse(codex_config.DEFAULTS["executor"]["enabled"])
 
     def test_missing_keys_lists_exactly_the_deleted_leaves(self):
         doc = seed.seed_document(str(self.repo))

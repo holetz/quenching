@@ -4,10 +4,10 @@ title: Plugin configuration contract
 description: "`.agents/quenching.json` is the plugin's single configuration home, with `.claude/quenching.json` read as legacy; provider selection is derived from the repository remote, while placement, Azure mappings, lifecycle hooks, profiles, proposal catalogues and the `git` pillar's per-artifact writing directives remain explicit target settings"
 resource: .agents/quenching.json, quenching/assets/bin/quenching/common/config.py, quenching/assets/bin/quenching/specs/config.py, quenching/assets/bin/quenching/specs/store.py, quenching/assets/bin/quenching/ops/**, quenching/assets/bin/quenching/proof/**, quenching/assets/bin/quenching/git/base.py, quenching/assets/bin/quenching/git/conventions.py, quenching/assets/bin/quenching/git/ignored.py, quenching/assets/bin/quenching/config/**, quenching/assets/bin/quenching/common/identity.py
 tags: [workflows, specs, configuration, provider, plugin]
-timestamp: 2026-11-06
+timestamp: 2026-11-14
 audience: both
 authority: current
-source: specs 1065, 1075, 1405, 1907, 1908, 1909, 1910, 1911, 1912, 2092, 2118, 2164, 2175, 2022, 1020213 — lineage in decision 0004
+source: specs 1065, 1075, 1405, 1907, 1908, 1909, 1910, 1911, 1912, 2092, 2118, 2164, 2175, 2190, 2022, 1020213 — lineage in decision 0004
 maintainer: quenching
 ---
 
@@ -229,9 +229,10 @@ specs adapter to obtain shared configuration.
 
 ## The `shared.codex` block
 
-`shared.codex` configures `cq codex` (`codex/config.py`): `crossReview` (`auto` · `off`),
-`maxUsedPercent` (`{primary: 80, secondary: 90}`), `timeoutSeconds` (`900`), `model` (`gpt-6-astra`)
-and the `executor` object. Its keys and their effect are owned by
+`shared.codex` configures `cq codex` (`codex/config.py`): `crossReview` (`auto` · `off`, default
+`off`), `maxUsedPercent` (`{primary: 80, secondary: 90}`), `timeoutSeconds` (`900`), `model` (`gpt-6-astra`)
+and the `executor` object (`enabled` defaults to `false`). Codex is opt-in: an absent block calls
+it nowhere. Its keys and their effect are owned by
 [codex-pillar.md](../architecture/codex-pillar.md); a leaf of the wrong shape falls back to its
 default and is named in the payload's warnings, and `cq config show --effective` lists every leaf.
 `delivery.provider` is read by `delivery/config.py`; `specs.artifactLanguage`, `specs.card` and

@@ -4,10 +4,10 @@ title: Codex pillar
 description: A pillar that reads the Codex quota, runs the Codex CLI as an independent reviewer that must change nothing, and lets it write one eligible spec task inside a worktree — app-server quota first, exit 0/1/2 failing closed, Codex's native sandbox never asked for, both runs under the bypass bounded by a git guard (the review's proves the tree unchanged, the executor's proves its diff inside `files:`), a stop-loss, and argv that never inherits the user's Codex configuration
 resource: quenching/assets/bin/quenching/codex/**, quenching/tests/test_codex_probe.py, quenching/tests/test_codex_review.py, quenching/tests/test_codex_eligible.py, quenching/tests/test_codex_implement.py, quenching/tests/fixtures/codex/**, .agents/quenching.json
 tags: [architecture, codex, pillar, git-guard, quota, review, executor]
-timestamp: 2026-10-18
+timestamp: 2026-11-14
 audience: both
 authority: current
-source: specs 1818, 1879, 1661, 1660, 1817, 1914, ADR 0014 — lineage in decision 0004
+source: specs 1818, 1879, 1661, 1660, 1817, 1914, 2190, ADR 0014 — lineage in decision 0004
 maintainer: quenching
 ---
 
@@ -116,15 +116,17 @@ are state.
 The optional `shared.codex` block of `.agents/quenching.json`:
 
 ```json
-{"crossReview": "auto", "maxUsedPercent": {"primary": 80, "secondary": 90},
+{"crossReview": "off", "maxUsedPercent": {"primary": 80, "secondary": 90},
  "timeoutSeconds": 900, "model": "gpt-6-astra",
- "executor": {"enabled": true, "modelSmall": "gpt-6.1-sol", "modelVerified": "gpt-6.1-sol",
+ "executor": {"enabled": false, "modelSmall": "gpt-6.1-sol", "modelVerified": "gpt-6.1-sol",
               "modelSmallTier": "gpt-6-luna", "reasoningEffort": "medium",
               "maxTaskTokens": 20000, "reservePercent": 10, "stopLossPercent": 15}}
 ```
 
-These are the defaults; an absent block is every default. `crossReview: "off"` is the explicit
-opt-out of the review; it never turns off the executor, whose own switch is `executor.enabled`. A value of the wrong shape falls back to its default and is named in the payload's
+These are the defaults; an absent block is every default, so **Codex is opt-in**: a repository that
+declares nothing never calls it, and `cq config init` seeds the same disabled values.
+`crossReview: "auto"` opts in to the review; `"off"` never turns off the executor, whose own switch
+is `executor.enabled` (`true` opts in). A value of the wrong shape falls back to its default and is named in the payload's
 `warnings`. There is no sandbox key: a leftover `executor.sandbox` or `executor.windowsSandbox` is
 ignored.
 

@@ -427,9 +427,10 @@ reviewer gets no Codex grant. Two verbs of the `codex` pillar carry it:
   argv that ignores the user's Codex configuration and never asks for Codex's native sandbox; a
   git guard proves afterwards that the review changed nothing.
 
-**Default and opt-out.** The review runs by default whenever the quota allows
-(`shared.codex.crossReview: "auto"`); `"off"` in `.agents/quenching.json` is the explicit refusal.
-The optional `shared.codex` block defaults to `maxUsedPercent` `80` (primary) and `90`
+**Opt-in.** Codex is off by default: `shared.codex.crossReview` defaults to `"off"`, so a
+repository that declares nothing never calls Codex, and `cq config init` seeds that same value.
+Declaring `"crossReview": "auto"` in `.agents/quenching.json` turns the review on whenever the quota
+allows. The optional `shared.codex` block defaults to `maxUsedPercent` `80` (primary) and `90`
 (secondary), `timeoutSeconds` `900` and `model` `gpt-6-astra`; an absent block is every default.
 
 **Cost and quota.** One Codex call per epic, billed to the ChatGPT/Codex quota and never to the
@@ -463,8 +464,8 @@ side reproduces it, with the command and its output. The Codex surface (`quenchi
 
 Step 5b of `/quenching-specs execute` hands **one task at a time** to Codex when the code
 admits it; Claude keeps the self-review, the `verify:`, the commit, the tick and the verifier. It
-is **on by default**, under `shared.codex.executor` in `.agents/quenching.json`, and independent of
-`crossReview` (`executor.enabled: false` is its opt-out).
+is **off by default**, under `shared.codex.executor` in `.agents/quenching.json`, and independent of
+`crossReview` (`executor.enabled: true` is its opt-in).
 
 - **Eligibility** — `cq codex eligible --spec <id> --task <tid> --json`: an open task that declares
   `files:`, writes nothing under `docs/` or `knowledge/`, and is small (bytes of its `files:` / 4 ≤

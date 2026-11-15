@@ -22,8 +22,9 @@ from quenching.codex.eligible import eligibility, reserved, run_eligible, task_t
 
 
 def settings(**executor) -> dict:
+    """A repository that opted in: the executor is off by default, so every fixture enables it."""
     return {**DEFAULTS, "maxUsedPercent": dict(DEFAULTS["maxUsedPercent"]),
-            "executor": {**DEFAULTS["executor"], **executor}}
+            "executor": {**DEFAULTS["executor"], "enabled": True, **executor}}
 
 
 def task(files=("src/a.py",), verify=None, state=" ") -> dict:
@@ -108,6 +109,14 @@ class EligibilityTest(unittest.TestCase):
             self.assertEqual(code, 1, path)
             self.assertIn("docs/ or knowledge/", payload["reason"])
 
+    def test_the_default_settings_never_dispatch(self):
+        quota = Quota()
+        default = {**DEFAULTS, "executor": dict(DEFAULTS["executor"])}
+        payload, code = eligibility(task(), default, self.root, quota)
+        self.assertEqual(code, 1)
+        self.assertEqual("shared.codex.executor.enabled is false", payload["reason"])
+        self.assertEqual([], quota.seen)
+
     def test_no_files_disabled_or_closed_task_is_not_eligible(self):
         self.assertEqual(eligibility(task(files=[]), settings(), self.root, Quota())[1], 1)
         self.assertEqual(eligibility(task(), settings(enabled=False), self.root, Quota())[1], 1)
@@ -143,6 +152,7 @@ class CliTest(unittest.TestCase):
         with mock.patch("quenching.codex.eligible.open_backend",
                         return_value=(FakeBackend(info), {})), \
                 mock.patch("quenching.codex.eligible.probe", Quota()), \
+                mock.patch("quenching.codex.load_settings", return_value=(settings(), [])), \
                 tempfile.TemporaryDirectory() as root, contextlib.redirect_stdout(out):
             code = main(["eligible", "--root", root, "--json", *argv])
         return code, json.loads(out.getvalue())
