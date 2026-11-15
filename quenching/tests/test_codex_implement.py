@@ -100,7 +100,8 @@ class Implement(unittest.TestCase):
                     "AWS_SECRET_ACCESS_KEY": "s", "GIT_AUTHOR_NAME": "t",
                     "GIT_AUTHOR_EMAIL": "t@t", "GIT_COMMITTER_NAME": "t",
                     "GIT_COMMITTER_EMAIL": "t@t", "HOME": str(self.tmp)}
-        self.settings = {**DEFAULTS, "timeoutSeconds": 20, "executor": dict(DEFAULTS["executor"])}
+        self.settings = {**DEFAULTS, "timeoutSeconds": 20,
+                         "executor": {**DEFAULTS["executor"], "enabled": True}}
         self.tasks = [task()]
 
     def implement(self, quota=None, run="r1", **executor):
@@ -207,6 +208,7 @@ class Implement(unittest.TestCase):
         with mock.patch("quenching.codex.implement.open_backend",
                         return_value=(FakeBackend(self.tasks), {})), \
                 mock.patch("quenching.codex.implement.probe", Quota(10, 12)), \
+                mock.patch("quenching.codex.load_settings", return_value=(self.settings, [])), \
                 mock.patch.dict(os.environ, self.env, clear=True), \
                 contextlib.redirect_stdout(out):
             code = main(["implement", "--root", str(self.repo), "--json", "--spec", "7",

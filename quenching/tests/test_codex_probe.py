@@ -149,7 +149,9 @@ class FakeCodex(unittest.TestCase):
                     "FAKE_CODEX_LIMITS": json.dumps(limits())}
 
     def settings(self, **overrides) -> dict:
-        return {**DEFAULTS, "maxUsedPercent": dict(DEFAULTS["maxUsedPercent"]), **overrides}
+        # a repository that opted in: crossReview is off by default
+        return {**DEFAULTS, "crossReview": "auto",
+                "maxUsedPercent": dict(DEFAULTS["maxUsedPercent"]), **overrides}
 
     def calls(self) -> list:
         if not self.log.exists():
@@ -278,14 +280,15 @@ class TheSettings(unittest.TestCase):
             (pathlib.Path(raw) / ".claude").mkdir()
             (pathlib.Path(raw) / ".claude" / "quenching.json").write_text("{}", encoding="utf-8")
             self.assertEqual((DEFAULTS, []), load_settings(raw))
+        self.assertEqual(("off", False), (DEFAULTS["crossReview"], DEFAULTS["executor"]["enabled"]))
 
     def test_declared_values_override_the_defaults(self):
         with tempfile.TemporaryDirectory() as raw:
-            self.write(pathlib.Path(raw), {"crossReview": "off", "timeoutSeconds": 60,
+            self.write(pathlib.Path(raw), {"crossReview": "auto", "timeoutSeconds": 60,
                                            "model": "m", "maxUsedPercent": {"primary": 50}})
             settings, warnings = load_settings(raw)
         self.assertEqual([], warnings)
-        self.assertEqual(("off", 60, "m"), (settings["crossReview"], settings["timeoutSeconds"],
+        self.assertEqual(("auto", 60, "m"), (settings["crossReview"], settings["timeoutSeconds"],
                                             settings["model"]))
         self.assertEqual({"primary": 50, "secondary": 90}, settings["maxUsedPercent"])
 
@@ -310,13 +313,13 @@ class TheSettings(unittest.TestCase):
 class TheExecutorSettings(unittest.TestCase):
     write = TheSettings.write
 
-    def test_the_executor_is_on_by_default_and_outside_cross_review(self):
+    def test_the_executor_is_off_by_default_and_outside_cross_review(self):
         with tempfile.TemporaryDirectory() as raw:
-            self.write(pathlib.Path(raw), {"crossReview": "off"})
+            self.write(pathlib.Path(raw), {"crossReview": "auto"})
             settings, warnings = load_settings(raw)
         self.assertEqual([], warnings)
         self.assertEqual(DEFAULTS["executor"], settings["executor"])
-        self.assertEqual((True, 20000, 10, 15),
+        self.assertEqual((False, 20000, 10, 15),
                          tuple(settings["executor"][k] for k in (
                              "enabled", "maxTaskTokens", "reservePercent", "stopLossPercent")))
         self.assertFalse({"sandbox", "windowsSandbox"} & set(settings["executor"]))
@@ -324,12 +327,12 @@ class TheExecutorSettings(unittest.TestCase):
     def test_declared_executor_values_override_the_defaults(self):
         with tempfile.TemporaryDirectory() as raw:
             self.write(pathlib.Path(raw), {"executor": {
-                "enabled": False, "modelSmall": " s ", "maxTaskTokens": 5000,
+                "enabled": True, "modelSmall": " s ", "maxTaskTokens": 5000,
                 "reservePercent": 5}})
             settings, warnings = load_settings(raw)
         self.assertEqual([], warnings)
         executor = settings["executor"]
-        self.assertEqual((False, "s", 5000, 5, 15),
+        self.assertEqual((True, "s", 5000, 5, 15),
                          (executor["enabled"], executor["modelSmall"], executor["maxTaskTokens"],
                           executor["reservePercent"], executor["stopLossPercent"]))
 
@@ -356,6 +359,10 @@ class TheExecutorSettings(unittest.TestCase):
 
 
 class TheCommandLine(FakeCodex):
+    def setUp(self):
+        super().setUp()
+        TheSettings.write(self, self.tmp, {"crossReview": "auto"})   # off by default: opt in
+
     def run_main(self, argv: list[str]) -> tuple[int, str]:
         buffer = io.StringIO()
         with mock.patch.dict(os.environ, self.env, clear=False), \
