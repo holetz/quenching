@@ -12,8 +12,8 @@ import _paths  # noqa: F401
 from quenching.specs.backends.memory import MemoryBackend
 from quenching.specs.commands.cli import build_parser
 from quenching.specs.commands.estimate import (EXECUTE_BODY, EXECUTOR_FIXED_TOKENS,
-                                               SMALL_TIER_CEILING, cmd_estimate, estimate_build,
-                                               estimate_task)
+                                               SMALL_TIER_CEILING, _shipped_execute_body,
+                                               cmd_estimate, estimate_build, estimate_task)
 from quenching.specs.commands.output import Emitter
 
 
@@ -313,6 +313,23 @@ class SmallTierProjection(unittest.TestCase):
         missing = self.project("- [ ] 1.1 Task\n      files: gone.py\n" + self.VERIFY)
         self.assertFalse(missing["smallTierEligible"])
         self.assertIsNone(self.project("- [ ] 1.1 Task\n      files: a.py\n", "9.9"))
+
+
+class ShippedExecuteBody(unittest.TestCase):
+    def test_installed_layout_is_found_and_the_source_wins_when_both_exist(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            module = root / ".agents/quenching/assets/bin/quenching/specs/commands/estimate.py"
+            rel = "skills/quenching-specs/references/execute.md"
+            self.assertEqual(root / ".agents/quenching" / rel, _shipped_execute_body(module))
+            installed = root / ".agents" / rel
+            installed.parent.mkdir(parents=True)
+            installed.write_text("installed")
+            self.assertEqual(installed, _shipped_execute_body(module))
+            source = root / ".agents/quenching" / rel
+            source.parent.mkdir(parents=True)
+            source.write_text("source")
+            self.assertEqual(source, _shipped_execute_body(module))
 
 
 class EstimatorCommand(unittest.TestCase):

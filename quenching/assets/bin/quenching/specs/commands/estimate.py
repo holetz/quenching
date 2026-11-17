@@ -22,7 +22,17 @@ EXCLUDED = [
     "host/system/harness overhead", "conditional execute references", "tool/test output",
     "iteration count", "growing conversation history", "generated code",
 ]
-EXECUTE_BODY = Path(__file__).resolve().parents[5] / "skills/quenching-specs/references/execute.md"
+_EXECUTE_REL = "skills/quenching-specs/references/execute.md"
+
+
+def _shipped_execute_body(module: Path) -> Path:
+    """The execute body beside this runtime: `quenching/skills/` in the source checkout, or
+    `.agents/skills/` where `cq deploy` installed the runtime under `.agents/quenching/`."""
+    candidates = [module.parents[n] / _EXECUTE_REL for n in (5, 6)]
+    return next((c for c in candidates if c.is_file()), candidates[0])
+
+
+EXECUTE_BODY = _shipped_execute_body(Path(__file__).resolve())
 # Small-tier projection (ADR 0014). Fixed prompt of a Task sub-agent in this repository,
 # measured 2026-10-17 on the first turn of general-purpose sub-agents (32065-33329 tokens).
 EXECUTOR_FIXED_TOKENS = 33000
