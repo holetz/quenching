@@ -160,6 +160,41 @@ class Deploy(unittest.TestCase):
         self.assertFalse((self.target / ".agents/quenching").exists())
         self.assertIn("keep me", (self.target / ".agents/skills/quenching-specs/SKILL.md").read_text())
 
+    def drop_from_manifest(self, rel: str):
+        path = self.target / ".agents/.quenching-deploy.json"
+        manifest = json.loads(path.read_text())
+        del manifest["files"][rel]
+        path.write_text(json.dumps(manifest, indent=2) + "\n")
+
+    def test_an_unowned_bridge_copy_with_the_generated_bytes_is_adopted(self):
+        self.write(".agents/skills/my-skill/SKILL.md", "---\ndescription: Mine.\n---\n\nBody.\n")
+        self.assertEqual(0, self.run_deploy("--modules", "specs", "--write")[0])
+        bridge = self.target / ".claude/skills/my-skill/SKILL.md"
+        before = bridge.read_bytes()
+        self.drop_from_manifest(".claude/skills/my-skill/SKILL.md")
+        code, payload = self.run_deploy("--modules", "specs", "--check")
+        self.assertEqual(1, code)
+        self.assertIn({"path": ".claude/skills/my-skill/SKILL.md", "change": "adopt"},
+                      payload["changes"])
+        self.assertEqual([], payload["conflicts"])
+        self.assertEqual(0, self.run_deploy("--modules", "specs", "--write")[0])
+        self.assertEqual(before, bridge.read_bytes())
+        manifest = json.loads((self.target / ".agents/.quenching-deploy.json").read_text())
+        self.assertIn(".claude/skills/my-skill/SKILL.md", manifest["files"])
+        code, payload = self.run_deploy("--modules", "specs", "--check")
+        self.assertEqual((0, []), (code, payload["changes"]))
+
+    def test_an_unowned_bridge_copy_that_differs_still_refuses(self):
+        self.write(".agents/skills/my-skill/SKILL.md", "---\ndescription: Mine.\n---\n\nBody.\n")
+        self.assertEqual(0, self.run_deploy("--modules", "specs", "--write")[0])
+        self.drop_from_manifest(".claude/skills/my-skill/SKILL.md")
+        self.write(".claude/skills/my-skill/SKILL.md", "edited by hand\n")
+        code, payload = self.run_deploy("--modules", "specs", "--write")
+        self.assertEqual(2, code)
+        self.assertEqual("ct-deploy-unowned", payload["code"])
+        self.assertEqual("edited by hand\n",
+                         (self.target / ".claude/skills/my-skill/SKILL.md").read_text())
+
     def test_module_selection_limits_skills_and_enabled_pillars(self):
         self.assertEqual(0, self.run_deploy("--modules", "specs", "--write")[0])
         self.assertTrue((self.target / ".agents/skills/quenching-specs/SKILL.md").exists())
