@@ -35,7 +35,7 @@ class BuildSizeApproval(unittest.TestCase):
 
     def test_manual_describes_a_heuristic_without_guaranteeing_fit(self):
         text = prose("README.md")
-        for marker in ("cq specs estimate", "bytes / 4", "100000", "never proves", "unresolved"):
+        for marker in ("cq specs estimate", "bytes / 4", "200000", "never proves", "unresolved"):
             self.assertIn(marker, text)
 
 
