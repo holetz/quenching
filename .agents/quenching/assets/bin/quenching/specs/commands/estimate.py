@@ -22,7 +22,17 @@ EXCLUDED = [
     "host/system/harness overhead", "conditional execute references", "tool/test output",
     "iteration count", "growing conversation history", "generated code",
 ]
-EXECUTE_BODY = Path(__file__).resolve().parents[5] / "skills/quenching-specs/references/execute.md"
+_EXECUTE_REL = "skills/quenching-specs/references/execute.md"
+
+
+def _shipped_execute_body(module: Path) -> Path:
+    """The execute body beside this runtime: `quenching/skills/` in the source checkout, or
+    `.agents/skills/` where `cq deploy` installed the runtime under `.agents/quenching/`."""
+    candidates = [module.parents[n] / _EXECUTE_REL for n in (5, 6)]
+    return next((c for c in candidates if c.is_file()), candidates[0])
+
+
+EXECUTE_BODY = _shipped_execute_body(Path(__file__).resolve())
 # Small-tier projection (ADR 0014). Fixed prompt of a Task sub-agent in this repository,
 # measured 2026-10-17 on the first turn of general-purpose sub-agents (32065-33329 tokens).
 EXECUTOR_FIXED_TOKENS = 33000
@@ -83,8 +93,17 @@ def _is_generated_mirror(root: Path, entry: str) -> bool:
     return False
 
 
+def _is_declared_write_only(label: str, write_only: list[str]) -> bool:
+    """A repository-declared path: the relative label equal to, or `fnmatch`-ing, one entry."""
+    return any(label == pattern or fnmatch.fnmatch(label, pattern) for pattern in write_only)
+
+
+def _valid_paths(value) -> bool:
+    return isinstance(value, list) and all(isinstance(v, str) and v.strip() for v in value)
+
+
 def estimate_build(info: dict, root: str | Path, budget: int = WORKER_BUDGET_TOKENS,
-                   preamble: Path = EXECUTE_BODY) -> dict:
+                   preamble: Path = EXECUTE_BODY, write_only: list[str] | None = None) -> dict:
     """Load no task file contents: sizes and the backend's parsed document are enough."""
     root = Path(root).resolve()
     impact = strip_comments(info["sections"].get("Impact", {}).get("body", ""))
@@ -110,8 +129,11 @@ def estimate_build(info: dict, root: str | Path, budget: int = WORKER_BUDGET_TOK
         for task in tasks:
             for entry in task["files"]:
                 row = _file_size(root, entry)
-                if row["path"] not in standard_paths and _is_generated_mirror(root, entry):
-                    row["writeOnly"] = "generated mirror"
+                if row["path"] not in standard_paths:
+                    if _is_declared_write_only(row["path"], write_only or []):
+                        row["writeOnly"] = "declared by repo"
+                    elif _is_generated_mirror(root, entry):
+                        row["writeOnly"] = "generated mirror"
                 files[row["path"]] = row
         unresolved = [{"path": row["path"], "reason": row["reason"]}
                       for row in files.values() if row["bytes"] is None and not row.get("writeOnly")]
@@ -219,13 +241,16 @@ def _cmd_estimate_task(args, root: str, out: Emitter, info: dict) -> int:
 
 
 def cmd_estimate(args, root: str, out: Emitter) -> int:
+    from quenching.common.config import setting
     if args.worker_budget is None:
-        from quenching.common.config import setting
         args.worker_budget, warning = setting(
             root, "shared", "contextBudgets.worker", WORKER_BUDGET_TOKENS,
             lambda v: isinstance(v, int) and not isinstance(v, bool) and v > 0)
         if warning:
             print(f"warning: {warning}", file=sys.stderr)
+    write_only, warning = setting(root, "specs", "estimate.writeOnly", [], _valid_paths)
+    if warning:
+        print(f"warning: {warning}", file=sys.stderr)
     if args.worker_budget <= 0:
         return out.emit_err(args.json, {"code": "sp-bad-worker-budget", "exit": 2,
                                        "message": "worker budget must be a positive token count"})
@@ -237,7 +262,8 @@ def cmd_estimate(args, root: str, out: Emitter) -> int:
         return out.emit_err(args.json, err)
     if getattr(args, "task", None):
         return _cmd_estimate_task(args, root, out, info)
-    payload = {"ok": True, "id": info["id"], **estimate_build(info, root, args.worker_budget)}
+    payload = {"ok": True, "id": info["id"], **estimate_build(info, root, args.worker_budget,
+                                                               write_only=write_only)}
     human = (f"{info['id']} — estimated declared reading (UTF-8 bytes / 4)\n"
              f"  max section: {payload['maxSectionTokens']} estimated tokens / "
              f"worker budget: {args.worker_budget}\n")

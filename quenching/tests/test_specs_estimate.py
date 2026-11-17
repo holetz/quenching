@@ -12,8 +12,8 @@ import _paths  # noqa: F401
 from quenching.specs.backends.memory import MemoryBackend
 from quenching.specs.commands.cli import build_parser
 from quenching.specs.commands.estimate import (EXECUTE_BODY, EXECUTOR_FIXED_TOKENS,
-                                               SMALL_TIER_CEILING, cmd_estimate, estimate_build,
-                                               estimate_task)
+                                               SMALL_TIER_CEILING, _shipped_execute_body,
+                                               cmd_estimate, estimate_build, estimate_task)
 from quenching.specs.commands.output import Emitter
 
 
@@ -163,6 +163,73 @@ class DeclaredReading(unittest.TestCase):
                             "integrations/quenching-specs/nested/big.py\n")["sections"][0]
         self.assertEqual("generated mirror", row["files"][0]["writeOnly"])
 
+    def test_declared_exact_and_glob_paths_keep_size_but_add_no_reading_tokens(self):
+        (self.root / "bundle/catalogs").mkdir(parents=True)
+        (self.root / "bundle/catalogs/tasks_manifest.json").write_bytes(b"m" * 4000)
+        (self.root / "bundle/registry").mkdir(parents=True)
+        (self.root / "bundle/registry/columns.yml").write_bytes(b"c" * 3000)
+        task = ("- [ ] 1.1 Task\n      files: a.py, bundle/catalogs/tasks_manifest.json, "
+                "bundle/registry/columns.yml\n")
+        result = self.estimate(task, write_only=["bundle/catalogs/tasks_manifest.json",
+                                                 "bundle/registry/*.yml"])
+        row = result["sections"][0]
+        self.assertEqual(20 + result["specBuildBytes"] + 400, row["bytes"])
+        self.assertEqual([{"path": "a.py", "bytes": 400},
+                          {"path": "bundle/catalogs/tasks_manifest.json", "bytes": 4000,
+                           "writeOnly": "declared by repo"},
+                          {"path": "bundle/registry/columns.yml", "bytes": 3000,
+                           "writeOnly": "declared by repo"}], row["files"])
+        self.assertEqual([], row["unresolved"])
+
+    def test_declared_missing_path_is_not_unresolved(self):
+        for suffix in ("", " (new)"):
+            with self.subTest(suffix=suffix):
+                row = self.estimate(f"- [ ] 1.1 Task\n      files: out/gen.json{suffix}\n",
+                                    write_only=["out/*"])["sections"][0]
+                self.assertEqual("declared by repo", row["files"][0]["writeOnly"])
+                self.assertEqual([], row["unresolved"])
+                self.assertTrue(row["complete"])
+
+    def test_declared_path_wins_over_generated_mirror(self):
+        generated = self.root / "integrations/quenching-specs"
+        generated.mkdir(parents=True)
+        (generated / ".generated-from.json").write_text("{}")
+        row = self.estimate("- [ ] 1.1 Task\n      files: integrations/quenching-specs/x.py\n",
+                            write_only=["integrations/**"])["sections"][0]
+        self.assertEqual("declared by repo", row["files"][0]["writeOnly"])
+
+    def test_impact_standard_is_counted_even_when_declared(self):
+        standard = "docs/standards/agents/communication.md"
+        result = self.estimate(f"- [ ] 1.1 Task\n      files: {standard}\n", f"- /{standard}\n",
+                               write_only=["docs/*"])
+        row = result["sections"][0]
+        self.assertEqual([{"path": standard, "bytes": 80}], row["files"])
+        self.assertEqual(20 + result["specBuildBytes"] + 80, row["bytes"])
+
+    def test_without_declaration_the_result_is_unchanged(self):
+        task = "- [ ] 1.1 Task\n      files: a.py, missing.py\n"
+        self.assertEqual(self.estimate(task), self.estimate(task, write_only=[]))
+
+    def test_cli_reads_the_declaration_and_warns_on_an_invalid_value(self):
+        (self.root / "big.json").write_bytes(b"b" * 4000)
+        backend = MemoryBackend()
+        backend.create_spec("plans", "---\ntitle: Estimate\ndate: 2026-10-14\n---\n"
+                            "\n## Tasks\n- [ ] 1.1 Task\n      files: big.json\n")
+        config = self.root / ".agents/quenching.json"
+        config.parent.mkdir(parents=True, exist_ok=True)
+        args = argparse.Namespace(spec="1", json=True, worker_budget=100000, task=None)
+        for value, expected in ((["big.json"], "declared by repo"), ("big.json", None)):
+            with self.subTest(value=value):
+                config.write_text(json.dumps({"specs": {"estimate": {"writeOnly": value}}}))
+                stdout, stderr = io.StringIO(), io.StringIO()
+                with patch("quenching.specs.commands.estimate.open_backend",
+                           return_value=(backend, None)), \
+                        contextlib.redirect_stdout(stdout), contextlib.redirect_stderr(stderr):
+                    self.assertEqual(0, cmd_estimate(args, str(self.root), Emitter()))
+                files = json.loads(stdout.getvalue())["sections"][0]["files"]
+                self.assertEqual(expected, files[0].get("writeOnly"))
+                self.assertEqual(expected is None, "specs.estimate.writeOnly" in stderr.getvalue())
+
     def test_empty_spec_and_unavailable_preamble_are_incomplete(self):
         self.assertFalse(self.estimate("- none — no tasks")["complete"])
         self.preamble.unlink()
@@ -246,6 +313,23 @@ class SmallTierProjection(unittest.TestCase):
         missing = self.project("- [ ] 1.1 Task\n      files: gone.py\n" + self.VERIFY)
         self.assertFalse(missing["smallTierEligible"])
         self.assertIsNone(self.project("- [ ] 1.1 Task\n      files: a.py\n", "9.9"))
+
+
+class ShippedExecuteBody(unittest.TestCase):
+    def test_installed_layout_is_found_and_the_source_wins_when_both_exist(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            module = root / ".agents/quenching/assets/bin/quenching/specs/commands/estimate.py"
+            rel = "skills/quenching-specs/references/execute.md"
+            self.assertEqual(root / ".agents/quenching" / rel, _shipped_execute_body(module))
+            installed = root / ".agents" / rel
+            installed.parent.mkdir(parents=True)
+            installed.write_text("installed")
+            self.assertEqual(installed, _shipped_execute_body(module))
+            source = root / ".agents/quenching" / rel
+            source.parent.mkdir(parents=True)
+            source.write_text("source")
+            self.assertEqual(source, _shipped_execute_body(module))
 
 
 class EstimatorCommand(unittest.TestCase):

@@ -290,7 +290,9 @@ Impact standards once, plus the shipped execute body and spec build sections; an
 counts the shared files again. A declared file under a generated mirror directory (one holding
 `.generated-from.json` or `.generated-files.json`, except the files its module lists as `authored`)
 is write-only: a generator writes it and no task reads it, so it is listed with `writeOnly` but adds
-no bytes and is never unresolved. Missing/new files and undeclared task inputs remain unresolved.
+no bytes and is never unresolved. A path the repository declares in `specs.estimate.writeOnly`
+(exact or `fnmatch`) gets the same treatment as `writeOnly: "declared by repo"`, which wins over the
+mirror reason; an Impact standard is counted even when declared. Missing/new files and undeclared task inputs remain unresolved.
 The largest section is compared with the worker size estimate above. Total reading volume is
 not a context peak, and even complete declared-input coverage never proves the build fits:
 host/harness overhead, conditional references, outputs, generated code and iterations are excluded.

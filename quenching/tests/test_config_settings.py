@@ -86,6 +86,19 @@ class BudgetTests(unittest.TestCase):
         self.assertEqual(1234, args.worker_budget)
 
 
+class EstimateWriteOnlyTests(unittest.TestCase):
+    def test_absent_valid_invalid(self):
+        read = lambda root: setting(root, "specs", "estimate.writeOnly", [],  # noqa: E731
+                                    estimate_mod._valid_paths)
+        self.assertEqual(([], None), read(repo()))
+        self.assertEqual((["a/*.json"], None),
+                         read(repo({"specs": {"estimate": {"writeOnly": ["a/*.json"]}}})))
+        for bad in ("a.json", [1], [""]):
+            value, warning = read(repo({"specs": {"estimate": {"writeOnly": bad}}}))
+            self.assertEqual([], value)
+            self.assertIn("specs.estimate.writeOnly", warning)
+
+
 class ChatTests(unittest.TestCase):
     def test_defaults_valid_invalid(self):
         self.assertEqual({"model": "sonnet", "budgetUsd": 0.5, "timeoutSeconds": 300.0},
