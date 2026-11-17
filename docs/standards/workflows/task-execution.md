@@ -461,7 +461,7 @@ conditions hold:
 2. **Reversible** — a disposable worktree, no destructive git, nothing under `/docs/` or
    `knowledge/`;
 3. **Projected context ≤ 80k** — `cq specs estimate --spec <id> --task <tid> --json` reports
-   `oracleProtected` and `smallTierEligible`; 80k is a margin under the 100k worker budget;
+   `oracleProtected` and `smallTierEligible`; 80k is the Haiku ceiling of ADR 0014, independent of the worker budget;
 4. **Short ladder** — one attempt on the small tier; a failed `verify:` returns the task to the
    session model, which corrects on the diff; a second failure goes to the human;
 5. **Review by reading** — execute's own self-review, on the session model, reads the diff before

@@ -69,7 +69,7 @@ class CostTests(unittest.TestCase):
                      "cache_creation_input_tokens": 0, "output_tokens": 1,
                      "iterations": [{"type": "message", "input_tokens": window}]}
             return {"type": "assistant", "message": {"id": mid, "model": "opus", "usage": usage}}
-        write(self.sub / "agent-w1.jsonl", [windowed("w1a", 50000), windowed("w1b", 120000)])
+        write(self.sub / "agent-w1.jsonl", [windowed("w1a", 50000), windowed("w1b", 220000)])
         (self.sub / "agent-w1.meta.json").write_text('{"agentType":"quenching-specs:spec-runner"}')
         write(self.sub / "agent-w2.jsonl", [windowed("w2a", 90000)])
         (self.sub / "agent-w2.meta.json").write_text('{"agentType":"quenching-specs:spec-runner"}')
@@ -77,7 +77,7 @@ class CostTests(unittest.TestCase):
         data = json.loads(out)
         agents = {a["agentId"]: a for a in data["agents"]}
         self.assertEqual((agents["w1"]["role"], agents["w1"]["peakContext"], agents["w1"]["budget"],
-                          agents["w1"]["exceeded"]), ("worker", 120000, 100000, True))
+                          agents["w1"]["exceeded"]), ("worker", 220000, 200000, True))
         self.assertFalse(agents["w2"]["exceeded"])
         self.assertIsNone(agents["a"]["exceeded"])
         self.assertEqual(data["overBudget"], ["w1"])

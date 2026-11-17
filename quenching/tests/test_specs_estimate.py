@@ -257,7 +257,7 @@ class DeclaredReading(unittest.TestCase):
         self.assertFalse(self.estimate(task, budget=count)["overBudget"])
         self.assertTrue(self.estimate(task, budget=count - 1)["overBudget"])
         result = self.estimate(task)
-        self.assertEqual(100000, result["workerBudgetTokens"])
+        self.assertEqual(200000, result["workerBudgetTokens"])
         self.assertNotIn("fits", result)
         self.assertIn("never proves", result["uncertainty"])
         self.assertIn("iteration count", result["excluded"])

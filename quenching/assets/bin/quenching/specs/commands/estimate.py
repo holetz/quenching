@@ -9,6 +9,7 @@ import shlex
 import sys
 from pathlib import Path
 
+from quenching.session.commands.context import BUDGETS
 from quenching.specs.backends import open_backend
 from quenching.specs.commands.output import Emitter, read_one
 from quenching.specs.parse.tasks import _files_bad_annotation
@@ -16,7 +17,7 @@ from quenching.specs.parse.text import STANDARD_PATH_RE, strip_comments
 from quenching.specs.schema import headings_for_moment
 
 
-WORKER_BUDGET_TOKENS = 100000
+WORKER_BUDGET_TOKENS = BUDGETS["worker"]
 BYTES_PER_TOKEN = 4
 EXCLUDED = [
     "host/system/harness overhead", "conditional execute references", "tool/test output",
@@ -37,7 +38,7 @@ EXECUTE_BODY = _shipped_execute_body(Path(__file__).resolve())
 # measured 2026-10-17 on the first turn of general-purpose sub-agents (32065-33329 tokens).
 EXECUTOR_FIXED_TOKENS = 33000
 SMALL_TIER_TOKENIZER_FACTOR = 1.3  # Haiku 5.5 counts ~30% more tokens than Haiku 4.5
-SMALL_TIER_CEILING = 80000  # margin under the 100k worker cut
+SMALL_TIER_CEILING = 80000  # ADR 0014: a Haiku ceiling, independent of the worker budget
 IRREVERSIBLE_ROOTS = ("docs/", "knowledge/")
 
 

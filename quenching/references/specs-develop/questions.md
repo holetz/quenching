@@ -520,7 +520,7 @@ risk, plus the declared-reading estimate, worker budget and unknown inputs.
 
 **The size signal precedes every approval stamp.** Run `.agents/quenching/bin/cq specs estimate <id> --json` after
 ready verification. Its `overBudget` compares the largest task section's known reading estimate
-with `workerBudgetTokens` (S2: 100000). Bytes / 4 is a heuristic, not measured build context;
+with `workerBudgetTokens` (default 200000). Bytes / 4 is a heuristic, not measured build context;
 excluded overhead and unknown inputs remain visible below the budget. Never claim a build fits
 from this signal, and never change `complexity` to make a plan appear smaller.
 

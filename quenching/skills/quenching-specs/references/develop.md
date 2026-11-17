@@ -368,7 +368,7 @@ derived from the real stage. **The re-entry is narrated, never offered.**
 ```
 
 Read the exit code before the payload; refusal or failure leaves approval unstamped. Report
-`maxSectionTokens`, `workerBudgetTokens` (the S2 worker policy is 100000), the section/task counts,
+`maxSectionTokens`, `workerBudgetTokens` (the worker default is 200000), the section/task counts,
 `complete`, unresolved inputs and `excluded`. This is a UTF-8 bytes / 4 declared-reading heuristic;
 it **never proves the full build fits**, even when every declared input was found. Total reading
 volume is not a context peak; system overhead, future code, outputs and iterations are not predicted.
