@@ -212,7 +212,7 @@
     ".agents/quenching/assets/bin/quenching/specs/commands/deps.py": "94d5fc6b2a7a3634da7e7bc87ae69eaff6f241aa97affb4cfb46fcf45f5724d1",
     ".agents/quenching/assets/bin/quenching/specs/commands/doctor.py": "b9a1271c99666967bfd0d34932ad17bbbd14c0fa829a2dd639fcc4b8272b7102",
     ".agents/quenching/assets/bin/quenching/specs/commands/epic.py": "00ccdc5f83152d03b7be3ece36662d4aa149fb1174d3b2e463d998db29c44f60",
-    ".agents/quenching/assets/bin/quenching/specs/commands/estimate.py": "3d5ad9c0b06e8bd3a95c1f67b46ca9fc22de67bc814c63828bb354415aa828de",
+    ".agents/quenching/assets/bin/quenching/specs/commands/estimate.py": "3043d9556953e6e18b3c1453371301f04a87bffcd477cb5d91bd9b821a50c61b",
     ".agents/quenching/assets/bin/quenching/specs/commands/fields.py": "0f6dbe8da70440bf847a1740d67fa4c7110ab694e9d0f28ee3fe2df0ad9c6450",
     ".agents/quenching/assets/bin/quenching/specs/commands/find.py": "3b930b6ab48d50d5e0fe6eaa61df112bb66929d7596821859e008d571acd6d56",
     ".agents/quenching/assets/bin/quenching/specs/commands/granular.py": "35b38067d87e6c40c94d757ec5287826954b83232439fa8eaa84c7e91bb8fb7f",
