@@ -37,6 +37,7 @@ tree. Other namespaces are read by their owning front.
 | `specs.artifactLanguage` | a non-empty string | none | `.agents/quenching/bin/cq specs`, on the branch or here |
 | `specs.cardAt` | the sibling spelling of `specs.card.at` | none | the card layer, on the branch or here |
 | `specs.chat` | `{model, budgetUsd, timeoutSeconds}` | `{sonnet, 0.50, 300}` | the portal's `--chat`; `--chat-budget-usd` wins |
+| `specs.estimate.writeOnly` | a list of repo-relative paths, exact or `fnmatch` globs | `[]` — nothing is discounted | `.agents/quenching/bin/cq specs estimate`: a matching task file is `writeOnly: "declared by repo"`, sized but not counted; an Impact standard is always counted |
 | `specs.azureStates` | `{"plans": "<state>", "archive": "<state>"}` | **none, deliberately** — refuses (exit 2, `sp-az-no-states`) rather than guess | the `azure-boards` backend only |
 | `specs.azurePlacement` | `{areaPath, workItemType, discoveryTag, team, iterationPath, boardColumn, defaultSubject}` — `workItemType` retired, see `workItemTypes` below | per sub-key — `areaPath` **none, deliberately**, the rest default | the `azure-boards` backend only |
 | `specs.azureColumns` | `{"<board state>": "<lane>", …}` — any subset | `{}` — falls back to `azurePlacement.boardColumn` per state | the `azure-boards` backend only |
