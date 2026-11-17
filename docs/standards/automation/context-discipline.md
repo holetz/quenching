@@ -327,7 +327,7 @@ Use these selected policy budgets in input-context tokens, measured by code from
 | Role | Budget | Applies to |
 | --- | --- | --- |
 | Main session | 200000 | Human-led spec stages and the top-level conversation; an offer at the stage end |
-| Worker | 100000 | The spec-runner building one spec in its isolated context; a size estimate, never a stop |
+| Worker | 200000 | The spec-runner building one spec in its isolated context; a size estimate, never a stop |
 | Conductor | 150000 | Orchestrator and autopilot coordination contexts; a stop, checked between waves |
 
 Role comes from topology/agent metadata, independently of command attribution. A conductor
@@ -394,7 +394,10 @@ Main exposure is 602003067 tokens; the 14 sessions above 200000 account for 5174
 (85.954879%). A 150000 cut would affect 23/58 sessions. Choose 200000 to address the
 concentrated long tail with less fragmentation. Worker 100000 rounds above p90 97126;
 conductor 150000 rounds above p90 127383. These choices price different role distributions
-rather than copying the old unmeasured 150k/200k prose.
+rather than copying the old unmeasured 150k/200k prose. On 2026-11-17 the maintainer raised the
+worker default to 200000 by decision, not by a new measurement: with the execute body counted again,
+ordinary sections passed 100000 while the worker runs on a far larger context; the paragraphs here
+record where the original 100000 came from.
 
 Four identified opus-only worker resumes (specs 1368, 1419, 1386 and 1457), paired with an
 earlier task-check invocation for the same spec, each took three requests through the first
