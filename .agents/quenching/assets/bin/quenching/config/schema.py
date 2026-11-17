@@ -171,6 +171,9 @@ _k("specs.chat.budgetUsd", "number", 0.5, "specs", "either", "the portal's --cha
 _k("specs.chat.timeoutSeconds", "integer", 300, "specs", "either", "the portal's --chat",
    ("Portal chat timeout (seconds)", "How long one chat answer may take."),
    ("Tempo limite do chat (segundos)", "Quanto uma resposta do chat pode levar."), minimum=1)
+_k("specs.estimate.writeOnly", "paths", [], "specs", "project", "cq specs estimate",
+   ("Write-only paths", "Generated or tool-edited paths the estimate lists but never counts."),
+   ("Caminhos só de escrita", "Caminhos gerados ou editados por ferramenta que a estimativa lista e não conta."))
 for _name, _en, _pt in (
         ("azureStates", "Azure states", "Estados do Azure"),
         ("azurePlacement", "Azure placement", "Posicionamento no Azure"),

@@ -131,7 +131,8 @@ silences `cq specs doctor`'s `sp-config-setup-idempotence`. See
 `cq config init [--write]` creates the configuration file (`.agents/quenching.json` unless the legacy file is the one read) with every adjustable default spelled
 out: `shared.codex` (including `executor`), `shared.autonomy`, `shared.contextBudgets`,
 `shared.okfValidate`, `shared.workHost` (its leaves with a non-null default; `target`,
-`dockerContext` and `runner` stay absent because the loader warns on a null), `specs.chat`, the
+`dockerContext` and `runner` stay absent because the loader warns on a null), `specs.chat`,
+`specs.estimate.writeOnly` (empty), the
 detected `shared.profiles.installed`, and `backend: git`. Without `--write` it prints the document
 and writes nothing. The document is built from the owning modules' own default constants
 (`config/seed.py`), so it cannot drift from the code; the two defaults that live where the
@@ -217,7 +218,7 @@ Ownership follows the meaning of the key, not the module that happens to read it
 | --- | --- | --- |
 | root | `backend` | legacy/provider metadata only; provider selection comes from `origin` |
 | `shared` | `worktreeSetup`, `sharedPaths`, `regenerablePaths`, `hooks`, `profiles`, `gitConventions`, `gitIdentity`, `autonomy`, `workHost`, `okfValidate`, `contextBudgets`, `codex` | settings used by more than one local surface or by isolation |
-| `specs` | Azure state and placement mappings, `subjects`, `tagCatalog`, `workItemTypes`, `chat`, `artifactLanguage`, `card`, `cardAt` | provider-owned plan lifecycle and proposal conventions |
+| `specs` | Azure state and placement mappings, `subjects`, `tagCatalog`, `workItemTypes`, `chat`, `estimate`, `artifactLanguage`, `card`, `cardAt` | provider-owned plan lifecycle and proposal conventions |
 | `delivery` | `provider` | the delivery front's explicit provider declaration; it chooses no pipeline policy |
 | `ops` | `opsRoot`, `router`, `registry` | operations inventory, router and generated registry |
 | `proof` | `proofRoot`, `layers`, `measuredRoots`, `proofExclusions`, `ratchetPath`, `cost` | verification inventory, layers, coverage evidence and the run's declared cost |
@@ -318,6 +319,7 @@ explicit flag wins over the key.
 | `shared.workHost` | `{target, dockerContext, runner, remoteRoot, syncFlags, syncExclude, pullBack, protectedPaths, minFreeGb}` | disabled | `cq config host --plan`; see [work-host.md](work-host.md) |
 | `shared.mcp` | `{mount: "specs", command: [strings]}` | absent; no MCP file is generated | `cq deploy`; read from the repository document only, never the merged envelope |
 | `specs.chat` | `{model: string, budgetUsd: number > 0, timeoutSeconds: number > 0}` | `sonnet`, `0.50`, `300` | the portal's `--chat`; `--chat-budget-usd` wins over `budgetUsd` |
+| `specs.estimate.writeOnly` | a list of repo-relative paths, exact or `fnmatch` globs | `[]` | `cq specs estimate`: a task file it matches is listed with `writeOnly: "declared by repo"`, keeps its size and adds no bytes; an Impact standard is always counted; `--task` ignores it |
 
 The internal timeouts of `git` and `gh` stay in code.
 

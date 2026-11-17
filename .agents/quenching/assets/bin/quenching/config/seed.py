@@ -34,7 +34,7 @@ def seed_document(root: str) -> dict:
             "profiles": {"installed": profile},
             "workHost": {k: v for k, v in WORK_HOST.items() if v is not None},
         },
-        "specs": {"chat": CHAT},
+        "specs": {"chat": CHAT, "estimate": {"writeOnly": []}},
     }
     return copy.deepcopy(document)
 
