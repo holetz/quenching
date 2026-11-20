@@ -133,6 +133,38 @@ class Runner(unittest.TestCase):
         self.assertIn("CQ=<absent>", (out / "suite/c1.without.output.txt").read_text())
         self.assertNotIn("CQ=<absent>", (out / "suite/c1.with.output.txt").read_text())
 
+    def test_the_baseline_arm_runs_the_surface_of_its_ref_and_reports_a_delta_against_it(self):
+        head = subprocess.run(["git", "-C", str(REPO), "rev-parse", "HEAD"], capture_output=True,
+                              text=True, check=True).stdout.strip()
+        out = self.full_run("fake", "--arms", "with,baseline", "--baseline-ref", "HEAD")
+        bench = json.loads((out / "suite/benchmark.json").read_text())
+        self.assertEqual(bench["baselineRef"], head)
+        self.assertEqual(bench["deltaVsBaseline"]["passRate"], 0.0)
+        self.assertNotIn("delta", bench)
+        self.assertEqual(json.loads((out / "summary.json").read_text())["baselineRef"], head)
+        baseline = (out / "suite/c1.baseline.output.txt").read_text()
+        self.assertIn("eval-baseline-", baseline)
+        self.assertTrue(baseline.rstrip().endswith("quenching/assets/bin/cq"))
+        self.assertIn(f"CQ={runner.CQ}", (out / "suite/c1.with.output.txt").read_text())
+
+    def test_the_baseline_arm_and_its_ref_are_refused_apart_or_unresolvable(self):
+        base = ["--harness", "fake", "--model", "m", "--grader-harness", "grader", "--grader-model", "g",
+                "--run-id", "r"]
+        for extra, reason in ((["--arms", "with,baseline"], "go together"),
+                              (["--baseline-ref", "HEAD"], "go together"),
+                              (["--arms", "baseline", "--baseline-ref", "no-such-ref-xyz"], "names no commit")):
+            code, text = self.run_cli(*base, *extra)
+            self.assertEqual(code, 2, text)
+            self.assertIn(reason, text)
+
+    def test_dry_run_deploys_the_baseline_surface_as_the_with_arm_does(self):
+        lines = self.dry_lines("--host", "--harness", "claude", "--arms", "with,baseline", "--baseline-ref", "HEAD")
+        by_arm = {line["arm"]: line for line in lines}
+        self.assertEqual(by_arm["baseline"]["deploy"], "claude")
+        self.assertEqual(by_arm["baseline"]["argv"], by_arm["with"]["argv"])
+        self.assertIn("baselineRef", by_arm["baseline"])
+        self.assertNotIn("baselineRef", by_arm["with"])
+
     def test_a_failing_setup_is_recorded_and_the_run_goes_on(self):
         (self.suite / "setup.sh").write_text('[ "$1" = c1 ] && exit 3\necho ok\n')
         out = self.full_run("fake")
