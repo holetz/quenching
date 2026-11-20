@@ -170,3 +170,57 @@ test('the tab list is Overview, the sections, then Dependências; ages and signa
   expect(ageLabel('junk', now)).toBe('junk')
   expect(signals(spec({ run: '', verifier: '', assignee: '', priority: '', complexity: '' }), now)).toEqual(['blocked', 'yesterday', '1/3 tasks'])
 })
+
+test('the Dependências tab draws the edges both ways, the epic block and the member block, and a press opens the neighbour', async ($, on) => {
+  const state = memory(on)
+  on('clock.now', () => ({ value: Date.parse('2026-11-20T00:00:00Z') }))
+  on('session.cwd', () => ({ value: '/w' }))
+  on('process.run', () => ({
+    value: { exitCode: 2, stdout: '', stderr: 'refused', isStdoutTruncated: false, isStderrTruncated: false },
+  }))
+  const neighbor = (id: number, extra = {}) => ({ id, title: `T${id}`, phase: 'plans', critical: false, slip: 0, start: '', target: '', ...extra })
+  const full = spec({
+      deps: { up: [neighbor(9, { phase: 'archive', critical: true, slip: 2, start: '2026-11-01', target: '2026-11-09' })], down: [neighbor(11)], cycle: ['2191', '9', '2191'] },
+      epics: [{ epic: 1, title: 'Epic', label: 'S1', group: 2 }],
+      composition: {
+        progress: { done: 1, total: 2, blocked: 1, ready: 0 },
+        groups: [],
+        items: [{ label: 'S1', spec: 12, title: 'Member', group: 1, status: 'done', stage: 'archived', after: ['S0'], waitingOn: [] }],
+      },
+    })
+
+  for (const surface of SURFACES) {
+    state.put('picked', 2191)
+    state.put('detail', full, 'detail-1')
+    state.put('tab', 3)
+    const ui = await $.ui.mount({ ...PANE, surface })
+
+    expect((await ui.find({ key: 'dep-up-9' }))?.text).toBe('9 · T9 archived · critical path · +2d · 2026-11-01 → 2026-11-09')
+    expect((await ui.find({ key: 'dep-down-11' }))?.text).toBe('11 · T11 ')
+    expect((await ui.find({ key: 'epic-1' }))?.text).toBe('S1 1 · Epic wave 2')
+    expect((await ui.find({ key: 'member-12' }))?.text).toBe('✓ S1 12 · Member archived · waits for S0')
+    expect(await ui.find({ type: 'Text', text: /1\/2 done · 1 blocked/ })).toBeDefined()
+    expect(await ui.find({ type: 'Text', text: /cycle: 2191 → 9 → 2191/ })).toBeDefined()
+
+    await ui.press({ key: 'dep-down-11' })
+    await ui.redraw()
+    expect(await ui.find({ key: 'back' })).toBeDefined()
+    await ui.unmount()
+  }
+})
+
+test('a spec with no edge and no epic says so, above and below', async ($, on) => {
+  const state = memory(on)
+  on('clock.now', () => ({ value: 0 }))
+  state.put('picked', 2191)
+  state.put('detail', spec(), 'detail-1')
+
+  for (const surface of SURFACES) {
+    state.put('tab', 3)
+    const ui = await $.ui.mount({ ...PANE, surface })
+
+    expect(await ui.find({ type: 'Text', text: /nothing above/ })).toBeDefined()
+    expect(await ui.find({ type: 'Text', text: /nothing below/ })).toBeDefined()
+    await ui.unmount()
+  }
+})

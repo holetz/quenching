@@ -1,7 +1,7 @@
 import { atom, read, update } from 'claude-code'
 import type { EngineInterface } from 'claude-code'
 
-import type { CqState, Detail, LedgerEntry, Kind, TouchRow, View } from '../types'
+import type { Composite, CqState, Detail, LedgerEntry, Kind, Member, Neighbor, TouchRow, View } from '../types'
 import { createCq } from './cq'
 import type { Runner } from './cq'
 import { harvest, touch, touchedRows } from './ledger'
@@ -193,10 +193,112 @@ export function tabsOf(spec: Detail): string[] {
   return ['Overview', ...spec.sections.map(section => section.heading), 'Dependências']
 }
 
+/** What the board shows beside a neighbour: archived, on the critical path, slipping, and its window. */
+export function depMeta(node: Neighbor): string {
+  const bits: string[] = []
+
+  if (node.phase === 'archive') {
+    bits.push('archived')
+  }
+
+  if (node.critical) {
+    bits.push('critical path')
+  }
+
+  if (node.slip > 0) {
+    bits.push(`+${node.slip}d`)
+  }
+
+  if (node.start || node.target) {
+    bits.push(`${node.start || '?'} → ${node.target || '?'}`)
+  }
+
+  return bits.join(' · ')
+}
+
+const MEMBER_MARK: Record<string, string> = { done: '✓', dropped: '×', 'in-progress': '▸', waiting: '!' }
+
+/** What the epic knows of a member: its spec stage and what it waits for inside the epic. */
+export function memberMeta(member: Member): string {
+  const bits: string[] = []
+
+  if (member.stage) {
+    bits.push(member.stage)
+  }
+
+  if (member.after.length > 0) {
+    bits.push(`waits for ${member.after.join(', ')}`)
+  }
+
+  return bits.join(' · ')
+}
+
+type Elements = ReturnType<EngineInterface['ui']['resolve']>
+
+/** The Dependências tab: where the spec is a member, what the epic is made of, and the edges both ways. */
+export function drawDependencies($: EngineInterface, els: Elements, spec: Detail) {
+  const { Box, Button, Text } = els
+  const edges = spec.deps.up.length > 0 || spec.deps.down.length > 0
+  const group = (label: string, group: string, nodes: Neighbor[], empty: string) => (
+    <Box flexDirection="column">
+      <Text bold>{label}</Text>
+      {nodes.length === 0 && <Text dimColor>{empty}</Text>}
+      {nodes.map(node => (
+        <Button key={`dep-${group}-${node.id}`} plain onPress={() => pick($, node.id)}>
+          {`${node.id} · ${node.title} `}
+          <Text dimColor>{depMeta(node)}</Text>
+        </Button>
+      ))}
+    </Box>
+  )
+
+  return (
+    <Box flexDirection="column" gap={1}>
+      {spec.epics.length > 0 && (
+        <Box flexDirection="column">
+          <Text bold>Part of</Text>
+          {spec.epics.map((epic: Composite) => (
+            <Button key={`epic-${epic.epic}`} plain onPress={() => pick($, epic.epic)}>
+              {`${epic.label || '·'} ${epic.epic} · ${epic.title} `}
+              <Text dimColor>{epic.group > 0 ? `wave ${epic.group}` : ''}</Text>
+            </Button>
+          ))}
+        </Box>
+      )}
+      {spec.composition && (
+        <Box flexDirection="column">
+          <Text bold>
+            {`Specs of this epic · ${spec.composition.progress.done}/${spec.composition.progress.total} done${
+              spec.composition.progress.blocked > 0 ? ` · ${spec.composition.progress.blocked} blocked` : ''
+            }`}
+          </Text>
+          {spec.composition.items.map(member => (
+            <Button key={`member-${member.spec}`} plain onPress={() => pick($, member.spec)}>
+              {`${MEMBER_MARK[member.status] ?? '·'} ${member.label} ${member.spec} · ${member.title} `}
+              <Text dimColor>{memberMeta(member)}</Text>
+            </Button>
+          ))}
+        </Box>
+      )}
+      {spec.deps.cycle.length > 0 && (
+        <Text color="red">{`cycle: ${spec.deps.cycle.join(' → ')} — nothing is scheduled while it exists`}</Text>
+      )}
+      {/* With no edge, and a composition or membership above, the two lists have nothing to say. */}
+      {(edges || (!spec.composition && spec.epics.length === 0)) && (
+        <Box flexDirection="column" gap={1}>
+          {group('Above — this spec waits for', 'up', spec.deps.up, 'nothing above: no dependency declared')}
+          {group('Below — waiting for this spec', 'down', spec.deps.down, 'nothing below: no spec declares it depends on this one')}
+        </Box>
+      )}
+    </Box>
+  )
+}
+
 const taskMark = (task: Detail['tasks'][number]) => (task.state === 'x' ? '[x]' : task.blocked ? '[!]' : '[ ]')
 
 export async function drawPane($: EngineInterface, e: Parameters<EngineInterface['ui']['resolve']>[0]) {
-  const { Box, Button, Markdown, Text } = $.ui.resolve(e)
+  const els = $.ui.resolve(e)
+  const { Box, Button, Markdown, Text } = els
   const cq = await read($, cqState)
   const list = await read($, rows)
   const id = await read($, picked)
@@ -283,7 +385,7 @@ export async function drawPane($: EngineInterface, e: Parameters<EngineInterface
         </Box>
       )}
       {section && <Markdown key={`section-${spec.id}-${at}`} text={section.body || '_Empty._'} />}
-      {at === tabs.length - 1 && <Text dimColor>No dependencies read yet.</Text>}
+      {at === tabs.length - 1 && drawDependencies($, els, spec)}
     </Box>
   )
 }
