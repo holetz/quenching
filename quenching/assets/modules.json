@@ -8,6 +8,11 @@
       "name": "quenching-hud",
       "path": "integrations/claude-hud",
       "marketplace": true
+    },
+    {
+      "name": "quenching-vitrine",
+      "path": "integrations/claude-vitrine",
+      "marketplace": true
     }
   ],
   "modules": [
