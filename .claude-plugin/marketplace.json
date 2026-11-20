@@ -10,7 +10,7 @@
       "name": "quenching-hud",
       "source": "./integrations/claude-hud",
       "description": "Band above the prompt: the worktree's active quenching spec, its stage and task progress, read through cq specs status --no-fetch. Runs only git branch --show-current and cq specs status; writes no spec or branch and never fetches: it reads the local refs/remotes/origin/quenching, so the band can lag the remote.",
-      "version": "7.8.0",
+      "version": "7.9.0",
       "author": {
         "name": "Israel Holetz",
         "email": "holetz@gmail.com"
@@ -28,7 +28,7 @@
       "name": "quenching-vitrine",
       "source": "./integrations/claude-vitrine",
       "description": "Specs pane for Claude Desktop and the terminal: the specs this session touched, each document in tabs, dependencies and epics, and the quenching configuration. Reads through cq specs and cq config; its only write is cq config set|unset on request. Installed separately from the skills; cq deploy never installs it.",
-      "version": "7.8.0",
+      "version": "7.9.0",
       "author": {
         "name": "Israel Holetz",
         "email": "holetz@gmail.com"
