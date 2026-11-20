@@ -219,15 +219,18 @@ else
   printf 'SKIPPED: `claude` is not on PATH; integrations/claude-hud was not validated.\n'
 fi
 
-# The vendored cache-maxxing bar carries upstream's own suite (bun, through `claude plugin test`).
+# The quenching-cache band carries generated copies of quenching's price table and handoff
+# template; a stale copy is refused here, with or without `claude`.
+run_check "quenching-cache generated copies" \
+  python3 scripts/cache_plugin_sync.py --check
 if command -v claude >/dev/null 2>&1; then
-  run_check "quenching-cache-maxxing plugin" \
-    claude plugin validate integrations/claude-cache-maxxing
-  run_check "quenching-cache-maxxing tests" \
-    claude plugin test integrations/claude-cache-maxxing
+  run_check "quenching-cache plugin" \
+    claude plugin validate integrations/claude-cache
+  run_check "quenching-cache tests" \
+    claude plugin test integrations/claude-cache
 else
-  printf '\n==> quenching-cache-maxxing plugin\n'
-  printf 'SKIPPED: `claude` is not on PATH; integrations/claude-cache-maxxing was not validated.\n'
+  printf '\n==> quenching-cache plugin\n'
+  printf 'SKIPPED: `claude` is not on PATH; integrations/claude-cache was not validated or tested.\n'
 fi
 
 # The OpenCode vitrine is TypeScript against the GUI SDK it pins; a type error there ships a page

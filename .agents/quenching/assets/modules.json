@@ -10,9 +10,12 @@
       "marketplace": true
     },
     {
-      "name": "quenching-cache-maxxing",
-      "path": "integrations/claude-cache-maxxing",
-      "marketplace": true
+      "name": "quenching-cache",
+      "path": "integrations/claude-cache",
+      "marketplace": true,
+      "commands": [
+        "quenching-cache"
+      ]
     }
   ],
   "modules": [

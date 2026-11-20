@@ -2,7 +2,7 @@
 type: standard
 title: Source layout — what lives under quenching/ and integrations/
 description: one editable source, quenching/, reaches a repository only through cq deploy, and the satellites that install into no repository sit beside it under integrations/<name>/; in the source, skills/<name>/SKILL.md is the only entry point and the skill name is the folder name, a reference lives inside the skill that cites it or in the common references/ when two skills cite it, and everything that is not an entry point lives under assets/ or references/ and is cited by absolute path in the target dialect
-resource: quenching/skills/**, quenching/references/**, quenching/agents/**, quenching/assets/**, quenching/tests/**, integrations/claude-hud/**, integrations/claude-cache-maxxing/**, integrations/opencode-vitrine/**
+resource: quenching/skills/**, quenching/references/**, quenching/agents/**, quenching/assets/**, quenching/tests/**, integrations/claude-hud/**, integrations/claude-cache/**, integrations/opencode-vitrine/**
 tags: [architecture, source, skills, layout, deploy]
 timestamp: 2026-11-03
 audience: both
@@ -26,7 +26,7 @@ one folder per harness satellite. The skill surface reaches a repository only th
 |---|---|---|
 | `quenching/` | the source, the only editable tree of the skill surface, never published; `cq deploy` installs it into a target ([deploy-mode.md](deploy-mode.md)) | — |
 | `integrations/claude-hud/` | the band above the Claude Code prompt that shows the active spec, an entry of `.claude-plugin/marketplace.json` | hand-written; the gate runs `claude plugin validate` |
-| `integrations/claude-cache-maxxing/` | the prompt-cache bar above the Claude Code prompt, an entry of `.claude-plugin/marketplace.json`; vendored from [cache-maxxing](https://github.com/5m0k3/cache-maxxing) by 5m0k3 (MIT), with the upstream `LICENSE` kept and every local change listed in its `NOTICE.md` | vendored; re-synced from upstream, never rewritten; the gate runs `claude plugin validate` and `claude plugin test` |
+| `integrations/claude-cache/` | `quenching-cache`, the prompt-cache band above the Claude Code prompt, an entry of `.claude-plugin/marketplace.json`; derived from [cache-maxxing](https://github.com/5m0k3/cache-maxxing) by 5m0k3 (MIT), both copyrights in its `LICENSE` and every change in its `NOTICE.md`. It reads `shared.cache` and writes handoffs through `cq`; `hooks/prices.ts` and `hooks/handoff-template.md` are generated from `session/pricing.json` and the `quenching-handoff` template by `scripts/cache_plugin_sync.py` | hand-written but the two generated copies; the gate checks the copies and runs `claude plugin validate` and `claude plugin test` |
 | `integrations/opencode-vitrine/` | the OpenCode Desktop GUI plugin (TypeScript + Solid); `npm run build` writes the committed `dist/gui-experimental.cjs`, `node_modules/` is ignored, and OpenCode installs it from the `plugins` array of its configuration | hand-written |
 
 Inside `quenching/` each folder has one job:

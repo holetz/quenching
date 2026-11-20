@@ -1,0 +1,13 @@
+{
+  "name": "quenching-cache",
+  "version": "7.8.0",
+  "description": "Band above the prompt: minutes left on Claude's prompt cache, the next message's estimated cost and one tip, in the repository's declared language. /quenching-cache handoff writes quenching's handoff with Haiku (the expired chat is never resent) and stores it beside its spec through cq; /quenching-cache stats reads cq components session cache. Settings come from shared.cache through cq config; prices are quenching's own table. No network of its own. Derived from cache-maxxing by 5m0k3 (MIT).",
+  "types": "./types/index.d.ts",
+  "author": {
+    "name": "Israel Holetz",
+    "email": "holetz@gmail.com"
+  },
+  "homepage": "https://github.com/holetz/quenching/tree/main/integrations/claude-cache",
+  "repository": "https://github.com/holetz/quenching",
+  "license": "MIT"
+}

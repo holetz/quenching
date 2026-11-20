@@ -4,7 +4,7 @@
     "name": "Israel Holetz",
     "email": "holetz@gmail.com"
   },
-  "description": "Marketplace hosting the plugins that install into no repository: quenching-hud, the band above the prompt that shows the worktree's active quenching spec, and quenching-cache-maxxing, the prompt-cache bar vendored from cache-maxxing by 5m0k3. The quenching surface itself is not a plugin: it is installed into each target repository with `cq deploy`.",
+  "description": "Marketplace hosting the plugins that install into no repository: quenching-hud, the band above the prompt that shows the worktree's active quenching spec, and quenching-cache, the prompt-cache band derived from cache-maxxing by 5m0k3. The quenching surface itself is not a plugin: it is installed into each target repository with `cq deploy`.",
   "plugins": [
     {
       "name": "quenching-hud",
@@ -25,9 +25,9 @@
       ]
     },
     {
-      "name": "quenching-cache-maxxing",
-      "source": "./integrations/claude-cache-maxxing",
-      "description": "Band above the prompt: minutes left on Claude's prompt cache, the next message's estimated cost and one tip, with /cmaxx-handoff, /cmaxx-stats and /cmaxx-update. Vendored from cache-maxxing by 5m0k3 (MIT, https://github.com/5m0k3/cache-maxxing). The bar runs locally; only /cmaxx-handoff (one Haiku call) and /cmaxx-update (reads GitHub, sends nothing) reach outside.",
+      "name": "quenching-cache",
+      "source": "./integrations/claude-cache",
+      "description": "Band above the prompt: minutes left on Claude's prompt cache, the next message's estimated cost and one tip, in the repository's declared language, with settings from shared.cache through cq. /quenching-cache handoff writes quenching's handoff with Haiku (the expired chat is never resent) and stores it beside its spec; /quenching-cache stats reads cq components session cache. No network of its own. Derived from cache-maxxing by 5m0k3 (MIT, https://github.com/5m0k3/cache-maxxing).",
       "version": "7.8.0",
       "author": {
         "name": "Israel Holetz",

@@ -362,11 +362,15 @@ def trim(p):
 path_findings, cmd_findings = [], []
 paths_checked = cmds_checked = 0
 # The skills the modules own, read from the manifest. A router shares its name with a module
-# (`quenching-specs`), and both are cited: the name is live when a skill answers to it.
+# (`quenching-specs`), and both are cited: the name is live when a skill answers to it. A
+# the slash commands a marketplace plugin registers (`plugins[].commands`) are live the same way.
 commands = set()
 with open(os.path.join(plugin, "assets", "modules.json"), encoding="utf-8") as handle:
-    for module in json.load(handle)["modules"]:
+    manifest = json.load(handle)
+    for module in manifest["modules"]:
         commands.update(module["owned"]["skills"])
+    for entry in manifest.get("plugins", []):
+        commands.update(entry.get("commands", []))
 
 FROZEN_DATA = (plugin + "/tests/fixtures/golden/", plugin + "/tests/capture_golden.py",
                # A `files:` case table reproducing a real, historical bug report verbatim — a

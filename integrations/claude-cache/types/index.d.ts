@@ -1,14 +1,13 @@
-// One chat's last main-thread request, as the bar needs it. Also saved in $.store
-// under `cmx:<sessionId>` so an app restart or resume keeps the countdown.
+// One chat's last main-thread request, as the bar needs it. Also saved in $.store under
+// `cmx:<sessionId>` so an app restart or resume keeps the countdown.
 export type Rec = {
   at: number // ms epoch when the last main-thread request started (the cache refresh)
-  prefix: number // tokens the next request re-sends (engine's context_tokens)
+  prefix: number // tokens the next request re-sends
   out: number // last reply's output tokens: written, not read, by the next request
   model: string
   read: number
   write: number
-  ttlMin: number // 60, or 5 when the user forces it (ttlFor)
-  miss5: number // unused since 0.1.3 (always 0); kept so older saved records still load
+  ttlMin: number // 60, or 5 when the reply wrote the 5-minute cache or the checkout forces it
   warned: boolean // expiry pop-up already shown for this request
   window?: number // the model's context window in tokens
   resetBy?: 'model' | 'compact' // cache gone before its time ran out; cleared by the next reply
@@ -17,6 +16,6 @@ export type Rec = {
 
 declare module 'claude-code' {
   interface PluginState {
-    'quenching-cache-maxxing': { last: Shaped<Rec | null>; tick: number; hidden: boolean }
+    'quenching-cache': { last: Shaped<Rec | null>; tick: number; hidden: boolean }
   }
 }

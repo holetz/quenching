@@ -11,7 +11,7 @@ repository for Claude Code, Codex and OpenCode
 deploy contract is [deploy-mode](docs/standards/architecture/deploy-mode.md)). The satellites that
 install into no repository sit beside it: two entries of this repository's Claude marketplace, the
 spec band [`integrations/claude-hud/`](integrations/claude-hud/) and the prompt-cache bar
-[`integrations/claude-cache-maxxing/`](integrations/claude-cache-maxxing/) (vendored from
+[`integrations/claude-cache/`](integrations/claude-cache/) (derived from
 [cache-maxxing](https://github.com/5m0k3/cache-maxxing) by 5m0k3, MIT), and the OpenCode Desktop
 Specs panel [`integrations/opencode-vitrine/`](integrations/opencode-vitrine/).
 

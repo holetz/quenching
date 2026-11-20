@@ -91,6 +91,9 @@ def load_manifest(root: Path) -> dict:
         safe_path(root, path)
         if not isinstance(plugin.get("marketplace"), bool):
             raise ValueError(f"{name}: marketplace must be boolean")
+        commands = plugin.get("commands", [])
+        if not isinstance(commands, list) or not all(isinstance(c, str) and c for c in commands):
+            raise ValueError(f"{name}: commands must be a list of command names")
     return data
 
 
