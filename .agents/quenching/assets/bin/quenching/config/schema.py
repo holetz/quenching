@@ -16,7 +16,7 @@ Scope says which layer may hold the key:
 """
 from __future__ import annotations
 
-from quenching.codex.config import CHOICES as CODEX_CHOICES, CROSS_REVIEW, DEFAULTS as CODEX
+from quenching.codex.config import CHOICES as CODEX_CHOICES, DEFAULTS as CODEX
 from quenching.config.autonomy import COMPLEXITY, DEFAULTS as AUTONOMY, MERGE
 from quenching.config.host import DEFAULTS as WORK_HOST
 from quenching.session.commands.context import BUDGETS
@@ -29,7 +29,7 @@ CATEGORIES = (
     ("autonomy", "Autonomy and orchestration", "Autonomia e orquestração"),
     ("specs", "Specs and cards", "Specs e cards"),
     ("git", "Git and PR", "Git e PR"),
-    ("review", "Review (Codex)", "Revisão (Codex)"),
+    ("codex", "Codex", "Codex"),
     ("proof", "Proof and tests", "Prova e testes"),
     ("ops", "Operations", "Operações"),
     ("knowledge", "Knowledge", "Conhecimento"),
@@ -203,25 +203,19 @@ _k("delivery.provider", "string", None, "git", "project", "the delivery front",
    ("Delivery provider", "The CI provider, declared explicitly."),
    ("Provedor de entrega", "O provedor de CI, declarado explicitamente."))
 
-# — Review (Codex) —
-_k("shared.codex.crossReview", "enum", CODEX["crossReview"], "review", "either", "cq codex",
-   ("Codex cross-review", "Whether Codex reviews each spec's diff."),
-   ("Revisão cruzada do Codex", "Se o Codex revisa o diff de cada spec."), choices=list(CROSS_REVIEW))
+# — Codex —
 _k("shared.codex.maxUsedPercent.primary", "integer", CODEX["maxUsedPercent"]["primary"],
-   "review", "machine", "cq codex", ("Primary quota ceiling (%)", "Codex stops above this use."),
+   "codex", "machine", "cq codex", ("Primary quota ceiling (%)", "Codex stops above this use."),
    ("Teto da cota primária (%)", "O Codex para acima deste uso."), minimum=0, maximum=100)
 _k("shared.codex.maxUsedPercent.secondary", "integer", CODEX["maxUsedPercent"]["secondary"],
-   "review", "machine", "cq codex",
+   "codex", "machine", "cq codex",
    ("Secondary quota ceiling (%)", "Codex stops above this weekly use."),
    ("Teto da cota secundária (%)", "O Codex para acima deste uso semanal."), minimum=0,
    maximum=100)
-_k("shared.codex.timeoutSeconds", "integer", CODEX["timeoutSeconds"], "review", "either",
+_k("shared.codex.timeoutSeconds", "integer", CODEX["timeoutSeconds"], "codex", "either",
    "cq codex", ("Codex timeout (seconds)", "How long one Codex call may run."),
    ("Tempo limite do Codex (segundos)", "Quanto uma chamada ao Codex pode durar."), minimum=1)
-_k("shared.codex.model", "string", CODEX["model"], "review", "either", "cq codex",
-   ("Review model", "The Codex model that reviews."),
-   ("Modelo de revisão", "O modelo do Codex que revisa."))
-_k("shared.codex.executor.enabled", "boolean", CODEX["executor"]["enabled"], "review", "either",
+_k("shared.codex.executor.enabled", "boolean", CODEX["executor"]["enabled"], "codex", "either",
    "cq codex implement", ("Codex writes tasks", "Codex writes eligible tasks' code at execute."),
    ("Codex escreve tarefas", "O Codex escreve o código das tarefas elegíveis no execute."))
 for _name, _en, _pt in (("modelSmall", "Executor model (small)", "Modelo do executor (pequeno)"),
@@ -229,23 +223,23 @@ for _name, _en, _pt in (("modelSmall", "Executor model (small)", "Modelo do exec
                          "Modelo do executor (verificado)"),
                         ("modelSmallTier", "Executor model (small tier)",
                          "Modelo do executor (faixa pequena)")):
-    _k(f"shared.codex.executor.{_name}", "string", CODEX["executor"][_name], "review", "either",
+    _k(f"shared.codex.executor.{_name}", "string", CODEX["executor"][_name], "codex", "either",
        "cq codex implement", (_en, "The Codex model for this class of task."),
        (_pt, "O modelo do Codex para esta classe de tarefa."))
 _k("shared.codex.executor.reasoningEffort", "enum", CODEX["executor"]["reasoningEffort"],
-   "review", "either", "cq codex implement",
+   "codex", "either", "cq codex implement",
    ("Executor reasoning effort", "How hard Codex thinks when writing a task."),
    ("Esforço de raciocínio", "Quanto o Codex pensa ao escrever uma tarefa."),
    choices=list(CODEX_CHOICES["reasoningEffort"]))
-_k("shared.codex.executor.maxTaskTokens", "integer", CODEX["executor"]["maxTaskTokens"], "review",
+_k("shared.codex.executor.maxTaskTokens", "integer", CODEX["executor"]["maxTaskTokens"], "codex",
    "either", "cq codex eligible", ("Largest task (tokens)", "Bigger tasks stay with the agent."),
    ("Maior tarefa (tokens)", "Tarefas maiores ficam com o agente."), minimum=1)
 _k("shared.codex.executor.reservePercent", "integer", CODEX["executor"]["reservePercent"],
-   "review", "machine", "cq codex eligible",
-   ("Quota reserve (%)", "Quota kept free for reviews."),
-   ("Reserva de cota (%)", "Cota mantida livre para revisões."), minimum=0, maximum=100)
+   "codex", "machine", "cq codex eligible",
+   ("Quota reserve (%)", "Quota kept free below each ceiling."),
+   ("Reserva de cota (%)", "Cota mantida livre abaixo de cada teto."), minimum=0, maximum=100)
 _k("shared.codex.executor.stopLossPercent", "integer", CODEX["executor"]["stopLossPercent"],
-   "review", "machine", "cq codex implement",
+   "codex", "machine", "cq codex implement",
    ("Stop loss (%)", "Quota one task may burn before it is stopped."),
    ("Stop loss (%)", "Cota que uma tarefa pode gastar antes de ser parada."), minimum=0,
    maximum=100)
