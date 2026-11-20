@@ -108,8 +108,15 @@ rewrites, because `updatedInput` applies only paired with `allow`, which would a
 whole command. Opt-out: `QUENCHING_ALLOW_CLAUDE_COAUTHOR=1`.
 
 **`warn-git-add-all`.** `quenching-git` declares a rung-2 `PreToolUse` hook on the shell tools that warns
-(never blocks) on `git add -A`, `--all` and `.`, citing `/quenching-git commit`. A skill-scoped
-rung 1 does not exist for it: the skill bridge is a byte copy and carries no frontmatter hook.
+(never blocks) on two things: `git add -A`, `--all` and `.`, citing `/quenching-git commit`; and a
+command that skips the git hooks — `--no-verify`, `git commit -n`, `git -c core.hooksPath=` — since
+the leak and identity gates only exist while those hooks run. Both rules share one body, so a shell
+call pays one Python start for them, not one each; the file keeps its first rule's name because the
+settings merge finds its entry by it. Cost claim: every shell call × one Python start and two
+regexes over the raw input, zero tokens on no-match. It reads the command text only — a hook path
+set by `git config` beforehand, a variable or an alias goes unseen — so it is a reminder, not a
+boundary. A skill-scoped rung 1 does not exist for it: the skill bridge is a byte copy and carries
+no frontmatter hook.
 
 **Before it, this repo wired no hook of its own.** It once wired the OKF checker itself, at rungs 2 and
 3, via a `hooks.json` shipped under this plugin's own `hooks/` — a `PostToolUse` hook matched to `Write|Edit` and a

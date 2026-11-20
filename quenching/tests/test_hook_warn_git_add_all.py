@@ -31,6 +31,28 @@ class TheStagingWarning(unittest.TestCase):
             with self.subTest(command=command):
                 self.assertEqual({}, run(command))
 
+    def test_it_warns_when_a_command_skips_the_git_hooks(self):
+        for command in ("git commit --no-verify -m wip", "git push --no-verify origin main",
+                        "git commit -n -m wip", "git commit -n",
+                        "git -c core.hooksPath=/dev/null commit -m wip"):
+            with self.subTest(command=command):
+                out = run(command)
+                self.assertIn("skips the repository's git hooks", out["systemMessage"])
+                self.assertIn("leak and identity gates", out["hookSpecificOutput"]["additionalContext"])
+                self.assertNotIn("permissionDecision", out["hookSpecificOutput"])
+
+    def test_both_rules_report_in_one_answer(self):
+        out = run("git add . && git commit --no-verify -m wip")
+        self.assertIn("/quenching-git commit", out["systemMessage"])
+        self.assertIn("skips the repository's git hooks", out["systemMessage"])
+
+    def test_lookalikes_of_the_bypass_stay_silent(self):
+        for command in ("git push -n origin main", "git add -n .x", "git log --no-walk",
+                        "git config core.hooksPath .agents/quenching/assets/githooks",
+                        "echo no-verify"):
+            with self.subTest(command=command):
+                self.assertNotIn("skips", run(command).get("systemMessage", ""))
+
     def test_it_exits_zero_on_garbage(self):
         done = subprocess.run([sys.executable, str(HANDLER)], input="{garbage", capture_output=True, text=True)
         self.assertEqual(0, done.returncode)
