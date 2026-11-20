@@ -4,7 +4,7 @@ title: Skill evaluation
 description: What it takes to claim a skill works — with/without runs in isolated processes, assertions graded on quoted evidence, a rate reported with its fixture, and a delta reported even when it is zero
 resource: quenching/assets/evals/**, quenching/skills/quenching-components/references/command-eval.md, scripts/run_evals.py
 tags: [automation, skills, evaluation, testing, benchmark]
-timestamp: 2026-10-24
+timestamp: 2026-11-20
 audience: both
 authority: current
 source: "instrument-and-extend-skill-front plan — formats adopted from Anthropic's skill-creator. Graduated to current on its own stated gate: /quenching-components agent-new and /quenching-components hook-new each carry a committed evals.json + grading.json + benchmark.json with a non-zero stated delta (2026-07-27)"
@@ -177,6 +177,16 @@ with `--harnesses`). It keeps both arms: the `with` arm loads the quenching modu
 - **The `opencode` flags come from the H1 spike, not from a re-run.** `run --model --format json`
   and, in the container, `--auto` and `--command` are the ones the spike runs used against
   OpenCode 1.19.4; no live OpenCode has run them since.
+- **A change to the surface is measured against its own baseline.** `--arms with,baseline
+  --baseline-ref <ref>` runs the `with` arm twice over: once on the working tree's surface and once
+  on the surface `cq deploy` installs from `<ref>`'s `quenching/` tree (exported with `git archive`,
+  nothing written into the repository). Same profile, model, grader and fixture, so the
+  `deltaVsBaseline` in `benchmark.json`, with the resolved `baselineRef` beside it, measures that
+  one change and nothing else. It is the number that settles an edit made to save tokens or to
+  teach more: **a token rise with no pass-rate gain is a regression of cost**, and a cut that keeps
+  the pass rate is the gain. Change one thing per comparison; two changes against one baseline
+  measure their sum. The claim stays bounded by the case set, as [the claim a run is allowed to
+  make](#the-claim-a-run-is-allowed-to-make) says.
 - `--check` validates every suite without running anything, and the repository gate runs it
   through the runner's unit tests. A live run needs a harness and costs tokens, so it is never part
   of the gate.
