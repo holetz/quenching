@@ -53,7 +53,7 @@
     ".agents/quenching/agents/spec-reviewer.md": "a808bb9f23abbbe9477dbd159e45a110d34e3db3ad00a0c16c9b289a82906e3e",
     ".agents/quenching/agents/spec-runner.md": "e1cbbe9f76f4e8e6881f54aa27b2af6d20a60f7a7bbdb5d52de6ec02e903df29",
     ".agents/quenching/agents/spec-scout.md": "fe5176dbcdcf05237a0cb50f75d8051adaeb8442d712d9f1cb75fc66cd4fe8ae",
-    ".agents/quenching/agents/spec-verifier.md": "34edf22026b1cbcab9169bbff1bc0dbe23ff359759e0ac3ed39738e55cb26214",
+    ".agents/quenching/agents/spec-verifier.md": "5a10a1cc905b2fda96b184614bc65c45bef21e15f3767bc182f44c5fa4d95e36",
     ".agents/quenching/assets/bin/cq": "a5da176bd71a9d6d03eeec78d929d94115f511349e3024e80491b97b97db6e53",
     ".agents/quenching/assets/bin/quenching/codex/__init__.py": "a77e6af6e025f79661a55ba7a2620c8db35b261d6312e3d1c95fa2d647ee17c6",
     ".agents/quenching/assets/bin/quenching/codex/config.py": "0caa5fc2c9ec5f3ff1073c2a27a94f508763a530a2f45df18d98258f294ebd15",
@@ -120,7 +120,7 @@
     ".agents/quenching/assets/bin/quenching/design/markdown.py": "fe65c5fee7173906019bc1b06a7d15aa4fcabdb78c1f69622e16daecb112640a",
     ".agents/quenching/assets/bin/quenching/design/model.py": "c5eadfaabaad3e3959cd77e7d58fd19b007ecac8ff2ed026f73e774efe4bcb42",
     ".agents/quenching/assets/bin/quenching/git/__init__.py": "e0f935aefba94c5d7bdea1d6eee84a91c8a83d9ad06e74f3941ea40574a35c82",
-    ".agents/quenching/assets/bin/quenching/git/audit.py": "fc9b10f13686e6872a573258b5ea1d5b2c930d883d190b6e56f93f19e000bda9",
+    ".agents/quenching/assets/bin/quenching/git/audit.py": "d9809cc66e492fcfbf5b7ec7afffbbbfd38eb6e7e45d24a7977d294e068935da",
     ".agents/quenching/assets/bin/quenching/git/azure_pull.py": "81fef94a9cf89cc82da3a2707662cfadffd368fd219a97971e777c41c2814e94",
     ".agents/quenching/assets/bin/quenching/git/base.py": "ac67a17a3c5193e572b02532b20407df9890e96d1af780f726cee900fdadb3c2",
     ".agents/quenching/assets/bin/quenching/git/commit.py": "bd8f94d161c906bab76ad286f4f3df71ee7b9b6b9b7733f4270da033b80f1e55",
@@ -495,7 +495,7 @@
     ".claude/agents/quenching-spec-reviewer.md": "a808bb9f23abbbe9477dbd159e45a110d34e3db3ad00a0c16c9b289a82906e3e",
     ".claude/agents/quenching-spec-runner.md": "e1cbbe9f76f4e8e6881f54aa27b2af6d20a60f7a7bbdb5d52de6ec02e903df29",
     ".claude/agents/quenching-spec-scout.md": "fe5176dbcdcf05237a0cb50f75d8051adaeb8442d712d9f1cb75fc66cd4fe8ae",
-    ".claude/agents/quenching-spec-verifier.md": "34edf22026b1cbcab9169bbff1bc0dbe23ff359759e0ac3ed39738e55cb26214",
+    ".claude/agents/quenching-spec-verifier.md": "5a10a1cc905b2fda96b184614bc65c45bef21e15f3767bc182f44c5fa4d95e36",
     ".claude/skills/.generated-files.json": "8648e1298c134191c534319bfc8661edeeb09bfad0cee52e4313e39e00ab29c1",
     ".claude/skills/commands-tighten/SKILL.md": "41574a4774e70deffd6c8c6766a1a24581d579d1f7247b68a93ba86b39b2019b",
     ".claude/skills/quenching-align/SKILL.md": "7637b9fec33f705479ee377da9ae77f13ebdc55bbcb6d4666650ddec1c6649f5",
@@ -603,7 +603,7 @@
     ".opencode/agents/quenching-spec-reviewer.md": "125a12bca3e037f10e171d0b6f4b76e36c5c8af10821090fcf0c9bf924bf0a8c",
     ".opencode/agents/quenching-spec-runner.md": "afc986b6408bdac2f1c7ef3cb0f368cc5bcd239664af4b05442f3df9d22fe777",
     ".opencode/agents/quenching-spec-scout.md": "141171f6c5ae7a85c6cfb41aedeb00f44f2b4020221d457fa07c439232890015",
-    ".opencode/agents/quenching-spec-verifier.md": "fa246ede47529a303fa00ea515ebfe38e0af36663003c1d8a9fa240d01e1ecc3"
+    ".opencode/agents/quenching-spec-verifier.md": "a5a9ec49ff741d3d08bc3abe6b8f6b8727620288decaaccf3324faaedd3110bf"
   },
   "claudeSettings": {
     "hooks": [

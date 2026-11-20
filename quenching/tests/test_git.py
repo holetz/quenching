@@ -1182,6 +1182,26 @@ class Audit(RepoCase):
         rewrites = _cq_json(self.repo, *self._reflog_args())["rewrites"]
         self.assertTrue(rewrites["branch"][0].startswith("(no reflog message)"))
 
+    def _reuse_slot(self):
+        """A slot that served another branch first: `HEAD` moves to an unrelated tip, then back."""
+        _run(self.wt, "checkout", "-q", "--orphan", "previous")
+        _run(self.wt, "commit", "-q", "--allow-empty", "-m", "previous spec")
+        _run(self.wt, "checkout", "-q", "-f", "spec/1")
+
+    def test_head_rewrites_ignore_the_switch_onto_the_audited_branch(self):
+        self._reuse_slot()
+        rewrites = _cq_json(self.repo, *self._reflog_args())["rewrites"]
+        self.assertEqual(rewrites, {"branch": [], "head": []})
+
+    def test_head_rewrites_still_see_a_reset_after_the_switch(self):
+        self._reuse_slot()
+        self._commit_more()
+        _run(self.wt, "reset", "-q", "--hard", "HEAD~1")
+        rewrites = _cq_json(self.repo, *self._reflog_args())["rewrites"]
+        self.assertEqual(len(rewrites["head"]), 1)
+        self.assertTrue(rewrites["head"][0].startswith("reset"))
+        self.assertEqual(len(rewrites["branch"]), 1)
+
     def test_expired_reflog_is_an_error_not_a_clean_audit(self):
         _run(self.wt, "reflog", "expire", "--expire=now", "--all")
         payload = _cq_json(self.repo, *self._reflog_args())
