@@ -325,7 +325,7 @@ With `QUENCHING_SPECS_SYNC=1` and the `azure-boards` backend, every read is answ
 | `/quenching-specs conclude` | Closes a spec out, resumable, **merging last**: whole-branch review (`reviewed:`), the emergent `/docs/`, the archive with `outcome: done` (refuses on open boxes unless forced) or `abandoned` (always allowed), ONE distillation pass, the flow sweep that captures each defect of the project's own automation as its own spec — never developed in this run —, the release obligations your standards attach to the merge itself (a version bump, a changelog entry — never a spec task) and the `merge: {strategy, subject, pr}` stamp — all on the work branch — and only then the merge, by the **route** you chose alongside the strategy: local, or a pull request where `gh` resolves the repo (pushed, opened and merged in one consented block, with `pr:` recorded). Called with no `--spec`, reads the branch's own marking first — one valid slug resolves silently, several ask, none falls to a diff-measured offer to materialize a minimal spec — before falling back to a plain list-and-ask. Nothing is committed to the base after it. |
 | `/quenching-specs improve` | **Typed only.** Maps a repository's genuinely relevant improvement opportunities with read-only scouts (evidence, consequence, no duplicate of an open spec, at most 15), settles the owner's decisions in rounds (the epic's autonomy policy among them, written into its `## Design`), and turns the approved part of the plan into an epic with member specs. Never builds. |
 | `/quenching-specs orchestrate` | Launches the `spec-orchestrator` agent over an epic id or a list of spec ids: dependency waves, at most 3 workers, a result accepted only on a `spec-verifier` PASS. A pre-check separates the specs that run alone from those that need a human (develop now, launch the independent subset, or `--autonomous`, which stamps `by=orchestrator-forced`); without `--autonomous` a `medium`+ spec with no `approved` comes back `blocked` as `needs-approval`. A thin launcher; the protocol lives in `agents/spec-orchestrator.md`. A spec is accepted as done only when archived with an Outcome, and a worker `blocked` with a `needs-human:` note is never re-spawned: its question goes to the human. |
-| `/quenching-specs autopilot` | **Typed only.** The invocation is the human's delegation for an unattended run: rounds of health, queue (each loose spec proves relevance or is abandoned with evidence), the `/quenching-specs improve` map decided by the conductor as delegated owner, an epic with the dated autonomy policy in its `## Design`, the `spec-orchestrator` with `autonomous`, a read-only correctness review per epic, run in parallel with a Codex review when the quota allows (fallback reported, `codex`-only findings kept only once reproduced), whose reproduced findings become next-round specs, then the gate. Never forces a decision that widens a grant or an executing surface — those go to a human epic. Runs ONE round by default; `--until-dry` or `--until` repeat rounds (a resumable round record, the next round in a fresh context) until the deadline or a whole round produces no spec with evidence and consequence, and `--max-launches` (provisional 40) caps the launches of the whole tree. |
+| `/quenching-specs autopilot` | **Typed only.** The invocation is the human's delegation for an unattended run: rounds of health, queue (each loose spec proves relevance or is abandoned with evidence), the `/quenching-specs improve` map decided by the conductor as delegated owner, an epic with the dated autonomy policy in its `## Design`, the `spec-orchestrator` with `autonomous`, a read-only correctness review per epic, whose reproduced findings become next-round specs, then the gate. Never forces a decision that widens a grant or an executing surface — those go to a human epic. Runs ONE round by default; `--until-dry` or `--until` repeat rounds (a resumable round record, the next round in a fresh context) until the deadline or a whole round produces no spec with evidence and consequence, and `--max-launches` (provisional 40) caps the launches of the whole tree. |
 | `/quenching-specs triage` | Ranks the whole front in ONE confirmed table, writing `priority: {level, criticality, complexity, date}` per spec and nothing else — merging, never clobbering a human's ranking. |
 | `/quenching-specs board` | Human-only. Starts `cq specs serve` in the background and prints the URL: a local browser portal (board by derived stage, drag-to-rank list, spec detail, search, capture, approve as `by: human`) over the same backend as the CLI. Loopback only, per-run token, `Host`/`Origin` checks, `--read-only` disables writes on the server; `cq-specs-read serve` is always read-only. |
 
@@ -414,58 +414,19 @@ A URI resolves only to those two fixed files or to a `.md` inside `docs/standard
 traversal or an unknown URI is a JSON-RPC error (`-32602` bad parameters, `-32002` not found), never a file
 read. The same 60,000-character ceiling cuts an oversized answer with `truncated: true` and a `hint`.
 
-### A revisão Codex independente
-
-Step 6 of `/quenching-specs autopilot` runs, once per epic, a second and independent
-correctness review by Codex beside the Claude reviewer. Only the conductor calls `cq codex`; the
-reviewer gets no Codex grant. Two verbs of the `codex` pillar carry it:
-
-- `cq codex probe [--json]` answers whether Codex may be called now, without spending quota:
-  exit `0` available, `1` unavailable (a window over its ceiling, `crossReview: "off"`, no `codex`
-  on `PATH`), `2` unknown (no readable source or a stale snapshot).
-- `cq codex review --worktree <dir> --prompt <file> --run <name>` runs `codex exec` with a fixed
-  argv that ignores the user's Codex configuration and never asks for Codex's native sandbox; a
-  git guard proves afterwards that the review changed nothing.
-
-**Opt-in.** Codex is off by default: `shared.codex.crossReview` defaults to `"off"`, so a
-repository that declares nothing never calls Codex, and `cq config init` seeds that same value.
-Declaring `"crossReview": "auto"` in `.agents/quenching.json` turns the review on whenever the quota
-allows. The optional `shared.codex` block defaults to `maxUsedPercent` `80` (primary) and `90`
-(secondary), `timeoutSeconds` `900` and `model` `gpt-6-astra`; an absent block is every default.
-
-**Cost and quota.** One Codex call per epic, billed to the ChatGPT/Codex quota and never to the
-Claude one. The final report carries its tokens as measured, or `not measured`, apart from the
-Claude tiers.
-
-**Where the output lands.** `.quenching/codex/<run>/` holds `prompt.md` (the caller's prompt and
-the rule that Codex only reads), `review.md` and `events.jsonl`.
-
-**No sandbox, a git guard instead.** Codex runs with `--dangerously-bypass-approvals-and-sandbox`,
-because the native sandbox needs admin rights most machines lack and fails there with errors. The
-environment loses `GH_TOKEN`, `GITHUB_TOKEN`, `AWS_*`, `AZURE_*` and `GOOGLE_*`, and the guard
-compares the reviewed worktree's `HEAD`, branch, reflog, stash, the index, the status
-and bytes of every path `git status` reports and the ignored local configuration (`.claude/**`,
-`*.local.json`), before and after. Every symlink that resolves to a file (tracked, ignored or
-pointing outside the worktree) is recorded with its target and the hash of the resolved bytes; a
-symlink to a directory is not walked and stays a residual risk. Any change, a git command of the
-guard that fails, or any file-system error while taking the snapshot, before or after, is exit `2`
-`codex-git-guard` with no fallback (the refusal before the run removes the run's folder): the tree
-is never cleaned by Claude and goes to the human.
-
-**Fallback.** A probe that exits `1`, or a review that times out or exits `1`, leaves the step with
-the Claude review alone, and the final report names the fallback and its reason. A refusal (exit
-`2`) is reported the same way and never blocks the step — except `codex-git-guard`, which stops
-the run for the human.
-
-**Findings need reproduction.** A finding only Codex raised becomes a spec only once the Claude
-side reproduces it, with the command and its output. The Codex surface (`quenching-codex`) has no such step.
-
 ### O executor Codex
 
 Step 5b of `/quenching-specs execute` hands **one task at a time** to Codex when the code
 admits it; Claude keeps the self-review, the `verify:`, the commit, the tick and the verifier. It
-is **off by default**, under `shared.codex.executor` in `.agents/quenching.json`, and independent of
-`crossReview` (`executor.enabled: true` is its opt-in).
+is **off by default**, under `shared.codex.executor` in `.agents/quenching.json`
+(`executor.enabled: true` is its opt-in); a repository that declares nothing never calls Codex, and
+`cq config init` seeds that same value. There is no Codex cross review: a leftover
+`shared.codex.crossReview` or `shared.codex.model` is ignored and named in `warnings`.
+
+- **Quota probe** — `cq codex probe [--json]` answers whether Codex may be called now, without
+  spending quota: exit `0` available, `1` unavailable (a window over its ceiling, no `codex` on
+  `PATH`), `2` unknown (no readable source or a stale snapshot). The ceilings default to
+  `maxUsedPercent` `80` (primary) and `90` (secondary), and one call to `timeoutSeconds` `900`.
 
 - **Eligibility** — `cq codex eligible --spec <id> --task <tid> --json`: an open task that declares
   `files:`, writes nothing under `docs/` or `knowledge/`, and is small (bytes of its `files:` / 4 ≤
@@ -709,7 +670,7 @@ updates the published artifacts in lockstep. See
 contract.
 
 <!-- quenching-proof-readme-start -->
-<!-- quenching-proof-readme-sha256 226be1f2b394aa0e36f35e07908323ac77ad6534daeee7b0c8c6bba2ea93fdc2 -->
+<!-- quenching-proof-readme-sha256 c3397518d667e0a197d0665ca1e351423336d12e7657a8d5873e525d3522586f -->
 ## Declared proof layers
 
 ### tests
@@ -718,7 +679,7 @@ contract.
 - Reach: tree
 - Budget: not declared
 - Required: yes
-- Test modules: 170
+- Test modules: 168
 - Fixture modules: none
 
 ### Declared cost contract
