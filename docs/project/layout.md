@@ -27,6 +27,7 @@ of a behaviour and editing a generated copy of it.
 | `quenching/` | the single editable source `cq deploy` installs | the owning spec |
 | `integrations/opencode-vitrine/` | **hand-written** OpenCode Desktop GUI plugin (Specs panel); built with npm, `dist/` committed | the owning spec |
 | `integrations/claude-hud/` | band above the prompt (active spec, stage, task progress; read with `cq specs status --no-fetch`: local ref only, no fetch, no network); **hand-written**, validated by the gate with `claude plugin validate` | the owning spec |
+| `integrations/claude-vitrine/` | the Specs pane and configuration view for Claude Desktop and the terminal (a hooks-module mod); **hand-written**, installed from the marketplace and never by `cq deploy`; validated and tested by the gate with `claude plugin validate` and `claude plugin test` | the owning spec |
 | `.agents/skills/`, `.agents/quenching/`, `.claude/skills/` | this repository's own deployed surface, generated from `quenching/` | `cq deploy --target . --write` |
 | `.claude/` | this repository's own local command surface | `/quenching-components-*` |
 | `scripts/` | thin launchers CI calls | the owning spec |
@@ -38,8 +39,9 @@ change that survives until the next sync and then vanishes without a diff to exp
 for this repository's own deployed surface. The source is
 `quenching/` and the trees that install into no repository sit under `integrations/`
 ([source-layout.md](../standards/architecture/source-layout.md) §One source and two satellites).
-`integrations/claude-hud/` and `integrations/opencode-vitrine/` are the hand-written trees
-under a harness: edit the vitrine's `src/` and rebuild `dist/`, never a generated copy. The Claude
+`integrations/claude-hud/`, `integrations/claude-vitrine/` and `integrations/opencode-vitrine/` are the hand-written
+trees under a harness: edit the OpenCode vitrine's `src/` and rebuild `dist/`, never a generated copy; the Claude
+mods have no build. The Claude
 module plugins, the specs reader, the Codex plugin and the OpenCode user-level distribution were
 retired on 2026-11-03 with their generators.
 
