@@ -223,6 +223,20 @@ else
   printf 'SKIPPED: `claude` is not on PATH; integrations/claude-hud was not validated.\n'
 fi
 
+# The quenching-cache band carries generated copies of quenching's price table and handoff
+# template; a stale copy is refused here, with or without `claude`.
+run_check "quenching-cache generated copies" \
+  python3 scripts/cache_plugin_sync.py --check
+if command -v claude >/dev/null 2>&1; then
+  run_check "quenching-cache plugin" \
+    claude plugin validate integrations/claude-cache
+  run_check "quenching-cache tests" \
+    claude plugin test integrations/claude-cache
+else
+  printf '\n==> quenching-cache plugin\n'
+  printf 'SKIPPED: `claude` is not on PATH; integrations/claude-cache was not validated or tested.\n'
+fi
+
 # The quenching-vitrine mod (the Claude Desktop Specs pane) is validated and tested the same way:
 # the engine type-checks its hooks and runs its UI tests on the terminal and the desktop surface.
 if command -v claude >/dev/null 2>&1; then

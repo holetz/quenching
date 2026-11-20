@@ -22,6 +22,7 @@ from quenching.common.version import VERSION
 from quenching.specs.backends.base import BackendRefusal
 from quenching.specs.parse.fields import UnclosedFence
 from quenching.specs.commands.artifacts import cmd_artifact
+from quenching.specs.commands.handoff import add_parser as add_handoff_parser, cmd_handoff
 from quenching.specs.commands.create import cmd_new
 from quenching.specs.commands.deps import cmd_depends, cmd_schedule
 from quenching.specs.commands.doctor import cmd_config, cmd_doctor
@@ -313,6 +314,8 @@ def _add_inspection(sub) -> None:
     pad.add_argument("--spec")
     pad.add_argument("--name", required=True)
 
+    add_handoff_parser(sub, add_json)
+
     sp = add_json(sub.add_parser("discover", help="append a line to ## Discoveries"))
     sp.add_argument("spec")
     sp.add_argument("text")
@@ -452,6 +455,7 @@ DISPATCH: dict = {
     "discover": cmd_discover,
     "push": cmd_push,
     "artifact": cmd_artifact,
+    "handoff": cmd_handoff,
     "epic": cmd_epic,
     "link": cmd_epic,
     "validate": cmd_validate,

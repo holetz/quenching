@@ -30,6 +30,7 @@ tree. Other namespaces are read by their owning front.
 | `shared.workHost` | `{target, dockerContext, runner, remoteRoot, syncFlags, syncExclude, pullBack, protectedPaths, minFreeGb}` — a bad leaf falls back to its default and is named in `warnings` | disabled until `target` is set | `.agents/quenching/bin/cq config host --plan`, which prints the dispatch steps and runs nothing |
 | `shared.okfValidate` | `{warnAsError: boolean, ignoreGlobs: list of strings}` | `{warnAsError: false, ignoreGlobs: []}`, key by key; wins over `.claude/hooks/hooks-config*.json` | `.agents/quenching/bin/cq knowledge validate` |
 | `shared.contextBudgets` | `{main, worker, conductor}`, positive integers | `{main: 200000, worker: 200000, conductor: 150000}` | `.agents/quenching/bin/cq session context`: `worker` is a **size estimate**, never a stop, and `conductor` is the stop checked between waves; `worker` is also the default of `.agents/quenching/bin/cq specs estimate --worker-budget` |
+| `shared.cache` | `{rebuildLimitUsd: number ≥ 0, warnMinutes: integer ≥ 1, ttlMinutes: auto \| 5 \| 60, costStyle: dollars \| times}` — a bad leaf falls back to its default and is named in `warnings` | `{rebuildLimitUsd: 0.5, warnMinutes: 15, ttlMinutes: auto, costStyle: dollars}`, leaf by leaf; a long chat is `shared.contextBudgets.main` | the `quenching-cache` plugin's bar above the prompt, through `.agents/quenching/bin/cq config show --effective` |
 | `shared.codex` | `{crossReview: auto \| off, maxUsedPercent: {primary, secondary}, timeoutSeconds, model, executor}` — a bad leaf falls back to its default and is named in `warnings` | `{off, {80, 90}, 900, gpt-6-astra}` and `executor.enabled: false`, leaf by leaf — Codex is opt-in | `cq codex` |
 | `shared.gitIdentity` | `{allowedEmails: [address or fnmatch pattern, …]}` | none — nothing is judged | the identity gate (`cq git commit`), failing closed on a malformed value |
 | `shared.mcp` | `{mount: "specs", command: [strings]}` | none — no MCP file is generated | `cq deploy`, from the repository document only |
@@ -83,8 +84,8 @@ git through `.git/info/exclude`. Each key carries a **scope** in the registry
 
 | Scope | The local layer | Keys |
 | --- | --- | --- |
-| `machine` | wins over every file | `shared.worktreeSlots` (but `setupIdempotent`), `shared.workHost`, `shared.contextBudgets`, the Codex quota ceilings |
-| `either` | fills a key the project leaves out; the project wins | `shared.autonomy`, the rest of `shared.codex`, `shared.okfValidate`, `specs.chat` |
+| `machine` | wins over every file | `shared.worktreeSlots` (but `setupIdempotent`), `shared.workHost`, `shared.contextBudgets`, `shared.cache.ttlMinutes`, the Codex quota ceilings |
+| `either` | fills a key the project leaves out; the project wins | `shared.autonomy`, the rest of `shared.codex`, the rest of `shared.cache`, `shared.okfValidate`, `specs.chat` |
 | `project` | ignored and named in `localConfig.ignored` | everything else — the team's contract |
 
 `.agents/quenching/bin/cq config set <key> <value> --layer project|local` and `unset <key> --layer …`

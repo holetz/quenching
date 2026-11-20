@@ -345,7 +345,8 @@ class RealRepoLockstep(unittest.TestCase):
 
     def test_manifests_carry_no_hard_coded_command_count(self):
         for rel in (".claude-plugin/marketplace.json",
-                    "integrations/claude-hud/.claude-plugin/plugin.json"):
+                    "integrations/claude-hud/.claude-plugin/plugin.json",
+                    "integrations/claude-cache/.claude-plugin/plugin.json"):
             self.assertNotRegex(read_text(os.path.join(REPO, rel)), r"\d+ commands", rel)
 
 
