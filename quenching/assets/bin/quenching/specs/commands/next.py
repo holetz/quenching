@@ -4,7 +4,7 @@ The ranking lives here and nowhere else: four lexicographic factors, plus a live
 ref that outranks all four in both directions.
 
 `--spec` has three live consumers — `/quenching-specs execute`, the gate bank of
-`/quenching-specs develop`, and `assets/checks/conclude-order-check.sh`. `--front` was kept
+`/quenching-specs develop`, and the conclude text tests. `--front` was kept
 deliberately through a period with none, because the front's ordering logic exists nowhere else;
 `--table` gave it two — `/quenching-specs status` prints it as its whole spec block, and
 `/quenching-specs triage` prints it under `--order priority` as its closing ranking. Both quote the
