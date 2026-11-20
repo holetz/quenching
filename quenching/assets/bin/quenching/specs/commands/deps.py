@@ -85,7 +85,7 @@ def cmd_schedule(args, root: str, out: Emitter) -> int:
     result = schedule(infos, selected)
     cycle = result["cycle"]
     human = ("dependency cycle: " + " -> ".join(cycle)) if cycle else "\n".join(
-        f"{node['id']} — start: {node['start']}, target: {node['target']}; "
+        f"{node['id']} — start: {node['start']}, target: {node['target']}, end: {node['end']}; "
         f"earliestStart: {node['earliestStart']}, earliestFinish: {node['earliestFinish']}; "
         f"slipDays: {node['slipDays']}, critical: {node['critical']}"
         for node in result["nodes"])

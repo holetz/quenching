@@ -159,6 +159,7 @@ def schedule(infos: dict[str, dict], ids: list[str] | None = None) -> dict:
         info = infos[spec]
         fm = info["frontmatter"]
         start, target = _date(fm.get("start")), _date(fm.get("target"))
+        end = _date(fm.get("end"))
         duration = (target - start).days if start and target and target >= start else None
         earliest, driven_by = start, None
         blocked = False
@@ -170,22 +171,25 @@ def schedule(infos: dict[str, dict], ids: list[str] | None = None) -> dict:
             elif finish is not None and (earliest is None or finish > earliest):
                 earliest, driven_by = finish, dep
         if archived_done:
-            finish = target
+            finish = end or target
         elif blocked:
             earliest, driven_by, finish = None, None, None
+        elif end is not None:
+            # The finish the spec declares beats a derived one, but never precedes the start.
+            finish = max(end, earliest) if earliest is not None else end
         else:
             finish = earliest + timedelta(days=duration) \
                 if earliest is not None and duration is not None else target
         nodes[spec] = {
             "id": spec, "title": fm.get("title") or "", "phase": info["phase"],
-            "start": _iso(start), "target": _iso(target), "dependsOn": deps[spec],
+            "start": _iso(start), "target": _iso(target), "end": _iso(end), "dependsOn": deps[spec],
             "earliestStart": _iso(earliest), "earliestFinish": _iso(finish),
             "slipDays": max(0, (finish - target).days) if finish and target else 0,
             "critical": False, "drivenBy": driven_by,
         }
         if info["phase"] == "archive":
             outcome = str(fm.get("outcome") or "").strip()
-            finishes[spec] = target if outcome == "done" else None
+            finishes[spec] = (end or target) if outcome == "done" else None
         else:
             finishes[spec] = finish
         for successor in successors[spec]:

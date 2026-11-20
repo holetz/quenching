@@ -218,6 +218,31 @@ class DependencySchedule(unittest.TestCase):
                          (nodes["B"]["earliestStart"], nodes["B"]["earliestFinish"], nodes["B"]["slipDays"]))
         self.assertEqual("C", got["nodes"][-1]["id"])
 
+    def test_declared_end_is_the_finish_and_never_precedes_the_start(self):
+        got = schedule({"A": info(start="2026-01-01", target="2026-01-05", end="2026-01-09"),
+                        "B": info(dependsOn="A", start="2026-01-02", target="2026-01-10",
+                                  end="2026-01-04"),
+                        "C": info(target="2026-01-03", end="2026-01-04")}, ["B", "C"])
+        nodes = by_id(got)
+        self.assertEqual(("2026-01-09", "2026-01-09", 4, "2026-01-09"),
+                         (nodes["A"]["earliestFinish"], nodes["B"]["earliestStart"],
+                          nodes["A"]["slipDays"], nodes["B"]["earliestFinish"]))
+        self.assertEqual(("2026-01-09", "2026-01-04", "2026-01-04"),
+                         (nodes["A"]["end"], nodes["B"]["end"], nodes["C"]["earliestFinish"]))
+
+    def test_archived_done_dependency_finishes_at_its_end_before_its_target(self):
+        got = schedule({"A": info("archive", outcome="done", target="2026-01-10", end="2026-01-12"),
+                        "B": info(dependsOn="A", start="2026-01-05", target="2026-01-07")})
+        nodes = by_id(got)
+        self.assertEqual("2026-01-12", nodes["A"]["earliestFinish"])
+        self.assertEqual("2026-01-12", nodes["B"]["earliestStart"])
+
+    def test_invalid_end_reads_as_absent(self):
+        got = schedule({"A": info(start="2026-01-01", target="2026-01-05", end="nope"),
+                        "B": info(dependsOn="A")}, ["B"])
+        node = by_id(got)["A"]
+        self.assertEqual((None, "2026-01-05"), (node["end"], node["earliestFinish"]))
+
 
 if __name__ == "__main__":
     unittest.main()
