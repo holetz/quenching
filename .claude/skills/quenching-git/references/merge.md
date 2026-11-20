@@ -73,6 +73,8 @@ the merge:
 .agents/quenching/bin/cq specs reconcile --write --json
 ```
 A `needs-human` row (`## Outcome` not written, a task still open) is reported and never forced.
+Then bring the local base up to the remote with `.agents/quenching/bin/cq git refresh --json`: fast-forward only, it keeps uncommitted
+changes and switches no branch, and a `diverged` or `merge-refused` result is reported, never forced.
 **Done when:** the record is stamped and pushed and the spec archived or its `needs-human` row
 reported (with an ID), or explicitly skipped (without one).
 

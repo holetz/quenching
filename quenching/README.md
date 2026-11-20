@@ -670,7 +670,7 @@ updates the published artifacts in lockstep. See
 contract.
 
 <!-- quenching-proof-readme-start -->
-<!-- quenching-proof-readme-sha256 ef64e4d9af725078ebd357cd46471b1d09ab445b797d0eb713eec4ad1911bc4a -->
+<!-- quenching-proof-readme-sha256 7b74974abcd1b48da400462d3f368e0191e438e44ada074c6fa35ad4c269e970 -->
 ## Declared proof layers
 
 ### tests
