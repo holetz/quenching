@@ -1,0 +1,59 @@
+{
+  "name": "quenching-cache-maxxing",
+  "version": "7.8.0",
+  "description": "Band above the prompt: minutes left on Claude's prompt cache, what the next message costs and one tip, with /cmaxx-handoff to start a fresh chat from a Haiku brief. Vendored from cache-maxxing by 5m0k3 (MIT); the bar runs locally and reaches the network only on /cmaxx-update and /cmaxx-handoff.",
+  "types": "./types/index.d.ts",
+  "userConfig": {
+    "rebuildLimitUsd": {
+      "type": "number",
+      "title": "Rebuild limit ($)",
+      "description": "Above this rebuild cost, the bar suggests a new chat instead of carrying on.",
+      "default": 0.5
+    },
+    "warnMinutes": {
+      "type": "number",
+      "title": "Warning time (minutes)",
+      "description": "How early the bar turns yellow before the chat memory expires (1-hour memory only; the 5-minute memory never turns yellow).",
+      "default": 15
+    },
+    "longChatTokens": {
+      "type": "number",
+      "title": "Long chat size (tokens)",
+      "description": "Chat size at which the bar suggests starting a new chat after the current task.",
+      "default": 300000
+    },
+    "costStyle": {
+      "type": "string",
+      "title": "Show cost as",
+      "description": "dollars shows approximate $ amounts; times shows how many times more than a normal message.",
+      "options": [
+        "dollars",
+        "times"
+      ],
+      "default": "dollars"
+    },
+    "memoryMinutes": {
+      "type": "string",
+      "title": "Memory time",
+      "description": "auto follows each reply (1 hour on a subscription, 5 minutes with an API key or usage credits); 5 or 60 force it.",
+      "options": [
+        "auto",
+        "5",
+        "60"
+      ],
+      "default": "auto"
+    }
+  },
+  "network": {
+    "hosts": [
+      "raw.githubusercontent.com"
+    ]
+  },
+  "author": {
+    "name": "Israel Holetz",
+    "email": "holetz@gmail.com"
+  },
+  "homepage": "https://github.com/5m0k3/cache-maxxing",
+  "repository": "https://github.com/holetz/quenching",
+  "license": "MIT"
+}

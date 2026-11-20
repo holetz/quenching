@@ -219,6 +219,17 @@ else
   printf 'SKIPPED: `claude` is not on PATH; integrations/claude-hud was not validated.\n'
 fi
 
+# The vendored cache-maxxing bar carries upstream's own suite (bun, through `claude plugin test`).
+if command -v claude >/dev/null 2>&1; then
+  run_check "quenching-cache-maxxing plugin" \
+    claude plugin validate integrations/claude-cache-maxxing
+  run_check "quenching-cache-maxxing tests" \
+    claude plugin test integrations/claude-cache-maxxing
+else
+  printf '\n==> quenching-cache-maxxing plugin\n'
+  printf 'SKIPPED: `claude` is not on PATH; integrations/claude-cache-maxxing was not validated.\n'
+fi
+
 # The OpenCode vitrine is TypeScript against the GUI SDK it pins; a type error there ships a page
 # that fails only inside Desktop. Its dependencies are a local `npm install`, so without
 # `node_modules` the skip is stated, as with `claude` above.

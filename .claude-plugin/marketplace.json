@@ -4,7 +4,7 @@
     "name": "Israel Holetz",
     "email": "holetz@gmail.com"
   },
-  "description": "Marketplace hosting quenching-hud, the band above the prompt that shows the worktree's active quenching spec. The quenching surface itself is not a plugin: it is installed into each target repository with `cq deploy`.",
+  "description": "Marketplace hosting the plugins that install into no repository: quenching-hud, the band above the prompt that shows the worktree's active quenching spec, and quenching-cache-maxxing, the prompt-cache bar vendored from cache-maxxing by 5m0k3. The quenching surface itself is not a plugin: it is installed into each target repository with `cq deploy`.",
   "plugins": [
     {
       "name": "quenching-hud",
@@ -22,6 +22,24 @@
         "spec-driven",
         "hud",
         "read-only"
+      ]
+    },
+    {
+      "name": "quenching-cache-maxxing",
+      "source": "./integrations/claude-cache-maxxing",
+      "description": "Band above the prompt: minutes left on Claude's prompt cache, the next message's estimated cost and one tip, with /cmaxx-handoff, /cmaxx-stats and /cmaxx-update. Vendored from cache-maxxing by 5m0k3 (MIT, https://github.com/5m0k3/cache-maxxing). The bar runs locally; only /cmaxx-handoff (one Haiku call) and /cmaxx-update (reads GitHub, sends nothing) reach outside.",
+      "version": "7.8.0",
+      "author": {
+        "name": "Israel Holetz",
+        "email": "holetz@gmail.com"
+      },
+      "license": "MIT",
+      "category": "productivity",
+      "keywords": [
+        "claude-code",
+        "prompt-cache",
+        "cost",
+        "hud"
       ]
     }
   ]

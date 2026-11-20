@@ -8,6 +8,11 @@
       "name": "quenching-hud",
       "path": "integrations/claude-hud",
       "marketplace": true
+    },
+    {
+      "name": "quenching-cache-maxxing",
+      "path": "integrations/claude-cache-maxxing",
+      "marketplace": true
     }
   ],
   "modules": [

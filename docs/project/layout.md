@@ -27,6 +27,7 @@ of a behaviour and editing a generated copy of it.
 | `quenching/` | the single editable source `cq deploy` installs | the owning spec |
 | `integrations/opencode-vitrine/` | **hand-written** OpenCode Desktop GUI plugin (Specs panel); built with npm, `dist/` committed | the owning spec |
 | `integrations/claude-hud/` | band above the prompt (active spec, stage, task progress; read with `cq specs status --no-fetch`: local ref only, no fetch, no network); **hand-written**, validated by the gate with `claude plugin validate` | the owning spec |
+| `integrations/claude-cache-maxxing/` | prompt-cache bar above the prompt (cache countdown, next-message cost, `/cmaxx-handoff`); **vendored** from [cache-maxxing](https://github.com/5m0k3/cache-maxxing) by 5m0k3 (MIT), local changes in its `NOTICE.md`; validated and tested by the gate with `claude plugin validate` and `claude plugin test` | re-synced from upstream |
 | `.agents/skills/`, `.agents/quenching/`, `.claude/skills/` | this repository's own deployed surface, generated from `quenching/` | `cq deploy --target . --write` |
 | `.claude/` | this repository's own local command surface | `/quenching-components-*` |
 | `scripts/` | thin launchers CI calls | the owning spec |
@@ -37,9 +38,11 @@ Every generated tree is the trap: it is **regenerated wholesale**, so editing it
 change that survives until the next sync and then vanishes without a diff to explain it. That holds
 for this repository's own deployed surface. The source is
 `quenching/` and the trees that install into no repository sit under `integrations/`
-([source-layout.md](../standards/architecture/source-layout.md) §One source and two satellites).
+([source-layout.md](../standards/architecture/source-layout.md) §One source and its satellites).
 `integrations/claude-hud/` and `integrations/opencode-vitrine/` are the hand-written trees
-under a harness: edit the vitrine's `src/` and rebuild `dist/`, never a generated copy. The Claude
+under a harness: edit the vitrine's `src/` and rebuild `dist/`, never a generated copy.
+`integrations/claude-cache-maxxing/` is vendored: it follows upstream, and a change of its own is
+listed in its `NOTICE.md`. The Claude
 module plugins, the specs reader, the Codex plugin and the OpenCode user-level distribution were
 retired on 2026-11-03 with their generators.
 

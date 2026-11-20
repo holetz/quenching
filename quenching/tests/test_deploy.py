@@ -567,7 +567,7 @@ class TargetLauncher(unittest.TestCase):
         marketplace = json.loads(
             (REPO_ROOT / ".claude-plugin" / "marketplace.json").read_text(encoding="utf-8"))
         marketplace_versions = {item["name"]: item["version"] for item in marketplace["plugins"]}
-        self.assertEqual({"quenching-hud"}, set(marketplace_versions))
+        self.assertEqual({"quenching-hud", "quenching-cache-maxxing"}, set(marketplace_versions))
         self.assertEqual({VERSION}, set(marketplace_versions.values()), marketplace_versions)
 
     def test_the_entrypoint_declares_and_checks_the_python_floor_before_package_imports(self):
