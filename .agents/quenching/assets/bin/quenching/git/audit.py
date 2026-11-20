@@ -100,14 +100,35 @@ def _reflog(cwd: str, ref: str, env: dict[str, str] | None = None,
     return kept
 
 
+def _since_switch(entries: list[list[str]], branch: str, held: set[str]) -> list[list[str]]:
+    """The `HEAD` reflog entries (newest first) that belong to the audited branch's life: those newer
+    than the last `checkout: moving from <x> to <branch>` whose new sha the branch ref itself held
+    (`held`, the shas of its own reflog). A slot is reused across specs, so what came before that
+    switch is another branch's history. A forged subject whose sha the branch never held is no
+    boundary, so a hand-made move cannot hide what precedes it. No such switch keeps every entry."""
+    want = "checkout: moving from "
+    for i, (sha, subject) in enumerate(entries):
+        if subject.startswith(want) and subject.endswith(f" to {branch}") and sha in held:
+            return entries[:i]
+    return entries
+
+
 def _rewrites(cwd: str, ref: str, env: dict[str, str] | None = None,
-              errors: list[dict] | None = None) -> list[str]:
+              errors: list[dict] | None = None, branch: str | None = None) -> list[str]:
     """The reflog moves of `ref` that are not fast-forwards: the older sha is not an ancestor of the
     newer one. The verdict is the graph's, so a rewrite made with no message or a forged one
     (`update-ref -m "commit: tidy"`) is still listed. The oldest entry is the creation and has no
-    older sha, so it is never one. Each item reads `<subject or (no reflog message)> <old>..<new>`."""
+    older sha, so it is never one. Each item reads `<subject or (no reflog message)> <old>..<new>`.
+    With `branch`, `ref` is `HEAD` and only the moves since its last switch onto that branch count
+    (`_since_switch`): the switch itself moves `HEAD` between unrelated tips and is no rewrite of the work."""
     entries = [(line.split(" ", 1) + [""])[:2]
                for line in _lines(cwd, "reflog", "show", "--format=%H %gs", ref, env=env)]
+    if branch is not None:
+        held = {line.split(" ", 1)[0] for line in
+                _lines(cwd, "reflog", "show", "--format=%H %gs", f"refs/heads/{branch}", env=env)}
+        kept = _since_switch(entries, branch, held)
+        if len(kept) < len(entries):
+            entries = entries[:len(kept) + 1]          # the switch entry stays as the oldest anchor; the loop never lists it
     found = []
     for i, (sha, subject) in enumerate(entries[:-1]):
         older = entries[i + 1][0]
@@ -981,7 +1002,7 @@ def cmd_audit(args) -> int:
         "reflog": {"branch": _reflog(worktree, f"refs/heads/{args.branch}", env, errors),
                    "head": _reflog(worktree, "HEAD", env, errors)},
         "rewrites": {"branch": _rewrites(worktree, f"refs/heads/{args.branch}", env, errors),
-                     "head": _rewrites(worktree, "HEAD", env, errors)},
+                     "head": _rewrites(worktree, "HEAD", env, errors, branch=args.branch)},
     }
     payload["generated"] = _generated(worktree, base, tip, payload["changed"], env, errors)
     payload["grants"] = _grants(worktree, base, tip, payload["changed"], env, errors,
