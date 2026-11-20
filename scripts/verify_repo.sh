@@ -36,6 +36,10 @@ mkdir -p "$COVERAGE_DIR"
 # directory, and it would take the worker data with it before the report is combined.
 export COVERAGE_FILE="$ROOT/$COVERAGE_DIR/.coverage"
 
+# One timezone for every tier: a test that renders a date reads the same clock face on a laptop,
+# in an agent session and in CI. The locale is left to the host — `C.UTF-8` is not a macOS locale.
+export TZ=UTC
+
 # One temp root for the whole run. `scripts.toolchain.tmproot` prefers a RAM-backed candidate and
 # falls back to the disk with a NOTICE on stderr; it prints the chosen root on stdout. The
 # `quenching-gate-*` directory under it is per run and removed on exit — normal, failed, SIGINT or
