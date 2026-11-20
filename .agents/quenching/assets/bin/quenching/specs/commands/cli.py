@@ -172,6 +172,7 @@ def _add_section_and_fields(sub) -> None:
         ("assignee", "omit to read; a name or identity to set"),
         ("start", "omit to read; YYYY-MM-DD to set"),
         ("target", "omit to read; YYYY-MM-DD to set"),
+        ("end", "omit to read; YYYY-MM-DD to set (the finish the spec declares)"),
     ):
         sp = add_json(sub.add_parser(field, help=f"read or set ONE spec's `{field}` — "
                                                  f"stored, never projected"))
@@ -445,6 +446,7 @@ DISPATCH: dict = {
     "assignee": cmd_field,
     "start": cmd_field,
     "target": cmd_field,
+    "end": cmd_field,
     "record": cmd_record,
     "promote": cmd_promote,
     "reconcile": cmd_reconcile,
