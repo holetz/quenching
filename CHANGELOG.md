@@ -13,6 +13,40 @@ owner: [`ci-cd/versioning-release.md`](docs/standards/ci-cd/versioning-release.m
 short version for a consumer: the version is published once, deliberately, as a release — never at a
 spec's own conclude — and `cq --version` is what answers which one you are running.
 
+## 7.10.0
+
+**Chega o `quenching-cache`, a faixa do cache de prompt.** Um plugin novo do marketplace
+  (`integrations/claude-cache/`, derivado do cache-maxxing, MIT) mostra acima do prompt quanto tempo
+  o cache segue quente, quanto custa a próxima mensagem e o que fazer. O `/quenching-cache handoff`
+  escreve o handoff da conversa e o guarda ao lado da spec da branch, e o `/quenching-cache stats`
+  lê o `cq components session cache --usd`. A tabela de preços e as chaves `shared.cache` são do
+  `cq`, e o handoff ganhou um verbo só, `cq specs handoff`, com um template (#115).
+
+**O `cq deploy` distingue edição local de mudança upstream e ganhou `--remove`**, e as salvaguardas
+  da revisão ECC entraram juntas: o leak gate pega tokens de provedor prefixados e Unicode oculto, um
+  hook avisa quando um comando de shell pula os hooks do git, e o pilar de segurança aponta grants de
+  agente arriscados já commitados (#124).
+
+**A revisão cruzada do Codex saiu.** O `cq codex review` e a guarda git exclusiva dele foram
+  removidos; `shared.codex.crossReview` e `shared.codex.model` deixam de ser lidos, e um valor
+  remanescente é ignorado e nomeado em `warnings`, sem recusar a configuração. O executor do Codex
+  continua (spec 2199, #123).
+
+**Um erro preexistente encontrado durante a execução tem rota própria:** provado vermelho na base,
+  ele vira uma task `[fix-preexistente]` quando cabe na spec ou uma spec capturada quando não cabe;
+  um vermelho não contido continua FAIL, e a supressão dentro de uma task de correção é FAIL no
+  `spec-verifier` (spec 2203, #125).
+
+**O run_evals mede uma mudança contra uma ref de base** (`--arms with,baseline --baseline-ref`),
+  com `deltaVsBaseline` no benchmark (#116).
+
+**Correções:** o autopilot reconfere um worker parado antes de encerrá-lo (spec 2198, #122); o gate
+  do repositório fixa TZ e locale em toda execução (spec 2197, #121); o preflight distingue uma
+  branch atrás do remoto de um remoto que recusa escrita (spec 2193, #117); o `warn-git-add-all`
+  avisa só num `git add` que roda, não num texto que o menciona (spec 2196, #120); o status de
+  segurança reporta `write-all` como sem limite (spec 2195, #119); e o drift de runtime do toolchain
+  lê uma restrição `>=` como piso, não como pin (spec 2194, #118).
+
 ## 7.9.0
 
 **Os hooks implantados rodam no harness do GitHub Copilot, em qualquer shell.** O Copilot (a janela
