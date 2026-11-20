@@ -108,6 +108,44 @@ export async function record($: EngineInterface, hits: { id: number; kind: Kind 
   await update($, ledger, entries => hits.reduce((all, hit) => touch(all, hit.id, hit.kind, now), entries))
 }
 
+/** What the box is told about a whole spec: its stage, its progress and the next task to build. */
+export function specNote(spec: Detail): string {
+  const next = spec.tasks.find(task => task.state !== 'x' && !task.blocked)
+
+  return [
+    `spec ${spec.id} — ${spec.title}`,
+    `stage: ${spec.stage} · tasks: ${spec.checked}/${spec.total}${spec.blocked ? ` · blocked: ${spec.blocked}` : ''}`,
+    next ? `next: ${next.id} ${next.text}` : '',
+  ]
+    .filter(Boolean)
+    .join('\n')
+}
+
+/** What the box is told about one task: its text, the files it may touch and how it is verified. */
+export function taskNote(id: number, taskID: string, info: { text: string; files: string; verify: string }): string {
+  return `spec ${id} task ${taskID} — ${info.text}\nfiles: ${info.files || '-'}\nverify: ${info.verify || '-'}`
+}
+
+/** Why nothing reached the composer, in words the person can act on. */
+export function refusalNote(refusal: 'no_composer' | 'dialog' | undefined): string {
+  return refusal === 'dialog' ? 'A dialog is open: close it, then attach again.' : 'No prompt box to fill: nothing was attached.'
+}
+
+/** Puts a task, or the whole spec, in the composer where the cursor stands; a refusal is a toast. */
+export async function attach($: EngineInterface, id: number, taskID?: string) {
+  const { specs } = services($)
+  const cwd = await $.session.cwd()
+  const shown = await read($, detail)
+  const text = taskID
+    ? taskNote(id, taskID, await specs.task(cwd, id, taskID))
+    : specNote(shown?.id === id ? shown : await specs.detail(cwd, id))
+  const filled = await $.prompt.fill({ text: `${text}\n`, mode: 'insert' })
+
+  if (!filled.isFilled) {
+    $.ui.toast(refusalNote(filled.refusal))
+  }
+}
+
 export async function back($: EngineInterface) {
   await update($, picked, () => null)
   await update($, detail, () => null)
@@ -358,6 +396,7 @@ export async function drawPane($: EngineInterface, e: Parameters<EngineInterface
       <Box flexDirection="row" gap={2}>
         <Button key="back" label="Back" onPress={() => back($)} />
         <Text bold>{`${spec.id} · ${spec.title}`}</Text>
+        <Button key="attach-spec" label="Attach spec" onPress={() => attach($, spec.id)} />
       </Box>
       <Text color={runBad(spec) ? 'red' : undefined} dimColor={!runBad(spec)}>
         {signals(spec, now).join(' · ')}
@@ -380,7 +419,10 @@ export async function drawPane($: EngineInterface, e: Parameters<EngineInterface
         <Box flexDirection="column">
           {spec.tasks.length === 0 && <Text dimColor>No tasks yet.</Text>}
           {spec.tasks.map(task => (
-            <Text key={`task-${task.id}`}>{`${taskMark(task)} ${task.id} ${task.text}`}</Text>
+            <Box key={`row-${task.id}`} flexDirection="row" gap={1}>
+              <Text>{`${taskMark(task)} ${task.id} ${task.text}`}</Text>
+              <Button key={`attach-${task.id}`} label="Attach" onPress={() => attach($, spec.id, task.id)} />
+            </Box>
           ))}
         </Box>
       )}

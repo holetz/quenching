@@ -1,7 +1,7 @@
 import { expect, test } from 'claude-code/testing'
 
 import type { Detail, TouchRow } from '../types'
-import { ageLabel, signals, tabsOf } from './pane'
+import { ageLabel, refusalNote, signals, specNote, tabsOf, taskNote } from './pane'
 
 const PANE = {
   plugin: 'quenching-vitrine',
@@ -223,4 +223,60 @@ test('a spec with no edge and no epic says so, above and below', async ($, on) =
     expect(await ui.find({ type: 'Text', text: /nothing below/ })).toBeDefined()
     await ui.unmount()
   }
+})
+
+test('a task and the whole spec go to the composer; a refusal is a toast', async ($, on) => {
+  const state = memory(on)
+  on('clock.now', () => ({ value: 0 }))
+  on('session.cwd', () => ({ value: '/w' }))
+  on('process.run', (_, e) => {
+    const key = e.argv.join(' ')
+    const out = key.startsWith('cq specs show --spec 2191 --task 1.3')
+      ? JSON.stringify({ tasks: [{ text: 'three', files: ['a.ts', 'b.ts'], verify: 'make test', subject: '' }] })
+      : '{}'
+
+    return { value: { exitCode: 0, stdout: out, stderr: '', isStdoutTruncated: false, isStderrTruncated: false } }
+  })
+  const filled: string[] = []
+  const toasts: string[] = []
+  let refusal: 'dialog' | undefined
+  on('prompt.fill', (_, e) => {
+    filled.push(`${e.mode}:${e.text}`)
+
+    return refusal ? { isFilled: false, refusal, text: '', cursor: 0 } : { isFilled: true, text: e.text, cursor: 0 }
+  })
+  on('ui.toast', (_, e) => {
+    toasts.push(e.text)
+
+    return { value: undefined }
+  })
+
+  for (const surface of SURFACES) {
+    state.put('picked', 2191)
+    state.put('detail', spec(), 'detail-1')
+    state.put('tab', 0)
+    const ui = await $.ui.mount({ ...PANE, surface })
+
+    await ui.press({ key: 'attach-1.3' })
+    await ui.press({ key: 'attach-spec' })
+    refusal = 'dialog'
+    await ui.press({ key: 'attach-spec' })
+    refusal = undefined
+    await ui.unmount()
+  }
+
+  expect(filled[0]).toBe('insert:spec 2191 task 1.3 — three\nfiles: a.ts, b.ts\nverify: make test\n')
+  expect(filled[1]).toBe('insert:spec 2191 — Port the panel\nstage: blocked · tasks: 1/3 · blocked: 1\nnext: 1.3 three\n')
+  expect(toasts.length).toBe(2)
+})
+
+test('a refusal reads as an instruction', () => {
+  expect(refusalNote('dialog')).toMatch(/dialog is open/)
+  expect(refusalNote('no_composer')).toMatch(/No prompt box/)
+  expect(refusalNote(undefined)).toMatch(/No prompt box/)
+})
+
+test('the notes carry the spec and the task as the OpenCode attach did', () => {
+  expect(specNote(spec({ blocked: 0, tasks: [] }))).toBe('spec 2191 — Port the panel\nstage: blocked · tasks: 1/3')
+  expect(taskNote(7, '1.1', { text: 'x', files: '', verify: '' })).toBe('spec 7 task 1.1 — x\nfiles: -\nverify: -')
 })
