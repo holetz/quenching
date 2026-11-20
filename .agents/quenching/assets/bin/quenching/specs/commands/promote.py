@@ -1,8 +1,11 @@
 """`promote` — the one remaining transition, `plans/` -> `archive/`."""
 from __future__ import annotations
 
+import subprocess
+
 from quenching.specs.backends import open_backend
 from quenching.specs.backends.base import BackendRefusal
+from quenching.specs.commands import epic
 from quenching.specs.commands.output import Emitter, read_one
 from quenching.specs.commands.push import card_failures, card_warnings
 from quenching.specs.commands.read import _next_phase
@@ -14,6 +17,61 @@ from quenching.specs.parse.fields import set_frontmatter_key
 from quenching.specs.parse.text import body_after_frontmatter
 from quenching.specs.parse.sections import duplicate_headings, gate_report, section_state
 from quenching.specs.schema import OUTCOMES, canonical_headings
+
+
+def isolated(info: dict) -> bool:
+    """Whether the spec's `branch` record names a work ref distinct from its base."""
+    rec = info["frontmatter"].get("branch")
+    if not isinstance(rec, dict):
+        return False
+    work = str(rec.get("work") or "").strip()
+    return bool(work) and work != str(rec.get("base") or "").strip()
+
+
+def merge_evidence(info: dict, root: str, remote: str = "origin", *, fetch: bool = True,
+                   ask_pr: bool = True) -> tuple[bool, str]:
+    """The store is the quenching ref: an archive is visible at once while its PR can still stall.
+    `fetch=False` and `ask_pr=False` keep the answer offline, for a caller that already fetched."""
+    if not isolated(info):
+        return True, "no isolated work ref"
+    rec = info["frontmatter"]["branch"]
+    work = str(rec["work"]).strip()
+    base = str(rec.get("base") or "").strip()
+    merge = info["frontmatter"].get("merge")
+    if isinstance(merge, dict) and str(merge.get("strategy") or "").strip():
+        return True, "merge record"
+
+    def git(*args):
+        try:
+            return subprocess.run(["git", *args], cwd=root, capture_output=True,
+                                  text=True, timeout=30)
+        except (OSError, subprocess.SubprocessError):
+            return None
+
+    if fetch:
+        git("fetch", "--quiet", remote, base)
+    work_tip = None
+    for ref in (f"refs/heads/{work}", f"refs/remotes/{remote}/{work}"):
+        resolved = git("rev-parse", "--verify", f"{ref}^{{commit}}")
+        if resolved is not None and resolved.returncode == 0:
+            work_tip = resolved.stdout.strip()
+            break
+    base_ref = None
+    for ref in (f"refs/remotes/{remote}/{base}", f"refs/heads/{base}"):
+        resolved = git("rev-parse", "--verify", f"{ref}^{{commit}}")
+        if resolved is not None and resolved.returncode == 0:
+            base_ref = ref
+            break
+    if work_tip and base_ref:
+        ancestor = git("merge-base", "--is-ancestor", work_tip, base_ref)
+        if ancestor is not None and ancestor.returncode == 0:
+            return True, f"work ref is in {base_ref}"
+    number = epic.pr_number(info) if ask_pr else None
+    if number:
+        pr = epic._pr_view(info, epic._provider(root), root, 15)
+        if pr and pr[0] == "MERGED":
+            return True, f"PR #{number} merged"
+    return False, f"{work} is not in {remote}/{base} and no merged PR is recorded"
 
 
 def cmd_promote(args, root: str, out: Emitter) -> int:
@@ -127,6 +185,20 @@ def cmd_promote(args, root: str, out: Emitter) -> int:
                      "\n".join(f"  [{t['state']}] {t['text'][:70]}" for t in open_tasks[:8]) +
                      "\n  pass --force to archive anyway, or --outcome abandoned")
             return 2
+
+        if outcome == "done":
+            merged, reason = merge_evidence(info, root)
+            if not merged:
+                branch = info["frontmatter"]["branch"]
+                message = (f"cannot archive '{info['id']}' as done before its work is merged — "
+                           f"{reason}; write ## Outcome, open the PR, and archive after the "
+                           "merge (cq specs reconcile)")
+                out.emit(args.json,
+                         {"ok": False, "code": "sp-not-merged", "id": info["id"],
+                          "work": branch.get("work"), "base": branch.get("base"),
+                          "reason": reason, "message": message},
+                         f"refused: {message}")
+                return 2
 
     if args.dry_run:
         out.emit(args.json,

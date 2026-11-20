@@ -2,6 +2,7 @@ import { Plugin } from "@opencode/plugin"
 import { Vitrine } from "./rpc.js"
 import * as specs from "./specs.js"
 import * as quench from "./quenching.js"
+import { configSchema, configWrite } from "./cq.js"
 
 export default Plugin.define({
   id: "quenching-vitrine",
@@ -41,6 +42,16 @@ export default Plugin.define({
       quenching: async (input) => {
         const { directory } = input as { directory: string }
         return quench.health(directory)
+      },
+      config: async (input) => {
+        const { directory } = input as { directory: string }
+        return configSchema(directory)
+      },
+      configWrite: async (input) => {
+        const { directory, key, layer, value, unset } = input as {
+          directory: string; key: string; layer: "project" | "local"; value: string; unset: boolean
+        }
+        return configWrite(directory, key, layer, unset ? null : value)
       },
       upgrade: async (input) => {
         const { directory } = input as { directory: string }

@@ -134,8 +134,74 @@ class Deploy(unittest.TestCase):
         code, payload = self.run_deploy("--modules", "core", "--check")
         self.assertEqual(1, code)
         self.assertIn({"path": ".agents/skills/quenching-specs/SKILL.md",
-                       "change": "update"}, payload["changes"])
+                       "change": "edited"}, payload["changes"])
         self.assertIn("local edit", skill.read_text(encoding="utf-8"))
+
+    def test_a_write_refuses_to_discard_a_local_edit_until_forced(self):
+        self.assertEqual(0, self.run_deploy("--modules", "core", "--write")[0])
+        skill = self.target / ".agents/skills/quenching-specs/SKILL.md"
+        pristine = skill.read_bytes()
+        skill.write_bytes(pristine + b"\nlocal edit\n")
+        code, payload = self.run_deploy("--modules", "core", "--write")
+        self.assertEqual((2, "ct-deploy-edited"), (code, payload["code"]))
+        self.assertEqual([".agents/skills/quenching-specs/SKILL.md"], payload["paths"])
+        self.assertIn(b"local edit", skill.read_bytes())
+        self.assertEqual(0, self.run_deploy("--modules", "core", "--write", "--force")[0])
+        self.assertEqual(pristine, skill.read_bytes())
+
+    def test_an_upstream_change_to_an_unedited_file_is_an_update(self):
+        self.assertEqual(0, self.run_deploy("--modules", "core", "--write")[0])
+        rel = ".agents/skills/quenching-specs/SKILL.md"
+        path = self.target / ".agents/.quenching-deploy.json"
+        manifest = json.loads(path.read_text())
+        # The recorded bytes and the disk agree, the source moved on: simulate an older deploy.
+        old = b"an older release\n"
+        (self.target / rel).write_bytes(old)
+        import hashlib
+        manifest["files"][rel] = hashlib.sha256(old).hexdigest()
+        manifest["version"] = "0.0.1"
+        path.write_text(json.dumps(manifest, indent=2) + "\n")
+        code, payload = self.run_deploy("--modules", "core", "--check")
+        self.assertEqual(1, code)
+        self.assertIn({"path": rel, "change": "update"}, payload["changes"])
+        self.assertEqual("0.0.1", payload["installedVersion"])
+        self.assertTrue(any("0.0.1" in w for w in payload["warnings"]))
+        self.assertEqual(0, self.run_deploy("--modules", "core", "--write")[0])
+
+    def test_a_symlinked_directory_cannot_carry_a_write_outside_the_target(self):
+        outside = tempfile.TemporaryDirectory()
+        self.addCleanup(outside.cleanup)
+        (self.target / ".agents").mkdir()
+        os.symlink(outside.name, self.target / ".agents/skills")
+        code, payload = self.run_deploy("--modules", "core", "--write")
+        self.assertEqual(2, code)
+        self.assertEqual([], os.listdir(outside.name))
+
+    def test_remove_plans_then_deletes_the_owned_surface_and_keeps_edits(self):
+        self.write(".claude/settings.json", json.dumps({"permissions": {"allow": ["Read"]}}))
+        self.write(".agents/skills/my-skill/SKILL.md", "---\ndescription: Mine.\n---\n\nBody.\n")
+        self.assertEqual(0, self.run_deploy("--modules", "core", "--write")[0])
+        edited = self.target / ".agents/skills/quenching-git/SKILL.md"
+        edited.write_text("mine now\n", encoding="utf-8")
+        code, payload = self.run_deploy("--remove")
+        self.assertEqual(1, code)
+        self.assertFalse(payload["written"])
+        self.assertTrue((self.target / ".agents/quenching/bin/cq").exists())
+        self.assertIn(".agents/skills/quenching-git/SKILL.md", payload["kept"])
+        code, payload = self.run_deploy("--remove", "--write")
+        self.assertEqual(0, code)
+        self.assertFalse((self.target / ".agents/quenching").exists())
+        self.assertFalse((self.target / ".agents/.quenching-deploy.json").exists())
+        self.assertFalse((self.target / ".agents/skills/quenching-specs").exists())
+        self.assertEqual("mine now\n", edited.read_text(encoding="utf-8"))
+        for rel in ("AGENTS.md", ".agents/quenching.json", ".agents/skills/my-skill/SKILL.md"):
+            self.assertTrue((self.target / rel).exists(), rel)
+        settings = json.loads((self.target / ".claude/settings.json").read_text())
+        self.assertEqual({"permissions": {"allow": ["Read"]}}, settings)
+
+    def test_remove_refuses_a_target_that_was_never_deployed(self):
+        code, payload = self.run_deploy("--remove", "--write")
+        self.assertEqual((2, "ct-deploy-remove"), (code, payload["code"]))
 
     def test_a_group_writable_surface_is_not_drift(self):
         self.assertEqual(0, self.run_deploy("--modules", "core", "--write")[0])
@@ -159,6 +225,41 @@ class Deploy(unittest.TestCase):
         self.assertEqual(".agents/skills/quenching-specs/SKILL.md", payload["conflicts"][0]["path"])
         self.assertFalse((self.target / ".agents/quenching").exists())
         self.assertIn("keep me", (self.target / ".agents/skills/quenching-specs/SKILL.md").read_text())
+
+    def drop_from_manifest(self, rel: str):
+        path = self.target / ".agents/.quenching-deploy.json"
+        manifest = json.loads(path.read_text())
+        del manifest["files"][rel]
+        path.write_text(json.dumps(manifest, indent=2) + "\n")
+
+    def test_an_unowned_bridge_copy_with_the_generated_bytes_is_adopted(self):
+        self.write(".agents/skills/my-skill/SKILL.md", "---\ndescription: Mine.\n---\n\nBody.\n")
+        self.assertEqual(0, self.run_deploy("--modules", "specs", "--write")[0])
+        bridge = self.target / ".claude/skills/my-skill/SKILL.md"
+        before = bridge.read_bytes()
+        self.drop_from_manifest(".claude/skills/my-skill/SKILL.md")
+        code, payload = self.run_deploy("--modules", "specs", "--check")
+        self.assertEqual(1, code)
+        self.assertIn({"path": ".claude/skills/my-skill/SKILL.md", "change": "adopt"},
+                      payload["changes"])
+        self.assertEqual([], payload["conflicts"])
+        self.assertEqual(0, self.run_deploy("--modules", "specs", "--write")[0])
+        self.assertEqual(before, bridge.read_bytes())
+        manifest = json.loads((self.target / ".agents/.quenching-deploy.json").read_text())
+        self.assertIn(".claude/skills/my-skill/SKILL.md", manifest["files"])
+        code, payload = self.run_deploy("--modules", "specs", "--check")
+        self.assertEqual((0, []), (code, payload["changes"]))
+
+    def test_an_unowned_bridge_copy_that_differs_still_refuses(self):
+        self.write(".agents/skills/my-skill/SKILL.md", "---\ndescription: Mine.\n---\n\nBody.\n")
+        self.assertEqual(0, self.run_deploy("--modules", "specs", "--write")[0])
+        self.drop_from_manifest(".claude/skills/my-skill/SKILL.md")
+        self.write(".claude/skills/my-skill/SKILL.md", "edited by hand\n")
+        code, payload = self.run_deploy("--modules", "specs", "--write")
+        self.assertEqual(2, code)
+        self.assertEqual("ct-deploy-unowned", payload["code"])
+        self.assertEqual("edited by hand\n",
+                         (self.target / ".claude/skills/my-skill/SKILL.md").read_text())
 
     def test_module_selection_limits_skills_and_enabled_pillars(self):
         self.assertEqual(0, self.run_deploy("--modules", "specs", "--write")[0])
@@ -381,8 +482,7 @@ class Deploy(unittest.TestCase):
         self.assertEqual({"commit": "", "pr": ""}, self.settings()["attribution"])
         self.assertEqual({"context7": True}, self.settings()["enabledPlugins"])
         for name in ("deny-claude-coauthor", "warn-git-add-all"):
-            script = self.target / f".agents/quenching/assets/hooks/{name}.sh"
-            self.assertTrue(os.access(script, os.X_OK), name)
+            self.assertTrue((self.target / f".agents/quenching/assets/hooks/{name}.py").is_file(), name)
         manifest = json.loads((self.target / ".agents/.quenching-deploy.json").read_text())
         self.assertEqual(["deny-claude-coauthor", "warn-git-add-all"], sorted(manifest["claudeSettings"]["hooks"]))
         self.assertNotIn(".claude/settings.json", manifest["files"])
@@ -409,7 +509,7 @@ class Deploy(unittest.TestCase):
         self.run_deploy("--modules", "specs", "--write")
         self.assertEqual(1, len(self.hook_commands()))
         self.assertIn("deny-claude-coauthor", self.hook_commands()[0])
-        self.assertFalse((self.target / ".agents/quenching/assets/hooks/warn-git-add-all.sh").exists())
+        self.assertFalse((self.target / ".agents/quenching/assets/hooks/warn-git-add-all.py").exists())
         code, _ = self.run_deploy("--modules", "specs", "--harness", "codex", "--write")
         self.assertEqual(0, code)
         self.assertEqual({"model": "x"}, self.settings())
@@ -532,8 +632,16 @@ class TargetLauncher(unittest.TestCase):
         marketplace = json.loads(
             (REPO_ROOT / ".claude-plugin" / "marketplace.json").read_text(encoding="utf-8"))
         marketplace_versions = {item["name"]: item["version"] for item in marketplace["plugins"]}
-        self.assertEqual({"quenching-hud"}, set(marketplace_versions))
+        self.assertEqual({"quenching-hud", "quenching-vitrine", "quenching-cache"}, set(marketplace_versions))
         self.assertEqual({VERSION}, set(marketplace_versions.values()), marketplace_versions)
+
+    def test_a_deploy_installs_nothing_of_the_marketplace_mods(self):
+        """The mods install through the marketplace, never through `cq deploy`."""
+        for selection, root in self.roots.items():
+            installed = [str(path.relative_to(root)) for path in root.rglob("*") if path.is_file()]
+            leaked = [path for path in installed if "claude-vitrine" in path or "claude-hud" in path
+                      or "quenching-vitrine" in path or "quenching-hud" in path]
+            self.assertEqual([], leaked, selection)
 
     def test_the_entrypoint_declares_and_checks_the_python_floor_before_package_imports(self):
         source = REAL.read_text(encoding="utf-8")

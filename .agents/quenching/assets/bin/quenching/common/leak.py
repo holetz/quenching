@@ -3,7 +3,8 @@
 Three pattern sets, one scanner:
 
 * the GENERIC patterns below, safe to publish (Brazilian tax ids, Azure Databricks workspace
-  hosts, Databricks personal access tokens, classic cluster ids, private keys);
+  hosts, Databricks personal access tokens, classic cluster ids, private keys, provider tokens with
+  a fixed prefix, and hidden Unicode — zero-width, bidi and tag characters);
 * the PATH patterns, built at run time from `$HOME` — the home directory itself and the slug
   Claude Code derives from it for project and scratchpad directories. No user name is ever written
   into this file, and a machine with another `$HOME` finds nothing that only exists on this one;
@@ -38,7 +39,24 @@ GENERIC_PATTERNS: dict[str, re.Pattern[str]] = {
     "azure-databricks-host": re.compile(r"adb-\d{6,}\.\d+\.azuredatabricks\.net", re.IGNORECASE),
     "databricks-pat": re.compile(r"\bdapi[0-9a-f]{32}\b"),
     "classic-cluster-id": re.compile(r"\b\d{4}-\d{6}-[a-z0-9]{8}\b"),
-    "private-key": re.compile(r"-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----"),
+    "private-key": re.compile(
+        r"-----BEGIN (?:RSA |EC |DSA |OPENSSH |ENCRYPTED |PGP )?PRIVATE KEY(?: BLOCK)?-----"),
+    # Provider tokens with a fixed prefix: the prefix makes a match near-certain, so these stay
+    # precise where a generic `password=` or `token:` pattern would refuse ordinary prose.
+    "github-token": re.compile(r"\b(?:gh[pousr]_[A-Za-z0-9]{36,}|github_pat_[A-Za-z0-9_]{60,})"),
+    "aws-access-key-id": re.compile(r"\b(?:AKIA|ASIA)[0-9A-Z]{16}\b"),
+    "anthropic-api-key": re.compile(r"\bsk-ant-[A-Za-z0-9_-]{20,}"),
+    "openai-project-key": re.compile(r"\bsk-proj-[A-Za-z0-9_-]{40,}"),
+    "slack-token": re.compile(r"\bxox[abposr]-[A-Za-z0-9-]{10,}"),
+    "gitlab-token": re.compile(r"\bglpat-[A-Za-z0-9_-]{20,}"),
+    # Characters a reader cannot see but a model reads: zero-width and bidi controls, the BOM
+    # anywhere but where an editor puts it, and the Unicode tag block that smuggles ASCII. Every
+    # command body, reference and imported doc is loaded straight into an agent's context, so a
+    # hidden instruction there is an injection no review catches by eye. ZWJ (U+200D) is left
+    # out: it joins emoji sequences in ordinary prose.
+    "hidden-unicode": re.compile(
+        "[\u200b\u200c\u200e\u200f\u202a-\u202e\u2060-\u2064\u2066-\u2069"
+        "\U000e0000-\U000e007f]|(?!^)\ufeff"),
 }
 
 # A Claude Code session scratchpad: `/tmp/claude-<uid>/<project slug>/<session>/scratchpad`.

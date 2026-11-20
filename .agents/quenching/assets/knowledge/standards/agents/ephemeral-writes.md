@@ -53,6 +53,18 @@ link, or provide history and backup. A worktree carries only tracked files, so t
 destination remains local unless a separate target-owned mechanism makes it shared. That plumbing
 and the policy for the path belong to the target, or to a separate contract that owns them.
 
+## Loops that outlive their command
+
+A loop started with `&` has no owner: the command that spawned it returns, the session ends, and the
+loop keeps polling, writing and holding temporary files nobody will read. A gate measured while
+orphaned `until ...; sleep` loops from an earlier session were still running took 399 s for work
+that finished in 227 s once they were gone, and the load outlived the session that started it.
+
+So a command does not leave a loop behind. A wait that must repeat belongs in the foreground with a
+deadline — `timeout`, a bounded retry count — and a background job is waited for before the command
+returns. A loop that cannot be bounded that way is a job, and a job belongs to the scheduler that
+owns its lifecycle, not to a shell that happened to start it.
+
 ## The boundary
 
 This standard owns the routing test and the declaration's shape. It does not own:

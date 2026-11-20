@@ -13,6 +13,11 @@ material is downgraded to `unknown`.
 By default each arm runs in a disposable container (`--image`) where the profile's `container.permission`
 applies; `--host` runs it on the host, where no permission is widened. The grader always runs on the host.
 
+`--baseline-ref <ref>` adds the `baseline` arm: the same harness profile as `with`, in a fixture
+where the surface of `<ref>` (its `quenching/` tree, exported with `git archive`) was deployed instead
+of the working tree's. `with` against `baseline` measures one change to the surface on a fixed model,
+which is the question a with/without delta cannot answer.
+
 Writes `<out>/<suite>/grading.json`, `<out>/<suite>/benchmark.json` and `<out>/summary.json`.
 """
 from __future__ import annotations
@@ -34,7 +39,7 @@ EVALS_ROOT = ROOT / "quenching/assets/evals"
 SKILLS_ROOT = ROOT / "quenching/skills"
 PROFILES = Path(__file__).resolve().with_name("eval_harnesses.json")
 CQ = ROOT / "quenching/assets/bin/cq"
-ARMS = ("with", "without")
+ARMS = ("with", "without", "baseline")
 RESULTS = ("pass", "fail", "unknown")
 GIT_ENV = {"GIT_AUTHOR_NAME": "Eval fixture", "GIT_AUTHOR_EMAIL": "eval@example.com",
            "GIT_COMMITTER_NAME": "Eval fixture", "GIT_COMMITTER_EMAIL": "eval@example.com"}
@@ -164,6 +169,11 @@ def arm_values(args, case: dict, workdir: str) -> dict:
     return {"prompt": case["prompt"], "model": args.model, "workdir": workdir, "max_turns": str(args.max_turns)}
 
 
+def profile_arm(arm: str) -> str:
+    """The profile arm an arm runs as: `baseline` is the `with` arm on another surface."""
+    return "with" if arm == "baseline" else arm
+
+
 def render(profile: dict, arm: str | None, values: dict, extra: list[str], container: bool = False) -> list[str]:
     """The argv for one invocation; `arm=None` is the grader's, which loads nothing.
 
@@ -171,6 +181,7 @@ def render(profile: dict, arm: str | None, values: dict, extra: list[str], conta
     standalone token {permission} expands to `container.permission`. On the host that token expands to nothing.
     A profile's `prompts.<arm>` replaces the {prompt} token for that arm, so a skill is invoked in the session.
     """
+    arm = profile_arm(arm) if arm is not None else None
     if arm is not None and arm not in profile.get("arms", {}):
         raise ValueError(f"this harness profile has no `{arm}` arm")
     arm_tokens = profile["arms"][arm] if arm is not None else []
@@ -270,18 +281,20 @@ def invoke(argv: list[str], cwd: Path, env: dict, timeout: int) -> dict:
 
 # --------------------------------------------------------------------------- fixture
 
-def provision(suite: Path, case_id: str, parent: Path, deploy: str | None = None) -> tuple[Path, dict]:
+def provision(suite: Path, case_id: str, parent: Path, deploy: str | None = None,
+              cq: Path = CQ) -> tuple[Path, dict]:
     """The case's workspace. `deploy` names the harness whose surface `cq deploy` installs into it
-    before the fixture commit, so the snapshot diff never carries the installed surface."""
+    before the fixture commit, so the snapshot diff never carries the installed surface. `cq` is the
+    tool that deploys it and that `setup.sh` receives: the baseline arm's comes from its ref."""
     workspace = parent / "workspace"
     if (suite / "fixture").is_dir():
         shutil.copytree(suite / "fixture", workspace)
     else:
         workspace.mkdir()
     if deploy:
-        subprocess.run([sys.executable, str(CQ), "deploy", "--target", str(workspace), "--modules", "all",
+        subprocess.run([sys.executable, str(cq), "deploy", "--target", str(workspace), "--modules", "all",
                         "--harness", deploy, "--write"], check=True, capture_output=True, text=True)
-    env = {**os.environ, **GIT_ENV, "CQ": str(CQ), "EVAL_CASE": case_id,
+    env = {**os.environ, **GIT_ENV, "CQ": str(cq), "EVAL_CASE": case_id,
            "EVAL_WORKSPACE": str(workspace)}
     for argv in (["git", "init", "-q", "-b", "main"], ["git", "add", "-A"],
                  ["git", "commit", "-q", "--allow-empty", "-m", "Fixture"]):
@@ -414,7 +427,9 @@ def run_arm(args, profiles: dict, suite: Path, case: dict, arm: str) -> dict:
     profile = profiles[args.harness]
     with tempfile.TemporaryDirectory(prefix="eval-") as temporary:
         try:
-            workspace, env = provision(suite, case["id"], Path(temporary), profile.get("deploy", {}).get(arm))
+            workspace, env = provision(suite, case["id"], Path(temporary),
+                                       profile.get("deploy", {}).get(profile_arm(arm)),
+                                       args.baseline_cq if arm == "baseline" else CQ)
         except (subprocess.CalledProcessError, subprocess.TimeoutExpired, OSError) as exc:
             detail = getattr(exc, "stderr", None) or ""
             detail = detail.decode(errors="replace") if isinstance(detail, bytes) else detail
@@ -423,7 +438,7 @@ def run_arm(args, profiles: dict, suite: Path, case: dict, arm: str) -> dict:
                     "error": error, "assertions": [{"assertion": a, "result": "unknown", "evidence": "",
                                                     "reason": error} for a in case["assertions"]]}
         arm_env = dict(env)
-        if arm != "with":
+        if profile_arm(arm) != "with":
             arm_env.pop("CQ", None)  # the without arm gets no path to the tool or the skill bodies
         values = arm_values(args, case, str(workspace))
         record = invoke(arm_argv(args, profile, arm, values, temporary), workspace, arm_env, args.timeout)
@@ -508,10 +523,13 @@ def benchmark(data: dict, cases: list[dict], args, arms: list[str]) -> dict:
               "grader": grader_record(args)}
     for arm in arms:
         result[arm] = aggregate(cases, arm)
-    if set(arms) == set(ARMS):
-        result["delta"] = {k: (round(result["with"][k] - result["without"][k], 4)
-                               if None not in (result["with"][k], result["without"][k]) else None)
+    for other, key in (("without", "delta"), ("baseline", "deltaVsBaseline")):
+        if "with" in arms and other in arms:
+            result[key] = {k: (round(result["with"][k] - result[other][k], 4)
+                               if None not in (result["with"][k], result[other][k]) else None)
                            for k in ("passRate", "caseApprovalRate", "tokens", "durationMs")}
+    if "baseline" in arms:
+        result["baselineRef"] = args.baseline_sha
     result["unknown"] = sum(result[arm]["unknown"] for arm in arms)
     result["errors"] = sum(result[arm]["errors"] for arm in arms)
     return result
@@ -527,15 +545,51 @@ def refusal_without_container(args, profile: dict) -> str | None:
     return None
 
 
+def export_baseline(ref: str, parent: Path) -> tuple[str, Path] | str:
+    """The commit `ref` names and the `cq` of its exported `quenching/` tree, or why it cannot be had.
+
+    `git archive` writes nothing into this repository: no worktree, no ref, no index entry."""
+    sha = subprocess.run(["git", "-C", str(ROOT), "rev-parse", "--verify", "--quiet", f"{ref}^{{commit}}"],
+                         capture_output=True, text=True)
+    if sha.returncode:
+        return f"--baseline-ref {ref!r} names no commit in {ROOT}"
+    commit = sha.stdout.strip()
+    archive = subprocess.run(["git", "-C", str(ROOT), "archive", "--format=tar", commit, "quenching"],
+                             capture_output=True)
+    if archive.returncode:
+        return f"--baseline-ref {ref!r}: git archive failed: {archive.stderr.decode(errors='replace').strip()}"
+    subprocess.run(["tar", "-x", "-C", str(parent)], input=archive.stdout, check=True, capture_output=True)
+    cq = parent / "quenching/assets/bin/cq"
+    if not cq.is_file():
+        return f"--baseline-ref {ref!r}: commit {commit[:12]} has no quenching/assets/bin/cq"
+    return commit, cq
+
+
 def run(args) -> int:
-    profiles = load_profiles(Path(args.harnesses))
     arms = [a.strip() for a in args.arms.split(",") if a.strip()]
+    if ("baseline" in arms) != bool(args.baseline_ref):
+        print("run_evals: the `baseline` arm and --baseline-ref go together", file=sys.stderr)
+        return 2
+    if not args.baseline_ref:
+        args.baseline_sha, args.baseline_cq = None, None
+        return run_arms(args, arms)
+    with tempfile.TemporaryDirectory(prefix="eval-baseline-") as temporary:
+        exported = export_baseline(args.baseline_ref, Path(temporary))
+        if isinstance(exported, str):
+            print(f"run_evals: {exported}", file=sys.stderr)
+            return 2
+        args.baseline_sha, args.baseline_cq = exported
+        return run_arms(args, arms)
+
+
+def run_arms(args, arms: list[str]) -> int:
+    profiles = load_profiles(Path(args.harnesses))
     for name in (args.harness, args.grader_harness, args.escalate_grader_harness):
         if name and name not in profiles:
             print(f"run_evals: no harness profile {name!r} in {args.harnesses}", file=sys.stderr)
             return 2
     for arm in arms:
-        if arm not in ARMS or arm not in profiles[args.harness].get("arms", {}):
+        if arm not in ARMS or profile_arm(arm) not in profiles[args.harness].get("arms", {}):
             print(f"run_evals: harness {args.harness!r} has no {arm!r} arm", file=sys.stderr)
             return 2
     if not args.host:
@@ -558,13 +612,15 @@ def run(args) -> int:
                     values = arm_values(args, case, "<workspace>")
                     argv = arm_argv(args, profiles[args.harness], arm, values, "<fixture>")
                     print(json.dumps({"suite": suite_name(directory), "case": case["id"], "arm": arm,
-                                      "deploy": profiles[args.harness].get("deploy", {}).get(arm),
+                                      "deploy": profiles[args.harness].get("deploy", {}).get(profile_arm(arm)),
+                                      **({"baselineRef": args.baseline_sha} if arm == "baseline" else {}),
                                       "argv": argv}, ensure_ascii=False))
         return 0
     out = Path(args.out or ROOT / ".quenching/evals" / args.run_id)
     summary = {"runId": args.run_id, "harness": args.harness, "model": args.model,
                "grader": grader_record(args),
                "arms": arms, "suites": [],
+               **({"baselineRef": args.baseline_sha} if "baseline" in arms else {}),
                "mode": {"where": "host"} if args.host else
                {"where": "container", "runtime": args.runtime, "image": args.image}}
     for directory, data, cases in suites:
@@ -628,7 +684,9 @@ def parser() -> argparse.ArgumentParser:
     p.add_argument("--harnesses", default=str(PROFILES), help="the harness profile file")
     p.add_argument("--harness", help="the profile the arms run under")
     p.add_argument("--model", help="the model the arms run on")
-    p.add_argument("--arms", default="with", help="comma-separated: with, without (default: with)")
+    p.add_argument("--arms", default="with", help="comma-separated: with, without, baseline (default: with)")
+    p.add_argument("--baseline-ref", metavar="REF",
+                   help="the commit whose surface the `baseline` arm deploys (e.g. main, HEAD~1, a tag)")
     p.add_argument("--grader-harness", default=DEFAULT_GRADER_HARNESS,
                    help=f"the profile the grader runs under (default: {DEFAULT_GRADER_HARNESS})")
     p.add_argument("--grader-model", default=DEFAULT_GRADER_MODEL,

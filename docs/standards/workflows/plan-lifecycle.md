@@ -211,6 +211,12 @@ moment in the lifecycle, not about which command happens to be running:
 | definition — `/quenching-specs develop`, any stage | one line of `## Discoveries` on the spec being developed, written with `cq specs discover` inside the pass's one consolidated edit |
 | close-out — `/quenching-specs conclude` on a `done` outcome | the harvest turns it into a fresh spec, if it still deserves one |
 
+**One exception: a pre-existing error.** `/quenching-specs execute` and `conclude` may mint a spec at once for a
+pre-existing error they diagnosed and proved on the base but could not contain in the running spec
+(`task-execution.md` §Pre-existing errors): `cq specs new` with `## Problem` plus the diagnosis, and a
+`## Discoveries` line resolved `promoted: <id>` on the running spec. The exception covers only diagnosed
+pre-existing errors; `develop` still only parks.
+
 The asymmetry is the whole rule. At definition time nobody knows whether the parent will ship, so
 a spec minted then is a bet placed before the information arrives; at close-out that fact is in
 hand, which is why the harvest table in `specs-conclude/distill.md` is the only place a follow-up

@@ -45,23 +45,24 @@ follow-up) that were never committed to a home. Most of what a spec proves is al
 the time it closes; the harvest is usually small.
 
 A rule the code demonstrates belongs beside that code in history; a by-product of the *thinking* has
-no code to ship with, and is cheapest to harvest once the spec is **closed** — which happens at the
-archive move, in step 4, **on the branch**.
+no code to ship with, and is cheapest to harvest once the spec is **closed** — which happens when
+`## Outcome` is written, in step 4, **on the branch**.
 
 This file used to put the second one "on the base branch, after the merge", reasoning that a
 by-product is cheapest to harvest once the spec is closed. The reasoning was right and the placement
 did not follow from it: **closing and merging were being conflated.** A spec is closed when
-`## Outcome` is written and the file moves to `archive/` — both of which happen on the branch,
-before anything is merged. Harvesting there satisfies the same argument and leaves nothing to write
-on the base afterwards, so reverting the merge reverts the spec's whole footprint, distilled docs
-included.
+`## Outcome` is written — on the branch, before anything is merged. Harvesting there satisfies the
+same argument and leaves nothing to write on the base afterwards, so reverting the merge reverts the
+spec's whole footprint, distilled docs included. The archive move is a different fact: the store is
+a git ref every reader sees at once, so it waits for the merge (conclude step 8), and the harvest
+does not need it.
 
 ## The procedure (one confirmation)
 
 <!-- rules -->
-Runs **after** the archive move succeeds, as the command's distillation step:
+Runs **after** `## Outcome` is written, as the command's distillation step:
 
-1. **Harvest candidates.** Read the archived spec's sections (`## Problem`, `## Proposal`,
+1. **Harvest candidates.** Read the spec's sections (`## Problem`, `## Proposal`,
    `## Design`, `## Discoveries`, `## Outcome`) and the conversation's own context, and check what
    `knowledge/` already received — during execution, and at the emergent moment above. List each
    **remaining** candidate as *one line*: what it is → proposed home + `type` + path (per the table
@@ -74,33 +75,28 @@ Runs **after** the archive move succeeds, as the command's distillation step:
    §Routing into another module) — or skip distillation entirely — never scaffold ad hoc.
 3. **Mint each approved doc** under the insert procedure
    ([homes.md](.agents/quenching/references/knowledge-add/homes.md)): fill the home's mold, stamp the
-   frontmatter (`resource` may cite the archived spec path — it exists, so the link is derived, not
+   frontmatter (`resource` may cite the spec's locator — it exists, so the link is derived, not
    invented; `source:` names the spec), update the home's `index.md`, enrich the glossary when a
    term warrants it. A follow-up instead goes through `/quenching-specs create` into `specs/plans/`.
-4. **Narrate the bridge in the archived spec's `## Outcome`.** One line per minted doc —
+4. **Narrate the bridge in the spec's `## Outcome`.** One line per minted doc —
    `distilled: [<title>](/docs/<path>.md) — <what it carries>` — appended to the `## Outcome`
-   already written at the archive gate. An empty harvest writes nothing.
+   written in conclude step 4. An empty harvest writes nothing.
 5. **Self-check** every touched file against
    [knowledge-align/conformance.md](.agents/quenching/references/knowledge-align/conformance.md).
 
 <!-- rationale -->
-**Why there, and why this is a second edit to an archived file.** The bundle's `log.md` is
-retired, and the provenance it used to carry has one honest home left: the record of the
-spec that produced the doc. `## Outcome` is mandatory at promote and sits in the file a
-reader of the archived spec already has open, so the bridge costs no new artifact. It has to
-be written *after* the archive move because that is when the minted paths first exist —
-`## Outcome` is drafted at the gate, before distillation knows what it minted. That makes
-this the **second** bounded exception to "never edit anything in `archive/`", alongside the
-`merge:` stamp, and for the same reason: both are facts that only come into being once the
-spec has closed. Neither revises what the archived spec claimed; both append what happened
-to it. Any third exception should be argued for, not assumed from these two.
+**Why there.** The bundle's `log.md` is retired, and the provenance it used to carry has one
+honest home left: the record of the spec that produced the doc. `## Outcome` is mandatory at
+the archive and sits in the file a reader of the archived spec already has open, so the bridge
+costs no new artifact. It is appended *after* `## Outcome` is drafted because that is when the
+minted paths first exist. The spec is still in `plans/` then — the archive waits for the
+merge — so the append edits no archived file.
 
 ## Invariants
 
 - **Never bulk-copy** an artifact into `knowledge/` — distill the durable unit, cite the archive.
-- **Never delete or revise** the archived spec while distilling — the archive is history. The one
-  write permitted here is step 4's append to `## Outcome`, which records what the distillation
-  produced and changes nothing the spec claimed.
+- **Never delete or revise** what the spec claimed while distilling. The one write permitted here
+  is step 4's append to `## Outcome`, which records what the distillation produced.
 - **Never mint without the one confirmation**, and never fabricate a candidate to have something
   to distill: an empty harvest is a valid outcome.
 - A distilled `standard` claims `authority: current` **only** when the spec actually implemented

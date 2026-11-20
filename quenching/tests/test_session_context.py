@@ -112,17 +112,17 @@ class ContextTests(unittest.TestCase):
             self.assertEqual(data["iterationCoverage"], coverage)
 
     def test_agent_roles_come_from_metadata_and_unknown_refuses(self):
-        for kind, role, budget in (("quenching-specs:spec-runner", "worker", 100000),
+        for kind, role, budget in (("quenching-specs:spec-runner", "worker", 200000),
                                     ("quenching-specs:spec-orchestrator", "conductor", 150000),
                                     ("quenching-specs:spec-orchestrator", "conductor", 150000),
                                     ("quenching:autopilot", "conductor", 150000),
                                     ("Explore", "unknown", None), (7, "unknown", None)):
             agent = self.base / "session/subagents/agent-worker.jsonl"
-            self.write(request("a", usage(110000, [110000])), path=agent)
+            self.write(request("a", usage(170000, [170000])), path=agent)
             agent.with_suffix(".meta.json").write_text(json.dumps({"agentType": kind}))
             code, data = run(agent)
             self.assertEqual((data["role"], data["budget"]), (role, budget))
-            self.assertEqual(code, 2 if budget is None else 1 if role == "worker" else 0)
+            self.assertEqual(code, 2 if budget is None else 1 if role == "conductor" else 0)
 
     def test_deployed_agent_name_keeps_its_role(self):
         self.assertEqual(bare_agent("quenching-spec-runner"), "spec-runner")
@@ -248,7 +248,7 @@ class ContextTests(unittest.TestCase):
                          QUENCHING_TRANSCRIPTS_ROOT=str(project.parent)):
             code, data = run("--self", "1632")
             self.assertEqual(data["transcript"], str(agents["w1"]))
-            self.assertEqual((data["role"], data["budget"]), ("worker", 100000))
+            self.assertEqual((data["role"], data["budget"]), ("worker", 200000))
             self.assertIn("self marker", data["resolvedBy"])
             self.assertEqual(run("--self", "999")[1]["code"], "se-self-not-found")
             self.assertEqual(run("--self", "163")[1]["code"], "se-self-not-found")
@@ -292,7 +292,7 @@ class OpenCodeContextTests(unittest.TestCase):
         db.executemany("INSERT INTO session_v2 VALUES (?,?,?,?)", [
             ("ses_root", None, "build", "/r"), ("ses_kid", "ses_root", "quenching-spec-runner", "/r"),
             ("ses_odd", "ses_root", "explore", "/r")])
-        steps = [("ses_root", 1000, 500), ("ses_kid", 40000, 60000), ("ses_kid", 1000, 110000), ("ses_odd", 5, 5)]
+        steps = [("ses_root", 1000, 500), ("ses_kid", 40000, 60000), ("ses_kid", 1000, 210000), ("ses_odd", 5, 5)]
         for n, (sid, inp, read) in enumerate(steps):
             db.execute("INSERT INTO session_message VALUES (?,?,'assistant',?,?)", (f"m{n}", sid, n, json.dumps({
                 "time": {"created": 1_790_000_000_000}, "model": {"id": "deepseek"},
@@ -311,7 +311,7 @@ class OpenCodeContextTests(unittest.TestCase):
         code, out = self.live("ses_kid", "--self", "2149")
         self.assertEqual(code, 1)
         self.assertEqual((out["role"], out["peakContext"], out["budget"], out["exceeded"], out["turns"]),
-                         ("worker", 111000, 100000, True, 2))
+                         ("worker", 211000, 200000, True, 2))
         self.assertEqual(out["measurement"], "recorded-OpenCode-usage")
 
     def test_main_session_is_within_budget(self):
@@ -322,7 +322,7 @@ class OpenCodeContextTests(unittest.TestCase):
         self.assertEqual(self.live("ses_root", "--agent", "ses_kid")[1]["role"], "worker")
 
     def test_explicit_session_id_needs_no_environment(self):
-        self.assertEqual(run("ses_kid")[1]["peakContext"], 111000)
+        self.assertEqual(run("ses_kid")[1]["peakContext"], 211000)
 
     def test_unknown_role_and_unknown_session_are_unmeasured(self):
         self.assertEqual(self.live("ses_odd")[0], 2)

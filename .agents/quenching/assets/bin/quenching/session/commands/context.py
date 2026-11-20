@@ -15,7 +15,7 @@ from quenching.session.model import bare_agent
 from quenching.session.transcript import resolve_transcript
 
 TOKEN_KEYS = ("input_tokens", "cache_read_input_tokens", "cache_creation_input_tokens")
-BUDGETS = {"main": 200000, "worker": 100000, "conductor": 150000}
+BUDGETS = {"main": 200000, "worker": 200000, "conductor": 150000}
 ROLES = {"spec-runner": "worker", "spec-orchestrator": "conductor", "orchestrator": "conductor",
          "autopilot": "conductor"}
 OPENCODE_ID = "ses_"

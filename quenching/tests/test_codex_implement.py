@@ -23,7 +23,8 @@ except ModuleNotFoundError:  # package-qualified unittest invocation from the re
     import _paths  # noqa: F401
 from quenching.codex import main
 from quenching.codex.config import DEFAULTS
-from quenching.codex.implement import BYPASS, build_argv, clean_env, run_implement
+from quenching.codex.implement import (BYPASS, NOT_MEASURED, build_argv, clean_env,
+                                      measured_tokens, run_implement)
 
 FAKE = r'''#!/usr/bin/env python3
 import json, os, subprocess, sys, time
@@ -100,7 +101,8 @@ class Implement(unittest.TestCase):
                     "AWS_SECRET_ACCESS_KEY": "s", "GIT_AUTHOR_NAME": "t",
                     "GIT_AUTHOR_EMAIL": "t@t", "GIT_COMMITTER_NAME": "t",
                     "GIT_COMMITTER_EMAIL": "t@t", "HOME": str(self.tmp)}
-        self.settings = {**DEFAULTS, "timeoutSeconds": 20, "executor": dict(DEFAULTS["executor"])}
+        self.settings = {**DEFAULTS, "timeoutSeconds": 20,
+                         "executor": {**DEFAULTS["executor"], "enabled": True}}
         self.tasks = [task()]
 
     def implement(self, quota=None, run="r1", **executor):
@@ -207,6 +209,7 @@ class Implement(unittest.TestCase):
         with mock.patch("quenching.codex.implement.open_backend",
                         return_value=(FakeBackend(self.tasks), {})), \
                 mock.patch("quenching.codex.implement.probe", Quota(10, 12)), \
+                mock.patch("quenching.codex.load_settings", return_value=(self.settings, [])), \
                 mock.patch.dict(os.environ, self.env, clear=True), \
                 contextlib.redirect_stdout(out):
             code = main(["implement", "--root", str(self.repo), "--json", "--spec", "7",
@@ -214,6 +217,52 @@ class Implement(unittest.TestCase):
                          "--prompt", str(self.prompt), "--run", "cli"])
         self.assertEqual(code, 2)
         self.assertEqual(json.loads(out.getvalue())["outside"], ["other.py"])
+
+
+class TheTokens(unittest.TestCase):
+    """`measured_tokens` reads what `codex exec --json` printed, and never guesses."""
+
+    def setUp(self):
+        self.tmp = pathlib.Path(tempfile.mkdtemp())
+        self.addCleanup(shutil.rmtree, self.tmp, True)
+
+    def test_unreadable_events_are_not_measured(self):
+        events = self.tmp / "events.jsonl"
+        events.write_text("not json\n", encoding="utf-8")
+        self.assertEqual(NOT_MEASURED, measured_tokens(str(events)))
+        self.assertEqual(NOT_MEASURED, measured_tokens(str(self.tmp / "absent.jsonl")))
+
+    def test_turn_completed_usage_is_measured(self):
+        events = pathlib.Path(__file__).resolve().parent / "fixtures" / "codex" / \
+            "events-turn-completed.jsonl"
+        self.assertEqual({"input_tokens": 24763, "cached_input_tokens": 24448,
+                          "output_tokens": 122, "total_tokens": 24885},
+                         measured_tokens(str(events)))
+
+    def test_every_turn_completed_is_summed_over_the_rollout_format(self):
+        events = self.tmp / "events.jsonl"
+        events.write_text("\n".join(json.dumps(e) for e in [
+            {"type": "token_count", "info": {"total_token_usage": {"total_tokens": 7}}},
+            {"type": "turn.completed", "usage": {"input_tokens": 10, "output_tokens": 2}},
+            {"type": "turn.completed", "usage": {"input_tokens": 5, "output_tokens": 1}}]) + "\n",
+                          encoding="utf-8")
+        self.assertEqual({"input_tokens": 15, "output_tokens": 3, "total_tokens": 18},
+                         measured_tokens(str(events)))
+
+    def test_the_rollout_format_alone_keeps_its_last_total(self):
+        events = self.tmp / "events.jsonl"
+        events.write_text("\n".join(json.dumps(e) for e in [
+            {"type": "token_count", "info": {"total_token_usage": {"total_tokens": 7}}},
+            {"type": "token_count", "info": {"total_token_usage": {"total_tokens": 9}}}]) + "\n",
+                          encoding="utf-8")
+        self.assertEqual({"total_tokens": 9}, measured_tokens(str(events)))
+
+
+class TheReviewIsGone(unittest.TestCase):
+    def test_cq_codex_review_is_not_a_command(self):
+        with contextlib.redirect_stderr(io.StringIO()), self.assertRaises(SystemExit) as raised:
+            main(["review", "--worktree", ".", "--prompt", "p.md"])
+        self.assertEqual(2, raised.exception.code)
 
 
 if __name__ == "__main__":

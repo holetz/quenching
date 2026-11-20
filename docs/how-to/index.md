@@ -14,6 +14,8 @@ what you should observe at every step. If the plugin is new to you, take the
   document on your issue tracker: capture, refine, build task by task, close with the merge last.
 - **[Publish the documentation site](publish-the-docs-site.md)** — turn the `/docs/` bundle into a
   rendered Diátaxis site, planned, sourced, reviewed and gated by a strict build.
+- **[Set up a machine for the test suite](set-up-a-machine-for-the-test-suite.md)** — confirm the
+  temp root the gate chose, and make the optional per-OS changes that need, or do not need, admin.
 
 **Looking for exact command signatures?** The [command catalog](../project/commands.md) lists the
 complete command surface by front.

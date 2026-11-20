@@ -227,14 +227,12 @@ boundary, and a build offers to stop there.
   end or worker return. Never stop in the middle of a task because a count crossed a threshold.
 - **The event triggers; the measured threshold decides only the tone — offer or recommendation.**
   A human-led `/quenching-specs develop`, `/quenching-specs execute` or `/quenching-specs conclude`
-  reads `cq components session context --json` once at its stage end, and `execute` once more at
-  each section boundary. Within the main-session budget, or unmeasured, the next stage stays an
+  reads `cq components session context --json` once at its stage end, never at a section boundary,
+  which is never a question. Within the main-session budget, or unmeasured, the next stage stays an
   offer; over it, the command recommends the next stage in a new session, with the exact command,
   inside the payload of a question it already asks or in the `→` line. Nothing is stopped and
-  nothing is recorded. **The worker budget is a size estimate, not a stop limit:** under
-  `autonomous`, `execute` measures its own transcript with `cq components session context --self
-  <id> --json` at each section boundary, prints the peak against the estimate and carries on; a
-  worker over it finishes the spec, and the `spec-runner` never returns `budget:`. The
+  nothing is recorded. **The worker budget is a size estimate, not a stop limit:** a worker over it
+  finishes the spec, and the `spec-runner` never returns `budget:`. The
   orchestrator's totals line still reports `BUDGET:` from `cq components session cost --json`'s
   `overBudget`, as telemetry that blocks no acceptance. Exit 2 never stops a run. On
   OpenCode the same command measures the session named by `OPENCODE_SESSION_ID`, which a subagent
@@ -290,16 +288,16 @@ Impact standards once, plus the shipped execute body and spec build sections; an
 counts the shared files again. A declared file under a generated mirror directory (one holding
 `.generated-from.json` or `.generated-files.json`, except the files its module lists as `authored`)
 is write-only: a generator writes it and no task reads it, so it is listed with `writeOnly` but adds
-no bytes and is never unresolved. Missing/new files and undeclared task inputs remain unresolved.
+no bytes and is never unresolved. A path the repository declares in `specs.estimate.writeOnly`
+(exact or `fnmatch`) gets the same treatment as `writeOnly: "declared by repo"`, which wins over the
+mirror reason; an Impact standard is counted even when declared. Missing/new files and undeclared task inputs remain unresolved.
 The largest section is compared with the worker size estimate above. Total reading volume is
 not a context peak, and even complete declared-input coverage never proves the build fits:
 host/harness overhead, conditional references, outputs, generated code and iterations are excluded.
 
-Develop checks this signal before every approval path. Known reading above the budget proposes
-independently verifiable slices in the main session, proposal-only. Capturing/linking
-children needs explicit authorization; the source problem and approval/task history survive.
-Low/forced-low autonomous runs return the oversized-plan decision to their conductor, without
-approving it automatically. A human may explicitly accept the unsplit estimate risk.
+The estimate runs only when called. Develop does not run it before approval and no flow asks,
+blocks or recommends decomposition because of it: the declared reading of a section is not the
+build's context, and the question it raised cost more than it saved.
 
 Conclude preserves observed usage separately in `buildCost`, before archive. A measured record
 requires exact build-only transcript/agent attribution and known models, with request counts,
@@ -325,7 +323,7 @@ Use these selected policy budgets in input-context tokens, measured by code from
 | Role | Budget | Applies to |
 | --- | --- | --- |
 | Main session | 200000 | Human-led spec stages and the top-level conversation; an offer at the stage end |
-| Worker | 100000 | The spec-runner building one spec in its isolated context; a size estimate, never a stop |
+| Worker | 200000 | The spec-runner building one spec in its isolated context; a size estimate, never a stop |
 | Conductor | 150000 | Orchestrator and autopilot coordination contexts; a stop, checked between waves |
 
 Role comes from topology/agent metadata, independently of command attribution. A conductor
@@ -392,7 +390,10 @@ Main exposure is 602003067 tokens; the 14 sessions above 200000 account for 5174
 (85.954879%). A 150000 cut would affect 23/58 sessions. Choose 200000 to address the
 concentrated long tail with less fragmentation. Worker 100000 rounds above p90 97126;
 conductor 150000 rounds above p90 127383. These choices price different role distributions
-rather than copying the old unmeasured 150k/200k prose.
+rather than copying the old unmeasured 150k/200k prose. On 2026-11-17 the maintainer raised the
+worker default to 200000 by decision, not by a new measurement: with the execute body counted again,
+ordinary sections passed 100000 while the worker runs on a far larger context; the paragraphs here
+record where the original 100000 came from.
 
 Four identified opus-only worker resumes (specs 1368, 1419, 1386 and 1457), paired with an
 earlier task-check invocation for the same spec, each took three requests through the first

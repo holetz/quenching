@@ -1,6 +1,7 @@
 """Collect security evidence without changing the target repository."""
 from __future__ import annotations
 
+import json
 import os
 import re
 import subprocess
@@ -48,8 +49,46 @@ def _relative(root: Path, path: Path) -> str:
     return path.relative_to(root).as_posix()
 
 
+_PERMISSIONS = re.compile(r"^(\s*)permissions\s*:\s*([^#]*?)\s*(?:#.*)?$")
+_SCOPE = re.compile(r"^\s*([A-Za-z-]+)\s*:\s*([A-Za-z-]+)")
+
+
+def _grants(lines: list[str]) -> tuple[list[str], list[str]]:
+    """Every `write-all` and every scope granted `write`, as `workflow` or `job:<line>` plus the
+    scope. Line-based, like the counts: an inline value, a flow mapping or the block below."""
+    write_all: list[str] = []
+    write_scopes: list[str] = []
+    for number, line in enumerate(lines, start=1):
+        match = _PERMISSIONS.match(line)
+        if not match:
+            continue
+        indent, inline = len(match.group(1)), match.group(2)
+        where = "workflow" if indent == 0 else f"job:{number}"
+        if inline == "write-all":
+            write_all.append(where)
+            continue
+        if inline.startswith("{"):
+            pairs = [item.split(":", 1) for item in inline.strip("{}").split(",") if ":" in item]
+        elif inline:
+            continue
+        else:
+            pairs = []
+            for below in lines[number:]:
+                if not below.strip() or below.lstrip().startswith("#"):
+                    continue
+                if len(below) - len(below.lstrip()) <= indent:
+                    break
+                scope = _SCOPE.match(below)
+                if scope:
+                    pairs.append([scope.group(1), scope.group(2)])
+        write_scopes += [f"{where}:{key.strip()}" for key, value in pairs
+                         if value.strip() == "write"]
+    return write_all, write_scopes
+
+
 def workflow_permissions(root: Path) -> QuestionResult:
-    """Report whether recognized workflows declare workflow or job permissions."""
+    """Report whether recognized workflows declare workflow or job permissions, and where a
+    declaration grants `write-all`, the one grant unbounded by its own definition."""
     files = _workflow_files(root)
     if not files:
         return QuestionResult(
@@ -67,20 +106,22 @@ def workflow_permissions(root: Path) -> QuestionResult:
             evidence.append({"path": relative, "reason": error})
             continue
         assert text is not None
-        workflow_declarations = sum(
-            bool(re.match(r"^permissions\s*:", line)) for line in text.splitlines()
-        )
-        job_declarations = sum(
-            bool(re.match(r"^\s{2,}permissions\s*:", line)) for line in text.splitlines()
-        )
+        lines = text.splitlines()
+        workflow_declarations = sum(bool(re.match(r"^permissions\s*:", line)) for line in lines)
+        job_declarations = sum(bool(re.match(r"^\s{2,}permissions\s*:", line)) for line in lines)
+        write_all, write_scopes = _grants(lines)
         evidence.append({
             "path": relative,
             "workflowDeclarations": workflow_declarations,
             "jobDeclarations": job_declarations,
+            "writeAll": write_all,
+            "writeScopes": write_scopes,
         })
 
     if any("reason" in item for item in evidence):
         state = "refused"
+    elif any(item["writeAll"] for item in evidence):
+        state = "unbounded"
     elif any(item["workflowDeclarations"] or item["jobDeclarations"] for item in evidence):
         state = "present"
     else:
@@ -231,6 +272,111 @@ def access_ownership(root: Path) -> QuestionResult:
     )
 
 
+_AGENT_FILES = (".claude/settings.json", ".mcp.json")
+_RUNNERS = {"npx", "bunx", "uvx", "pipx"}
+_UNBOUNDED_SHELL = re.compile(r"^(Bash|PowerShell)(\((\*|:\*)?\))?$")
+_NETWORK_HOOK = re.compile(r"\b(curl|wget|Invoke-WebRequest|iwr)\b", re.I)
+_AGENT_QUESTION = "Are the agent harness grants committed to the repository bounded?"
+
+
+def _package_pinned(spec: str) -> bool:
+    """`name@1.2.3`, `@scope/name@1.2.3` or `name==1.2.3`; `@latest`, `@next` and bare are not."""
+    if "==" in spec:
+        return True
+    name, _, version = spec[1:].rpartition("@") if spec.startswith("@") else spec.rpartition("@")
+    return bool(name) and bool(re.match(r"v?\d", version))
+
+
+def _unpinned_servers(servers: object) -> list[str]:
+    found: list[str] = []
+    for name, server in (servers.items() if isinstance(servers, dict) else ()):
+        if not isinstance(server, dict):
+            continue
+        command = os.path.basename(str(server.get("command", ""))).lower().removesuffix(".cmd")
+        args = [str(arg) for arg in server.get("args", []) if isinstance(arg, (str, int))] \
+            if isinstance(server.get("args"), list) else []
+        if command == "pnpm" and args[:1] == ["dlx"]:
+            command, args = "npx", args[1:]
+        if command not in _RUNNERS:
+            continue
+        packages = [arg for arg in args if not arg.startswith("-")]
+        if command in {"uvx", "pipx"} and "--from" in args:
+            index = args.index("--from") + 1
+            packages = args[index:index + 1]
+        if packages and not _package_pinned(packages[0]):
+            found.append(f"{name}: {command} {packages[0]}")
+    return found
+
+
+def _settings_findings(document: dict) -> list[dict[str, object]]:
+    findings: list[dict[str, object]] = []
+    permissions = document.get("permissions")
+    permissions = permissions if isinstance(permissions, dict) else {}
+    if permissions.get("defaultMode") == "bypassPermissions":
+        findings.append({"code": "bypass-permissions-default",
+                         "value": "permissions.defaultMode"})
+    allow = permissions.get("allow")
+    for rule in allow if isinstance(allow, list) else ():
+        if isinstance(rule, str) and _UNBOUNDED_SHELL.match(rule.strip()):
+            findings.append({"code": "unbounded-shell-allow", "value": rule})
+    if document.get("enableAllProjectMcpServers") is True:
+        findings.append({"code": "all-project-mcp-enabled", "value": "enableAllProjectMcpServers"})
+    hooks = document.get("hooks")
+    for event, groups in (hooks.items() if isinstance(hooks, dict) else ()):
+        for group in groups if isinstance(groups, list) else ():
+            entries = group.get("hooks") if isinstance(group, dict) else None
+            for entry in entries if isinstance(entries, list) else ():
+                command = entry.get("command") if isinstance(entry, dict) else None
+                if isinstance(command, str) and _NETWORK_HOOK.search(command):
+                    findings.append({"code": "network-hook", "value": event})
+    for server in _unpinned_servers(document.get("mcpServers")):
+        findings.append({"code": "unpinned-mcp-server", "value": server})
+    return findings
+
+
+def agent_grants(root: Path) -> QuestionResult:
+    """Report risky grants in the agent configuration the repository commits.
+
+    Reads the shared `.claude/settings.json` and `.mcp.json` only — never `settings.local.json`,
+    which is one person's machine — and names each risky grant without judging whether the target
+    meant it: a default that bypasses permission prompts, an unscoped shell allow rule, every
+    project MCP server enabled at once, an MCP server fetched through a runner without a pinned
+    version, and a hook that reaches the network. Nothing is edited.
+    """
+    evidence: list[dict[str, object]] = []
+    findings: list[dict[str, object]] = []
+    measured = False
+    for relative in _AGENT_FILES:
+        text, error = _read(root / relative)
+        if error == "missing":
+            continue
+        measured = True
+        if error:
+            evidence.append({"path": relative, "reason": error})
+            continue
+        try:
+            document = json.loads(text or "")
+        except ValueError:
+            evidence.append({"path": relative, "reason": "invalid JSON"})
+            continue
+        if not isinstance(document, dict):
+            evidence.append({"path": relative, "reason": "not a JSON object"})
+            continue
+        found = _settings_findings(document)
+        evidence.append({"path": relative, "findings": len(found)})
+        findings.extend({"path": relative, **item} for item in found)
+    if not measured:
+        return QuestionResult(
+            "agent-grants", _AGENT_QUESTION, "not-measured",
+            ({"path": ".claude/settings.json", "reason": "no committed agent configuration"},))
+    if any("reason" in item for item in evidence):
+        state = "refused"
+    else:
+        state = "missing" if findings else "present"
+    return QuestionResult("agent-grants", _AGENT_QUESTION, state, tuple(evidence),
+                          {"findings": findings} if findings else {})
+
+
 def build_report(root: str) -> SecurityReport:
     """Build all security answers from static files under ``root``."""
     repository = Path(root).resolve()
@@ -239,5 +385,6 @@ def build_report(root: str) -> SecurityReport:
         secret_ignore_coverage(repository),
         advisory_dependency_configuration(repository),
         access_ownership(repository),
+        agent_grants(repository),
     )
     return SecurityReport(str(repository), questions)

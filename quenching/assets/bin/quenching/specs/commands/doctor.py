@@ -119,6 +119,22 @@ def cmd_doctor(args, root: str, out: Emitter) -> int:
                                  remedy=f"move its keys into {CONFIG_FILE} and delete it; "
                                         f"whatever it declares is doing nothing today"))
 
+    # A slot is reused, so `acquire` runs the setup again over a tree that already holds what
+    # the last run installed. A setup that assumes a fresh tree breaks on the second acquire;
+    # the target says once that it does not, and the warning stops.
+    if cfg.get("worktreeSetup"):
+        from quenching.git.slots import setup_idempotent
+        from quenching.specs.config import find_repo_root
+
+        if not setup_idempotent(find_repo_root(root) or root):
+            findings.append(_finding(
+                "sp-config-setup-idempotence", "warn",
+                f"{CONFIG_FILE} declares `worktreeSetup`, which `cq git worktree acquire` runs "
+                "on every acquire of a reused slot — it must be idempotent",
+                path=CONFIG_FILE, command=cfg["worktreeSetup"],
+                remedy="make the setup safe to run over a slot that already holds its "
+                       "dependencies, then declare `shared.worktreeSlots.setupIdempotent: true`"))
+
     # The provider checks below reach the network — every other finding above is local by
     # construction. Justified because it is the only place that can ever catch it: a card a
     # human untagged is invisible to every OTHER command, which all read through the

@@ -8,14 +8,67 @@ branch comes from owns the rule; `test_specs_find.py` asserts the sibling guard 
 `find_match`.
 """
 import pathlib
+import argparse
+import contextlib
+import importlib
+import io
+import json
 import subprocess
 import sys
 import tempfile
 import unittest
+from unittest.mock import patch
 
 import _paths  # noqa: F401  — must precede the `quenching` import; see its docstring
 from quenching.specs.commands.next import (TABLE_COLUMNS, _cell, _order_key,
                                            _resolve_columns, _state, _table_row, _work_ref)
+from quenching.specs.backends.memory import MemoryBackend
+from quenching.specs.commands.output import Emitter
+from test_specs_promote_gate import _document
+
+next_module = importlib.import_module("quenching.specs.commands.next")
+
+
+class PostMergeNext(unittest.TestCase):
+    def setUp(self):
+        self.backend = MemoryBackend()
+        text = _document("- [x] 1.1 Done\n").replace(
+            "date: 2026-08-11\n",
+            "date: 2026-08-11\nbranch:\n  base: main\n  work: plan/1-x\n", 1)
+        self.backend.create_spec("plans", text)
+        p = patch.object(next_module, "open_backend", return_value=(self.backend, {}))
+        p.start()
+        self.addCleanup(p.stop)
+
+    def test_front_reports_merged_specs_offline_without_reading_them_twice(self):
+        with patch.object(next_module, "_git_refs", return_value=(set(), None)), \
+                patch.object(next_module, "front_fields", return_value={}), \
+                patch.object(next_module.promote, "merge_evidence",
+                             return_value=(True, "merge record")) as evidence, \
+                patch.object(self.backend, "read_spec", wraps=self.backend.read_spec) as read:
+            buf = io.StringIO()
+            with contextlib.redirect_stdout(buf):
+                code = next_module._next_front(argparse.Namespace(json=True), ".", Emitter())
+        self.assertEqual(code, 0)
+        payload = json.loads(buf.getvalue())
+        self.assertEqual(payload["mergedNotArchived"], [
+            {"id": 1, "title": "Gate fixture", "reason": "merge record"}])
+        evidence.assert_called_once()
+        self.assertEqual(evidence.call_args.kwargs, {"fetch": False, "ask_pr": False})
+        read.assert_called_once_with(1)
+        self.assertNotIn("_info", payload["candidates"][0])
+
+    def test_complete_spec_points_to_reconcile_after_merge(self):
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf):
+            code = next_module.cmd_next(
+                argparse.Namespace(json=True, front=False, spec=1), ".", Emitter())
+        self.assertEqual(code, 0)
+        payload = json.loads(buf.getvalue())
+        self.assertEqual(payload["action"], "promote")
+        self.assertEqual(payload["to"], "archive")
+        self.assertEqual(payload["message"], "all tasks complete — write ## Outcome and open "
+                         "the PR; after the merge, `cq specs reconcile --write` archives it")
 
 
 class WorkRef(unittest.TestCase):

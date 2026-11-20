@@ -4,10 +4,10 @@ title: Plan git record contract
 description: How a spec records the git facts that cannot be derived later — per-task commit subjects, branch, pull request and merge records, branch marks for conclude discovery, base inference, merge routes, and safe local and remote branch cleanup
 resource: quenching/references/git/**, quenching/references/specs-execute/execution.md, quenching/references/specs-conclude/auto-discover.md, quenching/assets/bin/quenching/specs/**, quenching/assets/bin/quenching/git/**, quenching/skills/quenching-specs/references/execute.md, quenching/skills/quenching-specs/references/conclude.md, quenching/skills/quenching-git/references/merge.md, quenching/skills/quenching-git/references/pr-create.md
 tags: [workflows, specs, git, commits, records]
-timestamp: 2026-11-06
+timestamp: 2026-11-13
 audience: both
 authority: background
-source: abandonar-slug-por-id-nativo, vincular-spec-a-branch-commits-e-pr, spec 2022; history in ADR 0003
+source: abandonar-slug-por-id-nativo, vincular-spec-a-branch-commits-e-pr, spec 2022, spec 2187; history in ADR 0003
 maintainer: quenching
 ---
 
@@ -34,7 +34,7 @@ Two consequences follow:
 - **`/quenching-git merge` stamps `merge:` on the work branch before merging**, so the merge is the
   last action of *that* command and **nothing is ever committed to the base branch after it**. One
   merge carries the code, the emergent docs (written earlier, by `/quenching-specs conclude`, which
-  stops before the merge and hands off to this command) and the archived spec's distillation;
+  stops before the merge and hands off to this command) and the spec's distillation;
   reverting it reverts the spec's whole footprint.
 
 A record that cannot be written beforehand is a record that forces a write afterwards, and a write
@@ -287,6 +287,33 @@ itself — every run reads the named route and runs the command on its own word.
 merge route remain separate because human review decides whether and when the branch enters the
 base (`quenching/references/align/convergence.md` §The PR route).
 
+## A `done` spec is archived after its merge, never before
+
+`## Outcome` is written before the PR; the archive move follows the merge. The spec store is the
+`quenching` ref, read by every session the moment a write is pushed, so an archive written before
+the merge publishes a close over a PR that can still stall, fail its checks or be closed — three
+times in two repositories (1518, 1028798, 1030888) before this rule.
+
+`cq specs promote --to archive --outcome done` refuses (`sp-not-merged`, exit 2) while the
+`branch` record names a work ref distinct from its base and none of these holds: the work tip is an
+ancestor of `origin/<base>`, a `merge:` record names a strategy, or the `pr:` record's PR reads
+merged (the squash case, where ancestry fails). `--force` waives open tasks only; it never reaches
+this refusal. `--outcome abandoned` has nothing to wait for and is not checked.
+
+The close is one verb, `cq specs reconcile --write`: it finds every spec of the front whose work is
+merged and archives as `done` each one carrying `## Outcome`, through `promote`'s own gate; one
+without `## Outcome`, or with a task still open, is reported `needs-human` and never forced. Four
+callers run it, so no route to a merge leaves the spec open:
+
+- `/quenching-specs conclude` resumed after the merge (its step 8);
+- `/quenching-git merge`, right after its `merge:` stamp;
+- the `spec-orchestrator`, right after `cq git pr merge`;
+- the open of `/quenching-specs execute`, `orchestrate` and `conclude`, which reconcile whatever
+  merged since the last run.
+
+`cq specs next --front` lists the same specs offline as `mergedNotArchived`, so a merged spec left
+open is visible before any of those runs.
+
 ## The squash caveat, and what rebase no longer costs
 
 The four merge strategies differ in one dimension that matters here — what happens to the commits
@@ -302,7 +329,7 @@ the recorded subjects resolve against:
 A squash is a common house style and is not argued against — but its consequence is said out loud:
 when squash is chosen, `/quenching-git merge` records it in `merge:` and offers **not** to delete
 the branch, the only way the archived spec's `subject:` fields stay resolvable. `## Outcome` no
-longer names the strategy — it is decided after `conclude` has already written and archived it — so
+longer names the strategy — it is decided after `conclude` has already written it — so
 the branch's own `merge:` record and `git log` are where a later reader resolves which strategy
 ran.
 

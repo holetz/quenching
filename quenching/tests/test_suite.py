@@ -10,22 +10,33 @@ collects zero tests exits 0 and reads exactly like a run where everything passed
 """
 
 import ast
+import os
 import pathlib
+import subprocess
 import sys
+import tempfile
 import unittest
+
+try:
+    import _paths  # noqa: F401 — the git isolation must exist before any test runs git alone
+except ModuleNotFoundError:
+    sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
+    import _paths  # noqa: F401
 
 TESTS_DIR = pathlib.Path(__file__).resolve().parent
 PLUGIN_ROOT = TESTS_DIR.parent
 PACKAGE_DIR = PLUGIN_ROOT / "assets" / "bin" / "quenching"
 
 def first_party() -> set[str]:
-    """Names that resolve only because `discover` puts this directory on `sys.path`.
+    """Names that resolve only because the suite runs from this repository.
 
+    `tests/` joins `sys.path` through `discover`, and the repository root through `_paths.py`, which
+    every test module imports first — `scripts` is this repository's own tooling, not a dependency.
     Derived from disk rather than listed: a hard-coded allowlist makes every new helper in
     `tests/` look like an external dependency, and the cheapest way out of that is to reach the
     helper through `importlib` — evading this check instead of satisfying it.
     """
-    return {"quenching"} | {path.stem for path in TESTS_DIR.glob("*.py")}
+    return {"quenching", "scripts"} | {path.stem for path in TESTS_DIR.glob("*.py")}
 
 
 def top_level_imports(source: str) -> set[str]:
@@ -55,6 +66,40 @@ class SuiteIntegrity(unittest.TestCase):
         suite = unittest.defaultTestLoader.discover(str(TESTS_DIR), top_level_dir=str(TESTS_DIR))
         self.assertGreater(suite.countTestCases(), 0)
         self.assertEqual([], unittest.defaultTestLoader.errors)
+
+
+class GitIsolation(unittest.TestCase):
+    """The suite reads this configuration instead of the machine's — and proves it with git."""
+
+    def test_the_global_file_replaces_the_machines(self):
+        import _paths  # noqa: F401  — the import is what exports it
+
+        global_file = pathlib.Path(os.environ["GIT_CONFIG_GLOBAL"])
+        text = global_file.read_text(encoding="utf-8")
+        self.assertEqual("1", os.environ.get("GIT_CONFIG_NOSYSTEM"))
+        self.assertIn("defaultBranch = main", text)
+        self.assertIn("fsync = none", text)
+        self.assertNotIn("user", text)  # identity stays per repository, never command scope
+        run_root = os.environ.get("QUENCHING_TEST_TMPROOT") or os.environ["TMPDIR"]
+        self.assertTrue(global_file.is_relative_to(pathlib.Path(run_root)), global_file)
+
+    def test_a_fresh_repository_inherits_it(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            subprocess.run(["git", "init", "-q", tmp], check=True)
+            head = subprocess.run(["git", "-C", tmp, "symbolic-ref", "--short", "HEAD"],
+                                  check=True, capture_output=True, text=True).stdout.strip()
+            fsync = subprocess.run(["git", "-C", tmp, "config", "--get", "core.fsync"],
+                                   check=True, capture_output=True, text=True).stdout.strip()
+        self.assertEqual("main", head)
+        self.assertEqual("none", fsync)
+
+    def test_a_repository_setting_beats_the_global_file(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            subprocess.run(["git", "init", "-q", tmp], check=True)
+            subprocess.run(["git", "-C", tmp, "config", "init.defaultBranch", "trunk"], check=True)
+            read = subprocess.run(["git", "-C", tmp, "config", "--get", "init.defaultBranch"],
+                                  check=True, capture_output=True, text=True).stdout.strip()
+        self.assertEqual("trunk", read)
 
 
 if __name__ == "__main__":
