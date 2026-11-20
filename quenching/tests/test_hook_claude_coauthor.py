@@ -1,4 +1,4 @@
-"""`deny-claude-coauthor.sh` — the plugin-wide PreToolUse hook that keeps Claude off commit and PR messages.
+"""`deny-claude-coauthor.py` — the plugin-wide PreToolUse hook that keeps Claude off commit and PR messages.
 
 It runs on every Bash call in every repo that enables `quenching-specs`, so both halves matter: it
 denies exactly the message-writing commands that carry the attribution, and it prints `{}` for
@@ -9,16 +9,21 @@ import json
 import os
 import pathlib
 import subprocess
+import sys
 import unittest
 
 PLUGIN_ROOT = pathlib.Path(__file__).resolve().parent.parent
-HANDLER = PLUGIN_ROOT / "assets" / "hooks" / "deny-claude-coauthor.sh"
+HANDLER = PLUGIN_ROOT / "assets" / "hooks" / "deny-claude-coauthor.py"
 MODULES = PLUGIN_ROOT / "assets" / "modules.json"
 
 
 def run(command, raw=None, **env):
     payload = raw if raw is not None else json.dumps({"tool_name": "Bash", "tool_input": {"command": command}})
-    done = subprocess.run(["bash", str(HANDLER)], input=payload, capture_output=True, text=True,
+    return _run(payload, **env)
+
+
+def _run(payload, **env):
+    done = subprocess.run([sys.executable, str(HANDLER)], input=payload, capture_output=True, text=True,
                           env={**os.environ, "QUENCHING_ALLOW_CLAUDE_COAUTHOR": "", **env})
     assert done.returncode == 0, done.stderr
     return json.loads(done.stdout)
@@ -51,11 +56,19 @@ class TheCoauthorHook(unittest.TestCase):
         self.assertEqual({}, run('git commit -m x -m "Co-Authored-By: Claude <noreply@anthropic.com>"',
                                  QUENCHING_ALLOW_CLAUDE_COAUTHOR="1"))
 
+    def test_it_reads_the_copilot_input_shape(self):
+        command = 'git commit -m x -m "Co-Authored-By: Claude <noreply@anthropic.com>"'
+        for args in ({"command": command}, json.dumps({"command": command})):
+            with self.subTest(args=type(args).__name__):
+                self.assertTrue(denied(_run(json.dumps({"toolName": "powershell", "toolArgs": args}))))
+        self.assertEqual({}, _run(json.dumps({"toolName": "powershell", "toolArgs": {"command": "git status"}})))
+
     def test_the_module_declares_the_hook_with_a_timeout(self):
         modules = {m["name"]: m for m in json.loads(MODULES.read_text())["modules"]}
         hook, = modules["quenching-specs"]["owned"]["hooks"]
-        self.assertEqual({"name": "deny-claude-coauthor", "event": "PreToolUse", "matcher": "Bash", "timeout": 5}, hook)
-        self.assertTrue((HANDLER.parent / (hook["name"] + ".sh")).is_file())
+        self.assertEqual({"name": "deny-claude-coauthor", "event": "PreToolUse",
+                          "matcher": "Bash|PowerShell|bash|powershell", "timeout": 5}, hook)
+        self.assertTrue((HANDLER.parent / (hook["name"] + ".py")).is_file())
 
 
 if __name__ == "__main__":

@@ -158,7 +158,7 @@ a subtree stops being derivable from the sentence, not when the table gains a ro
 The rule that decides where an executable sits is **by how it is invoked, not by whether it
 ships.** `hooks/` holds a handler dedicated to one hook event; an entry that serves both a skill
 body and a hook lives in `bin/`. The only hooks are those declared in `assets/modules.json` and
-installed by `cq deploy` (`deny-claude-coauthor` and `warn-git-add-all`, in `assets/hooks/`).
+installed by `cq deploy` (`deny-claude-coauthor` and `warn-git-add-all`, Python bodies in `assets/hooks/`).
 
 Current subtrees, by the reason each is here:
 

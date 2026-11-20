@@ -23,7 +23,7 @@
           {
             "name": "deny-claude-coauthor",
             "event": "PreToolUse",
-            "matcher": "Bash",
+            "matcher": "Bash|PowerShell|bash|powershell",
             "timeout": 5
           }
         ],
@@ -78,7 +78,7 @@
           {
             "name": "warn-git-add-all",
             "event": "PreToolUse",
-            "matcher": "Bash",
+            "matcher": "Bash|PowerShell|bash|powershell",
             "timeout": 5
           }
         ]

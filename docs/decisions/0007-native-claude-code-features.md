@@ -39,7 +39,8 @@ skills page says the same applies to plugin skills. Hooks are deterministic wher
 bundled script resolves.
 
 Implemented: `/quenching:git:commit` carries a `PreToolUse` `Bash` hook running
-`assets/hooks/warn-git-add-all.sh`. It **warns** (`systemMessage` plus `additionalContext`, exit 0)
+`assets/hooks/warn-git-add-all.sh` (a Python body, `.py`, since 2026-11-20 — see
+[hooks.md](../standards/automation/hooks.md) for the polyglot command). It **warns** (`systemMessage` plus `additionalContext`, exit 0)
 on `git add -A`, `--all` or `.`, in line with the "warn by default; block by consent" rule of
 [hooks.md](../standards/automation/hooks.md). Its handler guards its own absence
 (`test -f ... || exit 0`) and has a 5-second timeout. The command's `allowed-tools` never listed

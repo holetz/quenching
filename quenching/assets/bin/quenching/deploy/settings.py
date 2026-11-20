@@ -4,6 +4,11 @@ Pure: it takes the current text (or None) and the wanted entries and returns the
 refuses. The file belongs to the user; only the entries whose command points under
 `.agents/quenching/assets/hooks/` are quenching's, and that path is the marker that identifies them
 even when no deploy manifest exists.
+
+The GitHub Copilot harness reads this same file, and on Windows it runs the command through
+PowerShell or cmd, not bash. So the command is one polyglot line — a Python prefix and `-I -c "…"`
+whose code holds no `$`, no backtick and no double quote — that every one of those shells hands to
+Python unchanged.
 """
 from __future__ import annotations
 
@@ -13,7 +18,8 @@ import re
 from dataclasses import dataclass, field
 
 MARKER = ".agents/quenching/assets/hooks/"
-_NAME = re.compile(re.escape(MARKER) + r"([A-Za-z0-9_.-]+)\.sh")
+_NAME = re.compile(re.escape(MARKER) + r"([A-Za-z0-9_-]+)\.(?:sh|py)\b")
+PYTHON = ("python3",)  # the prefix when the repository declares no `shared.mcp.command`
 ATTRIBUTION = {"commit": "", "pr": ""}
 
 
@@ -28,15 +34,25 @@ class Merged:
     warnings: list[str] = field(default_factory=list)
 
 
-def hook_command(name: str) -> str:
-    script = f'"$CLAUDE_PROJECT_DIR/{MARKER}{name}.sh"'
-    return f"test -f {script} || exit 0; bash {script}"
+def _word(part: str) -> str:
+    return f'"{part}"' if any(c.isspace() for c in part) else part
 
 
-def desired_entries(declared: list[dict]) -> list[dict]:
+def hook_command(name: str, prefix: list[str] | tuple[str, ...] = PYTHON) -> str:
+    """The one line bash, PowerShell and cmd all read the same way: the root from the
+    `CLAUDE_PROJECT_DIR` both harnesses export (else the working directory), `{}` when the body is
+    not installed, else the body run as `__main__`."""
+    code = ("import os,runpy,sys;"
+            f"p=os.path.join(os.environ.get('CLAUDE_PROJECT_DIR') or os.getcwd(),'{MARKER}{name}.py');"
+            "os.path.isfile(p) or (print('{}'),sys.exit(0));"
+            "runpy.run_path(p,run_name='__main__')")
+    return " ".join(_word(part) for part in prefix) + f' -I -c "{code}"'
+
+
+def desired_entries(declared: list[dict], prefix: list[str] | tuple[str, ...] = PYTHON) -> list[dict]:
     """The wanted hooks, from `owned.hooks` declarations: name, event, matcher, timeout."""
     return [{"name": h["name"], "event": h["event"], "matcher": h["matcher"],
-             "timeout": h["timeout"], "command": hook_command(h["name"])} for h in declared]
+             "timeout": h["timeout"], "command": hook_command(h["name"], prefix)} for h in declared]
 
 
 def _own_name(hook) -> str | None:
