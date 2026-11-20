@@ -1,17 +1,18 @@
-"""`warn-git-add-all.sh` — the PreToolUse guard that flags blanket staging without ever blocking."""
+"""`warn-git-add-all.py` — the PreToolUse guard that flags blanket staging without ever blocking."""
 
 import json
 import pathlib
 import subprocess
+import sys
 import unittest
 
 PLUGIN_ROOT = pathlib.Path(__file__).resolve().parent.parent
-HANDLER = PLUGIN_ROOT / "assets" / "hooks" / "warn-git-add-all.sh"
+HANDLER = PLUGIN_ROOT / "assets" / "hooks" / "warn-git-add-all.py"
 
 
 def run(command):
     payload = json.dumps({"tool_name": "Bash", "tool_input": {"command": command}})
-    done = subprocess.run(["bash", str(HANDLER)], input=payload, capture_output=True, text=True)
+    done = subprocess.run([sys.executable, str(HANDLER)], input=payload, capture_output=True, text=True)
     assert done.returncode == 0, done.stderr
     return json.loads(done.stdout)
 
@@ -31,7 +32,7 @@ class TheStagingWarning(unittest.TestCase):
                 self.assertEqual({}, run(command))
 
     def test_it_exits_zero_on_garbage(self):
-        done = subprocess.run(["bash", str(HANDLER)], input="{garbage", capture_output=True, text=True)
+        done = subprocess.run([sys.executable, str(HANDLER)], input="{garbage", capture_output=True, text=True)
         self.assertEqual(0, done.returncode)
         self.assertEqual({}, json.loads(done.stdout))
 
