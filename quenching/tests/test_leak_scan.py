@@ -52,6 +52,35 @@ class LeakEnv(unittest.TestCase):
 
 
 class Patterns(LeakEnv):
+    def test_prefixed_provider_tokens_are_caught_and_their_lookalikes_are_not(self):
+        samples = {
+            "github-token": "gh" + "p_" + "A1b2" * 9,
+            "aws-access-key-id": "AK" + "IA" + "ABCDEFGHIJ234567",
+            "anthropic-api-key": "sk-" + "ant-" + "api03-" + "x" * 30,
+            "openai-project-key": "sk-" + "proj-" + "y" * 48,
+            "slack-token": "xo" + "xb-" + "1234567890-abc",
+            "gitlab-token": "gl" + "pat-" + "z" * 20,
+            "private-key": "-----BEGIN " + "PGP PRIVATE KEY BLOCK-----",
+        }
+        pats = leak.patterns(generic_only=True)
+        for label, sample in samples.items():
+            found = leak.scan_text("f.md", f"token = {sample}\n", pats)
+            self.assertEqual([label], [f.label for f in found], label)
+            self.assertNotIn(sample, found[0].excerpt, label)
+        prose = ("a `ghp_` prefix, the AKIA family, `sk-ant-` keys and a password=example "
+                 "line in prose are not tokens\n")
+        self.assertEqual([], leak.scan_text("f.md", prose, pats))
+
+    def test_hidden_unicode_is_caught_but_a_leading_bom_and_emoji_joiners_are_not(self):
+        pats = leak.patterns(generic_only=True)
+        for char in ("\u200b", "\u202e", "\u2066", "\U000e0041", "\ufeff"):
+            found = leak.scan_text("SKILL.md", f"run the step{char} now\n", pats)
+            self.assertEqual(["hidden-unicode"], [f.label for f in found], repr(char))
+        self.assertEqual([], leak.scan_text("f.md", "\ufeffa file an editor saved with a BOM\n",
+                                            pats))
+        self.assertEqual([], leak.scan_text("f.md", "a family \U0001f468\u200d\U0001f469\n",
+                                            pats))
+
     def test_generic_patterns_catch_each_class_and_name_the_line(self):
         text = f"ok\nhost {DATABRICKS_HOST}\ncpf {CPF}\n"
         found = leak.scan_text("f.md", text, leak.patterns(generic_only=True))
