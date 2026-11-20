@@ -566,8 +566,16 @@ class TargetLauncher(unittest.TestCase):
         marketplace = json.loads(
             (REPO_ROOT / ".claude-plugin" / "marketplace.json").read_text(encoding="utf-8"))
         marketplace_versions = {item["name"]: item["version"] for item in marketplace["plugins"]}
-        self.assertEqual({"quenching-hud"}, set(marketplace_versions))
+        self.assertEqual({"quenching-hud", "quenching-vitrine"}, set(marketplace_versions))
         self.assertEqual({VERSION}, set(marketplace_versions.values()), marketplace_versions)
+
+    def test_a_deploy_installs_nothing_of_the_marketplace_mods(self):
+        """The mods install through the marketplace, never through `cq deploy`."""
+        for selection, root in self.roots.items():
+            installed = [str(path.relative_to(root)) for path in root.rglob("*") if path.is_file()]
+            leaked = [path for path in installed if "claude-vitrine" in path or "claude-hud" in path
+                      or "quenching-vitrine" in path or "quenching-hud" in path]
+            self.assertEqual([], leaked, selection)
 
     def test_the_entrypoint_declares_and_checks_the_python_floor_before_package_imports(self):
         source = REAL.read_text(encoding="utf-8")
