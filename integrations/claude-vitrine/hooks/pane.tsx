@@ -1,7 +1,8 @@
 import { atom, read, update } from 'claude-code'
 import type { EngineInterface } from 'claude-code'
 
-import type { Composite, CqState, Detail, LedgerEntry, Kind, Member, Neighbor, TouchRow, View } from '../types'
+import type { Composite, ConfigKey, ConfigLayer, ConfigSchema, CqState, Detail, LedgerEntry, Kind, Member, Neighbor, TouchRow, View } from '../types'
+import { SOURCE_LABEL, describe, encode, isReadOnly, parseSchema, restoreLayer, sectionsOf, shown, sourceOf, targetLayer } from './config'
 import { createCq } from './cq'
 import type { Runner } from './cq'
 import { harvest, touch, touchedRows } from './ledger'
@@ -16,6 +17,10 @@ export const detail = atom({ plugin: 'quenching-vitrine', key: 'detail' } as con
 export const tab = atom({ plugin: 'quenching-vitrine', key: 'tab' } as const, 0)
 export const cqState = atom({ plugin: 'quenching-vitrine', key: 'cq' } as const, null as CqState | null)
 export const busy = atom({ plugin: 'quenching-vitrine', key: 'busy' } as const, '')
+export const config = atom({ plugin: 'quenching-vitrine', key: 'config' } as const, null as ConfigSchema | null, { shape: 'config-1' })
+export const configError = atom({ plugin: 'quenching-vitrine', key: 'configError' } as const, '')
+export const layer = atom({ plugin: 'quenching-vitrine', key: 'layer' } as const, 'project' as ConfigLayer)
+export const drafts = atom({ plugin: 'quenching-vitrine', key: 'drafts' } as const, {} as Record<string, string>, { shape: 'drafts-1' })
 
 // ── services ─────────────────────────────────────────────────────────────────
 
@@ -144,6 +149,52 @@ export async function attach($: EngineInterface, id: number, taskID?: string) {
   if (!filled.isFilled) {
     $.ui.toast(refusalNote(filled.refusal))
   }
+}
+
+/** Switches between the Specs view and the Configuração view; the configuration is read when it opens. */
+export async function show($: EngineInterface, next: View) {
+  await update($, view, () => next)
+
+  if (next === 'config') {
+    await loadConfig($)
+  }
+}
+
+/** Reads every key with its effective value and the layer that gave it; a failure is shown, never thrown. */
+export async function loadConfig($: EngineInterface) {
+  const { cq } = services($)
+  const cwd = await $.session.cwd()
+  await update($, busy, () => 'Reading the configuration…')
+
+  try {
+    const read = await cq.configSchema(cwd)
+    const schema = read.ok ? parseSchema(read.json) : undefined
+
+    await update($, configError, () => (schema ? '' : read.error || 'cq printed a configuration this pane cannot read.'))
+
+    if (schema) {
+      await update($, config, () => schema)
+      await update($, drafts, () => ({}))
+    }
+  } finally {
+    await update($, busy, () => '')
+  }
+}
+
+/** Writes a key through `cq config set|unset` and reads the schema back; a refusal is a toast with the cq's reason. */
+export async function writeConfig($: EngineInterface, entry: ConfigKey, value: string | null, into?: ConfigLayer) {
+  const { cq } = services($)
+  const cwd = await $.session.cwd()
+  const target = into ?? targetLayer(entry, await read($, layer))
+  const result = await cq.configWrite(cwd, entry.key, target, value)
+
+  if (!result.ok) {
+    $.ui.toast(`Not saved: ${result.message || 'cq refused the value'}`)
+
+    return
+  }
+  $.ui.toast(`${entry.key} → ${target === 'local' ? 'Local' : 'Project'}`)
+  await loadConfig($)
 }
 
 export async function back($: EngineInterface) {
@@ -332,10 +383,111 @@ export function drawDependencies($: EngineInterface, els: Elements, spec: Detail
   )
 }
 
+/** The Configuração view: every key by category with its layer badge, a Write to selector and Restore default. */
+export function drawConfig(
+  $: EngineInterface,
+  els: Elements,
+  state: { schema: ConfigSchema | null; error: string; layer: ConfigLayer; drafts: Record<string, string>; working: string },
+) {
+  const { Box, Button, Input, Select, Text } = els
+  const { schema } = state
+
+  const control = (entry: ConfigKey, schema: ConfigSchema) => {
+    const current = schema.values[entry.key]?.value
+    const restorable = restoreLayer(sourceOf(schema, entry))
+    const restore = restorable && (
+      <Button key={`restore-${entry.key}`} label="Restore default" onPress={() => writeConfig($, entry, null, restorable)} />
+    )
+
+    if (isReadOnly(entry)) {
+      return (
+        <Text dimColor>{`read-only here: edit ${schema.layerPaths.project}${shown(current) ? ` · now ${shown(current)}` : ''}`}</Text>
+      )
+    }
+
+    if (entry.type === 'boolean') {
+      return (
+        <Box flexDirection="row" gap={1}>
+          <Button
+            key={`cfg-${entry.key}`}
+            label={current === true ? 'On' : 'Off'}
+            onPress={() => writeConfig($, entry, JSON.stringify(current !== true))}
+          />
+          {restore}
+        </Box>
+      )
+    }
+
+    if (entry.type === 'enum') {
+      return (
+        <Box flexDirection="row" gap={1}>
+          <Select
+            key={`cfg-${entry.key}`}
+            options={(entry.choices ?? []).map(choice => ({ value: choice, label: choice }))}
+            value={typeof current === 'string' ? current : undefined}
+            onSelect={choice => writeConfig($, entry, JSON.stringify(choice))}
+          />
+          {restore}
+        </Box>
+      )
+    }
+
+    return (
+      <Box flexDirection="row" gap={1}>
+        <Input
+          key={`cfg-${entry.key}`}
+          value={state.drafts[entry.key] ?? shown(current)}
+          placeholder={shown(entry.default) || 'Enter saves'}
+          onInput={text => update($, drafts, all => ({ ...all, [entry.key]: text }))}
+          onSubmit={text => writeConfig($, entry, encode(entry, text))}
+        />
+        {restore}
+      </Box>
+    )
+  }
+
+  return (
+    <Box flexDirection="column" gap={1}>
+      <Box flexDirection="row" gap={2}>
+        <Button key="reload" label="Reload" onPress={() => loadConfig($)} />
+        <Select
+          key="layer"
+          label="Write to"
+          options={[
+            { value: 'project', label: 'Project' },
+            { value: 'local', label: 'Local' },
+          ]}
+          value={state.layer}
+          onSelect={choice => update($, layer, () => (choice === 'local' ? 'local' : 'project'))}
+        />
+      </Box>
+      <Text dimColor>Project is .agents/quenching.json, the team contract; Local is .agents/quenching.local.json, this machine only.</Text>
+      {state.working !== '' && <Text dimColor>{state.working}</Text>}
+      {state.error !== '' && <Text color="red">{state.error}</Text>}
+      {schema === null && state.error === '' && state.working === '' && <Text dimColor>The configuration is not read yet.</Text>}
+      {schema &&
+        sectionsOf(schema).map(section => (
+          <Box key={`section-${section.id}`} flexDirection="column" gap={1}>
+            <Text bold>{section.title}</Text>
+            {section.keys.map(entry => (
+              <Box key={`row-${entry.key}`} flexDirection="column">
+                <Text>
+                  {entry.copy.en.title}
+                  <Text dimColor>{` [${SOURCE_LABEL[sourceOf(schema, entry)] ?? sourceOf(schema, entry)}]${entry.scope === 'project' && state.layer === 'local' ? ' project key: always written to the project' : ''}`}</Text>
+                </Text>
+                <Text dimColor>{describe(entry)}</Text>
+                {control(entry, schema)}
+              </Box>
+            ))}
+          </Box>
+        ))}
+    </Box>
+  )
+}
+
 const taskMark = (task: Detail['tasks'][number]) => (task.state === 'x' ? '[x]' : task.blocked ? '[!]' : '[ ]')
 
-export async function drawPane($: EngineInterface, e: Parameters<EngineInterface['ui']['resolve']>[0]) {
-  const els = $.ui.resolve(e)
+async function drawSpecs($: EngineInterface, els: Elements) {
   const { Box, Button, Markdown, Text } = els
   const cq = await read($, cqState)
   const list = await read($, rows)
@@ -428,6 +580,33 @@ export async function drawPane($: EngineInterface, e: Parameters<EngineInterface
       )}
       {section && <Markdown key={`section-${spec.id}-${at}`} text={section.body || '_Empty._'} />}
       {at === tabs.length - 1 && drawDependencies($, els, spec)}
+    </Box>
+  )
+}
+
+/** The pane: the two views side by side in one bar, then the one chosen. */
+export async function drawPane($: EngineInterface, e: Parameters<EngineInterface['ui']['resolve']>[0]) {
+  const els = $.ui.resolve(e)
+  const { Box, Button } = els
+  const current = await read($, view)
+  const body =
+    current === 'config'
+      ? drawConfig($, els, {
+          schema: await read($, config),
+          error: await read($, configError),
+          layer: await read($, layer),
+          drafts: await read($, drafts),
+          working: await read($, busy),
+        })
+      : await drawSpecs($, els)
+
+  return (
+    <Box flexDirection="column" gap={1}>
+      <Box flexDirection="row" gap={1}>
+        <Button key="view-specs" label="Specs" variant={current === 'specs' ? 'primary' : undefined} onPress={() => show($, 'specs')} />
+        <Button key="view-config" label="Configuração" variant={current === 'config' ? 'primary' : undefined} onPress={() => show($, 'config')} />
+      </Box>
+      {body}
     </Box>
   )
 }
