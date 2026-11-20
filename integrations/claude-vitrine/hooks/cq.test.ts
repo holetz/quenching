@@ -1,6 +1,6 @@
 import { expect, test } from 'claude-code/testing'
 
-import { createCq, limiter, singleFlight } from './cq'
+import { createCq, DEPLOYED_CQ, limiter, singleFlight, withLauncher } from './cq'
 import type { Run, Runner } from './cq'
 
 const ok = (stdout: string): Run => ({ code: 0, stdout, stderr: '' })
@@ -110,4 +110,49 @@ test('git reads go through the same cap and return trimmed stdout, or nothing on
 
   expect(await cq.git('/w', ['rev-parse', 'HEAD'])).toBe('abc123')
   expect(await cq.git('/w', ['branch'])).toBe(undefined)
+})
+
+test("withLauncher runs the repository's own launcher when one is found, and cq on PATH otherwise", async () => {
+  const seen: string[][] = []
+  const runner: Runner = async argv => {
+    seen.push(argv)
+
+    return ok('{}')
+  }
+  let located = 0
+  const run = withLauncher(runner, async cwd => {
+    located += 1
+
+    return cwd === '/repo' ? `/repo/${DEPLOYED_CQ}` : undefined
+  })
+
+  await run(['cq', 'specs', 'list', '--json'], '/repo', 1000)
+  await run(['cq', '--version'], '/repo', 1000)
+  await run(['cq', '--version'], '/elsewhere', 1000)
+  await run(['git', 'branch', '--show-current'], '/repo', 1000)
+
+  expect(seen).toEqual([
+    ['/repo/.agents/quenching/bin/cq', 'specs', 'list', '--json'],
+    ['/repo/.agents/quenching/bin/cq', '--version'],
+    ['cq', '--version'],
+    ['git', 'branch', '--show-current'],
+  ])
+  expect(located).toBe(2)
+})
+
+test('withLauncher falls back to cq on PATH when locating throws', async () => {
+  const seen: string[][] = []
+  const run = withLauncher(
+    async argv => {
+      seen.push(argv)
+
+      return ok('')
+    },
+    async () => {
+      throw new Error('no git')
+    }
+  )
+
+  await run(['cq', '--version'], '/x', 1000)
+  expect(seen).toEqual([['cq', '--version']])
 })

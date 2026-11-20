@@ -29,7 +29,7 @@ It never installs quenching into a project: skills keep arriving by `cq deploy`,
 
 ## Requirements
 
-`cq` on `PATH` (the target's own `.agents/quenching/bin/cq` or a global one). Without it the pane says so and
+The repository's own `.agents/quenching/bin/cq` (what `cq deploy` installs), found from the session's git root, or else `cq` on `PATH`. Without it the pane says so and
 shows nothing else.
 
 ## Install

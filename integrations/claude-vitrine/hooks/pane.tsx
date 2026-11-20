@@ -3,7 +3,7 @@ import type { EngineInterface } from 'claude-code'
 
 import type { Composite, ConfigKey, ConfigLayer, ConfigSchema, CqState, Detail, LedgerEntry, Kind, Member, Neighbor, TouchRow, View } from '../types'
 import { SOURCE_LABEL, describe, encode, isReadOnly, parseSchema, restoreLayer, sectionsOf, shown, sourceOf, targetLayer } from './config'
-import { createCq } from './cq'
+import { createCq, DEPLOYED_CQ, withLauncher } from './cq'
 import type { Runner } from './cq'
 import { harvest, touch, touchedRows } from './ledger'
 import { createSpecs } from './specs'
@@ -29,6 +29,8 @@ type Services = { cq: ReturnType<typeof createCq>; specs: ReturnType<typeof crea
 /** What the cached `cq` runs with; each call swaps in the newest `$`, so a hot reload never leaves a dead one. */
 let run: Runner = async () => ({ code: -1, stdout: '', stderr: 'the engine is not ready' })
 let held: Services | undefined
+/** The newest `$.fs.stat`, swapped like `run`. */
+let stat: (path: string) => Promise<{ kind: string } | undefined> = async () => undefined
 
 /** One `cq` and one specs cache for the mod. */
 export function services($: EngineInterface): Services {
@@ -42,8 +44,19 @@ export function services($: EngineInterface): Services {
     }
   }
 
+  stat = path => $.fs.stat(path).catch(() => undefined)
+
   if (!held) {
-    const cq = createCq((argv, cwd, timeoutMs) => run(argv, cwd, timeoutMs))
+    const locate = async (cwd: string) => {
+      const top = await run(['git', 'rev-parse', '--show-toplevel'], cwd, 10_000)
+
+      if (top.code !== 0 || !top.stdout.trim()) {
+        return undefined
+      }
+      const path = `${top.stdout.trim()}/${DEPLOYED_CQ}`
+      return (await stat(path))?.kind === 'file' ? path : undefined
+    }
+    const cq = createCq(withLauncher((argv, cwd, timeoutMs) => run(argv, cwd, timeoutMs), locate))
     held = { cq, specs: createSpecs(cq) }
   }
 

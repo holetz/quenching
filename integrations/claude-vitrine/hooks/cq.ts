@@ -77,6 +77,34 @@ export type Cq = {
   stats: { running: number; peak: number; spawned: number }
 }
 
+/** Where a deployed repository keeps its own launcher, relative to its root. */
+export const DEPLOYED_CQ = '.agents/quenching/bin/cq'
+
+/**
+ * A runner whose `cq` is the session repository's own launcher when `locate` finds one, else `cq` on PATH.
+ * A deploy installs `.agents/quenching/bin/cq` without putting it on PATH, so a bare `cq` would miss it.
+ * Each working directory is located once.
+ */
+export function withLauncher(runner: Runner, locate: (cwd: string) => Promise<string | undefined>): Runner {
+  const found = new Map<string, Promise<string>>()
+  const launcher = (cwd: string) => {
+    let current = found.get(cwd)
+
+    if (!current) {
+      current = locate(cwd).then(
+        path => path ?? 'cq',
+        () => 'cq'
+      )
+      found.set(cwd, current)
+    }
+
+    return current
+  }
+
+  return async (argv, cwd, timeoutMs) =>
+    argv[0] === 'cq' ? runner([await launcher(cwd), ...argv.slice(1)], cwd, timeoutMs) : runner(argv, cwd, timeoutMs)
+}
+
 /** `cq` over a runner: JSON reads with a concurrency cap and de-duplication, and the config writer. */
 export function createCq(runner: Runner, concurrency = CQ_CONCURRENCY): Cq {
   const slot = limiter(concurrency)
