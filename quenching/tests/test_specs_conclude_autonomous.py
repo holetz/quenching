@@ -30,6 +30,7 @@ class ConcludeAutonomous(unittest.TestCase):
 
     def test_outside_autonomous_the_handoff_is_named_and_not_invoked(self):
         self.assertIn('Skill("quenching-git", "pr-create <id>")', self.text)
+        self.assertIn("`low` chains the provider handoff", self.text)
         self.assertIn("name the handoff and stop", self.text)
         self.assertNotIn("stops at the named PR handoff", self.text,
                          "the autonomous run no longer stops before its own PR")
