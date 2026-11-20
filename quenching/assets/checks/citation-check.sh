@@ -365,8 +365,11 @@ paths_checked = cmds_checked = 0
 # (`quenching-specs`), and both are cited: the name is live when a skill answers to it.
 commands = set()
 with open(os.path.join(plugin, "assets", "modules.json"), encoding="utf-8") as handle:
-    for module in json.load(handle)["modules"]:
-        commands.update(module["owned"]["skills"])
+    manifest = json.load(handle)
+for module in manifest["modules"]:
+    commands.update(module["owned"]["skills"])
+# A mod the marketplace publishes answers to a slash command of its own name (`/quenching-vitrine`).
+commands.update(entry["name"] for entry in manifest.get("plugins", []))
 
 FROZEN_DATA = (plugin + "/tests/fixtures/golden/", plugin + "/tests/capture_golden.py",
                # A `files:` case table reproducing a real, historical bug report verbatim — a
