@@ -71,6 +71,8 @@ export type Cq = {
   configSchema: (cwd: string) => Promise<{ ok: boolean; json: string; error: string }>
   /** `cq config set|unset`, the only writer; `value` is JSON, or null to unset. */
   configWrite: (cwd: string, key: string, layer: 'project' | 'local', value: string | null) => Promise<ConfigWrite>
+  /** A git read from the session's directory: trimmed stdout, or `undefined` when git refuses. */
+  git: (cwd: string, args: string[]) => Promise<string | undefined>
   /** Reads started and the most that ran together, for the tests. */
   stats: { running: number; peak: number; spawned: number }
 }
@@ -145,6 +147,11 @@ export function createCq(runner: Runner, concurrency = CQ_CONCURRENCY): Cq {
       } catch {
         return { ok: run.code === 0, message: run.stderr.trim() || run.stdout.trim() }
       }
+    },
+    git: async (cwd, args) => {
+      const run = await slot(() => runner(['git', ...args], cwd, 10_000))
+
+      return run.code === 0 ? run.stdout.trim() : undefined
     },
     stats,
   }

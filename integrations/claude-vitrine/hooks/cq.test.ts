@@ -100,3 +100,10 @@ test('config writes go through cq config set|unset with the layer and report a r
   expect(seen[0]).toEqual(['cq', 'config', 'set', 'a.b', '3', '--layer', 'local', '--json'])
   expect(seen[1]).toEqual(['cq', 'config', 'unset', 'a.b', '--layer', 'project', '--json'])
 })
+
+test('git reads go through the same cap and return trimmed stdout, or nothing on a refusal', async () => {
+  const cq = createCq(async argv => (argv[1] === 'rev-parse' ? ok('abc123\n') : { code: 128, stdout: '', stderr: 'no' }))
+
+  expect(await cq.git('/w', ['rev-parse', 'HEAD'])).toBe('abc123')
+  expect(await cq.git('/w', ['branch'])).toBe(undefined)
+})
