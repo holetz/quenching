@@ -272,7 +272,7 @@
     ".agents/quenching/assets/githooks/pre-commit": "8de39f2c74a9db39cf3b9368580fba6e108e595f86615d27e37465d773635675",
     ".agents/quenching/assets/githooks/pre-push": "d9421efdd85092a3bafb3fd9eaae00228563cdf8aee1af976d96871f888ae471",
     ".agents/quenching/assets/hooks/deny-claude-coauthor.py": "0755db09e71e36adab51a13b919a4972ffe3725c1e3af8ad7837c06af06dc5c9",
-    ".agents/quenching/assets/hooks/warn-git-add-all.py": "ac4fea70f7833b3a5dd84c79c6108e7e48f09581c50652ccb797b02f5399d1fe",
+    ".agents/quenching/assets/hooks/warn-git-add-all.py": "3e428715e8f0e73787174dbfa070268ec5e5c9f9df4c71f061a6fab457cf7c20",
     ".agents/quenching/assets/knowledge/assets/glossary-abbreviations.txt": "e89e6f7abfa763d191a3ee9fb105220d4aa31372a71590e88b2ba4a385ce4e0f",
     ".agents/quenching/assets/knowledge/catalog/index.md": "95f32f32f7a483fe4906387eee101f522407a2149ade8745d916769b99a8762b",
     ".agents/quenching/assets/knowledge/concepts/index.md": "7fc29f4c469a4f6c4862454d5be657d3cdb9478a4c72ab5238474797463786e9",
