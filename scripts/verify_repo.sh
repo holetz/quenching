@@ -219,6 +219,18 @@ else
   printf 'SKIPPED: `claude` is not on PATH; integrations/claude-hud was not validated.\n'
 fi
 
+# The quenching-vitrine mod (the Claude Desktop Specs pane) is validated and tested the same way:
+# the engine type-checks its hooks and runs its UI tests on the terminal and the desktop surface.
+if command -v claude >/dev/null 2>&1; then
+  run_check "quenching-vitrine plugin" \
+    claude plugin validate integrations/claude-vitrine
+  run_check "quenching-vitrine plugin tests" \
+    claude plugin test integrations/claude-vitrine
+else
+  printf '\n==> quenching-vitrine plugin\n'
+  printf 'SKIPPED: `claude` is not on PATH; integrations/claude-vitrine was not validated or tested.\n'
+fi
+
 # The OpenCode vitrine is TypeScript against the GUI SDK it pins; a type error there ships a page
 # that fails only inside Desktop. Its dependencies are a local `npm install`, so without
 # `node_modules` the skip is stated, as with `claude` above.
