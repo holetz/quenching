@@ -755,8 +755,9 @@ def key(task, name):
     return any(line.strip().startswith(name) for line in task)
 sys.exit(0 if all(key(t, "files:") and key(t, "verify:") for t in tasks) else 1)'; then r=yes; else r=no; fi
   check "$r" "every task in the group carries files: and verify:"
-  if printf '%s' "$tasks_json" | python3 -c '
-import json, re, sys
+  impact_body="$( cd "$box" && ./.agents/quenching/bin/cq specs section "$probe_id" Impact --json 2>/dev/null | python3 -c 'import json,sys; print(json.load(sys.stdin).get("body") or "")' )"
+  if printf '%s' "$tasks_json" | IMPACT_BODY="$impact_body" python3 -c '
+import json, os, re, sys
 body = json.load(sys.stdin).get("body") or ""
 lines = body.splitlines()
 start = next((i for i, line in enumerate(lines) if line.strip() == "### 1. Process surface"), None)
@@ -764,11 +765,12 @@ if start is None:
     sys.exit(1)
 end = next((i for i in range(start + 1, len(lines)) if lines[i].lstrip().startswith("### ")), len(lines))
 group = "\n".join(lines[start + 1:end])
-decl = next((i for i, line in enumerate(lines) if line.strip() == "### Process surface this spec expects to touch"), None)
+impact = os.environ.get("IMPACT_BODY", "").splitlines()
+decl = next((i for i, line in enumerate(impact) if line.strip() == "### Process surface this spec expects to touch"), None)
 if decl is None:
     sys.exit(1)
-decl_end = next((i for i in range(decl + 1, len(lines)) if lines[i].lstrip().startswith("### ")), len(lines))
-paths = re.findall(r"`([^`]+)`", "\n".join(lines[decl + 1:decl_end]))
+decl_end = next((i for i in range(decl + 1, len(impact)) if impact[i].lstrip().startswith("### ")), len(impact))
+paths = re.findall(r"`([^`]+)`", "\n".join(impact[decl + 1:decl_end]))
 sys.exit(0 if paths and all(p in group for p in paths) else 1)'; then r=yes; else r=no; fi
   check "$r" "every declared surface path is named by the group"
   if printf '%s' "$tasks_json" | python3 -c '
