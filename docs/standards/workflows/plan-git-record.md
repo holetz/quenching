@@ -389,12 +389,10 @@ is deleted from — the one case worth fearing, and git already declines it on i
 passed, by any command in this front, under any outcome: on a refusal, report git's own output
 verbatim and keep the branch.
 
-This is proven, not merely agreed. `assets/checks/conclude-order-check.sh`'s `abandoned` arm builds
-a spec through create → isolate → execute → conclude(`--outcome abandoned`), deletes the branch with
-`git branch -D` from the base checkout, and asserts that everything the closing wrote — the archive
-move, the `outcome:` stamp, the distillation's background note — still resolves on the base
-afterwards. The assertion that failed before §Every record is written where it needs to survive
-existed is exactly this one.
+This is agreed and locked as text, not proven by a run: the order of conclude's steps is pinned by
+`quenching/tests/test_specs_conclude_flow_sweep.py` and `test_specs_conclude_retire_worktree.py`,
+and no executable check builds an abandoned spec end to end. An executable check that did
+once existed and is gone; the claim is therefore the contract's wording, not a measured fact.
 
 ## Remote branch cleanup is a reported fact, not an automatic merge record
 

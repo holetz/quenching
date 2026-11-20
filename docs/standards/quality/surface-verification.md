@@ -152,11 +152,10 @@ Meanwhile the one real routing defect the repo has recorded — a `/quenching-co
 measured as a miss — was found by `/quenching-components command-eval`, and check 3 gained a probe for it only afterwards.
 
 **That measurement is scoped to `functional-checks.sh` alone.** It does not extend to
-`citation-check.sh` or the conclude-order check by proximity — no equivalent record exists for
-either, and the defect class that earned the rule (a cp1252 read, a hardcoded marketplace ref, a
+`citation-check.sh` by proximity — no equivalent record exists for
+it, and the defect class that earned the rule (a cp1252 read, a hardcoded marketplace ref, a
 turn cap, a probe flaky across identical runs) has no counterpart in a tool with no LLM in its
-loop: both are deterministic and cheap to run (`citation-check.sh` ~0.26s, `conclude-order-check.sh`
-~1.0s, against this harness's full, non-deterministic `claude -p` sessions). That is reason to find
+loop: it is deterministic and cheap to run (`citation-check.sh` ~0.26s, against this harness's full, non-deterministic `claude -p` sessions). That is reason to find
 the rule plausible there too, never reason to assert what nobody has measured —
 [citation-verification.md](citation-verification.md) records the opportunistic route chosen
 instead: no dedicated measurement campaign, a red run's cause recorded when one actually happens.
@@ -232,10 +231,13 @@ with the preconditions reproduced, or expect residue and clean it up in the same
 
 Some claims are about **when** something happens, not about what any one file says. *"Nothing is
 written to the base branch after the merge"* is true or false of a run; no linter, and no reading of
-`conclude.md`, can observe it. `assets/checks/conclude-order-check.sh` is the pattern: a throwaway
-`git init` repo where a spec is created, a task executed and the spec concluded end to end, then
-assertions on **real git state** — `HEAD` on the base *is* the merge commit, the task's commit lists
-both the code file and the ticked spec file, each recorded subject resolves to exactly one commit.
+`conclude.md`, can observe it. The executable end-to-end check that once proved conclude's order no longer exists; today
+`quenching/tests/test_specs_conclude_flow_sweep.py` and `test_specs_conclude_retire_worktree.py`
+lock that order as **text tests** on `conclude.md`, which pin the wording, not a run. The pattern for an
+executable proof is a throwaway `git init` repo where a spec is created, a task executed and the
+spec concluded end to end, then assertions on **real git state** — `HEAD` on the base *is* the merge
+commit, the task's commit lists both the code file and the ticked spec file, each recorded subject
+resolves to exactly one commit. No such check is claimed for conclude's current order.
 
 It shares this standard's two rules — a separate process, and assertions on artifacts rather than
 prose — and adds a third worth naming: **assert on what git can be asked, not on what the run
