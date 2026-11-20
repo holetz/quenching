@@ -68,6 +68,15 @@
       "site",
       "site-source"
     ],
-    "ratchetPath": ".coverage-floor.json"
+    "ratchetPath": ".coverage-floor.json",
+    "cost": {
+      "tempRoot": "isolated",
+      "workers": "auto",
+      "scopes": {
+        "task": "python3 -m scripts.toolchain.test --affected",
+        "close": "QUENCHING_TEST_SCOPE=affected bash scripts/verify_repo.sh",
+        "ci": "bash scripts/verify_repo.sh"
+      }
+    }
   }
 }

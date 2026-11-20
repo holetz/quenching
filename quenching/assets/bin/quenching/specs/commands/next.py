@@ -20,6 +20,7 @@ from quenching.specs.backends import open_backend
 from quenching.specs.backends.base import SpecBackend
 from quenching.specs.commands.epic import cmd_next_epic, pr_states
 from quenching.specs.commands.output import Emitter, display_locator, front_fields, read_one
+from quenching.specs.commands import promote
 from quenching.specs.members import read_members
 from quenching.specs.parse import derive_info, spec_handle
 from quenching.specs.parse.derive import derive_stage
@@ -182,6 +183,7 @@ def _candidate(backend: SpecBackend, s: dict, schema: dict, heads: set[str],
                  info["date"], str(s["id"])),
         "_why": pwhy,
         "_executing": executing,
+        "_info": info,
     }
 
 
@@ -323,8 +325,15 @@ def _next_front(args, root: str, out: Emitter) -> int:
              for s in backend.list_specs("plans")]
     cands.sort(key=_order_key(getattr(args, "order", "rank")))
     ranked = []
+    merged_not_archived = []
     for c in cands:
         c = dict(c)
+        info = c.pop("_info")
+        if promote.isolated(info):
+            merged, reason = promote.merge_evidence(info, root, fetch=False, ask_pr=False)
+            if merged:
+                merged_not_archived.append({"id": c["id"], "title": c["title"],
+                                            "reason": reason})
         c["reason"] = _rank_reason(c)
         for k in ("_key", "_why", "_executing"):
             c.pop(k)
@@ -342,6 +351,7 @@ def _next_front(args, root: str, out: Emitter) -> int:
     obj = {"ok": True, **front_fields(root), "count": len(ranked),
            "top": ranked[0]["id"] if ranked else None,
            "needsTriage": needs_triage,
+           "mergedNotArchived": merged_not_archived,
            "candidates": ranked}
     if args.json:
         print(json.dumps(obj, indent=2, ensure_ascii=False))
@@ -359,6 +369,9 @@ def _next_front(args, root: str, out: Emitter) -> int:
     if needs_triage:
         print("\n  nothing is in flight and nothing carries a priority record — this order "
               "is age alone.\n  `cq specs`-driven triage would give it something to stand on.")
+    if merged_not_archived:
+        print(f"\n  {len(merged_not_archived)} merged but not archived — run "
+              "`cq specs reconcile --write`")
     return 0
 
 
@@ -479,8 +492,9 @@ def cmd_next(args, root: str, out: Emitter) -> int:
                     f"\n  [{i['status']}] {i['label']} spec {i['spec']}" for i in remaining))
                 return 0
             obj = {"ok": True, "action": "promote", "to": "archive", **base,
-                   "message": "every task and every member is done — write ## Outcome, then "
-                              f"`cq specs promote {info['id']} --to archive`"}
+                   "message": "every task and every member is done — write ## Outcome and "
+                              "open the PR; after the merge, `cq specs reconcile --write` "
+                              "archives it"}
             out.emit(args.json, obj, obj["message"])
             return 0
         waiting = [t for t in info["tasks"]
@@ -496,8 +510,8 @@ def cmd_next(args, root: str, out: Emitter) -> int:
                 + "".join(f"\n  [!] {b['text']}" for b in base["blocked"]))
             return 0
         obj = {"ok": True, "action": "promote", "to": "archive", **base,
-               "message": f"all tasks complete — write ## Outcome, then "
-                          f"`cq specs promote {info['id']} --to archive`"}
+               "message": "all tasks complete — write ## Outcome and open the PR; after "
+                          "the merge, `cq specs reconcile --write` archives it"}
         out.emit(args.json, obj, obj["message"])
         return 0
 

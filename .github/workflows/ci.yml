@@ -65,6 +65,12 @@ jobs:
         run: python -m unittest discover -s quenching/tests -p test_session_live.py
       - name: Junction fallback
         run: python -m unittest discover -s quenching/tests -p test_windows_links.py
+      # The temp root, the affected-test selector, the runner and the slot budget are the
+      # repository tooling the suite depends on; the paths and locks they take are platform
+      # decisions, so Windows is where they are cheapest to break. The two cases that need pytest
+      # in the interpreter skip themselves in this job, which installs no packages.
+      - name: Toolchain helpers (temp root, affected tests, slots)
+        run: python -m unittest discover -s quenching/tests -p 'test_toolchain_*.py'
 
   lint:
     name: Ruff

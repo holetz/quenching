@@ -22,6 +22,7 @@ from quenching.common.version import VERSION
 from quenching.specs.backends.base import BackendRefusal
 from quenching.specs.parse.fields import UnclosedFence
 from quenching.specs.commands.artifacts import cmd_artifact
+from quenching.specs.commands.handoff import add_parser as add_handoff_parser, cmd_handoff
 from quenching.specs.commands.create import cmd_new
 from quenching.specs.commands.deps import cmd_depends, cmd_schedule
 from quenching.specs.commands.doctor import cmd_config, cmd_doctor
@@ -35,6 +36,7 @@ from quenching.specs.commands.next import cmd_next
 from quenching.specs.commands.output import Emitter
 from quenching.specs.commands.parallel import cmd_parallel
 from quenching.specs.commands.promote import cmd_promote
+from quenching.specs.commands.reconcile import cmd_reconcile
 from quenching.specs.commands.push import cmd_push
 from quenching.specs.commands.read import cmd_export, cmd_list, cmd_status
 from quenching.specs.commands.release import cmd_release
@@ -195,6 +197,10 @@ def _add_record_promote_task(sub) -> None:
                     help="archive as done despite open tasks")
     sp.add_argument("--dry-run", action="store_true", dest="dry_run")
 
+    sp = add_json(sub.add_parser("reconcile", help="close every merged spec: archive it after the merge"))
+    sp.add_argument("--write", action="store_true")
+    sp.add_argument("--remote", default="origin")
+
     sp = add_json(sub.add_parser("task", help="check, reopen or block a checkbox"))
     sp.add_argument("--spec", required=True)
     sp.add_argument("--check")
@@ -265,7 +271,7 @@ def _add_inspection(sub) -> None:
     sp = add_json(sub.add_parser("estimate", help="estimated declared build reading by task section"))
     add_spec(sp, True)
     sp.add_argument("--worker-budget", type=int, default=None,
-                    help="positive size estimate in tokens (default: shared.contextBudgets.worker, else 100000); not a stop limit and not a model limit")
+                    help="positive size estimate in tokens (default: shared.contextBudgets.worker, else 200000); not a stop limit and not a model limit")
     sp.add_argument("--task", help="project ONE task's executor context and judge the small-tier "
                                    "conditions (ADR 0014) instead of the section reading")
 
@@ -307,6 +313,8 @@ def _add_inspection(sub) -> None:
     pad = add_json(asub.add_parser("rm", help="remove one artifact"))
     pad.add_argument("--spec")
     pad.add_argument("--name", required=True)
+
+    add_handoff_parser(sub, add_json)
 
     sp = add_json(sub.add_parser("discover", help="append a line to ## Discoveries"))
     sp.add_argument("spec")
@@ -401,6 +409,10 @@ def build_parser() -> tuple[argparse.ArgumentParser, argparse._SubParsersAction]
 
     sp = add_json(sub.add_parser("schedule", help="derive dates and the critical path"))
     add_spec(sp, False)
+    sp.add_argument("--all", action="store_true",
+                    help="schedule every spec in the store, archived and edge-less included "
+                         "(the default selects the open specs that declare an edge plus their "
+                         "transitive dependencies); refuses with --spec")
 
     _add_new(sub)
     _add_read(sub)
@@ -435,6 +447,7 @@ DISPATCH: dict = {
     "target": cmd_field,
     "record": cmd_record,
     "promote": cmd_promote,
+    "reconcile": cmd_reconcile,
     "task": cmd_task,
     "next": cmd_next,
     "parallel": cmd_parallel,
@@ -442,6 +455,7 @@ DISPATCH: dict = {
     "discover": cmd_discover,
     "push": cmd_push,
     "artifact": cmd_artifact,
+    "handoff": cmd_handoff,
     "epic": cmd_epic,
     "link": cmd_epic,
     "validate": cmd_validate,

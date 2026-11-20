@@ -638,6 +638,14 @@ class Audit(RepoCase):
         self.assertEqual([(e["severity"], e["kind"], e["detail"]) for e in got],
                          [("fail", "gate-shrunk", ["run two"])])
 
+    def test_lowered_watches_a_toolchain_helper_the_gate_calls(self):
+        self._commit_file("scripts/toolchain/helper.py", "one\ntwo\n", "helper")
+        _run(self.repo, "merge", "-q", "--ff-only", "spec/1")
+        self._commit_file("scripts/toolchain/helper.py", "one\n", "shrink")
+        got = self._lowered()
+        self.assertEqual([(e["severity"], e["kind"], e["detail"]) for e in got],
+                         [("fail", "gate-shrunk", ["two"])])
+
     def test_lowered_only_warns_for_added_suppressions(self):
         self._commit_file("tests/test_c.py", "import unittest\n\n@unittest.skip('x')\n"
                           "def test_c():\n    assert 1  # noqa\n", "skip")

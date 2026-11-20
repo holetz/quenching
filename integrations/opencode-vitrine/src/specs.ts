@@ -1,6 +1,8 @@
 import { spawn, type ChildProcess } from "node:child_process"
 import { createInterface } from "node:readline"
-import { cqBinary, cqJson, forgetBinaries, git, mainRoot, singleFlight, spawnArgs, type Launch } from "./cq.js"
+import {
+  cqBinary, cqJson, cqJsonPartial, forgetBinaries, git, mainRoot, singleFlight, spawnArgs, type Launch,
+} from "./cq.js"
 
 /** Uma linha de `cq specs list`, normalizada para a GUI. */
 export type SpecRow = {
@@ -14,6 +16,7 @@ export type SpecRow = {
   total: number
   work: string
   run: string
+  workItemType: string
 }
 
 /** O que a sessão fez com uma spec. `worktree` é o checkout em que ela está; `command` é escrita. */
@@ -25,6 +28,45 @@ const RANK: Record<Kind, number> = { mention: 0, read: 1, command: 2, commit: 3,
 export type TouchRow = SpecRow & { kind: Kind; at: number }
 
 export type Section = { heading: string; body: string }
+
+/** Uma spec vizinha no grafo de dependências, como o `schedule` a descreve. */
+export type Neighbor = {
+  id: number
+  title: string
+  phase: string
+  critical: boolean
+  slip: number
+  start: string
+  target: string
+}
+
+/** Quem está acima (o que ela espera), abaixo (quem espera por ela) e o ciclo que trava tudo. */
+export type Dependencies = { up: Neighbor[]; down: Neighbor[]; cycle: string[] }
+
+/** Uma spec que compõe um épico, como o documento do épico a declara. */
+export type Member = {
+  label: string
+  spec: number
+  title: string
+  group: number
+  status: string
+  stage: string
+  after: string[]
+  waitingOn: string[]
+}
+
+/**
+ * A composição de um épico: quanto dele já saiu, os grupos declarados e os membros na ordem em que
+ * o documento os lista. É o que o épico é feito, não o que ele espera — a aresta `dependsOn` é outra.
+ */
+export type Composition = {
+  progress: { done: number; total: number; blocked: number; ready: number }
+  groups: { group: number; title: string; done: number; blocked: number; total: number }[]
+  items: Member[]
+}
+
+/** Onde uma spec é membro: o composite que a nomeia, o título dele e o rótulo que ele lhe deu. */
+export type Composite = { epic: number; title: string; label: string; group: number }
 
 export type Detail = {
   id: number
@@ -52,6 +94,10 @@ export type Detail = {
   work: string
   sections: Section[]
   tasks: { id: string; state: string; text: string; blocked: boolean }[]
+  workItemType: string
+  deps: Dependencies
+  composition?: Composition
+  epics: Composite[]
 }
 
 export type TaskInfo = { text: string; files: string; verify: string; subject: string }
@@ -70,6 +116,7 @@ function normalizeRow(row: any): SpecRow {
     total: Number(row?.tasks?.total ?? 0),
     work: String(row?.records?.branch?.work ?? ""),
     run: String(row?.records?.run?.state ?? ""),
+    workItemType: String(row?.workItemType ?? ""),
   }
 }
 
@@ -135,6 +182,7 @@ export function forget(): void {
   details.clear()
   catalogues.clear()
   snapshots.clear()
+  graphs.clear()
   homes.clear()
   offRows.clear()
   forgetBinaries()
@@ -206,6 +254,144 @@ export function priorityOf(record: any): { label: string; hint: string } {
   return { label: "", hint: "" }
 }
 
+type ScheduleNode = {
+  id?: string
+  title?: string
+  phase?: string
+  dependsOn?: string[]
+  critical?: boolean
+  slipDays?: number
+  start?: string | null
+  target?: string | null
+}
+
+type CompositeRef = { epic?: string; label?: string; group?: number }
+
+type Schedule = {
+  nodes?: ScheduleNode[]
+  cycle?: string[]
+  composites?: Record<string, CompositeRef[]>
+}
+
+type Graph = {
+  at: number
+  nodes: Map<string, ScheduleNode>
+  cycle: string[]
+  composites: Map<string, CompositeRef[]>
+}
+
+const graphs = new Map<string, Graph>()
+const graphing = singleFlight<Graph>()
+
+/**
+ * O grafo de dependências inteiro numa leitura só. `--all` inclui as specs sem aresta e as
+ * arquivadas: quem está ABAIXO de uma spec é o nó que a nomeia, e um dependente arquivado fica
+ * fora da seleção padrão do `schedule`. Um `cq` anterior ao `--all` recusa o pedido; aí vale o
+ * grafo aberto, menor, e o painel mostra o que ele tem em vez de mentir que não há aresta.
+ * Um ciclo sai do `cq` com exit 1 e ainda assim traz o payload: é ele que o painel precisa.
+ */
+async function dependencyGraph(cwd: string): Promise<Graph> {
+  const root = (await mainRoot(cwd)) ?? cwd
+  const hit = graphs.get(root)
+  if (hit && Date.now() - hit.at < TTL) return hit
+  return graphing(root, async () => {
+    const payload = await cqJsonPartial<Schedule>(cwd, ["specs", "schedule", "--all"])
+      ?? await cqJson<Schedule>(cwd, ["specs", "schedule"])
+    const nodes = new Map<string, ScheduleNode>()
+    for (const node of payload?.nodes ?? []) {
+      if (node?.id !== undefined) nodes.set(String(node.id), node)
+    }
+    const composites = new Map<string, CompositeRef[]>()
+    for (const [member, list] of Object.entries(payload?.composites ?? {})) {
+      if (Array.isArray(list)) composites.set(String(member), list)
+    }
+    const value: Graph = { at: Date.now(), nodes, cycle: (payload?.cycle ?? []).map(String), composites }
+    // Uma falha do `cq` não pode apagar o grafo que já se sabia.
+    if (payload || !hit) graphs.set(root, value)
+    return payload ? value : (hit ?? value)
+  })
+}
+
+function neighborOf(node: ScheduleNode): Neighbor {
+  return {
+    id: Number(node.id ?? 0),
+    title: String(node.title ?? ""),
+    phase: String(node.phase ?? ""),
+    critical: Boolean(node.critical),
+    slip: Number(node.slipDays ?? 0),
+    start: String(node.start ?? ""),
+    target: String(node.target ?? ""),
+  }
+}
+
+/**
+ * Os composites que nomeiam `id`, com o título vindo do grafo e o rótulo que o composite deu ao
+ * membro. Um id que o grafo não conhece é descartado: uma referência quebrada é achado do
+ * `validate`, não uma linha que aponta para lugar nenhum.
+ */
+function membershipOf(graph: Graph, id: number): Composite[] {
+  return (graph.composites.get(String(id)) ?? [])
+    .map((ref) => {
+      const node = graph.nodes.get(String(ref.epic ?? ""))
+      return {
+        epic: Number(ref.epic ?? 0),
+        title: String(node?.title ?? ""),
+        label: String(ref.label ?? ""),
+        group: Number(ref.group ?? 0),
+      }
+    })
+    .filter((ref) => ref.epic > 0)
+}
+
+/** As arestas que tocam `id`, nas duas direções: as declaradas por ela e as que a nomeiam. */
+function neighbors(graph: Graph, id: number): Dependencies {
+  const key = String(id)
+  const up = (graph.nodes.get(key)?.dependsOn ?? [])
+    .map((dep) => graph.nodes.get(dep))
+    .filter((node): node is ScheduleNode => Boolean(node))
+    .map(neighborOf)
+  const down = [...graph.nodes.values()]
+    .filter((node) => String(node.id) !== key && (node.dependsOn ?? []).includes(key))
+    .map(neighborOf)
+    .sort((a, b) => a.id - b.id)
+  return { up, down, cycle: graph.cycle }
+}
+
+/**
+ * A composição que o `status` já entrega para um épico. Uma spec que não é épico não traz a chave,
+ * e aí `undefined` é a resposta certa — não é uma composição vazia, é a ausência de composição.
+ */
+function compositionOf(raw: any): Composition | undefined {
+  if (!raw || !Array.isArray(raw.items)) return undefined
+  const count = (value: unknown) => Number(value ?? 0)
+  const labels = (value: unknown) => (Array.isArray(value) ? value.map(String) : [])
+  return {
+    progress: {
+      done: count(raw.progress?.done),
+      total: count(raw.progress?.total),
+      blocked: count(raw.progress?.blocked),
+      ready: count(raw.progress?.ready),
+    },
+    groups: (raw.groups ?? []).map((group: any) => ({
+      group: count(group?.group),
+      title: String(group?.title ?? ""),
+      done: count(group?.done),
+      blocked: count(group?.blocked),
+      total: count(group?.total),
+    })),
+    items: raw.items.map((item: any) => ({
+      label: String(item?.label ?? ""),
+      spec: Number(item?.spec ?? 0),
+      title: String(item?.title ?? ""),
+      group: count(item?.group),
+      status: String(item?.status ?? ""),
+      stage: String(item?.stage ?? ""),
+      after: labels(item?.after),
+      waitingOn: labels(item?.waitingOn),
+    })),
+  }
+}
+
 export async function detail(cwd: string, id: number): Promise<Detail> {
   const root = (await mainRoot(cwd)) ?? cwd
   const key = `${root}:${id}`
@@ -215,10 +401,11 @@ export async function detail(cwd: string, id: number): Promise<Detail> {
 }
 
 async function readDetail(cwd: string, id: number, key: string): Promise<Detail> {
-  const [status, show, full] = await Promise.all([
+  const [status, show, full, graph] = await Promise.all([
     cqJson<any>(cwd, ["specs", "status", "--spec", String(id)]),
     cqJson<any>(cwd, ["specs", "show", "--spec", String(id)]),
     cqJson<any>(cwd, ["specs", "show", "--spec", String(id), "--full"]),
+    dependencyGraph(cwd),
   ])
   const blocked = new Set<string>(
     (status?.tasks?.blockedTasks ?? []).map((task: any) => String(task?.id ?? task?.task ?? "")),
@@ -228,6 +415,7 @@ async function readDetail(cwd: string, id: number, key: string): Promise<Detail>
     : (show?.sections ?? []).map((section: any) => ({ heading: String(section?.heading ?? ""), body: "" }))
   const fm = full?.document ? frontmatter(String(full.document)) : {}
   const priority = priorityOf(status?.records?.priority)
+  const composition = compositionOf(status?.composition)
   const blockedTask = (status?.tasks?.blockedTasks ?? [])[0] as any
   const blockedText = String(blockedTask?.text ?? "")
   const reason = blockedText.split(/—\s*blocked:\s*/i)[1] ?? blockedText
@@ -262,6 +450,10 @@ async function readDetail(cwd: string, id: number, key: string): Promise<Detail>
       text: String(task?.text ?? ""),
       blocked: blocked.has(String(task?.id ?? "")),
     })),
+    workItemType: fm.workItemType ? fm.workItemType.replace(/^["']|["']$/g, "") : "",
+    deps: neighbors(graph, id),
+    epics: membershipOf(graph, id),
+    ...(composition ? { composition } : {}),
   }
   details.set(key, { at: Date.now(), value })
   return value
@@ -514,6 +706,7 @@ function rowOf(spec: Detail): SpecRow {
     total: spec.total,
     work: spec.work,
     run: spec.run,
+    workItemType: spec.workItemType,
   }
 }
 

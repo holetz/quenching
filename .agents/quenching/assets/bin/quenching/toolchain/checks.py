@@ -70,37 +70,57 @@ def _version(value: object) -> str | None:
     return match.group(0) if match else None
 
 
-def _runtime(inventory: ToolchainInventory) -> dict[str, list[tuple[str, str]]]:
-    values: dict[str, list[tuple[str, str]]] = {}
+def _declared(value: object) -> tuple[str, str] | None:
+    """A manifest value as `(version, kind)`: led by `>=` or `>` it is a floor the project
+    accepts; anything else is the exact version it names, as before."""
+    version = _version(value)
+    if version is None:
+        return None
+    return version, "floor" if str(value).lstrip().startswith(">") else "exact"
+
+
+def _key(version: str) -> tuple[int, ...]:
+    return tuple(int(part) for part in version.split("."))
+
+
+def _runtime(inventory: ToolchainInventory) -> dict[str, list[tuple[str, str, str]]]:
+    values: dict[str, list[tuple[str, str, str]]] = {}
     for artifact in inventory.manifests:
         details = artifact.details
         if artifact.kind in {"pyproject", "setup-cfg"}:
-            value = _version(details.get("requiresPython"))
-            if value:
-                values.setdefault("python", []).append((artifact.path, value))
+            group, raw = "python", details.get("requiresPython")
         elif artifact.kind == "package-json":
-            value = _version(details.get("engines", {}).get("node"))
-            if value:
-                values.setdefault("node", []).append((artifact.path, value))
+            group, raw = "node", details.get("engines", {}).get("node")
         elif artifact.kind == "cargo-toml":
-            value = _version(details.get("rustVersion"))
-            if value:
-                values.setdefault("rust", []).append((artifact.path, value))
+            group, raw = "rust", details.get("rustVersion")
+        else:
+            continue
+        declared = _declared(raw)
+        if declared:
+            values.setdefault(group, []).append((artifact.path, *declared))
     for pin in inventory.language_pins:
         group = "python" if pin.path == ".python-version" else "node"
         value = _version(pin.details.get("value"))
         if value:
-            values.setdefault(group, []).append((pin.path, value))
+            values.setdefault(group, []).append((pin.path, value, "exact"))
     return values
+
+
+def _disagree(declarations: list[tuple[str, str, str]]) -> bool:
+    exact = {value for _, value, kind in declarations if kind == "exact"}
+    floors = {value for _, value, kind in declarations if kind == "floor"}
+    if len(exact) > 1 or len(floors) > 1:
+        return True
+    return bool(exact and floors) and _key(next(iter(exact))) < _key(next(iter(floors)))
 
 
 def check_runtime_drift(inventory: ToolchainInventory) -> list[Finding]:
     findings = []
     for declarations in _runtime(inventory).values():
-        versions = {value for _, value in declarations}
-        if len(versions) > 1:
+        if _disagree(declarations):
             path = declarations[-1][0]
-            rendered = ", ".join(f"{source}={value}" for source, value in declarations)
+            rendered = ", ".join(f"{source}={'>=' if kind == 'floor' else ''}{value}"
+                                 for source, value, kind in declarations)
             findings.append(_finding("tc-runtime-drift", f"runtime declarations disagree: {rendered}", path))
     return findings
 

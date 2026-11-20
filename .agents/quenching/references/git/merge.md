@@ -102,4 +102,6 @@ clean tree leaves the disk silently; a refusal is reported with the path and git
 the worktree stays.
 
 Three bounds: only after a merge verified at exit 0, never for an abandoned spec, and it does
-**not** delete the branch — that stays the separate offer it already was.
+**not** delete the branch — that stays the separate offer it already was. A worktree **slot** is
+never removed: `cq specs reconcile --write` releases it (detached at the remote base, unlocked, its
+caches kept) — see [isolation.md](isolation.md) §Worktrees are slots.

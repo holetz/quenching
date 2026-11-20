@@ -20,8 +20,9 @@ const row = {
     total: { type: "number" },
     work: { type: "string" },
     run: { type: "string" },
+    workItemType: { type: "string" },
   },
-  required: ["id", "title", "stage", "phase", "date", "checked", "blocked", "total", "work", "run"],
+  required: ["id", "title", "stage", "phase", "date", "checked", "blocked", "total", "work", "run", "workItemType"],
   additionalProperties: false,
 } as const
 
@@ -48,6 +49,95 @@ const task = {
     blocked: { type: "boolean" },
   },
   required: ["id", "state", "text", "blocked"],
+  additionalProperties: false,
+} as const
+
+const neighbor = {
+  type: "object",
+  properties: {
+    id: { type: "number" },
+    title: { type: "string" },
+    phase: { type: "string" },
+    critical: { type: "boolean" },
+    slip: { type: "number" },
+    start: { type: "string" },
+    target: { type: "string" },
+  },
+  required: ["id", "title", "phase", "critical", "slip", "start", "target"],
+  additionalProperties: false,
+} as const
+
+const dependencies = {
+  type: "object",
+  properties: {
+    up: { type: "array", items: neighbor },
+    down: { type: "array", items: neighbor },
+    cycle: { type: "array", items: { type: "string" } },
+  },
+  required: ["up", "down", "cycle"],
+  additionalProperties: false,
+} as const
+
+const member = {
+  type: "object",
+  properties: {
+    label: { type: "string" },
+    spec: { type: "number" },
+    title: { type: "string" },
+    group: { type: "number" },
+    status: { type: "string" },
+    stage: { type: "string" },
+    after: { type: "array", items: { type: "string" } },
+    waitingOn: { type: "array", items: { type: "string" } },
+  },
+  required: ["label", "spec", "title", "group", "status", "stage", "after", "waitingOn"],
+  additionalProperties: false,
+} as const
+
+const composition = {
+  type: "object",
+  properties: {
+    progress: {
+      type: "object",
+      properties: {
+        done: { type: "number" },
+        total: { type: "number" },
+        blocked: { type: "number" },
+        ready: { type: "number" },
+      },
+      required: ["done", "total", "blocked", "ready"],
+      additionalProperties: false,
+    },
+    groups: {
+      type: "array",
+      items: {
+        type: "object",
+        properties: {
+          group: { type: "number" },
+          title: { type: "string" },
+          done: { type: "number" },
+          blocked: { type: "number" },
+          total: { type: "number" },
+        },
+        required: ["group", "title", "done", "blocked", "total"],
+        additionalProperties: false,
+      },
+    },
+    items: { type: "array", items: member },
+  },
+  required: ["progress", "groups", "items"],
+  additionalProperties: false,
+} as const
+
+const composite = {
+  type: "object",
+  properties: {
+    epic: { type: "number" },
+    title: { type: "string" },
+    label: { type: "string" },
+    group: { type: "number" },
+  },
+  required: ["epic", "title", "label", "group"],
   additionalProperties: false,
 } as const
 
@@ -79,11 +169,16 @@ const detail = {
     work: { type: "string" },
     sections: { type: "array", items: section },
     tasks: { type: "array", items: task },
+    workItemType: { type: "string" },
+    deps: dependencies,
+    composition,
+    epics: { type: "array", items: composite },
   },
   required: [
     "id", "title", "stage", "phase", "date", "priority", "priorityHint", "complexity",
     "subject", "assignee", "tags", "ready", "missing", "checked", "blocked", "blockedTask",
     "blockedReason", "total", "run", "verifier", "pr", "prUrl", "work", "sections", "tasks",
+    "workItemType", "deps", "epics",
   ],
   additionalProperties: false,
 } as const
@@ -134,6 +229,20 @@ const quenchingUpdate = {
   additionalProperties: false,
 } as const
 
+const configRead = {
+  type: "object",
+  properties: { ok: { type: "boolean" }, json: { type: "string" }, error: { type: "string" } },
+  required: ["ok", "json", "error"],
+  additionalProperties: false,
+} as const
+
+const configWrite = {
+  type: "object",
+  properties: { ok: { type: "boolean" }, message: { type: "string" } },
+  required: ["ok", "message"],
+  additionalProperties: false,
+} as const
+
 const changed = {
   type: "object",
   properties: { sessionID: { type: "string" } },
@@ -153,8 +262,35 @@ export type Row = {
   total: number
   work: string
   run: string
+  workItemType: string
 }
 export type Touch = Row & { kind: string; at: number }
+export type Neighbor = {
+  id: number
+  title: string
+  phase: string
+  critical: boolean
+  slip: number
+  start: string
+  target: string
+}
+export type Dependencies = { up: Neighbor[]; down: Neighbor[]; cycle: string[] }
+export type Member = {
+  label: string
+  spec: number
+  title: string
+  group: number
+  status: string
+  stage: string
+  after: string[]
+  waitingOn: string[]
+}
+export type Composition = {
+  progress: { done: number; total: number; blocked: number; ready: number }
+  groups: { group: number; title: string; done: number; blocked: number; total: number }[]
+  items: Member[]
+}
+export type Composite = { epic: number; title: string; label: string; group: number }
 export type Detail = {
   id: number
   title: string
@@ -181,6 +317,10 @@ export type Detail = {
   work: string
   sections: { heading: string; body: string }[]
   tasks: { id: string; state: string; text: string; blocked: boolean }[]
+  workItemType: string
+  deps: Dependencies
+  composition?: Composition
+  epics: Composite[]
 }
 export type TaskInfo = { text: string; files: string; verify: string; subject: string }
 export type Quenching = {
@@ -193,6 +333,29 @@ export type Quenching = {
   error: string
 }
 export type QuenchingUpdate = { ok: boolean; version: string; available: string; output: string }
+export type ConfigRead = { ok: boolean; json: string; error: string }
+export type ConfigWrite = { ok: boolean; message: string }
+export type ConfigLayer = "project" | "local"
+/** Uma chave do registro, como `cq config schema --json` a imprime. */
+export type ConfigKey = {
+  key: string
+  type: "string" | "integer" | "number" | "boolean" | "enum" | "paths" | "strings" | "prose" | "object"
+  default: unknown
+  category: string
+  scope: "project" | "machine" | "either"
+  reader: string
+  editable: boolean
+  choices?: string[]
+  minimum?: number
+  maximum?: number
+  copy: Record<"en" | "pt-BR", { title: string; summary: string }>
+}
+export type ConfigSchema = {
+  categories: { id: string; title: Record<"en" | "pt-BR", string> }[]
+  keys: ConfigKey[]
+  values: Record<string, { value: unknown; source: string }>
+  layerPaths: Record<ConfigLayer, string>
+}
 
 const empty = { type: "object", properties: {}, additionalProperties: false } as const
 
@@ -258,6 +421,30 @@ export const Vitrine = Rpc.define({
         additionalProperties: false,
       },
       output: quenchingHealth,
+    },
+    config: {
+      input: {
+        type: "object",
+        properties: { directory: { type: "string" } },
+        required: ["directory"],
+        additionalProperties: false,
+      },
+      output: configRead,
+    },
+    configWrite: {
+      input: {
+        type: "object",
+        properties: {
+          directory: { type: "string" },
+          key: { type: "string" },
+          layer: { type: "string", enum: ["project", "local"] },
+          value: { type: "string" },
+          unset: { type: "boolean" },
+        },
+        required: ["directory", "key", "layer", "value", "unset"],
+        additionalProperties: false,
+      },
+      output: configWrite,
     },
     upgrade: {
       input: {

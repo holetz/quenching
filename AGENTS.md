@@ -19,6 +19,14 @@ The gate is zero errors. Surface-load checks live at
 store is the git branch `quenching` (`cq specs config` prints `backend: git`), so there is no local
 `/.specs/` workspace and the GitHub issues are a pre-migration copy `cq` does not read.
 
+Three tiers, one gate — pick the narrowest that answers the question:
+
+- building a task: `python3 -m scripts.toolchain.test --affected` runs the diff's tests and defers
+  the `integration` layer;
+- closing a spec: `QUENCHING_TEST_SCOPE=affected bash scripts/verify_repo.sh` runs the whole gate on
+  that selection, the coverage floor reporting `SKIPPED`, and the merge waits for green CI;
+- CI and `/release`: the full gate, floor enforced; `QUENCHING_FULL_GATE=1` forces it locally.
+
 This repository runs its own deployed surface: `.agents/quenching/`, `.agents/skills/`, the Claude
 bridge and the OpenCode subagents are generated from `quenching/`. After changing a command
 body, a reference or the shipped payload, refresh it with

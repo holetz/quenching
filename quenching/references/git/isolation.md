@@ -114,11 +114,35 @@ record.
 the repository's base — whatever it is named — that branch is **adopted** as `work` outright: no
 rename, no refusal, and no requirement that it match `plan/<id>-<handle>`.
 
-A worktree goes beside the repo, never inside it:
+A worktree goes beside the repo, never inside it, and it is a **slot**:
 
 ```bash
-git worktree add ../<repo>-<handle> -b plan/<id>-<handle>
+.agents/quenching/bin/cq git worktree acquire --branch plan/<id>-<handle> --base <base> --spec <id>
 ```
+
+### Worktrees are slots
+
+<!-- rules -->
+
+A slot is a registered worktree at `../<repo>-slot-<n>` that outlives its spec. `acquire` locks one
+and switches it to the spec's branch; `.agents/quenching/bin/cq specs reconcile --write` releases it
+after the merge — detached at the remote base, unlocked, `.venv` and every regenerable cache kept.
+`.agents/quenching/bin/cq git worktree slots` lists who holds each.
+
+- `shared.worktreeSlots.max` (default 12) is a **ceiling**: at it, `acquire` refuses, or with
+  `--wait` waits, and a timed-out wait is reported to the human. No worktree is cut past it.
+- `shared.worktreeSlots.min` (default 4) is a **floor**: `/quenching-git cleanup` never offers
+  the lowest-numbered free slots up to it (`slot-floor`); free slots above it are candidates.
+- A slot is released only clean: a dirty tree, or ignored content no `shared.regenerablePaths`
+  entry covers, keeps it held — nothing of one spec leaks into the next, and nothing is committed or
+  discarded to free it.
+- Only slots count. A worktree under any other name — cut before slots, or by the harness — is
+  listed and never counted, never taken; a merged one is removed with `retire`.
+
+<!-- rationale -->
+
+A fresh worktree costs a scan of every file an on-access antivirus sees — tens of thousands with a
+venv — and a reinstall; a branch switch inside a warm slot rewrites only what differs.
 
 ### The worktree is the form
 

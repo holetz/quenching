@@ -18,7 +18,11 @@ The report contains local `staleBranches` (removable), `keptBranches` (staying, 
 size. Each assessed worktree and its `manifest` entry carries
 `ignored: {regenerable: [...], unrecognized: [...]}`. An otherwise eligible worktree with only
 regenerable ignored content is `candidate` and `recommended: true`; unrecognized ignored content
-makes it `preserved`, with blocker `ignored-content-unrecognized` and the exact paths listed.
+makes it `preserved`, with blocker `ignored-content-unrecognized` and the exact paths listed. A
+worktree slot (`../<repo>-slot-<n>`) carries its `slot` number: a held slot is `locked`, and the
+lowest-numbered free slots up to `shared.worktreeSlots.min` are `preserved` with blocker
+`slot-floor` — warm on purpose. Only a free slot above the floor is a `candidate`
+(`slot-above-floor`).
 `manifest` empty → say so and stop; there is nothing to prune. The `manifest` is the complete list, so a candidate that sits in no legacy list (a detached worktree) still keeps the run going. Do not fetch or run `git
 remote prune` here: if the caller needs newer remote facts, it must fetch explicitly and start a
 fresh cleanup run. The report's `remote` must equal the selected remote. **Done when:** the manifest and the selected remote are in hand.

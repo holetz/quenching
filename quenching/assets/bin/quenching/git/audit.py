@@ -719,7 +719,7 @@ def _grants(cwd: str, base: str, tip: str, changed: list[str], env: dict[str, st
 TEST_PATH = re.compile(r"(^|/)(tests?|__tests__)/|(^|/)test_[^/]*$|_test\.[^/]+$|\.(test|spec)\.[^/]+$")
 TEST_NAME = re.compile(r"(^|/)test_[^/]*$|_test\.[^/]+$|\.(test|spec)\.[^/]+$")
 ASSERT = re.compile(r"\bassert\w*\b|\bexpect\s*\(")
-GATE_PATH = re.compile(r"^scripts/verify_repo\.sh$|^quenching/assets/checks/")
+GATE_PATH = re.compile(r"^scripts/verify_repo\.sh$|^scripts/toolchain/|^quenching/assets/checks/")
 CODE_EXT = re.compile(r"\.(py|sh|js|jsx|ts|tsx|rb|go|rs|java|kt|cs)$")
 TEST_DIRECT = re.compile(r"(^|/)(tests?|__tests__)/[^/]+$")
 DISCOVER_WORD = re.compile(r"\b(discover|pytest|nosetests?|tox)\b")

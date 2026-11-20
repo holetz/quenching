@@ -402,29 +402,11 @@ The re-derived stage came back in step 7's call. Compare it with
 where the pass expected to land: a divergence is named and the pass re-enters at step 3 with a pass
 derived from the real stage. **The re-entry is narrated, never offered.**
 
-**Before either approval route**, run the read-only size signal:
+**No size check runs before approval.** Do not run `.agents/quenching/bin/cq specs estimate`, and
+never ask, block or recommend decomposition over a token budget: a declared-reading estimate is not
+a build's context, and a worker over its size estimate finishes the spec anyway.
 
-```bash
-.agents/quenching/bin/cq specs estimate <id> --json
-```
-
-Read the exit code before the payload; refusal or failure leaves approval unstamped. Report
-`maxSectionTokens`, `workerBudgetTokens` (the S2 worker policy is 100000), the section/task counts,
-`complete`, unresolved inputs and `excluded`. This is a UTF-8 bytes / 4 declared-reading heuristic;
-it **never proves the full build fits**, even when every declared input was found. Total reading
-volume is not a context peak; system overhead, future code, outputs and iterations are not predicted.
-
-When `overBudget` is true, follow §Approval's decomposition recommendation **before stamping**:
-propose, in this session, independently verifiable slices and
-dependencies from the source id/problem, task-section estimates,
-worker budget, unresolved inputs and exclusions, creating no children yet. Offer that concrete proposal to the human (recommended),
-explicit acceptance of the unsplit estimate risk, or stop. Only explicit authorization permits
-capture/linking, which this session runs with `.agents/quenching/bin/cq specs new` and `.agents/quenching/bin/cq specs link add`; preserve the original problem and never approve/execute the children incidentally.
-On the simple track and on `autonomous`, do not ask or automatically approve an oversized
-source: return `STATE: blocked` with `NOTE: needs-human: <budget evidence and proposed slices>` to
-the conductor. A lower estimate reports uncertainty and continues; it is not a fits verdict.
-
-With no unresolved size decision, close according to the track — §Approval owns the screen:
+Close according to the track — §Approval owns the screen:
 
 - **Simple track** — no screen. With `ready` now **proved** by step 7's payload and `approved`
   unset, stamp it here: `.agents/quenching/bin/cq specs record <id> approved --set date=<today> --set by=session`. **`by:`

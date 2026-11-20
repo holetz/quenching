@@ -85,6 +85,28 @@ def parse_items(info: dict) -> list[dict]:
     return items
 
 
+def reverse_index(infos: dict) -> dict[str, list[dict]]:
+    """Where each spec sits: member id → the composites that name it, by label and wave.
+
+    The other end of `parse_items`. The link lives in the composite's `## Tasks`, so only a
+    store-wide read can answer it — that is why this rides the bulk `schedule --all` instead of a
+    per-spec verb. An id the store does not hold is skipped (a stale reference is `validate`'s
+    finding, not a row that points nowhere), and so is a composite naming itself.
+    """
+    index: dict[str, list[dict]] = {}
+    for key in sorted(infos, key=str):
+        for item in parse_items(infos[key]):
+            member = str(item.get("spec") or "")
+            if not member or member == str(key) or member not in infos:
+                continue
+            index.setdefault(member, []).append({
+                "epic": str(key),
+                "label": str(item.get("label") or ""),
+                "group": int(item.get("group") or 0),
+            })
+    return index
+
+
 def pr_number(member: dict) -> str | None:
     """The PR number a member's `pr:` record carries, or `None` when it has none."""
     rec = member["frontmatter"].get("pr")

@@ -11,7 +11,8 @@ Builds the `## Tasks` of ONE spec: writing each task, verifying it under the spe
 policy, reviewing its diff, committing it alone, and recording the spec task after that commit.
 
 **This command stops at the last commit.** Reviewing the whole branch, writing the `/docs/` the work
-revealed, merging, and archiving belong to `/quenching-specs conclude`.
+revealed, merging, and archiving belong to `/quenching-specs conclude` — the archive only after the
+merge.
 
 `Bash` is unrestricted: the verification, `.agents/quenching/bin/cq specs` and Git commands are resolved from the live
 spec. The commit itself is one `.agents/quenching/bin/cq git commit` call, which commits the existing index.
@@ -39,10 +40,11 @@ is under way, or run `.agents/quenching/bin/cq specs list --json` and pick on a 
   --sections "§The precondition"
 ```
 
-The rest of this step is read in **one call** — the tree, the isolation ref, the spec's own state,
-and the environment probe below:
+The rest of this step is read in **one call** — the post-merge close of whatever already merged,
+the tree, the isolation ref, the spec's own state, and the environment probe below:
 
 ```bash
+.agents/quenching/bin/cq specs reconcile --write --json   # archives merged specs carrying ## Outcome
 git status --porcelain
 git branch --list "plan/<id>-<handle>"
 git branch --show-current
@@ -87,12 +89,15 @@ checkout. Show the inference on the same line as the confirmation, before stampi
 Never derive `base` from `git merge-base` or `--fork-point`; they answer a commit, not a branch
 name.
 
-**On the base with the work ref alive and unclaimed → cut a worktree over it, unasked, never a
-second branch.** `git worktree add ../<repo>-<id> <work ref>` beside this checkout, then
-`cd <worktree> && .agents/quenching/bin/cq git worktree link` to materialise the declared shared paths, and the declared
-`worktreeSetup` — displayed verbatim, as every cut does — run inside the new tree, exactly as a
-fresh cut would. **Nothing is stamped** — a `branch` record, where one exists, is write-once and
-already true.
+**On the base with the work ref alive and unclaimed → take a slot over it, unasked, never a
+second branch.** `.agents/quenching/bin/cq git worktree acquire --branch <work ref> --base <base> --json`
+switches a free slot (or a new one under `shared.worktreeSlots.max`) to the work ref, links the
+declared shared paths and runs the declared `worktreeSetup` — displayed verbatim, as every cut does —
+inside it. A ref already checked out in a slot returns that slot. **Nothing is stamped** — a
+`branch` record, where one exists, is write-once and already true. At the ceiling the verb refuses
+`git-worktree-slots-full` with each holder named: wait with `--wait`, and on
+`git-worktree-slots-timeout` stop and tell the human the limit was reached — never cut a worktree
+outside the slots.
 
 **On the base branch, with nothing to check out → hand off to `/quenching-git branch`**, which
 cuts the worktree from the remote base (its cost stated, `worktreeSetup`, the `branch:` record and
@@ -130,9 +135,11 @@ the missing path, and let the human decide; never `--no-verify` past it. Silent 
 **2c. On a resume, re-run the last checked task's `verify:` before any code.** A resume is a
 `status` with at least one task checked. Take the last checked task and run its `verify:` (the
 `## Validation` command when it has none) from its declared `cwd:`, in the same checkout the run
-builds in. Green → go on to step 3. Red → **stop**: report the task, the command and its output,
-write nothing and fix nothing; the regression belongs to the task that caused it, not to the
-conclude gate. Nothing checked yet → run nothing.
+builds in. Green → go on to step 3. Red → **stop**: report the task, the command and its output
+and write nothing, until the cause is classified. Reproduce the failure in the base worktree
+(`.quenching/red`): it reproduces there → pre-existing, and the route of **5i** applies; it does not →
+the regression belongs to the task that caused it, not to the conclude gate, and nothing is fixed
+here. Nothing checked yet → run nothing.
 
 **Done when:** the tree is clean, the worktree (or the requested branch) has been taken or found
 already held, any unresolved hook has been reported, and a resume's last checked task still
@@ -217,7 +224,7 @@ Then, for that task:
 
 a. **Show what is being worked on** — the ID, its declared `files:` and its `verify:`.
 
-b. **Write the code**, minimal and scoped to the declared files — but only after the Codex
+b. **Write the code**, minimal and scoped to the declared files (a task tagged `[fix-preexistente]` declares its own, see 5i) — but only after the Codex
    consultation below, which is the first action of 5b for EVERY task, not a choice. A task that declares `files:` and
    writes nothing under `/docs/` **may** go to an executor sub-agent under
    [execution-delegation.md](.agents/quenching/references/specs-execute/execution-delegation.md)
@@ -342,9 +349,6 @@ g. **Run and report the declared hook for this event, and move on.** Once the sp
    with the hook's text instead of the fixed report is a defect. An orchestrated run always ends
    with the fixed report.
 
-   A repository that wants a Codex review per task declares it as this hook; the recipe is
-   `docs/standards/architecture/codex-pillar.md` §The per-task review hook.
-
    `enabled: false` was filtered during the config read and is never announced or invoked;
    absence of `enabled` means enabled. The executor never evaluates `condition`: it reports the
    declaration and passes it as context to the hook. An optional hook failure is reported and the
@@ -355,20 +359,30 @@ g. **Run and report the declared hook for this event, and move on.** Once the sp
    as the spec-runner's `HOOKS:` line, so an optional hook that never resolved is never lost. A hook
    absent from config is silent.
 
-h. **At a section boundary, keep the task commits, read the session size once, and continue.** The
-   branch is at a clean, independently anchored boundary; another section may still be ahead. Run
-   `.agents/quenching/bin/cq components session context --self <id> --json` — `--self` measures this run's own transcript,
-   a sub-agent's included — and print its peak and budget in the banner. **The number never ends the
-   spec:** a worker's budget is a size estimate, not a stop limit. **Under `autonomous`, exit 1 asks
-   nothing and stops nothing** — print the measured peak, the estimate and the section just closed
-   and go on to the next task; the conductor's own budget stays the only stop of an autonomous run,
-   between waves. In a human-led run, exit 1 → ask once, on a decision sheet: stop here and resume
-   with `/quenching-specs execute <id>` in a new session as option A (recommended), the measured peak
-   in its own text, or continue. Exit 0 or 2 → continue to the next task: the boundary is not a
-   question. Otherwise stop only when the workflow reaches a question that requires a human answer,
-   or under the pause conditions below. See
+h. **At a section boundary, keep the task commits and continue.** The branch is at a clean,
+   independently anchored boundary; another section may still be ahead. **No session-size read runs
+   here and the boundary is never a question:** do not measure the context, print a budget or offer
+   a new session. Stop only when the workflow reaches a question that requires a human answer, or
+   under the pause conditions below. See
    [execution-cadence.md](.agents/quenching/references/specs-execute/execution-cadence.md)
    §The section boundary.
+
+i. **A red that is not this spec's has its own route, never a dismissal** — a failing gate, a broken
+   test or drift found on the way, read per `/docs/standards/workflows/task-execution.md`
+   §Pre-existing errors. **Diagnose, then prove it on the base**: reproduce it in the base worktree
+   (`git worktree add --detach .quenching/red <base>`, removed before returning, per
+   [execution.md](.agents/quenching/references/specs-execute/execution.md) §The validation loop); no
+   reproduction → it is this spec's own and the validation loop applies. Reproduced, the four criteria
+   hold together — cause diagnosed and reproduced on the base, few files and no contract changed, an
+   existing verification proves it, no human decision — → **fix it in the spec**: append a task
+   `[fix-preexistente] <title>` with its own `files:` (generated mirrors included) and a `verify:` that
+   fails before and passes after, through `.agents/quenching/bin/cq specs section "<id>" Tasks --write`
+   (the checked boxes and their `subject:` survive) then `.agents/quenching/bin/cq specs validate`, and
+   run it through this loop. Any criterion failing → **capture it now**, while the context is warm:
+   `.agents/quenching/bin/cq specs new` with `## Problem` and the diagnosis (cause, reproduction, files), and
+   one `## Discoveries` line `promoted: <id>` on this spec. Never skip, `xfail`, suppress or delete a test,
+   edit a `verify:` or use `--no-verify` as the fix. An uncorrected pre-existing red stays a FAIL of the
+   gate, and the PR names the base red and the spec that captures it.
 
 **Pause if:** a task is unclear; implementation reveals a design problem (→ `/quenching-specs develop`); a
 task contradicts a `/docs/standards/` contract (surface it and let the human pick — revise the
@@ -381,7 +395,8 @@ only on a real block: attempts stop converging; a standard contradiction the evi
 settle; a new grant, a changed frontmatter key or a lowered bar; an undeclared irreversible, merge, push or deploy
 action; a required proof that cannot run; `approved` absent. A proof the spec requires that cannot
 run for a missing environment variable, credential or service is a real block — never skipped in silence,
-never marked as passed. Anything else the evidence or the recorded intent answers is decided and
+never marked as passed. An uncontained pre-existing red (5i) is that real block: capture the spec, name
+it in `needs-human:` and stop. Anything else the evidence or the recorded intent answers is decided and
 recorded as one line, `.agents/quenching/bin/cq specs discover "<id>" "decision: <what> — <evidence or criterion>"`; a
 `decision:` line is not a Handoff event.
 **Done when:** every task is `- [x]` or `- [!]`, or the run pauses with the reason stated.
@@ -412,9 +427,6 @@ small. `--scope current` always resolves to whichever section still has open wor
 [execution-cadence.md](.agents/quenching/references/specs-execute/execution-cadence.md) §The
 Handoff cadence.
 
-**The over-budget question at a section boundary (step 5h) adds no fifth event and writes no new
-state.** Accepted, it is a pause and a last commit, which are already two of the four above;
-declined, nothing happened worth recording.
 **Done when:** the global block and the current section's `## Handoff` block describe the tree as
 it stands after the run's last commit.
 
@@ -505,7 +517,8 @@ each is absolute. The three whose failure is **silent and permanent**:
 - Stamp `branch:` once the work ref is resolved, taken or declined (`work` then equals `base`) —
   never over an existing record, through `.agents/quenching/bin/cq specs record`, never the frontmatter.
 - Write **only** the `/docs/` a task explicitly names. Emergent findings are one `.agents/quenching/bin/cq specs discover`
-  line — never an unrequested standard, and never a loose code comment.
+  line — never an unrequested standard, and never a loose code comment. A pre-existing error is the
+  exception (5i): a declared `[fix-preexistente]` task, or a captured spec resolved `promoted: <id>`.
 - Delegate an executor only under
   [execution-delegation.md](.agents/quenching/references/specs-execute/execution-delegation.md)
   §Delegating an executor (declares `files:`, touches no `/docs/`, pinned to the session model —

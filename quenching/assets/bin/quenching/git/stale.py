@@ -251,6 +251,25 @@ def _assess_worktrees(cwd: str, base: str, open_prs: set[str] | None) -> list[di
         assessed.append({"path": real, "branch": row["branch"], "detached": row["branch"] is None,
                          "tip": tip, "eligible": not blockers, "blockers": blockers,
                          "ignored": ignored})
+    return _keep_the_slot_floor(cwd, assessed)
+
+
+def _keep_the_slot_floor(cwd: str, assessed: list[dict]) -> list[dict]:
+    """A free slot is warm on purpose: the lowest-numbered `shared.worktreeSlots.min` of them are
+    preserved (`slot-floor`); only the free slots above the floor are removal candidates."""
+    from quenching.git import slots as slot_pool
+
+    view = slot_pool.survey(cwd)
+    numbers = {os.path.realpath(s["path"]): s["n"] for s in view["slots"]}
+    floor = slot_pool.limits(view["primary"])["min"]
+    free = sorted((w for w in assessed if w["path"] in numbers and w["eligible"]),
+                  key=lambda w: numbers[w["path"]])
+    for w in assessed:
+        if w["path"] in numbers:
+            w["slot"] = numbers[w["path"]]
+    for w in free[:floor]:
+        w["eligible"] = False
+        w["blockers"].append("slot-floor")
     return assessed
 
 
@@ -292,7 +311,9 @@ def _manifest(cwd: str, remote: str, report: dict, worktrees: list[dict]) -> lis
     for w in worktrees:
         ok = w["eligible"]
         entry = add("worktree", w["path"], "local", w["path"], w["tip"],
-                    "candidate" if ok else "preserved", ["merged-clean"] if ok else w["blockers"],
+                    "candidate" if ok else "preserved",
+                    (["merged-clean"] + (["slot-above-floor"] if "slot" in w else [])) if ok
+                    else w["blockers"],
                     ["git", "worktree", "remove", "--", w["path"]] if ok else None,
                     ["cq", "git", "prune", "--worktree", w["path"], "--expect-tip", w["tip"] or "",
                      "--confirm-inactive"] if ok else None, ok)

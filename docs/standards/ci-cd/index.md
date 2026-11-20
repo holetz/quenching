@@ -10,6 +10,9 @@ carries `type: standard` + a derived `resource:`; add each to [../index.md](../i
 
 ## Current docs
 
+* [test-cost.md](test-cost.md) — what a run may write, how many workers it may take and how much of
+  the suite each tier runs: one temp root outside the repository, a git configuration of the run's
+  own, a shared worker budget and three scopes
 * [versioning-release.md](versioning-release.md) — The source version surfaces that
   `cq specs release` bumps together, with the HUD manifest and every Claude marketplace entry moved to the same version
 
@@ -18,13 +21,14 @@ carries `type: standard` + a derived `resource:`; add each to [../index.md](../i
 Break this subject **one concept per file**. The method evaluates each candidate against
 the repo, generates the applicable ones (`file:line`-anchored, full OKF frontmatter), and
 records the rest below as deferrals (never a silent skip):
-`build` · `deploy` · `manifest-generation` · `pipeline-stages` · `versioning-release`.
+`build` · `deploy` · `manifest-generation` · `pipeline-stages` · `test-cost` · `versioning-release`.
 
 ## Coverage / deferred sub-standards
 
 Per-subject ledger the verify gate reads. A subject is "done" only when every candidate is
 **present or listed here** with a one-line why.
 
+- `test-cost` — **present**: [test-cost.md](test-cost.md).
 - `versioning-release` — **present**: [versioning-release.md](versioning-release.md).
 - `build` — **deferred, not applicable.** There is no build step: the plugin ships markdown
   command bodies and one dependency-free stdlib Python package, copied as-is.

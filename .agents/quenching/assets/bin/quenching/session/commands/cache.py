@@ -5,8 +5,11 @@ Both reduce to the same request record, so a cold request means the same thing o
 `COLD_FLOOR` tokens of context with more than `COLD_SHARE` of them missed. Claude reports a miss as
 a cache write and DeepSeek as plain input, so `missed` is their sum.
 
-The output is token counts only. No price is applied, because the gateway's rate is not in either
-store, and tokens are never summed across models. Message content is never selected."""
+The output is token counts only unless `--usd` asks: no price is applied by default, because the
+gateway's rate is not in either store, and tokens are never summed across models. `--usd` adds each
+row's list-price estimate from quenching's own table (`session/pricing.json`), `null` for a model
+the table does not price. `--session` narrows the scope to one session (the `quenching-cache` bar's
+"this chat"). Message content is never selected."""
 from __future__ import annotations
 
 import json
@@ -18,6 +21,7 @@ from pathlib import Path
 from typing import NamedTuple
 
 from quenching.common.output import FINDINGS, OK, refuse
+from quenching.session import pricing
 from quenching.session.commands.cost import _agent_type, _n, _requests, parse_instant
 from quenching.session.transcript import projects_root, resolve_project_dir
 
@@ -198,7 +202,14 @@ def _context(r: Req) -> int:
     return r.input + r.read + r.write
 
 
-def summarize(reqs: list) -> tuple:
+def request_usd(r: Req) -> float | None:
+    """One request at list price; a cache write the record did not split prices at 5 minutes."""
+    return pricing.usd(r.model, input=r.input, cache_read=r.read, write5m=r.write5m, write1h=r.write1h,
+                       write_other=max(0, r.write - r.write5m - r.write1h), output=r.output,
+                       prompt_tokens=_context(r))
+
+
+def summarize(reqs: list, priced: bool = False) -> tuple:
     """Rows per harness/model/role/agent, gap histogram per harness/model/role, cold boundaries."""
     by_session: dict = {}
     for r in reqs:
@@ -211,7 +222,7 @@ def summarize(reqs: list) -> tuple:
         row = rows.setdefault((harness, model, head.role, head.agent), {
             "harness": harness, "model": model, "role": head.role, "agent": head.agent, "sessions": 0,
             "requests": 0, "input": 0, "cacheRead": 0, "cacheWrite": 0, "write5m": 0, "write1h": 0,
-            "output": 0, "_first": [], "_peak": []})
+            "output": 0, "_first": [], "_peak": [], "_usd": 0.0, "_unpriced": False})
         row["sessions"] += 1
         row["_first"].append(_context(head))
         row["_peak"].append(max(_context(r) for r in own))
@@ -220,6 +231,11 @@ def summarize(reqs: list) -> tuple:
                            ("write5m", sum(r.write5m for r in own)), ("write1h", sum(r.write1h for r in own)),
                            ("output", sum(r.output for r in own))):
             row[key] += value
+        if priced:
+            for r in own:
+                cost = request_usd(r)
+                row["_unpriced"] = row["_unpriced"] or cost is None
+                row["_usd"] += cost or 0.0
         for prev, cur in zip(own, own[1:]):
             if prev.at is None or cur.at is None or _context(cur) < COLD_FLOOR:
                 continue
@@ -237,6 +253,9 @@ def summarize(reqs: list) -> tuple:
         row["hitRate"] = round(row["cacheRead"] / context, 4) if context else None
         row["firstRequestMedian"] = _median(row.pop("_first"))
         row["peakMedian"] = _median(row.pop("_peak"))
+        spent, unpriced = row.pop("_usd"), row.pop("_unpriced")
+        if priced:
+            row["usd"] = None if unpriced else round(spent, 4)
         out_rows.append(row)
     order = {label: n for n, (_, label) in enumerate(GAPS)}
     out_gaps = [{"harness": h, "model": m, "role": ro, "gap": label, **slot,
@@ -297,13 +316,19 @@ def cmd_cache(args) -> int:
             unavailable["opencode"] = f"no OpenCode database at {path}"
     if since is not None:
         reqs = [r for r in reqs if r.at is not None and r.at >= since]
+    session = getattr(args, "session", None)
+    if session:
+        reqs = [r for r in reqs if session in r.session]
     if not reqs:
         return refuse({"code": "se-no-usage", "message": "no request with usage in scope",
                        "unavailable": unavailable}, args.json)
-    rows, gaps, boundaries = summarize(reqs)
+    priced = bool(getattr(args, "usd", False))
+    rows, gaps, boundaries = summarize(reqs, priced)
     out = {"ok": True, "scope": str(directory) if directory else "all", "sources": sources,
            "unavailable": unavailable, "rows": rows, "gaps": gaps, "boundaries": boundaries,
            "skillListing": listing_summary(listings), "anomalies": anomalies}
+    if priced:
+        out["pricing"] = {"sourceDate": pricing.table()["sourceDate"], "basis": "list price estimate"}
     if args.json:
         print(json.dumps(out, indent=2, ensure_ascii=False))
         return FINDINGS if anomalies else OK

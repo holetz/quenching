@@ -22,8 +22,9 @@ from quenching.codex.eligible import eligibility, reserved, run_eligible, task_t
 
 
 def settings(**executor) -> dict:
+    """A repository that opted in: the executor is off by default, so every fixture enables it."""
     return {**DEFAULTS, "maxUsedPercent": dict(DEFAULTS["maxUsedPercent"]),
-            "executor": {**DEFAULTS["executor"], **executor}}
+            "executor": {**DEFAULTS["executor"], "enabled": True, **executor}}
 
 
 def task(files=("src/a.py",), verify=None, state=" ") -> dict:
@@ -108,18 +109,25 @@ class EligibilityTest(unittest.TestCase):
             self.assertEqual(code, 1, path)
             self.assertIn("docs/ or knowledge/", payload["reason"])
 
+    def test_the_default_settings_never_dispatch(self):
+        quota = Quota()
+        default = {**DEFAULTS, "executor": dict(DEFAULTS["executor"])}
+        payload, code = eligibility(task(), default, self.root, quota)
+        self.assertEqual(code, 1)
+        self.assertEqual("shared.codex.executor.enabled is false", payload["reason"])
+        self.assertEqual([], quota.seen)
+
     def test_no_files_disabled_or_closed_task_is_not_eligible(self):
         self.assertEqual(eligibility(task(files=[]), settings(), self.root, Quota())[1], 1)
         self.assertEqual(eligibility(task(), settings(enabled=False), self.root, Quota())[1], 1)
         self.assertEqual(eligibility(task(state="x"), settings(), self.root, Quota())[1], 1)
 
-    def test_quota_is_judged_under_the_reserve_and_ignores_cross_review_off(self):
+    def test_quota_is_judged_under_the_reserve(self):
         quota = Quota(state="unavailable", reason="over the ceiling")
-        base = {**settings(reservePercent=10), "crossReview": "off"}
-        payload, code = eligibility(task(), base, self.root, quota)
+        payload, code = eligibility(task(), settings(reservePercent=10), self.root, quota)
         self.assertEqual(code, 1)
         self.assertIn("10% reserve", payload["reason"])
-        self.assertEqual(quota.seen[0]["crossReview"], "auto")
+        self.assertNotIn("crossReview", quota.seen[0])
         self.assertEqual(quota.seen[0]["maxUsedPercent"], {"primary": 70, "secondary": 80})
 
     def test_reserve_never_goes_below_zero(self):
@@ -143,6 +151,7 @@ class CliTest(unittest.TestCase):
         with mock.patch("quenching.codex.eligible.open_backend",
                         return_value=(FakeBackend(info), {})), \
                 mock.patch("quenching.codex.eligible.probe", Quota()), \
+                mock.patch("quenching.codex.load_settings", return_value=(settings(), [])), \
                 tempfile.TemporaryDirectory() as root, contextlib.redirect_stdout(out):
             code = main(["eligible", "--root", root, "--json", *argv])
         return code, json.loads(out.getvalue())

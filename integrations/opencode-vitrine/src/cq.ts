@@ -260,11 +260,7 @@ export function setReadRunner(runner: typeof readRunner): void {
 
 const reads = singleFlight<unknown>()
 
-/**
- * Uma leitura `--json` do `cq`; `undefined` quando o comando recusa ou não devolve JSON.
- * A mesma leitura em voo é compartilhada e no máximo `CQ_CONCURRENCY` rodam ao mesmo tempo.
- */
-export function cqJson<T>(cwd: string, args: string[], timeout = READ_TIMEOUT): Promise<T | undefined> {
+function readJson<T>(cwd: string, args: string[], timeout: number, accept: (code: number) => boolean) {
   return reads(`${cwd}\0${args.join("\0")}`, async () => {
     const { launch } = await cqBinary(cwd)
     const run = await cqSlot(async () => {
@@ -277,11 +273,57 @@ export function cqJson<T>(cwd: string, args: string[], timeout = READ_TIMEOUT): 
         cqStats.running -= 1
       }
     })
-    if (run.code !== 0) return undefined
+    if (!accept(run.code)) return undefined
     try {
       return JSON.parse(run.stdout) as T
     } catch {
       return undefined
     }
   }) as Promise<T | undefined>
+}
+
+/**
+ * Uma leitura `--json` do `cq`; `undefined` quando o comando recusa ou não devolve JSON.
+ * A mesma leitura em voo é compartilhada e no máximo `CQ_CONCURRENCY` rodam ao mesmo tempo.
+ */
+export function cqJson<T>(cwd: string, args: string[], timeout = READ_TIMEOUT): Promise<T | undefined> {
+  return readJson<T>(cwd, args, timeout, (code) => code === 0)
+}
+
+/**
+ * A mesma leitura, mas um exit 1 ainda entrega o payload: o `schedule` sai 1 num ciclo de
+ * dependência, e o ciclo é justamente o dado que o painel precisa mostrar.
+ */
+export function cqJsonPartial<T>(cwd: string, args: string[], timeout = READ_TIMEOUT): Promise<T | undefined> {
+  return readJson<T>(cwd, args, timeout, (code) => code === 0 || code === 1)
+}
+
+/** O que a página de configurações recebe: o JSON do `cq config schema --values`, ou o erro. */
+export type ConfigRead = { ok: boolean; json: string; error: string }
+export type ConfigWrite = { ok: boolean; message: string }
+
+/** Cada chave com tipo, padrão, categoria, escopo, textos e o valor efetivo com a camada que o deu. */
+export async function configSchema(cwd: string): Promise<ConfigRead> {
+  const { launch } = await cqBinary(cwd)
+  const run = await runCq(launch, ["config", "schema", "--values", "--json"], cwd)
+  if (run.code !== 0) {
+    return { ok: false, json: "", error: run.stderr.trim() || run.stdout.trim() || `cq saiu ${run.code}` }
+  }
+  return { ok: true, json: run.stdout, error: "" }
+}
+
+/** Grava (`value` em JSON) ou remove (`value` nulo) uma chave numa camada, pelo único escritor: `cq config set|unset`. */
+export async function configWrite(cwd: string, key: string, layer: "project" | "local", value: string | null): Promise<ConfigWrite> {
+  const { launch } = await cqBinary(cwd)
+  const args = value === null
+    ? ["config", "unset", key, "--layer", layer, "--json"]
+    : ["config", "set", key, value, "--layer", layer, "--json"]
+  const run = await runCq(launch, args, cwd)
+  try {
+    const payload = JSON.parse(run.stdout) as { ok?: boolean; message?: string; remedy?: string }
+    if (run.code === 0) return { ok: true, message: "" }
+    return { ok: false, message: [payload.message, payload.remedy].filter(Boolean).join(" — ") }
+  } catch {
+    return { ok: run.code === 0, message: run.stderr.trim() || run.stdout.trim() }
+  }
 }

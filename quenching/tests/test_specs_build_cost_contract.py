@@ -1,4 +1,4 @@
-"""Executable-prose contracts keep the estimate ahead of approval and decomposition gated."""
+"""Executable-prose contracts keep the estimate out of approval and the build cost measured at conclude."""
 from pathlib import Path
 import re
 import unittest
@@ -12,30 +12,23 @@ def prose(path):
 
 
 class BuildSizeApproval(unittest.TestCase):
-    def test_develop_checks_estimate_before_either_approval_route(self):
+    def test_develop_runs_no_size_check_before_approval(self):
         text = prose("skills/quenching-specs/references/develop.md")
         close = text[text.index("### 8. Close"):]
-        self.assertLess(close.index("cq specs estimate"), close.index("stamp it here"))
-        for marker in ("overBudget", "workerBudgetTokens", "autonomous", "STATE: blocked",
-                       "in this session", "creating no children yet", "never proves the full build fits"):
-            self.assertIn(marker, close)
+        self.assertIn("No size check runs before approval", close)
+        for marker in ("overBudget", "workerBudgetTokens", "STATE: blocked", "needs-human: <budget"):
+            self.assertNotIn(marker, close)
 
-    def test_shared_approval_rule_covers_simple_track_and_estimate_uncertainty(self):
+    def test_shared_approval_rule_never_gates_on_a_budget(self):
         text = prose("references/specs-develop/questions.md")
         close = text[text.index("## Approval —"):text.index("## Gathering the evidence")]
-        for marker in ("overBudget", "No automatic approval", "autonomous", "unknown inputs",
-                       "complexity", "explicitly accept", "develop session"):
-            self.assertIn(marker, close)
-
-    def test_slice_proposal_creates_nothing_and_capture_requires_authorization(self):
-        text = prose("skills/quenching-specs/references/develop.md")
-        for marker in ("creating no children yet", "Only explicit authorization permits",
-                       "preserve the original problem", "never approve/execute the children incidentally"):
-            self.assertIn(marker, text)
+        self.assertIn("No token-budget check precedes approval", close)
+        for marker in ("overBudget", "No automatic approval", "Decompose", "size check"):
+            self.assertNotIn(marker, close)
 
     def test_manual_describes_a_heuristic_without_guaranteeing_fit(self):
         text = prose("README.md")
-        for marker in ("cq specs estimate", "bytes / 4", "100000", "never proves", "unresolved"):
+        for marker in ("cq specs estimate", "bytes / 4", "200000", "never proves", "unresolved"):
             self.assertIn(marker, text)
 
 

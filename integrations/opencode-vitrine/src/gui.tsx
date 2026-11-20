@@ -1,15 +1,20 @@
-import { createEffect, createSignal, For, onCleanup, Show } from "solid-js"
+import { createEffect, createMemo, createSignal, For, onCleanup, Show, untrack } from "solid-js"
 import {
   Command,
   MenuItem,
   Panel,
   Plugin,
+  SettingsPage,
   Style,
   usePlugin,
   type PanelProps,
   type PanelTab,
 } from "@opencode/plugin/gui"
-import { Vitrine, type Detail, type Quenching, type QuenchingUpdate, type Row, type TaskInfo, type Touch } from "./rpc.js"
+import {
+  Vitrine, type Composite, type Composition, type Detail, type Member, type Neighbor, type Quenching,
+  type QuenchingUpdate, type Row, type TaskInfo, type Touch,
+  type ConfigKey, type ConfigLayer, type ConfigRead, type ConfigSchema, type ConfigWrite,
+} from "./rpc.js"
 
 const specsTab: PanelTab = { id: "specs", title: "Specs", closable: "hover" }
 const EVIDENCE: Record<string, string> = {
@@ -150,7 +155,178 @@ const css = `
 .qs-task.blocked .qs-state { color: #f87171; }
 .qs-state { width: 10px; flex: none; }
 .qs-task-text { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.qs-dep-count { display: inline-flex; gap: 3px; margin-left: 5px; font-variant-numeric: tabular-nums; opacity: .75; }
+.qs-deps { display: flex; flex-direction: column; gap: 10px; padding-bottom: 6px; }
+.qs-dep-group { display: flex; flex-direction: column; gap: 4px; }
+.qs-dep-label { font-size: 10px; text-transform: uppercase; letter-spacing: .08em; opacity: .6; }
+.qs-dep-list { display: flex; flex-direction: column; border: 1px solid var(--border); border-radius: 6px; overflow: hidden; }
+.qs-dep { display: grid; grid-template-columns: auto 1fr; gap: 2px 8px; width: 100%; padding: 5px 8px; border: 0; border-bottom: 1px solid var(--border); background: transparent; color: inherit; font: inherit; text-align: left; cursor: pointer; }
+.qs-dep:last-child { border-bottom: 0; }
+.qs-dep:hover { background: color-mix(in srgb, currentColor 6%, transparent); }
+.qs-dep-id { font-variant-numeric: tabular-nums; opacity: .6; }
+.qs-dep.critical .qs-dep-id { opacity: 1; font-weight: 600; color: color-mix(in srgb, #a86f00 78%, currentColor); }
+.qs-dep-title { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.qs-dep-meta { grid-column: 1 / -1; font-size: 11px; opacity: .55; }
+.qs-member.dropped .qs-dep-id, .qs-member.dropped .qs-dep-title { opacity: .45; text-decoration: line-through; }
+.qs-member.done .qs-dep-id { opacity: 1; color: color-mix(in srgb, #2f8f4e 78%, currentColor); }
+.qs-member.waiting .qs-dep-id { opacity: 1; color: color-mix(in srgb, #a86f00 78%, currentColor); }
 `
+
+/** O que o `schedule` sabe de uma vizinha, numa linha: entrega, caminho crítico, atraso e janela. */
+function depMeta(node: Neighbor): string {
+  const bits: string[] = []
+  if (node.phase === "archive") bits.push("arquivada")
+  if (node.critical) bits.push("caminho crítico")
+  if (node.slip > 0) bits.push(`+${node.slip}d`)
+  if (node.start || node.target) bits.push(`${node.start || "?"} → ${node.target || "?"}`)
+  return bits.join(" · ")
+}
+
+const MEMBER_MARK: Record<string, string> = { done: "✓", dropped: "×", "in-progress": "▸", waiting: "!" }
+
+/** O que o épico já sabe de um membro: o estado dele, a etapa da spec e o que ele espera dentro do épico. */
+function memberMeta(member: Member): string {
+  const bits: string[] = []
+  if (member.stage) bits.push(STAGE_LABEL[member.stage] ?? member.stage)
+  if (member.after.length > 0) bits.push(`espera ${member.after.join(", ")}`)
+  return bits.join(" · ")
+}
+
+function memberClass(member: Member): string {
+  if (member.status === "done") return "done"
+  if (member.status === "dropped") return "dropped"
+  return member.waitingOn.length > 0 ? "waiting" : ""
+}
+
+/** Os membros do épico, na ordem declarada: o que ele é feito, e não o que ele espera. */
+function CompositionView(props: { composition: Composition; onPick: (id: number) => void }) {
+  const progress = () => props.composition.progress
+  return (
+    <div class="qs-dep-group">
+      <div
+        class="qs-dep-label"
+        title="as specs que este épico declara no próprio documento, na ordem em que ele as lista"
+      >
+        Specs deste épico
+        <span class="qs-dep-count">
+          <span>{progress().done}/{progress().total} concluídas</span>
+          <Show when={progress().blocked > 0}><span>· {progress().blocked} bloqueada{progress().blocked > 1 ? "s" : ""}</span></Show>
+        </span>
+      </div>
+      <div class="qs-dep-list">
+        <For each={props.composition.items}>{(member) => (
+          <button
+            class="qs-dep qs-member"
+            classList={{ done: memberClass(member) === "done", dropped: memberClass(member) === "dropped", waiting: memberClass(member) === "waiting" }}
+            title={`${member.spec} — ${member.title}`}
+            onClick={() => props.onPick(member.spec)}
+          >
+            <span class="qs-dep-id">{MEMBER_MARK[member.status] ?? "·"} {member.label}</span>
+            <span class="qs-dep-title">{member.spec} · {member.title}</span>
+            <Show when={memberMeta(member)}>{(meta) => <span class="qs-dep-meta">{meta()}</span>}</Show>
+          </button>
+        )}</For>
+      </div>
+    </div>
+  )
+}
+
+/** Onde esta spec é membro: o épico que a declara no próprio documento, com o rótulo que ele lhe deu. */
+function MembershipView(props: { epics: Composite[]; onPick: (id: number) => void }) {
+  return (
+    <div class="qs-dep-group">
+      <div class="qs-dep-label" title="os épicos que nomeiam esta spec no `## Tasks` deles">
+        Parte de
+      </div>
+      <div class="qs-dep-list">
+        <For each={props.epics}>{(epic) => (
+          <button
+            class="qs-dep"
+            title={`${epic.epic} — ${epic.title}`}
+            onClick={() => props.onPick(epic.epic)}
+          >
+            <span class="qs-dep-id">{epic.label || "·"}</span>
+            <span class="qs-dep-title">{epic.epic} · {epic.title}</span>
+            <Show when={epic.group > 0}>{(group) => <span class="qs-dep-meta">onda {group()}</span>}</Show>
+          </button>
+        )}</For>
+      </div>
+    </div>
+  )
+}
+
+function hasView(spec: Detail): boolean {
+  return spec.deps.up.length > 0 || spec.deps.down.length > 0 || spec.deps.cycle.length > 0
+    || Boolean(spec.composition) || spec.epics.length > 0
+}
+
+function DependencyGroup(props: {
+  label: string
+  hint: string
+  nodes: Neighbor[]
+  empty: string
+  onPick: (id: number) => void
+}) {
+  return (
+    <div class="qs-dep-group">
+      <div class="qs-dep-label" title={props.hint}>{props.label}</div>
+      <Show when={props.nodes.length > 0} fallback={<div class="qs-mute">{props.empty}</div>}>
+        <div class="qs-dep-list">
+          <For each={props.nodes}>{(node) => (
+            <button
+              class="qs-dep"
+              classList={{ critical: node.critical }}
+              title={`${node.id} — ${node.title}`}
+              onClick={() => props.onPick(node.id)}
+            >
+              <span class="qs-dep-id">{node.id}</span>
+              <span class="qs-dep-title">{node.title}</span>
+              <Show when={depMeta(node)}>{(meta) => <span class="qs-dep-meta">{meta()}</span>}</Show>
+            </button>
+          )}</For>
+        </div>
+      </Show>
+    </div>
+  )
+}
+
+/** A aba de dependências: as specs que esta espera e as que esperam por ela, ambas clicáveis. */
+function DependencyView(props: { spec: Detail; onPick: (id: number) => void }) {
+  const edges = () => props.spec.deps.up.length > 0 || props.spec.deps.down.length > 0
+  return (
+    <div class="qs-deps">
+      <Show when={props.spec.epics.length > 0}>
+        <MembershipView epics={props.spec.epics} onPick={props.onPick} />
+      </Show>
+      <Show when={props.spec.composition}>
+        {(composition) => <CompositionView composition={composition()} onPick={props.onPick} />}
+      </Show>
+      <Show when={props.spec.deps.cycle.length > 0}>
+        <div class="qs-why" title="ciclo de dependência">
+          <span>⚠</span>
+          <span>ciclo: {props.spec.deps.cycle.join(" → ")} — nada é agendado enquanto ele existir</span>
+        </div>
+      </Show>
+      {/* Sem aresta, e com composição ou membresia acima, as duas listas não têm o que dizer. */}
+      <Show when={edges() || (!props.spec.composition && props.spec.epics.length === 0)}>
+        <DependencyGroup
+          label="Acima — esta spec espera por"
+          hint="as specs nomeadas no dependsOn desta"
+          nodes={props.spec.deps.up}
+          empty="nada acima: nenhuma dependência declarada"
+          onPick={props.onPick}
+        />
+        <DependencyGroup
+          label="Abaixo — esperam por esta"
+          hint="as specs que nomeiam esta no dependsOn delas"
+          nodes={props.spec.deps.down}
+          empty="nada abaixo: nenhuma spec declara que depende desta"
+          onPick={props.onPick}
+        />
+      </Show>
+    </div>
+  )
+}
 
 function SpecsPanel(props: PanelProps) {
   const ctx = usePlugin()
@@ -166,6 +342,7 @@ function SpecsPanel(props: PanelProps) {
   const [quench, setQuench] = createSignal<Quenching>()
   const [upgrading, setUpgrading] = createSignal(false)
   const directory = () => props.session.directory
+  createEffect(() => rememberProject(ctx, directory()))
   const searching = () => query().trim().length > 0
   // Só existe botão quando há o que consertar: ausente ou atrás do cq do PATH.
   const stale = () => {
@@ -375,6 +552,10 @@ function SpecsPanel(props: PanelProps) {
           )}
         </Show>
         <ctx.ui.Button size="small" busy={busy()} onClick={() => void openBoard()}>Board</ctx.ui.Button>
+        <Show when={hasSettingsPage(ctx)}>
+          <ctx.ui.IconButton icon="sliders" label="Configurações do quenching" size="small" variant="ghost"
+            onClick={() => openQuenchingSettings(ctx, directory())} />
+        </Show>
       </div>
       <Show when={error()}><div class="qs-error">{error()}</div></Show>
       <Show when={!searching()}>
@@ -384,7 +565,10 @@ function SpecsPanel(props: PanelProps) {
             <button class="qs-row" classList={{ picked: picked() === row.id }} onClick={() => pick(row.id)}>
               <span class="qs-id"><span class={`qs-dot ${row.kind}`} />{row.id}</span>
               <span class="qs-title">{row.title}</span>
-              <span class="qs-meta">{EVIDENCE[row.kind] ?? row.kind} · {STAGE_LABEL[row.stage] ?? row.stage} · {row.checked}/{row.total}</span>
+              <span class="qs-meta">
+                <Show when={row.workItemType === "epic"}><span class="qs-chip">épico</span> </Show>
+                {EVIDENCE[row.kind] ?? row.kind} · {STAGE_LABEL[row.stage] ?? row.stage} · {row.checked}/{row.total}
+              </span>
             </button>
           )}</For>
           <Show when={touched().length === 0}>
@@ -401,7 +585,10 @@ function SpecsPanel(props: PanelProps) {
             <button class="qs-row" classList={{ picked: picked() === row.id }} onClick={() => pick(row.id)}>
               <span class="qs-id">{row.id}</span>
               <span class="qs-title">{row.title}</span>
-              <span class="qs-meta">{STAGE_LABEL[row.stage] ?? row.stage} · {row.checked}/{row.total}</span>
+              <span class="qs-meta">
+                <Show when={row.workItemType === "epic"}><span class="qs-chip">épico</span> </Show>
+                {STAGE_LABEL[row.stage] ?? row.stage} · {row.checked}/{row.total}
+              </span>
             </button>
           )}</For>
           <Show when={rows().length === 0}><div class="qs-mute" style={{ padding: "8px" }}>nenhuma spec</div></Show>
@@ -485,28 +672,358 @@ function SpecsPanel(props: PanelProps) {
                 {section.heading}
               </button>
             )}</For>
+            <Show when={hasView(spec)}>
+              <button
+                class="qs-tab"
+                classList={{ active: tab() === spec.sections.length }}
+                title="quem esta spec espera, quem espera por ela e, num épico, as specs que ele compõe"
+                onClick={() => setTab(spec.sections.length)}
+              >
+                Dependências
+                <span class="qs-dep-count">
+                  <Show when={spec.composition}>{(composition) => (
+                    <span title="specs deste épico">{composition().items.length}</span>
+                  )}</Show>
+                  <Show when={spec.deps.up.length}><span>↑{spec.deps.up.length}</span></Show>
+                  <Show when={spec.deps.down.length}><span>↓{spec.deps.down.length}</span></Show>
+                </span>
+              </button>
+            </Show>
           </div>
           <div class="qs-section">
-            <Show when={spec.sections[tab()]?.heading === "Tasks"}>
-              <div class="qs-task-list">
-                <For each={spec.tasks}>{(item) => (
-                  <button
-                    class="qs-task"
-                    classList={{ done: item.state === "x", blocked: item.blocked }}
-                    title={item.text}
-                    onClick={() => void attach(spec.id, item.id)}
-                  >
-                    <span class="qs-state">{item.state === "x" ? "✓" : item.blocked ? "!" : "·"}</span>
-                    <span class="qs-task-text">{item.text}</span>
-                  </button>
-                )}</For>
-              </div>
+            <Show
+              when={spec.sections[tab()]}
+              keyed
+              fallback={<Show when={hasView(spec)}><DependencyView spec={spec} onPick={pick} /></Show>}
+            >
+              {(section) => (
+                <>
+                  <Show when={section.heading === "Tasks"}>
+                    <div class="qs-task-list">
+                      <For each={spec.tasks}>{(item) => (
+                        <button
+                          class="qs-task"
+                          classList={{ done: item.state === "x", blocked: item.blocked }}
+                          title={item.text}
+                          onClick={() => void attach(spec.id, item.id)}
+                        >
+                          <span class="qs-state">{item.state === "x" ? "✓" : item.blocked ? "!" : "·"}</span>
+                          <span class="qs-task-text">{item.text}</span>
+                        </button>
+                      )}</For>
+                    </div>
+                  </Show>
+                  <ctx.ui.Markdown text={section.body || "_sem conteúdo_"} class="qs-md" />
+                </>
+              )}
             </Show>
-            <ctx.ui.Markdown text={spec.sections[tab()]?.body || "_sem conteúdo_"} class="qs-md" />
           </div>
         </div>
       )}</Show>
     </div>
+  )
+}
+
+type Lang = "en" | "pt-BR"
+
+type PluginCtx = Pick<ReturnType<typeof usePlugin>, "storage" | "sessions" | "layout" | "ui">
+
+/**
+ * The project the Settings page edits. Settings leaves the session tab, so `ctx.sessions.current()` is empty there;
+ * the Specs panel and the shortcuts remember the session's directory in window memory, with the recent ones.
+ */
+function settingsTarget(ctx: PluginCtx) {
+  return ctx.storage.memory("settings-target", { initial: { directory: "", recent: [] as string[] } })
+}
+
+function rememberProject(ctx: PluginCtx, directory: string | undefined) {
+  if (!directory) return
+  const [target, update] = settingsTarget(ctx)
+  // Untracked: a caller's effect must depend on the session's directory, never on the page's choice.
+  if (untrack(() => target.directory === directory && target.recent[0] === directory)) return
+  update((draft) => {
+    draft.directory = directory
+    draft.recent = [directory, ...draft.recent.filter((item) => item !== directory)].slice(0, 8)
+  })
+}
+
+/** Remembers the current session's project, then opens the quenching Settings page. */
+function openQuenchingSettings(ctx: PluginCtx, directory?: string) {
+  rememberProject(ctx, directory ?? ctx.sessions.current()?.directory)
+  ctx.layout.settings("quenching")
+}
+
+const hasSettingsPage = (ctx: PluginCtx) =>
+  typeof (ctx.ui as { SettingsLayout?: unknown }).SettingsLayout === "function"
+
+function projectLabel(path: string): string {
+  const parts = path.split(/[\\/]/).filter(Boolean)
+  return parts[parts.length - 1] ?? path
+}
+
+const SETTINGS_COPY: Record<Lang, Record<string, string>> = {
+  "pt-BR": {
+    title: "quenching",
+    description: "A configuração do quenching deste projeto. Projeto é .agents/quenching.json, o contrato do time; Local é .agents/quenching.local.json, só esta máquina, fora do git.",
+    noSession: "Nenhum projeto escolhido. Abra o painel Specs numa sessão do projeto e use o botão de configurações dele, ou o comando \"quenching: configurações\".",
+    projectRow: "Projeto",
+    projectHint: "O projeto cuja configuração esta página lê e grava. A lista guarda os projetos abertos nesta janela.",
+    loading: "Lendo a configuração…",
+    writeTo: "Gravar em",
+    writeToHint: "Para onde vão as alterações. Uma chave de projeto vai sempre para o projeto.",
+    project: "Projeto",
+    local: "Local",
+    default: "Padrão",
+    user: "Usuário",
+    repository: "Projeto",
+    branch: "Branch",
+    restore: "Restaurar padrão",
+    open: "Abrir no editor",
+    reload: "Recarregar",
+    save: "Enter salva",
+    defaultIs: "Padrão",
+    readBy: "Lido por",
+    scope: "Escopo",
+    scopeProject: "projeto — contrato do time; a camada local não vale",
+    scopeMachine: "máquina — o valor local vence o do projeto",
+    scopeEither: "qualquer — o projeto vence; o local preenche o que falta",
+    none: "nenhum",
+    saved: "Configuração gravada",
+    refused: "Não gravado",
+  },
+  en: {
+    title: "quenching",
+    description: "This project's quenching configuration. Project is .agents/quenching.json, the team's contract; Local is .agents/quenching.local.json, this machine only, out of git.",
+    noSession: "No project chosen. Open the Specs panel in one of the project's sessions and use its settings button, or the \"quenching: configurações\" command.",
+    projectRow: "Project",
+    projectHint: "The project whose configuration this page reads and writes. The list keeps the projects opened in this window.",
+    loading: "Reading the configuration…",
+    writeTo: "Write to",
+    writeToHint: "Where changes go. A project key always goes to the project.",
+    project: "Project",
+    local: "Local",
+    default: "Default",
+    user: "User",
+    repository: "Project",
+    branch: "Branch",
+    restore: "Restore default",
+    open: "Open in editor",
+    reload: "Reload",
+    save: "Enter saves",
+    defaultIs: "Default",
+    readBy: "Read by",
+    scope: "Scope",
+    scopeProject: "project — the team's contract; the local layer does not count",
+    scopeMachine: "machine — the local value wins over the project",
+    scopeEither: "either — the project wins; local fills what it leaves out",
+    none: "none",
+    saved: "Configuration saved",
+    refused: "Not saved",
+  },
+}
+
+function shown(value: unknown): string {
+  if (value === null || value === undefined) return ""
+  if (Array.isArray(value)) return value.join(", ")
+  if (typeof value === "object") return JSON.stringify(value)
+  return String(value)
+}
+
+/** O texto de um campo, como JSON que o `cq config set` valida. */
+function encode(entry: ConfigKey, text: string): string {
+  const raw = text.trim()
+  if (entry.type === "paths" || entry.type === "strings") {
+    return JSON.stringify(raw ? raw.split(",").map((item) => item.trim()).filter(Boolean) : [])
+  }
+  if (entry.type === "integer" || entry.type === "number") return raw
+  return JSON.stringify(raw)
+}
+
+const settingsCss = `
+.qcfg-badge { display: inline-flex; align-items: center; margin-left: 6px; padding: 0 6px; height: 16px; border-radius: 999px; font-size: 10px; border: 1px solid color-mix(in srgb, currentColor 18%, transparent); opacity: .75; vertical-align: middle; }
+.qcfg-badge.local { color: color-mix(in srgb, #2f6fd0 78%, currentColor); opacity: 1; }
+.qcfg-badge.repository, .qcfg-badge.branch { color: color-mix(in srgb, #1f6f43 78%, currentColor); opacity: 1; }
+.qcfg-lock { margin-left: 4px; opacity: .55; font-size: 10px; }
+.qcfg-control { display: inline-flex; align-items: center; gap: 4px; }
+.qcfg-input { width: 220px; }
+.qcfg-tip { max-width: 360px; white-space: pre-line; }
+.qcfg-error { color: #f87171; font-size: 12px; }
+`
+
+function QuenchingSettings(props: { target?: string; onEntries: (entries: { id: string; title: string; description: string; keywords: string }[]) => void }) {
+  const ctx = usePlugin()
+  const rpc = () => ctx.client.rpc(Vitrine)
+  const lang = (): Lang => (ctx.locale.locale().toLowerCase().startsWith("pt") ? "pt-BR" : "en")
+  const t = (key: string) => SETTINGS_COPY[lang()][key] ?? key
+  const [target, updateTarget] = settingsTarget(ctx)
+  rememberProject(ctx, ctx.sessions.current()?.directory)
+  const directory = () => target.directory || undefined
+  const [schema, setSchema] = createSignal<ConfigSchema>()
+  const [error, setError] = createSignal("")
+  const [layer, setLayer] = createSignal<ConfigLayer>("project")
+  const [drafts, setDrafts] = createSignal<Record<string, string>>({})
+
+  const load = async () => {
+    const dir = directory()
+    if (!dir) return
+    setError("")
+    try {
+      const read = await rpc().config({ directory: dir }) as ConfigRead
+      if (!read.ok) return setError(read.error)
+      const parsed = JSON.parse(read.json) as ConfigSchema
+      setSchema(parsed)
+      setDrafts({})
+      props.onEntries(parsed.keys.map((entry) => ({
+        id: `quenching.${entry.key}`,
+        title: entry.copy[lang()].title,
+        description: entry.copy[lang()].summary,
+        keywords: `${entry.key} ${entry.copy.en.title} quenching`,
+      })))
+    } catch (cause) {
+      setError(String(cause))
+    }
+  }
+  createEffect(() => {
+    directory()
+    void load()
+  })
+
+  const write = async (entry: ConfigKey, value: string, unset = false, into?: ConfigLayer) => {
+    const dir = directory()
+    if (!dir) return
+    const target = into ?? (entry.scope === "project" ? "project" : layer())
+    const result = await rpc().configWrite({ directory: dir, key: entry.key, layer: target, value, unset }) as ConfigWrite
+    if (!result.ok) {
+      ctx.toast.show({ title: t("refused"), description: result.message })
+      return
+    }
+    ctx.toast.show({ title: t("saved"), description: `${entry.key} → ${target === "local" ? t("local") : t("project")}` })
+    await load()
+  }
+
+  const valueOf = (entry: ConfigKey) => schema()?.values[entry.key]
+  const sourceOf = (entry: ConfigKey) => valueOf(entry)?.source ?? "default"
+  const tooltip = (entry: ConfigKey) => {
+    const scope = { project: t("scopeProject"), machine: t("scopeMachine"), either: t("scopeEither") }[entry.scope]
+    return [
+      entry.copy[lang()].summary,
+      `${t("defaultIs")}: ${shown(entry.default) || t("none")}`,
+      `${t("readBy")}: ${entry.reader}`,
+      `${t("scope")}: ${scope}`,
+      entry.key,
+    ].join("\n")
+  }
+  const restore = (entry: ConfigKey) => {
+    const source = sourceOf(entry)
+    if (source === "local") void write(entry, "", true, "local")
+    else if (source === "repository") void write(entry, "", true, "project")
+  }
+
+  const control = (entry: ConfigKey) => {
+    const current = () => valueOf(entry)?.value
+    const locked = () => entry.scope === "project" && layer() === "local"
+    const restorable = () => ["local", "repository"].includes(sourceOf(entry))
+    const menu = () => (
+      <Show when={restorable()}>
+        <ctx.ui.Menu label={t("restore")} items={[{ label: t("restore"), onSelect: () => restore(entry) }]} />
+      </Show>
+    )
+    if (!entry.editable) {
+      return (
+        <ctx.ui.Button size="small" onClick={() => {
+          const path = schema()?.layerPaths.project
+          if (path) ctx.system.openExternal(`file://${path}`)
+        }}>{t("open")}</ctx.ui.Button>
+      )
+    }
+    if (entry.type === "boolean") {
+      return (
+        <span class="qcfg-control">
+          <ctx.ui.Switch checked={current() === true} label={entry.copy[lang()].title} hideLabel
+            onChange={(checked) => void write(entry, JSON.stringify(checked))} />
+          {menu()}
+        </span>
+      )
+    }
+    if (entry.type === "enum") {
+      return (
+        <span class="qcfg-control">
+          <ctx.ui.Select label={entry.copy[lang()].title}
+            options={(entry.choices ?? []).map((choice) => ({ value: choice, label: choice }))}
+            value={typeof current() === "string" ? current() as string : undefined}
+            onChange={(choice) => void write(entry, JSON.stringify(choice))} />
+          {menu()}
+        </span>
+      )
+    }
+    const text = () => drafts()[entry.key] ?? shown(current())
+    return (
+      <span class="qcfg-control">
+        <ctx.ui.TextInput class="qcfg-input" label={entry.copy[lang()].title} value={text()}
+          placeholder={shown(entry.default) || t("save")} disabled={false}
+          onInput={(value) => setDrafts({ ...drafts(), [entry.key]: value })}
+          onSubmit={(value) => void write(entry, encode(entry, value))} />
+        <Show when={locked()}><span class="qcfg-lock" title={t("scopeProject")}>🔒</span></Show>
+        {menu()}
+      </span>
+    )
+  }
+
+  const sections = createMemo(() => {
+    const value = schema()
+    if (!value) return []
+    return value.categories.map((category) => ({
+      id: category.id,
+      title: category.title[lang()],
+      keys: value.keys.filter((entry) => entry.category === category.id),
+    })).filter((section) => section.keys.length > 0)
+  })
+
+  return (
+    <ctx.ui.SettingsLayout title={t("title")} description={t("description")}
+      actions={<ctx.ui.Button size="small" onClick={() => void load()}>{t("reload")}</ctx.ui.Button>}>
+      <Show when={directory()} fallback={<ctx.ui.SettingsSection><div class="qcfg-error">{t("noSession")}</div></ctx.ui.SettingsSection>}>
+        <Show when={error()}>
+          <ctx.ui.SettingsSection><div class="qcfg-error">{error()}</div></ctx.ui.SettingsSection>
+        </Show>
+        <Show when={schema()} fallback={<Show when={!error()}><ctx.ui.SettingsSection><div>{t("loading")}</div></ctx.ui.SettingsSection></Show>}>
+          <ctx.ui.SettingsSection>
+            <ctx.ui.SettingsRow title={t("projectRow")} description={t("projectHint")}>
+              <span title={directory()}>
+                <ctx.ui.Select label={t("projectRow")} value={directory()}
+                  options={target.recent.map((path) => ({ value: path, label: projectLabel(path) }))}
+                  onChange={(value) => updateTarget((draft) => { draft.directory = value as string })} />
+              </span>
+            </ctx.ui.SettingsRow>
+            <ctx.ui.SettingsRow title={t("writeTo")} description={t("writeToHint")}>
+              <ctx.ui.Select label={t("writeTo")} value={layer()}
+                options={[{ value: "project", label: t("project") }, { value: "local", label: t("local") }]}
+                onChange={(value) => setLayer(value as ConfigLayer)} />
+            </ctx.ui.SettingsRow>
+          </ctx.ui.SettingsSection>
+          <For each={sections()}>{(section) => (
+            <ctx.ui.SettingsSection title={section.title}>
+              <For each={section.keys}>{(entry) => (
+                <ctx.ui.SettingsRow
+                  id={`quenching.${entry.key}`}
+                  title={
+                    <ctx.ui.Tooltip value={<span class="qcfg-tip">{tooltip(entry)}</span>}>
+                      <span>
+                        {entry.copy[lang()].title}
+                        <span class={`qcfg-badge ${sourceOf(entry)}`}>{t(sourceOf(entry))}</span>
+                      </span>
+                    </ctx.ui.Tooltip>
+                  }
+                  description={entry.copy[lang()].summary}
+                >
+                  {control(entry)}
+                </ctx.ui.SettingsRow>
+              )}</For>
+            </ctx.ui.SettingsSection>
+          )}</For>
+        </Show>
+      </Show>
+    </ctx.ui.SettingsLayout>
   )
 }
 
@@ -519,6 +1036,21 @@ export default Plugin.define({
     }
 
     ctx.add(Style, css)
+
+    // The page needs SettingsLayout/Section/Row (SDK 2.3.0); an older host keeps every other part.
+    if (hasSettingsPage(ctx)) {
+      const [entries, setEntries] = createSignal<{ id: string; title: string; description: string; keywords: string }[]>([])
+      ctx.add(Style, settingsCss)
+      ctx.add(SettingsPage, {
+        id: "quenching",
+        title: "quenching",
+        icon: "sliders",
+        get entries() {
+          return entries()
+        },
+        render: (input) => <QuenchingSettings target={input.target} onEntries={setEntries} />,
+      })
+    }
 
     ctx.add(Panel, {
       id: "specs",
@@ -537,5 +1069,14 @@ export default Plugin.define({
       slash: { name: "specs" },
       run: openSpecs,
     }))
+    if (hasSettingsPage(ctx)) {
+      ctx.add(Command, () => ({
+        id: "quenching-settings",
+        title: "quenching: configurações",
+        description: "Abrir a configuração do quenching deste projeto",
+        keywords: "quenching config configuração configurações settings worktree slots",
+        run: () => openQuenchingSettings(ctx),
+      }))
+    }
   },
 })
