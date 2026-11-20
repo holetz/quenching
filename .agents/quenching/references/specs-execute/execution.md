@@ -118,7 +118,12 @@ For each task the policy says to verify:
 1. Run the task's `verify:` command, from its declared `cwd:` — or, absent one, from the session's
    or worktree's root, exactly as before this key existed.
 2. **Passes** → the task is done; go to the diff self-review.
-3. **Fails** → read the failure, change the code, and run it again.
+3. **Fails** → classify it first. Reproduce the failure in the base worktree (`.quenching/red`): it
+   reproduces there → it is **pre-existing**, not this task's, and
+   `/docs/standards/workflows/task-execution.md` §Pre-existing errors applies — a declared
+   `[fix-preexistente]` task when the four criteria hold, else a spec captured with `cq specs new`; never
+   widen the `verify:` to hide it. It does not reproduce → it is this task's own: read the failure, change
+   the code, and run it again.
 
 Two rules bound the loop:
 
