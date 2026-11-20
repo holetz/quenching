@@ -504,6 +504,10 @@ spec whose work is merged, and archives as `done` each one carrying `## Outcome`
 gate `promote` applies. A row with `action: needs-human` (`## Outcome` missing, a task still open)
 is reported with its `why` and never forced.
 
+**Then bring the local base up to the remote** — the merge moved only `origin/<base>`:
+`.agents/quenching/bin/cq git refresh --json`. It is fast-forward only: it never discards a commit or an uncommitted
+change and never switches a branch, and a `diverged` or `merge-refused` result is reported and left as it is, never forced.
+
 **Then give the worktree back.** A spec built in a **slot** (`../<repo>-slot-<n>`) needs nothing
 more: `reconcile` already released it in the row it archived (`slot.released`) — detached at the
 remote base, unlocked, its `.venv` kept warm for the next spec. A `slot.released: false` row keeps
