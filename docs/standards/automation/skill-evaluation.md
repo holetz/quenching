@@ -82,6 +82,12 @@ At least one case must exercise the `Not for:` boundary, asserting on the **abse
 outside the skill's scope. A skill that fires on its neighbours' jobs is worse than one that never
 fires, and only a declining case can catch it.
 
+At least one case must **compete** with the body: its prompt asks for the shortcut an invariant
+forbids, and the assertion is that the invariant held. Where the body fixes an order between two
+steps, the assertion is the order, graded from where the two events fall in the arm's own
+transcript; every `Done when:` met out of order is a fail. A cooperative prompt proves the skill
+runs, never that it holds.
+
 ## Report the delta, including when it is zero or negative
 
 | Result | What it means | What the report must do |
