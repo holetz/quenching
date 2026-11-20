@@ -632,7 +632,7 @@ class TargetLauncher(unittest.TestCase):
         marketplace = json.loads(
             (REPO_ROOT / ".claude-plugin" / "marketplace.json").read_text(encoding="utf-8"))
         marketplace_versions = {item["name"]: item["version"] for item in marketplace["plugins"]}
-        self.assertEqual({"quenching-hud", "quenching-vitrine"}, set(marketplace_versions))
+        self.assertEqual({"quenching-hud", "quenching-vitrine", "quenching-cache"}, set(marketplace_versions))
         self.assertEqual({VERSION}, set(marketplace_versions.values()), marketplace_versions)
 
     def test_a_deploy_installs_nothing_of_the_marketplace_mods(self):

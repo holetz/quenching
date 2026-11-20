@@ -113,7 +113,8 @@ command that skips the git hooks — `--no-verify`, `git commit -n`, `git -c cor
 the leak and identity gates only exist while those hooks run. Both rules share one body, so a shell
 call pays one Python start for them, not one each; the file keeps its first rule's name because the
 settings merge finds its entry by it. Cost claim: every shell call × one Python start and two
-regexes over the raw input, zero tokens on no-match. It reads the command text only — a hook path
+regexes over the raw input, zero tokens on no-match; a regex hit is confirmed on the tokenized
+command, so a quoted commit message or an `echo` that only mentions a flag stays silent. It reads the command text only — a hook path
 set by `git config` beforehand, a variable or an alias goes unseen — so it is a reminder, not a
 boundary. A skill-scoped rung 1 does not exist for it: the skill bridge is a byte copy and carries
 no frontmatter hook.

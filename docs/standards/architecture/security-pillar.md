@@ -28,7 +28,7 @@ a secure value.
 
 | Question | Evidence read | Ownership boundary |
 | --- | --- | --- |
-| Are workflow and job permissions explicit and bounded? | Provider workflow files and their workflow/job permission declarations | `delivery` owns pipeline shape; the target owner decides whether a permission is safe. |
+| Are workflow and job permissions explicit and bounded? | Provider workflow files and their workflow/job permission declarations; a `write-all` grant is reported `unbounded`, and scopes granted `write` are listed as evidence without changing the state | `delivery` owns pipeline shape; the target owner decides whether a permission is safe. |
 | Do ignore rules cover the secret classes the repository exposes? | Repository ignore patterns and the secret-bearing paths they cover | The target owns secret policy; the pillar never adds or edits an ignore rule. |
 | Is advisory dependency configuration present? | Dependency-advisory or update configuration and the manifests it names | `toolchain` owns dependency declarations; the pillar only reports advisory coverage. |
 | Who may touch the relevant security surface? | Access-ownership declarations such as CODEOWNERS or an equivalent provider artifact | The provider and target owner own access policy; the pillar does not grant or revoke access. |

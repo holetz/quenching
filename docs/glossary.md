@@ -197,7 +197,8 @@ Fifteen terms to read first; each has its full entry under *Terms*.
 - [**Handoff artifact**](standards/architecture/spec-backend.md) — the session-to-session handoff
   stored on the `quenching` branch under `specs/artifacts/<id>/` (or `_handoffs/` when no spec is
   attached) and read back with `cq specs artifact read`; a different fact from the `## Handoff`
-  section above, which is the spec's own resumption context.
+  section above. `/quenching-handoff` (warm cache) and `/quenching-cache handoff` (expired) both
+  write it through `cq specs handoff`.
 - **Harness** — the agent-facing instruction file of a repository (`AGENTS.md`, with legacy `CLAUDE.md`) that
   point into `/docs/` instead of duplicating it.
 - [**Impeccable**](standards/architecture/design-front.md) — optional screen-craft consumer that

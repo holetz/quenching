@@ -122,13 +122,12 @@ class EligibilityTest(unittest.TestCase):
         self.assertEqual(eligibility(task(), settings(enabled=False), self.root, Quota())[1], 1)
         self.assertEqual(eligibility(task(state="x"), settings(), self.root, Quota())[1], 1)
 
-    def test_quota_is_judged_under_the_reserve_and_ignores_cross_review_off(self):
+    def test_quota_is_judged_under_the_reserve(self):
         quota = Quota(state="unavailable", reason="over the ceiling")
-        base = {**settings(reservePercent=10), "crossReview": "off"}
-        payload, code = eligibility(task(), base, self.root, quota)
+        payload, code = eligibility(task(), settings(reservePercent=10), self.root, quota)
         self.assertEqual(code, 1)
         self.assertIn("10% reserve", payload["reason"])
-        self.assertEqual(quota.seen[0]["crossReview"], "auto")
+        self.assertNotIn("crossReview", quota.seen[0])
         self.assertEqual(quota.seen[0]["maxUsedPercent"], {"primary": 70, "secondary": 80})
 
     def test_reserve_never_goes_below_zero(self):

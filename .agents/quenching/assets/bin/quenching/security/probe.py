@@ -49,8 +49,46 @@ def _relative(root: Path, path: Path) -> str:
     return path.relative_to(root).as_posix()
 
 
+_PERMISSIONS = re.compile(r"^(\s*)permissions\s*:\s*([^#]*?)\s*(?:#.*)?$")
+_SCOPE = re.compile(r"^\s*([A-Za-z-]+)\s*:\s*([A-Za-z-]+)")
+
+
+def _grants(lines: list[str]) -> tuple[list[str], list[str]]:
+    """Every `write-all` and every scope granted `write`, as `workflow` or `job:<line>` plus the
+    scope. Line-based, like the counts: an inline value, a flow mapping or the block below."""
+    write_all: list[str] = []
+    write_scopes: list[str] = []
+    for number, line in enumerate(lines, start=1):
+        match = _PERMISSIONS.match(line)
+        if not match:
+            continue
+        indent, inline = len(match.group(1)), match.group(2)
+        where = "workflow" if indent == 0 else f"job:{number}"
+        if inline == "write-all":
+            write_all.append(where)
+            continue
+        if inline.startswith("{"):
+            pairs = [item.split(":", 1) for item in inline.strip("{}").split(",") if ":" in item]
+        elif inline:
+            continue
+        else:
+            pairs = []
+            for below in lines[number:]:
+                if not below.strip() or below.lstrip().startswith("#"):
+                    continue
+                if len(below) - len(below.lstrip()) <= indent:
+                    break
+                scope = _SCOPE.match(below)
+                if scope:
+                    pairs.append([scope.group(1), scope.group(2)])
+        write_scopes += [f"{where}:{key.strip()}" for key, value in pairs
+                         if value.strip() == "write"]
+    return write_all, write_scopes
+
+
 def workflow_permissions(root: Path) -> QuestionResult:
-    """Report whether recognized workflows declare workflow or job permissions."""
+    """Report whether recognized workflows declare workflow or job permissions, and where a
+    declaration grants `write-all`, the one grant unbounded by its own definition."""
     files = _workflow_files(root)
     if not files:
         return QuestionResult(
@@ -68,20 +106,22 @@ def workflow_permissions(root: Path) -> QuestionResult:
             evidence.append({"path": relative, "reason": error})
             continue
         assert text is not None
-        workflow_declarations = sum(
-            bool(re.match(r"^permissions\s*:", line)) for line in text.splitlines()
-        )
-        job_declarations = sum(
-            bool(re.match(r"^\s{2,}permissions\s*:", line)) for line in text.splitlines()
-        )
+        lines = text.splitlines()
+        workflow_declarations = sum(bool(re.match(r"^permissions\s*:", line)) for line in lines)
+        job_declarations = sum(bool(re.match(r"^\s{2,}permissions\s*:", line)) for line in lines)
+        write_all, write_scopes = _grants(lines)
         evidence.append({
             "path": relative,
             "workflowDeclarations": workflow_declarations,
             "jobDeclarations": job_declarations,
+            "writeAll": write_all,
+            "writeScopes": write_scopes,
         })
 
     if any("reason" in item for item in evidence):
         state = "refused"
+    elif any(item["writeAll"] for item in evidence):
+        state = "unbounded"
     elif any(item["workflowDeclarations"] or item["jobDeclarations"] for item in evidence):
         state = "present"
     else:

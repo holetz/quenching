@@ -35,7 +35,7 @@ Report one compact table:
 
 | Question | State | Evidence |
 | --- | --- | --- |
-| `workflow-permissions` | `present`/`missing`/`refused` | workflow paths and workflow/job declaration counts |
+| `workflow-permissions` | `present`/`unbounded`/`missing`/`refused` | workflow paths, workflow/job declaration counts, `writeAll` (where `write-all` is granted, which makes the state `unbounded`) and `writeScopes` (scopes granted `write`, evidence only) |
 | `secret-ignore-coverage` | `present`/`missing`/`refused` | ignore path and recognized secret classes, never secret values |
 | `advisory-dependency-configuration` | `present`/`missing`/`refused` | recognized advisory configuration paths |
 | `access-ownership` | `present`/`missing` | recognized ownership declaration paths, never owner values |

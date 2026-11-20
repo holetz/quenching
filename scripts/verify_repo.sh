@@ -36,6 +36,10 @@ mkdir -p "$COVERAGE_DIR"
 # directory, and it would take the worker data with it before the report is combined.
 export COVERAGE_FILE="$ROOT/$COVERAGE_DIR/.coverage"
 
+# One timezone for every tier: a test that renders a date reads the same clock face on a laptop,
+# in an agent session and in CI. The locale is left to the host — `C.UTF-8` is not a macOS locale.
+export TZ=UTC
+
 # One temp root for the whole run. `scripts.toolchain.tmproot` prefers a RAM-backed candidate and
 # falls back to the disk with a NOTICE on stderr; it prints the chosen root on stdout. The
 # `quenching-gate-*` directory under it is per run and removed on exit — normal, failed, SIGINT or
@@ -217,6 +221,20 @@ if command -v claude >/dev/null 2>&1; then
 else
   printf '\n==> quenching-hud plugin\n'
   printf 'SKIPPED: `claude` is not on PATH; integrations/claude-hud was not validated.\n'
+fi
+
+# The quenching-cache band carries generated copies of quenching's price table and handoff
+# template; a stale copy is refused here, with or without `claude`.
+run_check "quenching-cache generated copies" \
+  python3 scripts/cache_plugin_sync.py --check
+if command -v claude >/dev/null 2>&1; then
+  run_check "quenching-cache plugin" \
+    claude plugin validate integrations/claude-cache
+  run_check "quenching-cache tests" \
+    claude plugin test integrations/claude-cache
+else
+  printf '\n==> quenching-cache plugin\n'
+  printf 'SKIPPED: `claude` is not on PATH; integrations/claude-cache was not validated or tested.\n'
 fi
 
 # The quenching-vitrine mod (the Claude Desktop Specs pane) is validated and tested the same way:

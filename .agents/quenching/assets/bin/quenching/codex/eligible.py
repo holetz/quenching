@@ -9,8 +9,7 @@ hold, and the class picks the model (`modelSmall` or `modelVerified`). A verifie
 
 The quota is asked last, because it is the only check that starts a process: the probe must
 answer `available` under every ceiling lowered by `reservePercent`, so a dispatch never spends the
-margin the human kept. `crossReview: "off"` turns off the review, never the executor, so the probe
-is asked as if the review were on.
+margin the human kept.
 
     exit 0  eligible: `class`, `model`, `reasoningEffort` in the payload
     exit 1  not eligible: `reason` names the first rule that failed — Claude writes the task
@@ -49,7 +48,7 @@ def task_tokens(root: str, files: list[str]) -> int:
 def reserved(settings: dict) -> dict:
     """The settings the probe judges against: every ceiling lowered by `reservePercent`."""
     reserve = settings["executor"]["reservePercent"]
-    return {**settings, "crossReview": "auto",
+    return {**settings,
             "maxUsedPercent": {window: max(0, ceiling - reserve)
                                for window, ceiling in settings["maxUsedPercent"].items()}}
 

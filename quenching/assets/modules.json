@@ -13,6 +13,11 @@
       "name": "quenching-vitrine",
       "path": "integrations/claude-vitrine",
       "marketplace": true
+    },
+    {
+      "name": "quenching-cache",
+      "path": "integrations/claude-cache",
+      "marketplace": true
     }
   ],
   "modules": [
