@@ -144,7 +144,7 @@ export function split(document: string): Section[] {
     if (last) {
       out.push({ heading: last.heading, body: body.slice(last.start, match.index).trim() })
     }
-    last = { heading: match[1], start: heading.lastIndex }
+    last = { heading: match[1] ?? '', start: heading.lastIndex }
   }
 
   if (last) {
@@ -167,7 +167,7 @@ export function frontmatter(document: string): Record<string, string> {
     const field = /^([A-Za-z][\w-]*):[ \t]*(.*)$/.exec(line)
 
     if (field) {
-      out[field[1]] = field[2].trim()
+      out[field[1] ?? ''] = (field[2] ?? '').trim()
     }
   }
 

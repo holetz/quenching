@@ -121,10 +121,10 @@ test('the detail joins status, show, the full document and the dependency graph,
   expect(detail.sections.map(one => one.heading)).toEqual(['Problem', 'Proposal'])
   expect(detail.tasks.map(one => [one.id, one.blocked])).toEqual([['1.1', false], ['1.2', true]])
   expect(detail.deps.up.map(one => one.id)).toEqual([9])
-  expect(detail.deps.up[0].phase).toBe('archive')
+  expect(detail.deps.up[0]?.phase).toBe('archive')
   expect(detail.deps.down.map(one => one.id)).toEqual([11])
   expect(detail.epics).toEqual([{ epic: 1, title: 'Epic', label: 'S1', group: 2 }])
-  expect(detail.composition?.items[0].label).toBe('S1')
+  expect(detail.composition?.items[0]?.label).toBe('S1')
 })
 
 test('a cycle exits 1 with its payload and still reaches the detail; an old cq falls back to the open graph', async () => {

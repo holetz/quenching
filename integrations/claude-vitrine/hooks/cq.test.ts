@@ -4,7 +4,11 @@ import { createCq, limiter, singleFlight } from './cq'
 import type { Run, Runner } from './cq'
 
 const ok = (stdout: string): Run => ({ code: 0, stdout, stderr: '' })
-const settle = () => new Promise(done => setTimeout(done, 0))
+const settle = async () => {
+  for (let turn = 0; turn < 5; turn += 1) {
+    await Promise.resolve()
+  }
+}
 
 test('a read appends --json and parses the payload', async () => {
   const seen: string[][] = []
