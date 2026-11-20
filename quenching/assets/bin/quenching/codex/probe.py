@@ -1,4 +1,4 @@
-"""Whether the Codex quota allows a review right now — read-only, and failing closed.
+"""Whether the Codex quota allows a call right now — read-only, and failing closed.
 
 Primary source: the `account/rateLimits/read` JSON-RPC method of `codex app-server` over stdio,
 under a deadline. Fallback, only when the app-server does not answer: the last `token_count`
@@ -10,8 +10,8 @@ event in `$CODEX_HOME/sessions/**/rollout-*.jsonl`. `auth.json` is never opened.
     unknown     (exit 2)  no source could be read, or the only snapshot is stale
 
 The app-server starts no thread and no turn, so it runs nothing. Codex's native sandbox is never
-asked for anywhere in this pillar: the review and the executor both run with the bypass, bounded by
-the git guard (`quenching.codex.guard`).
+asked for anywhere in this pillar: the executor runs with the bypass, bounded by the git guard
+(`quenching.codex.guard`).
 """
 from __future__ import annotations
 

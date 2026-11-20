@@ -7,7 +7,7 @@ The task is judged again by `eligibility` (the quota included), so a caller cann
 loses `GH_TOKEN`, `GITHUB_TOKEN` and every `AWS_*`, `AZURE_*` and `GOOGLE_*` variable; the prompt
 forbids git and any write outside the task's `files:`.
 
-The git guard is read before and after: the reviewed worktree's own `HEAD`, branch, reflog length
+The git guard is read before and after: the worktree's own `HEAD`, branch, reflog length
 and stash ref (never another worktree's `HEAD`), the base checkout's `HEAD` and the primary branch
 ref (a fast-forward is accepted; a rewind, a branch switch, a detached base `HEAD` or a removed
 ref is a divergence), and `git status` contained in `files:`. A divergence is
@@ -27,7 +27,9 @@ of the execution.
 """
 from __future__ import annotations
 
+import json
 import os
+import re
 import shutil
 import subprocess
 import time
@@ -36,8 +38,10 @@ from quenching.codex.eligible import eligibility, strip_annotation
 from quenching.codex.guard import (BYPASS, GuardError, base_moves, base_state, clean_env, git, refs,
                                    touched)
 from quenching.codex.probe import group_kwargs, probe, stop
-from quenching.codex.review import RUN_NAME, measured_tokens, refusal
 from quenching.specs.backends import open_backend
+
+RUN_NAME = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]*$")
+NOT_MEASURED = "not measured"
 
 RULE = (
     "Regras do executor: escreva apenas nos arquivos listados abaixo, dentro deste diretório. "
@@ -52,6 +56,56 @@ def build_argv(executor: dict, model: str, worktree: str, message_path: str) -> 
     return ["exec", BYPASS, "--ignore-user-config", "--ignore-rules", "-m", model,
             "-c", f"model_reasoning_effort={executor['reasoningEffort']}", "-C", worktree,
             "--json", "-o", message_path, "-"]
+
+
+def _last_usage(node, found: list) -> None:
+    if isinstance(node, dict):
+        for key, value in node.items():
+            if key == "total_token_usage" and isinstance(value, dict):
+                found.append(value)
+            else:
+                _last_usage(value, found)
+    elif isinstance(node, list):
+        for item in node:
+            _last_usage(item, found)
+
+
+def _add_turn(totals: dict, usage: dict) -> None:
+    for key, value in usage.items():
+        if isinstance(value, int) and not isinstance(value, bool):
+            totals[key] = totals.get(key, 0) + value
+
+
+def measured_tokens(events_path: str):
+    """The usage of every `turn.completed` that `codex exec --json` printed, summed.
+
+    Without one, the last `total_token_usage` of the rollout format; without either,
+    `not measured`. `total_tokens` is input plus output, as the event does not carry it.
+    """
+    turns: dict = {}
+    found: list = []
+    try:
+        with open(events_path, encoding="utf-8", errors="replace") as handle:
+            for line in handle:
+                try:
+                    event = json.loads(line)
+                except json.JSONDecodeError:
+                    continue
+                if isinstance(event, dict) and event.get("type") == "turn.completed" \
+                        and isinstance(event.get("usage"), dict):
+                    _add_turn(turns, event["usage"])
+                else:
+                    _last_usage(event, found)
+    except OSError:
+        return NOT_MEASURED
+    if turns:
+        turns["total_tokens"] = turns.get("input_tokens", 0) + turns.get("output_tokens", 0)
+        return turns
+    return found[-1] if found else NOT_MEASURED
+
+
+def refusal(code: str, message: str) -> tuple[dict, int]:
+    return {"ok": False, "code": code, "message": message}, 2
 
 
 def primary_used(quota: dict | None):
