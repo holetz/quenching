@@ -1,5 +1,5 @@
 """`cq git refresh`: the local base moves by fast-forward only, keeps uncommitted work, switches no
-branch, and the three close-of-cycle bodies name the verb."""
+branch, and the conclude and merge bodies name the verb."""
 from __future__ import annotations
 
 import contextlib
@@ -8,7 +8,6 @@ import json
 import os
 import pathlib
 import subprocess
-import tempfile
 import unittest
 from types import SimpleNamespace
 
@@ -115,14 +114,11 @@ class Refresh(RepoCase):
 
 
 class TheCloseNamesTheVerb(unittest.TestCase):
-    def test_conclude_merge_and_orchestrator_bodies_call_it(self):
+    def test_conclude_and_merge_bodies_call_it(self):
         for rel in ("quenching/skills/quenching-specs/references/conclude.md",
-                    "quenching/skills/quenching-git/references/merge.md",
-                    "quenching/agents/spec-orchestrator.md"):
+                    "quenching/skills/quenching-git/references/merge.md"):
             text = " ".join((ROOT / rel).read_text(encoding="utf-8").split())
             self.assertIn("cq git refresh", text, rel)
-        grant = (ROOT / "quenching/agents/spec-orchestrator.md").read_text(encoding="utf-8")
-        self.assertIn("Bash(cq git refresh:*)", grant)
 
 
 if __name__ == "__main__":

@@ -26,6 +26,7 @@ from quenching.git.preflight import cmd_preflight
 from quenching.git.prune import cmd_prune
 from quenching.git.pull import cmd_pr
 from quenching.git.push import cmd_push
+from quenching.git.refresh import cmd_refresh
 from quenching.git.slugs import cmd_specs
 from quenching.git.stale import cmd_stale
 from quenching.git.state import cmd_state
@@ -35,7 +36,8 @@ DISPATCH = {"base": cmd_base, "specs": cmd_specs, "stale": cmd_stale,
             "conventions": cmd_conventions, "worktree": cmd_worktree,
             "commit": cmd_commit, "audit": cmd_audit, "state": cmd_state,
             "push": cmd_push, "prune": cmd_prune, "pr": cmd_pr,
-            "history": cmd_history, "preflight": cmd_preflight, "identity": cmd_identity}
+            "history": cmd_history, "preflight": cmd_preflight, "identity": cmd_identity,
+            "refresh": cmd_refresh}
 
 
 READ_VERBS = ("base", "stale", "conventions", "state", "history", "preflight", "audit",
@@ -200,6 +202,14 @@ def build_parser() -> argparse.ArgumentParser:
     pp.add_argument("--spec", metavar="ID",
                     help="stamp this spec's `merge` record once the PR is merged (GitHub)")
     pp.add_argument("--json", action="store_true", help="machine-readable output")
+
+    sp = sub.add_parser("refresh", help="fast-forward the local base branch to <remote>/<base> — "
+                                         "never discards a commit or an uncommitted change, "
+                                         "never switches a branch")
+    sp.add_argument("--base", metavar="BRANCH", help="the base branch (default: the resolved base)")
+    sp.add_argument("--remote", default="origin", metavar="REMOTE",
+                    help="the remote read (default: origin)")
+    sp.add_argument("--json", action="store_true", help="machine-readable output")
 
     sp = sub.add_parser("audit", help="the verifier's facts inside one registered worktree — "
                                        "status, stash, commits, scope, ancestry, reflog; "
