@@ -10,6 +10,12 @@ const HIDDEN = '(engine)' // what Claude Code draws when the plugin shows nothin
 const WAITING = '⚪️ quenching-cache starts after you send a message'
 const BAR = { plugin: 'quenching-cache', component: 'AbovePrompt', props: { hasSurvey: false, isCollapsed: false, isWorking: false } as never } as const // the kit fills the rest of the band's props
 
+// The plugin redraws once per second, so `clock.advance` costs one redraw per simulated second and a
+// long advance is thousands of them: its real run time follows machine load, and the kit's 5 s test
+// timeout is hit on a busy host. Tests that only read the bar after a long wait start from a saved
+// record of the right age instead; the ones about what a tick does advance only the minutes that matter.
+const saved = (age: number, over: Record<string, unknown> = {}) => ({ at: T0 - age, prefix: 228_000, out: 0, model: 'claude-opus-5-5', read: 228_000, write: 0, ttlMin: 60, warned: false, window: 1_000_000, ...over })
+
 type Body = Extract<Parameters<typeof test>[1], (...args: never[]) => unknown>
 type On = Parameters<Body>[1]
 type Dollar = Parameters<Body>[0]
@@ -91,29 +97,27 @@ test('after a reply: green with the countdown, identical on desktop, vscode, ter
   await expectBar($, '🟢 50 min left · next message ≈ $0.01 · 50K / 1M · ✅ Keep going')
 })
 
-test('countdown starts at the request, not the end of a 3-minute reply', async ($, on) => {
-  const w = engine(on, { streamMs: 3 * MIN })
+test('countdown starts at the request, not the end of a 1-minute reply', async ($, on) => {
+  const w = engine(on, { streamMs: MIN })
   await start($)
   await w.reply($, { read: 50_000, write: 0 })
-  await expectBar($, '🟢 57 min left · next message ≈ $0.01 · 50K / 1M · ✅ Keep going')
+  await expectBar($, '🟢 59 min left · next message ≈ $0.01 · 50K / 1M · ✅ Keep going')
 })
 
 test('subagent steps do not move the clock', async ($, on) => {
   const w = engine(on)
   await start($)
   await w.reply($, { read: 50_000, write: 0 })
-  await w.clock.advance(30 * MIN)
+  await w.clock.advance(5 * MIN)
   await w.reply($, { read: 900_000, write: 0 }, 'agent-7')
-  await expectBar($, '🟢 30 min left · next message ≈ $0.01 · 50K / 1M · ✅ Keep going')
+  await expectBar($, '🟢 55 min left · next message ≈ $0.01 · 50K / 1M · ✅ Keep going')
 })
 
 test('ticks to yellow, then red, with exactly one pop-up', async ($, on) => {
-  const w = engine(on)
+  const w = engine(on, { store: { 'cmx:chat-1': saved(57 * MIN) } })
   await start($)
-  await w.reply($, { read: 228_000, write: 0 })
-  await w.clock.advance(57 * MIN)
   await expectBar($, '🟡 3:00 min left · next message ≈ $0.05, later ≈ $1.82 (40× more) · 228K / 1M · ⏳ Reply soon or try /quenching-cache handoff')
-  await w.clock.advance(15 * MIN)
+  await w.clock.advance(4 * MIN)
   await expectBar($, '🔴 cache expired · next message ≈ $1.82 (40× more) · 228K / 1M · 🔄 Try /quenching-cache handoff to save 170K tokens | $1.71')
   await w.clock.advance(5 * MIN)
   // the pop-up says exactly what the bar says
@@ -140,7 +144,7 @@ test('after model switches and a compact, the next reply counts down from a full
   await $.classic.PostModelSwitch({ ...sw, from_model: 'claude-opus-5-5', to_model: 'claude-haiku-5-5' } as never)
   await $.classic.PostModelSwitch({ ...sw, from_model: 'claude-haiku-5-5', to_model: 'claude-opus-5-5' } as never)
   await $.classic.PostCompact({ trigger: 'manual', compact_summary: 'x'.repeat(40_000) } as never)
-  await w.clock.advance(20 * MIN)
+  await w.clock.advance(2 * MIN)
   await $.classic.SessionStart({ source: 'compact', session_id: 'chat-1', seconds_since_last_response: 1200, context_tokens: 30_000, prompt_cache_likely_expired: true, model: 'claude-opus-5-5' } as never)
   await w.reply($, { read: 0, write: 30_000 })
   await expectBar($, '🟢 60 min left · next message ≈ <$0.01 · 30K / 1M · ✅ Keep going')
@@ -223,13 +227,12 @@ test('vscode: the ✕ row never wraps and the text column can shrink', async ($,
 })
 
 test('a closed bar also stops the pop-up', async ($, on) => {
-  const w = engine(on)
+  const w = engine(on, { store: { 'cmx:chat-1': saved(55 * MIN) } })
   await start($)
-  await w.reply($, { read: 228_000, write: 0 })
   const ui = await $.ui.mount({ ...BAR, surface: 'desktop' })
   await ui.press({ key: 'close' })
   await ui.unmount()
-  await w.clock.advance(80 * MIN)
+  await w.clock.advance(10 * MIN)
   expect(w.toasts.length).toBe(0)
 })
 
@@ -265,8 +268,8 @@ function cqEngine(on: On, o: CqOpts = {}) {
   return argv
 }
 
-function handoffEngine(on: On, opts: { reply?: string | null; clearRefusals?: number; fillRefused?: boolean; noticeRefused?: boolean; surface?: (typeof SURFACES)[number] } & CqOpts = {}) {
-  const w = engine(on)
+function handoffEngine(on: On, opts: { store?: Record<string, unknown>; reply?: string | null; clearRefusals?: number; fillRefused?: boolean; noticeRefused?: boolean; surface?: (typeof SURFACES)[number] } & CqOpts = {}) {
+  const w = engine(on, opts.store ? { store: opts.store } : {})
   const argv = cqEngine(on, opts)
   const calls = { argv, model: [] as { model: string; system?: unknown; prompt: unknown; effort?: string; maxTokens?: number; timeoutMs?: number }[], writes: [] as { path: string; text: string }[], clears: 0, fills: [] as string[], copies: [] as string[], notices: [] as string[] }
   on('fs.read', (_, e) => {
@@ -394,10 +397,8 @@ test('handoff without cq: refused before Haiku runs, the chat untouched', async 
 })
 
 test('handoff: on an expired cache the old chat sees the approx saving, net of Haiku', async ($, on) => {
-  const h = handoffEngine(on)
+  const h = handoffEngine(on, { store: { 'cmx:chat-1': saved(70 * MIN) } })
   await start($, 'terminal')
-  await h.reply($, { read: 228_000, write: 0 })
-  await h.clock.advance(70 * MIN)
   await handoff($)
   // rebuild 228K on Opus 1h = $1.824; Haiku 40K in + 1.5K out = $0.00475; tokens 228,000 - 41,500 - 13,000
   expect(h.calls.notices[0]!.endsWith(' ≈ 174K tokens · $1.72 (Opus).')).toBe(true)
@@ -495,10 +496,10 @@ test('a broken store never costs the commands, the bar or the pop-up', async ($,
   const w = engine(on, { brokenStore: true })
   await start($)
   expect(w.commands).toEqual(['quenching-cache'])
-  await w.reply($, { read: 290_000, write: 0 })
+  await w.reply($, { read: 0, write: 290_000, ttl: 5 }) // a 5 min cache: its expiry costs 6 simulated minutes, not 62
   await w.clock.advance(MIN)
-  await expectBar($, '🟢 59 min left · next message ≈ $0.06 · 290K / 1M · 🔄 Try /quenching-cache handoff or a new chat') // past shared.contextBudgets.main
-  await w.clock.advance(61 * MIN)
+  await expectBar($, '🟢 4 min left · next message ≈ $0.06 · 290K / 1M · 🔄 Try /quenching-cache handoff or a new chat') // past shared.contextBudgets.main
+  await w.clock.advance(5 * MIN)
   expect(w.toasts.filter(t => t.includes('🔴 cache expired')).length).toBe(1)
 })
 
@@ -531,11 +532,11 @@ test('API key or usage credits: a reply that wrote the 5m cache counts down 5 mi
 })
 
 test('resume: the exact record beats the session-start estimate of the same reply (issue #4)', async ($, on) => {
-  const w = engine(on, { streamMs: 3 * MIN })
+  const w = engine(on, { streamMs: MIN })
   await start($)
-  await w.reply($, { read: 45_000, write: 5_000 }) // started at T0, ended 3 min later
+  await w.reply($, { read: 45_000, write: 5_000 }) // started at T0, ended 1 min later
   await $.classic.SessionStart({ source: 'resume', session_id: 'chat-1', seconds_since_last_response: 0, context_tokens: 50_000, model: 'claude-opus-5-5' } as never)
-  await expectBar($, '🟢 57 min left · next message ≈ $0.01 · 50K / 1M · ✅ Keep going')
+  await expectBar($, '🟢 59 min left · next message ≈ $0.01 · 50K / 1M · ✅ Keep going')
 })
 
 test('the 🔴 saving uses the size of your own fresh chats, learned from their first replies (issue #3)', async ($, on) => {
@@ -543,8 +544,8 @@ test('the 🔴 saving uses the size of your own fresh chats, learned from their 
   await start($)
   await $.classic.SessionStart({ source: 'startup', session_id: 'chat-1', transcript_path: '/t/chat-1.jsonl', model: 'claude-opus-5-5' } as never)
   await w.reply($, { read: 0, write: 42_000 })
-  await w.reply($, { read: 42_000, write: 186_000 })
-  await w.clock.advance(70 * MIN)
+  await w.reply($, { read: 42_000, write: 186_000, ttl: 5 }) // a 5 min write: expired after 6 min, not 70
+  await w.clock.advance(6 * MIN)
   // 228K - 45K Haiku estimate - (42K median of 40K, 44K and this chat's 42K + 4K brief) = 137K; two samples would fall back to 13K: 170K
   expect((await bars($))[0]).toContain('🔄 Try /quenching-cache handoff to save 137K tokens')
 })
