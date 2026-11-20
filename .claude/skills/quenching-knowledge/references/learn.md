@@ -21,14 +21,30 @@ decision / procedure / external-asset fact). If it belongs in another home, say 
 to `/quenching-knowledge add`. Otherwise proceed under `concepts/`. **Done when:** the home is
 confirmed or the item is routed away.
 
-### 2. Determine identity (path)
+### 2. Search for what already says it
+Grep `/docs/concepts/` and `/docs/standards/` for the concept's key terms and their synonyms, then
+read each hit that could hold the same understanding. Decide one verdict and show it to the human
+with the paths you read:
+
+| Verdict | When | Then |
+| --- | --- | --- |
+| **New** | no doc carries it | continue at step 3 |
+| **Absorb into `<path>`** | an existing doc carries the subject and lacks this piece | edit that doc in place — a section or a paragraph, never a duplicate file — and continue at step 7 |
+| **Already captured** | an existing doc already says it | stop and cite the doc |
+| **Route away** | the hit is a standard and this piece changes what it binds | hand off to `/quenching-knowledge add` |
+
+A doc that holds the subject but contradicts the new piece is not an absorb: report the
+contradiction and let the human decide. **Done when:** the verdict and the paths it rests on are
+stated, and the human confirmed any absorb before the edit.
+
+### 3. Determine identity (path)
 Pick (or create) the `concepts/<subject>/` subfolder for the concept — e.g. `domain/`,
 `glossary/`, `concepts/`. Concept ID = the path without `.md`; one concept per file; kebab-case;
 **English slug**. If the subject already carries a cluster subfolder, nest inside it. If the
 concept creates a **new** subfolder, that subfolder needs its own `index.md`. **Done when:** the
 canonical concept path and any new subject index are fixed.
 
-### 3. Fill the mold
+### 4. Fill the mold
 Copy `.agents/quenching/assets/templates/concept-front.md` and complete the frontmatter:
 `type: concept` + the OKF recommended fields (`title`/`description`/`resource`/`generated`)
 + the method labels (`audience` — usually `both`; `authority` — usually `background`;
@@ -37,19 +53,19 @@ Copy `.agents/quenching/assets/templates/concept-front.md` and complete the fron
 that is what produced it).
 **Done when:** the complete stamp is evidence-backed.
 
-### 4. Write the concept doc
+### 5. Write the concept doc
 Write the file with `Write`. Favor structural markdown (headings, lists, tables). Cross-home
 links absolute (`/docs/...`); within-home links relative. Body prose MAY be the repo's language.
 **Done when:** the concept body is written without overwriting filled content.
 
-### 5. Update `concepts/index.md`
+### 6. Update `concepts/index.md`
 Add a bullet-link with the doc's `description`
 (`* [<title>](<rel-path>.md) — <description>`) under the right subject. If you created a new
 subfolder, create its frontmatter-free `index.md` and link it from `concepts/index.md`. Never
 add frontmatter to an `index.md`. **Done when:** the concept and all required index links are in
 place.
 
-### 6. Enrich the glossary
+### 7. Enrich the glossary
 If the concept introduced a **repo-specific term**, add or sharpen its entry in
 `glossary.md` per **Enriching the glossary** in
 [knowledge-add/homes.md](.agents/quenching/references/knowledge-add/homes.md) (the tail step
@@ -57,7 +73,7 @@ every capture runs; on-demand counterpart `/quenching-knowledge define`, bulk co
 `/quenching-knowledge glossary-backfill`). **Done when:** every repo-specific term is linked or
 explicitly left for a glossary command.
 
-### 7. Self-check against the conformance core
+### 8. Self-check against the conformance core
 Verify every file you touched against
 [knowledge-align/conformance.md](.agents/quenching/references/knowledge-align/conformance.md) —
 the same checks `.agents/quenching/bin/cq knowledge validate` machine-verifies. **Done when:** validation and the touched
@@ -65,6 +81,7 @@ file list are reported.
 
 ## Invariants to never violate
 
+- Never write a second doc for understanding an existing doc already carries — absorb it there.
 - Never file a **contract / decision / procedure / external-asset fact** under `concepts/` —
   route it to its home via `/quenching-knowledge add`.
 - Never write an empty or self-pointing `resource`, and never fabricate a `source`.

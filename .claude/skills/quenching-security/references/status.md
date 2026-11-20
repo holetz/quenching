@@ -39,13 +39,14 @@ Report one compact table:
 | `secret-ignore-coverage` | `present`/`missing`/`refused` | ignore path and recognized secret classes, never secret values |
 | `advisory-dependency-configuration` | `present`/`missing`/`refused` | recognized advisory configuration paths |
 | `access-ownership` | `present`/`missing` | recognized ownership declaration paths, never owner values |
+| `agent-grants` | `present`/`missing`/`not-measured`/`refused` | `.claude/settings.json` and `.mcp.json`, each finding's code and value |
 
 Then report the payload's `controls` block — each catalog control id, its requirement ids with `present`, `missing`, `not-measured`, `refused` or `retired`, and the evidence paths. `present` is candidate evidence, never conformance; the block never changes `ok` or the exit code.
 
 Preserve every question key, state, evidence path and detail returned by the route. Distinguish a
 missing declaration from a source that was not measurable or was refused. Preserve the payload's
 `readOnly` and `writePolicy` values: the pillar read workflow permissions, ignore patterns,
-advisory configuration and ownership declarations only; it did not expose secret or owner values.
+advisory configuration, ownership declarations and committed agent configuration only; it did not expose secret or owner values.
 
 **Done when:** every returned question has a state and evidence row, and no secret or owner value
 has entered the report.
