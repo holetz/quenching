@@ -8,12 +8,13 @@ quenching reaches a repository only through `cq deploy`, which installs the surf
 repository for Claude Code, Codex and OpenCode
 ([ADR 0017](docs/decisions/0017-install-only-by-deploy.md)). The single editable source lives in
 [`quenching/`](quenching/) ([source-layout](docs/standards/architecture/source-layout.md); the
-deploy contract is [deploy-mode](docs/standards/architecture/deploy-mode.md)). The satellites that
-install into no repository sit beside it: two entries of this repository's Claude marketplace, the
-spec band [`integrations/claude-hud/`](integrations/claude-hud/) and the prompt-cache bar
+deploy contract is [deploy-mode](docs/standards/architecture/deploy-mode.md)). Four satellites that
+install into no repository sit beside it: the Claude Code band [`integrations/claude-hud/`](integrations/claude-hud/), the
+Claude Code Specs pane [`integrations/claude-vitrine/`](integrations/claude-vitrine/) and the prompt-cache band
 [`integrations/claude-cache/`](integrations/claude-cache/) (derived from
-[cache-maxxing](https://github.com/5m0k3/cache-maxxing) by 5m0k3, MIT), and the OpenCode Desktop
-Specs panel [`integrations/opencode-vitrine/`](integrations/opencode-vitrine/).
+[cache-maxxing](https://github.com/5m0k3/cache-maxxing) by 5m0k3, MIT) — the three entries of this
+repository's Claude marketplace, installed apart from the skills — and the OpenCode Desktop Specs panel
+[`integrations/opencode-vitrine/`](integrations/opencode-vitrine/).
 
 **Core fronts** — maintained actively, with reliability, adoption and cost as priorities:
 `knowledge`, `specs`, `git` and `components`. **Non-core fronts** — `design`, `ops`, `proof`,

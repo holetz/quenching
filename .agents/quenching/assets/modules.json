@@ -10,12 +10,14 @@
       "marketplace": true
     },
     {
+      "name": "quenching-vitrine",
+      "path": "integrations/claude-vitrine",
+      "marketplace": true
+    },
+    {
       "name": "quenching-cache",
       "path": "integrations/claude-cache",
-      "marketplace": true,
-      "commands": [
-        "quenching-cache"
-      ]
+      "marketplace": true
     }
   ],
   "modules": [
@@ -26,7 +28,7 @@
           {
             "name": "deny-claude-coauthor",
             "event": "PreToolUse",
-            "matcher": "Bash",
+            "matcher": "Bash|PowerShell|bash|powershell",
             "timeout": 5
           }
         ],
@@ -81,7 +83,7 @@
           {
             "name": "warn-git-add-all",
             "event": "PreToolUse",
-            "matcher": "Bash",
+            "matcher": "Bash|PowerShell|bash|powershell",
             "timeout": 5
           }
         ]

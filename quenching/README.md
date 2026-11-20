@@ -223,11 +223,11 @@ motion, shadows, breakpoints, and snippets remain in the source and sidecar.
 | `/quenching-git pr-review` | Works through a PR's unresolved review threads, one confirmation per thread. |
 
 **The one plugin-wide hook.** `quenching-specs` ships `hooks/hooks.json`: a `PreToolUse` hook on
-`Bash` that **denies** any `git commit`/`merge`/`tag`/`notes`, `gh pr` or `cq git` command whose
+the shell tools that **denies** any `git commit`/`merge`/`tag`/`notes`, `gh pr` or `cq git` command whose
 message carries Claude's co-authorship (`Co-Authored-By: Claude …`, `noreply@anthropic.com`,
 `Generated with Claude Code`), so Claude reruns it without the attribution. It never rewrites the
 command (`updatedInput` only applies paired with `allow`, which would auto-approve whatever the
-command chains), fails open without `python3`, and is off when `QUENCHING_ALLOW_CLAUDE_COAUTHOR=1`.
+command chains), fails open on any crash, and is off when `QUENCHING_ALLOW_CLAUDE_COAUTHOR=1`.
 Pair it with `"attribution": {"commit": "", "pr": ""}` in the target's settings so the trailer is
 never written in the first place.
 
@@ -632,7 +632,7 @@ keeps its modules, while `--modules core` narrows a wider install and deletes th
 | Option | Values |
 | --- | --- |
 | `--modules` | `core` (default: `quenching-specs` plus `quenching-align` — specs, git, knowledge, components), `all`, or a comma list of modules; `specs` is always included because it owns the one `cq` |
-| `--harness` | `claude`, `codex`, `opencode` (default: all three) or `none` |
+| `--harness` | `claude`, `codex`, `opencode` (default: all three) or `none`; `claude` also serves the GitHub Copilot harness (below) |
 | `--runtime` | `vendor` (default, offline) copies the runtime; `uvx` writes a shim pinned to the release tag |
 | `--profiles` | overrides the derived `shared.profiles.installed` |
 | `--check` | exit 1 on drift instead of writing |
@@ -644,6 +644,16 @@ Deploy writes `AGENTS.md` and `.agents/quenching.json` only when absent, plus th
 what it owns in `.agents/.quenching-deploy.json`. `CLAUDE.md` is not created. Deploy installs the
 surface only: the target's `/quenching-knowledge align` installs `/docs/` and converges the fronts.
 The full contract, including the surface translation, is [deploy-mode.md](../docs/standards/architecture/deploy-mode.md).
+
+**The GitHub Copilot harness reads the `claude` files.** The VS Code Agents window and the Copilot
+CLI read the target's `.claude/settings.json` hooks and its `.mcp.json` as their own, so a Copilot
+session gets the same guards and the `quenching` MCP server with no file of its own. The hook
+command is one polyglot line that bash, PowerShell and cmd parse alike, started by the repository's
+`shared.mcp.command` prefix (else `python3`): declare that prefix on a Windows target
+([hooks.md](../docs/standards/automation/hooks.md)). Open a Copilot session with **Branch**
+isolation, not **New Worktree**: Copilot's worktree starts at the current HEAD, carries no ignored
+file and runs no `worktreeSetup`, and the agent would then cut a second one with
+`cq git worktree add` — the worktree is the quenching flow's to cut.
 
 A deployed target runs the same ids this manual writes: `/quenching-<vertical> <flow>`, for
 example `/quenching-specs create`, with the source written in that dialect

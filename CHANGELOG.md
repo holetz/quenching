@@ -13,6 +13,35 @@ owner: [`ci-cd/versioning-release.md`](docs/standards/ci-cd/versioning-release.m
 short version for a consumer: the version is published once, deliberately, as a release — never at a
 spec's own conclude — and `cq --version` is what answers which one you are running.
 
+## 7.9.0
+
+**Os hooks implantados rodam no harness do GitHub Copilot, em qualquer shell.** O Copilot (a janela
+  Agents do VS Code e o Copilot CLI) lê o `.claude/settings.json` e o `.mcp.json` do alvo como seus,
+  e no Windows roda o comando do hook pelo PowerShell ou pelo cmd: a linha em bash falhava, e a
+  falha num `preToolUse` negava a ferramenta. Cada hook que o `cq deploy` instala é agora uma linha
+  só, `<prefixo python> -I -c "…"`, sem `$`, crase, `%`, `!` nem aspas internas, que bash, PowerShell
+  e cmd entregam iguais ao Python. O prefixo é o `shared.mcp.command` declarado, ou `python3`.
+  `deny-claude-coauthor` e `warn-git-add-all` viraram corpos Python (`assets/hooks/<nome>.py`), leem
+  o `tool_input` do Claude e o `toolArgs` do Copilot, e casam também com o PowerShell. Uma entrada
+  `.sh` antiga é reescrita no lugar no próximo deploy. O manual orienta abrir a sessão do Copilot em
+  **Branch**: a worktree é do `cq git worktree add` (spec 2192, #113).
+
+**O painel de specs chega ao Claude Desktop** como mod instalado à parte, com o grafo de
+  dependências, os épicos e a configuração (spec 2191, #114).
+
+**A página de configuração do OpenCode lembra o projeto** quando o Settings abre fora da sessão, e
+  o painel de specs ganhou o atalho para ela (spec 2189, #103).
+
+**O Codex nasce desligado em projeto novo:** `shared.codex.crossReview` passa a `off` e
+  `executor.enabled` a `false` quando o repositório não declara nada (spec 2190, #104).
+
+**A estimativa ficou mais fiel.** O `cq specs estimate` desconta caminhos que o repositório declara
+  gerados ou editados por ferramenta (#109), encontra o corpo do execute no layout instalado (#110) e
+  usa o orçamento padrão de worker de 200000 tokens (#112).
+
+**O deploy adota o arquivo sem dono que já tem os bytes gerados**, em vez de recusar a execução
+  inteira com `ct-deploy-unowned` (#111).
+
 ## 7.8.0
 
 **A spec só é arquivada depois do merge, as worktrees viram slots reaproveitáveis e a configuração

@@ -60,7 +60,7 @@ class Lockstep(unittest.TestCase):
                 (source.parent / "references" / reference).mkdir(parents=True, exist_ok=True)
             for hook in module["owned"].get("hooks", []):
                 (source / "hooks").mkdir(parents=True, exist_ok=True)
-                (source / "hooks" / (hook["name"] + ".sh")).write_text("#!/bin/sh\n")
+                (source / "hooks" / (hook["name"] + ".py")).write_text("print('{}')\n")
             for skill in module["owned"]["skills"]:
                 (source.parent / "skills" / skill).mkdir(parents=True, exist_ok=True)
                 (source.parent / "skills" / skill / "SKILL.md").write_text("x\n")

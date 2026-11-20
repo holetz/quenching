@@ -344,11 +344,11 @@ def build_tree(source: Path, target: Path, modules: list[str], harnesses: list[s
     for module in selected:
         for rel in ASSETS_BY_MODULE.get(module["name"], ()):
             _add_tree(tree, source, rel, translate.reference_document)
-    # The hooks the selected modules declare, installed in `.claude/settings.json` by `cli`; only
-    # Claude reads them, so the scripts travel only with that harness.
+    # The hooks the selected modules declare, installed in `.claude/settings.json` by `cli`; Claude
+    # Code and the GitHub Copilot harness both read that file, so the bodies travel with `claude`.
     hooks = _declared_hooks(selected) if "claude" in harnesses else []
     for hook in hooks:
-        _add_tree(tree, source, f"assets/hooks/{hook['name']}.sh")
+        _add_tree(tree, source, f"assets/hooks/{hook['name']}.py")
 
     for name, path in _agents(source).items():
         _add(tree, f"{PAYLOAD}/agents/{name}.md",
@@ -424,7 +424,8 @@ def build_tree(source: Path, target: Path, modules: list[str], harnesses: list[s
     if "claude" in harnesses:
         # `.claude/settings.json` is the user's file: it is merged by `cli`, never listed in `files`.
         # `attribution` holds the keys this deploy wrote; `cli` replaces it once the merge ran.
-        settings = {"hooks": claude_settings.desired_entries(hooks),
+        settings = {"hooks": claude_settings.desired_entries(
+                        hooks, mcp["command"] if mcp else claude_settings.PYTHON),
                     "attribution": dict(claude_settings.ATTRIBUTION)}
         document["claudeSettings"] = {"hooks": [hook["name"] for hook in hooks],
                                       "attribution": sorted(claude_settings.ATTRIBUTION)}

@@ -103,26 +103,6 @@ class CostUsd(unittest.TestCase):
         self.assertIn("5-minute", out["pricing"]["basis"])
 
 
-class PluginCommands(unittest.TestCase):
-    def test_a_marketplace_plugin_declares_the_commands_it_registers(self):
-        import shutil
-        from quenching.common.modules import load_manifest
-        self.assertEqual(["quenching-cache"], next(p for p in load_manifest(REPO)["plugins"]
-                                                   if p["name"] == "quenching-cache")["commands"])
-        with tempfile.TemporaryDirectory() as tmp:
-            root = pathlib.Path(tmp)
-            shutil.copytree(REPO / "quenching", root / "quenching",
-                            ignore=shutil.ignore_patterns("tests", "__pycache__"))
-            path = root / "quenching" / "assets" / "modules.json"
-            data = json.loads(path.read_text(encoding="utf-8"))
-            for entry in data["plugins"]:
-                (root / entry["path"]).mkdir(parents=True, exist_ok=True)
-            data["plugins"][0]["commands"] = "quenching-cache"
-            path.write_text(json.dumps(data), encoding="utf-8")
-            with self.assertRaisesRegex(ValueError, "commands must be a list"):
-                load_manifest(root)
-
-
 class TheGeneratedCopies(unittest.TestCase):
     def test_the_plugin_copies_are_current(self):
         run = subprocess.run([sys.executable, str(REPO / "scripts" / "cache_plugin_sync.py"), "--check"],

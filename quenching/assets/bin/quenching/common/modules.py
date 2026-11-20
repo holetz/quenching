@@ -61,7 +61,7 @@ def load_manifest(root: Path) -> dict:
             if hook_name in hook_names or hook_name in planned_hooks:
                 raise ValueError(f"duplicate hook owner: {hook_name}")
             hook_names.add(hook_name)
-            if not safe_path(root / data["source"] / "assets/hooks", hook_name + ".sh").is_file():
+            if not safe_path(root / data["source"] / "assets/hooks", hook_name + ".py").is_file():
                 raise ValueError(f"missing hook script: {hook_name}")
         planned_hooks |= hook_names
         for package in module["owned"]["packages"]:
@@ -91,9 +91,6 @@ def load_manifest(root: Path) -> dict:
         safe_path(root, path)
         if not isinstance(plugin.get("marketplace"), bool):
             raise ValueError(f"{name}: marketplace must be boolean")
-        commands = plugin.get("commands", [])
-        if not isinstance(commands, list) or not all(isinstance(c, str) and c for c in commands):
-            raise ValueError(f"{name}: commands must be a list of command names")
     return data
 
 
