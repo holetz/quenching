@@ -35,7 +35,7 @@ epic members.
   cycle that passes through the edited spec blocks the edit, so self-edges and cycles among other
   specs never block an edit of an unrelated spec.
 - `cq specs schedule [--spec <id> | --all] [--json]` prints the derived schedule: per spec the
-  planned `start` and `target`, `earliestStart`, `earliestFinish`, `slipDays` (only when positive)
+  planned `start` and `target`, the declared `end`, `earliestStart`, `earliestFinish`, `slipDays` (only when positive)
   and `critical`, plus `criticalPath` as an id list and `cycle` when one exists. Exit 1 on a cycle,
   0 otherwise. It writes nothing; the portal's Gantt view consumes the JSON. `--all` schedules every
   spec in the store, archived and edge-less included: it is the read for a consumer that needs both
@@ -55,9 +55,11 @@ The graph itself has one direction: `dependsOn`. Who waits for a spec is answere
 over the nodes the reader holds, which is why a view that shows both sides asks for `--all`. In
 topological order, `earliestStart` is the latest `earliestFinish` among the dependencies, never
 earlier than the spec's own `start`; `earliestFinish` is `earliestStart` plus the days between
-`start` and `target`, or the spec's `target` when only that is set. An unknown stays `null` and
-propagates as unknown, never as zero. A dependency archived `done` finishes at its `target` when it
-has one, even when one of its own dependencies is open and undated; else it constrains nothing.
+`start` and `target`, or the spec's `target` when only that is set. A spec that declares `end`
+(`cq specs end <id> YYYY-MM-DD`, a real calendar date, an invalid one reads as absent) finishes on
+`end` instead, never earlier than its own `earliestStart`; the Gantt draws that finish. An unknown stays `null` and
+propagates as unknown, never as zero. A dependency archived `done` finishes at its `end` or `target` when it
+has one (`end` first, then `target`), even when one of its own dependencies is open and undated; else it constrains nothing.
 `slipDays` is `earliestFinish` minus `target` when positive. A dependency archived with an outcome
 other than `done` (dropped) stays in `nodes` but is left out of the critical path. The critical path
 follows, from the latest known `earliestFinish`, the dependency that fixed each `earliestStart`.
