@@ -220,7 +220,7 @@
     ".agents/quenching/assets/bin/quenching/specs/commands/granular.py": "35b38067d87e6c40c94d757ec5287826954b83232439fa8eaa84c7e91bb8fb7f",
     ".agents/quenching/assets/bin/quenching/specs/commands/handoff.py": "b7c3e380a843689cd1f4cf6acf60bf0b11c184b608a99b9a0362f1b56822a08c",
     ".agents/quenching/assets/bin/quenching/specs/commands/migrate.py": "5943bce7d0a23a5fb6fa990681b98990f7b67b94fe78f2072e5ecae60b271afd",
-    ".agents/quenching/assets/bin/quenching/specs/commands/next.py": "baf28cc033646b4014ab07608582342d40ffece60677d23a676a1337f2549af1",
+    ".agents/quenching/assets/bin/quenching/specs/commands/next.py": "f575c1ac50ec6325a073e3dbd8bf73ecbfc26e47a5c984937b60cbc97cf9555d",
     ".agents/quenching/assets/bin/quenching/specs/commands/output.py": "989f1e3773a0f61b7e8f0096fe3dfe9e116d76bf8704d0969d74796d264da662",
     ".agents/quenching/assets/bin/quenching/specs/commands/parallel.py": "d43116a012a3879fb47eb55d99432d0f8485cf12edd190f7e952c082a0106a06",
     ".agents/quenching/assets/bin/quenching/specs/commands/promote.py": "0925a7c57db7f0ef450bf8842873ab14f83491936549e3f864a0935a0054d076",
