@@ -1,5 +1,5 @@
-import type { LedgerEntry, Kind } from '../types'
-import type { SpecRow, Specs } from './specs'
+import type { Kind, LedgerEntry, TouchRow } from '../types'
+import type { Specs } from './specs'
 
 /** The weight of the evidence: a strong fact is never demoted by a weaker one. */
 const RANK: Record<Kind, number> = { mention: 0, read: 1, command: 2, commit: 3, worktree: 3 }
@@ -147,9 +147,6 @@ export function touch(entries: readonly LedgerEntry[], id: number, kind: Kind, a
 export function ordered(entries: readonly LedgerEntry[]): LedgerEntry[] {
   return [...entries].sort((a, b) => RANK[b.kind] - RANK[a.kind] || b.at - a.at)
 }
-
-/** A ledger row shown in the pane: the spec's list row and the evidence that put it there. */
-export type TouchRow = SpecRow & { kind: Kind; at: number }
 
 /** Specs outside `plans` read per pane opening; a long session cites hundreds, each costing three `cq` reads. */
 export const OFF_LIST_READS = 12

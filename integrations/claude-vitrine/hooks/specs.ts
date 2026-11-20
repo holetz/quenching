@@ -1,92 +1,9 @@
 import { singleFlight } from './cq'
 import type { Cq } from './cq'
 
-/** One line of `cq specs list`, normalised for the pane. */
-export type SpecRow = {
-  id: number
-  title: string
-  stage: string
-  phase: string
-  date: string
-  checked: number
-  blocked: number
-  total: number
-  work: string
-  run: string
-  workItemType: string
-}
+import type { Composite, Composition, Dependencies, Detail, Member, Neighbor, Section, SpecRow, TaskInfo } from '../types'
 
-export type Section = { heading: string; body: string }
-
-/** A neighbouring spec in the dependency graph, as `schedule` describes it. */
-export type Neighbor = {
-  id: number
-  title: string
-  phase: string
-  critical: boolean
-  slip: number
-  start: string
-  target: string
-}
-
-/** Who sits above (what the spec waits for), below (who waits for it) and the cycle that stalls everything. */
-export type Dependencies = { up: Neighbor[]; down: Neighbor[]; cycle: string[] }
-
-/** A spec an epic is made of, as the epic's document declares it. */
-export type Member = {
-  label: string
-  spec: number
-  title: string
-  group: number
-  status: string
-  stage: string
-  after: string[]
-  waitingOn: string[]
-}
-
-/** An epic's composition: how much has shipped, the declared groups, and the members in document order. */
-export type Composition = {
-  progress: { done: number; total: number; blocked: number; ready: number }
-  groups: { group: number; title: string; done: number; blocked: number; total: number }[]
-  items: Member[]
-}
-
-/** Where a spec is a member: the composite that names it, its title and the label it gave the member. */
-export type Composite = { epic: number; title: string; label: string; group: number }
-
-export type Detail = {
-  id: number
-  title: string
-  stage: string
-  phase: string
-  date: string
-  priority: string
-  priorityHint: string
-  complexity: string
-  subject: string
-  assignee: string
-  tags: string[]
-  ready: boolean
-  missing: string
-  checked: number
-  blocked: number
-  blockedTask: string
-  blockedReason: string
-  total: number
-  run: string
-  verifier: string
-  pr: string
-  prUrl: string
-  work: string
-  sections: Section[]
-  tasks: { id: string; state: string; text: string; blocked: boolean }[]
-  workItemType: string
-  deps: Dependencies
-  composition?: Composition
-  epics: Composite[]
-}
-
-export type TaskInfo = { text: string; files: string; verify: string; subject: string }
+export type { Composite, Composition, Dependencies, Detail, Member, Neighbor, Section, SpecRow, TaskInfo }
 
 const TTL = 30_000
 
