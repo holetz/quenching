@@ -3,7 +3,10 @@ store writable, is the provider's type catalog there, does a push reach the remo
 route authenticated (`gh`, or `az` on an Azure DevOps origin), and is the base branch's CI
 available.
 
-Read-only: pushes use `--dry-run`, CI is read with `gh run list` / `gh run view` (GitHub only:
+Read-only: pushes use `--dry-run` onto a ref the remote does not have (`PROBE_REF`, with
+`--force`), so a branch that is merely behind or diverged never reads as a refused write; a failed
+probe carries the `reason` git's stderr names — `read-only` or `no-credentials` (`fail`), or
+`unreachable` or `probe-failed` (`unknown`). CI is read with `gh run list` / `gh run view` (GitHub only:
 on Azure DevOps `ci` is `unknown`), and no hook is
 ever disabled or skipped. Each check is `{id, status, message}` with status `ok`, `fail`,
 `unknown` (could not answer, never promoted to ok) or `skipped`. `ci` also answers
@@ -43,12 +46,34 @@ def _check(cid: str, status: str, message: str, **extra) -> dict:
     return {"id": cid, "status": status, "message": message, **extra}
 
 
-def _dry_push(cwd: str, remote: str, ref: str) -> tuple[str, str]:
-    code, _out, err = _tool(cwd, "git", "push", "--dry-run", "--porcelain", "--", remote,
-                            f"{ref}:{ref}")
+PROBE_REF = "refs/heads/quenching-preflight-probe"
+_READ_ONLY = ("permission", "denied", "403", "not allowed", "protected")
+_NO_CREDENTIALS = ("could not read username", "authentication", "terminal prompts disabled", "401",
+                   "publickey")
+_UNREACHABLE = ("could not resolve", "unable to access", "connection", "timed out")
+
+
+def _push_reason(code: int, err: str) -> str:
+    """Credentials and refusals first: a forge's 401/403 arrives wrapped in "unable to access"."""
+    text = err.lower()
     if code in (124, 127):
-        return "unknown", err.strip()
-    return ("ok", "") if code == 0 else ("fail", err.strip())
+        return "unreachable"
+    for reason, words in (("no-credentials", _NO_CREDENTIALS), ("read-only", _READ_ONLY),
+                          ("unreachable", _UNREACHABLE)):
+        if any(word in text for word in words):
+            return reason
+    return "probe-failed"
+
+
+def _dry_push(cwd: str, remote: str, source: str) -> tuple[str, str, str | None]:
+    """Whether `remote` accepts a write, asked of a ref it does not have: no fast-forward rule
+    applies there, so only a refused or unreachable remote can fail the probe."""
+    code, _out, err = _tool(cwd, "git", "push", "--dry-run", "--porcelain", "--force", "--",
+                            remote, f"{source}:{PROBE_REF}")
+    if code == 0:
+        return "ok", "", None
+    reason = _push_reason(code, err)
+    return ("fail" if reason in ("read-only", "no-credentials") else "unknown"), err.strip(), reason
 
 
 def _store(cwd: str, remote: str, backend: str) -> dict:
@@ -56,9 +81,10 @@ def _store(cwd: str, remote: str, backend: str) -> dict:
         return _check("store", "unknown", f"backend {backend} is not probed")
     ref = f"refs/heads/{STORE_BRANCH}"
     if _tool(cwd, "git", "rev-parse", "--verify", "--quiet", ref)[0] == 0:
-        status, why = _dry_push(cwd, remote, ref)
+        status, why, reason = _dry_push(cwd, remote, ref)
         return _check("store", status, "store branch accepts a push (dry-run)"
-                      if status == "ok" else f"store push: {why or 'unreachable'}")
+                      if status == "ok" else f"store push ({reason}): {why or 'unreachable'}",
+                      reason=reason)
     code, _out, err = _tool(cwd, "git", "ls-remote", "--exit-code", remote, ref)
     if code == 0:
         return _check("store", "ok", "store branch exists on the remote; no local copy to dry-run")
@@ -88,12 +114,12 @@ def _push(cwd: str, remote: str) -> dict:
     code, out, _err = _tool(cwd, "git", "symbolic-ref", "--quiet", "HEAD")
     if code != 0:
         return _check("push", "unknown", "detached HEAD: no branch to dry-run")
-    status, why = _dry_push(cwd, remote, out.strip())
+    status, why, reason = _dry_push(cwd, remote, out.strip())
     return _check("push", status,
                   ("push reaches the remote (dry-run); a passing dry-run does not prove the "
                    "pre-push hook passes — the hook runs at the real push, and is never skipped")
-                  if status == "ok" else f"push: {why or 'unreachable'}",
-                  hooks=_hooks(cwd), noVerify=False)
+                  if status == "ok" else f"push ({reason}): {why or 'unreachable'}",
+                  reason=reason, hooks=_hooks(cwd), noVerify=False)
 
 
 def _gh_auth(cwd: str, provider: str | None) -> dict:
