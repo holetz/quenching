@@ -83,3 +83,6 @@ records and stops only on a real block; this section is its loop-side procedure.
   frontmatter key or a lowered bar; an undeclared irreversible, merge, push or deploy action; a
   required proof that cannot run; `approved` absent under `autonomous`. Outside the list the loop
   decides and goes on.
+- **A pre-existing red has its own route** (`/docs/standards/workflows/task-execution.md`
+  §Pre-existing errors): proved on the base, fixed by a declared `[fix-preexistente]` task or captured as
+  a spec. Uncontained under `autonomous`, it is a real block that names the captured spec.

@@ -135,9 +135,11 @@ the missing path, and let the human decide; never `--no-verify` past it. Silent 
 **2c. On a resume, re-run the last checked task's `verify:` before any code.** A resume is a
 `status` with at least one task checked. Take the last checked task and run its `verify:` (the
 `## Validation` command when it has none) from its declared `cwd:`, in the same checkout the run
-builds in. Green → go on to step 3. Red → **stop**: report the task, the command and its output,
-write nothing and fix nothing; the regression belongs to the task that caused it, not to the
-conclude gate. Nothing checked yet → run nothing.
+builds in. Green → go on to step 3. Red → **stop**: report the task, the command and its output
+and write nothing, until the cause is classified. Reproduce the failure in the base worktree
+(`.quenching/red`): it reproduces there → pre-existing, and the route of **5i** applies; it does not →
+the regression belongs to the task that caused it, not to the conclude gate, and nothing is fixed
+here. Nothing checked yet → run nothing.
 
 **Done when:** the tree is clean, the worktree (or the requested branch) has been taken or found
 already held, any unresolved hook has been reported, and a resume's last checked task still
@@ -222,7 +224,7 @@ Then, for that task:
 
 a. **Show what is being worked on** — the ID, its declared `files:` and its `verify:`.
 
-b. **Write the code**, minimal and scoped to the declared files — but only after the Codex
+b. **Write the code**, minimal and scoped to the declared files (a task tagged `[fix-preexistente]` declares its own, see 5i) — but only after the Codex
    consultation below, which is the first action of 5b for EVERY task, not a choice. A task that declares `files:` and
    writes nothing under `/docs/` **may** go to an executor sub-agent under
    [execution-delegation.md](.agents/quenching/references/specs-execute/execution-delegation.md)
@@ -372,6 +374,23 @@ h. **At a section boundary, keep the task commits, read the session size once, a
    [execution-cadence.md](.agents/quenching/references/specs-execute/execution-cadence.md)
    §The section boundary.
 
+i. **A red that is not this spec's has its own route, never a dismissal** — a failing gate, a broken
+   test or drift found on the way, read per `/docs/standards/workflows/task-execution.md`
+   §Pre-existing errors. **Diagnose, then prove it on the base**: reproduce it in the base worktree
+   (`git worktree add --detach .quenching/red <base>`, removed before returning, per
+   [execution.md](.agents/quenching/references/specs-execute/execution.md) §The validation loop); no
+   reproduction → it is this spec's own and the validation loop applies. Reproduced, the four criteria
+   hold together — cause diagnosed and reproduced on the base, few files and no contract changed, an
+   existing verification proves it, no human decision — → **fix it in the spec**: append a task
+   `[fix-preexistente] <title>` with its own `files:` (generated mirrors included) and a `verify:` that
+   fails before and passes after, through `.agents/quenching/bin/cq specs section "<id>" Tasks --write`
+   (the checked boxes and their `subject:` survive) then `.agents/quenching/bin/cq specs validate`, and
+   run it through this loop. Any criterion failing → **capture it now**, while the context is warm:
+   `.agents/quenching/bin/cq specs new` with `## Problem` and the diagnosis (cause, reproduction, files), and
+   one `## Discoveries` line `promoted: <id>` on this spec. Never skip, `xfail`, suppress or delete a test,
+   edit a `verify:` or use `--no-verify` as the fix. An uncorrected pre-existing red stays a FAIL of the
+   gate, and the PR names the base red and the spec that captures it.
+
 **Pause if:** a task is unclear; implementation reveals a design problem (→ `/quenching-specs develop`); a
 task contradicts a `/docs/standards/` contract (surface it and let the human pick — revise the
 standard via `/quenching-knowledge add`, or the spec via `/quenching-specs develop`); attempts stop converging; or the user
@@ -383,7 +402,8 @@ only on a real block: attempts stop converging; a standard contradiction the evi
 settle; a new grant, a changed frontmatter key or a lowered bar; an undeclared irreversible, merge, push or deploy
 action; a required proof that cannot run; `approved` absent. A proof the spec requires that cannot
 run for a missing environment variable, credential or service is a real block — never skipped in silence,
-never marked as passed. Anything else the evidence or the recorded intent answers is decided and
+never marked as passed. An uncontained pre-existing red (5i) is that real block: capture the spec, name
+it in `needs-human:` and stop. Anything else the evidence or the recorded intent answers is decided and
 recorded as one line, `.agents/quenching/bin/cq specs discover "<id>" "decision: <what> — <evidence or criterion>"`; a
 `decision:` line is not a Handoff event.
 **Done when:** every task is `- [x]` or `- [!]`, or the run pauses with the reason stated.
@@ -507,7 +527,8 @@ each is absolute. The three whose failure is **silent and permanent**:
 - Stamp `branch:` once the work ref is resolved, taken or declined (`work` then equals `base`) —
   never over an existing record, through `.agents/quenching/bin/cq specs record`, never the frontmatter.
 - Write **only** the `/docs/` a task explicitly names. Emergent findings are one `.agents/quenching/bin/cq specs discover`
-  line — never an unrequested standard, and never a loose code comment.
+  line — never an unrequested standard, and never a loose code comment. A pre-existing error is the
+  exception (5i): a declared `[fix-preexistente]` task, or a captured spec resolved `promoted: <id>`.
 - Delegate an executor only under
   [execution-delegation.md](.agents/quenching/references/specs-execute/execution-delegation.md)
   §Delegating an executor (declares `files:`, touches no `/docs/`, pinned to the session model —

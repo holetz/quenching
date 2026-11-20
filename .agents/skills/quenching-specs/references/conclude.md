@@ -122,7 +122,7 @@ stops the run with `STATE: blocked` and `NOTE: needs-human: <the question>`.
 | Step 7 — the abandoned branch-delete offer | keep, recorded in the report |
 | Step 8 — the post-merge close | no question exists: `reconcile --write` and the worktree's release run as written; a `needs-human` row or a refusal is reported and never forced |
 
-A red gate is `STATE: failed`, never a question. For a `done` outcome step 7 opens the PR itself;
+A red gate is `STATE: failed`, never a question — unless the red is a pre-existing error (step 7). For a `done` outcome step 7 opens the PR itself;
 for `abandoned` there is no handoff to make.
 
 ## Workflow
@@ -397,6 +397,18 @@ standing on), so what it grades is the change being proposed.
 branch unmerged, and let the human fix it *on the branch* — then this command is re-run. Never hand
 off past a red check, and never repair one with a commit that isn't the fix itself.
 
+**A red that is not this spec's has its own route**, per `/docs/standards/workflows/task-execution.md`
+§Pre-existing errors: reproduce it in the base worktree (`.quenching/red`, removed before returning).
+No reproduction → it is the branch's own and the paragraph above applies. Reproduced and contained (the
+four criteria together: cause diagnosed and reproduced on the base, few files without a contract change,
+an existing verification proves it, no human decision) → the fix itself is the one commit allowed
+here, declared as a `[fix-preexistente]` task (`files:` and `verify:`) so the verifier reads it as scope,
+and the gate runs again. Otherwise capture it now with `.agents/quenching/bin/cq specs new` (`## Problem` plus
+cause, reproduction, files), record `promoted: <id>` in `## Discoveries`, and stop `STATE: failed` (under
+`autonomous`, `needs-human:` naming that spec): the red stays a FAIL, the PR names it and the merge
+waits for the captured spec. Never skip, `xfail`, suppress a test or edit a `verify:`. The sweep of
+step 6 keeps its own criteria; this route is for defects of the product, not of the automation.
+
 **The gate grades the branch, so the branch must already carry the base.** If the base moved since
 the branch was cut, a green gate says nothing about the merged tree:
 
@@ -573,6 +585,8 @@ acceptance line and the next-step block are all reported.
 - **This command's own commits end at step 5.** Nothing it does writes to the branch after the gate
   in step 7, except the base merge `autonomous` runs before that gate — the merge, the PR, and whatever they each commit belong entirely to
   `/quenching-git merge` and `/quenching-git pr-create`, run separately, on the human's own word.
+- **A pre-existing red is never waved off nor muted**: a contained fix is a declared `[fix-preexistente]`
+  commit, anything else is a captured spec, and the gate stays red until one of them lands.
 - **Never develop a swept candidate in the run that found it.** Step 6 captures; the design and the
   go belong to the session that takes the spec, and only the human asking for that improvement in
   this same run makes it a new `create`. Never open a sweep spec without the evidence that named
