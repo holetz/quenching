@@ -4,7 +4,7 @@ title: Security pillar
 description: A read-only pillar that reports workflow permissions, secret and ignore coverage, advisory dependency configuration and access ownership without owning a converged tree
 resource: .github/workflows/**, .gitignore, pyproject.toml, .agents/quenching.json, quenching/skills/**, quenching/assets/bin/quenching/security/**, quenching/assets/bin/quenching/controls/**, quenching/assets/bin/quenching/common/leak.py, quenching/assets/bin/quenching/common/identity.py, quenching/assets/bin/quenching/git/identity.py, quenching/assets/githooks/**, scripts/githooks/**
 tags: [architecture, security, pillar, read-only, permissions]
-timestamp: 2026-11-03
+timestamp: 2026-11-20
 audience: both
 authority: background
 source: spec 1071 (task 1.1) — the security subject was classified as pillar-shaped by the axis contract, fixing its questions and boundary; spec 2097 (task 3.2) — the `leak` verb; spec 2164 — the identity allowlist
@@ -28,7 +28,7 @@ a secure value.
 
 | Question | Evidence read | Ownership boundary |
 | --- | --- | --- |
-| Are workflow and job permissions explicit and bounded? | Provider workflow files and their workflow/job permission declarations | `delivery` owns pipeline shape; the target owner decides whether a permission is safe. |
+| Are workflow and job permissions explicit and bounded? | Provider workflow files and their workflow/job permission declarations; a `write-all` grant is reported `unbounded`, and scopes granted `write` are listed as evidence without changing the state | `delivery` owns pipeline shape; the target owner decides whether a permission is safe. |
 | Do ignore rules cover the secret classes the repository exposes? | Repository ignore patterns and the secret-bearing paths they cover | The target owns secret policy; the pillar never adds or edits an ignore rule. |
 | Is advisory dependency configuration present? | Dependency-advisory or update configuration and the manifests it names | `toolchain` owns dependency declarations; the pillar only reports advisory coverage. |
 | Who may touch the relevant security surface? | Access-ownership declarations such as CODEOWNERS or an equivalent provider artifact | The provider and target owner own access policy; the pillar does not grant or revoke access. |
