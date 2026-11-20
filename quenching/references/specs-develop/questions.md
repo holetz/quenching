@@ -486,7 +486,7 @@ the task group or park it as one `## Discoveries` line (§Discoveries); nothing 
 | Contract | Required shape |
 | --- | --- |
 | Position | `### 1. Process surface` is the FIRST group of `## Tasks`, ahead of the objective's tasks that rely on the new behaviour: the dependency is real and serial. |
-| Items | Every item carries `files:` and `verify:`. `files:` names the surface paths declared under `## Impact` §`Process surface this spec expects to touch` ([artifacts.md](artifacts.md) §`## Impact`), plus any generated `.agents/**` / `.claude/**` mirrors and deploy manifest the source edit rewrites, declared in the same task. |
+| Items | Every item carries `files:` and `verify:`. `files:` names the surface paths listed under `## Impact` in the `Process surface this spec expects to touch` list ([artifacts.md](artifacts.md)), plus any generated `.agents/**` / `.claude/**` mirrors and deploy manifest the source edit rewrites, declared in the same task. |
 | Coverage | Every path under that `## Impact` sub-heading is named by a task in the group; a declared path without a task is a review finding. |
 | Order | No `[P]` crosses the group: its tasks share the surface and land in order. |
 | Timing | Plan the group during definition; execution never infers it. |
