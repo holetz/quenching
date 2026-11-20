@@ -6,7 +6,7 @@ event in `$CODEX_HOME/sessions/**/rollout-*.jsonl`. `auth.json` is never opened.
 
     available   (exit 0)  the quota is under every configured ceiling
     unavailable (exit 1)  a known fact forbids the call: ceiling reached, usage not allowed,
-                          `crossReview: "off"`, or no `codex` on PATH
+                          or no `codex` on PATH
     unknown     (exit 2)  no source could be read, or the only snapshot is stale
 
 The app-server starts no thread and no turn, so it runs nothing. Codex's native sandbox is never
@@ -195,11 +195,8 @@ def probe(settings: dict, env: dict | None = None, now: float | None = None) -> 
     env = os.environ if env is None else env
     now = time.time() if now is None else now
     out = {"state": "unknown", "reason": "", "source": None, "rateLimits": None,
-           "thresholds": settings["maxUsedPercent"], "crossReview": settings["crossReview"],
-           "appServerError": None, "sessionFile": None}
-    if settings["crossReview"] == "off":
-        out.update(state="unavailable", reason="shared.codex.crossReview is off")
-        return out
+           "thresholds": settings["maxUsedPercent"], "appServerError": None,
+           "sessionFile": None}
     binary = shutil.which("codex", path=env.get("PATH"))
     if binary is None:
         out.update(state="unavailable", reason="codex is not on PATH")

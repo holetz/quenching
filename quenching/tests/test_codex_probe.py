@@ -149,8 +149,7 @@ class FakeCodex(unittest.TestCase):
                     "FAKE_CODEX_LIMITS": json.dumps(limits())}
 
     def settings(self, **overrides) -> dict:
-        # a repository that opted in: crossReview is off by default
-        return {**DEFAULTS, "crossReview": "auto",
+        return {**DEFAULTS,
                 "maxUsedPercent": dict(DEFAULTS["maxUsedPercent"]), **overrides}
 
     def calls(self) -> list:
@@ -207,10 +206,10 @@ class TheAppServerSource(FakeCodex):
 
 
 class TheShortCircuits(FakeCodex):
-    def test_cross_review_off_never_spawns_codex(self):
-        out = probe(self.settings(crossReview="off"), env=self.env)
-        self.assertEqual("unavailable", out["state"])
-        self.assertEqual([], self.calls())
+    def test_the_default_settings_read_the_quota_with_no_gate(self):
+        out = probe(self.settings(), env=self.env)
+        self.assertEqual("available", out["state"])
+        self.assertNotIn("crossReview", out)
 
     def test_no_codex_on_path_is_unavailable(self):
         self.env["PATH"] = str(self.tmp / "empty")
@@ -280,24 +279,22 @@ class TheSettings(unittest.TestCase):
             (pathlib.Path(raw) / ".claude").mkdir()
             (pathlib.Path(raw) / ".claude" / "quenching.json").write_text("{}", encoding="utf-8")
             self.assertEqual((DEFAULTS, []), load_settings(raw))
-        self.assertEqual(("off", False), (DEFAULTS["crossReview"], DEFAULTS["executor"]["enabled"]))
+        self.assertFalse(DEFAULTS["executor"]["enabled"])
+        self.assertFalse({"crossReview", "model"} & set(DEFAULTS))
 
     def test_declared_values_override_the_defaults(self):
         with tempfile.TemporaryDirectory() as raw:
-            self.write(pathlib.Path(raw), {"crossReview": "auto", "timeoutSeconds": 60,
-                                           "model": "m", "maxUsedPercent": {"primary": 50}})
+            self.write(pathlib.Path(raw), {"timeoutSeconds": 60, "maxUsedPercent": {"primary": 50}})
             settings, warnings = load_settings(raw)
         self.assertEqual([], warnings)
-        self.assertEqual(("auto", 60, "m"), (settings["crossReview"], settings["timeoutSeconds"],
-                                            settings["model"]))
+        self.assertEqual(60, settings["timeoutSeconds"])
         self.assertEqual({"primary": 50, "secondary": 90}, settings["maxUsedPercent"])
 
     def test_bad_values_fall_back_and_are_named(self):
         with tempfile.TemporaryDirectory() as raw:
-            self.write(pathlib.Path(raw), {"crossReview": "maybe", "timeoutSeconds": 0,
-                                           "model": "", "maxUsedPercent": {"primary": 150}})
+            self.write(pathlib.Path(raw), {"timeoutSeconds": 0, "maxUsedPercent": {"primary": 150}})
             settings, warnings = load_settings(raw)
-        self.assertEqual(4, len(warnings))
+        self.assertEqual(2, len(warnings))
         self.assertEqual(DEFAULTS["timeoutSeconds"], settings["timeoutSeconds"])
         self.assertEqual(80, settings["maxUsedPercent"]["primary"])
 
@@ -313,9 +310,19 @@ class TheSettings(unittest.TestCase):
 class TheExecutorSettings(unittest.TestCase):
     write = TheSettings.write
 
-    def test_the_executor_is_off_by_default_and_outside_cross_review(self):
+    def test_the_retired_review_keys_are_ignored_and_named(self):
         with tempfile.TemporaryDirectory() as raw:
-            self.write(pathlib.Path(raw), {"crossReview": "auto"})
+            self.write(pathlib.Path(raw), {"crossReview": "auto", "model": "m"})
+            settings, warnings = load_settings(raw)
+        self.assertEqual(["shared.codex.crossReview is no longer read: the Codex cross review "
+                          "was removed",
+                          "shared.codex.model is no longer read: the Codex cross review was "
+                          "removed"], warnings)
+        self.assertFalse({"crossReview", "model"} & set(settings))
+
+    def test_the_executor_is_off_by_default(self):
+        with tempfile.TemporaryDirectory() as raw:
+            self.write(pathlib.Path(raw), {"timeoutSeconds": 60})
             settings, warnings = load_settings(raw)
         self.assertEqual([], warnings)
         self.assertEqual(DEFAULTS["executor"], settings["executor"])
@@ -361,7 +368,7 @@ class TheExecutorSettings(unittest.TestCase):
 class TheCommandLine(FakeCodex):
     def setUp(self):
         super().setUp()
-        TheSettings.write(self, self.tmp, {"crossReview": "auto"})   # off by default: opt in
+        TheSettings.write(self, self.tmp, {})
 
     def run_main(self, argv: list[str]) -> tuple[int, str]:
         buffer = io.StringIO()

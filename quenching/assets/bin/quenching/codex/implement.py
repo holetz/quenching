@@ -205,7 +205,7 @@ def run_implement(root: str, settings: dict, spec: str, task_id: str, worktree: 
         base_bad = [f"base unreadable ({error})"]
     out.update(runDir=run_dir, argv=["codex", *argv], exitCode=exit_code,
                tokens=measured_tokens(events_path))
-    out["quotaAfter"] = primary_used(quota({**settings, "crossReview": "auto"}, env=env))
+    out["quotaAfter"] = primary_used(quota(settings, env=env))
     if out["quotaBefore"] is not None and out["quotaAfter"] is not None:
         out["quotaDelta"] = out["quotaAfter"] - out["quotaBefore"]
         out["stopLoss"] = out["quotaDelta"] > executor["stopLossPercent"]
