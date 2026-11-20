@@ -416,8 +416,7 @@ class Deploy(unittest.TestCase):
         self.assertEqual({"commit": "", "pr": ""}, self.settings()["attribution"])
         self.assertEqual({"context7": True}, self.settings()["enabledPlugins"])
         for name in ("deny-claude-coauthor", "warn-git-add-all"):
-            script = self.target / f".agents/quenching/assets/hooks/{name}.sh"
-            self.assertTrue(os.access(script, os.X_OK), name)
+            self.assertTrue((self.target / f".agents/quenching/assets/hooks/{name}.py").is_file(), name)
         manifest = json.loads((self.target / ".agents/.quenching-deploy.json").read_text())
         self.assertEqual(["deny-claude-coauthor", "warn-git-add-all"], sorted(manifest["claudeSettings"]["hooks"]))
         self.assertNotIn(".claude/settings.json", manifest["files"])
@@ -444,7 +443,7 @@ class Deploy(unittest.TestCase):
         self.run_deploy("--modules", "specs", "--write")
         self.assertEqual(1, len(self.hook_commands()))
         self.assertIn("deny-claude-coauthor", self.hook_commands()[0])
-        self.assertFalse((self.target / ".agents/quenching/assets/hooks/warn-git-add-all.sh").exists())
+        self.assertFalse((self.target / ".agents/quenching/assets/hooks/warn-git-add-all.py").exists())
         code, _ = self.run_deploy("--modules", "specs", "--harness", "codex", "--write")
         self.assertEqual(0, code)
         self.assertEqual({"model": "x"}, self.settings())
