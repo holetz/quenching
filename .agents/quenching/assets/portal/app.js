@@ -1580,7 +1580,7 @@
       for (const [n, a, b] of spans) {
         const y = TOP + row.get(n.id) * ROW, w = Math.max(x(b) - x(a), 6);
         const label = `${n.id} ${n.title || "(sem título)"}, ${n.earliestStart} a ${n.earliestFinish}`
-          + (g.crit && n.critical ? ", caminho crítico" : "") + (n.slipDays ? `, folga de ${n.slipDays} dias` : "");
+          + (n.end ? `, fim declarado em ${n.end}` : "") + (g.crit && n.critical ? ", caminho crítico" : "") + (n.slipDays ? `, folga de ${n.slipDays} dias` : "");
         el.append(svg("a", { href: "#/spec/" + encodeURIComponent(n.id), class: "gantt-bar", "aria-label": label },
           svg("title", {}, label),
           svg("text", { class: "gantt-label", x: 4, y: y + ROW / 2 + 4 }, `${n.id} · ${(n.title || "").slice(0, 26)}`),
@@ -1604,10 +1604,11 @@
         h("summary", {}, "Ver o cronograma como tabela"),
         h("table", {},
           h("caption", {}, `Cronograma derivado de ${spans.length} specs`),
-          h("thead", {}, h("tr", {}, ["Spec", "Início", "Fim", "Depende de", "Folga", "Caminho crítico", "Estágio"].map((t) => h("th", { scope: "col" }, t)))),
+          h("thead", {}, h("tr", {}, ["Spec", "Início", "Fim", "Fim declarado", "Depende de", "Folga", "Caminho crítico", "Estágio"].map((t) => h("th", { scope: "col" }, t)))),
           h("tbody", {}, spans.map(([n]) => h("tr", {},
             h("td", {}, h("a", { href: "#/spec/" + encodeURIComponent(n.id) }, `${n.id} · ${n.title || ""}`)),
             h("td", {}, fmtDate(n.earliestStart)), h("td", {}, fmtDate(n.earliestFinish)),
+            h("td", {}, n.end ? fmtDate(n.end) : "—"),
             h("td", {}, (n.dependsOn || []).join(", ") || "—"),
             h("td", {}, n.slipDays ? `+${n.slipDays} d` : "0"),
             h("td", {}, n.critical ? "sim" : "não"),
