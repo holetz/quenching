@@ -57,6 +57,34 @@ class SecurityQuestions(unittest.TestCase):
             self.assertEqual(1, evidence["workflowDeclarations"])
             self.assertEqual(1, evidence["jobDeclarations"])
 
+    def _permissions(self, text):
+        with tempfile.TemporaryDirectory() as raw:
+            root = pathlib.Path(raw)
+            workflow = root / ".github" / "workflows" / "ci.yml"
+            workflow.parent.mkdir(parents=True)
+            workflow.write_text(text, encoding="utf-8")
+            return workflow_permissions(root).as_dict()
+
+    def test_write_all_at_either_level_is_unbounded(self):
+        for text, where in (
+                ("permissions: write-all\njobs:\n  t:\n    runs-on: x\n", ["workflow"]),
+                ("permissions:\n  contents: read\njobs:\n  t:\n    permissions: write-all  # why\n",
+                 ["job:5"])):
+            with self.subTest(where=where):
+                result = self._permissions(text)
+                self.assertEqual("unbounded", result["state"])
+                self.assertEqual(where, result["evidence"][0]["writeAll"])
+
+    def test_a_scoped_write_is_evidence_not_a_verdict(self):
+        result = self._permissions(
+            "permissions:\n  contents: read\njobs:\n  release:\n    permissions:\n"
+            "      contents: write  # tag\n      id-token: write\n    steps: []\n"
+            "  lint:\n    permissions: {contents: read, pull-requests: write}\n")
+        self.assertEqual("present", result["state"])
+        self.assertEqual([], result["evidence"][0]["writeAll"])
+        self.assertEqual(["job:5:contents", "job:5:id-token", "job:10:pull-requests"],
+                         result["evidence"][0]["writeScopes"])
+
     def test_secret_ignore_coverage_groups_known_patterns(self):
         with tempfile.TemporaryDirectory() as raw:
             root = pathlib.Path(raw)
