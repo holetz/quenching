@@ -93,6 +93,37 @@ class ToolchainResults(unittest.TestCase):
                           "tc-key-unarbitered"}, codes)
         self.assertTrue(all(item["band"] == "Structural" for item in payload["findings"]))
 
+    def test_a_pin_above_a_floor_is_not_runtime_drift(self):
+        for floor, pin in ((">=3.11", "3.13\n"), (">=3.11", "3.11.9\n"), ("> 3.10", "3.12\n")):
+            with self.subTest(floor=floor, pin=pin):
+                payload, _ = self._run({
+                    "pyproject.toml": (
+                        f"[project]\nname = 'demo'\nrequires-python = '{floor}'\n"
+                        "[tool.uv]\npackage = false\n"),
+                    ".python-version": pin,
+                })
+                self.assertNotIn("tc-runtime-drift",
+                                 {item["code"] for item in payload["findings"]})
+
+    def test_exact_declarations_that_differ_are_still_runtime_drift(self):
+        payload, _ = self._run({
+            "package.json": '{"name":"demo","engines":{"node":"18"}}\n',
+            ".nvmrc": "20\n",
+        })
+        drift = [item for item in payload["findings"] if item["code"] == "tc-runtime-drift"]
+        self.assertEqual(1, len(drift))
+        self.assertIn("package.json=18", drift[0]["message"])
+
+    def test_a_pin_below_the_floor_names_the_floor(self):
+        payload, _ = self._run({
+            "pyproject.toml": (
+                "[project]\nname = 'demo'\nrequires-python = '>=3.11'\n[tool.uv]\npackage = false\n"),
+            ".python-version": "3.10\n",
+        })
+        drift = [item for item in payload["findings"] if item["code"] == "tc-runtime-drift"]
+        self.assertEqual(1, len(drift))
+        self.assertIn("pyproject.toml=>=3.11", drift[0]["message"])
+
     def test_exact_pinned_python_dev_dependency_is_not_unpinned(self):
         payload, _ = self._run({
             "pyproject.toml": (
