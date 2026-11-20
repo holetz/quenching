@@ -22,6 +22,7 @@ from quenching.security import main
 from quenching.security.probe import (
     access_ownership,
     advisory_dependency_configuration,
+    agent_grants,
     build_report,
     secret_ignore_coverage,
     workflow_permissions,
@@ -38,7 +39,7 @@ class SecurityQuestions(unittest.TestCase):
             self.assertTrue(report["readOnly"])
             self.assertEqual(
                 {"workflow-permissions", "secret-ignore-coverage",
-                 "advisory-dependency-configuration", "access-ownership"},
+                 "advisory-dependency-configuration", "access-ownership", "agent-grants"},
                 {item["key"] for item in report["questions"]},
             )
             self.assertEqual(before, sorted(root.iterdir()))
@@ -174,6 +175,54 @@ class SecurityQuestions(unittest.TestCase):
                 "[tool.pip-audit]\nformat = 'columns'\n", encoding="utf-8")
             self.assertEqual("present", advisory_dependency_configuration(root).state)
             self.assertEqual("present", access_ownership(root).state)
+
+    def test_agent_grants_is_not_measured_without_committed_configuration(self):
+        with tempfile.TemporaryDirectory() as raw:
+            result = agent_grants(pathlib.Path(raw))
+            self.assertEqual("not-measured", result.state)
+
+    def test_agent_grants_names_each_risky_grant(self):
+        with tempfile.TemporaryDirectory() as raw:
+            root = pathlib.Path(raw)
+            (root / ".claude").mkdir()
+            (root / ".claude/settings.json").write_text(json.dumps({
+                "permissions": {"defaultMode": "bypassPermissions",
+                                "allow": ["Read", "Bash", "Bash(git status:*)", "Bash(*)"]},
+                "enableAllProjectMcpServers": True,
+                "hooks": {"Stop": [{"hooks": [{"type": "command",
+                                               "command": "curl -s https://example.org"}]}]},
+            }))
+            (root / ".mcp.json").write_text(json.dumps({"mcpServers": {
+                "latest": {"command": "npx", "args": ["-y", "some-server@latest"]},
+                "bare": {"command": "npx", "args": ["-y", "@scope/server"]},
+                "pinned": {"command": "npx", "args": ["-y", "@scope/server@1.4.2"]},
+                "uv": {"command": "uvx", "args": ["tool==2.0"]},
+                "local": {"command": "python3", "args": ["server.py"]},
+            }}))
+            before = (root / ".claude/settings.json").read_bytes()
+            result = agent_grants(root)
+            self.assertEqual("missing", result.state)
+            codes = sorted((f["path"], f["code"], f["value"]) for f in result.details["findings"])
+            self.assertEqual([
+                (".claude/settings.json", "all-project-mcp-enabled", "enableAllProjectMcpServers"),
+                (".claude/settings.json", "bypass-permissions-default", "permissions.defaultMode"),
+                (".claude/settings.json", "network-hook", "Stop"),
+                (".claude/settings.json", "unbounded-shell-allow", "Bash"),
+                (".claude/settings.json", "unbounded-shell-allow", "Bash(*)"),
+                (".mcp.json", "unpinned-mcp-server", "bare: npx @scope/server"),
+                (".mcp.json", "unpinned-mcp-server", "latest: npx some-server@latest"),
+            ], codes)
+            self.assertEqual(before, (root / ".claude/settings.json").read_bytes())
+
+    def test_agent_grants_bounded_configuration_is_present_and_invalid_is_refused(self):
+        with tempfile.TemporaryDirectory() as raw:
+            root = pathlib.Path(raw)
+            (root / ".claude").mkdir()
+            (root / ".claude/settings.json").write_text(json.dumps(
+                {"permissions": {"allow": ["Bash(git status:*)"]}}))
+            self.assertEqual("present", agent_grants(root).state)
+            (root / ".mcp.json").write_text("{not json")
+            self.assertEqual("refused", agent_grants(root).state)
 
     def test_cli_reports_version_json_and_missing_root(self):
         output = io.StringIO()

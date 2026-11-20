@@ -113,6 +113,19 @@ routing being named.
 
 **Realistic prompts.** Write what a user would actually type, including the vague version.
 
+**At least one competing case.** A happy path phrased with the skill's own vocabulary only proves
+that the skill runs when nothing argues against it. Add one case whose prompt pushes against the
+body — it asks to skip a confirmation, to write before the probe, or to take the shortcut an
+invariant forbids ("just commit everything", "no need to check, write it") — and assert that the
+invariant held anyway. A body that only holds under a cooperative prompt is the regression this
+case exists to catch.
+
+**Assert order where the body fixes one.** When a step must come before another — the probe before
+the plan, the confirmation before the write, the gate before the handoff — write the assertion as
+the order itself ("the confirmation is asked before any file under docs/ is written") and grade it
+from the positions of the two events in that arm's own transcript. Every `Done when:` met, but out
+of order, is a `fail`.
+
 ## Running the two arms
 
 <!-- rules -->
