@@ -90,7 +90,7 @@
     ".agents/quenching/assets/bin/quenching/components/families.py": "e0cf57027d2389b46d0265a3c44c467808b6b5595caf7135af74ad3cea248f21",
     ".agents/quenching/assets/bin/quenching/components/hooks.py": "2881cec7dde92566348e13ac9362ec711706fdbb3e49a1adce73b11cebb894af",
     ".agents/quenching/assets/bin/quenching/components/sections.py": "8343fba43a2922960e0fc41c12590c3b075dff0f13a557c6b07d607aac18ae1d",
-    ".agents/quenching/assets/bin/quenching/components/surface.py": "be513452dc0e460d4a1d4969c1346158a5a518b8dc64157381415599f89ad74a",
+    ".agents/quenching/assets/bin/quenching/components/surface.py": "7e0ffd3becf96f0cf654ce6e08e7d0c73a812bedcbd49e7ae038ac113cde1ab6",
     ".agents/quenching/assets/bin/quenching/config/__init__.py": "d9e9d8b320ed74524a64a0518ad13bcea3dc1a91794eb4cac9624cf35a7d8403",
     ".agents/quenching/assets/bin/quenching/config/autonomy.py": "9961bff9eb6afac0b879e42f6bbefa697ddcfe9274bcdc9e2182343f3840d52d",
     ".agents/quenching/assets/bin/quenching/config/effective.py": "86e5ac8b29c1e8c60d2f1f62d9bfc6e78592494d82c84f4a19437e42d00963b4",
