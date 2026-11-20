@@ -130,7 +130,7 @@
     ".agents/quenching/assets/bin/quenching/git/identity.py": "dc32fbecb49039f81191d527cc0823e26ceab62cb14c4af596146e68798f4c81",
     ".agents/quenching/assets/bin/quenching/git/ignored.py": "3422fe1b759b75c88e3fd554e40f0c72f29cc8eeb2627e3cdac958c638ad6517",
     ".agents/quenching/assets/bin/quenching/git/pr.py": "747e5dbffa41d6226a9a056693d0796a6a385969852424d3732ca4d7a904b5fd",
-    ".agents/quenching/assets/bin/quenching/git/preflight.py": "9d8b044963d2e62088e6f3e8ebd831f418cab1b361743525bcfc184786eeb8fb",
+    ".agents/quenching/assets/bin/quenching/git/preflight.py": "d46925a756b5ad5f90e5644919ee214b447960ec40973d6437c25db320a27d9a",
     ".agents/quenching/assets/bin/quenching/git/prune.py": "835b6db89379964c5b0e597e3d51742fd7bd20a0d39fda62344b651ad5953afc",
     ".agents/quenching/assets/bin/quenching/git/pull.py": "c29ba2e0e48828d6daf76bb4748ee35a0894473d61832a38f1cb8ca0fc88b852",
     ".agents/quenching/assets/bin/quenching/git/push.py": "3a7e189f8027c17ac3a2226c1bf412d6158728e4337ae713fa5b7e7ff7be4c9f",
