@@ -359,18 +359,11 @@ g. **Run and report the declared hook for this event, and move on.** Once the sp
    as the spec-runner's `HOOKS:` line, so an optional hook that never resolved is never lost. A hook
    absent from config is silent.
 
-h. **At a section boundary, keep the task commits, read the session size once, and continue.** The
-   branch is at a clean, independently anchored boundary; another section may still be ahead. Run
-   `.agents/quenching/bin/cq components session context --self <id> --json` — `--self` measures this run's own transcript,
-   a sub-agent's included — and print its peak and budget in the banner. **The number never ends the
-   spec:** a worker's budget is a size estimate, not a stop limit. **Under `autonomous`, exit 1 asks
-   nothing and stops nothing** — print the measured peak, the estimate and the section just closed
-   and go on to the next task; the conductor's own budget stays the only stop of an autonomous run,
-   between waves. In a human-led run, exit 1 → ask once, on a decision sheet: stop here and resume
-   with `/quenching-specs execute <id>` in a new session as option A (recommended), the measured peak
-   in its own text, or continue. Exit 0 or 2 → continue to the next task: the boundary is not a
-   question. Otherwise stop only when the workflow reaches a question that requires a human answer,
-   or under the pause conditions below. See
+h. **At a section boundary, keep the task commits and continue.** The branch is at a clean,
+   independently anchored boundary; another section may still be ahead. **No session-size read runs
+   here and the boundary is never a question:** do not measure the context, print a budget or offer
+   a new session. Stop only when the workflow reaches a question that requires a human answer, or
+   under the pause conditions below. See
    [execution-cadence.md](.agents/quenching/references/specs-execute/execution-cadence.md)
    §The section boundary.
 
@@ -434,9 +427,6 @@ small. `--scope current` always resolves to whichever section still has open wor
 [execution-cadence.md](.agents/quenching/references/specs-execute/execution-cadence.md) §The
 Handoff cadence.
 
-**The over-budget question at a section boundary (step 5h) adds no fifth event and writes no new
-state.** Accepted, it is a pause and a last commit, which are already two of the four above;
-declined, nothing happened worth recording.
 **Done when:** the global block and the current section's `## Handoff` block describe the tree as
 it stands after the run's last commit.
 

@@ -155,9 +155,8 @@ itself: search by title in `.agents/quenching/bin/cq specs list --json` first
 earlier `link add` calls), serializing any two members that touch the same files with `after:`.
 Exit 2 is read, never repeated blindly. The model restrictions on code and classification stay as
 they are.
-**Decomposition, by this session.** Members not yet decided, a spec over the worker size estimate, or waves
-that need reading file overlap are decomposed here, as the develop flow's decomposition step does
-(`/quenching-specs develop`): propose the slices from the queue and the kept candidates,
+**Decomposition, by this session.** Members not yet decided, or waves that need reading file
+overlap, are decomposed here — never on a token estimate: propose the slices from the queue and the kept candidates,
 then create the composite and the members with the same `.agents/quenching/bin/cq specs new` and `.agents/quenching/bin/cq specs link add`.
 Either way, write the composite's `## Design` — and write it as a READ, AN APPEND AND ONE WRITE,
 because `.agents/quenching/bin/cq specs section --write` REPLACES the section: `.agents/quenching/bin/cq specs section <composite> Design

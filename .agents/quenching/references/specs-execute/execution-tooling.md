@@ -197,8 +197,7 @@ also the point where the suite has just run.
 
 The window size came back once it was measured rather than invented: `.agents/quenching/bin/cq components session
 context` reads the recorded peak against the role budget of
-`docs/standards/automation/context-discipline.md` §Measured context budgets. It still triggers
-nothing — the section boundary does — and it only turns the boundary from silent into a
-recommendation. For the worker that number is a size estimate and the run never stops on it; the
-conductor's budget is the one stop that survives, and the orchestrator checks it between waves,
-never at this boundary.
+`docs/standards/automation/context-discipline.md` §Measured context budgets. It is read at a
+stage end, never at a section boundary: a boundary question cost more turns than the new session it
+offered saved. For the worker that number is a size estimate and the run never stops on it; the
+conductor's budget is the one stop that survives, and the orchestrator checks it between waves.

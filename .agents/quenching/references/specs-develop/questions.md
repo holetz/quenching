@@ -516,23 +516,11 @@ built** — and say what should happen to it next.
 This stage adds nothing to the body: it writes one record and no section. What it shows is always
 the same: what the spec now commits to, in the proposal's one line, the task count, the
 `verification` policy in force, the declared `docs/standards/` paths, and the biggest accepted
-risk, plus the declared-reading estimate, worker budget and unknown inputs.
+risk.
 
-**The size signal precedes every approval stamp.** Run `.agents/quenching/bin/cq specs estimate <id> --json` after
-ready verification. Its `overBudget` compares the largest task section's known reading estimate
-with `workerBudgetTokens` (default 200000). Bytes / 4 is a heuristic, not measured build context;
-excluded overhead and unknown inputs remain visible below the budget. Never claim a build fits
-from this signal, and never change `complexity` to make a plan appear smaller.
-
-An excess recommends **decomposition in the develop session**, not an unconditional approve:
-from the source spec and section estimates, propose independent slices
-and dependency edges, and present them before asking to capture an epic. Capture/linking needs
-explicit authorization and keeps the original problem available; an existing approval or task
-history is never silently rewritten. The human may instead **explicitly accept** the unsplit
-estimate risk or stop. **No automatic approval** above budget, including the simple track
-and `autonomous`: a worker returns `STATE: blocked` / `NOTE: needs-human:` with the evidence and
-proposal so the conductor holds the decision. An estimator refusal/failure also leaves approval
-unstamped. Incomplete input coverage is reported honestly; it never becomes a false fits verdict.
+**No token-budget check precedes approval.** The approval runs no `cq specs estimate`, shows no
+estimate and never asks, blocks or recommends decomposition over a budget. Splitting a spec is a
+scope judgment §Refine's signals make, never a byte count.
 
 **The screen recommends, rather than defaulting to approve.** It judges what the pass just produced
 against §Refine's three signals and leads with the move those signals argue for, as option A of
@@ -541,18 +529,16 @@ text:
 
 | Recommendation | When | What choosing it does |
 | --- | --- | --- |
-| **Decompose** | known declared reading exceeds worker budget | propose independently verifiable slices in this session; capture only on explicit authorization |
 | **Approve** | no signal fired | `.agents/quenching/bin/cq specs record "<id>" approved --set date=<today> --set by=human`, never by editing the provider document directly |
 | **Refine** | a scope or critique signal fired, and refine has not run this pass | the choice IS the OK to refine with the lens the signal names, restamping `complexity` if the depth grew, and the pass re-enters at refine |
 | **Refine with the premortem** | the spec is irreversible | same mechanics, premortem lens |
 | **Stop here** | — | nothing stamped, and the report says what is open |
 
-A pass where refine already ran does not recommend refining again; absent a size excess it recommends approving, and
+A pass where refine already ran does not recommend refining again; it recommends approving, and
 names what the argument settled. Recommending the raise a human has already taken is asking them to
 decide the same thing twice.
 
-**On the simple track, after the size check leaves no unresolved oversized-plan decision — the pass
-approves, and the record says so.**
+**On the simple track, the pass approves, and the record says so.**
 `.agents/quenching/bin/cq specs record "<id>" approved --set date=<today> --set by=session`. There is no screen, because
 the simple track is the one with nothing left for a human to decide. The review window is **the
 spec's URL in the backend**, announced before the pass read anything and repeated in its report. The

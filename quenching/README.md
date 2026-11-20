@@ -519,10 +519,8 @@ worker **size estimate** is **200000 input-context tokens**: it says how much re
 that size fits, and it never stops a build; `--worker-budget` declares an explicit override.
 The estimate **never proves** a full build fits: system/harness overhead, conditional references,
 future code, tool/test output, iteration count and growing history are excluded. Total reading
-volume is not a context peak. Develop compares the largest section before approval and proposes
-decomposition in the main session when known reading exceeds the budget. It presents independent
-slices first; capturing an epic requires explicit authorization. Declared autonomy leaves an oversized
-source unapproved and returns the decision to its conductor.
+volume is not a context peak. The verb runs only when called: develop does not check it before
+approval, and no flow asks, blocks or proposes decomposition over a token budget.
 
 The command registry loads at **session start**, so surface changes require fresh `claude -p`
 processes. `assets/checks/functional-checks.sh` deploys this checkout into throwaway targets and proves root

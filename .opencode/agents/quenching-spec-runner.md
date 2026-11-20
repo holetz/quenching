@@ -77,13 +77,10 @@ Your budget is the size estimate of `docs/standards/automation/context-disciplin
 context budgets: how much reading a spec of this size is expected to cost, measured by code, never
 by your own count. It is not a stop limit. Nothing about crossing it ends the spec.
 
-`/quenching-specs execute` measures at each section boundary with
-`.agents/quenching/bin/cq components session context --self <id> --json` and prints the peak against
-the estimate. Over it (exit 1) is a diagnostic: the run prints the number and carries on, and you
-never write a handoff note for it, never return `STATE: continue` for it, and never treat that
-boundary as the end of the spec. Exit 2 (unmeasured) is equally not a stop. The peak reaches the
-caller through that banner, and the orchestrator's own `BUDGET:` line reports the same role budgets
-from `cq components session cost`; neither is a verdict on the spec. Only a real block of
+`/quenching-specs execute` does not measure it at a section boundary, and you never measure it
+yourself: never write a handoff note for it, never return `STATE: continue` for it, and never treat
+a boundary as the end of the spec. The orchestrator's own `BUDGET:` line reports the role budgets
+from `cq components session cost`; it is not a verdict on the spec. Only a real block of
 `docs/standards/workflows/task-execution.md` §After approval, the executor decides, records and stops only on a real block
 ends a run.
 
