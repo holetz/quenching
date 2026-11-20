@@ -104,6 +104,8 @@ def add_subcommands(sub: argparse._SubParsersAction) -> argparse._SubParsersActi
     co.add_argument("--since", metavar="ISO8601",
                     help="count only requests at or after this instant (an orchestrator's own window "
                          "when several share the session)")
+    co.add_argument("--usd", action="store_true",
+                    help="add each row's list-price estimate from quenching's price table")
     co.add_argument("--json", action="store_true", help="machine-readable output")
     co.set_defaults(func=cmd_cost)
     ca = sub.add_parser("cache", help="the prompt cache Claude Code and OpenCode delivered, in one shape")
@@ -115,6 +117,9 @@ def add_subcommands(sub: argparse._SubParsersAction) -> argparse._SubParsersActi
     ca.add_argument("--opencode-db", metavar="PATH",
                     help="OpenCode database (default: QUENCHING_OPENCODE_DB, else the XDG data dir)")
     ca.add_argument("--since", metavar="ISO8601", help="count only requests at or after this instant")
+    ca.add_argument("--session", metavar="ID", help="count only this session's requests (its id)")
+    ca.add_argument("--usd", action="store_true",
+                    help="add each row's list-price estimate from quenching's price table")
     ca.add_argument("--json", action="store_true", help="machine-readable output")
     ca.set_defaults(func=cmd_cache)
     cx = sub.add_parser("context", help="measure a live transcript's context and role budget")

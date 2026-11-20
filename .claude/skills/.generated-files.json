@@ -37,7 +37,8 @@
     "quenching-git/references/push.md": "5a6e2e1fd602e775395eb58624969455d3c10f6cbe01dc4bacdf09e327fb0f75",
     "quenching-git/references/revert.md": "d43f2c69c088820acb38fdb1c0b873b36ae7e4a9642fa0f7426827472812445d",
     "quenching-git/references/sync.md": "1b608cc8c84941e9e385c4e817bd4e1c749bdf1d622337ed2f32baf74fb1d87d",
-    "quenching-handoff/SKILL.md": "588c0117b3c0e0be17be08c4fcc36dcff37dc1768bb218bc471f25fbc997c154",
+    "quenching-handoff/SKILL.md": "8e791e33ded50934cbda488c800baa1bf05d3823c704ae98ef6e925b3c12ea42",
+    "quenching-handoff/references/template.md": "3cadf312ed570714431ee5fcf655a9358b0d97ce12c95d0417e59f7947def1c4",
     "quenching-knowledge/SKILL.md": "9d7df5a9f03c1fa505e961f4dfa073615ba1d7e041db79c4d52208ee11c75f15",
     "quenching-knowledge/references/add.md": "8ece711dec0a4d8805a4fc1e45e54fc76ac8fc54c5107f5415c379e717666106",
     "quenching-knowledge/references/align.md": "b6c82fb8572ee971af88c6dea310fd2691c7fc26f1f604d709e57b1aa20d5222",
@@ -102,7 +103,7 @@
     "quenching-toolchain/references/status.md": "043229665fac8062b7cc154893fa8a0bb038790e4b5ba438a297ea35ac890da3",
     "quenching-toolchain/references/toolchain-align/bands.md": "d73941d0034ffd0cbc3b3c79bc992d432b1a802e3d86926730a5943309034b97",
     "references-tighten/SKILL.md": "02e15aa8d31c490909873e404ecdbaa5a64765a7976d684ce141a9e71ba98d1a",
-    "release/SKILL.md": "6a069364bc90b0e62b4a6bec125956aaeb58d887623fe2f997c74c57f454eb00",
+    "release/SKILL.md": "201e3aa31c11d61c57de8e9dbc83e529be35f18984670585fd83a8512643abff",
     "skill-map/SKILL.md": "eb309cf9d098a5daccbabff27d97f3da24a967c888bbde88f0400cc6af09b5be"
   }
 }

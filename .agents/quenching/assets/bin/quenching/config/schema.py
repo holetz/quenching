@@ -20,6 +20,7 @@ from quenching.codex.config import CHOICES as CODEX_CHOICES, DEFAULTS as CODEX
 from quenching.config.autonomy import COMPLEXITY, DEFAULTS as AUTONOMY, MERGE
 from quenching.config.host import DEFAULTS as WORK_HOST
 from quenching.session.commands.context import BUDGETS
+from quenching.session.cachebar import COST_STYLES, DEFAULTS as CACHE_BAR, TTL_CHOICES
 
 SCOPES = ("project", "machine", "either")
 TYPES = ("string", "integer", "boolean", "enum", "paths", "strings", "prose", "number", "object")
@@ -33,6 +34,7 @@ CATEGORIES = (
     ("proof", "Proof and tests", "Prova e testes"),
     ("ops", "Operations", "Operações"),
     ("knowledge", "Knowledge", "Conhecimento"),
+    ("cache", "Prompt cache", "Cache de prompt"),
 )
 
 SLOTS = {"min": 4, "max": 12, "waitMinutes": 30, "pollSeconds": 30, "setupIdempotent": False}
@@ -141,6 +143,26 @@ _k("shared.contextBudgets.worker", "integer", BUDGETS["worker"], "autonomy", "ma
 _k("shared.contextBudgets.conductor", "integer", BUDGETS["conductor"], "autonomy", "machine",
    "cq session context", ("Conductor budget", "Tokens the orchestrating session plans around."),
    ("Orçamento do condutor", "Tokens que a sessão que orquestra considera."), minimum=1)
+# — Prompt cache (the quenching-cache bar) —
+_k("shared.cache.rebuildLimitUsd", "number", CACHE_BAR["rebuildLimitUsd"], "cache", "either",
+   "quenching-cache plugin",
+   ("Rebuild limit (USD)", "Above this rebuild cost an expired chat turns red and suggests a handoff."),
+   ("Limite de reconstrução (USD)", "Acima deste custo de reconstrução o chat expirado fica vermelho e sugere um handoff."),
+   minimum=0)
+_k("shared.cache.warnMinutes", "integer", CACHE_BAR["warnMinutes"], "cache", "either",
+   "quenching-cache plugin",
+   ("Warning time (minutes)", "How early the 1-hour cache turns yellow before it expires."),
+   ("Aviso (minutos)", "Quanto antes de expirar o cache de 1 hora fica amarelo."), minimum=1)
+_k("shared.cache.ttlMinutes", "enum", CACHE_BAR["ttlMinutes"], "cache", "machine",
+   "quenching-cache plugin",
+   ("Cache lifetime", "auto follows each reply's cache write; 5 or 60 force it."),
+   ("Duração do cache", "auto segue a escrita de cache de cada resposta; 5 ou 60 a forçam."),
+   choices=list(TTL_CHOICES))
+_k("shared.cache.costStyle", "enum", CACHE_BAR["costStyle"], "cache", "either",
+   "quenching-cache plugin",
+   ("Show cost as", "dollars at list price, or times more than a normal message."),
+   ("Mostrar custo como", "dólares a preço de tabela, ou quantas vezes mais que uma mensagem normal."),
+   choices=list(COST_STYLES))
 _k("shared.hooks", "object", {}, "autonomy", "project", "the command that owns the event",
    ("Hooks", "Commands run on flow events; edit in the file."),
    ("Hooks", "Comandos executados em eventos do fluxo; edite no arquivo."))

@@ -95,10 +95,10 @@ Where a local value lands depends on the key's **scope**, declared once in the k
   `localConfig.ignored`, and `show --effective` names it in `warnings`; an editor shows the key
   locked to the project layer.
 - `machine` — a property of the machine the checkout runs on: `shared.worktreeSlots` (all but
-  `setupIdempotent`), `shared.workHost`, `shared.contextBudgets` and the Codex quota ceilings. The
+  `setupIdempotent`), `shared.workHost`, `shared.contextBudgets`, `shared.cache.ttlMinutes` and the Codex quota ceilings. The
   local value wins over every file.
 - `either` — a preference the team may fix: `shared.autonomy`, the rest of `shared.codex`,
-  `shared.okfValidate`, `specs.chat`. The repository wins; the local value fills a leaf the
+  the rest of `shared.cache`, `shared.okfValidate`, `specs.chat`. The repository wins; the local value fills a leaf the
   repository leaves out, and beats the user layer.
 
 The local layer merges **leaf by leaf** at the registry's granularity — a local
@@ -217,7 +217,7 @@ Ownership follows the meaning of the key, not the module that happens to read it
 | Namespace | Owned declarations | Boundary |
 | --- | --- | --- |
 | root | `backend` | legacy/provider metadata only; provider selection comes from `origin` |
-| `shared` | `worktreeSetup`, `sharedPaths`, `regenerablePaths`, `hooks`, `profiles`, `gitConventions`, `gitIdentity`, `autonomy`, `workHost`, `okfValidate`, `contextBudgets`, `codex` | settings used by more than one local surface or by isolation |
+| `shared` | `worktreeSetup`, `sharedPaths`, `regenerablePaths`, `hooks`, `profiles`, `gitConventions`, `gitIdentity`, `autonomy`, `workHost`, `okfValidate`, `contextBudgets`, `codex`, `cache` | settings used by more than one local surface or by isolation |
 | `specs` | Azure state and placement mappings, `subjects`, `tagCatalog`, `workItemTypes`, `chat`, `estimate`, `artifactLanguage`, `card`, `cardAt` | provider-owned plan lifecycle and proposal conventions |
 | `delivery` | `provider` | the delivery front's explicit provider declaration; it chooses no pipeline policy |
 | `ops` | `opsRoot`, `router`, `registry` | operations inventory, router and generated registry |
@@ -307,7 +307,7 @@ permission, removes a sandbox or loosens a verifier check: `merge: all` applies 
 
 ## Limits and checker settings
 
-Four optional keys carry a limit or a checker setting whose default lives in code. An absent key, or a
+These optional keys carry a limit or a checker setting whose default lives in code. An absent key, or a
 leaf of the wrong shape, leaves the default and names the ignored value in a warning on stderr; an
 explicit flag wins over the key.
 
@@ -315,6 +315,7 @@ explicit flag wins over the key.
 | --- | --- | --- | --- |
 | `shared.okfValidate` | `{warnAsError: boolean, ignoreGlobs: list of strings}` | `false`, `[]` | `cq knowledge validate`; wins key by key over `.claude/hooks/hooks-config.local.json` and `hooks-config.json` |
 | `shared.contextBudgets` | `{main, worker, conductor}`, positive integers | `200000` / `200000` / `150000` | `cq session context` per role: the worker number is a **size estimate**, measured and never a stop, the conductor's is a stop checked between waves, and the main number is an offer; `cq specs estimate --worker-budget` uses `worker` |
+| `shared.cache` | `{rebuildLimitUsd, warnMinutes, ttlMinutes: auto \| 5 \| 60, costStyle: dollars \| times}` | `0.5` / `15` / `auto` / `dollars` | the `quenching-cache` plugin's bar, through `cq config show --effective`; its long-chat line is `shared.contextBudgets.main` |
 | `shared.autonomy.maxLaunches` | integer ≥ 1 | `40` | `/quenching-specs autopilot` (see the autonomy block); the launch ceiling lives only there |
 | `shared.workHost` | `{target, dockerContext, runner, remoteRoot, syncFlags, syncExclude, pullBack, protectedPaths, minFreeGb}` | disabled | `cq config host --plan`; see [work-host.md](work-host.md) |
 | `shared.mcp` | `{mount: "specs", command: [strings]}` | absent; no MCP file is generated | `cq deploy`; read from the repository document only, never the merged envelope |
