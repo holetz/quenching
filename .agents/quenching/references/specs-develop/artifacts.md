@@ -107,7 +107,7 @@ costs one line.
 ## `## Impact` — the parsed sub-heading
 
 <!-- rules -->
-Three sub-headings, and exactly one is machine-checked:
+Four sub-headings, and exactly one is machine-checked:
 
 ```markdown
 ### Standards this spec will write into docs/standards/
@@ -121,6 +121,11 @@ Three sub-headings, and exactly one is machine-checked:
 ### Product code this spec expects to touch
 
 - `src/auth/session.ts` — the mint/revoke path
+
+### Process surface this spec expects to touch
+
+- `quenching/references/specs-develop/artifacts.md` — declare the process surface scope
+- `quenching/skills/quenching-specs/SKILL.md` — route the revised authoring flow
 ```
 
 `.agents/quenching/bin/cq specs validate` parses **only the first sub-heading** (`parse_impact_standards`) and emits
@@ -136,9 +141,16 @@ line and is written at conclude
 ([execution-delegation.md](.agents/quenching/references/specs-execute/execution-delegation.md) §Declared
 versus emergent `knowledge/`).
 
+The process-surface sub-heading **declares scope for the human reviewer**, like the product-code
+one. It is **unparsed**: no validator reads it, and writing it is never itself a finding. **Every
+path it names gets a task** (§`## Tasks`). A declared surface path that no `## Tasks` item names is
+a review finding, not a validation error: the reader checks coverage; the only automation is the
+task's own `verify:`.
+
 <!-- rationale -->
-The other two are deliberately **not** parsed: they name paths the spec does not promise to write,
-and checking them would flag a spec for not delivering a doc it never claimed.
+The first sub-heading is parsed because it promises standards the spec will write. The three
+beyond it are deliberately **not** parsed: they name paths the spec does not promise to write as
+standards, and checking them would flag a spec for not delivering a standard it never claimed.
 
 ## `## Handoff` — small, and refreshed on events
 

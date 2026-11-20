@@ -3,7 +3,8 @@
 Front-neutral: any command body that gathers evidence from `grep`/`gh`/`cq` to answer a small
 question, or reads a doctrine or standard to obey part of it, pays for what it reads on every turn
 that follows. This file states the two rules that keep that payment proportional to the question
-being answered, cited by `.agents/quenching` from wherever a command needs them.
+being answered and the rule that governs a source gathered from the web, cited by
+`.agents/quenching` from wherever a command needs them.
 
 Measured on one real `/quenching-specs develop` session (`renomear-docs-para-knowledge`, backend
 `github`): raw evidence was 36.6% of the ~58k tokens ingested — one `grep` alone returned 14,252
@@ -82,3 +83,32 @@ in question stop being paid for.
 The exit 2 is the useful half of the stability constraint: it names the headings the file actually
 has, so a body that plans for it recovers in one call. What the constraint forbids is the silent
 assumption that a target's bundle is shaped like this repository's.
+
+## 3. A web source is cited, dated, and never the rule alone
+
+<!-- rules -->
+
+The citation carries three facts in the same place: the URL, the source's **publication date**,
+and the date it was **retrieved**. A source with no publication date is marked `undated`; a
+retrieval date invented from memory is not a date. Where the claim depends on the version or
+release a page documents, cite it beside them.
+
+A web source may ground an alternative in `## Alternatives Considered`, a rationale paragraph in
+`## Design`, a description of an external tool's measured behaviour, or a version fact. It is
+evidence for a **choice**, and it is citable.
+
+A web source may not ground a binding rule alone. A `/docs/standards/` rule, a command's invariant,
+or a task's `verify:` needs the repository's own contract beside the page — the code, a test, or a
+run whose output is quoted. A page changes without notice and disappears; the rule must stand if
+it does. Remove the URL: the rule still has to be defensible from what the repository carries.
+
+Reading current practice is delegated to the read-only research sub-agent of
+[specs-develop/questions.md](.agents/quenching/references/specs-develop/questions.md) §Surface
+refinement. Its table carries the same three facts per row; a claim without them is dropped
+rather than cited.
+
+<!-- rationale -->
+
+A citation with no retrieval date cannot be told apart from one copied from another summary.
+The date pair places the source's publication and its observation in time; a rule that rests on a
+page expires silently when the page moves.
