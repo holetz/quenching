@@ -10,7 +10,7 @@ description: >-
   finishes: the bump and its tag live on the primary branch's tip, on origin. Not for:
   concluding or merging ONE spec into the primary branch → /quenching-specs conclude.
 argument-hint: [version — optional, skips the proposal and confirms this exact X.Y.Z]
-allowed-tools: Bash(git:*), Bash(python3:*), Bash(QUENCHING_FULL_GATE=1 QUENCHING_FUNCTIONAL=1 bash scripts/verify_repo.sh:*), Read, AskUserQuestion
+allowed-tools: Bash(git:*), Bash(python3:*), Bash(gh api:*), Bash(QUENCHING_FULL_GATE=1 QUENCHING_FUNCTIONAL=1 bash scripts/verify_repo.sh:*), Read, AskUserQuestion
 ---
 
 # /release — publish what the primary branch accumulated
@@ -81,7 +81,21 @@ nobody who deploys from the tag. **Done when:** the human has confirmed one exac
 or declined — a decline stops the run with nothing written.
 
 ### 4. Bump on the primary branch, and push
-Before the bump, from the primary branch's checkout, run the surface-load measurement that the
+Before the bump, confirm that CI ran green on the **exact commit** the tag will sit on top of — the
+local gate proves this checkout, not what origin's CI saw:
+```bash
+git -C <primary checkout from step 1> fetch origin <primary-branch>
+git -C <primary checkout from step 1> rev-parse HEAD origin/<primary-branch>
+gh api "repos/{owner}/{repo}/commits/<that sha>/check-runs" --jq '[.check_runs[] | {name, status, conclusion}]'
+```
+The two shas must be equal: a local tip ahead of or behind origin is not the commit CI judged, so
+stop and name the difference. Then the release proceeds only when the list is non-empty and every
+run is `completed` with a `success`, `skipped` or `neutral` conclusion. A run still `queued` or
+`in_progress`, a `failure`/`cancelled`/`timed_out` conclusion, an empty list, or `gh` missing or
+refusing → stop without bumping and report it as **not verified**, naming each run that is not
+green; never read an unanswered check as a green one.
+
+Then, from the primary branch's checkout, run the surface-load measurement that the
 ordinary local gate keeps opt-in:
 ```bash
 ( cd <primary checkout from step 1> && QUENCHING_FULL_GATE=1 QUENCHING_FUNCTIONAL=1 bash scripts/verify_repo.sh )

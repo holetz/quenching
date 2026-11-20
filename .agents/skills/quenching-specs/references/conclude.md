@@ -548,7 +548,11 @@ body blocks:
    step 5, **what the sweep captured in step 6** — the ids it opened and the candidate it declined,
    with the reason — and what the pre-merge gate returned. §Quoting a tool's own output governs the gate's
    result, which means **a check that came back inconclusive is named as such, never counted as
-   passed**.
+   passed**. Close the block with one line on **target acceptance** — whether the change was
+   exercised where it lands, apart from the local gate: `Target acceptance: verified (<what ran,
+   where>)`, `not performed (<why>)` or `n/a (<why nothing lands outside the gate>)`. A green gate
+   proves this checkout, never a deployed target, a real session or the provider, so it never
+   stands in for `verified`.
 3. **Unresolved `## Discoveries`** — optional, each line named. They are
    `/quenching-specs develop`'s discoveries stage to close, and they are easiest to lose at exactly
    this moment.
@@ -558,8 +562,8 @@ Print §The session-size line before the block — `.agents/quenching/bin/cq com
 Close on §The next-step block, its recommended line naming step 7's handoff — `/quenching-git pr-create`
 or `/quenching-git merge`, whichever was recommended, or `/quenching-specs develop <id>` when
 block 3 has rows and that needs settling first.
-**Done when:** path, outcome, records, both `/docs/` passes, what the sweep captured and the
-next-step block are all reported.
+**Done when:** path, outcome, records, both `/docs/` passes, what the sweep captured, the target
+acceptance line and the next-step block are all reported.
 
 ## Invariants to never violate
 
