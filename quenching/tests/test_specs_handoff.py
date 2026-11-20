@@ -143,27 +143,53 @@ class Write(GitStoreFixture):
 
 
 class Fallback(unittest.TestCase):
-    def test_a_repository_without_a_store_keeps_it_local_and_says_so(self):
+    """A store that holds no artifacts (github, azure) or no store at all keeps the handoff local
+    and says so; a fake backend stands in, so no provider CLI is reached."""
+
+    def write(self, backend):
+        from unittest import mock
         with tempfile.TemporaryDirectory() as root:
             root = os.path.realpath(root)
             subprocess.run(["git", "init", "-q", root], check=True)
-            subprocess.run(["git", "-C", root, "remote", "add", "origin", "https://github.com/o/r.git"],
-                           check=True)
-            os.makedirs(os.path.join(root, ".agents"))
-            Path(root, ".agents", "quenching.json").write_text(json.dumps({"backend": "github"}))
             draft = Path(root, "draft.md")
             draft.write_text(BRIEF, encoding="utf-8")
-            backends_mod._BACKEND_CACHE.clear()
             buf = io.StringIO()
-            with contextlib.redirect_stdout(buf):
-                code = cli.main(["--root", root, "handoff", "write", "--from", str(draft),
+            with mock.patch("quenching.specs.commands.handoff.open_backend", return_value=(backend, {})), \
+                    contextlib.redirect_stdout(buf):
+                code = cli.main(["--root", root, "handoff", "write", "--from", str(draft), "--spec", "3",
                                  "--focus", "f", "--date", "2026-11-20", "--lang", "en", "--json"])
             got = json.loads(buf.getvalue())
-            self.assertEqual(0, code, got)
-            self.assertTrue(got["local"], got)
-            self.assertEqual(".quenching/handoff/handoff-2026-11-20-f.md", got["locator"])
-            self.assertEqual(BRIEF, Path(root, got["locator"]).read_text(encoding="utf-8"))
-            self.assertIn("local only", got["block"])
+            stored = Path(root, got["locator"]).read_text(encoding="utf-8") if got.get("locator") else None
+            return code, got, stored
+
+    def test_a_backend_without_artifacts_keeps_it_local_and_says_so(self):
+        from quenching.specs.backends.base import BackendRefusal, artifact_unsupported
+
+        class NoArtifacts:
+            def list_artifacts(self, spec=None):
+                raise BackendRefusal(artifact_unsupported("github"))
+
+        code, got, stored = self.write(NoArtifacts())
+        self.assertEqual(0, code, got)
+        self.assertEqual((True, "sp-artifact-unsupported"), (got["local"], got["reason"]))
+        self.assertEqual(".quenching/handoff/handoff-2026-11-20-f.md", got["locator"])
+        self.assertEqual(BRIEF, stored)
+        self.assertIn("local only", got["block"])
+
+    def test_no_store_at_all_is_the_same_fallback(self):
+        code, got, stored = self.write(None)
+        self.assertEqual((0, True, "sp-artifact-no-store"), (code, got["local"], got["reason"]))
+        self.assertEqual(BRIEF, stored)
+
+    def test_any_other_refusal_stays_the_failure_it_is(self):
+        from quenching.specs.backends.base import BackendRefusal
+
+        class Broken:
+            def list_artifacts(self, spec=None):
+                raise BackendRefusal({"code": "sp-gh-unauthenticated", "exit": 2, "message": "gh says no"})
+
+        code, got, _ = self.write(Broken())
+        self.assertEqual((2, "sp-gh-unauthenticated"), (code, got["code"]))
 
 
 if __name__ == "__main__":
