@@ -236,7 +236,7 @@ the structure that holds them, an automation. Fold each into the group or park i
 
 Draft `### 1. Process surface` as the first group of `## Tasks`, ahead of the objective's tasks
 that rely on the new behaviour. Give every item `files:` and `verify:`. Name in `files:` the
-paths declared under `## Impact` §`Process surface this spec expects to touch` plus the generated
+paths in the `Process surface this spec expects to touch` list under `## Impact`, plus the generated
 mirrors each source edit rewrites — the deployed `.agents/**` and `.claude/**` mirrors and
 `.agents/.quenching-deploy.json` — in the same task as that source edit. Name every declared path
 in a task; let no `[P]` cross the group.
