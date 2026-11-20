@@ -4,7 +4,7 @@ title: Deploy mode — install the surface in a target repository
 description: "`cq deploy` materializes the selected quenching modules in a target's generic layer — AGENTS.md, .agents/skills and a vendored runtime — while Claude Code receives only a generated bridge under .claude; install is not alignment and never calls a model."
 resource: quenching/assets/bin/quenching/deploy/**, quenching/assets/bin/cq, quenching/assets/modules.json, quenching/pyproject.toml, quenching/assets/bin/quenching/components/commands/bridge.py, quenching/assets/bin/quenching/components/commands/migrate.py, integrations/opencode-vitrine/**
 tags: [architecture, deploy, installation, agents, skills, bridge]
-timestamp: 2026-11-03
+timestamp: 2026-11-20
 audience: both
 authority: current
 source: deploy-mode implementation (2026-10-28); spec 2126, spec 2160, spec 2168, spec 2174 (absorbs surface-translation.md); retired with surface-translation.md (spec 2174, 2026-11-03); lineage in ADR 0017 and ADR 0019
@@ -63,11 +63,35 @@ authority over the plan.
 
 The manifest is the authority for what deploy owns. A generated file must be listed before it may
 be overwritten; a file at a generated path that the manifest does not own is a conflict
-(`ct-deploy-unowned`, exit 2) and nothing is written. Generated files may be edited by hand only
-as drift: `--check` reports it and `--write` regenerates them. Drift is content and the executable
-bit — the only part of the mode git carries — so a checkout that creates files group-writable
+(`ct-deploy-unowned`, exit 2) and nothing is written. Drift is content and the executable bit —
+the only part of the mode git carries — so a checkout that creates files group-writable
 (`umask 0002`) is clean. A target's own skills, references, `AGENTS.md` and configuration are never
 in the manifest's write set.
+
+The plan is **three-way**: the bytes on disk, the sha256 the manifest recorded, the new bytes. An
+owned file that still holds its recorded bytes and differs from the new ones is an `update` (the
+source moved on); one whose bytes no longer match the record is `edited` (someone changed it in the
+target). `--check` reports both (exit 1). `--write` applies updates but refuses an `edited` file
+(`ct-deploy-edited`, exit 2) and writes nothing, because regenerating it would discard work; the
+edit belongs in a target-owned skill or in the quenching source, and `--force` discards it on
+purpose. A manifest entry without a hash cannot tell the two apart and is read as `update`.
+
+A generated path is written only when it **resolves inside the target**: a symlinked directory that
+carries it elsewhere is a conflict in the plan, never a write through the link.
+
+The manifest records the `version` that wrote it. When it differs from the source's, the plan
+carries `installedVersion` and a warning naming both, so release lag reads apart from content drift.
+
+## Remove
+
+`cq deploy --target <repo> --remove` plans removing the whole surface (exit 1 while there is
+something to remove); `--remove --write` does it. Each owned file that still holds its recorded
+bytes is deleted, and directories it leaves empty go with it; an `edited` file is **kept** and
+reported, becoming the target's own file, unless `--force`. Only the hooks and keys a past deploy
+merged leave `.claude/settings.json`, which is deleted only when that leaves it empty. The manifest
+goes last. Seeds — `AGENTS.md`, `.agents/quenching.json` — the target's own skills and `/docs/`
+are never owned, so never removed. A target without a manifest refuses (`ct-deploy-remove`, exit 2):
+nothing is owned there.
 
 ## Runtime
 
@@ -260,6 +284,7 @@ decision.
 
 ```bash
 cq deploy --target . --modules core --check --json   # 0 clean, 1 drift, 2 refusal
+cq deploy --target . --remove --json                 # the removal plan; --write applies it
 python3 .agents/quenching/bin/cq --version
 python3 .agents/quenching/bin/cq components status --json
 python3 .agents/quenching/bin/cq components bridge --target . --check --json

@@ -686,8 +686,10 @@ deploys `core` instead: the read verbs ship with it.
 ## Uninstall or reverse
 
 Re-running `cq deploy --write` with a narrower `--modules` or `--harness` removes the dropped part
-of the surface. To remove all of it, delete the files `.agents/.quenching-deploy.json` lists and
-the manifest itself, or revert the commit that deployed them. Neither touches the target's `/docs/`,
+of the surface. To remove all of it, run `cq deploy --target <repo> --remove` to see the plan, then
+`--remove --write`: it deletes every owned file that still holds the bytes deploy wrote, keeps and
+reports any file edited in the target, takes only its own hooks out of `.claude/settings.json`, and
+deletes the manifest. Reverting the commit that deployed the surface works too. Neither touches the target's `/docs/`,
 its own skills or `.agents/quenching.json`: those are repository-owned data and configuration. To
 reverse an alignment, review and revert the target repository's own commits; removing the surface
 is not a data rollback. If an upgrade is the problem, deploy the previous release tag again.
