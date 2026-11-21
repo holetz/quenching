@@ -290,6 +290,6 @@ def evaluate(config: dict, *, mode: str, artifact: str | None = None) -> tuple[d
         "coverage": coverage["path"],
         "ratchetPath": str(floor_path),
         "achieved": {key: round(value, 6) for key, value in percentages.items()},
-        "floors": _floor_payload(next_floors)["floors"],
+        "floors": _floor_payload(next_floors if written else floors)["floors"],
         "findings": findings,
     }, 1 if findings else 0

@@ -178,7 +178,7 @@
     ".agents/quenching/assets/bin/quenching/proof/doctor.py": "a2a70b68d90f97f350ebeb7fc66d483dee28acb577a8c1438d5732b43c60b496",
     ".agents/quenching/assets/bin/quenching/proof/inventory.py": "4f9b21702f8dfea14f6b9835d791ed4e9e073705201b85ef098e9bd3c1e08f23",
     ".agents/quenching/assets/bin/quenching/proof/model.py": "f147bc496258ff9f7ab5d2534bc512ab68495041f1ea34180d418cebbfdd2729",
-    ".agents/quenching/assets/bin/quenching/proof/ratchet.py": "a5d15215d52638b7f001129508402a5552c4feeecc385f25031607f329ca030e",
+    ".agents/quenching/assets/bin/quenching/proof/ratchet.py": "c83e072c8355cc9d036364158c4901d50051fc166da8edd8e25659b5fa63af69",
     ".agents/quenching/assets/bin/quenching/proof/readme.py": "a57febe07dadbf8dd5e27674d2ad08c3e7028a95b232cbd7cb8cec2c441740f5",
     ".agents/quenching/assets/bin/quenching/security/__init__.py": "9e9cbdf05378b49f742ad64b3cd55dc46ad17788d8a09a5e6d0161337b2b3378",
     ".agents/quenching/assets/bin/quenching/security/model.py": "5c2e839a1b80384c97d115a24cab934530c3e08d5ca01a7d86a305a84eb6ea6e",
