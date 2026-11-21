@@ -219,9 +219,11 @@ def _merged_holder(cwd: str, slot: dict, base_sha: str | None) -> bool:
 def _take(cwd: str, view: dict, cap: int, reason: str, base_sha: str,
           freed: list) -> tuple[dict | None, bool]:
     """Lock one slot for the caller: a free clean one, else a new one under the cap, else a held
-    one whose branch is merged, whose tree is clean and where no process runs (released first;
-    without `/proc` the process check is skipped). A reused slot's
-    `.quenching/handoff/` is moved to the primary checkout (`slot["handoff"]`). `(slot, created)`."""
+    one whose branch is merged, whose tree is clean, which holds no ignored content `release`
+    would refuse on, and where no process runs (released first; without `/proc` the process check
+    is skipped). A reused slot's `.quenching/handoff/` is moved to the primary checkout
+    (`slot["handoff"]`); a merged holder's `.quenching/codex/` is archived there as `release`
+    does (`slot["archived"]`). `(slot, created)`."""
     for slot in view["slots"]:
         if slot["state"] == "free" and _lock(cwd, slot["path"], reason):
             if _dirty(slot["path"]) is False:
@@ -243,15 +245,18 @@ def _take(cwd: str, view: dict, cap: int, reason: str, base_sha: str,
                 return {"path": path, "n": n, "branch": None}, True
     for slot in view["slots"]:
         if slot["state"] == "held" and slot["holder"] and _merged_holder(cwd, slot, base_sha) \
-                and _dirty(slot["path"]) is False and not processes_in(slot["path"]):
+                and _dirty(slot["path"]) is False \
+                and _ignored_left(slot["path"], view["primary"]) == [] \
+                and not processes_in(slot["path"]):
             # Re-lock under the caller's reason only after the merged holder's lock is gone; a
             # second session racing here loses at `lock`, never both win.
             _unlock(cwd, slot["path"])
             if _lock(cwd, slot["path"], reason):
                 freed.append({"path": slot["path"], "branch": slot["branch"],
                               "spec": slot["holder"].get("spec")})
-                # The previous spec's handoff goes to the primary checkout, never left for the
-                # next spec and never discarded.
+                # The previous spec's handoff and Codex state go to the primary checkout, never
+                # left for the next spec and never discarded.
+                slot["archived"] = _archive_codex(slot["path"], view["primary"], slot["branch"])
                 slot["handoff"] = _move_handoffs(slot["path"], view["primary"])
                 return slot, False
     return None, False
@@ -342,7 +347,8 @@ def acquire(args) -> int:
                      and (setup is None or setup["ok"]),
                "path": path, "slot": slot["n"], "created": created, "reused": not created,
                "branch": args.branch, "base": args.base, "start": start, "startSha": base_sha,
-               "lock": reason, "freed": freed, "handoff": slot.get("handoff", []),
+               "lock": reason, "freed": freed, "archived": slot.get("archived"),
+               "handoff": slot.get("handoff", []),
                "paths": results or [],
                "linkRefusal": link_refusal, "setup": setup}
     if stamp:
@@ -350,6 +356,8 @@ def acquire(args) -> int:
     human = [f"slot {slot['n']}: {path} ({'new' if created else 'reused'})",
              f"branch: {args.branch} from {start} ({base_sha[:12]})"]
     human += [f"freed: {f['path']} (merged {f['branch']})" for f in freed]
+    if slot.get("archived"):
+        human.append(f"codex state archived: {slot['archived']}")
     human += [f"handoff moved: {h['from']} -> {h['to']}" for h in slot.get("handoff", [])]
     human += _link_lines(results or [])
     if link_refusal:
@@ -371,6 +379,33 @@ def _collected(entry: str) -> bool:
     """An ignored entry `release` carries to the primary checkout instead of refusing on."""
     entry = entry.replace(os.sep, "/")
     return any(entry == c or entry.startswith(c + "/") for c in COLLECTED)
+
+
+def _ignored_left(path: str, primary: str) -> list[str] | None:
+    """The ignored entries in `path` that neither the built-in caches nor
+    `shared.regenerablePaths` cover and that `release` does not carry over; `None` when the
+    inspection fails."""
+    ignored = ignored_entries(path)
+    if ignored is None:
+        return None
+    rules = declared_regenerable(load_config(primary))
+    return [e for e in undeclared(path, ignored, rules) if not _collected(e)]
+
+
+def _archive_codex(path: str, primary: str, branch: str | None) -> str | None:
+    """Move the slot's `.quenching/codex/` under the primary checkout's
+    `.quenching/codex/retired/`, never over an earlier archive; the target, or `None`."""
+    source = os.path.join(path, ".quenching", "codex")
+    if not os.path.isdir(source) or _is_link(source):
+        return None
+    archived = os.path.join(primary, ".quenching", "codex", "retired",
+                            f"{os.path.basename(path)}-{(branch or 'detached').replace('/', '-')}")
+    suffix, target = 2, archived
+    while os.path.lexists(target):
+        target, suffix = f"{archived}-{suffix}", suffix + 1
+    os.makedirs(os.path.dirname(target), exist_ok=True)
+    shutil.move(source, target)
+    return target
 
 
 def _move_handoffs(path: str, primary: str) -> list[dict]:
@@ -516,12 +551,10 @@ def release(args) -> int:
         payload["message"] = f"{path} has uncommitted changes; the slot stays held"
         emit(args.json, payload, payload["message"])
         return FINDINGS
-    ignored = ignored_entries(path)
-    if ignored is None:
+    left = _ignored_left(path, view["primary"])
+    if left is None:
         return refuse({"code": "git-worktree-release-status-failed",
                        "message": f"git status failed in {path}"}, args.json)
-    rules = declared_regenerable(load_config(view["primary"]))
-    left = [e for e in undeclared(path, ignored, rules) if not _collected(e)]
     if left:
         payload.update(ignored=left, message=f"{path} holds ignored files no "
                        f"shared.regenerablePaths entry covers: {', '.join(left)}; the slot stays held")
@@ -531,16 +564,7 @@ def release(args) -> int:
     if refusal or base_sha is None:
         return refuse(refusal or {"code": "git-worktree-ref-invalid",
                                   "message": f"the base does not resolve: {base}"}, args.json)
-    source = os.path.join(path, ".quenching", "codex")
-    if os.path.isdir(source) and not _is_link(source):
-        archived = os.path.join(view["primary"], ".quenching", "codex", "retired",
-                                f"{os.path.basename(path)}-{(branch or 'detached').replace('/', '-')}")
-        suffix, target = 2, archived
-        while os.path.lexists(target):
-            target, suffix = f"{archived}-{suffix}", suffix + 1
-        os.makedirs(os.path.dirname(target), exist_ok=True)
-        shutil.move(source, target)
-        payload["archived"] = target
+    payload["archived"] = _archive_codex(path, view["primary"], branch)
     payload["handoff"] = _move_handoffs(path, view["primary"])
     code, _out, err = _git_run(path, *SAFE, "switch", "--detach", base_sha)
     if code != 0:
