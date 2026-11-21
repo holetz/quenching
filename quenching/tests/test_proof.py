@@ -126,6 +126,32 @@ class TheCoverageRatchet(unittest.TestCase):
                 self.assertIn(("pf-floor-unmeasured", "lib"),
                               [(f["code"], f["root"]) for f in payload["findings"]])
 
+    def test_a_blocked_raise_reports_the_floors_on_disk_not_the_proposed_ones(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            floor = root / ".coverage-floor.json"
+            config = {
+                "repoRoot": str(root),
+                "proofRoot": str(root / "tests"),
+                "ratchetPath": str(floor),
+                "measuredRoots": [{"relative": "src"}, {"relative": "lib"}],
+            }
+            (root / "coverage.json").write_text(json.dumps({
+                "files": {
+                    "src/a.py": {"covered_lines": 20, "num_statements": 100},
+                    "lib/a.py": {"covered_lines": 90, "num_statements": 100},
+                },
+                "totals": {"percent_covered": 55.0},
+            }), encoding="utf-8")
+            floor.write_text(json.dumps({"version": 1, "floors": {"src": 50, "lib": 60}}),
+                             encoding="utf-8")
+            before = floor.read_bytes()
+            payload, code = evaluate(config, mode="raise")
+            self.assertEqual(1, code)
+            self.assertFalse(payload["written"])
+            self.assertEqual(before, floor.read_bytes())
+            self.assertEqual({"lib": 60.0, "src": 50.0}, payload["floors"])
+
     def test_coverage_py_nested_summaries_preserve_independent_root_floors(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
