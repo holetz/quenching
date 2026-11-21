@@ -75,8 +75,15 @@ def _rpc(process: subprocess.Popen, lines: queue.Queue, deadline: float, payload
             continue
         if isinstance(message, dict) and message.get("id") == payload["id"]:
             if "error" in message:
-                raise RuntimeError(f"{payload['method']}: {message['error'].get('message')}")
-            return message.get("result") or {}
+                error = message["error"]
+                detail = error.get("message") if isinstance(error, dict) else error
+                raise RuntimeError(f"{payload['method']}: {detail}")
+            result = message.get("result")
+            if result is None:
+                return {}
+            if not isinstance(result, dict):
+                raise RuntimeError(f"{payload['method']}: result is not an object")
+            return result
 
 
 def _with_stderr(message: str, process: subprocess.Popen, errors) -> str:
