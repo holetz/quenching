@@ -4,7 +4,7 @@ title: Toolchain front
 description: The target repository's toolchain surface — manifests, locks, language pins and tool configuration, with explicit ownership boundaries and stable tc-* findings
 resource: .agents/quenching.json, pyproject.toml, uv.lock, AGENTS.md, .github/workflows/**, quenching/assets/zensical/ci-github-pages.yml
 tags: [architecture, toolchain, dependencies, build, configuration]
-timestamp: 2026-11-20
+timestamp: 2026-11-21
 audience: both
 authority: current
 source: spec 1067 (task 1.1, 2026-08-31) — the admission evidence, cross-file surface and ownership boundaries were measured in the current repository
@@ -60,7 +60,7 @@ than requiring every ecosystem:
 ```text
 toolchain surface
 ├── manifests: pyproject.toml, setup.cfg, package.json, Cargo.toml
-├── locks: uv.lock, poetry.lock, package-lock.json
+├── locks: uv.lock, poetry.lock, package-lock.json, yarn.lock, pnpm-lock.yaml, Cargo.lock
 ├── language pins: .python-version, .nvmrc
 └── tool-configuration blocks carried by those manifests
 ```
@@ -68,6 +68,11 @@ toolchain surface
 The list is a candidate family, not an inventory of files the target must create. A later
 implementation may extend it only after measuring a real target corpus and adding the extension to
 the verifier's declared contract. `.agents/quenching.json` is never a member of this tree.
+
+`yarn.lock` and `pnpm-lock.yaml` joined the family after a measured false `tc-tool-unpinned` on yarn
+and pnpm targets (spec 2228): each is a lock for `package.json`, and the inventory reads both as
+text, never as JSON or TOML — a readable, non-empty file parses `ok`, an empty one is `empty`, and
+neither format's internal structure is audited.
 
 ## Configuration and ownership boundaries
 
