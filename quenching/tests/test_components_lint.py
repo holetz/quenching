@@ -448,6 +448,18 @@ class CqCallsAgainstTheParsers(unittest.TestCase):
         self.assertEqual([f["code"] for f in found], ["sk-cq-unknown-verb"])
         self.assertIn("bogus", found[0]["message"])
 
+    def test_an_unknown_pillar_is_an_unknown_verb_of_cq(self):
+        for body in ("Run `cq session context --json`.", "`cq spces show --spec 1`",
+                     "```bash\ncq --root . session context\n```\n"):
+            found = _cq_call_findings(body, self.WHERE)
+            self.assertEqual([f["code"] for f in found], ["sk-cq-unknown-verb"], body)
+            self.assertIn("is not a verb of `cq`", found[0]["message"], body)
+
+    def test_the_launchers_own_commands_and_a_placeholder_pillar_are_clean(self):
+        body = ("`cq deploy --target . --write`\n\n`cq doctor --json`\n\n`cq modules`\n\n"
+                "`cq --root . doctor`\n\n`cq <pillar> --help`\n\n`cq --version`\n")
+        self.assertEqual(self._codes(body), [])
+
     def test_a_correct_call_is_clean_inline_and_fenced(self):
         body = "`cq specs show --spec <id> --json`\n\n```bash\ncq --root . specs status --spec 1\n```\n"
         self.assertEqual(self._codes(body), [])
