@@ -136,10 +136,12 @@ def _fetch_base(cwd: str, remote: str, base: str) -> tuple[str | None, str, dict
                           "message": f"git could not read the remote: {remote}"}
     if has_remote:
         for attempt in range(5):
-            # Concurrent takers fetch into the same repository; the loser of a ref lock retries.
+            # Concurrent takers fetch into the same repository: the loser of a ref lock retries,
+            # and so does a fetch whose connectivity check read a sibling worktree's HEAD that
+            # `git worktree add` had not finished writing (`bad object worktrees/<slot>/HEAD`).
             code, _out, err = _git_run(cwd, *SAFE, "fetch", "--no-recurse-submodules", "--",
                                        remote, f"refs/heads/{base}")
-            if code == 0 or ".lock" not in err:
+            if code == 0 or not (".lock" in err or "bad object worktrees/" in err):
                 break
             time.sleep(0.2 * (attempt + 1))
         if code != 0:
