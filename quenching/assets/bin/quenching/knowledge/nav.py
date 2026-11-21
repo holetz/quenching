@@ -211,11 +211,16 @@ def _bracket_delta(line: str) -> int:
     return delta
 
 
+class NavUnclosedError(ValueError):
+    """The config opens `nav = [` and the file ends before the array closes."""
+
+
 def replace_nav(config_text: str, block: str) -> str:
     """Swap the `nav = [...]` array in place, touching nothing else in the file.
 
     Bracket-counted rather than parsed, for the same reason `ensure_nav` was: this file is a
-    human's, and a TOML round-trip would reformat every key it did not come for.
+    human's, and a TOML round-trip would reformat every key it did not come for. An array that
+    never closes raises `NavUnclosedError`: returning the text intact would read as `current`.
     """
     lines = config_text.splitlines(keepends=True)
     start = next((i for i, line in enumerate(lines) if re.match(r"\s*nav\s*=\s*\[", line)), None)
@@ -226,7 +231,7 @@ def replace_nav(config_text: str, block: str) -> str:
         depth += _bracket_delta(lines[end])
         if depth == 0:
             return "".join(lines[:start]) + block + "\n" + "".join(lines[end + 1:])
-    return config_text
+    raise NavUnclosedError(f"`nav = [` opened on line {start + 1} never closes")
 
 
 def generate(bundle_root: str, config_path: str) -> tuple[str, str]:
