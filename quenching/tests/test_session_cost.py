@@ -312,9 +312,21 @@ class SessionChoiceTests(unittest.TestCase):
 
     def test_single_session_still_resolves(self):
         shutil.rmtree(self.proj / "sessB" / "subagents")
+        os.utime(self.proj / "sessB.jsonl", (1_000_000_000, 1_000_000_000))
         code, text = run("--json")
         self.assertEqual(code, 0)
         self.assertEqual(json.loads(text)["groups"][0]["output"], 3)
+
+    def test_older_session_with_subagents_is_not_the_current_one(self):
+        """The only session with subagents is older than the current one: refuse, never cost it."""
+        shutil.rmtree(self.proj / "sessB" / "subagents")
+        os.utime(self.proj / "sessA.jsonl", (1_000_000_000, 1_000_000_000))
+        code, out = run("--json")
+        self.assertEqual(code, 2)
+        data = json.loads(out)
+        self.assertEqual(data["code"], "se-no-subagents")
+        self.assertIn("sessB", data["message"])
+        self.assertIn("sessA", data["message"])
 
 
 if __name__ == "__main__":
