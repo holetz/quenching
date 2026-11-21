@@ -27,6 +27,22 @@ class ReclaimRepo(SlotRepo):
         path.write_text(text, encoding="utf-8")
         return path
 
+    def held(self, spec="7", merged=True):
+        """A slot held under a quenching lock naming `spec`, with one commit merged (pushed to
+        origin/main) or not."""
+        got = self.run_verb("acquire", branch=f"plan/{spec}-x")[1]
+        path = got["path"]
+        pathlib.Path(path, f"f-{spec}.txt").write_text("f\n", encoding="utf-8")
+        _git(path, "add", f"f-{spec}.txt")
+        _git(path, "commit", "-q", "-m", "work")
+        if merged:
+            _git(path, "push", "-q", "origin", "HEAD:main")
+            _git(self.main, "fetch", "-q", "origin")
+        _git(self.main, "worktree", "unlock", path)
+        _git(self.main, "worktree", "lock", "--reason",
+             slots.lock_reason(spec, "s1"), path)
+        return path
+
 
 class ReleaseCarriesTheHandoff(ReclaimRepo):
     def test_a_handoff_is_moved_to_the_primary_checkout_and_the_slot_is_released(self):
@@ -63,22 +79,6 @@ class ReleaseCarriesTheHandoff(ReclaimRepo):
 
 
 class Evidence(ReclaimRepo):
-    def held(self, spec="7", merged=True):
-        """A slot held under a quenching lock naming `spec`, with one commit merged (pushed to
-        origin/main) or not."""
-        got = self.run_verb("acquire", branch=f"plan/{spec}-x")[1]
-        path = got["path"]
-        pathlib.Path(path, "f.txt").write_text("f\n", encoding="utf-8")
-        _git(path, "add", "f.txt")
-        _git(path, "commit", "-q", "-m", "work")
-        if merged:
-            _git(path, "push", "-q", "origin", "HEAD:main")
-            _git(self.main, "fetch", "-q", "origin")
-        _git(self.main, "worktree", "unlock", path)
-        _git(self.main, "worktree", "lock", "--reason",
-             slots.lock_reason(spec, "s1"), path)
-        return path
-
     def evidence(self, path, phase="archive", processes=()):
         slot = next(s for s in slots.survey(self.main)["slots"] if s["path"] == path)
         with mock.patch.object(slots, "processes_in", return_value=processes):
@@ -105,7 +105,7 @@ class Evidence(ReclaimRepo):
         got = self.evidence(path, processes=[])
         self.assertEqual(got["blockers"], ["ignored-content-unrecognized"])
         self.assertEqual(got["ignored"]["unrecognized"], [".tmp/w.txt"])
-        pathlib.Path(path, "f.txt").write_text("changed\n", encoding="utf-8")
+        pathlib.Path(path, "f-7.txt").write_text("changed\n", encoding="utf-8")
         self.assertIn("dirty", self.evidence(path, processes=[])["blockers"])
 
     def test_a_head_outside_the_remote_base_is_unmerged(self):
@@ -123,6 +123,34 @@ class Evidence(ReclaimRepo):
         self.assertIn(os.getpid(), slots.processes_in(path))
         os.chdir(self.main)
         self.assertNotIn(os.getpid(), slots.processes_in(path))
+
+
+class StaleReportsHeldSlots(ReclaimRepo):
+    def report(self, phases):
+        from quenching.git.stale import stale_report
+
+        with mock.patch("quenching.git.stale._open_pr_heads", return_value=set()), \
+                mock.patch.object(slots, "spec_phases", return_value=phases), \
+                mock.patch.object(slots, "processes_in", return_value=[]):
+            return stale_report(self.main)
+
+    def test_an_archived_holder_is_a_slot_candidate_and_a_live_one_is_preserved(self):
+        done = os.path.realpath(self.held("7"))
+        live = os.path.realpath(self.held("8"))
+        report = self.report({"7": "archive", "8": "plans"})
+        rows = {e["ref"]: e for e in report["manifest"] if e["kind"] == "slot"}
+        self.assertEqual(rows[done]["status"], "candidate")
+        self.assertEqual(rows[done]["reasons"], ["archived-holder"])
+        self.assertTrue(rows[done]["recommended"])
+        self.assertEqual(rows[done]["spec"], "7")
+        self.assertEqual(rows[done]["action"]["cq"][:4], ["cq", "git", "prune", "--slot"])
+        self.assertEqual(rows[live]["status"], "preserved")
+        self.assertEqual(rows[live]["reasons"], ["holder-not-archived"])
+        self.assertIsNone(rows[live]["action"])
+        worktree_refs = {e["ref"] for e in report["manifest"] if e["kind"] == "worktree"}
+        self.assertFalse({done, live} & worktree_refs)
+        group = next(g for g in report["groups"] if g["kind"] == "slot")
+        self.assertEqual(group["ids"], [rows[done]["id"]])
 
 
 if __name__ == "__main__":
