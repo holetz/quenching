@@ -339,6 +339,20 @@ class Deploy(unittest.TestCase):
                        "change": "delete"}, payload["changes"])
         self.assertFalse((self.target / ".agents/skills/quenching-design").exists())
 
+    def test_narrowing_the_modules_leaves_no_orphan_bridge_skill_in_one_write(self):
+        self.assertEqual(0, self.run_deploy("--modules", "all", "--harness", "claude",
+                                            "--write")[0])
+        self.write(".agents/skills/quenching-design/notes.md", "kept by the target\n")
+        code, _payload = self.run_deploy("--modules", "core", "--write")
+        self.assertEqual(0, code)
+        self.assertFalse((self.target / ".claude/skills/quenching-design/SKILL.md").exists())
+        self.assertTrue((self.target / ".claude/skills/quenching-design/notes.md").exists())
+        bridge = json.loads((self.target / ".claude/skills/.generated-files.json").read_text())
+        self.assertNotIn("quenching-design/SKILL.md", bridge["files"])
+        code, payload = self.run_deploy("--check")
+        self.assertEqual(0, code)
+        self.assertEqual([], payload["changes"])
+
     def test_modules_all_expands_in_registry_order_under_any_hash_seed(self):
         # Hash randomization is fixed at interpreter start, so each seed needs its own child.
         probe = ("import json; from quenching.deploy import tree; "
