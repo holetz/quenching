@@ -36,7 +36,7 @@ import shutil
 import subprocess
 import time
 
-from quenching.codex.eligible import eligibility, strip_annotation
+from quenching.codex.eligible import eligibility, repo_path
 from quenching.codex.guard import (BYPASS, GuardError, base_moves, base_state, clean_env, git, refs,
                                    touched)
 from quenching.codex.probe import group_kwargs, probe, stop
@@ -153,7 +153,7 @@ def run_implement(root: str, settings: dict, spec: str, task_id: str, worktree: 
     task, info, refused = read_task(root, spec, task_id)
     if refused:
         return refused
-    files = sorted(strip_annotation(f).lstrip("/") for f in task["files"])
+    files = sorted(repo_path(f) for f in task["files"])
     try:
         dirty = sorted(touched(worktree) - set(files))
     except GuardError as error:

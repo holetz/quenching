@@ -230,6 +230,15 @@ class Implement(unittest.TestCase):
         self.implement()
         self.assertEqual([["exec", BYPASS]], [c["argv"][:2] for c in self.calls()])
 
+    def test_a_dotted_files_entry_matches_the_path_git_status_reports(self):
+        self.tasks = [task(files=("./src/a.py",))]
+        (self.repo / "src" / "a.py").write_text("print('dirty')\n", encoding="utf-8")
+        payload, code = self.implement()
+        self.assertEqual(code, 0, payload)
+        self.assertEqual(payload["reason"], "codex wrote the task")
+        self.assertEqual(payload["files"], ["src/a.py"])
+        self.assertFalse(payload.get("outside"))
+
     def test_a_dirty_tree_outside_files_is_refused(self):
         (self.repo / "loose.txt").write_text("x", encoding="utf-8")
         payload, code = self.implement()
