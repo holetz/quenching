@@ -119,6 +119,33 @@ TWO_RUNS_FIXTURE = [
      "message": {"content": [{"type": "tool_use", "name": "Bash", "input": {"command": "e"}}]}},
 ]
 
+# A stage typed DIRECTLY first (1-4, corrected by the human at 3), then run as a stage by its
+# conductor (6-7), then typed directly again (9-10). The direct runs must keep their windows
+# beside the stage's — the regression of 2258 dropped them and left line 3 unassigned.
+DIRECT_THEN_STAGE_FIXTURE = [
+    {"type": "user", "uuid": "d1",
+     "message": {"content": "<command-name>/demo:stage</command-name>"}},
+    {"type": "assistant", "uuid": "d2", "attributionSkill": "demo:stage",
+     "message": {"content": [{"type": "tool_use", "name": "Bash", "input": {"command": "a"}}]}},
+    {"type": "user", "uuid": "d3",
+     "message": {"content": [{"type": "text", "text": "pare, isso esta errado"}]}},
+    {"type": "assistant", "uuid": "d4", "attributionSkill": "demo:stage",
+     "message": {"content": [{"type": "tool_use", "name": "Bash", "input": {"command": "b"}}]}},
+    {"type": "user", "uuid": "d5",
+     "message": {"content": "<command-name>/demo:conduct</command-name>"}},
+    {"type": "assistant", "uuid": "d6", "attributionSkill": "demo:conduct",
+     "message": {"content": [{"type": "tool_use", "name": "Skill",
+                              "input": {"skill": "demo:stage"}}]}},
+    {"type": "assistant", "uuid": "d7", "attributionSkill": "demo:stage",
+     "message": {"content": [{"type": "tool_use", "name": "Bash", "input": {"command": "c"}}]}},
+    {"type": "assistant", "uuid": "d8", "attributionSkill": "demo:conduct",
+     "message": {"content": [{"type": "tool_use", "name": "Bash", "input": {"command": "d"}}]}},
+    {"type": "user", "uuid": "d9",
+     "message": {"content": "<command-name>/demo:stage</command-name>"}},
+    {"type": "assistant", "uuid": "d10", "attributionSkill": "demo:stage",
+     "message": {"content": [{"type": "tool_use", "name": "Bash", "input": {"command": "e"}}]}},
+]
+
 
 # A transcript that plainly HELD something and yielded no command. The point of the case
 # is that this must never come back as a clean, empty report.
@@ -284,6 +311,33 @@ class TwoRunsFixture(unittest.TestCase):
         self.assertEqual([c["line"] for c in stage["corrections"]], [4, 8])
         self.assertEqual((stage["counts"]["interrupts"], stage["counts"]["interjections"]),
                          (1, 1))
+
+
+class DirectThenStageFixture(unittest.TestCase):
+    """A command run directly AND as a stage keeps one window per direct execution beside
+    its stage windows, and its attributed run ends where the last of either kind ends."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.model = _read(DIRECT_THEN_STAGE_FIXTURE)
+        cls.by_name = {c.name: c for c in cls.model["_commands"]}
+
+    def test_each_direct_execution_is_its_own_window(self):
+        self.assertEqual(self.by_name["demo:stage"].direct, [(1, 4), (9, 10)])
+
+    def test_the_stage_windows_stay_the_stage_executions_only(self):
+        stage = self.by_name["demo:stage"]
+        self.assertEqual(stage.runs, [(6, 7)])
+        self.assertEqual(stage.as_dict()["attributedRun"]["runs"], [[6, 7]])
+
+    def test_the_run_ends_where_the_last_execution_of_either_kind_ends(self):
+        self.assertEqual(self.by_name["demo:stage"].last, 10)
+
+    def test_a_command_never_invoked_as_a_stage_keeps_no_stage_windows(self):
+        conduct = self.by_name["demo:conduct"]
+        self.assertEqual(conduct.runs, [])
+        self.assertEqual(conduct.direct, [(5, 8)])
+        self.assertEqual(conduct.last, 8)
 
 
 class SilenceRefusal(unittest.TestCase):
