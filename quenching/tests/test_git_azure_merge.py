@@ -54,8 +54,10 @@ class AzureMergeTests(unittest.TestCase):
             self.calls.append(list(argv))
             if argv[:4] == ("repos", "pr", "policy", "list"):
                 return policy_code, json.dumps([BUILD] if policies is None else policies), "denied"
-            if "--http-method=PATCH" in argv:
-                path = next(a.split("=", 1)[1] for a in argv if a.startswith("--in-file="))
+            if argv[:2] == ("rest", "--method=patch"):
+                self.assertIn("--url=https://", argv[2])
+                self.assertIn("/_apis/git/repositories/repo/pullrequests/226343?", argv[2])
+                path = next(a.split("=@", 1)[1] for a in argv if a.startswith("--body=@"))
                 self.bodies.append(json.loads(Path(path).read_text(encoding="utf-8")))
                 return patch_code, "{}", "policy refused"
             return 0, "not json" if unreadable else json.dumps(next(snapshots)), ""
@@ -79,14 +81,17 @@ class AzureMergeTests(unittest.TestCase):
                                   "bypassPolicy": False, "deleteSourceBranch": False,
                                   "transitionWorkItems": False}}])
         for call in self.calls:
-            self.assertIn("--org=https://dev.azure.com/org", call)
+            if call[0] == "rest":  # the completion goes to the repository-scoped route
+                self.assertTrue(call[2].startswith("--url=https://dev.azure.com/org/"), call)
+            else:
+                self.assertIn("--org=https://dev.azure.com/org", call)
         reads = [call for call in self.calls if "--http-method=GET" in call]
         self.assertEqual(len(reads), 3)
         self.assertIn("project=Some Project", reads[0])
         self.assertIn("repositoryId=repo", reads[0])
         self.assertIn("pullRequestId=226343", reads[0])
-        path = next(a.split("=", 1)[1] for call in self.calls for a in call
-                    if a.startswith("--in-file="))
+        path = next(a.split("=@", 1)[1] for call in self.calls for a in call
+                    if a.startswith("--body=@"))
         self.assertFalse(Path(path).exists())
 
     def test_already_completed_is_read_only_even_without_ci(self):

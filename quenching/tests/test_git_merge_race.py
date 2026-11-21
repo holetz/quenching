@@ -85,7 +85,7 @@ class AzureRaceTests(unittest.TestCase):
         def az(*argv):
             if argv[:4] == ("repos", "pr", "policy", "list"):
                 return 0, json.dumps([BUILD]), ""
-            if "--http-method=PATCH" in argv:
+            if argv[:2] == ("rest", "--method=patch"):
                 return 1, "", "already completed"
             return 0, json.dumps(next(reads)), ""
 

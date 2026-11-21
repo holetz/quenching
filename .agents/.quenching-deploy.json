@@ -121,7 +121,7 @@
     ".agents/quenching/assets/bin/quenching/design/model.py": "c5eadfaabaad3e3959cd77e7d58fd19b007ecac8ff2ed026f73e774efe4bcb42",
     ".agents/quenching/assets/bin/quenching/git/__init__.py": "ce0b03214334259517ed86523405025831b5e6601e64f127ce9946d9b0b0d2a5",
     ".agents/quenching/assets/bin/quenching/git/audit.py": "b42ea60bc22ac59a5b805a831b63afb55a3ff04a94d402fdbf2e51b9d904d71d",
-    ".agents/quenching/assets/bin/quenching/git/azure_pull.py": "9da60513f0c60140bec24b90ac4fcfdc0ce5d4fc6901aaff107292bd62fdf506",
+    ".agents/quenching/assets/bin/quenching/git/azure_pull.py": "a84275e6573a01a13f139f9ee00898094070c8683b1a278e6763265b84e8fb88",
     ".agents/quenching/assets/bin/quenching/git/base.py": "ac67a17a3c5193e572b02532b20407df9890e96d1af780f726cee900fdadb3c2",
     ".agents/quenching/assets/bin/quenching/git/commit.py": "bd8f94d161c906bab76ad286f4f3df71ee7b9b6b9b7733f4270da033b80f1e55",
     ".agents/quenching/assets/bin/quenching/git/conventions.py": "09a4487bf3de0ea57f72f0dbba1750e3dfb7e04d75f5dc82a411cf35b7b26de3",
