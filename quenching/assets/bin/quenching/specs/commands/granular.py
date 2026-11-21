@@ -15,7 +15,7 @@ from quenching.specs.commands.task import _find_task
 from quenching.specs.parse import derive_info
 from quenching.specs.parse.edit import (_match_heading, fold_stray_heading,
                                         resolve_heading_name, split_section_stream,
-                                        upsert_section, whole_body,
+                                        unclosed_fence, upsert_section, whole_body,
                                         write_handoff_block)
 from quenching.specs.parse.handoff import current_handoff_section, parse_handoff
 from quenching.specs.parse.sections import section_state, stray_headings
@@ -189,6 +189,14 @@ def _refuse_nested_heading(args, out: Emitter, heading: str, line: str) -> int:
     return 2
 
 
+def _refuse_unclosed_fence(args, out: Emitter, heading: str, line: str) -> int:
+    msg = (f"the body of `## {heading}` opens `{line}` and never closes it — written, the fence "
+           "would swallow every section after it; close the block and write again")
+    out.emit(args.json, {"ok": False, "code": "sp-write-unclosed-fence", "heading": heading,
+                         "line": line, "message": msg}, f"error: {msg}")
+    return 2
+
+
 def _splice_stream(args, out: Emitter, info: dict, headings: list[str],
                    content: str) -> tuple[str, list[dict]] | int:
     """The text with every streamed section spliced in, or the exit code of a refusal."""
@@ -220,6 +228,11 @@ def _splice_stream(args, out: Emitter, info: dict, headings: list[str],
     # It is the ONE case the set check cannot govern, because the stream declares nothing
     # for it to be checked against.
     singular = not blocks and len(headings) == 1
+    # Before the set check: a fence left open swallows the `## ` lines after it, so the set
+    # mismatch it causes is a symptom and the open fence is what the writer must fix.
+    for heading, body in (blocks or ([(headings[0], content)] if singular else [])):
+        if opener := unclosed_fence(body):
+            return _refuse_unclosed_fence(args, out, heading, opener)
     if not singular and set(carried) != set(headings):
         out.emit(args.json,
                  {"ok": False, "code": "sp-write-set-mismatch", "declared": headings,
@@ -292,6 +305,8 @@ def cmd_section(args, root: str, out: Emitter) -> int:
         content, refusal = whole_body(content, headings[0])
         if refusal:
             return _refuse_nested_heading(args, out, headings[0], refusal)
+    if scope and (opener := unclosed_fence(content)):
+        return _refuse_unclosed_fence(args, out, headings[0], opener)
     if scope:
         new_text, action = write_handoff_block(info, scope, content)
         results = [{"heading": "Handoff", "action": action}]
