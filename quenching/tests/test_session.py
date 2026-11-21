@@ -339,6 +339,14 @@ class DirectThenStageFixture(unittest.TestCase):
         self.assertEqual(conduct.direct, [(5, 8)])
         self.assertEqual(conduct.last, 8)
 
+    def test_a_correction_inside_the_direct_execution_belongs_to_the_command(self):
+        attached, unassigned = assign_corrections(self.model["corrections"],
+                                                  self.model["_commands"])
+        self.assertEqual([(c["line"], c["when"]) for c in attached["demo:stage"]],
+                         [(3, "during")])
+        self.assertEqual(attached["demo:conduct"], [])
+        self.assertEqual(unassigned, [])
+
 
 class SilenceRefusal(unittest.TestCase):
     """`silence_refusal` — "no commands found" and "could not read this file" must never
