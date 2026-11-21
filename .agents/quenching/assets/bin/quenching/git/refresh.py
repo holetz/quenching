@@ -11,7 +11,8 @@ from sits commits behind the remote. This verb is the one safe pull the close of
   that do — nothing is stashed, reset or overwritten, and no branch is switched;
 - where no worktree holds the base, the ref moves with `update-ref` against the tip it read.
 
-Hooks stay off (`SAFE`). Exit 0 up to date or updated · 1 refused (fetch failed, diverged, git
+A base the remote does not have (never pushed) is a skip, told apart from a failed fetch by
+`ls-remote --exit-code`. Hooks stay off (`SAFE`). Exit 0 up to date, updated or skipped · 1 refused (fetch failed, diverged, git
 refused the merge) · 2 refusal (a malformed name)."""
 from __future__ import annotations
 
@@ -55,6 +56,13 @@ def cmd_refresh(args) -> int:
     code, _out, err = _git_run(cwd, *SAFE, "fetch", "--quiet", args.remote,
                                f"+refs/heads/{base}:{remote_ref}")
     if code != 0:
+        # ls-remote's exit 2 means the remote answered and has no such branch: a base never
+        # pushed is a skip, not a failure. Any other code keeps the fetch's own error.
+        gone = _git_run(cwd, *SAFE, "ls-remote", "--exit-code", "--heads", args.remote,
+                        f"refs/heads/{base}")[0]
+        if gone == 2:
+            payload.update(ok=True, action="skipped", reason="no-remote-base")
+            return _report(args, payload, f"nothing to refresh: no-remote-base for {base}", OK)
         payload.update(action="refused", reason="fetch-failed", message=err.strip())
         return _report(args, payload, f"not refreshed: fetch of {args.remote}/{base} failed: "
                                       f"{err.strip()}", FINDINGS)
