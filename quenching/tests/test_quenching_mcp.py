@@ -299,6 +299,52 @@ class Hostile(unittest.TestCase):
         self.assertEqual(payload["code"], "mcp-core-failure")
 
 
+class Malformed(unittest.TestCase):
+    """A request whose `params` or `capabilities` is not an object is refused with -32602, and
+    whatever still escapes `handle` is -32603: the stdio session keeps serving either way."""
+
+    def serve(self, messages, surface=None) -> list:
+        lines = [json.dumps(m) for m in messages] + [json.dumps(rpc("last", "ping"))]
+        out = io.StringIO()
+        with tempfile.TemporaryDirectory() as tmp:
+            self.assertEqual(server.serve(tmp, surface or cli.surface(),
+                                          io.StringIO("\n".join(lines) + "\n"), out), 0)
+        replies = [json.loads(line) for line in out.getvalue().splitlines()]
+        self.assertEqual(replies[-1], {"jsonrpc": "2.0", "id": "last", "result": {}})
+        return replies[:-1]
+
+    def test_params_that_is_not_an_object_is_bad_params_and_the_loop_survives(self):
+        cases = [rpc(1, "tools/call", [1]), rpc(2, "resources/read", "x"),
+                 rpc(3, "tools/list", 7), rpc(4, "ping", True)]
+        replies = self.serve(cases)
+        self.assertEqual(len(replies), len(cases))
+        for case, reply in zip(cases, replies):
+            with self.subTest(method=case["method"]):
+                self.assertEqual(reply["id"], case["id"])
+                self.assertEqual(reply["error"]["code"], server.BAD_PARAMS)
+
+    def test_capabilities_that_is_not_an_object_is_bad_params(self):
+        (reply,) = self.serve([rpc(1, "initialize", {"capabilities": [1]})])
+        self.assertEqual(reply["id"], 1)
+        self.assertEqual(reply["error"]["code"], server.BAD_PARAMS)
+
+    def test_absent_or_null_params_and_capabilities_still_read_as_empty(self):
+        replies = self.serve([rpc(1, "initialize", {"capabilities": None}),
+                              {"jsonrpc": "2.0", "id": 2, "method": "ping", "params": None}])
+        self.assertIn("serverInfo", replies[0]["result"])
+        self.assertEqual(replies[1]["result"], {})
+
+    def test_an_exception_escaping_handle_is_an_internal_error_for_that_request(self):
+        class Broken(server.Composite):
+            def list_tools(self):
+                raise RuntimeError("boom")
+
+        (reply,) = self.serve([rpc(9, "tools/list")], Broken("broken", []))
+        self.assertEqual(reply["id"], 9)
+        self.assertEqual(reply["error"]["code"], -32603)
+        self.assertNotIn("boom", reply["error"]["message"])
+
+
 class EntryPoint(unittest.TestCase):
     def test_the_router_carries_the_mcp_pillar_with_its_own_root(self):
         pillar = catalog.router().PILLARS["mcp"]
