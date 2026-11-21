@@ -23,6 +23,25 @@ def _git(cwd: str, *argv: str) -> str:
         return ""
 
 
+_ORIGIN_PREFIX = "refs/remotes/origin/"
+_HEADS_PREFIX = "refs/heads/"
+
+
+def origin_head_branch(cwd: str) -> str | None:
+    """The branch `origin/HEAD` points at, whole — `refs/remotes/origin/team/main` is
+    `team/main`. The prefix is stripped, never cut at the last `/`: a branch name may carry
+    slashes. None when `origin/HEAD` is absent or points outside `origin`."""
+    ref = _git(cwd, "symbolic-ref", "refs/remotes/origin/HEAD").strip()
+    if not ref.startswith(_ORIGIN_PREFIX):
+        return None
+    return ref[len(_ORIGIN_PREFIX):] or None
+
+
+def short_branch(name: str) -> str:
+    """`refs/heads/<name>` as `<name>`, whole; a name without that prefix is returned as is."""
+    return name[len(_HEADS_PREFIX):] if name.startswith(_HEADS_PREFIX) else name
+
+
 def _git_run(cwd: str, *argv: str, stdin: str | None = None,
              env: dict[str, str] | None = None) -> tuple[int, str, str]:
     """Exit code, stdout AND stderr of one git command — the two halves `_git` throws away.
