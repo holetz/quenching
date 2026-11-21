@@ -16,9 +16,10 @@ from quenching.specs.parse.deps import dep_findings, deps_of, find_cycle, find_c
 from quenching.specs.parse.epics import (composition_cycle, composition_findings,
                                          deprecation_findings, has_links, is_remote,
                                          parse_items)
+from quenching.specs.parse.edit import unclosed_fence_at
 from quenching.specs.parse.text import body_after_frontmatter
 from quenching.specs.parse.sections import (duplicate_headings, gate_report, parse_impact_standards, ready_report,
-                                            section_state, stray_headings)
+                                            section_spans, section_state, stray_headings)
 from quenching.specs.parse.tasks import _files_bad_annotation, operational_entries
 from quenching.specs.schema import (MERGE_ANCHORLESS_STRATEGIES, MERGE_NO_PR_STRATEGIES,
                                     MERGE_STRATEGIES, RECORD_NONE_RE, VERIFICATION_POLICIES,
@@ -105,6 +106,26 @@ def validate_spec(backend: SpecBackend, s: dict,
                             remedy=(f"close it with `cq specs section --fold` — `cq specs "
                                     f"section {spec_id} --fold \"{h}\"` demotes it into the "
                                     "canonical section above, text preserved")))
+
+    # A fence the document never closes makes `parse_sections` read every later `## ` as code:
+    # those sections vanish from every read without a word, and the next write of the section
+    # holding the opener deletes them. `section --write` refuses such a body
+    # (`sp-write-unclosed-fence`); this names one that reached the store another way.
+    if found := unclosed_fence_at(text):
+        lineno, opener = found
+        holder = next((h for h, a, b in section_spans(text) if a < lineno - 1 < b), None)
+        where_in = f" inside `## {holder}`" if holder else ""
+        out.append(_finding("sp-unclosed-fence", "error",
+                            f"{where}: line {lineno} opens `{opener}`{where_in} and the fence "
+                            f"never closes — every `## ` after it reads as code",
+                            spec=spec_id, path=where, line=lineno, opener=opener,
+                            heading=holder,
+                            remedy=(f"close the block: `cq specs section {spec_id} \"{holder}\"` "
+                                    "reads the swallowed sections back inside its body; write "
+                                    f"them back with the fence closed through `cq specs section "
+                                    f"{spec_id} \"{holder},<each swallowed heading>\" --write`"
+                                    if holder else
+                                    f"close the block opened at line {lineno}")))
 
     # The phase-scoped rule governs whether a heading must be PRESENT — so `missing` is
     # checked only against the gate of the phase this spec is IN.

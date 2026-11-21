@@ -373,6 +373,34 @@ class Stale(RepoCase):
         stale, _kept = self._lists()
         self.assertEqual(stale["ff-one"], ["merged"])
 
+    def test_a_branch_only_fast_forwarded_to_the_base_is_kept_and_prune_refuses_it(self):
+        # Cut, then only fast-forwarded to an advanced base: its reflog moved, but by no commit
+        # of its own (spec 2250) — the rule `slots.has_own_work` applies.
+        _run(self.repo, "branch", "plan/6-ff-only")
+        _run(self.repo, "commit", "-q", "--allow-empty", "-m", "base moves")
+        _run(self.repo, "checkout", "-q", "plan/6-ff-only")
+        _run(self.repo, "merge", "-q", "--ff-only", "main")
+        _run(self.repo, "checkout", "-q", "main")
+        stale, kept = self._lists()
+        self.assertNotIn("plan/6-ff-only", stale)
+        self.assertEqual(kept["plan/6-ff-only"], ["no-own-commits"])
+        proc = _cq(self.repo, "prune", "--branch", "plan/6-ff-only")
+        self.assertEqual(proc.returncode, 2, proc.stdout)
+        self.assertIn("plan/6-ff-only", subprocess.run(["git", "branch"], cwd=self.repo,
+                                                       capture_output=True, text=True).stdout)
+
+    def test_a_remote_branch_whose_local_namesake_only_fast_forwarded_is_not_a_candidate(self):
+        self._origin_with_merged_branch()
+        _run(self.repo, "branch", "plan/5-ff-remote")
+        _run(self.repo, "commit", "-q", "--allow-empty", "-m", "base moves")
+        _run(self.repo, "checkout", "-q", "plan/5-ff-remote")
+        _run(self.repo, "merge", "-q", "--ff-only", "main")
+        _run(self.repo, "checkout", "-q", "main")
+        _run(self.repo, "push", "-q", "origin", "main", "plan/5-ff-remote")
+        _run(self.repo, "fetch", "-q", "origin")
+        rows = {r["branch"] for r in _merged_remote_branches(self.repo, "main", {"main"})}
+        self.assertEqual(rows, {"remote-feature"})
+
     def test_without_a_reflog_the_first_parent_chain_decides(self):
         _merged_branch(self.repo, "merged-no-log")
         _run(self.repo, "branch", "fresh-no-log")

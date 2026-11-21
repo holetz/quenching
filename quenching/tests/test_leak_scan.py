@@ -194,6 +194,29 @@ class Scans(LeakEnv):
                          ["brazilian-cpf"])
         self.assertEqual(leak.scan_push(self.repo, line, pats, "private"), [])
 
+    def test_existing_ref_merging_a_published_base_judges_only_what_the_remote_lacks(self):
+        git(self.repo, "checkout", "-q", "-b", "work")
+        pathlib.Path(self.repo, "w.txt").write_text("work\n", encoding="utf-8")
+        git(self.repo, "add", "w.txt")
+        git(self.repo, "commit", "-q", "-m", "work")
+        old_tip = git(self.repo, "rev-parse", "HEAD").strip()
+        git(self.repo, "update-ref", "refs/remotes/origin/work", old_tip)
+        git(self.repo, "checkout", "-q", "main")
+        pathlib.Path(self.repo, "a.txt").write_text(f"clean\ncpf {CPF}\n", encoding="utf-8")
+        git(self.repo, "commit", "-q", "-am", "published on main")
+        git(self.repo, "update-ref", "refs/remotes/origin/main",
+            git(self.repo, "rev-parse", "HEAD").strip())
+        git(self.repo, "checkout", "-q", "work")
+        git(self.repo, "merge", "-q", "--no-ff", "-m", "merge main", "main")
+        pathlib.Path(self.repo, "w.txt").write_text(f"work\ncpf {CPF}\n", encoding="utf-8")
+        git(self.repo, "commit", "-q", "-am", "new on work")
+        head = git(self.repo, "rev-parse", "HEAD").strip()
+        line = f"refs/heads/work {head} refs/heads/work {old_tip}\n"
+        pats = leak.patterns(generic_only=True)
+        self.assertEqual([f.where for f in leak.scan_push(self.repo, line, pats, "origin")],
+                         [f"commit {head[:12]} (diff)"])
+        self.assertEqual(len(leak.scan_push(self.repo, line, pats)), 2)
+
     def test_staged_scans_a_type_change(self):
         os.remove(pathlib.Path(self.repo, "a.txt"))
         try:
