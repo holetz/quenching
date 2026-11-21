@@ -12,7 +12,9 @@ and stash ref (never another worktree's `HEAD`), the base checkout's `HEAD` and 
 ref (a fast-forward is accepted; a rewind, a branch switch, a detached base `HEAD` or a removed
 ref is a divergence), and `git status` contained in `files:`. A divergence is
 exit 2 with the offending paths. With `outside` non-empty (paths `files:` never declared) Claude
-may not clean them: it stops the task as `needs-human` naming them. With `outside` empty (a moved
+may not clean them: it stops the task as `needs-human` naming them. A `git status` that fails,
+before or after the run, is exit 2 `codex-git-guard` with `statusUnreadable: true` and no
+`discard`: what Codex wrote is unknown, so the task stops as `needs-human` too. With `outside` empty (a moved
 `HEAD`, branch, reflog or stash) Claude discards the diff inside `files:` (never `reset`, `stash`
 or `checkout`) and writes the task itself.
 
@@ -23,7 +25,7 @@ of the execution.
     exit 0  Codex finished and its diff stays inside `files:` — Claude verifies, reviews, commits
     exit 1  fall back to Claude: ineligible, Codex failed or timed out
     exit 2  refusal (missing worktree, prompt, spec, task or `codex`, a dirty tree outside
-            `files:`), or `codex-git-guard`: the guard saw a divergence
+            `files:`), or `codex-git-guard`: the guard saw a divergence or could not read it
 """
 from __future__ import annotations
 
@@ -50,6 +52,9 @@ RULE = (
     "O lado Claude verifica, revisa e faz o commit.")
 WAY_OUT = ("Claude may not clean these paths (no reset, stash or checkout) and files: never "
            "declared them: stop the task as needs-human naming them, so the human cleans the tree.")
+STATUS_WAY_OUT = ("git status failed, so what Codex wrote cannot be proved inside files: discard "
+                  "nothing and stop the task as needs-human, so the human repairs and cleans the "
+                  "tree.")
 
 
 def build_argv(executor: dict, model: str, worktree: str, message_path: str) -> list[str]:
@@ -145,7 +150,14 @@ def run_implement(root: str, settings: dict, spec: str, task_id: str, worktree: 
     if refused:
         return refused
     files = sorted(strip_annotation(f).lstrip("/") for f in task["files"])
-    dirty = sorted(touched(worktree) - set(files))
+    try:
+        dirty = sorted(touched(worktree) - set(files))
+    except GuardError as error:
+        return {"ok": False, "fallback": False, "code": "codex-git-guard",
+                "statusUnreadable": True,
+                "message": f"the guard cannot read git status before the run: {error}. "
+                           f"{STATUS_WAY_OUT}",
+                "reason": f"git guard: {error}"}, 2
     if dirty:
         return refusal("codex-tree-dirty", "the tree is dirty outside files: "
                        + ", ".join(dirty) + f". {WAY_OUT}")
@@ -210,7 +222,16 @@ def run_implement(root: str, settings: dict, spec: str, task_id: str, worktree: 
         out["quotaDelta"] = out["quotaAfter"] - out["quotaBefore"]
         out["stopLoss"] = out["quotaDelta"] > executor["stopLossPercent"]
 
-    out["outside"] = sorted(touched(worktree) - set(files))
+    try:
+        out["outside"] = sorted(touched(worktree) - set(files))
+    except GuardError as error:
+        out["guard"] = {"moved": [f"worktree status unreadable ({error})"],
+                        "before": {**before, "base": base_before},
+                        "after": {**after, "base": base_after}}
+        return {**out, "fallback": False, "code": "codex-git-guard", "statusUnreadable": True,
+                "message": f"the git guard cannot read git status after the run: {error}. "
+                           f"{STATUS_WAY_OUT}",
+                "reason": f"git guard: {error}"}, 2
     moved = sorted(key for key in before if before[key] != after[key]) + base_bad
     if moved or out["outside"]:
         out["guard"] = {"moved": moved, "before": {**before, "base": base_before},

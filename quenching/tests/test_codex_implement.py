@@ -44,6 +44,11 @@ if mode == "stray":
         handle.write("x\n")
 if mode == "commit":
     subprocess.run(["git", "-C", cwd, "commit", "-qam", "codex"], check=True)
+if mode == "corrupt":
+    with open(os.path.join(cwd, "OUTSIDE.py"), "w", encoding="utf-8") as handle:
+        handle.write("x\n")
+    with open(os.path.join(cwd, ".git", "index"), "wb") as handle:
+        handle.write(b"DIRC")
 print(json.dumps({"type": "turn.completed", "usage": {"input_tokens": 100, "output_tokens": 20}}))
 with open(argv[argv.index("-o") + 1], "w", encoding="utf-8") as handle:
     handle.write("feito\n")
@@ -159,6 +164,26 @@ class Implement(unittest.TestCase):
         self.assertIn("other.py", payload["message"])
         self.assertIn("needs-human", payload["message"])
         self.assertIs(False, payload["fallback"])
+
+    def test_a_failing_git_status_after_the_run_fails_closed(self):
+        self.env["FAKE_MODE"] = "corrupt"
+        payload, code = self.implement()
+        self.assertEqual((code, payload["code"]), (2, "codex-git-guard"))
+        self.assertIs(True, payload["statusUnreadable"])
+        self.assertIs(False, payload["ok"])
+        self.assertIs(False, payload["fallback"])
+        self.assertNotIn("discard", payload)
+        self.assertIn("needs-human", payload["message"])
+        self.assertIn("worktree status unreadable", payload["guard"]["moved"][0])
+
+    def test_a_failing_git_status_before_the_run_never_starts_codex(self):
+        (self.repo / ".git" / "index").write_bytes(b"DIRC")
+        payload, code = self.implement()
+        self.assertEqual((code, payload["code"]), (2, "codex-git-guard"))
+        self.assertIs(True, payload["statusUnreadable"])
+        self.assertNotIn("discard", payload)
+        self.assertIn("needs-human", payload["message"])
+        self.assertFalse(self.log.exists())
 
     def test_a_commit_trips_the_guard(self):
         self.env["FAKE_MODE"] = "commit"
