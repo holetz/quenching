@@ -15,7 +15,7 @@ from quenching.specs.members import origin_url, own_repo, read_members
 from quenching.specs.parse.deps import dep_findings, deps_of, find_cycle, find_cycle_through
 from quenching.specs.parse.epics import (composition_cycle, composition_findings,
                                          deprecation_findings, has_links, is_remote,
-                                         parse_items)
+                                         parse_items, task_after_problems)
 from quenching.specs.parse.edit import unclosed_fence_at
 from quenching.specs.parse.text import body_after_frontmatter
 from quenching.specs.parse.sections import (duplicate_headings, gate_report, parse_impact_standards, ready_report,
@@ -225,6 +225,21 @@ def validate_spec(backend: SpecBackend, s: dict,
                                 f"it writes", spec=spec_id, path=where,
                                 task=t["id"] or t["index"],
                                 remedy="declare the generator's outputs in the task's `files:`"))
+
+    # `next` opens a task only once every `after:` label is done, so a label nothing carries or
+    # a loop between tasks leaves the spec waiting forever with no line named.
+    after = task_after_problems(info)
+    for u in after["unknown"]:
+        out.append(_finding("sp-after-unknown", "error",
+                            f"{where}: task {u['task']} comes after `{u['label']}`, which is "
+                            f"neither a task nor a spec item", spec=spec_id, path=where,
+                            task=u["task"], dependency=u["label"], line=u["line"],
+                            remedy="correct or remove the label in the task's `after:`"))
+    if after["cycle"]:
+        out.append(_finding("sp-after-cycle", "error",
+                            f"{where}: task dependency cycle {' -> '.join(after['cycle'])}",
+                            spec=spec_id, path=where, cycle=after["cycle"],
+                            remedy="remove one `after:` in the reported cycle"))
 
     # Judged against the READY gate: a spec is "unrefined" once it could be built, not the
     # moment it is captured. Warning on every fresh capture would train the reader to

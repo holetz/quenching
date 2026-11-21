@@ -232,7 +232,7 @@
     ".agents/quenching/assets/bin/quenching/specs/commands/scrub.py": "629bbcb3dbaa8c1ddae24087d9ed746525b5be02072d3702f96de9dd2593d269",
     ".agents/quenching/assets/bin/quenching/specs/commands/sync.py": "2d5b63bf4616434439c7e83af8178546a0cce470a03ae54cf22e5ee573d1c7f9",
     ".agents/quenching/assets/bin/quenching/specs/commands/task.py": "ff4767db361f011260c4140c901d7dabf4bdddef12ecd615afd8da543ebef756",
-    ".agents/quenching/assets/bin/quenching/specs/commands/validate.py": "203ff014ca3dbb07a8975dc0092954fa2c56da0c41727aa25166a2c9df8e62e8",
+    ".agents/quenching/assets/bin/quenching/specs/commands/validate.py": "f9fb5b0a2d8ab111631932ee71501f360a5a7f147a54d7fbaddb6b144faec753",
     ".agents/quenching/assets/bin/quenching/specs/config.py": "1b50f5e8be3cadd9609a03a81e00a36613cc0fe1f27f524f3c974a7ad3f2f03d",
     ".agents/quenching/assets/bin/quenching/specs/mcp.py": "21891992ce32faabd22b43df2098e0ee90f6ae57e0f82e6b6d9b2cbbad4e2d92",
     ".agents/quenching/assets/bin/quenching/specs/members.py": "868c5873366280a3613fee5b9d1389f3716cb7ee84e5e368e0e8495f333b78b6",
