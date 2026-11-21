@@ -254,6 +254,22 @@ def _assess_worktrees(cwd: str, base: str, open_prs: set[str] | None) -> list[di
     return _keep_the_slot_floor(cwd, assessed)
 
 
+def _assess_held_slots(cwd: str, base: str, remote: str) -> list[dict]:
+    """Every held slot with the evidence that would let it go (`slots.reclaim_evidence`): the
+    holder spec's phase is read in one batch from the spec backend."""
+    from quenching.git import slots as slot_pool
+
+    held = [s for s in slot_pool.survey(cwd)["slots"]
+            if s["state"] == "held" and os.path.isdir(s["path"])]
+    if not held:
+        return []
+    rules = declared_regenerable(load_config(cwd))
+    specs = [(s["holder"] or {}).get("spec") or "" for s in held]
+    phases = slot_pool.spec_phases(cwd, sorted({i for i in specs if i.isdigit()}))
+    return [slot_pool.reclaim_evidence(cwd, s, remote, base, rules, phases.get(spec))
+            for s, spec in zip(held, specs)]
+
+
 def _keep_the_slot_floor(cwd: str, assessed: list[dict]) -> list[dict]:
     """A free slot is warm on purpose: the lowest-numbered `shared.worktreeSlots.min` of them are
     preserved (`slot-floor`); only the free slots above the floor are removal candidates."""
@@ -273,7 +289,8 @@ def _keep_the_slot_floor(cwd: str, assessed: list[dict]) -> list[dict]:
     return assessed
 
 
-def _manifest(cwd: str, remote: str, report: dict, worktrees: list[dict]) -> list[dict]:
+def _manifest(cwd: str, remote: str, report: dict, worktrees: list[dict],
+              reclaims: list[dict]) -> list[dict]:
     cache: dict = {}
     entries = []
 
@@ -308,7 +325,10 @@ def _manifest(cwd: str, remote: str, report: dict, worktrees: list[dict]) -> lis
             ["git", "push", remote, "--delete", b["branch"]],
             ["cq", "git", "prune", "--remote-branch", b["branch"], "--remote", remote,
              "--expect-tip", tip or ""], lookup_ok and tip is not None)
+    held = {os.path.realpath(r["path"]) for r in reclaims}
     for w in worktrees:
+        if w["path"] in held:
+            continue
         ok = w["eligible"]
         entry = add("worktree", w["path"], "local", w["path"], w["tip"],
                     "candidate" if ok else "preserved",
@@ -318,6 +338,15 @@ def _manifest(cwd: str, remote: str, report: dict, worktrees: list[dict]) -> lis
                     ["cq", "git", "prune", "--worktree", w["path"], "--expect-tip", w["tip"] or "",
                      "--confirm-inactive"] if ok else None, ok)
         entry["ignored"] = w["ignored"]
+    for r in reclaims:
+        ok, path = r["eligible"], os.path.realpath(r["path"])
+        entry = add("slot", path, "local", path, r["head"], "candidate" if ok else "preserved",
+                    ["archived-holder"] if ok else r["blockers"],
+                    ["cq", "git", "worktree", "release", "--path", path, "--base",
+                     report["base"], "--remote", remote] if ok else None,
+                    ["cq", "git", "prune", "--slot", path, "--expect-tip", r["head"] or "",
+                     "--confirm-inactive"] if ok else None, ok)
+        entry.update(slot=r["slot"], spec=r["spec"], ignored=r["ignored"])
     for w in report["orphanWorktrees"]:
         add("orphan-worktree", w["path"], "local", w["path"], None, "candidate",
             ["directory-missing"], ["git", "worktree", "remove", "--", w["path"]],
@@ -385,8 +414,10 @@ def stale_report(cwd: str, remote: str = "origin") -> dict:
               "remoteBranches": remote_branches, "orphanWorktrees": _orphan_worktrees(cwd),
               UNREGISTERED_WORKTREES_KEY: _unregistered_worktrees(cwd)}
     worktrees = _assess_worktrees(cwd, base, open_prs)
-    manifest = _manifest(cwd, remote, report, worktrees)
-    report.update(worktrees=worktrees, manifest=manifest, groups=_groups(manifest))
+    reclaims = _assess_held_slots(cwd, base, remote)
+    manifest = _manifest(cwd, remote, report, worktrees, reclaims)
+    report.update(worktrees=worktrees, heldSlots=reclaims, manifest=manifest,
+                  groups=_groups(manifest))
     return report
 
 
@@ -418,6 +449,11 @@ def cmd_stale(args) -> int:
             paths = w["ignored"][classification]
             if paths:
                 lines.append(f"    ignored.{classification}: {', '.join(paths)}")
+    held = report["heldSlots"]
+    lines.append("held slots:" if held else "held slots: none")
+    for r in held:
+        state = "reclaimable" if r["eligible"] else "kept: " + ", ".join(r["blockers"])
+        lines.append(f"  slot {r['slot']} {r['path']} (spec {r['spec'] or '-'}, {state})")
     lines.append("unregistered worktrees (repository siblings):"
                  if unregistered_worktrees
                  else "unregistered worktrees (repository siblings): none")

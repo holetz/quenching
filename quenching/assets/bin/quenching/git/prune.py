@@ -7,10 +7,15 @@ the report read (a tip that moved since is refused; a branch already gone from t
 tracking ref) — never `-D`, a plain `--force` or a
 refspec the caller wrote. Runs with `audit.SAFE`.
 
-Exit 0 deleted · 1 git refused (not fully merged, dirty worktree) and the item stands ·
-2 refusal: not in the report."""
+`--slot` is the one non-delete: a held slot the report lists as a `kind: slot` candidate (its
+spec archived, HEAD in the remote base, clean, nobody in it) is given back to the pool through
+`cq git worktree release` itself, never removed.
+
+Exit 0 deleted or released · 1 git refused (not fully merged, dirty worktree) and the item
+stands · 2 refusal: not in the report."""
 from __future__ import annotations
 
+import argparse
 import os
 
 from quenching.common.git import _git, _git_run
@@ -24,12 +29,43 @@ def _same_path(a: str | None, b: str) -> bool:
     return bool(a) and (a == b or os.path.realpath(a) == os.path.realpath(b))
 
 
+def _release_slot(args, report: dict) -> int:
+    """`--slot`: release a `kind: slot` candidate of the fresh report, at the approved tip and
+    id, and only on the owner's inactivity confirmation."""
+    from quenching.git import slots
+
+    entry = next((e for e in report["manifest"] if e["kind"] == "slot"
+                  and e["status"] == "candidate" and _same_path(e["ref"], args.slot)), None)
+    if entry is None:
+        return refuse({"code": "git-prune-not-reported",
+                       "message": f"`cq git stale` does not report the slot {args.slot} as "
+                                  "reclaimable"}, args.json)
+    if not args.confirm_inactive:
+        return refuse({"code": "git-prune-inactivity-unconfirmed",
+                       "message": f"slot {args.slot} needs --confirm-inactive: the evidence is "
+                                  "not the owner's word that nobody is using it"}, args.json)
+    if not args.expect_tip:
+        return refuse({"code": "git-prune-tip-required",
+                       "message": "a slot is released only against its approved tip"}, args.json)
+    if entry["tip"] != args.expect_tip:
+        return refuse({"code": "git-prune-tip-changed",
+                       "message": f"slot {args.slot} is at {entry['tip'] or 'no tip'}, not the "
+                                  f"approved {args.expect_tip}; read a fresh report"}, args.json)
+    if args.id and args.id != entry["id"]:
+        return refuse({"code": "git-prune-id-mismatch",
+                       "message": f"{args.id} does not identify the slot {args.slot}"}, args.json)
+    return slots.release(argparse.Namespace(json=args.json, path=entry["ref"], branch=None,
+                                            base=report["base"], remote=args.remote))
+
+
 def cmd_prune(args) -> int:
     cwd = os.getcwd()
     if args.remote_branch is not None and not remote_ok(cwd, args.remote):
         return refuse({"code": "git-prune-remote-unknown",
                        "message": f"not a configured remote: {args.remote}"}, args.json)
     report = stale_report(cwd, args.remote)
+    if getattr(args, "slot", None) is not None:
+        return _release_slot(args, report)
     live = None
     if args.branch is not None:
         kind, target = "branch", args.branch

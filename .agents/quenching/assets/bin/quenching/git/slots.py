@@ -25,7 +25,8 @@ from quenching.common.config import load_config, namespace
 from quenching.common.git import _git_run
 from quenching.common.output import FINDINGS, emit, refuse
 from quenching.git.audit import SAFE, _branch_ok, _commit, _run
-from quenching.git.ignored import _is_link, declared_regenerable, ignored_entries, undeclared
+from quenching.git.ignored import (_is_link, classify, declared_regenerable, ignored_entries,
+                                   undeclared)
 from quenching.git.push import remote_probe
 
 DEFAULTS = {"min": 4, "max": 12, "waitMinutes": 30, "pollSeconds": 30}
@@ -353,12 +354,131 @@ def acquire(args) -> int:
     return 0 if payload["ok"] else FINDINGS
 
 
+COLLECTED = (".quenching/codex", ".quenching/handoff")
+
+
+def _collected(entry: str) -> bool:
+    """An ignored entry `release` carries to the primary checkout instead of refusing on."""
+    entry = entry.replace(os.sep, "/")
+    return any(entry == c or entry.startswith(c + "/") for c in COLLECTED)
+
+
+def _move_handoffs(path: str, primary: str) -> list[dict]:
+    """Move every file under the slot's `.quenching/handoff/` to the same relative place in the
+    primary checkout. A name already taken there gets `-<slot>-<n>` before its extension: a
+    handoff is never overwritten and never discarded."""
+    source = os.path.join(path, ".quenching", "handoff")
+    if not os.path.isdir(source) or _is_link(source):
+        return []
+    target_root = os.path.join(primary, ".quenching", "handoff")
+    moved = []
+    for root, _dirs, names in os.walk(source):
+        for name in sorted(names):
+            rel = os.path.relpath(os.path.join(root, name), source)
+            target = os.path.join(target_root, rel)
+            stem, ext = os.path.splitext(target)
+            n = 1
+            while os.path.lexists(target):
+                target = f"{stem}-{os.path.basename(path)}-{n}{ext}"
+                n += 1
+            os.makedirs(os.path.dirname(target), exist_ok=True)
+            shutil.move(os.path.join(root, name), target)
+            moved.append({"from": os.path.join(root, name), "to": target})
+    shutil.rmtree(source)
+    return moved
+
+
+def processes_in(path: str) -> list[int] | None:
+    """The pids whose cwd is `path` or inside it, read from `/proc`; None where there is no
+    `/proc` to read. A pid this user may not inspect, or one gone mid-read, is skipped."""
+    if not os.path.isdir("/proc/self"):
+        return None
+    real = os.path.realpath(path)
+    found = []
+    for pid in os.listdir("/proc"):
+        if not pid.isdigit():
+            continue
+        try:
+            where = os.readlink(os.path.join("/proc", pid, "cwd"))
+        except OSError:
+            continue
+        if where == real or where.startswith(real + os.sep):
+            found.append(int(pid))
+    return found
+
+
+def spec_phases(cwd: str, ids: list[str]) -> dict[str, str | None]:
+    """`{id: phase}` read from the spec backend in one batch; None for an id that does not
+    resolve, and for every id when the backend does not open."""
+    from quenching.specs.backends import open_backend
+    from quenching.specs.config import find_repo_root
+
+    if not ids:
+        return {}
+    backend, err = open_backend(find_repo_root(cwd))
+    if err:
+        return dict.fromkeys(ids)
+    try:
+        infos = backend.read_specs(ids)
+    except Exception:  # any backend failure leaves the holder unknown, never archived
+        return dict.fromkeys(ids)
+    return {i: (infos.get(i) or {}).get("phase") for i in ids}
+
+
+def reclaim_evidence(cwd: str, slot: dict, remote: str, base: str, rules: list[str],
+                     phase: str | None) -> dict:
+    """Whether a held slot may be released for its spec is done: `eligible` only with every
+    piece of evidence in favour — the holder spec in `archive`, HEAD contained in
+    `<remote>/<base>`, a clean porcelain, no ignored content outside `rules` and what `release`
+    collects, and no process with its cwd in the slot. Each missing or contrary fact is a
+    named blocker."""
+    path, holder = slot["path"], slot.get("holder")
+    spec = (holder or {}).get("spec") or None
+    blockers = []
+    if holder is None:
+        blockers.append("foreign-lock")
+    elif not (spec or "").isdigit():
+        blockers.append("holder-not-a-spec")
+    elif phase is None:
+        blockers.append("holder-unknown")
+    elif phase != "archive":
+        blockers.append("holder-not-archived")
+    head = _commit(path, "HEAD")
+    remote_base = _commit(cwd, f"refs/remotes/{remote}/{base}")
+    if remote_base is None:
+        blockers.append("base-unresolved")
+    elif not head or _run(cwd, "merge-base", "--is-ancestor", head, remote_base)[0] != 0:
+        blockers.append("unmerged-head")
+    dirty = _dirty(path)
+    entries = ignored_entries(path)
+    ignored = {"regenerable": [], "unrecognized": []}
+    if dirty is None or entries is None:
+        blockers.append("inspection-failed")
+    else:
+        if dirty:
+            blockers.append("dirty")
+        regenerable, unrecognized = classify(path, entries, rules)
+        ignored = {"regenerable": regenerable,
+                   "unrecognized": [e for e in unrecognized if not _collected(e)]}
+        if ignored["unrecognized"]:
+            blockers.append("ignored-content-unrecognized")
+    processes = processes_in(path)
+    if processes is None:
+        blockers.append("process-lookup-unavailable")
+    elif processes:
+        blockers.append("process-in-slot")
+    return {"path": path, "slot": slot["n"], "branch": slot.get("branch"), "spec": spec,
+            "phase": phase, "head": head, "eligible": not blockers, "blockers": blockers,
+            "ignored": ignored, "processes": processes}
+
+
 def release(args) -> int:
     """Detach a clean slot at the remote base and unlock it; `branch -d` its branch when merged.
 
     A dirty tree, or ignored content no `shared.regenerablePaths` entry covers, keeps the slot
     held (exit 1): nothing of one spec may leak into the next, and nothing is committed or
-    discarded to free it."""
+    discarded to free it. `.quenching/codex/` and `.quenching/handoff/` are carried to the
+    primary checkout instead."""
     cwd = os.getcwd()
     view = survey(cwd)
     want = os.path.realpath(args.path) if args.path else None
@@ -381,7 +501,7 @@ def release(args) -> int:
         return refuse({"code": "git-worktree-release-status-failed",
                        "message": f"git status failed in {path}"}, args.json)
     payload = {"ok": False, "path": path, "slot": slot["n"], "branch": branch,
-               "released": False, "branchDeleted": False, "archived": None}
+               "released": False, "branchDeleted": False, "archived": None, "handoff": []}
     if dirty:
         payload["message"] = f"{path} has uncommitted changes; the slot stays held"
         emit(args.json, payload, payload["message"])
@@ -391,8 +511,7 @@ def release(args) -> int:
         return refuse({"code": "git-worktree-release-status-failed",
                        "message": f"git status failed in {path}"}, args.json)
     rules = declared_regenerable(load_config(view["primary"]))
-    left = [e for e in undeclared(path, ignored, rules)
-            if not e.replace(os.sep, "/").startswith(".quenching/codex")]
+    left = [e for e in undeclared(path, ignored, rules) if not _collected(e)]
     if left:
         payload.update(ignored=left, message=f"{path} holds ignored files no "
                        f"shared.regenerablePaths entry covers: {', '.join(left)}; the slot stays held")
@@ -412,6 +531,7 @@ def release(args) -> int:
         os.makedirs(os.path.dirname(target), exist_ok=True)
         shutil.move(source, target)
         payload["archived"] = target
+    payload["handoff"] = _move_handoffs(path, view["primary"])
     code, _out, err = _git_run(path, *SAFE, "switch", "--detach", base_sha)
     if code != 0:
         payload["message"] = f"git switch --detach failed in {path}: {err.strip()}"
