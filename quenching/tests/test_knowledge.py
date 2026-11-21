@@ -620,6 +620,23 @@ class SourceAndGlossaryLint(unittest.TestCase):
         self.assertIn("glossary-order", codes)
         self.assertIn("glossary-duplicate", codes)
 
+    def test_the_documented_star_mold_warns_on_duplicates_and_order(self):
+        # The skeleton, `define` and `glossary-backfill` publish `* **Term** —` and
+        # `* [Term](path.md) —`; both must be read as entries.
+        head = ("---\ntype: concept\ntitle: G\ndescription: D\nresource: x\ntimestamp: 2026-01-01\n---\n"
+                "# G\n\n## Terms\n\n")
+        for alpha in ("* **Alpha** — a.", "* [Alpha](a.md) — a."):
+            with self.subTest(alpha=alpha):
+                gl = head + f"* **Zeta** — z.\n{alpha}\n* **Alpha** — a again.\n"
+                codes = self._codes({"glossary.md": gl})
+                self.assertIn("glossary-order", codes)
+                self.assertIn("glossary-duplicate", codes)
+
+    def test_a_long_star_entry_warns(self):
+        gl = ("---\ntype: concept\ntitle: G\ndescription: D\nresource: x\ntimestamp: 2026-01-01\n---\n"
+              "# G\n\n## Terms\n\n* **Alpha** — " + " ".join(["w"] * 80) + "\n")
+        self.assertIn("glossary-entry-long", self._codes({"glossary.md": gl}))
+
     def test_a_sorted_glossary_with_a_core_block_is_clean(self):
         gl = ("---\ntype: concept\ntitle: G\ndescription: D\nresource: x\ntimestamp: 2026-01-01\n---\n"
               "# G\n\n## Core vocabulary\n\n- **Zed** - z.\n- **Alpha** - a.\n\n"

@@ -381,7 +381,9 @@ def check_concept(text: str) -> list[tuple[str, str, str]]:
     return out
 
 
-GLOSSARY_ENTRY_RE = re.compile(r"^- (?:\[)?\*\*(.+?)\*\*")
+# Entries open with `- ` or `* ` (the published skeleton writes `* `); the term is bold,
+# bold inside a link, or a plain link (`* [Term](path.md) —`).
+GLOSSARY_ENTRY_RE = re.compile(r"^[-*] (?:\[?\*\*(.+?)\*\*|\[([^\]]+)\]\()")
 GLOSSARY_MAX_WORDS = 70
 
 
@@ -398,14 +400,14 @@ def check_glossary(text: str) -> list[tuple[str, str, str]]:
         return out
     end = text.find("\n## ", start + 4)
     body = text[start:end if end != -1 else len(text)]
-    entries = re.split(r"\n(?=- )", body)[1:]
+    entries = re.split(r"\n(?=[-*] )", body)[1:]
     seen: set[str] = set()
     prev = ""
     for entry in entries:
         m = GLOSSARY_ENTRY_RE.match(entry)
         if not m:
             continue
-        term = m.group(1)
+        term = m.group(1) or m.group(2)
         key = _glossary_key(term)
         if key in seen:
             out.append(("WARN", "glossary-duplicate", f"term `{term}` is defined more than once"))
