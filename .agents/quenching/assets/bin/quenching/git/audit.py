@@ -113,6 +113,54 @@ def _since_switch(entries: list[list[str]], branch: str, held: set[str]) -> list
     return entries
 
 
+def _own_commits(entries: list[list[str]], branch: str) -> set[str]:
+    """The shas `HEAD` committed while it sat on `branch`, read from the `HEAD` reflog (newest first)
+    by following the `checkout: moving from <x> to <y>` subjects. Before the first checkout the
+    current branch is that checkout's `<x>`, or `branch` itself when there is none: a worktree
+    starts on the branch it was cut for."""
+    ordered = entries[::-1]
+    current = branch
+    for _sha, subject in ordered:
+        m = re.match(r"checkout: moving from (.+) to .+$", subject)
+        if m:
+            current = m.group(1)
+            break
+    own = set()
+    for sha, subject in ordered:
+        m = re.match(r"checkout: moving from .+ to (.+)$", subject)
+        if m:
+            current = m.group(1)
+        elif subject.startswith("commit") and current == branch:
+            own.add(sha)
+    return own
+
+
+def _discarded_by_switch(cwd: str, entries: list[list[str]], i: int, branch: str,
+                         env: dict[str, str] | None, errors: list[dict] | None) -> str:
+    """The switch onto `branch` at entry `i` is a slot's boundary, but one that throws the branch's own
+    commits away (`checkout --detach; branch -D X; checkout -b X <older>`) is a rewrite: where `HEAD`
+    stood before the switch descends strictly from where it lands and some commit between them was
+    made on `branch`. A previous branch ahead of the landing point owns its commits, so it is no
+    finding. Returns the item for `rewrites.head`, or `""`."""
+    if i + 1 >= len(entries):
+        return ""
+    new, old = entries[i][0], entries[i + 1][0]
+    if new == old:
+        return ""
+    code, out, err = _git_run(cwd, *SAFE, "rev-list", f"{new}..{old}", env=env)
+    if code != 0:
+        if errors is not None:
+            errors.append(_error(("rev-list",), code, err))
+        return ""
+    between = set(out.split())
+    if not between:
+        return ""
+    dropped = between & _own_commits(entries, branch)
+    if not dropped:
+        return ""
+    return (f"{entries[i][1]} {old[:12]}..{new[:12]} (discards {len(dropped)} commit(s) of {branch})")
+
+
 def _rewrites(cwd: str, ref: str, env: dict[str, str] | None = None,
               errors: list[dict] | None = None, branch: str | None = None) -> list[str]:
     """The reflog moves of `ref` that are not fast-forwards: the older sha is not an ancestor of the
@@ -127,9 +175,13 @@ def _rewrites(cwd: str, ref: str, env: dict[str, str] | None = None,
         held = {line.split(" ", 1)[0] for line in
                 _lines(cwd, "reflog", "show", "--format=%H %gs", f"refs/heads/{branch}", env=env)}
         kept = _since_switch(entries, branch, held)
+        discarded = ""
         if len(kept) < len(entries):
+            discarded = _discarded_by_switch(cwd, entries, len(kept), branch, env, errors)
             entries = entries[:len(kept) + 1]          # the switch entry stays as the oldest anchor; the loop never lists it
     found = []
+    if branch is not None and discarded:
+        found.append(discarded)
     for i, (sha, subject) in enumerate(entries[:-1]):
         older = entries[i + 1][0]
         if older == sha:
