@@ -240,7 +240,7 @@
     ".agents/quenching/assets/bin/quenching/specs/parse/deps.py": "ddb0a4b93431d9b3f57c0dd44ff5c47ae5d5143ff18c9dc95deb1357f55da215",
     ".agents/quenching/assets/bin/quenching/specs/parse/derive.py": "d51e1ef9d902aeaf2b4ca988f029f1a5e2f7c8f3a5bd838390e3049f7a6a498d",
     ".agents/quenching/assets/bin/quenching/specs/parse/edit.py": "960b9119f161b1adb93dca664ae65753f63508d0fa4392a2d24e2fe3d66ccf9c",
-    ".agents/quenching/assets/bin/quenching/specs/parse/epics.py": "4a989e31193533e511fa676a354f5cbd34becacd9fb1add9f9628605e4237d9a",
+    ".agents/quenching/assets/bin/quenching/specs/parse/epics.py": "aa0f093d89ca0c658c236657bbdaf8886c87ec859f3915fb85e66694d09cc1e4",
     ".agents/quenching/assets/bin/quenching/specs/parse/fields.py": "76daf0506802f483dfa95b34932be2597da41b50f7ce450bd5eb11344eb090e3",
     ".agents/quenching/assets/bin/quenching/specs/parse/handoff.py": "b36657f84c2c21591b8c15c7c9fabc3cbd8c1dd98a2a31eac9c05c879dcbaf77",
     ".agents/quenching/assets/bin/quenching/specs/parse/records.py": "f594c25c8c5f94aa891991433e6e49310ffa7f7995a197110ec880b929162656",
