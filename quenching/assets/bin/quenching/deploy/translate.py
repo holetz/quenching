@@ -183,8 +183,23 @@ def opencode_permissions(tools: str | None) -> dict[str, str | dict[str, str]]:
         granted["bash"] = {"*": "ask", **dict.fromkeys(patterns, "allow")}
     else:
         granted["bash"] = "ask" if "Bash" in heads else "deny"
-    granted["task"] = "allow" if heads & {"Agent", "Task"} else "deny"
+    granted["task"] = _task_grant(names)
     return granted
+
+
+def _task_grant(names: list[str]) -> str | dict[str, str]:
+    """`Agent(a, b)`/`Task(a, b)` as a deny-first map by agent name, never wider than the source."""
+    allowed: list[str] = []
+    for name in names:
+        head, _, rest = name.partition("(")
+        if head not in {"Agent", "Task"}:
+            continue
+        if not rest:
+            return "allow"
+        allowed.extend(item.strip() for item in rest.rstrip(")").split(",") if item.strip())
+    if not allowed:
+        return "deny"
+    return {"*": "deny", **dict.fromkeys(allowed, "allow")}
 
 
 def opencode_agent_document(raw: str, name: str) -> str:
@@ -194,7 +209,10 @@ def opencode_agent_document(raw: str, name: str) -> str:
     if not description:
         raise ValueError(f"agent has no description: {name}")
     granted = opencode_permissions(fields.get("tools"))
-    denies_task = granted.pop("task", "allow") == "deny"
+    task = granted.pop("task", "allow")
+    denies_task = task == "deny"
+    if isinstance(task, dict):
+        granted["task"] = task
     out = ["---", f"description: {json.dumps(transform_platform(description), ensure_ascii=False)}",
            "mode: subagent"]
     if granted:
