@@ -26,6 +26,7 @@ REPO_ROOT = pathlib.Path(__file__).resolve().parents[2]
 # Shaped like a suite path but never exists; assembled so the citation check does not read the
 # fixture as a claim about a file in this checkout.
 MISSING_TEST = "quenching/" + "tests/test_that_was_removed.py"
+TESTS = "quenching/" + "tests"
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
@@ -165,21 +166,21 @@ class IndirectImports(unittest.TestCase):
             f"{self.PKG}/top/__init__.py": "",
             f"{self.PKG}/top/app.py": "from . import helper\nfrom quenching.mid import use\n",
             f"{self.PKG}/top/helper.py": "",
-            "quenching/tests/test_base.py": "",
-            "quenching/tests/test_far.py": "import quenching.top.app\n",
-            "quenching/tests/test_other.py": "import quenching.top.helper\n",
+            f"{TESTS}/test_base.py": "",
+            f"{TESTS}/test_far.py": "import quenching.top.app\n",
+            f"{TESTS}/test_other.py": "import quenching.top.helper\n",
         })
         got = self.select(root, f"{self.PKG}/leaf/core.py")
         self.assertFalse(got.complete)
-        self.assertIn("quenching/tests/test_far.py", got.tests)
-        self.assertNotIn("quenching/tests/test_other.py", got.tests)
+        self.assertIn(f"{TESTS}/test_far.py", got.tests)
+        self.assertNotIn(f"{TESTS}/test_other.py", got.tests)
 
     def test_a_module_that_does_not_parse_fails_open(self):
         root = self._tree({
             f"{self.PKG}/__init__.py": "",
             f"{self.PKG}/leaf.py": "X = 1\n",
             f"{self.PKG}/broken.py": "def (:\n",
-            "quenching/tests/test_base.py": "",
+            f"{TESTS}/test_base.py": "",
         })
         got = self.select(root, f"{self.PKG}/leaf.py")
         self.assertTrue(got.complete)
