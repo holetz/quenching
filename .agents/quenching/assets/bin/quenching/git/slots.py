@@ -24,7 +24,7 @@ import time
 from quenching.common.config import load_config, namespace
 from quenching.common.git import _git_run
 from quenching.common.output import FINDINGS, emit, refuse
-from quenching.git.audit import SAFE, _branch_ok, _commit, _run
+from quenching.git.audit import SAFE, _branch_ok, _commit, _reflog, _run
 from quenching.git.ignored import (_is_link, classify, declared_regenerable, ignored_entries,
                                    undeclared)
 from quenching.git.push import remote_probe
@@ -199,17 +199,19 @@ def _unlock(cwd: str, path: str) -> None:
     _git_run(cwd, *SAFE, "worktree", "unlock", "--", path)
 
 
+OWN_WORK = ("commit", "cherry-pick", "revert")
+
+
 def _merged_holder(cwd: str, slot: dict, base_sha: str | None) -> bool:
     """A held slot whose branch carries work and is already in the base: its spec is done and
-    the slot may go. A branch just cut has no work, and its tip — the base it was cut from — is
-    an ancestor of the base too; its reflog, holding only the creation, is what tells them apart.
-    No reflog → not provably merged, so the slot is never taken."""
+    the slot may go. A branch just cut, or one that only fast-forwarded to the base, has no work
+    and its tip is an ancestor of the base too; a reflog entry that committed on the branch is
+    what tells them apart. No such entry → not provably merged, so the slot is never taken."""
     branch = slot.get("branch")
     tip = _commit(cwd, f"refs/heads/{branch}") if branch else None
     if not (tip and base_sha):
         return False
-    code, out, _err = _git_run(cwd, *SAFE, "reflog", "show", "--format=%H", f"refs/heads/{branch}")
-    if code != 0 or len(out.split()) < 2:
+    if not any(s.startswith(OWN_WORK) for s in _reflog(cwd, f"refs/heads/{branch}")):
         return False
     return _run(cwd, "merge-base", "--is-ancestor", tip, base_sha)[0] == 0
 
@@ -217,7 +219,8 @@ def _merged_holder(cwd: str, slot: dict, base_sha: str | None) -> bool:
 def _take(cwd: str, view: dict, cap: int, reason: str, base_sha: str,
           freed: list) -> tuple[dict | None, bool]:
     """Lock one slot for the caller: a free clean one, else a new one under the cap, else a held
-    one whose branch is merged and whose tree is clean (released first). A reused slot's
+    one whose branch is merged, whose tree is clean and where no process runs (released first;
+    without `/proc` the process check is skipped). A reused slot's
     `.quenching/handoff/` is moved to the primary checkout (`slot["handoff"]`). `(slot, created)`."""
     for slot in view["slots"]:
         if slot["state"] == "free" and _lock(cwd, slot["path"], reason):
@@ -240,7 +243,7 @@ def _take(cwd: str, view: dict, cap: int, reason: str, base_sha: str,
                 return {"path": path, "n": n, "branch": None}, True
     for slot in view["slots"]:
         if slot["state"] == "held" and slot["holder"] and _merged_holder(cwd, slot, base_sha) \
-                and _dirty(slot["path"]) is False:
+                and _dirty(slot["path"]) is False and not processes_in(slot["path"]):
             # Re-lock under the caller's reason only after the merged holder's lock is gone; a
             # second session racing here loses at `lock`, never both win.
             _unlock(cwd, slot["path"])

@@ -245,6 +245,22 @@ class ArchiveWaitsForMerge(unittest.TestCase):
         self.assert_archived()
         self.pr_view.assert_not_called()
 
+    def test_fresh_branch_without_commits_refuses_done(self):
+        # Cut from the base and never committed to: its tip is an ancestor of origin/main like a
+        # merged branch's, and only its reflog says no work ever landed on it.
+        self.git("branch", "plan/2-fresh", "main")
+        code, payload, spec_id, text = self.promote(work="plan/2-fresh")
+        self.assertEqual(code, 2, payload)
+        self.assertEqual(payload["code"], "sp-not-merged")
+        self.assertEqual(payload["reason"],
+                         "plan/2-fresh has no commits of its own and no merged PR is recorded")
+        self.assertEqual(self.backend.docs[spec_id], ("plans", text))
+
+    def test_fresh_branch_with_merged_pr_archives(self):
+        self.git("branch", "plan/2-fresh", "main")
+        self.pr_view.return_value = ("MERGED", "plan/2-fresh")
+        self.assert_archived(work="plan/2-fresh", records="pr:\n  number: 42\n")
+
     def test_merged_pr_archives_without_ancestry(self):
         self.pr_view.return_value = ("MERGED", "plan/1-x")
         self.assert_archived(records="pr:\n  number: 42\n")

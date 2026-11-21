@@ -157,6 +157,37 @@ class TheCeiling(SlotRepo):
         self.assertEqual(code, 2, out)
         self.assertEqual(out["code"], "git-worktree-slots-full")
 
+    def test_a_branch_only_fast_forwarded_to_the_base_is_never_taken_as_merged(self):
+        for n in range(1, 4):
+            _code, got = self.run_verb("acquire", branch=f"plan/{n}-x")
+            if n == 1:
+                first = got["path"]
+        _git(self.main, "commit", "-q", "--allow-empty", "-m", "base moves")
+        _git(self.main, "push", "-q", "origin", "main")
+        _git(first, "fetch", "-q", "origin")
+        _git(first, "merge", "-q", "--ff-only", "origin/main")
+        code, out = self.run_verb("acquire", branch="plan/9-new")
+        self.assertEqual(code, 2, out)
+        self.assertEqual(out["code"], "git-worktree-slots-full")
+        self.assertEqual(_git(first, "branch", "--show-current").strip(), "plan/1-x")
+
+    @unittest.skipUnless(os.path.isdir("/proc/self"), "process lookup reads /proc")
+    def test_a_merged_holder_with_a_live_process_in_its_slot_is_never_taken(self):
+        for n in range(1, 4):
+            _code, got = self.run_verb("acquire", branch=f"plan/{n}-x")
+            if n == 1:
+                first = got["path"]
+                _git(first, "commit", "-q", "--allow-empty", "-m", "work")
+        _git(self.main, "push", "-q", "origin", "plan/1-x:main")
+        live = subprocess.Popen([sys.executable, "-c", "import sys; sys.stdin.read()"],
+                                cwd=first, stdin=subprocess.PIPE)
+        self.addCleanup(live.wait)
+        self.addCleanup(live.stdin.close)
+        code, out = self.run_verb("acquire", branch="plan/9-new")
+        self.assertEqual(code, 2, out)
+        self.assertEqual(out["code"], "git-worktree-slots-full")
+        self.assertEqual(_git(first, "branch", "--show-current").strip(), "plan/1-x")
+
     def test_other_worktrees_are_never_counted(self):
         for n in range(3):
             _git(self.main, "worktree", "add", "-q", "-b", f"legacy-{n}",
