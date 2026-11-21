@@ -106,6 +106,21 @@ class SiteNavTests(unittest.TestCase):
             self.assertNotIn("external/index.md", rendered_paths)
             self.assertNotIn("scratch/index.md", rendered_paths)
 
+    def test_nav_skips_private_dirs_and_files_like_the_staged_source(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "index.md").write_text("# Home\n")
+            (root / "standards" / "_drafts").mkdir(parents=True)
+            (root / "standards" / "index.md").write_text("# standards\n")
+            (root / "standards" / "guide.md").write_text("# guide\n")
+            (root / "standards" / "_drafts" / "wip.md").write_text("# rascunho privado\n")
+            (root / "standards" / "_scratch.md").write_text("# scratch\n")
+
+            rendered_paths = repr(build_nav(str(root)))
+            self.assertIn("standards/guide.md", rendered_paths)
+            self.assertNotIn("_drafts", rendered_paths)
+            self.assertNotIn("_scratch.md", rendered_paths)
+
     def test_titles_with_quotes_and_backslashes_stay_valid_toml_and_idempotent(self) -> None:
         for title in ('Guia "avançado"', "Pasta C:\\dados", 'Mix \\"x\\" fim'):
             with self.subTest(title=title), tempfile.TemporaryDirectory() as tmp:

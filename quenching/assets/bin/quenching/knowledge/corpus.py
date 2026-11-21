@@ -15,10 +15,15 @@ import time
 from quenching.knowledge.schema import ASSET_DIRS
 
 
+def is_private_name(name: str) -> bool:
+    """A path segment that is never published: a dot entry (`.git`) or a `_`-prefixed
+    private/raw sidecar (`_curadoria/`, `_drafts/`). The one predicate every walk shares."""
+    return name.startswith((".", "_"))
+
+
 def _is_skipped_dir(name: str) -> bool:
-    """A directory pruned from the bundle walk: dotfolder, `_`-prefixed
-    private/raw sidecar (`_curadoria/`), `.git`, or a known asset dir."""
-    return (name.startswith(".") or name.startswith("_") or name in ASSET_DIRS)
+    """A directory pruned from the bundle walk: a private name or a known asset dir."""
+    return is_private_name(name) or name in ASSET_DIRS
 
 
 def _is_ignored_path(rel_path: str, patterns: tuple[str, ...]) -> bool:
