@@ -132,9 +132,14 @@ def close_attribution(ordered: list, timeline: list, anomalies: list) -> None:
                     "message": f"{cmd.name} was invoked as a stage by {caller}, which never "
                                f"regained attribution — counts for {cmd.name} are an upper "
                                f"bound and may include {caller}'s own turns"})
+                cmd.runs.append((inv["line"], cmd.last))
             else:
-                # The conductor came back, so the stage's run genuinely ends before it.
-                cmd.last = min(cmd.last, resumed - 1) if cmd.last is not None else None
+                # The conductor came back, so this run genuinely ends before it.
+                cmd.runs.append((inv["line"], min(cmd.last, resumed - 1)))
+        if cmd.runs:
+            # The attributed run ends where the LAST execution ends, never at the first resume:
+            # the counts already include every execution, and the window must agree with them.
+            cmd.last = max(hi for _, hi in cmd.runs)
 
 
 def read_session(path: Path) -> dict:
