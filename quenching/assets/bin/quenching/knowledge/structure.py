@@ -28,7 +28,7 @@ import os
 import re
 
 from quenching.common.frontmatter import parse_frontmatter
-from quenching.knowledge.corpus import _is_ignored_path, _is_skipped_dir
+from quenching.knowledge.corpus import _is_ignored_path, _is_skipped_dir, is_private_name
 from quenching.knowledge.resource import _is_uri
 from quenching.knowledge.schema import EXEMPT, GLOSSARY_REL, LINK_RE, RESERVED
 
@@ -235,7 +235,8 @@ def _squash_ws(text: str) -> str:
 def validate_generated_listing(bundle_root: str, corpus: dict) -> list[tuple[str, str, str, str]]:
     """The `<!-- BEGIN GENERATED -->` zone of `standards/index.md` against the docs on disk
     (both WARN, same class and same gate as the codes above):
-      - `generated-listing-missing` a `standards/**` doc no row in the zone links.
+      - `generated-listing-missing` a `standards/**` doc no row in the zone links; a private file
+                                    name (`_`/`.`) is owed no row, as the site never publishes it.
       - `generated-listing-drift`   a row whose description no longer equals the doc's own.
     Consumes the `_build_corpus` dict — no disk reads of its own. Both findings are reported
     against the listing, because the listing is the file either one is fixed in.
@@ -259,7 +260,7 @@ def validate_generated_listing(bundle_root: str, corpus: dict) -> list[tuple[str
 
     for ap in sorted(corpus):
         fn = os.path.basename(ap)
-        if fn in RESERVED or fn in EXEMPT or fn == "README.md":
+        if fn in RESERVED or fn in EXEMPT or fn == "README.md" or is_private_name(fn):
             continue
         if not ap.startswith(subject_root + os.sep):
             continue
@@ -291,15 +292,17 @@ def _listed_docs(subject_root: str, root: str,
                  ignore_globs: tuple[str, ...] = ()) -> dict[str, str]:
     """Every doc the zone is owed a row for -> its squashed frontmatter `description`.
 
-    Directories are pruned exactly as `_build_corpus` prunes them, so the listing owes a row to
-    the same docs `validate_generated_listing` reads — never to a private `_drafts/` page."""
+    Directories are pruned exactly as `_build_corpus` prunes them, and a private file name is
+    skipped as `validate_generated_listing` skips it, so the listing owes a row to the same docs the
+    site publishes — never to a private `_drafts/` page or a loose `_rascunho.md`."""
     docs: dict[str, str] = {}
     for dirpath, dirs, files in os.walk(subject_root):
         rel_dir = os.path.relpath(dirpath, root).replace(os.sep, "/")
         dirs[:] = [d for d in dirs
                    if not _is_skipped_dir(d) and not _is_ignored_path(f"{rel_dir}/{d}", ignore_globs)]
         for fn in files:
-            if not fn.endswith(".md") or fn in RESERVED or fn in EXEMPT or fn == "README.md":
+            if (not fn.endswith(".md") or fn in RESERVED or fn in EXEMPT or fn == "README.md"
+                    or is_private_name(fn)):
                 continue
             ap = os.path.join(dirpath, fn)
             with open(ap, encoding="utf-8") as fh:

@@ -57,6 +57,7 @@ class ListingPrivatePaths(unittest.TestCase):
                 "standards/code/index.md": "# code/\n\n- [imports.md](imports.md)\n",
                 "standards/code/imports.md": _std("Imports", "How we import"),
                 "standards/_drafts/wip.md": _std("WIP", "rascunho privado nao publicar"),
+                "standards/code/_rascunho.md": _std("Rascunho", "arquivo privado solto"),
                 "standards/.hidden/note.md": _std("Hidden", "dot dir"),
                 "standards/vendored/copy.md": _std("Vendored", "ignored by glob"),
             }
@@ -67,7 +68,8 @@ class ListingPrivatePaths(unittest.TestCase):
             report = regenerate_listing(str(base), write=True, ignore_globs=("standards/vendored",))
             self.assertFalse(report["changed"])
             zone = (base / "standards/index.md").read_text(encoding="utf-8")
-            for leaked in ("wip.md", "rascunho privado", "note.md", "copy.md"):
+            for leaked in ("wip.md", "rascunho privado", "note.md", "copy.md",
+                           "_rascunho.md", "arquivo privado solto"):
                 self.assertNotIn(leaked, zone)
 
 
