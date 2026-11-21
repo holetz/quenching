@@ -18,6 +18,7 @@ margin the human kept.
 from __future__ import annotations
 
 import os
+import posixpath
 
 from quenching.codex.probe import probe
 from quenching.specs.backends import open_backend
@@ -35,11 +36,19 @@ def strip_annotation(entry: str) -> str:
     return entry[:-len("(new)")].rstrip() if entry.endswith("(new)") else entry
 
 
+def repo_path(entry: str) -> str:
+    """`./docs/x.md (new)` → `docs/x.md`: one entry of `files:` as the repository path git reports.
+
+    Every comparison of the Codex pillar goes through here, so `./docs/x.md` and
+    `src/../docs/x.md` are refused as `docs/x.md` and `./src/a.py` matches git's `src/a.py`."""
+    return posixpath.normpath(strip_annotation(entry).replace("\\", "/")).lstrip("/")
+
+
 def task_tokens(root: str, files: list[str]) -> int:
     """Bytes over four of every declared file that exists; a file still to be created costs 0."""
     total = 0
     for entry in files:
-        path = os.path.join(root, strip_annotation(entry).lstrip("/"))
+        path = os.path.join(root, repo_path(entry))
         if os.path.isfile(path):
             total += os.path.getsize(path)
     return total // BYTES_PER_TOKEN
@@ -75,10 +84,10 @@ def eligibility(task: dict, settings: dict, root: str, quota=None,
     if task.get("operational"):
         return no("files: (operational) — the task writes no repository file, so there is "
                   "nothing for Codex to write")
-    files = [strip_annotation(f) for f in task["files"]]
+    files = [repo_path(f) for f in task["files"]]
     if not files:
         return no("the task declares no files:")
-    knowledge = [f for f in files if f.lstrip("/").split("/", 1)[0] in WRITTEN_KNOWLEDGE]
+    knowledge = [f for f in files if f.split("/", 1)[0] in WRITTEN_KNOWLEDGE]
     if knowledge:
         return no(f"the task writes docs/ or knowledge/: {', '.join(knowledge)}")
     out["tokens"] = task_tokens(root, files)

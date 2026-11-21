@@ -18,7 +18,7 @@ except ModuleNotFoundError:  # package-qualified unittest invocation from the re
     import _paths  # noqa: F401
 from quenching.codex import main
 from quenching.codex.config import DEFAULTS
-from quenching.codex.eligible import eligibility, reserved, run_eligible, task_tokens
+from quenching.codex.eligible import eligibility, repo_path, reserved, run_eligible, task_tokens
 
 
 def settings(**executor) -> dict:
@@ -108,6 +108,16 @@ class EligibilityTest(unittest.TestCase):
                                         Quota())
             self.assertEqual(code, 1, path)
             self.assertIn("docs/ or knowledge/", payload["reason"])
+
+    def test_a_dotted_or_dotdot_path_is_judged_as_the_repository_path(self):
+        for path in ("./docs/x.md", "./knowledge/a.md", "src/../docs/x.md", ".\\docs\\x.md"):
+            payload, code = eligibility(task(files=["src/a.py", path]), settings(), self.root,
+                                        Quota())
+            self.assertEqual(code, 1, path)
+            self.assertIn("docs/ or knowledge/", payload["reason"])
+        self.assertEqual(task_tokens(self.root, ["./src/a.py"]),
+                         task_tokens(self.root, ["src/a.py"]))
+        self.assertEqual(repo_path("./.github/w.yml (new)"), ".github/w.yml")
 
     def test_the_default_settings_never_dispatch(self):
         quota = Quota()
