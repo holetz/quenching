@@ -150,7 +150,7 @@
     ".agents/quenching/assets/bin/quenching/knowledge/schema.py": "177657a8086f945cd9ebb28700df863f80bf66789e52f791dd1e2f0dabd71e3a",
     ".agents/quenching/assets/bin/quenching/knowledge/site_source.py": "251291ed85a5e46a2060d805625c62bf5f3f6a533288a9ad56f7e37d9e06d2a4",
     ".agents/quenching/assets/bin/quenching/knowledge/stale.py": "741ead0ebfa0a09ea5c6b73ed41a5fa33cca738368d42eeaf87750a9496ab571",
-    ".agents/quenching/assets/bin/quenching/knowledge/structure.py": "65d1dc948b5b503ba83bebe516eab88a30012158501c67114e6cd63b079592e6",
+    ".agents/quenching/assets/bin/quenching/knowledge/structure.py": "6cc74eb56262c0132118d07424680cd32dd7f014e7b85879fe01bc2b278ae059",
     ".agents/quenching/assets/bin/quenching/knowledge/validate.py": "6e673e47c5dbf5ed925da8cfef8703e71acc62ca9817266512b50e1aa661aa3e",
     ".agents/quenching/assets/bin/quenching/mcp/catalog.py": "8fb450df2d245802e1b259cfddfffff2a704708751c35438a15d291fa8be3b2a",
     ".agents/quenching/assets/bin/quenching/mcp/cli.py": "168d60922494389e5c02eb624e6178d33ab76f73125b67521e010d08f5e43b55",

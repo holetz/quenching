@@ -590,6 +590,16 @@ class GeneratedListingChecker(unittest.TestCase):
         self.assertEqual(len(missing), 2, missing)
         self.assertTrue(any("standards/code/imports.md" in m for m in missing), missing)
 
+    def test_a_loose_private_file_is_owed_no_row(self):
+        # The site-source never publishes a `_`/`.`-named file (site_source.py prunes it), so a
+        # row for it would point at a page that is not there. The corpus still reads it.
+        fixture = dict(CONFORMANT_ZONE)
+        fixture["standards/code/_rascunho.md"] = _standard("Rascunho", "rascunho privado")
+        fixture["standards/code/.oculto.md"] = _standard("Oculto", "dot file")
+        missing = {msg for sev, rel, code, msg in _validated(fixture)
+                   if code == "generated-listing-missing"}
+        self.assertEqual(missing, set())
+
     def test_whitespace_around_a_cell_is_not_drift(self):
         fixture = _generated_fixture(("imports.md",), "How we import   ")
         drift = {code for sev, rel, code, msg in _validated(fixture)
