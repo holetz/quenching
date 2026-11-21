@@ -4,10 +4,10 @@ title: Plan git record contract
 description: How a spec records the git facts that cannot be derived later — per-task commit subjects, branch, pull request and merge records, branch marks for conclude discovery, base inference, merge routes, and safe local and remote branch cleanup
 resource: quenching/references/git/**, quenching/references/specs-execute/execution.md, quenching/references/specs-conclude/auto-discover.md, quenching/assets/bin/quenching/specs/**, quenching/assets/bin/quenching/git/**, quenching/skills/quenching-specs/references/execute.md, quenching/skills/quenching-specs/references/conclude.md, quenching/skills/quenching-git/references/merge.md, quenching/skills/quenching-git/references/pr-create.md
 tags: [workflows, specs, git, commits, records]
-timestamp: 2026-11-13
+timestamp: 2026-11-20
 audience: both
 authority: background
-source: abandonar-slug-por-id-nativo, vincular-spec-a-branch-commits-e-pr, spec 2022, spec 2187; history in ADR 0003
+source: abandonar-slug-por-id-nativo, vincular-spec-a-branch-commits-e-pr, spec 2022, spec 2187, spec 2209; history in ADR 0003
 maintainer: quenching
 ---
 
@@ -419,8 +419,25 @@ provenance, always resolving to the displayed ids. The recommendation is the evi
 a worktree, its eligibility — or none when the PR lookup is unavailable, and it never grants
 execution.
 
+A worktree slot held under a quenching lock is reported apart, as `kind: slot` in the `manifest`
+and with its evidence in `heldSlots`, never as `kind: worktree`. It is a `candidate` with reason
+`archived-holder` only with every piece of evidence in favour: the spec its lock names is in
+`archive`, its HEAD is contained in the already fetched `<remote>/<base>`, its porcelain is clean,
+no ignored content sits outside the regenerable class (`.quenching/handoff/` and `.quenching/codex/`
+excepted, because the release carries them to the main checkout), and `/proc` shows no process with
+its cwd inside it. Any missing or contrary fact keeps it `preserved` with a named blocker
+(`foreign-lock`, `holder-not-a-spec`, `holder-unknown`, `holder-not-archived`, `base-unresolved`,
+`unmerged-head`, `inspection-failed`, `dirty`, `ignored-content-unrecognized`,
+`process-lookup-unavailable`, `process-in-slot`). Its action is `cq git prune --slot <path> --id
+<id> --expect-tip <tip> --confirm-inactive`, which re-reads the report and gives the slot back
+through `cq git worktree release` — detached at the base, unlocked, its merged branch deleted with
+`-d` — and never removes the directory. The release moves every file under the slot's
+`.quenching/handoff/` to the same place in the main checkout; a name already taken there gets a
+`-<slot>-<n>` suffix, so a handoff is never overwritten and never discarded.
+
 `/quenching-git cleanup` presents concise grouped choices over that manifest, local and remote
-decisions kept separate, and a live worktree needs the owner's own confirmation that it is inactive.
+decisions kept separate, archived slots as their own decision, and a live worktree or slot needs
+the owner's own confirmation that it is inactive.
 `cq git prune` re-reads a fresh report and refuses (exit 2) when the approved `--expect-tip` or
 `--id` no longer matches, when a live worktree lacks `--expect-tip` or `--confirm-inactive`, or when
 the target is no longer eligible; deletes stay `-d`, no force, and the remote delete keeps its
