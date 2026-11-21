@@ -298,10 +298,13 @@ times in two repositories (1518, 1028798, 1030888) before this rule.
 `branch` record names a work ref distinct from its base and none of these holds: the work tip is an
 ancestor of `origin/<base>` and carries commits of its own, a `merge:` record names a strategy, or
 the `pr:` record's PR reads merged (the squash case, where ancestry fails). A branch just cut from
-the base is an ancestor of it too, so ancestry counts only when the local ref's tip has left the
-commit its reflog recorded at creation; an unmoved or reflog-less local ref falls through to the
-`pr:` record and otherwise refuses with `<work> has no commits of its own`, the same guard the slot
-reclaim applies (spec 2235). `--force` waives open tasks only; it never reaches
+the base, or one that only fast-forwarded to it (`git merge --ff-only`, a `cq git sync` with no
+work), is an ancestor of it too, so ancestry counts for a local ref only when its reflog holds an
+entry that moved it by commit, cherry-pick or revert; a local ref without one, or with an empty or
+expired reflog, falls through to the `pr:` record and otherwise refuses with `<work> has no commits
+of its own`. A remote-only ref has no local reflog and is judged by ancestry alone. This is the
+same guard the slot reclaim applies — both call `has_own_work` in `quenching/git/slots.py` (specs
+2235, 2241). `--force` waives open tasks only; it never reaches
 this refusal. `--outcome abandoned` has nothing to wait for and is not checked.
 
 The close is one verb, `cq specs reconcile --write`: it finds every spec of the front whose work is
