@@ -403,6 +403,72 @@ class NoWriteOpensASecondSection(_Workspace):
         self.assertEqual((code, obj["code"]), (2, "sp-write-duplicate-heading"))
 
 
+class NoWriteLeavesAFenceOpen(_Workspace):
+    """2244 — a body whose fence never closes used to be written: `parse_sections` then read
+    every later `## ` as code, and the next write of the section deleted them all."""
+
+    OPEN = "Ruim:\n\n```bash\necho hi\n"
+
+    def read_spec_text(self):
+        return self.backend.read_spec(1)[0]["text"]
+
+    def setUp(self):
+        super().setUp()
+        code, obj = self.run_section(heading="Proposal", write=True, stdin="A proposta.\n")
+        self.assertEqual(code, 0, obj)
+
+    def assert_refused(self, code, obj, before, heading="Problem"):
+        self.assertEqual((code, obj["code"], obj["heading"]),
+                         (2, "sp-write-unclosed-fence", heading))
+        self.assertEqual(obj["line"], "```bash")
+        self.assertEqual(self.read_spec_text(), before)
+        self.assertEqual(self.state("Proposal"), "filled")
+
+    def test_the_reported_sequence_is_refused_and_keeps_the_next_section(self):
+        before = self.read_spec_text()
+        code, obj = self.run_section(heading="Problem", write=True, stdin=self.OPEN)
+        self.assert_refused(code, obj, before)
+
+    def test_a_singular_stream_block_is_refused(self):
+        before = self.read_spec_text()
+        code, obj = self.run_section(heading="Problem", write=True,
+                                     stdin="## Problem\n\n" + self.OPEN)
+        self.assert_refused(code, obj, before)
+
+    def test_a_fence_that_swallows_the_next_block_is_named_not_the_set(self):
+        before = self.read_spec_text()
+        code, obj = self.run_section(heading="Problem,Proposal", write=True,
+                                     stdin="## Problem\n\n" + self.OPEN
+                                     + "\n## Proposal\n\nB\n")
+        self.assert_refused(code, obj, before)
+
+    def test_a_later_block_is_refused_too(self):
+        before = self.read_spec_text()
+        code, obj = self.run_section(heading="Problem,Proposal", write=True,
+                                     stdin="## Problem\n\nP\n\n## Proposal\n\n" + self.OPEN)
+        self.assert_refused(code, obj, before, heading="Proposal")
+
+    def test_a_scoped_handoff_body_is_refused(self):
+        before = self.read_spec_text()
+        code, obj = self.run_section(heading="Handoff", write=True, scope="global",
+                                     stdin=self.OPEN)
+        self.assert_refused(code, obj, before, heading="Handoff")
+
+    def test_a_shorter_mark_does_not_close_a_longer_fence(self):
+        before = self.read_spec_text()
+        code, obj = self.run_section(heading="Problem", write=True,
+                                     stdin="````bash\nx\n```\n")
+        self.assertEqual((code, obj["code"], obj["line"]),
+                         (2, "sp-write-unclosed-fence", "````bash"))
+        self.assertEqual(self.read_spec_text(), before)
+
+    def test_a_closed_fence_still_writes(self):
+        code, obj = self.run_section(heading="Problem", write=True,
+                                     stdin=self.OPEN + "```\n\n~~~\n## Design\n~~~\n")
+        self.assertEqual(code, 0, obj)
+        self.assertEqual(self.state("Proposal"), "filled")
+
+
 class ArchiveRefusesAnyEmptySection(_Workspace):
     spec_text = HANDOFF_SPEC
 

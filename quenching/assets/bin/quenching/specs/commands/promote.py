@@ -58,12 +58,11 @@ def merge_evidence(info: dict, root: str, remote: str = "origin", *, fetch: bool
             break
     unmoved = False
     if work_ref == f"refs/heads/{work}":
-        # A branch just cut is its base's own commit, an ancestor of the base like a merged one;
-        # its reflog's oldest entry — the creation — is what tells them apart (`_merged_holder`).
-        # A remote-only ref was pushed, and its reflog starts at a fetch that already carried work.
-        log = git("reflog", "show", "--format=%H", work_ref)
-        created = log.stdout.split()[-1:] if log is not None and log.returncode == 0 else []
-        unmoved = created in ([], [work_tip])
+        # A branch just cut, or one that only fast-forwarded, is an ancestor of the base like a
+        # merged one; only a reflog entry that committed on it tells them apart — the slot
+        # reclaim's own rule. A remote-only ref was pushed, so it is judged by ancestry alone.
+        from quenching.git.slots import has_own_work
+        unmoved = not has_own_work(root, work)
     base_ref = None
     for ref in (f"refs/remotes/{remote}/{base}", f"refs/heads/{base}"):
         resolved = git("rev-parse", "--verify", f"{ref}^{{commit}}")
