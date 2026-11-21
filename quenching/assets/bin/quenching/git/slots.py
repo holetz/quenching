@@ -353,12 +353,47 @@ def acquire(args) -> int:
     return 0 if payload["ok"] else FINDINGS
 
 
+COLLECTED = (".quenching/codex", ".quenching/handoff")
+
+
+def _collected(entry: str) -> bool:
+    """An ignored entry `release` carries to the primary checkout instead of refusing on."""
+    entry = entry.replace(os.sep, "/")
+    return any(entry == c or entry.startswith(c + "/") for c in COLLECTED)
+
+
+def _move_handoffs(path: str, primary: str) -> list[dict]:
+    """Move every file under the slot's `.quenching/handoff/` to the same relative place in the
+    primary checkout. A name already taken there gets `-<slot>-<n>` before its extension: a
+    handoff is never overwritten and never discarded."""
+    source = os.path.join(path, ".quenching", "handoff")
+    if not os.path.isdir(source) or _is_link(source):
+        return []
+    target_root = os.path.join(primary, ".quenching", "handoff")
+    moved = []
+    for root, _dirs, names in os.walk(source):
+        for name in sorted(names):
+            rel = os.path.relpath(os.path.join(root, name), source)
+            target = os.path.join(target_root, rel)
+            stem, ext = os.path.splitext(target)
+            n = 1
+            while os.path.lexists(target):
+                target = f"{stem}-{os.path.basename(path)}-{n}{ext}"
+                n += 1
+            os.makedirs(os.path.dirname(target), exist_ok=True)
+            shutil.move(os.path.join(root, name), target)
+            moved.append({"from": os.path.join(root, name), "to": target})
+    shutil.rmtree(source)
+    return moved
+
+
 def release(args) -> int:
     """Detach a clean slot at the remote base and unlock it; `branch -d` its branch when merged.
 
     A dirty tree, or ignored content no `shared.regenerablePaths` entry covers, keeps the slot
     held (exit 1): nothing of one spec may leak into the next, and nothing is committed or
-    discarded to free it."""
+    discarded to free it. `.quenching/codex/` and `.quenching/handoff/` are carried to the
+    primary checkout instead."""
     cwd = os.getcwd()
     view = survey(cwd)
     want = os.path.realpath(args.path) if args.path else None
@@ -381,7 +416,7 @@ def release(args) -> int:
         return refuse({"code": "git-worktree-release-status-failed",
                        "message": f"git status failed in {path}"}, args.json)
     payload = {"ok": False, "path": path, "slot": slot["n"], "branch": branch,
-               "released": False, "branchDeleted": False, "archived": None}
+               "released": False, "branchDeleted": False, "archived": None, "handoff": []}
     if dirty:
         payload["message"] = f"{path} has uncommitted changes; the slot stays held"
         emit(args.json, payload, payload["message"])
@@ -391,8 +426,7 @@ def release(args) -> int:
         return refuse({"code": "git-worktree-release-status-failed",
                        "message": f"git status failed in {path}"}, args.json)
     rules = declared_regenerable(load_config(view["primary"]))
-    left = [e for e in undeclared(path, ignored, rules)
-            if not e.replace(os.sep, "/").startswith(".quenching/codex")]
+    left = [e for e in undeclared(path, ignored, rules) if not _collected(e)]
     if left:
         payload.update(ignored=left, message=f"{path} holds ignored files no "
                        f"shared.regenerablePaths entry covers: {', '.join(left)}; the slot stays held")
@@ -412,6 +446,7 @@ def release(args) -> int:
         os.makedirs(os.path.dirname(target), exist_ok=True)
         shutil.move(source, target)
         payload["archived"] = target
+    payload["handoff"] = _move_handoffs(path, view["primary"])
     code, _out, err = _git_run(path, *SAFE, "switch", "--detach", base_sha)
     if code != 0:
         payload["message"] = f"git switch --detach failed in {path}: {err.strip()}"
