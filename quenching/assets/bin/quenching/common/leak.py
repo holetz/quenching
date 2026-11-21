@@ -248,13 +248,16 @@ def scan_staged(root: str, pats: dict[str, re.Pattern[str]]) -> list[Finding]:
 
 def _commits_to_push(root: str, local_sha: str, remote_sha: str,
                      remote: str | None = None) -> list[str]:
-    """The commits a push publishes; a new ref publishes what the destination's remote-tracking
-    refs do not have yet. Without the destination's name every commit of the ref is judged: a
-    commit already on another remote may still be new to this one."""
+    """The commits a push publishes: what the destination's remote-tracking refs and the ref's old
+    tip do not have yet, so a merge of an already published base is not judged again. Without the
+    destination's name only the old tip is excluded, and a new ref is judged whole: a commit
+    already on another remote may still be new to this one."""
     if local_sha == ZERO_SHA:
         return []
     if remote_sha != ZERO_SHA:
-        revs = [f"{remote_sha}..{local_sha}"]
+        revs = [local_sha, "--not", remote_sha]
+        if remote:
+            revs.append(f"--remotes={remote}")
     elif remote:
         revs = [local_sha, "--not", f"--remotes={remote}"]
     else:
