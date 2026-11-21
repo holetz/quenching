@@ -3,14 +3,20 @@ primary checkout, `cq git stale` reports the held slot as `kind: slot` only with
 evidence in favour, and `cq git prune --slot` releases it against the approved tip and id."""
 from __future__ import annotations
 
+import contextlib
+import io
+import json
 import os
 import pathlib
 import unittest
+from types import SimpleNamespace
 from unittest import mock
 
 import _paths  # noqa: F401  — must precede the `quenching` import; see its docstring
 from quenching.git import slots
 from quenching.git.ignored import declared_regenerable
+from quenching.git.prune import cmd_prune
+from quenching.git.stale import entry_id, stale_report
 from test_git_worktree_slots import SlotRepo, _git
 
 
@@ -127,8 +133,6 @@ class Evidence(ReclaimRepo):
 
 class StaleReportsHeldSlots(ReclaimRepo):
     def report(self, phases):
-        from quenching.git.stale import stale_report
-
         with mock.patch("quenching.git.stale._open_pr_heads", return_value=set()), \
                 mock.patch.object(slots, "spec_phases", return_value=phases), \
                 mock.patch.object(slots, "processes_in", return_value=[]):
@@ -151,6 +155,51 @@ class StaleReportsHeldSlots(ReclaimRepo):
         self.assertFalse({done, live} & worktree_refs)
         group = next(g for g in report["groups"] if g["kind"] == "slot")
         self.assertEqual(group["ids"], [rows[done]["id"]])
+
+
+class PruneReleasesTheSlot(ReclaimRepo):
+    def prune(self, phases, **kw):
+        args = SimpleNamespace(branch=None, worktree=None, remote_branch=None, slot=None,
+                               remote="origin", expect_tip=None, id=None,
+                               confirm_inactive=False, json=True)
+        vars(args).update(kw)
+        buf = io.StringIO()
+        with mock.patch("quenching.git.stale._open_pr_heads", return_value=set()), \
+                mock.patch.object(slots, "spec_phases", return_value=phases), \
+                mock.patch.object(slots, "processes_in", return_value=[]), \
+                contextlib.redirect_stdout(buf), contextlib.redirect_stderr(io.StringIO()):
+            code = cmd_prune(args)
+        return code, json.loads(buf.getvalue())
+
+    def approved(self, path):
+        real = os.path.realpath(path)
+        return {"slot": path, "expect_tip": _git(path, "rev-parse", "HEAD").strip(),
+                "id": entry_id("slot", real), "confirm_inactive": True}
+
+    def state(self, path):
+        return next(s["state"] for s in slots.survey(self.main)["slots"] if s["path"] == path)
+
+    def test_an_approved_candidate_is_released_and_its_handoff_carried(self):
+        path = self.held("7")
+        self.handoff(path, "next.md", "h\n")
+        code, out = self.prune({"7": "archive"}, **self.approved(path))
+        self.assertEqual(code, 0, out)
+        self.assertTrue(out["released"])
+        self.assertEqual(self.state(path), "free")
+        self.assertTrue(pathlib.Path(self.main, ".quenching", "handoff", "next.md").exists())
+
+    def test_every_missing_approval_is_a_refusal_and_the_slot_stays_held(self):
+        path = self.held("7")
+        good = self.approved(path)
+        for change, code in (({"confirm_inactive": False}, "git-prune-inactivity-unconfirmed"),
+                             ({"expect_tip": None}, "git-prune-tip-required"),
+                             ({"expect_tip": "0" * 40}, "git-prune-tip-changed"),
+                             ({"id": "slot:000000000000"}, "git-prune-id-mismatch")):
+            got, out = self.prune({"7": "archive"}, **{**good, **change})
+            self.assertEqual((got, out["code"]), (2, code))
+        got, out = self.prune({"7": "plans"}, **good)
+        self.assertEqual((got, out["code"]), (2, "git-prune-not-reported"))
+        self.assertEqual(self.state(path), "held")
 
 
 if __name__ == "__main__":
