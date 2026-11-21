@@ -359,9 +359,14 @@ def run_listing(argv: list[str]) -> int:
     _declare_listing(parser)
     args = parser.parse_args(argv)
 
+    try:
+        cfg = _load_config(_config_dir(args.root))
+    except ConfigError as exc:
+        return refuse({"code": "config-unreadable", "message": str(exc)}, args.json)
     bundle = _rooted(args.root, args.bundle)
     try:
-        report = regenerate_listing(bundle, write=args.write)
+        report = regenerate_listing(bundle, write=args.write,
+                                    ignore_globs=tuple(cfg.get("ignoreGlobs") or ()))
     except ValueError as exc:
         message = str(exc)
         print(json.dumps({"ok": False, "code": "listing-no-zone", "message": message})

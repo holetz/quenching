@@ -21,6 +21,7 @@ from __future__ import annotations
 import os
 import re
 
+from quenching.knowledge.corpus import is_private_name
 from quenching.knowledge.schema import ASSET_DIRS, EXEMPT
 from quenching.knowledge.site_source import PUBLISHED_HOMES
 
@@ -88,7 +89,8 @@ def _entries(bundle_root: str, rel_dir: str) -> list:
     """One directory's nav entries: its own `index.md` first, then subsections, then pages.
 
     `assets/` and the harness pointers are excluded: the first holds no pages the reader wants a
-    sidebar row for, the second is agent-facing. The staged-source builder decides which non-page
+    sidebar row for, the second is agent-facing. A private (`.`/`_`) name is skipped too, as the
+    staged source skips it, so no row points at a page the site never carries. The staged-source builder decides which non-page
     assets are copied; these paths simply carry no nav line.
     """
     abs_dir = os.path.join(bundle_root, rel_dir) if rel_dir else bundle_root
@@ -101,7 +103,7 @@ def _entries(bundle_root: str, rel_dir: str) -> list:
     if os.path.isfile(os.path.join(bundle_root, index_rel)):
         out.append(index_rel)
     for name in names:
-        if name.startswith(".") or name in ASSET_DIRS or name in EXEMPT:
+        if is_private_name(name) or name in ASSET_DIRS or name in EXEMPT:
             continue
         child_rel = f"{rel_dir}/{name}" if rel_dir else name
         if os.path.isdir(os.path.join(abs_dir, name)):
