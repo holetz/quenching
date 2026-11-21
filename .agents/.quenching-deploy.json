@@ -155,7 +155,7 @@
     ".agents/quenching/assets/bin/quenching/mcp/catalog.py": "8fb450df2d245802e1b259cfddfffff2a704708751c35438a15d291fa8be3b2a",
     ".agents/quenching/assets/bin/quenching/mcp/cli.py": "168d60922494389e5c02eb624e6178d33ab76f73125b67521e010d08f5e43b55",
     ".agents/quenching/assets/bin/quenching/mcp/resources.py": "61dc6effc7117547fbde0ccc1d8e7796448c59499f976e9968bf0df466bf51d1",
-    ".agents/quenching/assets/bin/quenching/mcp/server.py": "70c057a885a1e83859ab60d2723516f675c6db5c29748116359062e46dc6617b",
+    ".agents/quenching/assets/bin/quenching/mcp/server.py": "43c7294303fc156b7b33c08a9dc97fe489c2f950cceb96366d45de34c5942c44",
     ".agents/quenching/assets/bin/quenching/opensource/__init__.py": "306ff4685817302924fc661ec47ce59ca789bbf3a14df2fcb9b355a9dbcc94bb",
     ".agents/quenching/assets/bin/quenching/opensource/aggregate.py": "5612dda0fa57df25ef49f6ff8870a6e22d8042e34ed2da043ef1ae6c2aadc678",
     ".agents/quenching/assets/bin/quenching/opensource/apply.py": "2adb45998f67e77662ed90d8c58f82a46650972e15918322098bb0cc553a9bd8",

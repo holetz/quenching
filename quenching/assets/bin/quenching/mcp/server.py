@@ -149,13 +149,21 @@ def handle(message, root: str, session: Session | None, surface):
         return _error(message.get("id") if isinstance(message, dict) else None,
                       -32600, "invalid request")
     method, request_id = message["method"], message.get("id")
-    params = message.get("params") or {}
+    params = message.get("params")
     if "id" not in message:
         return None
+    if params is None:
+        params = {}
+    elif not isinstance(params, dict):
+        return _error(request_id, BAD_PARAMS, "params must be an object")
     if method == "initialize":
         asked = params.get("protocolVersion")
-        session.elicitation = isinstance((params.get("capabilities") or {}).get("elicitation"),
-                                         dict)
+        capabilities = params.get("capabilities")
+        if capabilities is None:
+            capabilities = {}
+        elif not isinstance(capabilities, dict):
+            return _error(request_id, BAD_PARAMS, "capabilities must be an object")
+        session.elicitation = isinstance(capabilities.get("elicitation"), dict)
         return _result(request_id, {
             "protocolVersion": asked if asked in PROTOCOL_VERSIONS else PROTOCOL_VERSIONS[0],
             "capabilities": {"tools": {"listChanged": False},
@@ -222,9 +230,15 @@ def serve(root: str, surface, stdin=None, stdout=None) -> int:
         if not line:
             continue
         try:
-            reply = handle(json.loads(line), root, session, surface)
+            message = json.loads(line)
         except ValueError:
-            reply = _error(None, -32700, "parse error")
+            _emit(stdout, _error(None, -32700, "parse error"))
+            continue
+        try:
+            reply = handle(message, root, session, surface)
+        except Exception as exc:  # one request never takes the whole stdio session down
+            request_id = message.get("id") if isinstance(message, dict) else None
+            reply = _error(request_id, -32603, f"internal error: {type(exc).__name__}")
         if reply is not None:
             _emit(stdout, reply)
     return OK
