@@ -286,8 +286,9 @@ def _job(lines: list[str], name: str, kind: str) -> Job:
         or kind == "gitlab-ci" and any(re.match(r"^\s*(?:image|before_script):", line)
                                         for line in lines)
         or kind == "azure-pipelines" and any(
-            re.search(r"\btask:\s*(?:UsePythonVersion|UseDotNet|NodeTool)@", line)
-            or re.match(r"^\s*container:", line) for line in lines),
+            re.search(r"\btask:\s*(?:UsePythonVersion|UseDotNet|NodeTool)@", line) for line in lines)
+        or kind in {"azure-pipelines", "github-actions"} and any(
+            re.match(r"^\s*container:", line) for line in lines),
         runtimes=tuple(sorted(set(runtimes))),
         stage=stage,
         release=release,

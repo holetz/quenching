@@ -356,6 +356,21 @@ class DeliveryResults(unittest.TestCase):
                              {item["code"] for item in payload["findings"]}, name)
             self.assertEqual(0, code, name)
 
+    def test_github_job_container_is_setup(self):
+        for container in ("    container: python:3.12-slim\n",
+                          "    container:\n      image: python:3.12-slim\n"):
+            payload, code = self._run({
+                ".github/workflows/ci.yml": (
+                    "on: push\njobs:\n  test:\n    runs-on: ubuntu-latest\n" + container
+                    + "    steps:\n      - uses: actions/checkout@v4\n"
+                    "      - run: python -m unittest\n"),
+            })
+            job = payload["inventory"]["workflows"][0]["jobDetails"][0]
+            self.assertTrue(job["setup"], container)
+            self.assertNotIn("delivery-setup-missing",
+                             {item["code"] for item in payload["findings"]}, container)
+            self.assertEqual(0, code, container)
+
     def test_matrix_setup_uv_and_bash_only_jobs_raise_no_false_errors(self):
         payload, code = self._run({
             ".github/workflows/ci.yml": (
