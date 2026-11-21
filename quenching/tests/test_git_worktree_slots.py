@@ -177,6 +177,46 @@ class TheCeiling(SlotRepo):
         self.assertEqual(code, 0, out)
         self.assertEqual([f["branch"] for f in out["freed"]], ["plan/1-x"])
 
+    def _leave_handoff(self, path, name, text):
+        info = _git(path, "rev-parse", "--path-format=absolute", "--git-path", "info/exclude").strip()
+        with open(info, "a", encoding="utf-8") as fh:
+            fh.write(".quenching/\n")
+        target = pathlib.Path(path, ".quenching", "handoff", name)
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_text(text, encoding="utf-8")
+
+    def test_a_reused_merged_holder_hands_its_handoff_to_the_primary_checkout(self):
+        for n in range(1, 4):
+            _code, got = self.run_verb("acquire", branch=f"plan/{n}-x")
+            if n == 1:
+                first = got["path"]
+                _git(first, "commit", "-q", "--allow-empty", "-m", "work")
+        self._leave_handoff(first, "next.md", "from spec 1\n")
+        _git(self.main, "push", "-q", "origin", "plan/1-x:main")
+        code, out = self.run_verb("acquire", branch="plan/9-new")
+        self.assertEqual(code, 0, out)
+        self.assertEqual(out["path"], first)
+        moved = pathlib.Path(self.main, ".quenching", "handoff", "next.md")
+        self.assertEqual(moved.read_text(encoding="utf-8"), "from spec 1\n")
+        self.assertEqual([h["to"] for h in out["handoff"]], [str(moved)])
+        self.assertFalse(pathlib.Path(first, ".quenching", "handoff").exists())
+
+    def test_a_reused_free_slot_hands_its_handoff_over_without_overwriting(self):
+        _code, got = self.run_verb("acquire", branch="plan/1-x")
+        self.assertEqual(self.run_verb("release", path=got["path"])[0], 0)
+        self._leave_handoff(got["path"], "next.md", "slot\n")
+        kept = pathlib.Path(self.main, ".quenching", "handoff", "next.md")
+        kept.parent.mkdir(parents=True)
+        kept.write_text("primary\n", encoding="utf-8")
+        code, out = self.run_verb("acquire", branch="plan/2-y")
+        self.assertEqual(code, 0, out)
+        self.assertEqual(out["path"], got["path"])
+        self.assertEqual(kept.read_text(encoding="utf-8"), "primary\n")
+        target = pathlib.Path(out["handoff"][0]["to"])
+        self.assertNotEqual(target, kept)
+        self.assertEqual(target.read_text(encoding="utf-8"), "slot\n")
+        self.assertFalse(pathlib.Path(got["path"], ".quenching", "handoff").exists())
+
     def test_wait_times_out_to_needs_human(self):
         for n in range(1, 4):
             self.run_verb("acquire", branch=f"plan/{n}-x")
