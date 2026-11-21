@@ -338,6 +338,10 @@ def _azure_extra_triggers(lines: list[str]) -> list[str]:
 
 def _triggers(lines: list[str], kind: str) -> tuple[str, ...]:
     names = _trigger_names(lines, kind)
+    # An absent trigger key is the platform's default: run on every push.
+    if (kind == "azure-pipelines" and not _block(lines, "trigger")
+            or kind == "gitlab-ci" and not (_block(lines, "workflow") or _block(lines, "rules"))):
+        names.append("push")
     if kind == "azure-pipelines":
         names += _azure_extra_triggers(lines)
     return tuple(sorted(set(name for name in names if name.lower() != "none")))

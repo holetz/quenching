@@ -343,6 +343,19 @@ class DeliveryResults(unittest.TestCase):
                              {item["code"] for item in payload["findings"]}, key)
             self.assertEqual(0, code, key)
 
+    def test_absent_trigger_key_is_the_platform_default_push(self):
+        cases = {
+            "azure": ("azure-pipelines.yml",
+                      "pool:\n  vmImage: ubuntu-latest\nsteps:\n- checkout: self\n- script: echo ok\n"),
+            "gitlab": (".gitlab-ci.yml", "test:\n  script:\n    - echo ok\n"),
+        }
+        for name, (path, body) in cases.items():
+            payload, code = self._run({path: body})
+            self.assertEqual(["push"], payload["inventory"]["workflows"][0]["triggers"], name)
+            self.assertNotIn("delivery-trigger-unreachable",
+                             {item["code"] for item in payload["findings"]}, name)
+            self.assertEqual(0, code, name)
+
     def test_matrix_setup_uv_and_bash_only_jobs_raise_no_false_errors(self):
         payload, code = self._run({
             ".github/workflows/ci.yml": (
