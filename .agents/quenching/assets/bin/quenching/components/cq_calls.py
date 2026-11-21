@@ -18,6 +18,10 @@ never checked, because prose abbreviates them.
 THE GLOBAL OPTION BEFORE THE PILLAR IS READ. `cq --root "$TARGET_ROOT" proof doctor` is the form a
 third of the delivery commands use (measured on the corpus when this module was written), so the
 extractor skips the top-level parser's `--root <value>` before it reads the pillar.
+
+AN UNKNOWN PILLAR IS AN UNKNOWN VERB OF `cq`. A first word that is neither a pillar nor one of the
+commands the launcher answers before its parser (`deploy`, `doctor`, `modules`) is reported, never
+skipped: `cq session context` fails at argparse just like `cq specs shw`.
 """
 from __future__ import annotations
 
@@ -42,6 +46,8 @@ _SPLIT_RE = re.compile(r"\s*(?:&&|\|\||;|\s\|\s)\s*")
 _INLINE_RE = re.compile(r"`([^`\n]+)`")
 _BIN_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 _WRAPPERS = ("python3", "python", "sudo", "exec")
+# Answered by `assets/bin/cq` `main()` before its pillar parser, so they are no pillar of `PILLARS`.
+_LAUNCHER_COMMANDS = frozenset({"deploy", "doctor", "modules"})
 
 
 class Call(NamedTuple):
@@ -241,7 +247,12 @@ def check_cq_calls(body: str) -> list[CqIssue]:
                 tokens = []
                 break
             tokens = tokens[1 if "=" in tokens[0] else 2:]
-        if not tokens or tokens[0] not in pillars:
+        if not tokens or tokens[0] in _LAUNCHER_COMMANDS or _is_placeholder(tokens[0]):
+            continue
+        if tokens[0] not in pillars:
+            known = ", ".join(sorted({*pillars, *_LAUNCHER_COMMANDS}))
+            issues.append(CqIssue(call.line, "unknown-verb", call.text,
+                                  f"`{tokens[0]}` is not a verb of `cq` (known: {known})"))
             continue
         issues.extend(_check(_pillar_parser(tokens[0]), tokens[1:], call, f"cq {tokens[0]}"))
     return issues

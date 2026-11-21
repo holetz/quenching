@@ -28,6 +28,7 @@ import os
 import re
 
 from quenching.common.frontmatter import parse_frontmatter
+from quenching.knowledge.corpus import _is_ignored_path, _is_skipped_dir
 from quenching.knowledge.resource import _is_uri
 from quenching.knowledge.schema import EXEMPT, GLOSSARY_REL, LINK_RE, RESERVED
 
@@ -286,10 +287,17 @@ def validate_generated_listing(bundle_root: str, corpus: dict) -> list[tuple[str
 _ROW_CELL_RE = re.compile(r"^(\|[^|\n]*\[[^\]]*\]\(([^)\n]+)\)[^|\n]*\|)" + _CELL + r"\|?\s*$")
 
 
-def _listed_docs(subject_root: str, root: str) -> dict[str, str]:
-    """Every doc the zone is owed a row for -> its squashed frontmatter `description`."""
+def _listed_docs(subject_root: str, root: str,
+                 ignore_globs: tuple[str, ...] = ()) -> dict[str, str]:
+    """Every doc the zone is owed a row for -> its squashed frontmatter `description`.
+
+    Directories are pruned exactly as `_build_corpus` prunes them, so the listing owes a row to
+    the same docs `validate_generated_listing` reads — never to a private `_drafts/` page."""
     docs: dict[str, str] = {}
-    for dirpath, _dirs, files in os.walk(subject_root):
+    for dirpath, dirs, files in os.walk(subject_root):
+        rel_dir = os.path.relpath(dirpath, root).replace(os.sep, "/")
+        dirs[:] = [d for d in dirs
+                   if not _is_skipped_dir(d) and not _is_ignored_path(f"{rel_dir}/{d}", ignore_globs)]
         for fn in files:
             if not fn.endswith(".md") or fn in RESERVED or fn in EXEMPT or fn == "README.md":
                 continue
@@ -300,13 +308,15 @@ def _listed_docs(subject_root: str, root: str) -> dict[str, str]:
     return docs
 
 
-def regenerate_listing(bundle_root: str, write: bool = False) -> dict:
+def regenerate_listing(bundle_root: str, write: bool = False,
+                       ignore_globs: tuple[str, ...] = ()) -> dict:
     """Rebuild the rows of the GENERATED zone of `standards/index.md` from the docs on disk.
 
     Existing rows keep their order and subfolder headings: a stale description is rewritten, a row
     whose doc is gone is dropped, a doc no row links is appended to its `### <subfolder>/` table
     (the section is created when absent). Prose outside the zone is never touched. Raises
-    `ValueError` when the listing or its zone is absent — a zone is never invented.
+    `ValueError` when the listing or its zone is absent — a zone is never invented. `ignore_globs`
+    is `okfValidate.ignoreGlobs`, pruned here as `validate` prunes it.
     """
     root = os.path.abspath(bundle_root)
     listing = os.path.join(root, *GENERATED_LISTING_REL.split("/"))
@@ -319,7 +329,7 @@ def regenerate_listing(bundle_root: str, write: bool = False) -> dict:
         raise ValueError(f"{GENERATED_LISTING_REL} carries no BEGIN/END GENERATED zone")
 
     subject_root = os.path.dirname(listing)
-    docs = _listed_docs(subject_root, root)
+    docs = _listed_docs(subject_root, root, ignore_globs)
     lines = zone.group("zone").split("\n")
     out: list[str] = []
     seen: set[str] = set()
