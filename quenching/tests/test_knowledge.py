@@ -184,6 +184,22 @@ class NavRefusalsAndConfigTolerance(unittest.TestCase):
         self.assertEqual(code, 2)
         self.assertEqual(json.loads(out)["code"], "nav-config-unreadable")
 
+    def test_unclosed_nav_is_a_refusal_in_check_and_write(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            os.mkdir(os.path.join(tmp, "docs"))
+            pathlib.Path(tmp, "docs", "index.md").write_text("# Home\n")
+            config = pathlib.Path(tmp, "zensical.toml")
+            raw = b'[project]\nnav = [\n  "index.md",\n'
+            config.write_bytes(raw)
+            for mode in ("--check", "--write"):
+                with self.subTest(mode=mode):
+                    out = io.StringIO()
+                    with contextlib.redirect_stdout(out), contextlib.redirect_stderr(io.StringIO()):
+                        code = knowledge_cli.main(["nav", "--root", tmp, mode, "--json"])
+                    self.assertEqual(code, 2)
+                    self.assertEqual(json.loads(out.getvalue())["code"], "nav-unclosed")
+                    self.assertEqual(config.read_bytes(), raw)
+
     def _validate_with_config(self, raw: bytes):
         with tempfile.TemporaryDirectory() as tmp:
             hooks = pathlib.Path(tmp, ".claude", "hooks")

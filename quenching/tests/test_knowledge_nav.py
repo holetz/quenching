@@ -5,7 +5,7 @@ import unittest
 from pathlib import Path
 
 import _paths  # noqa: F401
-from quenching.knowledge.nav import generate, kept_titles, replace_nav
+from quenching.knowledge.nav import NavUnclosedError, generate, kept_titles, replace_nav
 
 
 CONFIG = """[project]
@@ -33,6 +33,11 @@ class ReplaceNavTests(unittest.TestCase):
     def test_literal_string_and_escaped_quote_are_skipped(self) -> None:
         config = "nav = [\n  { 'a [' = [\n    \"b\\\" [/index.md\",\n  ] },\n]\nrest = 1\n"
         self.assertEqual(replace_nav(config, "nav = []"), "nav = []\nrest = 1\n")
+
+    def test_an_unclosed_nav_array_raises(self) -> None:
+        config = '[project]\nnav = [\n  "index.md",\n'
+        with self.assertRaises(NavUnclosedError):
+            replace_nav(config, 'nav = [\n  "index.md",\n]')
 
     def test_kept_titles_keeps_a_bracketed_title(self) -> None:
         self.assertEqual(kept_titles(CONFIG), {"how-to": "Intervalos [0, 1)"})
