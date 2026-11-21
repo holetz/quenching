@@ -391,7 +391,7 @@
     ".agents/quenching/references/specs-develop/spec-driven.md": "3b6f90e372b370aa94e2fb4047ec64ee240b22cff526b8123f4a83a179dd4645",
     ".agents/quenching/references/specs-develop/specs-surface.md": "672aa1518b2e4f4de27521004b05471ff6776f8e99f3d892fbb0157d4e4899d4",
     ".agents/quenching/references/specs-execute/execution-cadence.md": "8b9a3494083f998dd409d6590fd2255c8b31755687566fc9c80bee4f9dbd1da3",
-    ".agents/quenching/references/specs-execute/execution-delegation.md": "a6c3f949c3aae4f3c5d9d50a3fb2940e8bd30c88de30673d82c1e80446d22f54",
+    ".agents/quenching/references/specs-execute/execution-delegation.md": "29f0a896551d61e863960390bb58b7c63673df150239bc4828b27c31aff48d6c",
     ".agents/quenching/references/specs-execute/execution-tooling.md": "81c785ab334fda5b4a2cda3b33e728cc86158f7aacd30e65100c62cdaebb64fe",
     ".agents/quenching/references/specs-execute/execution.md": "e7176b7c2265b3216fcb5df39253e41c48d73d0587fbae1a515ba13e6c80ea98",
     ".agents/skills/quenching-align/SKILL.md": "f260e1bedfb955e750383578051f2ef404a0f69b94a4e7e9fecb05519df77299",
