@@ -141,6 +141,23 @@ class Base(RepoCase):
              "refs/remotes/origin/develop")
         self.assertEqual(_origin_head_branch(self.repo), "develop")
 
+    def test_a_default_branch_with_a_slash_is_returned_whole(self):
+        _run(self.repo, "update-ref", "refs/remotes/origin/team/main", "HEAD")
+        _run(self.repo, "symbolic-ref", "refs/remotes/origin/HEAD",
+             "refs/remotes/origin/team/main")
+        self.assertEqual(_origin_head_branch(self.repo), "team/main")
+        self.assertEqual(_cq_json(self.repo, "base")["base"], "team/main")
+
+    def test_a_host_default_with_a_slash_is_compared_whole(self):
+        result = SimpleNamespace(returncode=0, stdout="team/main\n")
+        with mock.patch.object(subprocess, "run", return_value=result):
+            self.assertTrue(_is_host_default(self.repo, "github", "team/main"))
+            self.assertFalse(_is_host_default(self.repo, "github", "main"))
+        with mock.patch("quenching.git.base._az_run",
+                        return_value=(0, "refs/heads/team/main\n", "")):
+            self.assertTrue(_is_host_default(self.repo, "azure-boards", "team/main"))
+            self.assertFalse(_is_host_default(self.repo, "azure-boards", "main"))
+
     def test_is_host_default_is_unknown_for_an_unknown_backend(self):
         self.assertIsNone(_is_host_default(self.repo, "unknown-provider", "main"))
 
