@@ -58,7 +58,7 @@
     ".agents/quenching/assets/bin/quenching/codex/__init__.py": "a77e6af6e025f79661a55ba7a2620c8db35b261d6312e3d1c95fa2d647ee17c6",
     ".agents/quenching/assets/bin/quenching/codex/config.py": "0caa5fc2c9ec5f3ff1073c2a27a94f508763a530a2f45df18d98258f294ebd15",
     ".agents/quenching/assets/bin/quenching/codex/eligible.py": "ad9a19bb2e30e77a794a23ebc63822398041e869839176e87c4aabc4e555e64c",
-    ".agents/quenching/assets/bin/quenching/codex/guard.py": "a4ea87e56269716d2a722bb7ee4b551c49015faa1e599c45ef5ed8e9f1a53561",
+    ".agents/quenching/assets/bin/quenching/codex/guard.py": "a749fe7253552405f533fc269cfd6f7bb4959a378353d3f29c8bf39fb0f7a45c",
     ".agents/quenching/assets/bin/quenching/codex/implement.py": "03afb486a7d44426197cda5d2960505e87f283efab6fb40e0892fdf1146e16d1",
     ".agents/quenching/assets/bin/quenching/codex/probe.py": "0afe4da7a47fe97f4554994047acf575d7f3df5c445f6b435dcb2e6409c4324d",
     ".agents/quenching/assets/bin/quenching/common/config.py": "65644380a957a1711bb763427b6456629c090993037c72599879a466c2382a13",

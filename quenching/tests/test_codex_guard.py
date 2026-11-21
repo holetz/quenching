@@ -18,7 +18,7 @@ try:
 except ModuleNotFoundError:  # package-qualified unittest invocation from the repository root
     sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
     import _paths  # noqa: F401
-from quenching.codex.guard import GuardError, base_moves, base_state
+from quenching.codex.guard import GuardError, base_moves, base_state, touched
 
 ENV = {**os.environ, "GIT_AUTHOR_NAME": "t", "GIT_AUTHOR_EMAIL": "t@t",
        "GIT_COMMITTER_NAME": "t", "GIT_COMMITTER_EMAIL": "t@t", "GIT_CONFIG_GLOBAL": os.devnull}
@@ -98,6 +98,13 @@ class BaseGuard(unittest.TestCase):
     def test_unreadable_git_fails_closed(self):
         with self.assertRaises(GuardError):
             base_state(os.path.join(self.base, "missing"))
+
+    def test_a_failing_git_status_fails_closed(self):
+        pathlib.Path(self.base, "stray.py").write_text("x")
+        self.assertEqual(touched(self.base), {"stray.py"})
+        pathlib.Path(self.base, ".git", "index").write_bytes(b"DIRC")
+        with self.assertRaises(GuardError):
+            touched(self.base)
 
 
 if __name__ == "__main__":
