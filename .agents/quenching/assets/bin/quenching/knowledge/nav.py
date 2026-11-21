@@ -185,6 +185,32 @@ def kept_titles(config_text: str) -> dict[str, str]:
     return {_unescape(match.group(2)): _unescape(match.group(1)) for match in _SECTION_TITLE.finditer(config_text)}
 
 
+def _bracket_delta(line: str) -> int:
+    """`[` minus `]` on one line, outside TOML basic/literal strings and comments.
+
+    A section title such as `Intervalos [0, 1)` is a string, and counting its bracket would leave
+    the nav array open forever. Single-line strings never cross a line, so no state carries over.
+    """
+    delta, quote, i = 0, "", 0
+    while i < len(line):
+        char = line[i]
+        if quote:
+            if char == "\\" and quote == '"':
+                i += 1
+            elif char == quote:
+                quote = ""
+        elif char in "\"'":
+            quote = char
+        elif char == "#":
+            break
+        elif char == "[":
+            delta += 1
+        elif char == "]":
+            delta -= 1
+        i += 1
+    return delta
+
+
 def replace_nav(config_text: str, block: str) -> str:
     """Swap the `nav = [...]` array in place, touching nothing else in the file.
 
@@ -197,7 +223,7 @@ def replace_nav(config_text: str, block: str) -> str:
         return config_text
     depth = 0
     for end in range(start, len(lines)):
-        depth += lines[end].count("[") - lines[end].count("]")
+        depth += _bracket_delta(lines[end])
         if depth == 0:
             return "".join(lines[:start]) + block + "\n" + "".join(lines[end + 1:])
     return config_text

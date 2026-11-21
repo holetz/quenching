@@ -143,7 +143,7 @@
     ".agents/quenching/assets/bin/quenching/knowledge/cli.py": "a89ef3cb2bd26c5b9504c3c77dfdfbc5b6e7e59c50dc097add2e97e53fff6fac",
     ".agents/quenching/assets/bin/quenching/knowledge/config.py": "acf4c8be0d468050a2de89d9d2004f9e70c14880f0a3f036fba2a968c00ec3e6",
     ".agents/quenching/assets/bin/quenching/knowledge/corpus.py": "5f323d954b19773eac0c4bc7fca7d6e36d270cfe3beb72e2e3743fe870dd3ae6",
-    ".agents/quenching/assets/bin/quenching/knowledge/nav.py": "daad7ff32cc901e76a8c50e05e62701a97ed46cbe3c943eb32f4d504ba1063a6",
+    ".agents/quenching/assets/bin/quenching/knowledge/nav.py": "9089726e484751a12ab2fdf016c6f5810db47343b8c3510fe165547671694c12",
     ".agents/quenching/assets/bin/quenching/knowledge/projection.py": "75f34f7573f4e2daed3c1c00864ba3a945a45ca796061995ccdaef3c1b370cbf",
     ".agents/quenching/assets/bin/quenching/knowledge/render.py": "7ce6ee78ee85dd2ea60fbef2dacefb27a8b167947661c76ea1fa315aa5bfbe36",
     ".agents/quenching/assets/bin/quenching/knowledge/resource.py": "a5d8f9d53d176a14e5c0c8bc42ed68bce541a0fac4bf382856d0d31c6afae26c",
