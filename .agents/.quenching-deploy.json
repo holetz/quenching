@@ -211,7 +211,7 @@
     ".agents/quenching/assets/bin/quenching/specs/chat.py": "15b6671ee3030997bbe54c50ac5e90b8b165aca9782497ad7de731c82936529b",
     ".agents/quenching/assets/bin/quenching/specs/commands/artifacts.py": "7b920d2218de27a351413c743b58d3cfe6279936e617e124b3538a3d92e81d4c",
     ".agents/quenching/assets/bin/quenching/specs/commands/cli.py": "6bcbd5574b15d1331da5cd36d489eb3411b140ce8006bdc4fc638231099691da",
-    ".agents/quenching/assets/bin/quenching/specs/commands/create.py": "c043f4f58d3baa789cdd8f381e68a87c080d1886b1727e2bbb36a9d1d86f8ed5",
+    ".agents/quenching/assets/bin/quenching/specs/commands/create.py": "7b0085ecf00071946c2eeb71c277792192a05609b85284c0bf9ba372a9d38d2c",
     ".agents/quenching/assets/bin/quenching/specs/commands/deps.py": "555c25746e91e1173c65dd859d391c595ff738aab24b8ed40b3fa9e7472c9c99",
     ".agents/quenching/assets/bin/quenching/specs/commands/doctor.py": "b9a1271c99666967bfd0d34932ad17bbbd14c0fa829a2dd639fcc4b8272b7102",
     ".agents/quenching/assets/bin/quenching/specs/commands/epic.py": "00ccdc5f83152d03b7be3ece36662d4aa149fb1174d3b2e463d998db29c44f60",
