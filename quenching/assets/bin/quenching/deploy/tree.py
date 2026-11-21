@@ -104,7 +104,9 @@ def load_modules(source: Path) -> dict:
 
 
 def normalize_modules(values: list[str] | None, manifest: dict) -> list[str]:
-    known = {module["name"] for module in manifest["modules"] if "owned" in module}
+    # Registry order, never a set's: `all` lands in the deploy manifest, compared byte for byte.
+    owned = [module["name"] for module in manifest["modules"] if "owned" in module]
+    known = set(owned)
     selected: list[str] = []
     for raw in values or ["core"]:
         token = raw.strip()
@@ -113,7 +115,7 @@ def normalize_modules(values: list[str] | None, manifest: dict) -> list[str]:
         if token == "core":
             token = CORE
         elif token == "all":
-            token = ",".join(MODULE_SHORT[name] for name in known)
+            token = ",".join(MODULE_SHORT[name] for name in owned)
         parts = []
         for part in token.split(","):
             parts += MODULE_ALIAS.get(part.strip(), part).split(",")
