@@ -18,30 +18,14 @@ margin the human kept.
 from __future__ import annotations
 
 import os
-import posixpath
 
 from quenching.codex.probe import probe
+from quenching.common.paths import repo_path
 from quenching.specs.backends import open_backend
 from quenching.specs.commands.estimate import estimate_task
 
 BYTES_PER_TOKEN = 4
 WRITTEN_KNOWLEDGE = ("docs", "knowledge")
-
-
-def strip_annotation(entry: str) -> str:
-    """`path (new)` → `path`: the one annotation that reaches this point, dropped.
-
-    `(operational)` never gets here — `eligibility` refuses the task before it reads the
-    paths, because there is nothing for Codex to write."""
-    return entry[:-len("(new)")].rstrip() if entry.endswith("(new)") else entry
-
-
-def repo_path(entry: str) -> str:
-    """`./docs/x.md (new)` → `docs/x.md`: one entry of `files:` as the repository path git reports.
-
-    Every comparison of the Codex pillar goes through here, so `./docs/x.md` and
-    `src/../docs/x.md` are refused as `docs/x.md` and `./src/a.py` matches git's `src/a.py`."""
-    return posixpath.normpath(strip_annotation(entry).replace("\\", "/")).lstrip("/")
 
 
 def task_tokens(root: str, files: list[str]) -> int:
