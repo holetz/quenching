@@ -21,11 +21,12 @@ def assign_corrections(corrections: list, ordered: list) -> tuple[dict, list]:
     tagged `after` rather than `during`, because a report that cannot tell the two apart is
     guessing and should say so.
     """
-    # A stage's windows are its executions; a command never run as a stage has one window,
-    # its whole attributed run. A conductor's window wraps every stage it called, so a turn
-    # inside both belongs to the innermost one — the latest to open, then the narrowest.
+    # A stage's windows are its executions, as a stage and run directly; a command never run
+    # as a stage has one window, its whole attributed run. A conductor's window wraps every
+    # stage it called, so a turn inside both belongs to the innermost one — the latest to
+    # open, then the narrowest.
     spans = [(lo, hi, c) for c in ordered if c.first is not None
-             for lo, hi in (c.runs or [(c.first, c.last)])]
+             for lo, hi in ((c.runs + c.direct) if c.runs else [(c.first, c.last)])]
     out, unassigned = {c.name: [] for c in ordered}, []
     for corr in corrections:
         line, hit = corr["line"], None
