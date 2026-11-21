@@ -139,7 +139,7 @@
     ".agents/quenching/assets/bin/quenching/git/stale.py": "12c94141413e0b7bef2329bb3dd97db7557d466d4f36545b6f07c03fe11efec3",
     ".agents/quenching/assets/bin/quenching/git/state.py": "986789548179bef9d5102f87f76f6402baf4f94e52e38172b4ef68e8344b7175",
     ".agents/quenching/assets/bin/quenching/git/worktree.py": "67c7075ab102e139a3f66a2f120ce0a21900ab5941dfb2a747ffce2db4037ce8",
-    ".agents/quenching/assets/bin/quenching/knowledge/checks.py": "06c9d53d83a9c7d855fdf134d0f1213f564ca5910f90aa44a5c083d7c5f9c47d",
+    ".agents/quenching/assets/bin/quenching/knowledge/checks.py": "703d285f6ed49faa860a32c90dfafbd6f41f0c829cb5e8d7347fdeb6f13be2bd",
     ".agents/quenching/assets/bin/quenching/knowledge/cli.py": "a89ef3cb2bd26c5b9504c3c77dfdfbc5b6e7e59c50dc097add2e97e53fff6fac",
     ".agents/quenching/assets/bin/quenching/knowledge/config.py": "acf4c8be0d468050a2de89d9d2004f9e70c14880f0a3f036fba2a968c00ec3e6",
     ".agents/quenching/assets/bin/quenching/knowledge/corpus.py": "5f323d954b19773eac0c4bc7fca7d6e36d270cfe3beb72e2e3743fe870dd3ae6",
