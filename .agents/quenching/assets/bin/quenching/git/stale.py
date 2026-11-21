@@ -66,22 +66,30 @@ def _gone_branches(cwd: str, protected: set[str]) -> set[str]:
 
 
 def _merged_remote_branches(cwd: str, base: str, protected: set[str],
-                            remote: str = "origin") -> list[dict]:
-    """Report fetched remote branches already reachable from ``base``.
+                            remote: str = "origin", chain: set[str] | None = None) -> list[dict]:
+    """Report fetched remote branches already reachable from ``base`` that carried work of their
+    own: the tip is off the base's first-parent chain, or the local branch of the same name has
+    commits of its own (a local fast-forward pushed through the base). A remote-tracking reflog
+    starts at a ref that already held the tip, so it proves nothing here.
 
     This is deliberately a read of remote-tracking refs. It does not fetch, prune local refs, or
     claim that the server has not changed since the last fetch; cleanup owns the later, confirmed
     delete of a selected server branch.
     """
+    if chain is None:
+        chain = _first_parent_chain(cwd, base)
     prefix = f"{remote}/"
-    out = _git(cwd, "for-each-ref", "--format=%(refname:short)",
+    out = _git(cwd, "for-each-ref", "--format=%(refname:short)|%(objectname)",
                f"refs/remotes/{remote}", "--merged", base)
     branches = []
-    for ref in out.splitlines():
+    for line in out.splitlines():
+        ref, _, tip = line.partition("|")
         if not ref.startswith(prefix):
             continue
         branch = ref[len(prefix):]
         if not branch or branch == "HEAD" or branch in protected:
+            continue
+        if tip in chain and not _has_own_commits(cwd, branch, chain):
             continue
         branches.append({"remote": remote, "branch": branch, "reasons": ["merged"]})
     return branches
@@ -435,7 +443,7 @@ def stale_report(cwd: str, remote: str = "origin") -> dict:
             reasons[b] = found
     branches = [{"branch": b, "reasons": sorted(r)} for b, r in sorted(reasons.items())]
     kept_branches = [{"branch": b, "reasons": sorted(r)} for b, r in sorted(kept.items())]
-    remote_branches = _merged_remote_branches(cwd, base, protected, remote)
+    remote_branches = _merged_remote_branches(cwd, base, protected, remote, chain)
     report = {"ok": True, "base": base, "remote": remote, "staleBranches": branches,
               "keptBranches": kept_branches,
               "prLookup": "ok" if open_prs is not None else "unavailable",

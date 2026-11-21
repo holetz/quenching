@@ -388,6 +388,21 @@ class Stale(RepoCase):
         self.assertEqual(rows, [{"remote": "origin", "branch": "remote-feature",
                                  "reasons": ["merged"]}])
 
+    def test_a_remote_branch_without_commits_of_its_own_is_not_a_candidate(self):
+        remote_repo = self._origin_with_merged_branch()
+        _merged_branch(self.repo, "merged-elsewhere")
+        _run(self.repo, "push", "-q", "origin", "main", "merged-elsewhere",
+             "main:plan/7-remote-fresh")
+        _run(self.repo, "branch", "-q", "-D", "merged-elsewhere")
+        _run(self.repo, "fetch", "-q", "origin")
+        rows = {r["branch"] for r in _merged_remote_branches(self.repo, "main", {"main"})}
+        self.assertEqual(rows, {"remote-feature", "merged-elsewhere"})
+        proc = _cq(self.repo, "prune", "--remote-branch", "plan/7-remote-fresh")
+        self.assertEqual(proc.returncode, 2, proc.stdout)
+        heads = subprocess.run(["git", "for-each-ref", "--format=%(refname)", "refs/heads"],
+                               cwd=remote_repo, capture_output=True, text=True).stdout.split()
+        self.assertIn("refs/heads/plan/7-remote-fresh", heads)
+
     def test_origin_head_and_protected_current_branch_are_not_remote_candidates(self):
         self._origin_with_merged_branch()
         rows = _merged_remote_branches(self.repo, "main", {"main", "remote-feature"})
