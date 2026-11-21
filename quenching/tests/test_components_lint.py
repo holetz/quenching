@@ -460,6 +460,13 @@ class CqCallsAgainstTheParsers(unittest.TestCase):
                 "`cq --root . doctor`\n\n`cq <pillar> --help`\n\n`cq --version`\n")
         self.assertEqual(self._codes(body), [])
 
+    def test_modules_after_a_global_option_is_an_unknown_verb(self):
+        for body in ("Run `cq --root /tmp modules --json`.", "`cq --root=. modules`"):
+            found = _cq_call_findings(body, self.WHERE)
+            self.assertEqual([f["code"] for f in found], ["sk-cq-unknown-verb"], body)
+            self.assertIn("first word of `cq`", found[0]["message"], body)
+        self.assertEqual(self._codes("`cq --root . deploy --target . --write`\n\n`cq modules --json`\n"), [])
+
     def test_a_correct_call_is_clean_inline_and_fenced(self):
         body = "`cq specs show --spec <id> --json`\n\n```bash\ncq --root . specs status --spec 1\n```\n"
         self.assertEqual(self._codes(body), [])
