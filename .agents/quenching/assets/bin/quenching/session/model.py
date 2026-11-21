@@ -23,7 +23,8 @@ class Command:
     """One command, aggregated across every turn attributed to it."""
 
     __slots__ = ("name", "plugin", "invocations", "tools", "first", "last",
-                 "first_ts", "last_ts", "reads", "touches", "shell", "closed", "may_include")
+                 "first_ts", "last_ts", "reads", "touches", "shell", "closed", "may_include",
+                 "runs")
 
     def __init__(self, name: str):
         self.name = name
@@ -38,6 +39,9 @@ class Command:
         # True until proven otherwise: only a stage whose caller never resumed is unclosed.
         self.closed = True
         self.may_include = None
+        # One (first, last) window per `Skill` invocation, filled by `close_attribution`;
+        # empty for a command never invoked as a stage.
+        self.runs = []
 
     def touch(self, index: int, ts):
         if self.first is None:
@@ -69,6 +73,7 @@ class Command:
                 "lastTimestamp": self.last_ts,
                 "closed": self.closed,
                 "mayIncludeTurnsFrom": self.may_include,
+                "runs": [list(run) for run in self.runs],
             },
         }
 
