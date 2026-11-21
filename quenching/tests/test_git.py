@@ -1202,6 +1202,22 @@ class Audit(RepoCase):
         self.assertTrue(rewrites["head"][0].startswith("reset"))
         self.assertEqual(len(rewrites["branch"]), 1)
 
+    def test_head_rewrites_see_a_branch_deleted_and_recreated_over_its_own_commits(self):
+        self._commit_more()
+        _run(self.wt, "checkout", "-q", "--detach")
+        _run(self.wt, "branch", "-D", "spec/1")
+        _run(self.wt, "checkout", "-q", "-b", "spec/1", "main")
+        rewrites = _cq_json(self.repo, *self._reflog_args())["rewrites"]
+        self.assertEqual(len(rewrites["head"]), 1)
+        self.assertIn("discards 2 commit(s)", rewrites["head"][0])
+
+    def test_head_rewrites_ignore_a_previous_branch_ahead_of_the_switch_point(self):
+        _run(self.wt, "checkout", "-q", "-b", "previous")
+        self._commit_more()
+        _run(self.wt, "checkout", "-q", "spec/1")
+        rewrites = _cq_json(self.repo, *self._reflog_args())["rewrites"]
+        self.assertEqual(rewrites, {"branch": [], "head": []})
+
     def test_expired_reflog_is_an_error_not_a_clean_audit(self):
         _run(self.wt, "reflog", "expire", "--expire=now", "--all")
         payload = _cq_json(self.repo, *self._reflog_args())
