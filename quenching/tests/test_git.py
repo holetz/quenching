@@ -3071,6 +3071,43 @@ class WorktreeRetire(RepoCase):
         self.assertEqual((existing / "x").read_text(encoding="utf-8"), "original\n")
         self.assertEqual(json.loads(proc.stdout)["archived"], str(archived))
 
+    def test_a_dirty_worktree_keeps_its_codex_state(self):
+        self._merge_through_gh()
+        pathlib.Path(self.repo, ".git", "info", "exclude").write_text(
+            ".quenching/\n", encoding="utf-8")
+        source = pathlib.Path(self.wt, ".quenching", "codex", "x")
+        source.parent.mkdir(parents=True)
+        source.write_text("keep\n", encoding="utf-8")
+        pathlib.Path(self.wt, "w.txt").write_text("dirty\n", encoding="utf-8")
+        pathlib.Path(self.wt, "new.txt").write_text("untracked\n", encoding="utf-8")
+        proc = self._retire()
+        self.assertEqual(proc.returncode, 1, proc.stdout)
+        payload = json.loads(proc.stdout)
+        self.assertEqual(sorted(payload["dirty"]), ["new.txt", "w.txt"])
+        self.assertIsNone(payload["archived"])
+        self.assertFalse(payload["worktreeRemoved"])
+        self.assertEqual(source.read_text(encoding="utf-8"), "keep\n")
+        self.assertFalse(pathlib.Path(self.repo, ".quenching", "codex", "retired").exists())
+        self.assertIn("plan/1-x", self._heads())
+
+    def test_a_refused_removal_puts_the_codex_state_back(self):
+        self._merge_through_gh()
+        pathlib.Path(self.repo, ".git", "info", "exclude").write_text(
+            ".quenching/\n", encoding="utf-8")
+        source = pathlib.Path(self.wt, ".quenching", "codex", "x")
+        source.parent.mkdir(parents=True)
+        source.write_text("keep\n", encoding="utf-8")
+        _run(self.repo, "worktree", "lock", self.wt)
+        proc = self._retire()
+        self.assertEqual(proc.returncode, 1, proc.stdout)
+        payload = json.loads(proc.stdout)
+        self.assertFalse(payload["worktreeRemoved"])
+        self.assertIsNone(payload["archived"])
+        self.assertTrue(payload["restored"])
+        self.assertEqual(source.read_text(encoding="utf-8"), "keep\n")
+        self.assertFalse(pathlib.Path(self.repo, ".quenching", "codex", "retired", "wt").exists())
+        self.assertIn("plan/1-x", self._heads())
+
     def test_an_ignored_file_stands_under_show_untracked_files_no(self):
         self._merge_through_gh()
         info = os.path.join(self.repo, ".git", "info", "exclude")
