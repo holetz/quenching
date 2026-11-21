@@ -87,13 +87,39 @@ def _scalar(value: str) -> str:
     return value
 
 
+def _split_flow(inner: str) -> list[str]:
+    """Split the inside of a YAML flow collection on its top-level commas only.
+
+    A comma nested in `{…}` or `[…]`, or inside a quoted scalar, belongs to its item.
+    """
+    parts: list[str] = []
+    depth = 0
+    quote = ""
+    start = 0
+    for i, ch in enumerate(inner):
+        if quote:
+            if ch == quote:
+                quote = ""
+        elif ch in ("'", '"'):
+            quote = ch
+        elif ch in "{[":
+            depth += 1
+        elif ch in "}]":
+            depth -= 1
+        elif ch == "," and depth == 0:
+            parts.append(inner[start:i])
+            start = i + 1
+    parts.append(inner[start:])
+    return parts
+
+
 def _flow_map(value: str) -> dict | None:
     """A `{ k: v, ... }` flow map as a dict, or None when the text is not one."""
     value = value.strip()
     if not (value.startswith("{") and value.endswith("}")):
         return None
     out: dict = {}
-    for part in value[1:-1].split(","):
+    for part in _split_flow(value[1:-1]):
         if ":" in part:
             key, _, val = part.partition(":")
             out[_scalar(key)] = _scalar(val)
@@ -128,7 +154,9 @@ def _read_mapping_list(text: str, key: str) -> list[dict] | None:
         if not (inline.startswith("[") and inline.endswith("]")):
             return None
         items: list[dict] = []
-        for part in inline[1:-1].split(","):
+        for part in _split_flow(inline[1:-1]):
+            if not part.strip():
+                continue
             mapped = _flow_map(part)
             if mapped is None:
                 return None
