@@ -80,6 +80,7 @@ def _fold_stray(args, backend, info: dict, root: str, out: Emitter) -> int:
     it has no honest host — inventing one is worse than the refusal, so it writes nothing."""
     beside = [flag for flag, val in (("--moment", args.moment), ("--write", args.write),
                                      ("--scope", getattr(args, "scope", None)),
+                                     ("--clear", getattr(args, "clear", False)),
                                      ("a heading", args.heading)) if val]
     if beside:
         msg = f"--fold takes the stray heading alone; drop {', '.join(beside)}"
@@ -197,6 +198,15 @@ def _refuse_unclosed_fence(args, out: Emitter, heading: str, line: str) -> int:
     return 2
 
 
+def _refuse_empty_body(args, out: Emitter, empty: list[str]) -> int:
+    names = ", ".join(f"## {h}" for h in empty)
+    msg = (f"the body of {names} is empty — written, it would replace the section with the "
+           "template's guidance; pass --clear to ask for that, or send the body")
+    out.emit(args.json, {"ok": False, "code": "sp-write-empty-body", "headings": empty,
+                         "message": msg}, f"error: {msg}")
+    return 2
+
+
 def _splice_stream(args, out: Emitter, info: dict, headings: list[str],
                    content: str) -> tuple[str, list[dict]] | int:
     """The text with every streamed section spliced in, or the exit code of a refusal."""
@@ -242,11 +252,17 @@ def _splice_stream(args, out: Emitter, info: dict, headings: list[str],
                  f"error: declared {', '.join(headings)}; stream carries "
                  f"{', '.join(carried) or 'none'}")
         return 2
+    # Last of the refusals: an empty body only rides with the explicit --clear, so a producer
+    # that failed upstream of the pipe cannot wipe a filled section and still exit 0.
+    pairs = blocks or [(headings[0], content)]
+    empty = [h for h, body in pairs if not body.strip()]
+    if empty and not getattr(args, "clear", False):
+        return _refuse_empty_body(args, out, empty)
     # `upsert_section` splices by the line numbers of the info it was handed, so each
     # section's write invalidates the next one's offsets — re-derive between them, and
     # hand the backend the one text they all landed in.
     new_text, results, cur = info["text"], [], info
-    for heading, body in (blocks or [(headings[0], content)]):
+    for heading, body in pairs:
         block = (f"## {heading}\n\n{body.strip()}\n"
                  if body.strip() else section_guidance(heading))
         new_text, action = upsert_section(cur, heading, block)
@@ -290,6 +306,11 @@ def cmd_section(args, root: str, out: Emitter) -> int:
     if code:
         return code
     scope = getattr(args, "scope", None)
+    if getattr(args, "clear", False) and not args.write:
+        msg = "--clear empties a section on a write; it takes --write beside it"
+        out.emit(args.json, {"ok": False, "code": "sp-clear-without-write", "message": msg},
+                 f"error: {msg}")
+        return 2
     if not args.write:
         return _read_sections(args, out, info, headings, scope)
     if scope and headings != ["Handoff"]:
@@ -307,6 +328,8 @@ def cmd_section(args, root: str, out: Emitter) -> int:
             return _refuse_nested_heading(args, out, headings[0], refusal)
     if scope and (opener := unclosed_fence(content)):
         return _refuse_unclosed_fence(args, out, headings[0], opener)
+    if scope and not content.strip() and not getattr(args, "clear", False):
+        return _refuse_empty_body(args, out, headings)
     if scope:
         new_text, action = write_handoff_block(info, scope, content)
         results = [{"heading": "Handoff", "action": action}]

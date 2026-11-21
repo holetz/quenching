@@ -138,7 +138,13 @@ def _add_section_and_fields(sub) -> None:
                          "canonical position. Several: open the stream on `## <Heading>` "
                          "lines, one per body, and the set must match what was declared "
                          "here; a stream carrying no heading is one raw body under the one "
-                         "heading declared")
+                         "heading declared. An empty body refuses (sp-write-empty-body) "
+                         "unless --clear asks for it")
+    sp.add_argument("--clear", action="store_true",
+                    help="with --write: let an empty body through, putting the template's "
+                         "guidance back under that heading. Without it an empty stdin — a "
+                         "tty, a producer that failed upstream of the pipe — exits 2 and "
+                         "writes nothing")
     sp.add_argument("--scope", choices=["global", "current"],
                     help="narrow ## Handoff to one block — the evergreen global one, or that "
                          "one plus the ### N. matching the next actionable task's section. "
