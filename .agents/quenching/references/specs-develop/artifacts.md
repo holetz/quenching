@@ -23,6 +23,12 @@ in a spec are machine contracts — the `## Tasks` checkboxes and the one parsed
 canonical position on first write, so creating and revising are the same call. An emptied section
 becomes an explicit `- none — <reason>`, never a deleted heading (§The explicit-none rule).
 
+**An empty body refuses** (exit 2, `sp-write-empty-body`, naming the empty headings) and writes
+nothing — a tty stdin, a producer that failed upstream of the pipe, or a `## <Heading>` block with
+no body in the stream. `--clear` beside `--write` is the explicit ask that lets an empty body
+through and puts the template's guidance back under that heading; without `--write` it refuses
+(`sp-clear-without-write`).
+
 **The bodies go on stdin as one heredoc, in the same call** — a scratch file, a `mkdir` and a `cat`
 are three turns buying what one already does, and a pass that filled six sections over six calls
 paid six round trips for one edit:
