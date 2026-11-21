@@ -126,11 +126,15 @@ def cmd_new(args, root: str, out: Emitter) -> int:
 
     policy = args.verification or DEFAULT_VERIFICATION
     title = args.title or args.name
-    body = (capture_form(schema=schema)
-            .replace("title: <TITLE>", f"title: {yaml_title_scalar(title)}")
-            .replace("<TITLE>", title)
-            .replace("<DATE>", today())
-            .replace("<VERIFICATION>", policy))
+    # The title goes in last and in one pass, so a `<DATE>`, `<VERIFICATION>` or `<TITLE>` the
+    # title itself carries is never rescanned as a template placeholder.
+    template = (capture_form(schema=schema)
+                .replace("<DATE>", today())
+                .replace("<VERIFICATION>", policy))
+    body = re.sub(r"title: <TITLE>|<TITLE>",
+                  lambda m: (f"title: {yaml_title_scalar(title)}"
+                             if m.group(0) != "<TITLE>" else title),
+                  template)
     # The subject's fixed tags go into the CANONICAL DOCUMENT, never applied to the tracker
     # directly: `tags:` is a recognised frontmatter key, so `create_spec` reads them off this
     # text through the same path every other stored field takes — never a second,
