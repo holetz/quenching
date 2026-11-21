@@ -248,6 +248,48 @@ class TheCeiling(SlotRepo):
         self.assertEqual(target.read_text(encoding="utf-8"), "slot\n")
         self.assertFalse(pathlib.Path(got["path"], ".quenching", "handoff").exists())
 
+    def _fill_with_merged_first(self):
+        for n in range(1, 4):
+            _code, got = self.run_verb("acquire", branch=f"plan/{n}-x")
+            if n == 1:
+                first = got["path"]
+                _git(first, "commit", "-q", "--allow-empty", "-m", "work")
+        _git(self.main, "push", "-q", "origin", "plan/1-x:main")
+        return first
+
+    def test_a_merged_holder_with_unrecognized_ignored_content_is_never_taken(self):
+        first = self._fill_with_merged_first()
+        secret = pathlib.Path(first, ".tmp", "secret.env")
+        secret.parent.mkdir()
+        secret.write_text("token\n", encoding="utf-8")
+        code, out = self.run_verb("acquire", branch="plan/9-new")
+        self.assertEqual(code, 2, out)
+        self.assertEqual(out["code"], "git-worktree-slots-full")
+        self.assertEqual(secret.read_text(encoding="utf-8"), "token\n")
+        self.assertEqual(_git(first, "branch", "--show-current").strip(), "plan/1-x")
+
+    def test_a_merged_holder_with_only_regenerable_ignored_content_is_taken(self):
+        first = self._fill_with_merged_first()
+        os.makedirs(os.path.join(first, ".venv", "lib"))
+        code, out = self.run_verb("acquire", branch="plan/9-new")
+        self.assertEqual(code, 0, out)
+        self.assertEqual(out["path"], first)
+        self.assertTrue(os.path.isdir(os.path.join(first, ".venv", "lib")))
+
+    def test_a_reused_merged_holder_archives_its_codex_state_in_the_primary_checkout(self):
+        first = self._fill_with_merged_first()
+        self._leave_handoff(first, "next.md", "x\n")
+        codex = pathlib.Path(first, ".quenching", "codex", "run.json")
+        codex.parent.mkdir(parents=True)
+        codex.write_text("{}\n", encoding="utf-8")
+        code, out = self.run_verb("acquire", branch="plan/9-new")
+        self.assertEqual(code, 0, out)
+        archived = pathlib.Path(out["archived"])
+        self.assertEqual(archived.parent,
+                         pathlib.Path(self.main, ".quenching", "codex", "retired"))
+        self.assertEqual((archived / "run.json").read_text(encoding="utf-8"), "{}\n")
+        self.assertFalse(pathlib.Path(first, ".quenching", "codex").exists())
+
     def test_wait_times_out_to_needs_human(self):
         for n in range(1, 4):
             self.run_verb("acquire", branch=f"plan/{n}-x")
