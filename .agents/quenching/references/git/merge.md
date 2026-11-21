@@ -104,4 +104,8 @@ the worktree stays.
 Three bounds: only after a merge verified at exit 0, never for an abandoned spec, and it does
 **not** delete the branch — that stays the separate offer it already was. A worktree **slot** is
 never removed: `cq specs reconcile --write` releases it (detached at the remote base, unlocked, its
-caches kept) — see [isolation.md](isolation.md) §Worktrees are slots.
+caches kept) — see [isolation.md](isolation.md) §Worktrees are slots. When the spec was archived
+before the merge's own `reconcile` (an earlier `push` or `record` archived it), `reconcile` returns no
+row and the slot stays locked to the merged branch: `cq git worktree release --path <slot>` frees it.
+`cq git worktree retire` is the wrong verb for a slot — it removes a worktree and refuses the slot's
+lock.

@@ -46,7 +46,7 @@ def tearDownModule():
 
 class AzureMergeTests(unittest.TestCase):
     def run_merge(self, *, prs=None, policies=None, policy_code=0, patch_code=0,
-                  url=URL, wait=0, unreadable=False):
+                  url=URL, wait=0, unreadable=False, allow_no_checks=False, spec=None):
         snapshots = iter(prs if prs is not None else [PR, PR, {**PR, "status": "completed"}])
         self.calls, self.bodies = [], []
 
@@ -63,7 +63,8 @@ class AzureMergeTests(unittest.TestCase):
         with mock.patch.object(azure_pull, "_az", side_effect=az), \
                 mock.patch.object(pull, "_gh") as gh, \
                 contextlib.redirect_stdout(io.StringIO()) as out:
-            code = pull.cmd_pr(SimpleNamespace(action="merge", url=url, wait=wait, json=True))
+            code = pull.cmd_pr(SimpleNamespace(action="merge", url=url, wait=wait, json=True,
+                                               allow_no_checks=allow_no_checks, spec=spec))
         gh.assert_not_called()
         return code, json.loads(out.getvalue())
 
@@ -111,6 +112,30 @@ class AzureMergeTests(unittest.TestCase):
             code, result = self.run_merge(policies=policies)
             self.assertEqual((code, result["reason"]), (1, "no-checks"))
             self.assertEqual(self.bodies, [])
+
+    def test_allow_no_checks_completes_only_the_pr_without_any_build_policy(self):
+        """`--allow-no-checks` is for a repository with no PR gate: it accepts `no-checks` and
+        nothing else, and the completion keeps the pinned head and the fixed options."""
+        code, result = self.run_merge(policies=[], allow_no_checks=True)
+        self.assertEqual(code, 0, result)
+        self.assertTrue(result["noChecksAccepted"])
+        self.assertEqual(self.bodies[0]["lastMergeSourceCommit"], {"commitId": HEAD})
+        self.assertFalse(self.bodies[0]["completionOptions"]["bypassPolicy"])
+        red = {**BUILD, "status": "rejected"}
+        running = {**BUILD, "status": "running"}
+        for policies in ([red], [running]):
+            code, result = self.run_merge(policies=policies, allow_no_checks=True)
+            self.assertEqual(code, 1, result)
+            self.assertEqual(self.bodies, [])
+
+    def test_spec_is_stamped_with_the_azure_subject_after_completion(self):
+        with mock.patch.object(pull, "_stamp_merge",
+                               return_value={"ok": True, "stamped": True}) as stamp:
+            code, result = self.run_merge(spec="1037500")
+        self.assertEqual(code, 0, result)
+        stamp.assert_called_once_with(
+            "1037500", 226343, URL,
+            subject="Merge pull request 226343 from plan/spec into master")
 
     def test_red_pending_skipped_and_unreadable_evidence_never_complete(self):
         for status, reason in (("rejected", "failed"), ("queued", "pending"),

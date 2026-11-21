@@ -107,6 +107,20 @@ def merge_azure(args, match: re.Match) -> int:
                 payload["message"] = message
         else:
             payload["ok"] = True
+            spec = getattr(args, "spec", None)
+            if spec:
+                from quenching.git.pull import _stamp_merge
+
+                branch = str(pr["sourceRefName"]).removeprefix("refs/heads/")
+                target = str(pr["targetRefName"]).removeprefix("refs/heads/")
+                payload["merge"] = stamp = _stamp_merge(
+                    spec, number, args.url,
+                    subject=f"Merge pull request {number} from {branch} into {target}")
+                if not stamp["ok"]:
+                    payload.update(ok=False, reason="stamp-failed", message=stamp["message"])
+                    emit(args.json, payload, f"merged {args.url}; `merge` record not stamped: "
+                         f"{stamp['message']}")
+                    return FINDINGS
             payload["specs"] = sync_store(find_repo_root(os.getcwd()))
         emit(args.json, payload, f"not merged: {reason} {message}".rstrip() if reason
              else f"merged {args.url} (noFastForward)" + _specs_note(payload["specs"]))
@@ -134,7 +148,9 @@ def merge_azure(args, match: re.Match) -> int:
         print(f"checks pending; re-reading in {POLL_S}s", file=sys.stderr, flush=True)
         time.sleep(POLL_S)
     payload.update(checks=state, notGreen=names)
-    if state != "green":
+    if state == "no-checks" and getattr(args, "allow_no_checks", False):
+        payload["noChecksAccepted"] = True
+    elif state != "green":
         return finish(state, message)
     now, message = _read(route + ["--http-method=GET"], dict)
     if now is None:

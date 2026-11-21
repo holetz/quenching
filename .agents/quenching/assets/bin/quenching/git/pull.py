@@ -130,11 +130,12 @@ def _is_merged(url: str) -> bool:
         return False
 
 
-def _stamp_merge(spec: str, number: int, url: str) -> dict:
+def _stamp_merge(spec: str, number: int, url: str, subject: str | None = None) -> dict:
     """Merge the `merge` record of the spec this PR was merged for, through `cmd_record`.
 
     Write-once: a record already present is reported as `stamped: false`, never rewritten.
-    The subject follows GitHub's `Merge pull request #N from owner/head` without the `#`, which frontmatter reads as a comment."""
+    The subject follows GitHub's `Merge pull request #N from owner/head` without the `#`, which frontmatter reads as a comment;
+    Azure passes its own `Merge pull request N from <branch> into <target>`."""
     quiet = _Quiet()
     try:
         backend, err = open_backend(find_repo_root(os.getcwd()))
@@ -144,11 +145,12 @@ def _stamp_merge(spec: str, number: int, url: str) -> dict:
         present = (info.get("frontmatter") or {}).get("merge")
         if present:
             return {"ok": True, "stamped": False, "value": present}
-        head = _real_head(number, url)
-        if isinstance(head, str):
-            return {"ok": False, "message": f"head unreadable: {head}"}
-        owner = url.split("/")[3]
-        subject = f"Merge pull request {number} from {owner}/{head[1]}"
+        if subject is None:  # GitHub: the subject names owner/head, read from the PR itself
+            head = _real_head(number, url)
+            if isinstance(head, str):
+                return {"ok": False, "message": f"head unreadable: {head}"}
+            owner = url.split("/")[3]
+            subject = f"Merge pull request {number} from {owner}/{head[1]}"
         ns = SimpleNamespace(spec=spec, name="merge", json=True, set=[
             "strategy=merge-commit", f"subject={subject}", f"pr={number}"])
         code = cmd_record(ns, find_repo_root(os.getcwd()), quiet)
@@ -205,7 +207,9 @@ def _merge(args) -> int:
                    and (c.get("bucket") not in GREEN or state == "skipped"))
     payload = {"ok": False, "url": args.url, "number": int(match.group(1)), "checks": state,
                "notGreen": names}
-    if state != "green":
+    if state == "none" and getattr(args, "allow_no_checks", False):
+        payload["noChecksAccepted"] = True
+    elif state != "green":
         payload["reason"] = {"red": "failed", "pending": "pending", "none": "no-checks",
                                     "skipped": "skipped-required"}.get(
             state, "checks-unreadable")
