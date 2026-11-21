@@ -166,7 +166,7 @@ def _registry_lifecycle(root: str, registry_path: str | None = None) -> dict[str
                 continue
             match, state = declared, tail.group(1)
         if match:
-            candidate = match.group(1).replace("\\", "/").lstrip("./")
+            candidate = match.group(1).replace("\\", "/").removeprefix("./")
             if candidate.endswith(_SCRIPT_SUFFIXES):
                 out[candidate] = state
     return out
