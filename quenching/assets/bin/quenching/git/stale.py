@@ -14,8 +14,10 @@ from quenching.common.config import detect_provider, load_config
 from quenching.common.git import _git, _git_run
 from quenching.common.output import emit
 from quenching.common.tools import spawn_argv
+from quenching.git.audit import _reflog
 from quenching.git.base import resolve_base
 from quenching.git.ignored import classify, declared_regenerable, ignored_entries
+from quenching.git.slots import has_own_work
 from quenching.session.worktrees import worktree_branch as _worktree_branch
 from quenching.session.worktrees import worktree_gitdir as _worktree_gitdir
 
@@ -41,17 +43,17 @@ def _first_parent_chain(cwd: str, base: str) -> set[str]:
 
 
 def _has_own_commits(cwd: str, branch: str, chain: set[str]) -> bool:
-    """A local branch carried work of its own: its reflog moved off the creation commit (the
-    rule `merge_evidence` applies, spec 2235), or, with no reflog that moved, its tip is off the
-    base's first-parent chain. A branch just cut is an ancestor of the base like a merged one,
-    and only this evidence tells them apart."""
+    """A local branch carried work of its own: `slots.has_own_work`, the rule the slot reclaim
+    and `promote`'s merge evidence apply (a commit, cherry-pick or revert in its reflog, so a
+    branch only fast-forwarded to its base has none), or, with an empty or expired reflog, its
+    tip is off the base's first-parent chain. A branch just cut is an ancestor of the base like a
+    merged one, and only this evidence tells them apart."""
     ref = f"refs/heads/{branch}"
     tip = _git(cwd, "rev-parse", "--verify", "--quiet", ref).strip()
     if not tip:
         return False
-    created = _git(cwd, "reflog", "show", "--format=%H", ref).split()[-1:]
-    if created and created != [tip]:
-        return True
+    if _reflog(cwd, ref):
+        return has_own_work(cwd, branch)
     return tip not in chain
 
 
