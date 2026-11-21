@@ -202,16 +202,23 @@ def _unlock(cwd: str, path: str) -> None:
 OWN_WORK = ("commit", "cherry-pick", "revert")
 
 
+def has_own_work(cwd: str, branch: str) -> bool:
+    """Whether the local `branch` committed work of its own: a moving reflog entry of
+    `refs/heads/<branch>` that is a commit, cherry-pick or revert. A branch just cut, or one that
+    only fast-forwarded to its base, has none, and its tip is an ancestor of the base like a
+    merged branch's; an empty or expired reflog proves no work either. The one rule both the
+    slot reclaim and `cq specs promote`'s merge evidence apply."""
+    return any(s.startswith(OWN_WORK) for s in _reflog(cwd, f"refs/heads/{branch}"))
+
+
 def _merged_holder(cwd: str, slot: dict, base_sha: str | None) -> bool:
-    """A held slot whose branch carries work and is already in the base: its spec is done and
-    the slot may go. A branch just cut, or one that only fast-forwarded to the base, has no work
-    and its tip is an ancestor of the base too; a reflog entry that committed on the branch is
-    what tells them apart. No such entry → not provably merged, so the slot is never taken."""
+    """A held slot whose branch carries work (`has_own_work`) and is already in the base: its
+    spec is done and the slot may go. No work → not provably merged, so the slot is never taken."""
     branch = slot.get("branch")
     tip = _commit(cwd, f"refs/heads/{branch}") if branch else None
     if not (tip and base_sha):
         return False
-    if not any(s.startswith(OWN_WORK) for s in _reflog(cwd, f"refs/heads/{branch}")):
+    if not has_own_work(cwd, branch):
         return False
     return _run(cwd, "merge-base", "--is-ancestor", tip, base_sha)[0] == 0
 

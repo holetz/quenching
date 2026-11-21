@@ -256,6 +256,34 @@ class ArchiveWaitsForMerge(unittest.TestCase):
                          "plan/2-fresh has no commits of its own and no merged PR is recorded")
         self.assertEqual(self.backend.docs[spec_id], ("plans", text))
 
+    def fast_forwarded_branch(self):
+        # Cut from the base, then only `git merge --ff-only origin/main`: its tip moved off the
+        # creation commit and is in origin/main, yet no commit ever landed on it (spec 2241).
+        self.git("branch", "plan/2-ff", "main")
+        self.git("update-ref", "refs/remotes/origin/main", self.work_tip)
+        self.git("checkout", "plan/2-ff")
+        self.git("merge", "--ff-only", "refs/remotes/origin/main")
+
+    def test_fast_forwarded_branch_refuses_done(self):
+        self.fast_forwarded_branch()
+        code, payload, spec_id, text = self.promote(work="plan/2-ff")
+        self.assertEqual(code, 2, payload)
+        self.assertEqual(payload["code"], "sp-not-merged")
+        self.assertEqual(payload["reason"],
+                         "plan/2-ff has no commits of its own and no merged PR is recorded")
+        self.assertEqual(self.backend.docs[spec_id], ("plans", text))
+
+    def test_merge_evidence_and_the_slot_reclaim_agree(self):
+        from quenching.git import slots
+        self.git("branch", "plan/2-fresh", "main")
+        self.fast_forwarded_branch()
+        base_sha = self.git("rev-parse", "refs/remotes/origin/main")
+        for work, merged in (("plan/2-fresh", False), ("plan/2-ff", False), ("plan/1-x", True)):
+            info = {"frontmatter": {"branch": {"work": work, "base": "main"}}}
+            evidence = promote_module.merge_evidence(info, self.root, fetch=False, ask_pr=False)
+            holder = slots._merged_holder(self.root, {"branch": work}, base_sha)
+            self.assertEqual((evidence[0], holder), (merged, merged), (work, evidence))
+
     def test_fresh_branch_with_merged_pr_archives(self):
         self.git("branch", "plan/2-fresh", "main")
         self.pr_view.return_value = ("MERGED", "plan/2-fresh")
