@@ -7,7 +7,7 @@ tags: [workflows, specs, git, commits, records]
 timestamp: 2026-11-21
 audience: both
 authority: background
-source: abandonar-slug-por-id-nativo, vincular-spec-a-branch-commits-e-pr, spec 2022, spec 2187, spec 2209, spec 2235; history in ADR 0003
+source: abandonar-slug-por-id-nativo, vincular-spec-a-branch-commits-e-pr, spec 2022, spec 2187, spec 2209, spec 2235, spec 2242; history in ADR 0003
 maintainer: quenching
 ---
 
@@ -408,6 +408,17 @@ resolved base. That `remoteBranches` list is a local observation, not proof that
 unchanged, and it is separate from `branch:`, `pr:` and `merge:` records. The default cleanup flow
 uses no implicit fetch or remote-prune: a caller that needs newer facts fetches explicitly and
 starts a fresh report.
+
+Ancestry alone never makes a branch `merged` in that report: a branch just cut from the base is an
+ancestor of it too. A local branch is a `merged` candidate only when it carried commits of its own —
+its reflog moved off the creation commit, or, without such an entry, its tip is off the base's
+first-parent chain; otherwise it stays in `keptBranches` with `no-own-commits`, and `cq git prune
+--branch` refuses it (`git-prune-not-reported`). A remote branch whose tip sits on the first-parent
+chain is listed only when the local branch of the same name carried commits of its own; a
+remote-tracking reflog starts at a ref that already held the tip, so it proves nothing. `gone` is
+only an added reason: a gone branch with commits outside the base stays in `keptBranches` with
+`["gone", "unmerged-commits"]`, because `prune` deletes with `branch -d`, which refuses it (spec
+2242).
 
 `cq git stale` also assesses registered linked worktrees and prints a complete `manifest`: every
 local branch, remote branch and worktree, candidate or preserved, with a stable `id` (derived from
