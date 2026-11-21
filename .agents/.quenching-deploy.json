@@ -136,7 +136,7 @@
     ".agents/quenching/assets/bin/quenching/git/refresh.py": "7693af3e5430582d1c47a9d78db725ee9cf5965ca81bc3dce58818a68a17440e",
     ".agents/quenching/assets/bin/quenching/git/slots.py": "96afd259183a734ddb00bd0126bb9ed5ba18180de98bca91a062b3c7815dee24",
     ".agents/quenching/assets/bin/quenching/git/slugs.py": "810953ab971b319caf6fa84617afff9a7cbaa0589585ac163314b6e0392c7127",
-    ".agents/quenching/assets/bin/quenching/git/stale.py": "e42386cac369af4782b552f53dff85a2c9f5169740e9e4fed3d59fb8cc2bbac0",
+    ".agents/quenching/assets/bin/quenching/git/stale.py": "12c94141413e0b7bef2329bb3dd97db7557d466d4f36545b6f07c03fe11efec3",
     ".agents/quenching/assets/bin/quenching/git/state.py": "986789548179bef9d5102f87f76f6402baf4f94e52e38172b4ef68e8344b7175",
     ".agents/quenching/assets/bin/quenching/git/worktree.py": "a70cd714125d9604bd56540881a6231c44d044a2df46df56de9f46071c00a737",
     ".agents/quenching/assets/bin/quenching/knowledge/checks.py": "27135460318cd9b6ab005abff6162cd19bf7edd85ce3e5b60cc35c79b3730525",
