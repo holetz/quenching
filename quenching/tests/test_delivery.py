@@ -330,6 +330,19 @@ class DeliveryResults(unittest.TestCase):
             self.assertNotIn("delivery-trigger-unreachable",
                              {item["code"] for item in payload["findings"]})
 
+    def test_quoted_on_key_is_a_trigger(self):
+        for key in ('"on"', "'on'"):
+            payload, code = self._run({
+                ".github/workflows/ci.yml": (
+                    "name: CI\n" + key + ":\n  push:\n    branches: [main]\njobs:\n"
+                    "  t:\n    runs-on: ubuntu-latest\n    steps:\n"
+                    "      - uses: actions/checkout@v4\n      - run: echo ok\n"),
+            })
+            self.assertEqual(["push"], payload["inventory"]["workflows"][0]["triggers"], key)
+            self.assertNotIn("delivery-trigger-unreachable",
+                             {item["code"] for item in payload["findings"]}, key)
+            self.assertEqual(0, code, key)
+
     def test_matrix_setup_uv_and_bash_only_jobs_raise_no_false_errors(self):
         payload, code = self._run({
             ".github/workflows/ci.yml": (

@@ -9,7 +9,7 @@ from quenching.delivery.model import DeliveryInventory, Job, Workflow
 from quenching.delivery.probe import probe_delivery, workflow_artifacts
 
 
-_TOP_LEVEL = re.compile(r"^([A-Za-z_][A-Za-z0-9_.-]*):(?:\s*(.*?))?\s*$")
+_TOP_LEVEL = re.compile(r"^[\"']?([A-Za-z_][A-Za-z0-9_.-]*)[\"']?:(?:\s*(.*?))?\s*$")
 _RUSTUP_SETUP = re.compile(r"(?:^|&&|\|\||;|\n)\s*rustup\s+(?:toolchain\s+install|default|show\s+active-toolchain)\b")
 _MAPPING = re.compile(r"^\s+([A-Za-z_][A-Za-z0-9_.-]*):(?:\s*(.*?))?\s*$")
 _LIST = re.compile(r"^\s*-\s*([^\s#]+)")
