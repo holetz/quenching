@@ -343,6 +343,32 @@ def scope_of(key: str) -> str | None:
     return None
 
 
+def unknown_leaves(document: dict) -> list[str]:
+    """Dotted leaves inside the known namespaces of a repository document that nothing reads.
+
+    A leaf is read when the registry knows it or a catalog above it, when it sits under one of
+    the keys `cq specs` reads from its merged `shared`+`specs` view, or under `specs.store`.
+    Top-level keys are left to `unknownKeys`, which the envelope already reports."""
+    from quenching.common.config import NAMESPACES
+    from quenching.specs.config import BRANCH_CONFIG_KEYS, CONFIG_KEYS   # deferred: specs imports config
+
+    merged = (set(CONFIG_KEYS) - {"backend"}) | set(BRANCH_CONFIG_KEYS)
+    out: list[str] = []
+    for name in NAMESPACES:
+        block = document.get(name)
+        if not isinstance(block, dict):
+            continue
+        for key, _ in registry_leaves({name: block}):
+            first = key.split(".")[1] if "." in key else None
+            if (scope_of(key) is not None
+                    or any(known.startswith(key + ".") for known in REGISTRY)
+                    or (name in ("shared", "specs") and first in merged)
+                    or (name == "specs" and first == "store")):
+                continue
+            out.append(key)
+    return sorted(out)
+
+
 def local_decision(key: str, project_declares: bool) -> tuple[bool, str | None]:
     """Whether a local-layer `key` applies, and why not when it does not."""
     scope = scope_of(key)

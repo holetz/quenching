@@ -8,6 +8,8 @@ the end and report, never to refuse."""
 from __future__ import annotations
 
 import json
+from quenching.common.config import repository_document
+from quenching.config.schema import unknown_leaves
 from quenching.specs.backends.azure import open_azure_backend
 from quenching.specs.backends.base import BackendRefusal
 from quenching.specs.backends.github import (GH_LISTING_SUSPECT_REMEDY, listing_is_suspect,
@@ -61,6 +63,14 @@ def cmd_doctor(args, root: str, out: Emitter) -> int:
                                  f"{CONFIG_FILE} declares `{key}`, which nothing reads",
                                  path=CONFIG_FILE, key=key,
                                  remedy=f"the recognised key(s): {', '.join(CONFIG_KEYS)}"))
+    document = repository_document(root)[0]
+    for key in unknown_leaves(document) if isinstance(document, dict) else []:
+        findings.append(_finding("sp-config-unknown-leaf", "warn",
+                                 f"{CONFIG_FILE} declares `{key}`, which nothing reads — "
+                                 f"its default applies",
+                                 path=CONFIG_FILE, key=key,
+                                 remedy="compare it with the keys `cq config schema` lists, "
+                                        "or remove it"))
     if cfg["unknownBackend"]:
         findings.append(_finding("sp-config-unknown-backend", "warn",
                                  f"{CONFIG_FILE} declares backend `{cfg['unknownBackend']}`, "
