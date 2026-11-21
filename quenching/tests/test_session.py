@@ -7,6 +7,8 @@ some prior, real reading of a transcript got it wrong, and the comment on each r
 which mistake.
 """
 import argparse
+import contextlib
+import io
 import json
 import pathlib
 import tempfile
@@ -14,6 +16,7 @@ import unittest
 
 import _paths  # noqa: F401  — must precede the `quenching` import; see its docstring
 from quenching.session.commands.cli import build_parser
+from quenching.session.evidence import assign_corrections
 from quenching.session.parse import read_session, silence_refusal
 
 # A typed `/` invocation, a conducted stage, redundant vs. paged reads, a write miscounted
@@ -251,6 +254,36 @@ class TwoRunsFixture(unittest.TestCase):
     def test_a_command_never_invoked_as_a_stage_has_no_windows(self):
         self.assertEqual(self.by_name["demo:conduct"].runs, [])
         self.assertEqual(self.by_name["demo:conduct"].last, 10)
+
+    def test_a_correction_inside_the_stage_belongs_to_the_stage_not_its_conductor(self):
+        attached, unassigned = assign_corrections(self.model["corrections"],
+                                                  self.model["_commands"])
+        self.assertEqual([(c["line"], c["when"]) for c in attached["demo:stage"]],
+                         [(4, "during"), (8, "during")])
+        self.assertEqual(attached["demo:conduct"], [])
+        self.assertEqual(unassigned, [])
+
+    def test_a_turn_between_two_executions_belongs_to_the_conductor(self):
+        turn = {"line": 6, "timestamp": None, "kind": "interjection", "text": "x"}
+        attached, _ = assign_corrections([turn], self.model["_commands"])
+        self.assertEqual([c["line"] for c in attached["demo:conduct"]], [6])
+        self.assertEqual(attached["demo:stage"], [])
+
+    def test_the_digest_counts_the_stages_corrections_on_the_stage(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = pathlib.Path(tmp) / "t.jsonl"
+            path.write_text("\n".join(json.dumps(r) for r in TWO_RUNS_FIXTURE) + "\n",
+                            encoding="utf-8")
+            out = io.StringIO()
+            with contextlib.redirect_stdout(out):
+                args = build_parser().parse_args(
+                    ["digest", str(path), "--command", "demo:stage", "--json"])
+                args.func(args)
+        stage = json.loads(out.getvalue())["commands"][0]
+        self.assertEqual(stage["attributedRun"]["lastLine"], 9)
+        self.assertEqual([c["line"] for c in stage["corrections"]], [4, 8])
+        self.assertEqual((stage["counts"]["interrupts"], stage["counts"]["interjections"]),
+                         (1, 1))
 
 
 class SilenceRefusal(unittest.TestCase):
