@@ -104,6 +104,35 @@ class OwnerControls(unittest.TestCase):
             self.assertEqual("missing",
                              _requirements(owner_controls("security", root))["OSPS-BR-01.01"]["state"])
 
+    def test_untrusted_trigger_ignores_yaml_comments(self):
+        with tempfile.TemporaryDirectory() as raw:
+            root = pathlib.Path(raw)
+            _write(root, ".github/workflows/ci.yml",
+                   "# never use pull_request_target here\n"
+                   "on: [pull_request]  # not pull_request_target either\n"
+                   "jobs:\n  a:\n    steps:\n      - run: make #pull_request_target is unsafe\n")
+            self.assertEqual("present", untrusted_trigger(root)["state"])
+            self.assertEqual("present",
+                             _requirements(owner_controls("security", root))["OSPS-BR-01.01"]["state"])
+
+    def test_untrusted_trigger_still_matches_real_triggers(self):
+        forms = {
+            "list": "on: [pull_request, pull_request_target]\n",
+            "map": "on:\n  pull_request_target:\n    types: [opened]\n",
+            "scalar": "on: pull_request_target\n",
+            "commented": "on: pull_request_target  # reviewed\n",
+            "hash-in-double-quotes": 'name: "a #b"\non: [pull_request_target]\n',
+            "hash-in-single-quotes": "on: ['a #b', pull_request_target]\n",
+            "escaped-single-quote": "on: ['it''s #b', pull_request_target]\n",
+        }
+        for form, text in forms.items():
+            with self.subTest(form=form), tempfile.TemporaryDirectory() as raw:
+                root = pathlib.Path(raw)
+                _write(root, ".github/workflows/wf.yml", text)
+                result = untrusted_trigger(root)
+                self.assertEqual("missing", result["state"])
+                self.assertEqual([".github/workflows/wf.yml"], result["evidence"])
+
 
 ROUTES = {
     "security": ("quenching.security", []),
