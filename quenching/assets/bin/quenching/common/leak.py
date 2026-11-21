@@ -31,6 +31,7 @@ from pathlib import Path
 
 DENYLIST_ENV = "QUENCHING_DENYLIST_FILE"
 ZERO_SHA = "0" * 40
+_SHA = re.compile(r"[0-9a-f]{40}|[0-9a-f]{64}")
 EXCERPT_CHARS = 160
 
 GENERIC_PATTERNS: dict[str, re.Pattern[str]] = {
@@ -246,15 +247,25 @@ def scan_staged(root: str, pats: dict[str, re.Pattern[str]]) -> list[Finding]:
     return findings
 
 
+def _known_commit(root: str, sha: str) -> bool:
+    """Whether `sha` is a full object name this clone resolves to a commit."""
+    if not _SHA.fullmatch(sha):
+        return False
+    return subprocess.run(["git", "cat-file", "-e", f"{sha}^{{commit}}"], cwd=root,
+                          capture_output=True).returncode == 0
+
+
 def _commits_to_push(root: str, local_sha: str, remote_sha: str,
                      remote: str | None = None) -> list[str]:
     """The commits a push publishes: what the destination's remote-tracking refs and the ref's old
     tip do not have yet, so a merge of an already published base is not judged again. Without the
     destination's name only the old tip is excluded, and a new ref is judged whole: a commit
-    already on another remote may still be new to this one."""
+    already on another remote may still be new to this one. An old tip this clone does not have
+    (the remote moved and nothing was fetched) is judged as a new ref, so the cut is never
+    narrower than with no old tip at all."""
     if local_sha == ZERO_SHA:
         return []
-    if remote_sha != ZERO_SHA:
+    if remote_sha != ZERO_SHA and _known_commit(root, remote_sha):
         revs = [local_sha, "--not", remote_sha]
         if remote:
             revs.append(f"--remotes={remote}")
