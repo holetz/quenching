@@ -112,6 +112,16 @@ class Refresh(RepoCase):
         code, payload = _refresh(self.repo)
         self.assertEqual((code, payload["reason"]), (1, "fetch-failed"))
 
+    def test_a_base_the_remote_does_not_have_is_a_skip_not_a_finding(self):
+        empty = os.path.join(self.tmp, "empty.git")
+        subprocess.run(["git", "init", "-q", "--bare", empty], check=True)
+        _run(self.repo, "remote", "set-url", "origin", empty)
+        before = self._head()
+        code, payload = _refresh(self.repo)
+        self.assertEqual((code, payload["action"], payload["reason"]),
+                         (0, "skipped", "no-remote-base"))
+        self.assertEqual(self._head(), before)
+
 
 class TheCloseNamesTheVerb(unittest.TestCase):
     def test_conclude_and_merge_bodies_call_it(self):
