@@ -2,22 +2,20 @@
 from __future__ import annotations
 
 import json
-import re
 
+from quenching.common.paths import escapes_repo, repo_path
 from quenching.specs.backends import open_backend
 from quenching.specs.commands.output import Emitter, read_one
 from quenching.specs.parse.tasks import _files_bad_annotation
 
 
-def _norm_file(p: str) -> str:
-    p = p.strip().replace("\\", "/")
-    p = re.sub(r"\s*\(new\)\s*$", "", p)      # `src/a.py (new)` is still src/a.py
-    return p.strip("./")
-
-
 def _overlaps(a: str, b: str) -> bool:
-    a, b = _norm_file(a), _norm_file(b)
-    return a == b or a.startswith(b.rstrip("/") + "/") or b.startswith(a.rstrip("/") + "/")
+    """Fail closed: the root covers every path, and a path outside the repository cannot be
+    proven disjoint from anything, so both count as a clash."""
+    a, b = repo_path(a), repo_path(b)
+    if "." in (a, b) or escapes_repo(a) or escapes_repo(b):
+        return True
+    return a == b or a.startswith(b + "/") or b.startswith(a + "/")
 
 
 def parallel_groups(tasks: list[dict]) -> list[list[dict]]:
@@ -62,7 +60,7 @@ def cmd_parallel(args, root: str, out: Emitter) -> int:
                     for fb in b["files"]:
                         if _overlaps(fa, fb):
                             clashes.append({"a": a["id"], "b": b["id"],
-                                            "file": _norm_file(fa)})
+                                            "file": repo_path(fa)})
         eligible = not undeclared and not clashes and not annotations
         findings.append({"group": gi, "tasks": [t["id"] for t in group],
                          "eligible": eligible, "undeclared": undeclared,
