@@ -364,6 +364,16 @@ class Deploy(unittest.TestCase):
         self.assertIn("Source model tier: `sonnet`.", text)
         self.assertIn("tools:\n  task: false", text)
 
+    def test_the_opencode_orchestrator_may_launch_only_the_agents_its_source_names(self):
+        self.assertEqual(0, self.run_deploy("--modules", "core", "--write")[0])
+        text = (self.target / ".opencode/agents/quenching-spec-orchestrator.md").read_text(
+            encoding="utf-8")
+        self.assertIn('  task:\n    "*": deny\n'
+                      '    "quenching-spec-runner": allow\n'
+                      '    "quenching-spec-verifier": allow\n'
+                      '    "quenching-spec-scout": allow\n', text)
+        self.assertNotIn("tools:\n  task: false", text)
+
     def test_a_harness_that_is_not_selected_writes_no_agents(self):
         self.assertEqual(0, self.run_deploy("--modules", "core", "--harness", "claude",
                                             "--write")[0])
