@@ -41,6 +41,7 @@ from quenching.codex.guard import (BYPASS, GuardError, base_moves, base_state, c
                                    touched)
 from quenching.codex.probe import group_kwargs, probe, stop
 from quenching.specs.backends import open_backend
+from quenching.specs.commands.estimate import estimate_task
 
 RUN_NAME = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]*$")
 NOT_MEASURED = "not measured"
@@ -118,18 +119,21 @@ def primary_used(quota: dict | None):
     return window.get("usedPercent")
 
 
-def read_task(root: str, spec: str, task_id: str) -> tuple[dict | None, tuple[dict, int] | None]:
+def read_task(root: str, spec: str, task_id: str
+              ) -> tuple[dict | None, dict | None, tuple[dict, int] | None]:
+    """The task, the spec it was read from (for `estimate_task`), or the refusal."""
     backend, err = open_backend(root)
     if err:
-        return None, refusal("codex-specs-unreadable",
-                             err.get("message", "the spec store could not be opened"))
+        return None, None, refusal("codex-specs-unreadable",
+                                   err.get("message", "the spec store could not be opened"))
     info, err = backend.read_spec(spec)
     if info is None:
-        return None, refusal("codex-spec-missing", (err or {}).get("message", f"no spec {spec}"))
+        return None, None, refusal("codex-spec-missing",
+                                   (err or {}).get("message", f"no spec {spec}"))
     task = next((t for t in info.get("tasks", []) if t["id"] == task_id), None)
     if task is None:
-        return None, refusal("codex-task-missing", f"spec {spec} has no task {task_id}")
-    return task, None
+        return None, None, refusal("codex-task-missing", f"spec {spec} has no task {task_id}")
+    return task, info, None
 
 
 def run_implement(root: str, settings: dict, spec: str, task_id: str, worktree: str,
@@ -146,7 +150,7 @@ def run_implement(root: str, settings: dict, spec: str, task_id: str, worktree: 
                        f"worktree is not the top level of a git checkout: {worktree}")
     if not os.path.isfile(prompt):
         return refusal("codex-prompt-missing", f"prompt file does not exist: {prompt}")
-    task, refused = read_task(root, spec, task_id)
+    task, info, refused = read_task(root, spec, task_id)
     if refused:
         return refused
     files = sorted(strip_annotation(f).lstrip("/") for f in task["files"])
@@ -171,7 +175,8 @@ def run_implement(root: str, settings: dict, spec: str, task_id: str, worktree: 
     if os.path.exists(run_dir):
         return refusal("codex-run-exists", f"run directory already exists: {run_dir}")
 
-    judged, code = eligibility(task, settings, worktree, lambda s: quota(s, env=env))
+    judged, code = eligibility(task, settings, worktree, lambda s: quota(s, env=env),
+                               estimate_task(info, task_id, worktree))
     executor = settings["executor"]
     out = {"ok": False, "fallback": True, "spec": str(spec), "task": task_id, "files": files,
            "class": judged["class"], "model": judged["model"],

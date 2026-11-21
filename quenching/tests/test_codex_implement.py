@@ -212,6 +212,15 @@ class Implement(unittest.TestCase):
         self.assertIn("docs/", payload["reason"])
         self.assertFalse(self.log.exists())
 
+    def test_a_protected_verified_task_dispatches_the_small_tier_eligible_reports(self):
+        self.tasks = [task(verify="make test")]
+        payload, code = self.implement(maxTaskTokens=0)
+        self.assertEqual(code, 0, payload)
+        small_tier = DEFAULTS["executor"]["modelSmallTier"]
+        self.assertEqual((payload["class"], payload["model"]), ("verified", small_tier))
+        argv = self.calls()[0]["argv"]
+        self.assertEqual(argv[argv.index("-m") + 1], small_tier)
+
     def test_the_quota_reserve_blocks_the_dispatch(self):
         payload, code = self.implement(quota=Quota(10, state="unavailable"))
         self.assertEqual(code, 1)
