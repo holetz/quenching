@@ -262,9 +262,28 @@ def _manifest(path: Path, root: Path) -> tuple[Artifact, list[Artifact]]:
     return _cargo(path, root)
 
 
+_TEXT_LOCK_VERSION = {
+    "yarn.lock": re.compile(r"^# yarn lockfile (v\d+)|^  version: (\S+)", re.MULTILINE),
+    "pnpm-lock.yaml": re.compile(r"^lockfileVersion:\s*['\"]?([^'\"\s]+)", re.MULTILINE),
+}
+
+
+def _text_lock(path: Path) -> dict[str, Any]:
+    text = _read_text(path)
+    if text is None:
+        return {"parse": "unreadable", "lockfileVersion": None}
+    if not text.strip():
+        return {"parse": "empty", "lockfileVersion": None}
+    match = _TEXT_LOCK_VERSION[path.name].search(text)
+    version = next((group for group in match.groups() if group), None) if match else None
+    return {"parse": "ok", "lockfileVersion": version}
+
+
 def _lock(path: Path, root: Path) -> Artifact:
     details: dict[str, Any]
-    if path.suffix == ".json":
+    if path.name in _TEXT_LOCK_VERSION:
+        details = _text_lock(path)
+    elif path.suffix == ".json":
         data, error = _read_json(path)
         data = data or {}
         packages = data.get("packages")

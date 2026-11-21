@@ -16,6 +16,8 @@ LOCKS = (
     "uv.lock",
     "poetry.lock",
     "package-lock.json",
+    "yarn.lock",
+    "pnpm-lock.yaml",
     "Cargo.lock",
 )
 LANGUAGE_PINS = (".python-version", ".nvmrc")
