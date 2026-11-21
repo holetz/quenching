@@ -1,7 +1,7 @@
 """Contract: the worker budget is a size estimate; only the conductor budget stops a run.
 
 The surfaces are prose, so the fixture pins the sentences that bind them: the runner never returns
-`budget:`, `execute` under `autonomous` prints the peak and carries on, and the orchestrator keeps
+`budget:`, `execute` carries on past a section boundary without measuring it, and the orchestrator keeps
 the between-wave stop the autopilot relaunches.
 """
 
@@ -31,13 +31,12 @@ class TheWorkerEstimateTests(unittest.TestCase):
         self.assertNotIn("NOTE: budget:", runner)
         self.assertNotIn("budget stop", runner)
 
-    def test_execute_autonomous_prints_the_peak_and_carries_on(self):
+    def test_execute_boundary_carries_on_without_a_budget_question(self):
         body = flat(SPECS / "execute.md")
         step = body[body.index("h. **At a section boundary"):body.index("**Pause if:**")]
 
-        self.assertIn("a worker's budget is a size estimate, not a stop limit", step)
-        self.assertIn("**Under `autonomous`, exit 1 asks nothing and stops nothing**", step)
-        self.assertIn("In a human-led run, exit 1 → ask once", step)
+        self.assertIn("the boundary is never a question", step)
+        self.assertNotIn("exit 1", step)
 
 
 class TheConductorStopTests(unittest.TestCase):

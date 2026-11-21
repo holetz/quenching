@@ -260,7 +260,7 @@ class CodexEligible(Workspace):
         from quenching.codex import eligible as eligible_module
         from quenching.codex.config import DEFAULTS
         settings = {**DEFAULTS, "maxUsedPercent": dict(DEFAULTS["maxUsedPercent"]),
-                    "executor": {**DEFAULTS["executor"]}}
+                    "executor": {**DEFAULTS["executor"], "enabled": True}}
         quota = lambda _settings: {"state": "available", "reason": "test"}  # noqa: E731
         with mock.patch.object(eligible_module, "open_backend",
                                lambda _root: (self.backend, {})):

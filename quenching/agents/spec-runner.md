@@ -40,6 +40,7 @@ once, and work only there afterwards.
 - A `cq` write that fails is retried with backoff; exit 2 is read, never repeated blindly.
 - You have no `AskUserQuestion`. Where a command would ask the human, stop and return
   `STATE: blocked` with `NOTE: needs-human: <the question>`; never improvise an answer.
+- **A red that is not this spec's is diagnosed, never dismissed** (`docs/standards/workflows/task-execution.md` §Pre-existing errors). Reproduce it in the base worktree `.quenching/red` (the same fixed path and removal as the RED proof below); no reproduction means it is the spec's own. Reproduced, with the four criteria together (cause diagnosed and reproduced on the base, few files without a contract change, an existing verification proves it, no human decision), append a task `[fix-preexistente]` with its own `files:` and `verify:` through `.agents/quenching/bin/cq specs section "<id>" Tasks --write` and `.agents/quenching/bin/cq specs validate`, and build it as any task. Otherwise capture it with `.agents/quenching/bin/cq specs new` (`## Problem` plus cause, reproduction and files) and one `promoted: <id>` line in `## Discoveries`. Skipping, `xfail`, suppressing a test, editing a `verify:` or `--no-verify` is never the fix. An uncorrected base red keeps `GATE: fail`; under `autonomous` it is a real block, `STATE: blocked` with `NOTE: needs-human:` naming the captured spec. Report the evidence as a `DISCOVERIES` line starting `BASE-RED: <command> fails on <base> (base worktree)`.
 - **After approval, decide and record.** What the spec, the code, the declared standards or the recorded intent answer, you decide and write as one line: `.agents/quenching/bin/cq specs discover "<id>" "decision: <what> — <evidence or criterion>"`. Return `STATE: blocked` only on a real block of `docs/standards/workflows/task-execution.md` §After approval, the executor decides, records and stops only on a real block: attempts stop converging; a standard contradiction the evidence does not settle; a new grant, changed frontmatter or lowered bar; an undeclared irreversible, merge, push or deploy action; a required proof that cannot run; `approved` absent under `autonomous`. The NOTE is `needs-human: <the real block and the question>`, never a skipped proof marked as passed. Decisions are listed under `DISCOVERIES`.
 
 ## Forbidden
@@ -67,13 +68,10 @@ Your budget is the size estimate of `docs/standards/automation/context-disciplin
 context budgets: how much reading a spec of this size is expected to cost, measured by code, never
 by your own count. It is not a stop limit. Nothing about crossing it ends the spec.
 
-`/quenching-specs execute` measures at each section boundary with
-`.agents/quenching/bin/cq components session context --self <id> --json` and prints the peak against
-the estimate. Over it (exit 1) is a diagnostic: the run prints the number and carries on, and you
-never write a handoff note for it, never return `STATE: continue` for it, and never treat that
-boundary as the end of the spec. Exit 2 (unmeasured) is equally not a stop. The peak reaches the
-caller through that banner, and the orchestrator's own `BUDGET:` line reports the same role budgets
-from `cq components session cost`; neither is a verdict on the spec. Only a real block of
+`/quenching-specs execute` does not measure it at a section boundary, and you never measure it
+yourself: never write a handoff note for it, never return `STATE: continue` for it, and never treat
+a boundary as the end of the spec. The orchestrator's own `BUDGET:` line reports the role budgets
+from `cq components session cost`; it is not a verdict on the spec. Only a real block of
 `docs/standards/workflows/task-execution.md` §After approval, the executor decides, records and stops only on a real block
 ends a run.
 

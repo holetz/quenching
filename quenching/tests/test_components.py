@@ -185,6 +185,58 @@ class ComponentsStatus(unittest.TestCase):
         self.assertEqual(pathlib.Path(root).name, ".agents")
         self.assertEqual([c["command"] for c in surface["commands"]], ["/front-verb"])
 
+    def test_root_at_a_target_repository_resolves_its_claude_or_agents_surface(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            claude = pathlib.Path(tmp, "a", ".claude", "commands", "x")
+            claude.mkdir(parents=True)
+            pathlib.Path(claude, "y.md").write_text("---\ndescription: c\n---\n\nBody.\n",
+                                                    encoding="utf-8")
+            skill = pathlib.Path(tmp, "b", ".agents", "skills", "front-verb")
+            skill.mkdir(parents=True)
+            pathlib.Path(skill, "SKILL.md").write_text("---\ndescription: s\n---\n\nBody.\n",
+                                                       encoding="utf-8")
+            plugin = pathlib.Path(tmp, "c", "commands", "x")
+            plugin.mkdir(parents=True)
+            pathlib.Path(plugin, "y.md").write_text("---\ndescription: p\n---\n\nBody.\n",
+                                                    encoding="utf-8")
+            empty = pathlib.Path(tmp, "d")
+            empty.mkdir()
+            a = find_surface_root(str(pathlib.Path(tmp, "a")))
+            b = find_surface_root(str(pathlib.Path(tmp, "b")))
+            c = find_surface_root(str(pathlib.Path(tmp, "c")))
+            d = find_surface_root(str(empty))
+            output = io.StringIO()
+            with contextlib.redirect_stdout(output):
+                components_cli.main(["--root", str(pathlib.Path(tmp, "a")), "status", "--json"])
+
+        self.assertEqual(pathlib.Path(a).name, ".claude")
+        self.assertEqual(pathlib.Path(b).name, ".agents")
+        self.assertEqual(pathlib.Path(c).name, "c")
+        self.assertEqual(pathlib.Path(d).name, "d")
+        self.assertEqual(json.loads(output.getvalue())["commands"], 1)
+
+    def test_root_prefers_the_target_surface_over_a_loose_commands_dir(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            both = pathlib.Path(tmp, "both")
+            pathlib.Path(both, "commands").mkdir(parents=True)
+            pathlib.Path(both, "commands", "bar.md").write_text(
+                "---\ndescription: p\n---\n\nBody.\n", encoding="utf-8")
+            skill = pathlib.Path(both, ".agents", "skills", "foo")
+            skill.mkdir(parents=True)
+            pathlib.Path(skill, "SKILL.md").write_text(
+                "---\ndescription: s\n---\n\nBody.\n", encoding="utf-8")
+            claude = pathlib.Path(tmp, "claude")
+            pathlib.Path(claude, ".claude", "commands").mkdir(parents=True)
+            pathlib.Path(claude, "commands").mkdir()
+            with_root = find_surface_root(str(both))
+            claude_root = find_surface_root(str(claude))
+            with contextlib.chdir(both):
+                walked = find_surface_root(None)
+
+        self.assertEqual(pathlib.Path(with_root).name, ".agents")
+        self.assertEqual(pathlib.Path(with_root).resolve(), pathlib.Path(walked).resolve())
+        self.assertEqual(pathlib.Path(claude_root).name, ".claude")
+
     def test_doctor_names_a_skill_by_its_folder_and_reads_claude_agents_beside_it(self):
         with tempfile.TemporaryDirectory() as tmp:
             skill = pathlib.Path(tmp, ".agents", "skills", "front-verb")

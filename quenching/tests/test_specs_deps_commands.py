@@ -107,6 +107,10 @@ class DependencyCommands(unittest.TestCase):
             self.backend.docs[spec] = (phase, text.replace("date: 2026-10-24\n",
                                                          "date: 2026-10-24\n" + fm))
 
+    def seed_composite(self, spec, items):
+        phase, text = self.backend.docs[spec]
+        self.backend.docs[spec] = (phase, text + "## Tasks\n\n" + "\n".join(items) + "\n")
+
     def seed_dependency(self, spec, dependencies, phase="plans", outcome=None):
         text = self.text(spec)
         fm = f"dependsOn: [{', '.join(map(str, dependencies))}]\n"
@@ -236,6 +240,45 @@ class DependencyCommands(unittest.TestCase):
         self.assertEqual(["4"], [node["id"] for node in
                          self.call("schedule", "4")[1]["nodes"]])
         self.assertIn("criticalPath: 1 -> 2 -> 3", self.call("schedule", as_json=False)[1])
+        self.assertEqual(before, self.backend.docs)
+        self.writer.assert_not_called()
+
+    def test_schedule_all_selects_the_edgeless_and_the_archived(self):
+        self.seed_schedule()
+        self.seed_dependency(4, [], phase="archive", outcome="done")
+        self.assertEqual(["1", "2", "3"],
+                         [node["id"] for node in self.call("schedule")[1]["nodes"]])
+        nodes = self.call("schedule", "--all")[1]["nodes"]
+        self.assertEqual(["1", "2", "3", "4"], [node["id"] for node in nodes])
+        # The dependent of a node is the node that names it: `--all` is what a reader of both
+        # directions asks for, and it keeps an archived dependent that the default drops.
+        self.assertEqual(["2"], [node["id"] for node in nodes if "1" in node["dependsOn"]])
+        self.assertEqual(("4", "archive", None),
+                         tuple(nodes[3][key] for key in ("id", "phase", "start")))
+
+    def test_schedule_all_answers_the_composites_that_name_a_member(self):
+        self.seed_composite(4, ["- [ ] S1 First — spec: #1",
+                                "- [ ] S2 Second — spec: #2 — after: S1",
+                                "- [ ] S3 Ghost — spec: #99"])
+        self.seed_composite(3, ["- [ ] A Fourth — spec: #4"])
+        payload = self.call("schedule", "--all")[1]
+        self.assertEqual({
+            "1": [{"epic": "4", "label": "S1", "group": 0}],
+            "2": [{"epic": "4", "label": "S2", "group": 0}],
+            "4": [{"epic": "3", "label": "A", "group": 0}],
+        }, payload["composites"])
+        # A member of two composites lists both; the index is a list, never a single parent.
+        self.seed_composite(2, ["- [ ] A First too — spec: #1"])
+        self.assertEqual(["2", "4"],
+                         [row["epic"] for row in self.call("schedule", "--all")[1]["composites"]["1"]])
+        # The default selection is a subset of the store, so it carries no whole-store index.
+        self.assertNotIn("composites", self.call("schedule")[1])
+
+    def test_schedule_refuses_spec_with_all(self):
+        self.seed_schedule()
+        before = copy.deepcopy(self.backend.docs)
+        code, payload = self.call("schedule", "--spec", "2", "--all")
+        self.assertEqual((2, "sp-conflicting-selection"), (code, payload["code"]))
         self.assertEqual(before, self.backend.docs)
         self.writer.assert_not_called()
 

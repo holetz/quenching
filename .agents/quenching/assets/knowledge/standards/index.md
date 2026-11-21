@@ -47,5 +47,11 @@ generate list). The **agent-facing pointer** for this home is [AGENTS.md](AGENTS
 | [communication.md](agents/communication.md) | The two languages a repo declares for what its agents write — the conversation tag on the root harness line, and an artifact language declared by a standard or the artifactLanguage config key — and the conduct contract that holds whether or not either is declared |
 | [ephemeral-writes.md](agents/ephemeral-writes.md) | Where an agent puts a file it creates — the three destinations, the one question that sorts them, and the session-start declaration that makes the durable-ignored path present before the first write |
 
+### ci-cd/
+
+| Doc | Covers |
+| --- | --- |
+| [test-cost.md](ci-cd/test-cost.md) | What a run may write, how many workers it may take and how much of the suite each tier runs — one temp root outside the repository, a git configuration of the run's own, a shared worker budget and three scopes, with a narrow local gate that never replaces CI |
+
 _(other subjects fill in as standards are created — these tables are regenerated deterministically from the real files)_
 <!-- END GENERATED -->

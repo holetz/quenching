@@ -81,6 +81,39 @@ class Preflight(unittest.TestCase):
         self.assertEqual(code, 1)
         self.assertEqual(out["failed"], ["ghAuth"])
 
+    def _advance_origin(self, branch):
+        other = os.path.join(os.path.dirname(self.repo), "other")
+        _git(os.path.dirname(self.repo), "clone", "-q", "-b", branch,
+             os.path.join(os.path.dirname(self.repo), "origin.git"), other)
+        _git(other, "config", "user.email", "t@example.com")
+        _git(other, "config", "user.name", "T")
+        pathlib.Path(other, "b.txt").write_text("y\n")
+        _git(other, "add", "b.txt")
+        _git(other, "commit", "-q", "-m", "ahead")
+        _git(other, "push", "-q", "origin", branch)
+
+    def test_a_branch_behind_its_remote_still_reaches_it(self):
+        _git(self.repo, "push", "-q", "origin", "main")
+        self._advance_origin("main")
+        code, out = self.run_cq(FAKE_GH_STEPS="1")
+        checks = {c["id"]: c for c in out["checks"]}
+        self.assertEqual(code, 0, out)
+        self.assertEqual(("ok", None), (checks["push"]["status"], checks["push"]["reason"]))
+
+    def test_a_store_behind_its_remote_still_reaches_it(self):
+        _git(self.repo, "branch", "quenching", "main")
+        self._advance_origin("quenching")
+        code, out = self.run_cq(FAKE_GH_STEPS="1")
+        checks = {c["id"]: c for c in out["checks"]}
+        self.assertEqual(code, 0, out)
+        self.assertEqual("ok", checks["store"]["status"])
+
+    def test_the_probe_never_creates_its_ref(self):
+        self.run_cq(FAKE_GH_STEPS="1")
+        listed = subprocess.run(["git", "ls-remote", "origin", "quenching-preflight-probe"],
+                                cwd=self.repo, capture_output=True, text=True, check=True)
+        self.assertEqual("", listed.stdout)
+
     def test_unknown_remote_is_a_refusal(self):
         code, out = self.run_cq("--remote", "nowhere")
         self.assertEqual(code, 2)
@@ -94,6 +127,44 @@ class AutopilotContract(unittest.TestCase):
         self.assertIn("mergesAllowed", body)
         self.assertIn("no merges", body)
         self.assertIn("Bash(cq:*)", body)
+
+
+class PushReason(unittest.TestCase):
+    """A failed probe names why: only a refusal or missing credentials is a `fail`."""
+
+    def setUp(self):
+        sys.path.insert(0, str(PLUGIN_ROOT / "assets" / "bin"))
+        from quenching.git import preflight
+        self.preflight = preflight
+
+    def probe(self, code, err):
+        with unittest.mock.patch.object(self.preflight, "_tool", return_value=(code, "", err)):
+            return self.preflight._dry_push("/r", "origin", "refs/heads/main")
+
+    def test_each_stderr_lands_on_its_reason(self):
+        cases = {
+            "remote: Permission to o/r.git denied to u.\nfatal: unable to access "
+            "'https://github.com/o/r/': The requested URL returned error: 403": ("fail", "read-only"),
+            "fatal: could not read Username for 'https://github.com': terminal prompts disabled":
+                ("fail", "no-credentials"),
+            "git@github.com: Permission denied (publickey).": ("fail", "no-credentials"),
+            "fatal: unable to access 'https://x/': Could not resolve host: x": ("unknown", "unreachable"),
+            "error: something nobody anticipated": ("unknown", "probe-failed"),
+        }
+        for err, expected in cases.items():
+            with self.subTest(err=err):
+                status, _why, reason = self.probe(128, err)
+                self.assertEqual(expected, (status, reason))
+
+    def test_a_timeout_is_unreachable_not_a_refusal(self):
+        self.assertEqual(("unknown", "unreachable"), self.probe(124, "timed out")[::2])
+
+    def test_the_probe_targets_a_ref_the_remote_lacks_with_force(self):
+        with unittest.mock.patch.object(self.preflight, "_tool", return_value=(0, "", "")) as tool:
+            self.preflight._dry_push("/r", "origin", "refs/heads/main")
+        argv = tool.call_args.args[1:]
+        self.assertIn("--force", argv)
+        self.assertEqual(f"refs/heads/main:{self.preflight.PROBE_REF}", argv[-1])
 
 
 class AzurePreflight(unittest.TestCase):

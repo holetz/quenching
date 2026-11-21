@@ -170,14 +170,9 @@ class TaskExecutionContractTests(unittest.TestCase):
 
         self.assertIn("ran|failed|unresolved|skipped: worktree", runner)
 
-    def test_low_complexity_chains_conclude_to_the_provider_pr_skill(self):
-        conclude = CONCLUDE.read_text(encoding="utf-8")
+    def test_low_complexity_scale_names_the_provider_pr_skill(self):
         scale = SCALE.read_text(encoding="utf-8")
 
-        self.assertIn('Skill("quenching-git", "pr-create <id>")', conclude)
-        self.assertIn("`low` chains the provider handoff", conclude)
-        self.assertNotIn('"<id> autonomous")', conclude)
-        self.assertIn("do not invoke it", conclude)
         self.assertIn('Skill("quenching-git", "pr-create <id>")', scale)
         self.assertIn("Other builds retain", scale)
 
@@ -192,9 +187,10 @@ class TaskExecutionContractTests(unittest.TestCase):
             "| Step 4 — the `## Outcome` draft | written unconfirmed",
             "| Step 5 — the distillation plan |",
             "| Step 5 — the release obligations |",
-            "| Step 6 — branch behind its base | the base merged in",
-            "| Step 6 — an inconclusive check | `needs-human`",
-            "| Step 6 — the abandoned branch-delete offer | keep",
+            "| Step 6 — the flow sweep | `done` and `abandoned`: every evidenced candidate is captured unasked",
+            "| Step 7 — branch behind its base | the base merged in",
+            "| Step 7 — an inconclusive check | `needs-human`",
+            "| Step 7 — the abandoned branch-delete offer | keep",
         ):
             self.assertIn(row, conclude)
         self.assertIn("`autonomous` never supplies an outcome", conclude)

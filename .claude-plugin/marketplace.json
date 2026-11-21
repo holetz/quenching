@@ -4,13 +4,13 @@
     "name": "Israel Holetz",
     "email": "holetz@gmail.com"
   },
-  "description": "Marketplace hosting quenching-hud, the band above the prompt that shows the worktree's active quenching spec. The quenching surface itself is not a plugin: it is installed into each target repository with `cq deploy`.",
+  "description": "Marketplace hosting the quenching mods: quenching-hud, the band above the prompt that shows the worktree's active quenching spec, quenching-vitrine, the pane of the specs a session touched and the quenching configuration, and quenching-cache, the prompt-cache band derived from cache-maxxing by 5m0k3. The quenching surface itself is not a plugin: it is installed into each target repository with `cq deploy`.",
   "plugins": [
     {
       "name": "quenching-hud",
       "source": "./integrations/claude-hud",
       "description": "Band above the prompt: the worktree's active quenching spec, its stage and task progress, read through cq specs status --no-fetch. Runs only git branch --show-current and cq specs status; writes no spec or branch and never fetches: it reads the local refs/remotes/origin/quenching, so the band can lag the remote.",
-      "version": "7.2.0",
+      "version": "7.10.0",
       "author": {
         "name": "Israel Holetz",
         "email": "holetz@gmail.com"
@@ -22,6 +22,42 @@
         "spec-driven",
         "hud",
         "read-only"
+      ]
+    },
+    {
+      "name": "quenching-vitrine",
+      "source": "./integrations/claude-vitrine",
+      "description": "Specs pane for Claude Desktop and the terminal: the specs this session touched, each document in tabs, dependencies and epics, and the quenching configuration. Reads through cq specs and cq config; its only write is cq config set|unset on request. Installed separately from the skills; cq deploy never installs it.",
+      "version": "7.10.0",
+      "author": {
+        "name": "Israel Holetz",
+        "email": "holetz@gmail.com"
+      },
+      "license": "MIT",
+      "category": "productivity",
+      "keywords": [
+        "claude-code",
+        "spec-driven",
+        "pane",
+        "configuration"
+      ]
+    },
+    {
+      "name": "quenching-cache",
+      "source": "./integrations/claude-cache",
+      "description": "Band above the prompt: minutes left on Claude's prompt cache, the next message's estimated cost and one tip, in the repository's declared language, with settings from shared.cache through cq. /quenching-cache handoff writes quenching's handoff with Haiku (the expired chat is never resent) and stores it beside its spec; /quenching-cache stats reads cq components session cache. No network of its own. Derived from cache-maxxing by 5m0k3 (MIT, https://github.com/5m0k3/cache-maxxing).",
+      "version": "7.10.0",
+      "author": {
+        "name": "Israel Holetz",
+        "email": "holetz@gmail.com"
+      },
+      "license": "MIT",
+      "category": "productivity",
+      "keywords": [
+        "claude-code",
+        "prompt-cache",
+        "cost",
+        "hud"
       ]
     }
   ]

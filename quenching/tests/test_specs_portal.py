@@ -153,9 +153,10 @@ class Handlers(PortalCase):
         self.assertEqual((status, body["count"]), (200, 3))
         self.assertEqual(self.get("/api/search?q=zzzz")[1]["count"], 0)
 
-    def _dated(self, title, deps="", start="", target=""):
+    def _dated(self, title, deps="", start="", target="", end=""):
         extra = "".join(f"{k}: {v}\n" for k, v in
-                        (("dependsOn", deps), ("start", start), ("target", target)) if v)
+                        (("dependsOn", deps), ("start", start), ("target", target),
+                         ("end", end)) if v)
         text = READY.format(title=title).replace("tags:", extra + "tags:")
         self.backend.create_spec("plans", text)
         return next(r["id"] for r in self.get("/api/specs?refresh=1")[1]["specs"] if r["title"] == title)
@@ -172,6 +173,14 @@ class Handlers(PortalCase):
         self.assertEqual(nodes[str(second)]["drivenBy"], str(first))
         self.assertIn(nodes[str(first)]["stage"], self.get("/api/specs")[1]["stages"])
         self.assertEqual(body["criticalPath"], [str(first), str(second)])
+
+    def test_schedule_draws_a_declared_end_as_the_finish(self):
+        first = self._dated("Ends late", start="2026-02-01", target="2026-02-11", end="2026-02-20")
+        second = self._dated("Waits", deps=f"[{first}]", target="2026-02-25")
+        nodes = {n["id"]: n for n in self.get("/api/schedule")[1]["nodes"]}
+        self.assertEqual((nodes[str(first)]["end"], nodes[str(first)]["earliestFinish"],
+                          nodes[str(second)]["earliestStart"]),
+                         ("2026-02-20", "2026-02-20", "2026-02-20"))
 
     def test_schedule_keeps_an_undated_node_with_null_dates(self):
         first = self._dated("Bare")
@@ -410,6 +419,13 @@ workItemType: epic
         status, body = self.post("discovery", {"spec": 1, "text": "found a thing"})
         self.assertEqual(status, 200, body)
         self.assertIn("- found a thing", self.backend.docs[1][1])
+
+    def test_an_empty_section_body_is_refused_and_writes_nothing(self):
+        before = self.backend.docs[1][1]
+        status, body = self.post("section", {"spec": 1, "heading": "Problem", "body": ""})
+        self.assertNotEqual(status, 200, body)
+        self.assertEqual(body["code"], "sp-write-empty-body")
+        self.assertEqual(self.backend.docs[1][1], before)
 
     def test_approve_records_a_human_and_is_write_once(self):
         # The ready gate is not met by a Problem-only document: refused, nothing written.

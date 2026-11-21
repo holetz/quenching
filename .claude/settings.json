@@ -9,21 +9,21 @@
   "hooks": {
     "PreToolUse": [
       {
-        "matcher": "Bash",
+        "matcher": "Bash|PowerShell|bash|powershell",
         "hooks": [
           {
             "type": "command",
-            "command": "test -f \"$CLAUDE_PROJECT_DIR/.agents/quenching/assets/hooks/deny-claude-coauthor.sh\" || exit 0; bash \"$CLAUDE_PROJECT_DIR/.agents/quenching/assets/hooks/deny-claude-coauthor.sh\"",
+            "command": "python3 -I -c \"import os,runpy,sys;p=os.path.join(os.environ.get('CLAUDE_PROJECT_DIR') or os.getcwd(),'.agents/quenching/assets/hooks/deny-claude-coauthor.py');os.path.isfile(p) or (print('{}'),sys.exit(0));runpy.run_path(p,run_name='__main__')\"",
             "timeout": 5
           }
         ]
       },
       {
-        "matcher": "Bash",
+        "matcher": "Bash|PowerShell|bash|powershell",
         "hooks": [
           {
             "type": "command",
-            "command": "test -f \"$CLAUDE_PROJECT_DIR/.agents/quenching/assets/hooks/warn-git-add-all.sh\" || exit 0; bash \"$CLAUDE_PROJECT_DIR/.agents/quenching/assets/hooks/warn-git-add-all.sh\"",
+            "command": "python3 -I -c \"import os,runpy,sys;p=os.path.join(os.environ.get('CLAUDE_PROJECT_DIR') or os.getcwd(),'.agents/quenching/assets/hooks/warn-git-add-all.py');os.path.isfile(p) or (print('{}'),sys.exit(0));runpy.run_path(p,run_name='__main__')\"",
             "timeout": 5
           }
         ]

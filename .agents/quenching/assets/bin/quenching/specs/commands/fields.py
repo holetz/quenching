@@ -127,7 +127,7 @@ def parse_field_date(value: str) -> str | None:
 
 
 def cmd_field(args, root: str, out: Emitter) -> int:
-    """Read or set ONE declared scalar — `tags`/`assignee`/`start`/`target` —
+    """Read or set ONE declared scalar — `tags`/`assignee`/`start`/`target`/`end` —
     through the backend. The ONE deterministic verb `## Design` requires for each: an agent
     (or a human) may choose WHAT to write, a tag from `tagCatalog`, an assignee or a date,
     but never HOW. `args.field` is set by the subparser that dispatched here.
@@ -163,7 +163,7 @@ def cmd_field(args, root: str, out: Emitter) -> int:
         items = [t.strip() for t in args.value.split(",") if t.strip()]
         rendered = "[" + ", ".join(json.dumps(t, ensure_ascii=False) for t in items) + "]"
         stored: object = items
-    elif key in ("start", "target"):
+    elif key in ("start", "target", "end"):
         value = parse_field_date(args.value.strip())
         if value is None:
             out.emit(args.json, {"ok": False, "code": f"sp-bad-{key}", "given": args.value,

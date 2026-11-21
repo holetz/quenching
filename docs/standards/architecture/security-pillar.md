@@ -4,7 +4,7 @@ title: Security pillar
 description: A read-only pillar that reports workflow permissions, secret and ignore coverage, advisory dependency configuration and access ownership without owning a converged tree
 resource: .github/workflows/**, .gitignore, pyproject.toml, .agents/quenching.json, quenching/skills/**, quenching/assets/bin/quenching/security/**, quenching/assets/bin/quenching/controls/**, quenching/assets/bin/quenching/common/leak.py, quenching/assets/bin/quenching/common/identity.py, quenching/assets/bin/quenching/git/identity.py, quenching/assets/githooks/**, scripts/githooks/**
 tags: [architecture, security, pillar, read-only, permissions]
-timestamp: 2026-11-03
+timestamp: 2026-11-20
 audience: both
 authority: background
 source: spec 1071 (task 1.1) — the security subject was classified as pillar-shaped by the axis contract, fixing its questions and boundary; spec 2097 (task 3.2) — the `leak` verb; spec 2164 — the identity allowlist
@@ -28,14 +28,25 @@ a secure value.
 
 | Question | Evidence read | Ownership boundary |
 | --- | --- | --- |
-| Are workflow and job permissions explicit and bounded? | Provider workflow files and their workflow/job permission declarations | `delivery` owns pipeline shape; the target owner decides whether a permission is safe. |
+| Are workflow and job permissions explicit and bounded? | Provider workflow files and their workflow/job permission declarations; a `write-all` grant is reported `unbounded`, and scopes granted `write` are listed as evidence without changing the state | `delivery` owns pipeline shape; the target owner decides whether a permission is safe. |
 | Do ignore rules cover the secret classes the repository exposes? | Repository ignore patterns and the secret-bearing paths they cover | The target owns secret policy; the pillar never adds or edits an ignore rule. |
 | Is advisory dependency configuration present? | Dependency-advisory or update configuration and the manifests it names | `toolchain` owns dependency declarations; the pillar only reports advisory coverage. |
 | Who may touch the relevant security surface? | Access-ownership declarations such as CODEOWNERS or an equivalent provider artifact | The provider and target owner own access policy; the pillar does not grant or revoke access. |
+| Are the agent harness grants committed to the repository bounded? (`agent-grants`) | The shared `.claude/settings.json` and `.mcp.json` — never `settings.local.json`, which is one person's machine | The target owner decides which grants it means; the pillar names each risky one and edits nothing. |
+
+`agent-grants` names five findings, each with its file and value: `bypass-permissions-default`
+(`permissions.defaultMode: bypassPermissions`), `unbounded-shell-allow` (an allow rule of `Bash`,
+`Bash(*)` or the PowerShell equivalent), `all-project-mcp-enabled` (`enableAllProjectMcpServers`),
+`unpinned-mcp-server` (a server launched through `npx`, `bunx`, `pnpm dlx`, `uvx` or `pipx` whose
+package carries no version, or `@latest`), and `network-hook` (a hook command calling `curl`, `wget`
+or `Invoke-WebRequest`). Any finding makes the state `missing`; no committed configuration is
+`not-measured`; a file that is not a JSON object is `refused`. A runner without a pinned version
+installs whatever the registry serves on the next session start, which is the supply-chain path an
+agent configuration opens that no lock file records.
 
 ### Catalog controls
 
-Beside the four questions, the payload carries a `controls` block: every control the open source
+Beside the five questions, the payload carries a `controls` block: every control the open source
 controls catalog routes to `security`, each requirement with its id and a state (`present`,
 `missing`, `not-measured`, `refused` or `retired`) and its evidence paths, computed by the shared
 evaluator `quenching/controls/evaluate.py`. `present` is candidate evidence, never conformance.
@@ -68,7 +79,16 @@ store guard imports too ([`spec-backend.md`](spec-backend.md) §Every store writ
 guard):
 
 - **Generic patterns**, safe to publish: Brazilian CPF and CNPJ, Azure Databricks workspace hosts,
-  Databricks personal access tokens, classic cluster ids, private-key headers.
+  Databricks personal access tokens, classic cluster ids, private-key headers (RSA, EC, DSA,
+  OpenSSH, encrypted, PGP), and provider tokens with a fixed prefix — GitHub (`ghp_`, `gho_`,
+  `ghu_`, `ghs_`, `ghr_`, `github_pat_`), AWS access key ids (`AKIA`, `ASIA`), Anthropic
+  (`sk-ant-`), OpenAI project keys (`sk-proj-`), Slack (`xox?-`) and GitLab (`glpat-`). Only
+  prefixed formats qualify: a generic `password=` or `token:` pattern refuses ordinary prose, and a
+  refusal nobody can act on teaches the reader to bypass the hook.
+- **Hidden Unicode** (`hidden-unicode`), in the same generic set: zero-width characters (except the
+  emoji joiner U+200D), bidi controls, the Unicode tag block, and a BOM anywhere but the start of a
+  file. Command bodies, references and imported docs load straight into an agent's context, so an
+  invisible character there is an instruction no human reviewer sees.
 - **Path patterns**, built at run time from `$HOME`: the home directory and the slug Claude Code
   derives from it. No user name is written into the repository, so a machine with another `$HOME`
   finds nothing that only exists on this one.

@@ -29,7 +29,8 @@ package = false
 
 [tool.pytest.ini_options]
 addopts = "--strict-markers"
-markers = ["tests: the single declared proof layer (quenching/tests)"]
+markers = ["tests: the single declared proof layer (quenching/tests)",
+           "integration: git- and subprocess-heavy tests, skipped by the affected run"]
 
 [tool.coverage.run]
 source = ["quenching/assets/bin/quenching"]

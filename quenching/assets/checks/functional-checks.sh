@@ -43,6 +43,7 @@
 #                    and the core arrangement
 #   --mcp-smoke      uvx packaging smoke only; no agent session
 #   --only 3         spoken routing — OPT-IN, see below
+#   --only 6         the surface-refinement probe — OPT-IN, see below
 #   --only 1,2,3,4,5 all five
 #
 # TWO ARRANGEMENTS. Checks 1-4 deploy every module (`--modules all`); check 5 deploys `--modules
@@ -607,6 +608,193 @@ for line in sys.stdin: print(json.loads(line).get("skill",""))')
 else
   inconc "/quenching-specs status read only the core payload" "missing tool activity or verifiable skill inventory"
   inconc "invoked no skill the core deploy does not carry" "missing tool activity or verifiable skill inventory"
+fi
+fi
+
+# --------------------------------------------------------------------------- #
+# 6. an asked-for surface refinement is planned as tasks, and nothing else is written
+#
+# The one check that drives `/quenching-specs develop` end to end. It seeds a READY spec in the
+# box's own git store, invokes the pass with `--with-surface`, and grades what the spec carries
+# afterwards and what the box's tree shows — never what the session says it did.
+#
+# OPT-IN (`--only 6`), like check 3 and for a related reason: one billed session, and the pass is
+# prompt-following judgment rather than a deterministic transform. A session that produced no tool
+# activity is INCONCLUSIVE; one that ran and did not plan the group is a FAIL.
+#
+# The spec store lives on the box's `quenching` branch (`backend: git`), so the pass writes the
+# branch and the WORKING TREE MUST NOT MOVE: `git status --short` is captured before and compared
+# after, which is the `## Validation` assertion "shows the spec and nothing else" applied to this
+# store — the spec is not a working-tree file here, and its absence from the tree is the point.
+# --------------------------------------------------------------------------- #
+if want 6; then
+echo "6. develop plans an asked-for surface refinement as tasks"
+box="$WORK/sandbox6"
+newbox "$box"
+# The git store needs an `origin` and a declared backend; the box derives no provider.
+git init -q --bare "$WORK/sandbox6-remote.git"
+( cd "$box" && git remote add origin "$WORK/sandbox6-remote.git" && git push -q origin HEAD )
+python3 - "$box" <<'PYSET'
+import json, pathlib, sys
+path = pathlib.Path(sys.argv[1], ".agents", "quenching.json")
+data = json.loads(path.read_text(encoding="utf-8"))
+data["backend"] = "git"
+path.write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
+PYSET
+# The box carries the source of the declared surface path — a target with only the deployed payload
+# parks the line instead of planning it, which is a different run from the one this check grades.
+mkdir -p "$box/quenching/skills/quenching-specs/references"
+printf '# develop\n\nThe flow this probe declares as its process surface.\n' \
+  > "$box/quenching/skills/quenching-specs/references/develop.md"
+# The declared path is untracked, and `git status --short` cannot see a content edit inside one
+# `??` line. Commit it so an edit by the pass shows as ` M` instead of passing unseen.
+( cd "$box" && git add -A && git commit -qm "probe: seed the declared surface path" )
+BEFORE="$( cd "$box" && git status --short )"
+probe_id="$( cd "$box" && ./.agents/quenching/bin/cq specs new probe-surface --title "Probe: the surface rides the spec" --json 2>/dev/null | python3 -c 'import json,sys; print(json.load(sys.stdin).get("id",""))' )"
+( cd "$box" && ./.agents/quenching/bin/cq specs section "$probe_id" \
+  "Problem,Proposal,Out of Scope,Impact,Validation,Design,Alternatives Considered,Open Decisions,Risks,Tasks" --write <<'BODY' >/dev/null 2>&1
+## Problem
+
+The workflow around a spec is sometimes the real constraint, and definition has nowhere to put it.
+
+## Proposal
+
+- The definition pass plans the process surface as the first task group.
+
+## Out of Scope
+
+- none — the probe plans one surface file and nothing else.
+
+## Impact
+
+### Standards this spec will write into docs/standards/
+
+- none — the probe writes no standard.
+
+### Process surface this spec expects to touch
+
+- `quenching/skills/quenching-specs/references/develop.md` — the flow the refinement names
+
+### Product code this spec expects to touch
+
+- none — the probe writes no product code.
+
+## Validation
+
+- `cq specs parallel` exits 0.
+
+## Design
+
+**Decision 1 — plan, do not edit.** The pass writes the spec and nothing else.
+
+## Alternatives Considered
+
+- **Editing the flow in the pass.** Rejected: it widens the grant and leaves no runner.
+
+## Open Decisions
+
+- none — the probe closes nothing.
+
+## Risks
+
+- **The group drifts from the declaration.** Mitigation: every declared path is named by a task.
+
+## Tasks
+
+### 2. Objective
+
+- [ ] 2.1 Keep the flow's own text readable
+      files: quenching/skills/quenching-specs/references/develop.md
+      verify: grep -q "develop" quenching/skills/quenching-specs/references/develop.md
+BODY
+)
+if [ -z "$probe_id" ]; then
+  inconc "planned ### 1. Process surface as the first task group" "the scratch spec could not be captured"
+  inconc "every task in the group carries files: and verify:" "the scratch spec could not be captured"
+  inconc "cq specs parallel accepts the plan" "the scratch spec could not be captured"
+  inconc "the pass wrote nothing outside the spec store" "the scratch spec could not be captured"
+else
+( cd "$box" && claude -p --setting-sources project "/quenching-specs develop $probe_id --with-surface
+
+Refine the process surface alongside this spec. Compose and refine are already answered — skip
+them. Do the surface enumeration only: plan \`### 1. Process surface\` as the FIRST group of
+\`## Tasks\`, every item carrying \`files:\` and \`verify:\`, naming the path \`## Impact\` declares under
+\`Process surface this spec expects to touch\`. Write that group into the spec and nothing else, then
+stop. Ask nothing." \
+  --max-turns 30 --output-format stream-json --verbose < /dev/null > "$WORK/6.jsonl" 2>&1 )
+if evidence "$WORK/6.jsonl"; then
+  tasks_json="$( cd "$box" && ./.agents/quenching/bin/cq specs section "$probe_id" Tasks --json 2>/dev/null )"
+  if printf '%s' "$tasks_json" | python3 -c '
+import json, sys
+body = json.load(sys.stdin).get("body") or ""
+lines = body.splitlines()
+start = next((i for i, line in enumerate(lines) if line.strip() == "### 1. Process surface"), None)
+if start is None:
+    sys.exit(1)
+first = next((i for i, line in enumerate(lines) if line.lstrip().startswith("### ")), None)
+sys.exit(0 if first == start else 1)'; then r=yes; else r=no; fi
+  check "$r" "planned ### 1. Process surface as the first task group"
+  if printf '%s' "$tasks_json" | python3 -c '
+import json, sys
+body = json.load(sys.stdin).get("body") or ""
+lines = body.splitlines()
+start = next((i for i, line in enumerate(lines) if line.strip() == "### 1. Process surface"), None)
+if start is None:
+    sys.exit(1)
+end = next((i for i in range(start + 1, len(lines)) if lines[i].lstrip().startswith("### ")), len(lines))
+tasks, current = [], None
+for line in lines[start + 1:end]:
+    if line.strip().startswith("- ["):
+        current = [line]
+        tasks.append(current)
+    elif current is not None:
+        current.append(line)
+if not tasks:
+    sys.exit(1)
+def key(task, name):
+    return any(line.strip().startswith(name) for line in task)
+sys.exit(0 if all(key(t, "files:") and key(t, "verify:") for t in tasks) else 1)'; then r=yes; else r=no; fi
+  check "$r" "every task in the group carries files: and verify:"
+  impact_body="$( cd "$box" && ./.agents/quenching/bin/cq specs section "$probe_id" Impact --json 2>/dev/null | python3 -c 'import json,sys; print(json.load(sys.stdin).get("body") or "")' )"
+  if printf '%s' "$tasks_json" | IMPACT_BODY="$impact_body" python3 -c '
+import json, os, re, sys
+body = json.load(sys.stdin).get("body") or ""
+lines = body.splitlines()
+start = next((i for i, line in enumerate(lines) if line.strip() == "### 1. Process surface"), None)
+if start is None:
+    sys.exit(1)
+end = next((i for i in range(start + 1, len(lines)) if lines[i].lstrip().startswith("### ")), len(lines))
+group = "\n".join(lines[start + 1:end])
+impact = os.environ.get("IMPACT_BODY", "").splitlines()
+decl = next((i for i, line in enumerate(impact) if line.strip() == "### Process surface this spec expects to touch"), None)
+if decl is None:
+    sys.exit(1)
+decl_end = next((i for i in range(decl + 1, len(impact)) if impact[i].lstrip().startswith("### ")), len(impact))
+paths = re.findall(r"`([^`]+)`", "\n".join(impact[decl + 1:decl_end]))
+sys.exit(0 if paths and all(p in group for p in paths) else 1)'; then r=yes; else r=no; fi
+  check "$r" "every declared surface path is named by the group"
+  if printf '%s' "$tasks_json" | python3 -c '
+import json, sys
+body = json.load(sys.stdin).get("body") or ""
+lines = body.splitlines()
+start = next((i for i, line in enumerate(lines) if line.strip() == "### 1. Process surface"), None)
+if start is None:
+    sys.exit(1)
+end = next((i for i in range(start + 1, len(lines)) if lines[i].lstrip().startswith("### ")), len(lines))
+sys.exit(0 if not any("[P]" in line for line in lines[start + 1:end] if line.strip().startswith("- [")) else 1)'; then r=yes; else r=no; fi
+  check "$r" "no [P] crosses the group"
+  ( cd "$box" && ./.agents/quenching/bin/cq specs parallel --spec "$probe_id" >/dev/null 2>&1 ); parallel_rc=$?
+  check "$([ "$parallel_rc" -eq 0 ] && echo yes || echo no)" "cq specs parallel accepts the plan"
+  AFTER="$( cd "$box" && git status --short )"
+  check "$([ "$AFTER" = "$BEFORE" ] && echo yes || echo no)" "the pass wrote nothing outside the spec store"
+else
+  inconc "planned ### 1. Process surface as the first task group" "missing tool activity or verifiable skill inventory"
+  inconc "every task in the group carries files: and verify:" "missing tool activity or verifiable skill inventory"
+  inconc "every declared surface path is named by the group" "missing tool activity or verifiable skill inventory"
+  inconc "no [P] crosses the group" "missing tool activity or verifiable skill inventory"
+  inconc "cq specs parallel accepts the plan" "missing tool activity or verifiable skill inventory"
+  inconc "the pass wrote nothing outside the spec store" "missing tool activity or verifiable skill inventory"
+fi
 fi
 fi
 

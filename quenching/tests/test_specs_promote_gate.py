@@ -20,13 +20,15 @@ import argparse
 import contextlib
 import io
 import json
+import subprocess
 import tempfile
 import unittest
+from unittest.mock import patch
 
 import _paths  # noqa: F401  — must precede the `quenching` import; see its docstring
 from quenching.common.frontmatter import parse_frontmatter
 from quenching.specs.backends.memory import MemoryBackend
-from quenching.specs.commands import promote as promote_module
+from quenching.specs.commands import epic, promote as promote_module
 from quenching.specs.commands.output import Emitter
 from quenching.specs.parse.derive import derive_info
 from quenching.specs.parse.sections import gate_report
@@ -167,6 +169,146 @@ class TheSharedVerbAsksNoFilesystemQuestion(unittest.TestCase):
         self.assertEqual(code, 0, buf.getvalue())
         self.assertEqual(backend.docs[spec_id][0], "archive")
         self.assertEqual(parse_frontmatter(backend.docs[spec_id][1])["outcome"], "done")
+
+
+class ArchiveWaitsForMerge(unittest.TestCase):
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.tmp.cleanup)
+        self.root = self.tmp.name
+        self.git("init", "--initial-branch=main")
+        self.git("-c", "user.name=Fixture", "-c", "user.email=fixture@example.test",
+                 "commit", "--allow-empty", "-m", "Base")
+        self.git("update-ref", "refs/remotes/origin/main", "HEAD")
+        self.git("checkout", "-b", "plan/1-x")
+        self.git("-c", "user.name=Fixture", "-c", "user.email=fixture@example.test",
+                 "commit", "--allow-empty", "-m", "Work")
+        self.work_tip = self.git("rev-parse", "HEAD")
+        self.backend = MemoryBackend()
+        self.addCleanup(patch.stopall)
+        patch.object(promote_module, "open_backend",
+                     return_value=(self.backend, {})).start()
+        self.pr_view = patch.object(epic, "_pr_view", return_value=None).start()
+
+    def git(self, *args):
+        return subprocess.run(["git", *args], cwd=self.root, capture_output=True,
+                              text=True, check=True, timeout=30).stdout.strip()
+
+    def promote(self, *, work="plan/1-x", records="", force=False, dry_run=False,
+                outcome="done", tasks="- [x] 1.1 Done\n"):
+        text = _document(tasks).replace(
+            "date: 2026-08-11\n",
+            f"date: 2026-08-11\nbranch:\n  base: main\n  work: {work}\n{records}", 1)
+        self.backend.create_spec("plans", text)
+        spec_id = max(self.backend.docs)
+        args = argparse.Namespace(json=True, spec=spec_id, to="archive", outcome=outcome,
+                                  force=force, dry_run=dry_run)
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf):
+            code = promote_module.cmd_promote(args, self.root, Emitter())
+        return code, json.loads(buf.getvalue()), spec_id, text
+
+    def assert_unmerged(self, **kwargs):
+        code, payload, spec_id, text = self.promote(**kwargs)
+        self.assertEqual(code, 2, payload)
+        self.assertFalse(payload["ok"])
+        self.assertEqual(payload["code"], "sp-not-merged")
+        self.assertEqual(payload["id"], spec_id)
+        self.assertEqual(payload["work"], "plan/1-x")
+        self.assertEqual(payload["base"], "main")
+        self.assertEqual(payload["reason"],
+                         "plan/1-x is not in origin/main and no merged PR is recorded")
+        self.assertIn("cq specs reconcile", payload["message"])
+        self.assertEqual(self.backend.docs[spec_id], ("plans", text))
+
+    def assert_archived(self, **kwargs):
+        code, payload, spec_id, _ = self.promote(**kwargs)
+        self.assertEqual(code, 0, payload)
+        self.assertEqual(self.backend.docs[spec_id][0], "archive")
+
+    def test_unmerged_work_refuses_done(self):
+        self.assert_unmerged()
+
+    def test_force_does_not_waive_merge_guard(self):
+        self.assert_unmerged(force=True, tasks="- [ ] 1.1 Open\n")
+
+    def test_open_tasks_refuse_before_merge_guard(self):
+        with patch.object(promote_module, "merge_evidence") as evidence:
+            code, payload, _, _ = self.promote(tasks="- [ ] 1.1 Open\n")
+        self.assertEqual(code, 2)
+        self.assertEqual(payload["code"], "sp-open-tasks")
+        evidence.assert_not_called()
+
+    def test_work_merged_into_remote_base_archives(self):
+        self.git("update-ref", "refs/remotes/origin/main", self.work_tip)
+        self.assert_archived()
+        self.pr_view.assert_not_called()
+
+    def test_fresh_branch_without_commits_refuses_done(self):
+        # Cut from the base and never committed to: its tip is an ancestor of origin/main like a
+        # merged branch's, and only its reflog says no work ever landed on it.
+        self.git("branch", "plan/2-fresh", "main")
+        code, payload, spec_id, text = self.promote(work="plan/2-fresh")
+        self.assertEqual(code, 2, payload)
+        self.assertEqual(payload["code"], "sp-not-merged")
+        self.assertEqual(payload["reason"],
+                         "plan/2-fresh has no commits of its own and no merged PR is recorded")
+        self.assertEqual(self.backend.docs[spec_id], ("plans", text))
+
+    def fast_forwarded_branch(self):
+        # Cut from the base, then only `git merge --ff-only origin/main`: its tip moved off the
+        # creation commit and is in origin/main, yet no commit ever landed on it (spec 2241).
+        self.git("branch", "plan/2-ff", "main")
+        self.git("update-ref", "refs/remotes/origin/main", self.work_tip)
+        self.git("checkout", "plan/2-ff")
+        self.git("merge", "--ff-only", "refs/remotes/origin/main")
+
+    def test_fast_forwarded_branch_refuses_done(self):
+        self.fast_forwarded_branch()
+        code, payload, spec_id, text = self.promote(work="plan/2-ff")
+        self.assertEqual(code, 2, payload)
+        self.assertEqual(payload["code"], "sp-not-merged")
+        self.assertEqual(payload["reason"],
+                         "plan/2-ff has no commits of its own and no merged PR is recorded")
+        self.assertEqual(self.backend.docs[spec_id], ("plans", text))
+
+    def test_merge_evidence_and_the_slot_reclaim_agree(self):
+        from quenching.git import slots
+        self.git("branch", "plan/2-fresh", "main")
+        self.fast_forwarded_branch()
+        base_sha = self.git("rev-parse", "refs/remotes/origin/main")
+        for work, merged in (("plan/2-fresh", False), ("plan/2-ff", False), ("plan/1-x", True)):
+            info = {"frontmatter": {"branch": {"work": work, "base": "main"}}}
+            evidence = promote_module.merge_evidence(info, self.root, fetch=False, ask_pr=False)
+            holder = slots._merged_holder(self.root, {"branch": work}, base_sha)
+            self.assertEqual((evidence[0], holder), (merged, merged), (work, evidence))
+
+    def test_fresh_branch_with_merged_pr_archives(self):
+        self.git("branch", "plan/2-fresh", "main")
+        self.pr_view.return_value = ("MERGED", "plan/2-fresh")
+        self.assert_archived(work="plan/2-fresh", records="pr:\n  number: 42\n")
+
+    def test_merged_pr_archives_without_ancestry(self):
+        self.pr_view.return_value = ("MERGED", "plan/1-x")
+        self.assert_archived(records="pr:\n  number: 42\n")
+        self.pr_view.assert_called_once()
+
+    def test_merge_record_archives(self):
+        self.assert_archived(records="merge:\n  strategy: squash\n")
+        self.pr_view.assert_not_called()
+
+    def test_abandoned_never_checks_merge(self):
+        with patch.object(promote_module, "merge_evidence") as evidence:
+            self.assert_archived(outcome="abandoned")
+        evidence.assert_not_called()
+
+    def test_work_on_base_archives(self):
+        self.assert_archived(work="main")
+        self.pr_view.assert_not_called()
+
+    def test_unmerged_dry_run_also_refuses(self):
+        self.assert_unmerged(dry_run=True)
 
 
 if __name__ == "__main__":

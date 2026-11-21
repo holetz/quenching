@@ -6,6 +6,7 @@ import json
 from quenching.specs.backends import open_backend
 from quenching.specs.commands.output import Emitter, read_one
 from quenching.specs.parse.deps import dep_findings, deps_of, find_cycle_through, schedule
+from quenching.specs.parse.epics import reverse_index
 from quenching.specs.parse.fields import set_frontmatter_key
 
 
@@ -69,17 +70,31 @@ def cmd_schedule(args, root: str, out: Emitter) -> int:
         return out.emit_err(args.json, err)
     infos = _infos(backend)
     spec = str(args.spec) if args.spec is not None else None
+    every = getattr(args, "all", False)
+    if spec is not None and every:
+        return out.emit_err(args.json, {
+            "code": "sp-conflicting-selection", "exit": 2,
+            "message": "pass --spec or --all, not both"})
     if spec is not None and spec not in infos:
         return out.emit_err(args.json, {"code": "sp-unknown-id", "exit": 2, "id": spec,
                                        "message": f"no spec with id '{spec}'"})
-    result = schedule(infos, [spec] if spec is not None else None)
+    # `--all` is the reader that needs both directions of the graph: the specs waiting for a
+    # node are the nodes that name it, and an archived dependent or a spec with no edge of
+    # its own is outside the default selection.
+    selected = list(infos) if every else ([spec] if spec is not None else None)
+    result = schedule(infos, selected)
     cycle = result["cycle"]
     human = ("dependency cycle: " + " -> ".join(cycle)) if cycle else "\n".join(
-        f"{node['id']} — start: {node['start']}, target: {node['target']}; "
+        f"{node['id']} — start: {node['start']}, target: {node['target']}, end: {node['end']}; "
         f"earliestStart: {node['earliestStart']}, earliestFinish: {node['earliestFinish']}; "
         f"slipDays: {node['slipDays']}, critical: {node['critical']}"
         for node in result["nodes"])
     if not cycle:
         human += "\ncriticalPath: " + " -> ".join(result["criticalPath"])
-    out.emit(args.json, {"ok": not bool(cycle), **result}, human)
+    payload = {"ok": not bool(cycle), **result}
+    # The reverse of composition, over the same bulk read: a member asking which composites name it
+    # has no cheaper answer, and an index over a subset of the store would lie about the whole.
+    if every:
+        payload["composites"] = reverse_index(infos)
+    out.emit(args.json, payload, human)
     return 1 if cycle else 0

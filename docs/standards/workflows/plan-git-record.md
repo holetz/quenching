@@ -4,10 +4,10 @@ title: Plan git record contract
 description: How a spec records the git facts that cannot be derived later — per-task commit subjects, branch, pull request and merge records, branch marks for conclude discovery, base inference, merge routes, and safe local and remote branch cleanup
 resource: quenching/references/git/**, quenching/references/specs-execute/execution.md, quenching/references/specs-conclude/auto-discover.md, quenching/assets/bin/quenching/specs/**, quenching/assets/bin/quenching/git/**, quenching/skills/quenching-specs/references/execute.md, quenching/skills/quenching-specs/references/conclude.md, quenching/skills/quenching-git/references/merge.md, quenching/skills/quenching-git/references/pr-create.md
 tags: [workflows, specs, git, commits, records]
-timestamp: 2026-10-29
+timestamp: 2026-11-21
 audience: both
 authority: background
-source: abandonar-slug-por-id-nativo, vincular-spec-a-branch-commits-e-pr; history in ADR 0003
+source: abandonar-slug-por-id-nativo, vincular-spec-a-branch-commits-e-pr, spec 2022, spec 2187, spec 2209, spec 2235, spec 2242; history in ADR 0003
 maintainer: quenching
 ---
 
@@ -34,7 +34,7 @@ Two consequences follow:
 - **`/quenching-git merge` stamps `merge:` on the work branch before merging**, so the merge is the
   last action of *that* command and **nothing is ever committed to the base branch after it**. One
   merge carries the code, the emergent docs (written earlier, by `/quenching-specs conclude`, which
-  stops before the merge and hands off to this command) and the archived spec's distillation;
+  stops before the merge and hands off to this command) and the spec's distillation;
   reverting it reverts the spec's whole footprint.
 
 A record that cannot be written beforehand is a record that forces a write afterwards, and a write
@@ -287,6 +287,40 @@ itself — every run reads the named route and runs the command on its own word.
 merge route remain separate because human review decides whether and when the branch enters the
 base (`quenching/references/align/convergence.md` §The PR route).
 
+## A `done` spec is archived after its merge, never before
+
+`## Outcome` is written before the PR; the archive move follows the merge. The spec store is the
+`quenching` ref, read by every session the moment a write is pushed, so an archive written before
+the merge publishes a close over a PR that can still stall, fail its checks or be closed — three
+times in two repositories (1518, 1028798, 1030888) before this rule.
+
+`cq specs promote --to archive --outcome done` refuses (`sp-not-merged`, exit 2) while the
+`branch` record names a work ref distinct from its base and none of these holds: the work tip is an
+ancestor of `origin/<base>` and carries commits of its own, a `merge:` record names a strategy, or
+the `pr:` record's PR reads merged (the squash case, where ancestry fails). A branch just cut from
+the base, or one that only fast-forwarded to it (`git merge --ff-only`, a `cq git sync` with no
+work), is an ancestor of it too, so ancestry counts for a local ref only when its reflog holds an
+entry that moved it by commit, cherry-pick or revert; a local ref without one, or with an empty or
+expired reflog, falls through to the `pr:` record and otherwise refuses with `<work> has no commits
+of its own`. A remote-only ref has no local reflog and is judged by ancestry alone. This is the
+same guard the slot reclaim applies — both call `has_own_work` in `quenching/git/slots.py` (specs
+2235, 2241). `--force` waives open tasks only; it never reaches
+this refusal. `--outcome abandoned` has nothing to wait for and is not checked.
+
+The close is one verb, `cq specs reconcile --write`: it finds every spec of the front whose work is
+merged and archives as `done` each one carrying `## Outcome`, through `promote`'s own gate; one
+without `## Outcome`, or with a task still open, is reported `needs-human` and never forced. Four
+callers run it, so no route to a merge leaves the spec open:
+
+- `/quenching-specs conclude` resumed after the merge (its step 8);
+- `/quenching-git merge`, right after its `merge:` stamp;
+- the `spec-orchestrator`, right after `cq git pr merge`;
+- the open of `/quenching-specs execute`, `orchestrate` and `conclude`, which reconcile whatever
+  merged since the last run.
+
+`cq specs next --front` lists the same specs offline as `mergedNotArchived`, so a merged spec left
+open is visible before any of those runs.
+
 ## The squash caveat, and what rebase no longer costs
 
 The four merge strategies differ in one dimension that matters here — what happens to the commits
@@ -302,7 +336,7 @@ the recorded subjects resolve against:
 A squash is a common house style and is not argued against — but its consequence is said out loud:
 when squash is chosen, `/quenching-git merge` records it in `merge:` and offers **not** to delete
 the branch, the only way the archived spec's `subject:` fields stay resolvable. `## Outcome` no
-longer names the strategy — it is decided after `conclude` has already written and archived it — so
+longer names the strategy — it is decided after `conclude` has already written it — so
 the branch's own `merge:` record and `git log` are where a later reader resolves which strategy
 ran.
 
@@ -362,12 +396,10 @@ is deleted from — the one case worth fearing, and git already declines it on i
 passed, by any command in this front, under any outcome: on a refusal, report git's own output
 verbatim and keep the branch.
 
-This is proven, not merely agreed. `assets/checks/conclude-order-check.sh`'s `abandoned` arm builds
-a spec through create → isolate → execute → conclude(`--outcome abandoned`), deletes the branch with
-`git branch -D` from the base checkout, and asserts that everything the closing wrote — the archive
-move, the `outcome:` stamp, the distillation's background note — still resolves on the base
-afterwards. The assertion that failed before §Every record is written where it needs to survive
-existed is exactly this one.
+This is agreed and locked as text, not proven by a run: the order of conclude's steps is pinned by
+`quenching/tests/test_specs_conclude_flow_sweep.py` and `test_specs_conclude_retire_worktree.py`,
+and no executable check builds an abandoned spec end to end. An executable check that did
+once existed and is gone; the claim is therefore the contract's wording, not a measured fact.
 
 ## Remote branch cleanup is a reported fact, not an automatic merge record
 
@@ -377,6 +409,17 @@ unchanged, and it is separate from `branch:`, `pr:` and `merge:` records. The de
 uses no implicit fetch or remote-prune: a caller that needs newer facts fetches explicitly and
 starts a fresh report.
 
+Ancestry alone never makes a branch `merged` in that report: a branch just cut from the base is an
+ancestor of it too. A local branch is a `merged` candidate only when it carried commits of its own —
+its reflog moved off the creation commit, or, without such an entry, its tip is off the base's
+first-parent chain; otherwise it stays in `keptBranches` with `no-own-commits`, and `cq git prune
+--branch` refuses it (`git-prune-not-reported`). A remote branch whose tip sits on the first-parent
+chain is listed only when the local branch of the same name carried commits of its own; a
+remote-tracking reflog starts at a ref that already held the tip, so it proves nothing. `gone` is
+only an added reason: a gone branch with commits outside the base stays in `keptBranches` with
+`["gone", "unmerged-commits"]`, because `prune` deletes with `branch -d`, which refuses it (spec
+2242).
+
 `cq git stale` also assesses registered linked worktrees and prints a complete `manifest`: every
 local branch, remote branch and worktree, candidate or preserved, with a stable `id` (derived from
 the kind and the exact ref or canonical path), the observed `tip`, its `tipDate` (the tip's committer
@@ -384,14 +427,35 @@ date, `git show -s --format=%cI`, never creation or last use; `null` with a name
 unknown), the reasons, the exact action and a `recommended` flag. The legacy
 `staleBranches`/`keptBranches`/`remoteBranches`/`orphanWorktrees` lists keep their shape. A linked
 worktree is a candidate only when inspection succeeded, its HEAD is merged into the base, it holds no
-tracked, untracked or ignored content, is not locked, is not the main or current checkout or the base
-branch, and has no open PR with the PR lookup available. That is eligibility, not evidence of
-inactivity. Homogeneous candidates are summarized in `groups` by scope, kind, reasons and date
-provenance, always resolving to the displayed ids. The recommendation is the evidenced subset, or
-none when the PR lookup is unavailable, and it never grants execution.
+tracked or untracked content and no ignored content outside the regenerable class, is not locked, is
+not the main or current checkout or the base branch, and has no open PR with the PR lookup available.
+The ignored content is reported per worktree as `ignored: {regenerable, unrecognized}`: a path the
+built-in cache list or `shared.regenerablePaths` covers is regenerable and does not block, while any
+other ignored file is unrecognized, is named by path and blocks with `ignored-content-unrecognized`.
+That is eligibility, not evidence of inactivity. Homogeneous candidates are summarized in `groups` by scope, kind, reasons and date
+provenance, always resolving to the displayed ids. The recommendation is the evidenced subset — for
+a worktree, its eligibility — or none when the PR lookup is unavailable, and it never grants
+execution.
+
+A worktree slot held under a quenching lock is reported apart, as `kind: slot` in the `manifest`
+and with its evidence in `heldSlots`, never as `kind: worktree`. It is a `candidate` with reason
+`archived-holder` only with every piece of evidence in favour: the spec its lock names is in
+`archive`, its HEAD is contained in the already fetched `<remote>/<base>`, its porcelain is clean,
+no ignored content sits outside the regenerable class (`.quenching/handoff/` and `.quenching/codex/`
+excepted, because the release carries them to the main checkout), and `/proc` shows no process with
+its cwd inside it. Any missing or contrary fact keeps it `preserved` with a named blocker
+(`foreign-lock`, `holder-not-a-spec`, `holder-unknown`, `holder-not-archived`, `base-unresolved`,
+`unmerged-head`, `inspection-failed`, `dirty`, `ignored-content-unrecognized`,
+`process-lookup-unavailable`, `process-in-slot`). Its action is `cq git prune --slot <path> --id
+<id> --expect-tip <tip> --confirm-inactive`, which re-reads the report and gives the slot back
+through `cq git worktree release` — detached at the base, unlocked, its merged branch deleted with
+`-d` — and never removes the directory. The release moves every file under the slot's
+`.quenching/handoff/` to the same place in the main checkout; a name already taken there gets a
+`-<slot>-<n>` suffix, so a handoff is never overwritten and never discarded.
 
 `/quenching-git cleanup` presents concise grouped choices over that manifest, local and remote
-decisions kept separate, and a live worktree needs the owner's own confirmation that it is inactive.
+decisions kept separate, archived slots as their own decision, and a live worktree or slot needs
+the owner's own confirmation that it is inactive.
 `cq git prune` re-reads a fresh report and refuses (exit 2) when the approved `--expect-tip` or
 `--id` no longer matches, when a live worktree lacks `--expect-tip` or `--confirm-inactive`, or when
 the target is no longer eligible; deletes stay `-d`, no force, and the remote delete keeps its

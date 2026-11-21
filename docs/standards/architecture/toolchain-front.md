@@ -4,7 +4,7 @@ title: Toolchain front
 description: The target repository's toolchain surface — manifests, locks, language pins and tool configuration, with explicit ownership boundaries and stable tc-* findings
 resource: .agents/quenching.json, pyproject.toml, uv.lock, AGENTS.md, .github/workflows/**, quenching/assets/zensical/ci-github-pages.yml
 tags: [architecture, toolchain, dependencies, build, configuration]
-timestamp: 2026-08-31
+timestamp: 2026-11-21
 audience: both
 authority: current
 source: spec 1067 (task 1.1, 2026-08-31) — the admission evidence, cross-file surface and ownership boundaries were measured in the current repository
@@ -60,7 +60,7 @@ than requiring every ecosystem:
 ```text
 toolchain surface
 ├── manifests: pyproject.toml, setup.cfg, package.json, Cargo.toml
-├── locks: uv.lock, poetry.lock, package-lock.json
+├── locks: uv.lock, poetry.lock, package-lock.json, yarn.lock, pnpm-lock.yaml, Cargo.lock
 ├── language pins: .python-version, .nvmrc
 └── tool-configuration blocks carried by those manifests
 ```
@@ -68,6 +68,11 @@ toolchain surface
 The list is a candidate family, not an inventory of files the target must create. A later
 implementation may extend it only after measuring a real target corpus and adding the extension to
 the verifier's declared contract. `.agents/quenching.json` is never a member of this tree.
+
+`yarn.lock` and `pnpm-lock.yaml` joined the family after a measured false `tc-tool-unpinned` on yarn
+and pnpm targets (spec 2228): each is a lock for `package.json`, and the inventory reads both as
+text, never as JSON or TOML — a readable, non-empty file parses `ok`, an empty one is `empty`, and
+neither format's internal structure is audited.
 
 ## Configuration and ownership boundaries
 
@@ -112,7 +117,7 @@ The stable `tc-*` vocabulary is closed at seven findings. Severity and dispositi
 | `tc-lock-stale` | Mechanical | `error` | A lock artifact is desynchronized from the manifest declarations it records. | Regenerate the lock from the declared ecosystem source and re-run the verifier. |
 | `tc-config-duplicate` | Mechanical | `error` | The same toolchain key is declared in more than one configuration home. | Apply the declared arbiter and remove the duplicate source; never choose an owner from file order. |
 | `tc-generated-stale` | Mechanical | `error` | A generated tool-configuration block no longer matches its deterministic source. | Regenerate the block from its source while preserving authored text outside the generated zone. |
-| `tc-runtime-drift` | Structural | `error` | A language version disagrees across the manifest, CI, pin file or container declaration. | Align declarations under the target's chosen version source, or hand the version choice to the target owner when none is declared. |
+| `tc-runtime-drift` | Structural | `error` | A language version disagrees across the manifest and the language pin file (`.python-version`, `.nvmrc`): two exact versions differ, two floors differ, or a pin sits below a manifest floor (`>=`/`>`). CI and container declarations are not read. | Align declarations under the target's chosen version source, or hand the version choice to the target owner when none is declared. |
 | `tc-tool-unpinned` | Structural | `error` | A declared development tool has no reproducible version pin. | Add the pin in the declared toolchain home; selecting a version where none is evidenced remains a target-owner decision. |
 | `tc-build-backend-missing` | Structural | `error` | A buildable manifest lacks the build-backend declaration required by its ecosystem contract. | Add or repair the backend only when the target's build contract identifies it; otherwise report the missing decision. |
 | `tc-key-unarbitered` | Structural | `error` | A manifest or toolchain key is read by multiple fronts without one declared owning writer. | Apply the shared arbiter-by-key contract; report ambiguous ownership rather than selecting it by the front. |

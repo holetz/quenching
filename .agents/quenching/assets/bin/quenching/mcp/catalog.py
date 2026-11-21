@@ -80,7 +80,6 @@ CATALOG: dict[str, Row] = {
     **_rows("opensource", "read", "doctor", "status", "readiness"),
     **_rows("opensource", "write", "apply"),
     **_rows("codex", "read", "eligible", "probe"),
-    **_rows("codex", "external", "review"),
 }
 
 

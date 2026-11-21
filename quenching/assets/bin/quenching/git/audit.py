@@ -100,15 +100,88 @@ def _reflog(cwd: str, ref: str, env: dict[str, str] | None = None,
     return kept
 
 
+def _since_switch(entries: list[list[str]], branch: str, held: set[str]) -> list[list[str]]:
+    """The `HEAD` reflog entries (newest first) that belong to the audited branch's life: those newer
+    than the last `checkout: moving from <x> to <branch>` whose new sha the branch ref itself held
+    (`held`, the shas of its own reflog). A slot is reused across specs, so what came before that
+    switch is another branch's history. A forged subject whose sha the branch never held is no
+    boundary, so a hand-made move cannot hide what precedes it. No such switch keeps every entry."""
+    want = "checkout: moving from "
+    for i, (sha, subject) in enumerate(entries):
+        if subject.startswith(want) and subject.endswith(f" to {branch}") and sha in held:
+            return entries[:i]
+    return entries
+
+
+def _own_commits(entries: list[list[str]], branch: str) -> set[str]:
+    """The shas `HEAD` committed while it sat on `branch`, read from the `HEAD` reflog (newest first)
+    by following the `checkout: moving from <x> to <y>` subjects. Before the first checkout the
+    current branch is that checkout's `<x>`, or `branch` itself when there is none: a worktree
+    starts on the branch it was cut for."""
+    ordered = entries[::-1]
+    current = branch
+    for _sha, subject in ordered:
+        m = re.match(r"checkout: moving from (.+) to .+$", subject)
+        if m:
+            current = m.group(1)
+            break
+    own = set()
+    for sha, subject in ordered:
+        m = re.match(r"checkout: moving from .+ to (.+)$", subject)
+        if m:
+            current = m.group(1)
+        elif subject.startswith("commit") and current == branch:
+            own.add(sha)
+    return own
+
+
+def _discarded_by_switch(cwd: str, entries: list[list[str]], i: int, branch: str,
+                         env: dict[str, str] | None, errors: list[dict] | None) -> str:
+    """The switch onto `branch` at entry `i` is a slot's boundary, but one that throws the branch's own
+    commits away (`checkout --detach; branch -D X; checkout -b X <older>`) is a rewrite: where `HEAD`
+    stood before the switch descends strictly from where it lands and some commit between them was
+    made on `branch`. A previous branch ahead of the landing point owns its commits, so it is no
+    finding. Returns the item for `rewrites.head`, or `""`."""
+    if i + 1 >= len(entries):
+        return ""
+    new, old = entries[i][0], entries[i + 1][0]
+    if new == old:
+        return ""
+    code, out, err = _git_run(cwd, *SAFE, "rev-list", f"{new}..{old}", env=env)
+    if code != 0:
+        if errors is not None:
+            errors.append(_error(("rev-list",), code, err))
+        return ""
+    between = set(out.split())
+    if not between:
+        return ""
+    dropped = between & _own_commits(entries, branch)
+    if not dropped:
+        return ""
+    return (f"{entries[i][1]} {old[:12]}..{new[:12]} (discards {len(dropped)} commit(s) of {branch})")
+
+
 def _rewrites(cwd: str, ref: str, env: dict[str, str] | None = None,
-              errors: list[dict] | None = None) -> list[str]:
+              errors: list[dict] | None = None, branch: str | None = None) -> list[str]:
     """The reflog moves of `ref` that are not fast-forwards: the older sha is not an ancestor of the
     newer one. The verdict is the graph's, so a rewrite made with no message or a forged one
     (`update-ref -m "commit: tidy"`) is still listed. The oldest entry is the creation and has no
-    older sha, so it is never one. Each item reads `<subject or (no reflog message)> <old>..<new>`."""
+    older sha, so it is never one. Each item reads `<subject or (no reflog message)> <old>..<new>`.
+    With `branch`, `ref` is `HEAD` and only the moves since its last switch onto that branch count
+    (`_since_switch`): the switch itself moves `HEAD` between unrelated tips and is no rewrite of the work."""
     entries = [(line.split(" ", 1) + [""])[:2]
                for line in _lines(cwd, "reflog", "show", "--format=%H %gs", ref, env=env)]
+    if branch is not None:
+        held = {line.split(" ", 1)[0] for line in
+                _lines(cwd, "reflog", "show", "--format=%H %gs", f"refs/heads/{branch}", env=env)}
+        kept = _since_switch(entries, branch, held)
+        discarded = ""
+        if len(kept) < len(entries):
+            discarded = _discarded_by_switch(cwd, entries, len(kept), branch, env, errors)
+            entries = entries[:len(kept) + 1]          # the switch entry stays as the oldest anchor; the loop never lists it
     found = []
+    if branch is not None and discarded:
+        found.append(discarded)
     for i, (sha, subject) in enumerate(entries[:-1]):
         older = entries[i + 1][0]
         if older == sha:
@@ -719,7 +792,7 @@ def _grants(cwd: str, base: str, tip: str, changed: list[str], env: dict[str, st
 TEST_PATH = re.compile(r"(^|/)(tests?|__tests__)/|(^|/)test_[^/]*$|_test\.[^/]+$|\.(test|spec)\.[^/]+$")
 TEST_NAME = re.compile(r"(^|/)test_[^/]*$|_test\.[^/]+$|\.(test|spec)\.[^/]+$")
 ASSERT = re.compile(r"\bassert\w*\b|\bexpect\s*\(")
-GATE_PATH = re.compile(r"^scripts/verify_repo\.sh$|^quenching/assets/checks/")
+GATE_PATH = re.compile(r"^scripts/verify_repo\.sh$|^scripts/toolchain/|^quenching/assets/checks/")
 CODE_EXT = re.compile(r"\.(py|sh|js|jsx|ts|tsx|rb|go|rs|java|kt|cs)$")
 TEST_DIRECT = re.compile(r"(^|/)(tests?|__tests__)/[^/]+$")
 DISCOVER_WORD = re.compile(r"\b(discover|pytest|nosetests?|tox)\b")
@@ -981,7 +1054,7 @@ def cmd_audit(args) -> int:
         "reflog": {"branch": _reflog(worktree, f"refs/heads/{args.branch}", env, errors),
                    "head": _reflog(worktree, "HEAD", env, errors)},
         "rewrites": {"branch": _rewrites(worktree, f"refs/heads/{args.branch}", env, errors),
-                     "head": _rewrites(worktree, "HEAD", env, errors)},
+                     "head": _rewrites(worktree, "HEAD", env, errors, branch=args.branch)},
     }
     payload["generated"] = _generated(worktree, base, tip, payload["changed"], env, errors)
     payload["grants"] = _grants(worktree, base, tip, payload["changed"], env, errors,

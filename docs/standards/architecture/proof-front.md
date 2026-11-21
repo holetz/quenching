@@ -63,7 +63,7 @@ The target-structure, layer and gate details are self-contained in the proof-fro
 - [layer contract](../../../quenching/skills/quenching-proof/references/proof-align/layer-contract.md)
   owns layer meaning, derived markers and fixture reach;
 - [gate contract](../../../quenching/skills/quenching-proof/references/proof-align/gate-contract.md)
-  owns measured surfaces, floors, order evidence, CI and entry-point proof.
+  owns measured surfaces, floors, order evidence, run cost, CI and entry-point proof.
 
 ## Configuration home
 
@@ -77,15 +77,27 @@ configuration home, `.agents/quenching.json` (or the legacy `.claude/quenching.j
     "layers": {},
     "measuredRoots": ["src"],
     "proofExclusions": [],
-    "ratchetPath": null
+    "ratchetPath": null,
+    "cost": {
+      "tempRoot": "isolated",
+      "workers": "auto",
+      "scopes": {"task": "…", "close": "…", "ci": "…"}
+    }
   }
 }
 ```
 
-`proofRoot`, `layers`, `measuredRoots`, `proofExclusions`, and `ratchetPath` are paths and
+`proofRoot`, `layers`, `measuredRoots`, `proofExclusions`, `ratchetPath` and `cost` are paths and
 declarations owned by this front. The shared loader discovers and parses the envelope; the proof
 adapter resolves these values relative to the repository root and applies the defaults and shape
 rules defined below. No proof declaration is read from the `ops` or `specs` namespace.
+
+`cost` is the run's declared price: `tempRoot` is `isolated` or `system`, `workers` is `auto` or a
+positive integer, and `scopes` names the `task`, `close` and `ci` commands. Every key is optional,
+and an absent key is reported (`pf-cost-undeclared`) instead of being defaulted into a pass; a value
+of the wrong shape is a `pf-config-invalid` refusal, so a typo cannot read back as an honest
+declaration. The standard that states the rules is
+[test-cost.md](../ci-cd/test-cost.md).
 
 Root-level copies of these keys are legacy flat declarations. A configuration that contains one,
 alone or alongside `proof`, is refused with `sp-config-unscoped` and exit `2`; the refusal names
@@ -169,7 +181,7 @@ does not receive a partial report over rules written for pytest.
 
 ## Gate rules
 
-The verification gate carries five rules:
+The verification gate carries six rules:
 
 1. The measured surface is declared and every floor names the source root it protects.
 2. The suite runs all declared layers; an empty declared layer is reported, while a conditional
@@ -180,9 +192,12 @@ The verification gate carries five rules:
    assumed from one serial run.
 5. CI runs the same proof contract and the active operations entry points that the repository
    presents as part of its interface have an explicit test or an explicit not-applicable record.
+6. The gate is cheap without being narrower: the run declares its temp root, its worker count and
+   the scope of each tier, and a narrow local scope never replaces CI.
 
 The gate contract defines `pf-unmeasured-surface`, `pf-no-floor`, `pf-stop-first`,
-`pf-order-unproven`, `pf-no-ci` and the conditional `pf-untested-entrypoint`. The layer contract
+`pf-order-unproven`, `pf-no-ci`, `pf-cost-undeclared`, `pf-temp-shared`, `pf-scope-wide` and the
+conditional `pf-untested-entrypoint`. The layer contract
 owns `pf-empty-layer` because its severity depends on whether the target declared the layer as
 required evidence.
 

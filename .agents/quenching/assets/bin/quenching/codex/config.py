@@ -1,25 +1,25 @@
 """The `shared.codex` block of `.agents/quenching.json`, with its defaults.
 
-The block is optional: absent, every default holds and `crossReview` is `auto`. `"off"` is the
-explicit opt-out. A value of the wrong shape falls back to its default and is named in
-`warnings`, so a typo never silently changes the threshold a caller relies on.
+The block is optional: absent, every default holds and Codex is off — `executor.enabled` is
+`false`. A value of the wrong shape falls back to its default and is named in `warnings`, so a typo
+never silently changes the threshold a caller relies on.
 
-`executor` configures Codex writing one task's code inside `/quenching-specs execute`. It is
-on by default and independent of `crossReview`: `crossReview: "off"` turns off the review, never
-the executor. Codex's native sandbox is not configurable: the executor always runs with the
-bypass, inside the worktree, under the git guard.
+`executor` configures Codex writing one task's code inside `/quenching-specs execute`; a
+repository opts in with `executor.enabled: true`. Codex's native sandbox is not configurable: the
+executor always runs with the bypass, inside the worktree, under the git guard.
+
+`crossReview` and `model` belonged to the Codex cross review, which was removed: a leftover value
+is ignored and named in `warnings`.
 """
 from __future__ import annotations
 
 from quenching.common.config import load_config, namespace
 
 DEFAULTS = {
-    "crossReview": "auto",
     "maxUsedPercent": {"primary": 80, "secondary": 90},
     "timeoutSeconds": 900,
-    "model": "gpt-6-astra",
     "executor": {
-        "enabled": True,
+        "enabled": False,
         "modelSmall": "gpt-6.1-sol",
         "modelVerified": "gpt-6.1-sol",
         "modelSmallTier": "gpt-6-luna",
@@ -29,7 +29,7 @@ DEFAULTS = {
         "stopLossPercent": 15,
     },
 }
-CROSS_REVIEW = ("auto", "off")
+RETIRED = ("crossReview", "model")
 CHOICES = {
     "reasoningEffort": ("minimal", "low", "medium", "high"),
 }
@@ -50,11 +50,8 @@ def load_settings(root: str) -> tuple[dict, list[str]]:
     if not isinstance(block, dict):
         return settings, ["shared.codex is not an object; defaults apply"]
 
-    if "crossReview" in block:
-        if block["crossReview"] in CROSS_REVIEW:
-            settings["crossReview"] = block["crossReview"]
-        else:
-            warnings.append("shared.codex.crossReview must be 'auto' or 'off'; 'auto' applies")
+    warnings += [f"shared.codex.{key} is no longer read: the Codex cross review was removed"
+                 for key in RETIRED if key in block]
     ceilings = block.get("maxUsedPercent", {})
     if isinstance(ceilings, dict):
         for window in ("primary", "secondary"):
@@ -74,11 +71,6 @@ def load_settings(root: str) -> tuple[dict, list[str]]:
         else:
             warnings.append("shared.codex.timeoutSeconds must be a positive integer; "
                             f"{DEFAULTS['timeoutSeconds']} applies")
-    if "model" in block:
-        if isinstance(block["model"], str) and block["model"].strip():
-            settings["model"] = block["model"].strip()
-        else:
-            warnings.append(f"shared.codex.model must be a name; {DEFAULTS['model']} applies")
     if "executor" in block:
         warnings += _executor(block["executor"], settings["executor"])
     return settings, warnings

@@ -170,7 +170,7 @@ half 3 is the only instrument that can tell them.
 `surface-verification.md` records a measured fact about `functional-checks.sh` alone: over the
 whole `/.specs/archive/` record, every red run that harness ever produced traced to a defect in
 itself, none to a surface regression. That fact was earned by a specific measurement, on a specific
-harness, and it does not travel to `citation-check.sh` or `conclude-order-check.sh` by proximity —
+harness, and it does not travel to `citation-check.sh` by proximity —
 no equivalent measurement exists for either, and `citation-check.sh` in particular has too little
 run history to support one (it entered the tree on 2026-08-09).
 
@@ -183,7 +183,7 @@ rule *plausible* here too, never a reason to assert it: this standard does not c
 has measured.
 
 **Open Decision 3 (2026-08-11) chose the opportunistic route**: no dedicated measurement campaign
-for `citation-check.sh` or `conclude-order-check.sh`; a red run's cause is recorded when one
+for `citation-check.sh`; a red run's cause is recorded when one
 happens, and the rule above is revisited only on that evidence.
 
 ## What this does not cover

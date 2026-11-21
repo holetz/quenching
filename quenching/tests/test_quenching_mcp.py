@@ -57,8 +57,8 @@ class Catalog(unittest.TestCase):
 
     def test_the_external_class_names_the_moves_that_leave_the_machine(self):
         external = {n for n, r in catalog.CATALOG.items() if r.cls == "external"}
-        self.assertTrue({"git_push", "git_pr_create", "git_pr_merge", "git_pr_record",
-                         "codex_review"} <= external)
+        self.assertTrue({"git_push", "git_pr_create", "git_pr_merge", "git_pr_record"} <= external)
+        self.assertNotIn("codex_review", catalog.CATALOG)
         self.assertTrue(catalog.annotations(catalog.CATALOG["git_pr_merge"])["destructiveHint"])
 
 

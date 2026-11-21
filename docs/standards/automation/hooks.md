@@ -4,7 +4,7 @@ title: Scoped hooks
 description: Where a hook may be installed, what each scope and handler costs, and the policy defaults every hook obeys
 resource: .claude/settings.json, quenching/skills/**, quenching/assets/bin/quenching/components/**
 tags: [automation, hooks, performance, budget]
-timestamp: 2026-10-18
+timestamp: 2026-11-20
 audience: both
 authority: current
 source: 2026-07-27, 2026-08-03, enxugar-create-e-eliminar-o-rung-hooks, 2026-08-06; lineage in ADR 0004
@@ -69,25 +69,55 @@ deterministic 95% may share a matcher with a `prompt` rung for the judgment tail
 ## What this repo's own surface does under it
 
 **The source declares its hooks in `modules.json`; deploy installs them.** A module lists its hooks
-in `owned.hooks` (`name`, `event`, `matcher`, `timeout`; the script is
-`assets/hooks/<name>.sh`), and `cq deploy` merges them into the target's `.claude/settings.json`
-with the command `test -f "$CLAUDE_PROJECT_DIR/.agents/quenching/assets/hooks/<name>.sh" || exit 0;
-bash "$CLAUDE_PROJECT_DIR/.agents/quenching/assets/hooks/<name>.sh"` — Claude only. The owner of a
-hook is the module that declares it.
+in `owned.hooks` (`name`, `event`, `matcher`, `timeout`; the body is the Python file
+`assets/hooks/<name>.py`), and `cq deploy` merges them into the target's `.claude/settings.json`.
+The owner of a hook is the module that declares it.
+
+**Two harnesses read that file, so the command is one polyglot line.** Claude Code runs a hook
+command through bash (Git Bash on Windows); the GitHub Copilot harness — the VS Code Agents window
+and the Copilot CLI — reads the same `.claude/settings.json` and, on Windows, runs the command
+through PowerShell or cmd, where a bash line fails and a failed `preToolUse` command **denies the
+tool call**. The deployed command is therefore `<python prefix> -I -c "<code>"`, where `<code>` holds
+no `$`, no backtick, no `%`, no `!` and no inner double quote, so bash, PowerShell and cmd all hand it
+to Python unchanged. The code takes the root from `CLAUDE_PROJECT_DIR` (both harnesses export it;
+Copilot also exports `COPILOT_PROJECT_DIR`), else the working directory, prints `{}` when the body
+is not installed — the absence guard, now inside Python — and otherwise runs the body as
+`__main__`. The prefix is the repository's `shared.mcp.command` when declared (the one that already
+starts the MCP server), else `python3`; a Windows target declares it, since `python3` is often only
+the Store alias there. The marker path `.agents/quenching/assets/hooks/<name>.py` stays a literal
+substring of the command, which is how the merge finds its own entry — an older `<name>.sh` entry is
+recognised too and rewritten in place.
+
+**A body reads both input shapes.** Claude Code, and Copilot's `PreToolUse` alias, send
+`tool_input.command`; Copilot's native `preToolUse` sends `toolArgs`, an object or JSON text. The
+output stays `hookSpecificOutput.permissionDecision`, which both accept. The matcher names both
+shell tools (`Bash|PowerShell|bash|powershell`), so a Windows session's PowerShell calls are guarded
+too.
+
+**A separate `.github/hooks/` file is not shipped.** It is Copilot's own format, but Copilot also
+reads `.claude/settings.json`, so a second file would run every hook twice there.
 
 **`deny-claude-coauthor`.** `quenching-specs` declares one rung-2 `PreToolUse` hook matched to
-`Bash`, running `assets/hooks/deny-claude-coauthor.sh` (5-second timeout, absence-guarded). It denies a
+the shell tools, running `assets/hooks/deny-claude-coauthor.py` (5-second timeout, absence-guarded). It denies a
 message-writing command (`git commit`/`merge`/`tag`/`notes`, `gh pr`, `cq git`) that carries Claude's
 co-authorship trailer or `Generated with Claude Code` line — a block chosen by the owner on
 2026-10-18. Rung 1 does not suffice: a skill-scoped hook misses every commit made outside
-`/quenching-git commit`. Cost claim: every `Bash` call × one `bash`+`grep` fast path, zero
-tokens on no-match; `python3` runs only when the raw input names a co-author. It denies rather than
+`/quenching-git commit`. Cost claim: every shell call × one Python start and one regex over the raw
+input, zero tokens on no-match; the JSON is parsed only when that regex names a co-author. It denies rather than
 rewrites, because `updatedInput` applies only paired with `allow`, which would auto-approve the
 whole command. Opt-out: `QUENCHING_ALLOW_CLAUDE_COAUTHOR=1`.
 
-**`warn-git-add-all`.** `quenching-git` declares a rung-2 `PreToolUse` hook on `Bash` that warns
-(never blocks) on `git add -A`, `--all` and `.`, citing `/quenching-git commit`. A skill-scoped
-rung 1 does not exist for it: the skill bridge is a byte copy and carries no frontmatter hook.
+**`warn-git-add-all`.** `quenching-git` declares a rung-2 `PreToolUse` hook on the shell tools that warns
+(never blocks) on two things: `git add -A`, `--all` and `.`, citing `/quenching-git commit`; and a
+command that skips the git hooks — `--no-verify`, `git commit -n`, `git -c core.hooksPath=` — since
+the leak and identity gates only exist while those hooks run. Both rules share one body, so a shell
+call pays one Python start for them, not one each; the file keeps its first rule's name because the
+settings merge finds its entry by it. Cost claim: every shell call × one Python start and two
+regexes over the raw input, zero tokens on no-match; a regex hit is confirmed on the tokenized
+command, so a quoted commit message or an `echo` that only mentions a flag stays silent. It reads the command text only — a hook path
+set by `git config` beforehand, a variable or an alias goes unseen — so it is a reminder, not a
+boundary. A skill-scoped rung 1 does not exist for it: the skill bridge is a byte copy and carries
+no frontmatter hook.
 
 **Before it, this repo wired no hook of its own.** It once wired the OKF checker itself, at rungs 2 and
 3, via a `hooks.json` shipped under this plugin's own `hooks/` — a `PostToolUse` hook matched to `Write|Edit` and a

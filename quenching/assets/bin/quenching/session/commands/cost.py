@@ -205,6 +205,17 @@ def aggregate(directory: Path, descendants_of: str | None = None, nested: bool =
             "anomalies": anomalies}
 
 
+def price_rows(out: dict) -> None:
+    """`--usd`: each group and model row at list price; a cache write here carries no lifetime, so
+    it prices at the 5-minute floor. An unpriced model is `null`, never a neighbour's rate."""
+    from quenching.session import pricing
+    for row in [*out["groups"], *out["byModel"]]:
+        row["usd"] = pricing.usd(row["model"], input=row["input"], cache_read=row["cacheRead"],
+                                 write_other=row["cacheWrite"], output=row["output"])
+    out["pricing"] = {"sourceDate": pricing.table()["sourceDate"],
+                      "basis": "list price estimate; cache writes at the 5-minute rate"}
+
+
 def agent_peaks(transcripts: list) -> list:
     """Each agent's recorded context peak against its role budget, whole transcript.
 
@@ -255,6 +266,8 @@ def cmd_cost(args) -> int:
         return refuse({"code": "se-no-requests",
                        "message": f"no subagent request with usage under {directory}"}, args.json)
     out.update(ok=True, subagents=str(directory), resolvedBy=how)
+    if getattr(args, "usd", False):
+        price_rows(out)
     if args.json:
         print(json.dumps(out, indent=2, ensure_ascii=False))
     else:

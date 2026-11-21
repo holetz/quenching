@@ -66,8 +66,8 @@ class SeedDocument(unittest.TestCase):
             self.assertEqual(context_mod.BUDGETS[role], context_mod.effective_budgets(root)[role])
 
     def test_seed_is_a_copy_not_the_owner_dict(self):
-        seed.seed_document(str(self.repo))["shared"]["codex"]["executor"]["enabled"] = False
-        self.assertTrue(codex_config.DEFAULTS["executor"]["enabled"])
+        seed.seed_document(str(self.repo))["shared"]["codex"]["executor"]["enabled"] = True
+        self.assertFalse(codex_config.DEFAULTS["executor"]["enabled"])
 
     def test_missing_keys_lists_exactly_the_deleted_leaves(self):
         doc = seed.seed_document(str(self.repo))
@@ -136,6 +136,17 @@ class InitAndCheck(unittest.TestCase):
         self.file.write_text(json.dumps(doc))
         code, out, _ = self.run_cli("check", "--json")
         self.assertEqual((1, ["shared.autonomy.maxLaunches"]), (code, json.loads(out)["missing"]))
+
+    def test_check_names_a_leaf_nothing_reads_with_exit_1(self):
+        self.file.parent.mkdir()
+        self.file.write_text(json.dumps({"backend": "git",
+                                         "shared": {"autonomy": {"maxWorker": 8}}}))
+        code, out, _ = self.run_cli("check", "--json")
+        payload = json.loads(out)
+        self.assertEqual((1, False, ["shared.autonomy.maxWorker"]),
+                         (code, payload["ok"], payload["unknown"]))
+        _, text, _ = self.run_cli("check")
+        self.assertIn("shared.autonomy.maxWorker", text)
 
     def test_check_refuses_when_the_file_is_absent(self):
         self.assertEqual(2, self.run_cli("check")[0])

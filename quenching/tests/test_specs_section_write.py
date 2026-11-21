@@ -269,12 +269,37 @@ class TheWritePath(_Workspace):
         self.assertEqual(code, 2)
         self.assertEqual(obj["code"], "sp-scope-not-handoff")
 
-    def test_an_empty_body_still_gets_the_heading_s_guidance(self):
-        """The rule the singular form already had, carried into a block of the stream."""
+    def test_an_empty_block_in_the_stream_refuses_and_writes_nothing(self):
+        """An empty body is never a silent clear: the whole stream is refused, the filled
+        block beside it included."""
         code, obj = self.run_section(heading="Proposal,Risks", write=True,
+                                     stdin="## Proposal\n\nA\n\n## Risks\n")
+        self.assertEqual(code, 2, obj)
+        self.assertEqual((obj["code"], obj["headings"]), ("sp-write-empty-body", ["Risks"]))
+        self.assertEqual(self.state("Proposal"), "absent")
+
+    def test_clear_puts_the_heading_s_guidance_back(self):
+        code, obj = self.run_section(heading="Proposal,Risks", write=True, clear=True,
                                      stdin="## Proposal\n\nA\n\n## Risks\n")
         self.assertEqual(code, 0, obj)
         self.assertEqual(self.state("Risks"), "empty")
+        self.assertEqual(self.state("Proposal"), "filled")
+
+    def test_a_tty_or_an_empty_pipe_never_wipes_a_filled_section(self):
+        """The reported failure: `--write </dev/null`, or a producer that died upstream of the
+        pipe, replaced a filled `## Problem` with the template and exited 0."""
+        self.run_section(heading="Proposal", write=True, stdin="corpo\n")
+        for stdin in (None, "", "\n  \n"):
+            code, obj = self.run_section(heading="Proposal", write=True, stdin=stdin)
+            self.assertEqual((code, obj["code"]), (2, "sp-write-empty-body"), stdin)
+            self.assertEqual(self.state("Proposal"), "filled")
+        code, obj = self.run_section(heading="Proposal", write=True, clear=True, stdin=None)
+        self.assertEqual(code, 0, obj)
+        self.assertEqual(self.state("Proposal"), "empty")
+
+    def test_clear_without_write_refuses(self):
+        code, obj = self.run_section(heading="Proposal", clear=True)
+        self.assertEqual((code, obj["code"]), (2, "sp-clear-without-write"))
 
 
 class TheScopedRead(_Workspace):
@@ -372,6 +397,12 @@ class NoWriteOpensASecondSection(_Workspace):
         self.assertEqual(code, 0, obj)
         self.assert_one_handoff(self.read_spec_text())
 
+    def test_an_empty_scoped_write_refuses_without_clear(self):
+        before = self.read_spec_text()
+        code, obj = self.run_section(heading="Handoff", write=True, scope="global", stdin="")
+        self.assertEqual((code, obj["code"]), (2, "sp-write-empty-body"))
+        self.assertEqual(self.read_spec_text(), before)
+
     def test_a_scoped_write_refuses_a_foreign_heading(self):
         before = self.read_spec_text()
         code, obj = self.run_section(heading="Handoff", write=True, scope="current",
@@ -401,6 +432,72 @@ class NoWriteOpensASecondSection(_Workspace):
         code, obj = self.run_section(heading="Handoff", write=True,
                                      stdin="## Handoff\n\nA\n\n## Handoff\n\nB\n")
         self.assertEqual((code, obj["code"]), (2, "sp-write-duplicate-heading"))
+
+
+class NoWriteLeavesAFenceOpen(_Workspace):
+    """2244 — a body whose fence never closes used to be written: `parse_sections` then read
+    every later `## ` as code, and the next write of the section deleted them all."""
+
+    OPEN = "Ruim:\n\n```bash\necho hi\n"
+
+    def read_spec_text(self):
+        return self.backend.read_spec(1)[0]["text"]
+
+    def setUp(self):
+        super().setUp()
+        code, obj = self.run_section(heading="Proposal", write=True, stdin="A proposta.\n")
+        self.assertEqual(code, 0, obj)
+
+    def assert_refused(self, code, obj, before, heading="Problem"):
+        self.assertEqual((code, obj["code"], obj["heading"]),
+                         (2, "sp-write-unclosed-fence", heading))
+        self.assertEqual(obj["line"], "```bash")
+        self.assertEqual(self.read_spec_text(), before)
+        self.assertEqual(self.state("Proposal"), "filled")
+
+    def test_the_reported_sequence_is_refused_and_keeps_the_next_section(self):
+        before = self.read_spec_text()
+        code, obj = self.run_section(heading="Problem", write=True, stdin=self.OPEN)
+        self.assert_refused(code, obj, before)
+
+    def test_a_singular_stream_block_is_refused(self):
+        before = self.read_spec_text()
+        code, obj = self.run_section(heading="Problem", write=True,
+                                     stdin="## Problem\n\n" + self.OPEN)
+        self.assert_refused(code, obj, before)
+
+    def test_a_fence_that_swallows_the_next_block_is_named_not_the_set(self):
+        before = self.read_spec_text()
+        code, obj = self.run_section(heading="Problem,Proposal", write=True,
+                                     stdin="## Problem\n\n" + self.OPEN
+                                     + "\n## Proposal\n\nB\n")
+        self.assert_refused(code, obj, before)
+
+    def test_a_later_block_is_refused_too(self):
+        before = self.read_spec_text()
+        code, obj = self.run_section(heading="Problem,Proposal", write=True,
+                                     stdin="## Problem\n\nP\n\n## Proposal\n\n" + self.OPEN)
+        self.assert_refused(code, obj, before, heading="Proposal")
+
+    def test_a_scoped_handoff_body_is_refused(self):
+        before = self.read_spec_text()
+        code, obj = self.run_section(heading="Handoff", write=True, scope="global",
+                                     stdin=self.OPEN)
+        self.assert_refused(code, obj, before, heading="Handoff")
+
+    def test_a_shorter_mark_does_not_close_a_longer_fence(self):
+        before = self.read_spec_text()
+        code, obj = self.run_section(heading="Problem", write=True,
+                                     stdin="````bash\nx\n```\n")
+        self.assertEqual((code, obj["code"], obj["line"]),
+                         (2, "sp-write-unclosed-fence", "````bash"))
+        self.assertEqual(self.read_spec_text(), before)
+
+    def test_a_closed_fence_still_writes(self):
+        code, obj = self.run_section(heading="Problem", write=True,
+                                     stdin=self.OPEN + "```\n\n~~~\n## Design\n~~~\n")
+        self.assertEqual(code, 0, obj)
+        self.assertEqual(self.state("Proposal"), "filled")
 
 
 class ArchiveRefusesAnyEmptySection(_Workspace):

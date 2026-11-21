@@ -2,7 +2,7 @@
 type: standard
 title: Versioning and release — the version lockstep
 description: The version surfaces cq specs release bumps together — the source VERSION, the HUD plugin manifest, every Claude marketplace entry and the bundled cq identity — and the copies it regenerates before the release commit
-resource: quenching/assets/modules.json, quenching/VERSION, integrations/claude-hud/**, .claude-plugin/marketplace.json, quenching/assets/bin/quenching/common/version.py, quenching/assets/bin/quenching/common/modules.py, quenching/assets/bin/quenching/specs/release.py
+resource: quenching/assets/modules.json, quenching/VERSION, integrations/claude-hud/**, integrations/claude-vitrine/**, integrations/claude-cache/.claude-plugin/plugin.json, .claude-plugin/marketplace.json, quenching/assets/bin/quenching/common/version.py, quenching/assets/bin/quenching/common/modules.py, quenching/assets/bin/quenching/specs/release.py
 tags: [release, versioning, lockstep, plugin, distribution]
 timestamp: 2026-11-03
 audience: both
@@ -39,7 +39,7 @@ before the bump, so the surface-load checks are measured, not skipped.
 | # | Artifact | Read by |
 | --- | --- | --- |
 | 1 | `quenching/VERSION` (the unpublished source; it carries no `plugin.json`) | `cq deploy`, which records the version in a target's `.agents/.quenching-deploy.json` |
-| 2 | `.claude-plugin/plugin.json` of every entry of `plugins` with `marketplace: true` — today only `integrations/claude-hud` | Claude Code, to detect and apply the HUD upgrade |
+| 2 | `.claude-plugin/plugin.json` of every entry of `plugins` with `marketplace: true` — today `integrations/claude-hud`, `integrations/claude-vitrine` and `integrations/claude-cache` | Claude Code, to detect and apply a mod's upgrade |
 | 3 | `.claude-plugin/marketplace.json` → **every** entry's `version` | the marketplace listing |
 | 4 | `quenching/assets/bin/quenching/common/version.py` → `VERSION` | every pillar's own `--version` (`cq specs`, `cq knowledge`, `cq components`) |
 

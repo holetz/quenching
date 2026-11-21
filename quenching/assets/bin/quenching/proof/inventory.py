@@ -18,6 +18,7 @@ from quenching.proof.config import load_proof_config
 from quenching.proof.ci import discover_ci
 from quenching.proof.model import (
     Conftest,
+    CostContract,
     Fixture,
     GateConfig,
     Layer,
@@ -292,9 +293,22 @@ def build_inventory(root: str) -> tuple[ProofInventory | None, dict]:
     gate = _gate(repo_root, config["ratchetPath"])
     measured = tuple(item["relative"] for item in config["measuredRoots"])
     exclusions = tuple(item["relative"] for item in config["proofExclusions"])
-    return ProofInventory(repo_root, proof_root, layers, tuple(tests), tuple(fixtures),
-                          tuple(conftests), gate, discover_ci(repo_root, proof_root),
-                          measured, exclusions, _source_surfaces(repo_root, proof_root)), {}
+    declared_cost = config.get("cost")
+    cost = (CostContract(temp_root=declared_cost.get("tempRoot"),
+                         workers=declared_cost.get("workers"),
+                         scopes=dict(declared_cost.get("scopes") or {}))
+            if declared_cost is not None else None)
+    declared_config = config.get("config")
+    config_path = (_rel(declared_config, repo_root) if declared_config else None)
+    return ProofInventory(
+        repo_root, proof_root, layers, tuple(tests), tuple(fixtures), tuple(conftests), gate,
+        discover_ci(repo_root, proof_root),
+        cost=cost,
+        config_path=config_path,
+        measured_roots=measured,
+        exclusions=exclusions,
+        source_surfaces=_source_surfaces(repo_root, proof_root),
+    ), {}
 
 
 def inventory(root: str) -> tuple[ProofInventory | None, dict]:

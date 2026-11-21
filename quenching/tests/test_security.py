@@ -22,6 +22,7 @@ from quenching.security import main
 from quenching.security.probe import (
     access_ownership,
     advisory_dependency_configuration,
+    agent_grants,
     build_report,
     secret_ignore_coverage,
     workflow_permissions,
@@ -38,7 +39,7 @@ class SecurityQuestions(unittest.TestCase):
             self.assertTrue(report["readOnly"])
             self.assertEqual(
                 {"workflow-permissions", "secret-ignore-coverage",
-                 "advisory-dependency-configuration", "access-ownership"},
+                 "advisory-dependency-configuration", "access-ownership", "agent-grants"},
                 {item["key"] for item in report["questions"]},
             )
             self.assertEqual(before, sorted(root.iterdir()))
@@ -56,6 +57,34 @@ class SecurityQuestions(unittest.TestCase):
             evidence = result["evidence"][0]
             self.assertEqual(1, evidence["workflowDeclarations"])
             self.assertEqual(1, evidence["jobDeclarations"])
+
+    def _permissions(self, text):
+        with tempfile.TemporaryDirectory() as raw:
+            root = pathlib.Path(raw)
+            workflow = root / ".github" / "workflows" / "ci.yml"
+            workflow.parent.mkdir(parents=True)
+            workflow.write_text(text, encoding="utf-8")
+            return workflow_permissions(root).as_dict()
+
+    def test_write_all_at_either_level_is_unbounded(self):
+        for text, where in (
+                ("permissions: write-all\njobs:\n  t:\n    runs-on: x\n", ["workflow"]),
+                ("permissions:\n  contents: read\njobs:\n  t:\n    permissions: write-all  # why\n",
+                 ["job:5"])):
+            with self.subTest(where=where):
+                result = self._permissions(text)
+                self.assertEqual("unbounded", result["state"])
+                self.assertEqual(where, result["evidence"][0]["writeAll"])
+
+    def test_a_scoped_write_is_evidence_not_a_verdict(self):
+        result = self._permissions(
+            "permissions:\n  contents: read\njobs:\n  release:\n    permissions:\n"
+            "      contents: write  # tag\n      id-token: write\n    steps: []\n"
+            "  lint:\n    permissions: {contents: read, pull-requests: write}\n")
+        self.assertEqual("present", result["state"])
+        self.assertEqual([], result["evidence"][0]["writeAll"])
+        self.assertEqual(["job:5:contents", "job:5:id-token", "job:10:pull-requests"],
+                         result["evidence"][0]["writeScopes"])
 
     def test_secret_ignore_coverage_groups_known_patterns(self):
         with tempfile.TemporaryDirectory() as raw:
@@ -146,6 +175,54 @@ class SecurityQuestions(unittest.TestCase):
                 "[tool.pip-audit]\nformat = 'columns'\n", encoding="utf-8")
             self.assertEqual("present", advisory_dependency_configuration(root).state)
             self.assertEqual("present", access_ownership(root).state)
+
+    def test_agent_grants_is_not_measured_without_committed_configuration(self):
+        with tempfile.TemporaryDirectory() as raw:
+            result = agent_grants(pathlib.Path(raw))
+            self.assertEqual("not-measured", result.state)
+
+    def test_agent_grants_names_each_risky_grant(self):
+        with tempfile.TemporaryDirectory() as raw:
+            root = pathlib.Path(raw)
+            (root / ".claude").mkdir()
+            (root / ".claude/settings.json").write_text(json.dumps({
+                "permissions": {"defaultMode": "bypassPermissions",
+                                "allow": ["Read", "Bash", "Bash(git status:*)", "Bash(*)"]},
+                "enableAllProjectMcpServers": True,
+                "hooks": {"Stop": [{"hooks": [{"type": "command",
+                                               "command": "curl -s https://example.org"}]}]},
+            }))
+            (root / ".mcp.json").write_text(json.dumps({"mcpServers": {
+                "latest": {"command": "npx", "args": ["-y", "some-server@latest"]},
+                "bare": {"command": "npx", "args": ["-y", "@scope/server"]},
+                "pinned": {"command": "npx", "args": ["-y", "@scope/server@1.4.2"]},
+                "uv": {"command": "uvx", "args": ["tool==2.0"]},
+                "local": {"command": "python3", "args": ["server.py"]},
+            }}))
+            before = (root / ".claude/settings.json").read_bytes()
+            result = agent_grants(root)
+            self.assertEqual("missing", result.state)
+            codes = sorted((f["path"], f["code"], f["value"]) for f in result.details["findings"])
+            self.assertEqual([
+                (".claude/settings.json", "all-project-mcp-enabled", "enableAllProjectMcpServers"),
+                (".claude/settings.json", "bypass-permissions-default", "permissions.defaultMode"),
+                (".claude/settings.json", "network-hook", "Stop"),
+                (".claude/settings.json", "unbounded-shell-allow", "Bash"),
+                (".claude/settings.json", "unbounded-shell-allow", "Bash(*)"),
+                (".mcp.json", "unpinned-mcp-server", "bare: npx @scope/server"),
+                (".mcp.json", "unpinned-mcp-server", "latest: npx some-server@latest"),
+            ], codes)
+            self.assertEqual(before, (root / ".claude/settings.json").read_bytes())
+
+    def test_agent_grants_bounded_configuration_is_present_and_invalid_is_refused(self):
+        with tempfile.TemporaryDirectory() as raw:
+            root = pathlib.Path(raw)
+            (root / ".claude").mkdir()
+            (root / ".claude/settings.json").write_text(json.dumps(
+                {"permissions": {"allow": ["Bash(git status:*)"]}}))
+            self.assertEqual("present", agent_grants(root).state)
+            (root / ".mcp.json").write_text("{not json")
+            self.assertEqual("refused", agent_grants(root).state)
 
     def test_cli_reports_version_json_and_missing_root(self):
         output = io.StringIO()

@@ -105,7 +105,18 @@ def find_surface_root(root_arg: str | None) -> str:
     `.claude/commands/`, which wins over a bare `commands/` at the same level, so a repo root
     carrying a target surface and a packaged plugin resolves to the target's."""
     if root_arg:
-        return os.path.abspath(root_arg)
+        # A `--root` names a repository root or the surface itself, resolved in the same
+        # order as the walk below: the target's own `.agents/skills`, then `.claude/commands`,
+        # then a bare `commands/` beside it (a packaged plugin); else the path unchanged,
+        # which reports `missing`.
+        top = os.path.abspath(root_arg)
+        if generic_surface(os.path.join(top, AGENTS_DIR)):
+            return os.path.join(top, AGENTS_DIR)
+        if os.path.isdir(os.path.join(top, CLAUDE_DIR, COMMANDS_DIR)):
+            return os.path.join(top, CLAUDE_DIR)
+        if os.path.isdir(os.path.join(top, COMMANDS_DIR)):
+            return top
+        return top
     env = os.environ.get("SKILLS_ROOT")
     if env:
         return os.path.abspath(env)

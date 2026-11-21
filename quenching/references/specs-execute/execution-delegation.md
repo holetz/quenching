@@ -20,6 +20,11 @@ of — costs **one line and no authoring**:
 .agents/quenching/bin/cq specs discover "<id>" "<what was found, one line>"
 ```
 
+The exception is a **pre-existing error** diagnosed and proved on the base
+(`/docs/standards/workflows/task-execution.md` §Pre-existing errors): a declared `[fix-preexistente]`
+task, whose own `files:` the executor honours as any other, or a spec captured with `cq specs new` and the
+line `promoted: <id>`.
+
 It is captured **indiscriminately**. The lines are resolved by `/quenching-specs develop`'s
 discoveries stage, and the doc an emergent finding deserves is written by
 `/quenching-specs conclude` at distillation.

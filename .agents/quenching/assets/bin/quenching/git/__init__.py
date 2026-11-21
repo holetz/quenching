@@ -26,6 +26,7 @@ from quenching.git.preflight import cmd_preflight
 from quenching.git.prune import cmd_prune
 from quenching.git.pull import cmd_pr
 from quenching.git.push import cmd_push
+from quenching.git.refresh import cmd_refresh
 from quenching.git.slugs import cmd_specs
 from quenching.git.stale import cmd_stale
 from quenching.git.state import cmd_state
@@ -35,7 +36,8 @@ DISPATCH = {"base": cmd_base, "specs": cmd_specs, "stale": cmd_stale,
             "conventions": cmd_conventions, "worktree": cmd_worktree,
             "commit": cmd_commit, "audit": cmd_audit, "state": cmd_state,
             "push": cmd_push, "prune": cmd_prune, "pr": cmd_pr,
-            "history": cmd_history, "preflight": cmd_preflight, "identity": cmd_identity}
+            "history": cmd_history, "preflight": cmd_preflight, "identity": cmd_identity,
+            "refresh": cmd_refresh}
 
 
 READ_VERBS = ("base", "stale", "conventions", "state", "history", "preflight", "audit",
@@ -71,26 +73,39 @@ def build_parser() -> argparse.ArgumentParser:
                                              "plugin's defaults govern")
     sp.add_argument("--json", action="store_true", help="machine-readable output")
 
-    sp = sub.add_parser("worktree", help="materialise declared shared paths in this checkout, or "
-                                          "cut a branch from the remote base into a new worktree")
-    sp.add_argument("action", choices=("link", "add", "retire"),
-                    help="link: link each declared shared path; add: fetch, cut, link and run the "
-                         "declared `worktreeSetup`; "
+    sp = sub.add_parser("worktree", help="take or give back a reusable worktree slot, materialise "
+                                          "declared shared paths, or cut and retire a worktree")
+    sp.add_argument("action", choices=("acquire", "release", "slots", "link", "add", "retire"),
+                    help="acquire: lock a free slot (or a new one under shared.worktreeSlots.max), "
+                         "switch it to --branch, link and run `worktreeSetup`; release: detach a "
+                         "clean slot at the remote base and unlock it; slots: list the slots and "
+                         "who holds each; link: link each declared shared path; add: fetch, cut, "
+                         "link and run the declared `worktreeSetup` in a one-off worktree; "
                          "retire: remove a merged spec's worktree and `branch -d` its branch")
     sp.add_argument("--path", metavar="PATH", help="add: the new worktree's directory; "
-                                                    "retire: the worktree to remove")
-    sp.add_argument("--branch", metavar="BRANCH", help="add: the branch to create; "
-                                                        "retire: the branch it holds")
-    sp.add_argument("--base", metavar="BASE", help="add: the base branch to cut from; "
-                                                    "retire: the base it must be merged into")
+                                                    "retire/release: the worktree to give back")
+    sp.add_argument("--branch", metavar="BRANCH", help="acquire/add: the branch to switch to or "
+                                                        "create; retire/release: the branch it holds")
+    sp.add_argument("--base", metavar="BASE", help="acquire/add: the base branch to cut from; "
+                                                    "retire/release: the base it must be merged into "
+                                                    "(release: default the remote's HEAD)")
     sp.add_argument("--remote", default="origin", metavar="REMOTE",
                     help="add/retire: the remote whose base is fetched (default: origin); a remote "
                          "that does not exist falls back to the local base")
     sp.add_argument("--spec", metavar="ID",
                     help="add: stamp this spec's `branch` record (base, work) once the worktree "
                          "is cut; refused before any write when the spec does not own --branch")
+    sp.add_argument("--wait", action="store_true",
+                    help="acquire: at the limit, retry every shared.worktreeSlots.pollSeconds "
+                         "until a slot frees or the wait times out (then needs-human)")
+    sp.add_argument("--timeout-minutes", type=int, dest="timeout_minutes", metavar="N",
+                    help="acquire --wait: give up after N minutes (default "
+                         "shared.worktreeSlots.waitMinutes, 30)")
+    sp.add_argument("--session", metavar="ID",
+                    help="acquire: the session named in the lock reason (default "
+                         "$OPENCODE_SESSION_ID or $CLAUDE_SESSION_ID)")
     sp.add_argument("--no-setup", action="store_true",
-                    help="add: do not run the declared `worktreeSetup` in the new worktree "
+                    help="acquire/add: do not run the declared `worktreeSetup` in the new worktree "
                          "(it runs by default, once, after the link)")
     sp.add_argument("--discard-ignored", action="store_true",
                     help="retire: remove the worktree even though it holds ignored files "
@@ -130,13 +145,17 @@ def build_parser() -> argparse.ArgumentParser:
                     help="the remote probed (default: origin)")
     sp.add_argument("--json", action="store_true", help="machine-readable output")
 
-    sp = sub.add_parser("prune", help="delete one item `cq git stale` reports — `branch -d`, "
-                                       "`worktree remove`, or a reported remote branch")
+    sp = sub.add_parser("prune", help="act on one item `cq git stale` reports — `branch -d`, "
+                                       "`worktree remove`, a reported remote branch, or the "
+                                       "release of a reclaimable slot")
     target = sp.add_mutually_exclusive_group(required=True)
     target.add_argument("--branch", metavar="BRANCH", help="a reported stale local branch")
     target.add_argument("--worktree", metavar="PATH", help="a reported orphan worktree")
     target.add_argument("--remote-branch", metavar="BRANCH",
                         help="a branch reported under remoteBranches for --remote")
+    target.add_argument("--slot", metavar="PATH",
+                        help="a held slot reported as a `kind: slot` candidate; released, "
+                             "never removed")
     sp.add_argument("--remote", default="origin", metavar="REMOTE",
                     help="the remote the report reads (default: origin)")
     sp.add_argument("--expect-tip", metavar="SHA",
@@ -187,6 +206,14 @@ def build_parser() -> argparse.ArgumentParser:
     pp.add_argument("--spec", metavar="ID",
                     help="stamp this spec's `merge` record once the PR is merged (GitHub)")
     pp.add_argument("--json", action="store_true", help="machine-readable output")
+
+    sp = sub.add_parser("refresh", help="fast-forward the local base branch to <remote>/<base> — "
+                                         "never discards a commit or an uncommitted change, "
+                                         "never switches a branch")
+    sp.add_argument("--base", metavar="BRANCH", help="the base branch (default: the resolved base)")
+    sp.add_argument("--remote", default="origin", metavar="REMOTE",
+                    help="the remote read (default: origin)")
+    sp.add_argument("--json", action="store_true", help="machine-readable output")
 
     sp = sub.add_parser("audit", help="the verifier's facts inside one registered worktree — "
                                        "status, stash, commits, scope, ancestry, reflog; "

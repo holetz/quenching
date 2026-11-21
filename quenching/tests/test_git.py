@@ -69,6 +69,17 @@ def _init_repo(path: str) -> str:
     return path
 
 
+def _merged_branch(repo: str, name: str) -> None:
+    """A branch with a commit of its own, merged into `main` through a merge commit."""
+    _run(repo, "checkout", "-q", "-b", name)
+    work = name.replace("/", "-") + ".txt"
+    pathlib.Path(repo, work).write_text(f"{name}\n", encoding="utf-8")
+    _run(repo, "add", work)
+    _run(repo, "commit", "-q", "-m", f"{name} work")
+    _run(repo, "checkout", "-q", "main")
+    _run(repo, "merge", "-q", "--no-ff", "-m", f"merge {name}", name)
+
+
 def _cq_json(cwd: str, *argv: str) -> dict:
     proc = subprocess.run([sys.executable, CQ, "git", *argv, "--json"], cwd=cwd,
                           capture_output=True, text=True)
@@ -278,14 +289,14 @@ class Stale(RepoCase):
         self.assertEqual(_cq_json(self.repo, "stale")["unregisteredWorktrees"], [])
 
     def test_cq_git_stale_json_excludes_base_and_reports_merged(self):
-        _run(self.repo, "branch", "feature-e")
+        _merged_branch(self.repo, "feature-e")
         payload = _cq_json(self.repo, "stale")
         names = {b["branch"] for b in payload["staleBranches"]}
         self.assertIn("feature-e", names)
         self.assertNotIn("main", names)
 
     def test_cq_git_stale_keeps_unmerged_and_checked_out_branches_with_reasons(self):
-        _run(self.repo, "branch", "merged-one")
+        _merged_branch(self.repo, "merged-one")
         _run(self.repo, "checkout", "-q", "-b", "ahead-one")
         with open(os.path.join(self.repo, "ahead.txt"), "w") as f:
             f.write("x")
@@ -298,24 +309,99 @@ class Stale(RepoCase):
         kept = {b["branch"]: b["reasons"] for b in payload["keptBranches"]}
         stale = {b["branch"] for b in payload["staleBranches"]}
         self.assertEqual(kept["ahead-one"], ["unmerged-commits"])
-        self.assertEqual(kept["held-one"], ["worktree"])
+        self.assertEqual(kept["held-one"], ["no-own-commits", "worktree"])
         self.assertIn("merged-one", stale)
         self.assertNotIn("held-one", stale)
         self.assertIn(payload["prLookup"], ("ok", "unavailable"))
 
     def test_open_pr_moves_a_merged_branch_to_kept(self):
-        _run(self.repo, "branch", "pr-open")
+        _merged_branch(self.repo, "pr-open")
         with mock.patch("quenching.git.stale._open_pr_heads", return_value={"pr-open"}):
             report = stale_report(self.repo)
         self.assertEqual({b["branch"]: b["reasons"] for b in report["keptBranches"]}["pr-open"],
                          ["open-pr"])
         self.assertNotIn("pr-open", {b["branch"] for b in report["staleBranches"]})
 
+    def _gone(self, branch):
+        _run(self.repo, "remote", "add", "origin", "https://example.invalid/repo.git")
+        _run(self.repo, "update-ref", f"refs/remotes/origin/{branch}", branch)
+        _run(self.repo, "branch", f"--set-upstream-to=origin/{branch}", branch)
+        _run(self.repo, "update-ref", "-d", f"refs/remotes/origin/{branch}")
+
+    def _lists(self):
+        with mock.patch("quenching.git.stale._open_pr_heads", return_value=set()):
+            report = stale_report(self.repo)
+        return ({b["branch"]: b["reasons"] for b in report["staleBranches"]},
+                {b["branch"]: b["reasons"] for b in report["keptBranches"]})
+
+    def test_a_branch_without_commits_of_its_own_is_kept_and_prune_refuses_it(self):
+        # Cut from the base and never committed to: an ancestor of main like a merged branch.
+        _run(self.repo, "branch", "plan/9-fresh")
+        stale, kept = self._lists()
+        self.assertNotIn("plan/9-fresh", stale)
+        self.assertEqual(kept["plan/9-fresh"], ["no-own-commits"])
+        proc = _cq(self.repo, "prune", "--branch", "plan/9-fresh")
+        self.assertEqual(proc.returncode, 2, proc.stdout)
+        self.assertIn("plan/9-fresh", subprocess.run(["git", "branch"], cwd=self.repo,
+                                                     capture_output=True, text=True).stdout)
+
+    def test_a_gone_branch_with_unmerged_work_is_kept_not_offered(self):
+        _run(self.repo, "checkout", "-q", "-b", "plan/8-gone")
+        pathlib.Path(self.repo, "gone.txt").write_text("gone\n", encoding="utf-8")
+        _run(self.repo, "add", "gone.txt")
+        _run(self.repo, "commit", "-q", "-m", "gone work")
+        _run(self.repo, "checkout", "-q", "main")
+        self._gone("plan/8-gone")
+        stale, kept = self._lists()
+        self.assertNotIn("plan/8-gone", stale)
+        self.assertEqual(kept["plan/8-gone"], ["gone", "unmerged-commits"])
+        self.assertEqual(_cq(self.repo, "prune", "--branch", "plan/8-gone").returncode, 2)
+
+    def test_a_gone_branch_already_merged_stays_a_candidate(self):
+        _merged_branch(self.repo, "plan/7-done")
+        self._gone("plan/7-done")
+        stale, _kept = self._lists()
+        self.assertEqual(stale["plan/7-done"], ["gone", "merged"])
+
+    def test_a_fast_forwarded_branch_with_work_stays_a_candidate(self):
+        _run(self.repo, "checkout", "-q", "-b", "ff-one")
+        pathlib.Path(self.repo, "ff.txt").write_text("ff\n", encoding="utf-8")
+        _run(self.repo, "add", "ff.txt")
+        _run(self.repo, "commit", "-q", "-m", "ff work")
+        _run(self.repo, "checkout", "-q", "main")
+        _run(self.repo, "merge", "-q", "--ff-only", "ff-one")
+        stale, _kept = self._lists()
+        self.assertEqual(stale["ff-one"], ["merged"])
+
+    def test_without_a_reflog_the_first_parent_chain_decides(self):
+        _merged_branch(self.repo, "merged-no-log")
+        _run(self.repo, "branch", "fresh-no-log")
+        for branch in ("merged-no-log", "fresh-no-log"):
+            pathlib.Path(self.repo, ".git", "logs", "refs", "heads", branch).unlink()
+        stale, kept = self._lists()
+        self.assertEqual(stale["merged-no-log"], ["merged"])
+        self.assertEqual(kept["fresh-no-log"], ["no-own-commits"])
+
     def test_merged_origin_branch_is_reported_with_remote_identity(self):
         self._origin_with_merged_branch()
         rows = _merged_remote_branches(self.repo, "main", {"main"})
         self.assertEqual(rows, [{"remote": "origin", "branch": "remote-feature",
                                  "reasons": ["merged"]}])
+
+    def test_a_remote_branch_without_commits_of_its_own_is_not_a_candidate(self):
+        remote_repo = self._origin_with_merged_branch()
+        _merged_branch(self.repo, "merged-elsewhere")
+        _run(self.repo, "push", "-q", "origin", "main", "merged-elsewhere",
+             "main:plan/7-remote-fresh")
+        _run(self.repo, "branch", "-q", "-D", "merged-elsewhere")
+        _run(self.repo, "fetch", "-q", "origin")
+        rows = {r["branch"] for r in _merged_remote_branches(self.repo, "main", {"main"})}
+        self.assertEqual(rows, {"remote-feature", "merged-elsewhere"})
+        proc = _cq(self.repo, "prune", "--remote-branch", "plan/7-remote-fresh")
+        self.assertEqual(proc.returncode, 2, proc.stdout)
+        heads = subprocess.run(["git", "for-each-ref", "--format=%(refname)", "refs/heads"],
+                               cwd=remote_repo, capture_output=True, text=True).stdout.split()
+        self.assertIn("refs/heads/plan/7-remote-fresh", heads)
 
     def test_origin_head_and_protected_current_branch_are_not_remote_candidates(self):
         self._origin_with_merged_branch()
@@ -637,6 +723,14 @@ class Audit(RepoCase):
         got = self._lowered()
         self.assertEqual([(e["severity"], e["kind"], e["detail"]) for e in got],
                          [("fail", "gate-shrunk", ["run two"])])
+
+    def test_lowered_watches_a_toolchain_helper_the_gate_calls(self):
+        self._commit_file("scripts/toolchain/helper.py", "one\ntwo\n", "helper")
+        _run(self.repo, "merge", "-q", "--ff-only", "spec/1")
+        self._commit_file("scripts/toolchain/helper.py", "one\n", "shrink")
+        got = self._lowered()
+        self.assertEqual([(e["severity"], e["kind"], e["detail"]) for e in got],
+                         [("fail", "gate-shrunk", ["two"])])
 
     def test_lowered_only_warns_for_added_suppressions(self):
         self._commit_file("tests/test_c.py", "import unittest\n\n@unittest.skip('x')\n"
@@ -1173,6 +1267,42 @@ class Audit(RepoCase):
         _run(self.wt, "update-ref", "refs/heads/spec/1", "HEAD~1")
         rewrites = _cq_json(self.repo, *self._reflog_args())["rewrites"]
         self.assertTrue(rewrites["branch"][0].startswith("(no reflog message)"))
+
+    def _reuse_slot(self):
+        """A slot that served another branch first: `HEAD` moves to an unrelated tip, then back."""
+        _run(self.wt, "checkout", "-q", "--orphan", "previous")
+        _run(self.wt, "commit", "-q", "--allow-empty", "-m", "previous spec")
+        _run(self.wt, "checkout", "-q", "-f", "spec/1")
+
+    def test_head_rewrites_ignore_the_switch_onto_the_audited_branch(self):
+        self._reuse_slot()
+        rewrites = _cq_json(self.repo, *self._reflog_args())["rewrites"]
+        self.assertEqual(rewrites, {"branch": [], "head": []})
+
+    def test_head_rewrites_still_see_a_reset_after_the_switch(self):
+        self._reuse_slot()
+        self._commit_more()
+        _run(self.wt, "reset", "-q", "--hard", "HEAD~1")
+        rewrites = _cq_json(self.repo, *self._reflog_args())["rewrites"]
+        self.assertEqual(len(rewrites["head"]), 1)
+        self.assertTrue(rewrites["head"][0].startswith("reset"))
+        self.assertEqual(len(rewrites["branch"]), 1)
+
+    def test_head_rewrites_see_a_branch_deleted_and_recreated_over_its_own_commits(self):
+        self._commit_more()
+        _run(self.wt, "checkout", "-q", "--detach")
+        _run(self.wt, "branch", "-D", "spec/1")
+        _run(self.wt, "checkout", "-q", "-b", "spec/1", "main")
+        rewrites = _cq_json(self.repo, *self._reflog_args())["rewrites"]
+        self.assertEqual(len(rewrites["head"]), 1)
+        self.assertIn("discards 2 commit(s)", rewrites["head"][0])
+
+    def test_head_rewrites_ignore_a_previous_branch_ahead_of_the_switch_point(self):
+        _run(self.wt, "checkout", "-q", "-b", "previous")
+        self._commit_more()
+        _run(self.wt, "checkout", "-q", "spec/1")
+        rewrites = _cq_json(self.repo, *self._reflog_args())["rewrites"]
+        self.assertEqual(rewrites, {"branch": [], "head": []})
 
     def test_expired_reflog_is_an_error_not_a_clean_audit(self):
         _run(self.wt, "reflog", "expire", "--expire=now", "--all")
@@ -2959,13 +3089,12 @@ class WorktreeRetire(RepoCase):
         self.assertEqual(proc.returncode, 0, proc.stdout + proc.stderr)
         self.assertFalse(os.path.exists(self.wt))
 
-    def test_pytest_cache_blocks_retire_when_not_declared(self):
+    def test_pytest_cache_is_discarded_by_the_built_in_list(self):
         self._merge_through_gh()
         self._seed_pytest_cache()
         proc = self._retire()
-        self.assertEqual(proc.returncode, 1, proc.stdout)
-        self.assertIn(".pytest_cache", json.loads(proc.stdout)["ignored"][0])
-        self.assertTrue(os.path.isdir(self.wt))
+        self.assertEqual(proc.returncode, 0, proc.stdout + proc.stderr)
+        self.assertFalse(os.path.exists(self.wt))
 
     def test_repo_config_declares_pytest_cache_regenerable(self):
         root = pathlib.Path(__file__).resolve().parents[2]
@@ -3078,7 +3207,7 @@ class PruneVerb(RepoCase):
 
     def setUp(self):
         super().setUp()
-        _run(self.repo, "branch", "merged")
+        _merged_branch(self.repo, "merged")
         _run(self.repo, "checkout", "-q", "-b", "unmerged")
         pathlib.Path(self.repo, "u.txt").write_text("u\n", encoding="utf-8")
         _run(self.repo, "add", "u.txt")

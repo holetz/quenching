@@ -37,6 +37,22 @@ def run(*argv):
     return code, json.loads(output.getvalue())
 
 
+_SESSION_SELECTORS = ("OPENCODE_SESSION_ID", "CLAUDE_CODE_SESSION_ID")
+
+
+def session_env(**values):
+    """Patch the environment with only the session selectors this case names.
+
+    `mock.patch.dict` adds keys and keeps the rest, and this repository is developed inside a host
+    that exports `OPENCODE_SESSION_ID`: a test that left it visible would measure the operator's
+    live session instead of its own fixture. The copy keeps `PATH` and `XDG_*`, which
+    `resolve_transcript` needs, and clears the two selectors first.
+    """
+    environment = {key: value for key, value in os.environ.items() if key not in _SESSION_SELECTORS}
+    environment.update(values)
+    return mock.patch.dict(os.environ, environment, clear=True)
+
+
 class ContextTests(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()
@@ -96,17 +112,17 @@ class ContextTests(unittest.TestCase):
             self.assertEqual(data["iterationCoverage"], coverage)
 
     def test_agent_roles_come_from_metadata_and_unknown_refuses(self):
-        for kind, role, budget in (("quenching-specs:spec-runner", "worker", 100000),
+        for kind, role, budget in (("quenching-specs:spec-runner", "worker", 200000),
                                     ("quenching-specs:spec-orchestrator", "conductor", 150000),
                                     ("quenching-specs:spec-orchestrator", "conductor", 150000),
                                     ("quenching:autopilot", "conductor", 150000),
                                     ("Explore", "unknown", None), (7, "unknown", None)):
             agent = self.base / "session/subagents/agent-worker.jsonl"
-            self.write(request("a", usage(110000, [110000])), path=agent)
+            self.write(request("a", usage(170000, [170000])), path=agent)
             agent.with_suffix(".meta.json").write_text(json.dumps({"agentType": kind}))
             code, data = run(agent)
             self.assertEqual((data["role"], data["budget"]), (role, budget))
-            self.assertEqual(code, 2 if budget is None else 1 if role == "worker" else 0)
+            self.assertEqual(code, 2 if budget is None else 1 if role == "conductor" else 0)
 
     def test_deployed_agent_name_keeps_its_role(self):
         self.assertEqual(bare_agent("quenching-spec-runner"), "spec-runner")
@@ -180,9 +196,17 @@ class ContextTests(unittest.TestCase):
     def test_environment_and_explicit_precedence(self):
         self.write(request("a", usage(1, [1])))
         other = self.write(request("b", usage(2, [2])), path=self.base / "other.jsonl")
-        with mock.patch.dict(os.environ, {"CLAUDE_CODE_SESSION_ID": str(self.path)}):
+        with session_env(CLAUDE_CODE_SESSION_ID=str(self.path)):
             self.assertEqual(run()[1]["peakContext"], 1)
             self.assertEqual(run(other)[1]["peakContext"], 2)
+
+    def test_session_env_ignores_the_host_selector(self):
+        """The host's own OPENCODE_SESSION_ID never wins over the selector the case names."""
+        self.write(request("a", usage(1, [1])))
+        with mock.patch.dict(os.environ, {"OPENCODE_SESSION_ID": "ses_host"}):
+            with session_env(CLAUDE_CODE_SESSION_ID=str(self.path)):
+                self.assertEqual(run()[1]["peakContext"], 1)
+                self.assertEqual(run()[1]["transcript"], str(self.path))
 
     def test_session_id_and_agent_id_resolution(self):
         cwd = Path.cwd().resolve()
@@ -191,7 +215,7 @@ class ContextTests(unittest.TestCase):
         agent = project / "live/subagents/agent-a.jsonl"
         self.write(request("agent", usage(2, [2])), path=agent)
         agent.with_suffix(".meta.json").write_text('{"agentType":"quenching-specs:spec-runner"}')
-        with mock.patch.dict(os.environ, {"CLAUDE_CODE_SESSION_ID": "live", "QUENCHING_TRANSCRIPTS_ROOT": str(project.parent)}):
+        with session_env(CLAUDE_CODE_SESSION_ID="live", QUENCHING_TRANSCRIPTS_ROOT=str(project.parent)):
             self.assertEqual(run()[1]["peakContext"], 1)
             self.assertEqual(run("--agent", "a")[1]["role"], "worker")
             self.assertEqual(run("--agent", "../a")[0], 2)
@@ -220,11 +244,11 @@ class ContextTests(unittest.TestCase):
         self.call("2026-10-17T10:00:00Z", "cq components session context --self 1632 --json", path=agents["w1"])
         self.call("2026-10-17T10:05:00Z", "cq components session context --self 1700 --json", path=agents["w2"])
         self.call("2026-10-17T10:06:00Z", "grep -- '--self 1632' notes.md", path=main)
-        with mock.patch.dict(os.environ, {"CLAUDE_CODE_SESSION_ID": "live",
-                                          "QUENCHING_TRANSCRIPTS_ROOT": str(project.parent)}):
+        with session_env(CLAUDE_CODE_SESSION_ID="live",
+                         QUENCHING_TRANSCRIPTS_ROOT=str(project.parent)):
             code, data = run("--self", "1632")
             self.assertEqual(data["transcript"], str(agents["w1"]))
-            self.assertEqual((data["role"], data["budget"]), ("worker", 100000))
+            self.assertEqual((data["role"], data["budget"]), ("worker", 200000))
             self.assertIn("self marker", data["resolvedBy"])
             self.assertEqual(run("--self", "999")[1]["code"], "se-self-not-found")
             self.assertEqual(run("--self", "163")[1]["code"], "se-self-not-found")
@@ -239,7 +263,7 @@ class ContextTests(unittest.TestCase):
     def test_bare_session_id_resolves_from_a_sibling_worktree(self):
         root = self.base / "projects"
         target = self.write(request("main", usage(7, [7])), path=root / "-home-checkout" / "live.jsonl")
-        with mock.patch.dict(os.environ, {"CLAUDE_CODE_SESSION_ID": "live", "QUENCHING_TRANSCRIPTS_ROOT": str(root)}):
+        with session_env(CLAUDE_CODE_SESSION_ID="live", QUENCHING_TRANSCRIPTS_ROOT=str(root)):
             code, data = run()
             self.assertEqual((code, data["transcript"]), (0, str(target)))
             self.assertEqual(data["resolvedBy"], "session id across project dirs")
@@ -268,7 +292,7 @@ class OpenCodeContextTests(unittest.TestCase):
         db.executemany("INSERT INTO session_v2 VALUES (?,?,?,?)", [
             ("ses_root", None, "build", "/r"), ("ses_kid", "ses_root", "quenching-spec-runner", "/r"),
             ("ses_odd", "ses_root", "explore", "/r")])
-        steps = [("ses_root", 1000, 500), ("ses_kid", 40000, 60000), ("ses_kid", 1000, 110000), ("ses_odd", 5, 5)]
+        steps = [("ses_root", 1000, 500), ("ses_kid", 40000, 60000), ("ses_kid", 1000, 210000), ("ses_odd", 5, 5)]
         for n, (sid, inp, read) in enumerate(steps):
             db.execute("INSERT INTO session_message VALUES (?,?,'assistant',?,?)", (f"m{n}", sid, n, json.dumps({
                 "time": {"created": 1_790_000_000_000}, "model": {"id": "deepseek"},
@@ -287,7 +311,7 @@ class OpenCodeContextTests(unittest.TestCase):
         code, out = self.live("ses_kid", "--self", "2149")
         self.assertEqual(code, 1)
         self.assertEqual((out["role"], out["peakContext"], out["budget"], out["exceeded"], out["turns"]),
-                         ("worker", 111000, 100000, True, 2))
+                         ("worker", 211000, 200000, True, 2))
         self.assertEqual(out["measurement"], "recorded-OpenCode-usage")
 
     def test_main_session_is_within_budget(self):
@@ -298,7 +322,7 @@ class OpenCodeContextTests(unittest.TestCase):
         self.assertEqual(self.live("ses_root", "--agent", "ses_kid")[1]["role"], "worker")
 
     def test_explicit_session_id_needs_no_environment(self):
-        self.assertEqual(run("ses_kid")[1]["peakContext"], 111000)
+        self.assertEqual(run("ses_kid")[1]["peakContext"], 211000)
 
     def test_unknown_role_and_unknown_session_are_unmeasured(self):
         self.assertEqual(self.live("ses_odd")[0], 2)

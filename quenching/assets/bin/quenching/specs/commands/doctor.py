@@ -8,6 +8,8 @@ the end and report, never to refuse."""
 from __future__ import annotations
 
 import json
+from quenching.common.config import repository_document
+from quenching.config.schema import unknown_leaves
 from quenching.specs.backends.azure import open_azure_backend
 from quenching.specs.backends.base import BackendRefusal
 from quenching.specs.backends.github import (GH_LISTING_SUSPECT_REMEDY, listing_is_suspect,
@@ -62,6 +64,14 @@ def cmd_doctor(args, root: str, out: Emitter) -> int:
                                  f"{CONFIG_FILE} declares `{key}`, which nothing reads",
                                  path=CONFIG_FILE, key=key,
                                  remedy=f"the recognised key(s): {', '.join(CONFIG_KEYS)}"))
+    document = repository_document(root)[0]
+    for key in unknown_leaves(document) if isinstance(document, dict) else []:
+        findings.append(_finding("sp-config-unknown-leaf", "warn",
+                                 f"{CONFIG_FILE} declares `{key}`, which nothing reads — "
+                                 f"its default applies",
+                                 path=CONFIG_FILE, key=key,
+                                 remedy="compare it with the keys `cq config schema` lists, "
+                                        "or remove it"))
     if cfg["unknownBackend"]:
         findings.append(_finding("sp-config-unknown-backend", "warn",
                                  f"{CONFIG_FILE} declares backend `{cfg['unknownBackend']}`, "
@@ -119,6 +129,22 @@ def cmd_doctor(args, root: str, out: Emitter) -> int:
                                  path=f".specs/{LEGACY_CONFIG_FILE}",
                                  remedy=f"move its keys into {CONFIG_FILE} and delete it; "
                                         f"whatever it declares is doing nothing today"))
+
+    # A slot is reused, so `acquire` runs the setup again over a tree that already holds what
+    # the last run installed. A setup that assumes a fresh tree breaks on the second acquire;
+    # the target says once that it does not, and the warning stops.
+    if cfg.get("worktreeSetup"):
+        from quenching.git.slots import setup_idempotent
+        from quenching.specs.config import find_repo_root
+
+        if not setup_idempotent(find_repo_root(root) or root):
+            findings.append(_finding(
+                "sp-config-setup-idempotence", "warn",
+                f"{CONFIG_FILE} declares `worktreeSetup`, which `cq git worktree acquire` runs "
+                "on every acquire of a reused slot — it must be idempotent",
+                path=CONFIG_FILE, command=cfg["worktreeSetup"],
+                remedy="make the setup safe to run over a slot that already holds its "
+                       "dependencies, then declare `shared.worktreeSlots.setupIdempotent: true`"))
 
     # The provider checks below reach the network — every other finding above is local by
     # construction. Justified because it is the only place that can ever catch it: a card a

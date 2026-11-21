@@ -34,5 +34,10 @@ class AutonomyProseTests(unittest.TestCase):
         self.assertIn(CANONICAL, body)
 
 
+    def test_autopilot_rechecks_a_stall_before_stopping_the_worker(self):
+        body = " ".join(text("quenching/skills/quenching-specs/references/autopilot.md").split())
+        self.assertIn("right before `TaskStop`, read the mtime and the child check **again**", body)
+        self.assertIn("write both readings (time, mtime, child present) in the round record", body)
+
 if __name__ == "__main__":
     unittest.main()

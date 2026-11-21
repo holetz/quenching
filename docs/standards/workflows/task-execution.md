@@ -461,7 +461,7 @@ conditions hold:
 2. **Reversible** — a disposable worktree, no destructive git, nothing under `/docs/` or
    `knowledge/`;
 3. **Projected context ≤ 80k** — `cq specs estimate --spec <id> --task <tid> --json` reports
-   `oracleProtected` and `smallTierEligible`; 80k is a margin under the 100k worker budget;
+   `oracleProtected` and `smallTierEligible`; 80k is the Haiku ceiling of ADR 0014, independent of the worker budget;
 4. **Short ladder** — one attempt on the small tier; a failed `verify:` returns the task to the
    session model, which corrects on the diff; a second failure goes to the human;
 5. **Review by reading** — execute's own self-review, on the session model, reads the diff before
@@ -527,7 +527,40 @@ The run stops only on a **real block**, a closed list:
    in silence, never marked as passed;
 6. `approved` is absent under `autonomous`, because approval belongs to develop.
 
+A pre-existing red has its own route, [Pre-existing errors](#pre-existing-errors): it is fixed by a declared `[fix-preexistente]` task or captured as a spec, never waved off.
+
 Outside this list the executor decides and goes on. A real block returns `needs-human:` carrying the
 question; it never improvises the answer. Autonomy is recognised only when declared — the literal
 `autonomous`, or the human's own words asking to run to the end without asking — never inferred, and its
 reach is what the declaration names: "up to the PR" does not authorise a merge.
+
+### Pre-existing errors
+
+A red the run finds on the way — a failing gate, a broken test, surface drift — is never dismissed as "not
+this spec's". The executor **diagnoses** the cause and **proves** it already existed on the base: it
+reproduces the failure in the base worktree (`.quenching/red`, the mechanism of
+`references/specs-execute/execution.md` §The validation loop). A failure that does not reproduce there is
+this spec's own, and the validation loop applies unchanged. Pre-existence is proved, never claimed.
+
+**The fix stays in the spec when four criteria hold together**:
+
+1. the cause is diagnosed and reproduced on the base;
+2. the fix touches few files and changes no contract (command, config key, standard);
+3. an existing verification proves it — red before, green after;
+4. no human decision is needed.
+
+The fix enters as a new task tagged `[fix-preexistente]`, appended to `## Tasks` with its own `files:` (the
+generated mirrors included) and `verify:`, then validated, so the verifier reads it as declared scope.
+No number fixes "few files": the qualitative criterion (no contract changes) is what binds.
+
+**Any criterion failing → capture, never fix.** While the context is warm, `cq specs new` records a spec
+for the error, with `## Problem` plus the diagnosis (cause, reproduction, files). The current spec gets one
+`## Discoveries` line resolved `promoted: <id>`. This is the one exception to `plan-lifecycle.md`'s rule
+that only the conclude harvest creates specs, and it covers only diagnosed pre-existing errors.
+
+**The bar does not drop.** An uncorrected pre-existing red stays a FAIL of the gate: the PR declares the
+base red and the spec capturing it, and the merge waits for that spec. Skipping, deselecting, `xfail`,
+suppressing a test, editing a `verify:` or `--no-verify` is never a fix; inside a `[fix-preexistente]`
+task the verifier fails it. Under `autonomous`, an uncontained pre-existing red is a real block of the
+list above (a proof the spec requires cannot run): the run captures the spec, names it in the
+`needs-human:` note and stops.

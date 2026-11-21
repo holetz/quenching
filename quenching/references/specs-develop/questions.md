@@ -462,7 +462,60 @@ Both land in the pass's single edit, so the spec never holds the superseded vers
 table exists and the human has chosen — and the spec's biggest remaining risk is one they
 explicitly accepted.
 
+## Surface refinement
+
+**A second subject, never a stage.** The definition pass plans the spec's objective and the
+process surface together; both land in `## Tasks`.
+
+**Explicit input only.** The human asks — "refine the workflow too", "change the process alongside
+the objective" — or supplies `--with-surface`. Like `autonomous`, this is a declaration in the
+input, never a reading of the state: `## Impact`, a missing section and the pass's own judgment
+cannot trigger it.
+
+**It plans; it does not edit.** Definition writes the spec and nothing else: no workflow, skill,
+reference, structure or code file. `/quenching-specs execute` writes the surface files one task
+at a time, each with its own commit and `verify:`. That boundary lets the pass obey the doctrine
+it is changing.
+
+**Enumerate with the ask.** Account for every process-surface opportunity found while forming the
+objective — a workflow, a skill, a reference, their structure or an automation. Fold each into
+the task group or park it as one `## Discoveries` line (§Discoveries); nothing is dropped or edited.
+
+**The task group.** Use the grammar of [spec-driven.md](spec-driven.md) §`## Tasks`:
+
+| Contract | Required shape |
+| --- | --- |
+| Position | `### 1. Process surface` is the FIRST group of `## Tasks`, ahead of the objective's tasks that rely on the new behaviour: the dependency is real and serial. |
+| Items | Every item carries `files:` and `verify:`. `files:` names the surface paths listed under `## Impact` in the `Process surface this spec expects to touch` list ([artifacts.md](artifacts.md)), plus any generated `.agents/**` / `.claude/**` mirrors and deploy manifest the source edit rewrites, declared in the same task. |
+| Coverage | Every path under that `## Impact` sub-heading is named by a task in the group; a declared path without a task is a review finding. |
+| Order | No `[P]` crosses the group: its tasks share the surface and land in order. |
+| Timing | Plan the group during definition; execution never infers it. |
+
+**The research profile.** Where the plan needs what current practice says, delegate the reading to
+a read-only research sub-agent: `Read`, `Grep`, `Glob`, `WebSearch`, `WebFetch` — never `Edit`,
+`Write`, `NotebookEdit` or `Bash`. It returns one table and no raw page text — per row the source
+URL, the publication date (`undated` when none), the retrieval date, the claim, and what it would
+change in this spec; a claim that cannot carry the three source facts is dropped rather than
+hedged. It never decides: the pass chooses the alternative and cites the row in
+`## Alternatives Considered` or `## Design`. A web source may support an alternative or a
+rationale; it never grounds a binding rule alone
+(`quenching/references/align/evidence-doctrine.md` §3). A target that carries its own profile under
+`docs/standards/automation/agents.md` §The research profile uses that grant, which never narrows
+this one.
+
+**Stop when** every declared surface path is named by a task carrying `files:` and `verify:`,
+`.agents/quenching/bin/cq specs parallel --spec <id>` exits 0, and nothing outside the spec was
+written.
+
 ## Discoveries
+
+**Park the process surface, always.** Every pass — with or without the surface ask, on every
+track — parks a finding that the workflow, a skill, a reference, the structure or an automation
+around the spec is the constraint as ONE `## Discoveries` line carrying `path:line` and the
+consequence. A cost finding is one kind of it, and it carries a counted figure — tokens, round
+trips or whole-file reads — read from `cq components session context` or
+`cq components session cost`, never from the pass's recollection. Parking is not an offer and
+mints nothing.
 
 **Runs when** `## Discoveries` holds a line with no resolution on it — stage 0 of the pass, before
 compose, at any derived stage.
@@ -516,23 +569,11 @@ built** — and say what should happen to it next.
 This stage adds nothing to the body: it writes one record and no section. What it shows is always
 the same: what the spec now commits to, in the proposal's one line, the task count, the
 `verification` policy in force, the declared `docs/standards/` paths, and the biggest accepted
-risk, plus the declared-reading estimate, worker budget and unknown inputs.
+risk.
 
-**The size signal precedes every approval stamp.** Run `.agents/quenching/bin/cq specs estimate <id> --json` after
-ready verification. Its `overBudget` compares the largest task section's known reading estimate
-with `workerBudgetTokens` (S2: 100000). Bytes / 4 is a heuristic, not measured build context;
-excluded overhead and unknown inputs remain visible below the budget. Never claim a build fits
-from this signal, and never change `complexity` to make a plan appear smaller.
-
-An excess recommends **decomposition in the develop session**, not an unconditional approve:
-from the source spec and section estimates, propose independent slices
-and dependency edges, and present them before asking to capture an epic. Capture/linking needs
-explicit authorization and keeps the original problem available; an existing approval or task
-history is never silently rewritten. The human may instead **explicitly accept** the unsplit
-estimate risk or stop. **No automatic approval** above budget, including the simple track
-and `autonomous`: a worker returns `STATE: blocked` / `NOTE: needs-human:` with the evidence and
-proposal so the conductor holds the decision. An estimator refusal/failure also leaves approval
-unstamped. Incomplete input coverage is reported honestly; it never becomes a false fits verdict.
+**No token-budget check precedes approval.** The approval runs no `cq specs estimate`, shows no
+estimate and never asks, blocks or recommends decomposition over a budget. Splitting a spec is a
+scope judgment §Refine's signals make, never a byte count.
 
 **The screen recommends, rather than defaulting to approve.** It judges what the pass just produced
 against §Refine's three signals and leads with the move those signals argue for, as option A of
@@ -541,18 +582,16 @@ text:
 
 | Recommendation | When | What choosing it does |
 | --- | --- | --- |
-| **Decompose** | known declared reading exceeds worker budget | propose independently verifiable slices in this session; capture only on explicit authorization |
 | **Approve** | no signal fired | `.agents/quenching/bin/cq specs record "<id>" approved --set date=<today> --set by=human`, never by editing the provider document directly |
 | **Refine** | a scope or critique signal fired, and refine has not run this pass | the choice IS the OK to refine with the lens the signal names, restamping `complexity` if the depth grew, and the pass re-enters at refine |
 | **Refine with the premortem** | the spec is irreversible | same mechanics, premortem lens |
 | **Stop here** | — | nothing stamped, and the report says what is open |
 
-A pass where refine already ran does not recommend refining again; absent a size excess it recommends approving, and
+A pass where refine already ran does not recommend refining again; it recommends approving, and
 names what the argument settled. Recommending the raise a human has already taken is asking them to
 decide the same thing twice.
 
-**On the simple track, after the size check leaves no unresolved oversized-plan decision — the pass
-approves, and the record says so.**
+**On the simple track, the pass approves, and the record says so.**
 `.agents/quenching/bin/cq specs record "<id>" approved --set date=<today> --set by=session`. There is no screen, because
 the simple track is the one with nothing left for a human to decide. The review window is **the
 spec's URL in the backend**, announced before the pass read anything and repeated in its report. The
@@ -578,6 +617,11 @@ Every stage that reads the codebase or `docs/` to answer its own questions — c
 the aggregate a `grep`/`gh`/`cq` call produces, never the raw dump; `.agents/quenching/bin/cq components read <path>
 --sections "§X"` for `docs/standards/` and `knowledge/glossary.md`, the same way this
 plugin's own references already address a section instead of a whole file.
+
+**Park at the read.** A reading that exposes a constraint in the workflow, a skill, a reference,
+the structure or an automation around the spec parks it on the spot, under §Discoveries' own
+always-park rule — one line, `path:line` and the consequence, a counted figure for a cost
+finding. The reading never becomes the edit.
 
 Two uses delegate that reading to a sub-agent, and they do not share one tool profile.
 

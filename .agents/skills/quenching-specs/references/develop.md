@@ -163,6 +163,12 @@ already loaded. The pass is up to four stages, always in this order:
 | refine | a concrete signal fired (scope, critique, irreversibility), or the input asked for it; never on `autonomous` |
 | approval | always |
 
+**Surface refinement is not a stage.** Only an explicit ask in the human's words or
+`--with-surface` runs step 3d, which plans the process surface as the first task group; without
+the ask, skip it. Never infer the ask from `## Impact`, a missing section or the pass's judgment.
+The stages, their order and their stop conditions stay unchanged —
+[questions.md](.agents/quenching/references/specs-develop/questions.md) §Surface refinement.
+
 A spec already `ready`/`approved` has nothing to compose, so an invocation over one **is** a refine
 request, run with the lens the risk argues for (alternatives, critique or premortem).
 
@@ -186,7 +192,7 @@ commands together, every stage at once:
 | Stage | Spec sections it reads or writes |
 | --- | --- |
 | discoveries | `## Discoveries` |
-| compose | `## Problem` `## Design`, plus every heading `ready.missing`/`ready.malformed` named in step 2 |
+| compose | `## Problem` `## Design`, plus every heading `ready.missing`/`ready.malformed` named in step 2, plus `## Impact` `## Tasks` where step 3d runs |
 | refine | `## Problem` `## Proposal` `## Design` `## Alternatives Considered` `## Risks` `## Impact` `## Tasks` |
 | approval | `## Proposal` `## Impact` `## Risks` — and it writes nothing into the body |
 
@@ -215,6 +221,39 @@ goes orphaned if it changes.
 own consolidated write, landing as `### Mapa de dependências` under `## Design`, dated.
 **Done when:** the spec already carries a map, or this pass holds the sub-agent's table to write at
 step 7.
+
+### 3d. Enumerate the surface refinement
+Runs only on the ask step 3 identified; skip whole otherwise. Follow
+[questions.md](.agents/quenching/references/specs-develop/questions.md) §Surface refinement.
+
+**Plan; do not edit.** Write no workflow, skill, reference, structure or code file during
+definition. This boundary lets the pass obey the doctrine it is changing: the surface becomes a
+task group, never a prose edit to its targets. `/quenching-specs execute` writes it.
+
+Enumerate every opportunity found while forming the objective — a workflow, a skill, a reference,
+the structure that holds them, an automation. Fold each into the group or park it as one
+`## Discoveries` line, per §Surface refinement's enumeration. Drop nothing.
+
+Draft `### 1. Process surface` as the first group of `## Tasks`, ahead of the objective's tasks
+that rely on the new behaviour. Give every item `files:` and `verify:`. Name in `files:` the
+paths in the `Process surface this spec expects to touch` list under `## Impact`, plus the generated
+mirrors each source edit rewrites — the deployed `.agents/**` and `.claude/**` mirrors and
+`.agents/.quenching-deploy.json` — in the same task as that source edit. Name every declared path
+in a task; let no `[P]` cross the group.
+Declare the paths per [specs-develop/artifacts.md](.agents/quenching/references/specs-develop/artifacts.md) §`## Impact` — the parsed sub-heading.
+
+Where the plan needs current practice, delegate to the read-only research sub-agent of
+[specs-develop/questions.md](.agents/quenching/references/specs-develop/questions.md) §Surface
+refinement. Keep one table — source, publication date, retrieval date, claim, what it would
+change — in `## Alternatives Considered` or `## Design`. A web source may support an alternative or a rationale;
+it never grounds a binding rule alone —
+[align/evidence-doctrine.md](.agents/quenching/references/align/evidence-doctrine.md) §3.
+
+This is a subject the pass plans, not an execution question like `[P]`/`files:`/`pattern:`.
+Ask the human only what the surface plan cannot answer from evidence, under the pass's track.
+**Done when:** every declared surface path is named by a task carrying `files:` and `verify:`,
+`.agents/quenching/bin/cq specs parallel --spec <id>` exits 0 in step 7, and nothing outside the
+spec was written.
 
 ### 4. Compose
 Skip where the spec is already `ready`. Otherwise follow §Compose, under the four shared mechanics:
@@ -277,7 +316,8 @@ Load the authoring doctrine now — the union of `artifacts.md` sections this pa
 per section, what changes and the answer it came from, drafted under the doctrine just loaded, with
 what refine overturned marked as such — and then write it in step 7. The plan is **narrated, never
 submitted**: do not ask for a confirmation of it and do not wait for one. Invoking this command is
-the authorization.
+the authorization. When surface refinement ran, its group and the `## Impact` sub-heading that
+declares it belong to this same plan — narrate group by group, never as a second edit.
 
 Anything that turned out to belong outside the spec is narrated here too: a durable rule or a term
 as a **routed offer**, not an edit, and an **out-of-scope follow-up as the one `## Discoveries` line
@@ -291,7 +331,8 @@ the `## Discoveries` lines, the records, `verification`, `validate`, and the clo
 Write the narrated sections with `.agents/quenching/bin/cq specs section <id> "<Heading>[,<Heading>…]" --write` (bodies
 on stdin) — it creates each heading in canonical position on first write, so creating and revising
 are the same call. An emptied section becomes an explicit `- none — <reason>`, never a deleted
-heading.
+heading. The surface group and the `## Impact` sub-heading that declares it land in this same
+single write as the rest; there is no surface-specific write, call or record.
 
 **The bodies go on stdin as one heredoc, in the same call:**
 
@@ -361,29 +402,11 @@ The re-derived stage came back in step 7's call. Compare it with
 where the pass expected to land: a divergence is named and the pass re-enters at step 3 with a pass
 derived from the real stage. **The re-entry is narrated, never offered.**
 
-**Before either approval route**, run the read-only size signal:
+**No size check runs before approval.** Do not run `.agents/quenching/bin/cq specs estimate`, and
+never ask, block or recommend decomposition over a token budget: a declared-reading estimate is not
+a build's context, and a worker over its size estimate finishes the spec anyway.
 
-```bash
-.agents/quenching/bin/cq specs estimate <id> --json
-```
-
-Read the exit code before the payload; refusal or failure leaves approval unstamped. Report
-`maxSectionTokens`, `workerBudgetTokens` (the S2 worker policy is 100000), the section/task counts,
-`complete`, unresolved inputs and `excluded`. This is a UTF-8 bytes / 4 declared-reading heuristic;
-it **never proves the full build fits**, even when every declared input was found. Total reading
-volume is not a context peak; system overhead, future code, outputs and iterations are not predicted.
-
-When `overBudget` is true, follow §Approval's decomposition recommendation **before stamping**:
-propose, in this session, independently verifiable slices and
-dependencies from the source id/problem, task-section estimates,
-worker budget, unresolved inputs and exclusions, creating no children yet. Offer that concrete proposal to the human (recommended),
-explicit acceptance of the unsplit estimate risk, or stop. Only explicit authorization permits
-capture/linking, which this session runs with `.agents/quenching/bin/cq specs new` and `.agents/quenching/bin/cq specs link add`; preserve the original problem and never approve/execute the children incidentally.
-On the simple track and on `autonomous`, do not ask or automatically approve an oversized
-source: return `STATE: blocked` with `NOTE: needs-human: <budget evidence and proposed slices>` to
-the conductor. A lower estimate reports uncertainty and continues; it is not a fits verdict.
-
-With no unresolved size decision, close according to the track — §Approval owns the screen:
+Close according to the track — §Approval owns the screen:
 
 - **Simple track** — no screen. With `ready` now **proved** by step 7's payload and `approved`
   unset, stamp it here: `.agents/quenching/bin/cq specs record <id> approved --set date=<today> --set by=session`. **`by:`
@@ -422,7 +445,8 @@ blocks:
    to the close's recommendation**; the track and what it changed about who answered; how many
    questions were asked and answered, and how many answers the pass gave from evidence with an
    assumption named; **what refine overturned**, if anything; **an `approved` stamped
-   `by: session`, `by: human` or `by: orchestrator-forced` on its own line**; the sections edited; the records stamped; the routed offers and
+   `by: session`, `by: human` or `by: orchestrator-forced` on its own line**; the sections edited;
+   whether surface refinement ran and, when it did, its group's task count; the records stamped; the routed offers and
    whether each was taken; the stage before and after, and whether it landed where the pass expected.
 2. **Parked into `## Discoveries`** — optional, and every line **quoted**.
 
@@ -439,8 +463,11 @@ block, and is never asked as a question mid-pass.
 
 ## Invariants to never violate
 
-- **NEVER edit implementation code.** If the spec implies code changes, stop and name
-  `/quenching-specs execute`.
+- **Never edit anything but the spec.** The pass writes the spec and nothing else — no workflow,
+  skill, reference, structure, `docs/` file or code, the surface refinement's targets included.
+  What the ask plans lands in `## Tasks`; writing it belongs to `/quenching-specs execute`, one
+  task at a time. A pass that edits the surface has broken the boundary that lets it obey the
+  doctrine it is changing.
 - **Never write into `/docs/`.** A durable rule a question surfaces routes to `/quenching-knowledge add`, an
   understanding to `/quenching-knowledge learn`, a term to `/quenching-knowledge define` — **offered, never
   auto-written**. The rules a spec *proves* are written during execution, not during definition.

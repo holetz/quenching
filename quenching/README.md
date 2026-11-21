@@ -223,11 +223,11 @@ motion, shadows, breakpoints, and snippets remain in the source and sidecar.
 | `/quenching-git pr-review` | Works through a PR's unresolved review threads, one confirmation per thread. |
 
 **The one plugin-wide hook.** `quenching-specs` ships `hooks/hooks.json`: a `PreToolUse` hook on
-`Bash` that **denies** any `git commit`/`merge`/`tag`/`notes`, `gh pr` or `cq git` command whose
+the shell tools that **denies** any `git commit`/`merge`/`tag`/`notes`, `gh pr` or `cq git` command whose
 message carries Claude's co-authorship (`Co-Authored-By: Claude …`, `noreply@anthropic.com`,
 `Generated with Claude Code`), so Claude reruns it without the attribution. It never rewrites the
 command (`updatedInput` only applies paired with `allow`, which would auto-approve whatever the
-command chains), fails open without `python3`, and is off when `QUENCHING_ALLOW_CLAUDE_COAUTHOR=1`.
+command chains), fails open on any crash, and is off when `QUENCHING_ALLOW_CLAUDE_COAUTHOR=1`.
 Pair it with `"attribution": {"commit": "", "pr": ""}` in the target's settings so the trailer is
 never written in the first place.
 
@@ -237,9 +237,13 @@ questions about the target's live evidence, so there is nothing a probe could fi
 security subject is pillar-shaped and §The git pillar has no align). The `specs` axis hands off to
 the git pillar rather than executing git
 itself — `/quenching-specs execute` invokes `/quenching-git branch` for isolation, and
-`/quenching-specs conclude` reviews, distils, archives and proves the pre-merge gate green, then
+`/quenching-specs conclude` reviews, writes `## Outcome`, distils, sweeps its own flow — each defect
+of the project's automation becomes its own captured spec, never a task of this one — and proves the
+pre-merge gate green, then
 **names** `/quenching-git pr-create` or `/quenching-git merge` as the human's own next command
-instead of running either.
+instead of running either. The archive waits for the merge: `cq specs reconcile --write` closes every
+merged spec, and `conclude`, `execute`, `orchestrate`, `/quenching-git merge` and the orchestrator
+all run it.
 
 ### The two root commands
 
@@ -295,7 +299,7 @@ write-only, nothing reads it back, so it is never a second store.
 
 `cq config show --effective [--json]` prints every configuration key with its effective value and the layer it came from (`default`, `user`, `repository`, `branch`), plus the path and state of each layer; it only reads.
 
-`cq config init [--write]` seeds `.agents/quenching.json` with every adjustable default spelled out (preview without `--write`; an existing file is refused, never merged), and `cq config check [--json]` lists the seeded keys the file lacks (exit 1). `cq doctor` prints the same list in a `config` block and only reports it; `/quenching-align` runs the check and seeds an absent file under its one authorization.
+`cq config init [--write]` seeds `.agents/quenching.json` with every adjustable default spelled out (preview without `--write`; an existing file is refused, never merged), and `cq config check [--json]` lists the seeded keys the file lacks and the leaves inside a known namespace that nothing reads, such as a typo like `shared.autonomy.maxWorker` (exit 1; `cq specs doctor` warns on the same leaves as `sp-config-unknown-leaf`). `cq doctor` prints the same list in a `config` block and only reports it; `/quenching-align` runs the check and seeds an absent file under its one authorization.
 
 The repository layer is read through a configuration provider. `file` is the default and the compatibility read: with nothing declared, every value, refusal and `cq config show --effective` row is what it was, `.agents/quenching.json` included (and the legacy `.claude/quenching.json`). `QUENCHING_CONFIG_PROVIDER=<name>` (read from the environment, never from the file) selects another registered provider; a name nothing answers to is a refusal (exit 2) naming the registered providers, never a fallback to the file. Under a non-file provider the repository needs no `.agents/quenching.json`, `cq doctor` stops asking for it, `cq config show --effective` names the provider as the repository layer's source, and `cq config init` and `cq config check` refuse, because a write the provider did not receive would be a silent divergence. `cq config export [--json]` prints the repository layer as the envelope a service would hold, so the file can be loaded there and then deleted; it only reads. No service provider ships yet: this release delivers the seam.
 
@@ -318,10 +322,10 @@ With `QUENCHING_SPECS_SYNC=1` and the `azure-boards` backend, every read is answ
 | `/quenching-specs create` | ONE spec in `plans/`, ONE call, ONE closing screen — effort proportional to input, never an interrogation. A sentence becomes `## Problem` and `summary:`; a Claude Code plan file becomes every section it actually supports, mapped and never invented. Subject, type, tags and `complexity` are resolved and written with the capture, then shown — corrected or not — on the one screen at the end, which also offers to hand straight into `/quenching-specs develop` — whether that pass asks anything is the `complexity` the same screen shows. |
 | `/quenching-specs develop` | Two operations in ONE pass, both derived and neither offered as a choice: **compose** takes the spec from wherever its derived stage leaves it to a closed ten-section ready set, and **refine** argues with the composed spec and may overturn anything in it, the proposal included. Discovery resolution opens the pass, the approval close ends it — recommending approve, refine, or refine with the premortem against the spec's own signals. Questions grouped by dependency, each with an inline recommendation; one edit per pass, records `refined:`. Never edits code. |
 | `/quenching-specs execute` | Builds `## Tasks` one verified commit at a time: clean tree required, a worktree taken inline when it starts from the base branch, `verify:` run under the spec's declared policy, four-item diff self-review, then the box ticked with the subject of the commit it is about to make (`cq specs task --check --subject`) so code and box land in ONE commit. Writes only the `/docs/standards/` a task explicitly names; everything else is one `cq specs discover` line. Marks an isolated branch's own description with the slug(s) it built there — never on the base — so `conclude` can self-discover it later. Stops at the last commit. |
-| `/quenching-specs conclude` | Closes a spec out, resumable, **merging last**: whole-branch review (`reviewed:`), the emergent `/docs/`, the archive with `outcome: done` (refuses on open boxes unless forced) or `abandoned` (always allowed), ONE distillation pass, the release obligations your standards attach to the merge itself (a version bump, a changelog entry — never a spec task) and the `merge: {strategy, subject, pr}` stamp — all on the work branch — and only then the merge, by the **route** you chose alongside the strategy: local, or a pull request where `gh` resolves the repo (pushed, opened and merged in one consented block, with `pr:` recorded). Called with no `--spec`, reads the branch's own marking first — one valid slug resolves silently, several ask, none falls to a diff-measured offer to materialize a minimal spec — before falling back to a plain list-and-ask. Nothing is committed to the base after it. |
+| `/quenching-specs conclude` | Closes a spec out, resumable, **merging last**: whole-branch review (`reviewed:`), the emergent `/docs/`, the archive with `outcome: done` (refuses on open boxes unless forced) or `abandoned` (always allowed), ONE distillation pass, the flow sweep that captures each defect of the project's own automation as its own spec — never developed in this run —, the release obligations your standards attach to the merge itself (a version bump, a changelog entry — never a spec task) and the `merge: {strategy, subject, pr}` stamp — all on the work branch — and only then the merge, by the **route** you chose alongside the strategy: local, or a pull request where `gh` resolves the repo (pushed, opened and merged in one consented block, with `pr:` recorded). Called with no `--spec`, reads the branch's own marking first — one valid slug resolves silently, several ask, none falls to a diff-measured offer to materialize a minimal spec — before falling back to a plain list-and-ask. Nothing is committed to the base after it. |
 | `/quenching-specs improve` | **Typed only.** Maps a repository's genuinely relevant improvement opportunities with read-only scouts (evidence, consequence, no duplicate of an open spec, at most 15), settles the owner's decisions in rounds (the epic's autonomy policy among them, written into its `## Design`), and turns the approved part of the plan into an epic with member specs. Never builds. |
 | `/quenching-specs orchestrate` | Launches the `spec-orchestrator` agent over an epic id or a list of spec ids: dependency waves, at most 3 workers, a result accepted only on a `spec-verifier` PASS. A pre-check separates the specs that run alone from those that need a human (develop now, launch the independent subset, or `--autonomous`, which stamps `by=orchestrator-forced`); without `--autonomous` a `medium`+ spec with no `approved` comes back `blocked` as `needs-approval`. A thin launcher; the protocol lives in `agents/spec-orchestrator.md`. A spec is accepted as done only when archived with an Outcome, and a worker `blocked` with a `needs-human:` note is never re-spawned: its question goes to the human. |
-| `/quenching-specs autopilot` | **Typed only.** The invocation is the human's delegation for an unattended run: rounds of health, queue (each loose spec proves relevance or is abandoned with evidence), the `/quenching-specs improve` map decided by the conductor as delegated owner, an epic with the dated autonomy policy in its `## Design`, the `spec-orchestrator` with `autonomous`, a read-only correctness review per epic, run in parallel with a Codex review when the quota allows (fallback reported, `codex`-only findings kept only once reproduced), whose reproduced findings become next-round specs, then the gate. Never forces a decision that widens a grant or an executing surface — those go to a human epic. Runs ONE round by default; `--until-dry` or `--until` repeat rounds (a resumable round record, the next round in a fresh context) until the deadline or a whole round produces no spec with evidence and consequence, and `--max-launches` (provisional 40) caps the launches of the whole tree. |
+| `/quenching-specs autopilot` | **Typed only.** The invocation is the human's delegation for an unattended run: rounds of health, queue (each loose spec proves relevance or is abandoned with evidence), the `/quenching-specs improve` map decided by the conductor as delegated owner, an epic with the dated autonomy policy in its `## Design`, the `spec-orchestrator` with `autonomous`, a read-only correctness review per epic, whose reproduced findings become next-round specs, then the gate. Never forces a decision that widens a grant or an executing surface — those go to a human epic. Runs ONE round by default; `--until-dry` or `--until` repeat rounds (a resumable round record, the next round in a fresh context) until the deadline or a whole round produces no spec with evidence and consequence, and `--max-launches` (provisional 40) caps the launches of the whole tree. |
 | `/quenching-specs triage` | Ranks the whole front in ONE confirmed table, writing `priority: {level, criticality, complexity, date}` per spec and nothing else — merging, never clobbering a human's ranking. |
 | `/quenching-specs board` | Human-only. Starts `cq specs serve` in the background and prints the URL: a local browser portal (board by derived stage, drag-to-rank list, spec detail, search, capture, approve as `by: human`) over the same backend as the CLI. Loopback only, per-run token, `Host`/`Origin` checks, `--read-only` disables writes on the server; `cq-specs-read serve` is always read-only. |
 
@@ -390,8 +394,8 @@ only on a spec that met the ready gate (`mcp-not-ready` otherwise, before the qu
 
 What the flow concludes after that approval writes without asking: the `reviewed`, `merge` and
 `outcome` records and `specs_promote` run as the CLI verbs do. The archive is refused (exit 2) only
-by its own content gate — an empty `## Outcome`, or an open task under `done` — never by a
-confirmation; `outcome` is not a `specs_record` at all, because `specs_promote` is its one writer.
+by its own gate — an empty `## Outcome`, an open task under `done`, or `done` work not yet merged
+into `origin/<base>` — never by a confirmation; `outcome` is not a `specs_record` at all, because `specs_promote` is its one writer.
 
 Size policy: no tool returns a whole spec; reads go by section and by task, listings are paged, and any
 answer above 60,000 characters is cut with `truncated: true` and a `hint` naming the narrower call.
@@ -410,57 +414,19 @@ A URI resolves only to those two fixed files or to a `.md` inside `docs/standard
 traversal or an unknown URI is a JSON-RPC error (`-32602` bad parameters, `-32002` not found), never a file
 read. The same 60,000-character ceiling cuts an oversized answer with `truncated: true` and a `hint`.
 
-### A revisão Codex independente
-
-Step 6 of `/quenching-specs autopilot` runs, once per epic, a second and independent
-correctness review by Codex beside the Claude reviewer. Only the conductor calls `cq codex`; the
-reviewer gets no Codex grant. Two verbs of the `codex` pillar carry it:
-
-- `cq codex probe [--json]` answers whether Codex may be called now, without spending quota:
-  exit `0` available, `1` unavailable (a window over its ceiling, `crossReview: "off"`, no `codex`
-  on `PATH`), `2` unknown (no readable source or a stale snapshot).
-- `cq codex review --worktree <dir> --prompt <file> --run <name>` runs `codex exec` with a fixed
-  argv that ignores the user's Codex configuration and never asks for Codex's native sandbox; a
-  git guard proves afterwards that the review changed nothing.
-
-**Default and opt-out.** The review runs by default whenever the quota allows
-(`shared.codex.crossReview: "auto"`); `"off"` in `.agents/quenching.json` is the explicit refusal.
-The optional `shared.codex` block defaults to `maxUsedPercent` `80` (primary) and `90`
-(secondary), `timeoutSeconds` `900` and `model` `gpt-6-astra`; an absent block is every default.
-
-**Cost and quota.** One Codex call per epic, billed to the ChatGPT/Codex quota and never to the
-Claude one. The final report carries its tokens as measured, or `not measured`, apart from the
-Claude tiers.
-
-**Where the output lands.** `.quenching/codex/<run>/` holds `prompt.md` (the caller's prompt and
-the rule that Codex only reads), `review.md` and `events.jsonl`.
-
-**No sandbox, a git guard instead.** Codex runs with `--dangerously-bypass-approvals-and-sandbox`,
-because the native sandbox needs admin rights most machines lack and fails there with errors. The
-environment loses `GH_TOKEN`, `GITHUB_TOKEN`, `AWS_*`, `AZURE_*` and `GOOGLE_*`, and the guard
-compares the reviewed worktree's `HEAD`, branch, reflog, stash, the index, the status
-and bytes of every path `git status` reports and the ignored local configuration (`.claude/**`,
-`*.local.json`), before and after. Every symlink that resolves to a file (tracked, ignored or
-pointing outside the worktree) is recorded with its target and the hash of the resolved bytes; a
-symlink to a directory is not walked and stays a residual risk. Any change, a git command of the
-guard that fails, or any file-system error while taking the snapshot, before or after, is exit `2`
-`codex-git-guard` with no fallback (the refusal before the run removes the run's folder): the tree
-is never cleaned by Claude and goes to the human.
-
-**Fallback.** A probe that exits `1`, or a review that times out or exits `1`, leaves the step with
-the Claude review alone, and the final report names the fallback and its reason. A refusal (exit
-`2`) is reported the same way and never blocks the step — except `codex-git-guard`, which stops
-the run for the human.
-
-**Findings need reproduction.** A finding only Codex raised becomes a spec only once the Claude
-side reproduces it, with the command and its output. The Codex surface (`quenching-codex`) has no such step.
-
 ### O executor Codex
 
 Step 5b of `/quenching-specs execute` hands **one task at a time** to Codex when the code
 admits it; Claude keeps the self-review, the `verify:`, the commit, the tick and the verifier. It
-is **on by default**, under `shared.codex.executor` in `.agents/quenching.json`, and independent of
-`crossReview` (`executor.enabled: false` is its opt-out).
+is **off by default**, under `shared.codex.executor` in `.agents/quenching.json`
+(`executor.enabled: true` is its opt-in); a repository that declares nothing never calls Codex, and
+`cq config init` seeds that same value. There is no Codex cross review: a leftover
+`shared.codex.crossReview` or `shared.codex.model` is ignored and named in `warnings`.
+
+- **Quota probe** — `cq codex probe [--json]` answers whether Codex may be called now, without
+  spending quota: exit `0` available, `1` unavailable (a window over its ceiling, no `codex` on
+  `PATH`), `2` unknown (no readable source or a stale snapshot). The ceilings default to
+  `maxUsedPercent` `80` (primary) and `90` (secondary), and one call to `timeoutSeconds` `900`.
 
 - **Eligibility** — `cq codex eligible --spec <id> --task <tid> --json`: an open task that declares
   `files:`, writes nothing under `docs/` or `knowledge/`, and is small (bytes of its `files:` / 4 ≤
@@ -549,14 +515,12 @@ The OKF contract lives in the skills' `references/`; the installable payload is 
 declared files and Impact standards, plus the execute command body and spec build sections, using
 UTF-8 bytes / 4 rounded upward. Files repeated in one section count once; a new section counts its
 reads again. Missing/new files and tasks without declared files remain `unresolved`. The default
-worker **size estimate** is **100000 input-context tokens** (S2): it says how much reading a spec of
+worker **size estimate** is **200000 input-context tokens**: it says how much reading a spec of
 that size fits, and it never stops a build; `--worker-budget` declares an explicit override.
 The estimate **never proves** a full build fits: system/harness overhead, conditional references,
 future code, tool/test output, iteration count and growing history are excluded. Total reading
-volume is not a context peak. Develop compares the largest section before approval and proposes
-decomposition in the main session when known reading exceeds the budget. It presents independent
-slices first; capturing an epic requires explicit authorization. Declared autonomy leaves an oversized
-source unapproved and returns the decision to its conductor.
+volume is not a context peak. The verb runs only when called: develop does not check it before
+approval, and no flow asks, blocks or proposes decomposition over a token budget.
 
 The command registry loads at **session start**, so surface changes require fresh `claude -p`
 processes. `assets/checks/functional-checks.sh` deploys this checkout into throwaway targets and proves root
@@ -627,7 +591,7 @@ keeps its modules, while `--modules core` narrows a wider install and deletes th
 | Option | Values |
 | --- | --- |
 | `--modules` | `core` (default: `quenching-specs` plus `quenching-align` — specs, git, knowledge, components), `all`, or a comma list of modules; `specs` is always included because it owns the one `cq` |
-| `--harness` | `claude`, `codex`, `opencode` (default: all three) or `none` |
+| `--harness` | `claude`, `codex`, `opencode` (default: all three) or `none`; `claude` also serves the GitHub Copilot harness (below) |
 | `--runtime` | `vendor` (default, offline) copies the runtime; `uvx` writes a shim pinned to the release tag |
 | `--profiles` | overrides the derived `shared.profiles.installed` |
 | `--check` | exit 1 on drift instead of writing |
@@ -639,6 +603,16 @@ Deploy writes `AGENTS.md` and `.agents/quenching.json` only when absent, plus th
 what it owns in `.agents/.quenching-deploy.json`. `CLAUDE.md` is not created. Deploy installs the
 surface only: the target's `/quenching-knowledge align` installs `/docs/` and converges the fronts.
 The full contract, including the surface translation, is [deploy-mode.md](../docs/standards/architecture/deploy-mode.md).
+
+**The GitHub Copilot harness reads the `claude` files.** The VS Code Agents window and the Copilot
+CLI read the target's `.claude/settings.json` hooks and its `.mcp.json` as their own, so a Copilot
+session gets the same guards and the `quenching` MCP server with no file of its own. The hook
+command is one polyglot line that bash, PowerShell and cmd parse alike, started by the repository's
+`shared.mcp.command` prefix (else `python3`): declare that prefix on a Windows target
+([hooks.md](../docs/standards/automation/hooks.md)). Open a Copilot session with **Branch**
+isolation, not **New Worktree**: Copilot's worktree starts at the current HEAD, carries no ignored
+file and runs no `worktreeSetup`, and the agent would then cut a second one with
+`cq git worktree add` — the worktree is the quenching flow's to cut.
 
 A deployed target runs the same ids this manual writes: `/quenching-<vertical> <flow>`, for
 example `/quenching-specs create`, with the source written in that dialect
@@ -671,8 +645,10 @@ deploys `core` instead: the read verbs ship with it.
 ## Uninstall or reverse
 
 Re-running `cq deploy --write` with a narrower `--modules` or `--harness` removes the dropped part
-of the surface. To remove all of it, delete the files `.agents/.quenching-deploy.json` lists and
-the manifest itself, or revert the commit that deployed them. Neither touches the target's `/docs/`,
+of the surface. To remove all of it, run `cq deploy --target <repo> --remove` to see the plan, then
+`--remove --write`: it deletes every owned file that still holds the bytes deploy wrote, keeps and
+reports any file edited in the target, takes only its own hooks out of `.claude/settings.json`, and
+deletes the manifest. Reverting the commit that deployed the surface works too. Neither touches the target's `/docs/`,
 its own skills or `.agents/quenching.json`: those are repository-owned data and configuration. To
 reverse an alignment, review and revert the target repository's own commits; removing the surface
 is not a data rollback. If an upgrade is the problem, deploy the previous release tag again.
@@ -694,7 +670,7 @@ updates the published artifacts in lockstep. See
 contract.
 
 <!-- quenching-proof-readme-start -->
-<!-- quenching-proof-readme-sha256 012445eb0b1d303c24dec0eeb0c1ea2d7ce5a22b89c6c3afaf6989ee76297584 -->
+<!-- quenching-proof-readme-sha256 9ee947aee25859e4ce511f34abfe4832518fd171ca2763684cbf4bd995f380b5 -->
 ## Declared proof layers
 
 ### tests
@@ -703,6 +679,13 @@ contract.
 - Reach: tree
 - Budget: not declared
 - Required: yes
-- Test modules: 155
+- Test modules: 173
 - Fixture modules: none
+
+### Declared cost contract
+- Temp root: `isolated` — outside the repository, removed when the run ends
+- Workers: `auto`
+- Task scope: `python3 -m scripts.toolchain.test --affected`
+- Close scope: `QUENCHING_TEST_SCOPE=affected bash scripts/verify_repo.sh`
+- CI scope: `bash scripts/verify_repo.sh`
 <!-- quenching-proof-readme-end -->

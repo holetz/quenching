@@ -67,7 +67,11 @@ Isolation-while-building is what a **branch or worktree** provides, with real me
 reversion (what crosses into `knowledge/`: §Boundary).
 
 The store owns the locator and lifecycle transition. `promote` archives the document on the
-`quenching` branch and closes the card; it moves nothing on the code branches. What does not change is anything a command can
+`quenching` branch and closes the card; it moves nothing on the code branches. Because that ref is
+read by everyone the moment it is written, a `done` spec is archived only **after its work is
+merged** — `promote --outcome done` refuses while the work ref is not in `origin/<base>`, `--force`
+included, and `cq specs reconcile --write` is the post-merge close every route to a merge runs.
+`## Outcome` is written before the PR; the archive follows the merge. What does not change is anything a command can
 observe through `.agents/quenching/bin/cq specs`.
 
 <!-- rationale -->
@@ -142,12 +146,12 @@ merely derived fact earns no such mirror.
 
 There is no attempt counter and no `.specs.json`.
 
-**Four more keys — `tags`, `assignee`, `start`, `target` — are STATE, never records.** Each is a
-first-level frontmatter key with its own deterministic verb (`.agents/quenching/bin/cq specs tags|assignee|start|target
+**Five more keys — `tags`, `assignee`, `start`, `target`, `end` — are STATE, never records.** Each is a
+first-level frontmatter key with its own deterministic verb (`.agents/quenching/bin/cq specs tags|assignee|start|target|end
 <id> [value]`), not a `{field: value}` record and not owned by one lifecycle command. `tags` is
 also written at capture — `.agents/quenching/bin/cq specs new --tags` folds a resolved `subjects.<KEY>`'s own fixed tags
 in automatically, so the whole list still lands in ONE write rather than the capture's own tags
-followed by a second, separate `.agents/quenching/bin/cq specs tags` call. On the git store all four live in the document's frontmatter; the card shows
+followed by a second, separate `.agents/quenching/bin/cq specs tags` call. On the git store all five live in the document's frontmatter; the card shows
 tags and assignee as labels and assignees at transitions. A deprecated tracker backend instead
 stores them natively and reassembles them on read (`docs/standards/architecture/spec-backend.md`
 §Legacy tracker backends).
@@ -212,7 +216,7 @@ omission; it is a *not-yet*.
 | `new` (creation) | `## Problem` |
 | `ready` (**derived**) | the nine definition sections (`## Problem` … `## Risks`) **and `## Tasks`** |
 | `ready` (warning only) | `## Handoff` non-empty |
-| `promote → archive/` | `## Outcome` |
+| `promote → archive/` | `## Outcome` — and, for `done`, the work ref merged into `origin/<base>` |
 
 **`ready` is a derived stage, not a folder, and it refuses nothing.** Filling those ten sections is
 what makes a spec ready; no file moves, so there is nothing to refuse. It is a **floor** that

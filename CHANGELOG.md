@@ -13,6 +13,169 @@ owner: [`ci-cd/versioning-release.md`](docs/standards/ci-cd/versioning-release.m
 short version for a consumer: the version is published once, deliberately, as a release — never at a
 spec's own conclude — and `cq --version` is what answers which one you are running.
 
+## 7.10.0
+
+**Chega o `quenching-cache`, a faixa do cache de prompt.** Um plugin novo do marketplace
+  (`integrations/claude-cache/`, derivado do cache-maxxing, MIT) mostra acima do prompt quanto tempo
+  o cache segue quente, quanto custa a próxima mensagem e o que fazer. O `/quenching-cache handoff`
+  escreve o handoff da conversa e o guarda ao lado da spec da branch, e o `/quenching-cache stats`
+  lê o `cq components session cache --usd`. A tabela de preços e as chaves `shared.cache` são do
+  `cq`, e o handoff ganhou um verbo só, `cq specs handoff`, com um template (#115).
+
+**O `cq deploy` distingue edição local de mudança upstream e ganhou `--remove`**, e as salvaguardas
+  da revisão ECC entraram juntas: o leak gate pega tokens de provedor prefixados e Unicode oculto, um
+  hook avisa quando um comando de shell pula os hooks do git, e o pilar de segurança aponta grants de
+  agente arriscados já commitados (#124).
+
+**A revisão cruzada do Codex saiu.** O `cq codex review` e a guarda git exclusiva dele foram
+  removidos; `shared.codex.crossReview` e `shared.codex.model` deixam de ser lidos, e um valor
+  remanescente é ignorado e nomeado em `warnings`, sem recusar a configuração. O executor do Codex
+  continua (spec 2199, #123).
+
+**Um erro preexistente encontrado durante a execução tem rota própria:** provado vermelho na base,
+  ele vira uma task `[fix-preexistente]` quando cabe na spec ou uma spec capturada quando não cabe;
+  um vermelho não contido continua FAIL, e a supressão dentro de uma task de correção é FAIL no
+  `spec-verifier` (spec 2203, #125).
+
+**O run_evals mede uma mudança contra uma ref de base** (`--arms with,baseline --baseline-ref`),
+  com `deltaVsBaseline` no benchmark (#116).
+
+**Correções:** o autopilot reconfere um worker parado antes de encerrá-lo (spec 2198, #122); o gate
+  do repositório fixa TZ e locale em toda execução (spec 2197, #121); o preflight distingue uma
+  branch atrás do remoto de um remoto que recusa escrita (spec 2193, #117); o `warn-git-add-all`
+  avisa só num `git add` que roda, não num texto que o menciona (spec 2196, #120); o status de
+  segurança reporta `write-all` como sem limite (spec 2195, #119); e o drift de runtime do toolchain
+  lê uma restrição `>=` como piso, não como pin (spec 2194, #118).
+
+## 7.9.0
+
+**Os hooks implantados rodam no harness do GitHub Copilot, em qualquer shell.** O Copilot (a janela
+  Agents do VS Code e o Copilot CLI) lê o `.claude/settings.json` e o `.mcp.json` do alvo como seus,
+  e no Windows roda o comando do hook pelo PowerShell ou pelo cmd: a linha em bash falhava, e a
+  falha num `preToolUse` negava a ferramenta. Cada hook que o `cq deploy` instala é agora uma linha
+  só, `<prefixo python> -I -c "…"`, sem `$`, crase, `%`, `!` nem aspas internas, que bash, PowerShell
+  e cmd entregam iguais ao Python. O prefixo é o `shared.mcp.command` declarado, ou `python3`.
+  `deny-claude-coauthor` e `warn-git-add-all` viraram corpos Python (`assets/hooks/<nome>.py`), leem
+  o `tool_input` do Claude e o `toolArgs` do Copilot, e casam também com o PowerShell. Uma entrada
+  `.sh` antiga é reescrita no lugar no próximo deploy. O manual orienta abrir a sessão do Copilot em
+  **Branch**: a worktree é do `cq git worktree add` (spec 2192, #113).
+
+**O painel de specs chega ao Claude Desktop** como mod instalado à parte, com o grafo de
+  dependências, os épicos e a configuração (spec 2191, #114).
+
+**A página de configuração do OpenCode lembra o projeto** quando o Settings abre fora da sessão, e
+  o painel de specs ganhou o atalho para ela (spec 2189, #103).
+
+**O Codex nasce desligado em projeto novo:** `shared.codex.crossReview` passa a `off` e
+  `executor.enabled` a `false` quando o repositório não declara nada (spec 2190, #104).
+
+**A estimativa ficou mais fiel.** O `cq specs estimate` desconta caminhos que o repositório declara
+  gerados ou editados por ferramenta (#109), encontra o corpo do execute no layout instalado (#110) e
+  usa o orçamento padrão de worker de 200000 tokens (#112).
+
+**O deploy adota o arquivo sem dono que já tem os bytes gerados**, em vez de recusar a execução
+  inteira com `ct-deploy-unowned` (#111).
+
+## 7.8.0
+
+**A spec só é arquivada depois do merge, as worktrees viram slots reaproveitáveis e a configuração
+  se edita pelo OpenCode.** O `cq specs promote --to archive --outcome done` recusa
+  `sp-not-merged`, sem `--force`, até o trabalho estar provadamente mergeado (tip ancestral de
+  `origin/<base>`, registro `merge:` ou PR MERGED). O novo `cq specs reconcile [--write]` é o único
+  verbo pós-merge: busca uma vez, arquiva cada spec mergeada que já tem `## Outcome`, aponta
+  `needs-human` para as demais e libera o slot da spec. O `conclude` escreve o `## Outcome` antes do
+  PR e arquiva no passo 8, depois do merge, e o `next --front` lista `mergedNotArchived`. O
+  `cq git worktree acquire | release | slots` mantém worktrees reaproveitáveis em
+  `../<repo>-slot-<n>`: a spec troca de branch numa árvore já aquecida, com a `.venv` intacta, em vez
+  de o antivírus reescanear uma árvore nova. O `git worktree lock` é o mutex. O
+  `shared.worktreeSlots.max` (12) é o teto, que recusa nomeando quem segura cada slot ou espera com
+  `--wait`. O `min` (4) é o piso que o `stale`/`prune` mantêm. O `worktreeSetup` roda a cada acquire
+  e precisa ser idempotente (`sp-config-setup-idempotence`). A configuração ganhou um registro único
+  de chaves (`cq config schema [--values]`) e uma camada local `.agents/quenching.local.json`, fora do
+  git, aplicada por escopo. O `cq config set|unset --layer project|local` é o escritor. A vitrine do
+  OpenCode, agora no SDK 2.3.0, traz uma página **quenching** nas Configurações, com categorias,
+  tooltips, selo da camada de origem e "restaurar padrão". O gate faz o typecheck da vitrine. Também
+  entram neste release: o `conclude` retira a worktree da spec depois de confirmado o merge (#101), e
+  uma renomeação passa a varrer o corpus e o `conclude` revisa o próprio fluxo (#100).
+
+## 7.7.0
+
+**O painel do OpenCode mostra onde uma spec está: o que ela espera, quem espera por ela, o que o
+  épico compõe e de que épico ela é membro.** A aba **Dependências** do detalhe lê o grafo inteiro
+  numa chamada só — `cq specs schedule --all`, que agora alarga a seleção para todo o store,
+  arquivadas e sem aresta incluídas, e recusa `--spec` junto com ela (`sp-conflicting-selection`) —
+  e lista, acima, as specs que o `dependsOn` nomeia e, abaixo, as que nomeiam esta, cada linha
+  clicável, com a etapa de arquivo, o caminho crítico, o atraso e a janela que o `schedule` já
+  derivava. Num épico, a mesma aba mostra o bloco **Specs deste épico**: os membros na ordem
+  declarada, com o estado de cada um, o que ele espera dentro do épico e o progresso do conjunto,
+  sem uma leitura a mais — a composição já vinha no `status --spec` que o painel lia e descartava. A
+  outra ponta veio junto: o `schedule --all` passa a emitir `composites`, o índice inverso de quem
+  nomeia quem, e um membro ganha o bloco **Parte de** com o épico e o rótulo que ele lhe deu —
+  composição lida de trás para frente, porque o `epic:` do frontmatter é depreciado e o vínculo mora
+  no `## Tasks` do composto. Um grafo é uma leitura em massa por checkout, em cache por 30 s e
+  compartilhada em voo; um `cq` anterior degrada para o grafo aberto em vez de falhar, e a lista
+  marca com o chip `épico` a linha cujo `workItemType` é épico.
+
+## 7.6.0
+
+**O alvo declara o custo do run, e o doutor cobra a diferença entre as três provas.** O
+  `proof.cost` em `.agents/quenching.json` nomeia a raiz temporária (`isolated` ou `system`), o
+  orçamento de workers (`auto` ou um inteiro) e os três escopos — o que uma task paga, o que o
+  fechamento paga e o que o CI paga. O `cq proof doctor` reporta `pf-cost-undeclared` para a chave
+  que falta, `pf-temp-shared` para raiz no disco da máquina, `pf-scope-wide` quando o fechamento é o
+  CI e `pf-task-wide` quando a task é o fechamento: uma task paga a prova **dirigida** — o arquivo ou
+  diretório que ela tocou —, o fechamento paga a **seletiva** do diff dentro do gate, e o CI e o
+  release pagam a **inteira**. Como a cadência não mora no comando, ela continua onde já morava: na
+  política `verification` da spec (`per-task`, `per-section` ou `end-of-plan`). A declaração é
+  renderizada na zona gerada do README de provas, então o que o alvo lê e o que ele declara não
+  divergem; a norma `ci-cd/test-cost.md` acompanha o plugin e explica a adoção sem os helpers deste
+  repositório. Nada disso instala runner: a frente ensina o contrato e gradua a declaração.
+
+## 7.5.0
+
+**A suíte e o gate deixam de escrever centenas de megabytes no disco.** O gate resolve um único
+  temp root em RAM (`$XDG_RUNTIME_DIR`, `/dev/shm` ou um Dev Drive no Windows, com o temp do sistema
+  como último recurso e um `NOTICE`) e o remove no fim, inclusive em SIGINT/SIGTERM; a suíte com
+  `-n auto` caiu de 688,6 MB e 54.538 escritas para 1,7 MB e 1.536, e o gate inteiro de 723,2 MB para
+  36,3 MB. O mesmo bootstrap dá a todo `git` um arquivo de configuração do run
+  (`GIT_CONFIG_GLOBAL`), então hooks, assinatura e `init.defaultBranch` da máquina não entram num
+  teste. Um orçamento de workers em arquivos com lock de kernel divide os núcleos entre gates
+  concorrentes, e uma execução aninhada roda serial dentro da cota do pai em vez de enfileirar.
+  **Três camadas, um gate:** `scripts.toolchain.test --affected` para a task, o gate com
+  `QUENCHING_TEST_SCOPE=affected` no fechamento (piso de cobertura `SKIPPED`) e a suíte inteira no CI
+  e no `/release`; `QUENCHING_FULL_GATE=1` força a camada completa mesmo com um escopo exportado no
+  shell, e a skill de release passa essa flag para que uma tag nunca seja decidida sobre um
+  subconjunto. Os testes das próprias ferramentas rodam no job Windows.
+
+## 7.4.0
+
+**`cq git stale` separa cache regenerável de ignorado que pode guardar trabalho.** Cada worktree
+  avaliado passa a carregar `ignored: {regenerable, unrecognized}` e motivos granulares
+  (`tracked-changes`, `untracked-files`, `ignored-content-unrecognized`) no lugar do rótulo único
+  `dirty-or-ignored-content`. O conteúdo que o repositório recompõe — a lista embutida de caches de
+  Python somada ao `shared.regenerablePaths` declarado — não bloqueia nem alerta; qualquer outro
+  ignorado é listado por caminho e mantém o worktree preservado. Um worktree mesclado, limpo,
+  destravado e sem ignorado não declarado vira `candidate` e `recommended: true`; a remoção continua
+  exigindo a confirmação do dono e nunca usa `--force`.
+  **`worktree retire` lê a mesma fonte** (`quenching/git/ignored.py`), então o `.venv` que travava o
+  cleanup orquestrado também deixa de travar o `retire`. A lista embutida cobre caches inequívocos
+  (`.venv`, `__pycache__`, `.pytest_cache`, `.ruff_cache`, `*.egg-info`, `.coverage`, `.coverage.*`,
+  `node_modules`, …) e deixa `build/` e `dist/` para o alvo declarar. O `cleanup.md` ganha a decisão
+  D3, separada das branches, com as duas classes e os caminhos exatos.
+  **Compatibilidade:** o rótulo `dirty-or-ignored-content` sai de `blockers` — quem casava a string
+  passa a ver `tracked-changes`, `untracked-files` ou `ignored-content-unrecognized`.
+
+## 7.3.0
+
+**A home `communications/` entra na árvore canônica e `type: communication` dispensa `resource`.**
+  O aviso já enviado a um público — incidente, mudança, release — passa a ter casa própria no
+  bundle: uma página por aviso, datada no caminho (`<ano>/<aaaa-mm-dd>-<slug>.md`) e na ficha, com
+  `index.md` reservado na home e em cada ano. O tipo `communication` entra na tabela por home e em
+  `TYPES_WITHOUT_RESOURCE`: um aviso operacional muitas vezes não aponta para ativo nenhum, e o
+  `resource` que ele **tem** continua sendo resolvido. O roteiro do `/quenching-knowledge add`
+  ganha a linha e o desempate contra `documentation/`; o caminho do `/quenching-knowledge align`
+  deixa de tratar a home como fora da árvore.
+
 ## 7.2.0
 
 **`cq git worktree add` roda o `worktreeSetup` declarado.** Logo depois do corte e do link, o

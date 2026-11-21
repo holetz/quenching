@@ -24,6 +24,7 @@ Ask **"what IS this, relative to us?"**:
 | a **how-to / task recipe** (product usage) | `how-to/` | `how-to` | `concept-front.md` | `how-to/<slug>.md` |
 | a **tutorial** (learning-oriented) | `tutorials/` | `tutorial` | `concept-front.md` | `tutorials/<slug>.md` |
 | **documentation** (site page, the reader's why — business rules included; the Diátaxis explanation quadrant) | `documentation/` | `documentation` | `concept-front.md` | `<slug>.md` |
+| a **notice already sent** to an audience (incident, change, release) — a record, not a rule | `communications/<year>/` | `communication` | — (the notice's own flow owns the body) | `<aaaa-mm-dd>-<slug>.md` |
 | **this repository's own manual** (commands, automation, layout) | `project/` | `project` | `concept-front.md` | `<slug>.md` |
 | **generic understanding we hold** (concept / explanation / learning) | `concepts/<subject>/` | `concept` | `concept-front.md` | `<subject>/<slug>.md` |
 | a **fact about an external** tool/lib/regulation | `external/{tools,libraries,regulations}/` | `external` | `concept-front.md` | `<slug>.md` |
@@ -43,6 +44,10 @@ Ask **"what IS this, relative to us?"**:
 - **documentation vs concepts:** a **published-site page** (narrative, for a human reading
   the docs) is a reader-facing quadrant; **internal team understanding** (mental model, learning,
   glossary) is `concepts/`.
+- **documentation vs communications:** a page that explains a rule or a why the reader keeps
+  coming back to is `documentation/`; a notice that was **sent once** and is kept as the record of
+  what the audience was told is `communications/`. The notice is not edited afterwards — a
+  correction is a new notice.
 - **standards & agreed rules:** a **proven, current** rule for how we build is a `standard`
   (`authority: current`); an **agreed-but-not-yet-proven** rule is a `standard` with
   `authority: background` until proven. There is **no separate decision home** — a decision's

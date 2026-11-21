@@ -277,7 +277,8 @@ def evaluate(config: dict, *, mode: str, artifact: str | None = None) -> tuple[d
                                         f"artifact did not measure it"})
 
     blocking = {"pf-floor-regressed", "pf-floor-unmeasured"}
-    if mode == "raise" and not any(item["code"] in blocking for item in findings):
+    written = mode == "raise" and not any(item["code"] in blocking for item in findings)
+    if written:
         floor_path.parent.mkdir(parents=True, exist_ok=True)
         floor_path.write_text(json.dumps(_floor_payload(next_floors), indent=2) + "\n",
                               encoding="utf-8")
@@ -285,9 +286,10 @@ def evaluate(config: dict, *, mode: str, artifact: str | None = None) -> tuple[d
     return {
         "ok": not findings,
         "mode": mode,
+        "written": written,
         "coverage": coverage["path"],
         "ratchetPath": str(floor_path),
         "achieved": {key: round(value, 6) for key, value in percentages.items()},
-        "floors": _floor_payload(next_floors)["floors"],
+        "floors": _floor_payload(next_floors if written else floors)["floors"],
         "findings": findings,
     }, 1 if findings else 0
