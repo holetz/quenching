@@ -339,5 +339,26 @@ class InferredBackendWarning(unittest.TestCase):
         self.assertNotIn("inferred", finding["message"])
 
 
+class UnknownLeafWarning(unittest.TestCase):
+    """A leaf inside a known namespace that nothing reads is a warning, never silence."""
+
+    def test_a_backend_under_specs_is_named_and_the_workspace_no_longer_conforms(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            os.makedirs(os.path.join(tmp, ".claude"))
+            Path(tmp, ".claude", "quenching.json").write_text(
+                json.dumps({"specs": {"backend": "git"}}), encoding="utf-8")
+            buf = io.StringIO()
+            with mock.patch.object(common_config, "detect_provider",
+                                   return_value=("github", "github.com")), \
+                    mock.patch.object(doctor_mod, "open_github_backend",
+                                      lambda _root: (_StubBackend(rows=[], open_issues=0), {})), \
+                    contextlib.redirect_stdout(buf):
+                cmd_doctor(argparse.Namespace(json=True), os.path.join(tmp, ".specs"), Emitter())
+        found = [f for f in json.loads(buf.getvalue())["findings"]
+                 if f["code"] == "sp-config-unknown-leaf"]
+        self.assertEqual([("warn", "specs.backend")],
+                         [(f["severity"], f["key"]) for f in found])
+
+
 if __name__ == "__main__":
     unittest.main()
