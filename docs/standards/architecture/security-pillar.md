@@ -4,10 +4,10 @@ title: Security pillar
 description: A read-only pillar that reports workflow permissions, secret and ignore coverage, advisory dependency configuration and access ownership without owning a converged tree
 resource: .github/workflows/**, .gitignore, pyproject.toml, .agents/quenching.json, quenching/skills/**, quenching/assets/bin/quenching/security/**, quenching/assets/bin/quenching/controls/**, quenching/assets/bin/quenching/common/leak.py, quenching/assets/bin/quenching/common/identity.py, quenching/assets/bin/quenching/git/identity.py, quenching/assets/githooks/**, scripts/githooks/**
 tags: [architecture, security, pillar, read-only, permissions]
-timestamp: 2026-11-20
+timestamp: 2026-11-21
 audience: both
 authority: background
-source: spec 1071 (task 1.1) — the security subject was classified as pillar-shaped by the axis contract, fixing its questions and boundary; spec 2097 (task 3.2) — the `leak` verb; spec 2164 — the identity allowlist
+source: spec 1071 (task 1.1) — the security subject was classified as pillar-shaped by the axis contract, fixing its questions and boundary; spec 2097 (task 3.2) — the `leak` verb; spec 2164 — the identity allowlist; spec 2251
 maintainer: quenching
 ---
 
@@ -71,7 +71,7 @@ of the pattern it matched. Exactly one mode is required:
 | Mode | Scans | Caller |
 | --- | --- | --- |
 | `--staged` | the index's content and the configured `user.email`; with an allowlist declared, the author and committer the commit will carry | the `pre-commit` hook |
-| `--pre-push [--remote <name>]` | the commits named on stdin by git: added lines, messages, author and committer emails (patterns, and the allowlist when declared). A new ref is judged against the destination's remote-tracking refs only (`--remote`, the hook's first argument), or whole without it | the `pre-push` hook |
+| `--pre-push [--remote <name>]` | the commits named on stdin by git: added lines, messages, author and committer emails (patterns, and the allowlist when declared). A new ref is judged against the destination's remote-tracking refs only (`--remote`, the hook's first argument), or whole without it; an existing ref excludes its old tip and, with `--remote`, the destination's remote-tracking refs too, so a merge of an already published base is not judged again | the `pre-push` hook |
 | `--all` | every tracked file | the repository gate, which CI runs |
 
 Three pattern sets feed one scanner, from one module (`quenching/common/leak.py`) that the specs
