@@ -194,6 +194,19 @@ class Scans(LeakEnv):
                          ["brazilian-cpf"])
         self.assertEqual(leak.scan_push(self.repo, line, pats, "private"), [])
 
+    def test_an_old_tip_this_clone_lacks_is_judged_as_a_new_ref(self):
+        pathlib.Path(self.repo, "a.txt").write_text(f"clean\ncpf {CPF}\n", encoding="utf-8")
+        git(self.repo, "commit", "-q", "-am", "leak")
+        head = git(self.repo, "rev-parse", "HEAD").strip()
+        pats = leak.patterns(generic_only=True)
+        new_ref = f"refs/heads/main {head} refs/heads/main {leak.ZERO_SHA}\n"
+        for unknown in ("8921fe5" + "0" * 32 + "1", "--all", "HEAD~1"):
+            line = f"refs/heads/main {head} refs/heads/main {unknown}\n"
+            for remote in (None, "origin"):
+                found = leak.scan_push(self.repo, line, pats, remote)
+                self.assertEqual(found, leak.scan_push(self.repo, new_ref, pats, remote))
+                self.assertEqual([f.label for f in found], ["brazilian-cpf"])
+
     def test_existing_ref_merging_a_published_base_judges_only_what_the_remote_lacks(self):
         git(self.repo, "checkout", "-q", "-b", "work")
         pathlib.Path(self.repo, "w.txt").write_text("work\n", encoding="utf-8")
