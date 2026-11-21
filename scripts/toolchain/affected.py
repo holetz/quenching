@@ -3,10 +3,10 @@
 The task loop runs a `verify:` for every task, several times per spec, in several worktrees at
 once — the load this spec exists to remove. This module narrows that run to the tests a diff can
 break. It follows SAFRA's `scripts/toolchain/afetados.py`: a table maps each source surface to the
-tests that cover it, each test's direct imports are read from the AST to catch cross-module use, the
-import graph inside the shipped package is followed transitively (a test that reaches a changed
-module through another one is selected too), and the diff is the merge base plus the working tree
-plus untracked files.
+tests that cover it, each test's direct imports are read from the AST to catch cross-module use, and
+the diff is the merge base plus the working tree plus untracked files.
+The import graph inside the shipped package is also followed transitively: a test that reaches a
+changed module through another one is selected too.
 
 **Any doubt runs the whole suite.** That is a decision, never an error: a global file, a path no
 rule covers, a rule pointing at a test that no longer exists, an unresolvable base, a source change
