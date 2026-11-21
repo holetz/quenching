@@ -241,12 +241,20 @@ def check_cq_calls(body: str) -> list[CqIssue]:
     pillars, top = _pillar_modules()
     for call in extract_calls(body, ("cq",)):
         tokens = list(call.args)
+        rooted = False
         while tokens and tokens[0].startswith("-"):
             action = _option(top, tokens[0])
             if action is None or action.nargs == 0:
                 tokens = []
                 break
             tokens = tokens[1 if "=" in tokens[0] else 2:]
+            rooted = True
+        if rooted and tokens and tokens[0] == "modules":
+            # The launcher answers `modules` only at index 0 (`assets/bin/cq` `main()`).
+            issues.append(CqIssue(call.line, "unknown-verb", call.text,
+                                  "`modules` is answered only as the first word of `cq`; "
+                                  "the launcher refuses it after a global option"))
+            continue
         if not tokens or tokens[0] in _LAUNCHER_COMMANDS or _is_placeholder(tokens[0]):
             continue
         if tokens[0] not in pillars:
