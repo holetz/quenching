@@ -339,6 +339,22 @@ class Deploy(unittest.TestCase):
                        "change": "delete"}, payload["changes"])
         self.assertFalse((self.target / ".agents/skills/quenching-design").exists())
 
+    def test_modules_all_expands_in_registry_order_under_any_hash_seed(self):
+        # Hash randomization is fixed at interpreter start, so each seed needs its own child.
+        probe = ("import json; from quenching.deploy import tree; "
+                 "print(json.dumps(tree.normalize_modules(['all'], "
+                 "tree.load_modules(tree.source_root()))))")
+        orders = []
+        for seed in ("1", "2"):
+            run = subprocess.run([sys.executable, "-c", probe], capture_output=True, text=True,
+                                 cwd=PLUGIN_ROOT / "assets" / "bin",
+                                 env={**os.environ, "PYTHONHASHSEED": seed})
+            self.assertEqual(0, run.returncode, run.stderr)
+            orders.append(json.loads(run.stdout))
+        registry = json.loads((PLUGIN_ROOT / "assets/modules.json").read_text())["modules"]
+        self.assertEqual([module["name"] for module in registry if "owned" in module], orders[0])
+        self.assertEqual(orders[0], orders[1])
+
     def test_the_opencode_harness_writes_its_subagents(self):
         self.assertEqual(0, self.run_deploy("--modules", "core", "--write")[0])
         agent = self.target / ".opencode/agents/quenching-spec-verifier.md"

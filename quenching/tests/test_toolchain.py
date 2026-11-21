@@ -228,6 +228,28 @@ class ToolchainCli(unittest.TestCase):
             self.assertFalse(payload["ok"])
             self.assertIn("tc-lock-stale", {item["code"] for item in payload["findings"]})
 
+    def test_human_output_names_every_finding(self):
+        with tempfile.TemporaryDirectory() as raw:
+            (pathlib.Path(raw) / "package.json").write_text(
+                '{"name":"demo","devDependencies":{"eslint":"^9.0.0"}}\n', encoding="utf-8")
+            for verb in ("doctor", "status"):
+                with self.subTest(verb=verb):
+                    output = io.StringIO()
+                    with contextlib.redirect_stdout(output):
+                        code = main(["--root", raw, verb])
+                    self.assertEqual(1, code)
+                    line = next((row for row in output.getvalue().splitlines()
+                                 if "tc-tool-unpinned" in row), "")
+                    self.assertIn("package.json", line)
+                    self.assertIn("1 finding(s)", output.getvalue())
+
+    def test_human_output_says_ok_without_findings(self):
+        with tempfile.TemporaryDirectory() as raw:
+            output = io.StringIO()
+            with contextlib.redirect_stdout(output):
+                self.assertEqual(0, main(["--root", raw, "doctor"]))
+            self.assertIn("OK — no findings", output.getvalue())
+
     def test_cli_version_is_stable(self):
         output = io.StringIO()
         with contextlib.redirect_stdout(output):
