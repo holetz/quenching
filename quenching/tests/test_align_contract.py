@@ -228,6 +228,50 @@ class KnowledgeAlignmentContract(unittest.TestCase):
         self.assertIn("missing.md", result.stdout)
         self.assertIn("cited paths", result.stdout)
 
+    def _citation_check(self, files):
+        """Run half 2 over a throwaway repository holding the check, the manifest and `files`."""
+        check = ROOT / "assets" / "checks" / "citation-check.sh"
+        with tempfile.TemporaryDirectory() as directory:
+            repo = pathlib.Path(directory)
+            script = repo / "quenching" / "assets" / "checks" / check.name
+            script.parent.mkdir(parents=True)
+            shutil.copy2(check, script)
+            shutil.copy2(ROOT / "assets" / "modules.json", script.parents[1] / "modules.json")
+            for relative, text in files.items():
+                path = repo / relative
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_text(text, encoding="utf-8")
+            subprocess.run(["git", "init", "-q"], cwd=repo, check=True)
+            subprocess.run(["git", "config", "user.email", "test@example.com"], cwd=repo, check=True)
+            subprocess.run(["git", "config", "user.name", "Citation Test"], cwd=repo, check=True)
+            subprocess.run(["git", "add", "."], cwd=repo, check=True)
+            subprocess.run(["git", "commit", "-qm", "fixture"], cwd=repo, check=True)
+            return subprocess.run(
+                ["bash", str(script), "--half", "2"], cwd=repo, text=True, capture_output=True
+            )
+
+    def test_citation_check_resolves_bundle_relative_section_targets(self):
+        # A path relative to the bundle (`naming/surface.md`) names `docs/standards/naming/`;
+        # resolving nothing used to skip the marker in silence, so a dead section passed green.
+        files = {
+            "quenching/skills/quenching-knowledge/references/align.md": (
+                "/quenching-knowledge align\n"
+                "`quenching/skills/quenching-knowledge/references/align.md`\n"
+                "(`naming/surface.md` §Three forms) ends here.\n"
+            ),
+            "docs/standards/naming/surface.md": "# Surface\n\n## Two forms, and the condition\n",
+        }
+        dead = self._citation_check(files)
+        self.assertEqual(dead.returncode, 1, dead.stdout + dead.stderr)
+        self.assertIn("§Three forms", dead.stdout)
+        self.assertIn("docs/standards/naming/surface.md", dead.stdout)
+
+        files["quenching/skills/quenching-knowledge/references/align.md"] = files[
+            "quenching/skills/quenching-knowledge/references/align.md"
+        ].replace("§Three forms", "§Two forms")
+        live = self._citation_check(files)
+        self.assertIn("cited sections: 1 checked, all resolve", live.stdout, live.stdout + live.stderr)
+
 
 if __name__ == "__main__":
     unittest.main()
