@@ -21,7 +21,7 @@ from quenching.common.output import FINDINGS, OK, REFUSAL, NoAbbrevParser, emit,
 from quenching.common.version import VERSION
 from quenching.config.effective import effective
 from quenching.config.host import build_plan, load_settings
-from quenching.config.schema import REGISTRY, schema as key_schema, validate
+from quenching.config.schema import REGISTRY, schema as key_schema, unknown_leaves, validate
 from quenching.config.seed import (missing_keys, read_repository, seed_document, set_leaf,
                                    unset_leaf)
 
@@ -149,10 +149,15 @@ def cmd_check(args) -> int:
             "remedy": "fix the file by hand; check reads only a valid object",
         }, args.json)
     missing = missing_keys(document, root)
+    unknown = unknown_leaves(document)
     human = ("seeded keys missing from the file:\n" + "\n".join(f"  {k}" for k in missing)
              if missing else "every seeded key is declared")
-    emit(args.json, {"ok": not missing, "path": path, "missing": missing}, human)
-    return FINDINGS if missing else OK
+    if unknown:
+        human += ("\nkeys nothing reads (a typo yields the default):\n"
+                  + "\n".join(f"  {k}" for k in unknown))
+    found = bool(missing or unknown)
+    emit(args.json, {"ok": not found, "path": path, "missing": missing, "unknown": unknown}, human)
+    return FINDINGS if found else OK
 
 
 def _exclude_local(repo: str) -> str | None:

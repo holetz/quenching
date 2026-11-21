@@ -137,6 +137,17 @@ class InitAndCheck(unittest.TestCase):
         code, out, _ = self.run_cli("check", "--json")
         self.assertEqual((1, ["shared.autonomy.maxLaunches"]), (code, json.loads(out)["missing"]))
 
+    def test_check_names_a_leaf_nothing_reads_with_exit_1(self):
+        self.file.parent.mkdir()
+        self.file.write_text(json.dumps({"backend": "git",
+                                         "shared": {"autonomy": {"maxWorker": 8}}}))
+        code, out, _ = self.run_cli("check", "--json")
+        payload = json.loads(out)
+        self.assertEqual((1, False, ["shared.autonomy.maxWorker"]),
+                         (code, payload["ok"], payload["unknown"]))
+        _, text, _ = self.run_cli("check")
+        self.assertIn("shared.autonomy.maxWorker", text)
+
     def test_check_refuses_when_the_file_is_absent(self):
         self.assertEqual(2, self.run_cli("check")[0])
 
