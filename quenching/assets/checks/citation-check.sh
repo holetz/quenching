@@ -834,6 +834,60 @@ PY
     *) FAIL=$((FAIL+1)) ;;
   esac
   echo
+
+  # A `cq <pillar> <verb>` the shipped prose tells its reader to run is a claim about the CLI, and
+  # the CLI's own parsers are the base it is measured against: `cq_calls.check_cq_calls` reads the
+  # pillar table from `assets/bin/cq` and walks each pillar's `build_parser()`, the same reading
+  # `cq components lint` gives command bodies. References and skill files are read here because
+  # the lint stops at the body — `cq specs backlog reindex` lived in a reference, green, until
+  # spec 2246 removed it by hand.
+  python3 - "$REPO" <<'PY'
+import os
+import subprocess
+import sys
+
+repo = sys.argv[1]
+bin_dir = os.path.join(repo, "quenching", "assets", "bin")
+sys.path.insert(0, bin_dir)
+try:
+    from quenching.components.cq_calls import check_cq_calls, extract_calls
+except ImportError as error:
+    print("  the cq parsers did not load from %s: %s" % (bin_dir, error))
+    print("  nothing could be measured — this is not a pass")
+    sys.exit(2)
+
+listed = subprocess.run(
+    ["git", "ls-files", "-z", "--", "quenching/references", "quenching/skills"],
+    cwd=repo, check=True, stdout=subprocess.PIPE,
+).stdout.split(b"\x00")
+sources = [path.decode("utf-8", "replace") for path in listed if path.endswith(b".md")]
+
+findings, calls = [], 0
+for source in sources:
+    with open(os.path.join(repo, source), encoding="utf-8", errors="replace") as handle:
+        body = handle.read()
+    calls += len(extract_calls(body, ("cq",)))
+    findings += [(source, issue) for issue in check_cq_calls(body)]
+
+for source, issue in findings[:200]:
+    print("         %s:%d: `%s` — %s" % (source, issue.line, issue.call, issue.detail))
+if len(findings) > 200:
+    print("         … and %d more" % (len(findings) - 200))
+# A sweep that read no file, or found no call in what it read, measured nothing.
+if not sources or not calls:
+    print("  no cq call could be measured in %d file(s) — this is not a pass" % len(sources))
+    sys.exit(2)
+if findings:
+    print("  FAIL   cited cq calls: %d, over %d checked in %d file(s)" % (len(findings), calls, len(sources)))
+    sys.exit(1)
+print("  ok     cited cq calls: %d checked in %d file(s), all parse" % (calls, len(sources)))
+PY
+  case $? in
+    0) ;;
+    2) echo; echo "  cq call check could not be measured"; exit 2 ;;
+    *) FAIL=$((FAIL+1)) ;;
+  esac
+  echo
 fi
 
 # --------------------------------------------------------------------------- #
