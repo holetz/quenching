@@ -233,6 +233,12 @@ class CommandBody(unittest.TestCase):
                        "ignored-content-unrecognized", "kept — not removable"):
             self.assertIn(needle, text)
 
+    def test_cleanup_offers_archived_slots_as_their_own_decision(self):
+        text = " ".join(CLEANUP_COMMAND.read_text(encoding="utf-8").split())
+        for needle in ("D4 — archived slots", "kind: slot", "archived-holder",
+                       "cq git prune --slot", ".quenching/handoff/", "process-in-slot"):
+            self.assertIn(needle, text)
+
 
 if __name__ == "__main__":
     unittest.main()

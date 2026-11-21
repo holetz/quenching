@@ -145,13 +145,17 @@ def build_parser() -> argparse.ArgumentParser:
                     help="the remote probed (default: origin)")
     sp.add_argument("--json", action="store_true", help="machine-readable output")
 
-    sp = sub.add_parser("prune", help="delete one item `cq git stale` reports — `branch -d`, "
-                                       "`worktree remove`, or a reported remote branch")
+    sp = sub.add_parser("prune", help="act on one item `cq git stale` reports — `branch -d`, "
+                                       "`worktree remove`, a reported remote branch, or the "
+                                       "release of a reclaimable slot")
     target = sp.add_mutually_exclusive_group(required=True)
     target.add_argument("--branch", metavar="BRANCH", help="a reported stale local branch")
     target.add_argument("--worktree", metavar="PATH", help="a reported orphan worktree")
     target.add_argument("--remote-branch", metavar="BRANCH",
                         help="a branch reported under remoteBranches for --remote")
+    target.add_argument("--slot", metavar="PATH",
+                        help="a held slot reported as a `kind: slot` candidate; released, "
+                             "never removed")
     sp.add_argument("--remote", default="origin", metavar="REMOTE",
                     help="the remote the report reads (default: origin)")
     sp.add_argument("--expect-tip", metavar="SHA",
