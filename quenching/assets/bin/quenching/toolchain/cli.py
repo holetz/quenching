@@ -24,10 +24,19 @@ def _root(value: str | None) -> str:
     return resolve_root(value)
 
 
+def _finding_lines(findings: list[dict]) -> list[str]:
+    if not findings:
+        return ["  OK — no findings"]
+    return [f"  [{item['severity']:<5}] {item.get('path', '-')} — {item['message']} ({item['code']})"
+            for item in findings]
+
+
 def _human_doctor(payload: dict) -> str:
     state = payload["applicability"]["state"]
     artifacts = ", ".join(payload["applicability"]["artifacts"]) or "(none)"
-    return f"toolchain doctor — {payload['root']} ({state}); artifacts: {artifacts}"
+    header = (f"toolchain doctor — {payload['root']} ({state}); artifacts: {artifacts}; "
+              f"{len(payload['findings'])} finding(s)")
+    return "\n".join([header, *_finding_lines(payload["findings"])])
 
 
 def _status_payload(payload: dict) -> dict:
@@ -45,7 +54,9 @@ def _status_payload(payload: dict) -> dict:
 
 def _human_status(payload: dict) -> str:
     state = payload["applicability"]["state"]
-    return f"toolchain status — {payload['root']} ({state}); {summary_line(payload['controls'])}"
+    header = f"toolchain status — {payload['root']} ({state}); {len(payload['findings'])} finding(s)"
+    return "\n".join([header, *_finding_lines(payload["findings"]),
+                      f"  {summary_line(payload['controls'])}"])
 
 
 def main(argv: list[str]) -> int:
