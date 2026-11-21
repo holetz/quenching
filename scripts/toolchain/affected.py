@@ -3,8 +3,10 @@
 The task loop runs a `verify:` for every task, several times per spec, in several worktrees at
 once — the load this spec exists to remove. This module narrows that run to the tests a diff can
 break. It follows SAFRA's `scripts/toolchain/afetados.py`: a table maps each source surface to the
-tests that cover it, each test's direct imports are read from the AST to catch cross-module use, and
-the diff is the merge base plus the working tree plus untracked files.
+tests that cover it, each test's direct imports are read from the AST to catch cross-module use, the
+import graph inside the shipped package is followed transitively (a test that reaches a changed
+module through another one is selected too), and the diff is the merge base plus the working tree
+plus untracked files.
 
 **Any doubt runs the whole suite.** That is a decision, never an error: a global file, a path no
 rule covers, a rule pointing at a test that no longer exists, an unresolvable base, a source change
@@ -31,6 +33,7 @@ import subprocess
 import sys
 
 TESTS_DIR = "quenching/tests"
+BIN_DIR = "quenching/assets/bin"
 GLOBAL = (
     "pyproject.toml",
     "uv.lock",
@@ -226,6 +229,70 @@ def _imports_module(imported: str, module: str) -> bool:
             or module.startswith(imported + "."))
 
 
+class _GraphUndecided(Exception):
+    """The import graph cannot be trusted: a shipped module does not parse."""
+
+
+def _shipped_modules(root: pathlib.Path) -> dict[str, pathlib.Path]:
+    """Every dotted module the shipped package defines, with its file."""
+    found: dict[str, pathlib.Path] = {}
+    for path in sorted((root / BIN_DIR).rglob("*.py")):
+        module = _module_of(str(path.relative_to(root)).replace("\\", "/"))
+        if module:
+            found[module] = path
+    return found
+
+
+def _edges_of(module: str, path: pathlib.Path, known: dict[str, pathlib.Path]) -> set[str]:
+    """The known modules `path` imports, absolute and relative, `from pkg import sub` included."""
+    try:
+        tree = ast.parse(path.read_text(encoding="utf-8"))
+    except (OSError, SyntaxError, UnicodeDecodeError, ValueError) as exc:
+        raise _GraphUndecided(f"{path.name} does not parse: {exc}") from exc
+    package = module.split(".") if path.name == "__init__.py" else module.split(".")[:-1]
+    edges: set[str] = set()
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Import):
+            targets = [alias.name for alias in node.names]
+        elif isinstance(node, ast.ImportFrom):
+            if node.level:
+                keep = len(package) - (node.level - 1)
+                if keep < 0:
+                    continue
+                base = ".".join([*package[:keep], *(node.module.split(".") if node.module else [])])
+            else:
+                base = node.module or ""
+            if not base:
+                continue
+            targets = [base, *(f"{base}.{alias.name}" for alias in node.names)]
+        else:
+            continue
+        for target in targets:
+            # `import a.b.c` runs a, a.b and a.b.c; each known one is a dependency.
+            parts = target.split(".")
+            edges.update(".".join(parts[:i]) for i in range(1, len(parts) + 1)
+                         if ".".join(parts[:i]) in known)
+    edges.discard(module)
+    return edges
+
+
+def _dependents(root: pathlib.Path, modules: set[str]) -> set[str]:
+    """`modules` plus every shipped module that reaches one of them through imports."""
+    known = _shipped_modules(root)
+    reverse: dict[str, set[str]] = {}
+    for module, path in known.items():
+        for target in _edges_of(module, path, known):
+            reverse.setdefault(target, set()).add(module)
+    closure = set(modules)
+    pending = [module for module in modules if module in known]
+    while pending:
+        for parent in reverse.get(pending.pop(), ()):
+            if parent not in closure:
+                closure.add(parent)
+                pending.append(parent)
+    return closure
+
+
 def _tests_importing(root: pathlib.Path, modules: set[str]) -> set[str]:
     """Every test module whose direct imports reach one of `modules`."""
     if not modules:
@@ -324,6 +391,10 @@ def select(root: pathlib.Path, base: str | None = None,
 
     if not covered:
         return Selection(base, changed, (), ("change outside the tested surfaces",), False)
+    try:
+        modules = _dependents(root, modules)
+    except _GraphUndecided as exc:
+        return Selection(base, changed, (), (f"fail-open: {exc}",), True)
     selected.update(_tests_importing(root, modules))
     if not selected:
         return Selection(base, changed, (), (f"fail-open: {changed[0]} selected no test",), True)
