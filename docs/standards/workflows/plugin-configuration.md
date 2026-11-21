@@ -318,7 +318,7 @@ explicit flag wins over the key.
 | Key | Values | Default | Read by |
 | --- | --- | --- | --- |
 | `shared.okfValidate` | `{warnAsError: boolean, ignoreGlobs: list of strings}` | `false`, `[]` | `cq knowledge validate`; wins key by key over `.claude/hooks/hooks-config.local.json` and `hooks-config.json` |
-| `shared.contextBudgets` | `{main, worker, conductor}`, positive integers | `200000` / `200000` / `150000` | `cq session context` per role: the worker number is a **size estimate**, measured and never a stop, the conductor's is a stop checked between waves, and the main number is an offer; `cq specs estimate --worker-budget` uses `worker` |
+| `shared.contextBudgets` | `{main, worker, conductor}`, positive integers | `200000` / `200000` / `150000` | `cq components session context` per role: the worker number is a **size estimate**, measured and never a stop, the conductor's is a stop checked between waves, and the main number is an offer; `cq specs estimate --worker-budget` uses `worker` |
 | `shared.cache` | `{rebuildLimitUsd, warnMinutes, ttlMinutes: auto \| 5 \| 60, costStyle: dollars \| times}` | `0.5` / `15` / `auto` / `dollars` | the `quenching-cache` plugin's bar, through `cq config show --effective`; its long-chat line is `shared.contextBudgets.main` |
 | `shared.autonomy.maxLaunches` | integer ≥ 1 | `40` | `/quenching-specs autopilot` (see the autonomy block); the launch ceiling lives only there |
 | `shared.workHost` | `{target, dockerContext, runner, remoteRoot, syncFlags, syncExclude, pullBack, protectedPaths, minFreeGb}` | disabled | `cq config host --plan`; see [work-host.md](work-host.md) |
