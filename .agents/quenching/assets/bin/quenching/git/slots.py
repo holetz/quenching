@@ -217,10 +217,12 @@ def _merged_holder(cwd: str, slot: dict, base_sha: str | None) -> bool:
 def _take(cwd: str, view: dict, cap: int, reason: str, base_sha: str,
           freed: list) -> tuple[dict | None, bool]:
     """Lock one slot for the caller: a free clean one, else a new one under the cap, else a held
-    one whose branch is merged and whose tree is clean (released first). `(slot, created)`."""
+    one whose branch is merged and whose tree is clean (released first). A reused slot's
+    `.quenching/handoff/` is moved to the primary checkout (`slot["handoff"]`). `(slot, created)`."""
     for slot in view["slots"]:
         if slot["state"] == "free" and _lock(cwd, slot["path"], reason):
             if _dirty(slot["path"]) is False:
+                slot["handoff"] = _move_handoffs(slot["path"], view["primary"])
                 return slot, False
             _unlock(cwd, slot["path"])
     with _creation_lock(cwd):
@@ -245,6 +247,9 @@ def _take(cwd: str, view: dict, cap: int, reason: str, base_sha: str,
             if _lock(cwd, slot["path"], reason):
                 freed.append({"path": slot["path"], "branch": slot["branch"],
                               "spec": slot["holder"].get("spec")})
+                # The previous spec's handoff goes to the primary checkout, never left for the
+                # next spec and never discarded.
+                slot["handoff"] = _move_handoffs(slot["path"], view["primary"])
                 return slot, False
     return None, False
 
@@ -334,13 +339,15 @@ def acquire(args) -> int:
                      and (setup is None or setup["ok"]),
                "path": path, "slot": slot["n"], "created": created, "reused": not created,
                "branch": args.branch, "base": args.base, "start": start, "startSha": base_sha,
-               "lock": reason, "freed": freed, "paths": results or [],
+               "lock": reason, "freed": freed, "handoff": slot.get("handoff", []),
+               "paths": results or [],
                "linkRefusal": link_refusal, "setup": setup}
     if stamp:
         payload["branchRecord"] = stamp
     human = [f"slot {slot['n']}: {path} ({'new' if created else 'reused'})",
              f"branch: {args.branch} from {start} ({base_sha[:12]})"]
     human += [f"freed: {f['path']} (merged {f['branch']})" for f in freed]
+    human += [f"handoff moved: {h['from']} -> {h['to']}" for h in slot.get("handoff", [])]
     human += _link_lines(results or [])
     if link_refusal:
         human.append(f"link refused: {link_refusal.get('message')}")
