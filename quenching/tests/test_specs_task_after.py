@@ -7,9 +7,11 @@ import unittest
 
 import _paths  # noqa: F401  — must precede the `quenching` import; see its docstring
 from quenching.specs.backends.memory import MemoryBackend
+from quenching.specs.commands import next as next_cmd
 from quenching.specs.commands.validate import validate_spec
 from quenching.specs.parse.epics import task_after_problems
 from quenching.specs.schema import capture_form
+from test_specs_composition import doc, run
 
 
 def _doc(tasks_body: str) -> str:
@@ -70,6 +72,34 @@ class ValidateNamesTheBadAfter(unittest.TestCase):
     def test_a_spec_item_label_and_a_valid_chain_raise_nothing(self):
         self.assertEqual([], _findings("- [ ] S2 Migration — spec: #3\n"
                                        "- [ ] 2.1 Wire — after: S2\n- [ ] 2.2 Ship — after: 2.1\n"))
+
+
+class NextPointsAtTheBadAfter(unittest.TestCase):
+    def _next(self, tasks_body: str) -> tuple[int, dict]:
+        b = MemoryBackend()
+        b.create_spec("plans", doc("Alpha", tasks="## Tasks\n\n" + tasks_body))
+        return run(next_cmd.cmd_next, b, spec=1, epic=None, front=False, limit=None)
+
+    def test_an_unknown_label_marks_the_waiting_row_and_names_validate(self):
+        code, got = self._next("- [ ] 1.1 Alpha — after: 9.9\n")
+        self.assertEqual((0, "blocked"), (code, got["action"]))
+        self.assertEqual((["9.9"], False), (got["waiting"][0]["unknown"],
+                                            got["waiting"][0]["cycle"]))
+        self.assertIn("cq specs validate", got["message"])
+
+    def test_a_cycle_marks_both_rows(self):
+        code, got = self._next("- [ ] 1.1 Alpha — after: 1.2\n- [ ] 1.2 Beta — after: 1.1\n")
+        self.assertEqual("blocked", got["action"])
+        self.assertEqual([True, True], [r["cycle"] for r in got["waiting"]])
+
+    def test_a_plain_block_carries_no_hint(self):
+        b = MemoryBackend()
+        b.create_spec("plans", doc("Alpha", tasks="## Tasks\n\n- [!] 1.1 Alpha — blocked: x\n"
+                                                  "- [ ] 1.2 Beta — after: 1.1\n"))
+        code, got = run(next_cmd.cmd_next, b, spec=1, epic=None, front=False, limit=None)
+        self.assertEqual("blocked", got["action"])
+        self.assertEqual(([], False), (got["waiting"][0]["unknown"], got["waiting"][0]["cycle"]))
+        self.assertNotIn("cq specs validate", got["message"])
 
 
 if __name__ == "__main__":
