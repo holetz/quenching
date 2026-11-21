@@ -81,7 +81,7 @@ def _registry_rows(inventory: Inventory, text: str) -> set[str]:
             if re.search(rf"(?<![A-Za-z0-9_./-]){re.escape(entry)}(?![A-Za-z0-9_./-])", line):
                 rows.add(entry)
         for match in re.finditer(r"`([^`]+)`", line):
-            candidate = match.group(1).replace("\\", "/").lstrip("./")
+            candidate = match.group(1).replace("\\", "/").removeprefix("./")
             if candidate.endswith(_ENTRY_SUFFIXES):
                 rows.add(candidate)
     return rows
