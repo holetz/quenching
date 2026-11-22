@@ -46,7 +46,7 @@ def tearDownModule():
 
 class AzureMergeTests(unittest.TestCase):
     def run_merge(self, *, prs=None, policies=None, policy_code=0, patch_code=0,
-                  url=URL, wait=0, unreadable=False):
+                  url=URL, wait=0, unreadable=False, allow_no_checks=False, spec=None):
         snapshots = iter(prs if prs is not None else [PR, PR, {**PR, "status": "completed"}])
         self.calls, self.bodies = [], []
 
@@ -54,8 +54,10 @@ class AzureMergeTests(unittest.TestCase):
             self.calls.append(list(argv))
             if argv[:4] == ("repos", "pr", "policy", "list"):
                 return policy_code, json.dumps([BUILD] if policies is None else policies), "denied"
-            if "--http-method=PATCH" in argv:
-                path = next(a.split("=", 1)[1] for a in argv if a.startswith("--in-file="))
+            if argv[:2] == ("rest", "--method=patch"):
+                self.assertIn("--url=https://", argv[2])
+                self.assertIn("/_apis/git/repositories/repo/pullrequests/226343?", argv[2])
+                path = next(a.split("=@", 1)[1] for a in argv if a.startswith("--body=@"))
                 self.bodies.append(json.loads(Path(path).read_text(encoding="utf-8")))
                 return patch_code, "{}", "policy refused"
             return 0, "not json" if unreadable else json.dumps(next(snapshots)), ""
@@ -63,7 +65,8 @@ class AzureMergeTests(unittest.TestCase):
         with mock.patch.object(azure_pull, "_az", side_effect=az), \
                 mock.patch.object(pull, "_gh") as gh, \
                 contextlib.redirect_stdout(io.StringIO()) as out:
-            code = pull.cmd_pr(SimpleNamespace(action="merge", url=url, wait=wait, json=True))
+            code = pull.cmd_pr(SimpleNamespace(action="merge", url=url, wait=wait, json=True,
+                                               allow_no_checks=allow_no_checks, spec=spec))
         gh.assert_not_called()
         return code, json.loads(out.getvalue())
 
@@ -78,14 +81,17 @@ class AzureMergeTests(unittest.TestCase):
                                   "bypassPolicy": False, "deleteSourceBranch": False,
                                   "transitionWorkItems": False}}])
         for call in self.calls:
-            self.assertIn("--org=https://dev.azure.com/org", call)
+            if call[0] == "rest":  # the completion goes to the repository-scoped route
+                self.assertTrue(call[2].startswith("--url=https://dev.azure.com/org/"), call)
+            else:
+                self.assertIn("--org=https://dev.azure.com/org", call)
         reads = [call for call in self.calls if "--http-method=GET" in call]
         self.assertEqual(len(reads), 3)
         self.assertIn("project=Some Project", reads[0])
         self.assertIn("repositoryId=repo", reads[0])
         self.assertIn("pullRequestId=226343", reads[0])
-        path = next(a.split("=", 1)[1] for call in self.calls for a in call
-                    if a.startswith("--in-file="))
+        path = next(a.split("=@", 1)[1] for call in self.calls for a in call
+                    if a.startswith("--body=@"))
         self.assertFalse(Path(path).exists())
 
     def test_already_completed_is_read_only_even_without_ci(self):
@@ -111,6 +117,30 @@ class AzureMergeTests(unittest.TestCase):
             code, result = self.run_merge(policies=policies)
             self.assertEqual((code, result["reason"]), (1, "no-checks"))
             self.assertEqual(self.bodies, [])
+
+    def test_allow_no_checks_completes_only_the_pr_without_any_build_policy(self):
+        """`--allow-no-checks` is for a repository with no PR gate: it accepts `no-checks` and
+        nothing else, and the completion keeps the pinned head and the fixed options."""
+        code, result = self.run_merge(policies=[], allow_no_checks=True)
+        self.assertEqual(code, 0, result)
+        self.assertTrue(result["noChecksAccepted"])
+        self.assertEqual(self.bodies[0]["lastMergeSourceCommit"], {"commitId": HEAD})
+        self.assertFalse(self.bodies[0]["completionOptions"]["bypassPolicy"])
+        red = {**BUILD, "status": "rejected"}
+        running = {**BUILD, "status": "running"}
+        for policies in ([red], [running]):
+            code, result = self.run_merge(policies=policies, allow_no_checks=True)
+            self.assertEqual(code, 1, result)
+            self.assertEqual(self.bodies, [])
+
+    def test_spec_is_stamped_with_the_azure_subject_after_completion(self):
+        with mock.patch.object(pull, "_stamp_merge",
+                               return_value={"ok": True, "stamped": True}) as stamp:
+            code, result = self.run_merge(spec="1037500")
+        self.assertEqual(code, 0, result)
+        stamp.assert_called_once_with(
+            "1037500", 226343, URL,
+            subject="Merge pull request 226343 from plan/spec into master")
 
     def test_red_pending_skipped_and_unreadable_evidence_never_complete(self):
         for status, reason in (("rejected", "failed"), ("queued", "pending"),

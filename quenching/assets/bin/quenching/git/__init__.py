@@ -204,7 +204,10 @@ def build_parser() -> argparse.ArgumentParser:
                     help="re-read pending checks every 20s for up to this long (max 540); "
                          "progress goes to stderr — keep it under the caller's Bash timeout")
     pp.add_argument("--spec", metavar="ID",
-                    help="stamp this spec's `merge` record once the PR is merged (GitHub)")
+                    help="stamp this spec's `merge` record once the PR is merged")
+    pp.add_argument("--allow-no-checks", action="store_true",
+                    help="accept a PR with no CI check or build policy at all (a repository "
+                         "without a PR gate); red, pending, skipped and unreadable still refuse")
     pp.add_argument("--json", action="store_true", help="machine-readable output")
 
     sp = sub.add_parser("refresh", help="fast-forward the local base branch to <remote>/<base> — "
