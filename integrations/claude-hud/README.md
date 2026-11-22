@@ -27,12 +27,14 @@ do GitHub.
 
 ## Pré-requisito
 
-`cq` no `PATH`, o que o plugin `quenching` garante quando está ativo. Sem `cq` a faixa some, sem erro.
+`cq` no `PATH`. O `cq deploy` instala o lançador em `.agents/quenching/bin/cq` sem pô-lo no `PATH`, então
+deixar um `cq` alcançável fica com quem instala o HUD. Sem `cq` a faixa some, sem erro.
 
 ## Instalação
 
 ```
-/plugin install quenching-hud --marketplace holetz/claude-quenching
+/plugin marketplace add holetz/quenching
+/plugin install quenching-hud@quenching
 ```
 
 ## Verificação
