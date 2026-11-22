@@ -23,6 +23,7 @@ except ModuleNotFoundError:  # package-qualified unittest invocation from the re
     import _paths  # noqa: F401
 from quenching.codex import main
 from quenching.codex.config import DEFAULTS
+from quenching.codex.guard import GuardError
 from quenching.codex.implement import (BYPASS, NOT_MEASURED, build_argv, clean_env,
                                       measured_tokens, run_implement)
 
@@ -44,6 +45,8 @@ if mode == "stray":
         handle.write("x\n")
 if mode == "commit":
     subprocess.run(["git", "-C", cwd, "commit", "-qam", "codex"], check=True)
+if mode == "orphan":
+    subprocess.run(["git", "-C", cwd, "symbolic-ref", "HEAD", "refs/heads/gone"], check=True)
 if mode == "corrupt":
     with open(os.path.join(cwd, "OUTSIDE.py"), "w", encoding="utf-8") as handle:
         handle.write("x\n")
@@ -183,6 +186,39 @@ class Implement(unittest.TestCase):
         self.assertIs(True, payload["statusUnreadable"])
         self.assertNotIn("discard", payload)
         self.assertIn("needs-human", payload["message"])
+        self.assertFalse(self.log.exists())
+
+    def test_unreadable_refs_after_the_run_fail_closed(self):
+        self.env["FAKE_MODE"] = "orphan"
+        payload, code = self.implement()
+        self.assertEqual((code, payload["code"]), (2, "codex-git-guard"))
+        self.assertIs(True, payload["refsUnreadable"])
+        self.assertIs(False, payload["ok"])
+        self.assertIs(False, payload["fallback"])
+        self.assertNotIn("discard", payload)
+        self.assertIn("needs-human", payload["message"])
+        self.assertIn("worktree refs unreadable", payload["guard"]["moved"][0])
+
+    def test_unreadable_refs_before_the_run_never_start_codex(self):
+        with mock.patch("quenching.codex.implement.refs",
+                        side_effect=GuardError("git rev-parse HEAD failed (128): broken")):
+            payload, code = self.implement()
+        self.assertEqual((code, payload["code"]), (2, "codex-git-guard"))
+        self.assertIs(True, payload["refsUnreadable"])
+        self.assertNotIn("discard", payload)
+        self.assertIn("needs-human", payload["message"])
+        self.assertFalse(self.log.exists())
+        self.assertFalse((self.repo / ".quenching" / "codex" / "r1").exists())
+
+    def test_a_worktree_outside_git_is_not_a_toplevel(self):
+        outside = self.tmp / "plain"
+        outside.mkdir()
+        with mock.patch("quenching.codex.implement.open_backend",
+                        return_value=(FakeBackend(self.tasks), {})):
+            payload, code = run_implement(str(self.repo), self.settings, "7", "2.2",
+                                          str(outside), str(self.prompt), "r1", env=self.env,
+                                          quota=Quota(10, 12))
+        self.assertEqual((code, payload["code"]), (2, "codex-worktree-not-toplevel"))
         self.assertFalse(self.log.exists())
 
     def test_a_commit_trips_the_guard(self):

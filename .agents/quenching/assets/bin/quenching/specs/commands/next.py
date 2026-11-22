@@ -24,7 +24,8 @@ from quenching.specs.commands import promote
 from quenching.specs.members import read_members
 from quenching.specs.parse import derive_info, spec_handle
 from quenching.specs.parse.derive import derive_stage
-from quenching.specs.parse.epics import derive_composition, has_links, parse_items
+from quenching.specs.parse.epics import (derive_composition, has_links, parse_items,
+                                         task_after_problems)
 from quenching.specs.parse.records import spec_records
 from quenching.specs.parse.sections import ready_report
 from quenching.specs.parse.tasks import (_files_bad_annotation, operational_entries,
@@ -500,11 +501,22 @@ def cmd_next(args, root: str, out: Emitter) -> int:
         waiting = [t for t in info["tasks"]
                    if not t["checked"] and not t["blocked"] and t not in openable]
         if base["blocked"] or waiting:
-            obj = {"ok": True, "action": "blocked", **base,
-                   "waiting": [{"id": t["id"], "text": t["text"], "after": t["after"]}
-                               for t in waiting],
+            # A label nothing carries, or a loop, is never satisfied: name it beside the row so
+            # the wait points at the bad line instead of looking like work in flight.
+            bad = task_after_problems(info)
+            cyclic = set(bad["cycle"] or [])
+            rows = [{"id": t["id"], "text": t["text"], "after": t["after"],
+                     "unknown": [u["label"] for u in bad["unknown"]
+                                 if u["task"] == (t["id"] or t["index"])],
+                     "cycle": t["id"] in cyclic}
+                    for t in waiting]
+            hint = (f" — an `after:` can never be met; run `cq specs validate --spec "
+                    f"{info['id']}` (sp-after-unknown, sp-after-cycle)"
+                    if any(r["unknown"] or r["cycle"] for r in rows) else "")
+            obj = {"ok": True, "action": "blocked", **base, "waiting": rows,
                    "message": f"every remaining task is blocked or waiting "
-                              f"({len(base['blocked'])} blocked, {len(waiting)} waiting)"}
+                              f"({len(base['blocked'])} blocked, {len(waiting)} waiting)"
+                              + hint}
             out.emit(args.json, obj, obj["message"] + "".join(
                 f"\n  [{t['state']}] {t['text']}" for t in waiting)
                 + "".join(f"\n  [!] {b['text']}" for b in base["blocked"]))
