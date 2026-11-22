@@ -46,12 +46,28 @@ def _declared_paths(config: dict) -> list[str]:
     return paths
 
 
-def _store_for(repo: str, relative: str) -> str | None:
+def _store_names(repo: str, relative: str) -> tuple[str, str] | None:
+    """`(store, legacy)`: the sibling store of `relative` and the name it had before the leading
+    dots were dropped (`.tmp` was `<repo>..tmp`, is `<repo>.tmp`); equal when nothing changed."""
     common = _git(repo, "rev-parse", "--path-format=absolute", "--git-common-dir").strip()
     if not common:
         return None
-    name = relative.replace(os.sep, ".")
-    return f"{os.path.dirname(common)}.{name}"
+    legacy = relative.replace(os.sep, ".")
+    name = legacy.lstrip(".") or legacy
+    base = os.path.dirname(common)
+    return f"{base}.{name}", f"{base}.{legacy}"
+
+
+def _migrate_store(store: str, legacy: str) -> str | None:
+    """Rename the legacy sibling store to its new name, when only the legacy one exists; the
+    path it came from, or None when there was nothing to move. Both present → FileExistsError,
+    and nothing is touched."""
+    if legacy == store or not os.path.lexists(legacy):
+        return None
+    if os.path.lexists(store):
+        raise FileExistsError(store)
+    os.rename(legacy, store)
+    return legacy
 
 
 def _link_path(repo: str, relative: str) -> str:
@@ -116,16 +132,31 @@ def _link(repo: str) -> tuple[list[dict] | None, dict | None]:
         return None, config["migrationRefusal"]
     results = []
     for relative in _declared_paths(config):
-        store = _store_for(repo, relative)
-        if store is None:
+        names = _store_names(repo, relative)
+        if names is None:
             return None, {"code": "git-worktree-no-common-dir", "path": relative,
                           "message": "git could not resolve the repository's common directory"}
+        store, legacy = names
+        try:
+            migrated = _migrate_store(store, legacy)
+        except FileExistsError:
+            return None, {"code": "git-worktree-store-conflict", "path": relative,
+                          "store": store, "legacy": legacy,
+                          "message": f"both the shared store '{store}' and its legacy name "
+                                     f"'{legacy}' exist; merge them into '{store}' by hand and "
+                                     "remove the legacy one, then link again"}
+        except OSError as exc:
+            return None, {"code": "git-worktree-store-migrate-failed", "path": relative,
+                          "store": store, "legacy": legacy,
+                          "message": f"could not rename '{legacy}' to '{store}': {exc}"}
         try:
             item = _materialise(repo, relative, store)
         except FileExistsError:
             return None, {"code": "git-worktree-path-not-empty", "path": relative,
                           "message": f"'{relative}' is a real path with content; merge it into "
                                      "the shared store by hand before linking it"}
+        if migrated:
+            item["migratedFrom"] = migrated
         warning = _ignore_warning(repo, relative)
         if warning:
             item["warning"] = warning
@@ -137,6 +168,8 @@ def _link_lines(results: list[dict]) -> list[str]:
     human = []
     for item in results:
         line = f"{item['path']}: {item['state']} -> {item['store']}"
+        if item.get("migratedFrom"):
+            line += f" (renamed from {item['migratedFrom']})"
         if item.get("warning"):
             line += f" [warning: {item['warning']}]"
         human.append(line)
@@ -288,10 +321,11 @@ def _retire(args) -> int:
     when the remote does not exist), because a PR merged through `gh` moves the remote base. Every
     preflight refusal (exit 2) happens before a write. The worktree goes first, since git will not
     delete a branch checked out in one; `worktree remove` runs without `--force`, so a dirty worktree
-    stands. A worktree holding ignored files that are not symlinks stands too (exit 1, `ignored`
-    lists them) unless `shared.regenerablePaths` declares them regenerable or `--discard-ignored`
-    is passed.
-    A real `.quenching/codex` directory is archived in the primary checkout before removal.
+    stands, and is read before any write (exit 1, `dirty` lists the paths). A worktree holding
+    ignored files that are not symlinks stands too (exit 1, `ignored` lists them) unless
+    `shared.regenerablePaths` declares them regenerable or `--discard-ignored` is passed.
+    A real `.quenching/codex` directory is archived in the primary checkout before removal, and put
+    back (`restored`) when `worktree remove` still refuses.
     `branch -d` compares the branch with its upstream when one is configured, so a published branch is
     deleted even while the local base is behind; with no upstream it compares with the checked-out
     HEAD and refuses when the local base is behind: the branch stands, exit 1."""
@@ -360,6 +394,16 @@ def _retire(args) -> int:
                        f"would delete: {', '.join(ignored)}; pass --discard-ignored to remove anyway")
         emit(args.json, payload, f"worktree {path} kept: {payload['message']}")
         return FINDINGS
+    code, out, _err = _git_run(path, *SAFE, "status", "--porcelain", "--untracked-files=all")
+    if code != 0:
+        return refuse({"code": "git-worktree-retire-status-failed",
+                       "message": f"git status failed in {path}; nothing was removed"}, args.json)
+    dirty = [line[3:] for line in out.splitlines() if not _is_codex_artifact(line[3:])]
+    if dirty:
+        payload.update(dirty=dirty, message=f"the worktree has changes that removal would refuse: "
+                       f"{', '.join(dirty)}")
+        emit(args.json, payload, f"worktree {path} kept: {payload['message']}")
+        return FINDINGS
     source = os.path.join(path, ".quenching", "codex")
     if os.path.isdir(source) and not _is_link(source):
         destination = os.path.join(registered[0][0], ".quenching", "codex", "retired",
@@ -379,7 +423,14 @@ def _retire(args) -> int:
     code, _out, err = _git_run(cwd, *SAFE, "worktree", "remove", "--", path)
     if code != 0:
         payload["message"] = err.strip()
-        emit(args.json, payload, f"worktree {path} refused: {err.strip()}")
+        if payload["archived"]:
+            try:
+                shutil.move(payload["archived"], source)
+                payload.update(archived=None, restored=True)
+            except (OSError, shutil.Error) as exc:
+                payload.update(restored=False, message=f"{err.strip()}; the Codex state stays at "
+                               f"{payload['archived']}: {exc}")
+        emit(args.json, payload, f"worktree {path} refused: {payload['message']}")
         return FINDINGS
     payload["worktreeRemoved"] = True
     code, _out, err = _git_run(cwd, *SAFE, "branch", "-d", "--", args.branch)

@@ -4,10 +4,10 @@ title: Bundle verification
 description: What the knowledge front machine-checks versus what it leaves to a skill's prose self-check, when an invariant is owed a deterministic check, where an accepted gap is recorded, and the resource glob-set format
 resource: quenching/assets/bin/quenching/knowledge/**, quenching/references/knowledge-align/conformance.md, quenching/skills/quenching-knowledge/references/status.md
 tags: [quality, verification, okf, validator, conformance]
-timestamp: 2026-08-27
+timestamp: 2026-11-21
 audience: both
 authority: current
-source: docs-verification-layer, collapse-remaining-language-clause-restatements, 2026-07-31, validar-a-zona-generated-contra-o-disco, 2026-08-17, narrow-stale-doc; lineage in ADR 0004
+source: docs-verification-layer, collapse-remaining-language-clause-restatements, 2026-07-31, validar-a-zona-generated-contra-o-disco, 2026-08-17, narrow-stale-doc, 2273; lineage in ADR 0004
 maintainer: quenching
 ---
 
@@ -150,6 +150,9 @@ and never could — it asks whether **any** `.md` links the doc, so a single sib
 disarms it. Measured 2026-08-13: `architecture/bundle-root.md` was cited by four docs, absent
 from the listing, and the validator was green throughout, alongside six rows whose descriptions
 their own docs had outgrown. A proxy any neighbour can disarm is not a check of the listing.
+The zone owes a row only to what the site publishes: a private name (`_`/`.`-prefixed directory or
+loose file) is owed none, so `generated-listing-missing` and `cq knowledge listing` skip it while
+the rest of the validator still reads it.
 
 **Advisory is a real category, and it is currently empty — which is the finding, not a gap.** Its
 only member was `stale-doc`, retired on 2026-08-27. The category stays named because the

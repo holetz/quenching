@@ -32,8 +32,9 @@ fits; it is never forced.**
   example stays valid even in a repo that also has this plugin installed** — a target's own
   bare-cited `git`-category `commit` command and this plugin's `/quenching-git commit` coexist
   rather than collide, because the citation forms already separate them
-  (`naming/command-surface.md` §Three citation forms): the example is about the target's own
-  category, and this plugin's commands are never bare-cited in a repo that did not vendor them.
+  (`naming/command-surface.md` §Two citation forms, and the condition on each): the example is
+  about the target's own category, and this plugin's commands are never bare-cited in a repo that
+  did not vendor them.
 - **Category, and a real folder tied to the skill** — the folder either **nests** inside
   the category or is **replaced** by it, per the convention already established for that
   category in *that* target repo (below). Several unrelated folders still fit neither and
@@ -142,9 +143,8 @@ This file owns, because no tool decides it:
   `registry reindex` reporting `changed: false`.
 
 <!-- rationale -->
-The format is stated in one place that executes, not in prose two skills reproduce by hand,
-exactly as `.agents/quenching/bin/cq specs backlog reindex` owns the backlog listing's. On `sk-no-zone` the tool
-refuses rather than placing a table at a guessed anchor inside prose a human wrote. A skill
+The format is stated in one place that executes, not in prose two skills reproduce by hand.
+On `sk-no-zone` the tool refuses rather than placing a table at a guessed anchor inside prose a human wrote. A skill
 that generates a derived table and then diffs it against its own source is one reader
 checking its own arithmetic, which is the failure this tool exists to remove; a hand edit
 inside the markers is therefore repaired, not accumulated.

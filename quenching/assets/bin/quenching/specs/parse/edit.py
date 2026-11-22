@@ -121,6 +121,34 @@ def nested_heading(text: str) -> str | None:
     return None
 
 
+def unclosed_fence(text: str) -> str | None:
+    """The opening line of a fence the text never closes, or None.
+
+    Spliced into a document, such a fence runs past the section's end, and `parse_sections`
+    then reads every following `## ` as code: the sections after it vanish, and the next write
+    of this section deletes them. Same fence rule `parse_sections` holds."""
+    found = unclosed_fence_at(text)
+    return found[1] if found else None
+
+
+def unclosed_fence_at(text: str) -> tuple[int, str] | None:
+    """`(1-based line number, opening line)` of the fence the text never closes, or None —
+    `unclosed_fence` with the position, so a check over a whole stored document can name the
+    line a reader has to go to."""
+    fence: str | None = None
+    opener: tuple[int, str] = (0, "")
+    for lineno, line in enumerate(split_lines(text), 1):
+        m = FENCE_RE.match(line)
+        if not m:
+            continue
+        mark = m.group(1)
+        if fence is None:
+            fence, opener = mark[0] * len(mark), (lineno, line.strip())
+        elif mark[0] == fence[0] and len(mark) >= len(fence):
+            fence = None
+    return opener if fence is not None else None
+
+
 def whole_body(content: str, heading: str) -> tuple[str, str | None]:
     """A body this command splices whole under `## <heading>`, checked for the one thing that
     makes the splice write a second section: an unfenced `## ` line of its own.

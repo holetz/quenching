@@ -135,8 +135,8 @@ by `/align`; `specs` remains provider-owned and `git` remains a pillar without a
 **A target repo's own `git` category coexists with this namespace, and never collides with it.**
 A target may mint its own `/git:commit` or `/git:cleanup` under its own `.claude/commands/git/` —
 `components-command-new/taxonomy.md`'s own canonical category example — naming a convention that
-repo declared for itself. §Three citation forms is what keeps the two apart: the plugin's own
-`git` commands are always spelled `/quenching-git <verb>` (or bare, only inside this repo's own
+repo declared for itself. §Two citation forms, and the condition on each is what keeps the two
+apart: the plugin's own `git` commands are always spelled `/quenching-git <verb>` (or bare, only inside this repo's own
 `.claude/commands/`, which does not hold one), so a target's bare `/git:<verb>` names its own
 command and nothing this plugin ships, on every repo that installs it.
 

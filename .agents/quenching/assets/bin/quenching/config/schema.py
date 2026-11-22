@@ -135,13 +135,13 @@ _k("shared.autonomy.livenessMinutes", "integer", AUTONOMY["livenessMinutes"], "a
    ("Worker liveness (minutes)", "Silence after which a worker is checked on."),
    ("Vida do worker (minutos)", "Silêncio depois do qual um worker é verificado."), minimum=1)
 _k("shared.contextBudgets.main", "integer", BUDGETS["main"], "autonomy", "machine",
-   "cq session context", ("Main session budget", "Tokens the main session plans around."),
+   "cq components session context", ("Main session budget", "Tokens the main session plans around."),
    ("Orçamento da sessão principal", "Tokens que a sessão principal considera."), minimum=1)
 _k("shared.contextBudgets.worker", "integer", BUDGETS["worker"], "autonomy", "machine",
-   "cq session context", ("Worker budget", "A size estimate for one worker, never a limit."),
+   "cq components session context", ("Worker budget", "A size estimate for one worker, never a limit."),
    ("Orçamento do worker", "Estimativa de tamanho de um worker, nunca um limite."), minimum=1)
 _k("shared.contextBudgets.conductor", "integer", BUDGETS["conductor"], "autonomy", "machine",
-   "cq session context", ("Conductor budget", "Tokens the orchestrating session plans around."),
+   "cq components session context", ("Conductor budget", "Tokens the orchestrating session plans around."),
    ("Orçamento do condutor", "Tokens que a sessão que orquestra considera."), minimum=1)
 # — Prompt cache (the quenching-cache bar) —
 _k("shared.cache.rebuildLimitUsd", "number", CACHE_BAR["rebuildLimitUsd"], "cache", "either",
@@ -341,6 +341,32 @@ def scope_of(key: str) -> str | None:
         if found:
             return found["scope"]
     return None
+
+
+def unknown_leaves(document: dict) -> list[str]:
+    """Dotted leaves inside the known namespaces of a repository document that nothing reads.
+
+    A leaf is read when the registry knows it or a catalog above it, when it sits under one of
+    the keys `cq specs` reads from its merged `shared`+`specs` view, or under `specs.store`.
+    Top-level keys are left to `unknownKeys`, which the envelope already reports."""
+    from quenching.common.config import NAMESPACES
+    from quenching.specs.config import BRANCH_CONFIG_KEYS, CONFIG_KEYS   # deferred: specs imports config
+
+    merged = (set(CONFIG_KEYS) - {"backend"}) | set(BRANCH_CONFIG_KEYS)
+    out: list[str] = []
+    for name in NAMESPACES:
+        block = document.get(name)
+        if not isinstance(block, dict):
+            continue
+        for key, _ in registry_leaves({name: block}):
+            first = key.split(".")[1] if "." in key else None
+            if (scope_of(key) is not None
+                    or any(known.startswith(key + ".") for known in REGISTRY)
+                    or (name in ("shared", "specs") and first in merged)
+                    or (name == "specs" and first == "store")):
+                continue
+            out.append(key)
+    return sorted(out)
 
 
 def local_decision(key: str, project_declares: bool) -> tuple[bool, str | None]:

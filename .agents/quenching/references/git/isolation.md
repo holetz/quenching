@@ -131,6 +131,11 @@ after the merge — detached at the remote base, unlocked, `.venv` and every reg
 
 - `shared.worktreeSlots.max` (default 12) is a **ceiling**: at it, `acquire` refuses, or with
   `--wait` waits, and a timed-out wait is reported to the human. No worktree is cut past it.
+- At the ceiling, `acquire` takes a held slot only when its branch has a commit of its own in its
+  reflog (`commit`, `cherry-pick`, `revert`) and its tip is in the base, its tree is clean, it holds
+  no ignored content `release` would refuse on, and no process has its cwd inside it. A branch that
+  only fast-forwarded to the base is never taken. The taken slot's `.quenching/codex/` is archived
+  in the primary checkout, as `release` does.
 - `shared.worktreeSlots.min` (default 4) is a **floor**: `/quenching-git cleanup` never offers
   the lowest-numbered free slots up to it (`slot-floor`); free slots above it are candidates.
 - A slot is released only clean: a dirty tree, or ignored content no `shared.regenerablePaths`
@@ -179,6 +184,13 @@ The isolation displays the declared list **verbatim** before it links anything. 
 `git worktree add`, `.agents/quenching/bin/cq git worktree link` materialises each path as a link to its sibling store
 before the setup command runs. A setup script must not re-create, replace or remove a path declared
 in `sharedPaths`; the link command owns that path for every checkout.
+
+The sibling store sits beside the primary checkout: `<repo>.<path>`, the path's separators turned
+into dots and its leading dots dropped (`.tmp` → `<repo>.tmp`, `a/b` → `<repo>.a.b`). A store left
+under the older name with the dot kept (`<repo>..tmp`) is renamed to the new name by the next
+`link` when the new one does not exist yet. A link pointing at the old name is then repointed. When
+both exist, `link` refuses with `git-worktree-store-conflict` and moves nothing; the human merges
+them.
 
 See
 [plugin-configuration.md](.agents/quenching/references/specs-align/plugin-configuration.md)

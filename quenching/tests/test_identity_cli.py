@@ -79,6 +79,38 @@ class IdentityVerb(IdentityRepo):
         self.assertIn("--reset-author", text)
         self.assertIn(f"commit {head[:12]} (author)", text)
 
+    def test_pre_push_over_an_old_tip_this_clone_lacks_judges_instead_of_refusing(self):
+        declare(self.repo, {"allowedEmails": ALLOWED})
+        pathlib.Path(self.repo, "b.txt").write_text("b\n", encoding="utf-8")
+        git(self.repo, "add", "b.txt")
+        with mock.patch.dict(os.environ, {"GIT_AUTHOR_EMAIL": OUTSIDE}):
+            git(self.repo, "commit", "-q", "-m", "b")
+        head = git(self.repo, "rev-parse", "HEAD").strip()
+        line = f"refs/heads/main {head} refs/heads/main {'8921fe5' + '0' * 32 + '1'}\n"
+        code, out = run(["identity", "--pre-push", "--remote", "origin", "--root", self.repo], line)
+        self.assertEqual(code, 1)
+        self.assertIn(f"commit {head[:12]} (author)", {f["where"] for f in out["findings"]})
+
+    def test_pre_push_with_a_forged_local_sha_refuses_with_exit_two(self):
+        declare(self.repo, {"allowedEmails": ALLOWED})
+        line = f"refs/heads/main --all refs/heads/main {self.base}\n"
+        code, out = run(["identity", "--pre-push", "--remote", "origin", "--root", self.repo], line)
+        self.assertEqual((code, out["code"]), (2, "identity-git-failed"))
+        self.assertIn("'--all'", out["message"])
+        code, out = run(["leak", "--pre-push", "--generic-only", "--remote", "origin",
+                         "--root", self.repo], line)
+        self.assertEqual((code, out["code"]), (2, "leak-git-failed"))
+        self.assertIn("'--all'", out["message"])
+
+    def test_pre_push_deleting_with_a_sha256_null_name_is_clean(self):
+        declare(self.repo, {"allowedEmails": ALLOWED})
+        line = f"(delete) {'0' * 64} refs/heads/main {self.base}\n"
+        for argv in (["identity", "--pre-push", "--remote", "origin", "--root", self.repo],
+                     ["leak", "--pre-push", "--generic-only", "--remote", "origin",
+                      "--root", self.repo]):
+            code, out = run(argv, line)
+            self.assertEqual((code, out["findings"]), (0, []))
+
     def test_a_malformed_list_refuses_with_exit_two(self):
         declare(self.repo, {"allowedEmails": []})
         code, out = run(["identity", "--staged", "--root", self.repo])

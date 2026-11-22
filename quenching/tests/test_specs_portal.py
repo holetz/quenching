@@ -420,6 +420,13 @@ workItemType: epic
         self.assertEqual(status, 200, body)
         self.assertIn("- found a thing", self.backend.docs[1][1])
 
+    def test_an_empty_section_body_is_refused_and_writes_nothing(self):
+        before = self.backend.docs[1][1]
+        status, body = self.post("section", {"spec": 1, "heading": "Problem", "body": ""})
+        self.assertNotEqual(status, 200, body)
+        self.assertEqual(body["code"], "sp-write-empty-body")
+        self.assertEqual(self.backend.docs[1][1], before)
+
     def test_approve_records_a_human_and_is_write_once(self):
         # The ready gate is not met by a Problem-only document: refused, nothing written.
         status, body = self.post("approve", {"spec": 1})

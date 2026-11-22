@@ -63,6 +63,23 @@ def _human_doctor(payload: dict) -> str:
     return "\n".join(lines)
 
 
+def _human_ratchet(payload: dict) -> str:
+    if "findings" not in payload:
+        return f"proof ratchet — refused: {payload['message']} ({payload['code']})"
+    findings = payload["findings"]
+    if payload["mode"] == "check":
+        verdict = "checked"
+    else:
+        verdict = "raised" if payload["written"] else "not raised — floor unchanged"
+    lines = [f"proof ratchet — {verdict} ({len(findings)} finding(s))"]
+    for finding in findings:
+        lines.append(f"  [{finding['severity']:<5}] {finding.get('root', '-')} — "
+                     f"{finding['message']} ({finding['code']})")
+    if not findings:
+        lines.append("  OK — every measured root meets its floor")
+    return "\n".join(lines)
+
+
 def _floor_values(path: str) -> dict[str, float]:
     try:
         payload = json.loads(Path(path).read_text(encoding="utf-8"))
@@ -164,7 +181,7 @@ def main(argv: list[str]) -> int:
         assert config is not None
         payload, code = evaluate(config, mode="raise" if args.raise_floor else "check",
                                  artifact=args.artifact)
-        emit(as_json, payload, f"proof ratchet — {'raised' if args.raise_floor else 'checked'}")
+        emit(as_json, payload, _human_ratchet(payload))
         return code
     payload, err = inspect_proof(root)
     if err:

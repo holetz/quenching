@@ -50,19 +50,26 @@ def merge_evidence(info: dict, root: str, remote: str = "origin", *, fetch: bool
 
     if fetch:
         git("fetch", "--quiet", remote, base)
-    work_tip = None
+    work_tip = work_ref = None
     for ref in (f"refs/heads/{work}", f"refs/remotes/{remote}/{work}"):
         resolved = git("rev-parse", "--verify", f"{ref}^{{commit}}")
         if resolved is not None and resolved.returncode == 0:
-            work_tip = resolved.stdout.strip()
+            work_tip, work_ref = resolved.stdout.strip(), ref
             break
+    unmoved = False
+    if work_ref == f"refs/heads/{work}":
+        # A branch just cut, or one that only fast-forwarded, is an ancestor of the base like a
+        # merged one; only a reflog entry that committed on it tells them apart — the slot
+        # reclaim's own rule. A remote-only ref was pushed, so it is judged by ancestry alone.
+        from quenching.git.slots import has_own_work
+        unmoved = not has_own_work(root, work)
     base_ref = None
     for ref in (f"refs/remotes/{remote}/{base}", f"refs/heads/{base}"):
         resolved = git("rev-parse", "--verify", f"{ref}^{{commit}}")
         if resolved is not None and resolved.returncode == 0:
             base_ref = ref
             break
-    if work_tip and base_ref:
+    if work_tip and base_ref and not unmoved:
         ancestor = git("merge-base", "--is-ancestor", work_tip, base_ref)
         if ancestor is not None and ancestor.returncode == 0:
             return True, f"work ref is in {base_ref}"
@@ -71,6 +78,8 @@ def merge_evidence(info: dict, root: str, remote: str = "origin", *, fetch: bool
         pr = epic._pr_view(info, epic._provider(root), root, 15)
         if pr and pr[0] == "MERGED":
             return True, f"PR #{number} merged"
+    if unmoved:
+        return False, f"{work} has no commits of its own and no merged PR is recorded"
     return False, f"{work} is not in {remote}/{base} and no merged PR is recorded"
 
 

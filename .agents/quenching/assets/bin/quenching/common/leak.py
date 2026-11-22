@@ -31,6 +31,7 @@ from pathlib import Path
 
 DENYLIST_ENV = "QUENCHING_DENYLIST_FILE"
 ZERO_SHA = "0" * 40
+_SHA = re.compile(r"[0-9a-f]{40}|[0-9a-f]{64}")
 EXCERPT_CHARS = 160
 
 GENERIC_PATTERNS: dict[str, re.Pattern[str]] = {
@@ -246,15 +247,46 @@ def scan_staged(root: str, pats: dict[str, re.Pattern[str]]) -> list[Finding]:
     return findings
 
 
+def _known_commit(root: str, sha: str) -> bool:
+    """Whether `sha` is a full object name this clone resolves to a commit."""
+    if not _SHA.fullmatch(sha):
+        return False
+    return subprocess.run(["git", "cat-file", "-e", f"{sha}^{{commit}}"], cwd=root,
+                          capture_output=True).returncode == 0
+
+
+class PushInputInvalid(subprocess.CalledProcessError):
+    """A `pre-push` stdin field that is not a full object name. A `CalledProcessError`, so every
+    verb that already refuses a failed git call refuses it too (exit 2), and the push is blocked
+    rather than scanned over a set the field rewrote."""
+
+    def __init__(self, field: str, value: str):
+        super().__init__(2, ["pre-push"], stderr=f"pre-push stdin carries a {field} that is not "
+                                                 f"a full object name: {value!r}")
+
+
+def _is_zero(sha: str) -> bool:
+    """git's null object name in either object format: 40 zeros (sha1) or 64 (sha256)."""
+    return bool(_SHA.fullmatch(sha)) and not sha.strip("0")
+
+
 def _commits_to_push(root: str, local_sha: str, remote_sha: str,
                      remote: str | None = None) -> list[str]:
-    """The commits a push publishes; a new ref publishes what the destination's remote-tracking
-    refs do not have yet. Without the destination's name every commit of the ref is judged: a
-    commit already on another remote may still be new to this one."""
-    if local_sha == ZERO_SHA:
+    """The commits a push publishes: what the destination's remote-tracking refs and the ref's old
+    tip do not have yet, so a merge of an already published base is not judged again. Without the
+    destination's name only the old tip is excluded, and a new ref is judged whole: a commit
+    already on another remote may still be new to this one. An old tip this clone does not have
+    (the remote moved and nothing was fetched) is judged as a new ref, so the cut is never
+    narrower than with no old tip at all. A local sha that is not a full object name refuses
+    (`PushInputInvalid`): it never reaches `git rev-list` as an option or a revision."""
+    if _is_zero(local_sha):
         return []
-    if remote_sha != ZERO_SHA:
-        revs = [f"{remote_sha}..{local_sha}"]
+    if not _SHA.fullmatch(local_sha):
+        raise PushInputInvalid("local sha", local_sha)
+    if not _is_zero(remote_sha) and _known_commit(root, remote_sha):
+        revs = [local_sha, "--not", remote_sha]
+        if remote:
+            revs.append(f"--remotes={remote}")
     elif remote:
         revs = [local_sha, "--not", f"--remotes={remote}"]
     else:

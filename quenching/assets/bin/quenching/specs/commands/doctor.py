@@ -8,6 +8,8 @@ the end and report, never to refuse."""
 from __future__ import annotations
 
 import json
+from quenching.common.config import repository_document
+from quenching.config.schema import unknown_leaves
 from quenching.specs.backends.azure import open_azure_backend
 from quenching.specs.backends.base import BackendRefusal
 from quenching.specs.backends.github import (GH_LISTING_SUSPECT_REMEDY, listing_is_suspect,
@@ -28,6 +30,7 @@ def cmd_config(args, root: str, out: Emitter) -> int:
              f"  backend: {cfg['backend']}"
              + (" (default)" if not cfg["present"] else ""),
              "  worktreeSetup: " + (cfg["worktreeSetup"] or "(none declared)"),
+             "  sharedPaths: " + (", ".join(cfg["sharedPaths"]) or "(none declared)"),
              "  azureStates: " + (", ".join(f"{p}={s}" for p, s in cfg["azureStates"].items())
                                   if cfg["azureStates"] else "(none declared)"),
              "  hooks: " + (", ".join(f"{event}: {len(entries)}" for event, entries in cfg["hooks"].items())
@@ -61,6 +64,14 @@ def cmd_doctor(args, root: str, out: Emitter) -> int:
                                  f"{CONFIG_FILE} declares `{key}`, which nothing reads",
                                  path=CONFIG_FILE, key=key,
                                  remedy=f"the recognised key(s): {', '.join(CONFIG_KEYS)}"))
+    document = repository_document(root)[0]
+    for key in unknown_leaves(document) if isinstance(document, dict) else []:
+        findings.append(_finding("sp-config-unknown-leaf", "warn",
+                                 f"{CONFIG_FILE} declares `{key}`, which nothing reads — "
+                                 f"its default applies",
+                                 path=CONFIG_FILE, key=key,
+                                 remedy="compare it with the keys `cq config schema` lists, "
+                                        "or remove it"))
     if cfg["unknownBackend"]:
         findings.append(_finding("sp-config-unknown-backend", "warn",
                                  f"{CONFIG_FILE} declares backend `{cfg['unknownBackend']}`, "

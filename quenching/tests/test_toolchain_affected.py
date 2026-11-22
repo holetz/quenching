@@ -26,6 +26,7 @@ REPO_ROOT = pathlib.Path(__file__).resolve().parents[2]
 # Shaped like a suite path but never exists; assembled so the citation check does not read the
 # fixture as a claim about a file in this checkout.
 MISSING_TEST = "quenching/" + "tests/test_that_was_removed.py"
+TESTS = "quenching/" + "tests"
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
@@ -128,6 +129,62 @@ class Selection(unittest.TestCase):
         self.assertEqual(0, proc.returncode, proc.stderr)
         payload = json.loads(proc.stdout)
         self.assertIn("quenching/tests/test_git.py", payload["tests"])
+
+
+class IndirectImports(unittest.TestCase):
+    """A module reached by a test only through another module still selects that test."""
+
+    PKG = "quenching/assets/bin/quenching"
+
+    def test_a_module_imported_by_another_package_selects_the_tests_of_that_package(self):
+        got = affected.select(REPO_ROOT, files=[f"{self.PKG}/session/worktrees.py"])
+        self.assertFalse(got.complete)
+        self.assertIn("quenching/tests/test_git.py", got.tests)
+
+    def _tree(self, files: dict[str, str]) -> pathlib.Path:
+        tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
+        root = pathlib.Path(tmp.name)
+        for name, body in files.items():
+            path = root / name
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text(body, encoding="utf-8")
+        return root
+
+    def select(self, root: pathlib.Path, path: str) -> affected.Selection:
+        rules = (affected.Rule((self.PKG + "/",), ("test_base",)),)
+        with mock.patch.object(affected, "RULES", rules):
+            return affected.select(root, files=[path])
+
+    def test_relative_imports_and_submodule_imports_form_a_chain(self):
+        root = self._tree({
+            f"{self.PKG}/__init__.py": "",
+            f"{self.PKG}/leaf/__init__.py": "",
+            f"{self.PKG}/leaf/core.py": "X = 1\n",
+            f"{self.PKG}/mid/__init__.py": "",
+            f"{self.PKG}/mid/use.py": "from ..leaf import core\n",
+            f"{self.PKG}/top/__init__.py": "",
+            f"{self.PKG}/top/app.py": "from . import helper\nfrom quenching.mid import use\n",
+            f"{self.PKG}/top/helper.py": "",
+            f"{TESTS}/test_base.py": "",
+            f"{TESTS}/test_far.py": "import quenching.top.app\n",
+            f"{TESTS}/test_other.py": "import quenching.top.helper\n",
+        })
+        got = self.select(root, f"{self.PKG}/leaf/core.py")
+        self.assertFalse(got.complete)
+        self.assertIn(f"{TESTS}/test_far.py", got.tests)
+        self.assertNotIn(f"{TESTS}/test_other.py", got.tests)
+
+    def test_a_module_that_does_not_parse_fails_open(self):
+        root = self._tree({
+            f"{self.PKG}/__init__.py": "",
+            f"{self.PKG}/leaf.py": "X = 1\n",
+            f"{self.PKG}/broken.py": "def (:\n",
+            f"{TESTS}/test_base.py": "",
+        })
+        got = self.select(root, f"{self.PKG}/leaf.py")
+        self.assertTrue(got.complete)
+        self.assertIn("does not parse", got.reasons[0])
 
 
 class GitSide(unittest.TestCase):

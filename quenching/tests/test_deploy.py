@@ -339,6 +339,36 @@ class Deploy(unittest.TestCase):
                        "change": "delete"}, payload["changes"])
         self.assertFalse((self.target / ".agents/skills/quenching-design").exists())
 
+    def test_narrowing_the_modules_leaves_no_orphan_bridge_skill_in_one_write(self):
+        self.assertEqual(0, self.run_deploy("--modules", "all", "--harness", "claude",
+                                            "--write")[0])
+        self.write(".agents/skills/quenching-design/notes.md", "kept by the target\n")
+        code, _payload = self.run_deploy("--modules", "core", "--write")
+        self.assertEqual(0, code)
+        self.assertFalse((self.target / ".claude/skills/quenching-design/SKILL.md").exists())
+        self.assertTrue((self.target / ".claude/skills/quenching-design/notes.md").exists())
+        bridge = json.loads((self.target / ".claude/skills/.generated-files.json").read_text())
+        self.assertNotIn("quenching-design/SKILL.md", bridge["files"])
+        code, payload = self.run_deploy("--check")
+        self.assertEqual(0, code)
+        self.assertEqual([], payload["changes"])
+
+    def test_modules_all_expands_in_registry_order_under_any_hash_seed(self):
+        # Hash randomization is fixed at interpreter start, so each seed needs its own child.
+        probe = ("import json; from quenching.deploy import tree; "
+                 "print(json.dumps(tree.normalize_modules(['all'], "
+                 "tree.load_modules(tree.source_root()))))")
+        orders = []
+        for seed in ("1", "2"):
+            run = subprocess.run([sys.executable, "-c", probe], capture_output=True, text=True,
+                                 cwd=PLUGIN_ROOT / "assets" / "bin",
+                                 env={**os.environ, "PYTHONHASHSEED": seed})
+            self.assertEqual(0, run.returncode, run.stderr)
+            orders.append(json.loads(run.stdout))
+        registry = json.loads((PLUGIN_ROOT / "assets/modules.json").read_text())["modules"]
+        self.assertEqual([module["name"] for module in registry if "owned" in module], orders[0])
+        self.assertEqual(orders[0], orders[1])
+
     def test_the_opencode_harness_writes_its_subagents(self):
         self.assertEqual(0, self.run_deploy("--modules", "core", "--write")[0])
         agent = self.target / ".opencode/agents/quenching-spec-verifier.md"
@@ -347,6 +377,16 @@ class Deploy(unittest.TestCase):
         self.assertIn('".agents/quenching/bin/cq git audit *": allow', text)
         self.assertIn("Source model tier: `sonnet`.", text)
         self.assertIn("tools:\n  task: false", text)
+
+    def test_the_opencode_orchestrator_may_launch_only_the_agents_its_source_names(self):
+        self.assertEqual(0, self.run_deploy("--modules", "core", "--write")[0])
+        text = (self.target / ".opencode/agents/quenching-spec-orchestrator.md").read_text(
+            encoding="utf-8")
+        self.assertIn('  task:\n    "*": deny\n'
+                      '    "quenching-spec-runner": allow\n'
+                      '    "quenching-spec-verifier": allow\n'
+                      '    "quenching-spec-scout": allow\n', text)
+        self.assertNotIn("tools:\n  task: false", text)
 
     def test_a_harness_that_is_not_selected_writes_no_agents(self):
         self.assertEqual(0, self.run_deploy("--modules", "core", "--harness", "claude",

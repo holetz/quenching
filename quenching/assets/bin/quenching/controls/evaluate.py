@@ -92,14 +92,38 @@ def pinned_actions(root: Path) -> dict[str, Any]:
     return {"state": "present", "evidence": [relative for relative, _ in texts]}
 
 
+def _strip_yaml_comment(line: str) -> str:
+    """The line without its YAML comment; anything ambiguous is kept, so a real trigger still matches."""
+    quote = None
+    previous = " "
+    escaped = False
+    for index, char in enumerate(line):
+        if escaped:
+            escaped = False
+        elif quote == '"' and char == "\\":
+            escaped = True
+        elif quote:
+            if char == quote and quote == "'" and line[index + 1:index + 2] == "'":
+                escaped = True
+            elif char == quote:
+                quote = None
+        elif char in "'\"" and (previous.isspace() or previous in ":[{,-"):
+            quote = char
+        elif char == "#" and previous.isspace():
+            return line[:index]
+        previous = char
+    return line
+
+
 def untrusted_trigger(root: Path) -> dict[str, Any]:
-    """No workflow runs on ``pull_request_target``."""
+    """No workflow runs on ``pull_request_target``; a YAML comment naming it is not a trigger."""
     texts, unreadable = _read_workflows(root)
     if unreadable:
         return {"state": "refused", "evidence": unreadable, "reason": "unreadable"}
     if not texts:
         return {"state": "missing", "evidence": [], "reason": "no workflow files"}
-    hazards = [relative for relative, text in texts if _PR_TARGET.search(text)]
+    hazards = [relative for relative, text in texts
+               if _PR_TARGET.search("\n".join(_strip_yaml_comment(line) for line in text.splitlines()))]
     if hazards:
         return {"state": "missing", "evidence": hazards, "reason": "pull_request_target"}
     return {"state": "present", "evidence": [relative for relative, _ in texts]}

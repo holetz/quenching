@@ -16,7 +16,7 @@ from unittest import mock
 import _paths  # noqa: F401  — must precede the `quenching` import; see its docstring
 from quenching.config import main as config_main
 from quenching.config.effective import DEFAULT_BLOCKS
-from quenching.config.schema import CATEGORIES, REGISTRY, SCOPES, TYPES, validate
+from quenching.config.schema import CATEGORIES, REGISTRY, SCOPES, TYPES, unknown_leaves, validate
 from quenching.config.seed import flatten, seed_document
 from quenching.git.conventions import GIT_CONVENTION_KEYS
 from quenching.ops.config import OPS_CONFIG_KEYS
@@ -107,6 +107,30 @@ class Validation(unittest.TestCase):
         self.assertIsNotNone(validate("specs.subjects", {})[1])
         self.assertIsNotNone(validate("nope.key", 1)[1])
         self.assertEqual(validate("shared.sharedPaths", ["a"]), (["a"], None))
+
+
+class UnknownLeaves(unittest.TestCase):
+    """A leaf nothing reads is named, so a typo never yields a default in silence."""
+
+    def test_the_seed_and_this_repository_declare_nothing_unknown(self):
+        self.assertEqual([], unknown_leaves(seed_document(".")))
+        repo = pathlib.Path(__file__).resolve().parents[2] / ".agents" / "quenching.json"
+        self.assertEqual([], unknown_leaves(json.loads(repo.read_text())))
+
+    def test_a_typo_inside_a_known_namespace_is_named(self):
+        self.assertEqual(["shared.autonomy.maxWorker"],
+                         unknown_leaves({"backend": "git",
+                                         "shared": {"autonomy": {"maxWorker": 8}}}))
+        self.assertEqual(["specs.backend"], unknown_leaves({"specs": {"backend": "git"}}))
+
+    def test_what_the_code_reads_stays_silent(self):
+        self.assertEqual([], unknown_leaves({
+            "shared": {"subjects": {"x": {"name": "X"}}, "hooks": {"e": []},
+                       "autonomy": {}},
+            "specs": {"worktreeSetup": "make", "store": {"anything": 1},
+                      "subjects": {"y": {}}, "card": {"provider": "none"}},
+            "proof": {"layers": {"unit": {"x": 1}}},
+            "unrelated": {"top": 1}}))
 
 
 class SchemaVerb(unittest.TestCase):

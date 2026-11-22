@@ -21,21 +21,23 @@ def assign_corrections(corrections: list, ordered: list) -> tuple[dict, list]:
     tagged `after` rather than `during`, because a report that cannot tell the two apart is
     guessing and should say so.
     """
-    spans = [(c.first, c.last, c) for c in ordered if c.first is not None]
-    spans.sort(key=lambda s: s[0])
+    # A stage's windows are its executions, as a stage and run directly; a command never run
+    # as a stage has one window, its whole attributed run. A conductor's window wraps every
+    # stage it called, so a turn inside both belongs to the innermost one — the latest to
+    # open, then the narrowest.
+    spans = [(lo, hi, c) for c in ordered if c.first is not None
+             for lo, hi in ((c.runs + c.direct) if c.runs else [(c.first, c.last)])]
     out, unassigned = {c.name: [] for c in ordered}, []
     for corr in corrections:
         line, hit = corr["line"], None
-        for lo, hi, cmd in spans:
-            if lo <= line <= hi:
-                hit = (cmd, "during")
-                break
-        if hit is None:
-            # the nearest span that ended before this turn, with no other span in between
+        inside = [s for s in spans if s[0] <= line <= s[1]]
+        if inside:
+            hit = (max(inside, key=lambda s: (s[0], -s[1]))[2], "during")
+        else:
+            # outside every window: the one that ended last before this turn just stopped
             prior = [s for s in spans if s[1] < line]
-            nxt = [s for s in spans if s[0] > line]
-            if prior and (not nxt or prior[-1][1] < nxt[0][0]):
-                hit = (prior[-1][2], "after")
+            if prior:
+                hit = (max(prior, key=lambda s: (s[1], s[0]))[2], "after")
         if hit is None:
             unassigned.append(corr)
         else:

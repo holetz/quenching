@@ -2,9 +2,9 @@
 type: standard
 title: Spec composition contract
 description: Any spec may list other specs as members of its `## Tasks` — one item grammar for a task and a member, composition derived from the document and never declared, the three levels derived from the waves (story, feature, epic), the member's state read from its own document and never ticked, the `link add` and `link remove` verbs with their `epic add` alias, cross-repository members read-only, the tracker card that keeps one work-item type and links members as predecessors, and the `sp-link-*` findings validate raises
-resource: quenching/assets/bin/quenching/specs/parse/epics.py, quenching/assets/bin/quenching/specs/parse/tasks.py, quenching/assets/bin/quenching/specs/parse/derive.py, quenching/assets/bin/quenching/specs/members.py, quenching/assets/bin/quenching/specs/commands/epic.py, quenching/assets/bin/quenching/specs/cards.py, quenching/assets/bin/quenching/specs/backends/azure.py, quenching/assets/bin/quenching/specs/portal.py, quenching/assets/bin/quenching/specs/commands/validate.py, quenching/assets/specs/schema.json
+resource: quenching/assets/bin/quenching/specs/parse/epics.py, quenching/assets/bin/quenching/specs/parse/tasks.py, quenching/assets/bin/quenching/specs/parse/derive.py, quenching/assets/bin/quenching/specs/members.py, quenching/assets/bin/quenching/specs/commands/epic.py, quenching/assets/bin/quenching/specs/cards.py, quenching/assets/bin/quenching/specs/backends/azure.py, quenching/assets/bin/quenching/specs/portal.py, quenching/assets/bin/quenching/specs/commands/validate.py, quenching/assets/bin/quenching/specs/commands/next.py, quenching/assets/specs/schema.json
 tags: [workflows, specs, composition, orchestration]
-timestamp: 2026-11-01
+timestamp: 2026-11-21
 audience: both
 authority: current
 source: spec 2137 (spec composition); retired with epics.md (spec 2137, 2026-11-01)
@@ -42,7 +42,9 @@ model and the compatibility spellings named below.
 - Every other checkbox is a **task item**, unchanged since v1 — `- [ ] <id>. <text>` plus its
   indented metadata (`files:`, `pattern:`, `verify:`, `subject:`, `commit:`).
 - `after: S1,S2` is read on both kinds: on a task it orders work inside this document, on a spec
-  item it orders the member.
+  item it orders the member. A task's `after:` names a task id or a spec item label of the same
+  document — the set `cq specs next` counts as done; a label outside it, or a loop between tasks,
+  is never met, so `next` marks the waiting row (`unknown`, `cycle`) and points at `validate`.
 - `### N.` headings are **waves** — the groups the document already had. The first heading is
   wave 1; items before any heading are ungrouped.
 
@@ -184,8 +186,10 @@ Errors: `sp-link-missing-member` (the id names no spec in a store that was read)
 `sp-link-item-unlinked` (an item that looks like a spec item and names nothing),
 `sp-link-duplicate-label`, `sp-link-duplicate-member`, `sp-link-unknown-dependency`,
 `sp-link-cycle` (an `after:` cycle inside one document) and `sp-link-member-cycle` (a document-level
-loop across composites, reported once). Warnings: `sp-link-member-unreadable` (a cross-repository
-member's store could not be read — a network failure is not a defect of the composition),
+loop across composites, reported once). On a task's own `after:`: `sp-after-unknown` (a label that
+names neither a task id nor a spec item of the document, one per task and label, with its line) and
+`sp-after-cycle` (a loop between tasks, reported once with its path). Warnings:
+`sp-link-member-unreadable` (a cross-repository member's store could not be read — a network failure is not a defect of the composition),
 `sp-link-manual-tick` and `sp-link-too-large` (over 100 items, a GitHub parent-card
 ceiling), plus `sp-epic-key-deprecated` for the retired back-reference.
 

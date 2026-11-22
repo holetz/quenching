@@ -15,7 +15,7 @@ from unittest import mock
 import _paths  # noqa: F401  — must precede the `quenching` import
 from quenching.git.prune import cmd_prune
 from quenching.git.stale import entry_id, stale_report
-from test_git import CLEANUP_COMMAND, RepoCase, _run
+from test_git import CLEANUP_COMMAND, RepoCase, _merged_branch, _run
 
 NO_PRS = mock.patch("quenching.git.stale._open_pr_heads", return_value=set())
 
@@ -155,7 +155,7 @@ class Assessment(RepoCase):
         self.assertEqual([w["path"] for w in report["worktrees"]], [path])
 
     def test_manifest_dates_the_observed_tip_and_keeps_legacy_lists(self):
-        _run(self.repo, "branch", "merged")
+        _merged_branch(self.repo, "merged")
         report = self._report()
         entry = next(e for e in report["manifest"] if e["ref"] == "merged")
         sha = subprocess.run(["git", "rev-parse", "merged"], cwd=self.repo, capture_output=True,
@@ -171,7 +171,7 @@ class Assessment(RepoCase):
 
 class Revalidation(RepoCase):
     def test_a_moved_tip_is_refused_and_the_branch_stands(self):
-        _run(self.repo, "branch", "merged")
+        _merged_branch(self.repo, "merged")
         old = subprocess.run(["git", "rev-parse", "merged"], cwd=self.repo, capture_output=True,
                              text=True).stdout.strip()
         code, _ = _prune(self.repo, branch="merged", expect_tip="0" * 40)
@@ -182,7 +182,7 @@ class Revalidation(RepoCase):
         self.assertEqual(code, 0)
 
     def test_an_id_that_names_another_target_is_refused(self):
-        _run(self.repo, "branch", "merged")
+        _merged_branch(self.repo, "merged")
         code, out = _prune(self.repo, branch="merged", id=entry_id("branch", "other"))
         self.assertEqual(code, 2)
         self.assertIn("git-prune-id-mismatch", out)

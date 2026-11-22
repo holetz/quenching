@@ -4,10 +4,10 @@ title: Plugin configuration contract
 description: "`.agents/quenching.json` is the plugin's single configuration home, with `.claude/quenching.json` read as legacy; provider selection is derived from the repository remote, while placement, Azure mappings, lifecycle hooks, profiles, proposal catalogues and the `git` pillar's per-artifact writing directives remain explicit target settings"
 resource: .agents/quenching.json, quenching/assets/bin/quenching/common/config.py, quenching/assets/bin/quenching/specs/config.py, quenching/assets/bin/quenching/specs/store.py, quenching/assets/bin/quenching/ops/**, quenching/assets/bin/quenching/proof/**, quenching/assets/bin/quenching/git/base.py, quenching/assets/bin/quenching/git/conventions.py, quenching/assets/bin/quenching/git/ignored.py, quenching/assets/bin/quenching/config/**, quenching/assets/bin/quenching/common/identity.py
 tags: [workflows, specs, configuration, provider, plugin]
-timestamp: 2026-11-20
+timestamp: 2026-11-21
 audience: both
 authority: current
-source: specs 1065, 1075, 1405, 1907, 1908, 1909, 1910, 1911, 1912, 2092, 2118, 2164, 2175, 2190, 2199, 2022, 1020213 — lineage in decision 0004
+source: specs 1065, 1075, 1405, 1907, 1908, 1909, 1910, 1911, 1912, 2092, 2118, 2164, 2175, 2190, 2199, 2022, 1020213, 2231 — lineage in decision 0004
 maintainer: quenching
 ---
 
@@ -140,8 +140,12 @@ and writes nothing. The document is built from the owning modules' own default c
 
 `init` refuses an existing file (exit 2, `cq-config-present`) and never merges into a file a human
 edited. `cq config check` flattens the file to dotted leaves and lists the seeded leaves it lacks
-(exit 1; exit 2 when the file is absent or not an object); it never reports extra keys, and reads
-only the repository file. `cq doctor` prints the same list as a `config` block and a line in its
+(`missing`) and the leaves inside a known namespace that nothing reads (`unknown`) — exit 1 when
+either list is non-empty, exit 2 when the file is absent or not an object — and reads only the
+repository file. A leaf is read when the key registry knows it or a catalog above it, when it sits
+under a key `cq specs` reads from its merged `shared`+`specs` view, or under `specs.store`; a typo
+such as `shared.autonomy.maxWorker` or `specs.backend` is therefore named instead of silently
+yielding the default. `cq doctor` prints the same list as a `config` block and a line in its
 report, but only reports: a missing key is information, never a failed prerequisite.
 `/quenching-align` runs `check` before the fronts and, under its one authorization, seeds an
 absent file.
@@ -314,7 +318,7 @@ explicit flag wins over the key.
 | Key | Values | Default | Read by |
 | --- | --- | --- | --- |
 | `shared.okfValidate` | `{warnAsError: boolean, ignoreGlobs: list of strings}` | `false`, `[]` | `cq knowledge validate`; wins key by key over `.claude/hooks/hooks-config.local.json` and `hooks-config.json` |
-| `shared.contextBudgets` | `{main, worker, conductor}`, positive integers | `200000` / `200000` / `150000` | `cq session context` per role: the worker number is a **size estimate**, measured and never a stop, the conductor's is a stop checked between waves, and the main number is an offer; `cq specs estimate --worker-budget` uses `worker` |
+| `shared.contextBudgets` | `{main, worker, conductor}`, positive integers | `200000` / `200000` / `150000` | `cq components session context` per role: the worker number is a **size estimate**, measured and never a stop, the conductor's is a stop checked between waves, and the main number is an offer; `cq specs estimate --worker-budget` uses `worker` |
 | `shared.cache` | `{rebuildLimitUsd, warnMinutes, ttlMinutes: auto \| 5 \| 60, costStyle: dollars \| times}` | `0.5` / `15` / `auto` / `dollars` | the `quenching-cache` plugin's bar, through `cq config show --effective`; its long-chat line is `shared.contextBudgets.main` |
 | `shared.autonomy.maxLaunches` | integer ≥ 1 | `40` | `/quenching-specs autopilot` (see the autonomy block); the launch ceiling lives only there |
 | `shared.workHost` | `{target, dockerContext, runner, remoteRoot, syncFlags, syncExclude, pullBack, protectedPaths, minFreeGb}` | disabled | `cq config host --plan`; see [work-host.md](work-host.md) |
@@ -403,7 +407,10 @@ it uses the adapter's documented default or its existing required-key refusal.
 Unknown namespace and invalid namespace-shape diagnostics remain visible at the envelope boundary.
 An unknown namespace is not treated as a new front, and an array or scalar where a namespace object
 is expected is not flattened into one. Unknown keys inside an accepted namespace remain that
-namespace adapter's responsibility; no other adapter may claim them.
+namespace adapter's responsibility; no other adapter may claim them. They are still reported, never
+refused: `cq specs doctor` emits one `sp-config-unknown-leaf` warning per leaf of the repository
+file that nothing reads (the same set as `cq config check`'s `unknown`), and the default applies
+as before.
 
 ## The `git` pillar's writing directives
 

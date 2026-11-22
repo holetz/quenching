@@ -194,6 +194,69 @@ class Scans(LeakEnv):
                          ["brazilian-cpf"])
         self.assertEqual(leak.scan_push(self.repo, line, pats, "private"), [])
 
+    def test_an_old_tip_this_clone_lacks_is_judged_as_a_new_ref(self):
+        pathlib.Path(self.repo, "a.txt").write_text(f"clean\ncpf {CPF}\n", encoding="utf-8")
+        git(self.repo, "commit", "-q", "-am", "leak")
+        head = git(self.repo, "rev-parse", "HEAD").strip()
+        pats = leak.patterns(generic_only=True)
+        new_ref = f"refs/heads/main {head} refs/heads/main {leak.ZERO_SHA}\n"
+        for unknown in ("8921fe5" + "0" * 32 + "1", "--all", "HEAD~1"):
+            line = f"refs/heads/main {head} refs/heads/main {unknown}\n"
+            for remote in (None, "origin"):
+                found = leak.scan_push(self.repo, line, pats, remote)
+                self.assertEqual(found, leak.scan_push(self.repo, new_ref, pats, remote))
+                self.assertEqual([f.label for f in found], ["brazilian-cpf"])
+
+    def test_a_local_sha_that_is_not_a_full_object_name_refuses(self):
+        base = git(self.repo, "rev-parse", "HEAD").strip()
+        pats = leak.patterns(generic_only=True)
+        for forged in ("--all", "HEAD", "HEAD~1", base[:12], base.upper()):
+            with self.subTest(forged=forged):
+                line = f"refs/heads/main {forged} refs/heads/main {base}\n"
+                with self.assertRaises(leak.PushInputInvalid) as raised:
+                    leak.scan_push(self.repo, line, pats, "origin")
+                self.assertIsInstance(raised.exception, subprocess.CalledProcessError)
+                self.assertIn(repr(forged), raised.exception.stderr)
+
+    def test_a_sha256_null_name_deletes_and_creates_like_the_sha1_one(self):
+        pathlib.Path(self.repo, "a.txt").write_text(f"clean\ncpf {CPF}\n", encoding="utf-8")
+        git(self.repo, "commit", "-q", "-am", "leak")
+        head = git(self.repo, "rev-parse", "HEAD").strip()
+        pats = leak.patterns(generic_only=True)
+        zero256 = "0" * 64
+        deleted = f"(delete) {zero256} refs/heads/main {head}\n"
+        self.assertEqual(leak.scan_push(self.repo, deleted, pats, "origin"), [])
+        sha1_new = f"refs/heads/main {head} refs/heads/main {leak.ZERO_SHA}\n"
+        sha256_new = f"refs/heads/main {head} refs/heads/main {zero256}\n"
+        with mock.patch.object(leak, "_known_commit", side_effect=AssertionError("asked")):
+            for remote in (None, "origin"):
+                found = leak.scan_push(self.repo, sha256_new, pats, remote)
+                self.assertEqual(found, leak.scan_push(self.repo, sha1_new, pats, remote))
+                self.assertEqual([f.label for f in found], ["brazilian-cpf"])
+
+    def test_existing_ref_merging_a_published_base_judges_only_what_the_remote_lacks(self):
+        git(self.repo, "checkout", "-q", "-b", "work")
+        pathlib.Path(self.repo, "w.txt").write_text("work\n", encoding="utf-8")
+        git(self.repo, "add", "w.txt")
+        git(self.repo, "commit", "-q", "-m", "work")
+        old_tip = git(self.repo, "rev-parse", "HEAD").strip()
+        git(self.repo, "update-ref", "refs/remotes/origin/work", old_tip)
+        git(self.repo, "checkout", "-q", "main")
+        pathlib.Path(self.repo, "a.txt").write_text(f"clean\ncpf {CPF}\n", encoding="utf-8")
+        git(self.repo, "commit", "-q", "-am", "published on main")
+        git(self.repo, "update-ref", "refs/remotes/origin/main",
+            git(self.repo, "rev-parse", "HEAD").strip())
+        git(self.repo, "checkout", "-q", "work")
+        git(self.repo, "merge", "-q", "--no-ff", "-m", "merge main", "main")
+        pathlib.Path(self.repo, "w.txt").write_text(f"work\ncpf {CPF}\n", encoding="utf-8")
+        git(self.repo, "commit", "-q", "-am", "new on work")
+        head = git(self.repo, "rev-parse", "HEAD").strip()
+        line = f"refs/heads/work {head} refs/heads/work {old_tip}\n"
+        pats = leak.patterns(generic_only=True)
+        self.assertEqual([f.where for f in leak.scan_push(self.repo, line, pats, "origin")],
+                         [f"commit {head[:12]} (diff)"])
+        self.assertEqual(len(leak.scan_push(self.repo, line, pats)), 2)
+
     def test_staged_scans_a_type_change(self):
         os.remove(pathlib.Path(self.repo, "a.txt"))
         try:

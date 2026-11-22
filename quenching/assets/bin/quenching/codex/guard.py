@@ -8,8 +8,8 @@ shared thing it does watch is the base checkout (the main worktree of `git workt
 primary branch ref: `base_state` and `base_moves` accept a fast-forward there (the new value
 descends from the old one) and bar a rewind or rewrite, a switch of the base `HEAD`'s branch, a
 detached base `HEAD` and the removal of the ref. `touched` is every path `git status` reports, so
-the executor can prove its diff stays inside the task's `files:`. A git command of the base read
-that fails is `GuardError`: the guard fails closed.
+the executor can prove its diff stays inside the task's `files:`. A git command of the base read, a
+read of the worktree's refs, or a `git status` that fails, is `GuardError`: the guard fails closed.
 """
 from __future__ import annotations
 
@@ -46,8 +46,9 @@ def git_strict(worktree: str, *args: str) -> str:
 
 
 def status(worktree: str) -> list[tuple[str, str]]:
-    """Every `(XY, path)` `git status` reports, rename sources included."""
-    entries = git(worktree, "status", "--porcelain=v1", "-z", "--untracked-files=all").split("\0")
+    """Every `(XY, path)` `git status` reports, rename sources included. A failing `git status`
+    is `GuardError`, never an empty tree."""
+    entries = git_strict(worktree, "status", "--porcelain=v1", "-z", "--untracked-files=all").split("\0")
     out: list[tuple[str, str]] = []
     source = None
     for entry in entries:
@@ -79,11 +80,12 @@ def _state(worktree: str, *args: str) -> str:
 
 
 def refs(worktree: str) -> dict:
-    """The refs of this worktree Codex must not move."""
-    return {"head": git(worktree, "rev-parse", "HEAD").strip(),
-            "branch": git(worktree, "symbolic-ref", "-q", "HEAD").strip(),
-            "reflogLength": len(git(worktree, "reflog", "--format=%H").splitlines()),
-            "stash": git(worktree, "rev-parse", "-q", "--verify", "refs/stash").strip()}
+    """The refs of this worktree Codex must not move. Fails closed: a detached `HEAD` and an
+    absent stash read as empty, and any other failing read is `GuardError`."""
+    return {"head": git_strict(worktree, "rev-parse", "HEAD").strip(),
+            "branch": _state(worktree, "symbolic-ref", "-q", "HEAD").strip(),
+            "reflogLength": len(git_strict(worktree, "reflog", "--format=%H").splitlines()),
+            "stash": _state(worktree, "rev-parse", "-q", "--verify", "refs/stash").strip()}
 
 
 def _ancestor(worktree: str, old: str, new: str) -> bool:

@@ -4,7 +4,7 @@ from __future__ import annotations
 import os
 from pathlib import Path
 
-from quenching.common.git import _git, _git_run
+from quenching.common.git import _git, _git_run, origin_head_branch
 from quenching.common.config import load_config
 from quenching.common.modules import distribution_findings, load_manifest
 from quenching.specs.commands.output import Emitter
@@ -55,10 +55,8 @@ def cmd_release(args, root: str, out: Emitter) -> int:
     # primary branch resolves the same chain `infer_base_branch` declares: `origin/HEAD`,
     # else `init.defaultBranch`, else `main`.
     cfg = load_config(root)
-    origin_ref = _git(repo, "symbolic-ref", "refs/remotes/origin/HEAD").strip()
-    origin_head = origin_ref.rsplit("/", 1)[-1] if origin_ref else None
     init_default = _git(repo, "config", "init.defaultBranch").strip() or None
-    primary = infer_base_branch(cfg, origin_head, init_default)
+    primary = infer_base_branch(cfg, origin_head_branch(repo), init_default)
     current = _git(repo, "rev-parse", "--abbrev-ref", "HEAD").strip()
     if current != primary:
         return out.emit_err(args.json, {"code": "sp-release-wrong-branch", "exit": 2,

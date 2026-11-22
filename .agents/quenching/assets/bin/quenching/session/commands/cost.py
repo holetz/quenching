@@ -35,6 +35,10 @@ def subagents_dir(arg: str | None) -> tuple[Path | None, str]:
                 return None, ("several sessions have subagents here, pass the session id of the one to "
                               "cost: " + ", ".join(live))
             if len(live) == 1:
+                current, _ = resolve_transcript(None, Path.cwd().resolve())
+                if current is not None and current.stem != live[0]:
+                    return None, (f"the most recent session {current.stem} has no subagents yet; "
+                                  f"pass the session id to cost another one: {live[0]}")
                 return project / live[0] / "subagents", "the only session with subagents in the project dir"
     path, how = resolve_transcript(arg, Path.cwd().resolve())
     if path is None:
@@ -236,7 +240,8 @@ def agent_peaks(transcripts: list) -> list:
 def cmd_cost(args) -> int:
     directory, how = subagents_dir(args.transcript)
     if directory is None:
-        code = "se-ambiguous-session" if how.startswith("several sessions") else "se-no-transcript"
+        code = ("se-ambiguous-session" if how.startswith("several sessions")
+                else "se-no-subagents" if how.startswith("the most recent session") else "se-no-transcript")
         return refuse({"code": code, "message": how}, args.json)
     if not directory.is_dir():
         return refuse({"code": "se-no-subagents", "message": f"no subagents directory at {directory}"},

@@ -69,6 +69,17 @@ def _init_repo(path: str) -> str:
     return path
 
 
+def _merged_branch(repo: str, name: str) -> None:
+    """A branch with a commit of its own, merged into `main` through a merge commit."""
+    _run(repo, "checkout", "-q", "-b", name)
+    work = name.replace("/", "-") + ".txt"
+    pathlib.Path(repo, work).write_text(f"{name}\n", encoding="utf-8")
+    _run(repo, "add", work)
+    _run(repo, "commit", "-q", "-m", f"{name} work")
+    _run(repo, "checkout", "-q", "main")
+    _run(repo, "merge", "-q", "--no-ff", "-m", f"merge {name}", name)
+
+
 def _cq_json(cwd: str, *argv: str) -> dict:
     proc = subprocess.run([sys.executable, CQ, "git", *argv, "--json"], cwd=cwd,
                           capture_output=True, text=True)
@@ -129,6 +140,23 @@ class Base(RepoCase):
         _run(self.repo, "symbolic-ref", "refs/remotes/origin/HEAD",
              "refs/remotes/origin/develop")
         self.assertEqual(_origin_head_branch(self.repo), "develop")
+
+    def test_a_default_branch_with_a_slash_is_returned_whole(self):
+        _run(self.repo, "update-ref", "refs/remotes/origin/team/main", "HEAD")
+        _run(self.repo, "symbolic-ref", "refs/remotes/origin/HEAD",
+             "refs/remotes/origin/team/main")
+        self.assertEqual(_origin_head_branch(self.repo), "team/main")
+        self.assertEqual(_cq_json(self.repo, "base")["base"], "team/main")
+
+    def test_a_host_default_with_a_slash_is_compared_whole(self):
+        result = SimpleNamespace(returncode=0, stdout="team/main\n")
+        with mock.patch.object(subprocess, "run", return_value=result):
+            self.assertTrue(_is_host_default(self.repo, "github", "team/main"))
+            self.assertFalse(_is_host_default(self.repo, "github", "main"))
+        with mock.patch("quenching.git.base._az_run",
+                        return_value=(0, "refs/heads/team/main\n", "")):
+            self.assertTrue(_is_host_default(self.repo, "azure-boards", "team/main"))
+            self.assertFalse(_is_host_default(self.repo, "azure-boards", "main"))
 
     def test_is_host_default_is_unknown_for_an_unknown_backend(self):
         self.assertIsNone(_is_host_default(self.repo, "unknown-provider", "main"))
@@ -278,14 +306,14 @@ class Stale(RepoCase):
         self.assertEqual(_cq_json(self.repo, "stale")["unregisteredWorktrees"], [])
 
     def test_cq_git_stale_json_excludes_base_and_reports_merged(self):
-        _run(self.repo, "branch", "feature-e")
+        _merged_branch(self.repo, "feature-e")
         payload = _cq_json(self.repo, "stale")
         names = {b["branch"] for b in payload["staleBranches"]}
         self.assertIn("feature-e", names)
         self.assertNotIn("main", names)
 
     def test_cq_git_stale_keeps_unmerged_and_checked_out_branches_with_reasons(self):
-        _run(self.repo, "branch", "merged-one")
+        _merged_branch(self.repo, "merged-one")
         _run(self.repo, "checkout", "-q", "-b", "ahead-one")
         with open(os.path.join(self.repo, "ahead.txt"), "w") as f:
             f.write("x")
@@ -298,24 +326,127 @@ class Stale(RepoCase):
         kept = {b["branch"]: b["reasons"] for b in payload["keptBranches"]}
         stale = {b["branch"] for b in payload["staleBranches"]}
         self.assertEqual(kept["ahead-one"], ["unmerged-commits"])
-        self.assertEqual(kept["held-one"], ["worktree"])
+        self.assertEqual(kept["held-one"], ["no-own-commits", "worktree"])
         self.assertIn("merged-one", stale)
         self.assertNotIn("held-one", stale)
         self.assertIn(payload["prLookup"], ("ok", "unavailable"))
 
     def test_open_pr_moves_a_merged_branch_to_kept(self):
-        _run(self.repo, "branch", "pr-open")
+        _merged_branch(self.repo, "pr-open")
         with mock.patch("quenching.git.stale._open_pr_heads", return_value={"pr-open"}):
             report = stale_report(self.repo)
         self.assertEqual({b["branch"]: b["reasons"] for b in report["keptBranches"]}["pr-open"],
                          ["open-pr"])
         self.assertNotIn("pr-open", {b["branch"] for b in report["staleBranches"]})
 
+    def _gone(self, branch):
+        _run(self.repo, "remote", "add", "origin", "https://example.invalid/repo.git")
+        _run(self.repo, "update-ref", f"refs/remotes/origin/{branch}", branch)
+        _run(self.repo, "branch", f"--set-upstream-to=origin/{branch}", branch)
+        _run(self.repo, "update-ref", "-d", f"refs/remotes/origin/{branch}")
+
+    def _lists(self):
+        with mock.patch("quenching.git.stale._open_pr_heads", return_value=set()):
+            report = stale_report(self.repo)
+        return ({b["branch"]: b["reasons"] for b in report["staleBranches"]},
+                {b["branch"]: b["reasons"] for b in report["keptBranches"]})
+
+    def test_a_branch_without_commits_of_its_own_is_kept_and_prune_refuses_it(self):
+        # Cut from the base and never committed to: an ancestor of main like a merged branch.
+        _run(self.repo, "branch", "plan/9-fresh")
+        stale, kept = self._lists()
+        self.assertNotIn("plan/9-fresh", stale)
+        self.assertEqual(kept["plan/9-fresh"], ["no-own-commits"])
+        proc = _cq(self.repo, "prune", "--branch", "plan/9-fresh")
+        self.assertEqual(proc.returncode, 2, proc.stdout)
+        self.assertIn("plan/9-fresh", subprocess.run(["git", "branch"], cwd=self.repo,
+                                                     capture_output=True, text=True).stdout)
+
+    def test_a_gone_branch_with_unmerged_work_is_kept_not_offered(self):
+        _run(self.repo, "checkout", "-q", "-b", "plan/8-gone")
+        pathlib.Path(self.repo, "gone.txt").write_text("gone\n", encoding="utf-8")
+        _run(self.repo, "add", "gone.txt")
+        _run(self.repo, "commit", "-q", "-m", "gone work")
+        _run(self.repo, "checkout", "-q", "main")
+        self._gone("plan/8-gone")
+        stale, kept = self._lists()
+        self.assertNotIn("plan/8-gone", stale)
+        self.assertEqual(kept["plan/8-gone"], ["gone", "unmerged-commits"])
+        self.assertEqual(_cq(self.repo, "prune", "--branch", "plan/8-gone").returncode, 2)
+
+    def test_a_gone_branch_already_merged_stays_a_candidate(self):
+        _merged_branch(self.repo, "plan/7-done")
+        self._gone("plan/7-done")
+        stale, _kept = self._lists()
+        self.assertEqual(stale["plan/7-done"], ["gone", "merged"])
+
+    def test_a_fast_forwarded_branch_with_work_stays_a_candidate(self):
+        _run(self.repo, "checkout", "-q", "-b", "ff-one")
+        pathlib.Path(self.repo, "ff.txt").write_text("ff\n", encoding="utf-8")
+        _run(self.repo, "add", "ff.txt")
+        _run(self.repo, "commit", "-q", "-m", "ff work")
+        _run(self.repo, "checkout", "-q", "main")
+        _run(self.repo, "merge", "-q", "--ff-only", "ff-one")
+        stale, _kept = self._lists()
+        self.assertEqual(stale["ff-one"], ["merged"])
+
+    def test_a_branch_only_fast_forwarded_to_the_base_is_kept_and_prune_refuses_it(self):
+        # Cut, then only fast-forwarded to an advanced base: its reflog moved, but by no commit
+        # of its own (spec 2250) — the rule `slots.has_own_work` applies.
+        _run(self.repo, "branch", "plan/6-ff-only")
+        _run(self.repo, "commit", "-q", "--allow-empty", "-m", "base moves")
+        _run(self.repo, "checkout", "-q", "plan/6-ff-only")
+        _run(self.repo, "merge", "-q", "--ff-only", "main")
+        _run(self.repo, "checkout", "-q", "main")
+        stale, kept = self._lists()
+        self.assertNotIn("plan/6-ff-only", stale)
+        self.assertEqual(kept["plan/6-ff-only"], ["no-own-commits"])
+        proc = _cq(self.repo, "prune", "--branch", "plan/6-ff-only")
+        self.assertEqual(proc.returncode, 2, proc.stdout)
+        self.assertIn("plan/6-ff-only", subprocess.run(["git", "branch"], cwd=self.repo,
+                                                       capture_output=True, text=True).stdout)
+
+    def test_a_remote_branch_whose_local_namesake_only_fast_forwarded_is_not_a_candidate(self):
+        self._origin_with_merged_branch()
+        _run(self.repo, "branch", "plan/5-ff-remote")
+        _run(self.repo, "commit", "-q", "--allow-empty", "-m", "base moves")
+        _run(self.repo, "checkout", "-q", "plan/5-ff-remote")
+        _run(self.repo, "merge", "-q", "--ff-only", "main")
+        _run(self.repo, "checkout", "-q", "main")
+        _run(self.repo, "push", "-q", "origin", "main", "plan/5-ff-remote")
+        _run(self.repo, "fetch", "-q", "origin")
+        rows = {r["branch"] for r in _merged_remote_branches(self.repo, "main", {"main"})}
+        self.assertEqual(rows, {"remote-feature"})
+
+    def test_without_a_reflog_the_first_parent_chain_decides(self):
+        _merged_branch(self.repo, "merged-no-log")
+        _run(self.repo, "branch", "fresh-no-log")
+        for branch in ("merged-no-log", "fresh-no-log"):
+            pathlib.Path(self.repo, ".git", "logs", "refs", "heads", branch).unlink()
+        stale, kept = self._lists()
+        self.assertEqual(stale["merged-no-log"], ["merged"])
+        self.assertEqual(kept["fresh-no-log"], ["no-own-commits"])
+
     def test_merged_origin_branch_is_reported_with_remote_identity(self):
         self._origin_with_merged_branch()
         rows = _merged_remote_branches(self.repo, "main", {"main"})
         self.assertEqual(rows, [{"remote": "origin", "branch": "remote-feature",
                                  "reasons": ["merged"]}])
+
+    def test_a_remote_branch_without_commits_of_its_own_is_not_a_candidate(self):
+        remote_repo = self._origin_with_merged_branch()
+        _merged_branch(self.repo, "merged-elsewhere")
+        _run(self.repo, "push", "-q", "origin", "main", "merged-elsewhere",
+             "main:plan/7-remote-fresh")
+        _run(self.repo, "branch", "-q", "-D", "merged-elsewhere")
+        _run(self.repo, "fetch", "-q", "origin")
+        rows = {r["branch"] for r in _merged_remote_branches(self.repo, "main", {"main"})}
+        self.assertEqual(rows, {"remote-feature", "merged-elsewhere"})
+        proc = _cq(self.repo, "prune", "--remote-branch", "plan/7-remote-fresh")
+        self.assertEqual(proc.returncode, 2, proc.stdout)
+        heads = subprocess.run(["git", "for-each-ref", "--format=%(refname)", "refs/heads"],
+                               cwd=remote_repo, capture_output=True, text=True).stdout.split()
+        self.assertIn("refs/heads/plan/7-remote-fresh", heads)
 
     def test_origin_head_and_protected_current_branch_are_not_remote_candidates(self):
         self._origin_with_merged_branch()
@@ -1749,6 +1880,86 @@ class Worktree(RepoCase):
         self.assertEqual((before.st_dev, before.st_ino), (after.st_dev, after.st_ino))
 
 
+class WorktreeDottedStore(RepoCase):
+    """A shared path that starts with a dot names its sibling store without the dot
+    (`.tmp` → `<repo>.tmp`, never `<repo>..tmp`); the legacy store is renamed on `link`."""
+
+    def setUp(self):
+        super().setUp()
+        config = pathlib.Path(self.repo) / ".claude" / "quenching.json"
+        config.parent.mkdir()
+        config.write_text(json.dumps({"shared": {"sharedPaths": [".tmp", "a/b"]}}) + "\n",
+                          encoding="utf-8")
+        pathlib.Path(self.repo, ".gitignore").write_text("/.tmp\n/a/b\n", encoding="utf-8")
+        _run(self.repo, "add", ".claude/quenching.json", ".gitignore")
+        _run(self.repo, "commit", "-q", "-m", "declare shared paths")
+        common = subprocess.run(
+            ["git", "rev-parse", "--path-format=absolute", "--git-common-dir"],
+            cwd=self.repo, check=True, capture_output=True, text=True).stdout.strip()
+        self.base = str(pathlib.Path(common).parent)
+        self.store = pathlib.Path(f"{self.base}.tmp")
+        self.legacy = pathlib.Path(f"{self.base}..tmp")
+        self.link = pathlib.Path(self.repo, ".tmp")
+
+    def _link(self):
+        return subprocess.run([sys.executable, CQ, "git", "worktree", "link", "--json"],
+                              cwd=self.repo, capture_output=True, text=True)
+
+    def test_the_leading_dot_is_dropped_and_a_nested_path_keeps_its_name(self):
+        proc = self._link()
+        self.assertEqual(proc.returncode, 0, proc.stdout + proc.stderr)
+        stores = [item["store"] for item in json.loads(proc.stdout)["paths"]]
+        self.assertEqual(stores, [str(self.store), f"{self.base}.a.b"])
+        self.assertEqual(self.link.resolve(), self.store.resolve())
+        self.assertFalse(self.legacy.exists())
+
+    def test_the_legacy_store_is_renamed_and_its_link_repointed(self):
+        self.legacy.mkdir()
+        (self.legacy / "keep").write_text("dado\n", encoding="utf-8")
+        self.link.symlink_to(self.legacy)
+        proc = self._link()
+        self.assertEqual(proc.returncode, 0, proc.stdout + proc.stderr)
+        item = json.loads(proc.stdout)["paths"][0]
+        self.assertEqual((item["state"], item["migratedFrom"]), ("repointed", str(self.legacy)))
+        self.assertFalse(self.legacy.exists())
+        self.assertEqual((self.store / "keep").read_text(encoding="utf-8"), "dado\n")
+        self.assertEqual(self.link.resolve(), self.store.resolve())
+        self.assertEqual((self.link / "keep").read_text(encoding="utf-8"), "dado\n")
+
+    def test_both_stores_present_is_refused_and_nothing_moves(self):
+        self.legacy.mkdir()
+        (self.legacy / "old").write_text("velho\n", encoding="utf-8")
+        self.store.mkdir()
+        (self.store / "new").write_text("novo\n", encoding="utf-8")
+        self.link.symlink_to(self.legacy)
+        proc = self._link()
+        self.assertEqual(proc.returncode, 2, proc.stdout)
+        payload = json.loads(proc.stdout)
+        self.assertEqual(payload["code"], "git-worktree-store-conflict")
+        self.assertEqual((payload["store"], payload["legacy"]), (str(self.store), str(self.legacy)))
+        self.assertEqual((self.legacy / "old").read_text(encoding="utf-8"), "velho\n")
+        self.assertEqual((self.store / "new").read_text(encoding="utf-8"), "novo\n")
+        self.assertEqual(os.readlink(self.link), str(self.legacy))
+
+
+class SpecsConfigSharedPaths(RepoCase):
+    """`cq specs config` shows the declared `sharedPaths`, beside `worktreeSetup`."""
+
+    def test_config_prints_and_returns_the_shared_paths(self):
+        config = pathlib.Path(self.repo) / ".agents" / "quenching.json"
+        config.parent.mkdir()
+        config.write_text(json.dumps({"backend": "git",
+                                      "shared": {"sharedPaths": [".tmp", " ", "a/b"]}}) + "\n",
+                          encoding="utf-8")
+        proc = subprocess.run([sys.executable, CQ, "specs", "config", "--json"],
+                              cwd=self.repo, capture_output=True, text=True)
+        self.assertEqual(proc.returncode, 0, proc.stdout + proc.stderr)
+        self.assertEqual(json.loads(proc.stdout)["sharedPaths"], [".tmp", "a/b"])
+        proc = subprocess.run([sys.executable, CQ, "specs", "config"],
+                              cwd=self.repo, capture_output=True, text=True)
+        self.assertIn("  sharedPaths: .tmp, a/b", proc.stdout)
+
+
 class LifecycleBehavior(RepoCase):
     """The lifecycle cases that prose-only command tests cannot prove.
 
@@ -2877,6 +3088,43 @@ class WorktreeRetire(RepoCase):
         self.assertEqual((existing / "x").read_text(encoding="utf-8"), "original\n")
         self.assertEqual(json.loads(proc.stdout)["archived"], str(archived))
 
+    def test_a_dirty_worktree_keeps_its_codex_state(self):
+        self._merge_through_gh()
+        pathlib.Path(self.repo, ".git", "info", "exclude").write_text(
+            ".quenching/\n", encoding="utf-8")
+        source = pathlib.Path(self.wt, ".quenching", "codex", "x")
+        source.parent.mkdir(parents=True)
+        source.write_text("keep\n", encoding="utf-8")
+        pathlib.Path(self.wt, "w.txt").write_text("dirty\n", encoding="utf-8")
+        pathlib.Path(self.wt, "new.txt").write_text("untracked\n", encoding="utf-8")
+        proc = self._retire()
+        self.assertEqual(proc.returncode, 1, proc.stdout)
+        payload = json.loads(proc.stdout)
+        self.assertEqual(sorted(payload["dirty"]), ["new.txt", "w.txt"])
+        self.assertIsNone(payload["archived"])
+        self.assertFalse(payload["worktreeRemoved"])
+        self.assertEqual(source.read_text(encoding="utf-8"), "keep\n")
+        self.assertFalse(pathlib.Path(self.repo, ".quenching", "codex", "retired").exists())
+        self.assertIn("plan/1-x", self._heads())
+
+    def test_a_refused_removal_puts_the_codex_state_back(self):
+        self._merge_through_gh()
+        pathlib.Path(self.repo, ".git", "info", "exclude").write_text(
+            ".quenching/\n", encoding="utf-8")
+        source = pathlib.Path(self.wt, ".quenching", "codex", "x")
+        source.parent.mkdir(parents=True)
+        source.write_text("keep\n", encoding="utf-8")
+        _run(self.repo, "worktree", "lock", self.wt)
+        proc = self._retire()
+        self.assertEqual(proc.returncode, 1, proc.stdout)
+        payload = json.loads(proc.stdout)
+        self.assertFalse(payload["worktreeRemoved"])
+        self.assertIsNone(payload["archived"])
+        self.assertTrue(payload["restored"])
+        self.assertEqual(source.read_text(encoding="utf-8"), "keep\n")
+        self.assertFalse(pathlib.Path(self.repo, ".quenching", "codex", "retired", "wt").exists())
+        self.assertIn("plan/1-x", self._heads())
+
     def test_an_ignored_file_stands_under_show_untracked_files_no(self):
         self._merge_through_gh()
         info = os.path.join(self.repo, ".git", "info", "exclude")
@@ -3041,7 +3289,7 @@ class PruneVerb(RepoCase):
 
     def setUp(self):
         super().setUp()
-        _run(self.repo, "branch", "merged")
+        _merged_branch(self.repo, "merged")
         _run(self.repo, "checkout", "-q", "-b", "unmerged")
         pathlib.Path(self.repo, "u.txt").write_text("u\n", encoding="utf-8")
         _run(self.repo, "add", "u.txt")
@@ -3548,6 +3796,90 @@ class PullRequestVerbs(RepoCase):
         self.assertEqual(code, 0, out.getvalue())
         (sets,) = seen
         self.assertEqual(sets[:2], ["number=7", f"url={self.AZURE_WEB}"])
+
+    def _azure_create_long(self, body, comment_rc=0):
+        """`pr create` on Azure through a fake `_az`: the create call answers a PR carrying its
+        repository and project ids, the invoke call reads the thread payload from --in-file."""
+        from quenching.git import pull
+        calls = []
+
+        def fake(*argv):
+            entry = {"argv": list(argv)}
+            calls.append(entry)
+            if argv[:2] == ("devops", "invoke"):
+                path = next(a for a in argv if a.startswith("--in-file="))[len("--in-file="):]
+                entry["thread"] = json.loads(pathlib.Path(path).read_text(encoding="utf-8"))
+                entry["path"] = path
+                return (comment_rc, json.dumps({"id": 11}) if comment_rc == 0 else "",
+                        "" if comment_rc == 0 else "TF401179: boom")
+            return 0, json.dumps({"pullRequestId": 7,
+                                  "url": "https://dev.azure.com/o/p/_apis/git/pullRequests/7",
+                                  "repository": {"id": "repo-guid",
+                                                 "project": {"name": "Proj X", "id": "proj-guid"},
+                                                 "webUrl": "https://dev.azure.com/o/p/_git/r"}}), ""
+        with mock.patch.object(pull, "_provider", return_value="azure-boards"), \
+                mock.patch.object(pull, "_az", side_effect=fake), \
+                mock.patch.object(pull, "sync_store", return_value={}), \
+                mock.patch.object(pull, "_branch_ok", return_value=True), \
+                contextlib.redirect_stdout(io.StringIO()) as out:
+            code = pull.cmd_pr(SimpleNamespace(action="create", base="main", head="plan/1-x",
+                                               title="t", body=body, spec=None, json=True,
+                                               **NO_AZURE_FLAGS))
+        return code, json.loads(out.getvalue()), calls
+
+    @staticmethod
+    def _long_body():
+        return "\n".join(f"## Seção {i}\n\n" + "x" * 900 for i in range(6))
+
+    def test_azure_long_body_is_cut_at_a_section_and_posted_whole_as_a_thread(self):
+        from quenching.git import pull
+        body = self._long_body()
+        self.assertGreater(len(body), 4000)
+        code, payload, calls = self._azure_create_long(body)
+        self.assertEqual(code, 0, payload)
+        create, invoke = calls
+        (description,) = [a[len("--description="):] for a in create["argv"]
+                          if a.startswith("--description=")]
+        self.assertLessEqual(len(description), 4000)
+        self.assertTrue(description.endswith("\n\nCorpo completo no primeiro comentário deste PR."))
+        kept = description.removesuffix("\n\n" + pull.AZURE_BODY_NOTE)
+        self.assertTrue(body.startswith(kept))
+        self.assertTrue(body[len(kept):].startswith("\n## "), "cut off a section boundary")
+        self.assertEqual(invoke["argv"][:2], ["devops", "invoke"])
+        for expected in ("--area=git", "--resource=pullRequestThreads", "--route-parameters",
+                         "project=Proj X", "repositoryId=repo-guid", "pullRequestId=7",
+                         "--http-method=POST"):
+            self.assertIn(expected, invoke["argv"])
+        self.assertEqual(invoke["thread"], {"comments": [{"parentCommentId": 0, "content": body,
+                                                          "commentType": 1}], "status": 4})
+        self.assertFalse(os.path.exists(invoke["path"]), "the payload file is removed")
+        self.assertEqual((payload["ok"], payload["descriptionTruncated"],
+                          payload["bodyComment"]), (True, True, {"ok": True, "threadId": 11}))
+        self.assertNotIn("findings", payload)
+
+    def test_azure_short_body_goes_whole_with_no_thread(self):
+        code, payload, calls = self._azure_create_long("## Problem\n\ncurto")
+        self.assertEqual(code, 0, payload)
+        (create,) = calls
+        self.assertIn("--description=## Problem\n\ncurto", create["argv"])
+        self.assertNotIn("descriptionTruncated", payload)
+
+    def test_azure_body_with_no_boundary_that_fits_is_cut_at_the_limit(self):
+        from quenching.git import pull
+        body = "x" * 5000
+        cut = pull._azure_description(body)
+        self.assertEqual(len(cut), 4000)
+        self.assertTrue(cut.startswith("x" * 3900))
+
+    def test_azure_failed_thread_is_a_finding_and_the_pr_stands(self):
+        code, payload, calls = self._azure_create_long(self._long_body(), comment_rc=1)
+        self.assertEqual(code, 0, payload)
+        self.assertEqual(len(calls), 2)
+        self.assertEqual((payload["ok"], payload["number"], payload["bodyComment"]["ok"]),
+                         (True, 7, False))
+        (finding,) = payload["findings"]
+        self.assertEqual(finding["code"], "git-pr-azure-comment-failed")
+        self.assertIn("TF401179: boom", finding["message"])
 
     def test_azure_only_flags_are_refused_on_github(self):
         proc = _cq(self.repo, "pr", "create", "--base", "main", "--head", "plan/1-x",

@@ -73,6 +73,15 @@ class TheCaptureStampsAReadableTitle(_Workspace):
                 self.assertEqual(code, 0, obj)
                 self.assertEqual(self.read_back()["frontmatter"]["title"], title)
 
+    def test_new_keeps_the_template_placeholders_a_title_carries(self):
+        for title in ("Placeholder <DATE> e <VERIFICATION>", "Um <TITLE> dentro do título"):
+            with self.subTest(title=title):
+                code, obj = self.run_new(title=title, stdin="## Problem\n\nP.\n")
+                self.assertEqual(code, 0, obj)
+                info = self.read_back()
+                self.assertEqual(info["frontmatter"]["title"], title)
+                self.assertIn(f"\n# {title}\n", info["text"])
+
 
 class TheTitleVerb(_Workspace):
     def setUp(self):

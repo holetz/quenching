@@ -157,6 +157,37 @@ class TheCeiling(SlotRepo):
         self.assertEqual(code, 2, out)
         self.assertEqual(out["code"], "git-worktree-slots-full")
 
+    def test_a_branch_only_fast_forwarded_to_the_base_is_never_taken_as_merged(self):
+        for n in range(1, 4):
+            _code, got = self.run_verb("acquire", branch=f"plan/{n}-x")
+            if n == 1:
+                first = got["path"]
+        _git(self.main, "commit", "-q", "--allow-empty", "-m", "base moves")
+        _git(self.main, "push", "-q", "origin", "main")
+        _git(first, "fetch", "-q", "origin")
+        _git(first, "merge", "-q", "--ff-only", "origin/main")
+        code, out = self.run_verb("acquire", branch="plan/9-new")
+        self.assertEqual(code, 2, out)
+        self.assertEqual(out["code"], "git-worktree-slots-full")
+        self.assertEqual(_git(first, "branch", "--show-current").strip(), "plan/1-x")
+
+    @unittest.skipUnless(os.path.isdir("/proc/self"), "process lookup reads /proc")
+    def test_a_merged_holder_with_a_live_process_in_its_slot_is_never_taken(self):
+        for n in range(1, 4):
+            _code, got = self.run_verb("acquire", branch=f"plan/{n}-x")
+            if n == 1:
+                first = got["path"]
+                _git(first, "commit", "-q", "--allow-empty", "-m", "work")
+        _git(self.main, "push", "-q", "origin", "plan/1-x:main")
+        live = subprocess.Popen([sys.executable, "-c", "import sys; sys.stdin.read()"],
+                                cwd=first, stdin=subprocess.PIPE)
+        self.addCleanup(live.wait)
+        self.addCleanup(live.stdin.close)
+        code, out = self.run_verb("acquire", branch="plan/9-new")
+        self.assertEqual(code, 2, out)
+        self.assertEqual(out["code"], "git-worktree-slots-full")
+        self.assertEqual(_git(first, "branch", "--show-current").strip(), "plan/1-x")
+
     def test_other_worktrees_are_never_counted(self):
         for n in range(3):
             _git(self.main, "worktree", "add", "-q", "-b", f"legacy-{n}",
@@ -176,6 +207,88 @@ class TheCeiling(SlotRepo):
         code, out = self.run_verb("acquire", branch="plan/9-new")
         self.assertEqual(code, 0, out)
         self.assertEqual([f["branch"] for f in out["freed"]], ["plan/1-x"])
+
+    def _leave_handoff(self, path, name, text):
+        info = _git(path, "rev-parse", "--path-format=absolute", "--git-path", "info/exclude").strip()
+        with open(info, "a", encoding="utf-8") as fh:
+            fh.write(".quenching/\n")
+        target = pathlib.Path(path, ".quenching", "handoff", name)
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_text(text, encoding="utf-8")
+
+    def test_a_reused_merged_holder_hands_its_handoff_to_the_primary_checkout(self):
+        for n in range(1, 4):
+            _code, got = self.run_verb("acquire", branch=f"plan/{n}-x")
+            if n == 1:
+                first = got["path"]
+                _git(first, "commit", "-q", "--allow-empty", "-m", "work")
+        self._leave_handoff(first, "next.md", "from spec 1\n")
+        _git(self.main, "push", "-q", "origin", "plan/1-x:main")
+        code, out = self.run_verb("acquire", branch="plan/9-new")
+        self.assertEqual(code, 0, out)
+        self.assertEqual(out["path"], first)
+        moved = pathlib.Path(self.main, ".quenching", "handoff", "next.md")
+        self.assertEqual(moved.read_text(encoding="utf-8"), "from spec 1\n")
+        self.assertEqual([h["to"] for h in out["handoff"]], [str(moved)])
+        self.assertFalse(pathlib.Path(first, ".quenching", "handoff").exists())
+
+    def test_a_reused_free_slot_hands_its_handoff_over_without_overwriting(self):
+        _code, got = self.run_verb("acquire", branch="plan/1-x")
+        self.assertEqual(self.run_verb("release", path=got["path"])[0], 0)
+        self._leave_handoff(got["path"], "next.md", "slot\n")
+        kept = pathlib.Path(self.main, ".quenching", "handoff", "next.md")
+        kept.parent.mkdir(parents=True)
+        kept.write_text("primary\n", encoding="utf-8")
+        code, out = self.run_verb("acquire", branch="plan/2-y")
+        self.assertEqual(code, 0, out)
+        self.assertEqual(out["path"], got["path"])
+        self.assertEqual(kept.read_text(encoding="utf-8"), "primary\n")
+        target = pathlib.Path(out["handoff"][0]["to"])
+        self.assertNotEqual(target, kept)
+        self.assertEqual(target.read_text(encoding="utf-8"), "slot\n")
+        self.assertFalse(pathlib.Path(got["path"], ".quenching", "handoff").exists())
+
+    def _fill_with_merged_first(self):
+        for n in range(1, 4):
+            _code, got = self.run_verb("acquire", branch=f"plan/{n}-x")
+            if n == 1:
+                first = got["path"]
+                _git(first, "commit", "-q", "--allow-empty", "-m", "work")
+        _git(self.main, "push", "-q", "origin", "plan/1-x:main")
+        return first
+
+    def test_a_merged_holder_with_unrecognized_ignored_content_is_never_taken(self):
+        first = self._fill_with_merged_first()
+        secret = pathlib.Path(first, ".tmp", "secret.env")
+        secret.parent.mkdir()
+        secret.write_text("token\n", encoding="utf-8")
+        code, out = self.run_verb("acquire", branch="plan/9-new")
+        self.assertEqual(code, 2, out)
+        self.assertEqual(out["code"], "git-worktree-slots-full")
+        self.assertEqual(secret.read_text(encoding="utf-8"), "token\n")
+        self.assertEqual(_git(first, "branch", "--show-current").strip(), "plan/1-x")
+
+    def test_a_merged_holder_with_only_regenerable_ignored_content_is_taken(self):
+        first = self._fill_with_merged_first()
+        os.makedirs(os.path.join(first, ".venv", "lib"))
+        code, out = self.run_verb("acquire", branch="plan/9-new")
+        self.assertEqual(code, 0, out)
+        self.assertEqual(out["path"], first)
+        self.assertTrue(os.path.isdir(os.path.join(first, ".venv", "lib")))
+
+    def test_a_reused_merged_holder_archives_its_codex_state_in_the_primary_checkout(self):
+        first = self._fill_with_merged_first()
+        self._leave_handoff(first, "next.md", "x\n")
+        codex = pathlib.Path(first, ".quenching", "codex", "run.json")
+        codex.parent.mkdir(parents=True)
+        codex.write_text("{}\n", encoding="utf-8")
+        code, out = self.run_verb("acquire", branch="plan/9-new")
+        self.assertEqual(code, 0, out)
+        archived = pathlib.Path(out["archived"])
+        self.assertEqual(archived.parent,
+                         pathlib.Path(self.main, ".quenching", "codex", "retired"))
+        self.assertEqual((archived / "run.json").read_text(encoding="utf-8"), "{}\n")
+        self.assertFalse(pathlib.Path(first, ".quenching", "codex").exists())
 
     def test_wait_times_out_to_needs_human(self):
         for n in range(1, 4):

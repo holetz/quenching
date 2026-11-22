@@ -359,9 +359,14 @@ def run_listing(argv: list[str]) -> int:
     _declare_listing(parser)
     args = parser.parse_args(argv)
 
+    try:
+        cfg = _load_config(_config_dir(args.root))
+    except ConfigError as exc:
+        return refuse({"code": "config-unreadable", "message": str(exc)}, args.json)
     bundle = _rooted(args.root, args.bundle)
     try:
-        report = regenerate_listing(bundle, write=args.write)
+        report = regenerate_listing(bundle, write=args.write,
+                                    ignore_globs=tuple(cfg.get("ignoreGlobs") or ()))
     except ValueError as exc:
         message = str(exc)
         print(json.dumps({"ok": False, "code": "listing-no-zone", "message": message})
@@ -388,7 +393,7 @@ def run_nav(argv: list[str]) -> int:
     _declare_nav(parser)
     args = parser.parse_args(argv)
 
-    from quenching.knowledge.nav import generate
+    from quenching.knowledge.nav import NavUnclosedError, generate
 
     bundle = _rooted(args.root, args.bundle)
     config = _rooted(args.root, args.config)
@@ -396,7 +401,10 @@ def run_nav(argv: list[str]) -> int:
         return refuse({"code": "nav-no-bundle", "message": f"{bundle} is not a directory"},
                       args.json)
 
-    current, desired = generate(bundle, config)
+    try:
+        current, desired = generate(bundle, config)
+    except NavUnclosedError as error:
+        return refuse({"code": "nav-unclosed", "message": f"{config}: {error}"}, args.json)
     if not current:
         return refuse({"code": "nav-config-unreadable",
                        "message": f"{config} is missing or unreadable"}, args.json)

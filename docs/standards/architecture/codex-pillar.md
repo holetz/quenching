@@ -4,10 +4,10 @@ title: Codex pillar
 description: A pillar that reads the Codex quota and lets the Codex CLI write one eligible spec task inside a worktree — app-server quota first, exit 0/1/2 failing closed, Codex's native sandbox never asked for, the run under the bypass bounded by a git guard that proves its diff inside `files:`, a stop-loss, and argv that never inherits the user's Codex configuration
 resource: quenching/assets/bin/quenching/codex/**, quenching/tests/test_codex_probe.py, quenching/tests/test_codex_guard.py, quenching/tests/test_codex_eligible.py, quenching/tests/test_codex_implement.py, quenching/tests/fixtures/codex/**, .agents/quenching.json
 tags: [architecture, codex, pillar, git-guard, quota, executor]
-timestamp: 2026-11-20
+timestamp: 2026-11-21
 audience: both
 authority: current
-source: specs 1818, 1879, 1661, 1660, 1817, 1914, 2190, 2199, ADR 0014 — lineage in decision 0004
+source: specs 1818, 1879, 1661, 1660, 1817, 1914, 2190, 2199, 191, 199, ADR 0014 — lineage in decision 0004
 maintainer: quenching
 ---
 
@@ -59,8 +59,9 @@ of a parallel worker never stops a run. Two shared things are watched, and only 
 there (the new value descends from the old one, as in a `git pull` or the conductor's merge) is
 accepted; a rewind or rewrite (`reset`, `branch -f` to a non-descendant, `update-ref`), a switch of
 the base `HEAD`'s branch, a detached base `HEAD` and the removal of the ref are `moved`. A git
-command of the base read that fails is `GuardError`, never an empty value, while a detached `HEAD`
-and a repository without `refs/stash` are state. The executor also checks that `git status` stays
+command of the base read that fails is `GuardError`, never an empty value, and so is a `git status`
+that fails, never an empty tree, while a detached `HEAD` and a repository without `refs/stash` are
+state. The executor also checks that `git status` stays
 inside the task's `files:` (§The executor).
 
 ## Configuration
@@ -108,7 +109,14 @@ The **git guard** (§The git guard) is read before and after, with `git status` 
 `codex-git-guard` with the offending paths and `discard: <files>`; the caller discards inside
 `files:` only — never `reset`, `stash`, `checkout` or `restore` — and writes the task itself. When
 `outside` is non-empty (paths `files:` never declared) the caller may not clean them and stops the
-task as `needs-human` naming them instead.
+task as `needs-human` naming them instead. A `git status` that fails, before the run (Codex is never
+started) or after it, is exit 2 `codex-git-guard` with `statusUnreadable: true` and no `discard`:
+what Codex wrote cannot be proved inside `files:`, so the caller discards nothing and stops the task
+as `needs-human`. A read of the worktree's refs that fails is the same: only a detached `HEAD` and an
+absent stash read as empty state, any other failing read of `HEAD`, the branch, the reflog or the
+stash, before the run (Codex is never started) or after it, is exit 2 `codex-git-guard` with
+`refsUnreadable: true` and no `discard`, and the caller stops the task as `needs-human`. A failing
+`git rev-parse --show-toplevel` is the `codex-worktree-not-toplevel` refusal.
 
 Exit 0 is a diff inside `files:`; exit 1 (ineligible, timeout, Codex error) falls back to Claude.
 The payload carries `tokens` (from `turn.completed.usage`, or `not measured`), `quotaBefore`,

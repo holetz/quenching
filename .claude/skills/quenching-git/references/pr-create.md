@@ -57,6 +57,14 @@ title; the non-empty `Problem`, `Proposal`, `Impact` and `Validation` sections u
 those names; a `Tasks` summary using the status counts (`checked`/`total`); and the resolved
 branch facts when present, in that order.
 Omit an absent or empty optional section — never replace it with invented prose.
+Build the body whole on both providers, and never shorten it to fit. On Azure the API refuses a PR
+description longer than 4000 characters, and markdown does not change the count. Past that limit,
+`.agents/quenching/bin/cq git pr create` puts the body cut at the last `\n## ` section boundary
+that fits into the description, with the closing note "Corpo completo no primeiro comentário deste
+PR.". Once the PR exists, it posts the whole body as the PR's first comment thread (markdown,
+closed). The payload then carries `descriptionTruncated` and `bodyComment`. A failed comment does
+not undo the PR: the verb still exits 0, and its `findings` carries
+`git-pr-azure-comment-failed`, which step 6 reports.
 
 The status `path` is the provider locator. On `github`, the spec id is the issue `<n>`: take it from
 the status `id`, never from `path`, and append exactly `Closes #<n>` to the generated body. On `azure-boards`, its trailing number is a

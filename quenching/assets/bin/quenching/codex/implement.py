@@ -12,7 +12,12 @@ and stash ref (never another worktree's `HEAD`), the base checkout's `HEAD` and 
 ref (a fast-forward is accepted; a rewind, a branch switch, a detached base `HEAD` or a removed
 ref is a divergence), and `git status` contained in `files:`. A divergence is
 exit 2 with the offending paths. With `outside` non-empty (paths `files:` never declared) Claude
-may not clean them: it stops the task as `needs-human` naming them. With `outside` empty (a moved
+may not clean them: it stops the task as `needs-human` naming them. A `git status` that fails,
+before or after the run, is exit 2 `codex-git-guard` with `statusUnreadable: true` and no
+`discard`: what Codex wrote is unknown, so the task stops as `needs-human` too. A read of the
+worktree's refs that fails, before the run (Codex never starts) or after it, is the same exit 2
+with `refsUnreadable: true` and no `discard`. A failing `git rev-parse --show-toplevel` is the
+`codex-worktree-not-toplevel` refusal. With `outside` empty (a moved
 `HEAD`, branch, reflog or stash) Claude discards the diff inside `files:` (never `reset`, `stash`
 or `checkout`) and writes the task itself.
 
@@ -23,7 +28,7 @@ of the execution.
     exit 0  Codex finished and its diff stays inside `files:` — Claude verifies, reviews, commits
     exit 1  fall back to Claude: ineligible, Codex failed or timed out
     exit 2  refusal (missing worktree, prompt, spec, task or `codex`, a dirty tree outside
-            `files:`), or `codex-git-guard`: the guard saw a divergence
+            `files:`), or `codex-git-guard`: the guard saw a divergence or could not read it
 """
 from __future__ import annotations
 
@@ -34,11 +39,12 @@ import shutil
 import subprocess
 import time
 
-from quenching.codex.eligible import eligibility, strip_annotation
-from quenching.codex.guard import (BYPASS, GuardError, base_moves, base_state, clean_env, git, refs,
-                                   touched)
+from quenching.codex.eligible import eligibility, repo_path
+from quenching.codex.guard import (BYPASS, GuardError, base_moves, base_state, clean_env,
+                                   git_strict, refs, touched)
 from quenching.codex.probe import group_kwargs, probe, stop
 from quenching.specs.backends import open_backend
+from quenching.specs.commands.estimate import estimate_task
 
 RUN_NAME = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]*$")
 NOT_MEASURED = "not measured"
@@ -50,6 +56,12 @@ RULE = (
     "O lado Claude verifica, revisa e faz o commit.")
 WAY_OUT = ("Claude may not clean these paths (no reset, stash or checkout) and files: never "
            "declared them: stop the task as needs-human naming them, so the human cleans the tree.")
+STATUS_WAY_OUT = ("git status failed, so what Codex wrote cannot be proved inside files: discard "
+                  "nothing and stop the task as needs-human, so the human repairs and cleans the "
+                  "tree.")
+REFS_WAY_OUT = ("the worktree refs cannot be read, so whether Codex moved HEAD, the branch, the "
+                "reflog or the stash cannot be proved: discard nothing and stop the task as "
+                "needs-human, so the human repairs the checkout.")
 
 
 def build_argv(executor: dict, model: str, worktree: str, message_path: str) -> list[str]:
@@ -113,18 +125,21 @@ def primary_used(quota: dict | None):
     return window.get("usedPercent")
 
 
-def read_task(root: str, spec: str, task_id: str) -> tuple[dict | None, tuple[dict, int] | None]:
+def read_task(root: str, spec: str, task_id: str
+              ) -> tuple[dict | None, dict | None, tuple[dict, int] | None]:
+    """The task, the spec it was read from (for `estimate_task`), or the refusal."""
     backend, err = open_backend(root)
     if err:
-        return None, refusal("codex-specs-unreadable",
-                             err.get("message", "the spec store could not be opened"))
+        return None, None, refusal("codex-specs-unreadable",
+                                   err.get("message", "the spec store could not be opened"))
     info, err = backend.read_spec(spec)
     if info is None:
-        return None, refusal("codex-spec-missing", (err or {}).get("message", f"no spec {spec}"))
+        return None, None, refusal("codex-spec-missing",
+                                   (err or {}).get("message", f"no spec {spec}"))
     task = next((t for t in info.get("tasks", []) if t["id"] == task_id), None)
     if task is None:
-        return None, refusal("codex-task-missing", f"spec {spec} has no task {task_id}")
-    return task, None
+        return None, None, refusal("codex-task-missing", f"spec {spec} has no task {task_id}")
+    return task, info, None
 
 
 def run_implement(root: str, settings: dict, spec: str, task_id: str, worktree: str,
@@ -136,16 +151,27 @@ def run_implement(root: str, settings: dict, spec: str, task_id: str, worktree: 
     worktree, prompt = os.path.realpath(worktree), os.path.abspath(prompt)
     if not os.path.isdir(worktree):
         return refusal("codex-worktree-missing", f"worktree does not exist: {worktree}")
-    if os.path.realpath(git(worktree, "rev-parse", "--show-toplevel").strip() or "/") != worktree:
+    try:
+        toplevel = git_strict(worktree, "rev-parse", "--show-toplevel").strip()
+    except GuardError:
+        toplevel = ""
+    if not toplevel or os.path.realpath(toplevel) != worktree:
         return refusal("codex-worktree-not-toplevel",
                        f"worktree is not the top level of a git checkout: {worktree}")
     if not os.path.isfile(prompt):
         return refusal("codex-prompt-missing", f"prompt file does not exist: {prompt}")
-    task, refused = read_task(root, spec, task_id)
+    task, info, refused = read_task(root, spec, task_id)
     if refused:
         return refused
-    files = sorted(strip_annotation(f).lstrip("/") for f in task["files"])
-    dirty = sorted(touched(worktree) - set(files))
+    files = sorted(repo_path(f) for f in task["files"])
+    try:
+        dirty = sorted(touched(worktree) - set(files))
+    except GuardError as error:
+        return {"ok": False, "fallback": False, "code": "codex-git-guard",
+                "statusUnreadable": True,
+                "message": f"the guard cannot read git status before the run: {error}. "
+                           f"{STATUS_WAY_OUT}",
+                "reason": f"git guard: {error}"}, 2
     if dirty:
         return refusal("codex-tree-dirty", "the tree is dirty outside files: "
                        + ", ".join(dirty) + f". {WAY_OUT}")
@@ -159,7 +185,8 @@ def run_implement(root: str, settings: dict, spec: str, task_id: str, worktree: 
     if os.path.exists(run_dir):
         return refusal("codex-run-exists", f"run directory already exists: {run_dir}")
 
-    judged, code = eligibility(task, settings, worktree, lambda s: quota(s, env=env))
+    judged, code = eligibility(task, settings, worktree, lambda s: quota(s, env=env),
+                               estimate_task(info, task_id, worktree))
     executor = settings["executor"]
     out = {"ok": False, "fallback": True, "spec": str(spec), "task": task_id, "files": files,
            "class": judged["class"], "model": judged["model"],
@@ -178,7 +205,14 @@ def run_implement(root: str, settings: dict, spec: str, task_id: str, worktree: 
     with open(prompt_path, "w", encoding="utf-8") as handle:
         handle.write(f"{text}\n\n{RULE}\n\nArquivos: {', '.join(files)}\n")
     argv = build_argv(executor, judged["model"], worktree, message_path)
-    before = refs(worktree)
+    try:
+        before = refs(worktree)
+    except GuardError as error:
+        shutil.rmtree(run_dir, ignore_errors=True)
+        return {**out, "fallback": False, "code": "codex-git-guard", "refsUnreadable": True,
+                "message": f"the guard cannot read the worktree refs before the run: {error}. "
+                           f"{REFS_WAY_OUT}",
+                "reason": f"git guard: {error}"}, 2
     try:
         base_before = base_state(worktree)
     except GuardError as error:
@@ -196,7 +230,11 @@ def run_implement(root: str, settings: dict, spec: str, task_id: str, worktree: 
         except subprocess.TimeoutExpired:
             stop(process)
             exit_code, out["timedOut"] = process.returncode, True
-    after = refs(worktree)
+    refs_error = None
+    try:
+        after = refs(worktree)
+    except GuardError as error:
+        after, refs_error = {}, error
     base_after = base_before
     try:
         base_after = base_state(worktree, base_before["primary"])
@@ -210,7 +248,24 @@ def run_implement(root: str, settings: dict, spec: str, task_id: str, worktree: 
         out["quotaDelta"] = out["quotaAfter"] - out["quotaBefore"]
         out["stopLoss"] = out["quotaDelta"] > executor["stopLossPercent"]
 
-    out["outside"] = sorted(touched(worktree) - set(files))
+    if refs_error is not None:
+        out["guard"] = {"moved": [f"worktree refs unreadable ({refs_error})"],
+                        "before": {**before, "base": base_before},
+                        "after": {"base": base_after}}
+        return {**out, "fallback": False, "code": "codex-git-guard", "refsUnreadable": True,
+                "message": f"the git guard cannot read the worktree refs after the run: "
+                           f"{refs_error}. {REFS_WAY_OUT}",
+                "reason": f"git guard: {refs_error}"}, 2
+    try:
+        out["outside"] = sorted(touched(worktree) - set(files))
+    except GuardError as error:
+        out["guard"] = {"moved": [f"worktree status unreadable ({error})"],
+                        "before": {**before, "base": base_before},
+                        "after": {**after, "base": base_after}}
+        return {**out, "fallback": False, "code": "codex-git-guard", "statusUnreadable": True,
+                "message": f"the git guard cannot read git status after the run: {error}. "
+                           f"{STATUS_WAY_OUT}",
+                "reason": f"git guard: {error}"}, 2
     moved = sorted(key for key in before if before[key] != after[key]) + base_bad
     if moved or out["outside"]:
         out["guard"] = {"moved": moved, "before": {**before, "base": base_before},

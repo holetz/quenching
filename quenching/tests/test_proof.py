@@ -1,6 +1,7 @@
 """Executable properties for the proof front, starting with the ratchet invariant."""
 
 import contextlib
+import io
 import json
 import importlib
 import os
@@ -125,6 +126,32 @@ class TheCoverageRatchet(unittest.TestCase):
                 self.assertIn(("pf-floor-unmeasured", "lib"),
                               [(f["code"], f["root"]) for f in payload["findings"]])
 
+    def test_a_blocked_raise_reports_the_floors_on_disk_not_the_proposed_ones(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            floor = root / ".coverage-floor.json"
+            config = {
+                "repoRoot": str(root),
+                "proofRoot": str(root / "tests"),
+                "ratchetPath": str(floor),
+                "measuredRoots": [{"relative": "src"}, {"relative": "lib"}],
+            }
+            (root / "coverage.json").write_text(json.dumps({
+                "files": {
+                    "src/a.py": {"covered_lines": 20, "num_statements": 100},
+                    "lib/a.py": {"covered_lines": 90, "num_statements": 100},
+                },
+                "totals": {"percent_covered": 55.0},
+            }), encoding="utf-8")
+            floor.write_text(json.dumps({"version": 1, "floors": {"src": 50, "lib": 60}}),
+                             encoding="utf-8")
+            before = floor.read_bytes()
+            payload, code = evaluate(config, mode="raise")
+            self.assertEqual(1, code)
+            self.assertFalse(payload["written"])
+            self.assertEqual(before, floor.read_bytes())
+            self.assertEqual({"lib": 60.0, "src": 50.0}, payload["floors"])
+
     def test_coverage_py_nested_summaries_preserve_independent_root_floors(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
@@ -162,6 +189,77 @@ class TheCoverageRatchet(unittest.TestCase):
             self.assertEqual(0, check_code)
             self.assertTrue(checked["ok"])
             self.assertEqual(before_check, floor.read_text(encoding="utf-8"))
+
+
+class TheRatchetHumanOutput(unittest.TestCase):
+    """The text a human reads names what the payload found, and claims no write it did not do."""
+
+    def _repo(self, root: Path, floor: float | None, achieved: float | None) -> None:
+        (root / ".claude").mkdir()
+        (root / "tests").mkdir()
+        (root / ".claude" / "quenching.json").write_text(json.dumps({
+            "proof": {"proofRoot": "tests", "measuredRoots": ["src"], "cost": DEFAULT_COST},
+        }), encoding="utf-8")
+        if floor is not None:
+            (root / ".coverage-floor.json").write_text(
+                json.dumps({"version": 1, "floors": {"src": floor}}), encoding="utf-8")
+        if achieved is not None:
+            (root / "coverage.json").write_text(json.dumps({
+                "files": {"src/app.py": {"covered_lines": achieved, "num_statements": 100}},
+                "totals": {"percent_covered": achieved},
+            }), encoding="utf-8")
+
+    def _run(self, root: Path, *extra: str) -> tuple[int, str]:
+        from quenching.proof.cli import main
+
+        out = io.StringIO()
+        with contextlib.redirect_stdout(out):
+            code = main(["--root", str(root), "ratchet", *extra])
+        return code, out.getvalue()
+
+    def test_a_regressed_check_names_the_finding(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            self._repo(root, floor=50, achieved=20)
+            code, text = self._run(root)
+            self.assertEqual(1, code)
+            self.assertIn("pf-floor-regressed", text)
+            self.assertIn("fell from 50.00% to 20.00%", text)
+            self.assertIn("(1 finding(s))", text)
+
+    def test_a_blocked_raise_does_not_claim_raised_and_leaves_the_floor(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            self._repo(root, floor=50, achieved=20)
+            before = (root / ".coverage-floor.json").read_bytes()
+            code, text = self._run(root, "--raise")
+            self.assertEqual(1, code)
+            self.assertNotIn("— raised", text)
+            self.assertIn("not raised — floor unchanged", text)
+            self.assertIn("pf-floor-regressed", text)
+            self.assertEqual(before, (root / ".coverage-floor.json").read_bytes())
+            code, raw = self._run(root, "--raise", "--json")
+            self.assertFalse(json.loads(raw)["written"])
+
+    def test_a_successful_raise_says_raised(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            self._repo(root, floor=50, achieved=70)
+            code, text = self._run(root, "--raise")
+            self.assertEqual(0, code)
+            self.assertTrue(text.startswith("proof ratchet — raised (0 finding(s))"), text)
+            self.assertEqual(70, json.loads(
+                (root / ".coverage-floor.json").read_text(encoding="utf-8"))["floors"]["src"])
+
+    def test_a_missing_artifact_is_shown_as_a_refusal(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            self._repo(root, floor=50, achieved=None)
+            code, text = self._run(root)
+            self.assertEqual(2, code)
+            self.assertIn("refused", text)
+            self.assertIn("pf-coverage-missing", text)
+            self.assertNotIn("checked", text)
 
 
 class GeneratedProofReadme(unittest.TestCase):

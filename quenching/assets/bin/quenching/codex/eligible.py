@@ -20,6 +20,7 @@ from __future__ import annotations
 import os
 
 from quenching.codex.probe import probe
+from quenching.common.paths import repo_path
 from quenching.specs.backends import open_backend
 from quenching.specs.commands.estimate import estimate_task
 
@@ -27,19 +28,11 @@ BYTES_PER_TOKEN = 4
 WRITTEN_KNOWLEDGE = ("docs", "knowledge")
 
 
-def strip_annotation(entry: str) -> str:
-    """`path (new)` → `path`: the one annotation that reaches this point, dropped.
-
-    `(operational)` never gets here — `eligibility` refuses the task before it reads the
-    paths, because there is nothing for Codex to write."""
-    return entry[:-len("(new)")].rstrip() if entry.endswith("(new)") else entry
-
-
 def task_tokens(root: str, files: list[str]) -> int:
     """Bytes over four of every declared file that exists; a file still to be created costs 0."""
     total = 0
     for entry in files:
-        path = os.path.join(root, strip_annotation(entry).lstrip("/"))
+        path = os.path.join(root, repo_path(entry))
         if os.path.isfile(path):
             total += os.path.getsize(path)
     return total // BYTES_PER_TOKEN
@@ -75,10 +68,10 @@ def eligibility(task: dict, settings: dict, root: str, quota=None,
     if task.get("operational"):
         return no("files: (operational) — the task writes no repository file, so there is "
                   "nothing for Codex to write")
-    files = [strip_annotation(f) for f in task["files"]]
+    files = [repo_path(f) for f in task["files"]]
     if not files:
         return no("the task declares no files:")
-    knowledge = [f for f in files if f.lstrip("/").split("/", 1)[0] in WRITTEN_KNOWLEDGE]
+    knowledge = [f for f in files if f.split("/", 1)[0] in WRITTEN_KNOWLEDGE]
     if knowledge:
         return no(f"the task writes docs/ or knowledge/: {', '.join(knowledge)}")
     out["tokens"] = task_tokens(root, files)

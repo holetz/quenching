@@ -21,6 +21,7 @@ from __future__ import annotations
 import os
 import re
 
+from quenching.knowledge.corpus import is_private_name
 from quenching.knowledge.schema import ASSET_DIRS, EXEMPT
 from quenching.knowledge.site_source import PUBLISHED_HOMES
 
@@ -88,7 +89,8 @@ def _entries(bundle_root: str, rel_dir: str) -> list:
     """One directory's nav entries: its own `index.md` first, then subsections, then pages.
 
     `assets/` and the harness pointers are excluded: the first holds no pages the reader wants a
-    sidebar row for, the second is agent-facing. The staged-source builder decides which non-page
+    sidebar row for, the second is agent-facing. A private (`.`/`_`) name is skipped too, as the
+    staged source skips it, so no row points at a page the site never carries. The staged-source builder decides which non-page
     assets are copied; these paths simply carry no nav line.
     """
     abs_dir = os.path.join(bundle_root, rel_dir) if rel_dir else bundle_root
@@ -101,7 +103,7 @@ def _entries(bundle_root: str, rel_dir: str) -> list:
     if os.path.isfile(os.path.join(bundle_root, index_rel)):
         out.append(index_rel)
     for name in names:
-        if name.startswith(".") or name in ASSET_DIRS or name in EXEMPT:
+        if is_private_name(name) or name in ASSET_DIRS or name in EXEMPT:
             continue
         child_rel = f"{rel_dir}/{name}" if rel_dir else name
         if os.path.isdir(os.path.join(abs_dir, name)):
@@ -183,11 +185,42 @@ def kept_titles(config_text: str) -> dict[str, str]:
     return {_unescape(match.group(2)): _unescape(match.group(1)) for match in _SECTION_TITLE.finditer(config_text)}
 
 
+def _bracket_delta(line: str) -> int:
+    """`[` minus `]` on one line, outside TOML basic/literal strings and comments.
+
+    A section title such as `Intervalos [0, 1)` is a string, and counting its bracket would leave
+    the nav array open forever. Single-line strings never cross a line, so no state carries over.
+    """
+    delta, quote, i = 0, "", 0
+    while i < len(line):
+        char = line[i]
+        if quote:
+            if char == "\\" and quote == '"':
+                i += 1
+            elif char == quote:
+                quote = ""
+        elif char in "\"'":
+            quote = char
+        elif char == "#":
+            break
+        elif char == "[":
+            delta += 1
+        elif char == "]":
+            delta -= 1
+        i += 1
+    return delta
+
+
+class NavUnclosedError(ValueError):
+    """The config opens `nav = [` and the file ends before the array closes."""
+
+
 def replace_nav(config_text: str, block: str) -> str:
     """Swap the `nav = [...]` array in place, touching nothing else in the file.
 
     Bracket-counted rather than parsed, for the same reason `ensure_nav` was: this file is a
-    human's, and a TOML round-trip would reformat every key it did not come for.
+    human's, and a TOML round-trip would reformat every key it did not come for. An array that
+    never closes raises `NavUnclosedError`: returning the text intact would read as `current`.
     """
     lines = config_text.splitlines(keepends=True)
     start = next((i for i, line in enumerate(lines) if re.match(r"\s*nav\s*=\s*\[", line)), None)
@@ -195,10 +228,10 @@ def replace_nav(config_text: str, block: str) -> str:
         return config_text
     depth = 0
     for end in range(start, len(lines)):
-        depth += lines[end].count("[") - lines[end].count("]")
+        depth += _bracket_delta(lines[end])
         if depth == 0:
             return "".join(lines[:start]) + block + "\n" + "".join(lines[end + 1:])
-    return config_text
+    raise NavUnclosedError(f"`nav = [` opened on line {start + 1} never closes")
 
 
 def generate(bundle_root: str, config_path: str) -> tuple[str, str]:

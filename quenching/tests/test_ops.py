@@ -447,6 +447,15 @@ class RegistryStale(unittest.TestCase):
             self.assertFalse(write_registry(registry_path, second))
             self.assertEqual(check_registry_stale(second), [])
 
+    def test_leading_dot_of_hidden_directory_is_preserved(self):
+        table = (
+            "| Entry | Purpose | Lifecycle |\n| --- | --- | --- |\n"
+            "| `.github/scripts/old.sh` | Old | archived |\n"
+            "| `./tools/x.py` | X | archived |\n"
+        )
+        self.assertEqual(self._lifecycle_of(table),
+                         {".github/scripts/old.sh": "archived", "tools/x.py": "archived"})
+
     def test_lifecycle_is_read_from_its_column_only(self):
         with tempfile.TemporaryDirectory() as raw:
             root = pathlib.Path(raw)

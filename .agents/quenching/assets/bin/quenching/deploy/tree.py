@@ -11,6 +11,7 @@ import json
 import os
 from pathlib import Path, PurePosixPath
 
+from quenching.common.deploy import read_manifest
 from quenching.common.version import VERSION
 from quenching.components.commands import bridge
 from quenching.deploy import settings as claude_settings
@@ -104,7 +105,9 @@ def load_modules(source: Path) -> dict:
 
 
 def normalize_modules(values: list[str] | None, manifest: dict) -> list[str]:
-    known = {module["name"] for module in manifest["modules"] if "owned" in module}
+    # Registry order, never a set's: `all` lands in the deploy manifest, compared byte for byte.
+    owned = [module["name"] for module in manifest["modules"] if "owned" in module]
+    known = set(owned)
     selected: list[str] = []
     for raw in values or ["core"]:
         token = raw.strip()
@@ -113,7 +116,7 @@ def normalize_modules(values: list[str] | None, manifest: dict) -> list[str]:
         if token == "core":
             token = CORE
         elif token == "all":
-            token = ",".join(MODULE_SHORT[name] for name in known)
+            token = ",".join(MODULE_SHORT[name] for name in owned)
         parts = []
         for part in token.split(","):
             parts += MODULE_ALIAS.get(part.strip(), part).split(",")
@@ -246,8 +249,12 @@ def _bridge_tree(tree: dict, target: Path) -> None:
 
     # A target may already carry its own skills. They are not deploy-owned source, but the
     # bridge is a byte copy of every skill; generating it here keeps the contract coherent.
+    # A file the previous deploy owned is leaving with this write, not the target's: bridging it
+    # would re-own a skill whose source the same write deletes.
     source = target / ".agents" / "skills"
     generated = {rel[len(SKILLS) + 1:].split("/", 1)[0] for rel in skill_files}
+    owned = (read_manifest(str(target)) or {}).get("files")
+    leaving = set(owned) if isinstance(owned, dict) else set()
     if source.is_dir():
         for folder in sorted(source.iterdir()):
             if not folder.is_dir() or folder.name in generated:
@@ -256,6 +263,8 @@ def _bridge_tree(tree: dict, target: Path) -> None:
                 if not path.is_file():
                     continue
                 relative = path.relative_to(source).as_posix()
+                if f"{SKILLS}/{relative}" in leaving:
+                    continue
                 data = path.read_bytes()
                 if path.name == bridge.SKILL_FILE and path.parent == folder:
                     data = bridge.with_marker(data.decode("utf-8"), folder.name).encode("utf-8")

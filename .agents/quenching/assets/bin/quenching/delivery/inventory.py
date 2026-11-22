@@ -9,7 +9,7 @@ from quenching.delivery.model import DeliveryInventory, Job, Workflow
 from quenching.delivery.probe import probe_delivery, workflow_artifacts
 
 
-_TOP_LEVEL = re.compile(r"^([A-Za-z_][A-Za-z0-9_.-]*):(?:\s*(.*?))?\s*$")
+_TOP_LEVEL = re.compile(r"^[\"']?([A-Za-z_][A-Za-z0-9_.-]*)[\"']?:(?:\s*(.*?))?\s*$")
 _RUSTUP_SETUP = re.compile(r"(?:^|&&|\|\||;|\n)\s*rustup\s+(?:toolchain\s+install|default|show\s+active-toolchain)\b")
 _MAPPING = re.compile(r"^\s+([A-Za-z_][A-Za-z0-9_.-]*):(?:\s*(.*?))?\s*$")
 _LIST = re.compile(r"^\s*-\s*([^\s#]+)")
@@ -286,8 +286,9 @@ def _job(lines: list[str], name: str, kind: str) -> Job:
         or kind == "gitlab-ci" and any(re.match(r"^\s*(?:image|before_script):", line)
                                         for line in lines)
         or kind == "azure-pipelines" and any(
-            re.search(r"\btask:\s*(?:UsePythonVersion|UseDotNet|NodeTool)@", line)
-            or re.match(r"^\s*container:", line) for line in lines),
+            re.search(r"\btask:\s*(?:UsePythonVersion|UseDotNet|NodeTool)@", line) for line in lines)
+        or kind in {"azure-pipelines", "github-actions"} and any(
+            re.match(r"^\s*container:", line) for line in lines),
         runtimes=tuple(sorted(set(runtimes))),
         stage=stage,
         release=release,
@@ -338,6 +339,10 @@ def _azure_extra_triggers(lines: list[str]) -> list[str]:
 
 def _triggers(lines: list[str], kind: str) -> tuple[str, ...]:
     names = _trigger_names(lines, kind)
+    # An absent trigger key is the platform's default: run on every push.
+    if (kind == "azure-pipelines" and not _block(lines, "trigger")
+            or kind == "gitlab-ci" and not (_block(lines, "workflow") or _block(lines, "rules"))):
+        names.append("push")
     if kind == "azure-pipelines":
         names += _azure_extra_triggers(lines)
     return tuple(sorted(set(name for name in names if name.lower() != "none")))

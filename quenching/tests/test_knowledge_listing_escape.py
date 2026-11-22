@@ -45,5 +45,33 @@ class ListingEscapeRoundTrip(unittest.TestCase):
             self.assertEqual(zone.count("[imports.md](code/imports.md)"), 2)  # mold + one row
 
 
+class ListingPrivatePaths(unittest.TestCase):
+    def test_private_and_ignored_dirs_get_no_row(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            base = pathlib.Path(tmp) / "docs"
+            files = {
+                "index.md": '---\nokf_version: "0.1"\n---\n\n# Bundle\n\n- [Standards](standards/index.md)\n',
+                "standards/index.md": "# Standards\n\n## Current docs\n\n" + MOLD
+                + "\n### code/\n\n| Doc | Covers |\n| --- | --- |\n"
+                + "| [imports.md](code/imports.md) | How we import |\n\n<!-- END GENERATED -->\n",
+                "standards/code/index.md": "# code/\n\n- [imports.md](imports.md)\n",
+                "standards/code/imports.md": _std("Imports", "How we import"),
+                "standards/_drafts/wip.md": _std("WIP", "rascunho privado nao publicar"),
+                "standards/code/_rascunho.md": _std("Rascunho", "arquivo privado solto"),
+                "standards/.hidden/note.md": _std("Hidden", "dot dir"),
+                "standards/vendored/copy.md": _std("Vendored", "ignored by glob"),
+            }
+            for rel, text in files.items():
+                p = base / rel
+                p.parent.mkdir(parents=True, exist_ok=True)
+                p.write_text(text, encoding="utf-8")
+            report = regenerate_listing(str(base), write=True, ignore_globs=("standards/vendored",))
+            self.assertFalse(report["changed"])
+            zone = (base / "standards/index.md").read_text(encoding="utf-8")
+            for leaked in ("wip.md", "rascunho privado", "note.md", "copy.md",
+                           "_rascunho.md", "arquivo privado solto"):
+                self.assertNotIn(leaked, zone)
+
+
 if __name__ == "__main__":
     unittest.main()

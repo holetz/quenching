@@ -12,8 +12,11 @@ _LOCK_MANIFEST = {
     "uv.lock": "pyproject.toml",
     "poetry.lock": "pyproject.toml",
     "package-lock.json": "package.json",
+    "yarn.lock": "package.json",
+    "pnpm-lock.yaml": "package.json",
     "Cargo.lock": "Cargo.toml",
 }
+_ECOSYSTEM_MANIFEST = {"python": "pyproject.toml", "node": "package.json"}
 _ARBITER_KEYS = {"project.scripts", "tool.coverage", "tool.pytest"}
 
 
@@ -126,10 +129,8 @@ def check_runtime_drift(inventory: ToolchainInventory) -> list[Finding]:
 
 
 def _has_lock(inventory: ToolchainInventory, ecosystem: str) -> bool:
-    names = {Path(item.path).name for item in inventory.locks}
-    return bool(names & ({"uv.lock", "poetry.lock"} if ecosystem == "python"
-                         else {"package-lock.json"} if ecosystem == "node"
-                         else {"Cargo.lock"}))
+    manifest = _ECOSYSTEM_MANIFEST.get(ecosystem, "Cargo.toml")
+    return any(_LOCK_MANIFEST.get(Path(item.path).name) == manifest for item in inventory.locks)
 
 
 def _is_exact_pin(ecosystem: object, spec: str) -> bool:

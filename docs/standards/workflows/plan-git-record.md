@@ -4,10 +4,10 @@ title: Plan git record contract
 description: How a spec records the git facts that cannot be derived later — per-task commit subjects, branch, pull request and merge records, branch marks for conclude discovery, base inference, merge routes, and safe local and remote branch cleanup
 resource: quenching/references/git/**, quenching/references/specs-execute/execution.md, quenching/references/specs-conclude/auto-discover.md, quenching/assets/bin/quenching/specs/**, quenching/assets/bin/quenching/git/**, quenching/skills/quenching-specs/references/execute.md, quenching/skills/quenching-specs/references/conclude.md, quenching/skills/quenching-git/references/merge.md, quenching/skills/quenching-git/references/pr-create.md
 tags: [workflows, specs, git, commits, records]
-timestamp: 2026-11-20
+timestamp: 2026-11-21
 audience: both
 authority: background
-source: abandonar-slug-por-id-nativo, vincular-spec-a-branch-commits-e-pr, spec 2022, spec 2187, spec 2209; history in ADR 0003
+source: abandonar-slug-por-id-nativo, vincular-spec-a-branch-commits-e-pr, spec 2022, spec 2187, spec 2209, spec 2235, spec 2242, spec 2250; history in ADR 0003
 maintainer: quenching
 ---
 
@@ -296,8 +296,15 @@ times in two repositories (1518, 1028798, 1030888) before this rule.
 
 `cq specs promote --to archive --outcome done` refuses (`sp-not-merged`, exit 2) while the
 `branch` record names a work ref distinct from its base and none of these holds: the work tip is an
-ancestor of `origin/<base>`, a `merge:` record names a strategy, or the `pr:` record's PR reads
-merged (the squash case, where ancestry fails). `--force` waives open tasks only; it never reaches
+ancestor of `origin/<base>` and carries commits of its own, a `merge:` record names a strategy, or
+the `pr:` record's PR reads merged (the squash case, where ancestry fails). A branch just cut from
+the base, or one that only fast-forwarded to it (`git merge --ff-only`, a `cq git sync` with no
+work), is an ancestor of it too, so ancestry counts for a local ref only when its reflog holds an
+entry that moved it by commit, cherry-pick or revert; a local ref without one, or with an empty or
+expired reflog, falls through to the `pr:` record and otherwise refuses with `<work> has no commits
+of its own`. A remote-only ref has no local reflog and is judged by ancestry alone. This is the
+same guard the slot reclaim applies — both call `has_own_work` in `quenching/git/slots.py` (specs
+2235, 2241). `--force` waives open tasks only; it never reaches
 this refusal. `--outcome abandoned` has nothing to wait for and is not checked.
 
 The close is one verb, `cq specs reconcile --write`: it finds every spec of the front whose work is
@@ -401,6 +408,18 @@ resolved base. That `remoteBranches` list is a local observation, not proof that
 unchanged, and it is separate from `branch:`, `pr:` and `merge:` records. The default cleanup flow
 uses no implicit fetch or remote-prune: a caller that needs newer facts fetches explicitly and
 starts a fresh report.
+
+Ancestry alone never makes a branch `merged` in that report: a branch just cut from the base is an
+ancestor of it too. A local branch is a `merged` candidate only when it carried commits of its own —
+its reflog holds a `commit`, `cherry-pick` or `revert` entry (`slots.has_own_work`, the rule the
+slot reclaim and `cq specs promote` apply, so a branch only fast-forwarded to its base has none), or,
+with an empty or expired reflog, its tip is off the base's first-parent chain; otherwise it stays in `keptBranches` with `no-own-commits`, and `cq git prune
+--branch` refuses it (`git-prune-not-reported`). A remote branch whose tip sits on the first-parent
+chain is listed only when the local branch of the same name carried commits of its own; a
+remote-tracking reflog starts at a ref that already held the tip, so it proves nothing. `gone` is
+only an added reason: a gone branch with commits outside the base stays in `keptBranches` with
+`["gone", "unmerged-commits"]`, because `prune` deletes with `branch -d`, which refuses it (spec
+2242).
 
 `cq git stale` also assesses registered linked worktrees and prints a complete `manifest`: every
 local branch, remote branch and worktree, candidate or preserved, with a stable `id` (derived from

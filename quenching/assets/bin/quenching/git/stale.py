@@ -14,8 +14,10 @@ from quenching.common.config import detect_provider, load_config
 from quenching.common.git import _git, _git_run
 from quenching.common.output import emit
 from quenching.common.tools import spawn_argv
+from quenching.git.audit import _reflog
 from quenching.git.base import resolve_base
 from quenching.git.ignored import classify, declared_regenerable, ignored_entries
+from quenching.git.slots import has_own_work
 from quenching.session.worktrees import worktree_branch as _worktree_branch
 from quenching.session.worktrees import worktree_gitdir as _worktree_gitdir
 
@@ -34,6 +36,27 @@ def _merged_branches(cwd: str, base: str, protected: set[str]) -> set[str]:
     return {b for b in out.splitlines() if b and b not in protected}
 
 
+def _first_parent_chain(cwd: str, base: str) -> set[str]:
+    """Every commit on the base's first-parent history: where a branch just cut from the base
+    sits, and where a branch merged through a merge commit (its tip a second parent) does not."""
+    return set(_git(cwd, "rev-list", "--first-parent", base).split())
+
+
+def _has_own_commits(cwd: str, branch: str, chain: set[str]) -> bool:
+    """A local branch carried work of its own: `slots.has_own_work`, the rule the slot reclaim
+    and `promote`'s merge evidence apply (a commit, cherry-pick or revert in its reflog, so a
+    branch only fast-forwarded to its base has none), or, with an empty or expired reflog, its
+    tip is off the base's first-parent chain. A branch just cut is an ancestor of the base like a
+    merged one, and only this evidence tells them apart."""
+    ref = f"refs/heads/{branch}"
+    tip = _git(cwd, "rev-parse", "--verify", "--quiet", ref).strip()
+    if not tip:
+        return False
+    if _reflog(cwd, ref):
+        return has_own_work(cwd, branch)
+    return tip not in chain
+
+
 def _gone_branches(cwd: str, protected: set[str]) -> set[str]:
     out = _git(cwd, "for-each-ref", "--format=%(refname:short)|%(upstream:track)", "refs/heads")
     gone = set()
@@ -45,22 +68,30 @@ def _gone_branches(cwd: str, protected: set[str]) -> set[str]:
 
 
 def _merged_remote_branches(cwd: str, base: str, protected: set[str],
-                            remote: str = "origin") -> list[dict]:
-    """Report fetched remote branches already reachable from ``base``.
+                            remote: str = "origin", chain: set[str] | None = None) -> list[dict]:
+    """Report fetched remote branches already reachable from ``base`` that carried work of their
+    own: the tip is off the base's first-parent chain, or the local branch of the same name has
+    commits of its own (a local fast-forward pushed through the base). A remote-tracking reflog
+    starts at a ref that already held the tip, so it proves nothing here.
 
     This is deliberately a read of remote-tracking refs. It does not fetch, prune local refs, or
     claim that the server has not changed since the last fetch; cleanup owns the later, confirmed
     delete of a selected server branch.
     """
+    if chain is None:
+        chain = _first_parent_chain(cwd, base)
     prefix = f"{remote}/"
-    out = _git(cwd, "for-each-ref", "--format=%(refname:short)",
+    out = _git(cwd, "for-each-ref", "--format=%(refname:short)|%(objectname)",
                f"refs/remotes/{remote}", "--merged", base)
     branches = []
-    for ref in out.splitlines():
+    for line in out.splitlines():
+        ref, _, tip = line.partition("|")
         if not ref.startswith(prefix):
             continue
         branch = ref[len(prefix):]
         if not branch or branch == "HEAD" or branch in protected:
+            continue
+        if tip in chain and not _has_own_commits(cwd, branch, chain):
             continue
         branches.append({"remote": remote, "branch": branch, "reasons": ["merged"]})
     return branches
@@ -384,30 +415,37 @@ def stale_report(cwd: str, remote: str = "origin") -> dict:
     # a report, not a promise nothing else changed since.
     protected = {base, current}
 
-    reasons: dict[str, set[str]] = {}
-    for b in _merged_branches(cwd, base, protected):
-        reasons.setdefault(b, set()).add("merged")
-    for b in _gone_branches(cwd, protected):
-        reasons.setdefault(b, set()).add("gone")
+    # `merged` is an ancestor of the base that carried work of its own; `gone` only adds to it,
+    # because `prune` deletes with `branch -d`, which refuses a branch the base does not hold.
+    chain = _first_parent_chain(cwd, base)
+    ancestors = _merged_branches(cwd, base, protected)
+    gone = _gone_branches(cwd, protected)
     # Guidance first: a branch that must stay is listed with the reason, never offered for
     # deletion. `open-pr` needs the host (`gh` or `az`); when it is unreachable the report says so.
     open_prs = _open_pr_heads(cwd)
     checked_out = _checked_out_branches(cwd)
+    reasons: dict[str, set[str]] = {}
     kept: dict[str, set[str]] = {}
     for b in _local_branches(cwd) - protected:
+        found = {"gone"} if b in gone else set()
         why = set()
         if open_prs and b in open_prs:
             why.add("open-pr")
         if b in checked_out:
             why.add("worktree")
-        if b not in reasons:
+        if b not in ancestors:
             why.add("unmerged-commits")
+        elif not _has_own_commits(cwd, b, chain):
+            why.add("no-own-commits")
+        else:
+            found.add("merged")
         if why:
-            kept[b] = why
-            reasons.pop(b, None)
+            kept[b] = why | (found - {"merged"})
+        elif found:
+            reasons[b] = found
     branches = [{"branch": b, "reasons": sorted(r)} for b, r in sorted(reasons.items())]
     kept_branches = [{"branch": b, "reasons": sorted(r)} for b, r in sorted(kept.items())]
-    remote_branches = _merged_remote_branches(cwd, base, protected, remote)
+    remote_branches = _merged_remote_branches(cwd, base, protected, remote, chain)
     report = {"ok": True, "base": base, "remote": remote, "staleBranches": branches,
               "keptBranches": kept_branches,
               "prLookup": "ok" if open_prs is not None else "unavailable",
