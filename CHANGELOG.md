@@ -13,6 +13,13 @@ owner: [`ci-cd/versioning-release.md`](docs/standards/ci-cd/versioning-release.m
 short version for a consumer: the version is published once, deliberately, as a release — never at a
 spec's own conclude — and `cq --version` is what answers which one you are running.
 
+## 7.11.1
+
+**O `cq git pr merge` aceita PR sem checks sob `--allow-no-checks`** e carimba o `--spec` no Azure,
+  para provedores sem CI; a conclusão de PR no Azure vai pela rota do repositório (`az rest`), não
+  pela do projeto, que recusa PATCH; e um slot sem linha no reconcile se libera com
+  `cq worktree release` (#220).
+
 ## 7.11.0
 
 **O `cq specs` pega o que antes passava calado.** O `validate` acusa um fence não fechado dentro de
