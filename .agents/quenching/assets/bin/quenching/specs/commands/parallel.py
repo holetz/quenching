@@ -37,7 +37,8 @@ def parallel_groups(tasks: list[dict]) -> list[list[dict]]:
 def cmd_parallel(args, root: str, out: Emitter) -> int:
     """Prove a `[P]` group's `files:` sets are disjoint — MECHANICALLY, never judged in
     prose. A group with an undeclared `files:` is ineligible: nothing can be proven about
-    a task that never said what it touches."""
+    a task that never said what it touches. So is a group where a member waits `after:` a
+    sibling: running both at once builds the dependent over a tree that lacks its dependency."""
     backend, err = open_backend(root)
     if err:
         return out.emit_err(args.json, err)
@@ -61,10 +62,14 @@ def cmd_parallel(args, root: str, out: Emitter) -> int:
                         if _overlaps(fa, fb):
                             clashes.append({"a": a["id"], "b": b["id"],
                                             "file": repo_path(fa)})
-        eligible = not undeclared and not clashes and not annotations
+        ids = {t["id"] for t in group}
+        dependent = [{"task": t["id"], "after": d} for t in group
+                     for d in t.get("after") or [] if d in ids and d != t["id"]]
+        eligible = not undeclared and not clashes and not annotations and not dependent
         findings.append({"group": gi, "tasks": [t["id"] for t in group],
                          "eligible": eligible, "undeclared": undeclared,
-                         "annotations": annotations, "clashes": clashes})
+                         "annotations": annotations, "clashes": clashes,
+                         "dependent": dependent})
     ok = all(f["eligible"] for f in findings)
     if args.json:
         print(json.dumps({"ok": ok, "id": info["id"], "groups": findings},
@@ -77,6 +82,8 @@ def cmd_parallel(args, root: str, out: Emitter) -> int:
                   f"{'eligible' if f['eligible'] else 'NOT eligible'}")
             for c in f["clashes"]:
                 print(f"    {c['a']} and {c['b']} both touch {c['file']}")
+            for d in f["dependent"]:
+                print(f"    {d['task']} waits after: {d['after']} in the same group")
             for a in f["annotations"]:
                 print(f"    {a['task']} declares non-path files entry {a['entry']!r} — "
                       f"remove the comment; `(new)` is the only reserved annotation")

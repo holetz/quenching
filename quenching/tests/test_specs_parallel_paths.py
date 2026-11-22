@@ -1,5 +1,6 @@
 """`cq specs parallel` compares `files:` as repository paths: two spellings of one path clash,
-two distinct paths never do, and a path it cannot place in the repository fails closed."""
+two distinct paths never do, and a path it cannot place in the repository fails closed. A
+member that waits `after:` a sibling of its own group makes the group ineligible."""
 from __future__ import annotations
 
 import pathlib
@@ -62,6 +63,29 @@ class Parallel(Workspace):
         code, payload = self.parallel(self.write(group("../x.py", "src/a.py")))
         self.assertEqual(code, 1)
         self.assertEqual(payload["groups"][0]["clashes"][0]["file"], "../x.py")
+
+
+def chained(after: str) -> str:
+    return ("### 1. One\n\n"
+            "- [ ] 1.1 [P] Alpha\n      files: src/a.py\n"
+            f"- [ ] 1.2 [P] Beta — after: {after}\n      files: src/b.py\n")
+
+
+class ParallelAfter(Workspace):
+    def test_a_member_waiting_on_a_sibling_is_not_eligible(self):
+        code, payload = self.parallel(self.write(chained("1.1")))
+        self.assertEqual(code, 1)
+        group = payload["groups"][0]
+        self.assertFalse(group["eligible"])
+        self.assertEqual(group["clashes"], [])
+        self.assertEqual(group["dependent"], [{"task": "1.2", "after": "1.1"}])
+
+    def test_waiting_on_a_task_outside_the_group_stays_eligible(self):
+        body = "### 0. Zero\n\n- [ ] 0.1 Setup\n      files: src/z.py\n\n" + chained("0.1")
+        code, payload = self.parallel(self.write(body))
+        self.assertEqual(code, 0)
+        self.assertTrue(payload["groups"][0]["eligible"])
+        self.assertEqual(payload["groups"][0]["dependent"], [])
 
 
 if __name__ == "__main__":
