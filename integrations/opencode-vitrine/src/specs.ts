@@ -473,11 +473,18 @@ export async function task(cwd: string, id: number, taskID: string): Promise<Tas
   }
 }
 
+/**
+ * Verbos de `cq specs` que escrevem; `section` só escreve com `--write`. O teste
+ * `quenching/tests/test_vitrine_write_verbs.py` amarra esta lista à CLI e à cópia do claude-vitrine.
+ */
 const WRITE = new Set([
-  "record", "task", "start", "target", "assignee", "tags", "title", "promote",
-  "discover", "new", "link", "epic", "scrub", "push", "artifact", "sync",
-  "migrate", "release",
+  "record", "task", "start", "target", "end", "assignee", "tags", "title",
+  "verification", "depends", "promote", "reconcile", "discover", "new", "link",
+  "epic", "scrub", "push", "artifact", "handoff", "sync", "migrate", "release",
 ])
+
+const writes = (verb: string, rest: string) =>
+  WRITE.has(verb) || (verb === "section" && /(?:^|\s)--write\b/.test(rest))
 
 /** As specs que um comando `cq` nomeia, cada uma com o peso do verbo que a nomeou. */
 export function parse(command: string): { hits: { id: number; kind: Kind }[]; commit: boolean } {
@@ -485,7 +492,7 @@ export function parse(command: string): { hits: { id: number; kind: Kind }[]; co
   const pattern = /\bcq\b[^\n;&|]*?\bspecs\s+([a-z][a-z-]*)([^\n;&|]*)/g
   let match: RegExpExecArray | null
   while ((match = pattern.exec(command)) !== null) {
-    const kind: Kind = WRITE.has(match[1]) ? "command" : "read"
+    const kind: Kind = writes(match[1], match[2]) ? "command" : "read"
     const id = /^\s+(?:--spec\s+)?(\d{3,})\b/.exec(match[2])
     if (!id) continue
     const value = Number(id[1])
