@@ -27,6 +27,8 @@ AZURE_PR_URL = re.compile(
     r"(?P<legacy>[\w.-]+\.visualstudio\.com)(?:/DefaultCollection)?)/"
     r"(?P<project>[\w.%~-]+)/_git/(?P<repo>[\w.%~-]+)/pullrequest/(?P<number>[1-9]\d*)")
 BUILD_POLICY = "0609b952-1397-4640-95ec-e00a01b2c241"
+#: The Azure DevOps application id `az rest` asks a token for.
+AZURE_DEVOPS_RESOURCE = "499b84ac-1321-427f-aa17-267ca6975798"
 
 
 def _read(argv: list[str], kind: type):
@@ -107,6 +109,20 @@ def merge_azure(args, match: re.Match) -> int:
                 payload["message"] = message
         else:
             payload["ok"] = True
+            spec = getattr(args, "spec", None)
+            if spec:
+                from quenching.git.pull import _stamp_merge
+
+                branch = str(pr["sourceRefName"]).removeprefix("refs/heads/")
+                target = str(pr["targetRefName"]).removeprefix("refs/heads/")
+                payload["merge"] = stamp = _stamp_merge(
+                    spec, number, args.url,
+                    subject=f"Merge pull request {number} from {branch} into {target}")
+                if not stamp["ok"]:
+                    payload.update(ok=False, reason="stamp-failed", message=stamp["message"])
+                    emit(args.json, payload, f"merged {args.url}; `merge` record not stamped: "
+                         f"{stamp['message']}")
+                    return FINDINGS
             payload["specs"] = sync_store(find_repo_root(os.getcwd()))
         emit(args.json, payload, f"not merged: {reason} {message}".rstrip() if reason
              else f"merged {args.url} (noFastForward)" + _specs_note(payload["specs"]))
@@ -134,7 +150,9 @@ def merge_azure(args, match: re.Match) -> int:
         print(f"checks pending; re-reading in {POLL_S}s", file=sys.stderr, flush=True)
         time.sleep(POLL_S)
     payload.update(checks=state, notGreen=names)
-    if state != "green":
+    if state == "no-checks" and getattr(args, "allow_no_checks", False):
+        payload["noChecksAccepted"] = True
+    elif state != "green":
         return finish(state, message)
     now, message = _read(route + ["--http-method=GET"], dict)
     if now is None:
@@ -154,7 +172,13 @@ def merge_azure(args, match: re.Match) -> int:
     with tempfile.TemporaryDirectory(prefix="cq-pr-merge-") as scratch:
         path = Path(scratch) / "completion.json"
         path.write_text(json.dumps(body), encoding="utf-8")
-        code, out, err = _az(*route, "--http-method=PATCH", f"--in-file={path}")
+        # `az devops invoke` resolves `pullRequests` to the project-scoped location, which is
+        # read-only (405 on PATCH); completion lives under the repository, reached by `az rest`.
+        update = (f"{org}/{match['project']}/_apis/git/repositories/{match['repo']}"
+                  f"/pullrequests/{number}?api-version=7.1")
+        code, out, err = _az("rest", "--method=patch", f"--url={update}",
+                             f"--resource={AZURE_DEVOPS_RESOURCE}", f"--body=@{path}",
+                             "--output=json")
     if code != 0:
         late, _ = _read(route + ["--http-method=GET"], dict)
         if (late is not None and late.get("pullRequestId") == number

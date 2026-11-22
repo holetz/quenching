@@ -135,13 +135,13 @@ _k("shared.autonomy.livenessMinutes", "integer", AUTONOMY["livenessMinutes"], "a
    ("Worker liveness (minutes)", "Silence after which a worker is checked on."),
    ("Vida do worker (minutos)", "Silêncio depois do qual um worker é verificado."), minimum=1)
 _k("shared.contextBudgets.main", "integer", BUDGETS["main"], "autonomy", "machine",
-   "cq session context", ("Main session budget", "Tokens the main session plans around."),
+   "cq components session context", ("Main session budget", "Tokens the main session plans around."),
    ("Orçamento da sessão principal", "Tokens que a sessão principal considera."), minimum=1)
 _k("shared.contextBudgets.worker", "integer", BUDGETS["worker"], "autonomy", "machine",
-   "cq session context", ("Worker budget", "A size estimate for one worker, never a limit."),
+   "cq components session context", ("Worker budget", "A size estimate for one worker, never a limit."),
    ("Orçamento do worker", "Estimativa de tamanho de um worker, nunca um limite."), minimum=1)
 _k("shared.contextBudgets.conductor", "integer", BUDGETS["conductor"], "autonomy", "machine",
-   "cq session context", ("Conductor budget", "Tokens the orchestrating session plans around."),
+   "cq components session context", ("Conductor budget", "Tokens the orchestrating session plans around."),
    ("Orçamento do condutor", "Tokens que a sessão que orquestra considera."), minimum=1)
 # — Prompt cache (the quenching-cache bar) —
 _k("shared.cache.rebuildLimitUsd", "number", CACHE_BAR["rebuildLimitUsd"], "cache", "either",

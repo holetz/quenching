@@ -118,9 +118,17 @@ def close_attribution(ordered: list, timeline: list, anomalies: list) -> None:
     tool exists to avoid.
     """
     for cmd in ordered:
+        mine = [line for line, name in timeline if name == cmd.name]
+        starts = [inv["line"] for inv in cmd.invocations]
         for inv in cmd.invocations:
             caller = inv.get("invokedBy")
             if inv["form"] != "skill" or not caller:
+                # A direct execution ends at this command's last attributed line before its
+                # next invocation: the same timeline evidence that closes a stage.
+                nxt = min((s for s in starts if s > inv["line"]), default=None)
+                inside = [line for line in mine
+                          if line >= inv["line"] and (nxt is None or line < nxt)]
+                cmd.direct.append((inv["line"], max(inside, default=inv["line"])))
                 continue
             resumed = next((line for line, name in timeline
                             if line > inv["line"] and name == caller), None)
@@ -132,9 +140,15 @@ def close_attribution(ordered: list, timeline: list, anomalies: list) -> None:
                     "message": f"{cmd.name} was invoked as a stage by {caller}, which never "
                                f"regained attribution — counts for {cmd.name} are an upper "
                                f"bound and may include {caller}'s own turns"})
+                cmd.runs.append((inv["line"], cmd.last))
             else:
-                # The conductor came back, so the stage's run genuinely ends before it.
-                cmd.last = min(cmd.last, resumed - 1) if cmd.last is not None else None
+                # The conductor came back, so this run genuinely ends before it.
+                cmd.runs.append((inv["line"], min(cmd.last, resumed - 1)))
+        if cmd.runs:
+            # The attributed run ends where the LAST execution ends, never at the first resume:
+            # the counts already include every execution, direct ones too, and the window must
+            # agree with them.
+            cmd.last = max(hi for _, hi in cmd.runs + cmd.direct)
 
 
 def read_session(path: Path) -> dict:

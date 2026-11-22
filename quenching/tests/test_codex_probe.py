@@ -54,6 +54,10 @@ if sys.argv[1:2] == ["app-server"]:
             reply = {"id": message["id"], "result": {"userAgent": "fake"}}
         elif mode == "error":
             reply = {"id": message["id"], "error": {"code": -32601, "message": "method not found"}}
+        elif mode == "error-string":
+            reply = {"id": message["id"], "error": "boom"}
+        elif mode == "result-string":
+            reply = {"id": message["id"], "result": "boom"}
         else:
             reply = {"id": message["id"], "result": json.loads(os.environ["FAKE_CODEX_LIMITS"])}
         print(json.dumps({"method": "account/rateLimits/updated", "params": {}}), flush=True)
@@ -243,6 +247,18 @@ class TheSessionsFallback(FakeCodex):
         self.assertEqual("sessions", out["source"])
         self.assertIn("method not found", out["appServerError"])
 
+    def test_a_json_rpc_error_given_as_a_string_falls_back(self):
+        self.env.update(FAKE_CODEX_MODE="error-string", CODEX_HOME=str(FIXTURE_HOME))
+        out = probe(self.settings(), env=self.env, now=self.NOW_BEFORE_RESET)
+        self.assertEqual("sessions", out["source"])
+        self.assertIn("boom", out["appServerError"])
+
+    def test_a_result_that_is_not_an_object_falls_back(self):
+        self.env.update(FAKE_CODEX_MODE="result-string", CODEX_HOME=str(FIXTURE_HOME))
+        out = probe(self.settings(), env=self.env, now=self.NOW_BEFORE_RESET)
+        self.assertEqual("sessions", out["source"])
+        self.assertIn("result is not an object", out["appServerError"])
+
     def test_a_stale_snapshot_is_unknown(self):
         self.env.update(FAKE_CODEX_MODE="crash", CODEX_HOME=str(FIXTURE_HOME))
         out = probe(self.settings(), env=self.env, now=1788300000)
@@ -387,6 +403,12 @@ class TheCommandLine(FakeCodex):
         self.assertFalse(json.loads(out)["ok"])
         self.env["FAKE_CODEX_MODE"] = "crash"
         self.assertEqual(2, self.run_main(["probe", "--root", root])[0])
+
+    def test_a_string_error_with_no_sessions_exits_unknown(self):
+        self.env["FAKE_CODEX_MODE"] = "error-string"
+        code, out = self.run_main(["--root", str(self.tmp), "probe", "--json"])
+        self.assertEqual(2, code)
+        self.assertEqual("unknown", json.loads(out)["state"])
 
     def test_the_probe_reports_no_sandbox(self):
         code, out = self.run_main(["--root", str(self.tmp), "probe", "--json"])

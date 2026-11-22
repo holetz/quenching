@@ -7,6 +7,8 @@ some prior, real reading of a transcript got it wrong, and the comment on each r
 which mistake.
 """
 import argparse
+import contextlib
+import io
 import json
 import pathlib
 import tempfile
@@ -14,6 +16,7 @@ import unittest
 
 import _paths  # noqa: F401  — must precede the `quenching` import; see its docstring
 from quenching.session.commands.cli import build_parser
+from quenching.session.evidence import assign_corrections
 from quenching.session.parse import read_session, silence_refusal
 
 # A typed `/` invocation, a conducted stage, redundant vs. paged reads, a write miscounted
@@ -87,6 +90,62 @@ CLOSED_FIXTURE = [
     {"type": "assistant", "uuid": "c4", "attributionSkill": "demo:conduct",
      "message": {"content": [{"type": "tool_use", "name": "Bash", "input": {"command": "b"}}]}},
 ]
+
+# A stage run TWICE by its conductor, each time resumed: lines 2-5 and 7-9, the conductor
+# taking attribution back at 6 and 10. The human corrects the stage inside each run (4, 8),
+# and both turns sit inside the conductor's wider run too.
+TWO_RUNS_FIXTURE = [
+    {"type": "user", "uuid": "t1",
+     "message": {"content": "<command-name>/demo:conduct</command-name>"}},
+    {"type": "assistant", "uuid": "t2", "attributionSkill": "demo:conduct",
+     "message": {"content": [{"type": "tool_use", "name": "Skill",
+                              "input": {"skill": "demo:stage"}}]}},
+    {"type": "assistant", "uuid": "t3", "attributionSkill": "demo:stage",
+     "message": {"content": [{"type": "tool_use", "name": "Bash", "input": {"command": "a"}}]}},
+    {"type": "user", "uuid": "t4",
+     "message": {"content": [{"type": "text", "text": "pare, isso esta errado"}]}},
+    {"type": "assistant", "uuid": "t5", "attributionSkill": "demo:stage",
+     "message": {"content": [{"type": "tool_use", "name": "Bash", "input": {"command": "b"}}]}},
+    {"type": "assistant", "uuid": "t6", "attributionSkill": "demo:conduct",
+     "message": {"content": [{"type": "tool_use", "name": "Bash", "input": {"command": "c"}}]}},
+    {"type": "assistant", "uuid": "t7", "attributionSkill": "demo:conduct",
+     "message": {"content": [{"type": "tool_use", "name": "Skill",
+                              "input": {"skill": "demo:stage"}}]}},
+    {"type": "user", "uuid": "t8",
+     "message": {"content": [{"type": "text", "text": "[Request interrupted by user]"}]}},
+    {"type": "assistant", "uuid": "t9", "attributionSkill": "demo:stage",
+     "message": {"content": [{"type": "tool_use", "name": "Bash", "input": {"command": "d"}}]}},
+    {"type": "assistant", "uuid": "t10", "attributionSkill": "demo:conduct",
+     "message": {"content": [{"type": "tool_use", "name": "Bash", "input": {"command": "e"}}]}},
+]
+
+# A stage typed DIRECTLY first (1-4, corrected by the human at 3), then run as a stage by its
+# conductor (6-7), then typed directly again (9-10). The direct runs must keep their windows
+# beside the stage's — the regression of 2258 dropped them and left line 3 unassigned.
+DIRECT_THEN_STAGE_FIXTURE = [
+    {"type": "user", "uuid": "d1",
+     "message": {"content": "<command-name>/demo:stage</command-name>"}},
+    {"type": "assistant", "uuid": "d2", "attributionSkill": "demo:stage",
+     "message": {"content": [{"type": "tool_use", "name": "Bash", "input": {"command": "a"}}]}},
+    {"type": "user", "uuid": "d3",
+     "message": {"content": [{"type": "text", "text": "pare, isso esta errado"}]}},
+    {"type": "assistant", "uuid": "d4", "attributionSkill": "demo:stage",
+     "message": {"content": [{"type": "tool_use", "name": "Bash", "input": {"command": "b"}}]}},
+    {"type": "user", "uuid": "d5",
+     "message": {"content": "<command-name>/demo:conduct</command-name>"}},
+    {"type": "assistant", "uuid": "d6", "attributionSkill": "demo:conduct",
+     "message": {"content": [{"type": "tool_use", "name": "Skill",
+                              "input": {"skill": "demo:stage"}}]}},
+    {"type": "assistant", "uuid": "d7", "attributionSkill": "demo:stage",
+     "message": {"content": [{"type": "tool_use", "name": "Bash", "input": {"command": "c"}}]}},
+    {"type": "assistant", "uuid": "d8", "attributionSkill": "demo:conduct",
+     "message": {"content": [{"type": "tool_use", "name": "Bash", "input": {"command": "d"}}]}},
+    {"type": "user", "uuid": "d9",
+     "message": {"content": "<command-name>/demo:stage</command-name>"}},
+    {"type": "assistant", "uuid": "d10", "attributionSkill": "demo:stage",
+     "message": {"content": [{"type": "tool_use", "name": "Bash", "input": {"command": "e"}}]}},
+]
+
 
 # A transcript that plainly HELD something and yielded no command. The point of the case
 # is that this must never come back as a clean, empty report.
@@ -195,6 +254,98 @@ class ClosedFixture(unittest.TestCase):
 
     def test_no_anomaly_is_raised_on_the_clean_case(self):
         self.assertEqual(self.anomalies, [])
+
+
+class TwoRunsFixture(unittest.TestCase):
+    """A stage executed twice has one window per execution, and its attributed run ends
+    where the LAST execution ends — never frozen at the first resume while the counts
+    already include the second."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.model = _read(TWO_RUNS_FIXTURE)
+        cls.by_name = {c.name: c for c in cls.model["_commands"]}
+
+    def test_each_execution_is_its_own_window(self):
+        self.assertEqual(self.by_name["demo:stage"].runs, [(2, 5), (7, 9)])
+
+    def test_the_run_ends_where_the_last_execution_ends(self):
+        self.assertEqual(self.by_name["demo:stage"].last, 9)
+
+    def test_the_window_agrees_with_the_counts_of_both_executions(self):
+        stage = self.by_name["demo:stage"]
+        self.assertEqual(stage.tool_calls, 3)
+        self.assertTrue(stage.closed)
+        self.assertEqual(stage.as_dict()["attributedRun"]["runs"], [[2, 5], [7, 9]])
+
+    def test_a_command_never_invoked_as_a_stage_has_no_windows(self):
+        self.assertEqual(self.by_name["demo:conduct"].runs, [])
+        self.assertEqual(self.by_name["demo:conduct"].last, 10)
+
+    def test_a_correction_inside_the_stage_belongs_to_the_stage_not_its_conductor(self):
+        attached, unassigned = assign_corrections(self.model["corrections"],
+                                                  self.model["_commands"])
+        self.assertEqual([(c["line"], c["when"]) for c in attached["demo:stage"]],
+                         [(4, "during"), (8, "during")])
+        self.assertEqual(attached["demo:conduct"], [])
+        self.assertEqual(unassigned, [])
+
+    def test_a_turn_between_two_executions_belongs_to_the_conductor(self):
+        turn = {"line": 6, "timestamp": None, "kind": "interjection", "text": "x"}
+        attached, _ = assign_corrections([turn], self.model["_commands"])
+        self.assertEqual([c["line"] for c in attached["demo:conduct"]], [6])
+        self.assertEqual(attached["demo:stage"], [])
+
+    def test_the_digest_counts_the_stages_corrections_on_the_stage(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = pathlib.Path(tmp) / "t.jsonl"
+            path.write_text("\n".join(json.dumps(r) for r in TWO_RUNS_FIXTURE) + "\n",
+                            encoding="utf-8")
+            out = io.StringIO()
+            with contextlib.redirect_stdout(out):
+                args = build_parser().parse_args(
+                    ["digest", str(path), "--command", "demo:stage", "--json"])
+                args.func(args)
+        stage = json.loads(out.getvalue())["commands"][0]
+        self.assertEqual(stage["attributedRun"]["lastLine"], 9)
+        self.assertEqual([c["line"] for c in stage["corrections"]], [4, 8])
+        self.assertEqual((stage["counts"]["interrupts"], stage["counts"]["interjections"]),
+                         (1, 1))
+
+
+class DirectThenStageFixture(unittest.TestCase):
+    """A command run directly AND as a stage keeps one window per direct execution beside
+    its stage windows, and its attributed run ends where the last of either kind ends."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.model = _read(DIRECT_THEN_STAGE_FIXTURE)
+        cls.by_name = {c.name: c for c in cls.model["_commands"]}
+
+    def test_each_direct_execution_is_its_own_window(self):
+        self.assertEqual(self.by_name["demo:stage"].direct, [(1, 4), (9, 10)])
+
+    def test_the_stage_windows_stay_the_stage_executions_only(self):
+        stage = self.by_name["demo:stage"]
+        self.assertEqual(stage.runs, [(6, 7)])
+        self.assertEqual(stage.as_dict()["attributedRun"]["runs"], [[6, 7]])
+
+    def test_the_run_ends_where_the_last_execution_of_either_kind_ends(self):
+        self.assertEqual(self.by_name["demo:stage"].last, 10)
+
+    def test_a_command_never_invoked_as_a_stage_keeps_no_stage_windows(self):
+        conduct = self.by_name["demo:conduct"]
+        self.assertEqual(conduct.runs, [])
+        self.assertEqual(conduct.direct, [(5, 8)])
+        self.assertEqual(conduct.last, 8)
+
+    def test_a_correction_inside_the_direct_execution_belongs_to_the_command(self):
+        attached, unassigned = assign_corrections(self.model["corrections"],
+                                                  self.model["_commands"])
+        self.assertEqual([(c["line"], c["when"]) for c in attached["demo:stage"]],
+                         [(3, "during")])
+        self.assertEqual(attached["demo:conduct"], [])
+        self.assertEqual(unassigned, [])
 
 
 class SilenceRefusal(unittest.TestCase):

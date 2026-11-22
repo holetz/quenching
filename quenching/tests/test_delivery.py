@@ -330,6 +330,47 @@ class DeliveryResults(unittest.TestCase):
             self.assertNotIn("delivery-trigger-unreachable",
                              {item["code"] for item in payload["findings"]})
 
+    def test_quoted_on_key_is_a_trigger(self):
+        for key in ('"on"', "'on'"):
+            payload, code = self._run({
+                ".github/workflows/ci.yml": (
+                    "name: CI\n" + key + ":\n  push:\n    branches: [main]\njobs:\n"
+                    "  t:\n    runs-on: ubuntu-latest\n    steps:\n"
+                    "      - uses: actions/checkout@v4\n      - run: echo ok\n"),
+            })
+            self.assertEqual(["push"], payload["inventory"]["workflows"][0]["triggers"], key)
+            self.assertNotIn("delivery-trigger-unreachable",
+                             {item["code"] for item in payload["findings"]}, key)
+            self.assertEqual(0, code, key)
+
+    def test_absent_trigger_key_is_the_platform_default_push(self):
+        cases = {
+            "azure": ("azure-pipelines.yml",
+                      "pool:\n  vmImage: ubuntu-latest\nsteps:\n- checkout: self\n- script: echo ok\n"),
+            "gitlab": (".gitlab-ci.yml", "test:\n  script:\n    - echo ok\n"),
+        }
+        for name, (path, body) in cases.items():
+            payload, code = self._run({path: body})
+            self.assertEqual(["push"], payload["inventory"]["workflows"][0]["triggers"], name)
+            self.assertNotIn("delivery-trigger-unreachable",
+                             {item["code"] for item in payload["findings"]}, name)
+            self.assertEqual(0, code, name)
+
+    def test_github_job_container_is_setup(self):
+        for container in ("    container: python:3.12-slim\n",
+                          "    container:\n      image: python:3.12-slim\n"):
+            payload, code = self._run({
+                ".github/workflows/ci.yml": (
+                    "on: push\njobs:\n  test:\n    runs-on: ubuntu-latest\n" + container
+                    + "    steps:\n      - uses: actions/checkout@v4\n"
+                    "      - run: python -m unittest\n"),
+            })
+            job = payload["inventory"]["workflows"][0]["jobDetails"][0]
+            self.assertTrue(job["setup"], container)
+            self.assertNotIn("delivery-setup-missing",
+                             {item["code"] for item in payload["findings"]}, container)
+            self.assertEqual(0, code, container)
+
     def test_matrix_setup_uv_and_bash_only_jobs_raise_no_false_errors(self):
         payload, code = self._run({
             ".github/workflows/ci.yml": (

@@ -247,6 +247,22 @@ class CmdReleaseCommit(Lockstep):
         return subprocess.run(["git", *argv], cwd=self.tmp, capture_output=True, text=True,
                               check=True).stdout
 
+    def test_a_primary_branch_with_a_slash_is_not_refused_as_the_wrong_branch(self):
+        self.git("branch", "-m", "main", "team/main")
+        self.git("update-ref", "refs/remotes/origin/team/main", "HEAD")
+        self.git("symbolic-ref", "refs/remotes/origin/HEAD", "refs/remotes/origin/team/main")
+        write_text(os.path.join(self.tmp, "stray.txt"), "dirty\n")  # stop before any write
+        from quenching.specs.commands.output import Emitter
+        from quenching.specs.commands.release import cmd_release
+        cwd = os.getcwd()
+        os.chdir(self.tmp)
+        self.addCleanup(os.chdir, cwd)
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf):
+            cmd_release(argparse.Namespace(new_version="9.10.0", json=True), self.tmp, Emitter())
+        payload = json.loads(buf.getvalue())
+        self.assertEqual(payload.get("code"), "sp-release-dirty", payload)
+
     def release(self):
         from quenching.specs.commands.output import Emitter
         from quenching.specs.commands.release import cmd_release

@@ -137,6 +137,20 @@ class VerifiedFamily(unittest.TestCase):
             "verified: { by: reviewer, at: 2026-06-25T09:00:00Z }")}))
         self.assertIn("verified-by-invalid", codes)
 
+    def test_an_inline_list_of_multi_key_events_is_read(self):
+        codes = _codes(_bundle({"a.md": _doc(
+            "generated: { by: human:a, at: 2026-06-20T22:53:05Z }\n"
+            "verified: [{by: human:x, at: 2026-01-01T00:00:00+00:00}, "
+            "{by: process:nightly, at: 2026-01-02T00:00:00Z}]")}))
+        self.assertEqual(codes, set())
+
+    def test_an_inline_list_still_checks_each_actor(self):
+        codes = _codes(_bundle({"a.md": _doc(
+            "generated: { by: human:a, at: 2026-06-20T22:53:05Z }\n"
+            "verified: [{by: reviewer, at: 2026-01-01T00:00:00Z}]")}))
+        self.assertIn("verified-by-invalid", codes)
+        self.assertNotIn("verified-malformed", codes)
+
 
 class LifecycleFamily(unittest.TestCase):
     def test_a_known_status_and_a_datetime_are_silent(self):
@@ -176,6 +190,20 @@ class SourcesFamily(unittest.TestCase):
             "    resource: x")}))
         self.assertIn("source-missing-resource", codes)
         self.assertIn("source-id-duplicate", codes)
+
+    def test_an_inline_list_of_multi_key_sources_is_checked(self):
+        codes = _codes(_bundle({"a.md": _doc(
+            "generated: { by: human:a, at: 2026-06-20T22:53:05Z }\n"
+            "sources: [{resource: a.md, id: x}, {resource: b.md, id: x}, {id: y}]")}))
+        self.assertNotIn("sources-malformed", codes)
+        self.assertIn("source-id-duplicate", codes)
+        self.assertIn("source-missing-resource", codes)
+
+    def test_a_quoted_comma_stays_inside_its_value(self):
+        codes = _codes(_bundle({"a.md": _doc(
+            "generated: { by: human:a, at: 2026-06-20T22:53:05Z }\n"
+            'sources: [{id: p, resource: a.md, title: "Policy, revised"}]')}))
+        self.assertEqual(codes, set())
 
     def test_a_usage_window_needs_both_ends(self):
         self.assertIn("usage-window-invalid", _codes(_bundle({"a.md": _doc(

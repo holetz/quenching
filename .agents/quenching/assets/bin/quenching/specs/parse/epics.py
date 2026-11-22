@@ -167,6 +167,22 @@ def find_cycle(items: list[dict]) -> list[str] | None:
     return None
 
 
+def task_after_problems(info: dict) -> dict:
+    """The task `after:` labels that can never be satisfied, for one document.
+
+    `unknown` lists `{task, label, line}` for every label naming neither a task id nor a spec
+    item of this document — the set `next` counts as done. `cycle` is one task cycle as a label
+    path, or `None`. A spec item's own `after:` is `composition_findings`'s, not this one's."""
+    tasks = info.get("tasks") or []
+    known = {t["id"] for t in tasks if t["id"]}
+    known |= {i["label"] for i in info.get("links") or [] if i.get("label")}
+    unknown = [{"task": t["id"] or t["index"], "label": d, "line": t["lineno"]}
+               for t in tasks for d in t.get("after") or [] if d not in known]
+    cycle = find_cycle([{"label": t["id"], "after": t.get("after") or []}
+                        for t in tasks if t["id"]])
+    return {"unknown": unknown, "cycle": cycle}
+
+
 def composition_cycle(infos: dict[str, dict]) -> list[str] | None:
     """One member cycle across composites (`A -> B -> A`), or `None`.
 

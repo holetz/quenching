@@ -13,6 +13,52 @@ owner: [`ci-cd/versioning-release.md`](docs/standards/ci-cd/versioning-release.m
 short version for a consumer: the version is published once, deliberately, as a release — never at a
 spec's own conclude — and `cq --version` is what answers which one you are running.
 
+## 7.11.1
+
+**O `cq git pr merge` aceita PR sem checks sob `--allow-no-checks`** e carimba o `--spec` no Azure,
+  para provedores sem CI; a conclusão de PR no Azure vai pela rota do repositório (`az rest`), não
+  pela do projeto, que recusa PATCH; e um slot sem linha no reconcile se libera com
+  `cq worktree release` (#220).
+
+## 7.11.0
+
+**O `cq specs` pega o que antes passava calado.** O `validate` acusa um fence não fechado dentro de
+  uma seção e um `after:` de task que nomeia rótulo inexistente ou forma ciclo (`sp-after-unknown`,
+  `sp-after-cycle`), e o `next` marca essas linhas em vez de responder `blocked` para sempre; o
+  `section --write` recusa um fence aberto e um corpo vazio, que antes apagavam seções; o
+  `cq specs parallel` respeita o `after:` dentro do grupo; e o `cq knowledge nav` recusa um
+  `nav = [` sem fechamento (`nav-unclosed`) e não congela num colchete desbalanceado (#161, #164,
+  #169, #176, #188, #213, #215, #219).
+
+**O git deixa de tratar branch sem trabalho próprio como mesclada.** A evidência de merge, os slots,
+  o `stale` e o `prune` usam a mesma regra (`has_own_work`): uma branch recém-cortada ou só
+  avançada por fast-forward não é apagada nem dada como mesclada; o `cleanup` recupera slots; o
+  `cq git base` aceita branch padrão com barra (`team/main`); o `refresh` distingue base remota
+  ausente de fetch que falhou; e os `sharedPaths` com `.` e a descrição do PR no Azure foram
+  corrigidos (#89, #142, #155, #156, #159, #160, #162, #163, #167, #178).
+
+**O pre-push examina só o que vai publicar, e falha fechado.** O leak e o identity no pre-push não
+  reexaminam commits que o remoto já tem, validam o `local_sha`, reconhecem o sha de deleção em
+  sha256 e não recusam com exit 2 um sha remoto ausente do clone (#168, #180, #185).
+
+**O executor do Codex endurecido.** A guarda recusa quando o `git status` ou a leitura de refs
+  falha (`refsUnreadable`), um caminho `./docs/…` não contorna mais a recusa de `docs/`, o
+  `implement` usa o mesmo modelo pequeno que o `eligible` reporta, e o `probe` lê um erro em texto
+  puro (#194, #197, #200, #202, #204, #214).
+
+**Correções:** o servidor `cq mcp` responde erro a `params` que não é objeto em vez de cair (#198);
+  o `cq delivery doctor` aceita CI válido (`"on":`, Azure sem `trigger:`, GitLab sem `rules:`,
+  `container:`) (#201); o digest de sessão atribui a correção ao estágio certo e devolve a janela
+  das execuções diretas (#173, #186); o `session cost` mede a sessão atual (#177); o `cq deploy
+  --modules all` sai em ordem determinística e não deixa skills órfãs (#147, #154); o toolchain
+  reconhece `yarn.lock` e `pnpm-lock.yaml` e o `doctor` nomeia o que falhou (#148, #152); o
+  `proof ratchet` diz o que gravou (#149, #158); o `--affected` segue imports indiretos (#146); a
+  configuração nomeia uma folha desconhecida em namespace conhecido (#153); a listagem e a nav do
+  knowledge ignoram docs privados `_` (#172, #187); o check de glossário lê o molde documentado
+  (#171); a ponte OpenCode restringe o `task` do orquestrador (#157); o corpo do orquestrador trata
+  `stamp-failed` e `checks-unreadable` no merge (#217); e o README do `quenching-hud` aponta a
+  instalação certa (#216). Dependências do `uv.lock` atualizadas (#166).
+
 ## 7.10.0
 
 **Chega o `quenching-cache`, a faixa do cache de prompt.** Um plugin novo do marketplace

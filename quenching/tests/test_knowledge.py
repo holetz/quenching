@@ -184,6 +184,22 @@ class NavRefusalsAndConfigTolerance(unittest.TestCase):
         self.assertEqual(code, 2)
         self.assertEqual(json.loads(out)["code"], "nav-config-unreadable")
 
+    def test_unclosed_nav_is_a_refusal_in_check_and_write(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            os.mkdir(os.path.join(tmp, "docs"))
+            pathlib.Path(tmp, "docs", "index.md").write_text("# Home\n")
+            config = pathlib.Path(tmp, "zensical.toml")
+            raw = b'[project]\nnav = [\n  "index.md",\n'
+            config.write_bytes(raw)
+            for mode in ("--check", "--write"):
+                with self.subTest(mode=mode):
+                    out = io.StringIO()
+                    with contextlib.redirect_stdout(out), contextlib.redirect_stderr(io.StringIO()):
+                        code = knowledge_cli.main(["nav", "--root", tmp, mode, "--json"])
+                    self.assertEqual(code, 2)
+                    self.assertEqual(json.loads(out.getvalue())["code"], "nav-unclosed")
+                    self.assertEqual(config.read_bytes(), raw)
+
     def _validate_with_config(self, raw: bytes):
         with tempfile.TemporaryDirectory() as tmp:
             hooks = pathlib.Path(tmp, ".claude", "hooks")
@@ -590,6 +606,16 @@ class GeneratedListingChecker(unittest.TestCase):
         self.assertEqual(len(missing), 2, missing)
         self.assertTrue(any("standards/code/imports.md" in m for m in missing), missing)
 
+    def test_a_loose_private_file_is_owed_no_row(self):
+        # The site-source never publishes a `_`/`.`-named file (site_source.py prunes it), so a
+        # row for it would point at a page that is not there. The corpus still reads it.
+        fixture = dict(CONFORMANT_ZONE)
+        fixture["standards/code/_rascunho.md"] = _standard("Rascunho", "rascunho privado")
+        fixture["standards/code/.oculto.md"] = _standard("Oculto", "dot file")
+        missing = {msg for sev, rel, code, msg in _validated(fixture)
+                   if code == "generated-listing-missing"}
+        self.assertEqual(missing, set())
+
     def test_whitespace_around_a_cell_is_not_drift(self):
         fixture = _generated_fixture(("imports.md",), "How we import   ")
         drift = {code for sev, rel, code, msg in _validated(fixture)
@@ -619,6 +645,23 @@ class SourceAndGlossaryLint(unittest.TestCase):
         codes = self._codes({"glossary.md": gl})
         self.assertIn("glossary-order", codes)
         self.assertIn("glossary-duplicate", codes)
+
+    def test_the_documented_star_mold_warns_on_duplicates_and_order(self):
+        # The skeleton, `define` and `glossary-backfill` publish `* **Term** —` and
+        # `* [Term](path.md) —`; both must be read as entries.
+        head = ("---\ntype: concept\ntitle: G\ndescription: D\nresource: x\ntimestamp: 2026-01-01\n---\n"
+                "# G\n\n## Terms\n\n")
+        for alpha in ("* **Alpha** — a.", "* [Alpha](a.md) — a."):
+            with self.subTest(alpha=alpha):
+                gl = head + f"* **Zeta** — z.\n{alpha}\n* **Alpha** — a again.\n"
+                codes = self._codes({"glossary.md": gl})
+                self.assertIn("glossary-order", codes)
+                self.assertIn("glossary-duplicate", codes)
+
+    def test_a_long_star_entry_warns(self):
+        gl = ("---\ntype: concept\ntitle: G\ndescription: D\nresource: x\ntimestamp: 2026-01-01\n---\n"
+              "# G\n\n## Terms\n\n* **Alpha** — " + " ".join(["w"] * 80) + "\n")
+        self.assertIn("glossary-entry-long", self._codes({"glossary.md": gl}))
 
     def test_a_sorted_glossary_with_a_core_block_is_clean(self):
         gl = ("---\ntype: concept\ntitle: G\ndescription: D\nresource: x\ntimestamp: 2026-01-01\n---\n"
