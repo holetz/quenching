@@ -82,8 +82,8 @@ def _split_files(val: str) -> list[str]:
 FILES_ANNOTATION_RE = re.compile(r"\s*\(([^()]*)\)\s*$")
 
 # THE RESERVED `files:` ANNOTATIONS — a closed grammar owned HERE and nowhere else, so no
-# consumer re-derives the set. `new` marks a path about to be created, which `_norm_file`
-# strips for comparisons. `operational` declares a task that writes no repository file at
+# consumer re-derives the set. `new` marks a path about to be created, which `repo_path`
+# (`quenching.common.paths`) strips for comparisons. `operational` declares a task that writes no repository file at
 # all: its proof is the `verify:`. Read the pair through `is_operational` and
 # `operational_entries` rather than spelling either name again.
 FILES_ANNOTATIONS = ("new", "operational")
