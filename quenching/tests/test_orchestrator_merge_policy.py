@@ -20,6 +20,16 @@ class MergePolicyTests(unittest.TestCase):
         self.assertIn(CANONICAL, body)
         self.assertNotIn("carries the dated autonomy policy", body)
 
+    def test_prohibition_matches_the_merge_step(self):
+        body = text("quenching/agents/spec-orchestrator.md")
+        self.assertNotIn("never merge or close a spec yourself", body)
+        self.assertIn("never a raw `git merge`", body)
+
+    def test_merge_reasons_stamp_failed_and_checks_unreadable_are_mapped(self):
+        body = text("quenching/agents/spec-orchestrator.md")
+        self.assertIn("`stamp-failed` is a merge that happened", body)
+        self.assertIn("`checks-unreadable`", body)
+
     def test_improve_records_the_canonical_text_only_when_forced_execution_is_chosen(self):
         body = text("quenching/skills/quenching-specs/references/improve.md")
         self.assertIn(CANONICAL, body)
