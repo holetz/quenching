@@ -82,7 +82,13 @@ reported (with an ID), or explicitly skipped (without one).
 Only when step 1's worktree list held a **separate** worktree for the merged branch (not the base's
 own checkout) and step 3 exited 0. A **slot** (`../<repo>-slot-<n>`) is never removed here: step 4's
 `reconcile` already released it (its row's `slot`), and a slot it could not release stays held
-with the reason reported. Any other worktree:
+with the reason reported. A slot still locked to the merged branch with **no** `reconcile` row
+(the spec was archived by an earlier write, so `reconcile` had nothing to do) is released here —
+never `cq git worktree retire`, which removes worktrees and refuses a locked slot:
+```bash
+.agents/quenching/bin/cq git worktree release --path <the slot path> --json
+```
+Any other worktree:
 ```bash
 git -C <the base's checkout> worktree remove <the worktree path>
 ```
