@@ -18,7 +18,7 @@ try:
 except ModuleNotFoundError:  # package-qualified unittest invocation from the repository root
     sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
     import _paths  # noqa: F401
-from quenching.codex.guard import GuardError, base_moves, base_state, touched
+from quenching.codex.guard import GuardError, base_moves, base_state, refs, touched
 
 ENV = {**os.environ, "GIT_AUTHOR_NAME": "t", "GIT_AUTHOR_EMAIL": "t@t",
        "GIT_COMMITTER_NAME": "t", "GIT_COMMITTER_EMAIL": "t@t", "GIT_CONFIG_GLOBAL": os.devnull}
@@ -105,6 +105,18 @@ class BaseGuard(unittest.TestCase):
         pathlib.Path(self.base, ".git", "index").write_bytes(b"DIRC")
         with self.assertRaises(GuardError):
             touched(self.base)
+
+    def test_a_detached_head_without_a_stash_reads_as_empty_refs(self):
+        git(self.work, "checkout", "-q", "--detach")
+        state = refs(self.work)
+        self.assertEqual((state["branch"], state["stash"]), ("", ""))
+        self.assertEqual(state["head"], git(self.work, "rev-parse", "HEAD"))
+        self.assertGreater(state["reflogLength"], 0)
+
+    def test_an_unreadable_head_fails_closed(self):
+        git(self.work, "symbolic-ref", "HEAD", "refs/heads/gone")
+        with self.assertRaises(GuardError):
+            refs(self.work)
 
 
 if __name__ == "__main__":
