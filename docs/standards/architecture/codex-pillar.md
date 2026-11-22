@@ -7,7 +7,7 @@ tags: [architecture, codex, pillar, git-guard, quota, executor]
 timestamp: 2026-11-21
 audience: both
 authority: current
-source: specs 1818, 1879, 1661, 1660, 1817, 1914, 2190, 2199, 191, ADR 0014 — lineage in decision 0004
+source: specs 1818, 1879, 1661, 1660, 1817, 1914, 2190, 2199, 191, 199, ADR 0014 — lineage in decision 0004
 maintainer: quenching
 ---
 
@@ -112,7 +112,11 @@ The **git guard** (§The git guard) is read before and after, with `git status` 
 task as `needs-human` naming them instead. A `git status` that fails, before the run (Codex is never
 started) or after it, is exit 2 `codex-git-guard` with `statusUnreadable: true` and no `discard`:
 what Codex wrote cannot be proved inside `files:`, so the caller discards nothing and stops the task
-as `needs-human`.
+as `needs-human`. A read of the worktree's refs that fails is the same: only a detached `HEAD` and an
+absent stash read as empty state, any other failing read of `HEAD`, the branch, the reflog or the
+stash, before the run (Codex is never started) or after it, is exit 2 `codex-git-guard` with
+`refsUnreadable: true` and no `discard`, and the caller stops the task as `needs-human`. A failing
+`git rev-parse --show-toplevel` is the `codex-worktree-not-toplevel` refusal.
 
 Exit 0 is a diff inside `files:`; exit 1 (ineligible, timeout, Codex error) falls back to Claude.
 The payload carries `tokens` (from `turn.completed.usage`, or `not measured`), `quotaBefore`,

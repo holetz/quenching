@@ -14,7 +14,10 @@ ref is a divergence), and `git status` contained in `files:`. A divergence is
 exit 2 with the offending paths. With `outside` non-empty (paths `files:` never declared) Claude
 may not clean them: it stops the task as `needs-human` naming them. A `git status` that fails,
 before or after the run, is exit 2 `codex-git-guard` with `statusUnreadable: true` and no
-`discard`: what Codex wrote is unknown, so the task stops as `needs-human` too. With `outside` empty (a moved
+`discard`: what Codex wrote is unknown, so the task stops as `needs-human` too. A read of the
+worktree's refs that fails, before the run (Codex never starts) or after it, is the same exit 2
+with `refsUnreadable: true` and no `discard`. A failing `git rev-parse --show-toplevel` is the
+`codex-worktree-not-toplevel` refusal. With `outside` empty (a moved
 `HEAD`, branch, reflog or stash) Claude discards the diff inside `files:` (never `reset`, `stash`
 or `checkout`) and writes the task itself.
 
@@ -37,8 +40,8 @@ import subprocess
 import time
 
 from quenching.codex.eligible import eligibility, repo_path
-from quenching.codex.guard import (BYPASS, GuardError, base_moves, base_state, clean_env, git, refs,
-                                   touched)
+from quenching.codex.guard import (BYPASS, GuardError, base_moves, base_state, clean_env,
+                                   git_strict, refs, touched)
 from quenching.codex.probe import group_kwargs, probe, stop
 from quenching.specs.backends import open_backend
 from quenching.specs.commands.estimate import estimate_task
@@ -56,6 +59,9 @@ WAY_OUT = ("Claude may not clean these paths (no reset, stash or checkout) and f
 STATUS_WAY_OUT = ("git status failed, so what Codex wrote cannot be proved inside files: discard "
                   "nothing and stop the task as needs-human, so the human repairs and cleans the "
                   "tree.")
+REFS_WAY_OUT = ("the worktree refs cannot be read, so whether Codex moved HEAD, the branch, the "
+                "reflog or the stash cannot be proved: discard nothing and stop the task as "
+                "needs-human, so the human repairs the checkout.")
 
 
 def build_argv(executor: dict, model: str, worktree: str, message_path: str) -> list[str]:
@@ -145,7 +151,11 @@ def run_implement(root: str, settings: dict, spec: str, task_id: str, worktree: 
     worktree, prompt = os.path.realpath(worktree), os.path.abspath(prompt)
     if not os.path.isdir(worktree):
         return refusal("codex-worktree-missing", f"worktree does not exist: {worktree}")
-    if os.path.realpath(git(worktree, "rev-parse", "--show-toplevel").strip() or "/") != worktree:
+    try:
+        toplevel = git_strict(worktree, "rev-parse", "--show-toplevel").strip()
+    except GuardError:
+        toplevel = ""
+    if not toplevel or os.path.realpath(toplevel) != worktree:
         return refusal("codex-worktree-not-toplevel",
                        f"worktree is not the top level of a git checkout: {worktree}")
     if not os.path.isfile(prompt):
@@ -195,7 +205,14 @@ def run_implement(root: str, settings: dict, spec: str, task_id: str, worktree: 
     with open(prompt_path, "w", encoding="utf-8") as handle:
         handle.write(f"{text}\n\n{RULE}\n\nArquivos: {', '.join(files)}\n")
     argv = build_argv(executor, judged["model"], worktree, message_path)
-    before = refs(worktree)
+    try:
+        before = refs(worktree)
+    except GuardError as error:
+        shutil.rmtree(run_dir, ignore_errors=True)
+        return {**out, "fallback": False, "code": "codex-git-guard", "refsUnreadable": True,
+                "message": f"the guard cannot read the worktree refs before the run: {error}. "
+                           f"{REFS_WAY_OUT}",
+                "reason": f"git guard: {error}"}, 2
     try:
         base_before = base_state(worktree)
     except GuardError as error:
@@ -213,7 +230,11 @@ def run_implement(root: str, settings: dict, spec: str, task_id: str, worktree: 
         except subprocess.TimeoutExpired:
             stop(process)
             exit_code, out["timedOut"] = process.returncode, True
-    after = refs(worktree)
+    refs_error = None
+    try:
+        after = refs(worktree)
+    except GuardError as error:
+        after, refs_error = {}, error
     base_after = base_before
     try:
         base_after = base_state(worktree, base_before["primary"])
@@ -227,6 +248,14 @@ def run_implement(root: str, settings: dict, spec: str, task_id: str, worktree: 
         out["quotaDelta"] = out["quotaAfter"] - out["quotaBefore"]
         out["stopLoss"] = out["quotaDelta"] > executor["stopLossPercent"]
 
+    if refs_error is not None:
+        out["guard"] = {"moved": [f"worktree refs unreadable ({refs_error})"],
+                        "before": {**before, "base": base_before},
+                        "after": {"base": base_after}}
+        return {**out, "fallback": False, "code": "codex-git-guard", "refsUnreadable": True,
+                "message": f"the git guard cannot read the worktree refs after the run: "
+                           f"{refs_error}. {REFS_WAY_OUT}",
+                "reason": f"git guard: {refs_error}"}, 2
     try:
         out["outside"] = sorted(touched(worktree) - set(files))
     except GuardError as error:
