@@ -132,7 +132,12 @@ cq codex implement --spec "<id>" --task "<task-id>" --worktree "<work checkout>"
 - **Exit 2** (`codex-git-guard`), payload `statusUnreadable: true` → `git status` failed, so
   what Codex wrote is unknown and the payload carries no `discard`: stop the task as `needs-human`
   with the guard's `reason`; write nothing and do not discard.
-- **Exit 2** (`codex-git-guard`), payload `outside` **empty** and no `statusUnreadable` → discard the
+- **Exit 2** (`codex-git-guard`), payload `refsUnreadable: true` → the worktree's refs could not be
+  read, so whether Codex moved `HEAD`, the branch, the reflog or the stash is unknown and the
+  payload carries no `discard`: stop the task as `needs-human` with the guard's `reason`; write
+  nothing and do not discard.
+- **Exit 2** (`codex-git-guard`), payload `outside` **empty** and neither `statusUnreadable` nor
+  `refsUnreadable` → discard the
   diff **inside the payload's `discard` only**:
   rewrite each tracked file with `git cat-file --filters HEAD:<file> > <file>` and delete each
   new one; never `reset`, `stash`, `checkout` or `restore`. Then write the task yourself and
