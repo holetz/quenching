@@ -343,7 +343,7 @@ Written by the orchestrator when it decides to stop retrying; `next` skips it. *
 attempt limit.**
 
 `[P]` marks a parallel-eligible group, honoured only when the group's `files:` sets are provably
-disjoint (`.agents/quenching/bin/cq specs parallel`). Serial by default.
+disjoint and no member waits `after:` a sibling of the same group (`.agents/quenching/bin/cq specs parallel`). Serial by default.
 
 <!-- rationale -->
 

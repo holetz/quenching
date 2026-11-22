@@ -317,7 +317,8 @@ matching.
 ```
 
 Set it **here, at definition time** — execution never infers it. It is honoured only when the
-marked tasks' `files:` sets are provably disjoint and none writes into `knowledge/`, which
+marked tasks' `files:` sets are provably disjoint, none waits `after:` another task of the same
+group and none writes into `knowledge/`, which
 `.agents/quenching/bin/cq specs parallel` checks mechanically. Serial is the default and needs no marker: without proven
 disjunction, parallel execution trades wall-clock for merge conflicts and loses on both.
 
