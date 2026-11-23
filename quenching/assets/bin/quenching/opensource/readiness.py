@@ -18,7 +18,7 @@ from pathlib import Path
 from typing import Any
 
 CLASSES = ("secrets", "internal-identifiers", "owner-terms", "dependency-license", "attribution",
-           "large-generated", "history-consent")
+           "large-generated", "history-consent", "provenance")
 MEASURED, PARTIAL, NOT_MEASURED, REFUSED = "measured", "partial", "not-measured", "refused"
 DEFAULT_TIMEOUT_S = 300
 GIT_TIMEOUT_S = 60
@@ -63,6 +63,7 @@ REMEDIATION = {
     "pr-license-text-missing": "add the referenced license texts under LICENSES/",
     "pr-license-incompatible": "the owner resolves the incompatible dependency license before publishing",
     "pr-consent-withheld": "the owner obtains consent or removes the contribution before publishing",
+    "pr-provenance-derived": "the owner obtains a license or authorization from the origin project, or removes the derived work",
 }
 
 
@@ -398,19 +399,24 @@ def load_evidence(path: str | None) -> tuple[dict[str, Any], str | None]:
     return (data, None) if isinstance(data, dict) else ({}, "pr-evidence-unreadable")
 
 
+def _filled(value: Any) -> bool:
+    return isinstance(value, str) and bool(value.strip())
+
+
 def _legal(evidence: dict[str, Any], evidence_code: str | None, key: str, cls: str,
-           clean: str, failing: str, code: str):
+           clean: tuple[str, ...], failing: str, code: str, cleared_by: str | None = None):
+    """A reviewed owner statement; ``cleared_by`` names the field that lifts the failing state."""
     if evidence_code:
         return [], {"class": cls, "state": NOT_MEASURED, "code": evidence_code}
     entry = evidence.get(key)
     if entry is None:
         return [], {"class": cls, "state": NOT_MEASURED, "code": "pr-evidence-absent"}
-    if not isinstance(entry, dict) or entry.get("state") not in (clean, failing):
+    if not isinstance(entry, dict) or entry.get("state") not in (*clean, failing):
         return [], {"class": cls, "state": NOT_MEASURED, "code": "pr-evidence-ambiguous"}
-    reviewer = entry.get("reviewedBy")
-    if not isinstance(reviewer, str) or not reviewer.strip():
+    if not _filled(entry.get("reviewedBy")):
         return [], {"class": cls, "state": NOT_MEASURED, "code": "pr-evidence-unreviewed"}
-    rows = [_finding(code, cls, "blocker")] if entry["state"] == failing else []
+    blocked = entry["state"] == failing and not (cleared_by and _filled(entry.get(cleared_by)))
+    rows = [_finding(code, cls, "blocker")] if blocked else []
     return rows, {"class": cls, "state": MEASURED, "code": None}
 
 
@@ -430,10 +436,13 @@ def assess(root: str, evidence: str | None = None, timeout: int = DEFAULT_TIMEOU
         for found, cover in (_secrets(root, inv, timeout, scanners), _internal(root, inv),
                              _owner_terms(root, inv, denylist, timeout),
                              _legal(evidence_data, evidence_code, "dependencyLicenses", "dependency-license",
-                                    "compatible", "incompatible", "pr-license-incompatible"),
+                                    ("compatible",), "incompatible", "pr-license-incompatible"),
                              _attribution(root, inv, timeout, scanners), _large(root),
                              _legal(evidence_data, evidence_code, "historyConsent", "history-consent",
-                                    "granted", "withheld", "pr-consent-withheld")):
+                                    ("granted",), "withheld", "pr-consent-withheld"),
+                             _legal(evidence_data, evidence_code, "provenance", "provenance",
+                                    ("original", "clean-room"), "derived", "pr-provenance-derived",
+                                    cleared_by="authorization")):
             rows += found
             coverage.append(cover)
     rows, truncated = _cap(rows)

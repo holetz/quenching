@@ -116,13 +116,16 @@ class ReadinessCase(unittest.TestCase):
                 encoding="utf-8")
             os.chmod(path, 0o755)
 
-    def evidence(self, licenses: dict | None = None, consent: dict | None = None) -> str:
+    def evidence(self, licenses: dict | None = None, consent: dict | None = None,
+                 provenance: dict | None = None) -> str:
         path = os.path.join(self.tmp.name, "evidence.json")
         data = {}
         if licenses is not None:
             data["dependencyLicenses"] = licenses
         if consent is not None:
             data["historyConsent"] = consent
+        if provenance is not None:
+            data["provenance"] = provenance
         pathlib.Path(path).write_text(json.dumps(data), encoding="utf-8")
         return path
 
@@ -190,7 +193,8 @@ class EngineTest(ReadinessCase):
         self.install("gitleaks", "reuse")
         reuse = {"non_compliant": {}, "summary": {"compliant": True}}
         evidence = self.evidence({"state": "compatible", "reviewedBy": "owner"},
-                                 {"state": "granted", "reviewedBy": "owner"})
+                                 {"state": "granted", "reviewedBy": "owner"},
+                                 {"state": "original", "reviewedBy": "owner"})
         with mock.patch.dict(os.environ, {"FAKE_REUSE_ROWS": json.dumps(reuse)}):
             payload, code = self.assess(evidence=evidence, denylist=self.denylist("Qckabsentterm"))
         self.assertEqual(0, code, payload["coverage"])
@@ -395,6 +399,23 @@ class AdversarialTest(ReadinessCase):
         payload, _ = self.assess(evidence=unreadable)
         self.assertEqual("pr-evidence-unreadable", self.coverage(payload)["history-consent"]["code"])
 
+    def test_derived_provenance_blocks_until_an_authorization_is_recorded(self):
+        commit(self.root, "a.txt", "x\n")
+        cases = [({"state": "derived", "reviewedBy": "owner"}, ["pr-provenance-derived"]),
+                 ({"state": "derived", "reviewedBy": "owner", "authorization": " "}, ["pr-provenance-derived"]),
+                 ({"state": "derived", "reviewedBy": "owner", "authorization": f"license {SENTINEL}"}, []),
+                 ({"state": "clean-room", "reviewedBy": "owner"}, []),
+                 ({"state": "original", "reviewedBy": "owner"}, [])]
+        for entry, blockers in cases:
+            with self.subTest(entry=entry):
+                payload, _ = self.assess(evidence=self.evidence(provenance=entry))
+                self.assertEqual("measured", self.coverage(payload)["provenance"]["state"])
+                self.assertEqual(blockers, [r["code"] for r in payload["blockers"]])
+        payload, _ = self.assess(evidence=self.evidence())
+        self.assertEqual("pr-evidence-absent", self.coverage(payload)["provenance"]["code"])
+        payload, _ = self.assess(evidence=self.evidence(provenance={"state": "forked", "reviewedBy": "owner"}))
+        self.assertEqual("pr-evidence-ambiguous", self.coverage(payload)["provenance"]["code"])
+
     def test_a_scratch_directory_inside_the_target_refuses_the_scanner(self):
         commit(self.root, "a.txt", "x\n")
         self.install("gitleaks")
@@ -453,7 +474,8 @@ class CleanCloneTest(ReadinessCase):
         commit(self.root, "README.md", "hello\n")
         self.install("gitleaks", "reuse")
         evidence = self.evidence({"state": "compatible", "reviewedBy": "owner"},
-                                 {"state": "granted", "reviewedBy": "owner"})
+                                 {"state": "granted", "reviewedBy": "owner"},
+                                 {"state": "clean-room", "reviewedBy": "owner"})
         env = dict(os.environ, FAKE_REUSE_ROWS=json.dumps({"non_compliant": {}}))
         before = snapshot(self.root)
         run = subprocess.run([sys.executable, str(target / ".agents/quenching/assets/bin/cq"), "--root", self.root,
