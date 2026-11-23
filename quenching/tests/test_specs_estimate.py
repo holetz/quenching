@@ -59,6 +59,27 @@ class DeclaredReading(unittest.TestCase):
                          [r["path"] for r in result["sections"][0]["files"]])
         self.assertTrue(result["complete"])
 
+    def test_names_the_three_largest_contributors_of_a_section(self):
+        (self.root / "b.py").write_bytes(b"b" * 800)
+        result = self.estimate("- [ ] 1.1 Task\n      files: a.py, b.py\n")
+        top = result["sections"][0]["topContributors"]
+        self.assertEqual(3, len(top))
+        self.assertEqual(["b.py", "a.py"], [c["source"] for c in top[:2]])
+        self.assertEqual([200, 100], [c["tokens"] for c in top[:2]])
+
+    def test_deploy_manifests_do_not_weigh_in_the_estimate(self):
+        (self.root / ".agents").mkdir()
+        (self.root / ".agents/.quenching-deploy.json").write_bytes(b"d" * 4000)
+        (self.root / ".claude/skills").mkdir(parents=True)
+        (self.root / ".claude/skills/.generated-files.json").write_bytes(b"{}" + b" " * 4000)
+        result = self.estimate("- [ ] 1.1 Task\n      files: a.py, .agents/.quenching-deploy.json, "
+                               ".claude/skills/.generated-files.json\n")
+        rows = {r["path"]: r for r in result["sections"][0]["files"]}
+        self.assertEqual("generated mirror", rows[".agents/.quenching-deploy.json"]["writeOnly"])
+        self.assertEqual("generated mirror", rows[".claude/skills/.generated-files.json"]["writeOnly"])
+        self.assertEqual(["a.py"], [c["source"] for c in result["sections"][0]["topContributors"]
+                                    if c["source"].endswith(".json") or c["source"] == "a.py"])
+
     def test_missing_new_files_and_undeclared_tasks_are_never_free_evidence(self):
         result = self.estimate("- [ ] 1.1 Task\n      files: missing.py (new)\n- [ ] 1.2 No files\n")
         row = result["sections"][0]
