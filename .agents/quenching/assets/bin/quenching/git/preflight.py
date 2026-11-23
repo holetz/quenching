@@ -189,10 +189,17 @@ def cmd_preflight(args) -> int:
               _gh_auth(cwd, cfg.get("provider")), _ci(cwd, base, cfg.get("provider"))]
     bad = [c["id"] for c in checks if c["status"] in BAD]
     ci = next(c for c in checks if c["id"] == "ci")
-    merges = ci["status"] != "unavailable"
+    from quenching.config.ci import read as read_ci_enforce
+
+    enforce, ci_warnings = read_ci_enforce(cwd)
+    # `off` merges on the local gate with checks pending, so a CI that executes no steps does not
+    # stop it; every other value needs the PR's own checks to run.
+    merges = ci["status"] != "unavailable" or enforce == "off"
     lines = [f"{c['id']}: {c['status']} — {c['message']}" for c in checks]
+    lines.append(f"ciEnforce: {enforce}")
     lines.append("merges: " + ("allowed" if merges else "none planned (CI unavailable)"))
     emit(args.json, {"ok": not bad, "base": base, "remote": args.remote, "checks": checks,
-                     "failed": bad, "mergesAllowed": merges, "plannedMerges": merges},
+                     "failed": bad, "mergesAllowed": merges, "plannedMerges": merges,
+                     "ciEnforce": enforce, "ciWarnings": ci_warnings},
          "\n".join(lines))
     return FINDINGS if bad else OK

@@ -118,14 +118,12 @@ class AzureMergeTests(unittest.TestCase):
             self.assertEqual((code, result["reason"]), (1, "no-checks"))
             self.assertEqual(self.bodies, [])
 
-    def test_allow_no_checks_completes_only_the_pr_without_any_build_policy(self):
-        """`--allow-no-checks` is for a repository with no PR gate: it accepts `no-checks` and
-        nothing else, and the completion keeps the pinned head and the fixed options."""
+    def test_allow_no_checks_no_longer_relaxes_the_exigence(self):
+        """The per-call flag is inert: `shared.ci.enforce` (`test_ci_enforce.py`) is the only
+        way to accept a PR with no build policy, and the default still demands CI."""
         code, result = self.run_merge(policies=[], allow_no_checks=True)
-        self.assertEqual(code, 0, result)
-        self.assertTrue(result["noChecksAccepted"])
-        self.assertEqual(self.bodies[0]["lastMergeSourceCommit"], {"commitId": HEAD})
-        self.assertFalse(self.bodies[0]["completionOptions"]["bypassPolicy"])
+        self.assertEqual((code, result["reason"]), (1, "no-checks"))
+        self.assertEqual(self.bodies, [])
         red = {**BUILD, "status": "rejected"}
         running = {**BUILD, "status": "running"}
         for policies in ([red], [running]):

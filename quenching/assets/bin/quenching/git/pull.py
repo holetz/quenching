@@ -188,6 +188,34 @@ def _merged(args, payload: dict, human: str) -> int:
     return OK
 
 
+def ci_refusal(args, payload: dict, state: str) -> tuple[str | None, str | None] | None:
+    """Judge the checks against `shared.ci.enforce` (project layer, default `required`).
+
+    `state` is `green`, `none` or `pending`; anything else (red, skipped, unreadable) is refused
+    under every value. `None` accepts — and a relaxed accept records `ciRelaxed` in `payload`;
+    otherwise `(reason, message)`, with `reason` None when the caller keeps its own."""
+    from quenching.config import ci
+
+    mode, warnings = ci.read(os.getcwd())
+    gate_exit = getattr(args, "gate_exit", None)
+    accepted, reason = ci.judge(mode, state, gate_exit)
+    if warnings:
+        payload["ciWarnings"] = warnings
+    if accepted:
+        if state != "green":
+            payload["ciRelaxed"] = {"enforce": mode, "checks": state, "gateExit": gate_exit}
+            if state == "none":
+                payload["noChecksAccepted"] = True
+        return None
+    message = None
+    if reason == "gate-proof-required":
+        message = ci.proof_message(mode, state)
+    elif reason == "no-checks" and getattr(args, "allow_no_checks", False):
+        message = ("--allow-no-checks no longer relaxes the exigence: declare shared.ci.enforce "
+                   "in the project layer (.agents/quenching.json)")
+    return reason, message
+
+
 def _merge(args) -> int:
     from quenching.git.azure_pull import AZURE_PR_URL, merge_azure
 
@@ -219,13 +247,14 @@ def _merge(args) -> int:
                    and (c.get("bucket") not in GREEN or state == "skipped"))
     payload = {"ok": False, "url": args.url, "number": int(match.group(1)), "checks": state,
                "notGreen": names}
-    if state == "none" and getattr(args, "allow_no_checks", False):
-        payload["noChecksAccepted"] = True
-    elif state != "green":
-        payload["reason"] = {"red": "failed", "pending": "pending", "none": "no-checks",
-                                    "skipped": "skipped-required"}.get(
+    refusal = ci_refusal(args, payload, state)
+    if refusal is not None:
+        payload["reason"] = refusal[0] or {"red": "failed", "pending": "pending",
+                                           "none": "no-checks", "skipped": "skipped-required"}.get(
             state, "checks-unreadable")
-        if message:
+        if refusal[1]:
+            payload["message"] = refusal[1]
+        elif message:
             payload["message"] = message
         emit(args.json, payload, f"not merged: {payload['reason']} {' '.join(names)}".rstrip())
         return FINDINGS

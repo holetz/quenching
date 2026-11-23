@@ -18,6 +18,7 @@ from __future__ import annotations
 
 from quenching.codex.config import CHOICES as CODEX_CHOICES, DEFAULTS as CODEX
 from quenching.config.autonomy import COMPLEXITY, DEFAULTS as AUTONOMY, MERGE
+from quenching.config.ci import DEFAULTS as CI, ENFORCE as CI_ENFORCE
 from quenching.config.host import DEFAULTS as WORK_HOST
 from quenching.session.commands.context import BUDGETS
 from quenching.session.cachebar import COST_STYLES, DEFAULTS as CACHE_BAR, TTL_CHOICES
@@ -143,6 +144,14 @@ _k("shared.contextBudgets.worker", "integer", BUDGETS["worker"], "autonomy", "ma
 _k("shared.contextBudgets.conductor", "integer", BUDGETS["conductor"], "autonomy", "machine",
    "cq components session context", ("Conductor budget", "Tokens the orchestrating session plans around."),
    ("Orçamento do condutor", "Tokens que a sessão que orquestra considera."), minimum=1)
+_k("shared.ci.enforce", "enum", CI["enforce"], "git", "project",
+   "cq git pr merge, /release, the autopilot and the orchestrator",
+   ("Require green CI", "required: every check green; when-present: a PR with no check may merge; "
+    "off: also with checks pending. A red check never merges, and a relaxed value needs the "
+    "local gate green (--gate-exit 0)."),
+   ("Exigir CI verde", "required: todo check verde; when-present: PR sem check pode mergear; "
+    "off: também com checks pendentes. Check vermelho nunca mergeia, e um valor relaxado exige "
+    "o gate local verde (--gate-exit 0)."), choices=list(CI_ENFORCE))
 # — Prompt cache (the quenching-cache bar) —
 _k("shared.cache.rebuildLimitUsd", "number", CACHE_BAR["rebuildLimitUsd"], "cache", "either",
    "quenching-cache plugin",
