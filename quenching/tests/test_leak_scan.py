@@ -98,6 +98,17 @@ class Patterns(LeakEnv):
         with mock.patch.dict(os.environ, {"HOME": "/"}):
             self.assertEqual(leak.path_patterns(), {})
 
+    def test_slug_of_a_root_home_ignores_a_flag_and_a_word_ending_in_it(self):
+        slug = "-" + "root"
+        text = f"run cq --root . then temp{slug} and {slug}-repo\n"
+        with mock.patch.dict(os.environ, {"HOME": "/root"}):
+            pat = leak.path_patterns()["home-slug"]
+            self.assertEqual([m.group() for m in pat.finditer(text)], [slug])
+            self.assertEqual(leak.normalize_paths(f"run cq --root . then temp{slug}\n"),
+                             f"run cq --root . then temp{slug}\n")
+            self.assertEqual(leak.normalize_paths(f"~/.claude/projects/{slug}-repo/m\n"),
+                             "~/.claude/projects/<project>/m\n")
+
     def test_denylist_is_case_insensitive_and_skips_comments(self):
         pats = leak.patterns()
         self.assertIn("denylist:3", pats)
