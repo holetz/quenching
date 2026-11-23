@@ -23,6 +23,11 @@ merge anything into a target's `.claude/settings.json` to make a tool resolve.
 Branch on the **exit code** (0 ok · 1 findings · 2 refusal) and the `--json` payload, never on
 prose.
 
+**Prefer the `quenching` MCP tool for a verb it covers** (`specs_status`, `specs_next`,
+`specs_section`, …) when the session exposes the server: its one long-lived process keeps the store
+tree read, where each shell call starts a Python and reads it again. A verb with no tool, or a
+session without the server, runs `cq` as above.
+
 ### Deploy mode: the target-local payload
 
 quenching reaches a repository only through `cq deploy`. The target carries the tool at
