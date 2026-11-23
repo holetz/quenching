@@ -108,12 +108,12 @@ def tearDownModule():
 
 class RepoCase(unittest.TestCase):
     def setUp(self):
-        # Restored via addCleanup, in LIFO order — BEFORE the tempdir cleanup below runs, so a
-        # test that `os.chdir`s into the repo never leaves the process cwd pointing at a
-        # directory `tmp.cleanup()` is about to delete out from under every test that follows.
-        self.addCleanup(os.chdir, os.getcwd())
+        # Cleanups run LIFO: registered after `tmp.cleanup`, the cwd is restored BEFORE the
+        # tempdir is deleted, so a test that `os.chdir`s into the repo never sits inside a
+        # directory being removed (Windows refuses that with WinError 32).
         tmp = tempfile.TemporaryDirectory()
         self.addCleanup(tmp.cleanup)
+        self.addCleanup(os.chdir, os.getcwd())
         self.tmp = tmp.name
         self.repo = _init_repo(os.path.join(self.tmp, "repo"))
 
