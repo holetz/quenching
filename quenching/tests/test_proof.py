@@ -286,6 +286,7 @@ class GeneratedProofReadme(unittest.TestCase):
             first = path.read_text(encoding="utf-8")
             self.assertFalse(write_readme(inventory))
             self.assertEqual(first, path.read_text(encoding="utf-8"))
+            self.assertNotIn(b"\r\n", path.read_bytes())  # LF on Windows too
             self.assertTrue(first.startswith(authored + "\n"))
             self.assertIn("\n<!-- quenching-proof-readme-end -->\n", first)
             self.assertEqual(first, render_readme_document(first, inventory))

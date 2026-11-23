@@ -300,8 +300,8 @@ class Cli(GitStoreFixture):
 
     def test_write_from_a_file_and_read_it_back_into_another(self):
         source = os.path.join(self.tmp, "source.md")
-        with open(source, "w", encoding="utf-8") as handle:
-            handle.write("from a file\n")
+        with open(source, "wb") as handle:
+            handle.write(b"from a file\n")
         code, said = self.run_cli("artifact", "write", "--spec", "1", "--name", "h.md",
                                   "--from", source)
         self.assertEqual(0, code, said)
@@ -309,8 +309,8 @@ class Cli(GitStoreFixture):
         code, said = self.run_cli("artifact", "read", "--spec", "1", "--name", "h.md",
                                   "--out", dest)
         self.assertEqual(0, code, said)
-        with open(dest, encoding="utf-8") as handle:
-            self.assertEqual("from a file\n", handle.read())
+        with open(dest, "rb") as handle:  # byte for byte: no CRLF added on Windows
+            self.assertEqual(b"from a file\n", handle.read())
 
     def test_json_carries_the_spec_name_locator_and_size(self):
         code, said = self.run_cli("artifact", "write", "--spec", "1", "--name", "h.md",
