@@ -12,6 +12,19 @@ cd "$ROOT"
 # A test that resolves a session must never measure the operator's session: the tree decides.
 unset OPENCODE_SESSION_ID CLAUDE_CODE_SESSION_ID
 
+# Every `python3` below is the project's own environment when one exists: on Windows the PATH's
+# `python3` is the Microsoft Store alias, a different interpreter with none of the dev group.
+if [ -x "$ROOT/.venv/bin/python" ]; then
+  GATE_PYTHON="$ROOT/.venv/bin/python"
+elif [ -x "$ROOT/.venv/Scripts/python.exe" ]; then
+  GATE_PYTHON="$ROOT/.venv/Scripts/python.exe"
+else
+  GATE_PYTHON="$(command -v python3 || command -v python || printf python3)"
+fi
+python3() { "$GATE_PYTHON" "$@"; }
+export GATE_PYTHON
+export -f python3  # the bash checks this gate starts (citation-check) call `python3` too
+
 run_check() {
   local name="$1"
   shift
@@ -208,8 +221,9 @@ if [ -f .agents/.quenching-deploy.json ]; then
 else
   printf '\n==> deployed surface lockstep\nSKIPPED: this checkout does not use deploy mode (no .agents/.quenching-deploy.json).\n'
 fi
+# `$BASH` is the shell running this gate: a bare `bash` may be another one (WSL's launcher on Windows).
 run_check "citation checks" \
-  bash quenching/assets/checks/citation-check.sh
+  "$BASH" quenching/assets/checks/citation-check.sh
 run_check "documentation site source" \
   python3 quenching/assets/bin/cq knowledge site-source docs site-source --write
 run_check "Zensical strict build" \
