@@ -13,6 +13,33 @@ owner: [`ci-cd/versioning-release.md`](docs/standards/ci-cd/versioning-release.m
 short version for a consumer: the version is published once, deliberately, as a release — never at a
 spec's own conclude — and `cq --version` is what answers which one you are running.
 
+## 7.13.0
+
+**Cada leitura do `cq` abre metade dos processos git, e os agentes preferem o MCP.** Dentro de uma
+  chamada, o ref resolvido, a URL do remote e a árvore da store por sha são reaproveitados: `cq specs
+  status` cai de 15 para 8 processos git, e `show`, `next` e `section` de 9 ou 10 para 5 ou 6, com
+  saída idêntica. Quando as tools `quenching.*` estão presentes, os agentes as usam no lugar da shell:
+  num ciclo de cinco leituras, 1 processo Python e 8 git contra 5 e 31 (#246).
+
+**O autopilot filtra por relevância e lê uma orientação por projeto.** O `shared.guidance.<flow>`
+  (autopilot, improve, develop, execute, review) entra no schema; o autopilot lê
+  `shared.guidance.autopilot` e o scout classifica cada spec como `relevant`, `superseded`, `stale` ou
+  `needs-human`, incluindo membros abertos de épicos de rodadas anteriores (#224). O conclude lê uma
+  vez o digest dos atritos da sessão (cerca de 800 tokens) e propõe a correção mínima de cada spec que
+  captura, sem custo quando não acha a transcrição (#2217).
+
+**O `opensource` pega mais antes de abrir um repositório.** O `readiness` reconhece tenants de SaaS
+  como identificador interno, varre `HEAD`, diffs e mensagens do histórico contra uma lista de termos
+  do dono (`--denylist`, sem nunca ecoar o termo) e exige a proveniência do código (#1962); o `status`
+  avisa quando o README de um projeto com interface não mostra imagem e quando vendor ou templates
+  distorcem a linguagem que o GitHub exibe (#1965).
+
+**Também:** o `estimate` nomeia os três arquivos que mais pesam em cada seção e não conta o manifesto
+  do deploy (#2165); o `handoff facts` traz o estado git em voo, com arquivos sujos, commits sem push,
+  stashes e worktrees (#227); o citation-check passa a varrer `docs/standards/`, com 20 citações `§`
+  mortas corrigidas (#2253); e o padrão de vazamento `home-slug` não acusa mais `--root` nem
+  `temp-root` quando `HOME=/root` (#2201).
+
 ## 7.12.0
 
 **O quenching funciona no Windows.** O lançador `cq` gerado pelo `cq deploy` não re-divide mais
