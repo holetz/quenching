@@ -5,7 +5,6 @@ import json
 import os
 import pathlib
 import shutil
-import stat
 import sys
 import tempfile
 import time
@@ -17,13 +16,13 @@ try:
 except ModuleNotFoundError:
     sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
     import _paths  # noqa: F401
+from _tools import WINDOWS, fake_tool
 from quenching.specs import backends as backends_mod
 from quenching.specs import chat as chat_mod
 from quenching.specs import portal as portal_mod
 from quenching.specs.backends.memory import MemoryBackend
 
-FAKE = """#!{python}
-import json, os, sys, time
+FAKE = """import json, os, sys, time
 args = sys.argv[1:]
 settings = args[args.index("--settings") + 1]
 log = {{"argv": args, "cwd": os.getcwd(), "stdin": sys.stdin.read(),
@@ -56,10 +55,7 @@ def install_fake(test: unittest.TestCase) -> tuple[str, str]:
     """A fake `claude` first on PATH; returns (its path, the log file it writes)."""
     bindir = tempfile.mkdtemp(prefix="quenching-fake-claude-")
     test.addCleanup(shutil.rmtree, bindir, True)
-    claude = os.path.join(bindir, "claude")
-    with open(claude, "w") as handle:
-        handle.write(FAKE.format(python=sys.executable))
-    os.chmod(claude, os.stat(claude).st_mode | stat.S_IXUSR)
+    claude = str(fake_tool(bindir, "claude", FAKE.format()))
     log = os.path.join(bindir, "log.json")
     patch = mock.patch.dict(os.environ, {"PATH": bindir + os.pathsep + os.environ["PATH"],
                                          "FAKE_CLAUDE_LOG": log})
@@ -93,7 +89,7 @@ class TheJob(unittest.TestCase):
         return json.loads(pathlib.Path(self.log).read_text())
 
     def test_the_fake_is_the_claude_on_path(self):
-        self.assertEqual(self.claude, chat_mod.find_claude())
+        self.assertEqual(os.path.normcase(self.claude), os.path.normcase(chat_mod.find_claude()))
 
     def test_argv_is_exact_and_the_question_goes_through_stdin(self):
         job = wait(chat_mod.Job(chat_mod.find_claude(), 0.5, self.cwd, "--evil what is 1815?"))
@@ -116,7 +112,8 @@ class TheJob(unittest.TestCase):
             "Read(~/.ssh/**)", "Read(~/.config/**)", "Read(//**/*.key)", "Read(//**/.env)",
             "Read(**/.env.*)", "Read(//**/.env.*)"]},
             "disableAllHooks": True}, log["settings"])
-        self.assertEqual("0o600", log["mode"])
+        if not WINDOWS:  # Windows has no owner-only mode bits: `os.stat` reports 0o666 there.
+            self.assertEqual("0o600", log["mode"])
         self.assertFalse(os.path.exists(job.settings))
 
     def test_the_view_carries_text_tool_names_and_result_only(self):

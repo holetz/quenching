@@ -48,6 +48,22 @@ GIT_ENV = {"GIT_AUTHOR_NAME": "Eval fixture", "GIT_AUTHOR_EMAIL": "eval@example.
 SAFE_GIT = ["-c", "core.fsmonitor=false", "-c", "core.hooksPath=/dev/null", "-c", "diff.external=",
             "-c", "gpg.program=/bin/false", "-c", "log.showSignature=false"]
 MATERIAL_LIMIT = 60000
+WINDOWS = os.name == "nt"
+
+
+def bash() -> str:
+    """The bash that runs a suite's `setup.sh`/`inspect.sh`. On Windows a bare `bash` resolves
+    `System32\\bash.exe`, the WSL launcher, before PATH: Git Bash, beside `git`, is taken instead."""
+    if not WINDOWS:
+        return "bash"
+    git = shutil.which("git")
+    if git:
+        here = Path(git).resolve().parent
+        for root in (here.parent, here.parent.parent):
+            for candidate in (root / "bin" / "bash.exe", root / "usr" / "bin" / "bash.exe"):
+                if candidate.is_file():
+                    return str(candidate)
+    return "bash"
 # The human's decision of 2026-10-24: the default grader is the Flash 1017 model service behind the
 # Unity Gateway (endpoint and credential come from the environment, see eval_gateway_grader.py).
 DEFAULT_GRADER_HARNESS = "gateway"
@@ -206,8 +222,10 @@ def render(profile: dict, arm: str | None, values: dict, extra: list[str], conta
 def container_argv(args, inner: list[str], mount: str, workdir: str) -> list[str]:
     """The disposable container around one arm: only `mount` is bound, variables travel by name."""
     names = ["EVAL_CASE", "EVAL_BASE", *args.env]
+    # The bind mount keeps the caller's ownership on POSIX; Windows has no uid to hand over.
+    user = ["--user", f"{os.getuid()}:{os.getgid()}"] if hasattr(os, "getuid") else []
     return [args.runtime, "run", "--rm", "-i", "--network", "bridge",
-            "--user", f"{os.getuid()}:{os.getgid()}", "-e", "HOME=/tmp/eval-home",
+            *user, "-e", "HOME=/tmp/eval-home",
             *[a for k, v in GIT_ENV.items() for a in ("-e", f"{k}={v}")],
             *[a for name in names for a in ("-e", name)],
             "--mount", f"type=bind,source={mount},target={mount}", "-w", workdir,
@@ -261,13 +279,20 @@ def output_text(profile: dict, stdout: str) -> tuple[str, int | None]:
 def invoke(argv: list[str], cwd: Path, env: dict, timeout: int) -> dict:
     started = time.monotonic()
     try:
-        # A new session makes the arm a process group, so the timeout can kill its grandchildren too.
-        proc = subprocess.Popen(argv, cwd=cwd, env=env, text=True, stdin=subprocess.DEVNULL,
-                                stdout=subprocess.PIPE, stderr=subprocess.PIPE, start_new_session=True)
+        # A group of its own (a new session on POSIX), so the timeout can kill its grandchildren too.
+        group = ({"creationflags": subprocess.CREATE_NEW_PROCESS_GROUP} if WINDOWS
+                 else {"start_new_session": True})
+        proc = subprocess.Popen(argv, cwd=cwd, env=env, text=True, encoding="utf-8",
+                                errors="replace", stdin=subprocess.DEVNULL,
+                                stdout=subprocess.PIPE, stderr=subprocess.PIPE, **group)
         try:
             stdout, stderr = proc.communicate(timeout=timeout)
         except subprocess.TimeoutExpired:
-            os.killpg(proc.pid, signal.SIGKILL)
+            if WINDOWS:
+                subprocess.run(["taskkill", "/F", "/T", "/PID", str(proc.pid)],
+                               capture_output=True, check=False)
+            else:
+                os.killpg(proc.pid, signal.SIGKILL)
             stdout, stderr = proc.communicate()
             return {"stdout": stdout or "", "stderr": stderr or "", "error": f"timeout after {timeout}s",
                     "durationMs": int((time.monotonic() - started) * 1000)}
@@ -300,7 +325,7 @@ def provision(suite: Path, case_id: str, parent: Path, deploy: str | None = None
                  ["git", "commit", "-q", "--allow-empty", "-m", "Fixture"]):
         subprocess.run(argv, cwd=workspace, env=env, check=True, capture_output=True)
     if (suite / "setup.sh").is_file():
-        subprocess.run(["bash", str(suite / "setup.sh"), case_id], cwd=workspace, env=env,
+        subprocess.run([bash(), str(suite / "setup.sh"), case_id], cwd=workspace, env=env,
                        check=True, capture_output=True, text=True, timeout=120)
     base = subprocess.run(["git", "rev-parse", "HEAD"], cwd=workspace, env=env, check=True,
                           capture_output=True, text=True).stdout.strip()
@@ -370,7 +395,7 @@ def snapshot(suite: Path, workspace: Path, env: dict) -> str:
     parts.append(("git diff HEAD", capture(["git", "diff", "--no-ext-diff", "--no-textconv", "HEAD"])))
     parts.append(("untracked files", capture(["git", "ls-files", "--others", "--exclude-standard"])))
     if (suite / "inspect.sh").is_file():
-        parts.append(("inspect.sh", capture(["bash", str(suite / "inspect.sh")])))
+        parts.append(("inspect.sh", capture([bash(), str(suite / "inspect.sh")])))
     return "\n\n".join(f"## {title}\n{body}" for title, body in parts)
 
 

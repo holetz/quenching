@@ -23,12 +23,12 @@ try:
 except ModuleNotFoundError:  # package-qualified unittest invocation from the repository root
     sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
     import _paths  # noqa: F401
+from _tools import fake_tool
 from quenching.opensource.readiness import CLASSES, assess, location
 
 SENTINEL = "QCKSENTINELAKIA9Z8Y7X6W5V4U3T2S1"
-FAKE = r'''#!{python}
-import json, os, sys, time
-name = os.path.basename(sys.argv[0])
+FAKE = r'''import json, os, sys, time
+name = os.path.splitext(os.path.basename(sys.argv[0]))[0]
 mode = os.environ.get("FAKE_%s_MODE" % name.upper(), "ok")
 sys.stderr.write("leaked {sentinel}\n")
 if len(sys.argv) > 1 and sys.argv[1] in ("version", "--version"):
@@ -100,13 +100,12 @@ class ReadinessCase(unittest.TestCase):
         os.makedirs(self.root)
         os.makedirs(self.bin)
         path = self.bin
-        try:
+        if os.name != "nt":
             os.symlink(shutil.which("git"), os.path.join(self.bin, "git"))
-        except OSError:
-            # Windows without the symlink privilege: git's own directory joins PATH instead, so long
-            # as it holds none of the scanners a test could reach by accident.
-            if os.name != "nt":
-                raise
+        else:
+            # A bare `git` is searched as `git.exe` only, so neither a symlink named `git` nor a
+            # `.cmd` forwarder reaches it: git's own directory joins PATH instead, so long as it
+            # holds none of the scanners a test could reach by accident.
             gitdir = os.path.dirname(shutil.which("git"))
             self.assertFalse([n for n in VERSIONS if shutil.which(n, path=gitdir)], gitdir)
             path = os.pathsep.join([self.bin, gitdir])
@@ -120,11 +119,7 @@ class ReadinessCase(unittest.TestCase):
 
     def install(self, *names: str) -> None:
         for name in names:
-            path = os.path.join(self.bin, name)
-            pathlib.Path(path).write_text(
-                FAKE.format(python=sys.executable, sentinel=SENTINEL, versions=json.dumps(VERSIONS)),
-                encoding="utf-8")
-            os.chmod(path, 0o755)
+            fake_tool(self.bin, name, FAKE.format(sentinel=SENTINEL, versions=json.dumps(VERSIONS)))
 
     def evidence(self, licenses: dict | None = None, consent: dict | None = None,
                  provenance: dict | None = None) -> str:

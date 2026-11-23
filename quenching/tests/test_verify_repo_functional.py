@@ -7,21 +7,24 @@ it pass empty.
 """
 
 import pathlib
-import shutil
 import subprocess
+import sys
 import tempfile
 import unittest
+
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
+from _tools import WINDOWS, bash  # noqa: E402
 
 REPO_ROOT = pathlib.Path(__file__).resolve().parent.parent.parent
 SCRIPT = REPO_ROOT / "scripts" / "verify_repo.sh"
 START = "printf '\\n==> surface-load checks\\n'"
 END = "printf '\\nRepository verification passed.\\n'"
-BASH = shutil.which("bash")
+BASH = bash()
 FUNCTIONAL = REPO_ROOT / "quenching" / "assets" / "checks" / "functional-checks.sh"
 
 
 def _block() -> str:
-    text = SCRIPT.read_text()
+    text = SCRIPT.read_text(encoding="utf-8")
     assert START in text and END in text, "surface-load markers moved in verify_repo.sh"
     return text[text.index(START) : text.index(END)]
 
@@ -35,7 +38,12 @@ class SurfaceLoadBlock(unittest.TestCase):
             (checks / "functional-checks.sh").write_text(f"exit {stub_rc}\n")
             fakebin = root / "fakebin"
             fakebin.mkdir()
-            (fakebin / "bash").symlink_to(BASH)
+            if WINDOWS:
+                # No symlink privilege here, and Git Bash runs a shebang script found on PATH:
+                # the fake `bash` hands over to the bash of its own root.
+                (fakebin / "bash").write_text('#!/bin/sh\nexec /usr/bin/bash "$@"\n')
+            else:
+                (fakebin / "bash").symlink_to(BASH)
             if claude:
                 fake = fakebin / "claude"
                 fake.write_text("#!/bin/sh\nexit 0\n")
@@ -44,7 +52,8 @@ class SurfaceLoadBlock(unittest.TestCase):
             if functional is not None:
                 env["QUENCHING_FUNCTIONAL"] = functional
             return subprocess.run(
-                [BASH, "-c", _block()], cwd=root, env=env, capture_output=True, text=True
+                [BASH, "-c", _block()], cwd=root, env=env, capture_output=True, text=True,
+                encoding="utf-8",
             )
 
     def test_without_the_opt_in_it_skips_and_stays_green(self):
@@ -78,7 +87,7 @@ class DeployedArrangements(unittest.TestCase):
         argv = [BASH, str(FUNCTIONAL), *args]
         if repo is not None:
             argv.append(str(repo))
-        return subprocess.run(argv, capture_output=True, text=True)
+        return subprocess.run(argv, capture_output=True, text=True, encoding="utf-8")
 
     def test_guards_pass(self):
         for flag in ("--selfcheck", "--selftest"):

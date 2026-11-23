@@ -23,6 +23,7 @@ try:
 except ModuleNotFoundError:  # package-qualified unittest invocation from the repository root
     sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
     import _paths  # noqa: F401
+from _tools import fake_tool
 from quenching.codex import main
 from quenching.codex.config import DEFAULTS, load_settings
 from quenching.codex.probe import APP_SERVER_ARGV, judge, probe, read_sessions
@@ -123,10 +124,7 @@ sys.exit(64)
 
 def write_fake(directory: pathlib.Path) -> pathlib.Path:
     """Write an executable fake `codex` into `directory` and return it."""
-    binary = directory / "codex"
-    binary.write_text(f"#!{sys.executable}\n{FAKE}", encoding="utf-8")
-    binary.chmod(0o755)
-    return binary
+    return fake_tool(directory, "codex", FAKE)
 
 
 def limits(primary: float = 10, secondary: float = 20, allowed=True, reached=None) -> dict:
@@ -424,7 +422,7 @@ class TheCommandLine(FakeCodex):
     def test_the_router_reaches_the_pillar(self):
         env = {**os.environ, **self.env}
         run = subprocess.run([sys.executable, str(CQ), "--root", str(self.tmp), "codex", "probe"],
-                             capture_output=True, text=True, env=env)
+                             capture_output=True, text=True, encoding="utf-8", env=env)
         self.assertEqual(0, run.returncode, run.stderr)
         self.assertIn("codex probe — available (app-server)", run.stdout)
 

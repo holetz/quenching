@@ -4,8 +4,12 @@ import pathlib
 import re
 import shutil
 import subprocess
+import sys
 import tempfile
 import unittest
+
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
+from _tools import bash  # noqa: E402
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 ALIGN_DECLARATION = ROOT.parent / "docs" / "standards" / "architecture" / "align-surface.md"
@@ -188,7 +192,8 @@ class KnowledgeAlignmentContract(unittest.TestCase):
                 ignore=shutil.ignore_patterns("__pycache__"),
             )
             return subprocess.run(
-                ["bash", str(script), "--half", "2"], cwd=repo, text=True, capture_output=True
+                [bash(), str(script), "--half", "2"], cwd=repo, text=True, capture_output=True,
+                encoding="utf-8",
             )
 
     def test_citation_check_rejects_unknown_section_addresses(self):
