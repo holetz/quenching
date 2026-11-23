@@ -29,6 +29,8 @@ def build_parser() -> argparse.ArgumentParser:
     child = sub.add_parser("readiness", help="assess tree and history before making the repository public, read-only")
     child.add_argument("--evidence", metavar="PATH",
                        help="the owner's reviewed dependency-license and history-consent evidence (JSON)")
+    child.add_argument("--denylist", metavar="PATH",
+                       help="the owner's sensitive terms, one per line, in a file outside the target")
     child.add_argument("--timeout", type=int, default=DEFAULT_TIMEOUT_S, metavar="SECONDS",
                        help="per-scanner bound")
     child.add_argument("--json", action="store_true", help="print machine-readable output")
@@ -70,7 +72,7 @@ def main(argv: list[str]) -> int:
         emit(as_json, result, f"opensource apply — {verb} {result['target']} from {result['source']}")
         return 0
     if args.cmd == "readiness":
-        payload, code = assess(root, args.evidence, args.timeout)
+        payload, code = assess(root, args.evidence, args.timeout, denylist=args.denylist)
         emit(as_json, payload, _readiness_human(payload))
         return code
     payload = doctor(root) if args.cmd == "doctor" else status(root)
