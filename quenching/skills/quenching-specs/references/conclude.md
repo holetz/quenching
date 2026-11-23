@@ -323,7 +323,11 @@ history should not carry. The distillation above still runs.
 were applied, reported as already satisfied, or reported as none.
 
 ### 6. Sweep the flow itself, and capture what it owes
-The change is finished; the way it was made is evidence too. This step judges the run itself — the
+The change is finished; the way it was made is evidence too. **Read the session first, once:**
+`.agents/quenching/bin/cq components session digest --json --cap 5` counts the corrections, the repeated
+reads and shells and the anomalies from the transcript, so the judgment below does not rest on
+memory. A non-zero exit (no transcript on this host) is not retried: judge from the conversation
+and say in the report that the digest did not exist. This step judges the run itself — the
 skills, flow references, agents, standards, harness and deploy surface that carried it — and turns
 each real defect into a spec of its own, captured with the problem and the evidence it needs, for
 another session to develop. The project's automation evolves because its runs leave the defects
@@ -336,14 +340,17 @@ hold:
    branch's and is already handled here;
 2. this run produced the evidence, quotable: a step that had to be improvised, a reference that
    contradicted another, a gate that could not see a class of defect, a command whose failure the
-   flow does not anticipate, a rule the run had to invent because no standard had it;
+   flow does not anticipate, a rule the run had to invent because no standard had it, or a figure
+   of the session digest (a human correction, a repeated read or shell, an anomaly) with its
+   number and its quoted turn;
 3. no open spec already covers it — check the front first
    (`.agents/quenching/bin/cq specs list --json`, matched on the title and on the defect it names)
    and add a `## Discoveries` line there instead of opening a duplicate.
 
 **What does not qualify matters as much**: a defect of the delivered product, a nit in one file, a
-preference of this session, or an improvement no fact from this run supports. Zero is the normal
-result; a sweep that finds something every time is inventing.
+preference of this session, or an improvement no fact from this run supports. Zero is a valid
+result only when neither the digest nor the run evidences a defect; a sweep that finds something
+every time is inventing.
 
 **One spec per candidate, captured and not designed** — the design costs a session, and the session
 that takes it should be the one that argues with the defect:
@@ -355,6 +362,8 @@ that takes it should be the one that argues with the defect:
 <what happened, in this run's own facts: the step, the command and its output, the file:line of the
 reference that misled, the spec and the date — and what the improvement has to make impossible>
 
+Minimal fix proposed: <the smallest fix that fits the defect, in one line>
+
 **Insumos**
 
 - <path:line of the reference, the standard, the agent definition>
@@ -363,7 +372,8 @@ reference that misled, the spec and the date — and what the improvement has to
 EOF
 ```
 
-The problem carries the **inputs** — the paths, the command and its output, the spec id — because
+A fix that would need a new layer, a new step in a command body or tokens with no measured return is
+not proposed in the spec: it is one line in the report, as a decision for the human. The problem carries the **inputs** — the paths, the command and its output, the spec id — because
 the session that develops it will not have this conversation. **Never develop the captured spec
 here**: its design and its go belong to whoever takes it, unless the human asks for that improvement
 in this same run, and then it is a new `create` and not a task of this spec.
