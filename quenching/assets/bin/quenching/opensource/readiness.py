@@ -75,7 +75,11 @@ def _env() -> dict[str, str]:
 
 
 def _run(argv: list[str], cwd: str, timeout: int) -> tuple[int, str, str] | None:
-    """Exit, stdout, stderr — or ``None`` for a missing binary or a timeout. Never raises."""
+    """Exit, stdout, stderr — or ``None`` for a missing binary or a timeout. Never raises.
+
+    The program runs from the path `which` resolves, the same lookup `_scanner` detected it with:
+    on Windows a bare name only reaches a `.exe`, so a `.cmd` shim would be found and then fail."""
+    argv = [shutil.which(argv[0]) or argv[0], *argv[1:]]
     try:
         out = subprocess.run(argv, capture_output=True, text=True, encoding="utf-8", errors="replace", cwd=cwd,
                              timeout=timeout, env=_env(), stdin=subprocess.DEVNULL)

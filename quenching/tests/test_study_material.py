@@ -7,6 +7,7 @@ import unittest
 from pathlib import Path
 
 import _paths  # noqa: F401
+from _tools import bash
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -39,9 +40,10 @@ class StudyMaterial(unittest.TestCase):
     def test_disposable_runner_completes_without_checkout_mutation(self):
         runner = ROOT / "experiments/first-workflow/run.sh"
         result = subprocess.run(
-            ["bash", str(runner)],
+            [bash(), str(runner)],
             cwd=ROOT,
             text=True,
+            encoding="utf-8",
             capture_output=True,
             check=False,
         )
