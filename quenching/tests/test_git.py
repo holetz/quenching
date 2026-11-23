@@ -84,7 +84,7 @@ def _merged_branch(repo: str, name: str) -> None:
 
 def _cq_json(cwd: str, *argv: str) -> dict:
     proc = subprocess.run([sys.executable, CQ, "git", *argv, "--json"], cwd=cwd,
-                          capture_output=True, text=True)
+                          capture_output=True, text=True, encoding="utf-8")
     assert proc.returncode == 0, proc.stderr
     return json.loads(proc.stdout)
 
@@ -1406,7 +1406,8 @@ class Audit(RepoCase):
         raw = (f"tree {tree}\nparent {self.sha}\nauthor T <t@e> 1 +0000\ncommitter T <t@e> 1 +0000\n"
                "gpgsig -----BEGIN PGP SIGNATURE-----\n \n x\n -----END PGP SIGNATURE-----\n\nsigned\n")
         signed = subprocess.run(["git", "hash-object", "-t", "commit", "-w", "--stdin"], cwd=self.wt,
-                                input=raw, check=True, capture_output=True, text=True).stdout.strip()
+                                input=raw.encode(), check=True,
+                                capture_output=True).stdout.decode().strip()
         _run(self.wt, "update-ref", "refs/heads/spec/1", signed)
         _run(self.repo, "config", "gpg.program", prog)
         _run(self.repo, "config", "log.showSignature", "true")
@@ -2500,7 +2501,7 @@ if __name__ == "__main__":
 def _cq(cwd: str, *argv: str, stdin: str | None = None,
         env: dict | None = None) -> subprocess.CompletedProcess:
     return subprocess.run([sys.executable, CQ, "git", *argv, "--json"], cwd=cwd, input=stdin,
-                          capture_output=True, text=True, env=env)
+                          capture_output=True, text=True, encoding="utf-8", env=env)
 
 
 def _sha(cwd: str, ref: str = "HEAD") -> str:
@@ -2836,11 +2837,11 @@ class WorktreeAdd(RepoCase):
         _run(self.repo, "push", "-q", "origin", "main:main", "--force")
 
     def test_runs_the_declared_setup_once_inside_the_new_worktree(self):
-        self._declare_setup("pwd > setup-ran.txt")
+        setup = "cd > setup-ran.txt" if os.name == "nt" else "pwd > setup-ran.txt"
+        self._declare_setup(setup)
         payload = _cq_json(self.repo, "worktree", "add", "--path", self.path,
                            "--branch", "plan/1-x", "--base", "main")
-        self.assertEqual(payload["setup"], {"command": "pwd > setup-ran.txt", "exit": 0,
-                                            "ok": True})
+        self.assertEqual(payload["setup"], {"command": setup, "exit": 0, "ok": True})
         ran = pathlib.Path(self.path, "setup-ran.txt").read_text(encoding="utf-8").strip()
         self.assertEqual(os.path.realpath(ran), os.path.realpath(self.path))
         self.assertFalse(pathlib.Path(self.repo, "setup-ran.txt").exists())
