@@ -738,6 +738,21 @@ class TargetLauncher(unittest.TestCase):
         self.assertEqual(through_shim.stdout, direct.stdout)
         self.assertEqual(through_shim.returncode, direct.returncode)
 
+    def test_an_argument_with_a_space_arrives_whole(self):
+        """`os.execv` on Windows joins argv unquoted: `"dois termos"` arrived as two arguments."""
+        with tempfile.TemporaryDirectory() as tmp:
+            root = pathlib.Path(tmp)
+            (root / "bin").mkdir()
+            (root / "assets/bin").mkdir(parents=True)
+            launcher = root / "bin/cq"
+            launcher.write_bytes(self.shim.read_bytes())
+            (root / "assets/bin/cq").write_text(
+                "import json, sys\nprint(json.dumps(sys.argv[1:]))\nsys.exit(3)\n", encoding="utf-8")
+            run = subprocess.run([sys.executable, str(launcher), "dois termos", "x"],
+                                 capture_output=True, text=True)
+        self.assertEqual(3, run.returncode, run.stderr)
+        self.assertEqual(["dois termos", "x"], json.loads(run.stdout))
+
     def test_a_refusal_arrives_as_exit_2(self):
         """Every command body branches on 0/1/2. A launcher that normalised one would break all of them."""
         run = subprocess.run([str(self.shim), "knowledge", "--root", "."], capture_output=True, text=True)
