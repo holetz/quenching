@@ -60,8 +60,8 @@ Prose — not an entry.
     def test_snippet_is_addressed_to_the_source_it_was_derived_from(self):
         with tempfile.TemporaryDirectory() as tmp:
             source = Path(tmp) / "glossary.md"
-            source.write_text("## Terms\n\n- **ASRC** — expected loss stage\n")
-            snippet = render_abbreviations(source, parse_glossary(source.read_text()))
+            source.write_text("## Terms\n\n- **ASRC** — expected loss stage\n", encoding="utf-8")
+            snippet = render_abbreviations(source, parse_glossary(source.read_text(encoding="utf-8")))
             digest = hashlib.sha256(source.read_bytes()).hexdigest()
             self.assertIn(f"source_sha256: {digest}", snippet)
             self.assertIn("*[ASRC]: expected loss stage", snippet)
@@ -71,8 +71,8 @@ Prose — not an entry.
         # there literally.
         with tempfile.TemporaryDirectory() as tmp:
             source = Path(tmp) / "glossary.md"
-            source.write_text("## Terms\n\n- **Probe** — the pass [align](standards/a.md) runs\n")
-            snippet = render_abbreviations(source, parse_glossary(source.read_text()))
+            source.write_text("## Terms\n\n- **Probe** — the pass [align](standards/a.md) runs\n", encoding="utf-8")
+            snippet = render_abbreviations(source, parse_glossary(source.read_text(encoding="utf-8")))
             self.assertIn("*[Probe]: the pass align runs", snippet)
             self.assertNotIn("standards/a.md", snippet)
 
@@ -84,9 +84,10 @@ Prose — not an entry.
                 "- **ASRC** — an acronym\n"
                 "- **Derived stage** — computed, never written\n"
                 "- **Probe** — the verifier pass\n"
-                "- **probe** — a distinct lowercase entry\n"
+                "- **probe** — a distinct lowercase entry\n",
+                encoding="utf-8",
             )
-            snippet = render_abbreviations(source, parse_glossary(source.read_text()))
+            snippet = render_abbreviations(source, parse_glossary(source.read_text(encoding="utf-8")))
             self.assertIn("*[Derived stage]: computed, never written", snippet)
             self.assertIn("*[derived stage]: computed, never written", snippet)
             # An acronym keeps its exact form only.
@@ -99,8 +100,8 @@ Prose — not an entry.
     def test_punctuation_term_is_declared_unabbreviatable_rather_than_emitted_broken(self):
         with tempfile.TemporaryDirectory() as tmp:
             source = Path(tmp) / "glossary.md"
-            source.write_text("## Terms\n\n- [**`[P]` marker**](standards/task.md) — opt-in marker\n")
-            snippet = render_abbreviations(source, parse_glossary(source.read_text()))
+            source.write_text("## Terms\n\n- [**`[P]` marker**](standards/task.md) — opt-in marker\n", encoding="utf-8")
+            snippet = render_abbreviations(source, parse_glossary(source.read_text(encoding="utf-8")))
             self.assertIn("explicit glossary abbr fallback", snippet)
             self.assertNotIn("*[[P] marker]:", snippet)
 
@@ -109,7 +110,7 @@ Prose — not an entry.
             root = Path(tmp) / "docs"
             (root / "assets").mkdir(parents=True)
             source = root / "glossary.md"
-            source.write_text("---\ntype: concept\n---\n\n## Terms\n\n- **ASRC** — expected loss\n")
+            source.write_text("---\ntype: concept\n---\n\n## Terms\n\n- **ASRC** — expected loss\n", encoding="utf-8")
             payload = write_projection(root)
             checked, findings = projection_findings(root)
             self.assertFalse(findings, checked)
@@ -125,9 +126,9 @@ Prose — not an entry.
             root = Path(tmp) / "docs"
             root.mkdir(parents=True)
             source = root / "glossary.md"
-            source.write_text("## Terms\n\n- **ASRC** — expected loss stage\n")
+            source.write_text("## Terms\n\n- **ASRC** — expected loss stage\n", encoding="utf-8")
             write_projection(root)
-            source.write_text("## Terms\n\n- **ASRC** — changed definition\n")
+            source.write_text("## Terms\n\n- **ASRC** — changed definition\n", encoding="utf-8")
             _, findings = projection_findings(root)
             self.assertEqual({f["code"] for f in findings}, {"glossary-snippet-stale"})
 
