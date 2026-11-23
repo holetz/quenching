@@ -13,6 +13,7 @@ from typing import Protocol
 from quenching.common.git import _git, remember_remote_url
 from quenching.common.remote import remote_host as _remote_host
 from quenching.common.io import read_text, write_text
+from quenching.common.paths import native_path
 
 
 CONFIG_FILE = os.path.join(".agents", "quenching.json")
@@ -173,7 +174,7 @@ def find_repo_root(specs_root: str) -> str:
     top = (_git(specs_root, "rev-parse", "--show-toplevel").strip()
            if os.path.isdir(specs_root) else "")
     if top:
-        return top
+        return native_path(top)
     return os.path.dirname(os.path.abspath(specs_root))
 
 
