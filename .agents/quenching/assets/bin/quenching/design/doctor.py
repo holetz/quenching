@@ -123,6 +123,12 @@ def _orphan_assets(root: Path) -> list[dict[str, str]]:
     if not assets.is_dir():
         return []
     searchable: list[str] = []
+    # A public README shows the interface asset it cites; that citation is a reference too.
+    for readme in sorted(root.glob("README*")):
+        try:
+            searchable.append(readme.read_text(encoding="utf-8"))
+        except (OSError, UnicodeDecodeError):
+            continue
     for base in (root / ".design", root / "docs" / "standards" / "design"):
         if not base.exists():
             continue
