@@ -196,7 +196,7 @@ motion, shadows, breakpoints, and snippets remain in the source and sidecar.
 | `/quenching-opensource` | The single entry point of the opensource flows: picks `align`, `status`, `readiness` by the flow you name or by the words of the request. |
 | `/quenching-opensource align` | Probes applicability, plans the license, contributing, conduct, support, governance, owners and template artifacts on one OK, and writes each through `cq opensource apply` from a pinned template, never choosing the owner's license, maintainers, contact or funding. |
 | `/quenching-opensource status` | Reports every owner's catalog answers, the OSPS baseline level reached and `os-*` findings without writing. |
-| `/quenching-opensource readiness` | Assesses secrets in tree and history, internal identifiers, attribution and the owner's license and consent evidence before a repository goes public, read-only; reports blockers, warnings and unmeasured coverage and never approves publication. |
+| `/quenching-opensource readiness` | Assesses secrets in tree and history, internal identifiers (SaaS tenants included), the owner's declared terms, attribution and the owner's license, consent and provenance evidence before a repository goes public, read-only; reports blockers, warnings and unmeasured coverage and never approves publication. |
 
 ### The security pillar — read-only repository security questions
 
