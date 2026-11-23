@@ -1,0 +1,3 @@
+[mcp_servers.quenching]
+command = "python3"
+args = [".agents/quenching/assets/bin/cq", "specs", "mcp"]
