@@ -39,13 +39,13 @@ end to end sees the sentence, knows the rule exists somewhere, and moves on — 
 ## The proof
 
 Before the tasks this standard documents, seven of the eight `/quenching-specs-*` bodies cited
-`spec-driven.md` §The report mold like this, in the preamble:
+`report-mold.md` section on the report mold like this, in the preamble:
 
-> "whose §The report mold owns the shape step 7 prints in"
+> "whose section on the report mold owns the shape step 7 prints in"
 
 and not one of the eight contained, at any point of its own body, the call
-`cq components read ... --sections "§The report mold"`. `develop.md` went further: it explicitly
-deferred to step 8 ("step 8 loads spec-driven.md's §The report mold") — and step 8, when read,
+`cq components read report-mold.md --sections "The rule"`. `develop.md` went further: it
+explicitly deferred to step 8 ("step 8 loads report-mold.md's section on the report mold") — and step 8, when read,
 carried no call at all, only the same sentence of prose.
 
 The measured symptom was exactly what a citation alone permits: a report emitted in free form, with

@@ -82,7 +82,7 @@ gets retired in one place and survives in the other — which is worse than eith
 that warns about a capability it has since proved teaches its readers to ignore its warnings.
 
 **This is not the hypothetical case — `azure-boards` was the one name this tuple carried, and
-`provar-e-posicionar-o-backend-azure-boards` (task 7.1) is the edit that retired it.** §6 of that
+`provar-e-posicionar-o-backend-azure-boards` (task 7.1) is the edit that retired it.** Section 6 of that
 plan ran the backend end to end against a real Azure DevOps project (a real
 organization and team): `new --subject`, every `section --write`, `record`, `task --check`, `status`,
 `show` and `promote --outcome done`, each compared against `files` for the same state and

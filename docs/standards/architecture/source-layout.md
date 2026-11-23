@@ -80,7 +80,7 @@ as a plugin. `assets/modules.json` (schema 3) is the deploy manifest: each modul
 
 <!-- rationale -->
 
-Splitting the source into one authored directory per module was rejected (spec 1635 §Design): the
+Splitting the source into one authored directory per module was rejected (spec 1635, its Design section): the
 suite imports from `quenching/assets/bin`, and one source per module would need one edit
 per module per change. Spec 2160 kept the single source and retired only the published copies —
 the module plugins, the specs reader, the Codex plugin and the OpenCode distribution — because a

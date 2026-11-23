@@ -173,7 +173,7 @@ alive gets *yes* forever ([plan-git-record.md](plan-git-record.md) §Three front
 rewriting the value would falsify a fact that already happened; the restampable three each carry
 their own `date` because their owning command may legitimately re-judge. In neither case may a
 command other than the one named in `writtenBy` touch the record — `complexity` excepted, which
-names its own list because part of it is computed (§ above), under a record whose owner stays
+names its own list because part of it is computed (see above), under a record whose owner stays
 `triage`. The vocabulary lives in
 `assets/specs/schema.json` (`frontmatter.records`), which `cq specs` embeds as its fallback.
 

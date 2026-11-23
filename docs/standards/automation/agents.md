@@ -7,7 +7,7 @@ tags: [automation, agents, delegation]
 timestamp: 2026-11-03
 audience: both
 authority: current
-source: skill-front capability research (2026-07-27) — hookify/plugin-dev/agent-sdk-dev + official docs; instrument-and-extend-skill-front plan §6; spec 2163 (2026-11-03)
+source: skill-front capability research (2026-07-27) — hookify/plugin-dev/agent-sdk-dev + official docs; instrument-and-extend-skill-front plan section 6; spec 2163 (2026-11-03)
 maintainer: quenching
 ---
 

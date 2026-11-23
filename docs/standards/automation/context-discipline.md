@@ -54,7 +54,7 @@ run measures its cut.
    the reader takes it:
    1. every `§`-address carries the file it belongs to, in the same link or glued to it;
    2. an address is never split across a line break;
-   3. a step of the body's own workflow is `step 5g`, never `§5g` — `§` keeps one meaning, a file's
+   3. a step of the body's own workflow is `step 5g`, never `5g` after the section sign - `§` keeps one meaning, a file's
       section, never a step number.
    4. **a value handed to the reader is first an ADDRESS, and only then a list.** A heading may
       carry a comma of its own — `## What crosses, what stays` — so a reader that splits every
@@ -196,13 +196,13 @@ section had already taken the order of magnitude, and this is the residue. The 7
 fraction of the markup as applied — conservative, only clearly narrative prose was relocated — not
 of an exhaustive classification.
 
-The last rule was not foreseen. Applied to `execution.md` §Delegating an executor, a single
+The last rule was not foreseen. Applied to `execution-delegation.md` §Delegating an executor, a single
 `<!-- rationale -->` inside one `###` swallowed three entirely normative `###` blocks, silently.
 
 **The two rules above it were not foreseen either, and both were caught by a branch review rather
 than by the task that introduced them.** Measured 2026-08-02 while relocating rationale out of
-`/quenching-specs execute`: the destination chosen was `execution.md` §Declared versus emergent
-`docs/` — one of the *seven* sections that command's preamble cites on every run. The section went
+`/quenching-specs execute`: the destination chosen was `execution-delegation.md` §Declared versus emergent
+`knowledge/` — one of the *seven* sections that command's preamble cites on every run. The section went
 1,547 → 2,366 chars, so **819 chars per turn were relocated into the bill they were being moved
 off**. Nothing detected it: the body was correct, the destination file was correct, and the task's
 own diff self-review saw one file's change with no view of the citation set. Moving the same two
