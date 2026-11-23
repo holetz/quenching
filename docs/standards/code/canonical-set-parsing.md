@@ -95,7 +95,7 @@ implementation of the same rule written inside the selftest.
 
 `SECTION_CASES` is a shared list: `cq components` and `cq specs` carry it verbatim and each proves the
 sectioning rule against its own reader. Two of its seven cases are about **name resolution** — that
-`§Gamma` and `## Alpha` are the same request, and that a unique prefix resolves. In `cq components`
+a request with the section sign and one without it are the same request, and that a unique prefix resolves. In `cq components`
 they ran through `select_sections`, which is what `read` calls. In `cq specs` they ran through a
 resolver written in the selftest body, ten lines that did the `§`-strip and the prefix walk
 themselves. It passed. Meanwhile the shipped path, `_match_heading`, did neither:

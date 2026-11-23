@@ -4,9 +4,11 @@ clones are the writers. Nothing here reaches a network or the repository under t
 The canonical sequence the external providers share runs against `GitBackend` too, and its
 observations must equal both the memory fake's and the GitHub transport fixture's."""
 
+import contextlib
 import json
 import os
 import pathlib
+import shlex
 import shutil
 import subprocess
 import sys
@@ -35,6 +37,35 @@ def _sh(cwd: str, *argv: str) -> str:
     if run.returncode != 0:
         raise AssertionError(f"git {' '.join(argv)} failed: {run.stderr}")
     return run.stdout
+
+
+_SPAWNS: list | None = None
+
+
+def _count_git(event: str, args: tuple) -> None:
+    if event == "subprocess.Popen" and _SPAWNS is not None:
+        # Windows audits the command line already joined into one string.
+        argv = ([str(a) for a in args[1]] if isinstance(args[1], (list, tuple))
+                else [a.strip('"') for a in shlex.split(str(args[1]), posix=False)])
+        if argv and os.path.basename(argv[0]).lower().startswith("git"):
+            rest = argv[1:]
+            while rest and rest[0] in ("-C", "--git-dir"):
+                rest = rest[2:]
+            _SPAWNS.append(rest[0] if rest else "")
+
+
+sys.addaudithook(_count_git)   # an audit hook cannot be removed; it counts only inside _git_spawns
+
+
+@contextlib.contextmanager
+def _git_spawns():
+    """The git subcommands spawned inside the block, in order."""
+    global _SPAWNS
+    _SPAWNS = []
+    try:
+        yield _SPAWNS
+    finally:
+        _SPAWNS = None
 
 
 class GitStoreFixture(unittest.TestCase):
@@ -346,6 +377,26 @@ class PendingWrites(GitStoreFixture):
         with mock.patch.dict(os.environ, {git_mod.NO_FETCH_ENV: "1"}):
             self.assertTrue(GitBackend(path).read_spec(1)[0]["text"].endswith("local\n"))
             self.assertTrue(GitBackend(path).has_local_ref())
+
+    def test_a_read_over_a_pending_write_spawns_each_git_question_once(self):
+        path, backend = self._seeded()
+        self._append(backend, 1, "local")
+        with mock.patch.dict(os.environ, {git_mod.NO_FETCH_ENV: "1"}), _git_spawns() as spawns:
+            self.assertTrue(GitBackend(path).read_spec(1)[0]["text"].endswith("local\n"))
+        self.assertEqual(["for-each-ref", "ls-tree", "ls-tree", "cat-file"], spawns)
+
+    def test_the_origin_url_is_read_once_per_process(self):
+        from quenching.common import config as common_config
+        from quenching.specs import members as members_mod
+        path = self.clone("a")
+        with _git_spawns() as spawns:
+            common_config.detect_provider(path)
+            backend, err = git_mod.open_git_backend(path)
+            url = members_mod.origin_url(path)
+        self.assertEqual({}, err)
+        self.assertEqual(self.remote, backend.remote_url)
+        self.assertEqual(self.remote, url)
+        self.assertEqual(1, spawns.count("remote"), spawns)
 
     def test_a_read_after_a_remote_move_replays_in_memory_and_never_moves_the_pending_ref(self):
         path, backend = self._seeded()

@@ -122,8 +122,8 @@ The surface is partitioned by the artifact each front's commands touch:
   front. The other six namespaces name fronts or the provider-owned specs flow; only the five
   local fronts converge a tree toward a canonical shape. `git` answers questions about the target
   repository's own live git state instead, which is why it carries no `align` verb of its own —
-  see [../architecture/align-surface.md](../architecture/align-surface.md) §The seventh pillar has
-  no align.
+  see [../architecture/align-surface.md](../architecture/align-surface.md) §The git pillar has no
+  align, and the reason is structural.
 - **root `/align`** — deliberately outside the front namespaces, because it is the one command
   that spans the five local aligned fronts. Under the old rule it was an exception the linter had to be
   told about; now it is simply a command at the top of the tree.

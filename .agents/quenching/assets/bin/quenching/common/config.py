@@ -10,7 +10,7 @@ import json
 import os
 from typing import Protocol
 
-from quenching.common.git import _git
+from quenching.common.git import _git, remember_remote_url
 from quenching.common.remote import remote_host as _remote_host
 from quenching.common.io import read_text, write_text
 
@@ -183,6 +183,7 @@ def detect_provider(root: str) -> tuple[str | None, str | None]:
     remote = _git(repo, "remote", "get-url", "origin").strip()
     if not remote:
         return None, None
+    remember_remote_url(repo, "origin", remote)
     host = _remote_host(remote)
     if host == "github.com" or host.endswith(".github.com"):
         return "github", host

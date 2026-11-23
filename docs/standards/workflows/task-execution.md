@@ -393,8 +393,8 @@ git add <the task's files> <the spec file> && git commit -m "<subject>"
 The `task --commit` option remains additive for legacy records, never a replacement for
 `task --subject`; both are accepted together or alone. This repository's `plans/` and `archive/`
 remain on the code branch, while migration of an already-populated `/.specs/` to a dedicated branch
-is deferred and never automatic ([spec-backend.md](../architecture/spec-backend.md) §The selected
-backend is the source of truth). The sha anchor is therefore still valid for a backend that does
+is deferred and never automatic ([spec-backend.md](../architecture/spec-backend.md) §The git store is
+the source of truth). The sha anchor is therefore still valid for a backend that does
 not co-branch, but it is not the new default for execution records.
 
 If the commit fails, **undo the tick** so no box claims a commit that does not exist. A task with no

@@ -10,11 +10,11 @@ from __future__ import annotations
 import hashlib
 import os
 import re
-import subprocess
 
 from quenching.common.config import find_repo_root
 from quenching.specs.backends.base import BackendRefusal
-from quenching.specs.backends.git import DEFAULT_REMOTE, GIT_TIMEOUT_S, NO_FETCH_ENV, GitBackend
+from quenching.specs.backends.git import NO_FETCH_ENV, GitBackend
+from quenching.specs.backends.git import origin_url as _origin_url
 from quenching.specs.parse.epics import local_key, split_ref
 
 # `<owner>/<repo>[.git][/]` at the end of a URL, after `/` or the scp-like `:`.
@@ -24,11 +24,7 @@ _FOREIGN: dict[str, GitBackend] = {}
 
 
 def origin_url(root: str | None) -> str | None:
-    repo = find_repo_root(root or os.getcwd())
-    run = subprocess.run(["git", "-C", repo, "remote", "get-url", DEFAULT_REMOTE],
-                         capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=GIT_TIMEOUT_S, check=False) \
-        if os.path.isdir(repo) else None
-    return (run.stdout.strip() or None) if run is not None and run.returncode == 0 else None
+    return _origin_url(find_repo_root(root or os.getcwd()))
 
 
 def own_repo(url: str | None) -> str | None:
