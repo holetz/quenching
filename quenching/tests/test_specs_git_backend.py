@@ -385,6 +385,19 @@ class PendingWrites(GitStoreFixture):
             self.assertTrue(GitBackend(path).read_spec(1)[0]["text"].endswith("local\n"))
         self.assertEqual(["for-each-ref", "ls-tree", "ls-tree", "cat-file"], spawns)
 
+    def test_the_origin_url_is_read_once_per_process(self):
+        from quenching.common import config as common_config
+        from quenching.specs import members as members_mod
+        path = self.clone("a")
+        with _git_spawns() as spawns:
+            common_config.detect_provider(path)
+            backend, err = git_mod.open_git_backend(path)
+            url = members_mod.origin_url(path)
+        self.assertEqual({}, err)
+        self.assertEqual(self.remote, backend.remote_url)
+        self.assertEqual(self.remote, url)
+        self.assertEqual(1, spawns.count("remote"), spawns)
+
     def test_a_read_after_a_remote_move_replays_in_memory_and_never_moves_the_pending_ref(self):
         path, backend = self._seeded()
         self._append(backend, 1, "local")

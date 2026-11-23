@@ -31,6 +31,7 @@ from datetime import datetime
 
 from quenching.common import identity
 from quenching.common.config import find_repo_root
+from quenching.common.git import remember_remote_url, remembered_remote_url
 from quenching.common.leak import guard_store_write, patterns, scan_text, store_refusal
 from quenching.specs.backends.base import (BackendRefusal, SpecBackend, artifact_owner,
                                            check_artifact)
@@ -1297,6 +1298,18 @@ class _Tree:
 _STORES: dict[tuple[str, str], GitBackend] = {}
 
 
+def origin_url(repo: str) -> str | None:
+    """The `origin` URL of `repo`: the one this process already read, else one `remote get-url`."""
+    url = remembered_remote_url(repo, DEFAULT_REMOTE)
+    if url is None and os.path.isdir(repo):
+        run = subprocess.run(["git", "-C", repo, "remote", "get-url", DEFAULT_REMOTE],
+                             capture_output=True, text=True, encoding="utf-8", errors="replace",
+                             timeout=GIT_TIMEOUT_S, check=False)
+        url = run.stdout.strip() if run.returncode == 0 else ""
+        remember_remote_url(repo, DEFAULT_REMOTE, url)
+    return url or None
+
+
 def open_git_backend(root: str, mirror_dir: str | None = None) -> tuple[SpecBackend | None, dict]:
     """The `git` store for this repository — one instance per repository and process, so the
     config loader and the commands share the one fetch."""
@@ -1304,14 +1317,12 @@ def open_git_backend(root: str, mirror_dir: str | None = None) -> tuple[SpecBack
     key = (os.path.abspath(repo), mirror_dir or "")
     if key in _STORES:
         return _STORES[key], {}
-    run = subprocess.run(["git", "-C", repo, "remote", "get-url", DEFAULT_REMOTE],
-                         capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=GIT_TIMEOUT_S, check=False) \
-        if os.path.isdir(repo) else None
-    if run is None or run.returncode != 0 or not run.stdout.strip():
+    url = origin_url(repo)
+    if not url:
         return None, {"code": "sp-git-no-remote", "exit": 2,
                       "message": f"the git store needs a '{DEFAULT_REMOTE}' remote in {repo}; "
                                  "no spec was read or written"}
-    backend = GitBackend(repo, mirror_dir=mirror_dir, remote_url=run.stdout.strip())
+    backend = GitBackend(repo, mirror_dir=mirror_dir, remote_url=url)
     _STORES[key] = backend
     return backend, {}
 
