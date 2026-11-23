@@ -39,7 +39,8 @@ class SecurityQuestions(unittest.TestCase):
             self.assertTrue(report["readOnly"])
             self.assertEqual(
                 {"workflow-permissions", "secret-ignore-coverage",
-                 "advisory-dependency-configuration", "access-ownership", "agent-grants"},
+                 "advisory-dependency-configuration", "access-ownership", "agent-grants",
+                  "ci-enforcement"},
                 {item["key"] for item in report["questions"]},
             )
             self.assertEqual(before, sorted(root.iterdir()))
