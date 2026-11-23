@@ -65,6 +65,11 @@ _SCRATCHPAD = re.compile(
     r"(?:/private)?/tmp/claude-\d+/[^/\s`'\")\]]+(?:/[0-9a-fA-F-]{36})?(?:/scratchpad)?")
 
 
+# A slug starts a path segment, so it never follows a word character, a dot or a dash: for a root
+# home it would otherwise match a `--root` flag or the tail of `temp-root`.
+_SLUG_LEFT = r"(?<![\w.-])"
+
+
 class DenylistMissing(Exception):
     """The denylist the caller requires is not on disk."""
 
@@ -123,7 +128,7 @@ def path_patterns() -> dict[str, re.Pattern[str]]:
         return {}
     return {
         "home-path": re.compile(re.escape(home) + r"(?![\w.-])"),
-        "home-slug": re.compile(re.escape(_home_slug(home)) + r"(?![\w.])"),
+        "home-slug": re.compile(_SLUG_LEFT + re.escape(_home_slug(home)) + r"(?![\w.])"),
     }
 
 
@@ -180,7 +185,7 @@ def normalize_paths(text: str, root: str | None = None) -> str:
     home = _home()
     if home:
         text = re.sub(re.escape(home) + r"(?![\w.-])", "~", text)
-        text = re.sub(re.escape(_home_slug(home)) + r"(?:-[^/\s`'\")\]]*)?(?![\w.])", "<project>", text)
+        text = re.sub(_SLUG_LEFT + re.escape(_home_slug(home)) + r"(?:-[^/\s`'\")\]]*)?(?![\w.])", "<project>", text)
     return text
 
 
