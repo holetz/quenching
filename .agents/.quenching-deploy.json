@@ -96,7 +96,7 @@
     ".agents/quenching/assets/bin/quenching/config/autonomy.py": "9961bff9eb6afac0b879e42f6bbefa697ddcfe9274bcdc9e2182343f3840d52d",
     ".agents/quenching/assets/bin/quenching/config/effective.py": "86e5ac8b29c1e8c60d2f1f62d9bfc6e78592494d82c84f4a19437e42d00963b4",
     ".agents/quenching/assets/bin/quenching/config/host.py": "8142472848a298f09484f327a3c7a2d8bbd2c162ff2636eb823498fdfd8eb504",
-    ".agents/quenching/assets/bin/quenching/config/schema.py": "480815a9619f4e1bfe9c35714c906be892294a85dd7b3c0d26366609f9d46be2",
+    ".agents/quenching/assets/bin/quenching/config/schema.py": "aee766b1936681ea94f864b3d99eda4fd57f5f925914635eebfd60c3864f0f46",
     ".agents/quenching/assets/bin/quenching/config/seed.py": "f8311f384057ec0ba225f987071891536da4095c2812550ce767c626c6c51b0d",
     ".agents/quenching/assets/bin/quenching/controls/__init__.py": "d7b6251673390a48038fec32359cd43e991f4e64f383fb41873728ce9851877e",
     ".agents/quenching/assets/bin/quenching/controls/evaluate.py": "05cdedea2db16edf16b741e5415097b534b15470ac0e77d0e8c67d7a2ba2a386",
@@ -108,10 +108,11 @@
     ".agents/quenching/assets/bin/quenching/delivery/model.py": "53ab186511c90bde4539d2babbe9442b9c1928253dd0336eb17cb5ca77f258cc",
     ".agents/quenching/assets/bin/quenching/delivery/probe.py": "ba556969ef473dfd54bba7582b633ef12c9349b00dea158cc2bfcb65856f889f",
     ".agents/quenching/assets/bin/quenching/deploy/__init__.py": "d9efa3062ac0c40e82c0bfc4041b7485a60420e2576afef7e94a72277a8cc0ff",
-    ".agents/quenching/assets/bin/quenching/deploy/cli.py": "b74cbe51d2cdc07772e378f376b771d6a8eefe89612a8521ea41dbfeb1d537d3",
+    ".agents/quenching/assets/bin/quenching/deploy/cli.py": "0cc46df21d6452dfd8488e52090c2714d32d72208cc900fc7195df28afaaa817",
+    ".agents/quenching/assets/bin/quenching/deploy/mcpfiles.py": "0783099baad2fd03826a64240e5a23ce92c939e913c65c4546be398890120921",
     ".agents/quenching/assets/bin/quenching/deploy/settings.py": "46bd3a61bd061b22a23766e8e483f170bc7bbd1911fd1856fc93b8182defc0c7",
     ".agents/quenching/assets/bin/quenching/deploy/translate.py": "a1c4e032adef508f1df0e8512ced9f40356f0093a3cfae77cb08dd144fd7f4ba",
-    ".agents/quenching/assets/bin/quenching/deploy/tree.py": "fc336498f83dc411d93926e1d951385f265d286c11268a005e6a00ea32ad5fc0",
+    ".agents/quenching/assets/bin/quenching/deploy/tree.py": "a96f91da37e593b0eafc4942f1b4ab19a39669508139ab1190f22afac885da13",
     ".agents/quenching/assets/bin/quenching/design/align.py": "6d29622f4b63ce0710271398eb72f4f44d22eae297f99aa782007bcac0e6f632",
     ".agents/quenching/assets/bin/quenching/design/build.py": "59a68bcebd16ed9d7aae86ef2466748486f533526dbcde7dbacd4bbac0908aba",
     ".agents/quenching/assets/bin/quenching/design/cli.py": "971bfc4ebbe6c251c225888e16493da17a8c099e3a78ba297c503e81e7f61ebc",
@@ -382,7 +383,7 @@
     ".agents/quenching/references/knowledge-align/taxonomy.md": "a57803ea48451dd8b0b188959d295b8aed24c20c140766d267de7b07e7a06f5b",
     ".agents/quenching/references/knowledge-import/sources.md": "b3648df86b186e0a481cd45cdf06d6ec0dff63f2b1a03831ed0bc0875a96c441",
     ".agents/quenching/references/specs-align/conformance.md": "41960c2d35ea68887d5c06697cea036557f030496da46fa644bdd21972fb98f7",
-    ".agents/quenching/references/specs-align/plugin-configuration.md": "a54d1b51e13ed2af24a73a78753c5fe69a6b82c1d132119f166c5d24ec153301",
+    ".agents/quenching/references/specs-align/plugin-configuration.md": "b889f692e502d2a13113b383132c0413c4ca0e886ee59f55fa673743ffd188e7",
     ".agents/quenching/references/specs-conclude/abandoned.md": "7067f28b0035550d958bdced006af5f55b6794293594ac1f7b6adec82da31cd4",
     ".agents/quenching/references/specs-conclude/auto-discover.md": "64eb6c946416d6c999f1c4219438015fbdb475bcc394a1b4b6525a8dba801fe0",
     ".agents/quenching/references/specs-conclude/distill.md": "d10f84afd69aba16515d51b80d777db8791469f08c91880c7b8954f2e0cac762",
@@ -607,6 +608,17 @@
     ".opencode/agents/quenching-spec-scout.md": "da8e2c895021db847dd6bcd87208ad71e7e424636340b84e3dd4099d06c1b155",
     ".opencode/agents/quenching-spec-verifier.md": "1f65cdc6ef127e1837550ec5ff7d4f4ffb09a7f3d544a71e1f5467911314411f"
   },
+  "mcp": {
+    "mount": "specs",
+    "command": [
+      "python3"
+    ]
+  },
+  "mcpFiles": [
+    ".mcp.json",
+    ".codex/config.toml",
+    "opencode.json"
+  ],
   "claudeSettings": {
     "hooks": [
       "deny-claude-coauthor",
