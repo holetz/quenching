@@ -71,6 +71,8 @@ def _is_generated_mirror(root: Path, entry: str) -> bool:
     resolved = (root / raw).resolve()
     if not resolved.is_relative_to(root):
         return False
+    if resolved.name == ".quenching-deploy.json":
+        return True     # the deploy's own manifest: written whole by `cq deploy`, never read to build
     for directory in resolved.parents:
         if directory == root:
             break
