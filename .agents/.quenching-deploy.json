@@ -146,7 +146,7 @@
     ".agents/quenching/assets/bin/quenching/specs/backends/__init__.py": "7ab56491220f44e0d5260f0dacffb0b05bf166f52eb0f8c1bb146da124ce6238",
     ".agents/quenching/assets/bin/quenching/specs/backends/azure.py": "32cab25d9ab5e61b60f77503a33e531e4bcb0f2002f6cc2cc48b07b4c7228243",
     ".agents/quenching/assets/bin/quenching/specs/backends/base.py": "bfc6e26b4f2b1904d04ca91123d675be33da33f7313895ef3fb1e203cd4dd023",
-    ".agents/quenching/assets/bin/quenching/specs/backends/git.py": "981acb72438b36eccfbda63ed401b19db143775db0b9098c1ccea6e71aefbbba",
+    ".agents/quenching/assets/bin/quenching/specs/backends/git.py": "9f5fb2603497e8b2d1d3aa6daabd0b73d6e50907fb8f44be5d30df00148e7359",
     ".agents/quenching/assets/bin/quenching/specs/backends/github.py": "5016c49004ac71e797bb92bd31d2ae938141046a3a01154b135646d79ed2d1b4",
     ".agents/quenching/assets/bin/quenching/specs/backends/hybrid.py": "d8dc25aa28f0a2f62ea0f056e391ff3a3e2457150d89a21eeaac04f84812da44",
     ".agents/quenching/assets/bin/quenching/specs/backends/memory.py": "72f5a90f9f63c16367bcf3ead1d7d2b8c51016ea505aac7ee05800be572a956e",

@@ -172,6 +172,8 @@ class GitBackend(SpecBackend):
         self._fetched_at: float | None = None
         self._snapshots: dict[str, dict[str, str]] = {}
         self._blob_text: dict[str, str] = {}
+        self._parents: dict[str, str | None] = {}
+        self._seen_pending: tuple[str | None] | None = None
         cache_key = f"{self.mirror_dir or self.repo_root}\0{remote}\0{branch}"
         self._cache_file = _cache_path(cache_key)
         # The card client: `_UNSET` resolves it from the configuration on first use, `None`
@@ -272,9 +274,10 @@ class GitBackend(SpecBackend):
                            capture_output=True, timeout=GIT_TIMEOUT_S, check=False)
         return self.remote_url
 
-    def _fetch(self) -> str | None:
+    def _fetch(self, resolve: bool = True) -> str | None:
         """One fetch of the store branch into the tracking ref; the tip, or None when the
-        remote has no store branch yet."""
+        remote has no store branch yet. `resolve=False` skips reading the tip back, for a
+        caller that resolves it together with the pending ref."""
         source = self._fetch_source()
         code, _, err = self._git("fetch", "--quiet", "--no-tags", "--no-write-fetch-head",
                                  source, f"+refs/heads/{self.branch}:{self.tracking_ref}")
@@ -288,12 +291,34 @@ class GitBackend(SpecBackend):
                            f"could not fetch branch '{self.branch}' from '{self.remote}': "
                            f"{err.strip() or code}", remote=self.remote)
         self._touch_cache()
-        return self._local_tip()
+        return self._local_tip() if resolve else None
 
     def _local_tip(self) -> str | None:
-        code, out, _ = self._git("rev-parse", "--verify", "--quiet",
-                                 f"{self.tracking_ref}^{{commit}}")
-        return (out.decode().strip() or None) if code == 0 else None
+        """The tracking tip. ONE `for-each-ref` also reads the pending ref beside it, kept in
+        `_seen_pending` for `_heads`, and memoizes the pending commit's parent; a ref that is
+        not a commit falls back to the peeling `rev-parse`."""
+        refs = [self.tracking_ref] + ([] if self.read_only else [self.pending_ref])
+        code, out, _ = self._git("for-each-ref",
+                                 "--format=%(objectname) %(objecttype) %(refname) %(parent)",
+                                 *refs)
+        found: dict[str, str] = {}
+        for line in out.decode().splitlines() if code == 0 else ():
+            sha, kind, name, *parents = line.split(" ")
+            if name not in refs:
+                continue
+            if kind != "commit":
+                code = 1
+                break
+            found[name] = sha
+            if name == self.pending_ref:
+                self._parents[sha] = parents[0] if parents and parents[0] else None
+        if code != 0:
+            code, out, _ = self._git("rev-parse", "--verify", "--quiet",
+                                     f"{self.tracking_ref}^{{commit}}")
+            return (out.decode().strip() or None) if code == 0 else None
+        if not self.read_only:
+            self._seen_pending = (found.get(self.pending_ref),)
+        return found.get(self.tracking_ref)
 
     def has_local_ref(self) -> bool:
         return self._local_tip() is not None or self._pending() is not None
@@ -307,8 +332,11 @@ class GitBackend(SpecBackend):
         return (out.decode().strip() or None) if code == 0 else None
 
     def _parent(self, commit: str) -> str | None:
-        code, out, _ = self._git("rev-parse", "--verify", "--quiet", f"{commit}^1")
-        return (out.decode().strip() or None) if code == 0 else None
+        """A commit's first parent, memoized: a commit never changes, so it is asked once."""
+        if commit not in self._parents:
+            code, out, _ = self._git("rev-parse", "--verify", "--quiet", f"{commit}^1")
+            self._parents[commit] = (out.decode().strip() or None) if code == 0 else None
+        return self._parents[commit]
 
     def _ops(self, commit: str | None) -> list[str]:
         """The operations a pending commit accumulated, from its message."""
@@ -353,12 +381,12 @@ class GitBackend(SpecBackend):
         memo = getattr(self, "_tip_memo", None)
         if memo is not None and time.monotonic() - memo[0] <= TIP_MEMO_S:
             return memo[1], memo[2]
-        if self._fetched_fresh() or os.environ.get(NO_FETCH_ENV, "") not in ("", "0") \
-                or self._cache_fresh():
-            tip = self._local_tip()
-        else:
-            tip = self._fetch()
-        pending = self._pending()
+        if not (self._fetched_fresh() or os.environ.get(NO_FETCH_ENV, "") not in ("", "0")
+                or self._cache_fresh()):
+            self._fetch(resolve=False)
+        self._seen_pending = None
+        tip = self._local_tip()
+        pending = self._seen_pending[0] if self._seen_pending else self._pending()
         self._tip_memo = (time.monotonic(), tip, pending)
         return tip, pending
 
