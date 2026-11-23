@@ -24,6 +24,7 @@ from types import SimpleNamespace
 from unittest import mock
 
 import _paths  # noqa: F401  — must precede the `quenching` import; see its docstring
+from _tools import fake_tool
 from quenching.git.base import (_init_default_branch, _is_host_default, _origin_head_branch,
                                 resolve_base)
 from quenching.git.conventions import STANDARDS_DIR, _declared_docs
@@ -3422,13 +3423,8 @@ class PullRequestVerbs(RepoCase):
     def setUp(self):
         super().setUp()
         bindir = pathlib.Path(self.tmp, "bin")
-        bindir.mkdir()
-        gh = bindir / "gh"
-        gh.write_text(FAKE_GH, encoding="utf-8")
-        gh.chmod(0o755)
-        az = bindir / "az"
-        az.write_text(FAKE_AZ, encoding="utf-8")
-        az.chmod(0o755)
+        fake_tool(bindir, "gh", FAKE_GH)
+        fake_tool(bindir, "az", FAKE_AZ)
         self.log = pathlib.Path(self.tmp, "gh.log")
         self.env = {**os.environ, "PATH": f"{bindir}{os.pathsep}{os.environ['PATH']}",
                     "FAKE_GH_LOG": str(self.log)}
