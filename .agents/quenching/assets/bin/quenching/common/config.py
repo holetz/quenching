@@ -28,6 +28,10 @@ NAMESPACES = ("shared", "specs", "ops", "proof", "delivery")
 PROVIDER_ENV = "QUENCHING_CONFIG_PROVIDER"
 DEFAULT_PROVIDER = "file"
 
+# `find_repo_root`'s git answer per directory: a repository's top does not move under a running
+# process, and one `git rev-parse` per call is ~50 ms on Windows. Only a found top is kept.
+_TOPLEVEL: dict[str, str] = {}
+
 # Root-level keys accepted by the pre-envelope format. They are diagnostic-only now: a front
 # adapter must refuse to interpret them because doing so makes a half-migrated repository look
 # healthy while one namespace silently wins over another.
@@ -170,11 +174,16 @@ def find_repo_root(specs_root: str) -> str:
         if parent == current:
             break
         current = parent
-    top = (_git(specs_root, "rev-parse", "--show-toplevel").strip()
-           if os.path.isdir(specs_root) else "")
+    start = os.path.abspath(specs_root)
+    top = _TOPLEVEL.get(start)
+    if top is None and os.path.isdir(specs_root):
+        top = _git(specs_root, "rev-parse", "--show-toplevel").strip()
+        if top:
+            # git prints `C:/x` on Windows; the native form keeps one root one cache key.
+            top = _TOPLEVEL[start] = os.path.normpath(top)
     if top:
         return top
-    return os.path.dirname(os.path.abspath(specs_root))
+    return os.path.dirname(start)
 
 
 def detect_provider(root: str) -> tuple[str | None, str | None]:
