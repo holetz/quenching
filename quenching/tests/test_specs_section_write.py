@@ -520,3 +520,49 @@ class ArchiveRefusesAnyEmptySection(_Workspace):
         obj = json.loads(buf.getvalue())
         self.assertEqual((code, obj["code"]), (2, "sp-gate-unmet"))
         self.assertIn("Handoff", obj["malformed"])
+
+
+APPROVED_SPEC = HANDOFF_SPEC.replace(
+    "date: 2026-08-15\n", "date: 2026-08-15\napproved: {date: 2026-08-16, by: human}\n", 1
+).replace("- [ ] 2.1 Aberta\n", "- [ ] 2.1 Aberta\n      files: a.py\n      verify: python -m unittest\n")
+
+
+class TasksAreAppendOnlyAfterApproval(_Workspace):
+    """2254 — `--write` on `## Tasks` of an approved spec may add tasks, never drop or weaken one."""
+
+    spec_text = APPROVED_SPEC
+
+    BASE = ("### 1. Primeira seção\n\n- [x] 1.1 Feita\n\n### 2. Segunda seção\n\n"
+            "- [ ] 2.1 Aberta\n      files: a.py\n      verify: python -m unittest\n")
+
+    def rewrite(self, tasks, spec=None):
+        self.write_spec(spec or APPROVED_SPEC)
+        return self.run_section(heading="Tasks", write=True, stdin=tasks)
+
+    def test_appending_a_task_is_allowed(self):
+        code, obj = self.rewrite(self.BASE + "\n- [ ] 2.2 Nova\n")
+        self.assertEqual(code, 0, obj)
+
+    def test_dropping_a_task_is_refused(self):
+        code, obj = self.rewrite(self.BASE.replace("- [x] 1.1 Feita\n\n", ""))
+        self.assertEqual((code, obj["code"], obj["tasks"]), (2, "sp-tasks-frozen", ["1.1"]))
+
+    def test_weakening_verify_is_refused(self):
+        code, obj = self.rewrite(self.BASE.replace("python -m unittest", "true"))
+        self.assertEqual((code, obj["code"], obj["tasks"]), (2, "sp-tasks-frozen", ["2.1"]))
+
+    def test_changing_files_or_text_is_refused(self):
+        for label, new in (("files", self.BASE.replace("a.py", "b.py")),
+                           ("text", self.BASE.replace("Aberta", "Outra"))):
+            with self.subTest(label):
+                code, obj = self.rewrite(new)
+                self.assertEqual((code, obj["code"]), (2, "sp-tasks-frozen"))
+
+    def test_a_refusal_writes_nothing(self):
+        self.rewrite(self.BASE.replace("- [x] 1.1 Feita\n\n", ""))
+        self.assertIn("1.1 Feita", self.run_section(heading="Tasks")[1]["body"])
+
+    def test_before_approval_the_rewrite_is_free(self):
+        code, obj = self.rewrite(self.BASE.replace("- [x] 1.1 Feita\n\n", ""),
+                                 spec=HANDOFF_SPEC)
+        self.assertEqual(code, 0, obj)
