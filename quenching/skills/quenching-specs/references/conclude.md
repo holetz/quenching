@@ -326,8 +326,8 @@ were applied, reported as already satisfied, or reported as none.
 The change is finished; the way it was made is evidence too. **Read the session first, once:**
 `.agents/quenching/bin/cq components session digest --json --cap 5` counts the corrections, the repeated
 reads and shells and the anomalies from the transcript, so the judgment below does not rest on
-memory. A non-zero exit (no transcript on this host) is not retried: judge from the conversation
-and say in the report that the digest did not exist. This step judges the run itself — the
+memory. A non-zero exit (no transcript on this host) is neither retried nor reported: go on and
+judge from the conversation, with no further read and no fallback. This step judges the run itself — the
 skills, flow references, agents, standards, harness and deploy surface that carried it — and turns
 each real defect into a spec of its own, captured with the problem and the evidence it needs, for
 another session to develop. The project's automation evolves because its runs leave the defects
