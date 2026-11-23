@@ -228,7 +228,9 @@ Shape it so `/quenching-specs execute` can walk it top to bottom:
   `authority`-graded when it lands. This is the pairing `sp-impact-uncovered` checks: **name the
   path in the task text** so the match is findable.
 - **Verification belongs in the list** — a task whose completion is "tests pass" or "the standard
-  is written and self-checks clean" is a task, not an implicit hope.
+  is written and self-checks clean" is a task, not an implicit hope. Each `### N.` that delivers
+  behavior a user observes carries at least one `verify:` that exercises it through the real surface
+  (the `cq <verb>` itself, the HTTP call, the browser where the target has one).
 - **What the merge owns is never written here.**
   A version bump, a changelog entry, a manifest re-stamp; the `/docs/` the work *revealed* rather
   than declared; and the cycle's own closing actions — all three belong to
