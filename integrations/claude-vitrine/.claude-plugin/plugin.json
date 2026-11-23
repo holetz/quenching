@@ -1,6 +1,6 @@
 {
   "name": "quenching-vitrine",
-  "version": "7.11.1",
+  "version": "7.12.0",
   "description": "A pane for Claude Desktop and the terminal: the specs this session touched, each one's document in tabs, its dependencies and epic, and the quenching configuration. Reads through cq specs and cq config; writes only cq config set|unset, on request.",
   "author": {
     "name": "Israel Holetz",

@@ -13,6 +13,28 @@ owner: [`ci-cd/versioning-release.md`](docs/standards/ci-cd/versioning-release.m
 short version for a consumer: the version is published once, deliberately, as a release — never at a
 spec's own conclude — and `cq --version` is what answers which one you are running.
 
+## 7.12.0
+
+**O quenching funciona no Windows.** O lançador `cq` gerado pelo `cq deploy` não re-divide mais
+  argumentos com espaço (`cq specs new "<título>"` funcionava só pelo `cq.cmd`); o despachante lê e
+  escreve stdin, stdout e stderr em UTF-8, em vez de corromper em silêncio corpos com acento ou
+  quebrar numa seta; as chamadas a `git`, `gh` e `az` com `text=True` passam a declarar o encoding,
+  com um lint que impede a regressão; o `cq deploy` com `core.autocrlf` não acusa mais como editados
+  arquivos limpos; e o job Windows do CI falha quando um passo roda zero testes (#225, #226, #228,
+  #229, #2221).
+
+**O `cq deploy` registra sempre o servidor MCP `quenching`**, para Claude Code, Codex e OpenCode,
+  sem exigir `shared.mcp`, que agora só sobrescreve o mount e o prefixo do Python (#235).
+
+**O `cq` pesa menos a cada chamada.** O pilar specs importa só o subcomando chamado, e a leitura de
+  config não arrasta mais o pacote `codex` nem `statistics`: `cq specs status` cai de 280 para 176
+  módulos e `cq specs --help` de 281 para 172, sem `http.server`, `email` nem `socket`. Um teste de
+  orçamento de import impede a regressão; o piso continua Python 3.11 (#231).
+
+**Também:** o ledger da vitrine passa a classificar como escrita os verbos `cq` que gravam (#208), e
+  o citation-check resolve os pares `cq` e mais alvos `§`, sem cair calado no arquivo que cita
+  (#2249).
+
 ## 7.11.1
 
 **O `cq git pr merge` aceita PR sem checks sob `--allow-no-checks`** e carimba o `--spec` no Azure,
