@@ -15,6 +15,7 @@ import os
 import pathlib
 import re
 import shutil
+import stat
 import subprocess
 import sys
 import tempfile
@@ -2585,7 +2586,9 @@ class Inert(RepoCase):
                            ("remote.origin.promisor", "true"),
                            ("core.sshCommand", str(prog))):
             _run(self.repo, "config", key, value)
-        os.remove(os.path.join(self.repo, ".git", "objects", blob[:2], blob[2:]))
+        loose = os.path.join(self.repo, ".git", "objects", blob[:2], blob[2:])
+        os.chmod(loose, stat.S_IWRITE)   # git writes objects read-only; Windows refuses to delete those
+        os.remove(loose)
         return pathlib.Path(self.tmp, "PWNED_lazy")
 
     def test_audit_blanks_a_filter_whose_name_carries_equals(self):
