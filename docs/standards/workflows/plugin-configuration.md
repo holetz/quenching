@@ -221,7 +221,7 @@ Ownership follows the meaning of the key, not the module that happens to read it
 | Namespace | Owned declarations | Boundary |
 | --- | --- | --- |
 | root | `backend` | legacy/provider metadata only; provider selection comes from `origin` |
-| `shared` | `worktreeSetup`, `sharedPaths`, `regenerablePaths`, `hooks`, `profiles`, `gitConventions`, `gitIdentity`, `autonomy`, `workHost`, `okfValidate`, `contextBudgets`, `codex`, `cache` | settings used by more than one local surface or by isolation |
+| `shared` | `worktreeSetup`, `sharedPaths`, `regenerablePaths`, `hooks`, `profiles`, `gitConventions`, `gitIdentity`, `guidance`, `autonomy`, `workHost`, `okfValidate`, `contextBudgets`, `codex`, `cache` | settings used by more than one local surface or by isolation |
 | `specs` | Azure state and placement mappings, `subjects`, `tagCatalog`, `workItemTypes`, `chat`, `estimate`, `artifactLanguage`, `card`, `cardAt` | provider-owned plan lifecycle and proposal conventions |
 | `delivery` | `provider` | the delivery front's explicit provider declaration; it chooses no pipeline policy |
 | `ops` | `opsRoot`, `router`, `registry` | operations inventory, router and generated registry |
