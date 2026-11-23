@@ -6,11 +6,16 @@ const RANK: Record<Kind, number> = { mention: 0, read: 1, command: 2, commit: 3,
 
 export const rank = (kind: Kind) => RANK[kind]
 
-/** `cq specs <verb>` verbs that write; every other verb reads. */
+/**
+ * `cq specs <verb>` verbs that write; every other verb reads, except `section`, which writes only with `--write`.
+ * `quenching/tests/test_vitrine_write_verbs.py` holds this list to the CLI and to the OpenCode vitrine's copy.
+ */
 const WRITE = new Set([
-  'record', 'task', 'start', 'target', 'assignee', 'tags', 'title', 'promote', 'discover', 'new', 'link',
-  'epic', 'scrub', 'push', 'artifact', 'sync', 'migrate', 'release',
+  'record', 'task', 'start', 'target', 'end', 'assignee', 'tags', 'title', 'verification', 'depends', 'promote',
+  'reconcile', 'discover', 'new', 'link', 'epic', 'scrub', 'push', 'artifact', 'handoff', 'sync', 'migrate', 'release',
 ])
+
+const writes = (verb: string, rest: string) => WRITE.has(verb) || (verb === 'section' && /(?:^|\s)--write\b/.test(rest))
 
 /** MCP tools of the `quenching` server that only read; any other `specs_*` tool writes. */
 const READ_TOOLS = new Set(['list', 'status', 'show', 'section', 'next', 'epic_progress'])
@@ -22,7 +27,7 @@ export function parseCommand(command: string): { hits: { id: number; kind: Kind 
   let match: RegExpExecArray | null
 
   while ((match = pattern.exec(command)) !== null) {
-    const kind: Kind = WRITE.has(match[1] ?? '') ? 'command' : 'read'
+    const kind: Kind = writes(match[1] ?? '', match[2] ?? '') ? 'command' : 'read'
     const id = /^\s+(?:--spec\s+)?(\d{3,})\b/.exec(match[2] ?? '')
 
     if (!id) {

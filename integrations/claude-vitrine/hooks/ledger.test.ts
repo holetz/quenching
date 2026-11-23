@@ -9,6 +9,12 @@ test('a cq specs command names its spec with the weight of its verb', () => {
   expect(parseCommand('cq specs record 2191 approved').hits).toEqual([{ id: 2191, kind: 'command' }])
   expect(parseCommand('cq specs show 1000 && cq specs record 1000 x').hits).toEqual([{ id: 1000, kind: 'command' }])
   expect(parseCommand('ls').hits).toEqual([])
+  for (const verb of ['depends', 'end', 'verification']) {
+    expect(parseCommand(`cq specs ${verb} 2191 x`).hits).toEqual([{ id: 2191, kind: 'command' }])
+  }
+  expect(parseCommand('cq specs section 2191 Design --write').hits).toEqual([{ id: 2191, kind: 'command' }])
+  expect(parseCommand('cq specs section 2191 Design').hits).toEqual([{ id: 2191, kind: 'read' }])
+  expect(parseCommand('cq specs estimate 2191 --json').hits).toEqual([{ id: 2191, kind: 'read' }])
   expect(parseCommand('cq git commit --subject x').commit).toBe(true)
 })
 
