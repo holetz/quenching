@@ -68,6 +68,9 @@ done
 # cwd, so reading it after the `cd` names a file that is not there — `bash assets/checks/...` from
 # the plugin directory, the way `CLAUDE.md` runs it, left `SELF` empty and every pathspec below
 # unparseable, which reads as `exit 2`, not as a pass. `realpath --relative-to` is GNU-only besides.
+# The probes below are Python heredocs that print `→` and match `§`: on Windows their standard
+# streams default to the ANSI code page, so the encoding is fixed here, not left to the host.
+export PYTHONIOENCODING=utf-8
 SELF_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO="${REPO:-$(cd "$SELF_DIR/../../.." && pwd)}"
 cd "$REPO" || { echo "citation-check: cannot enter $REPO"; exit 2; }
@@ -90,6 +93,9 @@ if [ -z "$TOPLEVEL" ]; then
   echo "  nothing could be measured — this is not a pass"
   exit 2
 fi
+# Git for Windows prints `C:/…` where Git Bash's `$PWD` reads `/c/…`: compare the shell's own
+# spelling of the same directory, never the two strings.
+TOPLEVEL="$(cd "$TOPLEVEL" && pwd)"
 if [ "$TOPLEVEL" != "$REPO" ]; then
   echo "citation-check: $REPO is not the repository root ($TOPLEVEL is)"
   echo "  every pathspec here is written from the root, so a subdirectory disarms them"
@@ -497,12 +503,15 @@ sys.exit(1 if bad else 0)
   # counters above remain comparable with the historical half-2 output.
   python3 - "$REPO" <<'PY'
 import os
+import posixpath
 import re
 import subprocess
 import sys
 
 repo = sys.argv[1]
 plugin = os.path.join(repo, "quenching")
+# Targets are git pathspecs, always `/`: `os.path.normpath` turns them into `\` on Windows, and
+# then no heading-index key nor `startswith("quenching/")` ever matches them.
 source_roots = ("quenching/skills/", "quenching/references/", "docs/standards/")
 link_re = re.compile(r"\]\(([^)\s]+)\)")
 labelled_link_re = re.compile(r"\[([^\[\]]*)(\]\()([^)\s]+)\)")
@@ -570,27 +579,27 @@ def relative_target(source, raw):
         target = target[len(".agents/quenching/") :]
         if any(char in target for char in "*?<>${}|"):
             return None
-        return os.path.normpath(os.path.join("quenching", target))
+        return posixpath.normpath(posixpath.join("quenching", target))
     if target.startswith(".agents/skills/"):
         target = target[len(".agents/skills/") :]
         if any(char in target for char in "*?<>${}|"):
             return None
-        return os.path.normpath(os.path.join("quenching", "skills", target))
+        return posixpath.normpath(posixpath.join("quenching", "skills", target))
     if any(char in target for char in "*?<>${}|"):
         return None
     if target.startswith("quenching/"):
-        return os.path.normpath(target)
+        return posixpath.normpath(target)
     if target.startswith("docs/"):
-        return os.path.normpath(target)
+        return posixpath.normpath(target)
     if target.startswith("/"):
-        return os.path.normpath(target[1:])
-    relative = os.path.normpath(os.path.join(os.path.dirname(source), target))
+        return posixpath.normpath(target[1:])
+    relative = posixpath.normpath(posixpath.join(posixpath.dirname(source), target))
     if os.path.isfile(os.path.join(repo, relative)):
         return relative
     # A path relative to the bundle (`naming/command-surface.md`, `standards/<subject>/<x>.md`)
     # names a standard under `/docs/`: resolve it there before falling back to the basename.
     for bundle in ("docs/standards/", "docs/"):
-        rooted = os.path.normpath(bundle + target)
+        rooted = posixpath.normpath(bundle + target)
         if os.path.isfile(os.path.join(repo, rooted)):
             return rooted
     basename = os.path.basename(target.split("#", 1)[0])
