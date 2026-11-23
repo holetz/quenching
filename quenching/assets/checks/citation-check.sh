@@ -140,9 +140,9 @@ echo
 # word — so the list needs no separate entry for it.
 #
 # THE `specs` FRONT IS HERE FOR THE OTHER HALF OF THE SAME RULE, AND IT WAS NEVER RENAMED. Its
-# front name did not move, but its citation form did: `naming/command-surface.md` §Three citation
-# forms says the bare slash is correct ONLY where the command file lives in the target repo's own
-# `.claude/commands/`, and it does not live there — so `/specs:develop` names a form that resolves
+# front name did not move, but its citation form did: `naming/command-surface.md` §Two citation
+# forms, and the condition on each says the bare slash is correct ONLY where the command file
+# lives in the target repo's own `.claude/commands/`, and it does not live there — so `/specs:develop` names a form that resolves
 # nowhere, exactly as `/docs:add` did. Leaving one front bare while the other two were qualified
 # is the asymmetry this pattern closes, and without it the bare form regrows silently.
 #
@@ -505,6 +505,7 @@ repo = sys.argv[1]
 plugin = os.path.join(repo, "quenching")
 source_roots = ("quenching/skills/", "quenching/references/")
 link_re = re.compile(r"\]\(([^)\s]+)\)")
+labelled_link_re = re.compile(r"\[([^\[\]]*)(\]\()([^)\s]+)\)")
 bare_path_re = re.compile(
     r"(?<![A-Za-z0-9_./-])/?(?:\.agents/quenching/)?"
     r"(?:[A-Za-z0-9_.-]+/)+[A-Za-z0-9_.-]+\.md(?:#[A-Za-z0-9_.-]+)?"
@@ -586,40 +587,69 @@ def relative_target(source, raw):
     relative = os.path.normpath(os.path.join(os.path.dirname(source), target))
     if os.path.isfile(os.path.join(repo, relative)):
         return relative
+    # A path relative to the bundle (`naming/command-surface.md`, `standards/<subject>/<x>.md`)
+    # names a standard under `/docs/`: resolve it there before falling back to the basename.
+    for bundle in ("docs/standards/", "docs/"):
+        rooted = os.path.normpath(bundle + target)
+        if os.path.isfile(os.path.join(repo, rooted)):
+            return rooted
     basename = os.path.basename(target.split("#", 1)[0])
-    matches = [
-        path
-        for path in files
-        if path.startswith("quenching/") and os.path.basename(path) == basename
-    ]
-    return matches[0] if len(matches) == 1 else relative
+    for home in ("quenching/", "docs/"):
+        matches = [path for path in same_named(basename) if path.startswith(home)]
+        if len(matches) == 1:
+            return matches[0]
+    return relative
 
 
-def target_for(source, marker_start, line):
+def targets_before(source, marker_start, line):
+    """Every file the line names before the marker, nearest first, that exists in this checkout.
+
+    A name every repository has (`AGENTS.md`, `README.md`) is no claim about one file here, and a
+    path that resolves to nothing is no target: both fall through to the citing file, the file the
+    previous lines named, and the one file whose heading answers the address.
+    """
     candidates = []
-    for match in link_re.finditer(line):
-        if match.start() >= marker_start:
+    # A marker inside a link's text (`[README.md §Model policy](path)`) cites that link's file.
+    for match in labelled_link_re.finditer(line):
+        if match.start() < marker_start < match.start(2):
+            candidates.append((marker_start, match.group(3)))
+    for regex, group in ((link_re, 1), (bare_path_re, 0), (filename_re, 1)):
+        for match in regex.finditer(line):
+            if match.start() >= marker_start:
+                continue
+            raw = match.group(group)
+            if regex is filename_re and raw.split("#", 1)[0] in GENERIC_FILENAMES:
+                continue
+            candidates.append((match.end(), raw))
+    resolved = []
+    for end, raw in candidates:
+        target = relative_target(source, raw)
+        if not target:
             continue
-        target = relative_target(source, match.group(1))
-        if target:
-            candidates.append((match.start(), target))
-    for match in bare_path_re.finditer(line):
-        if match.start() >= marker_start:
+        if measurable(target):
+            resolved.append((end, target))
             continue
-        target = relative_target(source, match.group(0))
-        if target:
-            candidates.append((match.start(), target))
-    for match in filename_re.finditer(line):
-        if match.start() >= marker_start:
-            continue
-        # A name every repository has (`AGENTS.md`, `README.md`) is no claim about one file here.
-        if match.group(1).split("#", 1)[0] in GENERIC_FILENAMES:
-            candidates.append((match.start(), ""))
-            continue
-        target = relative_target(source, match.group(1))
-        if target:
-            candidates.append((match.start(), target))
-    return candidates[-1][1] if candidates else source
+        # A bare name two files share (`taxonomy.md`) names whichever of them holds the section.
+        basename = os.path.basename(raw.split("#", 1)[0])
+        resolved += [(end, path) for path in same_named(basename)]
+    ordered = []
+    for _, target in sorted(resolved, key=lambda item: -item[0]):
+        if target not in ordered:
+            ordered.append(target)
+    return ordered
+
+
+def same_named(basename):
+    return [
+        path
+        for home in ("quenching/", "docs/")
+        for path in files
+        if path.startswith(home) and path.endswith(".md") and os.path.basename(path) == basename
+    ]
+
+
+def measurable(target):
+    return target.startswith(("quenching/", "docs/")) and os.path.isfile(os.path.join(repo, target))
 
 
 def targets_on_line(source, line):
@@ -749,9 +779,17 @@ for source in source_files:
                 continue
             window = line[marker.end() :] + " " + " ".join(lines[index + 1 : index + 6])
             address = window.split("§", 1)[0]
-            same_line_target = target_for(source, marker.start(), line)
-            targets = [same_line_target]
-            if same_line_target == source:
+            if any(
+                match.start() < marker.start() < match.start(2)
+                for match in labelled_link_re.finditer(line)
+            ):
+                address = address.split("](", 1)[0]
+            # The files this line names before the marker are the claim, and only they are
+            # tried: a section absent from every one of them is a finding, never a fallback to
+            # the citing file. With no file named, the address is the citing file's own, or the
+            # file the previous lines named, or the one file whose heading answers it.
+            targets = targets_before(source, marker.start(), line)
+            if not targets:
                 targets = [source]
                 if active_target and active_target != source:
                     targets.append(active_target)
@@ -762,20 +800,15 @@ for source in source_files:
                 (
                     candidate
                     for candidate in targets
-                    if candidate.startswith(("quenching/", "docs/"))
-                    and os.path.isfile(os.path.join(repo, candidate))
+                    if measurable(candidate)
                     and resolve_address(address, heading_names(candidate))
                 ),
                 targets[0],
             )
-            if not target.startswith(("quenching/", "docs/")):
-                continue
-            if not os.path.isfile(os.path.join(repo, target)):
-                continue
             if target not in heading_cache:
                 heading_cache[target] = heading_names(target)
             checked += 1
-            if not resolve_address(address, heading_cache[target]):
+            if not measurable(target) or not resolve_address(address, heading_cache[target]):
                 findings.append((source, index + 1, target, "§" + address.strip()))
         for _, target in targets_on_line(source, line):
             if target.startswith(("quenching/", "docs/")):
@@ -798,6 +831,60 @@ PY
   case $? in
     0) ;;
     2) echo; echo "  section citation check could not be measured"; exit 2 ;;
+    *) FAIL=$((FAIL+1)) ;;
+  esac
+  echo
+
+  # A `cq <pillar> <verb>` the shipped prose tells its reader to run is a claim about the CLI, and
+  # the CLI's own parsers are the base it is measured against: `cq_calls.check_cq_calls` reads the
+  # pillar table from `assets/bin/cq` and walks each pillar's `build_parser()`, the same reading
+  # `cq components lint` gives command bodies. References and skill files are read here because
+  # the lint stops at the body — `cq specs backlog reindex` lived in a reference, green, until
+  # spec 2246 removed it by hand.
+  python3 - "$REPO" <<'PY'
+import os
+import subprocess
+import sys
+
+repo = sys.argv[1]
+bin_dir = os.path.join(repo, "quenching", "assets", "bin")
+sys.path.insert(0, bin_dir)
+try:
+    from quenching.components.cq_calls import check_cq_calls, extract_calls
+except ImportError as error:
+    print("  the cq parsers did not load from %s: %s" % (bin_dir, error))
+    print("  nothing could be measured — this is not a pass")
+    sys.exit(2)
+
+listed = subprocess.run(
+    ["git", "ls-files", "-z", "--", "quenching/references", "quenching/skills"],
+    cwd=repo, check=True, stdout=subprocess.PIPE,
+).stdout.split(b"\x00")
+sources = [path.decode("utf-8", "replace") for path in listed if path.endswith(b".md")]
+
+findings, calls = [], 0
+for source in sources:
+    with open(os.path.join(repo, source), encoding="utf-8", errors="replace") as handle:
+        body = handle.read()
+    calls += len(extract_calls(body, ("cq",)))
+    findings += [(source, issue) for issue in check_cq_calls(body)]
+
+for source, issue in findings[:200]:
+    print("         %s:%d: `%s` — %s" % (source, issue.line, issue.call, issue.detail))
+if len(findings) > 200:
+    print("         … and %d more" % (len(findings) - 200))
+# A sweep that read no file, or found no call in what it read, measured nothing.
+if not sources or not calls:
+    print("  no cq call could be measured in %d file(s) — this is not a pass" % len(sources))
+    sys.exit(2)
+if findings:
+    print("  FAIL   cited cq calls: %d, over %d checked in %d file(s)" % (len(findings), calls, len(sources)))
+    sys.exit(1)
+print("  ok     cited cq calls: %d checked in %d file(s), all parse" % (calls, len(sources)))
+PY
+  case $? in
+    0) ;;
+    2) echo; echo "  cq call check could not be measured"; exit 2 ;;
     *) FAIL=$((FAIL+1)) ;;
   esac
   echo

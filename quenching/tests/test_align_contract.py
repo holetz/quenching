@@ -9,6 +9,8 @@ import unittest
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 ALIGN_DECLARATION = ROOT.parent / "docs" / "standards" / "architecture" / "align-surface.md"
+# Fixture paths for the citation-check tests, joined so this file never cites a path of its own.
+FIXTURE_REFERENCES = "/".join(("quenching", "references"))
 
 
 class KnowledgeAlignmentContract(unittest.TestCase):
@@ -155,79 +157,107 @@ class KnowledgeAlignmentContract(unittest.TestCase):
         self.assertIn("site-source/assets/glossary-abbreviations.txt", validation)
         self.assertIn("--glossary-term", validation)
 
-    def test_citation_check_rejects_unknown_section_addresses(self):
+    def _citation_check(self, files):
+        """Run half 2 over a throwaway repository holding the check, the manifest, the `cq`
+        parsers half 2 measures calls against, and `files`."""
         check = ROOT / "assets" / "checks" / "citation-check.sh"
+        files = {
+            # Half 2 refuses a corpus with no command or `cq` call to measure; every fixture has both.
+            f"{FIXTURE_REFERENCES}/calls.md": "/quenching-specs status\n`cq specs status --spec <id> --json`\n",
+            **files,
+        }
         with tempfile.TemporaryDirectory() as directory:
             repo = pathlib.Path(directory)
             script = repo / "quenching" / "assets" / "checks" / check.name
             script.parent.mkdir(parents=True)
             shutil.copy2(check, script)
             shutil.copy2(ROOT / "assets" / "modules.json", script.parents[1] / "modules.json")
-            command = repo / "quenching" / "skills" / "quenching-knowledge" / "references" / "align.md"
-            command.parent.mkdir(parents=True)
-            command.write_text(
-                "/quenching-knowledge align\n"
-                "`quenching/skills/quenching-knowledge/references/align.md`\n"
-                "[reference.md](../../../references/reference.md) §Inexistente\n",
-                encoding="utf-8",
-            )
-            reference = repo / "quenching" / "references" / "reference.md"
-            reference.parent.mkdir(parents=True)
-            reference.write_text("# Reference\n\n## Existing\n", encoding="utf-8")
+            for relative, text in files.items():
+                path = repo / relative
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_text(text, encoding="utf-8")
             subprocess.run(["git", "init", "-q"], cwd=repo, check=True)
             subprocess.run(["git", "config", "user.email", "test@example.com"], cwd=repo, check=True)
             subprocess.run(["git", "config", "user.name", "Citation Test"], cwd=repo, check=True)
             subprocess.run(["git", "add", "."], cwd=repo, check=True)
             subprocess.run(["git", "commit", "-qm", "fixture"], cwd=repo, check=True)
-
-            result = subprocess.run(
-                ["bash", str(script), "--half", "2"],
-                cwd=repo,
-                text=True,
-                capture_output=True,
+            # Untracked, so half 2 imports the parsers without reading their source as citations.
+            shutil.copytree(
+                ROOT / "assets" / "bin",
+                script.parents[1] / "bin",
+                ignore=shutil.ignore_patterns("__pycache__"),
             )
+            return subprocess.run(
+                ["bash", str(script), "--half", "2"], cwd=repo, text=True, capture_output=True
+            )
+
+    def test_citation_check_rejects_unknown_section_addresses(self):
+        result = self._citation_check({
+            "quenching/skills/quenching-knowledge/references/align.md": (
+                "/quenching-knowledge align\n"
+                "`quenching/skills/quenching-knowledge/references/align.md`\n"
+                "[reference.md](../../../references/reference.md) §Inexistente\n"
+            ),
+            f"{FIXTURE_REFERENCES}/reference.md": "# Reference\n\n## Existing\n",
+        })
 
         self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
         self.assertIn("§Inexistente", result.stdout)
         self.assertIn("cited sections", result.stdout)
 
     def test_citation_check_rejects_missing_plugin_root_paths(self):
-        check = ROOT / "assets" / "checks" / "citation-check.sh"
-        with tempfile.TemporaryDirectory() as directory:
-            repo = pathlib.Path(directory)
-            script = repo / "quenching" / "assets" / "checks" / check.name
-            script.parent.mkdir(parents=True)
-            shutil.copy2(check, script)
-            shutil.copy2(ROOT / "assets" / "modules.json", script.parents[1] / "modules.json")
-            command = repo / "quenching" / "skills" / "quenching-knowledge" / "references" / "align.md"
-            command.parent.mkdir(parents=True)
-            missing_path = ".agents/quenching/references/" + "missing.md"
-            command.write_text(
+        missing_path = ".agents/quenching/references/" + "missing.md"
+        result = self._citation_check({
+            "quenching/skills/quenching-knowledge/references/align.md": (
                 "/quenching-knowledge align\n"
                 f"`{missing_path}`\n"
-                "[reference.md](../../../references/reference.md) §Existing\n",
-                encoding="utf-8",
-            )
-            reference = repo / "quenching" / "references" / "reference.md"
-            reference.parent.mkdir(parents=True)
-            reference.write_text("# Reference\n\n## Existing\n", encoding="utf-8")
-            subprocess.run(["git", "init", "-q"], cwd=repo, check=True)
-            subprocess.run(["git", "config", "user.email", "test@example.com"], cwd=repo, check=True)
-            subprocess.run(["git", "config", "user.name", "Citation Test"], cwd=repo, check=True)
-            subprocess.run(["git", "add", "."], cwd=repo, check=True)
-            subprocess.run(["git", "commit", "-qm", "fixture"], cwd=repo, check=True)
-
-            result = subprocess.run(
-                ["bash", str(script), "--half", "2"],
-                cwd=repo,
-                text=True,
-                capture_output=True,
-            )
+                "[reference.md](../../../references/reference.md) §Existing\n"
+            ),
+            f"{FIXTURE_REFERENCES}/reference.md": "# Reference\n\n## Existing\n",
+        })
 
         self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
         self.assertIn("missing.md", result.stdout)
         self.assertIn("cited paths", result.stdout)
 
+    def test_citation_check_resolves_bundle_relative_section_targets(self):
+        # A path relative to the bundle (`naming/surface.md`) names `docs/standards/naming/`;
+        # resolving nothing used to skip the marker in silence, so a dead section passed green.
+        # The bundle path is assembled so this file does not itself cite a standard that is absent.
+        standard = "docs/standards/naming/" + "surface.md"
+        citing = "quenching/skills/quenching-knowledge/references/align.md"
+        files = {
+            citing: (
+                "/quenching-knowledge align\n"
+                "`quenching/skills/quenching-knowledge/references/align.md`\n"
+                "(`naming/surface.md` §Three forms) ends here.\n"
+            ),
+            standard: "# Surface\n\n## Two forms, and the condition\n",
+        }
+        dead = self._citation_check(files)
+        self.assertEqual(dead.returncode, 1, dead.stdout + dead.stderr)
+        self.assertIn("§Three forms", dead.stdout)
+        self.assertIn(standard, dead.stdout)
+
+        files[citing] = files[citing].replace("§Three forms", "§Two forms")
+        live = self._citation_check(files)
+        self.assertEqual(live.returncode, 0, live.stdout + live.stderr)
+        self.assertIn("cited sections: 1 checked, all resolve", live.stdout)
+
+    def test_citation_check_rejects_unknown_cq_verbs_in_references(self):
+        # `cq specs backlog reindex` sat in a reference, green: the lint reads bodies only.
+        dead = self._citation_check({
+            f"{FIXTURE_REFERENCES}/reindex.md": "# Reindex\n\n## Capture\n\nRun `cq specs backlog reindex` after a capture (§Capture).\n",
+        })
+        self.assertEqual(dead.returncode, 1, dead.stdout + dead.stderr)
+        self.assertIn("`backlog` is not a verb of `cq specs`", dead.stdout)
+        self.assertIn("cited cq calls", dead.stdout)
+
+        live = self._citation_check({
+            f"{FIXTURE_REFERENCES}/reindex.md": "# Reindex\n\n## Capture\n\nRun `cq specs status --spec <id>` after a capture (§Capture).\n",
+        })
+        self.assertEqual(live.returncode, 0, live.stdout + live.stderr)
+        self.assertIn("cited cq calls: 2 checked", live.stdout)
 
 if __name__ == "__main__":
     unittest.main()
