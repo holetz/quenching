@@ -42,7 +42,7 @@ def _identity_hooks_warnings(target: Path) -> list[str]:
     if not isinstance(block, dict) or "allowedEmails" not in block:
         return []
     done = subprocess.run(["git", "-C", str(target), "config", "--local", "core.hooksPath"],
-                          capture_output=True, text=True)
+                          capture_output=True, text=True, encoding="utf-8", errors="replace")
     current = done.stdout.strip().rstrip("/")
     if done.returncode not in (0, 1) or current == HOOKS_PATH:
         return []

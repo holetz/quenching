@@ -432,7 +432,7 @@ def _compile_pdf(source: str, target: Path, root: Path) -> None:
         for path in sorted(font_paths):
             command.extend(["--font-path", str(path)])
         try:
-            run = subprocess.run(command, capture_output=True, text=True,
+            run = subprocess.run(command, capture_output=True, text=True, encoding="utf-8", errors="replace",
                                  timeout=SUBPROCESS_TIMEOUT_S)
         except subprocess.TimeoutExpired as exc:
             raise DesignError(f"typst compile timed out after {SUBPROCESS_TIMEOUT_S}s") from exc

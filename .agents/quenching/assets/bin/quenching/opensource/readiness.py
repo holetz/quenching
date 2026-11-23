@@ -63,7 +63,7 @@ def _env() -> dict[str, str]:
 def _run(argv: list[str], cwd: str, timeout: int) -> tuple[int, str, str] | None:
     """Exit, stdout, stderr — or ``None`` for a missing binary or a timeout. Never raises."""
     try:
-        out = subprocess.run(argv, capture_output=True, text=True, errors="replace", cwd=cwd,
+        out = subprocess.run(argv, capture_output=True, text=True, encoding="utf-8", errors="replace", cwd=cwd,
                              timeout=timeout, env=_env(), stdin=subprocess.DEVNULL)
     except (OSError, ValueError, subprocess.SubprocessError):
         return None
