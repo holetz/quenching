@@ -27,7 +27,7 @@ whether a command *teaches* anything. This asks the prior question: whether it *
 
 The command registry is built at **session start**
 ([../../external/tools/claude-code-skill-command-mechanics.md](../../external/tools/claude-code-skill-command-mechanics.md)
-§4). A file created or edited now is not invocable until a new process. Every mechanical check can
+section 4). A file created or edited now is not invocable until a new process. Every mechanical check can
 therefore pass while the entire surface is unreachable:
 
 - `cq components lint` and `doctor` read frontmatter off disk. Disk is not the registry.

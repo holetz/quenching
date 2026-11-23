@@ -503,7 +503,7 @@ import sys
 
 repo = sys.argv[1]
 plugin = os.path.join(repo, "quenching")
-source_roots = ("quenching/skills/", "quenching/references/")
+source_roots = ("quenching/skills/", "quenching/references/", "docs/standards/")
 link_re = re.compile(r"\]\(([^)\s]+)\)")
 labelled_link_re = re.compile(r"\[([^\[\]]*)(\]\()([^)\s]+)\)")
 bare_path_re = re.compile(

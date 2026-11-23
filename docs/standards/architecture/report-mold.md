@@ -158,8 +158,8 @@ that standard names — reading the tag at session start and still reporting in 
 
 ## Known divergence, accepted and uncorrected
 
-Until this branch, `quenching/skills/quenching-knowledge/references/status.md` §4 was a near-literal copy of
-`quenching/skills/quenching-specs/references/status.md` §4 — the same five sections, the same titles, the same
+Until this branch, `quenching/skills/quenching-knowledge/references/status.md` step 4 was a near-literal copy of
+`quenching/skills/quenching-specs/references/status.md` step 4 — the same five sections, the same titles, the same
 closing sentence. It was a shared format *in fact*, written twice and owned by no file.
 
 This work touched only the `specs` front, so **the two stopped being mirrors**. That is recorded as

@@ -7,7 +7,7 @@ tags: [architecture, commands, read-only, status, tool-grants]
 timestamp: 2026-08-11
 audience: both
 authority: current
-source: docs-verification-layer spec (§Design)
+source: docs-verification-layer spec (its Design section)
 maintainer: quenching
 ---
 

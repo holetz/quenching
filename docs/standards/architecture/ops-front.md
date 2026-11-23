@@ -165,8 +165,8 @@ before it is retained as a contract check.
 
 <!-- rationale -->
 
-The distinction is owned by [`align-surface.md`](align-surface.md), §The aligned-front column and
-§The seventh pillar has no align: a front is a tree this plugin can converge toward and probe, while
+The distinction is owned by [`align-surface.md`](align-surface.md) §The aligned-front column and
+[`align-surface.md`](align-surface.md) §The git pillar has no align, and the reason is structural: a front is a tree this plugin can converge toward and probe, while
 the `git` pillar answers live questions about a target repository. The operations surface qualifies
 as a front because its tree, router, registry, lifecycle, and entry-point contract give a verifier a
 decidable target. It therefore earns its own alignment stages; it is not merely another `cq` axis

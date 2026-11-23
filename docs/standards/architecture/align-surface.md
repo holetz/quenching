@@ -161,8 +161,8 @@ the toolchain's runtime evidence and the delivery front's pipeline reachability 
 dependency chain). The conductor contract — one human OK
 authorizing the whole run, nesting one
 level, with code-coupled confirmations still surfacing individually — lives in
-`align/convergence.md`, shared by every conductor and restated by none (§The conductor
-categories).
+`align/convergence.md`, shared by every conductor and restated by none. The categories
+themselves are this file's own, below.
 
 ### The proof front has its own align
 

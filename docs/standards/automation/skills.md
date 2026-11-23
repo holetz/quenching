@@ -380,8 +380,8 @@ had looked at.
 **The grant is a declaration `cq components lint` checks; whether it also restricts is unmeasured.**
 What scoping reliably buys is that lint: a bare grant is reported, and a reader can see at a glance
 which tools a command expects to reach. It has never been observed to stop a command from using a
-tool it did not declare — [../quality/surface-verification.md](../quality/surface-verification.md)
-§What this does not cover records that, and forbids claiming the enforcement anywhere until it is
+tool it did not declare - [../quality/surface-verification.md](../quality/surface-verification.md) §What this does not cover
+records that, and forbids claiming the enforcement anywhere until it is
 measured, in either direction. So a command that must guarantee it writes nothing carries that
 guarantee in its own numbered steps and its doctrine, never in its `allowed-tools` line.
 

@@ -75,7 +75,7 @@ authoring the spec is not the same fact as the fallback a tool applies when nobo
 conflating them would remove the one point a human's judgment enters.
 
 This is also why **the description is prompt material, not documentation**
-([plugin-configuration.md](plugin-configuration.md) §Three keys are prompt material argues the
+([plugin-configuration.md](plugin-configuration.md) §The `git` pillar's writing directives argues the
 review consequence in full): a vague or misleading entry does not fail loudly, it makes the agent
 propose the wrong subject, tag or type, confidently, every time `/quenching-specs create` runs against it.
 
