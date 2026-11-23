@@ -52,25 +52,31 @@ jobs:
     name: Windows (focused tests, no administrator rights)
     runs-on: windows-latest
     timeout-minutes: 15
+    # unittest on 3.11 exits 0 when a pattern matches no file, so a renamed test would leave its
+    # step green; every step fails on the "Ran 0 tests" summary instead (pipefail keeps the
+    # interpreter's own failure through tee).
+    defaults:
+      run:
+        shell: bash
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
         with:
           python-version: '3.11'
       - name: Process group helper
-        run: python -m unittest discover -s quenching/tests -p test_windows_process.py
+        run: python -m unittest discover -s quenching/tests -p test_windows_process.py 2>&1 | tee "$RUNNER_TEMP/unit.log" && ! grep -q '^Ran 0 tests' "$RUNNER_TEMP/unit.log"
       - name: Tool spawn without cmd.exe
-        run: python -m unittest discover -s quenching/tests -p test_windows_tools.py
+        run: python -m unittest discover -s quenching/tests -p test_windows_tools.py 2>&1 | tee "$RUNNER_TEMP/unit.log" && ! grep -q '^Ran 0 tests' "$RUNNER_TEMP/unit.log"
       - name: Live session liveness
-        run: python -m unittest discover -s quenching/tests -p test_session_live.py
+        run: python -m unittest discover -s quenching/tests -p test_session_live.py 2>&1 | tee "$RUNNER_TEMP/unit.log" && ! grep -q '^Ran 0 tests' "$RUNNER_TEMP/unit.log"
       - name: Junction fallback
-        run: python -m unittest discover -s quenching/tests -p test_windows_links.py
+        run: python -m unittest discover -s quenching/tests -p test_windows_links.py 2>&1 | tee "$RUNNER_TEMP/unit.log" && ! grep -q '^Ran 0 tests' "$RUNNER_TEMP/unit.log"
       # The temp root, the affected-test selector, the runner and the slot budget are the
       # repository tooling the suite depends on; the paths and locks they take are platform
       # decisions, so Windows is where they are cheapest to break. The two cases that need pytest
       # in the interpreter skip themselves in this job, which installs no packages.
       - name: Toolchain helpers (temp root, affected tests, slots)
-        run: python -m unittest discover -s quenching/tests -p 'test_toolchain_*.py'
+        run: python -m unittest discover -s quenching/tests -p 'test_toolchain_*.py' 2>&1 | tee "$RUNNER_TEMP/unit.log" && ! grep -q '^Ran 0 tests' "$RUNNER_TEMP/unit.log"
 
   lint:
     name: Ruff
