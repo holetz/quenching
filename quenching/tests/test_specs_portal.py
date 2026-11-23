@@ -513,13 +513,13 @@ class Security(PortalCase):
         self.assertEqual(self.portal.handle("GET", "/?nonce=wrong", HOST)[0], 401)
 
     def test_the_client_keeps_no_token(self):
-        js = (portal_mod.static_dir() / "app.js").read_text()
+        js = (portal_mod.static_dir() / "app.js").read_text(encoding="utf-8")
         for needle in ("X-Quenching-Token", "sessionStorage", "?token", 'get("token")'):
             self.assertNotIn(needle, js)
 
     def test_the_gantt_page_is_routed_linked_and_builds_no_html(self):
-        js = (portal_mod.static_dir() / "app.js").read_text()
-        html = (portal_mod.static_dir() / "index.html").read_text()
+        js = (portal_mod.static_dir() / "app.js").read_text(encoding="utf-8")
+        html = (portal_mod.static_dir() / "index.html").read_text(encoding="utf-8")
         self.assertIn('view === "gantt"', js)
         self.assertIn('api("schedule")', js)
         self.assertIn('href="#/gantt"', html)
@@ -527,7 +527,7 @@ class Security(PortalCase):
             self.assertNotIn(needle, js)
 
     def test_a_cross_repository_id_is_shown_never_linked_or_opened(self):
-        js = (portal_mod.static_dir() / "app.js").read_text()
+        js = (portal_mod.static_dir() / "app.js").read_text(encoding="utf-8")
         self.assertIn("const isRemoteId = (id) => /[\\/#]/.test(String(id));", js)
         self.assertIn('it.spec && !isRemoteId(it.spec) ? h("a"', js)
         self.assertIn('const btn = id && !isRemoteId(id) ? h("button"', js)
@@ -535,7 +535,7 @@ class Security(PortalCase):
         self.assertEqual(self.get("/api/specs/acme/remote%237")[0], 404)
 
     def test_the_waiting_panel_shows_the_pending_tool_as_a_chip(self):
-        js = (portal_mod.static_dir() / "app.js").read_text()
+        js = (portal_mod.static_dir() / "app.js").read_text(encoding="utf-8")
         self.assertIn('s.pendingTool ? h("span", { class: "chip" }, s.pendingTool) : null', js)
 
     def test_the_open_url_carries_the_nonce_and_never_the_token(self):
@@ -682,7 +682,7 @@ class Sessions(PortalCase):
         self.assertEqual(set(source), {"read"})
 
     def test_the_portal_never_imports_the_session_pillar(self):
-        source = pathlib.Path(portal_mod.__file__).read_text()
+        source = pathlib.Path(portal_mod.__file__).read_text(encoding="utf-8")
         self.assertNotRegex(source, r"(?m)^\s*(?:from|import) quenching\.session")
 
 

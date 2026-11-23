@@ -8,7 +8,7 @@ PLUGIN = Path(__file__).resolve().parents[1]
 
 
 def prose(path):
-    return re.sub(r"\s+", " ", (PLUGIN / path).read_text().replace("**", "").replace("`", ""))
+    return re.sub(r"\s+", " ", (PLUGIN / path).read_text(encoding="utf-8").replace("**", "").replace("`", ""))
 
 
 class BuildSizeApproval(unittest.TestCase):
