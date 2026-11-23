@@ -53,6 +53,8 @@ closing action, and writes nothing.
 | `os-funding-missing` | `info` | funding account | Apply `funding` with the declared `github_sponsors`. |
 | `os-reuse-missing` | `info` | per-file licensing | Report only: REUSE needs a header or sidecar per file, which no template writes. |
 | `os-template-drift` | `error` | the plugin maintainer | Stop before any write; the pinned template no longer hashes to its `sources.json` sha256. Reinstall or update the plugin; never edit the template. |
+| `os-readme-media-missing` | `info` | a screenshot or GIF of the interface, made with synthetic data | Report only: the row carries `owner: knowledge` and its `command`; the owner stores the image under `.design/assets/` and the README cites it. |
+| `os-language-skew` | `info` | whether the flagged `paths` are vendored or templates | Report only: show the row's `gitattributes` lines; the owner commits them, outside `apply`. |
 | `os-<control>-missing` | `error` or `info` | the requirement's evidence | Any opensource-owned control with no named code (for example `OSPS-GV-02`, `OSPS-LE-01`, the `SCORECARD-*` supplements): report the evidence and the owner action. |
 
 ## Apply refusals
@@ -76,7 +78,7 @@ Each finding code has one and only one disposition:
 | --- | --- |
 | Mechanical | none |
 | Structural | `os-contributing-missing`, `os-conduct-missing`, `os-support-missing`, `os-templates-missing` |
-| Judgement | `os-license-missing`, `os-governance-missing`, `os-codeowners-missing`, `os-citation-missing`, `os-funding-missing`, `os-reuse-missing`, `os-template-drift`, `os-<control>-missing` |
+| Judgement | `os-license-missing`, `os-governance-missing`, `os-codeowners-missing`, `os-citation-missing`, `os-funding-missing`, `os-reuse-missing`, `os-readme-media-missing`, `os-language-skew`, `os-template-drift`, `os-<control>-missing` |
 
 Severity follows the catalog: a required control's code is `error` and changes the exit code; an
 optional control's code, and an artifact no control names, is an `info` advisory that never does.
