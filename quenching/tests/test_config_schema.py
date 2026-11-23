@@ -109,6 +109,23 @@ class Validation(unittest.TestCase):
         self.assertEqual(validate("shared.sharedPaths", ["a"]), (["a"], None))
 
 
+class Guidance(unittest.TestCase):
+    """`shared.guidance.<flow>` is registry-only: the registry refuses an empty directive and names a
+    sub-key nothing reads."""
+
+    def test_each_flow_takes_a_non_empty_prose_directive(self):
+        for flow in ("autopilot", "improve", "develop", "execute", "review"):
+            key = f"shared.guidance.{flow}"
+            self.assertEqual("x", validate(key, "x")[0])
+            self.assertIn("non-empty", validate(key, "  ")[1])
+            self.assertEqual("project", REGISTRY[key]["scope"])
+
+    def test_an_unknown_flow_is_named(self):
+        self.assertEqual(["shared.guidance.autopilto"],
+                         unknown_leaves({"shared": {"guidance": {"autopilot": "a",
+                                                                 "autopilto": "b"}}}))
+
+
 class UnknownLeaves(unittest.TestCase):
     """A leaf nothing reads is named, so a typo never yields a default in silence."""
 
