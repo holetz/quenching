@@ -700,6 +700,16 @@ components:
         self.assertIn("design-asset-orphan", codes)
         self.assertIn("design-nonweb-literal", codes)
 
+    def test_an_asset_cited_only_by_the_root_readme_is_not_orphan(self):
+        asset = self.root / ".design" / "assets" / "painel.png"
+        asset.write_bytes(b"\x89PNG")
+        def orphan() -> set[str]:
+            return {finding["path"] for finding in inspect_design(self.root)[1]
+                    if finding["code"] == "design-asset-orphan"}
+        self.assertIn(".design/assets/painel.png", orphan())
+        (self.root / "README.md").write_text("![Painel](.design/assets/painel.png)\n", encoding="utf-8")
+        self.assertNotIn(".design/assets/painel.png", orphan())
+
 
 if __name__ == "__main__":
     unittest.main()
