@@ -191,5 +191,108 @@ class SourcesTests(Fixture):
         self.assertEqual(summarize(many)[2][0]["coldFromGap"], "5-10m")
 
 
+class HostAndTtlTests(Fixture):
+    def setUp(self):
+        super().setUp()
+        self.project = self.projects / "-p"
+        self.sub = self.project / "s1" / "subagents"
+        self.sub.mkdir(parents=True)
+
+    def write(self, path, records):
+        path.write_text("\n".join(json.dumps(r) for r in records) + "\n")
+
+    def rows(self):
+        return json.loads(run("--harness", "claude", "--all", "--json")[1])["rows"]
+
+    def test_host_comes_from_the_entrypoint_and_subagent_without_meta_is_unknown(self):
+        first = assistant("m1", "2026-10-01T10:00:00Z", write=6000)
+        first["entrypoint"] = "claude-desktop"
+        self.write(self.project / "s1.jsonl", [first])
+        self.write(self.sub / "agent-a.jsonl", [assistant("s1", "2026-10-01T10:00:00Z", write=6000)])
+        rows = {r["role"]: r for r in self.rows()}
+        self.assertEqual(rows["main"]["host"], "claude-desktop")
+        self.assertEqual((rows["subagent"]["agent"], rows["subagent"]["host"]), ("unknown", ""))
+
+    def test_a_repeated_message_id_counts_once_and_a_missing_split_is_not_a_crash(self):
+        bare_usage = {"type": "assistant", "timestamp": "2026-10-01T10:00:00Z", "message": {
+            "id": "m1", "model": "opus", "usage": {"input_tokens": 1, "cache_creation_input_tokens": 500,
+                                                   "output_tokens": 1}}}
+        grown = json.loads(json.dumps(bare_usage))
+        grown["message"]["usage"]["output_tokens"] = 9
+        self.write(self.project / "s1.jsonl", [bare_usage, grown])
+        row = self.rows()[0]
+        self.assertEqual((row["requests"], row["cacheWrite"], row["write5m"], row["write1h"]), (1, 500, 0, 0))
+        self.assertEqual(row["ttl"]["writeNow"], row["ttl"]["writeAll5m"], "an unsplit write prices at 5 minutes")
+
+    def test_the_other_ttl_is_priced_and_the_pauses_are_counted(self):
+        self.write(self.project / "s1.jsonl", [
+            assistant("a", "2026-10-01T10:00:00Z", write=10000, ttl1h=10000),
+            assistant("b", "2026-10-01T10:20:00Z", read=10000, write=100, ttl1h=100)])
+        row = self.rows()[0]
+        self.assertEqual(row["ttl"]["writeNow"], row["ttl"]["writeAll1h"])
+        self.assertGreater(row["ttl"]["writeAll1h"], row["ttl"]["writeAll5m"])
+        self.assertEqual((row["readAfterGap5m"], row["missedAfterGap5to60"]), (10000, 100))
+
+
+class InflowTests(Fixture):
+    def claude(self):
+        project = self.projects / "-p"
+        project.mkdir(parents=True)
+        ref = "x" * 8000
+
+        def call(mid, tool_id, name, args):
+            return {"type": "assistant", "message": {"id": mid, "model": "opus", "usage": {},
+                                                     "content": [{"type": "tool_use", "id": tool_id,
+                                                                  "name": name, "input": args}]}}
+
+        def result(tool_id, text):
+            return {"type": "user", "message": {"content": [
+                {"type": "tool_result", "tool_use_id": tool_id, "content": text}]}}
+        records = [call("m1", "t1", "Read", {"file_path": "C:\\r\\quenching\\references\\execute.md"}),
+                   result("t1", ref),
+                   call("m2", "t2", "Bash", {"command": "cq components read refs/questions.md --sections x"}),
+                   result("t2", [{"type": "text", "text": "y" * 400}]),
+                   call("m3", "t3", "Bash", {"command": "ls"}), result("t3", "ok"),
+                   call("m4", "t4", "Bash", {"command": "ls"})]
+        (project / "s1.jsonl").write_text("\n".join(json.dumps(r) for r in records) + "\n")
+
+    def test_origin_size_and_reread_for_claude(self):
+        self.claude()
+        data = json.loads(run("--harness", "claude", "--all", "--inflow", "--json")[1])
+        top = {r["origin"]: r for r in data["inflow"]}
+        execute = top["references/execute.md"]
+        self.assertEqual((execute["kind"], execute["tokens"], execute["reread"]), ("reference", 2000, 2000 * 3))
+        sections = top["references/questions.md"] if "references/questions.md" in top else top["refs/questions.md"]
+        self.assertEqual((sections["kind"], sections["tokens"], sections["reread"]), ("cq-read-sections", 100, 200))
+        self.assertEqual(data["inflow"][0]["origin"], "references/execute.md", "ranked by what was re-read")
+
+    def test_content_never_reaches_the_output(self):
+        self.claude()
+        self.assertNotIn("xxxx", run("--harness", "claude", "--all", "--inflow")[1])
+
+    def test_opencode_tool_entries_are_read(self):
+        self.opencode_db()
+        data = json.loads(run("--harness", "opencode", "--opencode-db", str(self.db), "--all",
+                              "--inflow", "--json")[1])
+        row = data["inflow"][0]
+        self.assertEqual((row["harness"], row["kind"], row["origin"], row["tokens"], row["reread"]),
+                         ("opencode", "reference", "references/develop.md", 500, 500))
+
+    def opencode_db(self):
+        db = sqlite3.connect(self.db)
+        db.executescript("""
+            CREATE TABLE session (id TEXT, parent_id TEXT, agent TEXT, directory TEXT);
+            CREATE TABLE session_v2 (id TEXT, parent_id TEXT, agent TEXT, directory TEXT);
+            CREATE TABLE session_message (id TEXT, session_id TEXT, type TEXT, seq INT, data TEXT);""")
+        db.execute("INSERT INTO session_v2 VALUES ('root', NULL, 'build', '/repo')")
+        tool = {"type": "tool", "name": "read", "state": {"status": "completed",
+                "input": {"path": "/r/references/develop.md"}, "content": [{"type": "text", "text": "z" * 2000}]}}
+        for n, content in enumerate([[tool], []]):
+            db.execute("INSERT INTO session_message VALUES (?, 'root', 'assistant', ?, ?)", (
+                f"m{n}", n, json.dumps({"time": {"created": START + n}, "content": content})))
+        db.commit()
+        db.close()
+
+
 if __name__ == "__main__":
     unittest.main()
