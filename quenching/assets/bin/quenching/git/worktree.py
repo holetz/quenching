@@ -55,7 +55,7 @@ def _store_names(repo: str, relative: str) -> tuple[str, str] | None:
         return None
     legacy = relative.replace(os.sep, ".")
     name = legacy.lstrip(".") or legacy
-    base = os.path.dirname(common)
+    base = os.path.dirname(native_path(common))
     return f"{base}.{name}", f"{base}.{legacy}"
 
 
@@ -82,7 +82,8 @@ def _make_link(store: str, link: str) -> None:
     except OSError:
         if os.name != "nt":
             raise
-        result = subprocess.run(["cmd", "/c", "mklink", "/J", link, store],
+        # `cmd` reads a `/` inside `C:/x` as a switch, so the junction gets native paths
+        result = subprocess.run(["cmd", "/c", "mklink", "/J", native_path(link), native_path(store)],
                                 capture_output=True, text=True, encoding="utf-8", errors="replace")
         if result.returncode != 0:
             raise
