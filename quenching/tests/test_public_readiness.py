@@ -335,12 +335,12 @@ class AdversarialTest(ReadinessCase):
 
     def test_a_saas_tenant_is_an_internal_identifier_while_placeholders_are_not(self):
         commit(self.root, "tests/fixture.py", "URL = 'https://dev.azure.com/qcktenantorg/proj'\n")
-        commit(self.root, "docs/links.md", "see https://qcktenant.sharepoint.com/sites/x\n")
-        commit(self.root, "docs/example.md", "https://dev.azure.com/{org} https://dev.azure.com/<org> "
-                                            "https://dev.azure.com/contoso marketplace.visualstudio.com\n")
+        commit(self.root, "notes/links.md", "see https://qcktenant.sharepoint.com/sites/x\n")
+        commit(self.root, "notes/example.md", "https://dev.azure.com/{org} https://dev.azure.com/<org> "
+                                             "https://dev.azure.com/contoso marketplace.visualstudio.com\n")
         payload, _ = self.assess()
         found = {row["location"] for row in payload["warnings"] if row["code"] == "pr-internal-identifier"}
-        self.assertEqual({"tests/fixture.py", "docs/links.md"}, found)
+        self.assertEqual({"tests/fixture.py", "notes/links.md"}, found)
         self.assertNotIn("qcktenant", json.dumps(payload))
 
     def test_an_owner_term_blocks_from_the_tree_and_from_history_without_being_echoed(self):
