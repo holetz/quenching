@@ -29,6 +29,18 @@ class MakeLinkTest(unittest.TestCase):
             worktree._make_link("store", "link")
         self.assertEqual(run.call_args.args[0], ["cmd", "/c", "mklink", "/J", "link", "store"])
 
+    @unittest.skipUnless(os.name == "nt", "a junction exists only on Windows")
+    def test_a_git_path_with_forward_slashes_becomes_a_real_junction(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = os.path.realpath(tmp).replace("\\", "/")   # the form git prints
+            store, link = f"{root}/store", f"{root}/link"
+            os.mkdir(store)
+            with mock.patch("os.symlink", side_effect=OSError("privilege")):
+                worktree._make_link(store, link)
+            self.assertTrue(worktree._is_link(link))
+            self.assertEqual(os.path.realpath(link), os.path.realpath(store))
+            os.rmdir(link)
+
     def test_refusal_propagates_on_posix(self):
         with mock.patch("os.symlink", side_effect=OSError("denied")), \
              mock.patch("os.name", "posix"), \
