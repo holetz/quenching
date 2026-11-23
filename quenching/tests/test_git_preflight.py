@@ -4,25 +4,34 @@ from __future__ import annotations
 import json
 import os
 import pathlib
-import stat
 import subprocess
 import sys
 import tempfile
 import unittest
 import unittest.mock
 
+try:
+    import _paths  # noqa: F401
+except ModuleNotFoundError:  # package-qualified unittest invocation from the repository root
+    sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
+    import _paths  # noqa: F401
+from _tools import fake_tool
+
 PLUGIN_ROOT = pathlib.Path(__file__).resolve().parent.parent
 CQ = str(PLUGIN_ROOT / "assets" / "bin" / "cq")
 AUTOPILOT = PLUGIN_ROOT / "skills" / "quenching-specs" / "references" / "autopilot.md"
 
-FAKE_GH = """#!/bin/sh
-case "$1 $2" in
-  "auth status") exit ${FAKE_GH_AUTH:-0} ;;
-  "run list") echo '[{"databaseId": 7, "status": "completed", "conclusion": "failure"}]' ;;
-  "run view") if [ "$FAKE_GH_STEPS" = "1" ]; then
-      echo '{"jobs": [{"steps": [{"name": "build"}]}]}'; else echo '{"jobs": [{"steps": []}]}'; fi ;;
-  *) exit 1 ;;
-esac
+FAKE_GH = """import os, sys
+verb = " ".join(sys.argv[1:3])
+if verb == "auth status":
+    sys.exit(int(os.environ.get("FAKE_GH_AUTH", "0")))
+if verb == "run list":
+    print('[{"databaseId": 7, "status": "completed", "conclusion": "failure"}]')
+elif verb == "run view":
+    steps = '[{"name": "build"}]' if os.environ.get("FAKE_GH_STEPS") == "1" else "[]"
+    print('{"jobs": [{"steps": %s}]}' % steps)
+else:
+    sys.exit(1)
 """
 
 
@@ -48,10 +57,7 @@ class Preflight(unittest.TestCase):
         _git(self.repo, "remote", "add", "origin", bare)
         _git(self.repo, "push", "-q", "origin", "main:quenching")
         gh_dir = root / "bin"
-        gh_dir.mkdir()
-        gh = gh_dir / "gh"
-        gh.write_text(FAKE_GH)
-        gh.chmod(gh.stat().st_mode | stat.S_IEXEC)
+        self.gh = fake_tool(gh_dir, "gh", FAKE_GH)
         self.path = f"{gh_dir}{os.pathsep}{os.environ['PATH']}"
 
     def run_cq(self, *argv, **env):
@@ -113,6 +119,14 @@ class Preflight(unittest.TestCase):
         listed = subprocess.run(["git", "ls-remote", "origin", "quenching-preflight-probe"],
                                 cwd=self.repo, capture_output=True, text=True, check=True)
         self.assertEqual("", listed.stdout)
+
+    def test_gh_is_the_one_which_resolves_so_a_shim_is_reached(self):
+        sys.path.insert(0, str(PLUGIN_ROOT / "assets" / "bin"))
+        from quenching.git import preflight
+        with unittest.mock.patch.dict(os.environ, {"PATH": self.path}):
+            self.assertEqual(os.path.normcase(str(self.gh)), os.path.normcase(preflight._gh()))
+        with unittest.mock.patch.object(preflight.shutil, "which", return_value=None):
+            self.assertEqual("gh", preflight._gh())
 
     def test_unknown_remote_is_a_refusal(self):
         code, out = self.run_cq("--remote", "nowhere")
