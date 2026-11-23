@@ -168,6 +168,34 @@ class Deploy(unittest.TestCase):
         self.assertTrue(any("0.0.1" in w for w in payload["warnings"]))
         self.assertEqual(0, self.run_deploy("--modules", "core", "--write")[0])
 
+    def test_a_crlf_checkout_of_the_surface_is_clean_and_a_real_edit_is_still_edited(self):
+        self.assertEqual(0, self.run_deploy("--modules", "core", "--write")[0])
+        owned = json.loads((self.target / ".agents/.quenching-deploy.json").read_text())["files"]
+        converted = []
+        for rel in owned:
+            path = self.target / rel
+            data = path.read_bytes()
+            if b"\n" in data and b"\0" not in data:
+                path.write_bytes(data.replace(b"\n", b"\r\n"))  # what core.autocrlf checks out
+                converted.append(rel)
+        self.assertTrue(converted)
+        code, payload = self.run_deploy("--modules", "core", "--check")
+        self.assertEqual((0, []), (code, payload["changes"]))
+        code, payload = self.run_deploy("--modules", "core", "--write")
+        self.assertEqual((0, True), (code, payload["written"]))
+        self.assertIn(b"\r\n", (self.target / converted[0]).read_bytes())
+        skill = self.target / ".agents/skills/quenching-specs/SKILL.md"
+        skill.write_bytes(skill.read_bytes() + b"local edit\r\n")
+        code, payload = self.run_deploy("--modules", "core", "--check")
+        self.assertIn({"path": ".agents/skills/quenching-specs/SKILL.md", "change": "edited"},
+                      payload["changes"])
+
+    def test_the_tree_carries_lf_text_and_untouched_binary(self):
+        from quenching.deploy.tree import eol_canonical
+        self.assertEqual(b"a\nb\n", eol_canonical(b"a\r\nb\r\n"))
+        self.assertEqual(b"\x89PNG\r\n\x00\r\n", eol_canonical(b"\x89PNG\r\n\x00\r\n"))
+        self.assertEqual(b"\xff\r\n", eol_canonical(b"\xff\r\n"))
+
     def test_a_symlinked_directory_cannot_carry_a_write_outside_the_target(self):
         outside = tempfile.TemporaryDirectory()
         self.addCleanup(outside.cleanup)
@@ -210,6 +238,7 @@ class Deploy(unittest.TestCase):
         code, payload = self.run_deploy("--modules", "core", "--check")
         self.assertEqual((0, []), (code, payload["changes"]))
 
+    @unittest.skipIf(os.name == "nt", "Windows derives the executable bit from the extension")
     def test_a_non_executable_cq_is_still_drift(self):
         self.assertEqual(0, self.run_deploy("--modules", "core", "--write")[0])
         (self.target / ".agents/quenching/bin/cq").chmod(0o644)

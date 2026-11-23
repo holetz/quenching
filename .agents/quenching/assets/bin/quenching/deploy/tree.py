@@ -81,6 +81,26 @@ def _mode(path: Path) -> int:
     return 0o755 if path.stat().st_mode & 0o111 else 0o644
 
 
+def eol_canonical(data: bytes) -> bytes:
+    """Text with LF line ends — the bytes git keeps in the index.
+
+    A `core.autocrlf` checkout holds CRLF in the work tree for the same blob, in the source and in
+    the target alike. Binary data (a NUL byte, or not UTF-8) is returned untouched.
+    """
+    if b"\r\n" not in data or b"\0" in data:
+        return data
+    try:
+        data.decode("utf-8")
+    except UnicodeDecodeError:
+        return data
+    return data.replace(b"\r\n", b"\n")
+
+
+def _read(path: Path) -> bytes:
+    """A source file as the index holds it; `read_text` already gives LF on the translated paths."""
+    return eol_canonical(path.read_bytes())
+
+
 def _add(tree: dict[str, tuple[bytes, int]], rel: str, data: bytes, mode: int = 0o644) -> None:
     tree[PurePosixPath(rel).as_posix()] = (data, mode)
 
@@ -94,7 +114,7 @@ def _add_tree(tree: dict, source: Path, rel: str, transform=None, exclude=IGNORE
         if not path.is_file() or _is_build(path) or any(part in exclude for part in path.parts):
             continue
         relative = path.relative_to(source).as_posix()
-        data = path.read_bytes()
+        data = _read(path)
         if transform is not None and path.suffix == ".md":
             data = transform(data.decode("utf-8")).encode("utf-8")
         _add(tree, PAYLOAD + "/" + relative, data, _mode(path))
@@ -270,7 +290,7 @@ def _bridge_tree(tree: dict, target: Path) -> None:
                 relative = path.relative_to(source).as_posix()
                 if f"{SKILLS}/{relative}" in leaving:
                     continue
-                data = path.read_bytes()
+                data = _read(path)
                 if path.name == bridge.SKILL_FILE and path.parent == folder:
                     data = bridge.with_marker(data.decode("utf-8"), folder.name).encode("utf-8")
                 _add(tree, CLAUDE_SKILLS + "/" + relative, data, _mode(path))
@@ -395,13 +415,13 @@ def build_tree(source: Path, target: Path, modules: list[str], harnesses: list[s
                     continue
                 rel = path.relative_to(root).as_posix()
                 if installed:
-                    data = path.read_bytes()
+                    data = _read(path)
                 elif rel == "SKILL.md":
                     data = translate.skill_document(path.read_text(encoding="utf-8"), name).encode("utf-8")
                 elif path.suffix == ".md":
                     data = translate.reference_document(path.read_text(encoding="utf-8")).encode("utf-8")
                 else:
-                    data = path.read_bytes()
+                    data = _read(path)
                 _add(tree, f"{SKILLS}/{name}/{rel}", data, _mode(path))
 
     if "claude" in harnesses:
