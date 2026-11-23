@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import os
+import shutil
 import subprocess
 import tempfile
 import unittest
@@ -46,7 +47,7 @@ class ListWorktreesTest(unittest.TestCase):
         self.assertEqual(self._rows(self.plain), self._rows(self.main))
 
     def test_a_removed_directory_is_skipped(self):
-        subprocess.run(["rm", "-rf", self.plain], check=True)
+        shutil.rmtree(self.plain)
         self.assertNotIn(self.plain, [row["path"] for row in self._rows(self.main)])
 
     def test_a_subdirectory_resolves_to_the_enclosing_checkout(self):

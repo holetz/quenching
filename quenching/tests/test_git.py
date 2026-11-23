@@ -15,6 +15,7 @@ import os
 import pathlib
 import re
 import shutil
+import stat
 import subprocess
 import sys
 import tempfile
@@ -23,6 +24,7 @@ from types import SimpleNamespace
 from unittest import mock
 
 import _paths  # noqa: F401  — must precede the `quenching` import; see its docstring
+from _tools import fake_tool
 from quenching.git.base import (_init_default_branch, _is_host_default, _origin_head_branch,
                                 resolve_base)
 from quenching.git.conventions import STANDARDS_DIR, _declared_docs
@@ -32,7 +34,7 @@ from quenching.git.pr import (labelled_links, normalize_azure_pull_request,
 from quenching.git.slugs import _read_specs, cmd_specs
 from quenching.git.stale import (_gone_branches, _merged_branches, _merged_remote_branches,
                                  _orphan_worktrees, _unregistered_worktrees, stale_report)
-from quenching.git.worktree import _is_codex_artifact
+from quenching.git.worktree import _is_codex_artifact, _is_link, _make_link
 
 PLUGIN_ROOT = pathlib.Path(__file__).resolve().parent.parent
 CQ = str(PLUGIN_ROOT / "assets" / "bin" / "cq")
@@ -82,7 +84,7 @@ def _merged_branch(repo: str, name: str) -> None:
 
 def _cq_json(cwd: str, *argv: str) -> dict:
     proc = subprocess.run([sys.executable, CQ, "git", *argv, "--json"], cwd=cwd,
-                          capture_output=True, text=True)
+                          capture_output=True, text=True, encoding="utf-8")
     assert proc.returncode == 0, proc.stderr
     return json.loads(proc.stdout)
 
@@ -108,12 +110,12 @@ def tearDownModule():
 
 class RepoCase(unittest.TestCase):
     def setUp(self):
-        # Restored via addCleanup, in LIFO order — BEFORE the tempdir cleanup below runs, so a
-        # test that `os.chdir`s into the repo never leaves the process cwd pointing at a
-        # directory `tmp.cleanup()` is about to delete out from under every test that follows.
-        self.addCleanup(os.chdir, os.getcwd())
+        # Cleanups run LIFO: registered after `tmp.cleanup`, the cwd is restored BEFORE the
+        # tempdir is deleted, so a test that `os.chdir`s into the repo never sits inside a
+        # directory being removed (Windows refuses that with WinError 32).
         tmp = tempfile.TemporaryDirectory()
         self.addCleanup(tmp.cleanup)
+        self.addCleanup(os.chdir, os.getcwd())
         self.tmp = tmp.name
         self.repo = _init_repo(os.path.join(self.tmp, "repo"))
 
@@ -1131,10 +1133,14 @@ class Audit(RepoCase):
         target = pathlib.Path(self.wt, "notes")
         target.mkdir()
         pathlib.Path(target, "c.md").write_text("---\ntools: Bash\n---\n", encoding="utf-8")
-        os.makedirs(pathlib.Path(self.wt, ".claude"), exist_ok=True)
-        os.symlink("../notes", pathlib.Path(self.wt, ".claude", "commands"))
-        os.symlink("notes/c.md", pathlib.Path(self.wt, "plain.txt"))
-        _run(self.wt, "add", "notes", ".claude/commands", "plain.txt")
+        _run(self.wt, "add", "notes")
+        # A symlink is a `120000` entry whose blob is the target: written into the index
+        # directly, so no symlink privilege is needed (Windows) and the commit is the same.
+        for path, target in ((".claude/commands", "../notes"), ("plain.txt", "notes/c.md")):
+            blob = subprocess.run(["git", "hash-object", "-w", "--stdin"], cwd=self.wt,
+                                  input=target.encode(), check=True,
+                                  capture_output=True).stdout.decode().strip()
+            _run(self.wt, "update-index", "--add", "--cacheinfo", f"120000,{blob},{path}")
         _run(self.wt, "commit", "-q", "-m", "links")
         link = {"kind": "unknown", "added": ["(symlink)"]}
         self.assertEqual(self._grants(), [{"path": ".claude/commands", **link},
@@ -1400,7 +1406,8 @@ class Audit(RepoCase):
         raw = (f"tree {tree}\nparent {self.sha}\nauthor T <t@e> 1 +0000\ncommitter T <t@e> 1 +0000\n"
                "gpgsig -----BEGIN PGP SIGNATURE-----\n \n x\n -----END PGP SIGNATURE-----\n\nsigned\n")
         signed = subprocess.run(["git", "hash-object", "-t", "commit", "-w", "--stdin"], cwd=self.wt,
-                                input=raw, check=True, capture_output=True, text=True).stdout.strip()
+                                input=raw.encode(), check=True,
+                                capture_output=True).stdout.decode().strip()
         _run(self.wt, "update-ref", "refs/heads/spec/1", signed)
         _run(self.repo, "config", "gpg.program", prog)
         _run(self.repo, "config", "log.showSignature", "true")
@@ -1817,7 +1824,7 @@ class Worktree(RepoCase):
     def test_absent_path_creates_the_shared_store_link(self):
         payload = _cq_json(self.repo, "worktree", "link")
         self.assertEqual(payload["paths"][0]["state"], "created")
-        self.assertTrue(self.link.is_symlink())
+        self.assertTrue(_is_link(str(self.link)))
         self.assertEqual(self.link.resolve(), self.store.resolve())
 
     def test_legacy_flat_shared_paths_are_refused(self):
@@ -1834,16 +1841,16 @@ class Worktree(RepoCase):
 
     def test_existing_link_to_the_store_is_unchanged(self):
         self.store.mkdir()
-        self.link.symlink_to(self.store)
+        _make_link(str(self.store), str(self.link))
         payload = _cq_json(self.repo, "worktree", "link")
         self.assertEqual(payload["paths"][0]["state"], "unchanged")
-        self.assertTrue(self.link.is_symlink())
+        self.assertTrue(_is_link(str(self.link)))
         self.assertEqual(self.link.resolve(), self.store.resolve())
 
     def test_existing_link_to_another_place_is_repointed(self):
         other = pathlib.Path(self.tmp, "other")
         other.mkdir()
-        self.link.symlink_to(other)
+        _make_link(str(other), str(self.link))
         payload = _cq_json(self.repo, "worktree", "link")
         self.assertEqual(payload["paths"][0]["state"], "repointed")
         self.assertEqual(self.link.resolve(), self.store.resolve())
@@ -1924,7 +1931,7 @@ class WorktreeDottedStore(RepoCase):
     def test_the_legacy_store_is_renamed_and_its_link_repointed(self):
         self.legacy.mkdir()
         (self.legacy / "keep").write_text("dado\n", encoding="utf-8")
-        self.link.symlink_to(self.legacy)
+        _make_link(str(self.legacy), str(self.link))
         proc = self._link()
         self.assertEqual(proc.returncode, 0, proc.stdout + proc.stderr)
         item = json.loads(proc.stdout)["paths"][0]
@@ -1939,7 +1946,7 @@ class WorktreeDottedStore(RepoCase):
         (self.legacy / "old").write_text("velho\n", encoding="utf-8")
         self.store.mkdir()
         (self.store / "new").write_text("novo\n", encoding="utf-8")
-        self.link.symlink_to(self.legacy)
+        _make_link(str(self.legacy), str(self.link))
         proc = self._link()
         self.assertEqual(proc.returncode, 2, proc.stdout)
         payload = json.loads(proc.stdout)
@@ -1947,7 +1954,7 @@ class WorktreeDottedStore(RepoCase):
         self.assertEqual((payload["store"], payload["legacy"]), (str(self.store), str(self.legacy)))
         self.assertEqual((self.legacy / "old").read_text(encoding="utf-8"), "velho\n")
         self.assertEqual((self.store / "new").read_text(encoding="utf-8"), "novo\n")
-        self.assertEqual(os.readlink(self.link), str(self.legacy))
+        self.assertEqual(os.path.realpath(self.link), os.path.realpath(self.legacy))
 
 
 class SpecsConfigSharedPaths(RepoCase):
@@ -2502,7 +2509,7 @@ if __name__ == "__main__":
 def _cq(cwd: str, *argv: str, stdin: str | None = None,
         env: dict | None = None) -> subprocess.CompletedProcess:
     return subprocess.run([sys.executable, CQ, "git", *argv, "--json"], cwd=cwd, input=stdin,
-                          capture_output=True, text=True, env=env)
+                          capture_output=True, text=True, encoding="utf-8", env=env)
 
 
 def _sha(cwd: str, ref: str = "HEAD") -> str:
@@ -2593,7 +2600,9 @@ class Inert(RepoCase):
                            ("remote.origin.promisor", "true"),
                            ("core.sshCommand", str(prog))):
             _run(self.repo, "config", key, value)
-        os.remove(os.path.join(self.repo, ".git", "objects", blob[:2], blob[2:]))
+        loose = os.path.join(self.repo, ".git", "objects", blob[:2], blob[2:])
+        os.chmod(loose, stat.S_IWRITE)   # git writes objects read-only; Windows refuses to delete those
+        os.remove(loose)
         return pathlib.Path(self.tmp, "PWNED_lazy")
 
     def test_audit_blanks_a_filter_whose_name_carries_equals(self):
@@ -2824,7 +2833,7 @@ class WorktreeAdd(RepoCase):
         payload = _cq_json(self.repo, "worktree", "add", "--path", self.path,
                            "--branch", "plan/1-x", "--base", "main")
         self.assertEqual([p["state"] for p in payload["paths"]], ["created"])
-        self.assertTrue(os.path.islink(os.path.join(self.path, "shared")))
+        self.assertTrue(_is_link(os.path.join(self.path, "shared")))
 
     def _declare_setup(self, command: str) -> None:
         config = pathlib.Path(self.repo, ".claude", "quenching.json")
@@ -2836,11 +2845,11 @@ class WorktreeAdd(RepoCase):
         _run(self.repo, "push", "-q", "origin", "main:main", "--force")
 
     def test_runs_the_declared_setup_once_inside_the_new_worktree(self):
-        self._declare_setup("pwd > setup-ran.txt")
+        setup = "cd > setup-ran.txt" if os.name == "nt" else "pwd > setup-ran.txt"
+        self._declare_setup(setup)
         payload = _cq_json(self.repo, "worktree", "add", "--path", self.path,
                            "--branch", "plan/1-x", "--base", "main")
-        self.assertEqual(payload["setup"], {"command": "pwd > setup-ran.txt", "exit": 0,
-                                            "ok": True})
+        self.assertEqual(payload["setup"], {"command": setup, "exit": 0, "ok": True})
         ran = pathlib.Path(self.path, "setup-ran.txt").read_text(encoding="utf-8").strip()
         self.assertEqual(os.path.realpath(ran), os.path.realpath(self.path))
         self.assertFalse(pathlib.Path(self.repo, "setup-ran.txt").exists())
@@ -3423,13 +3432,8 @@ class PullRequestVerbs(RepoCase):
     def setUp(self):
         super().setUp()
         bindir = pathlib.Path(self.tmp, "bin")
-        bindir.mkdir()
-        gh = bindir / "gh"
-        gh.write_text(FAKE_GH, encoding="utf-8")
-        gh.chmod(0o755)
-        az = bindir / "az"
-        az.write_text(FAKE_AZ, encoding="utf-8")
-        az.chmod(0o755)
+        fake_tool(bindir, "gh", FAKE_GH)
+        fake_tool(bindir, "az", FAKE_AZ)
         self.log = pathlib.Path(self.tmp, "gh.log")
         self.env = {**os.environ, "PATH": f"{bindir}{os.pathsep}{os.environ['PATH']}",
                     "FAKE_GH_LOG": str(self.log)}

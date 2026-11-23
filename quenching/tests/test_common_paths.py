@@ -1,8 +1,11 @@
 """`quenching.common.paths` — the one normalisation every consumer of `files:` compares through."""
 from __future__ import annotations
 
+import os
 import pathlib
+import subprocess
 import sys
+import tempfile
 import unittest
 
 try:
@@ -11,7 +14,32 @@ except ModuleNotFoundError:  # package-qualified unittest invocation from the re
     sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
     import _paths  # noqa: F401
 from quenching.codex import eligible
-from quenching.common.paths import escapes_repo, repo_path
+from quenching.common.config import find_repo_root
+from quenching.common.paths import escapes_repo, native_path, repo_path
+
+
+class NativePath(unittest.TestCase):
+    def test_a_git_path_on_windows_takes_the_backslash_form(self):
+        self.assertEqual(native_path("C:/Users/x/repo-slot-1", windows=True),
+                         "C:\\Users\\x\\repo-slot-1")
+        self.assertEqual(native_path("C:\\Users\\x", windows=True), "C:\\Users\\x")
+
+    def test_posix_is_identity(self):
+        for path in ("/home/x/repo", "/home//x/../y", ""):
+            self.assertEqual(native_path(path, windows=False), path)
+
+    def test_an_empty_answer_stays_empty(self):
+        self.assertEqual(native_path("", windows=True), "")
+
+    def test_the_repository_root_git_reports_is_the_one_os_path_builds(self):
+        # a root without a config file comes from `rev-parse --show-toplevel`, which prints `/`
+        # on Windows; the backend cache and every `os.path.join` key on this exact string
+        with tempfile.TemporaryDirectory() as tmp:
+            root = os.path.realpath(tmp)
+            subprocess.run(["git", "init", "-q", root], check=True)
+            nested = os.path.join(root, "a", "b")
+            os.makedirs(nested)
+            self.assertEqual(find_repo_root(nested), root)
 
 
 class RepoPath(unittest.TestCase):

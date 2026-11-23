@@ -4,6 +4,7 @@ import contextlib
 import io
 import json
 import os
+import shutil
 import subprocess
 import tempfile
 import unittest
@@ -136,7 +137,7 @@ class ReconcileReleasesTheSlot(Reconcile):
         self.git("checkout", "-q", "main")
         slot = os.path.join(os.path.dirname(self.root),
                             os.path.basename(self.root) + "-slot-1")
-        self.addCleanup(subprocess.run, ["rm", "-rf", slot])
+        self.addCleanup(shutil.rmtree, slot, True)
         self.git("worktree", "add", "-q", "--lock", "--reason", "quenching: 1 · s · h · d",
                  slot, "plan/1-x")
         self.spec()
