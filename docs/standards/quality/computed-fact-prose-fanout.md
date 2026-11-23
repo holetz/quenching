@@ -100,7 +100,7 @@ from "narrates a past one" is the mention/use judgment
 [prose-sweeps.md](prose-sweeps.md) already establishes is invisible to a regex — so a check here
 would either flag the history or miss the live sites, and a check that cannot tell wrong from
 worth-a-look belongs nowhere
-([bundle-verification.md](bundle-verification.md) §Advisory is a real category).
+([bundle-verification.md](bundle-verification.md) §What is machine-checked, and at which severity, whose advisory category is empty).
 
 This standard is the sibling of that one, and the failures are opposite: `prose-sweeps.md` is the
 sweep you **ran**, corrupting the sentences that talk *about* the form. This is the sweep you
