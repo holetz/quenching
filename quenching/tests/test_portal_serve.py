@@ -203,7 +203,9 @@ class Command(unittest.TestCase):
     def setUp(self):
         home = tempfile.mkdtemp(prefix="quenching-home-")
         self.addCleanup(shutil.rmtree, home, True)
-        patch = mock.patch.dict(os.environ, {"HOME": home})
+        # `~` is HOME on POSIX and USERPROFILE on Windows: point both at the throwaway home, so
+        # the registry read is this test's and never the user's own.
+        patch = mock.patch.dict(os.environ, {"HOME": home, "USERPROFILE": home})
         patch.start()
         self.addCleanup(patch.stop)
         lent = mock.patch.dict(lent_mod._LENT, clear=True)

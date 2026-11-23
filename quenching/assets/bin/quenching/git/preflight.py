@@ -17,6 +17,7 @@ from __future__ import annotations
 
 import json
 import os
+import shutil
 import subprocess
 
 from quenching.common.config import find_repo_root
@@ -40,6 +41,12 @@ def _tool(cwd: str, *argv: str) -> tuple[int, str, str]:
     except OSError as e:
         return 127, "", str(e)
     return done.returncode, done.stdout, done.stderr
+
+
+def _gh() -> str:
+    """The `gh` to run, resolved as `which` does: on Windows a bare name only reaches `gh.exe`,
+    so a `gh.cmd`/`gh.bat` shim on PATH would read as `gh unavailable`."""
+    return shutil.which("gh") or "gh"
 
 
 def _check(cid: str, status: str, message: str, **extra) -> dict:
@@ -133,7 +140,7 @@ def _gh_auth(cwd: str, provider: str | None) -> dict:
         return _check("ghAuth", "ok" if code == 0 else "fail",
                       "az reaches the Azure DevOps PRs" if code == 0
                       else f"az does not reach the Azure DevOps PRs: {err.strip()}".rstrip(": "))
-    code, _out, err = _tool(cwd, "gh", "auth", "status")
+    code, _out, err = _tool(cwd, _gh(), "auth", "status")
     if code in (124, 127):
         return _check("ghAuth", "unknown", err.strip() or "gh unavailable")
     return _check("ghAuth", "ok" if code == 0 else "fail",
@@ -144,7 +151,8 @@ def _ci(cwd: str, base: str, provider: str | None) -> dict:
     if provider == "azure-boards":
         return _check("ci", "unknown", "the CI probe reads GitHub Actions; Azure Pipelines "
                                        "is not read")
-    code, out, err = _tool(cwd, "gh", "run", "list", "--branch", base, "--limit", "3",
+    gh = _gh()
+    code, out, err = _tool(cwd, gh, "run", "list", "--branch", base, "--limit", "3",
                            "--json", "databaseId,status,conclusion")
     if code != 0:
         return _check("ci", "unknown", err.strip() or "gh run list failed")
@@ -155,7 +163,7 @@ def _ci(cwd: str, base: str, provider: str | None) -> dict:
         return _check("ci", "unknown", "gh run list returned an unreadable payload")
     if not done:
         return _check("ci", "unknown", f"no finished run on {base}")
-    code, out, err = _tool(cwd, "gh", "run", "view", str(done[0].get("databaseId")),
+    code, out, err = _tool(cwd, gh, "run", "view", str(done[0].get("databaseId")),
                            "--json", "jobs")
     try:
         jobs = json.loads(out)["jobs"] if code == 0 else None

@@ -246,6 +246,15 @@ anchored () {
   local forbidden=""
   local result=yes
   local dir inside=no
+  local -a loaded=("${LOADED[@]}") sources=("$SOURCE")
+
+  # Git Bash: Claude on Windows reports `C:\\Users\\...` (JSON-escaped) for the path this shell
+  # spells `/tmp/...` or `/c/...`. Compare both in the `C:/...` form `cygpath -m` prints.
+  if command -v cygpath >/dev/null 2>&1; then
+    observed="${observed//\\\\//}"
+    for dir in "${LOADED[@]}"; do loaded+=("$(cygpath -m "$dir")"); done
+    sources+=("$(cygpath -m "$SOURCE")")
+  fi
 
   forbidden="$(grep -nE '/plugins/(cache|marketplaces)/' <<<"$observed" || true)"
   if [ -n "$forbidden" ]; then
@@ -254,14 +263,17 @@ anchored () {
     result=no
   fi
 
-  forbidden="$(grep -nF "$SOURCE/" <<<"$observed" || true)"
-  if [ -n "$forbidden" ]; then
-    printf 'FAIL anchor: observed path came from the source tree, not the deployed payload\n'
-    printf '%s\n' "$forbidden"
-    result=no
-  fi
+  for dir in "${sources[@]}"; do
+    forbidden="$(grep -nF "$dir/" <<<"$observed" || true)"
+    if [ -n "$forbidden" ]; then
+      printf 'FAIL anchor: observed path came from the source tree, not the deployed payload\n'
+      printf '%s\n' "$forbidden"
+      result=no
+      break
+    fi
+  done
 
-  for dir in "${LOADED[@]}"; do
+  for dir in "${loaded[@]}"; do
     if grep -qF "$dir/" <<<"$observed"; then inside=yes; fi
   done
   if grep -qE '(^|[" =])\.agents/(quenching|skills)/' <<<"$observed"; then inside=yes; fi

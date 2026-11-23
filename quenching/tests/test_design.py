@@ -5,14 +5,14 @@ import json
 import pathlib
 import shlex
 import shutil
-import stat
 import subprocess
 import sys
 import tempfile
 import unittest
 from unittest import mock
 
-import _paths  # noqa: F401 — installs assets/bin exactly as the cq entry point does
+import _paths  # noqa: F401 - installs assets/bin exactly as the cq entry point does
+from _tools import fake_tool
 from quenching.design.align import align_plan, align_write
 from quenching.design.build import build_drift, compute_build, write_build
 from quenching.design.doctor import inspect_design
@@ -26,6 +26,12 @@ from quenching.design.model import (
     read_json,
     validate_source,
 )
+
+# A stand-in `typst compile <in> <out>`: writes a PDF header to the output it is handed.
+FAKE_TYPST = """import sys
+with open(sys.argv[3], "w", encoding="utf-8") as handle:
+    handle.write("%PDF-1.4\\n")
+"""
 
 PRODUCT = {
     "Platform": "web",
@@ -349,9 +355,7 @@ components:
         )
         data = self.root / "pdf-note.json"
         data.write_text(json.dumps({"title": "A note", "body": "Text."}), encoding="utf-8")
-        compiler = self.root / "fake-typst"
-        compiler.write_text("#!/bin/sh\nprintf '%%PDF-1.4\\n' > \"$3\"\n", encoding="utf-8")
-        compiler.chmod(compiler.stat().st_mode | stat.S_IXUSR)
+        compiler = fake_tool(self.root / "fake-bin", "typst", FAKE_TYPST)
         with mock.patch("quenching.design.genre.shutil.which", return_value=str(compiler)):
             rendered = render_genre(self.root, "pdf-note", "pdf", data)
         self.assertTrue((self.root / rendered["output"]).is_file())
@@ -374,9 +378,7 @@ components:
                   ["title:required:Title", "body:required:Body"])
         data = self.root / "pdf-font.json"
         data.write_text(json.dumps({"title": "A note", "body": "Text."}), encoding="utf-8")
-        compiler = self.root / "fake-typst"
-        compiler.write_text("#!/bin/sh\nprintf '%%PDF-1.4\\n' > \"$3\"\n", encoding="utf-8")
-        compiler.chmod(compiler.stat().st_mode | stat.S_IXUSR)
+        compiler = fake_tool(self.root / "fake-bin", "typst", FAKE_TYPST)
         with mock.patch("quenching.design.genre.shutil.which", return_value=str(compiler)):
             render_genre(self.root, "pdf-font", "pdf", data)
         # The fake compiler keeps the target at argv[3]; successful output proves

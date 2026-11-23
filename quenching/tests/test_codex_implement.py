@@ -21,17 +21,18 @@ try:
 except ModuleNotFoundError:  # package-qualified unittest invocation from the repository root
     sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
     import _paths  # noqa: F401
+from _tools import WINDOWS, fake_tool, link_tool
 from quenching.codex import main
 from quenching.codex.config import DEFAULTS
 from quenching.codex.guard import GuardError
 from quenching.codex.implement import (BYPASS, NOT_MEASURED, build_argv, clean_env,
                                       measured_tokens, run_implement)
 
-FAKE = r'''#!/usr/bin/env python3
-import json, os, subprocess, sys, time
+FAKE = r'''import json, os, subprocess, sys, time
 argv = sys.argv[1:]
 with open(os.environ["FAKE_LOG"], "a", encoding="utf-8") as handle:
-    handle.write(json.dumps({"argv": argv, "env": sorted(os.environ), "stdin": sys.stdin.read()})
+    handle.write(json.dumps({"argv": argv, "env": sorted(os.environ),
+                             "stdin": sys.stdin.buffer.read().decode("utf-8")})
                  + "\n")
 mode = os.environ.get("FAKE_MODE", "write")
 cwd = argv[argv.index("-C") + 1]
@@ -91,10 +92,14 @@ class Implement(unittest.TestCase):
         self.addCleanup(shutil.rmtree, self.tmp, True)
         bin_dir = self.tmp / "bin"
         bin_dir.mkdir()
-        fake = bin_dir / "codex"
-        fake.write_text(FAKE.replace("/usr/bin/env python3", sys.executable), encoding="utf-8")
-        fake.chmod(0o755)
-        os.symlink(shutil.which("git"), bin_dir / "git")
+        fake_tool(bin_dir, "codex", FAKE)
+        path = str(bin_dir)
+        if WINDOWS:
+            # A bare `git` is searched as `git.exe` only, so a `.cmd` forwarder is never reached:
+            # git's own directory joins PATH instead, and it holds no `codex`.
+            path += os.pathsep + os.path.dirname(shutil.which("git"))
+        else:
+            link_tool(bin_dir, "git")
         self.repo = self.tmp / "repo"
         (self.repo / "src").mkdir(parents=True)
         (self.repo / "src" / "a.py").write_text("print('a')\n", encoding="utf-8")
@@ -105,10 +110,13 @@ class Implement(unittest.TestCase):
         self.prompt = self.tmp / "prompt.md"
         self.prompt.write_text("Implemente a tarefa 2.2.\n", encoding="utf-8")
         self.log = self.tmp / "calls.log"
-        self.env = {"PATH": str(bin_dir), "FAKE_LOG": str(self.log), "GH_TOKEN": "secret",
+        self.env = {"PATH": path, "FAKE_LOG": str(self.log), "GH_TOKEN": "secret",
                     "AWS_SECRET_ACCESS_KEY": "s", "GIT_AUTHOR_NAME": "t",
                     "GIT_AUTHOR_EMAIL": "t@t", "GIT_COMMITTER_NAME": "t",
                     "GIT_COMMITTER_EMAIL": "t@t", "HOME": str(self.tmp)}
+        if WINDOWS:
+            # Every Windows process carries these; without them a `.cmd` cannot start its shell.
+            self.env.update({k: os.environ[k] for k in ("SystemRoot", "ComSpec") if k in os.environ})
         self.settings = {**DEFAULTS, "timeoutSeconds": 20,
                          "executor": {**DEFAULTS["executor"], "enabled": True}}
         self.tasks = [task()]
