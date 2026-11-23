@@ -4,8 +4,10 @@ allowed-tools: Bash(cq:*), Bash(cq.cmd:*), Read, Grep, Glob, Bash(python3:*)
 
 # /quenching-opensource readiness — assess a repository before it goes public
 
-**Input**: `$ARGUMENTS` (an optional target repository root, and an optional `--evidence <path>`
-to the owner's reviewed license and consent evidence; omit the root to use the current repository).
+**Input**: `$ARGUMENTS` (an optional target repository root, an optional `--evidence <path>` to
+the owner's reviewed license, consent and provenance evidence, and an optional `--denylist <path>`
+to the owner's sensitive terms, kept outside the target; omit the root to use the current
+repository).
 
 This command is the read-only pre-publication assessment of the open source front. It runs
 **before** `/quenching-opensource align` when the owner wants to open a private
@@ -19,7 +21,7 @@ Resolve `cq` per
 §Resolving the tool. Set `TARGET_ROOT` to the supplied root, or to `.` when omitted, and run:
 
 ```bash
-.agents/quenching/bin/cq --root "$TARGET_ROOT" opensource readiness --json [--evidence "<path>"]
+.agents/quenching/bin/cq --root "$TARGET_ROOT" opensource readiness --json [--evidence "<path>"] [--denylist "<path>"]
 ```
 
 Branch on the exit code: `0` is a complete measured assessment with no finding, `1` carries
@@ -70,5 +72,6 @@ result is a publication approval.
 
 - Read only: no target write, no fetch, no ref change, no scanner install, no remote credential
   verification.
-- No secret value, snippet, scanner message, personal address or absolute path is ever echoed.
+- No secret value, snippet, scanner message, personal address, denylist term or absolute path is
+  ever echoed.
 - An unmeasured category is never reported as clean, and no exit is an approval to publish.

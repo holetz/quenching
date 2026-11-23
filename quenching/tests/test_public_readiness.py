@@ -99,9 +99,19 @@ class ReadinessCase(unittest.TestCase):
         self.bin = os.path.join(self.tmp.name, "bin")
         os.makedirs(self.root)
         os.makedirs(self.bin)
-        os.symlink(shutil.which("git"), os.path.join(self.bin, "git"))
+        path = self.bin
+        try:
+            os.symlink(shutil.which("git"), os.path.join(self.bin, "git"))
+        except OSError:
+            # Windows without the symlink privilege: git's own directory joins PATH instead, so long
+            # as it holds none of the scanners a test could reach by accident.
+            if os.name != "nt":
+                raise
+            gitdir = os.path.dirname(shutil.which("git"))
+            self.assertFalse([n for n in VERSIONS if shutil.which(n, path=gitdir)], gitdir)
+            path = os.pathsep.join([self.bin, gitdir])
         git(self.root, "init", "-q", "-b", "main")
-        self.env = mock.patch.dict(os.environ, {"PATH": self.bin})
+        self.env = mock.patch.dict(os.environ, {"PATH": path})
         self.env.start()
 
     def tearDown(self) -> None:
@@ -116,14 +126,22 @@ class ReadinessCase(unittest.TestCase):
                 encoding="utf-8")
             os.chmod(path, 0o755)
 
-    def evidence(self, licenses: dict | None = None, consent: dict | None = None) -> str:
+    def evidence(self, licenses: dict | None = None, consent: dict | None = None,
+                 provenance: dict | None = None) -> str:
         path = os.path.join(self.tmp.name, "evidence.json")
         data = {}
         if licenses is not None:
             data["dependencyLicenses"] = licenses
         if consent is not None:
             data["historyConsent"] = consent
+        if provenance is not None:
+            data["provenance"] = provenance
         pathlib.Path(path).write_text(json.dumps(data), encoding="utf-8")
+        return path
+
+    def denylist(self, *terms: str, inside: bool = False) -> str:
+        path = os.path.join(self.root if inside else self.tmp.name, "denylist.txt")
+        pathlib.Path(path).write_text("# owner terms\n\n" + "".join(t + "\n" for t in terms), encoding="utf-8")
         return path
 
     def assess(self, **kwargs) -> tuple[dict, int]:
@@ -185,9 +203,10 @@ class EngineTest(ReadinessCase):
         self.install("gitleaks", "reuse")
         reuse = {"non_compliant": {}, "summary": {"compliant": True}}
         evidence = self.evidence({"state": "compatible", "reviewedBy": "owner"},
-                                 {"state": "granted", "reviewedBy": "owner"})
+                                 {"state": "granted", "reviewedBy": "owner"},
+                                 {"state": "original", "reviewedBy": "owner"})
         with mock.patch.dict(os.environ, {"FAKE_REUSE_ROWS": json.dumps(reuse)}):
-            payload, code = self.assess(evidence=evidence)
+            payload, code = self.assess(evidence=evidence, denylist=self.denylist("Qckabsentterm"))
         self.assertEqual(0, code, payload["coverage"])
         self.assertTrue(payload["ok"])
         self.assertFalse(payload["grantsPublication"])
@@ -314,6 +333,44 @@ class AdversarialTest(ReadinessCase):
         self.assertEqual(1, warnings["pr-identity-in-metadata"]["addresses"])
         self.assertNotIn("acme", json.dumps(payload))
 
+    def test_a_saas_tenant_is_an_internal_identifier_while_placeholders_are_not(self):
+        commit(self.root, "tests/fixture.py", "URL = 'https://dev.azure.com/qcktenantorg/proj'\n")
+        commit(self.root, "notes/links.md", "see https://qcktenant.sharepoint.com/sites/x\n")
+        commit(self.root, "notes/example.md", "https://dev.azure.com/{org} https://dev.azure.com/<org> "
+                                             "https://dev.azure.com/contoso marketplace.visualstudio.com\n")
+        payload, _ = self.assess()
+        found = {row["location"] for row in payload["warnings"] if row["code"] == "pr-internal-identifier"}
+        self.assertEqual({"tests/fixture.py", "notes/links.md"}, found)
+        self.assertNotIn("qcktenant", json.dumps(payload))
+
+    def test_an_owner_term_blocks_from_the_tree_and_from_history_without_being_echoed(self):
+        added = commit(self.root, "src/client.py", "# built for QckEmployer's team\n")
+        old = commit(self.root, "notes.md", "vertical: qckvertical\n")
+        git(self.root, "rm", "-q", "notes.md")
+        git(self.root, "commit", "-q", "-m", "remove", env=identity())
+        removed = git(self.root, "rev-parse", "HEAD").strip()
+        said = commit(self.root, "a.txt", "x\n", message="port from QCKCODENAME")
+        commit(self.root, "b.txt", "qckemployerx is another word\n")
+        payload, _ = self.assess(denylist=self.denylist("qckemployer", "QckVertical", "qckcodename"))
+        owner = [row for row in payload["blockers"] if row["code"] == "pr-owner-term"]
+        self.assertEqual({"src/client.py"}, {row["location"] for row in owner if "location" in row})
+        self.assertEqual({added, old, removed, said}, {row["commit"] for row in owner if "commit" in row})
+        self.assertEqual("measured", self.coverage(payload)["owner-terms"]["state"])
+        self.assertNotIn("qck", json.dumps(payload).lower())
+
+    def test_an_absent_empty_or_inside_denylist_is_never_clean(self):
+        commit(self.root, "a.txt", "x\n")
+        cases = [(None, "not-measured", "pr-denylist-absent"),
+                 (self.denylist(), "not-measured", "pr-denylist-empty"),
+                 (os.path.join(self.tmp.name, "missing.txt"), "not-measured", "pr-denylist-unreadable"),
+                 (self.denylist("x", inside=True), "refused", "pr-denylist-inside-target")]
+        for path, state, code in cases:
+            with self.subTest(code=code):
+                payload, exit_code = self.assess(denylist=path)
+                self.assertEqual(2, exit_code)
+                cover = self.coverage(payload)["owner-terms"]
+                self.assertEqual((state, code), (cover["state"], cover["code"]))
+
     def test_missing_attribution_counts_tracked_files_only(self):
         commit(self.root, "src/a.py", "x = 1\n")
         pathlib.Path(self.root, "scratch.py").write_text("y\n", encoding="utf-8")
@@ -351,6 +408,23 @@ class AdversarialTest(ReadinessCase):
         pathlib.Path(unreadable).write_text(f"{{{SENTINEL}", encoding="utf-8")
         payload, _ = self.assess(evidence=unreadable)
         self.assertEqual("pr-evidence-unreadable", self.coverage(payload)["history-consent"]["code"])
+
+    def test_derived_provenance_blocks_until_an_authorization_is_recorded(self):
+        commit(self.root, "a.txt", "x\n")
+        cases = [({"state": "derived", "reviewedBy": "owner"}, ["pr-provenance-derived"]),
+                 ({"state": "derived", "reviewedBy": "owner", "authorization": " "}, ["pr-provenance-derived"]),
+                 ({"state": "derived", "reviewedBy": "owner", "authorization": f"license {SENTINEL}"}, []),
+                 ({"state": "clean-room", "reviewedBy": "owner"}, []),
+                 ({"state": "original", "reviewedBy": "owner"}, [])]
+        for entry, blockers in cases:
+            with self.subTest(entry=entry):
+                payload, _ = self.assess(evidence=self.evidence(provenance=entry))
+                self.assertEqual("measured", self.coverage(payload)["provenance"]["state"])
+                self.assertEqual(blockers, [r["code"] for r in payload["blockers"]])
+        payload, _ = self.assess(evidence=self.evidence())
+        self.assertEqual("pr-evidence-absent", self.coverage(payload)["provenance"]["code"])
+        payload, _ = self.assess(evidence=self.evidence(provenance={"state": "forked", "reviewedBy": "owner"}))
+        self.assertEqual("pr-evidence-ambiguous", self.coverage(payload)["provenance"]["code"])
 
     def test_a_scratch_directory_inside_the_target_refuses_the_scanner(self):
         commit(self.root, "a.txt", "x\n")
@@ -410,11 +484,13 @@ class CleanCloneTest(ReadinessCase):
         commit(self.root, "README.md", "hello\n")
         self.install("gitleaks", "reuse")
         evidence = self.evidence({"state": "compatible", "reviewedBy": "owner"},
-                                 {"state": "granted", "reviewedBy": "owner"})
+                                 {"state": "granted", "reviewedBy": "owner"},
+                                 {"state": "clean-room", "reviewedBy": "owner"})
         env = dict(os.environ, FAKE_REUSE_ROWS=json.dumps({"non_compliant": {}}))
         before = snapshot(self.root)
         run = subprocess.run([sys.executable, str(target / ".agents/quenching/assets/bin/cq"), "--root", self.root,
-                              "opensource", "readiness", "--json", "--evidence", evidence],
+                              "opensource", "readiness", "--json", "--evidence", evidence,
+                              "--denylist", self.denylist("Qckabsentterm")],
                              capture_output=True, text=True, env=env)
         self.assertEqual(before, snapshot(self.root))
         self.assertEqual(0, run.returncode, run.stdout + run.stderr)
