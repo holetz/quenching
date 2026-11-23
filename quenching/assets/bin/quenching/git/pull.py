@@ -24,6 +24,7 @@ import datetime
 import json
 import os
 import re
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -55,8 +56,13 @@ AZURE_BODY_NOTE = "Corpo completo no primeiro comentário deste PR."
 
 
 def _tool(tool: str, *argv: str, stdin: str | None = None) -> tuple[int, str, str]:
+    command = spawn_argv([tool, *argv])
+    if command[0] == tool:
+        # Windows looks a bare name up as `.exe` only; the path `which` resolves also reaches a
+        # `.cmd`. Elsewhere it is the same program the bare name would have run.
+        command[0] = shutil.which(tool) or tool
     try:
-        done = subprocess.run(spawn_argv([tool, *argv]), capture_output=True, text=True, encoding="utf-8", errors="replace", input=stdin or "",
+        done = subprocess.run(command, capture_output=True, text=True, encoding="utf-8", errors="replace", input=stdin or "",
                               timeout=GH_TIMEOUT_S, env={**os.environ, "LC_ALL": "C", "LANG": "C"})
     except (OSError, subprocess.SubprocessError) as e:
         return 127, "", str(e)

@@ -13,6 +13,29 @@ owner: [`ci-cd/versioning-release.md`](docs/standards/ci-cd/versioning-release.m
 short version for a consumer: the version is published once, deliberately, as a release — never at a
 spec's own conclude — and `cq --version` is what answers which one you are running.
 
+## 7.14.0
+
+**`## Tasks` aprovadas não perdem mais o que foi combinado.** Depois de `approved`, o `--write` da
+  seção `Tasks` é recusado quando uma task some ou muda o `verify:`, o `files:`, o `cwd:` ou o texto:
+  a seção passa a aceitar só acréscimos, regra declarada em `artifacts.md` (#263).
+
+**O `cq components session cache` mede o que antes ficava de fora.** Os subagentes do Claude Code
+  entram na conta, uma coluna nomeia o host, o contrafactual mostra o custo com o outro TTL de escrita,
+  e `--inflow` conta o que entra no contexto por origem, com tamanho e releituras, para Claude Code e
+  OpenCode (#261).
+
+**O execute e o verify provam pela base e pela superfície real.** A primeira execução roda uma
+  linha de base (o `verify:` da primeira task) antes de qualquer código, e um vermelho ali vai direto
+  para a rota da base (#270); o `verify:` passa a ser orientado a provar o comportamento pela
+  superfície que o usuário usa (#271).
+
+**O gate local roda no Windows.** `.gitattributes` fixa LF (CRLF só em `*.cmd` e `*.bat`), o gate
+  resolve o `python3` do `.venv` e roda o citation-check com o `bash` certo, o citation-check passa
+  no Git Bash, e os helpers de teste (`_tools.py`) cobrem bash e ferramentas falsas (#273).
+
+**Também:** o check de escopo do spec-verifier não reprova mais os arquivos que o deploy regenera de
+  uma fonte alterada (#272).
+
 ## 7.13.0
 
 **Cada leitura do `cq` abre metade dos processos git, e os agentes preferem o MCP.** Dentro de uma

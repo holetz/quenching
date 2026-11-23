@@ -879,6 +879,8 @@ class MalformedRegistry(unittest.TestCase):
         self.assertEqual(code, 1)
 
     @unittest.skipIf(hasattr(os, "geteuid") and os.geteuid() == 0, "root reads any file")
+    @unittest.skipIf(os.name == "nt", "chmod(0) clears only the write bit on Windows; "
+                                      "the file stays readable, so no unreadable file exists")
     def test_unreadable_registry_is_malformed_finding_and_exit_2(self):
         root = self._target(b"# readme\n")
         readme = root / "scripts" / "README.md"
