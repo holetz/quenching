@@ -82,9 +82,11 @@ no `$`, no backtick, no `%`, no `!` and no inner double quote, so bash, PowerShe
 to Python unchanged. The code takes the root from `CLAUDE_PROJECT_DIR` (both harnesses export it;
 Copilot also exports `COPILOT_PROJECT_DIR`), else the working directory, prints `{}` when the body
 is not installed — the absence guard, now inside Python — and otherwise runs the body as
-`__main__`. The prefix is the repository's `shared.mcp.command` when declared (the one that already
-starts the MCP server), else `python3`; a Windows target declares it, since `python3` is often only
-the Store alias there. The marker path `.agents/quenching/assets/hooks/<name>.py` stays a literal
+`__main__`. The prefix is the one that starts the MCP server: the repository's `shared.mcp.command`
+when declared, else the one the last deploy recorded, else the first of `python3`, `python` and
+`py -3` that runs a Python 3.11 or later on the deploying machine (no version is pinned), else
+`python3`; a Windows target is therefore found without a declaration, and `python3` as only the
+Store alias there is skipped. The marker path `.agents/quenching/assets/hooks/<name>.py` stays a literal
 substring of the command, which is how the merge finds its own entry — an older `<name>.sh` entry is
 recognised too and rewritten in place.
 

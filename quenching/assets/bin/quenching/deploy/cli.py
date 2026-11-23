@@ -13,6 +13,7 @@ from quenching.common.deploy import MANIFEST, read_manifest
 from quenching.common.config import repository_document
 from quenching.common.output import FINDINGS, OK, REFUSAL, NoAbbrevParser, emit, refuse
 from quenching.common.version import VERSION
+from quenching.deploy import mcpfiles
 from quenching.deploy import settings as claude_settings
 from quenching.deploy import tree as deploy_tree
 
@@ -29,8 +30,8 @@ HOOKS_PATH = deploy_tree.PAYLOAD + "/assets/githooks"
 
 def _mcp_refusal(message: str, **extra) -> dict:
     return {"code": "ct-deploy-mcp", "message": message, **extra,
-            "remedy": "declare `shared.mcp` as {mount: \"specs\", command: [<python prefix>]}, "
-                      "or remove the key"}
+            "remedy": "declare `shared.mcp` as {mount: \"specs\", command: [<python prefix>]} "
+                      "to override the default, or remove the key"}
 
 
 def _identity_hooks_warnings(target: Path) -> list[str]:
@@ -103,9 +104,56 @@ def _owned(previous: dict | None) -> set[str]:
 
 
 def _recorded_hashes(previous: dict | None) -> dict[str, str]:
+    """What the last deploy owned whole. The MCP harness files are the user's and merged, so a
+    manifest that still lists them (written before the merge) no longer owns them."""
     files = (previous or {}).get("files")
-    return {rel: digest for rel, digest in files.items() if isinstance(digest, str)} \
+    return {rel: digest for rel, digest in files.items()
+            if isinstance(digest, str) and rel not in mcpfiles.FILES} \
         if isinstance(files, dict) else {}
+
+
+def _mcp_recorded(previous: dict | None) -> list[str]:
+    """The harness files whose quenching entry the last deploy wrote."""
+    listed = (previous or {}).get("mcpFiles")
+    if isinstance(listed, list):
+        return [rel for rel in listed if rel in mcpfiles.FILES]
+    files = (previous or {}).get("files")
+    return [rel for rel in mcpfiles.FILES if isinstance(files, dict) and rel in files]
+
+
+def _canonical_text(path: Path) -> str | None:
+    if not path.is_file():
+        return None
+    return path.read_bytes().decode("utf-8", errors="replace").replace("\r\n", "\n")
+
+
+def _mcp_merge(target: Path, wanted: dict[str, list[str]], previous: dict | None) -> dict:
+    """The quenching entry written into (or taken out of) the user's harness files, unwritten.
+
+    `wanted` maps each file to the argv its entry carries; a file the last deploy wrote and that is
+    no longer wanted loses only that entry. Nothing is touched that cannot be read safely.
+    """
+    files: list[dict] = []
+    warnings: list[str] = []
+    for rel in sorted({*wanted, *_mcp_recorded(previous)}):
+        path = target / rel
+        if not (_safe_relative(rel) and _contained(target, path)) or (path.exists() and not path.is_file()):
+            warnings.append(f"{rel} is not a regular file inside the target; its MCP entry was not touched")
+            continue
+        current = _canonical_text(path)
+        if rel in wanted:
+            new = mcpfiles.merged(rel, current, wanted[rel])
+        elif current is not None and mcpfiles.NAME in current:
+            new = mcpfiles.removed(rel, current)
+        else:
+            continue
+        if new is None:
+            warnings.append(f"{rel} is not a JSON object this deploy can merge; its MCP entry was "
+                            "not touched — add the quenching server by hand")
+            continue
+        if new != current:
+            files.append({"rel": rel, "text": new, "delete": new == ""})
+    return {"files": files, "warnings": warnings}
 
 
 def _edited(target: Path, rel: str, recorded: str | None) -> bool:
@@ -225,6 +273,10 @@ def plan(target: Path, built: dict, previous: dict | None) -> dict:
         if merged["changed"]:
             changes.append(_change("settings", SETTINGS))
         warnings = [*warnings, *merged["warnings"]]
+    mcp = built.get("mcpMerge")
+    if mcp:
+        changes.extend(_change("mcp", item["rel"]) for item in mcp["files"])
+        warnings = [*warnings, *mcp["warnings"]]
     if (target / MANIFEST).exists():
         try:
             current = json.loads((target / MANIFEST).read_text(encoding="utf-8"))
@@ -288,6 +340,16 @@ def _unlink_owned(target: Path, rel: str) -> None:
         parent = parent.parent
 
 
+def _write_mcp(target: Path, merge: dict | None) -> None:
+    for item in (merge or {}).get("files", []):
+        path = target / item["rel"]
+        if item["delete"]:
+            _unlink_owned(target, item["rel"])
+        else:
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_bytes(item["text"].encode("utf-8"))
+
+
 def write(target: Path, built: dict, result: dict, prune_legacy: bool) -> None:
     tree, seeds = built["tree"], built["seeds"]
     previous = read_manifest(str(target)) or {}
@@ -320,6 +382,7 @@ def write(target: Path, built: dict, result: dict, prune_legacy: bool) -> None:
         else:
             path.parent.mkdir(parents=True, exist_ok=True)
             path.write_text(merged["text"], encoding="utf-8")
+    _write_mcp(target, built.get("mcpMerge"))
     if prune_legacy:
         pointer = target / "CLAUDE.md"
         if pointer.is_file() and pointer.read_text(encoding="utf-8").strip() == "@AGENTS.md":
@@ -394,13 +457,24 @@ def main(argv: list[str]) -> int:
             return refuse({"code": "ct-deploy-harness", "harness": harness,
                            "message": f"unknown harness: {harness}"}, args.json)
     runtime = args.runtime or recorded(previous, "runtime", {"vendor", "uvx"}) or "vendor"
-    mcp, refusal = _mcp_option(target)
+    declared, refusal = _mcp_option(target)
     if refusal:
         return refuse(refusal, args.json)
-    if mcp and runtime != "vendor":
+    if declared and runtime != "vendor":
         return refuse(_mcp_refusal(
             "`shared.mcp` needs `--runtime vendor`: the generated command points at "
             "`.agents/quenching/assets/bin/cq`, which a uvx runtime does not carry"), args.json)
+    recorded_mcp = (previous or {}).get("mcp")
+    python = mcpfiles.python_prefix(
+        declared["command"] if declared else None,
+        recorded_mcp.get("command") if isinstance(recorded_mcp, dict) else None)
+    # Registered by default; `shared.mcp` only overrides the mount and the prefix. A uvx runtime
+    # carries no vendored entry point to call, so there the registration is skipped, not refused.
+    mcp = ({"mount": declared["mount"] if declared else "specs", "command": python}
+           if runtime == "vendor" else None)
+    mcp_warnings = ([] if mcp or not harnesses else [
+        "the MCP server is not registered: `--runtime uvx` carries no vendored entry point; "
+        "use `--runtime vendor` to register it"])
     try:
         manifest = deploy_tree.load_modules(deploy_tree.source_root())
         modules = deploy_tree.normalize_modules(
@@ -408,7 +482,7 @@ def main(argv: list[str]) -> int:
         profiles = (_split(args.profiles) or recorded(previous, "profiles")
                     or deploy_tree.profiles_for(modules))
         built = deploy_tree.build_tree(deploy_tree.source_root(), target, modules, harnesses,
-                                       runtime, profiles, mcp=mcp)
+                                       runtime, profiles, mcp=mcp, python=python)
     except (OSError, ValueError) as exc:
         return refuse({"code": "ct-deploy-source", "message": str(exc),
                        "remedy": "run deploy from a complete quenching checkout or wheel"},
@@ -420,8 +494,12 @@ def main(argv: list[str]) -> int:
                        "message": f"{target / SETTINGS} cannot be merged: {exc}; nothing was written",
                        "remedy": "fix the file by hand, or remove it, then rerun `cq deploy`"},
                       args.json)
+    wanted = {rel: deploy_tree.mcp_argv(mcp) for rel in built["manifest"].get("mcpFiles", [])} \
+        if mcp else {}
+    built["mcpMerge"] = _mcp_merge(target, wanted, previous)
     result = plan(target, built, previous)
-    result["warnings"] = [*result.get("warnings", []), *_identity_hooks_warnings(target)]
+    result["warnings"] = [*result.get("warnings", []), *mcp_warnings,
+                          *_identity_hooks_warnings(target)]
     installed = (previous or {}).get("version")
     if isinstance(installed, str) and installed != built["manifest"]["version"]:
         result["warnings"] = [f"the target carries quenching {installed}; this source is "
@@ -474,8 +552,10 @@ def remove_plan(target: Path, previous: dict) -> dict:
     merged = _settings_merge(target, {"settings": None, "manifest": {}}, previous)
     if merged and merged["changed"]:
         changes.append(_change("settings", SETTINGS))
+    mcp = _mcp_merge(target, {}, previous)
+    changes.extend(_change("mcp", item["rel"]) for item in mcp["files"])
     changes.append(_change("delete", MANIFEST))
-    return {"changes": changes, "merged": merged}
+    return {"changes": changes, "merged": merged, "mcp": mcp}
 
 
 def _remove_main(target: Path, previous: dict | None, args) -> int:
@@ -496,7 +576,8 @@ def _remove_main(target: Path, previous: dict | None, args) -> int:
     written = False
     if args.write:
         for change in result["changes"]:
-            if change["path"] in (MANIFEST, SETTINGS) or change["path"] in kept:
+            if (change["path"] in (MANIFEST, SETTINGS) or change["path"] in kept
+                    or change["change"] == "mcp"):
                 continue
             _unlink_owned(target, change["path"])
         merged = result["merged"]
@@ -506,10 +587,11 @@ def _remove_main(target: Path, previous: dict | None, args) -> int:
                 path.unlink()
             elif merged["text"] is not None:
                 path.write_text(merged["text"], encoding="utf-8")
+        _write_mcp(target, result["mcp"])
         (target / MANIFEST).unlink()
         written = True
     warnings = [f"kept {rel}: edited in the target, so it is now the target's own file"
-                for rel in kept]
+                for rel in kept] + result["mcp"]["warnings"]
     payload = {"ok": True, "target": str(target), "remove": True,
                "installedVersion": previous.get("version"), "changes": result["changes"],
                "kept": kept, "warnings": warnings, "written": written}
