@@ -110,7 +110,7 @@ class Evidence(ReclaimRepo):
         pathlib.Path(path, ".tmp", "w.txt").write_text("w\n", encoding="utf-8")
         got = self.evidence(path, processes=[])
         self.assertEqual(got["blockers"], ["ignored-content-unrecognized"])
-        self.assertEqual(got["ignored"]["unrecognized"], [".tmp/w.txt"])
+        self.assertEqual(got["ignored"]["unrecognized"], [os.path.join(".tmp", "w.txt")])
         pathlib.Path(path, "f-7.txt").write_text("changed\n", encoding="utf-8")
         self.assertIn("dirty", self.evidence(path, processes=[])["blockers"])
 

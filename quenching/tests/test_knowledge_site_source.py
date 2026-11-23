@@ -126,7 +126,8 @@ class SiteNavTests(unittest.TestCase):
             with self.subTest(title=title), tempfile.TemporaryDirectory() as tmp:
                 root = Path(tmp)
                 (root / "how-to").mkdir()
-                (root / "how-to" / "index.md").write_text(f"---\ntitle: {title}\n---\n# x\n")
+                (root / "how-to" / "index.md").write_text(f"---\ntitle: {title}\n---\n# x\n",
+                                                          encoding="utf-8")
                 (root / "index.md").write_text("# Home\n")
                 config = root / "zensical.toml"
                 config.write_text("[project]\nnav = []\n")
