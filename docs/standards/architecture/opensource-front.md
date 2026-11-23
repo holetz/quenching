@@ -4,10 +4,10 @@ title: Opensource front
 description: The target repository's license, community and governance artifacts, written only from pinned templates through cq opensource apply, and the read-only aggregate of every owner's open source catalog answers into a conservative baseline level with stable os-* findings
 resource: quenching/skills/**, quenching/assets/bin/quenching/opensource/**, quenching/assets/opensource/templates/**, quenching/skills/quenching-opensource/references/opensource-align/**
 tags: [architecture, opensource, governance, community, license]
-timestamp: 2026-11-03
+timestamp: 2026-11-23
 audience: both
 authority: current
-source: spec 1637 (epic 1627) — route, aggregate, level, apply and template sha256 proved by test_opensource_front.py; module resolution measured with the nine principal modules on PATH; spec 2160 (install only by deploy)
+source: spec 1637 (epic 1627) — route, aggregate, level, apply and template sha256 proved by test_opensource_front.py; module resolution measured with the nine principal modules on PATH; spec 2160 (install only by deploy); spec 1965 (showcase advisories, proved by test_opensource_front.py ShowcaseTest)
 maintainer: quenching
 ---
 
@@ -66,6 +66,29 @@ never changes the exit code. `doctor` reports `applicable` when the root carries
 the root conductor reports and skips a `not-applicable` front, while
 `/quenching-opensource align` invoked directly runs anyway. No configuration namespace
 exists: the owner's answers live in the align plan and in the written artifacts.
+
+## Showcase advisories
+
+`status` also reports two `info` advisories about what the forge shows of a public repository,
+measured over the files `git ls-files` lists. Neither changes the exit code, and neither is
+emitted outside a git repository:
+
+- `os-readme-media-missing` — the tree carries an interface (`.html`, `.htm`, `.jinja`,
+  `.jinja2`, `.j2`, `.vue`, `.svelte`, `.jsx`, `.tsx`) and the root `README*` cites no image,
+  video or picture other than a badge. The README is the knowledge front's, so the row carries
+  `owner: knowledge` and its `command`. The closing action is the owner's: a screenshot or GIF
+  made with synthetic data, stored under `.design/assets/` and cited by the README. The design
+  doctor counts that citation as a reference, so the asset is not orphaned.
+- `os-language-skew` — the dominant language by bytes is `JavaScript`, `CSS`, `SCSS`, `Less` or
+  `HTML`, and another language dominates once the directories under a vendor segment (`static`,
+  `assets`, `plugins`, `vendors`, `lib`, `libs`, `third_party`, `external`) or a `templates`
+  segment leave the count. Paths already carrying `linguist-vendored`, `linguist-generated` or
+  `linguist-documentation`, or with `linguist-detectable` unset, are out of the count, and so are
+  the paths the forge discards by default (`node_modules/`, `vendor/`, `bower_components/`,
+  `*.min.js`, `*.min.css`). The row names `language`, `honest`, `paths` and the `.gitattributes`
+  lines to propose. The owner commits them; `apply` never writes them.
+
+The forge's description and topics are provider facts and stay with `cq opensource readiness`.
 
 ## Writing through the route, from pinned templates
 
