@@ -163,7 +163,8 @@ class TaskExecutionContractTests(unittest.TestCase):
 
         self.assertIn("On a resume, re-run the last checked task's `verify:`", command)
         self.assertIn("Red → **stop**", command)
-        self.assertIn("Nothing checked yet → run nothing", command)
+        self.assertIn("Nothing checked yet → run the baseline once, before any code", command)
+        self.assertIn("route **5i** directly, no `.quenching/red` worktree", command)
 
     def test_runner_hooks_line_accepts_the_worktree_skip(self):
         runner = " ".join(RUNNER.read_text(encoding="utf-8").split())
