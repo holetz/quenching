@@ -13,6 +13,20 @@ owner: [`ci-cd/versioning-release.md`](docs/standards/ci-cd/versioning-release.m
 short version for a consumer: the version is published once, deliberately, as a release — never at a
 spec's own conclude — and `cq --version` is what answers which one you are running.
 
+## 7.15.0
+
+**A exigência de CI verde passa a ser configurável.** `shared.ci.enforce` (`required`, que é o
+  padrão e o comportamento de antes, `when-present` ou `off`) decide em um só lugar se o
+  `cq git pr merge`, o `/release` e o fluxo de specs exigem CI. Check vermelho, pulado ou ilegível é
+  recusado com qualquer valor; quando o CI é relaxado, o merge exige o gate local verde no lugar. A
+  chave só é lida da camada do projeto, e o `/quenching-security status` a reporta (#274).
+
+**A suíte de testes roda no Windows.** Os testes que dirigem ferramentas falsas e processos filhos,
+  os de git, worktrees, slots e limpeza, e os de specs, portal, sessão, deploy e conhecimento deixam de
+  depender de caminhos POSIX, de symlink com privilégio de administrador e do `bash` do WSL; o
+  registro de projetos do usuário fica isolado nos testes. Somado à 7.14.0, o gate local no Windows
+  cai de 276 falhas e 12 erros para 2 falhas (#265, #266, #267).
+
 ## 7.14.0
 
 **`## Tasks` aprovadas não perdem mais o que foi combinado.** Depois de `approved`, o `--write` da
