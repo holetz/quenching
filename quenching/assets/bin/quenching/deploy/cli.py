@@ -373,7 +373,7 @@ def write(target: Path, built: dict, result: dict, prune_legacy: bool) -> None:
         path = target / rel
         if not path.exists():
             path.parent.mkdir(parents=True, exist_ok=True)
-            path.write_text(text, encoding="utf-8")
+            path.write_text(text, encoding="utf-8", newline="\n")
     merged = built.get("merged")
     if merged and merged["changed"]:
         path = target / SETTINGS
@@ -381,15 +381,16 @@ def write(target: Path, built: dict, result: dict, prune_legacy: bool) -> None:
             path.unlink()
         else:
             path.parent.mkdir(parents=True, exist_ok=True)
-            path.write_text(merged["text"], encoding="utf-8")
+            path.write_text(merged["text"], encoding="utf-8", newline="\n")
     _write_mcp(target, built.get("mcpMerge"))
     if prune_legacy:
         pointer = target / "CLAUDE.md"
         if pointer.is_file() and pointer.read_text(encoding="utf-8").strip() == "@AGENTS.md":
             pointer.unlink()
     (target / MANIFEST).parent.mkdir(parents=True, exist_ok=True)
+    # `newline="\n"` on every text write: the deployed tree is LF on Windows too.
     (target / MANIFEST).write_text(json.dumps(built["manifest"], indent=2) + "\n",
-                                   encoding="utf-8")
+                                   encoding="utf-8", newline="\n")
 
 
 def _human(target: Path, built: dict, result: dict, written: bool) -> str:
@@ -586,7 +587,7 @@ def _remove_main(target: Path, previous: dict | None, args) -> int:
             if merged["delete"]:
                 path.unlink()
             elif merged["text"] is not None:
-                path.write_text(merged["text"], encoding="utf-8")
+                path.write_text(merged["text"], encoding="utf-8", newline="\n")
         _write_mcp(target, result["mcp"])
         (target / MANIFEST).unlink()
         written = True

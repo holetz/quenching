@@ -86,6 +86,14 @@ class Deploy(unittest.TestCase):
         self.assertEqual(0, local.returncode, local.stdout + local.stderr)
         self.assertEqual([], json.loads(local.stdout)["changes"])
 
+    def test_every_text_the_deploy_writes_is_lf(self):
+        """Seeds, settings and the manifest are written as text: LF on Windows too."""
+        self.write(".claude/settings.json", json.dumps({"permissions": {"allow": ["Read"]}}))
+        self.assertEqual(0, self.run_deploy("--modules", "core", "--write")[0])
+        for rel in ("AGENTS.md", ".agents/quenching.json", ".agents/.quenching-deploy.json",
+                    ".claude/settings.json"):
+            self.assertNotIn(b"\r\n", (self.target / rel).read_bytes(), rel)
+
     def test_the_identity_hooks_ship_warn_until_active_and_refuse_an_outside_email(self):
         self.assertEqual(0, self.run_deploy("--modules", "core", "--write")[0])
         for hook in ("pre-commit", "pre-push"):
