@@ -39,7 +39,11 @@ class ConcludeFlowSweep(unittest.TestCase):
     def test_the_candidate_needs_evidence_and_never_judges_the_change(self):
         text = step(6)
         self.assertIn("how the work was carried", text)
-        self.assertIn("Zero is the normal result", text)
+        self.assertIn("Zero is a valid result only when neither the digest nor the run evidences a defect", text)
+        self.assertNotIn("Zero is the normal result", text)
+        self.assertIn("cq components session digest --json", text)
+        self.assertIn("Minimal fix proposed:", text)
+        self.assertIn("a decision for the human", text)
         self.assertIn("**Insumos**", text)
         self.assertIn("Never develop the captured spec", text)
         self.assertIn("quenching checkout", text)
