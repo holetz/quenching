@@ -126,6 +126,11 @@ class ReadinessCase(unittest.TestCase):
         pathlib.Path(path).write_text(json.dumps(data), encoding="utf-8")
         return path
 
+    def denylist(self, *terms: str, inside: bool = False) -> str:
+        path = os.path.join(self.root if inside else self.tmp.name, "denylist.txt")
+        pathlib.Path(path).write_text("# owner terms\n\n" + "".join(t + "\n" for t in terms), encoding="utf-8")
+        return path
+
     def assess(self, **kwargs) -> tuple[dict, int]:
         before = snapshot(self.root)
         payload, code = assess(self.root, **kwargs)
@@ -187,7 +192,7 @@ class EngineTest(ReadinessCase):
         evidence = self.evidence({"state": "compatible", "reviewedBy": "owner"},
                                  {"state": "granted", "reviewedBy": "owner"})
         with mock.patch.dict(os.environ, {"FAKE_REUSE_ROWS": json.dumps(reuse)}):
-            payload, code = self.assess(evidence=evidence)
+            payload, code = self.assess(evidence=evidence, denylist=self.denylist("Qckabsentterm"))
         self.assertEqual(0, code, payload["coverage"])
         self.assertTrue(payload["ok"])
         self.assertFalse(payload["grantsPublication"])
@@ -324,6 +329,34 @@ class AdversarialTest(ReadinessCase):
         self.assertEqual({"tests/fixture.py", "docs/links.md"}, found)
         self.assertNotIn("qcktenant", json.dumps(payload))
 
+    def test_an_owner_term_blocks_from_the_tree_and_from_history_without_being_echoed(self):
+        added = commit(self.root, "src/client.py", "# built for QckEmployer's team\n")
+        old = commit(self.root, "notes.md", "vertical: qckvertical\n")
+        git(self.root, "rm", "-q", "notes.md")
+        git(self.root, "commit", "-q", "-m", "remove", env=identity())
+        removed = git(self.root, "rev-parse", "HEAD").strip()
+        said = commit(self.root, "a.txt", "x\n", message="port from QCKCODENAME")
+        commit(self.root, "b.txt", "qckemployerx is another word\n")
+        payload, _ = self.assess(denylist=self.denylist("qckemployer", "QckVertical", "qckcodename"))
+        owner = [row for row in payload["blockers"] if row["code"] == "pr-owner-term"]
+        self.assertEqual({"src/client.py"}, {row["location"] for row in owner if "location" in row})
+        self.assertEqual({added, old, removed, said}, {row["commit"] for row in owner if "commit" in row})
+        self.assertEqual("measured", self.coverage(payload)["owner-terms"]["state"])
+        self.assertNotIn("qck", json.dumps(payload).lower())
+
+    def test_an_absent_empty_or_inside_denylist_is_never_clean(self):
+        commit(self.root, "a.txt", "x\n")
+        cases = [(None, "not-measured", "pr-denylist-absent"),
+                 (self.denylist(), "not-measured", "pr-denylist-empty"),
+                 (os.path.join(self.tmp.name, "missing.txt"), "not-measured", "pr-denylist-unreadable"),
+                 (self.denylist("x", inside=True), "refused", "pr-denylist-inside-target")]
+        for path, state, code in cases:
+            with self.subTest(code=code):
+                payload, exit_code = self.assess(denylist=path)
+                self.assertEqual(2, exit_code)
+                cover = self.coverage(payload)["owner-terms"]
+                self.assertEqual((state, code), (cover["state"], cover["code"]))
+
     def test_missing_attribution_counts_tracked_files_only(self):
         commit(self.root, "src/a.py", "x = 1\n")
         pathlib.Path(self.root, "scratch.py").write_text("y\n", encoding="utf-8")
@@ -424,7 +457,8 @@ class CleanCloneTest(ReadinessCase):
         env = dict(os.environ, FAKE_REUSE_ROWS=json.dumps({"non_compliant": {}}))
         before = snapshot(self.root)
         run = subprocess.run([sys.executable, str(target / ".agents/quenching/assets/bin/cq"), "--root", self.root,
-                              "opensource", "readiness", "--json", "--evidence", evidence],
+                              "opensource", "readiness", "--json", "--evidence", evidence,
+                              "--denylist", self.denylist("Qckabsentterm")],
                              capture_output=True, text=True, env=env)
         self.assertEqual(before, snapshot(self.root))
         self.assertEqual(0, run.returncode, run.stdout + run.stderr)

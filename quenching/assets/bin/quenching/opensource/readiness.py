@@ -17,7 +17,7 @@ import tempfile
 from pathlib import Path
 from typing import Any
 
-CLASSES = ("secrets", "internal-identifiers", "dependency-license", "attribution",
+CLASSES = ("secrets", "internal-identifiers", "owner-terms", "dependency-license", "attribution",
            "large-generated", "history-consent")
 MEASURED, PARTIAL, NOT_MEASURED, REFUSED = "measured", "partial", "not-measured", "refused"
 DEFAULT_TIMEOUT_S = 300
@@ -55,6 +55,7 @@ SUPPORTED = {"gitleaks": (8, 19), "trufflehog": (3, 0), "reuse": (2, 0)}
 REMEDIATION = {
     "pr-secret": "rotate the credential, then the owner decides whether to rewrite history",
     "pr-internal-identifier": "the owner reviews the reference and removes or generalizes it",
+    "pr-owner-term": "the owner removes the term from the tree and decides whether to rewrite history",
     "pr-identity-in-metadata": "the owner confirms every author agrees to public commit metadata",
     "pr-large-file": "the owner decides whether the artifact belongs in the published history",
     "pr-generated-artifact": "the owner decides whether the generated artifact belongs in the repository",
@@ -325,6 +326,49 @@ def _internal(root: str, inv: dict[str, Any]):
                   "code": None if state == MEASURED else "pr-history-incomplete"}
 
 
+def load_denylist(root: str, path: str | None) -> tuple[list[str], str | None, str | None]:
+    """The owner's terms, or the state and code that say why the class cannot be measured."""
+    if path is None:
+        return [], NOT_MEASURED, "pr-denylist-absent"
+    real = os.path.realpath(path)
+    if os.path.commonpath([real, root]) == root:
+        return [], REFUSED, "pr-denylist-inside-target"
+    try:
+        lines = Path(real).read_text(encoding="utf-8").splitlines()
+    except (OSError, ValueError):
+        return [], NOT_MEASURED, "pr-denylist-unreadable"
+    terms = list(dict.fromkeys(t.strip() for t in lines if t.strip() and not t.strip().startswith("#")))
+    return (terms, None, None) if terms else ([], NOT_MEASURED, "pr-denylist-empty")
+
+
+def _owner_terms(root: str, inv: dict[str, Any], denylist: str | None, timeout: int):
+    """Owner-declared terms by whole word, any case, in HEAD and in the history's diffs and messages."""
+    terms, state, code = load_denylist(root, denylist)
+    if state:
+        return [], {"class": "owner-terms", "state": state, "code": code}
+    argv = ["grep", "-I", "-l", "-i", "-w", "-F"]
+    for term in terms:
+        argv += ["-e", term]
+    code, out = _git(root, *argv, "HEAD")
+    if code not in (0, 1):
+        return [], {"class": "owner-terms", "state": NOT_MEASURED, "code": "pr-tree-unreadable"}
+    rows = [_finding("pr-owner-term", "owner-terms", "blocker",
+                     location(line.split(":", 1)[1] if ":" in line else line))
+            for line in out.splitlines() if line]
+    words = "|".join(re.sub(r"([.^$*+?()\[\]{}|\\])", r"\\\1", term) for term in terms)
+    regex = f"(^|[^A-Za-z0-9_])({words})([^A-Za-z0-9_]|$)"
+    commits: list[str] = []
+    for pick in ("-G" + regex, "--grep=" + regex):
+        result = _run(["git", "log", "--branches", "--tags", "--format=%H", "-i", "-E", pick], root, timeout)
+        if result is None or result[0] != 0:
+            return rows, {"class": "owner-terms", "state": PARTIAL, "code": "pr-history-unreadable"}
+        commits += [sha for sha in result[1].split() if COMMIT.match(sha)]
+    rows += [_finding("pr-owner-term", "owner-terms", "blocker", commit=sha) for sha in dict.fromkeys(commits)]
+    state = MEASURED if inv["historyComplete"] else PARTIAL
+    return rows, {"class": "owner-terms", "state": state,
+                  "code": None if state == MEASURED else "pr-history-incomplete"}
+
+
 def _large(root: str):
     code, out = _git(root, "ls-tree", "-r", "-l", "-z", "HEAD")
     if code != 0:
@@ -370,7 +414,8 @@ def _legal(evidence: dict[str, Any], evidence_code: str | None, key: str, cls: s
     return rows, {"class": cls, "state": MEASURED, "code": None}
 
 
-def assess(root: str, evidence: str | None = None, timeout: int = DEFAULT_TIMEOUT_S) -> tuple[dict[str, Any], int]:
+def assess(root: str, evidence: str | None = None, timeout: int = DEFAULT_TIMEOUT_S,
+           denylist: str | None = None) -> tuple[dict[str, Any], int]:
     """The readiness payload and its typed exit: 0 measured clean · 1 findings · 2 incomplete."""
     root = os.path.realpath(root)
     inv = inventory(root)
@@ -383,6 +428,7 @@ def assess(root: str, evidence: str | None = None, timeout: int = DEFAULT_TIMEOU
         coverage = [{"class": cls, "state": REFUSED, "code": reason} for cls in CLASSES]
     else:
         for found, cover in (_secrets(root, inv, timeout, scanners), _internal(root, inv),
+                             _owner_terms(root, inv, denylist, timeout),
                              _legal(evidence_data, evidence_code, "dependencyLicenses", "dependency-license",
                                     "compatible", "incompatible", "pr-license-incompatible"),
                              _attribution(root, inv, timeout, scanners), _large(root),
