@@ -110,7 +110,8 @@ class Reconcile(unittest.TestCase):
         self.assertEqual(payload["count"], 2)
         self.assertEqual(payload["remote"], "upstream")
         fetch.assert_called_once_with(["git", "fetch", "--quiet", "upstream"],
-                                      cwd=self.root, capture_output=True, text=True, timeout=30)
+                                      cwd=self.root, capture_output=True, text=True,
+                                      encoding="utf-8", errors="replace", timeout=30)
         self.assertEqual(evidence.call_count, 2)
         for call in evidence.call_args_list:
             self.assertEqual(call.args[2], "upstream")
