@@ -10,6 +10,7 @@ import tempfile
 import unittest
 
 import _paths  # noqa: F401
+from _tools import bash
 
 REPO = Path(__file__).resolve().parents[2]
 spec = importlib.util.spec_from_file_location("run_evals", REPO / "scripts/run_evals.py")
@@ -35,6 +36,12 @@ print(json.dumps([
 """
 ASSERTIONS = ["the agent reports it finished", "a file made.txt is written",
               "the setup and the inspection ran"]
+
+
+def script(path: Path, body: str) -> None:
+    """A shell script with LF endings: `write_text` would give it CRLF on Windows, and bash reads
+    the `\r` as part of every command."""
+    path.write_bytes(body.encode("utf-8"))
 
 
 def suite_file(directory: Path, cases: list[dict]) -> None:
@@ -68,8 +75,8 @@ class Runner(unittest.TestCase):
                                  "assertions": ASSERTIONS[:2]}])
         (self.suite / "fixture").mkdir()
         (self.suite / "fixture/README.md").write_text("fixture\n")
-        (self.suite / "setup.sh").write_text('echo "$EVAL_CASE" > "setup-ran-$1"\n')
-        (self.suite / "inspect.sh").write_text('echo "INSPECT OK"\n')
+        script(self.suite / "setup.sh", 'echo "$EVAL_CASE" > "setup-ran-$1"\n')
+        script(self.suite / "inspect.sh", 'echo "INSPECT OK"\n')
 
     def run_cli(self, *argv: str) -> tuple[int, str]:
         buffer = io.StringIO()
@@ -144,7 +151,8 @@ class Runner(unittest.TestCase):
         self.assertEqual(json.loads((out / "summary.json").read_text())["baselineRef"], head)
         baseline = (out / "suite/c1.baseline.output.txt").read_text()
         self.assertIn("eval-baseline-", baseline)
-        self.assertTrue(baseline.rstrip().endswith("quenching/assets/bin/cq"))
+        # `CQ` is a native path: `\` separates it on Windows.
+        self.assertTrue(baseline.rstrip().replace("\\", "/").endswith("quenching/assets/bin/cq"))
         self.assertIn(f"CQ={runner.CQ}", (out / "suite/c1.with.output.txt").read_text())
 
     def test_the_baseline_arm_and_its_ref_are_refused_apart_or_unresolvable(self):
@@ -166,7 +174,7 @@ class Runner(unittest.TestCase):
         self.assertNotIn("baselineRef", by_arm["with"])
 
     def test_a_failing_setup_is_recorded_and_the_run_goes_on(self):
-        (self.suite / "setup.sh").write_text('[ "$1" = c1 ] && exit 3\necho ok\n')
+        script(self.suite / "setup.sh", '[ "$1" = c1 ] && exit 3\necho ok\n')
         out = self.full_run("fake")
         grading = json.loads((out / "suite/grading.json").read_text())
         self.assertIn("could not be provisioned", grading[0]["arms"]["with"]["error"])
@@ -267,6 +275,16 @@ class Runner(unittest.TestCase):
         args = runner.parser().parse_args(["--model", "m"])
         self.assertEqual({"prompt", "model", "workdir", "max_turns"},
                          set(runner.arm_values(args, {"prompt": "p"}, "w")))
+
+    def test_the_container_runs_as_the_caller_only_where_a_uid_exists(self):
+        argv = self.dry_lines("--harness", "opencode", "--image", "img")[0]["argv"]
+        image = argv.index("img")
+        if hasattr(runner.os, "getuid"):
+            user = argv.index("--user")
+            self.assertLess(user, image)
+            self.assertEqual(f"{runner.os.getuid()}:{runner.os.getgid()}", argv[user + 1])
+        else:  # Windows: there is no uid to hand to the container, and none is invented.
+            self.assertNotIn("--user", argv)
 
     def test_the_container_values_never_reach_the_argv(self):
         argv = self.dry_lines("--harness", "opencode", "--image", "img", "--env", "PROVIDER_TOKEN")[0]["argv"]
@@ -379,7 +397,7 @@ class Containment(unittest.TestCase):
             mark = Path(tmp) / "ran"
             env = {**runner.os.environ, **runner.GIT_ENV}
             for argv in (["git", "init", "-q", "-b", "main"],
-                         ["git", "config", "core.fsmonitor", f"touch {mark}; false"]):
+                         ["git", "config", "core.fsmonitor", f"touch {mark.as_posix()}; false"]):
                 runner.subprocess.run(argv, cwd=workspace, env=env, check=True)
             runner.snapshot(Path(tmp) / "no-suite", workspace, env)
             self.assertFalse(mark.exists(), "the workspace fsmonitor ran during the snapshot")
@@ -394,7 +412,7 @@ class Containment(unittest.TestCase):
             (workspace / "f").write_text("one\n")
             for argv in (["git", "init", "-q", "-b", "main"], ["git", "add", "-A"],
                          ["git", "commit", "-q", "-m", "x"],
-                         ["git", "config", "filter.evil.clean", f"touch {mark}; cat"]):
+                         ["git", "config", "filter.evil.clean", f"touch {mark.as_posix()}; cat"]):
                 runner.subprocess.run(argv, cwd=workspace, env=env, check=True)
             (workspace / "f").write_text("two\n")
             runner.snapshot(Path(tmp) / "no-suite", workspace, env)
@@ -420,10 +438,11 @@ class Containment(unittest.TestCase):
             if driver == "evil\u0085driver":
                 config = workspace / ".git/config"
                 config.write_text(config.read_text(encoding="utf-8") +
-                                  f'\n[filter "{driver}"]\n\tclean = "touch {mark}; cat"\n',
+                                  f'\n[filter "{driver}"]\n\tclean = "touch {mark.as_posix()}; cat"\n',
                                   encoding="utf-8")
             else:
-                runner.subprocess.run(["git", "config", f"filter.{driver}.clean", f"touch {mark}; cat"],
+                runner.subprocess.run(["git", "config", f"filter.{driver}.clean",
+                                       f"touch {mark.as_posix()}; cat"],
                                       cwd=workspace, env=env, check=True)
             (workspace / "f").write_text("two\n")
             runner.subprocess.run(["git", "status", "--porcelain"], cwd=workspace, env=env,
@@ -446,7 +465,7 @@ class Containment(unittest.TestCase):
             runner.subprocess.run(argv, cwd=workspace, env=env, check=True)
         config = workspace / ".git/config"
         with config.open("ab") as handle:
-            handle.write(f'\n[filter "{driver}"]\n\tclean = "touch {mark}; cat"\n'.encode())
+            handle.write(f'\n[filter "{driver}"]\n\tclean = "touch {mark.as_posix()}; cat"\n'.encode())
         (workspace / "f").write_text("two\n")
         return workspace, mark, env
 
@@ -468,8 +487,8 @@ class Containment(unittest.TestCase):
     def test_an_inherited_git_config_parameters_filter_does_not_win(self):
         with tempfile.TemporaryDirectory() as tmp:
             workspace, mark, env = self.hostile_workspace(tmp, "evil")
-            hostile = {**env, "GIT_CONFIG_PARAMETERS": f"'filter.evil.clean={mark}.sh'"}
-            (Path(f"{mark}.sh")).write_text(f"#!/bin/sh\ntouch {mark}\ncat\n")
+            hostile = {**env, "GIT_CONFIG_PARAMETERS": f"'filter.evil.clean={mark.as_posix()}.sh'"}
+            script(Path(f"{mark}.sh"), f"#!/bin/sh\ntouch {mark.as_posix()}\ncat\n")
             Path(f"{mark}.sh").chmod(0o755)
             runner.snapshot(Path(tmp) / "no-suite", workspace, hostile)
             self.assertFalse(mark.exists(), "an inherited GIT_CONFIG_PARAMETERS filter ran")
@@ -505,7 +524,7 @@ class Containment(unittest.TestCase):
     def test_a_timeout_kills_the_grandchildren_too(self):
         with tempfile.TemporaryDirectory() as tmp:
             mark = Path(tmp) / "M"
-            record = runner.invoke(["bash", "-c", f"(sleep 2; touch {mark}) & sleep 30"], Path(tmp),
+            record = runner.invoke([bash(), "-c", f"(sleep 2; touch {mark.as_posix()}) & sleep 30"], Path(tmp),
                                    runner.os.environ.copy(), 1)
             runner.time.sleep(3)
             self.assertIn("timeout", record["error"])
