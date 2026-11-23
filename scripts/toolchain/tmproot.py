@@ -122,10 +122,14 @@ def _can_exec(path: pathlib.Path) -> bool:
 
 
 def _dev_drives() -> list[pathlib.Path]:
-    """Drives `fsutil devdrv query` reports, or none when the command is absent or refused."""
+    """Drives `fsutil devdrv query` reports, or none when the command is absent or refused.
+
+    `fsutil` prints in the console's OEM code page, which `PYTHONUTF8=1` would decode as UTF-8 and
+    raise on: only the ASCII drive letters are read, so the rest is replaced, never fatal.
+    """
     try:
         proc = subprocess.run(["fsutil", "devdrv", "query"], capture_output=True, text=True,
-                              timeout=5)
+                              errors="replace", timeout=5)
     except (OSError, subprocess.SubprocessError):
         return []
     if proc.returncode != 0:
