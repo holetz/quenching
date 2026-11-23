@@ -50,7 +50,7 @@ not walk the target again. Map each code once through `opensource-align/bands.md
 | --- | --- | --- |
 | Mechanical | none in the target | — |
 | Structural | `os-contributing-missing`, `os-conduct-missing`, `os-support-missing`, `os-templates-missing` | apply the template once the owner has declared its placeholders in the plan, then re-run status |
-| Judgement | `os-license-missing`, `os-governance-missing`, `os-codeowners-missing`, `os-citation-missing`, `os-funding-missing`, `os-reuse-missing`, `os-template-drift`, any other `os-<control>-missing` | write only what the owner chooses explicitly; with no answer, report the evidence and the closing action |
+| Judgement | `os-license-missing`, `os-governance-missing`, `os-codeowners-missing`, `os-citation-missing`, `os-funding-missing`, `os-reuse-missing`, `os-readme-media-missing`, `os-language-skew`, `os-template-drift`, any other `os-<control>-missing` | write only what the owner chooses explicitly; with no answer, report the evidence and the closing action |
 
 A requirement of another owner is never a finding here: report it with the `command` its owner
 block carries and leave it to that front.

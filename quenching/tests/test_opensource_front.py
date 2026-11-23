@@ -212,6 +212,71 @@ class ApplyTest(unittest.TestCase):
             self.assertEqual([], list(pathlib.Path(root).iterdir()))
 
 
+def _git(root: str, *args: str) -> None:
+    subprocess.run(["git", "-C", root, *args], check=True, capture_output=True)
+
+
+def _showcase_target(root: str) -> pathlib.Path:
+    """A Flask-shaped target: Python code, an HTML template and a vendored theme larger than both."""
+    target = pathlib.Path(root)
+    files = {
+        "LICENSE": "MIT\n",
+        "README.md": "# Painel\n\n![build](https://img.shields.io/badge/build-ok-green)\n",
+        "app/views.py": "def index():\n    return 'ok'\n" * 40,
+        "app/templates/index.html": "<html><body>{{ x }}</body></html>\n" * 10,
+        "app/static/assets/theme.js": "var theme = function () { return 1; };\n" * 400,
+        "app/static/assets/theme.css": ".box { color: red; }\n" * 200,
+    }
+    for name, text in files.items():
+        (target / name).parent.mkdir(parents=True, exist_ok=True)
+        (target / name).write_text(text, encoding="utf-8")
+    _git(root, "init", "-q")
+    _git(root, "add", "-A")
+    return target
+
+
+def _showcase(root: str) -> dict:
+    return {row["code"]: row for row in status(root)["advisories"]
+            if row["code"] in ("os-language-skew", "os-readme-media-missing")}
+
+
+class ShowcaseTest(unittest.TestCase):
+    def test_a_vendored_theme_and_a_readme_without_image_are_advisories(self):
+        with tempfile.TemporaryDirectory() as root:
+            _showcase_target(root)
+            rows = _showcase(root)
+            code, payload = _cq("--root", root, "opensource", "status", "--json")
+        skew = rows["os-language-skew"]
+        self.assertEqual(("JavaScript", "Python"), (skew["language"], skew["honest"]))
+        self.assertEqual(["app/static/"], skew["paths"])
+        self.assertEqual(["app/static/** linguist-vendored"], skew["gitattributes"])
+        media = rows["os-readme-media-missing"]
+        self.assertEqual(("README.md", "knowledge", "/quenching-knowledge align"),
+                         (media["path"], media["owner"], media["command"]))
+        self.assertEqual({"info"}, {skew["severity"], media["severity"]})
+        self.assertNotIn("os-language-skew", {row["code"] for row in payload["findings"]})
+        self.assertEqual(1 if payload["findings"] else 0, code)
+
+    def test_the_owner_correction_clears_both_advisories(self):
+        with tempfile.TemporaryDirectory() as root:
+            target = _showcase_target(root)
+            (target / ".gitattributes").write_text("app/static/** linguist-vendored\n", encoding="utf-8")
+            with (target / "README.md").open("a", encoding="utf-8") as readme:
+                readme.write("\n![Painel](.design/assets/painel.png)\n")
+            _git(root, "add", "-A")
+            self.assertEqual({}, _showcase(root))
+
+    def test_no_interface_and_no_repository_stay_silent(self):
+        with tempfile.TemporaryDirectory() as root:
+            target = pathlib.Path(root)
+            (target / "README.md").write_text("# Lib\n", encoding="utf-8")
+            (target / "lib.py").write_text("x = 1\n", encoding="utf-8")
+            self.assertEqual({}, _showcase(root))
+            _git(root, "init", "-q")
+            _git(root, "add", "-A")
+            self.assertEqual({}, _showcase(root))
+
+
 class ReadinessRouteTest(unittest.TestCase):
     def test_the_route_reports_an_unmeasured_assessment_as_inconclusive(self):
         with tempfile.TemporaryDirectory() as root:
