@@ -3,6 +3,7 @@ import argparse
 import contextlib
 import io
 import json
+import os
 from pathlib import Path
 import tempfile
 import unittest
@@ -15,6 +16,16 @@ from quenching.specs.commands.estimate import (EXECUTE_BODY, EXECUTOR_FIXED_TOKE
                                                SMALL_TIER_CEILING, _shipped_execute_body,
                                                cmd_estimate, estimate_build, estimate_task)
 from quenching.specs.commands.output import Emitter
+
+
+def link_dir(link, target):
+    """A directory link the test may create: a junction on Windows, where a symlink needs a
+    privilege an ordinary account lacks; `realpath` resolves both."""
+    if os.name == "nt":
+        import _winapi
+        _winapi.CreateJunction(str(target), str(link))
+    else:
+        os.symlink(target, link, target_is_directory=True)
 
 
 class DeclaredReading(unittest.TestCase):
@@ -163,7 +174,7 @@ class DeclaredReading(unittest.TestCase):
 
     def test_root_marker_and_invalid_paths_do_not_make_mirrors(self):
         (self.root / ".generated-from.json").write_text("{}")
-        (self.root / "escape").symlink_to(self.root.parent, target_is_directory=True)
+        link_dir(self.root / "escape", self.root.parent)
         result = self.estimate("- [ ] 1.1 Task\n      files: a.py, ../outside, /absolute, "
                                "escape/outside, a.py (comment)\n")
         row = result["sections"][0]
@@ -259,7 +270,7 @@ class DeclaredReading(unittest.TestCase):
         self.assertFalse(result["preamble"]["available"])
 
     def test_escape_absolute_path_directory_annotation_and_symlink_are_unresolved(self):
-        (self.root / "escape").symlink_to(self.root.parent, target_is_directory=True)
+        link_dir(self.root / "escape", self.root.parent)
         result = self.estimate("- [ ] 1.1 Task\n      files: ../outside, /absolute, escape/outside, "
                                "docs, a.py (comment)\n")
         self.assertEqual(5, len(result["sections"][0]["unresolved"]))
