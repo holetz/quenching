@@ -217,6 +217,11 @@ for _name, _en, _pt in (
     _k(f"shared.gitConventions.{_name}", "prose", None, "git", "project", "cq git conventions",
        (_en, "A prose directive the git pillar follows, never a template."),
        (_pt, "Uma diretiva em prosa que o pilar git segue, nunca um template."))
+for _name in ("autopilot", "improve", "develop", "execute", "review"):
+    _k(f"shared.guidance.{_name}", "prose", None, "specs", "project",
+       "/quenching-specs autopilot" if _name == "autopilot" else "declared, not yet read",
+       (f"Guidance: {_name}", "The project's focus and cautions for this flow, in prose; never widens a grant."),
+       (f"Contexto: {_name}", "O foco e os cuidados do projeto para este fluxo, em prosa; nunca amplia grant."))
 _k("shared.gitIdentity.allowedEmails", "strings", None, "git", "project",
    "cq git commit, the identity gate",
    ("Allowed emails", "Who may author or commit here: exact addresses or patterns."),
