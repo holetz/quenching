@@ -17,6 +17,7 @@ from types import SimpleNamespace
 from quenching.common.git import _git, _git_run
 from quenching.common.config import load_config, namespace
 from quenching.common.output import FINDINGS, emit, refuse
+from quenching.common.paths import native_path
 from quenching.git.audit import SAFE, _branch_ok, _commit, _run
 from quenching.git.ignored import _is_link, declared_regenerable, ignored_entries, undeclared
 from quenching.git.push import remote_probe
@@ -25,7 +26,7 @@ from quenching.specs.commands.fields import cmd_record
 from quenching.specs.config import find_repo_root
 
 def _repo_root(cwd: str) -> str:
-    return _git(cwd, "rev-parse", "--show-toplevel").strip()
+    return native_path(_git(cwd, "rev-parse", "--show-toplevel").strip())
 
 
 def _declared_paths(config: dict) -> list[str]:
@@ -298,7 +299,7 @@ def _registered_worktrees(cwd: str) -> list[tuple[str, str | None]]:
     path = branch = None
     for line in (out.splitlines() if code == 0 else []) + [""]:
         if line.startswith("worktree "):
-            path = line[len("worktree "):]
+            path = native_path(line[len("worktree "):])
         elif line.startswith("branch "):
             branch = line[len("branch "):].removeprefix("refs/heads/")
         elif not line and path is not None:
