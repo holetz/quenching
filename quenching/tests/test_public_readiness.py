@@ -99,9 +99,19 @@ class ReadinessCase(unittest.TestCase):
         self.bin = os.path.join(self.tmp.name, "bin")
         os.makedirs(self.root)
         os.makedirs(self.bin)
-        os.symlink(shutil.which("git"), os.path.join(self.bin, "git"))
+        path = self.bin
+        try:
+            os.symlink(shutil.which("git"), os.path.join(self.bin, "git"))
+        except OSError:
+            # Windows without the symlink privilege: git's own directory joins PATH instead, so long
+            # as it holds none of the scanners a test could reach by accident.
+            if os.name != "nt":
+                raise
+            gitdir = os.path.dirname(shutil.which("git"))
+            self.assertFalse([n for n in VERSIONS if shutil.which(n, path=gitdir)], gitdir)
+            path = os.pathsep.join([self.bin, gitdir])
         git(self.root, "init", "-q", "-b", "main")
-        self.env = mock.patch.dict(os.environ, {"PATH": self.bin})
+        self.env = mock.patch.dict(os.environ, {"PATH": path})
         self.env.start()
 
     def tearDown(self) -> None:
