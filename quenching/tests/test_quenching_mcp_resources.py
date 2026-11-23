@@ -95,13 +95,24 @@ class Containment(unittest.TestCase):
             tree.mkdir()
             pathlib.Path(tree, "real.md").write_text("# real\n", encoding="utf-8")
             outside.write_text("# secret\n", encoding="utf-8")
-            os.symlink(outside, tree / "link.md")
+            if os.name == "nt":
+                # A file symlink needs a privilege an ordinary account lacks; a junction to the
+                # folder holding the secret is the same escape, and `realpath` resolves it too.
+                import _winapi
+                vault = pathlib.Path(tmp, "vault")
+                vault.mkdir()
+                pathlib.Path(vault, "secret.md").write_text("# secret\n", encoding="utf-8")
+                _winapi.CreateJunction(str(vault), str(tree / "link"))
+                escaped = "link/secret.md"
+            else:
+                os.symlink(outside, tree / "link.md")
+                escaped = "link.md"
             held, resources.REFERENCES = resources.REFERENCES, str(tree)
             held_skills, resources.SKILLS = resources.SKILLS, str(pathlib.Path(tmp, "no-skills"))
             try:
                 self.assertEqual(resources.files(), ["real.md"])
                 with self.assertRaises(server.ResourceError) as caught:
-                    read("quenching://references/link.md")
+                    read(f"quenching://references/{escaped}")
                 self.assertEqual(caught.exception.code, server.NOT_FOUND)
             finally:
                 resources.REFERENCES = held

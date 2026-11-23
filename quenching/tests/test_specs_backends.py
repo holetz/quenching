@@ -1441,6 +1441,9 @@ class GithubResolutionCache(unittest.TestCase):
 
     def test_ten_cached_status_resolutions_stay_below_half_a_second(self):
         with tempfile.TemporaryDirectory() as raw:
+            # A status resolves inside a repository, whose top is found once per process; a bare
+            # folder would pay one `git rev-parse` per call (~50 ms on Windows) and measure that.
+            subprocess.run(["git", "init", "-q", raw], check=True)
             remote = "git@github.com:owner/repo.git"
             response = (0, json.dumps({"nameWithOwner": "owner/repo",
                                        "issues": {"totalCount": 38}}), "")

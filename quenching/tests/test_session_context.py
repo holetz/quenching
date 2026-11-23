@@ -13,6 +13,7 @@ from unittest import mock
 import _paths  # noqa: F401
 from quenching.session.commands.cli import build_parser
 from quenching.session.model import bare_agent
+from quenching.session.transcript import encode_cwd
 
 CQ = Path(__file__).resolve().parents[1] / "assets/bin/cq"
 
@@ -210,7 +211,9 @@ class ContextTests(unittest.TestCase):
 
     def test_session_id_and_agent_id_resolution(self):
         cwd = Path.cwd().resolve()
-        project = self.base / "projects" / str(cwd).replace("/", "-").replace(".", "-")
+        # The harness encoding, never a partial copy: on Windows `C:\x` stays absolute and the
+        # join would land the fixture in the cwd itself, outside the temp directory.
+        project = self.base / "projects" / encode_cwd(cwd)
         self.write(request("main", usage(1, [1])), path=project / "live.jsonl")
         agent = project / "live/subagents/agent-a.jsonl"
         self.write(request("agent", usage(2, [2])), path=agent)

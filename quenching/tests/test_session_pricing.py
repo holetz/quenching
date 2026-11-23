@@ -14,6 +14,11 @@ from unittest import mock
 import _paths  # noqa: F401  — must precede the `quenching` import; see its docstring
 from quenching.session import pricing
 from quenching.session.commands.cli import build_parser
+from quenching.session.transcript import encode_cwd
+
+# `--directory /p` resolves to the platform's absolute form (`C:\p` on Windows), and the project
+# directory is that form encoded the way the harness spells it.
+PROJECT = pathlib.Path("/p").resolve()
 
 REPO = pathlib.Path(__file__).resolve().parents[2]
 
@@ -60,7 +65,7 @@ class CacheUsdAndSession(unittest.TestCase):
         tmp = tempfile.TemporaryDirectory()
         self.addCleanup(tmp.cleanup)
         self.projects = pathlib.Path(tmp.name) / "projects"
-        project = self.projects / "-p"
+        project = self.projects / encode_cwd(PROJECT)
         project.mkdir(parents=True)
         (project / "chat-a.jsonl").write_text("\n".join(json.dumps(r) for r in [
             assistant("a1", "2026-10-01T10:00:00Z", write=1_000_000, ttl1h=1_000_000),
@@ -72,7 +77,7 @@ class CacheUsdAndSession(unittest.TestCase):
         self.addCleanup(patcher.stop)
 
     def run_cache(self, *argv):
-        args = build_parser().parse_args(["cache", "--harness", "claude", "--directory", "/p", "--json", *argv])
+        args = build_parser().parse_args(["cache", "--harness", "claude", "--directory", str(PROJECT), "--json", *argv])
         buf = io.StringIO()
         with contextlib.redirect_stdout(buf), contextlib.redirect_stderr(io.StringIO()):
             args.func(args)

@@ -33,7 +33,9 @@ class PortalRegistry(unittest.TestCase):
         self.tmp = pathlib.Path(self._tmp.name).resolve()
         self.home = self.tmp / "home"
         self.home.mkdir()
-        patch = mock.patch.dict(os.environ, {"HOME": str(self.home)})
+        # `expanduser("~")` reads USERPROFILE on Windows and HOME elsewhere: patch both, or the
+        # registry lands in the real home.
+        patch = mock.patch.dict(os.environ, {"HOME": str(self.home), "USERPROFILE": str(self.home)})
         patch.start()
         self.addCleanup(patch.stop)
         self.registry = self.home / ".config" / "quenching" / "projects.json"

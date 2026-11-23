@@ -25,6 +25,16 @@ REAL = PLUGIN_ROOT / "assets" / "bin" / "cq"
 VERSION = (PLUGIN_ROOT / "VERSION").read_text().strip()
 
 
+def launcher(path) -> list[str]:
+    """The argv that runs the shebang launcher `bin/cq` itself.
+
+    Windows cannot execute a shebang script (`[WinError 193]`); its door is `cq.cmd`, whose text
+    `test_the_windows_launcher_forwards_arguments_and_the_exit_code` proves. There the same
+    `bin/cq` runs under this interpreter, as a POSIX shebang would run it.
+    """
+    return [sys.executable, str(path)] if os.name == "nt" else [str(path)]
+
+
 class Deploy(unittest.TestCase):
     def setUp(self):
         tmp = tempfile.TemporaryDirectory()
@@ -49,7 +59,7 @@ class Deploy(unittest.TestCase):
     def write(self, rel: str, text: str):
         path = self.target / rel
         path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_text(text, encoding="utf-8")
+        path.write_text(text, encoding="utf-8", newline="\n")  # the LF it says, on Windows too
 
     def test_write_creates_the_generic_layer_without_claude_md(self):
         code, payload = self.run_deploy("--modules", "core", "--write")
@@ -76,11 +86,21 @@ class Deploy(unittest.TestCase):
         self.assertEqual(0, local.returncode, local.stdout + local.stderr)
         self.assertEqual([], json.loads(local.stdout)["changes"])
 
+    def test_every_text_the_deploy_writes_is_lf(self):
+        """Seeds, settings and the manifest are written as text: LF on Windows too."""
+        self.write(".claude/settings.json", json.dumps({"permissions": {"allow": ["Read"]}}))
+        self.assertEqual(0, self.run_deploy("--modules", "core", "--write")[0])
+        for rel in ("AGENTS.md", ".agents/quenching.json", ".agents/.quenching-deploy.json",
+                    ".claude/settings.json"):
+            self.assertNotIn(b"\r\n", (self.target / rel).read_bytes(), rel)
+
     def test_the_identity_hooks_ship_warn_until_active_and_refuse_an_outside_email(self):
         self.assertEqual(0, self.run_deploy("--modules", "core", "--write")[0])
         for hook in ("pre-commit", "pre-push"):
             path = self.target / ".agents/quenching/assets/githooks" / hook
-            self.assertTrue(path.stat().st_mode & 0o111, hook)
+            self.assertTrue(path.is_file(), hook)
+            if os.name != "nt":  # Windows has no execute bit; git for Windows runs a hook without one
+                self.assertTrue(path.stat().st_mode & 0o111, hook)
         self.assertEqual([], self.run_deploy("--modules", "core", "--check")[1]["warnings"])
         config = json.loads((self.target / ".agents/quenching.json").read_text(encoding="utf-8"))
         config["shared"]["gitIdentity"] = {"allowedEmails": ["dev@example.org"]}
@@ -200,7 +220,14 @@ class Deploy(unittest.TestCase):
         outside = tempfile.TemporaryDirectory()
         self.addCleanup(outside.cleanup)
         (self.target / ".agents").mkdir()
-        os.symlink(outside.name, self.target / ".agents/skills")
+        link = self.target / ".agents/skills"
+        if os.name == "nt":
+            # A symlink needs a privilege an ordinary account lacks; a junction carries the same
+            # escape, needs none, and `realpath` resolves it too.
+            import _winapi
+            _winapi.CreateJunction(outside.name, str(link))
+        else:
+            os.symlink(outside.name, link)
         code, payload = self.run_deploy("--modules", "core", "--write")
         self.assertEqual(2, code)
         self.assertEqual([], os.listdir(outside.name))
@@ -700,7 +727,7 @@ class TargetLauncher(unittest.TestCase):
         cls.tmp.cleanup()
 
     def cq(self, selection, *args):
-        return subprocess.run([str(self.roots[selection] / ".agents/quenching/bin/cq"), *args],
+        return subprocess.run([*launcher(self.roots[selection] / ".agents/quenching/bin/cq"), *args],
                               capture_output=True, text=True)
 
     def test_it_is_generated_and_executable(self):
@@ -730,7 +757,7 @@ class TargetLauncher(unittest.TestCase):
                           "toolchain", "delivery", "security", "opensource", "codex", "portal", "config", "mcp"}, pillars)
 
     def test_it_answers_the_version_lockstep(self):
-        run = subprocess.run([str(self.shim), "--version"], capture_output=True, text=True)
+        run = subprocess.run([*launcher(self.shim), "--version"], capture_output=True, text=True)
         self.assertEqual(run.returncode, 0, run.stderr)
         self.assertEqual(run.stdout.strip(), VERSION)
 
@@ -762,7 +789,7 @@ class TargetLauncher(unittest.TestCase):
                    "toolchain", "delivery", "security", "opensource", "codex", "portal", "config")
         for pillar in pillars:
             with self.subTest(pillar=pillar):
-                run = subprocess.run([str(self.shim), pillar, "--version"],
+                run = subprocess.run([*launcher(self.shim), pillar, "--version"],
                                      capture_output=True, text=True)
                 self.assertEqual(run.returncode, 0, run.stderr)
                 self.assertEqual(run.stdout.strip(), f"cq {pillar} {VERSION}")
@@ -770,7 +797,7 @@ class TargetLauncher(unittest.TestCase):
     def test_it_is_a_literally_equivalent_invocation(self):
         """Same argv through both doors — same stdout, same exit code. The `os.execv` claim."""
         argv = ["components", "doctor", "--root", str(PLUGIN_ROOT), "--json"]
-        through_shim = subprocess.run([str(self.shim), *argv], capture_output=True, text=True)
+        through_shim = subprocess.run([*launcher(self.shim), *argv], capture_output=True, text=True)
         direct = subprocess.run([sys.executable, str(self.payload / "assets/bin/cq"), *argv],
                                 capture_output=True, text=True)
         self.assertEqual(through_shim.stdout, direct.stdout)
@@ -793,11 +820,11 @@ class TargetLauncher(unittest.TestCase):
 
     def test_a_refusal_arrives_as_exit_2(self):
         """Every command body branches on 0/1/2. A launcher that normalised one would break all of them."""
-        run = subprocess.run([str(self.shim), "knowledge", "--root", "."], capture_output=True, text=True)
+        run = subprocess.run([*launcher(self.shim), "knowledge", "--root", "."], capture_output=True, text=True)
         self.assertEqual(run.returncode, 2, run.stdout + run.stderr)
 
     def test_argparse_misuse_arrives_as_the_distinct_usage_exit(self):
-        run = subprocess.run([str(self.shim), "knowledge", "--root", ".", "validate", "--bogus"],
+        run = subprocess.run([*launcher(self.shim), "knowledge", "--root", ".", "validate", "--bogus"],
                              capture_output=True, text=True)
         self.assertEqual(run.returncode, 3, run.stdout + run.stderr)
         self.assertIn("usage: cq knowledge validate", run.stderr)

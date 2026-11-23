@@ -17,8 +17,10 @@ from quenching.specs.backends.git import NO_FETCH_ENV, GitBackend
 from quenching.specs.backends.git import origin_url as _origin_url
 from quenching.specs.parse.epics import local_key, split_ref
 
-# `<owner>/<repo>[.git][/]` at the end of a URL, after `/` or the scp-like `:`.
-_TAIL_RE = re.compile(r"(?P<sep>[/:])(?P<owner>[^/:]+)/(?P<repo>[^/]+?)(?P<git>\.git)?/?$")
+# `<owner>/<repo>[.git][/]` at the end of a URL, after `/` or the scp-like `:`; a local-path
+# remote on Windows (`C:\stores\owner\repo.git`) separates with `\`.
+_TAIL_RE = re.compile(
+    r"(?P<sep>[/:\\])(?P<owner>[^/:\\]+)(?P<mid>[/\\])(?P<repo>[^/\\]+?)(?P<git>\.git)?[/\\]?$")
 
 _FOREIGN: dict[str, GitBackend] = {}
 
@@ -40,7 +42,8 @@ def sibling_url(url: str | None, repo: str) -> str | None:
     if own_repo(url) is None:
         return None
     m = _TAIL_RE.search(url)
-    return f"{url[:m.start()]}{m.group('sep')}{repo}{m.group('git') or ''}"
+    swapped = repo.replace("/", m.group("mid"))
+    return f"{url[:m.start()]}{m.group('sep')}{swapped}{m.group('git') or ''}"
 
 
 _STORE_BACKENDS = ("git", "memory")

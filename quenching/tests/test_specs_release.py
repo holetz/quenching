@@ -216,7 +216,7 @@ class Lockstep(unittest.TestCase):
                 before = {p: p.read_bytes() for p in Path(self.tmp).rglob("*") if p.is_file()}
                 result = bump_release_artifacts(self.tmp, "9.10.0")
                 self.assertFalse(result["ok"], result)
-                self.assertIn(str(catalog.relative_to(self.tmp)), result["error"])
+                self.assertIn(catalog.relative_to(self.tmp).as_posix(), result["error"])
                 self.assertEqual(before, {p: p.read_bytes() for p in before})
         catalog.write_text(original)
 

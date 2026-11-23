@@ -178,10 +178,16 @@ def normalize_paths(text: str, root: str | None = None) -> str:
     home slug of a Claude Code project directory to `<project>`."""
     text = _SCRATCHPAD.sub("<scratchpad>", text)
     if root:
-        top = os.path.abspath(root).rstrip("/\\")
-        if len(top) > 1:
-            text = re.sub(re.escape(top) + r"/", "", text)
-            text = re.sub(re.escape(top) + r"(?![\w./-])", ".", text)
+        # The root as given and as `abspath` spells it (`/r` is `C:\r` on Windows), each with
+        # either separator: a Windows path reaches a text as `C:\r\x` or as `C:/r/x`.
+        tops = set()
+        for top in (root, os.path.abspath(root)):
+            top = top.rstrip("/\\")
+            if len(top) > 1:
+                tops |= {top, top.replace("\\", "/"), top.replace("/", "\\")}
+        for top in sorted(tops, key=len, reverse=True):
+            text = re.sub(re.escape(top) + r"[/\\]", "", text)
+            text = re.sub(re.escape(top) + r"(?![\w./\\-])", ".", text)
     home = _home()
     if home:
         text = re.sub(re.escape(home) + r"(?![\w.-])", "~", text)

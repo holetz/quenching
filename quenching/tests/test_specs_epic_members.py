@@ -49,6 +49,8 @@ class SiblingUrl(unittest.TestCase):
             "https://github.com/holetz/forge": "https://github.com/holetz/quenching",
             "git@github.com:holetz/forge.git": "git@github.com:holetz/quenching.git",
             "/srv/stores/holetz/forge.git": "/srv/stores/holetz/quenching.git",
+            # A local-path remote as Windows git stores it.
+            "C:\\srv\\stores\\holetz\\forge.git": "C:\\srv\\stores\\holetz\\quenching.git",
         }
         for url, want in cases.items():
             with self.subTest(url=url):

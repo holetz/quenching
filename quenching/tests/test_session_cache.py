@@ -15,6 +15,9 @@ from quenching.session.commands.cli import build_parser
 
 MINUTE = 60_000
 START = 1_790_000_000_000
+# The directories OpenCode records are absolute in the platform's own form (`C:\repo` on
+# Windows), and `--directory` resolves to that form too.
+REPO, ELSEWHERE, OTHER = (str(pathlib.Path(p).resolve()) for p in ("/repo", "/elsewhere", "/other"))
 
 
 def assistant(mid, at, model="opus", inp=0, read=0, write=0, out=1, ttl1h=0):
@@ -68,9 +71,9 @@ class Fixture(unittest.TestCase):
             CREATE TABLE instruction_state (session_id TEXT, current_values TEXT);
             CREATE TABLE instruction_blob (hash TEXT, value TEXT);""")
         db.executemany("INSERT INTO session_v2 VALUES (?,?,?,?)", [
-            ("root", None, "build", "/repo"), ("kid", "root", "quenching-spec-runner", "/elsewhere"),
-            ("other", None, "build", "/other")])
-        db.execute("INSERT INTO session VALUES ('old', NULL, 'build', '/repo')")
+            ("root", None, "build", REPO), ("kid", "root", "quenching-spec-runner", ELSEWHERE),
+            ("other", None, "build", OTHER)])
+        db.execute("INSERT INTO session VALUES ('old', NULL, 'build', ?)", (REPO,))
         steps = [("root", "assistant", 0, 6000, 0), ("root", "assistant", 1, 100, 6000),
                  ("root", "assistant", 40, 7000, 0), ("kid", "assistant", 0, 9000, 0),
                  ("root", "compaction", 41, 50, 3000), ("other", "assistant", 0, 5000, 0)]
@@ -120,25 +123,25 @@ class OpenCodeTests(Fixture):
         self.argv = ("--harness", "opencode", "--opencode-db", str(self.db), "--json")
 
     def test_scope_follows_the_root_session(self):
-        data = json.loads(run(*self.argv, "--directory", "/repo")[1])
+        data = json.loads(run(*self.argv, "--directory", REPO)[1])
         rows = {(r["role"], r["agent"]): r for r in data["rows"]}
         self.assertEqual(set(rows), {("main", "main"), ("subagent", "spec-runner")})
         self.assertEqual(rows[("main", "main")]["requests"], 5, "v2 steps, the compaction, the legacy row")
         self.assertEqual(rows[("main", "main")]["sessions"], 2)
 
     def test_reasoning_counts_as_output(self):
-        data = json.loads(run(*self.argv, "--directory", "/repo")[1])
+        data = json.loads(run(*self.argv, "--directory", REPO)[1])
         kid = next(r for r in data["rows"] if r["role"] == "subagent")
         self.assertEqual((kid["input"], kid["cacheRead"], kid["output"]), (9000, 0, 5))
 
     def test_input_is_the_miss(self):
-        data = json.loads(run(*self.argv, "--directory", "/repo")[1])
+        data = json.loads(run(*self.argv, "--directory", REPO)[1])
         cold = {g["gap"]: (g["cold"], g["coldTokens"]) for g in data["gaps"]}
         self.assertEqual(cold["30-60m"], (1, 7000))
         self.assertEqual(cold["<2m"][0], 0)
 
     def test_skill_listing_is_measured_for_opencode(self):
-        data = json.loads(run(*self.argv, "--directory", "/repo")[1])
+        data = json.loads(run(*self.argv, "--directory", REPO)[1])
         self.assertEqual(data["skillListing"], [{"harness": "opencode", "role": "subagent", "agent": "spec-runner",
                                                  "sessions": 1, "entriesMedian": 2, "charsMedian": 80,
                                                  "tokensEstimate": 20}])

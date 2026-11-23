@@ -12,6 +12,7 @@ from unittest import mock
 
 import _paths  # noqa: F401  — must precede the `quenching` import; see its docstring
 from quenching.session.commands.cli import build_parser
+from quenching.session.transcript import encode_cwd
 
 
 def rec(mid, model, out, inp=2, cr=0, cw=0):
@@ -279,7 +280,7 @@ class SessionChoiceTests(unittest.TestCase):
         base = pathlib.Path(self.tmp.name)
         self.cwd = base / "work"
         self.cwd.mkdir()
-        self.proj = base / "root" / str(self.cwd).replace("/", "-").replace(".", "-")
+        self.proj = base / "root" / encode_cwd(self.cwd)
         self.proj.mkdir(parents=True)
         for sid, out in (("sessA", 3), ("sessB", 9)):
             (self.proj / f"{sid}.jsonl").write_text("{}\n")

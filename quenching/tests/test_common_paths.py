@@ -41,6 +41,19 @@ class NativePath(unittest.TestCase):
             os.makedirs(nested)
             self.assertEqual(find_repo_root(nested), root)
 
+    def test_two_repositories_in_one_process_each_get_their_own_top(self):
+        # the MCP server is one live process serving many `--root`s: the `_TOPLEVEL` cache is a
+        # directory → native top map, never one value for the whole process
+        with tempfile.TemporaryDirectory() as tmp:
+            tops = [os.path.join(os.path.realpath(tmp), name) for name in ("one", "two")]
+            for top in tops:
+                subprocess.run(["git", "init", "-q", top], check=True)
+                os.makedirs(os.path.join(top, "sub"))
+            for _ in range(2):  # the second round answers from the cache
+                for top in tops:
+                    self.assertEqual(find_repo_root(os.path.join(top, "sub")), top)
+                    self.assertEqual(find_repo_root(top), top)
+
 
 class RepoPath(unittest.TestCase):
     def test_a_leading_dot_directory_keeps_its_dot(self):

@@ -132,6 +132,12 @@ class Normalize(LeakEnv):
                          "a <scratchpad>/out.txt\nb docs/index.md\nc .\nd ~/.config/q\n"
                          "e ~/.claude/projects/<project>/memory/m.md\n")
 
+    def test_a_windows_root_is_relative_in_either_separator(self):
+        root = "C:\\work\\repo"
+        text = f"a {root}\\docs\\x.md\nb C:/work/repo/docs/index.md\nc {root}\nd C:\\work\\repository\n"
+        self.assertEqual(leak.normalize_paths(text, root),
+                         "a docs\\x.md\nb docs/index.md\nc .\nd C:\\work\\repository\n")
+
     def test_guard_normalizes_then_refuses_what_has_no_relative_form(self):
         clean, found = leak.guard_text(f"p {HOME}/x\n", None)
         self.assertEqual((clean, found), ("p ~/x\n", []))

@@ -107,6 +107,12 @@ class ReadinessCase(unittest.TestCase):
             # `.cmd` forwarder reaches it: git's own directory joins PATH instead, so long as it
             # holds none of the scanners a test could reach by accident.
             gitdir = os.path.dirname(shutil.which("git"))
+            # Under Git Bash `which` finds `mingw64\bin\git.exe`, which needs `usr\bin` on PATH:
+            # alone there a clone segfaults (0xC0000005). The `cmd\git.exe` wrapper sets its own.
+            wrapper = os.path.join(os.path.dirname(os.path.dirname(gitdir)), "cmd")
+            if (os.path.basename(os.path.dirname(gitdir)).lower() == "mingw64"
+                    and shutil.which("git", path=wrapper)):
+                gitdir = wrapper
             self.assertFalse([n for n in VERSIONS if shutil.which(n, path=gitdir)], gitdir)
             path = os.pathsep.join([self.bin, gitdir])
         git(self.root, "init", "-q", "-b", "main")
