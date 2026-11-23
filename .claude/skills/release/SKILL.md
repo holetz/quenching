@@ -94,7 +94,11 @@ stop and name the difference. Then the release proceeds only when the list is no
 run is `completed` with a `success`, `skipped` or `neutral` conclusion. A run still `queued` or
 `in_progress`, a `failure`/`cancelled`/`timed_out` conclusion, an empty list, or `gh` missing or
 refusing → stop without bumping and report it as **not verified**, naming each run that is not
-green; never read an unanswered check as a green one.
+green; never read an unanswered check as a green one. The project's `shared.ci.enforce`
+(`cq config show --effective`; a source other than `repository` or `default` counts as `required`)
+may relax two readings: `when-present` accepts an empty list, `off` also accepts runs not yet
+`completed`. A `failure`, `cancelled` or `timed_out` run never passes, and the local gate below,
+already mandatory, then stands in for CI.
 
 Then, from the primary branch's checkout, run the surface-load measurement that the
 ordinary local gate keeps opt-in:
