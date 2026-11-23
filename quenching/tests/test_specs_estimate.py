@@ -59,6 +59,14 @@ class DeclaredReading(unittest.TestCase):
                          [r["path"] for r in result["sections"][0]["files"]])
         self.assertTrue(result["complete"])
 
+    def test_names_the_three_largest_contributors_of_a_section(self):
+        (self.root / "b.py").write_bytes(b"b" * 800)
+        result = self.estimate("- [ ] 1.1 Task\n      files: a.py, b.py\n")
+        top = result["sections"][0]["topContributors"]
+        self.assertEqual(3, len(top))
+        self.assertEqual(["b.py", "a.py"], [c["source"] for c in top[:2]])
+        self.assertEqual([200, 100], [c["tokens"] for c in top[:2]])
+
     def test_missing_new_files_and_undeclared_tasks_are_never_free_evidence(self):
         result = self.estimate("- [ ] 1.1 Task\n      files: missing.py (new)\n- [ ] 1.2 No files\n")
         row = result["sections"][0]
