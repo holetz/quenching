@@ -37,9 +37,9 @@ for deployment; this verb installs the tool surface. It never invokes a model, n
 | `.claude/skills/<name>/` | Claude bridge, byte copy of every skill | generated |
 | `.claude/agents/quenching-<name>.md` | Claude subagents | generated when the `claude` harness is selected |
 | `.opencode/agents/quenching-<name>.md` | OpenCode subagents, `mode: subagent` | generated when the `opencode` harness is selected |
-| `.mcp.json` | Claude Code project MCP registration | generated when `shared.mcp` is declared and the `claude` harness is selected |
-| `.codex/config.toml` | Codex MCP registration | generated when `shared.mcp` is declared and the `codex` harness is selected |
-| `opencode.json` | OpenCode MCP registration | generated when `shared.mcp` is declared and the `opencode` harness is selected |
+| `.mcp.json` | Claude Code project MCP registration | target; the `quenching` entry merged when the `claude` harness is selected |
+| `.codex/config.toml` | Codex MCP registration | target; the `quenching` entry merged when the `codex` harness is selected |
+| `opencode.json` | OpenCode MCP registration | target; the `quenching` entry merged when the `opencode` harness is selected |
 | `CLAUDE.md` | legacy pointer to `AGENTS.md` | never created; removed only by `--prune-legacy` |
 | `.claude/commands/`, `.claude/references/` | legacy layout | refused; run `cq components migrate` first |
 
@@ -107,26 +107,37 @@ grant is `Bash(.agents/quenching/bin/cq:*)`.
 
 ## MCP registration
 
-A target that wants the quenching MCP server registered declares `shared.mcp` in
-`.agents/quenching.json` (`{mount: "specs", command: [...]}`, see
-[plugin-configuration.md](../workflows/plugin-configuration.md#the-sharedmcp-block)). Deploy then
-writes one whole file per selected harness — `.mcp.json` for `claude`, `.codex/config.toml` for
+Deploy always registers the quenching MCP server, with no declaration. It writes the `quenching`
+entry into one file per selected harness — `.mcp.json` for `claude`, `.codex/config.toml` for
 `codex`, `opencode.json` for `opencode` — with the same argv:
-`<command...> .agents/quenching/assets/bin/cq <mount> mcp`.
+`<command...> .agents/quenching/assets/bin/cq <mount> mcp`. `shared.mcp` (`{mount: "specs",
+command: [...]}`, see [plugin-configuration.md](../workflows/plugin-configuration.md#the-sharedmcp-block))
+only overrides the mount and the Python prefix.
 
-One whole file per harness, no merge: each file belongs to the target and to the manifest, so a
-hand edit is drift, not a second owner, and a file present at that path without a manifest entry is
-refused (`ct-deploy-unowned`). Turning the key off removes the files through the normal `delete`
-flow, and selecting fewer harnesses writes fewer files. The option requires `--runtime vendor`,
-because a `uvx` runtime omits the vendored entry point the generated command calls.
-Approving a generated `.mcp.json` server (`enabledMcpjsonServers`) stays a human step in the
+**The prefix finds Python without pinning a version.** Declared `shared.mcp.command`, else the
+`mcp.command` the last deploy recorded in the manifest (so two machines never flap), else the first
+of `python3`, `python` and `py -3` that runs a Python 3.11 or later here, else `python3`. The Claude
+Code hooks start with the same prefix.
+
+**The files stay the user's: merged, never owned.** Like `.claude/settings.json`, they are not in the
+manifest's `files`; the manifest records `mcp` and `mcpFiles`, and only the `quenching` entry is the
+deploy's. JSON keeps every other key and entry (`$schema` is added to `opencode.json` only when
+absent); TOML swaps only the `[mcp_servers.quenching]` table. A file that is not a JSON object (a
+JSONC `opencode.json`, say) is left untouched and reported as a warning. `--check` reports a merge
+that would change a file as `mcp` drift; selecting fewer harnesses, or `--remove`, takes the entry
+out of the files it left and deletes a file only when nothing else remains in it.
+
+**The runtime.** The command points at the vendored entry point, which a `uvx` runtime omits: with
+a declared `shared.mcp` that runtime refuses (`ct-deploy-mcp`); without one it registers nothing
+and warns.
+Approving a registered `.mcp.json` server (`enabledMcpjsonServers`) stays a human step in the
 harness; deploy never writes it.
 
 ## The `.claude/settings.json` merge
 
 With `claude` among the harnesses, deploy installs the hooks of the selected modules into the
-target's `.claude/settings.json`, and unlike `.mcp.json` the file stays the user's: it is merged,
-never owned, so it is not in the manifest's `files`.
+target's `.claude/settings.json`, which stays the user's file, as the MCP harness files do: it is
+merged, never owned, so it is not in the manifest's `files`.
 
 - **Own entries only.** An entry is quenching's when its `command` points under
   `.agents/quenching/assets/hooks/`; that path is the marker, valid even without a manifest.
