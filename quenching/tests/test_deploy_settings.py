@@ -14,6 +14,13 @@ sys.path.insert(0, str(PLUGIN_ROOT / "assets" / "bin"))
 
 from quenching.deploy import settings  # noqa: E402
 
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
+from _tools import bash  # noqa: E402
+
+# The shells a hook command may land in, resolved once. `bash` is `_tools.bash()`: on Windows the
+# bare name reaches the WSL launcher, which runs nothing when no distribution is installed.
+SHELLS = {"bash": bash(), "sh": shutil.which("sh"), "pwsh": shutil.which("pwsh")}
+
 COAUTHOR = {"name": "deny-claude-coauthor", "event": "PreToolUse", "matcher": "Bash", "timeout": 5}
 WARN = {"name": "warn-git-add-all", "event": "PreToolUse", "matcher": "Bash", "timeout": 5}
 USER_HOOK = {"type": "command", "command": "guard.sh"}
@@ -136,8 +143,8 @@ class ThePolyglotCommand(unittest.TestCase):
         shutil.copy(PLUGIN_ROOT / "assets" / "hooks" / "deny-claude-coauthor.py", hooks)
 
     def run_in(self, shell, command, payload, **env):
-        argv = {"bash": ["bash", "-c", command], "sh": ["sh", "-c", command],
-                "pwsh": ["pwsh", "-NoProfile", "-Command", command]}[shell]
+        argv = {"bash": [SHELLS["bash"], "-c", command], "sh": [SHELLS["sh"], "-c", command],
+                "pwsh": [SHELLS["pwsh"], "-NoProfile", "-Command", command]}[shell]
         done = subprocess.run(argv, input=payload, capture_output=True, text=True, cwd=self.root,
                               env={**os.environ, "QUENCHING_ALLOW_CLAUDE_COAUTHOR": "", **env})
         self.assertEqual(0, done.returncode, done.stderr)
@@ -155,10 +162,13 @@ class ThePolyglotCommand(unittest.TestCase):
         self.assertTrue(command.startswith("uv run --no-project python -I -c "))
 
     def test_it_runs_the_body_and_fails_open_without_it_in_every_available_shell(self):
-        command = settings.hook_command("deny-claude-coauthor", [sys.executable])
+        # The interpreter in its `/` spelling: bash would eat the `\` of `C:\...\python.exe`, and
+        # every shell here reads `C:/.../python.exe` as the same program.
+        python = pathlib.Path(sys.executable).as_posix()
+        command = settings.hook_command("deny-claude-coauthor", [python])
         attributed = json.dumps({"tool_name": "Bash", "tool_input": {
             "command": 'git commit -m x -m "Co-Authored-By: Claude <noreply@anthropic.com>"'}})
-        shells = [shell for shell in ("bash", "sh", "pwsh") if shutil.which(shell)]
+        shells = [shell for shell, path in SHELLS.items() if path]
         self.assertIn("bash", shells)
         for shell in shells:
             with self.subTest(shell=shell):
@@ -166,7 +176,7 @@ class ThePolyglotCommand(unittest.TestCase):
                 self.assertEqual("deny", out["hookSpecificOutput"]["permissionDecision"])
                 fallback = self.run_in(shell, command, attributed, CLAUDE_PROJECT_DIR="")  # the working directory
                 self.assertEqual("deny", fallback["hookSpecificOutput"]["permissionDecision"])
-                self.assertEqual({}, self.run_in(shell, settings.hook_command("absent", [sys.executable]),
+                self.assertEqual({}, self.run_in(shell, settings.hook_command("absent", [python]),
                                                  attributed, CLAUDE_PROJECT_DIR=str(self.root)))
 
 

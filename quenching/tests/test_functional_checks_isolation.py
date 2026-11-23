@@ -14,8 +14,34 @@ import tempfile
 import unittest
 
 
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
+from _tools import WINDOWS, bash  # noqa: E402
+
 ROOT = pathlib.Path(__file__).resolve().parents[2]
 SCRIPT = ROOT / "quenching/assets/checks/functional-checks.sh"
+BASH = bash()
+
+
+def _msys(path) -> str:
+    """`C:\\a\\b` as Git Bash spells it, `/c/a/b`."""
+    windows = pathlib.PureWindowsPath(path)
+    return "/" + windows.drive[0].lower() + windows.as_posix()[len(windows.drive):]
+
+
+def write_fake_claude(folder: pathlib.Path) -> None:
+    """The fake `claude` the harness finds on PATH from inside bash.
+
+    Git Bash looks a bare name up as itself or `.exe`, never `.cmd`, and runs a `#!/bin/sh` file
+    it finds: on Windows the fake is that shell script handing over to this interpreter."""
+    fake = folder / "claude"
+    if WINDOWS:
+        body = folder / "claude.py"
+        body.write_text(FAKE, encoding="utf-8")
+        fake.write_text(f'#!/bin/sh\nexec "{_msys(sys.executable)}" "{_msys(body)}" "$@"\n',
+                        encoding="utf-8")
+    else:
+        fake.write_text(f"#!{sys.executable}\n" + FAKE, encoding="utf-8")
+    fake.chmod(0o755)
 FAKE = r'''
 import json, os, pathlib, sys
 args = sys.argv[1:]
@@ -56,9 +82,7 @@ class FunctionalSessionIsolation(unittest.TestCase):
     def run_harness(self, *, foreign=False, registry="valid"):
         with tempfile.TemporaryDirectory() as tmp:
             folder = pathlib.Path(tmp)
-            fake = folder / "claude"
-            fake.write_text(f"#!{sys.executable}\n" + FAKE, encoding="utf-8")
-            fake.chmod(0o755)
+            write_fake_claude(folder)
             config = folder / "profile"
             config.mkdir()
             settings = config / "settings.json"
@@ -80,9 +104,9 @@ class FunctionalSessionIsolation(unittest.TestCase):
             shutil.copytree(ROOT / "quenching", repo / "quenching",
                             ignore=shutil.ignore_patterns("__pycache__", ".pytest_cache"))
             subprocess.run(["git", "init", "-q", str(repo)], env=env, check=True)
-            run = subprocess.run(["bash", str(SCRIPT), "--only", "1,2,3,4", str(repo)],
-                                 env=env, capture_output=True, text=True)
-            calls = [json.loads(line) for line in log.read_text().splitlines()]
+            run = subprocess.run([BASH, str(SCRIPT), "--only", "1,2,3,4", str(repo)],
+                                 env=env, capture_output=True, text=True, encoding="utf-8")
+            calls = [json.loads(line) for line in log.read_text(encoding="utf-8").splitlines()]
             self.assertEqual(settings.read_text(encoding="utf-8"), original)
             return run, calls
 
@@ -112,8 +136,8 @@ class FunctionalSessionIsolation(unittest.TestCase):
             source = SCRIPT.read_text(encoding="utf-8")
             source = source.replace(' --setting-sources project', '', 1)
             script.write_text(source, encoding="utf-8")
-            run = subprocess.run(["bash", str(script), "--selfcheck", str(ROOT)],
-                                 capture_output=True, text=True)
+            run = subprocess.run([BASH, str(script), "--selfcheck", str(ROOT)],
+                                 capture_output=True, text=True, encoding="utf-8")
             self.assertEqual(run.returncode, 1, run.stdout + run.stderr)
 
 
