@@ -19,9 +19,9 @@ except ModuleNotFoundError:
 from quenching.specs import portal as portal_mod
 
 ROOT = portal_mod.static_dir()
-HTML = (ROOT / "index.html").read_text()
-CSS = (ROOT / "app.css").read_text()
-JS = (ROOT / "app.js").read_text()
+HTML = (ROOT / "index.html").read_text(encoding="utf-8")
+CSS = (ROOT / "app.css").read_text(encoding="utf-8")
+JS = (ROOT / "app.js").read_text(encoding="utf-8")
 TOKENS = json.loads((ROOT.parents[2] / "design-system" / "tokens.json").read_text(encoding="utf-8"))
 
 

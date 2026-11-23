@@ -1,0 +1,6 @@
+# One line ending for every checkout. Git for Windows ships `core.autocrlf=true`, which would put
+# CRLF in the working tree and break the byte budgets, the fixtures copied from the checkout and
+# every bash script; the index has always been LF. Windows batch files are the one exception.
+* text=auto eol=lf
+*.cmd text eol=crlf
+*.bat text eol=crlf

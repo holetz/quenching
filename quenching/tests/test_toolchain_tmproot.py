@@ -10,6 +10,7 @@ from __future__ import annotations
 import contextlib
 import io
 import pathlib
+import subprocess
 import sys
 import tempfile
 import unittest
@@ -57,6 +58,18 @@ class TempRootCase(unittest.TestCase):
 
     def dev_drives(self, *paths):
         return mock.patch.object(tmproot, "_dev_drives", return_value=[pathlib.Path(p) for p in paths])
+
+    def test_dev_drive_output_in_another_code_page_never_kills_the_resolution(self):
+        # `fsutil` prints in the OEM code page; under `PYTHONUTF8=1` its bytes are no UTF-8. Byte
+        # 0x81 decodes neither as UTF-8 nor as cp1252, so the real decoder raises on any host.
+        real_run = subprocess.run
+        emit = "import sys; sys.stdout.buffer.write(b'\\x81 D: \\x81')"
+
+        def fake_fsutil(argv, **kwargs):
+            return real_run([sys.executable, "-c", emit], **kwargs)
+
+        with mock.patch.object(tmproot.subprocess, "run", side_effect=fake_fsutil):
+            self.assertEqual(tmproot._dev_drives(), [pathlib.Path("D:\\")])
 
     def test_the_explicit_override_wins_over_a_ram_candidate(self):
         with self.mounts((str(self.xdg), "tmpfs")), self.room():
