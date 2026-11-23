@@ -38,6 +38,18 @@ INTERNAL_PATTERNS = (
     r"(^|[^0-9.])192\.168\.[0-9]{1,3}\.[0-9]{1,3}([^0-9]|$)",
     r"(^|[^0-9.])172\.(1[6-9]|2[0-9]|3[01])\.[0-9]{1,3}\.[0-9]{1,3}([^0-9]|$)",
 )
+# A tenant inside a public SaaS host: the host is public, the organization in it is not.
+TENANT_PATTERNS = (
+    r"dev\.azure\.com/[A-Za-z0-9][A-Za-z0-9_.-]*",
+    r"[A-Za-z0-9][A-Za-z0-9-]*\.(visualstudio|sharepoint|snowflakecomputing)\.com",
+    r"[A-Za-z0-9][A-Za-z0-9-]*\.atlassian\.net",
+    r"adb-[0-9]+\.[0-9]+\.azuredatabricks\.net",
+)
+TENANT = re.compile(r"dev\.azure\.com/([^/\s]+)|^([^.]+)\.", re.IGNORECASE)
+# The vendor's own public subdomains and the documentation placeholders, which name no tenant.
+PUBLIC_TENANTS = {"app", "aka", "docs", "learn", "login", "marketplace", "status", "support", "vssps", "www",
+                  "o", "org", "myorg", "myorganization", "your-org", "yourorg", "example", "example-org",
+                  "acme", "contoso", "fabrikam", "tenant"}
 # The minimum version whose safe flags this adapter was written against.
 SUPPORTED = {"gitleaks": (8, 19), "trufflehog": (3, 0), "reuse": (2, 0)}
 REMEDIATION = {
@@ -286,9 +298,20 @@ def _internal(root: str, inv: dict[str, Any]):
     code, out = _git(root, *argv, "HEAD")
     if code not in (0, 1):
         return [], {"class": "internal-identifiers", "state": NOT_MEASURED, "code": "pr-tree-unreadable"}
-    rows = [_finding("pr-internal-identifier", "internal-identifiers", "warning",
-                     location(line.split(":", 1)[1] if ":" in line else line))
-            for line in out.splitlines() if line]
+    paths = [line.split(":", 1)[1] if ":" in line else line for line in out.splitlines() if line]
+    argv = ["grep", "-I", "-o", "-z", "-E"]
+    for pattern in TENANT_PATTERNS:
+        argv += ["-e", pattern]
+    code, out = _git(root, *argv, "HEAD")
+    if code not in (0, 1):
+        return [], {"class": "internal-identifiers", "state": NOT_MEASURED, "code": "pr-tree-unreadable"}
+    for line in out.splitlines():
+        path, _, match = line.partition("\0")
+        tenant = TENANT.match(match)
+        if tenant and (tenant.group(1) or tenant.group(2)).rstrip(".").lower() not in PUBLIC_TENANTS:
+            paths.append(path.split(":", 1)[1] if ":" in path else path)
+    rows = [_finding("pr-internal-identifier", "internal-identifiers", "warning", location(path))
+            for path in dict.fromkeys(paths)]
     code, log = _git(root, "log", "--branches", "--tags", "--format=%ae%n%ce")
     if code != 0:
         return rows, {"class": "internal-identifiers", "state": PARTIAL, "code": "pr-history-unreadable"}
