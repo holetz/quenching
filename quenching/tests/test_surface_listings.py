@@ -142,6 +142,16 @@ class ListingSurfaceTests(unittest.TestCase):
         for stale in ("workflow_dispatch", "apply enabled", "checkout of `develop`"):
             self.assertNotIn(stale, root_readme)
 
+    def test_windows_job_fails_a_step_that_runs_zero_tests(self):
+        declared = (REPO_ROOT / ".github" / "workflows" / "ci.yml").read_text(encoding="utf-8")
+        job = re.search(r"(?ms)^  windows:\n(.*?)(?=^  \S)", declared).group(1)
+        self.assertRegex(job, r"(?m)^    defaults:\n      run:\n        shell: bash$")
+        runs = [line for line in job.splitlines() if "unittest discover" in line]
+        self.assertGreaterEqual(len(runs), 5)
+        for line in runs:
+            self.assertIn('2>&1 | tee "$RUNNER_TEMP/unit.log" && ! grep -q \'^Ran 0 tests\' "$RUNNER_TEMP/unit.log"',
+                          line)
+
     def test_zensical_nav_matches_every_published_markdown_document(self):
         config = tomllib.loads(ZENSICAL.read_text(encoding="utf-8"))
         nav = _nav_paths(config["project"]["nav"])
