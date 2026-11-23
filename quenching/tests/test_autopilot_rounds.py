@@ -21,6 +21,15 @@ class AutopilotRoundsTests(unittest.TestCase):
         self.assertIn("`--until <date-time with offset>`", body)
         self.assertIn("one round is the default", body)
 
+    def test_relevance_covers_earlier_round_members_and_guidance(self):
+        body = text()
+        self.assertIn("`shared.guidance.autopilot`", body)
+        self.assertIn("open members of epics of earlier rounds", body)
+        self.assertIn("`superseded` (another spec or merge already absorbed the pain", body)
+        self.assertIn("`stale` (a cited `path:line` or command no longer exists)", body)
+        self.assertIn("`superseded` or `stale` → record the evidence in `## Outcome`", body)
+        self.assertIn("never widens a grant", body)
+
     def test_round_record_is_resumable(self):
         body = text()
         self.assertIn("autopilot/<date>/rounds.md", body)
