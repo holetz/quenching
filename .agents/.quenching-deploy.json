@@ -602,20 +602,11 @@
     ".claude/skills/references-tighten/SKILL.md": "02e15aa8d31c490909873e404ecdbaa5a64765a7976d684ce141a9e71ba98d1a",
     ".claude/skills/release/SKILL.md": "755cedcae5f0b30816bac804d7ce0c59dd9c81b1373bb5028dc3a12fe577bf8e",
     ".claude/skills/skill-map/SKILL.md": "eb309cf9d098a5daccbabff27d97f3da24a967c888bbde88f0400cc6af09b5be",
-    ".codex/config.toml": "0135812ae1bcb7e6d49d3b4ddd6fac7709a193119014d61199b57b4765b665fe",
-    ".mcp.json": "153ae5c9bc59d12b3c9f39ccd867a0475512a5ff63d1d45b3f66376e91f93dfe",
     ".opencode/agents/quenching-spec-orchestrator.md": "b6067e781c5d5f512de41544901476a5f1d53a4671a7a8750400c2cf7e420246",
     ".opencode/agents/quenching-spec-reviewer.md": "1eaaea94ad784d88a8fc6c19512c9d8611b23e804b486cb48834caf364913e15",
     ".opencode/agents/quenching-spec-runner.md": "307f844c010e99675ebcaa7b664ee96773a89d9d323fadf8c7ad77cc6fb0cfaa",
     ".opencode/agents/quenching-spec-scout.md": "da8e2c895021db847dd6bcd87208ad71e7e424636340b84e3dd4099d06c1b155",
-    ".opencode/agents/quenching-spec-verifier.md": "1f65cdc6ef127e1837550ec5ff7d4f4ffb09a7f3d544a71e1f5467911314411f",
-    "opencode.json": "a520c49aeaec3c1e521cba49b1f89ba58d1cc6e09fefe09f6028a2e8d97c0676"
-  },
-  "mcp": {
-    "mount": "specs",
-    "command": [
-      "python3"
-    ]
+    ".opencode/agents/quenching-spec-verifier.md": "1f65cdc6ef127e1837550ec5ff7d4f4ffb09a7f3d544a71e1f5467911314411f"
   },
   "mcp": {
     "mount": "specs",
