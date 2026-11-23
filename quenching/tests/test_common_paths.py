@@ -11,7 +11,21 @@ except ModuleNotFoundError:  # package-qualified unittest invocation from the re
     sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
     import _paths  # noqa: F401
 from quenching.codex import eligible
-from quenching.common.paths import escapes_repo, repo_path
+from quenching.common.paths import escapes_repo, native_path, repo_path
+
+
+class NativePath(unittest.TestCase):
+    def test_a_git_path_on_windows_takes_the_backslash_form(self):
+        self.assertEqual(native_path("C:/Users/x/repo-slot-1", windows=True),
+                         "C:\\Users\\x\\repo-slot-1")
+        self.assertEqual(native_path("C:\\Users\\x", windows=True), "C:\\Users\\x")
+
+    def test_posix_is_identity(self):
+        for path in ("/home/x/repo", "/home//x/../y", ""):
+            self.assertEqual(native_path(path, windows=False), path)
+
+    def test_an_empty_answer_stays_empty(self):
+        self.assertEqual(native_path("", windows=True), "")
 
 
 class RepoPath(unittest.TestCase):
