@@ -17,8 +17,8 @@ from quenching.specs import backends as backends_mod
 from quenching.specs.backends import git as git_mod
 from quenching.specs.backends.git import GitBackend
 from quenching.specs.commands import cli
-from quenching.specs.commands.handoff import (direction, language, missing_sections, slug,
-                                              transcript_facts)
+from quenching.specs.commands.handoff import (direction, inflight, language, missing_sections,
+                                              slug, transcript_facts)
 
 BRIEF = "## Handoff Confidence\nHigh.\n\n## Last Request\nship it\nStatus: Answered\n\n## Next Actions\n1. Release.\n"
 
@@ -56,6 +56,47 @@ class Facts(unittest.TestCase):
     def test_a_broken_line_is_skipped_not_fatal(self):
         self.path.write_text("not json\n" + _line(type="user", message={"content": "ok"}), encoding="utf-8")
         self.assertEqual("ok", transcript_facts(self.path, self.root)["lastUserMessage"])
+
+
+class InFlight(unittest.TestCase):
+    def git(self, *argv):
+        subprocess.run(["git", "-c", "user.name=t", "-c", "user.email=t@t", *argv], cwd=self.root,
+                       check=True, capture_output=True)
+
+    def setUp(self):
+        tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
+        self.root = os.path.realpath(tmp.name)
+        self.git("init", "-q")
+        Path(self.root, "a.txt").write_text("one", encoding="utf-8")
+        self.git("add", "a.txt")
+        self.git("commit", "-q", "-m", "first")
+
+    def test_a_clean_checkout_is_all_empty(self):
+        got = inflight(self.root)
+        self.assertEqual([], got["dirty"])
+        self.assertEqual(0, got["stashes"])
+        self.assertEqual([], got["worktrees"])
+        self.assertIsNone(got["upstream"])
+
+    def test_dirt_and_a_commit_with_no_remote_are_reported(self):
+        Path(self.root, "a.txt").write_text("two", encoding="utf-8")
+        Path(self.root, "b.txt").write_text("new", encoding="utf-8")
+        got = inflight(self.root)
+        self.assertEqual(2, len(got["dirty"]))
+        self.assertEqual(1, got["ahead"])
+
+    def test_a_stash_is_counted(self):
+        Path(self.root, "a.txt").write_text("two", encoding="utf-8")
+        self.git("stash", "push", "-q")
+        got = inflight(self.root)
+        self.assertEqual(1, got["stashes"])
+        self.assertEqual([], got["dirty"])
+
+    def test_no_git_leaves_the_empty_values(self):
+        with tempfile.TemporaryDirectory() as bare:
+            got = inflight(bare)
+        self.assertEqual({"dirty": [], "upstream": None, "ahead": 0, "stashes": 0, "worktrees": []}, got)
 
 
 class Pieces(unittest.TestCase):
