@@ -16,6 +16,7 @@ try:
 except ModuleNotFoundError:
     sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
     import _paths  # noqa: F401
+from quenching.common.deploy import dumps_hash_manifest
 from quenching.deploy import translate
 from quenching.deploy.cli import main as deploy_main
 
@@ -962,6 +963,37 @@ class TargetLauncher(unittest.TestCase):
         self.assertEqual(0, self.cq("all", "design", "--help").returncode)
         rows = json.loads(self.cq("all", "modules", "--json").stdout)["modules"]
         self.assertTrue(all(row["enabled"] for row in rows), rows)
+
+
+class HashManifestMerge(unittest.TestCase):
+    """Two specs that regenerate neighbouring hash entries must merge without a conflict."""
+
+    @staticmethod
+    def manifest(hashes: dict[str, str], separated: bool) -> str:
+        document = {"generator": "cq deploy", "version": "1", "files": hashes}
+        return dumps_hash_manifest(document) if separated else json.dumps(document, indent=2) + "\n"
+
+    def merge(self, separated: bool) -> subprocess.CompletedProcess:
+        base = {"a/one": "1", "a/two": "2", "a/three": "3", "a/four": "4"}
+        ours, theirs = {**base, "a/two": "22"}, {**base, "a/three": "33"}
+        with tempfile.TemporaryDirectory() as tmp:
+            paths = []
+            for name, hashes in (("ours", ours), ("base", base), ("theirs", theirs)):
+                path = pathlib.Path(tmp) / name
+                path.write_text(self.manifest(hashes, separated), encoding="utf-8", newline="\n")
+                paths.append(str(path))
+            return subprocess.run(["git", "merge-file", "-p", *paths], capture_output=True, text=True)
+
+    def test_neighbouring_entries_merge_clean_with_the_separator_and_conflict_without(self):
+        self.assertEqual(1, self.merge(separated=False).returncode)
+        merged = self.merge(separated=True)
+        self.assertEqual(0, merged.returncode, merged.stdout)
+        self.assertEqual({"a/one": "1", "a/two": "22", "a/three": "33", "a/four": "4"},
+                         json.loads(merged.stdout)["files"])
+
+    def test_the_separator_changes_no_value_a_reader_sees(self):
+        hashes = {"a/one": "1", "a/two": "2"}
+        self.assertEqual(json.loads(self.manifest(hashes, False)), json.loads(self.manifest(hashes, True)))
 
 
 if __name__ == "__main__":
