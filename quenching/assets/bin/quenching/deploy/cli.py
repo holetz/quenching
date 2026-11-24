@@ -9,7 +9,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-from quenching.common.deploy import MANIFEST, read_manifest
+from quenching.common.deploy import MANIFEST, dumps_hash_manifest, read_manifest
 from quenching.common.config import repository_document
 from quenching.common.output import FINDINGS, OK, REFUSAL, NoAbbrevParser, emit, refuse
 from quenching.common.version import VERSION
@@ -390,7 +390,7 @@ def write(target: Path, built: dict, result: dict, prune_legacy: bool) -> None:
             pointer.unlink()
     (target / MANIFEST).parent.mkdir(parents=True, exist_ok=True)
     # `newline="\n"` on every text write: the deployed tree is LF on Windows too.
-    (target / MANIFEST).write_text(json.dumps(built["manifest"], indent=2) + "\n",
+    (target / MANIFEST).write_text(dumps_hash_manifest(built["manifest"]),
                                    encoding="utf-8", newline="\n")
 
 
