@@ -221,6 +221,7 @@ the reproduction), queued for the next round; `NONE` creates none.
 
 ### 7. Gate and audit
 On `main`: pull, run the gate, and the audit of step 1. Red → the first spec of the next round.
+Also audit orphan processes: list `pytest`, xdist (`exec(eval(sys.stdin.readline()))`) and `functional-checks.sh` processes whose working directory sits in a slot with no live worker, end them by PID with their children, and print each in step 8 — a worker that returned must leave none running.
 Then decide whether to stop:
 
 - **deadline** — `--until` is reached, or no worker of a next round could finish before it;
