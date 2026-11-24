@@ -219,6 +219,17 @@ class TaskExecutionContractTests(unittest.TestCase):
         self.assertIn("the `spec-verifier` runs once, after you return and before the merge", runner)
         self.assertIn("Without `autonomous`, execute and conclude are two spawns.", runner)
 
+    def test_autonomous_orchestrator_runs_one_spawn_and_one_verifier(self):
+        orchestrator = " ".join(
+            (ROOT / "quenching/agents/spec-orchestrator.md").read_text(encoding="utf-8").split())
+
+        self.assertIn("Under `autonomous`, one runner spawn per spec, and the spec-verifier once.", orchestrator)
+        self.assertIn(
+            "call the `spec-verifier` once, after that spawn returns and before you adopt and merge the PR",
+            orchestrator)
+        self.assertIn("Without `autonomous`, execute and conclude are two spawns.", orchestrator)
+        self.assertIn("still returns `execute-done:`", orchestrator)
+
     def test_worker_budget_is_a_size_estimate_not_a_stop(self):
         runner = " ".join(RUNNER.read_text(encoding="utf-8").split())
 
