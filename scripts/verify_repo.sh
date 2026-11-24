@@ -295,8 +295,9 @@ else
   printf 'SKIPPED: `claude` is not on PATH; integrations/claude-hud was not validated.\n'
 fi
 
-# The quenching-cache band carries generated copies of quenching's price table and handoff
-# template; a stale copy is refused here, with or without `claude`.
+# The quenching-cache bands (Claude Code and OpenCode) carry generated copies of quenching's price
+# table and handoff template, and the OpenCode one the shared core too; a stale copy is refused
+# here, with or without `claude`.
 run_check "quenching-cache generated copies" \
   python3 scripts/cache_plugin_sync.py --check
 if [ "$RUN_INTEGRATIONS" = 0 ]; then

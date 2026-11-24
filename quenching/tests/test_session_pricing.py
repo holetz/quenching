@@ -114,6 +114,21 @@ class TheGeneratedCopies(unittest.TestCase):
                              capture_output=True, text=True)
         self.assertEqual(0, run.returncode, run.stdout + run.stderr)
 
+    def test_the_opencode_core_is_the_claude_core_with_file_imports(self):
+        sys.path.insert(0, str(REPO / "scripts"))
+        try:
+            import cache_plugin_sync as sync
+        finally:
+            sys.path.pop(0)
+        by_name = {path.name: text for path, text in sync.targets() if "opencode-cache" in path.as_posix()}
+        self.assertEqual({"logic.ts", "handoff.ts", "i18n.ts", "message.ts", "prices.ts", "types.ts",
+                          "handoff-template.md", "handoff-brief.md"}, set(by_name))
+        for name, text in by_name.items():
+            if name.endswith(".ts"):
+                self.assertNotRegex(text, r"from '\.{1,2}/[\w-]+'", name)  # every relative import names its file
+        self.assertIn("from './types.ts'", by_name["logic.ts"])
+        self.assertNotIn("claude-code", by_name["handoff.ts"])
+
 
 if __name__ == "__main__":
     unittest.main()
