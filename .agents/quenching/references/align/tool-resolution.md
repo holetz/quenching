@@ -79,7 +79,7 @@ The hand-written specs tools name their arguments apart from the CLI:
 | `specs_section(spec=X, headings=H, moment=M, scope=S)` | `cq specs section X "H"` / `--moment M --scope S` |
 | `specs_section_write(spec=X, heading=H, body=B)` | `cq specs section X "H" --write` with `B` on stdin |
 | `specs_record(spec=X, name=N, fields={"k": "v"})` | `cq specs record X N --set k=v` |
-| `specs_task(spec=X, action=A, task=T, reason=R, subject=S, commit=C)` | `cq specs task --spec X --A T --reason R --subject S --commit C` |
+| `specs_task(spec=X, action=A, task=T, reason=R, subject=S, commit=C)` | `cq specs task --spec X --check T --subject S --commit C` (`A` is the flag: `--check`, `--uncheck`, `--block` or `--descope`, the last two with `--reason R`) |
 | `specs_discover(spec=X, text=F)` | `cq specs discover X "F"` |
 | `specs_create(name=N, title=T, …)` | `cq specs new N --title T …` |
 | `specs_list(phase=P)`, `specs_next(spec=X)`, `specs_next()` | `cq specs list --phase P`, `cq specs next --spec X`, `cq specs next --front` |
