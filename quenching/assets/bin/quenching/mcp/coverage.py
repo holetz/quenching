@@ -1,4 +1,4 @@
-"""Catalog coverage: every `cq <pillar> <verb>` a skill or agent body cites has an MCP tool.
+"""Catalog coverage: every `cq <pillar> <verb>` a skill, agent or reference body cites has an MCP tool.
 
 A citation's verb path is what the pillar's own parser consumes — subparsers, and positionals whose
 `choices` carry the word (`git worktree acquire`, `security leak`) — stopping at the first word that
@@ -26,10 +26,13 @@ EXCEPTIONS: dict[tuple[str, ...], str] = {
     ("specs", "serve"): "long-running local portal",
     ("portal", "serve"): "long-running central portal",
     ("codex", "implement"): "long-running per-task executor",
+    ("specs", "migrate"): "one-time store migration the operator runs; may create remote work items",
+    ("specs", "export"): "writes a directory of files outside the store, for the operator",
 }
 
-# The bodies the coverage holds for, relative to the plugin root (`quenching/`).
-SOURCES = ("skills", "agents")
+# The bodies the coverage holds for, relative to the plugin root (`quenching/`): the references
+# the bodies load cite verbs too.
+SOURCES = ("skills", "agents", "references")
 
 CITE = re.compile(r"\bcq(?:\.cmd)?((?:[ \t]+[a-z][a-z0-9-]*)+)")
 

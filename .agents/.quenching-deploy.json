@@ -122,7 +122,7 @@
     ".agents/quenching/assets/bin/quenching/knowledge/validate.py": "6e673e47c5dbf5ed925da8cfef8703e71acc62ca9817266512b50e1aa661aa3e",
     ".agents/quenching/assets/bin/quenching/mcp/catalog.py": "0cdb5223ac36de2998a074035716c61f7c3ce8aa6f6b776e78c528f9d3dadaf3",
     ".agents/quenching/assets/bin/quenching/mcp/cli.py": "168d60922494389e5c02eb624e6178d33ab76f73125b67521e010d08f5e43b55",
-    ".agents/quenching/assets/bin/quenching/mcp/coverage.py": "e5498a324576fe3aa30eb51ddb5ad28ccb9dad866e1a3fc94f30767ea2a9ba3c",
+    ".agents/quenching/assets/bin/quenching/mcp/coverage.py": "92414da3c25f6ceef6e80d4d31cd450386fdd4f970933f6aef0deb8b4db04cec",
     ".agents/quenching/assets/bin/quenching/mcp/resources.py": "61dc6effc7117547fbde0ccc1d8e7796448c59499f976e9968bf0df466bf51d1",
     ".agents/quenching/assets/bin/quenching/mcp/server.py": "43c7294303fc156b7b33c08a9dc97fe489c2f950cceb96366d45de34c5942c44",
     ".agents/quenching/assets/bin/quenching/portal/__init__.py": "62de63bf04a15c8bb39c5f04035f9e5c8deb58b38813b17c0839b51b46624da5",
