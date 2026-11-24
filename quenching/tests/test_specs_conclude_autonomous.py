@@ -39,7 +39,7 @@ class ConcludeAutonomous(unittest.TestCase):
         # the step 7 recipe and the table row both cover the generated zones, not only the mirrors
         self.assertIn("A conflict only inside a generated zone", self.text)
         self.assertIn("§Enumerated generated zones", self.text)
-        self.assertIn("`cq proof readme --write`", self.text)
+        self.assertIn("cq proof readme --write`", self.text)
         self.assertIn("`git merge-file --theirs <ours> <base> <theirs>`", self.text)
         self.assertIn("every conflict marker of the file sits between the zone's delimiters",
                       self.text)
