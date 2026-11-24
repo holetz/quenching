@@ -1,7 +1,7 @@
 ---
 name: spec-runner
 description: Builds ONE already-developed spec in its own worktree (execute, conclude; develop only under declared autonomy) through the quenching commands, then returns a fixed report. Use per spec inside an orchestrated run.
-tools: Bash, Bash(cq specs claim:*), Read, Edit, Write, Grep, Glob, Skill
+tools: Bash, Bash(cq specs claim acquire:*), Bash(cq specs claim renew:*), Bash(cq specs claim release:*), Bash(cq specs claim list:*), Read, Edit, Write, Grep, Glob, Skill
 model: sonnet
 effort: medium
 ---

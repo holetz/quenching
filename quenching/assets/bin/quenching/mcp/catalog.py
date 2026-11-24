@@ -107,7 +107,6 @@ CATALOG: dict[str, Row] = {
     **_rows("specs", "read", "claim list"),
     **_rows("specs", "external", "claim acquire", "claim renew"),
     "specs_claim_release": Row("specs", ("claim", "release"), "external", True),
-    "specs_claim_take": Row("specs", ("claim", "take"), "external", True),
 }
 
 

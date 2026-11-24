@@ -81,8 +81,13 @@ take only an expired lease, which `acquire` already does.
 
 ## Grants
 
-`Bash(cq specs claim:*)` is granted in the `tools:` of the `spec-orchestrator` (for `renew`) and
-the `spec-runner`, and nowhere else; the commands that call it already hold `Bash(cq:*)`.
+The `tools:` of the `spec-orchestrator` (which calls `renew`) and of the `spec-runner` grant the
+four agent verbs one by one — `Bash(cq specs claim acquire:*)`, `renew`, `release` and `list` —
+never `Bash(cq specs claim:*)`, and the deploy maps them to `mcp__quenching__specs_claim_acquire`,
+`_renew`, `_release` and `_list`; no other agent gets them, and the commands that call them already
+hold `Bash(cq:*)`. `take` reaches no agent grant: it has no MCP tool (a declared coverage
+exception), so neither a scoped grant nor a whole-server one (`Bash`, OpenCode `quenching_*`)
+covers it, and an agent body that ran `cq specs claim take` in a shell would break its own rule.
 
 <!-- rationale -->
 

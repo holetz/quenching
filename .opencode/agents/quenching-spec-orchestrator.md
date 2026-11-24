@@ -13,7 +13,10 @@ permission:
     ".agents/quenching/bin/cq specs next *": allow
     ".agents/quenching/bin/cq specs record *": allow
     ".agents/quenching/bin/cq specs reconcile *": allow
-    ".agents/quenching/bin/cq specs claim *": allow
+    ".agents/quenching/bin/cq specs claim acquire *": allow
+    ".agents/quenching/bin/cq specs claim renew *": allow
+    ".agents/quenching/bin/cq specs claim release *": allow
+    ".agents/quenching/bin/cq specs claim list *": allow
     ".agents/quenching/bin/cq components session cost *": allow
     ".agents/quenching/bin/cq components session cache *": allow
     ".agents/quenching/bin/cq components session context *": allow
@@ -38,10 +41,9 @@ permission:
   quenching_specs_record: allow
   quenching_specs_reconcile: allow
   quenching_specs_claim_acquire: allow
-  quenching_specs_claim_list: allow
-  quenching_specs_claim_release: allow
   quenching_specs_claim_renew: allow
-  quenching_specs_claim_take: allow
+  quenching_specs_claim_release: allow
+  quenching_specs_claim_list: allow
   quenching_components_session_cost: allow
   quenching_components_session_cache: allow
   quenching_components_session_context: allow
@@ -98,7 +100,7 @@ An epic id or a list of spec ids, plus an optional `autonomous` flag from the co
    **Skip a spec another machine is building.** The same `status --json` carries `claim`: `live: true` with `mine: false` → the spec never receives a worker and leaves the DAG with `STATE: blocked`, `NOTE: held-by: <holder> until <expires>` and `TOKENS: 0`, its dependents with it. An expired lease, a terminal one or `claim: null` schedules normally: the worker's execute acquires it. You never `take` a lease.
    **Schedule every ready spec.** A spec with no unmerged dependency and a free slot gets a worker.
    **The worker takes its own worktree.** Every `spec-runner` prompt names the spec id and no worktree; the runner cuts it from `origin/<base>` with `/quenching-git branch` — the isolation is a worktree by default and asks nothing, so there is no branch-step spawn and no question to relay. It happens only once every dependency is merged, so the dependent carries the dependency's code. The path the runner returns on its `WORKTREE:` line is the worktree every later prompt names (a re-spawn, the `conclude` spawn outside `autonomous`, the spec-verifier, your own publish). A runner `blocked` before it returned a worktree leaves the spec with `STATE: blocked`, its NOTE and `TOKENS: 0`.
-   **Renew between waves.** Before launching each wave, run `.agents/quenching/bin/cq specs claim renew <id> --json` for every spec whose worker is still live, so a long wave does not let its lease expire under it; `reason: absent` and exit 2 go to that spec's NOTE and never stop the wave; `not-holder` means another machine took it: that spec's result is not accepted and it leaves with `NOTE: held-by: <holder>`. The claim grant is for `renew` only: `acquire` and `release` are the worker's, and `take` is the human's.
+   **Renew between waves.** Before launching each wave, run `.agents/quenching/bin/cq specs claim renew <id> --json` for every spec whose worker is still live, so a long wave does not let its lease expire under it; `reason: absent` and exit 2 go to that spec's NOTE and never stop the wave; `not-holder` means another machine took it: that spec's result is not accepted and it leaves with `NOTE: held-by: <holder>`. You call `renew` only, although the grant names the four agent verbs: `acquire` and `release` are the worker's, and `take` is the human's and no grant reaches it.
    Before closing each wave, compare the set you scheduled with the set the DAG resolved as ready,
    and name any spec that is in the second set only; a spec left out is scheduled in the next
    wave or reported, never dropped in silence.
