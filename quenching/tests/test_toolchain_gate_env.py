@@ -54,11 +54,11 @@ class TheAffectedScopeSkipsStepsTheDiffDoesNotTouch(unittest.TestCase):
 
     TEXT = SCRIPT.read_text(encoding="utf-8")
 
-    def _flags(self, changed):
+    def _flags(self, changed, unreadable=False):
         start = self.TEXT.index("import json, sys\ndoc = json.load(sys.stdin)\nsite = ")
         end = self.TEXT.index("')\"; then", start)
         code = self.TEXT[start:end]
-        run = subprocess.run([sys.executable, "-c", code], input=json.dumps({"changed": changed}),
+        run = subprocess.run([sys.executable, "-c", code], input=json.dumps({"changed": changed, "diffUnreadable": unreadable}),
                              capture_output=True, text=True)
         self.assertEqual(run.returncode, 0, run.stderr)
         return dict(line.split("\t") for line in run.stdout.splitlines())
@@ -66,6 +66,10 @@ class TheAffectedScopeSkipsStepsTheDiffDoesNotTouch(unittest.TestCase):
     def test_a_diff_in_the_git_module_skips_the_site_and_the_plugins(self):
         flags = self._flags(["quenching/assets/bin/quenching/git/audit.py"])
         self.assertEqual(flags, {"SITE": "0", "PLUGINS": "0"})
+
+    def test_an_unreadable_diff_keeps_the_site_and_the_plugins(self):
+        self.assertEqual(self._flags([], unreadable=True), {"SITE": "1", "PLUGINS": "1"})
+        self.assertEqual(self._flags([]), {"SITE": "0", "PLUGINS": "0"})
 
     def test_docs_and_skills_run_the_site_but_not_the_plugins(self):
         for path in ("docs/index.md", "quenching/skills/quenching-align/SKILL.md", "quenching/references/align/convergence.md", "zensical.toml"):
