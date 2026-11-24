@@ -8,6 +8,7 @@ agnosticas-ao-git`, task 3.5, wrote every case from the four subcommands' own co
 """
 from __future__ import annotations
 
+import atexit
 import contextlib
 import io
 import json
@@ -59,15 +60,31 @@ def _run(cwd: str, *argv: str) -> None:
     subprocess.run(["git", *argv], cwd=cwd, check=True, capture_output=True, text=True)
 
 
+_TEMPLATE: dict[str, str] = {}
+
+
+def _template_repo() -> str:
+    """One initialised repository per process, built once and copied per test: the `git init`,
+    two `git config` calls, `add` and `commit` are five processes a test would otherwise pay."""
+    if "path" not in _TEMPLATE:
+        root = tempfile.mkdtemp(prefix="cq-git-template-")
+        atexit.register(shutil.rmtree, root, ignore_errors=True)
+        path = os.path.join(root, "repo")
+        os.makedirs(path)
+        _run(path, "init", "-q", "-b", "main")
+        _run(path, "config", "user.email", "test@example.com")
+        _run(path, "config", "user.name", "Test")
+        with open(os.path.join(path, "a.txt"), "w", encoding="utf-8") as f:
+            f.write("x\n")
+        _run(path, "add", "a.txt")
+        _run(path, "commit", "-q", "-m", "init")
+        _TEMPLATE["path"] = path
+    return _TEMPLATE["path"]
+
+
 def _init_repo(path: str) -> str:
-    os.makedirs(path, exist_ok=True)
-    _run(path, "init", "-q", "-b", "main")
-    _run(path, "config", "user.email", "test@example.com")
-    _run(path, "config", "user.name", "Test")
-    with open(os.path.join(path, "a.txt"), "w", encoding="utf-8") as f:
-        f.write("x\n")
-    _run(path, "add", "a.txt")
-    _run(path, "commit", "-q", "-m", "init")
+    os.makedirs(os.path.dirname(path) or ".", exist_ok=True)
+    shutil.copytree(_template_repo(), path, dirs_exist_ok=True)
     return path
 
 
@@ -3650,6 +3667,26 @@ class PullRequestVerbs(RepoCase):
                               capture_output=True, text=True, env=self.env,
                               stdin=subprocess.DEVNULL, timeout=60)
 
+    def test_create_without_body_or_spec_refuses_and_opens_no_pr(self):
+        proc = _cq(self.repo, "pr", "create", "--base", "main", "--head", "plan/1-x",
+                   "--title", "t", "--json", env=self.env)
+        self.assertEqual(proc.returncode, 2, proc.stdout + proc.stderr)
+        self.assertEqual(json.loads(proc.stdout)["code"], "git-pr-body-empty")
+        self.assertEqual(self._calls(), [])
+
+    def test_create_with_spec_and_no_body_builds_it_from_the_spec(self):
+        spec, specs = self._store_spec()
+        wrote = subprocess.run([*specs, "section", spec, "Problem", "--write"], cwd=self.repo,
+                               input="Um problema real.\n", capture_output=True, text=True,
+                               env=self.env, timeout=60)
+        self.assertEqual(wrote.returncode, 0, wrote.stdout + wrote.stderr)
+        proc = _cq(self.repo, "pr", "create", "--base", "main", "--head", f"plan/{spec}-x",
+                   "--title", "t", "--spec", spec, "--json", env=self.env)
+        self.assertEqual(proc.returncode, 0, proc.stdout + proc.stderr)
+        (call,) = self._calls()
+        self.assertIn("## Problem", call["stdin"])
+        self.assertIn("Um problema real.", call["stdin"])
+
     def test_create_with_an_unknown_spec_opens_no_pr(self):
         spec, specs = self._store_spec()
         proc = _cq(self.repo, "pr", "create", "--base", "main", "--head", "plan/999-x",
@@ -3758,7 +3795,7 @@ class PullRequestVerbs(RepoCase):
                 mock.patch.object(pull, "_branch_ok", return_value=True), \
                 contextlib.redirect_stdout(io.StringIO()) as out:
             code = pull.cmd_pr(SimpleNamespace(action="create", base="main", head="x", title="t",
-                                               body="", spec="1", json=True, **NO_AZURE_FLAGS))
+                                               body="b", spec="1", json=True, **NO_AZURE_FLAGS))
         payload = json.loads(out.getvalue())
         self.assertEqual((code, payload["number"], payload["reason"], payload["message"]),
                          (1, 42, "stamp-failed", "refused"))
@@ -3822,7 +3859,7 @@ class PullRequestVerbs(RepoCase):
                 mock.patch.object(pull, "_branch_ok", return_value=True), \
                 contextlib.redirect_stdout(io.StringIO()) as out:
             code = pull.cmd_pr(SimpleNamespace(action="create", base="main", head="plan/1-x",
-                                               title="t", body="", spec="1", json=True,
+                                               title="t", body="b", spec="1", json=True,
                                                **NO_AZURE_FLAGS))
         self.assertEqual(code, 0, out.getvalue())
         (sets,) = seen

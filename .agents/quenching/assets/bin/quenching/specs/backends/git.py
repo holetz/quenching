@@ -35,6 +35,7 @@ from quenching.common.git import remember_remote_url, remembered_remote_url
 from quenching.common.leak import guard_store_write, patterns, scan_text, store_refusal
 from quenching.specs.backends.base import (BackendRefusal, SpecBackend, artifact_owner,
                                            check_artifact)
+from quenching.specs.backends.lean_cache import LeanCache
 from quenching.specs.parse import PHASES, derive_info, derive_labels, resolve_one
 
 
@@ -508,22 +509,46 @@ class GitBackend(SpecBackend):
     # -- the five primitives --------------------------------------------------- #
     def list_specs(self, phase: str | None = None, lean: bool = False) -> list[dict]:
         snapshot = self._view()
+        cache = None
         if lean:
-            snapshot.preload()
+            cache = LeanCache(self._lean_cache_dir())
+            # Only blobs the cache has not derived yet are read: a warm listing loads no text.
+            cold = [blob for path, blob in snapshot.blobs.items()
+                    if _spec_id(path) is not None and cache.get(blob) is None]
+            if cold:
+                self._texts(cold)
         rows = []
         for spec_id, (spec_phase, path) in self._index(snapshot).items():
             if phase is not None and spec_phase != phase:
                 continue
             row = self._descriptor(spec_id, spec_phase, path)
             if lean:
-                info = derive_info(row, snapshot[path][1])
-                row.update({"title": info["frontmatter"].get("title", ""),
+                blob = snapshot.blobs[path]
+                fields = cache.get(blob)
+                if fields is None:
+                    info = derive_info(row, snapshot[path][1])
+                    fields = {"title": info["frontmatter"].get("title", ""),
+                              "records": derive_labels(info),
+                              "epic": info["frontmatter"].get("epic"),
+                              "workItemType": info["frontmatter"].get("workItemType")}
+                    cache.put(blob, fields)
+                row.update({"title": fields["title"],
                             "state": "closed" if spec_phase == "archive" else "open",
-                            "records": derive_labels(info),
-                            "epic": info["frontmatter"].get("epic"),
-                            "workItemType": info["frontmatter"].get("workItemType")})
+                            "records": list(fields["records"]),
+                            "epic": fields["epic"],
+                            "workItemType": fields["workItemType"]})
             rows.append(row)
+        if cache is not None:
+            cache.save(set(snapshot.blobs.values()))
         return sorted(rows, key=lambda r: (PHASES.index(r["phase"]), r["id"]))
+
+    def _lean_cache_dir(self) -> str | None:
+        """The git directory the `list --lean` cache sits in: untracked, shared by worktrees."""
+        if self.mirror_dir:
+            return self.mirror_dir if os.path.isdir(self.mirror_dir) else None
+        code, out, _ = self._git("rev-parse", "--path-format=absolute", "--git-common-dir")
+        path = out.decode("utf-8", "replace").strip()
+        return path if code == 0 and os.path.isdir(path) else None
 
     def read_spec(self, spec_id: str | int) -> tuple[dict | None, dict]:
         snapshot = self._view()

@@ -205,7 +205,9 @@ ignored notebook — is `ignored.unrecognized` and blocks both.
 A built-in list of unambiguous Python caches applies before the key and cannot be removed by it:
 `.venv`, `venv`, `__pycache__`, `*.py[cod]`, `.pytest_cache`, `.ruff_cache`, `.mypy_cache`,
 `.pyright`, `.tox`, `.nox`, `htmlcov`, `.coverage`, `.coverage.*`, `*.egg-info`, `.eggs`,
-`pip-wheel-metadata`, `.cache`, `.ipynb_checkpoints`, `.hypothesis` and `node_modules`. `build/` and
+`pip-wheel-metadata`, `.cache`, `.ipynb_checkpoints`, `.hypothesis` and `node_modules`, plus the two
+root caches `cq` writes itself, `.quenching/git-base-cache.json` and `.quenching/git-ci-cache.json`, so a
+slot that only holds them is released clean. `build/` and
 `dist/` are deliberately absent because they can hold a file written by hand; a target that
 regenerates them declares them. The key adds to the defaults and never replaces them, so an absent
 key still lets the built-in caches go.

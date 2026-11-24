@@ -401,7 +401,12 @@ writes only the spec store.
 
 **First the gate: re-run whatever the repo's `## Validation` names — on the WORK BRANCH, before
 merging.** Run it from the checkout that carries the work (the worktree or branch this run is
-standing on), so what it grades is the change being proposed.
+standing on), so what it grades is the change being proposed. **One full gate per spec:** under
+`autonomous` the branch takes the base (the merge below) BEFORE this run, so the gate runs once
+over the merged tree and never once before and once after; it runs again only after a
+`[fix-preexistente]` commit. `/quenching-specs execute` does not run the full gate at its end, so
+this is the spec's only full run; the reviewer and the verifier read its `GATE_EXIT` and the CI
+run instead of repeating it.
 
 **A failing check stops the handoff.** Report which check failed and what it printed, leave the
 branch unmerged, and let the human fix it *on the branch* — then this command is re-run. Never hand
@@ -440,10 +445,11 @@ a write, and it is the human's call which way — merging the base in, or `/quen
 rebase, which carries the recorded task subjects through the rewrite. Never do it unasked, and
 never run the gate over a branch you know is behind.
 
-**Under `autonomous` the answer is given, and it is the merge.** A sibling spec merged mid-wave is
-the ordinary way to be behind, and a `needs-human` there is never relaunched. Run
+**Under `autonomous` the answer is given, and it is the merge, taken before the gate.** A sibling spec merged mid-wave is
+the ordinary way to be behind, and a `needs-human` there is never relaunched. Run the count first;
+non-zero, run
 `git merge --no-edit origin/<base>` — a merge, never a rebase, so the task shas stay ancestors and
-the spec-verifier's check 7 accepts them — and then the gate over the merged tree. A conflict only in
+the spec-verifier's check 7 accepts them — and only then the gate, once, over the merged tree. A conflict only in
 the deployed surface (`.agents/quenching/**`, `.claude/skills/**`, `.agents/.quenching-deploy.json`)
 is mechanical: take the base's side (`git checkout-index --stage=3 -f -- <path>`, `git add <path>`), then
 **regenerate before concluding the merge** — `cq deploy --target . --write` — `git add` what it

@@ -18,11 +18,20 @@ class RegenerableRulesTests(unittest.TestCase):
             ".mypy_cache", ".pyright", ".tox", ".nox", "htmlcov", ".coverage", ".coverage.*",
             "*.egg-info", ".eggs", "pip-wheel-metadata", ".cache", ".ipynb_checkpoints",
             ".hypothesis", "node_modules",
+            ".quenching/git-base-cache.json", ".quenching/git-ci-cache.json",
         ))
         rules = ignored.declared_regenerable({})
         for entry in ("build/", "dist/", "nested/build/manual.txt", "nested/dist/manual.txt"):
             with self.subTest(entry=entry):
                 self.assertFalse(ignored.is_regenerable(entry, rules))
+
+    def test_the_git_caches_are_regenerable_only_at_the_root(self):
+        rules = ignored.declared_regenerable({})
+        for entry in (".quenching/git-base-cache.json", ".quenching/git-ci-cache.json"):
+            with self.subTest(entry=entry):
+                self.assertTrue(ignored.is_regenerable(entry, rules))
+                self.assertFalse(ignored.is_regenerable("pkg/" + entry, rules))
+        self.assertFalse(ignored.is_regenerable(".quenching/notes.json", rules))
 
     def test_a_hand_written_coverage_config_is_not_a_cache(self):
         rules = ignored.declared_regenerable({})

@@ -180,7 +180,7 @@ this round's decisions, and `validate` raises no `sp-link-*` finding.
 `quenching-spec-verifier` for each member and, after the PASS, publishes it itself
 (`/quenching-git pr-create autonomous`, then `.agents/quenching/bin/cq git pr merge` on green CI, or on the green local gate where `shared.ci.enforce` relaxes it), with the acceptance rules
 of the spec-orchestrator's protocol, cited and not restated — steps 3 (delegation briefs), 4
-(acceptance only on a spec-verifier PASS, the `execute-done:`/`conclude` two spawns, publish after the PASS,
+(acceptance only on a spec-verifier PASS, one `autonomous` runner spawn per member that develops, executes and concludes, the spec-verifier once before the publish, publish after the PASS,
 one re-spawn) and 5 (retry, idempotency) of `quenching/agents/spec-orchestrator.md`.
 Each prompt is ≤ 1,500 characters, and it OPENS with the fixed text every prompt of that type
 shares — the word `autonomous`, the base, the model passed explicitly and the sentence "No git
