@@ -47,7 +47,7 @@ there is no generic argv passthrough. `components` never receives the workspace 
 because its `--root` names the surface root holding `commands/`; it runs with the workspace as cwd
 and finds the nearest `.claude/` from there. A new parser option on a catalogued verb is exposed without
 editing the catalog; a new verb requires a new row. Interactive or long-running entry points,
-including `specs serve`, `specs mcp`, `portal serve` and `codex implement`, are not catalogued.
+including `specs serve`, `specs mcp` and `portal serve`, are not catalogued.
 
 | Class | Meaning | MCP annotation |
 | --- | --- | --- |

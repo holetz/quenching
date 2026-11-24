@@ -4,7 +4,7 @@ okf_version: "0.2"
 
 # Every repository, the same shape
 
-**quenching** is a command surface for teams that build with AI agents, deployed into a repository for Claude Code, Codex and OpenCode. Point it at a repository and its knowledge, its plans, its
+**quenching** is a command surface for teams that build with AI agents, deployed into a repository for Claude Code and OpenCode. Point it at a repository and its knowledge, its plans, its
 design source, automation, operations and verification each converge onto one canonical, verifiable structure — probed first, planned
 once, changed only on your OK.
 

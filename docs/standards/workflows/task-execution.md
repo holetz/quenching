@@ -453,7 +453,7 @@ A per-task executor sub-agent is permitted when the task **declares `files:`** a
 
 ### The small-tier rung
 
-The executor may run on `haiku` (Codex: `gpt-6-luna`) for ONE task when **all** of ADR 0014's
+The executor may run on `haiku` for ONE task when **all** of ADR 0014's
 conditions hold:
 
 1. **Protected oracle** — an executable `verify:`, and the tests it runs sit outside the task's

@@ -74,7 +74,7 @@ The precedence, lowest to highest, is `default` < `user` < `repository` < `branc
 `cq config show --effective [--json]` prints every key with its effective value and the layer that
 supplied it, plus each layer's path, `present` and `unparseable` state (the branch layer also
 carries `applies`). A key is one row per `namespace.key`, because layers replace a key whole; the
-exception is a key whose default lives in code as data (`shared.codex`, `shared.autonomy`,
+exception is a key whose default lives in code as data (`shared.autonomy`,
 `shared.worktreeSlots`, `shared.workHost` and `shared.contextBudgets`), shown leaf by leaf
 with `default` where no layer declares the leaf. A key absent from every layer and without a
 default in code does not appear. The verb only reads: an unreadable layer is reported on its row of
@@ -95,9 +95,9 @@ Where a local value lands depends on the key's **scope**, declared once in the k
   `localConfig.ignored`, and `show --effective` names it in `warnings`; an editor shows the key
   locked to the project layer.
 - `machine` — a property of the machine the checkout runs on: `shared.worktreeSlots` (all but
-  `setupIdempotent`), `shared.workHost`, `shared.contextBudgets`, `shared.cache.ttlMinutes` and the Codex quota ceilings. The
+  `setupIdempotent`), `shared.workHost`, `shared.contextBudgets`, `shared.cache.ttlMinutes`. The
   local value wins over every file.
-- `either` — a preference the team may fix: `shared.autonomy`, the rest of `shared.codex`,
+- `either` — a preference the team may fix: `shared.autonomy`,
   the rest of `shared.cache`, `shared.okfValidate`, `specs.chat`. The repository wins; the local value fills a leaf the
   repository leaves out, and beats the user layer.
 
@@ -129,7 +129,7 @@ silences `cq specs doctor`'s `sp-config-setup-idempotence`. See
 ## The seed and the missing-keys check
 
 `cq config init [--write]` creates the configuration file (`.agents/quenching.json` unless the legacy file is the one read) with every adjustable default spelled
-out: `shared.codex` (including `executor`), `shared.autonomy`, `shared.contextBudgets`,
+out: `shared.autonomy`, `shared.contextBudgets`,
 `shared.okfValidate`, `shared.workHost` (its leaves with a non-null default; `target`,
 `dockerContext` and `runner` stay absent because the loader warns on a null), `specs.chat`,
 `specs.estimate.writeOnly` (empty), the
@@ -221,7 +221,7 @@ Ownership follows the meaning of the key, not the module that happens to read it
 | Namespace | Owned declarations | Boundary |
 | --- | --- | --- |
 | root | `backend` | legacy/provider metadata only; provider selection comes from `origin` |
-| `shared` | `worktreeSetup`, `sharedPaths`, `regenerablePaths`, `hooks`, `profiles`, `gitConventions`, `gitIdentity`, `guidance`, `autonomy`, `workHost`, `okfValidate`, `contextBudgets`, `codex`, `cache` | settings used by more than one local surface or by isolation |
+| `shared` | `worktreeSetup`, `sharedPaths`, `regenerablePaths`, `hooks`, `profiles`, `gitConventions`, `gitIdentity`, `guidance`, `autonomy`, `workHost`, `okfValidate`, `contextBudgets`, `cache` | settings used by more than one local surface or by isolation |
 | `specs` | Azure state and placement mappings, `subjects`, `tagCatalog`, `workItemTypes`, `chat`, `estimate`, `artifactLanguage`, `card`, `cardAt` | provider-owned plan lifecycle and proposal conventions |
 | `delivery` | `provider` | the delivery front's explicit provider declaration; it chooses no pipeline policy |
 | `ops` | `opsRoot`, `router`, `registry` | operations inventory, router and generated registry |
@@ -232,14 +232,11 @@ envelope. It does not interpret a front's values. Each adapter validates and res
 namespace. `ops`, `proof`, and `git` consume the common boundary directly; they do not import the
 specs adapter to obtain shared configuration.
 
-## The `shared.codex` block
+## The removed `shared.codex` block
 
-`shared.codex` configures `cq codex` (`codex/config.py`): `maxUsedPercent`
-(`{primary: 80, secondary: 90}`), `timeoutSeconds` (`900`) and the `executor` object (`enabled`
-defaults to `false`). Codex is opt-in: an absent block calls it nowhere. `crossReview` and `model`
-belonged to the removed Codex cross review; a leftover value is ignored and named in the warnings. Its keys and their effect are owned by
-[codex-pillar.md](../architecture/codex-pillar.md); a leaf of the wrong shape falls back to its
-default and is named in the payload's warnings, and `cq config show --effective` lists every leaf.
+`shared.codex` configured the Codex executor, which was removed ([ADR 0020](../../decisions/0020-remove-the-codex-executor-and-harness.md)).
+A leftover block in a target's configuration is accepted and named in the warnings as obsolete for
+one version; it is never seeded, never read and never refused.
 `delivery.provider` is read by `delivery/config.py`; `specs.artifactLanguage`, `specs.card` and
 `specs.cardAt` by `specs/config.py` (the last three may also sit on the `quenching` branch).
 
@@ -502,5 +499,5 @@ destination namespace named by `sp-config-unscoped`, then run the owning front's
 configuration is ready only when the refusal disappears and the front-specific defaults or
 required declarations are evaluated normally.
 
-This standard defines the contract for every projection: the Codex projection preserves the same
+This standard defines the contract for every projection: every projection preserves the same
 ownership, refusal payload and no-fallback rule and reads the same configuration file.

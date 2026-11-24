@@ -139,6 +139,6 @@ not an instruction for the align or status body to invoke an unbounded deploymen
 ## Boundary with delivery implementation
 
 This standard declares the surface and its admission and ownership rules. It does not create the
-`cq delivery` route, command bodies, tests or Codex translation. Those consumers may add provider
+`cq delivery` route, command bodies, or tests. Those consumers may add provider
 adapters and a route-specific vocabulary only when they preserve this bounded tree, the common
 front mold and the ownership table above.

@@ -2,7 +2,7 @@
 type: standard
 title: Windows without administrator rights — the supported prerequisites and what the port covers
 description: What "supported on Windows without administrator rights" means for the cq tool, the user-scope prerequisites, the three code paths that were POSIX-only (process groups, symlinks, the PATH launcher) and the one CI job that exercises them
-resource: quenching/assets/bin/quenching/codex/probe.py, quenching/assets/bin/quenching/common/tools.py, quenching/assets/bin/quenching/session/live.py, quenching/assets/bin/quenching/git/worktree.py, quenching/assets/bin/quenching/deploy/tree.py, quenching/assets/bin/quenching/opensource/readiness.py, quenching/assets/bin/quenching/git/preflight.py, quenching/assets/bin/quenching/specs/chat.py, .github/workflows/ci.yml
+resource: quenching/assets/bin/quenching/common/tools.py, quenching/assets/bin/quenching/session/live.py, quenching/assets/bin/quenching/git/worktree.py, quenching/assets/bin/quenching/deploy/tree.py, quenching/assets/bin/quenching/opensource/readiness.py, quenching/assets/bin/quenching/git/preflight.py, quenching/assets/bin/quenching/specs/chat.py, .github/workflows/ci.yml
 tags: [windows, platform, prerequisites, junction, process-group]
 timestamp: 2026-11-23
 audience: both
@@ -25,10 +25,6 @@ the official versioned ZIP under `%LOCALAPPDATA%`, without elevation.
 
 **What the port covers:**
 
-- **Process groups.** `group_kwargs()` and `stop()` in `codex/probe.py` own starting a child in its
-  own group and stopping its whole tree: `start_new_session` and `os.killpg` on POSIX,
-  `CREATE_NEW_PROCESS_GROUP` and `taskkill /F /T` on Windows. `implement.py` and `review.py` call
-  them and name no POSIX signal.
 - **External tools without `cmd.exe`.** `common/tools.spawn_argv` leaves every argv alone on POSIX;
   on Windows, an `az` call is resolved to the `python.exe` that ships beside `az.cmd` and runs as
   `python.exe -IBm azure.cli <argv>`. A title carrying `&`, `%` or quotes reaches the CLI intact,

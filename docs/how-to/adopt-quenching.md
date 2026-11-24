@@ -42,7 +42,7 @@ uvx --from "git+https://github.com/holetz/quenching@<tag>#subdirectory=quenching
 `Git operation failed`. To upgrade an installed target, drop `--modules`: the recorded manifest
 keeps its modules, while `--modules core` narrows a wider install and deletes the rest.
 
-`--modules` takes `core` (default), `all` or a comma list; `--harness` takes `claude`, `codex`,
+`--modules` takes `core` (default), `all` or a comma list; `--harness` takes `claude`,
 `opencode` or `none`; `--runtime uvx` writes a pinned shim instead of vendoring the runtime. The
 target keeps `AGENTS.md` and `.agents/` as its source; `.agents/quenching/` and `.claude/skills/`
 are generated, and every command is `/quenching-<front>-<verb>`. Deploy is installation, not

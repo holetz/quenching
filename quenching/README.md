@@ -98,7 +98,7 @@ these tables and `skills/**` disagree
 
 **The listing cost.** All thirteen descriptions are resident in every session, so the descriptions are
 the always-on cost of the plugin. Each router's description is a map of intent per flow with pt-BR and
-English triggers, at most 1,024 characters (the Agent Skills limit Codex and OpenCode read; Claude's own
+English triggers, at most 1,024 characters (the Agent Skills limit OpenCode reads; Claude's own
 cap is 1,536). Today the thirteen total about 6.4 thousand characters (about 1.6 thousand tokens); the
 ceiling is 13 × 1,024 = 13.3 thousand characters (about 3.3 thousand tokens). Before the non-core fronts
 had routers, the six resident descriptions were about 1.4 thousand characters.
@@ -415,42 +415,6 @@ A URI resolves only to those two fixed files or to a `.md` inside `docs/standard
 traversal or an unknown URI is a JSON-RPC error (`-32602` bad parameters, `-32002` not found), never a file
 read. The same 60,000-character ceiling cuts an oversized answer with `truncated: true` and a `hint`.
 
-### O executor Codex
-
-Step 5b of `/quenching-specs execute` hands **one task at a time** to Codex when the code
-admits it; Claude keeps the self-review, the `verify:`, the commit, the tick and the verifier. It
-is **off by default**, under `shared.codex.executor` in `.agents/quenching.json`
-(`executor.enabled: true` is its opt-in); a repository that declares nothing never calls Codex, and
-`cq config init` seeds that same value. There is no Codex cross review: a leftover
-`shared.codex.crossReview` or `shared.codex.model` is ignored and named in `warnings`.
-
-- **Quota probe** — `cq codex probe [--json]` answers whether Codex may be called now, without
-  spending quota: exit `0` available, `1` unavailable (a window over its ceiling, no `codex` on
-  `PATH`), `2` unknown (no readable source or a stale snapshot). The ceilings default to
-  `maxUsedPercent` `80` (primary) and `90` (secondary), and one call to `timeoutSeconds` `900`.
-
-- **Eligibility** — `cq codex eligible --spec <id> --task <tid> --json`: an open task that declares
-  `files:`, writes nothing under `docs/` or `knowledge/`, and is small (bytes of its `files:` / 4 ≤
-  `maxTaskTokens`, `20000`) or carries a `verify:`. A cheap model (`modelSmall`, `modelVerified`)
-  at `reasoningEffort` `medium`.
-- **Quota** — one dispatch at a time, only under `maxUsedPercent − reservePercent` (`80 − 10`) in
-  both windows. A task that moves the primary window by more than `stopLossPercent` (`15` points)
-  keeps its diff and turns the executor off for the rest of the run.
-- **Failure** — a red `verify:` is fixed by Claude on top of Codex's diff; a timeout, a Codex error
-  or a spent quota falls back to Claude. Codex never gets a second attempt.
-
-**Bypass, and its risk.** `cq codex implement` always runs `codex exec
---dangerously-bypass-approvals-and-sandbox -C <worktree>`; Codex's native sandbox is never asked
-for, because most machines lack the admin rights it needs. The bounds are the plugin's: `--ignore-user-config`, an
-environment without `GH_TOKEN`, `GITHUB_TOKEN`, `AWS_*`, `AZURE_*` or `GOOGLE_*`, a prompt that
-forbids git, and a **git guard** that compares the worktree's `HEAD`, branch, reflog, stash
-and `git status` before and after — any divergence or a path outside `files:` is exit `2`,
-the diff is discarded inside `files:` and Claude writes the task. What remains is a command run
-outside the worktree that git cannot see. There is no sandbox setting: a leftover
-`shared.codex.executor.sandbox` or `windowsSandbox` is ignored.
-
-The Codex surface (`quenching-codex`) has no executor: a Codex run never launches Codex.
-
 The shared facts live once — the spec document, the thirteen canonical sections, the
 gates, the record vocabulary, and the `cq specs` surface in
 [`specs-develop/spec-driven.md`](references/specs-develop/spec-driven.md),
@@ -529,8 +493,7 @@ substitution, conductor reachability and description routing. Each check is a **
 session** owned by the command that changes the surface; the default is the body subset and
 spoken routing is opt-in (`--only 3`).
 
-**The model policy is conservative — judgment is never downgraded:** the small tier (`haiku` in
-Claude, `gpt-6-luna` in Codex) writes product code only as the executor of ONE testable task —
+**The model policy is conservative — judgment is never downgraded:** the small tier (`haiku`) writes product code only as the executor of ONE testable task —
 an executable `verify:` whose tests sit outside the task's `files:`, a disposable worktree,
 nothing under `/docs/`, and a projected context at or under 80k (`cq specs estimate --task`
 reports `smallTierEligible`). One attempt; a failed `verify:` returns the task to the session
@@ -592,7 +555,7 @@ keeps its modules, while `--modules core` narrows a wider install and deletes th
 | Option | Values |
 | --- | --- |
 | `--modules` | `core` (default: `quenching-specs` plus `quenching-align` — specs, git, knowledge, components), `all`, or a comma list of modules; `specs` is always included because it owns the one `cq` |
-| `--harness` | `claude`, `codex`, `opencode` (default: all three) or `none`; `claude` also serves the GitHub Copilot harness (below) |
+| `--harness` | `claude`, `opencode` (default: both) or `none`; `claude` also serves the GitHub Copilot harness (below) |
 | `--runtime` | `vendor` (default, offline) copies the runtime; `uvx` writes a shim pinned to the release tag |
 | `--profiles` | overrides the derived `shared.profiles.installed` |
 | `--check` | exit 1 on drift instead of writing |

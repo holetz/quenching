@@ -128,7 +128,7 @@ Two rules follow:
 ## Across harnesses and models
 
 `scripts/run_evals.py` runs the same committed case sets against any harness and model through the
-profiles in `scripts/eval_harnesses.json` (`claude`, `codex`, `opencode`, or a custom file passed
+profiles in `scripts/eval_harnesses.json` (`claude`, `opencode`, or a custom file passed
 with `--harnesses`). It keeps both arms: the `with` arm loads the quenching modules and reaches
 `cq` on its `PATH`, the `without` arm loads nothing and gets no path to the tool.
 
