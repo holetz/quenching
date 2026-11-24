@@ -230,6 +230,15 @@ class TaskExecutionContractTests(unittest.TestCase):
         self.assertIn("Without `autonomous`, execute and conclude are two spawns.", orchestrator)
         self.assertIn("still returns `execute-done:`", orchestrator)
 
+    def test_autopilot_economy_mode_cites_the_single_autonomous_spawn(self):
+        autopilot = " ".join(
+            (ROOT / "quenching/skills/quenching-specs/references/autopilot.md").read_text(encoding="utf-8").split())
+
+        self.assertIn(
+            "one `autonomous` runner spawn per member that develops, executes and concludes, "
+            "the spec-verifier once before the publish", autopilot)
+        self.assertNotIn("the `execute-done:`/`conclude` two spawns", autopilot)
+
     def test_worker_budget_is_a_size_estimate_not_a_stop(self):
         runner = " ".join(RUNNER.read_text(encoding="utf-8").split())
 
