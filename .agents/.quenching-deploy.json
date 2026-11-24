@@ -150,7 +150,7 @@
 
     ".agents/quenching/assets/bin/quenching/deploy/tree.py": "1158cceb008ec7b0c4040feea2f6e19fb7784030ada98690c5d6b5ef348929a5",
 
-    ".agents/quenching/assets/bin/quenching/git/__init__.py": "8501760dcf5ab3b77195533888acbe6fe7f2795ad387cedbe869be8aeac11e4b",
+    ".agents/quenching/assets/bin/quenching/git/__init__.py": "8bc51f3f279e9269b53e485515e81d003684f7bb22ee558502f5449db2744e19",
 
     ".agents/quenching/assets/bin/quenching/git/audit.py": "38f08778d3262768688e63da0bd647f180a7934bfe70b7391ec260c06d270792",
 
@@ -170,7 +170,7 @@
 
     ".agents/quenching/assets/bin/quenching/git/pr.py": "747e5dbffa41d6226a9a056693d0796a6a385969852424d3732ca4d7a904b5fd",
 
-    ".agents/quenching/assets/bin/quenching/git/preflight.py": "a7e20b590ef392e9ec88b1f91af370b6ab25555ec31f40d343bb13b01a1cf4a9",
+    ".agents/quenching/assets/bin/quenching/git/preflight.py": "a349bf6086336b559341c84c3b92d97ff9139799b284685677315be70598cd91",
 
     ".agents/quenching/assets/bin/quenching/git/prune.py": "2674ba0be750de026c1438cd6b500cc11990fdb1820c786d48ae8666ffa05863",
 
@@ -216,7 +216,7 @@
 
     ".agents/quenching/assets/bin/quenching/knowledge/validate.py": "6e673e47c5dbf5ed925da8cfef8703e71acc62ca9817266512b50e1aa661aa3e",
 
-    ".agents/quenching/assets/bin/quenching/mcp/catalog.py": "cfc8c89d6ae80806d5becd424317d9966d99a0071dc44662b5f61f79a0f4757c",
+    ".agents/quenching/assets/bin/quenching/mcp/catalog.py": "cd747134dfa15bb93ced66165eb2bac6ae8304d50b6818f93428e4604ae16945",
 
     ".agents/quenching/assets/bin/quenching/mcp/cli.py": "168d60922494389e5c02eb624e6178d33ab76f73125b67521e010d08f5e43b55",
 
