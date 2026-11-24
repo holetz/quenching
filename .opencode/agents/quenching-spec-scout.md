@@ -8,6 +8,7 @@ permission:
     "*": ask
     ".agents/quenching/bin/cq specs show *": allow
     ".agents/quenching/bin/cq components read *": allow
+    "git ls-files *": allow
   "quenching_*": deny
   quenching_specs_show: allow
   quenching_components_read: allow
