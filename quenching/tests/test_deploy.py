@@ -19,12 +19,14 @@ except ModuleNotFoundError:
     import _paths  # noqa: F401
 from quenching.common.deploy import dumps_hash_manifest
 from quenching.deploy import translate
+from quenching.deploy import cli as deploy_cli
 from quenching.deploy.cli import main as deploy_main
 
 PLUGIN_ROOT = pathlib.Path(__file__).resolve().parent.parent
 REPO_ROOT = PLUGIN_ROOT.parent
 REAL = PLUGIN_ROOT / "assets" / "bin" / "cq"
 VERSION = (PLUGIN_ROOT / "VERSION").read_text().strip()
+REAL_PRECOMPILE = deploy_cli._precompile
 
 
 def launcher(path) -> list[str]:
@@ -48,6 +50,10 @@ class Deploy(unittest.TestCase):
         env = mock.patch.dict(os.environ, {"XDG_CONFIG_HOME": str(self.xdg), "OPENCODE_CONFIG": ""})
         env.start()
         self.addCleanup(env.stop)
+        # A real `compileall` costs a subprocess per write; the tests that prove it stop this stub.
+        self.precompile = mock.patch("quenching.deploy.cli._precompile", return_value=None)
+        self.precompile.start()
+        self.addCleanup(self.precompile.stop)
 
     def git(self, *argv):
         return subprocess.run(["git", "-C", str(self.target), *argv], check=True,
@@ -260,6 +266,43 @@ class Deploy(unittest.TestCase):
             self.assertTrue((self.target / rel).exists(), rel)
         settings = json.loads((self.target / ".claude/settings.json").read_text())
         self.assertEqual({"permissions": {"allow": ["Read"]}}, settings)
+
+    def pycs(self) -> set[str]:
+        root = self.target / ".agents/quenching"
+        return {p.relative_to(root).as_posix() for p in root.rglob("*.pyc")}
+
+    def test_a_write_precompiles_the_payload_so_a_first_call_writes_no_bytecode(self):
+        self.precompile.stop()
+        code, payload = self.run_deploy("--modules", "core", "--write")
+        self.assertEqual(0, code)
+        self.assertEqual([], [w for w in payload["warnings"] if "bytecode" in w])
+        compiled = self.pycs()
+        self.assertTrue(any(p.startswith("assets/bin/quenching/common/__pycache__/") for p in compiled))
+        self.assertTrue(any(p.startswith("assets/hooks/") for p in compiled), compiled)
+        status = self.target_cq("components", "status", "--json")
+        self.assertEqual(0, status.returncode, status.stderr)
+        self.assertEqual(compiled, self.pycs())
+        manifest = (self.target / ".agents/.quenching-deploy.json").read_text(encoding="utf-8")
+        self.assertNotIn("__pycache__", manifest)
+        self.assertEqual((0, []), (lambda r: (r[0], r[1]["changes"]))(
+            self.run_deploy("--modules", "core", "--check")))
+
+    def test_a_precompile_that_cannot_run_is_a_warning_not_a_refusal(self):
+        self.precompile.stop()
+        with mock.patch.object(deploy_cli, "_precompile", side_effect=lambda target, _python:
+                               REAL_PRECOMPILE(target, [str(self.target / "no-such-python")])):
+            code, payload = self.run_deploy("--modules", "core", "--write")
+        self.assertEqual(0, code)
+        self.assertTrue(payload["written"])
+        self.assertTrue(any("bytecode was not precompiled" in w for w in payload["warnings"]),
+                        payload["warnings"])
+
+    def test_remove_takes_the_bytecode_of_every_removed_module_with_it(self):
+        self.precompile.stop()
+        self.assertEqual(0, self.run_deploy("--modules", "core", "--write")[0])
+        self.assertTrue(self.pycs())
+        self.assertEqual(0, self.run_deploy("--remove", "--write")[0])
+        self.assertFalse((self.target / ".agents/quenching").exists())
 
     def test_remove_refuses_a_target_that_was_never_deployed(self):
         code, payload = self.run_deploy("--remove", "--write")
