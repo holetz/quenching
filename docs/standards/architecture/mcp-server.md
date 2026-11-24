@@ -2,12 +2,12 @@
 type: standard
 title: The quenching MCP server
 description: A closed parser-derived tool catalog over the cq core, three tool classes, bounded reference resources and a stdio launcher packaged with the plugin layout intact
-resource: quenching/assets/bin/quenching/mcp/**, quenching/assets/bin/quenching/specs/mcp.py, quenching/pyproject.toml, quenching/.mcp.json
+resource: quenching/assets/bin/quenching/mcp/**, quenching/assets/bin/quenching/specs/mcp.py, quenching/assets/bin/quenching/components/mcp_citations.py, quenching/pyproject.toml, quenching/.mcp.json
 tags: [architecture, mcp, distribution, tooling]
 timestamp: 2026-11-24
 audience: both
 authority: current
-source: specs 2110, 1020213 and 309; protocol, catalog, resources and installed-launcher tests
+source: specs 2110, 1020213, 309 and 417; protocol, catalog, resources and installed-launcher tests
 maintainer: quenching
 ---
 
@@ -59,6 +59,17 @@ group names no verb and is prose. The gate's `MCP catalog coverage` check fails 
 citation. A parameter that would move a row out of its class is hidden from the tool rather than
 reclassifying it: `specs_artifact_read` takes no `out`, and `specs_handoff_write` takes no `push`,
 which stays with `specs_push`.
+
+**Citation form.** A body cites a covered verb as the tool it calls, by its unprefixed name with
+the `inputSchema`'s argument names — `specs_status(spec=<id>)` — never as `cq <pillar> <verb>`
+([tool-resolution.md](/quenching/references/align/tool-resolution.md) §Citing a verb in a body). The
+CLI stays where no tool covers the verb and on a line marked `cli: <reason>`, from a closed set:
+`root` (the call must act on a working tree that is not the server's workspace, which no tool
+argument can name), `atomic` (a multi-section write), `by` (an `approved` stamp other than
+`by=human`), `flag` (a flag the tool does not publish) and `fallback` (a CLI synopsis beside its
+tool). `cq components lint` holds the form with `sk-cq-cli-citation` and `sk-mcp-unknown-tool` over
+the fronts `components/mcp_citations.py`'s `ENFORCED` names; each front joins it when its bodies are
+converted.
 
 | Class | Meaning | MCP annotation |
 | --- | --- | --- |
