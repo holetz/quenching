@@ -239,6 +239,19 @@ class TaskExecutionContractTests(unittest.TestCase):
             "the spec-verifier once before the publish", autopilot)
         self.assertNotIn("the `execute-done:`/`conclude` two spawns", autopilot)
 
+    def test_verifier_checks_are_closed_to_their_named_evidence(self):
+        verifier = " ".join(
+            (ROOT / "quenching/agents/spec-verifier.md").read_text(encoding="utf-8").split())
+
+        self.assertIn("**Each check is closed.**", verifier)
+        self.assertIn(
+            "The spec's `run` and `outcome` records, and the `verifier=` stamp a previous pass wrote, "
+            "are never evidence for any check", verifier)
+        self.assertIn(
+            "Counts: the `Outcome` entry of the payload's `sections` (`state: filled`).", verifier)
+        self.assertIn("the `outcome` record (absent or empty is no FAIL by itself)", verifier)
+        self.assertEqual(verifier.count("Counts:"), 5)
+
     def test_worker_budget_is_a_size_estimate_not_a_stop(self):
         runner = " ".join(RUNNER.read_text(encoding="utf-8").split())
 
