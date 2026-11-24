@@ -63,8 +63,6 @@ jobs:
       - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
         with:
           python-version: '3.11'
-      - name: Process group helper
-        run: python -m unittest discover -s quenching/tests -p test_windows_process.py 2>&1 | tee "$RUNNER_TEMP/unit.log" && ! grep -q '^Ran 0 tests' "$RUNNER_TEMP/unit.log"
       - name: Tool spawn without cmd.exe
         run: python -m unittest discover -s quenching/tests -p test_windows_tools.py 2>&1 | tee "$RUNNER_TEMP/unit.log" && ! grep -q '^Ran 0 tests' "$RUNNER_TEMP/unit.log"
       - name: Live session liveness

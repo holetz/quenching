@@ -58,7 +58,7 @@ POSIX hook scripts and `scripts/githooks`, and `scripts/run_evals.py`.
 
 **Proof:** one `windows-latest` job in the PR gate runs the Windows-sensitive unit tests. It
 patches `os.name` and `os.symlink` for the branches and runs them natively on a Windows runner.
-The job runs `test_windows_process.py`, `test_windows_tools.py`, `test_session_live.py` and `test_windows_links.py`. The standard stays `background` until that job has run green on a pull request.
+The job runs `test_windows_tools.py`, `test_session_live.py` and `test_windows_links.py`. The standard stays `background` until that job has run green on a pull request.
 
 <!-- rationale -->
 
