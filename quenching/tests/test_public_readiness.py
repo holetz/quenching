@@ -317,7 +317,7 @@ class AdversarialTest(ReadinessCase):
         commit(self.root, "a.txt", "x\n")
         sha = commit(self.root, "b.txt", "y\n")
         clone = os.path.join(self.tmp.name, "shallow")
-        git(self.tmp.name, "clone", "-q", "--depth", "1", "file://" + self.root, clone)
+        git(self.tmp.name, "clone", "-q", "--depth", "1", pathlib.Path(self.root).as_uri(), clone)
         self.root = clone
         payload, code = self.gitleaks([{"File": "b.txt", "Commit": sha}])
         self.assertEqual(2, code)
