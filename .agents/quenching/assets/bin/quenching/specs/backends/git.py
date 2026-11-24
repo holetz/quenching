@@ -594,14 +594,19 @@ class GitBackend(SpecBackend):
                     info["_git_blob"] = blob
 
     def create_spec(self, phase: str, text: str, spec_id: int | str | None = None,
-                    card: int | None = None) -> str:
+                    card: int | None = None, push: bool = True) -> str:
         """Store a new spec.
 
         With a card provider and no explicit ID, the card is created FIRST (one request) and
         its native number becomes the spec's ID. `card=<n>` adopts an existing tracker item
         instead: the document is written under that number, then the item is rewritten to the
         thin card. `spec_id` alone is the hook for an ID the caller already owns; with none of
-        them the branch counter allocates one under the same compare-and-swap."""
+        them the branch counter allocates one under the same compare-and-swap.
+
+        `push=False` is the capture path: the document lands in the clone's local pending commit
+        and the sync (`cq specs push`, `cq git push`, `cq git pr create`) sends it, so a creation
+        costs no push. The default keeps the write-through contract the migration and the tests'
+        fixtures rely on."""
         from quenching.specs import cards
         text = guard_store_write(text, self.repo_root, None, BackendRefusal)
         client = self.card()
@@ -624,7 +629,7 @@ class GitBackend(SpecBackend):
                 raise
             created_card = True
         try:
-            locator = self._create(phase, text, spec_id)
+            locator = self._create(phase, text, spec_id, push)
         except BackendRefusal as exc:
             if created_card:
                 exc.err["message"] = (f"{exc.err.get('message', '')}; the card #{spec_id} was "
@@ -639,7 +644,7 @@ class GitBackend(SpecBackend):
                 raise cards.card_refusal(spec_id, "rewritten as a thin card", exc.err)
         return locator
 
-    def _create(self, phase: str, text: str, spec_id: int | str | None) -> str:
+    def _create(self, phase: str, text: str, spec_id: int | str | None, push: bool = True) -> str:
         allocated: dict[str, int] = {}
 
         def apply(snapshot):
@@ -660,7 +665,16 @@ class GitBackend(SpecBackend):
             return {self._path(phase, new_id): text,
                     COUNTER_PATH: f"{max(counter, new_id + 1)}\n"}, None
 
-        self._store(apply, lambda: f"create {allocated['id']}")
+        if push:
+            self._store(apply, lambda: f"create {allocated['id']}")
+        else:
+            # A local pending write, like `write_specs`. `_store_local` never fetches, so the tip
+            # is brought up to date here through the same TTL cache as any read: the id is
+            # allocated over the remote's counter, and a clone that raced inside the cache window
+            # is refused at the push, never overwritten.
+            if not self.read_only:
+                self._tip()
+            self._store(apply, lambda: f"create {allocated['id']}", sync=False)
         return LOCATOR_PREFIX + self._path(phase, allocated["id"])
 
     def import_specs(self, items: list[tuple[int, str, str]],

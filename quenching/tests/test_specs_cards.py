@@ -286,7 +286,7 @@ class CardTransitions(GitStoreFixture):
         self.assertEqual(approved, self.remote_file("specs/10.md"))
         self.assertIsNone(syncing._pending())
 
-    def test_a_create_whose_sync_carries_a_failed_card_still_returns_its_spec(self):
+    def test_a_create_is_local_and_the_push_carries_the_failed_card(self):
         backend, fake = self._spec()
         info, _ = backend.read_spec(10)
         backend.write_spec(info, info["text"].replace("- [ ] 1.1 first", "- [x] 1.1 first"))
@@ -294,6 +294,7 @@ class CardTransitions(GitStoreFixture):
         buf = io.StringIO()
         args = argparse.Namespace(name="Eleven", title=None, verification=None, subject=None,
                                   type=None, tags=None, complexity=None, card=None, json=True)
+        before = self.remote_tip()
         with mock.patch.object(create_mod, "open_backend", lambda _r: (backend, {})), \
                 mock.patch.object(create_mod.sys, "stdin", io.StringIO("")), \
                 contextlib.redirect_stdout(buf):
@@ -302,9 +303,12 @@ class CardTransitions(GitStoreFixture):
         self.assertEqual(0, code, got)
         self.assertEqual(11, got["id"])                  # the new spec and its card exist once
         self.assertEqual([11], [c[1] for c in fake.calls if c[0] == "create"])
-        self.assertEqual([10], [f["id"] for f in got["cardFailures"]])
+        self.assertNotIn("cardFailures", got)            # nothing synced, so nothing to report
+        self.assertEqual(before, self.remote_tip())      # the capture pushed nothing
+        backend.push()
         self.assertIn("specs/11.md", _sh(self.remote, "ls-tree", "-r", "--name-only",
                                          "quenching"))
+        self.assertEqual([10], [f["id"] for f in backend.last_sync["cardFailures"]])
 
     def test_a_batch_costs_one_request_per_changed_spec(self):
         fake = FakeCard(next_number=20)
