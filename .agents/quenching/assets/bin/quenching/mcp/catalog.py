@@ -80,6 +80,24 @@ CATALOG: dict[str, Row] = {
     **_rows("opensource", "read", "doctor", "status", "readiness"),
     **_rows("opensource", "write", "apply"),
     **_rows("codex", "read", "eligible", "probe"),
+    # The verbs skill and agent bodies cite beyond the hand-written specs tools.
+    **_rows("specs", "read", "config", "validate", "parallel", "estimate", "handoff facts",
+            "artifact list"),
+    # `--out` would write a file from a read tool: the artifact comes back in the payload.
+    "specs_artifact_read": Row("specs", ("artifact", "read"), "read", hidden=frozenset({"out"})),
+    **_rows("specs", "write", "reconcile", "tags", "verification", "artifact write"),
+    # `--push` would publish from a write tool: publishing stays `specs_push`'s.
+    "specs_handoff_write": Row("specs", ("handoff", "write"), "write",
+                               hidden=frozenset({"push"})),
+    "specs_artifact_rm": Row("specs", ("artifact", "rm"), "write", True),
+    **_rows("components", "read", "status"),
+    **_rows("components", "write", "bridge", "migrate"),
+    **_rows("proof", "write", "readme"),
+    **_rows("git", "read", "worktree slots"),
+    **_rows("git", "write", "worktree acquire", "refresh"),
+    "git_worktree_release": Row("git", ("worktree", "release"), "write", True),
+    **_rows("design", "write", "render", "import"),
+    **_rows("security", "read", "leak"),
 }
 
 

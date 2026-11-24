@@ -7,7 +7,7 @@ tags: [architecture, mcp, distribution, tooling]
 timestamp: 2026-11-24
 audience: both
 authority: current
-source: specs 2110 and 1020213; protocol, catalog, resources and installed-launcher tests
+source: specs 2110, 1020213 and 309; protocol, catalog, resources and installed-launcher tests
 maintainer: quenching
 ---
 
@@ -50,10 +50,20 @@ and finds the nearest `.claude/` from there. A new parser option on a catalogued
 editing the catalog; a new verb requires a new row. Interactive or long-running entry points,
 including `specs serve`, `specs mcp`, `portal serve` and `codex implement`, are not catalogued.
 
+**Catalog coverage.** Every `cq <pillar> <verb>` that a body under `quenching/skills/**` or
+`quenching/agents/**` cites has a tool: a catalog row, a hand-written specs tool (whose verb path
+`specs/mcp.py`'s `COVERS` names), or an entry of `quenching/mcp/coverage.py`'s `EXCEPTIONS`, which
+carries its reason (`deploy`, `modules`, `mcp`, `specs mcp`, `specs serve`, `portal serve`,
+`codex implement`). The verb path is what the pillar's parser consumes, so a citation that ends on a
+group names no verb and is prose. The gate's `MCP catalog coverage` check fails on any other
+citation. A parameter that would move a row out of its class is hidden from the tool rather than
+reclassifying it: `specs_artifact_read` takes no `out`, and `specs_handoff_write` takes no `push`,
+which stays with `specs_push`.
+
 | Class | Meaning | MCP annotation |
 | --- | --- | --- |
 | `read` | Reads the workspace | `readOnlyHint: true` |
-| `write` | Can change the workspace or specs store | `readOnlyHint: false`; worktree retire also sets `destructiveHint: true` |
+| `write` | Can change the workspace or specs store | `readOnlyHint: false`; worktree retire, worktree release and artifact rm also set `destructiveHint: true` |
 | `external` | Can act outside the machine | `openWorldHint: true`; destructive merge/prune also set `destructiveHint: true` |
 
 Annotations describe capabilities; they grant no permission. The specs surface asks the human once:

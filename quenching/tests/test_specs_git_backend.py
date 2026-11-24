@@ -350,6 +350,18 @@ class PendingWrites(GitStoreFixture):
         info, _ = backend.read_spec(spec_id)
         backend.write_spec(info, info["text"] + f"\n{line}\n")
 
+    def test_list_reads_the_front_in_one_batch_not_one_read_per_spec(self):
+        from quenching.specs.commands import read as read_mod
+        _, backend = self._seeded(3)
+        emitter = mock.Mock()
+        args = mock.Mock(json=True, lean=False, phase=None)
+        with mock.patch.object(read_mod, "open_backend", return_value=(backend, None)), \
+                mock.patch.object(GitBackend, "read_spec", side_effect=AssertionError("per-spec read")), \
+                mock.patch.object(read_mod, "front_fields", return_value={}), \
+                contextlib.redirect_stdout(__import__("io").StringIO()) as buf:
+            self.assertEqual(0, read_mod.cmd_list(args, backend.repo_root, emitter))
+        self.assertEqual([1, 2, 3], [r["id"] for r in json.loads(buf.getvalue())["specs"]])
+
     def test_a_deferred_write_leaves_the_remote_untouched(self):
         _, backend = self._seeded()
         before = self.remote_tip()

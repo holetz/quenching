@@ -145,6 +145,37 @@ class Argv(unittest.TestCase):
         self.assertTrue(notes["destructiveHint"])
         self.assertFalse(notes["readOnlyHint"])
 
+    def test_the_verbs_the_bodies_cite_carry_their_class(self):
+        expected = {
+            "read": {"specs_config", "specs_validate", "specs_parallel", "specs_estimate",
+                     "specs_handoff_facts", "specs_artifact_list", "specs_artifact_read",
+                     "components_status", "git_worktree_slots", "security_leak"},
+            "write": {"specs_reconcile", "specs_tags", "specs_verification",
+                      "specs_handoff_write", "specs_artifact_write", "specs_artifact_rm",
+                      "components_bridge", "components_migrate", "proof_readme",
+                      "git_worktree_acquire", "git_worktree_release", "git_refresh",
+                      "design_render", "design_import"},
+        }
+        for cls, names in expected.items():
+            for name in names:
+                with self.subTest(name):
+                    self.assertEqual(catalog.CATALOG[name].cls, cls)
+        for name in ("specs_artifact_rm", "git_worktree_release"):
+            self.assertTrue(catalog.annotations(catalog.CATALOG[name])["destructiveHint"], name)
+
+    def test_a_read_or_write_tool_never_publishes_a_file_or_a_push(self):
+        hidden = {"specs_artifact_read": "out", "specs_handoff_write": "push"}
+        for name, dest in hidden.items():
+            props = catalog.schema(catalog.resolve(catalog.CATALOG[name]))["properties"]
+            self.assertNotIn(dest, props, name)
+            with self.assertRaises(server.ToolArgs):
+                catalog.argv(catalog.CATALOG[name], {dest: "x"}, "/r")
+
+    def test_a_specs_row_runs_under_the_router_root(self):
+        cmd, as_json = catalog.argv(catalog.CATALOG["specs_validate"], {"spec": "3"}, "/repo")
+        self.assertEqual(cmd, ["--root", "/repo", "specs", "validate", "--spec=3", "--json"])
+        self.assertTrue(as_json)
+
     def test_a_pillar_without_router_root_gets_the_verbs_own_root(self):
         cmd, _ = catalog.argv(catalog.CATALOG["git_base"], {}, "/repo")
         self.assertEqual(cmd, ["git", "base", "--root=/repo", "--json"])
