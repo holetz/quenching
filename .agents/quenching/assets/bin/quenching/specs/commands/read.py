@@ -10,6 +10,7 @@ import os
 
 from quenching.common.config import load_config
 from quenching.common.io import write_text
+from quenching.specs import claims
 from quenching.specs.backends import open_backend
 from quenching.specs.commands.epic import cmd_epic_status, composition_view, pr_states
 from quenching.specs.commands.output import Emitter, display_locator, front_fields, read_one
@@ -41,12 +42,15 @@ def cmd_list(args, root: str, out: Emitter) -> int:
         return out.emit_err(args.json, err)
     phase = getattr(args, "phase", None)
     if getattr(args, "lean", False):
+        listed = backend.list_specs(phase, lean=True)
+        snap = claims.snapshot(root) if listed else None
         rows = [{
             "id": s["id"], "title": s.get("title", ""), "phase": s["phase"],
             "state": s.get("state"), "path": display_locator(s["path"], root),
             "records": s.get("records", []),
+            "claim": claims.reading(snap, s["id"], s["phase"] == "archive"),
             **epic_meta(s["id"], {"epic": s.get("epic"), "workItemType": s.get("workItemType")}),
-        } for s in backend.list_specs(phase, lean=True)]
+        } for s in listed]
         unavailable = ["date", "stage", "outcome", "verification",
                        "ready", "sections", "tasks", "unreadable"]
         obj = {"ok": True, **front_fields(root), "lean": True, "count": len(rows),
@@ -210,6 +214,11 @@ def cmd_status(args, root: str, out: Emitter) -> int:
         "promote": gates,
         "path": display_locator(info["path"], root),
         "pending": _pending(backend),
+        # The reservation another machine may hold; `--no-fetch` promises no network, so none.
+        "claim": None if no_fetch else claims.reading(
+            claims.snapshot(root), info["id"],
+            info["phase"] == "archive" or bool(info["frontmatter"].get("outcome")
+                                               or info["frontmatter"].get("merge"))),
     }
     if comp:
         obj["level"] = comp.pop("level")
@@ -252,6 +261,11 @@ def cmd_status(args, root: str, out: Emitter) -> int:
             if isinstance(v, dict):
                 v = ", ".join(f"{kk}: {vv}" for kk, vv in v.items())
             print(f"    {k + ':':<10} {v}")
+    if obj["claim"]:
+        c = obj["claim"]
+        print(f"  claim: {c['holder']}" + (f" ({c['label']})" if c["label"] else "")
+              + f" · {'live' if c['live'] else 'not live'} · expires {c['expires']}"
+              + (" · mine" if c["mine"] else ""))
     if obj["pending"]:
         artifacts = len(obj["pending"]["artifacts"])
         counted = f"{len(obj['pending']['specs'])} spec(s)"
