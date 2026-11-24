@@ -774,6 +774,15 @@ class McpGrants(unittest.TestCase):
         self.assertIn('  "quenching_*": allow',
                       translate.opencode_agent_document(self.RUNNER, "spec-runner"))
 
+    def test_opencode_allows_the_non_cq_shell_grants_the_source_lists(self):
+        raw = ("---\ndescription: o\ntools: Bash(cq specs status:*), Bash(git worktree list:*), "
+               "Bash(gh pr view:*), Bash(bash scripts/verify_repo.sh:*)\n---\n\nbody\n")
+        text = translate.opencode_agent_document(raw, "o")
+        ask = text.index('    "*": ask')
+        for pattern in ("git worktree list *", "gh pr view *", "bash scripts/verify_repo.sh *"):
+            self.assertGreater(text.index(f'    "{pattern}": allow'), ask)
+        self.assertNotIn('"git *"', text)
+
     def test_a_second_translation_is_identical(self):
         once = translate.agent_document(self.VERIFIER, "spec-verifier")
         self.assertEqual(once, translate.agent_document(once, "spec-verifier"))
