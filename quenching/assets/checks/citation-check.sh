@@ -214,7 +214,7 @@ if want 1; then
   # that INSTRUCTS an agent to route — command bodies, the references they cite, and the moulds
   # stamped into an adopting repo. It stops there because outside those trees the same spelling is
   # not a routing claim. The TRANSLATED surface (`.agents/**`) is
-  # the clearest case: Codex has no `:` namespace, so the hyphenated name IS the real skill
+  # the clearest case: it has no `:` namespace, so the hyphenated name IS the real skill
   # directory there, and the translator's own tests govern it. `README.md` is the other: its
   # `## Upgrade` changelog names directories that really existed between releases 0.11 and 0.18 —
   # rewriting a dated record falsifies it — and its per-command manual is the whole scope of the

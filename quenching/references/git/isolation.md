@@ -134,8 +134,8 @@ after the merge — detached at the remote base, unlocked, `.venv` and every reg
 - At the ceiling, `acquire` takes a held slot only when its branch has a commit of its own in its
   reflog (`commit`, `cherry-pick`, `revert`) and its tip is in the base, its tree is clean, it holds
   no ignored content `release` would refuse on, and no process has its cwd inside it. A branch that
-  only fast-forwarded to the base is never taken. The taken slot's `.quenching/codex/` is archived
-  in the primary checkout, as `release` does.
+  only fast-forwarded to the base is never taken. The taken slot's `.quenching/handoff/` is moved
+  to the primary checkout, as `release` does.
 - `shared.worktreeSlots.min` (default 4) is a **floor**: `/quenching-git cleanup` never offers
   the lowest-numbered free slots up to it (`slot-floor`); free slots above it are candidates.
 - A slot is released only clean: a dirty tree, or ignored content no `shared.regenerablePaths`
