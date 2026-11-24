@@ -58,7 +58,9 @@ CATALOG: dict[str, Row] = {
     **_rows("knowledge", "read", "validate", "status"),
     **_rows("knowledge", "write", "site-source", "project", "nav", "listing"),
     **_rows("git", "read", "base", "state", "conventions", "history log", "history show",
-            "history diff", "audit", "stale", "preflight", "pr probe", "pr view"),
+            "history diff", "audit", "stale", "pr probe", "pr view"),
+    # `--probe-claims` writes a ref to the remote: a read grant never reaches it.
+    "git_preflight": Row("git", ("preflight",), "read", False, frozenset({"probe_claims"})),
     **_rows("git", "write", "commit", "worktree link", "worktree add", "specs"),
     **_rows("git", "external", "push", "pr create", "pr record"),
     # `--spec` would stamp the `merge` record with no `specs_record` call behind it: the

@@ -253,5 +253,7 @@ Print: the launches used against `--max-launches` and the resumes it made; per e
 specs with their PRs; the human epic and its members; every decision
 this session took as the delegated owner; specs in flight at the deadline, as `continue` with their
 state; second stalls; and the tokens the run spent per model and agent type, read with
-`components_session_cost` and never summed across tiers.
+`components_session_cost` and never summed across tiers; and the
+conductor's own `cq` share, `cqShell` against `cqMcp` and the `fellToShell` verbs, read from
+`components_session_digest()`.
 **Done when:** the report is printed.

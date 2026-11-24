@@ -7,7 +7,7 @@ tags: [workflows, specs, configuration, provider, plugin]
 timestamp: 2026-11-24
 audience: both
 authority: current
-source: specs 1065, 1075, 1405, 1907, 1908, 1909, 1910, 1911, 1912, 2092, 2118, 2164, 2175, 2190, 2199, 2022, 1020213, 2231 — lineage in decision 0004
+source: specs 1065, 1075, 1405, 1907, 1908, 1909, 1910, 1911, 1912, 2092, 2118, 2164, 2175, 2190, 2199, 2022, 1020213, 2231, 416 — lineage in decision 0004
 maintainer: quenching
 ---
 
@@ -264,9 +264,10 @@ by [security-pillar.md](../architecture/security-pillar.md) §The identity allow
 ## The `shared.mcp` block
 
 `cq deploy` registers the whole quenching MCP server in the target's harnesses with no
-declaration; `shared.mcp` only overrides how. It is `{mount, command}`: `mount` is `all` (the
-default, the whole server) or `specs` (the specs-only mount), and `command` is the non-empty list of
-strings that finds Python — for example `["python3"]` or `["py", "-3"]`. Deploy appends the vendored
+declaration; `shared.mcp` only overrides how. It is `{mount, command, cliFallback}`, every key
+optional: `mount` is `all` (the default, the whole server) or `specs` (the specs-only mount), and
+`command` is the non-empty list of strings that finds Python — for example `["python3"]` or
+`["py", "-3"]`. Deploy appends the vendored
 entry point and the mount, so the generated argv is `<command...> .agents/quenching/assets/bin/cq
 mcp`, or `<command...> .agents/quenching/assets/bin/cq specs mcp` under `mount: "specs"`. Without a
 `command`, deploy takes the prefix the last deploy recorded, else the first of `python3`, `python`
@@ -275,10 +276,16 @@ pinned, and the same prefix starts the Claude Code hooks. A `command` through `u
 replaced by a direct interpreter for both, with a warning
 ([hooks.md](../automation/hooks.md)).
 
+`cliFallback` (boolean, default `false`) keeps the CLI door open beside the server. With the whole
+server registered and no fallback, the generated grants drop every `Bash(cq …)` an MCP tool
+replaces and keep only the verbs with no tool; `true` restores both doors for a harness that runs
+without the server. The `specs` mount, which serves no other pillar, always keeps both
+([deploy-mode.md](../architecture/deploy-mode.md#mcp-registration)).
+
 The key is read through `repository_document`, not through the merged envelope: the user layer
 (`_apply_user_layer`) would otherwise make a generated file vary by machine, and a generated file
-belongs to the repository. A key of the wrong shape, an unknown leaf or a mount outside `all` and
-`specs` refuses with `ct-deploy-mcp` before anything is written. A declared key requires `--runtime vendor`,
+belongs to the repository. A key of the wrong shape, an unknown leaf, a mount outside `all` and
+`specs` or a `cliFallback` that is not a boolean refuses with `ct-deploy-mcp` before anything is written. A declared key requires `--runtime vendor`,
 because the `uvx` runtime does not carry the vendored entry point; without a declaration that
 runtime registers nothing and warns. `cq config seed` does not emit the key: absence is the
 default. See [deploy-mode.md](../architecture/deploy-mode.md#mcp-registration).
@@ -330,7 +337,7 @@ explicit flag wins over the key.
 | `shared.cache` | `{rebuildLimitUsd, warnMinutes, ttlMinutes: auto \| 5 \| 60, costStyle: dollars \| times}` | `0.5` / `15` / `auto` / `dollars` | the `quenching-cache` plugin's bar, through `cq config show --effective`; its long-chat line is `shared.contextBudgets.main` |
 | `shared.autonomy.maxLaunches` | integer ≥ 1 | `40` | `/quenching-specs autopilot` (see the autonomy block); the launch ceiling lives only there |
 | `shared.workHost` | `{target, dockerContext, runner, remoteRoot, syncFlags, syncExclude, pullBack, protectedPaths, minFreeGb}` | disabled | `cq config host --plan`; see [work-host.md](work-host.md) |
-| `shared.mcp` | `{mount: "all"\|"specs", command: [strings]}` | absent; the whole MCP server (`all`) is registered with a resolved direct Python prefix | `cq deploy`; read from the repository document only, never the merged envelope |
+| `shared.mcp` | `{mount: "all"\|"specs", command: [strings], cliFallback: boolean}` | absent; the whole MCP server (`all`) is registered with a resolved direct Python prefix, and the grants keep only the `cq` verbs no MCP tool replaces (`cliFallback: false`) | `cq deploy`; read from the repository document only, never the merged envelope |
 | `specs.chat` | `{model: string, budgetUsd: number > 0, timeoutSeconds: number > 0}` | `sonnet`, `0.50`, `300` | the portal's `--chat`; `--chat-budget-usd` wins over `budgetUsd` |
 | `specs.estimate.writeOnly` | a list of repo-relative paths, exact or `fnmatch` globs | `[]` | `cq specs estimate`: a task file it matches is listed with `writeOnly: "declared by repo"`, keeps its size and adds no bytes; an Impact standard is always counted; `--task` ignores it |
 

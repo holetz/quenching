@@ -7,6 +7,7 @@ import json
 from pathlib import Path
 
 from quenching.common.output import FINDINGS, OK, refuse
+from quenching.session.cqcalls import summarize
 from quenching.session.evidence import assign_corrections, clip, digest_command
 from quenching.session.model import normalize
 from quenching.session.opencode_transcript import OpenCodeError, read_opencode, wants_opencode
@@ -58,7 +59,9 @@ def cmd_digest(args) -> int:
     # a `--command` filter must not silently hand one command a turn that belonged to the
     # stage running next to it.
     attached, unassigned = assign_corrections(corrections, model_objects)
-    digested = [digest_command(c, attached[c.name], args.max_quote, args.cap)
+    session_cq = summarize(model["cq"]["shell"], model["cq"]["mcp"])
+    digested = [digest_command(c, attached[c.name], args.max_quote, args.cap,
+                               session_cq["connected"])
                 for c in objects]
 
     payload = {
@@ -70,6 +73,7 @@ def cmd_digest(args) -> int:
         "unparsed": model["unparsed"],
         "anomalies": model["anomalies"],
         "unattributedToolCalls": model["unattributedToolCalls"],
+        "cq": session_cq,
         "maxQuote": args.max_quote,
         "commands": digested,
         "unassignedCorrections": [{"line": c["line"], "kind": c["kind"],
@@ -84,6 +88,12 @@ def cmd_digest(args) -> int:
               f"  unparsed={payload['unparsed']}")
         for a in payload["anomalies"]:
             print(f"  ! {a['code']} line {a['line']}: {a['message']}")
+        q = session_cq
+        ratio = "-" if q["shellRatio"] is None else f"{q['shellRatio']:.0%}"
+        print(f"cq calls: shell={q['shellCalls']}  mcp={q['mcpCalls']}  shell share={ratio}"
+              f"  connected={'yes' if q['connected'] else 'no MCP call seen'}")
+        for verb, count in q["fellToShell"].items():
+            print(f"  fell to the shell with the server connected x{count}: cq {verb}")
         for c in digested:
             n = c["counts"]
             print(f"\n{c['command']}  [{', '.join(c['entryForms'])}]"

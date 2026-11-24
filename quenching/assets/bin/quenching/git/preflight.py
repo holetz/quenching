@@ -3,8 +3,9 @@ store writable, is the provider's type catalog there, does a push reach the remo
 route authenticated (`gh`, or `az` on an Azure DevOps origin), is the base branch's CI
 available, and does the remote accept the reservation refs `refs/quenching/claims/*` (`claims`).
 
-Read-only but for the `claims` probe, which creates and deletes one ref of its own: the other
-pushes use `--dry-run` onto a ref the remote does not have (`PROBE_REF`, with
+Read-only by default: the `claims` probe creates and deletes one ref on the remote, so it runs only
+under `--probe-claims` (opt-in, CLI only — the MCP tool never publishes it) and otherwise reads
+`skipped`. The other pushes use `--dry-run` onto a ref the remote does not have (`PROBE_REF`, with
 `--force`), so a branch that is merely behind or diverged never reads as a refused write; a failed
 probe carries the `reason` git's stderr names — `read-only` or `no-credentials` (`fail`), or
 `unreachable` or `probe-failed` (`unknown`). CI is read with `gh run list` / `gh run view` (GitHub only:
@@ -118,6 +119,14 @@ def _claims(cwd: str, remote: str) -> dict:
                                         f"but not deleted ({message}): remove it by hand")
     return _check("claims", "ok", f"{remote} accepts refs/quenching/claims/* (probe created and "
                                   "deleted with a compare-and-swap)")
+
+
+def _claims_or_skipped(cwd: str, remote: str, probe: bool) -> dict:
+    """The reservation probe writes to the remote, so the default preflight does not run it."""
+    if not probe:
+        return _check("claims", "skipped", "not probed: pass --probe-claims to create and delete "
+                                           "one refs/quenching/claims/* ref on the remote")
+    return _claims(cwd, remote)
 
 
 def _store(cwd: str, remote: str, backend: str) -> dict:
@@ -294,7 +303,7 @@ def cmd_preflight(args) -> int:
         store = pool.submit(_store, cwd, args.remote, backend)
         push = pool.submit(_push, cwd, args.remote)
         ci_auth = pool.submit(_ci_and_auth, cwd, base, provider)
-        reserve = pool.submit(_claims, cwd, args.remote)
+        reserve = pool.submit(_claims_or_skipped, cwd, args.remote, args.probe_claims)
         ci, auth = ci_auth.result()
         checks = [store.result(), _types(backend), push.result(), auth, ci, reserve.result()]
     bad = [c["id"] for c in checks if c["status"] in BAD]

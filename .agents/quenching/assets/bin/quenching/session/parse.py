@@ -70,6 +70,7 @@ import json
 import re
 from pathlib import Path
 
+from quenching.session.cqcalls import mcp_tools, shell_verbs, tally
 from quenching.session.model import Command, normalize, read_window
 
 COMMAND_NAME_RE = re.compile(r"<command-name>([^<]+)</command-name>")
@@ -164,6 +165,7 @@ def read_lines(source, label: str) -> dict:
     anomalies, seen_uuids, corrections = [], set(), []
     timeline = []                  # (line, command) for every attributed record, in order
     lines = unparsed = unattributed_tools = 0
+    cq = {"shell": {}, "mcp": {}}      # the whole session's `cq` calls, attributed or not
     session = {"sessionId": None, "cwd": None, "gitBranch": None, "version": None}
 
     def command(name: str) -> Command:
@@ -250,9 +252,19 @@ def read_lines(source, label: str) -> dict:
                 continue
             name = block.get("name")
             inp_ = block.get("input") or {}
+            shell_cq = [" ".join(v) for v in shell_verbs(inp_.get("command"))] if name == "Bash" else []
+            mcp_cq = mcp_tools(name, inp_)
+            for verb in shell_cq:
+                tally(cq["shell"], verb)
+            for tool in mcp_cq:
+                tally(cq["mcp"], tool)
             if attributed:
                 cmd = command(normalize(attributed))
                 cmd.tools[name] = cmd.tools.get(name, 0) + 1
+                for verb in shell_cq:
+                    tally(cmd.cq_shell, verb)
+                for tool in mcp_cq:
+                    tally(cmd.cq_mcp, tool)
                 # Only what identifies a target is kept — never the payload. `Edit` and
                 # `Write` carry whole file bodies in `new_string`/`content`, so touching
                 # those inputs at all is how a digest quietly becomes the transcript.
@@ -290,6 +302,7 @@ def read_lines(source, label: str) -> dict:
         "unparsed": unparsed,
         "anomalies": anomalies,
         "unattributedToolCalls": unattributed_tools,
+        "cq": cq,
         "commands": [c.as_dict() for c in ordered],
         "_commands": ordered,          # the objects, for digest; never serialised
         "corrections": corrections,
