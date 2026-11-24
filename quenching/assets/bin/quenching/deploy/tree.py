@@ -11,7 +11,7 @@ import json
 import os
 from pathlib import Path, PurePosixPath
 
-from quenching.common.deploy import read_manifest
+from quenching.common.deploy import dumps_hash_manifest, read_manifest
 from quenching.common.version import VERSION
 from quenching.components.commands import bridge
 from quenching.deploy import mcpfiles
@@ -311,7 +311,7 @@ def _bridge_tree(tree: dict, target: Path) -> None:
             "files": manifest,
         }
         _add(tree, CLAUDE_SKILLS + "/.generated-files.json",
-             (json.dumps(document, indent=2) + "\n").encode(), 0o644)
+             dumps_hash_manifest(document).encode(), 0o644)
 
 
 def mcp_argv(mcp: dict) -> list[str]:
