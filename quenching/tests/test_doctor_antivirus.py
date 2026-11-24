@@ -79,7 +79,56 @@ class AntivirusReportTest(unittest.TestCase):
         self.assertEqual("'C:\\it''s'", doctor._ps_quote("C:\\it's"))
 
 
+class AntivirusBroadPathTest(unittest.TestCase):
+    def test_disk_root_home_ancestor_and_temp_are_too_broad(self):
+        home = os.path.expanduser("~")
+        for path in (os.path.abspath(os.sep), home, os.path.dirname(home),
+                     tempfile.gettempdir()):
+            self.assertTrue(doctor._too_broad(path), path)
+
+    def test_a_folder_inside_home_or_temp_is_not_too_broad(self):
+        for path in (os.path.join(os.path.expanduser("~"), "proj"),
+                     os.path.join(tempfile.gettempdir(), "proj")):
+            self.assertFalse(doctor._too_broad(path), path)
+
+    def test_outside_a_repository_the_report_is_a_refusal(self):
+        outside = tempfile.mkdtemp()
+        report = doctor.antivirus_report(outside, which=_which({}))
+        self.assertEqual("cq-antivirus-no-repo", report["refusal"]["code"])
+        self.assertNotIn("paths", report)
+
+    def test_a_repository_at_the_home_is_refused(self):
+        home = os.path.realpath(os.path.expanduser("~"))
+        with mock.patch.object(doctor, "_primary_root", return_value=home):
+            report = doctor.antivirus_report(home, which=_which({}))
+        self.assertEqual("cq-antivirus-unsafe-root", report["refusal"]["code"])
+
+    def test_a_broad_cache_moves_to_not_listed(self):
+        tmp = tempfile.mkdtemp()
+        repo = os.path.join(tmp, "proj")
+        subprocess.run(["git", "init", "-q", repo], check=True)
+        home = os.path.expanduser("~")
+        with mock.patch.object(doctor, "cache_root", return_value=home):
+            report = doctor.antivirus_report(repo, which=_which({}))
+        self.assertNotIn(home, [p["path"] for p in report["paths"]])
+        self.assertIn(home, [p["path"] for p in report["informational"]])
+        self.assertNotIn(f"-ExclusionPath '{home}'", doctor._antivirus_human(report))
+
+
 class AntivirusCliTest(unittest.TestCase):
+    def _cq(self, root):
+        return subprocess.run([sys.executable, str(CQ), "doctor", "--antivirus", "--root", root],
+                              capture_output=True, text=True, timeout=120)
+
+    def test_disk_root_and_home_are_refused_without_a_command(self):
+        for root in (os.path.abspath(os.sep), os.path.expanduser("~"), tempfile.mkdtemp()):
+            if subprocess.run(["git", "-C", root, "rev-parse"], capture_output=True).returncode == 0:
+                continue
+            out = self._cq(root)
+            self.assertEqual(2, out.returncode, (root, out.stdout, out.stderr))
+            self.assertNotIn("Add-MpPreference", out.stdout + out.stderr)
+            self.assertIn("not inside a git repository", out.stderr)
+
     def test_json_carries_paths_processes_and_caveat(self):
         out = subprocess.run([sys.executable, str(CQ), "doctor", "--antivirus", "--json"],
                              capture_output=True, text=True, timeout=120,
