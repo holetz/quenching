@@ -116,8 +116,10 @@ spec|cut from origin/<base>>` before anything launches, and step 4 copies it int
 
 Then run
 `.agents/quenching/bin/cq git preflight --json` once (covered by the existing `Bash(cq:*)`; no new grant) and write its
-five checks (`store`, `types`, `push`, `ghAuth`, `ci`) in the round block as `preflight:`. `store`,
-`push` or `ghAuth` in `fail` → fixing it is this round's first spec, like a red gate. `mergesAllowed:
+six checks (`store`, `types`, `push`, `ghAuth`, `ci`, `claims`) in the round block as `preflight:`. `store`,
+`push` or `ghAuth` in `fail` → fixing it is this round's first spec, like a red gate. `claims` in
+`fail` → the remote refuses the reservation refs: the round runs unreserved (execute reports its
+exit 2 and builds), and the report says another machine could pick the same spec. `mergesAllowed:
 false` (CI unavailable) → steps 4–5 plan no merges and no chain that depends on a merge, and the
 report says why. Hooks are never disabled and `--no-verify` is never passed. Read the
 round record first: an `open` round whose start ref is still reachable from `main` resumes at its
@@ -136,6 +138,9 @@ it is still relevant against the current code and the `shared.guidance.autopilot
 - `superseded` or `stale` → record the evidence in `## Outcome`
   (`.agents/quenching/bin/cq specs section <id> Outcome --write`) and `.agents/quenching/bin/cq specs promote <id> --outcome abandoned`; a round epic left with no open member is closed;
 - it needs the human (the **never forced** list) → `.agents/quenching/bin/cq specs link add <human-composite> <id>`;
+- its `claim` is `live` and not `mine` → another machine is building it: it stays out of this
+  round's queue, named in the report with the holder, and is never taken (`take` is the human's);
+  an expired or terminal lease does not keep it out;
 - otherwise it joins this round's queue.
 
 **Done when:** every loose spec and every open member of an earlier round is queued, abandoned with evidence, or in the human epic.
@@ -221,6 +226,11 @@ the reproduction), queued for the next round; `NONE` creates none.
 
 ### 7. Gate and audit
 On `main`: pull, run the gate, and the audit of step 1. Red → the first spec of the next round.
+Then **release this round's reservations**: `.agents/quenching/bin/cq specs claim list --json`, and for every row
+with `mine: true` whose spec is a member of this round's epics, `.agents/quenching/bin/cq specs claim release <id> --json`
+— a worker that stopped without concluding leaves no lease to expire on its own. A lease of this
+machine on a spec outside the round belongs to another session and is left alone; a `not-holder`
+or exit 2 is printed in step 8, never retried with `take`.
 Also audit orphan processes: list `pytest`, xdist (`exec(eval(sys.stdin.readline()))`) and `functional-checks.sh` processes whose working directory sits in a slot with no live worker, end them by PID with their children, and print each in step 8 — a worker that returned must leave none running.
 Then decide whether to stop:
 

@@ -58,6 +58,21 @@ class Coverage(unittest.TestCase):
             self.assertTrue(reason.strip(), path)
             self.assertEqual(coverage.verb_path(list(path)), path)
 
+    def test_taking_a_live_lease_reaches_no_agent_grant(self):
+        from quenching.deploy import translate
+        self.assertNotIn("specs_claim_take", catalog.tool_names())
+        self.assertIn(("specs", "claim", "take"), coverage.EXCEPTIONS)
+        for name in ("spec-orchestrator", "spec-runner"):
+            with self.subTest(name):
+                fields, _ = translate.split_frontmatter((PLUGIN / "agents" / f"{name}.md").read_text())
+                tools = fields["tools"]
+                self.assertNotIn("Bash(cq specs claim:*)", tools)
+                for verb in ("acquire", "renew", "release", "list"):
+                    self.assertIn(f"Bash(cq specs claim {verb}:*)", tools)
+                self.assertNotIn("take", translate.transform_tools(tools, True))
+                permissions = translate.opencode_permissions(tools)
+                self.assertFalse(any("take" in key for key in permissions))
+
 
 if __name__ == "__main__":
     unittest.main()

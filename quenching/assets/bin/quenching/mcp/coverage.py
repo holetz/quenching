@@ -28,6 +28,7 @@ EXCEPTIONS: dict[tuple[str, ...], str] = {
     ("codex", "implement"): "long-running per-task executor",
     ("specs", "migrate"): "one-time store migration the operator runs; may create remote work items",
     ("specs", "export"): "writes a directory of files outside the store, for the operator",
+    ("specs", "claim", "take"): "taking a live lease is the human's call only; no agent grant may reach it",
 }
 
 # The bodies the coverage holds for, relative to the plugin root (`quenching/`): the references
