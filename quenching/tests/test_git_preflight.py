@@ -159,8 +159,9 @@ class Preflight(unittest.TestCase):
                               capture_output=True, text=True, check=True).stdout
 
     def test_the_default_preflight_writes_nothing_to_the_origin(self):
-        refs = lambda: subprocess.run(["git", "for-each-ref"], cwd=self._origin(),
-                                      capture_output=True, text=True, check=True).stdout
+        def refs():
+            return subprocess.run(["git", "for-each-ref"], cwd=self._origin(),
+                                  capture_output=True, text=True, check=True).stdout
         before = refs()
         code, out = self.run_cq(FAKE_GH_STEPS="1")
         checks = {c["id"]: c for c in out["checks"]}
