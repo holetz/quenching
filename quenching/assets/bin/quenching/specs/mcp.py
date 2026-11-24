@@ -208,7 +208,7 @@ def _rec_fields(args: dict) -> list[str]:
         if isinstance(value, bool) or not isinstance(value, (str, int, float)):
             raise ToolArgs(f"field `{key}` must be a string or a number")
         value = str(value).strip()
-        if not value or "\n" in value:
+        if "\n" in value:  # an empty scalar is absence, and the shell accepts `--set key=`
             raise ToolArgs(f"field `{key}` is not a valid value")
         argv += ["--set", f"{key}={value}"]
     return argv
