@@ -179,7 +179,7 @@
     ".agents/quenching/assets/bin/quenching/specs/commands/task.py": "ff4767db361f011260c4140c901d7dabf4bdddef12ecd615afd8da543ebef756",
     ".agents/quenching/assets/bin/quenching/specs/commands/validate.py": "f9fb5b0a2d8ab111631932ee71501f360a5a7f147a54d7fbaddb6b144faec753",
     ".agents/quenching/assets/bin/quenching/specs/config.py": "3b21d2a35ccbe3b3e41361c8f0e5e92ca462f977a7ca34fee81677a88a118763",
-    ".agents/quenching/assets/bin/quenching/specs/mcp.py": "21891992ce32faabd22b43df2098e0ee90f6ae57e0f82e6b6d9b2cbbad4e2d92",
+    ".agents/quenching/assets/bin/quenching/specs/mcp.py": "9246a187c38e5781f0a7612ff4aa74d549d4e9c9d68c737d7788b4f8a23a5346",
     ".agents/quenching/assets/bin/quenching/specs/members.py": "06cb05de454a5f5a615956571d08ad7b722255c8ccc68ed2abdbc6d752951894",
     ".agents/quenching/assets/bin/quenching/specs/parse/__init__.py": "26c420fca154b9dedd3ff506a754d8aa4e8fd23013c8ba0c59bd90a5a8f26356",
     ".agents/quenching/assets/bin/quenching/specs/parse/deps.py": "ddb0a4b93431d9b3f57c0dd44ff5c47ae5d5143ff18c9dc95deb1357f55da215",
