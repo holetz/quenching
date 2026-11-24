@@ -24,7 +24,7 @@ class Command:
 
     __slots__ = ("name", "plugin", "invocations", "tools", "first", "last",
                  "first_ts", "last_ts", "reads", "touches", "shell", "closed", "may_include",
-                 "runs", "direct")
+                 "runs", "direct", "cq_shell", "cq_mcp")
 
     def __init__(self, name: str):
         self.name = name
@@ -36,6 +36,8 @@ class Command:
         self.reads = {}            # file path -> [window, ...], one entry per Read
         self.touches = {}          # file path -> count of Edit/Write, which are not reads
         self.shell = {}            # bash command string -> count
+        self.cq_shell = {}         # "pillar verb" -> count, `cq` calls that ran through the shell
+        self.cq_mcp = {}           # quenching MCP tool -> count
         # True until proven otherwise: only a stage whose caller never resumed is unclosed.
         self.closed = True
         self.may_include = None
