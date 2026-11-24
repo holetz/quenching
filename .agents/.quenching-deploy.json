@@ -33,7 +33,7 @@
     ".agents/quenching/agents/spec-reviewer.md": "3bfb728d4ba537b3885ba10150468b9ea71025a758bf949dc3b3f5e0c6095863",
     ".agents/quenching/agents/spec-runner.md": "d1abfc8c4e1e95d78c9cba2be8ce18da925dfa5ab98911359efb0b9c6f3bc513",
     ".agents/quenching/agents/spec-scout.md": "95b32cf8fd4579cbb6b2981110a52c478bca0a2a7b8e4f51eee48f0bbef4e0c2",
-    ".agents/quenching/agents/spec-verifier.md": "a590108e06942a2386f3e6bc4776701b5e5a4b44c3bde45fea4580f3c2c5d767",
+    ".agents/quenching/agents/spec-verifier.md": "9c16737328eab6fdea2039d2559afe0a7dcb036c4001154bb245c41007f1c893",
     ".agents/quenching/assets/bin/cq": "3f3cf930ead5e7297832d70af13a4659c374c7e5a0b1c1612363f4d839b7bab2",
     ".agents/quenching/assets/bin/quenching/codex/__init__.py": "f003a307a7ef9ea75f5b389b4e0d5f968934c8fcf7503e6d4edfaa08d57a3cc7",
     ".agents/quenching/assets/bin/quenching/codex/config.py": "0caa5fc2c9ec5f3ff1073c2a27a94f508763a530a2f45df18d98258f294ebd15",
@@ -82,11 +82,11 @@
     ".agents/quenching/assets/bin/quenching/controls/__init__.py": "d7b6251673390a48038fec32359cd43e991f4e64f383fb41873728ce9851877e",
     ".agents/quenching/assets/bin/quenching/controls/evaluate.py": "05cdedea2db16edf16b741e5415097b534b15470ac0e77d0e8c67d7a2ba2a386",
     ".agents/quenching/assets/bin/quenching/deploy/__init__.py": "d9efa3062ac0c40e82c0bfc4041b7485a60420e2576afef7e94a72277a8cc0ff",
-    ".agents/quenching/assets/bin/quenching/deploy/cli.py": "c0f832bbd1af3589cd6ca84dc958b191932c43b5c387474815099b921cb234bc",
-    ".agents/quenching/assets/bin/quenching/deploy/mcpfiles.py": "04b955e9cbec02228f70b3137a836eaf9e3bc95fcb1321dc8f7ccec4ae6f2714",
-    ".agents/quenching/assets/bin/quenching/deploy/settings.py": "7b37c19b599c88d4d2da6f13d3bdbaad530b15ee54346381d85cab94db4de09d",
+    ".agents/quenching/assets/bin/quenching/deploy/cli.py": "19f9ae92fdf3f4c8fc8649b3e7675ae48ae29ba96d024ae0f9c1999074907584",
+    ".agents/quenching/assets/bin/quenching/deploy/mcpfiles.py": "90c586ff3592fcf71ad4f429c65f8e39fec7350108b4c3c9a09a9f0b6c432482",
+    ".agents/quenching/assets/bin/quenching/deploy/settings.py": "dc24b41de07969aac1ec96f3137c2158117c5f4aa679ad7af306379925a36485",
     ".agents/quenching/assets/bin/quenching/deploy/translate.py": "865d1395c9e0676f9f7f332d2cb5327845eec44d208257e77506686dbb4e0798",
-    ".agents/quenching/assets/bin/quenching/deploy/tree.py": "122c378b239d0d172f92c023c1d977b1d32cb6f9954f237259b9cc56ece24f3f",
+    ".agents/quenching/assets/bin/quenching/deploy/tree.py": "a84a3495b90bff67f7abb741536ce5f5038053a32840721473b74d5a744cdf31",
     ".agents/quenching/assets/bin/quenching/git/__init__.py": "8501760dcf5ab3b77195533888acbe6fe7f2795ad387cedbe869be8aeac11e4b",
     ".agents/quenching/assets/bin/quenching/git/audit.py": "b42ea60bc22ac59a5b805a831b63afb55a3ff04a94d402fdbf2e51b9d904d71d",
     ".agents/quenching/assets/bin/quenching/git/azure_pull.py": "87ab90ff25f82edb88e734deb86e2ab0d8c138cc1f01cd2619c8bc0a8f79026e",
@@ -373,7 +373,7 @@
     ".claude/agents/quenching-spec-reviewer.md": "3bfb728d4ba537b3885ba10150468b9ea71025a758bf949dc3b3f5e0c6095863",
     ".claude/agents/quenching-spec-runner.md": "d1abfc8c4e1e95d78c9cba2be8ce18da925dfa5ab98911359efb0b9c6f3bc513",
     ".claude/agents/quenching-spec-scout.md": "95b32cf8fd4579cbb6b2981110a52c478bca0a2a7b8e4f51eee48f0bbef4e0c2",
-    ".claude/agents/quenching-spec-verifier.md": "a590108e06942a2386f3e6bc4776701b5e5a4b44c3bde45fea4580f3c2c5d767",
+    ".claude/agents/quenching-spec-verifier.md": "9c16737328eab6fdea2039d2559afe0a7dcb036c4001154bb245c41007f1c893",
     ".claude/skills/.generated-files.json": "05e4f86c37ebc9835ba39800c88004687ea343661755ca6e243b2e90d5a5451a",
     ".claude/skills/commands-tighten/SKILL.md": "41574a4774e70deffd6c8c6766a1a24581d579d1f7247b68a93ba86b39b2019b",
     ".claude/skills/quenching-align/SKILL.md": "ff93b0078fe1c822027edf3ae1077c12e810e3326cacc8f5b4457e439982dd9d",
@@ -481,7 +481,7 @@
     ".opencode/agents/quenching-spec-reviewer.md": "34fb6ff76e1213b895ffb37249f872620e29244d23c7001d812427a1ea781a44",
     ".opencode/agents/quenching-spec-runner.md": "88554cc0bd530dd0cac54df7a2a061685e72b87cfc72c6bbd9def53e1807d11e",
     ".opencode/agents/quenching-spec-scout.md": "045446cccbf5e40a70fe7db44b9fc22d1ffa9216c7d35ff55500a610d578d607",
-    ".opencode/agents/quenching-spec-verifier.md": "f33e44b97ed142d977785768de3ba95d8b928d3a69034a0a6a9b05375dd43da1"
+    ".opencode/agents/quenching-spec-verifier.md": "d1139f1d5cdad8b1caed6add3be5d65f6d3358b8ad8eacab793460017ae76417"
   },
   "mcp": {
     "mount": "all",
@@ -502,6 +502,14 @@
     "attribution": [],
     "command": [
       "python3"
+    ],
+    "mcpjson": true
+  },
+  "opencodeConfig": {
+    "subagentDepth": 4,
+    "externalDirectory": [
+      "~/Projects/quenching-slot-*",
+      "~/Projects/quenching.*"
     ]
   }
 }

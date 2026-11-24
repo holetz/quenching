@@ -443,9 +443,11 @@ def build_tree(source: Path, target: Path, modules: list[str], harnesses: list[s
         # `attribution` holds the keys this deploy wrote; `cli` replaces it once the merge ran.
         # The hooks' own prefix: never `uv` (`mcpfiles.direct_prefix`), recorded so it does not flap.
         prefix = list(hooks_python or python or claude_settings.PYTHON)
+        # A registered `.mcp.json` server is approved by name, so it starts without a prompt.
         settings = {"hooks": claude_settings.desired_entries(hooks, prefix),
-                    "attribution": dict(claude_settings.ATTRIBUTION)}
+                    "attribution": dict(claude_settings.ATTRIBUTION),
+                    "mcpjson": bool(mcp)}
         document["claudeSettings"] = {"hooks": [hook["name"] for hook in hooks],
                                       "attribution": sorted(claude_settings.ATTRIBUTION),
-                                      "command": prefix}
+                                      "command": prefix, "mcpjson": bool(mcp)}
     return {"tree": tree, "seeds": seeds, "manifest": document, "settings": settings}
