@@ -362,6 +362,43 @@ class PendingWrites(GitStoreFixture):
             self.assertEqual(0, read_mod.cmd_list(args, backend.repo_root, emitter))
         self.assertEqual([1, 2, 3], [r["id"] for r in json.loads(buf.getvalue())["specs"]])
 
+    def test_a_local_creation_pushes_nothing_and_the_sync_sends_it(self):
+        path, backend = self._seeded(1)
+        before = self.remote_tip()
+        with _git_spawns() as spawns:
+            first = backend.create_spec("plans", canonical._case_doc("Two"), push=False)
+            second = backend.create_spec("plans", canonical._case_doc("Three"), push=False)
+        self.assertEqual(("quenching:specs/2.md", "quenching:specs/3.md"), (first, second))
+        self.assertNotIn("push", spawns)
+        self.assertNotIn("fetch", spawns)
+        self.assertEqual(before, self.remote_tip())
+        self.assertEqual([2, 3], backend.pending_state()["specs"])
+        backend.push()
+        self.assertEqual("4\n", self.remote_file(COUNTER_PATH))
+        self.assertTrue(self.remote_file("specs/3.md"))
+        self.assertIsNone(backend._pending())
+
+    def test_a_local_creation_allocates_over_the_remote_counter(self):
+        _, mine = self._seeded(1)
+        other = GitBackend(self.clone("b"))
+        other.create_spec("plans", canonical._case_doc("Elsewhere"))      # id 2, pushed
+        with mock.patch.object(git_mod, "FETCH_TTL_S", 0):
+            self.assertEqual("quenching:specs/3.md",
+                             mine.create_spec("plans", canonical._case_doc("Mine"), push=False))
+
+    def test_two_clones_creating_locally_collide_at_the_push_and_never_overwrite(self):
+        _, one = self._seeded(1)
+        two = GitBackend(self.clone("b"))
+        self.assertEqual("quenching:specs/2.md",
+                         one.create_spec("plans", canonical._case_doc("One"), push=False))
+        self.assertEqual("quenching:specs/2.md",
+                         two.create_spec("plans", canonical._case_doc("Two"), push=False))
+        one.push()
+        with self.assertRaises(BackendRefusal):
+            two.push()
+        self.assertIn("One", self.remote_file("specs/2.md"))
+        self.assertIsNotNone(two._pending())
+
     def test_a_deferred_write_leaves_the_remote_untouched(self):
         _, backend = self._seeded()
         before = self.remote_tip()

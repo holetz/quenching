@@ -189,7 +189,7 @@ and the GitHub and Azure Boards backends keep working unchanged beside it.
   everything under `specs/artifacts/<id>/`): the read keeps the local document and the sync refuses.
   `specs/.next-id` takes the larger value. A read-only mirror
   ignores the pending ref.
-- **A sync is one parentless commit.** `create`, `archive`/`restore`, `import`, `configure`,
+- **A sync is one parentless commit.** `archive`/`restore`, `import`, `configure`,
   `cq specs push [--drop <id>...]` and the end of `cq git push`, `cq git pr create` and
   `cq git pr merge` (GitHub and Azure) send the store. Each attempt re-reads the pending ref,
   fetches the tip T, replays onto it, runs the sync operation, and pushes ONE parentless commit
@@ -247,7 +247,12 @@ and discuss under. The spec on the branch stays the source of truth.
   GitHub and `none` otherwise.
 - **Identity.** With a provider, the card is created first, in one request, and its native number
   is the spec ID. A pending spec that conflicts with the remote refuses the creation before the
-  card exists; any refusal after the card was created names it as an orphan to close by hand. `cq specs new --card <n>` adopts an existing issue or work item instead: its
+  card exists; any refusal after the card was created names it as an orphan to close by hand.
+  **Capturing is a local write, sending is the sync:** `cq specs new` on the `git` backend lands the
+  document and the counter in the clone's pending commit, with no push, so a creation costs no
+  network beyond the card request and a fetch when the cache expired. The id is allocated over the
+  remote tip and the pending commit; two clones that create the same id inside the fetch cache
+  window collide at the push, which refuses with both blobs and overwrites nothing. `cq specs new --card <n>` adopts an existing issue or work item instead: its
   text becomes `## Problem` when the spec has none, `<n>` is the ID, and the item is rewritten to
   the thin card after the spec is written. A tracker backend refuses `--card`.
 - **Body.** A `<!-- quenching-card -->` marker (never the tracker backends' spec marker), the

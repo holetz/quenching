@@ -832,6 +832,29 @@ class TargetLauncher(unittest.TestCase):
         self.assertIn("exit /b %ERRORLEVEL%", source)
         self.assertNotIn("execv", source)
 
+    def test_the_windows_branch_runs_cq_in_the_same_process(self):
+        """The `nt` branch holds no second interpreter and, run as if on Windows, answers like the real `cq`."""
+        source = self.shim.read_text(encoding="utf-8")
+        nt_branch = source.split('if os.name == "nt":')[1].split("os.execv")[0]
+        self.assertNotIn("subprocess", source)
+        self.assertIn("sys.path.insert(0", nt_branch)
+        self.assertIn('["main"](sys.argv[1:])', nt_branch)
+        probe = self.payload / "bin/cq_nt_probe"
+        probe.write_text(source.replace('os.name == "nt"', "True", 1), encoding="utf-8")
+        try:
+            for argv in (["--version"], ["nosuch pillar", "a b"]):
+                with self.subTest(argv=argv):
+                    real = subprocess.run([sys.executable, str(self.payload / "assets/bin/cq"), *argv],
+                                          capture_output=True, text=True)
+                    nt = subprocess.run([sys.executable, str(probe), *argv], capture_output=True, text=True)
+                    self.assertEqual(real.returncode, nt.returncode)
+                    self.assertEqual(real.stdout, nt.stdout)
+                    self.assertEqual(real.stderr.replace("cq_nt_probe", "cq"), nt.stderr.replace("cq_nt_probe", "cq"))
+            self.assertNotEqual(0, nt.returncode)
+            self.assertIn("nosuch pillar", nt.stderr)
+        finally:
+            probe.unlink()
+
     def test_it_exposes_fifteen_pillars(self):
         run = subprocess.run([sys.executable, str(REAL), "--help"], capture_output=True, text=True)
         self.assertEqual(run.returncode, 0, run.stderr)
