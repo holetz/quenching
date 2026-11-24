@@ -59,7 +59,7 @@
     ".agents/quenching/assets/bin/quenching/common/text.py": "9413f35123d304aa08c1647ce811fdb111ff44612054469591b696394f39fc4c",
     ".agents/quenching/assets/bin/quenching/common/tools.py": "341dc7a06d659f8264a4df7cc0cc0fa776c03ee5c2f95b0e56b0a21fb8aa9568",
     ".agents/quenching/assets/bin/quenching/common/version.py": "3ec396153f35faecc5a189b901216520011cddd9921364c5508fd4749a48152e",
-    ".agents/quenching/assets/bin/quenching/components/commands/bridge.py": "e2f3a63d91307462898dd0063c81a02bd4c8334cdb547a612f417dbfd8ff2acd",
+    ".agents/quenching/assets/bin/quenching/components/commands/bridge.py": "85d72849002ba44b3de7a72aba835e9af9a7e5ac8a1989bf86de908edc839067",
     ".agents/quenching/assets/bin/quenching/components/commands/cli.py": "59d00afb136ea822cb45acb89e6f8d156f8b67604a559a7007eeb9f9333c49ff",
     ".agents/quenching/assets/bin/quenching/components/commands/cost.py": "c99123f22c3ec2a83adab78a8d2fb3b7c6532d0c4c281c989e02375a38d28236",
     ".agents/quenching/assets/bin/quenching/components/commands/doctor.py": "06a5e47a0eeafe645272664c39b9212ca32fcba79ffe0ba16eee3f6981634f7a",
