@@ -203,7 +203,11 @@ def _mcp_merge(target: Path, wanted: dict[str, list[str]], previous: dict | None
             warnings.extend(why)
             new = (None if current is not None and base is None
                    else mcpfiles.merged(rel, base, wanted[rel], extras))
-            opencode = extras if new is not None else None
+            # Record only what this merge writes: a depth or an allow the user already had is
+            # theirs, and the removal must not take it out.
+            written = mcpfiles.written_extras(base, extras)
+            opencode = written if new is not None and (
+                written["subagentDepth"] is not None or written["externalDirectory"]) else None
         elif rel in wanted:
             new = mcpfiles.merged(rel, current, wanted[rel])
         elif current is not None and mcpfiles.NAME in current:

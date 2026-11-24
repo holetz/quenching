@@ -70,6 +70,35 @@ class TheOpencodeExtras(unittest.TestCase):
         self.assertEqual({"$schema", "mcp"}, set(doc))
 
 
+class TheRecordIsOnlyWhatWasWritten(unittest.TestCase):
+    def test_an_empty_file_records_the_depth_and_both_allows(self):
+        self.assertEqual({"subagentDepth": 4, "externalDirectory": PATTERNS},
+                         mcpfiles.written_extras(None, EXTRAS))
+
+    def test_a_user_depth_equal_or_higher_is_not_recorded(self):
+        for value in (4, 6):
+            text = json.dumps({"experimental": {"subagent_depth": value}})
+            self.assertIsNone(mcpfiles.written_extras(text, EXTRAS)["subagentDepth"])
+
+    def test_a_lower_user_depth_is_raised_and_recorded(self):
+        text = json.dumps({"experimental": {"subagent_depth": 2}})
+        self.assertEqual(4, mcpfiles.written_extras(text, EXTRAS)["subagentDepth"])
+
+    def test_an_allow_the_user_already_had_is_not_recorded(self):
+        text = json.dumps({"permission": {"external_directory": {PATTERNS[0]: "allow"}}})
+        self.assertEqual([PATTERNS[1]], mcpfiles.written_extras(text, EXTRAS)["externalDirectory"])
+
+    def test_removal_keeps_the_depth_and_the_allow_the_user_already_had(self):
+        user = json.dumps({"experimental": {"subagent_depth": 4},
+                           "permission": {"external_directory": {PATTERNS[0]: "allow"}}})
+        written = mcpfiles.merged(mcpfiles.OPENCODE, user, ARGV, EXTRAS)
+        recorded = mcpfiles.written_extras(user, EXTRAS)
+        out = json.loads(mcpfiles.removed(mcpfiles.OPENCODE, written, recorded))
+        self.assertEqual(4, out["experimental"]["subagent_depth"])
+        self.assertEqual({PATTERNS[0]: "allow"}, out["permission"]["external_directory"])
+        self.assertNotIn("mcp", out)
+
+
 class ThePatterns(unittest.TestCase):
     def test_the_slots_and_the_store_are_siblings_of_the_primary(self):
         self.assertEqual(["/srv/p/repo-slot-*", "/srv/p/repo.*"],
