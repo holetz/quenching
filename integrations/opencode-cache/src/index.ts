@@ -9,6 +9,9 @@ import { WORDS, langOf } from "./core/i18n.ts"
 import type { Words } from "./core/i18n.ts"
 import type { Rec } from "./core/types.ts"
 import { runHandoff } from "./handoff.ts"
+import { fileURLToPath } from "node:url"
+import { mkdir, writeFile } from "node:fs/promises"
+import { dirname } from "node:path"
 import { applyStep, clearReset, expiresIn, explicitCache, normModel, reset, view } from "./track.ts"
 import type { ModelRef } from "./track.ts"
 
@@ -16,6 +19,7 @@ type Session = { rec: Rec | null; hidden: boolean; model?: ModelRef }
 type Checkout = { settings: Settings; words: Words; at: number }
 
 const KEEP = "quenching-cache"
+const HAIKU = { id: "claude-haiku-5-5", providerID: "anthropic" }
 const CHECKOUT_TTL_MS = 5 * 60_000
 
 export default Plugin.define({
@@ -55,7 +59,26 @@ export default Plugin.define({
       handoff: async (input) => {
         const { sessionID, directory, focus } = input as { sessionID: string; directory: string; focus: string }
         const { words } = await checkoutOf(directory)
-        return runHandoff({ sessionID, directory, focus, words })
+        const session = await sessionOf(sessionID)
+        const core = (name: string) => readFile(fileURLToPath(new URL(`./core/${name}`, import.meta.url)), "utf8")
+        const band = await bandOf(sessionID, directory)
+        return runHandoff({
+          sessionID, directory, focus, words, now: Date.now(),
+          context: () => ctx.session.context({ sessionID }) as unknown as Promise<unknown[]>,
+          generate: async (prompt) => (await ctx.experimental.generate.text({ prompt, model: HAIKU as never })).text,
+          cq: async (args) => {
+            const run = await cqRun(directory, args, 120_000).catch(() => undefined)
+            return run && run.code !== -1 ? { code: run.code, stdout: run.stdout } : null
+          },
+          writeFile: async (path, text) => { await mkdir(dirname(path), { recursive: true }); await writeFile(path, text, "utf8") },
+          openSession: async (line) => {
+            const created = await ctx.session.create({ location: { directory } as never })
+            await ctx.session.prompt({ sessionID: (created as { id: string }).id as never, text: line })
+          },
+          template: await core("handoff-template.md"),
+          preamble: await core("handoff-brief.md"),
+          numbers: { tokens: session.rec?.prefix, window: session.rec?.window, model: session.rec?.model, bar: band.text },
+        })
       },
     })
 
