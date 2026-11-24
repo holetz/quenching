@@ -551,6 +551,12 @@ function SpecsPanel(props: PanelProps) {
             </span>
           )}
         </Show>
+        <Show when={(quench()?.warnings ?? []).length > 0}>
+          <span class="qs-quench warn" title={(quench()?.warnings ?? []).join("\n")}>
+            <span class="qs-health-dot" />
+            {`${quench()?.warnings.length} aviso(s)`}
+          </span>
+        </Show>
         <ctx.ui.Button size="small" busy={busy()} onClick={() => void openBoard()}>Board</ctx.ui.Button>
         <Show when={hasSettingsPage(ctx)}>
           <ctx.ui.IconButton icon="sliders" label="Configurações do quenching" size="small" variant="ghost"

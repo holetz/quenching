@@ -942,6 +942,20 @@ class TargetLauncher(unittest.TestCase):
         finally:
             probe.unlink()
 
+    def test_the_windows_branch_forces_utf8_streams_before_main(self):
+        """`runpy.run_path` skips cq's `__main__` block, so the launcher itself must force UTF-8."""
+        probe = self.payload / "bin/cq_nt_utf8_probe"
+        probe.write_text(self.shim.read_text(encoding="utf-8").replace('os.name == "nt"', "True", 1),
+                         encoding="utf-8")
+        env = {**os.environ, "PYTHONIOENCODING": "cp1252"}
+        env.pop("PYTHONUTF8", None)
+        try:
+            run = subprocess.run([sys.executable, str(probe), "nosuchā"], capture_output=True, env=env)
+        finally:
+            probe.unlink()
+        self.assertNotEqual(0, run.returncode)
+        self.assertIn("nosuchā", run.stderr.decode("utf-8"))
+
     def test_it_exposes_fifteen_pillars(self):
         run = subprocess.run([sys.executable, str(REAL), "--help"], capture_output=True, text=True)
         self.assertEqual(run.returncode, 0, run.stderr)

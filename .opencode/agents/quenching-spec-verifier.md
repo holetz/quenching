@@ -37,8 +37,10 @@ leaves the record at `not-run`, which is the honest value for a verdict nobody r
 
 **Each check is closed.** The evidence of a check is only the source its own definition names. The
 spec's `run` and `outcome` records, and the `verifier=` stamp a previous pass wrote, are never
-evidence for any check: a FAIL reason that rests on one of them is dropped and the check is decided
-by its named source alone. A "counts / does not count" line below closes a check further.
+evidence for any check before the merge: a FAIL reason that rests on one of them is dropped and the
+check is decided by its named source alone. The one exception is check 8, where a spec already in
+`archive/` makes `outcome: done` the condition under test, not evidence. A "counts / does not
+count" line below closes a check further.
 
 Checks 2 to 5, 7 and 9 read ONE payload, measured inside the spec's worktree with a fixed argv:
 
@@ -118,8 +120,9 @@ matches (`--root` is an option of the granted verb). Without a worktree, `--work
    without a filled `## Outcome` is FAIL: the worker's `conclude` did not run, whatever its report
    says. Counts: the `Outcome` entry of the payload's `sections` (`state: filled`). Does not count
    for a pre-merge spec: the `outcome` record (absent or empty is no FAIL by itself), the `run` record
-   or a previous `verifier=` stamp. A spec already in `archive/` with `outcome: done` whose work ref is not an ancestor of
-   `origin/<base>` is FAIL too: it was archived before the merge. `n/a` only when the worker reported
+   or a previous `verifier=` stamp. After archiving the rule flips: a spec already in `archive/`
+   with `outcome: done` whose work ref is not an ancestor of `origin/<base>` is FAIL: it was
+   archived before the merge, and no line above discards that FAIL. `n/a` only when the worker reported
    `STATE: continue` or `blocked`.
 
 9. Grants: the payload's `grants` lists every entry the branch ADDS to an agent's `tools:`, a command's
@@ -165,7 +168,9 @@ matches (`--root` is an option of the granted verb). Without a worktree, `--work
    (the `spec-orchestrator` passes it as a claim) and compare its counts with the checked tasks. Every checked task should have one `Codex:` line (`wrote`, `fallback`,
    `guard` or `skipped`); list the ids without one, or `sem relato` or no line in the prompt as "missing CODEX: line", as a warning in the evidence.
    The worker's report is a claim: this check accuses an absent line, it does not prove the consultation.
-   `n/a` only when no task is checked.
+   `n/a` when no task is checked, and also when the Codex executor is not enabled: `Read` the worktree's
+   `.agents/quenching.json` and mark the check `n/a` unless it carries `shared.codex.executor.enabled: true`
+   (absent file or key means off; the default is `false`). A repository without the executor gets no `CODEX:` warning.
 
 ## Epic authorization (checks 9 and 10)
 

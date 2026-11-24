@@ -38,7 +38,7 @@
 
     ".agents/quenching/agents/spec-scout.md": "95b32cf8fd4579cbb6b2981110a52c478bca0a2a7b8e4f51eee48f0bbef4e0c2",
 
-    ".agents/quenching/agents/spec-verifier.md": "9c16737328eab6fdea2039d2559afe0a7dcb036c4001154bb245c41007f1c893",
+    ".agents/quenching/agents/spec-verifier.md": "af8ee452e3ac5df21d08e8a9de5cbfdb4247cc5e56e411c1b0c354538a40f7dd",
 
     ".agents/quenching/assets/bin/cq": "3f3cf930ead5e7297832d70af13a4659c374c7e5a0b1c1612363f4d839b7bab2",
 
@@ -136,15 +136,15 @@
 
     ".agents/quenching/assets/bin/quenching/deploy/__init__.py": "d9efa3062ac0c40e82c0bfc4041b7485a60420e2576afef7e94a72277a8cc0ff",
 
-    ".agents/quenching/assets/bin/quenching/deploy/cli.py": "7114a66aa0e4d0f83a17fcd54cad9b15071c7dbf37193c23ff490734fbd7c98c",
+    ".agents/quenching/assets/bin/quenching/deploy/cli.py": "d35d9451b7c8241ea11a25397c07484f5d91a99399447190b2d096cea6ecfef5",
 
-    ".agents/quenching/assets/bin/quenching/deploy/mcpfiles.py": "90c586ff3592fcf71ad4f429c65f8e39fec7350108b4c3c9a09a9f0b6c432482",
+    ".agents/quenching/assets/bin/quenching/deploy/mcpfiles.py": "28d6978e136de7ef8760b38b7c03f4ee523493e291262b507008c5bc3f128d28",
 
     ".agents/quenching/assets/bin/quenching/deploy/settings.py": "dc24b41de07969aac1ec96f3137c2158117c5f4aa679ad7af306379925a36485",
 
     ".agents/quenching/assets/bin/quenching/deploy/translate.py": "865d1395c9e0676f9f7f332d2cb5327845eec44d208257e77506686dbb4e0798",
 
-    ".agents/quenching/assets/bin/quenching/deploy/tree.py": "d7d497102d8e815b630502e1e7d1e686985289a933b595d6284d53a1681323b7",
+    ".agents/quenching/assets/bin/quenching/deploy/tree.py": "1158cceb008ec7b0c4040feea2f6e19fb7784030ada98690c5d6b5ef348929a5",
 
     ".agents/quenching/assets/bin/quenching/git/__init__.py": "8501760dcf5ab3b77195533888acbe6fe7f2795ad387cedbe869be8aeac11e4b",
 
@@ -274,13 +274,13 @@
 
     ".agents/quenching/assets/bin/quenching/specs/backends/base.py": "bfc6e26b4f2b1904d04ca91123d675be33da33f7313895ef3fb1e203cd4dd023",
 
-    ".agents/quenching/assets/bin/quenching/specs/backends/git.py": "6defedd49cf6898085162d5dac950dace6798066c5362b224d4c79570514bd59",
+    ".agents/quenching/assets/bin/quenching/specs/backends/git.py": "d22f9e1a298ef9b287aa6aeb3ac420b8028943bfc52673deb8d178d718479f3f",
 
     ".agents/quenching/assets/bin/quenching/specs/backends/github.py": "5016c49004ac71e797bb92bd31d2ae938141046a3a01154b135646d79ed2d1b4",
 
     ".agents/quenching/assets/bin/quenching/specs/backends/hybrid.py": "d8dc25aa28f0a2f62ea0f056e391ff3a3e2457150d89a21eeaac04f84812da44",
 
-    ".agents/quenching/assets/bin/quenching/specs/backends/lean_cache.py": "a71d3b7b55696ad8f290984d2f9408e9cb2f304be6496fbf2f330f7e502847a3",
+    ".agents/quenching/assets/bin/quenching/specs/backends/lean_cache.py": "40ed781f66d1a32053d6064c483a274c0d91a7cd9d51af5b08c3fc494dc1afa4",
 
     ".agents/quenching/assets/bin/quenching/specs/backends/memory.py": "72f5a90f9f63c16367bcf3ead1d7d2b8c51016ea505aac7ee05800be572a956e",
 
@@ -360,19 +360,19 @@
 
     ".agents/quenching/assets/bin/quenching/specs/parse/refs.py": "afdac27028ed4ca801c3305d6deade27ebc751b28ed598cd18579e70108b9311",
 
-    ".agents/quenching/assets/bin/quenching/specs/parse/sections.py": "bcc08eb4310e60d9753e1777e92104d25df1551ad38477dc34f8ca6bad35565c",
+    ".agents/quenching/assets/bin/quenching/specs/parse/sections.py": "534e8f27aadc92685fca3ca37db3e7a5d090a8bda7a0f14a286d908c6213e942",
 
     ".agents/quenching/assets/bin/quenching/specs/parse/spec.py": "6ea2338fd36c12e451a58b4eb1c9f93dad78a6e000e40700519e6454cd9ae240",
 
-    ".agents/quenching/assets/bin/quenching/specs/parse/tasks.py": "c41fc077ce19c71eb655819283c318ba7b4356c1b9d327e9860bddd667495455",
+    ".agents/quenching/assets/bin/quenching/specs/parse/tasks.py": "dd0e4698556b873a2314561e00f20fe4530249d67d6f352bed29b776d6d905b9",
 
-    ".agents/quenching/assets/bin/quenching/specs/parse/text.py": "8e0d0969a05d2764bdaae60d2afddbc6805aac585cb51ff347323a2adb658788",
+    ".agents/quenching/assets/bin/quenching/specs/parse/text.py": "c8b9e7b269a73925d161fa73174a66091a3a3e1b722868978b2e9602b2c290f7",
 
     ".agents/quenching/assets/bin/quenching/specs/portal.py": "5a9bc10cf2c3fd151969a2f985872e81ce26c0dddbdc23615a781b8df869ad59",
 
     ".agents/quenching/assets/bin/quenching/specs/release.py": "0d58748ccf84799d1832d95970f256363989cf2628442faf07e7a9579582c3e7",
 
-    ".agents/quenching/assets/bin/quenching/specs/schema.py": "8ee9876bf97aeef9118df7902e8753c9160b31379a9ac47da2e8b2fa947bf3ce",
+    ".agents/quenching/assets/bin/quenching/specs/schema.py": "55817e59a81196852a2a6324643e376b8c1151b999b402ed07a47369fae319c8",
 
     ".agents/quenching/assets/bin/quenching/specs/store.py": "597cc53d1d219cdfb77216c92dadab2088aef5516bbda7e0bf05e1d1e795fe09",
 
@@ -518,7 +518,7 @@
 
     ".agents/quenching/assets/zensical/zensical.toml.tmpl": "deb86ab4c6d3eedfb12dd87f5baef0468460c940134972e4f5bf3d90d7be135d",
 
-    ".agents/quenching/bin/cq": "7b4a8285b4a5d0949f690aa219eef684beebf1bc66fb58dad9351255319932cc",
+    ".agents/quenching/bin/cq": "9aee09bc098f879a8cc100d06c1858454fa212596967f05694ae29920addd06f",
 
     ".agents/quenching/bin/cq.cmd": "9636ea6bdfd9421b15b723b6849c320476beebd7efdfdabbcf7a6c761928d3ad",
 
@@ -718,7 +718,7 @@
 
     ".claude/agents/quenching-spec-scout.md": "95b32cf8fd4579cbb6b2981110a52c478bca0a2a7b8e4f51eee48f0bbef4e0c2",
 
-    ".claude/agents/quenching-spec-verifier.md": "9c16737328eab6fdea2039d2559afe0a7dcb036c4001154bb245c41007f1c893",
+    ".claude/agents/quenching-spec-verifier.md": "af8ee452e3ac5df21d08e8a9de5cbfdb4247cc5e56e411c1b0c354538a40f7dd",
 
     ".claude/skills/.generated-files.json": "6e3d0c6bf7be573e934c066a88fd11e9e125a55b09831d39e0f090c013084ec9",
 
@@ -934,7 +934,7 @@
 
     ".opencode/agents/quenching-spec-scout.md": "045446cccbf5e40a70fe7db44b9fc22d1ffa9216c7d35ff55500a610d578d607",
 
-    ".opencode/agents/quenching-spec-verifier.md": "d1139f1d5cdad8b1caed6add3be5d65f6d3358b8ad8eacab793460017ae76417"
+    ".opencode/agents/quenching-spec-verifier.md": "6638a6ab301ec7a8d7534724c2806f122411cf645a5af29d345c9fdc8dafcf0e"
   },
   "mcp": {
     "mount": "all",

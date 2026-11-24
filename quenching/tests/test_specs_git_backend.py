@@ -164,6 +164,18 @@ class LeanListCache(GitStoreFixture):
         self.assertTrue(titles[0].startswith("New "), titles)
 
 
+    def test_an_archived_spec_does_not_keep_the_open_phase_records(self):
+        clone = self.clone("a")
+        backend = GitBackend(clone)
+        doc = canonical._case_doc() + "\n## Tasks\n\n### 1. One\n\n- [x] 1.1 Done\n"
+        backend.create_spec("plans", doc)
+        self.assertIn("spec:built", backend.list_specs(lean=True)[0]["records"])
+        info, _ = backend.read_spec(1)
+        backend.move_spec(info, "archive")  # same blob, other phase
+        archived = GitBackend(clone).list_specs(lean=True)[0]
+        self.assertEqual("archive", archived["phase"])
+        self.assertNotIn("spec:built", archived["records"])
+
 class Layout(GitStoreFixture):
     def test_the_first_write_bootstraps_an_orphan_branch(self):
         backend = GitBackend(self.clone("a"))

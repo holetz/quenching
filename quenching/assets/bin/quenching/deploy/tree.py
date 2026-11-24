@@ -244,7 +244,9 @@ REAL = os.path.join(ROOT, "assets", "bin", "cq")
 if os.name == "nt":
     import runpy
     sys.path.insert(0, os.path.dirname(REAL))
-    sys.exit(runpy.run_path(REAL)["main"](sys.argv[1:]))
+    cq = runpy.run_path(REAL)  # run_name is not "__main__", so cq's own UTF-8 forcing never ran
+    cq["force_utf8_streams"]()
+    sys.exit(cq["main"](sys.argv[1:]))
 os.execv(sys.executable, [sys.executable, REAL, *sys.argv[1:]])
 '''
 
