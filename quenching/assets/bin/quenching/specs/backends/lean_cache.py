@@ -1,7 +1,8 @@
-"""A persistent `blob sha -> lean row fields` cache for `list --lean`.
+"""A persistent `<phase>:<blob sha> -> lean row fields` cache for `list --lean`.
 
-A blob is immutable, so what `derive_info` + `derive_labels` produce from it never changes
-unless the derivation itself does. The cache therefore lives beside the object store (never
+A blob is immutable, but the stage and the records `derive_labels` yields also depend on the
+phase the document sits in (an archive move keeps the blob), so the key carries both. What
+`derive_info` + `derive_labels` produce for one key never changes unless the derivation does. The cache therefore lives beside the object store (never
 tracked, shared by every worktree) and is keyed by a fingerprint of the schema and of the parse
 sources: editing either drops the whole file. Every failure degrades to "no cache" — the listing
 is always computable without it."""
@@ -31,6 +32,10 @@ def _fingerprint() -> str:
     return h.hexdigest()
 
 
+def lean_key(phase: str, blob: str) -> str:
+    return f"{phase}:{blob}"
+
+
 class LeanCache:
     def __init__(self, directory: str | None) -> None:
         self.path = os.path.join(directory, _CACHE_NAME) if directory else None
@@ -47,18 +52,18 @@ class LeanCache:
             except (OSError, ValueError):
                 pass
 
-    def get(self, blob: str) -> dict | None:
-        return self.rows.get(blob)
+    def get(self, key: str) -> dict | None:
+        return self.rows.get(key)
 
-    def put(self, blob: str, row: dict) -> None:
-        self.rows[blob] = row
+    def put(self, key: str, row: dict) -> None:
+        self.rows[key] = row
         self.dirty = True
 
     def save(self, keep: set[str]) -> None:
-        """Write once, atomically, pruned to the blobs the current tip still carries."""
+        """Write once, atomically, pruned to the keys the current tip still carries."""
         if not self.path or not (self.dirty or len(self.rows) != len(keep & set(self.rows))):
             return
-        rows = {b: r for b, r in self.rows.items() if b in keep}
+        rows = {k: r for k, r in self.rows.items() if k in keep}
         tmp = f"{self.path}.{os.getpid()}.tmp"
         try:
             with open(tmp, "w", encoding="utf-8") as fh:
