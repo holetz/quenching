@@ -216,7 +216,7 @@
 
     ".agents/quenching/assets/bin/quenching/knowledge/validate.py": "6e673e47c5dbf5ed925da8cfef8703e71acc62ca9817266512b50e1aa661aa3e",
 
-    ".agents/quenching/assets/bin/quenching/mcp/catalog.py": "cd747134dfa15bb93ced66165eb2bac6ae8304d50b6818f93428e4604ae16945",
+    ".agents/quenching/assets/bin/quenching/mcp/catalog.py": "e5745c0fe6560a95eaef200ef14064475864c80c0288916444af9bb1a626c728",
 
     ".agents/quenching/assets/bin/quenching/mcp/cli.py": "168d60922494389e5c02eb624e6178d33ab76f73125b67521e010d08f5e43b55",
 
@@ -294,11 +294,11 @@
 
     ".agents/quenching/assets/bin/quenching/specs/chat.py": "987e59657e252c05e8bbdc79537f6e016c43649f0e9386103579abb0d0c0ed22",
 
-    ".agents/quenching/assets/bin/quenching/specs/claims.py": "757c3a7a9cf4ec7687ac7b44e232be325c25d0ae8a6dc8e7fc8ea5ae78ec0566",
+    ".agents/quenching/assets/bin/quenching/specs/claims.py": "9658385b3f8adced79bc43947ba3d60edb1649901fe36568813e05fbc4db502f",
 
     ".agents/quenching/assets/bin/quenching/specs/commands/artifacts.py": "7b920d2218de27a351413c743b58d3cfe6279936e617e124b3538a3d92e81d4c",
 
-    ".agents/quenching/assets/bin/quenching/specs/commands/claim.py": "e500cf9bc13a1aa1d4b4de45c275d56ba486311bf8173b6ad9ffb74e0e1fa9b8",
+    ".agents/quenching/assets/bin/quenching/specs/commands/claim.py": "c5137fc1f1f2a59094d4398f6efd12bdf718e8de5b6b2ebf092dceb5e8eb996d",
 
     ".agents/quenching/assets/bin/quenching/specs/commands/cli.py": "2e30c62eb3cc0ae6ee51e2959853050ca68be37f65ad8130650ba1fa245f2afb",
 

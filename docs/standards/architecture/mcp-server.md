@@ -62,7 +62,7 @@ which stays with `specs_push`.
 
 | Class | Meaning | MCP annotation |
 | --- | --- | --- |
-| `read` | Reads the workspace | `readOnlyHint: true` |
+| `read` | Reads the workspace | `readOnlyHint: true`; a row whose verb reads the remote (`specs_claim_list`) also sets `openWorldHint: true` |
 | `write` | Can change the workspace or specs store | `readOnlyHint: false`; worktree retire, worktree release and artifact rm also set `destructiveHint: true` |
 | `external` | Can act outside the machine | `openWorldHint: true`; destructive merge/prune also set `destructiveHint: true` |
 

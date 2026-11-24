@@ -248,6 +248,9 @@ class Surface(unittest.TestCase):
             self.assertEqual(by_name[name]["inputSchema"]["type"], "object")
         self.assertTrue(by_name["git_base"]["annotations"]["readOnlyHint"])
         self.assertTrue(by_name["git_push"]["annotations"]["openWorldHint"])
+        listed = by_name["specs_claim_list"]["annotations"]
+        self.assertEqual((True, True), (listed["readOnlyHint"], listed["openWorldHint"]))
+        self.assertFalse(by_name["git_base"]["annotations"]["openWorldHint"])
 
     def test_an_absent_pillar_publishes_no_tool(self):
         surface = catalog.surface(present=lambda pillar: pillar not in ("ops", "specs"))

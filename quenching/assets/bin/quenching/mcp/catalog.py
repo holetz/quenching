@@ -44,6 +44,7 @@ class Row(NamedTuple):
     cls: str
     destructive: bool = False
     hidden: frozenset = frozenset()   # parser dests the tool never publishes
+    open_world: bool = False          # a read row whose verb reads the remote: `openWorldHint`
 
 
 def _rows(pillar: str, cls: str, *paths: str) -> dict[str, Row]:
@@ -106,7 +107,7 @@ CATALOG: dict[str, Row] = {
     **_rows("config", "read", "schema"),
     **_rows("config", "write", "set"),
     # A build's reservation lives on the `origin`: every change to it is a push.
-    **_rows("specs", "read", "claim list"),
+    "specs_claim_list": Row("specs", ("claim", "list"), "read", open_world=True),
     **_rows("specs", "external", "claim acquire", "claim renew"),
     "specs_claim_release": Row("specs", ("claim", "release"), "external", True),
 }
@@ -236,7 +237,8 @@ ANNOTATIONS = {
 
 
 def annotations(row: Row) -> dict:
-    return {**ANNOTATIONS[row.cls], **({"destructiveHint": True} if row.destructive else {})}
+    return {**ANNOTATIONS[row.cls], **({"destructiveHint": True} if row.destructive else {}),
+            **({"openWorldHint": True} if row.open_world else {})}
 
 
 _described: dict[str, dict] = {}
