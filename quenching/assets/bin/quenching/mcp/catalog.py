@@ -103,6 +103,11 @@ CATALOG: dict[str, Row] = {
     **_rows("specs", "write", "title", "depends"),
     **_rows("config", "read", "schema"),
     **_rows("config", "write", "set"),
+    # A build's reservation lives on the `origin`: every change to it is a push.
+    **_rows("specs", "read", "claim list"),
+    **_rows("specs", "external", "claim acquire", "claim renew"),
+    "specs_claim_release": Row("specs", ("claim", "release"), "external", True),
+    "specs_claim_take": Row("specs", ("claim", "take"), "external", True),
 }
 
 
