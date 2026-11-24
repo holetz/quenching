@@ -475,16 +475,13 @@ class Deploy(unittest.TestCase):
                           "args": ["run", "--no-project", "python",
                                    ".agents/quenching/assets/bin/cq", "specs", "mcp"]},
                          claude["mcpServers"]["quenching"])
-        codex = (self.target / ".codex/config.toml").read_text()
-        self.assertIn("[mcp_servers.quenching]", codex)
-        self.assertIn('command = "uv"', codex)
-        self.assertIn('".agents/quenching/assets/bin/cq", "specs", "mcp"]', codex)
+        self.assertFalse((self.target / ".codex/config.toml").exists())
         opencode = json.loads((self.target / "opencode.json").read_text())
         self.assertEqual(["uv", "run", "--no-project", "python",
                           ".agents/quenching/assets/bin/cq", "specs", "mcp"],
                          opencode["mcp"]["quenching"]["command"])
         self.assertTrue(opencode["mcp"]["quenching"]["enabled"])
-        for rel in (".mcp.json", ".codex/config.toml", "opencode.json"):
+        for rel in (".mcp.json", "opencode.json"):
             self.assertIn(rel, [c["path"] for c in payload["changes"]])
         manifest = json.loads((self.target / ".agents/.quenching-deploy.json").read_text())
         self.assertEqual({"mount": "specs",
@@ -497,12 +494,11 @@ class Deploy(unittest.TestCase):
         self.assertEqual(0, code, payload)
         server = json.loads((self.target / ".mcp.json").read_text())["mcpServers"]["quenching"]
         self.assertEqual([".agents/quenching/assets/bin/cq", "specs", "mcp"], server["args"][-3:])
-        self.assertTrue((self.target / ".codex/config.toml").exists())
+        self.assertFalse((self.target / ".codex/config.toml").exists())
         self.assertTrue((self.target / "opencode.json").exists())
         manifest = json.loads((self.target / ".agents/.quenching-deploy.json").read_text())
         self.assertEqual("specs", manifest["mcp"]["mount"])
-        self.assertEqual([".codex/config.toml", ".mcp.json", "opencode.json"],
-                         sorted(manifest["mcpFiles"]))
+        self.assertEqual([".mcp.json", "opencode.json"], sorted(manifest["mcpFiles"]))
         self.assertEqual([], self.run_deploy("--check")[1]["changes"])
 
     def test_turning_the_option_off_keeps_the_recorded_prefix(self):
@@ -517,22 +513,36 @@ class Deploy(unittest.TestCase):
     def test_a_hand_written_mcp_file_keeps_its_own_entries(self):
         self.configure(self.mcp_config())
         self.write(".mcp.json", '{"mcpServers": {"mine": {"command": "x"}}}\n')
-        self.write(".codex/config.toml", 'model = "o3"\n\n[mcp_servers.mine]\ncommand = "x"\n')
         self.write("opencode.json", '{"theme": "dark", "mcp": {"mine": {"type": "local"}}}\n')
         code, payload = self.run_deploy("--modules", "specs", "--write")
         self.assertEqual(0, code, payload)
         servers = json.loads((self.target / ".mcp.json").read_text())["mcpServers"]
         self.assertEqual({"command": "x"}, servers["mine"])
         self.assertIn("quenching", servers)
-        codex = (self.target / ".codex/config.toml").read_text()
-        self.assertIn('model = "o3"', codex)
-        self.assertIn('[mcp_servers.mine]\ncommand = "x"', codex)
-        self.assertEqual(1, codex.count("[mcp_servers.quenching]"))
         opencode = json.loads((self.target / "opencode.json").read_text())
         self.assertEqual("dark", opencode["theme"])
         self.assertEqual({"type": "local"}, opencode["mcp"]["mine"])
         self.assertIn("quenching", opencode["mcp"])
         self.assertEqual([], self.run_deploy("--check")[1]["changes"])
+
+    def test_an_entry_a_codex_deploy_wrote_is_taken_out_and_the_users_stays(self):
+        self.configure(self.mcp_config())
+        self.assertEqual(0, self.run_deploy("--modules", "specs", "--write")[0])
+        self.write(".codex/config.toml", 'model = "o3"\n\n[mcp_servers.mine]\ncommand = "x"\n\n'
+                   '[mcp_servers.quenching]\ncommand = "uv"\nargs = ["a"]\n')
+        path = self.target / ".agents/.quenching-deploy.json"
+        manifest = json.loads(path.read_text())
+        manifest["harnesses"] = ["claude", "codex", "opencode"]
+        manifest["mcpFiles"] = [".codex/config.toml", ".mcp.json", "opencode.json"]
+        path.write_text(json.dumps(manifest))
+        code, payload = self.run_deploy("--modules", "specs", "--write")
+        self.assertEqual(0, code, payload)
+        codex = (self.target / ".codex/config.toml").read_text()
+        self.assertIn('model = "o3"', codex)
+        self.assertIn('[mcp_servers.mine]\ncommand = "x"', codex)
+        self.assertNotIn("[mcp_servers.quenching]", codex)
+        self.assertEqual(["claude", "opencode"],
+                         json.loads(path.read_text())["harnesses"])
 
     def test_remove_takes_out_only_the_quenching_entry(self):
         self.write(".mcp.json", '{"mcpServers": {"mine": {"command": "x"}}}\n')
@@ -554,7 +564,7 @@ class Deploy(unittest.TestCase):
     def test_a_uvx_runtime_without_the_option_registers_nothing_and_warns(self):
         code, payload = self.run_deploy("--modules", "specs", "--runtime", "uvx", "--write")
         self.assertEqual(0, code, payload)
-        for rel in (".mcp.json", ".codex/config.toml", "opencode.json"):
+        for rel in (".mcp.json", "opencode.json"):
             self.assertFalse((self.target / rel).exists(), rel)
         self.assertTrue(any("MCP" in w for w in payload["warnings"]))
 
@@ -563,7 +573,6 @@ class Deploy(unittest.TestCase):
         self.assertEqual(0, self.run_deploy("--modules", "specs", "--harness", "claude",
                                             "--write")[0])
         self.assertTrue((self.target / ".mcp.json").exists())
-        self.assertFalse((self.target / ".codex/config.toml").exists())
         self.assertFalse((self.target / "opencode.json").exists())
 
     def test_the_option_refuses_a_uvx_runtime_and_an_invalid_shape(self):
@@ -644,7 +653,7 @@ class Deploy(unittest.TestCase):
         self.assertEqual(1, len(self.hook_commands()))
         self.assertIn("deny-claude-coauthor", self.hook_commands()[0])
         self.assertFalse((self.target / ".agents/quenching/assets/hooks/warn-git-add-all.py").exists())
-        code, _ = self.run_deploy("--modules", "specs", "--harness", "codex", "--write")
+        code, _ = self.run_deploy("--modules", "specs", "--harness", "opencode", "--write")
         self.assertEqual(0, code)
         self.assertEqual({"model": "x"}, self.settings())
 
@@ -654,11 +663,11 @@ class Deploy(unittest.TestCase):
         self.run_deploy("--modules", "core", "--harness", "opencode", "--write")
         self.assertFalse((self.target / ".claude/settings.json").exists())
 
-    def test_codex_only_writes_no_settings(self):
+    def test_the_removed_codex_harness_is_refused(self):
         code, payload = self.run_deploy("--modules", "core", "--harness", "codex", "--write")
-        self.assertEqual(0, code)
-        self.assertFalse((self.target / ".claude/settings.json").exists())
-        self.assertFalse((self.target / ".agents/quenching/assets/hooks").exists())
+        self.assertEqual(2, code)
+        self.assertEqual("ct-deploy-harness", payload["code"])
+        self.assertFalse((self.target / ".agents/.quenching-deploy.json").exists())
 
     def test_an_invalid_settings_file_refuses_with_exit_2_and_writes_nothing(self):
         self.write(".claude/settings.json", "{not json")
@@ -746,15 +755,15 @@ class TargetLauncher(unittest.TestCase):
         self.assertIn("exit /b %ERRORLEVEL%", source)
         self.assertNotIn("execv", source)
 
-    def test_it_exposes_fifteen_pillars(self):
+    def test_it_exposes_fourteen_pillars(self):
         run = subprocess.run([sys.executable, str(REAL), "--help"], capture_output=True, text=True)
         self.assertEqual(run.returncode, 0, run.stderr)
         choices = next(line.strip() for line in run.stdout.splitlines()
                        if line.strip().startswith("{") and line.strip().endswith("}"))
         pillars = set(choices[1:-1].split(","))
-        self.assertEqual(15, len(pillars))
+        self.assertEqual(14, len(pillars))
         self.assertEqual({"specs", "knowledge", "design", "components", "ops", "proof", "git",
-                          "toolchain", "delivery", "security", "opensource", "codex", "portal", "config", "mcp"}, pillars)
+                          "toolchain", "delivery", "security", "opensource", "portal", "config", "mcp"}, pillars)
 
     def test_it_answers_the_version_lockstep(self):
         run = subprocess.run([*launcher(self.shim), "--version"], capture_output=True, text=True)
@@ -786,7 +795,7 @@ class TargetLauncher(unittest.TestCase):
 
     def test_each_pillar_uses_the_same_version_grammar(self):
         pillars = ("specs", "knowledge", "design", "components", "ops", "proof", "git",
-                   "toolchain", "delivery", "security", "opensource", "codex", "portal", "config")
+                   "toolchain", "delivery", "security", "opensource", "portal", "config")
         for pillar in pillars:
             with self.subTest(pillar=pillar):
                 run = subprocess.run([*launcher(self.shim), pillar, "--version"],

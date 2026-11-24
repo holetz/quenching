@@ -10,13 +10,6 @@
       "output": "claude-json",
       "note": "The with arm runs in a fixture where `cq deploy` installed every module (the .claude/skills bridge and .agents/quenching/); the without arm gets no deploy. Run from a fixture whose project settings enable no plugin."
     },
-    "codex": {
-      "argv": ["codex", "exec", "--json", "--skip-git-repo-check", "-m", "{model}", "-C", "{workdir}", "{arm}", "{extra}", "{prompt}"],
-      "arms": {"with": []},
-      "deploy": {"with": "codex"},
-      "output": "codex-jsonl",
-      "note": "The with arm runs in a fixture where `cq deploy --harness codex` installed the .agents/skills surface; only the with arm exists here."
-    },
     "opencode": {
       "argv": ["opencode", "run", "--model", "{model}", "--format", "json", "{arm}", "{extra}", "{prompt}"],
       "arms": {"with": []},
