@@ -6,8 +6,6 @@ permission:
   webfetch: deny
   bash:
     "*": ask
-    ".agents/quenching/bin/cq specs show *": allow
-    ".agents/quenching/bin/cq components read *": allow
     "git ls-files *": allow
   "quenching_*": deny
   quenching_specs_show: allow

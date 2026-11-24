@@ -334,6 +334,9 @@ def build_tree(source: Path, target: Path, modules: list[str], harnesses: list[s
     if not selected:
         raise DeployError("no module selected")
     packages = _packages(selected)
+    # The registered whole server replaces every `cq` verb it serves: the grants the harness reads
+    # drop that shell door unless `shared.mcp.cliFallback` keeps both.
+    narrow = bool(mcp) and mcp["mount"] == "all" and not mcp.get("cliFallback")
     missing = [package for package in packages
                if not (source / "assets" / "bin" / "quenching" / package).is_dir()]
     if missing:
@@ -369,6 +372,7 @@ def build_tree(source: Path, target: Path, modules: list[str], harnesses: list[s
     for hook in hooks:
         _add_tree(tree, source, f"assets/hooks/{hook['name']}.py")
 
+    # The payload's agents are the source a target-local deploy re-reads: never narrowed.
     for name, path in _agents(source).items():
         _add(tree, f"{PAYLOAD}/agents/{name}.md",
              translate.agent_document(path.read_text(encoding="utf-8"), name).encode(), _mode(path))
@@ -400,7 +404,8 @@ def build_tree(source: Path, target: Path, modules: list[str], harnesses: list[s
                 if installed:
                     data = _read(path)
                 elif rel == "SKILL.md":
-                    data = translate.skill_document(path.read_text(encoding="utf-8"), name).encode("utf-8")
+                    data = translate.skill_document(path.read_text(encoding="utf-8"), name,
+                                                    narrow).encode("utf-8")
                 elif path.suffix == ".md":
                     data = translate.reference_document(path.read_text(encoding="utf-8")).encode("utf-8")
                 else:
@@ -411,13 +416,15 @@ def build_tree(source: Path, target: Path, modules: list[str], harnesses: list[s
         _bridge_tree(tree, target)
         for name, path in _agents(source).items():
             _add(tree, f"{CLAUDE_AGENTS}/{translate.agent_name(name)}.md",
-                 translate.agent_document(path.read_text(encoding="utf-8"), name).encode(), 0o644)
+                 translate.agent_document(path.read_text(encoding="utf-8"), name,
+                                          narrow).encode(), 0o644)
     if "opencode" in harnesses:
         # OpenCode reads `.opencode/agents/`, not `.claude/agents/`; without this copy a target
         # would keep every skill and lose the operator agents.
         for name, path in _agents(source).items():
             _add(tree, f"{OPENCODE_AGENTS}/{translate.agent_name(name)}.md",
-                 translate.opencode_agent_document(path.read_text(encoding="utf-8"), name).encode(),
+                 translate.opencode_agent_document(path.read_text(encoding="utf-8"), name,
+                                                   narrow).encode(),
                  0o644)
 
     seeds = {

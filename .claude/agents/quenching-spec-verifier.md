@@ -1,7 +1,7 @@
 ---
 name: quenching-spec-verifier
 description: "Audits a spec's real git and spec state and returns PASS or FAIL with evidence. Use before accepting any worker result. Read-only; never edits or fixes."
-tools: Read, Grep, Glob, Bash(.agents/quenching/bin/cq specs status:*), Bash(.agents/quenching/bin/cq specs show:*), Bash(.agents/quenching/bin/cq git audit:*), Bash(.agents/quenching/bin/cq git pr view:*), mcp__quenching__specs_epic_progress, mcp__quenching__specs_status, mcp__quenching__specs_show, mcp__quenching__git_audit, mcp__quenching__git_pr_view
+tools: Read, Grep, Glob, mcp__quenching__specs_epic_progress, mcp__quenching__specs_status, mcp__quenching__specs_show, mcp__quenching__git_audit, mcp__quenching__git_pr_view
 model: sonnet
 effort: low
 ---

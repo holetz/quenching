@@ -6,28 +6,6 @@ permission:
   webfetch: deny
   bash:
     "*": ask
-    ".agents/quenching/bin/cq specs status *": allow
-    ".agents/quenching/bin/cq specs list *": allow
-    ".agents/quenching/bin/cq specs show *": allow
-    ".agents/quenching/bin/cq specs parallel *": allow
-    ".agents/quenching/bin/cq specs next *": allow
-    ".agents/quenching/bin/cq specs record *": allow
-    ".agents/quenching/bin/cq specs reconcile *": allow
-    ".agents/quenching/bin/cq specs claim acquire *": allow
-    ".agents/quenching/bin/cq specs claim renew *": allow
-    ".agents/quenching/bin/cq specs claim release *": allow
-    ".agents/quenching/bin/cq specs claim list *": allow
-    ".agents/quenching/bin/cq components session cost *": allow
-    ".agents/quenching/bin/cq components session cache *": allow
-    ".agents/quenching/bin/cq components session context *": allow
-    ".agents/quenching/bin/cq git state *": allow
-    ".agents/quenching/bin/cq git push *": allow
-    ".agents/quenching/bin/cq git pr create *": allow
-    ".agents/quenching/bin/cq git pr probe *": allow
-    ".agents/quenching/bin/cq git pr record *": allow
-    ".agents/quenching/bin/cq git pr merge *": allow
-    ".agents/quenching/bin/cq git base *": allow
-    ".agents/quenching/bin/cq git conventions *": allow
     "git for-each-ref *": allow
     "git worktree list *": allow
     "gh pr view *": allow

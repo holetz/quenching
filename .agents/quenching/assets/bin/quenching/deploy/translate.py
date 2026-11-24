@@ -132,10 +132,29 @@ def _with_mcp(value: str, enumerate_all: bool) -> str:
     return ", ".join([value, *missing]) if missing else value
 
 
-def transform_tools(value: str, enumerate_mcp: bool = False) -> str:
+def narrowed(names: list[str]) -> list[str]:
+    """Each `Bash(cq <prefix>:*)` replaced by the shell grants its verbs with no MCP tool still
+    need (`coverage.cli_residue`), on the same launcher; every other grant, and a prefix that
+    names no verb, kept as is. Never wider than the source: the residue sits under its prefix."""
+    from quenching.mcp import coverage
+    out: list[str] = []
+    for name in names:
+        match = CQ_GRANT.match(name)
+        residue = (coverage.cli_residue(tuple((match.group(2) or "").split()))
+                   if match else None)
+        grants = [name] if residue is None else [
+            f"Bash({match.group(1)} {' '.join(path)}:*)" for path in residue]
+        out.extend(grant for grant in grants if grant not in out)
+    return out
+
+
+def transform_tools(value: str, enumerate_mcp: bool = False, narrow: bool = False) -> str:
     """Keep the shipped grant, re-rooted at the target-local `cq` and its `cq.cmd` twin, plus the
-    `quenching` MCP tools that grant covers."""
+    `quenching` MCP tools that grant covers. `narrow` (the server registered, no CLI fallback)
+    drops the shell grant each MCP tool replaces, keeping only `narrowed`'s residue."""
     value = _with_mcp(value, enumerate_mcp)
+    if narrow:
+        value = ", ".join(narrowed(_grant_names(value)))
     value = re.sub(r"Bash\(cq((?:\.cmd)?[^)]*):\*\)",
                    lambda m: f"Bash({CQ}{m.group(1)}:*)", value)
     def target_agent(item: str) -> str:
@@ -175,7 +194,7 @@ def _with_launcher_note(body: str) -> str:
     return LAUNCHER_NOTE + body
 
 
-def skill_document(raw: str, name: str) -> str:
+def skill_document(raw: str, name: str, narrow: bool = False) -> str:
     fields, body = split_frontmatter(raw)
     description = scalar_value(fields.get("description", ""))
     if not description:
@@ -185,7 +204,8 @@ def skill_document(raw: str, name: str) -> str:
                                                              ensure_ascii=False))]
     for key in ("argument-hint", "allowed-tools", "disable-model-invocation", "user-invocable"):
         if key in fields:
-            value = transform_tools(fields[key]) if key == "allowed-tools" else scalar_value(fields[key])
+            value = (transform_tools(fields[key], narrow=narrow) if key == "allowed-tools"
+                     else scalar_value(fields[key]))
             out.append((key, json.dumps(transform_platform(value), ensure_ascii=False)
                         if key == "argument-hint" else transform_platform(value)))
     return (_frontmatter(out) + HEADER + "\n\n"
@@ -224,8 +244,10 @@ def _shell_patterns(names: list[str]) -> list[str]:
     return patterns
 
 
-def opencode_permissions(tools: str | None) -> dict[str, str | dict[str, str]]:
-    """A source `tools:` list as OpenCode permissions: deny-first, with the cq grants allowed.
+def opencode_permissions(tools: str | None,
+                         narrow: bool = False) -> dict[str, str | dict[str, str]]:
+    """A source `tools:` list as OpenCode permissions: deny-first, with the cq grants allowed —
+    under `narrow`, only the cq grants no MCP tool replaces (`narrowed`).
 
     OpenCode applies the last matching rule, so the catch-all bash pattern comes first. The
     mapping mirrors the OpenCode distribution's agent writer; it lives here too because the
@@ -233,7 +255,8 @@ def opencode_permissions(tools: str | None) -> dict[str, str | dict[str, str]]:
     """
     if tools is None:
         return {}
-    names = _grant_names(tools)
+    source = _grant_names(tools)
+    names = narrowed(source) if narrow else source
     heads = {name.split("(", 1)[0] for name in names}
     granted: dict[str, str | dict[str, str]] = {}
     granted["edit"] = "allow" if heads & {"Edit", "Write", "NotebookEdit"} else "deny"
@@ -245,7 +268,7 @@ def opencode_permissions(tools: str | None) -> dict[str, str | dict[str, str]]:
     else:
         granted["bash"] = "ask" if "Bash" in heads else "deny"
     # Last match wins: the server-wide deny first, then the tools the cq grants cover.
-    mcp = mcp_tools(names)
+    mcp = mcp_tools(source)
     granted[f"{MCP_SERVER}_*"] = "allow" if mcp is None else "deny"
     granted.update(dict.fromkeys((f"{MCP_SERVER}_{tool}" for tool in mcp or []), "allow"))
     granted["task"] = _task_grant(names)
@@ -267,13 +290,13 @@ def _task_grant(names: list[str]) -> str | dict[str, str]:
     return {"*": "deny", **dict.fromkeys(allowed, "allow")}
 
 
-def opencode_agent_document(raw: str, name: str) -> str:
+def opencode_agent_document(raw: str, name: str, narrow: bool = False) -> str:
     """An OpenCode subagent: `mode: subagent`, deny-first permissions and the translated body."""
     fields, body = split_frontmatter(raw)
     description = scalar_value(fields.get("description", ""))
     if not description:
         raise ValueError(f"agent has no description: {name}")
-    granted = opencode_permissions(fields.get("tools"))
+    granted = opencode_permissions(fields.get("tools"), narrow)
     task = granted.pop("task", "allow")
     denies_task = task == "deny"
     if isinstance(task, dict):
@@ -300,7 +323,7 @@ def opencode_agent_document(raw: str, name: str) -> str:
     return "\n".join(out) + "\n\n" + HEADER + "\n\n" + preamble + transform_platform(_body(body))
 
 
-def agent_document(raw: str, name: str) -> str:
+def agent_document(raw: str, name: str, narrow: bool = False) -> str:
     fields, body = split_frontmatter(raw)
     description = scalar_value(fields.get("description", ""))
     if not description:
@@ -309,7 +332,7 @@ def agent_document(raw: str, name: str) -> str:
                                   ("description", json.dumps(transform_platform(description),
                                                              ensure_ascii=False))]
     if fields.get("tools"):
-        out.append(("tools", transform_tools(fields["tools"], enumerate_mcp=True)))
+        out.append(("tools", transform_tools(fields["tools"], enumerate_mcp=True, narrow=narrow)))
     for key in ("model", "effort"):
         if fields.get(key):
             out.append((key, fields[key]))

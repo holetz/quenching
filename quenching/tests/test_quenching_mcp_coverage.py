@@ -58,6 +58,37 @@ class Coverage(unittest.TestCase):
             self.assertTrue(reason.strip(), path)
             self.assertEqual(coverage.verb_path(list(path)), path)
 
+    def test_a_verb_a_tool_covers_leaves_no_shell_residue(self):
+        for prefix in (("specs", "status"), ("git", "worktree"), ("components", "read"),
+                       ("security", "leak"), ("specs", "claim")):
+            with self.subTest(prefix):
+                self.assertEqual(coverage.cli_residue(prefix), [])
+
+    def test_the_residue_keeps_the_exceptions_and_the_verbs_with_no_tool(self):
+        specs = coverage.cli_residue(("specs",))
+        for path in (("specs", "serve"), ("specs", "migrate"), ("specs", "sync")):
+            self.assertIn(path, specs)
+        self.assertNotIn(("specs", "status"), specs)
+        self.assertEqual(coverage.cli_residue(("git",)), [("git", "identity")])
+        self.assertEqual(coverage.cli_residue(("deploy",)), [("deploy",)])
+
+    def test_a_pillar_with_no_tool_below_collapses_to_one_path(self):
+        self.assertEqual(coverage.cli_residue(("portal",)), [("portal",)])
+        self.assertEqual(coverage.cli_residue(("specs", "sync")), [("specs", "sync")])
+
+    def test_the_whole_router_residue_has_each_path_once_and_never_the_lease_take(self):
+        whole = coverage.cli_residue(())
+        self.assertEqual(len(whole), len(set(whole)))
+        for path in (("deploy",), ("modules",), ("mcp",), ("portal",), ("specs", "serve")):
+            self.assertIn(path, whole)
+        self.assertFalse(any(path[:3] == ("specs", "claim", "take") or path == ("specs",)
+                             or path == ("specs", "claim") for path in whole))
+        self.assertEqual(coverage.cli_residue(("specs", "claim", "take")), [])
+
+    def test_a_prefix_that_names_no_verb_is_left_to_the_caller(self):
+        self.assertIsNone(coverage.cli_residue(("specs", "bogus")))
+        self.assertIsNone(coverage.cli_residue(("nopillar",)))
+
     def test_taking_a_live_lease_reaches_no_agent_grant(self):
         from quenching.deploy import translate
         self.assertNotIn("specs_claim_take", catalog.tool_names())
