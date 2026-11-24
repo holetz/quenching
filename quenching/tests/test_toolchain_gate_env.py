@@ -2,6 +2,7 @@
 renders dates the same way on a laptop, in an agent session and in CI — and runs every `python3`
 from the project's own environment."""
 
+import json
 import pathlib
 import re
 import subprocess
@@ -46,6 +47,40 @@ class TheGateEnvironment(unittest.TestCase):
         self.assertEqual(run.returncode, 0, run.stderr)
         self.assertEqual(run.stdout.split("\n")[:2], ["venv -c gate", "venv -c child"])
         self.assertLess(start, text.index("TMPROOT="), "python3 is resolved after its first use")
+
+
+class TheAffectedScopeSkipsStepsTheDiffDoesNotTouch(unittest.TestCase):
+    """The site and plugin steps are fixed cost; only the affected scope may skip them, and says so."""
+
+    TEXT = SCRIPT.read_text(encoding="utf-8")
+
+    def _flags(self, changed):
+        start = self.TEXT.index("import json, sys\ndoc = json.load(sys.stdin)\nsite = ")
+        end = self.TEXT.index("')\"; then", start)
+        code = self.TEXT[start:end]
+        run = subprocess.run([sys.executable, "-c", code], input=json.dumps({"changed": changed}),
+                             capture_output=True, text=True)
+        self.assertEqual(run.returncode, 0, run.stderr)
+        return dict(line.split("\t") for line in run.stdout.splitlines())
+
+    def test_a_diff_in_the_git_module_skips_the_site_and_the_plugins(self):
+        flags = self._flags(["quenching/assets/bin/quenching/git/audit.py"])
+        self.assertEqual(flags, {"SITE": "0", "PLUGINS": "0"})
+
+    def test_docs_and_skills_run_the_site_but_not_the_plugins(self):
+        for path in ("docs/index.md", "quenching/skills/x/SKILL.md", "quenching/references/a.md", "zensical.toml"):
+            self.assertEqual(self._flags([path]), {"SITE": "1", "PLUGINS": "0"}, path)
+
+    def test_integrations_run_the_plugins_and_the_gate_itself_runs_everything(self):
+        self.assertEqual(self._flags(["integrations/claude-cache/x.json"]), {"SITE": "0", "PLUGINS": "1"})
+        self.assertEqual(self._flags(["scripts/verify_repo.sh"]), {"SITE": "1", "PLUGINS": "1"})
+
+    def test_the_skip_is_reachable_only_from_the_affected_scope(self):
+        self.assertIn("RUN_SITE=1\nRUN_INTEGRATIONS=1\n", self.TEXT)
+        self.assertLess(self.TEXT.index("RUN_SITE=1"), self.TEXT.index("if [ \"$TEST_SCOPE\" = affected ]; then"))
+        self.assertEqual(self.TEXT.count("RUN_SITE=0"), 1)
+        self.assertGreater(self.TEXT.index("RUN_SITE=0"), self.TEXT.index("if [ \"$TEST_SCOPE\" = affected ]; then"))
+        self.assertIn("SKIPPED: %s", self.TEXT)
 
 
 if __name__ == "__main__":
