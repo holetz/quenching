@@ -40,7 +40,7 @@
 
     ".agents/quenching/agents/spec-verifier.md": "3a5b8d5a6b2fbac4d3a3264ccc0b4f0e269fa82114915e252ab9aaf3544d87b3",
 
-    ".agents/quenching/assets/bin/cq": "3f3cf930ead5e7297832d70af13a4659c374c7e5a0b1c1612363f4d839b7bab2",
+    ".agents/quenching/assets/bin/cq": "abc9debd2523f69594c708a266ba0e2f4b9ee3ab9ac24e83c33de872eddac6c3",
 
     ".agents/quenching/assets/bin/quenching/codex/__init__.py": "f003a307a7ef9ea75f5b389b4e0d5f968934c8fcf7503e6d4edfaa08d57a3cc7",
 
@@ -54,13 +54,15 @@
 
     ".agents/quenching/assets/bin/quenching/codex/probe.py": "f6d7a5896ec0b3031ab45c8409fe3f8b40595455fcc7ac63eb336c8df666e7d8",
 
+    ".agents/quenching/assets/bin/quenching/common/cache.py": "018cfd85e6009e6bad8c1aaf2e8dadf1832ac2a1b05cea25a03ec035f5d8ff05",
+
     ".agents/quenching/assets/bin/quenching/common/config.py": "fbb528cb62e6dab513cebf096f830ae09075b83948f93d1e8fd6bf5cf33e1e6a",
 
     ".agents/quenching/assets/bin/quenching/common/dates.py": "696c110d9b6fc175730be9e9efc6886e9e2a73c8e571981e7dee664deda003e5",
 
     ".agents/quenching/assets/bin/quenching/common/deploy.py": "0afbd9b2f40979800c1f61783e88ec7a76d3a30419cad86242aa9f8d220c0d2e",
 
-    ".agents/quenching/assets/bin/quenching/common/doctor.py": "822c6ade1d4aea7c999d2b89cb076f85d0ca617f40827a1435ed2cd9be0dccad",
+    ".agents/quenching/assets/bin/quenching/common/doctor.py": "37b67b114457932083b5194c874f5fedbbf5e9fdc81d67c8fe6479f2d2005487",
 
     ".agents/quenching/assets/bin/quenching/common/front.py": "464e0ddf1118b20bc19e981e86016f56b49099afb8441d4a941191b955f53baf",
 
@@ -272,13 +274,13 @@
 
     ".agents/quenching/assets/bin/quenching/specs/backends/__init__.py": "7ab56491220f44e0d5260f0dacffb0b05bf166f52eb0f8c1bb146da124ce6238",
 
-    ".agents/quenching/assets/bin/quenching/specs/backends/azure.py": "32cab25d9ab5e61b60f77503a33e531e4bcb0f2002f6cc2cc48b07b4c7228243",
+    ".agents/quenching/assets/bin/quenching/specs/backends/azure.py": "18714610ffc6b3a84e73da85c4d7224be1903d893bac2db08ff8b22fa17eb540",
 
     ".agents/quenching/assets/bin/quenching/specs/backends/base.py": "bfc6e26b4f2b1904d04ca91123d675be33da33f7313895ef3fb1e203cd4dd023",
 
-    ".agents/quenching/assets/bin/quenching/specs/backends/git.py": "d22f9e1a298ef9b287aa6aeb3ac420b8028943bfc52673deb8d178d718479f3f",
+    ".agents/quenching/assets/bin/quenching/specs/backends/git.py": "b3914d4e8c494f42b1d8d113c43156fbc1de249175afd02422d4e1170f0698d2",
 
-    ".agents/quenching/assets/bin/quenching/specs/backends/github.py": "5016c49004ac71e797bb92bd31d2ae938141046a3a01154b135646d79ed2d1b4",
+    ".agents/quenching/assets/bin/quenching/specs/backends/github.py": "c2d00ca687562abb7b04bffd971ae6bf7c9fea2477a555f4ba3c43ee0fd27d1a",
 
     ".agents/quenching/assets/bin/quenching/specs/backends/hybrid.py": "d8dc25aa28f0a2f62ea0f056e391ff3a3e2457150d89a21eeaac04f84812da44",
 
@@ -342,7 +344,7 @@
 
     ".agents/quenching/assets/bin/quenching/specs/mcp.py": "c7996217c82ceba62eed3a9f53f8747936dcea2961c377486bdbb32263e14ae6",
 
-    ".agents/quenching/assets/bin/quenching/specs/members.py": "06cb05de454a5f5a615956571d08ad7b722255c8ccc68ed2abdbc6d752951894",
+    ".agents/quenching/assets/bin/quenching/specs/members.py": "37199b9fcac8eb5a958e9e3e8441d1c8432542aa908d5fa6607690e7ed31ad83",
 
     ".agents/quenching/assets/bin/quenching/specs/parse/__init__.py": "26c420fca154b9dedd3ff506a754d8aa4e8fd23013c8ba0c59bd90a5a8f26356",
 
@@ -378,7 +380,7 @@
 
     ".agents/quenching/assets/bin/quenching/specs/store.py": "597cc53d1d219cdfb77216c92dadab2088aef5516bbda7e0bf05e1d1e795fe09",
 
-    ".agents/quenching/assets/bin/quenching/specs/sync.py": "1e0cc92c7fe9e501f0d01bca1fa30334b3ac3701a0360e3508304462e7392ff6",
+    ".agents/quenching/assets/bin/quenching/specs/sync.py": "061231d82295efbd037672ece3db75109b05e057cb9ae2a9a6ae2536936d53ae",
 
     ".agents/quenching/assets/githooks/pre-commit": "8de39f2c74a9db39cf3b9368580fba6e108e595f86615d27e37465d773635675",
 
