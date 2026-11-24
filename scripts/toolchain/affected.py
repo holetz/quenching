@@ -98,7 +98,6 @@ RULES: tuple[Rule, ...] = (
     Rule(("quenching/assets/bin/quenching/config/",),
          ("test_config_*", "test_user_config_layer", "test_owner_controls")),
     Rule(("quenching/assets/bin/quenching/controls/",), ("test_owner_controls",)),
-    Rule(("quenching/assets/bin/quenching/codex/",), ("test_codex_*",)),
     Rule(("quenching/skills/quenching-specs/",),
          ("test_specs_*", "test_autopilot_*", "test_handoff_command", "test_spec_runner_wait",
           "test_orchestrator_*")),

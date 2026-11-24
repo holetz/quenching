@@ -51,14 +51,12 @@ class Catalog(unittest.TestCase):
 
     def test_the_long_running_verbs_are_not_catalogued(self):
         paths = {(row.pillar, row.path) for row in catalog.CATALOG.values()}
-        for verb in (("specs", ("serve",)), ("portal", ("serve",)), ("specs", ("mcp",)),
-                     ("codex", ("implement",))):
+        for verb in (("specs", ("serve",)), ("portal", ("serve",)), ("specs", ("mcp",))):
             self.assertNotIn(verb, paths)
 
     def test_the_external_class_names_the_moves_that_leave_the_machine(self):
         external = {n for n, r in catalog.CATALOG.items() if r.cls == "external"}
         self.assertTrue({"git_push", "git_pr_create", "git_pr_merge", "git_pr_record"} <= external)
-        self.assertNotIn("codex_review", catalog.CATALOG)
         self.assertTrue(catalog.annotations(catalog.CATALOG["git_pr_merge"])["destructiveHint"])
 
 
