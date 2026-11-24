@@ -214,7 +214,7 @@ def new_lease(spec_id: str, holder: str, label: str | None, minutes: int,
 _SNAPSHOTS: dict[tuple[str, str], dict] = {}
 
 
-def _existing_machine(root: str) -> str:
+def existing_machine(root: str) -> str:
     """The id of this clone when it has one; a read never generates it."""
     code, out, _ = _git_run(root, "config", "--local", "--get", "quenching.machineId")
     return out.strip() if code == 0 else ""
@@ -229,7 +229,7 @@ def snapshot(root: str, remote: str = "origin") -> dict:
     key = (os.path.abspath(root), remote)
     if key in _SNAPSHOTS:
         return _SNAPSHOTS[key]
-    me = _existing_machine(root)
+    me = existing_machine(root)
     snap = {"available": False, "scope": None, "me": me, "at": now(), "leases": {}}
     try:
         store = Store(root, remote)
