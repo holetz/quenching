@@ -119,8 +119,9 @@ matches (`--root` is an option of the granted verb). Without a worktree, `--work
    changed frontmatter it cannot read whole (`(unparsed frontmatter)`), and a deleted settings file,
    hook, workflow, agent, command or skill (`(deleted)`). Unchanged never appears, nor a narrowing that removes no surface line, nor a relocation proved by the audit: a file that is a byte-for-byte copy of its source (the payload's `generated`) and a `tools:` entry that is exactly the namespace rewrite (`quenching:<head>` to `<module>:<head>`) of an entry the source had, by the map of the BASE manifest (the branch's own manifest never proves its equivalence). In an autonomous
    run a non-empty `grants` is FAIL with `needs-human: alargamento`, quoting each `path` and its
-   `added` entries: the `spec-orchestrator` takes the spec to the human epic, and the verifier never
-   judges whether the widening is justified. Empty is ok; a non-autonomous run reports the list.
+   `added` entries, except the entries an epic authorization covers (§Epic authorization): the
+   `spec-orchestrator` takes the rest to the human epic, and the verifier never judges whether a
+   widening is justified. Empty is ok; a non-autonomous run reports the list.
    The limit is declared: `grants` catches the widening a worker that follows the protocol makes by mistake;
    it is no sandbox against one who circumvents it on purpose (a worker with free `Bash` writes outside the diff anyway).
 
@@ -128,7 +129,8 @@ matches (`--root` is an option of the granted verb). Without a worktree, `--work
    `{path, severity, kind, detail}`. Any `severity: fail` entry (`test-deleted`, `test-lost-asserts`,
    `gate-shrunk`: a test file deleted or left with no assert, a step removed from
    `scripts/verify_repo.sh` or `quenching/assets/checks/**`) is FAIL with
-   `needs-human: régua rebaixada`, quoting each `path` and `detail`. When the spec's own `## Problem` or
+   `needs-human: régua rebaixada`, quoting each `path` and `detail`, except the entries an epic
+   authorization covers (§Epic authorization). When the spec's own `## Problem` or
    `## Proposal` declares that removal as its objective, the FAIL quotes that declaration for the
    conductor; it never dispenses the FAIL by itself. `severity: warn` entries (`suppression-added`: a new
    `noqa`, `type: ignore`, `skip`, `skipIf`, `skipUnless`, `xfail`; `discover-unrecognized`: the gate's test-discovery command was not recognised, so a moved
@@ -144,6 +146,10 @@ matches (`--root` is an option of the granted verb). Without a worktree, `--work
    `guard` or `skipped`); list the ids without one, or `sem relato` or no line in the prompt as "missing CODEX: line", as a warning in the evidence.
    The worker's report is a claim: this check accuses an absent line, it does not prove the consultation.
    `n/a` only when no task is checked.
+
+## Epic authorization (checks 9 and 10)
+
+The prompt names the epic id. Read its `## Design` with `.agents/quenching/bin/cq specs show --spec <epic> --full` (a verb you already hold; no grant is added). A `grants` or `lowered` entry passes only when a bullet of that Design carries a date (`YYYY-MM-DD`), names this spec's id or the entry's exact path, and describes the change the diff makes. The evidence quotes that bullet. An entry no such bullet covers stays FAIL with `needs-human`; so does every entry when the prompt names no epic or the Design has no such bullet. An authorization covers only what it names and never extends to another entry or another spec; the spec's own `## Problem` or `## Proposal` never authorizes by itself. This narrows what the verifier refuses by mistake and never stops it refusing an unauthorized widening or lowering.
 
 If a check does not apply (no PR yet; scope with an empty `changed`), mark it `n/a`; do not fail on it. An absent `files:` never makes scope `n/a` while `changed` is non-empty.
 

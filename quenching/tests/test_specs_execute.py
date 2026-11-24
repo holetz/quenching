@@ -252,6 +252,21 @@ class TaskExecutionContractTests(unittest.TestCase):
         self.assertIn("the `outcome` record (absent or empty is no FAIL by itself)", verifier)
         self.assertEqual(verifier.count("Counts:"), 5)
 
+    def test_verifier_reads_epic_authorization_for_grants_and_ruler(self):
+        verifier = " ".join(
+            (ROOT / "quenching/agents/spec-verifier.md").read_text(encoding="utf-8").split())
+
+        self.assertIn("## Epic authorization (checks 9 and 10)", verifier)
+        self.assertIn("`.agents/quenching/bin/cq specs show --spec <epic> --full`", verifier)
+        self.assertIn("carries a date (`YYYY-MM-DD`), names this spec's id or the entry's exact path", verifier)
+        self.assertIn("An entry no such bullet covers stays FAIL with `needs-human`", verifier)
+        self.assertIn("never stops it refusing an unauthorized widening or lowering", verifier)
+        self.assertEqual(verifier.count("(§Epic authorization)"), 2)
+        # no grant is added: the tools line keeps its closed list
+        head = verifier.split("---")[1]
+        self.assertNotIn("cq specs section", head)
+        self.assertNotIn("Bash(cq specs show:*), Bash(cq specs show:*)", head)
+
     def test_worker_budget_is_a_size_estimate_not_a_stop(self):
         runner = " ".join(RUNNER.read_text(encoding="utf-8").split())
 
