@@ -77,6 +77,15 @@ trap 'exit 143' TERM
 TEST_WORKERS="${QUENCHING_TEST_WORKERS:-auto}"
 printf '\ntemp root: %s\nworkers: %s\n' "$GATE_TMP" "$TEST_WORKERS"
 
+# line-endings notice: a checkout whose working copy is CRLF while the index holds LF (a reused slot
+# after a `.gitattributes` change) fails every byte-exact test. A sample of the index is read, the fix
+# command is named, and nothing is rewritten: the fix discards edits, so a human runs it on a clean tree.
+eol_drift="$(git ls-files --eol 2>/dev/null | head -n 200 | awk '$1 == "i/lf" && $2 == "w/crlf"' | wc -l)" || true
+if [ "${eol_drift//[[:space:]]/}" -gt 0 ] 2>/dev/null; then
+  printf 'NOTICE: %s of the first 200 tracked files are CRLF in the working copy and LF in the index; byte-exact tests will fail here. On a CLEAN tree run: git rm --cached -r -q . && git reset --hard -q\n' "${eol_drift//[[:space:]]/}"
+fi
+# end line-endings notice
+
 # `QUENCHING_TEST_SCOPE` picks how much of the suite this gate runs. `full` is the contract: CI and
 # `/release` always run it. `affected` is the close of a spec on a working machine — the tests the
 # branch's diff reaches, with the whole suite as the safe answer whenever

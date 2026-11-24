@@ -80,6 +80,40 @@ class SurfaceLoadBlock(unittest.TestCase):
         self.assertEqual(run.returncode, 0, run.stderr)
 
 
+class LineEndingsNotice(unittest.TestCase):
+    """The gate names a CRLF-over-LF checkout and its fix, and rewrites nothing."""
+
+    def block(self):
+        text = SCRIPT.read_text(encoding="utf-8")
+        start, end = "# line-endings notice:", "# end line-endings notice"
+        assert start in text and end in text, "line-endings markers moved in verify_repo.sh"
+        return text[text.index(start) : text.index(end)]
+
+    def run_in_repo(self, content):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = pathlib.Path(tmp)
+            for argv in (["init", "-q"], ["config", "core.autocrlf", "false"]):
+                subprocess.run(["git", "-C", str(root), *argv], check=True)
+            (root / "a.txt").write_bytes(b"one\ntwo\n")
+            subprocess.run(["git", "-C", str(root), "add", "a.txt"], check=True)
+            (root / "a.txt").write_bytes(content)
+            run = subprocess.run([BASH, "-c", "set -Eeuo pipefail\n" + self.block()], cwd=root,
+                                 capture_output=True, text=True, encoding="utf-8")
+            return run, (root / "a.txt").read_bytes()
+
+    def test_crlf_over_an_lf_index_is_named_with_the_fix_and_stays_green(self):
+        run, after = self.run_in_repo(b"one\r\ntwo\r\n")
+        self.assertEqual(run.returncode, 0, run.stderr)
+        self.assertIn("NOTICE: 1 of the first 200", run.stdout)
+        self.assertIn("git rm --cached -r -q . && git reset --hard -q", run.stdout)
+        self.assertEqual(after, b"one\r\ntwo\r\n")
+
+    def test_a_matching_checkout_prints_nothing(self):
+        run, _after = self.run_in_repo(b"one\ntwo\n")
+        self.assertEqual(run.returncode, 0, run.stderr)
+        self.assertNotIn("NOTICE", run.stdout)
+
+
 class DeployedArrangements(unittest.TestCase):
     """functional-checks measures boxes deployed from the source, never the source itself."""
 
