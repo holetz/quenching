@@ -120,7 +120,7 @@
     ".agents/quenching/assets/bin/quenching/knowledge/stale.py": "38b15048a5e98cf70af1a63e3b5bc361fb2ac183b42e341699029ccf57ba1958",
     ".agents/quenching/assets/bin/quenching/knowledge/structure.py": "6cc74eb56262c0132118d07424680cd32dd7f014e7b85879fe01bc2b278ae059",
     ".agents/quenching/assets/bin/quenching/knowledge/validate.py": "6e673e47c5dbf5ed925da8cfef8703e71acc62ca9817266512b50e1aa661aa3e",
-    ".agents/quenching/assets/bin/quenching/mcp/catalog.py": "8fb450df2d245802e1b259cfddfffff2a704708751c35438a15d291fa8be3b2a",
+    ".agents/quenching/assets/bin/quenching/mcp/catalog.py": "d022f777306222a3f9de2b85d69da09c58af4928b97a2a7e1c77075b0c10d9cb",
     ".agents/quenching/assets/bin/quenching/mcp/cli.py": "168d60922494389e5c02eb624e6178d33ab76f73125b67521e010d08f5e43b55",
     ".agents/quenching/assets/bin/quenching/mcp/resources.py": "61dc6effc7117547fbde0ccc1d8e7796448c59499f976e9968bf0df466bf51d1",
     ".agents/quenching/assets/bin/quenching/mcp/server.py": "43c7294303fc156b7b33c08a9dc97fe489c2f950cceb96366d45de34c5942c44",
