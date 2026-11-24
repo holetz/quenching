@@ -122,7 +122,7 @@
 
     ".agents/quenching/assets/bin/quenching/config/__init__.py": "07638831d3ca774d973dca539a063ebeade8349568bd1b2d4f471ed301ff0b92",
 
-    ".agents/quenching/assets/bin/quenching/config/autonomy.py": "9961bff9eb6afac0b879e42f6bbefa697ddcfe9274bcdc9e2182343f3840d52d",
+    ".agents/quenching/assets/bin/quenching/config/autonomy.py": "e8f1eda3561d3581efb8976216722d44d8979d1adbdc11798080aabd5f6d0257",
 
     ".agents/quenching/assets/bin/quenching/config/ci.py": "78c3ce547ea246980ff045123f6c8dd3d872d9a5abfb8d9504e93748b2db93d6",
 
@@ -130,7 +130,7 @@
 
     ".agents/quenching/assets/bin/quenching/config/host.py": "8142472848a298f09484f327a3c7a2d8bbd2c162ff2636eb823498fdfd8eb504",
 
-    ".agents/quenching/assets/bin/quenching/config/schema.py": "387c8c090c099b772f7300153ec7f1bc741c027047964f24a3e8d31b20ebdb7e",
+    ".agents/quenching/assets/bin/quenching/config/schema.py": "3eb808c3c759a131fbd05ff8b92df28bd280db2d42dc10c5bf66a8f6d12c71e8",
 
     ".agents/quenching/assets/bin/quenching/config/seed.py": "f8311f384057ec0ba225f987071891536da4095c2812550ce767c626c6c51b0d",
 
