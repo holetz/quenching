@@ -356,6 +356,9 @@ def build_tree(source: Path, target: Path, modules: list[str], harnesses: list[s
     # The hooks the selected modules declare, installed in `.claude/settings.json` by `cli`; Claude
     # Code and the GitHub Copilot harness both read that file, so the bodies travel with `claude`.
     hooks = _declared_hooks(selected) if "claude" in harnesses else []
+    # Every entry runs the dispatcher, which runs the bodies; both travel.
+    if hooks:
+        _add_tree(tree, source, f"assets/hooks/{claude_settings.DISPATCH}.py")
     for hook in hooks:
         _add_tree(tree, source, f"assets/hooks/{hook['name']}.py")
 

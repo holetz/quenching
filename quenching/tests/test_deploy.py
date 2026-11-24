@@ -612,10 +612,12 @@ class Deploy(unittest.TestCase):
         self.assertIn("settings", [c["change"] for c in payload["changes"]])
         commands = self.hook_commands()
         self.assertEqual("guard.sh", commands[0])
-        self.assertEqual(2, len([c for c in commands if ".agents/quenching/assets/hooks/" in c]))
+        own = [c for c in commands if ".agents/quenching/assets/hooks/" in c]
+        self.assertEqual(1, len(own))  # one process runs every body of the matcher
+        self.assertTrue(own[0].endswith('" deny-claude-coauthor warn-git-add-all'), own[0])
         self.assertEqual({"commit": "", "pr": ""}, self.settings()["attribution"])
         self.assertEqual({"context7": True}, self.settings()["enabledPlugins"])
-        for name in ("deny-claude-coauthor", "warn-git-add-all"):
+        for name in ("dispatch", "deny-claude-coauthor", "warn-git-add-all"):
             self.assertTrue((self.target / f".agents/quenching/assets/hooks/{name}.py").is_file(), name)
         manifest = json.loads((self.target / ".agents/.quenching-deploy.json").read_text())
         self.assertEqual(["deny-claude-coauthor", "warn-git-add-all"], sorted(manifest["claudeSettings"]["hooks"]))
@@ -639,10 +641,11 @@ class Deploy(unittest.TestCase):
     def test_a_narrower_module_set_or_harness_removes_only_the_own_hooks(self):
         self.write(".claude/settings.json", json.dumps({"model": "x"}))
         self.run_deploy("--modules", "specs,git", "--write")
-        self.assertEqual(2, len(self.hook_commands()))
+        self.assertEqual(1, len(self.hook_commands()))
+        self.assertIn("warn-git-add-all", self.hook_commands()[0])
         self.run_deploy("--modules", "specs", "--write")
         self.assertEqual(1, len(self.hook_commands()))
-        self.assertIn("deny-claude-coauthor", self.hook_commands()[0])
+        self.assertTrue(self.hook_commands()[0].endswith('" deny-claude-coauthor'))
         self.assertFalse((self.target / ".agents/quenching/assets/hooks/warn-git-add-all.py").exists())
         code, _ = self.run_deploy("--modules", "specs", "--harness", "codex", "--write")
         self.assertEqual(0, code)
