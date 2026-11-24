@@ -210,6 +210,15 @@ class TaskExecutionContractTests(unittest.TestCase):
         self.assertIn("with `model` passed explicitly", orchestrator)
         self.assertIn("call the `spec-verifier` only after it returns", orchestrator)
 
+    def test_autonomous_runner_concludes_in_the_same_spawn(self):
+        runner = " ".join(RUNNER.read_text(encoding="utf-8").split())
+
+        self.assertIn("Under `autonomous`, one spawn runs develop, execute and conclude.", runner)
+        self.assertIn(
+            "invoke `/quenching-specs conclude <id> autonomous --outcome done` in this same spawn", runner)
+        self.assertIn("the `spec-verifier` runs once, after you return and before the merge", runner)
+        self.assertIn("Without `autonomous`, execute and conclude are two spawns.", runner)
+
     def test_worker_budget_is_a_size_estimate_not_a_stop(self):
         runner = " ".join(RUNNER.read_text(encoding="utf-8").split())
 
