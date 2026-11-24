@@ -148,10 +148,12 @@ class Selection:
     tests: tuple[str, ...]
     reasons: tuple[str, ...]
     complete: bool
+    diff_unreadable: bool = False
 
     def as_json(self) -> dict:
         return {"base": self.base, "changed": list(self.changed), "tests": list(self.tests),
-                "reasons": list(self.reasons), "complete": self.complete}
+                "reasons": list(self.reasons), "complete": self.complete,
+                "diffUnreadable": self.diff_unreadable}
 
 
 def _run(root: pathlib.Path, *argv: str) -> tuple[int, str, str]:
@@ -347,7 +349,7 @@ def select(root: pathlib.Path, base: str | None = None,
     try:
         changed = tuple(files) if files is not None else changed_paths(root, base)
     except ValueError as exc:
-        return Selection(base, (), (), (f"fail-open: {exc}",), True)
+        return Selection(base, (), (), (f"fail-open: {exc}",), True, diff_unreadable=True)
     changed = tuple(path.replace("\\", "/") for path in changed if path)
     if not changed:
         return Selection(base, (), (), ("nothing changed",), False)

@@ -120,8 +120,9 @@ site = ("docs/", "quenching/skills/", "quenching/references/", "zensical.toml",
         "quenching/assets/bin/quenching/knowledge/", "scripts/verify_repo.sh")
 plugins = ("integrations/", "scripts/cache_plugin_sync.py", "scripts/verify_repo.sh")
 changed = doc["changed"]
+unreadable = doc.get("diffUnreadable", False)
 def hit(prefixes):
-    return any(p == q or p.startswith(q if q.endswith("/") else q + "/") for p in changed for q in prefixes)
+    return unreadable or any(p == q or p.startswith(q if q.endswith("/") else q + "/") for p in changed for q in prefixes)
 print("SITE\t" + ("1" if hit(site) else "0"))
 print("PLUGINS\t" + ("1" if hit(plugins) else "0"))
 ')"; then

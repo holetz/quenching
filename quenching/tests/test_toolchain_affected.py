@@ -234,6 +234,12 @@ class GitSide(unittest.TestCase):
         got = affected.select(self.root, base="no-such-ref")
         self.assertTrue(got.complete)
         self.assertIn("cannot resolve the merge base", got.reasons[0])
+        self.assertTrue(got.diff_unreadable)
+        self.assertTrue(got.as_json()["diffUnreadable"])
+
+    def test_a_readable_diff_is_never_marked_unreadable(self):
+        self.assertFalse(affected.select(self.root, files=["README.md"]).diff_unreadable)
+        self.assertFalse(affected.select(self.root, files=[]).as_json()["diffUnreadable"])
 
 
 if __name__ == "__main__":
