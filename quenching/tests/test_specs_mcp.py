@@ -256,6 +256,14 @@ class Writes(unittest.TestCase):
             self.assertEqual(asked, [], name)
             self.assertEqual(self.frontmatter()[name], fields, name)
 
+    def test_an_empty_scalar_field_is_written_as_the_shell_does(self):
+        payload, failed, _ = self.call("specs_record", {
+            "spec": 1, "name": "buildCost",
+            "fields": {"status": "unavailable", "measurements": ""}})
+        self.assertFalse(failed, payload)
+        self.assertEqual(self.frontmatter()["buildCost"]["status"], "unavailable")
+        self.assertIn("measurements", self.frontmatter()["buildCost"])
+
     def test_outcome_is_not_a_specs_record_because_promote_is_its_one_writer(self):
         payload, failed, _ = self.call("specs_record", {"spec": 1, "name": "outcome",
                                                         "fields": {"outcome": "done"}})

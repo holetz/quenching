@@ -25,7 +25,7 @@ from quenching.specs.commands import granular as granular_module
 from quenching.specs.commands import validate as validate_module
 from quenching.specs.commands.granular import cmd_section
 from quenching.specs.commands.output import Emitter
-from quenching.specs.parse.edit import split_section_stream
+from quenching.specs.parse.edit import mojibake_words, split_section_stream
 from quenching.specs.schema import canonical_headings
 
 CANON = canonical_headings()
@@ -498,6 +498,42 @@ class NoWriteLeavesAFenceOpen(_Workspace):
                                      stdin=self.OPEN + "```\n\n~~~\n## Design\n~~~\n")
         self.assertEqual(code, 0, obj)
         self.assertEqual(self.state("Proposal"), "filled")
+
+
+class NoWriteCarriesALostAccent(_Workspace):
+    """244 — a pipe encoded as ASCII turns every accent into a literal `?`; the body reaches the
+    store as `descri??o` and `n?o` and nothing said so."""
+
+    GARBLED = "A descri??o do n?o funciona e a decis?o ficou.\n"
+
+    def refused(self, **kw):
+        code, obj = self.run_section(write=True, **kw)
+        self.assertEqual((code, obj["code"]), (2, "sp-write-mojibake"), obj)
+        self.assertEqual(obj["count"], 3)
+        self.assertIn("OutputEncoding", obj["message"])
+        self.assertEqual(self.state("Proposal"), "absent")
+
+    def test_a_singular_body_is_refused_and_writes_nothing(self):
+        self.refused(heading="Proposal", stdin=self.GARBLED)
+
+    def test_a_streamed_block_is_refused_and_writes_nothing(self):
+        self.refused(heading="Proposal,Risks",
+                     stdin="## Proposal\n\nA\n\n## Risks\n\n" + self.GARBLED)
+
+    def test_a_scoped_handoff_body_is_refused(self):
+        code, obj = self.run_section(heading="Handoff", write=True, scope="global",
+                                     stdin=self.GARBLED)
+        self.assertEqual((code, obj["code"]), (2, "sp-write-mojibake"))
+
+    def test_the_detector_reads_prose_only(self):
+        legit = ("Veja https://x.dev/a?b=1 e a?b=2 no link.\n`a?b` e `c?d` em código.\n"
+                 "```\nx = a?b : c?d\n```\nUm só a?b passa.\n")
+        self.assertEqual(mojibake_words(legit), ["a?b"])
+
+    def test_a_legitimate_body_still_writes(self):
+        code, obj = self.run_section(heading="Proposal", write=True,
+                                     stdin="Funciona? Sim, acentuação é ção: `a?b`, `c?d`.\n")
+        self.assertEqual(code, 0, obj)
 
 
 class ArchiveRefusesAnyEmptySection(_Workspace):

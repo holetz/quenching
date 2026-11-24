@@ -10,12 +10,14 @@ import sys
 from quenching.common.dates import today
 from quenching.specs.backends import open_backend
 from quenching.specs.commands.fields import record_field_value_error
+from quenching.specs.commands.granular import refuse_mojibake
 from quenching.specs.commands.output import Emitter, display_locator
 from quenching.specs.commands.push import card_failures, card_warnings
 from quenching.specs.config import (azure_workitemtype_retirement, load_config,
                                     resolve_subject, resolve_type_key)
 from quenching.specs.parse import derive_info
-from quenching.specs.parse.edit import split_section_stream, upsert_section
+from quenching.specs.parse.edit import (MOJIBAKE_THRESHOLD, mojibake_words, split_section_stream,
+                                        upsert_section)
 from quenching.specs.parse.fields import (scalar_break, set_frontmatter_record,
                                           yaml_title_scalar)
 from quenching.specs.parse.sections import section_state
@@ -93,6 +95,8 @@ def cmd_new(args, root: str, out: Emitter) -> int:
     # The stdin stream — read once, decomposed and checked before the document exists at all.
     content = sys.stdin.read() if not sys.stdin.isatty() else ""
     blocks: list[tuple[str | None, str]] = []
+    if len(garbled := mojibake_words(content)) >= MOJIBAKE_THRESHOLD:
+        return refuse_mojibake(args, out, garbled)
     if content.strip():
         blocks = split_section_stream(content, canonical_headings(schema))
         if not blocks:

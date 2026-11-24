@@ -24,7 +24,7 @@ except ModuleNotFoundError:  # package-qualified unittest invocation from the re
     sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
     import _paths  # noqa: F401
 from _tools import fake_tool
-from quenching.opensource.readiness import CLASSES, assess, location
+from quenching.opensource.readiness import CLASSES, _trufflehog, assess, location
 
 SENTINEL = "QCKSENTINELAKIA9Z8Y7X6W5V4U3T2S1"
 FAKE = r'''import json, os, sys, time
@@ -278,6 +278,20 @@ class AdversarialTest(ReadinessCase):
         self.assertEqual("not-measured", cover["secrets"]["state"])
         self.assertEqual("pr-scanner-malformed", cover["attribution"]["code"])
 
+    def test_trufflehog_receives_a_valid_file_url_of_the_root(self):
+        seen: list[list[str]] = []
+
+        def run(argv, cwd, timeout):
+            seen.append(argv)
+            return 0, "", ""
+
+        with mock.patch("quenching.opensource.readiness._run", run):
+            _trufflehog(self.root, 5)
+        url = seen[0][2]
+        self.assertEqual(pathlib.Path(self.root).as_uri(), url)
+        self.assertTrue(url.startswith("file:///"), url)
+        self.assertNotIn("\\", url)
+
     def test_unsupported_or_unknown_versions_are_refused_without_running(self):
         commit(self.root, "a.txt", "x\n")
         self.install("gitleaks", "trufflehog", "reuse")
@@ -303,7 +317,7 @@ class AdversarialTest(ReadinessCase):
         commit(self.root, "a.txt", "x\n")
         sha = commit(self.root, "b.txt", "y\n")
         clone = os.path.join(self.tmp.name, "shallow")
-        git(self.tmp.name, "clone", "-q", "--depth", "1", "file://" + self.root, clone)
+        git(self.tmp.name, "clone", "-q", "--depth", "1", pathlib.Path(self.root).as_uri(), clone)
         self.root = clone
         payload, code = self.gitleaks([{"File": "b.txt", "Commit": sha}])
         self.assertEqual(2, code)
