@@ -76,6 +76,64 @@ def covered() -> set[tuple[str, ...]]:
             | set(EXCEPTIONS))
 
 
+# A verb no generated grant may reach, through a tool or through the shell residue below.
+DENIED = {("specs", "claim", "take")}
+
+
+def _children(parser, path: tuple[str, ...]) -> list[tuple[tuple[str, ...], object]]:
+    """The verb words under one parser: its subparsers, else its first `choices` positional."""
+    subs = catalog._subparsers(parser)
+    if subs is not None:
+        return [((*path, word), sub) for word, sub in subs.choices.items()]
+    slot = next((a for a in parser._actions if not a.option_strings and a.choices), None)
+    return [((*path, str(word)), None) for word in slot.choices] if slot is not None else []
+
+
+def _residue(path: tuple[str, ...], parser, tools: set) -> tuple[list[tuple[str, ...]], bool]:
+    """`(paths, whole)`: the fewest verb paths under `path` a tool does not cover, and whether
+    `path` itself is one of them — nothing below it covered nor denied, so one grant holds it."""
+    if path in DENIED or path in tools:
+        return [], False
+    children = _children(parser, path) if parser is not None else []
+    if not children:
+        return [path], True
+    out, whole = [], True
+    for child, sub in children:
+        paths, child_whole = _residue(child, sub, tools)
+        out.extend(paths)
+        whole = whole and child_whole
+    return ([path], True) if whole else (out, False)
+
+
+def cli_residue(prefix: tuple[str, ...]) -> list[tuple[str, ...]] | None:
+    """The fewest verb paths under a `cq <prefix…>` grant that no MCP tool covers: the shell
+    grants a narrowed deploy keeps. `EXCEPTIONS` count as uncovered, `DENIED` is never reached,
+    and an empty prefix is the whole router. `None` when the prefix names no verb path, so the
+    caller keeps the grant it cannot reason about."""
+    from quenching.specs import mcp as specs_mcp
+    tools = ({(row.pillar, *row.path) for row in catalog.CATALOG.values()}
+             | {("specs", *path) for path in specs_mcp.COVERS.values()})
+    if not prefix:
+        out: list[tuple[str, ...]] = [(verb,) for verb in (*ROUTER_VERBS, "mcp")]
+        for pillar in catalog.router().PILLARS:
+            out.extend(path for path in cli_residue((pillar,)) or [] if path not in out)
+        return out
+    if prefix[0] in ROUTER_VERBS or prefix == ("mcp",):
+        return [prefix]
+    if prefix[0] not in catalog.router().PILLARS:
+        return None
+    parser, path = catalog._pillar_parser(prefix[0]), (prefix[0],)
+    for word in prefix[1:]:
+        child = next(((p, sub) for p, sub in _children(parser, path) if p[-1] == word), None)
+        if child is None:
+            return None
+        path, parser = child
+    # A tool on an ancestor covers everything under it.
+    if any(prefix[:n] in tools for n in range(1, len(prefix))):
+        return []
+    return _residue(prefix, parser, tools)[0]
+
+
 def uncovered(texts: Iterable[tuple[str, str]]) -> list[tuple[str, tuple[str, ...]]]:
     """`(label, verb path)` for every citation in `texts` (`(label, text)` pairs) no tool covers."""
     known, out = covered(), []
