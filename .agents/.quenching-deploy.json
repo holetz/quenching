@@ -95,7 +95,7 @@
     ".agents/quenching/assets/bin/quenching/git/conventions.py": "09a4487bf3de0ea57f72f0dbba1750e3dfb7e04d75f5dc82a411cf35b7b26de3",
     ".agents/quenching/assets/bin/quenching/git/history.py": "76b49ea7b578f379ae884ff02b895eff05015c1d7a4d2723b756a12b96fdc426",
     ".agents/quenching/assets/bin/quenching/git/identity.py": "dc32fbecb49039f81191d527cc0823e26ceab62cb14c4af596146e68798f4c81",
-    ".agents/quenching/assets/bin/quenching/git/ignored.py": "78334e289d2e8ae9e7a253bc36c995a3f002b8f93ce37d1c6271552c5bd88aa1",
+    ".agents/quenching/assets/bin/quenching/git/ignored.py": "e1f1712acacd68bd097dbdbe644a9c1696bfc025a09bbde386b98920de398dda",
     ".agents/quenching/assets/bin/quenching/git/pr.py": "747e5dbffa41d6226a9a056693d0796a6a385969852424d3732ca4d7a904b5fd",
     ".agents/quenching/assets/bin/quenching/git/preflight.py": "f0cb9f565fe0e4b4ab347f67878b34039116f78a447ee1c3a0aaa791be437839",
     ".agents/quenching/assets/bin/quenching/git/prune.py": "2674ba0be750de026c1438cd6b500cc11990fdb1820c786d48ae8666ffa05863",
