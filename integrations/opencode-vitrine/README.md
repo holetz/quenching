@@ -71,6 +71,8 @@ without a shell.
 
 When the target's quenching is older than that `cq`, or absent, the panel offers
 **Atualizar** / **Instalar** and runs `cq deploy --target <root> --write` after confirmation.
+
+The pill also shows `N aviso(s)` (tooltip: each one, with the fix) from a local read of `opencode.json(c)` and the global `opencode.jsonc`: `experimental.subagent_depth` below 4, or the `quenching` MCP entry missing from `opencode.json` or using `uvx`. No command body and no tool call pays for it.
 When it is current, the same place shows a green **OK <version>** chip with the installed version.
 A target already installed reuses its manifest; a new target receives `--harness opencode`.
 
