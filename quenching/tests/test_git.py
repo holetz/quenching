@@ -3650,6 +3650,26 @@ class PullRequestVerbs(RepoCase):
                               capture_output=True, text=True, env=self.env,
                               stdin=subprocess.DEVNULL, timeout=60)
 
+    def test_create_without_body_or_spec_refuses_and_opens_no_pr(self):
+        proc = _cq(self.repo, "pr", "create", "--base", "main", "--head", "plan/1-x",
+                   "--title", "t", "--json", env=self.env)
+        self.assertEqual(proc.returncode, 2, proc.stdout + proc.stderr)
+        self.assertEqual(json.loads(proc.stdout)["code"], "git-pr-body-empty")
+        self.assertEqual(self._calls(), [])
+
+    def test_create_with_spec_and_no_body_builds_it_from_the_spec(self):
+        spec, specs = self._store_spec()
+        wrote = subprocess.run([*specs, "section", spec, "Problem", "--write"], cwd=self.repo,
+                               input="Um problema real.\n", capture_output=True, text=True,
+                               env=self.env, timeout=60)
+        self.assertEqual(wrote.returncode, 0, wrote.stdout + wrote.stderr)
+        proc = _cq(self.repo, "pr", "create", "--base", "main", "--head", f"plan/{spec}-x",
+                   "--title", "t", "--spec", spec, "--json", env=self.env)
+        self.assertEqual(proc.returncode, 0, proc.stdout + proc.stderr)
+        (call,) = self._calls()
+        self.assertIn("## Problem", call["stdin"])
+        self.assertIn("Um problema real.", call["stdin"])
+
     def test_create_with_an_unknown_spec_opens_no_pr(self):
         spec, specs = self._store_spec()
         proc = _cq(self.repo, "pr", "create", "--base", "main", "--head", "plan/999-x",
@@ -3758,7 +3778,7 @@ class PullRequestVerbs(RepoCase):
                 mock.patch.object(pull, "_branch_ok", return_value=True), \
                 contextlib.redirect_stdout(io.StringIO()) as out:
             code = pull.cmd_pr(SimpleNamespace(action="create", base="main", head="x", title="t",
-                                               body="", spec="1", json=True, **NO_AZURE_FLAGS))
+                                               body="b", spec="1", json=True, **NO_AZURE_FLAGS))
         payload = json.loads(out.getvalue())
         self.assertEqual((code, payload["number"], payload["reason"], payload["message"]),
                          (1, 42, "stamp-failed", "refused"))
@@ -3822,7 +3842,7 @@ class PullRequestVerbs(RepoCase):
                 mock.patch.object(pull, "_branch_ok", return_value=True), \
                 contextlib.redirect_stdout(io.StringIO()) as out:
             code = pull.cmd_pr(SimpleNamespace(action="create", base="main", head="plan/1-x",
-                                               title="t", body="", spec="1", json=True,
+                                               title="t", body="b", spec="1", json=True,
                                                **NO_AZURE_FLAGS))
         self.assertEqual(code, 0, out.getvalue())
         (sets,) = seen
