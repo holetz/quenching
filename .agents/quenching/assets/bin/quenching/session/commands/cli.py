@@ -104,6 +104,9 @@ def add_subcommands(sub: argparse._SubParsersAction) -> argparse._SubParsersActi
     co.add_argument("--since", metavar="ISO8601",
                     help="count only requests at or after this instant (an orchestrator's own window "
                          "when several share the session)")
+    co.add_argument("--opencode-db", metavar="PATH",
+                    help="measure an OpenCode session tree from this database (default: QUENCHING_OPENCODE_DB, "
+                         "else the XDG data dir); a `ses_…` id or OPENCODE_SESSION_ID picks OpenCode too")
     co.add_argument("--usd", action="store_true",
                     help="add each row's list-price estimate from quenching's price table")
     co.add_argument("--json", action="store_true", help="machine-readable output")
