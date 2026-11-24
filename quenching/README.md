@@ -619,6 +619,16 @@ isolation, not **New Worktree**: Copilot's worktree starts at the current HEAD, 
 file and runs no `worktreeSetup`, and the agent would then cut a second one with
 `cq git worktree add` — the worktree is the quenching flow's to cut.
 
+**Each harness gets what an orchestrated run needs.** Claude Code (and Copilot through the same
+file) gets `quenching` in `enabledMcpjsonServers`, so the registered server starts in a trusted
+folder without a prompt. OpenCode gets `experimental.subagent_depth: 4` in `opencode.json` for the
+conductor → orchestrator → runner → child chain, and `permission.external_directory` allows for the
+slots (`<repo>-slot-*`) and the sibling store (`<repo>.*`) only, so a worktree build never stops on
+an `ask`. A global OpenCode `experimental` block with other keys keeps the depth out, because a
+project block would hide them; the deploy warns with the line to add by hand
+([deploy-mode.md](../docs/standards/architecture/deploy-mode.md)). No `WorktreeCreate` hook is
+written: the slot is the flow's to take.
+
 A deployed target runs the same ids this manual writes: `/quenching-<vertical> <flow>`, for
 example `/quenching-specs create`, with the source written in that dialect
 ([source-layout.md](../docs/standards/architecture/source-layout.md)). A route into a module that was
