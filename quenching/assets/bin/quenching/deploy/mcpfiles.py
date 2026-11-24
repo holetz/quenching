@@ -95,6 +95,31 @@ def _object(document: dict, key: str) -> dict | None:
     return value if isinstance(value, dict) else None
 
 
+def _depth_wanted(current, depth: int) -> bool:
+    """The user's depth is missing or lower, so the deploy has to write its own."""
+    return not (isinstance(current, int) and not isinstance(current, bool) and current >= depth)
+
+
+def written_extras(text: str | None, extras: dict) -> dict:
+    """What merging `extras` into `text` changes — the only part the manifest may record, so that
+    removal never deletes a depth or an allow the user already had. A key already holding the
+    wanted value is the user's and is left out."""
+    try:
+        document = json.loads(text) if text and text.strip() else {}
+    except ValueError:
+        document = {}
+    document = document if isinstance(document, dict) else {}
+    depth = extras.get("subagentDepth")
+    experimental = document.get("experimental")
+    current = experimental.get("subagent_depth") if isinstance(experimental, dict) else None
+    permission = document.get("permission")
+    directories = permission.get("external_directory") if isinstance(permission, dict) else None
+    directories = directories if isinstance(directories, dict) else {}
+    return {"subagentDepth": depth if depth is not None and _depth_wanted(current, depth) else None,
+            "externalDirectory": [p for p in extras.get("externalDirectory") or []
+                                  if directories.get(p) != "allow"]}
+
+
 def _opencode_extras(document: dict, extras: dict) -> bool:
     """Write `experimental.subagent_depth` and the `external_directory` allows; False when a key
     holds a shape the merge cannot extend."""
@@ -104,7 +129,7 @@ def _opencode_extras(document: dict, extras: dict) -> bool:
         if experimental is None:
             return False
         current = experimental.get("subagent_depth")
-        if not (isinstance(current, int) and not isinstance(current, bool) and current >= depth):
+        if _depth_wanted(current, depth):
             experimental["subagent_depth"] = depth
     patterns = extras.get("externalDirectory") or []
     if patterns:
