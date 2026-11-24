@@ -5,6 +5,7 @@ import io
 import json
 import os
 import pathlib
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -127,6 +128,15 @@ class AntivirusPrimaryRootTest(unittest.TestCase):
         self.assertIn(slot, paths)
         self.assertNotIn(os.path.join(repo, ".git"), [p["path"] for p in report["informational"]])
 
+    def test_a_stale_stat_in_the_primary_still_proves_it_and_rewrites_no_index(self):
+        repo, slot = self._repo()
+        os.utime(os.path.join(repo, "README.md"), (1, 1))
+        index = os.path.join(repo, ".git", "index")
+        before = pathlib.Path(index).read_bytes()
+        report, _ = self._paths(slot)
+        self.assertEqual(repo, report["root"])
+        self.assertEqual(before, pathlib.Path(index).read_bytes())
+
     def test_a_slot_that_cannot_prove_its_primary_falls_back_to_itself(self):
         gd = os.path.join(self.tmp, "gd")
         os.makedirs(gd)
@@ -136,6 +146,50 @@ class AntivirusPrimaryRootTest(unittest.TestCase):
         report, paths = self._paths(odd)
         self.assertEqual(odd, report["root"])
         self.assertNotIn(gd, paths)
+
+    def _separate(self, name, *, tracked):
+        """`name` checked out with its git dir in `gd<name>/.git`; `tracked` is committed."""
+        gd = os.path.join(self.tmp, f"gd{name}")
+        repo = os.path.join(self.tmp, name)
+        os.makedirs(gd)
+        self._git("init", "-q", "--separate-git-dir", os.path.join(gd, ".git"), repo)
+        for rel in tracked:
+            os.makedirs(os.path.dirname(os.path.join(repo, rel)) or repo, exist_ok=True)
+            with open(os.path.join(repo, rel), "w", encoding="utf-8") as fh:
+                fh.write("x\n")
+            self._git("-C", repo, "add", rel)
+        self._git("-C", repo, "-c", "user.name=t", "-c", "user.email=t@t", "commit", "-q",
+                  "--allow-empty", "-m", "x")
+        return gd, repo
+
+    def _assert_never_the_git_dir_parent(self, root, gd):
+        report, paths = self._paths(root)
+        self.assertEqual(root, report["root"])
+        self.assertNotIn(gd, paths)
+        self.assertNotIn(f"{gd}-slot-*", paths)
+
+    def test_a_same_named_unrelated_file_is_no_proof(self):
+        gd, repo = self._separate("A", tracked=["README.md"])
+        with open(os.path.join(gd, "README.md"), "w", encoding="utf-8") as fh:
+            fh.write("unrelated\n")
+        odd = os.path.join(self.tmp, "elsewhereA")
+        self._git("-C", repo, "worktree", "add", "-q", odd)
+        self._assert_never_the_git_dir_parent(odd, gd)
+
+    def test_a_same_named_directory_is_no_proof_once_the_primary_is_gone(self):
+        gd, repo = self._separate("C", tracked=[os.path.join("src", "a")])
+        os.makedirs(os.path.join(gd, "src"))
+        slot = os.path.join(self.tmp, "C-slot-1")
+        self._git("-C", repo, "worktree", "add", "-q", slot)
+        shutil.rmtree(repo)
+        self._assert_never_the_git_dir_parent(slot, gd)
+
+    def test_nothing_tracked_is_no_proof(self):
+        gd, repo = self._separate("B", tracked=[])
+        slot = os.path.join(self.tmp, "B-slot-1")
+        self._git("-C", repo, "worktree", "add", "-q", slot)
+        shutil.rmtree(repo)
+        self._assert_never_the_git_dir_parent(slot, gd)
 
 
 class AntivirusBroadPathTest(unittest.TestCase):

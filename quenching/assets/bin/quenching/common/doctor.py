@@ -24,7 +24,7 @@ from pathlib import Path
 from typing import Callable
 
 from quenching.common.cache import cache_root
-from quenching.common.git import _git
+from quenching.common.git import COMMAND_TIMEOUT_S, _git
 from quenching.common.config import (active_provider, detect_profile, load_config,
                                      prepare_minimal_config,
                                      write_minimal_config)
@@ -226,10 +226,22 @@ def _owns(candidate: str, common: str) -> bool:
         return _canonical(target) == _canonical(common)
     if not os.path.isdir(dot_git) or _canonical(dot_git) != _canonical(common):
         return False
-    # A bare `.git` parent (`--separate-git-dir`) carries the git dir but none of its files.
-    tracked = _git(candidate, "--git-dir", common, "ls-files", "-z").split("\0")
-    tops = {entry.split("/", 1)[0] for entry in tracked if entry}
-    return not tops or any(os.path.lexists(os.path.join(candidate, top)) for top in tops)
+    # A bare `.git` parent (`--separate-git-dir`) carries the git dir but none of its files: only
+    # tracked files present with the index's content prove a checkout. `diff` compares content
+    # where the stat is stale and refreshes the index it reads, so it reads a throwaway copy.
+    index = os.path.join(common, "index")
+    if not os.path.isfile(index) or not _git(candidate, "--git-dir", common, "ls-files", "-z"):
+        return False
+    argv = ["git", "--git-dir", common, "--work-tree", candidate, "diff", "--quiet",
+            "--no-ext-diff", "--no-textconv", "--ignore-submodules"]
+    try:
+        with tempfile.TemporaryDirectory() as scratch:
+            copy = shutil.copyfile(index, os.path.join(scratch, "index"))
+            return subprocess.run(argv, capture_output=True, cwd=candidate,
+                                  timeout=COMMAND_TIMEOUT_S,
+                                  env={**os.environ, "GIT_INDEX_FILE": copy}).returncode == 0
+    except (OSError, subprocess.SubprocessError):
+        return False
 
 
 def _primary_root(root: str) -> str | None:
