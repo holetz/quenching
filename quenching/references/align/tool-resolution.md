@@ -58,6 +58,8 @@ no tool of the catalog.
    - **atomic** — a write of several spec sections in one call; `specs_section_write` writes one.
    - **by** — `approved` stamped `by=session` or `by=orchestrator-forced`; `specs_record` writes
      `approved` as `by=human`, after asking.
+   - **flag** — the call needs a flag the tool does not publish (`specs_create` has no `subject`,
+     `specs_next` no `table`, `specs_promote` no `force`).
 
 ### The fallback: a session with no server
 

@@ -107,7 +107,7 @@ def findings(body: str, where: dict) -> list[dict]:
                     "sk-cq-cli-citation", "error",
                     f"`{cited}` at body line {number}: cite the tool, `{tools[path]}(…)` "
                     "(align/tool-resolution.md §Citing a verb in a body), or mark the line "
-                    "`cli: <root|atomic|by>`",
+                    "`cli: <root|atomic|by|flag>`",
                     invocation=cited, line=number, **where))
         for match in call_re.finditer(line):
             if match.group(1) not in known:

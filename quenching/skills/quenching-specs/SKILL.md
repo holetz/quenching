@@ -20,18 +20,18 @@ flow's text is read only when the flow runs.
 
 ## Resolving the tool
 
-Resolve `cq` (`.agents/quenching/bin/cq components read` is the section reader every `§X` citation resolves through)
+The flows cite each verb as the `quenching` MCP tool they call — `specs_status(spec=<id>)`,
+`components_read(path=…, sections=[…])`, the section reader every `§X` citation resolves through —
 per [align/tool-resolution.md](.agents/quenching/references/align/tool-resolution.md)
-§Resolving the tool; branch on the **exit code** (0 ok · 1 findings · 2 refusal) and the `--json`,
-never on prose. With the `quenching` MCP server connected, every `cq <pillar> <verb>` below is
-called as its tool `<pillar>_<verb>` (`specs_status`, `git_state`, `components_read`); the CLI is
-the fallback the report names, only for a verb with no tool or a session without the server.
+§Resolving the tool; branch on the payload and the exit code it carries (0 ok · 1 findings ·
+2 refusal), never on prose. A `cq …` left in a flow is a verb with no tool or a line marked
+`cli: <reason>`; with no server, every call takes that section's fallback, and the report names it.
 
 ## Workflow
 
 ### 1. Pick the flow
 The first word of `$ARGUMENTS` naming a flow in the table below picks it, and the rest is the
-flow's input. No flow named → with an id, `.agents/quenching/bin/cq specs status --spec <id> --json` and the derived
+flow's input. No flow named → with an id, `specs_status(spec=<id>)` and the derived
 stage pick it; with no id, the request's own words do (a problem to capture, a ranking, a status
 question). An input that fits two flows is asked on a decision sheet, never guessed; a sub-agent
 returns `STATE: blocked` with `NOTE: needs-human:` carrying it.
@@ -53,7 +53,7 @@ returns `STATE: blocked` with `NOTE: needs-human:` carrying it.
 **Done when:** exactly one flow is chosen, with its input.
 
 ### 2. Load the flow and follow it
-Run `.agents/quenching/bin/cq components read` on the chosen flow's reference from the table above, with its
+Run `components_read` on the chosen flow's reference from the table above, with its
 `.agents/skills/quenching-specs/references/` path. Read the flow whole, once, and follow it from its own `## Workflow` with the input from step 1:
 its steps, `Done when:` lines and invariants bind this run exactly as they bound the standalone
 command. A `/quenching-specs <flow>` the flow names as the next step is this router called with that flow, and a conductor reaches the same flow by calling this skill with the flow and the id.
