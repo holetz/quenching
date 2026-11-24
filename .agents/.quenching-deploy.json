@@ -33,7 +33,7 @@
     ".agents/quenching/agents/spec-reviewer.md": "3bfb728d4ba537b3885ba10150468b9ea71025a758bf949dc3b3f5e0c6095863",
     ".agents/quenching/agents/spec-runner.md": "d1abfc8c4e1e95d78c9cba2be8ce18da925dfa5ab98911359efb0b9c6f3bc513",
     ".agents/quenching/agents/spec-scout.md": "95b32cf8fd4579cbb6b2981110a52c478bca0a2a7b8e4f51eee48f0bbef4e0c2",
-    ".agents/quenching/agents/spec-verifier.md": "c66ce8626a4ba0221d1aef776e22eb4d26859118ec62751fee52c3e4e3e34fb6",
+    ".agents/quenching/agents/spec-verifier.md": "a590108e06942a2386f3e6bc4776701b5e5a4b44c3bde45fea4580f3c2c5d767",
     ".agents/quenching/assets/bin/cq": "3f3cf930ead5e7297832d70af13a4659c374c7e5a0b1c1612363f4d839b7bab2",
     ".agents/quenching/assets/bin/quenching/codex/__init__.py": "f003a307a7ef9ea75f5b389b4e0d5f968934c8fcf7503e6d4edfaa08d57a3cc7",
     ".agents/quenching/assets/bin/quenching/codex/config.py": "0caa5fc2c9ec5f3ff1073c2a27a94f508763a530a2f45df18d98258f294ebd15",
@@ -373,7 +373,7 @@
     ".claude/agents/quenching-spec-reviewer.md": "3bfb728d4ba537b3885ba10150468b9ea71025a758bf949dc3b3f5e0c6095863",
     ".claude/agents/quenching-spec-runner.md": "d1abfc8c4e1e95d78c9cba2be8ce18da925dfa5ab98911359efb0b9c6f3bc513",
     ".claude/agents/quenching-spec-scout.md": "95b32cf8fd4579cbb6b2981110a52c478bca0a2a7b8e4f51eee48f0bbef4e0c2",
-    ".claude/agents/quenching-spec-verifier.md": "c66ce8626a4ba0221d1aef776e22eb4d26859118ec62751fee52c3e4e3e34fb6",
+    ".claude/agents/quenching-spec-verifier.md": "a590108e06942a2386f3e6bc4776701b5e5a4b44c3bde45fea4580f3c2c5d767",
     ".claude/skills/.generated-files.json": "05e4f86c37ebc9835ba39800c88004687ea343661755ca6e243b2e90d5a5451a",
     ".claude/skills/commands-tighten/SKILL.md": "41574a4774e70deffd6c8c6766a1a24581d579d1f7247b68a93ba86b39b2019b",
     ".claude/skills/quenching-align/SKILL.md": "ff93b0078fe1c822027edf3ae1077c12e810e3326cacc8f5b4457e439982dd9d",
@@ -481,7 +481,7 @@
     ".opencode/agents/quenching-spec-reviewer.md": "34fb6ff76e1213b895ffb37249f872620e29244d23c7001d812427a1ea781a44",
     ".opencode/agents/quenching-spec-runner.md": "88554cc0bd530dd0cac54df7a2a061685e72b87cfc72c6bbd9def53e1807d11e",
     ".opencode/agents/quenching-spec-scout.md": "045446cccbf5e40a70fe7db44b9fc22d1ffa9216c7d35ff55500a610d578d607",
-    ".opencode/agents/quenching-spec-verifier.md": "c083c4f0073fd386d6d451c26b316bed52cfe5ed879b0bf5a37456180d22efd0"
+    ".opencode/agents/quenching-spec-verifier.md": "f33e44b97ed142d977785768de3ba95d8b928d3a69034a0a6a9b05375dd43da1"
   },
   "mcp": {
     "mount": "all",

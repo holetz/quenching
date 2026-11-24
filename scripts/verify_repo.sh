@@ -169,6 +169,14 @@ fi
 
 pytest_args=("${TARGETS[@]}" -q -p randomly -p scripts.toolchain.slots -n "$TEST_WORKERS")
 if [ "$WITH_COVERAGE" = 1 ]; then
+  # Python >= 3.12 measures through `sys.monitoring` (`COVERAGE_CORE=sysmon`), cheaper than the C
+  # tracer older interpreters default to; the totals are identical, so the floor is unchanged. An
+  # operator's own `COVERAGE_CORE` wins. Data left by a killed run is dropped so the combine never
+  # reads a stale `.coverage.*`.
+  if [ -z "${COVERAGE_CORE:-}" ] && uv run python -c "import sys; sys.exit(0 if sys.version_info >= (3, 12) else 1)" >/dev/null 2>&1; then
+    export COVERAGE_CORE=sysmon
+  fi
+  rm -f "$COVERAGE_FILE" "$COVERAGE_FILE".*
   pytest_args+=(--cov=quenching/assets/bin/quenching --cov-report="json:$COVERAGE_JSON")
 fi
 if [ -n "${PYTEST_RANDOMLY_SEED:-}" ]; then
