@@ -35,6 +35,17 @@ class ConcludeAutonomous(unittest.TestCase):
         self.assertNotIn("stops at the named PR handoff", self.text,
                          "the autonomous run no longer stops before its own PR")
 
+    def test_a_conflict_only_inside_a_generated_zone_is_mechanical(self):
+        # the step 7 recipe and the table row both cover the generated zones, not only the mirrors
+        self.assertIn("A conflict only inside a generated zone", self.text)
+        self.assertIn("§Enumerated generated zones", self.text)
+        self.assertIn("`cq proof readme --write`", self.text)
+        self.assertIn("`git merge-file --theirs <ours> <base> <theirs>`", self.text)
+        self.assertIn("every conflict marker of the file sits between the zone's delimiters",
+                      self.text)
+        self.assertIn("a conflict only in the deployed surface or inside a generated zone",
+                      self.text)
+
 
 class RunnerReportsThePrRecord(unittest.TestCase):
     @classmethod

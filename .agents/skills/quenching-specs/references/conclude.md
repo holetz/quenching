@@ -117,7 +117,7 @@ stops the run with `STATE: blocked` and `NOTE: needs-human: <the question>`.
 | Step 5 — the distillation plan | as step 3: applied on the work branch for `done`, declined and named for `abandoned` |
 | Step 5 — the release obligations | `done`: applied on the work branch as narrated, the standard quoted in the report |
 | Step 6 — the flow sweep | `done` and `abandoned`: every evidenced candidate is captured unasked with `.agents/quenching/bin/cq specs new`, one spec per candidate, its `## Problem` carrying the inputs; none is developed, and the ids are named in the report |
-| Step 7 — branch behind its base | the base merged in (`git merge --no-edit origin/<base>`, never a rebase), then the gate; a conflict outside the generated mirrors → `git merge --abort` and `needs-human` with the paths |
+| Step 7 — branch behind its base | the base merged in (`git merge --no-edit origin/<base>`, never a rebase), then the gate; a conflict only in the deployed surface or inside a generated zone is resolved by regenerating; any other conflict → `git merge --abort` and `needs-human` with the paths |
 | Step 7 — an inconclusive check | `needs-human`, the check named |
 | Step 7 — the abandoned branch-delete offer | keep, recorded in the report |
 | Step 8 — the post-merge close | no question exists: `reconcile --write` and the worktree's release run as written; a `needs-human` row or a refusal is reported and never forced |
@@ -454,8 +454,20 @@ the deployed surface (`.agents/quenching/**`, `.claude/skills/**`, `.agents/.que
 is mechanical: take the base's side (`git checkout-index --stage=3 -f -- <path>`, `git add <path>`), then
 **regenerate before concluding the merge** — `cq deploy --target . --write` — `git add` what it
 rewrote, and conclude the merge. A manifest taken from the base alone loses the branch's entries.
-Then `cq deploy --target . --check` exits 0. A conflict in any other path →
-`git merge --abort` and `needs-human` naming the paths.
+Then `cq deploy --target . --check` exits 0.
+
+A conflict only inside a generated zone is mechanical too. The zones are those of
+`docs/standards/architecture/generated-listings.md` §Enumerated generated zones, each with its
+owner verb; the list is not repeated here. It holds only where every conflict marker of the file
+sits between the zone's delimiters (`…-start` / `…-end`): a marker outside them is a conflict
+in authored text. Resolve only the conflicting hunks, never the whole file, so what merged cleanly
+outside the zone survives: write the stages to scratch files (`git show :1:<path>`, `:2:`, `:3:`),
+run `git merge-file --theirs <ours> <base> <theirs>`, copy the result over `<path>`, then run the
+zone's owner verb (`cq proof readme --write` for `quenching-proof-readme`, `cq ops registry
+--write` for the operations registry) **before** `cq deploy --target . --write`, which mirrors
+the README, and `git add` what they rewrote. Then the owner's `--check` and `cq deploy --target .
+--check` exit 0. Any marker outside a zone, or a zone with no owner verb → `git merge --abort`
+and `needs-human` naming the paths.
 
 **An inconclusive result is not a green one.** A check that cannot tell "this failed" from "this
 could not be measured" has returned no verdict — say which it was, and ask (§Under `autonomous`:
