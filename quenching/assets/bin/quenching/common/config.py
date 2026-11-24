@@ -182,6 +182,23 @@ def find_repo_root(specs_root: str) -> str:
         current = parent
     start = os.path.abspath(specs_root)
     top = _TOPLEVEL.get(start)
+    if top is None and os.path.isdir(specs_root) and not os.environ.get("GIT_DIR") \
+            and not os.environ.get("GIT_WORK_TREE"):
+        # The nearest ancestor holding `.git` (a directory, or the file of a worktree) is the
+        # work tree's top: no process needed to learn what the file system already says.
+        walk = start
+        while True:
+            if os.path.exists(os.path.join(walk, ".git")):
+                top = _TOPLEVEL[start] = walk
+                break
+            up = os.path.dirname(walk)
+            if up == walk:
+                break
+            walk = up
+        if top is None and not (os.path.isdir(os.path.join(start, "objects"))
+                                and os.path.isfile(os.path.join(start, "HEAD"))):
+            # No `.git` above and not a bare repository: git has no work tree to name here.
+            return os.path.dirname(start)
     if top is None and os.path.isdir(specs_root):
         top = _git(specs_root, "rev-parse", "--show-toplevel").strip()
         if top:
