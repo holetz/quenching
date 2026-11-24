@@ -103,9 +103,10 @@ first of `python3`, `python` and `py -3` that runs a Python 3.11 or later on the
 (no version is pinned), else `python3` — **except** when that prefix starts with `uv` or `uvx`:
 `uv run` resolves the project on every call and exits **2** on failure, which Claude Code reads as a
 block of the tool call, so one broken environment would block every shell call of the session.
-There the hooks take the prefix the last deploy recorded for them (`claudeSettings.command` in the
-manifest), else the first of those three candidates that runs, and the deploy says so in a
-warning; the MCP server keeps the declared prefix. A Windows target is found without a
+There the hooks and the MCP server take the prefix the last deploy recorded for the hooks
+(`claudeSettings.command` in the manifest), else the first of those three candidates that runs, and
+the deploy says so in a warning: the server would otherwise resolve the project before answering
+the harness. A Windows target is found without a
 declaration, and `python3` as only the Store alias there is skipped. The marker path
 `.agents/quenching/assets/hooks/<name>.py` stays a literal substring of the command, which is how the merge
 finds its own entry — an older `<name>.sh` entry is recognised too and rewritten in place.

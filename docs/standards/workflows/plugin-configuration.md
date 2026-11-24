@@ -4,7 +4,7 @@ title: Plugin configuration contract
 description: "`.agents/quenching.json` is the plugin's single configuration home, with `.claude/quenching.json` read as legacy; provider selection is derived from the repository remote, while placement, Azure mappings, lifecycle hooks, profiles, proposal catalogues and the `git` pillar's per-artifact writing directives remain explicit target settings"
 resource: .agents/quenching.json, quenching/assets/bin/quenching/common/config.py, quenching/assets/bin/quenching/specs/config.py, quenching/assets/bin/quenching/specs/store.py, quenching/assets/bin/quenching/ops/**, quenching/assets/bin/quenching/proof/**, quenching/assets/bin/quenching/git/base.py, quenching/assets/bin/quenching/git/conventions.py, quenching/assets/bin/quenching/git/ignored.py, quenching/assets/bin/quenching/config/**, quenching/assets/bin/quenching/common/identity.py
 tags: [workflows, specs, configuration, provider, plugin]
-timestamp: 2026-11-21
+timestamp: 2026-11-24
 audience: both
 authority: current
 source: specs 1065, 1075, 1405, 1907, 1908, 1909, 1910, 1911, 1912, 2092, 2118, 2164, 2175, 2190, 2199, 2022, 1020213, 2231 — lineage in decision 0004
@@ -261,19 +261,22 @@ by [security-pillar.md](../architecture/security-pillar.md) §The identity allow
 
 ## The `shared.mcp` block
 
-`cq deploy` registers the quenching MCP server in the target's harnesses with no declaration;
-`shared.mcp` only overrides how. It is `{mount, command}`: `mount` is the mounted pillar (`specs`
-today, the default) and `command` is the non-empty list of strings that finds Python — for example
-`["uv", "run", "--no-project", "python"]`. Deploy appends the vendored entry point and the mount,
-so the generated argv is `<command...> .agents/quenching/assets/bin/cq <mount> mcp`. Without a
+`cq deploy` registers the whole quenching MCP server in the target's harnesses with no
+declaration; `shared.mcp` only overrides how. It is `{mount, command}`: `mount` is `all` (the
+default, the whole server) or `specs` (the specs-only mount), and `command` is the non-empty list of
+strings that finds Python — for example `["python3"]` or `["py", "-3"]`. Deploy appends the vendored
+entry point and the mount, so the generated argv is `<command...> .agents/quenching/assets/bin/cq
+mcp`, or `<command...> .agents/quenching/assets/bin/cq specs mcp` under `mount: "specs"`. Without a
 `command`, deploy takes the prefix the last deploy recorded, else the first of `python3`, `python`
 and `py -3` that runs a Python 3.11 or later on the deploying machine, else `python3`; no version is
-pinned, and the same prefix starts the Claude Code hooks.
+pinned, and the same prefix starts the Claude Code hooks. A `command` through `uv` or `uvx` is
+replaced by a direct interpreter for both, with a warning
+([hooks.md](../automation/hooks.md)).
 
 The key is read through `repository_document`, not through the merged envelope: the user layer
 (`_apply_user_layer`) would otherwise make a generated file vary by machine, and a generated file
-belongs to the repository. A key of the wrong shape, an unknown leaf or a mount outside `specs`
-refuses with `ct-deploy-mcp` before anything is written. A declared key requires `--runtime vendor`,
+belongs to the repository. A key of the wrong shape, an unknown leaf or a mount outside `all` and
+`specs` refuses with `ct-deploy-mcp` before anything is written. A declared key requires `--runtime vendor`,
 because the `uvx` runtime does not carry the vendored entry point; without a declaration that
 runtime registers nothing and warns. `cq config seed` does not emit the key: absence is the
 default. See [deploy-mode.md](../architecture/deploy-mode.md#mcp-registration).
@@ -324,7 +327,7 @@ explicit flag wins over the key.
 | `shared.cache` | `{rebuildLimitUsd, warnMinutes, ttlMinutes: auto \| 5 \| 60, costStyle: dollars \| times}` | `0.5` / `15` / `auto` / `dollars` | the `quenching-cache` plugin's bar, through `cq config show --effective`; its long-chat line is `shared.contextBudgets.main` |
 | `shared.autonomy.maxLaunches` | integer ≥ 1 | `40` | `/quenching-specs autopilot` (see the autonomy block); the launch ceiling lives only there |
 | `shared.workHost` | `{target, dockerContext, runner, remoteRoot, syncFlags, syncExclude, pullBack, protectedPaths, minFreeGb}` | disabled | `cq config host --plan`; see [work-host.md](work-host.md) |
-| `shared.mcp` | `{mount: "specs", command: [strings]}` | absent; the MCP is registered with the default mount and a resolved Python prefix | `cq deploy`; read from the repository document only, never the merged envelope |
+| `shared.mcp` | `{mount: "all"\|"specs", command: [strings]}` | absent; the whole MCP server (`all`) is registered with a resolved direct Python prefix | `cq deploy`; read from the repository document only, never the merged envelope |
 | `specs.chat` | `{model: string, budgetUsd: number > 0, timeoutSeconds: number > 0}` | `sonnet`, `0.50`, `300` | the portal's `--chat`; `--chat-budget-usd` wins over `budgetUsd` |
 | `specs.estimate.writeOnly` | a list of repo-relative paths, exact or `fnmatch` globs | `[]` | `cq specs estimate`: a task file it matches is listed with `writeOnly: "declared by repo"`, keeps its size and adds no bytes; an Impact standard is always counted; `--task` ignores it |
 
