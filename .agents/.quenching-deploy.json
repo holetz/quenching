@@ -82,7 +82,7 @@
     ".agents/quenching/assets/bin/quenching/controls/__init__.py": "d7b6251673390a48038fec32359cd43e991f4e64f383fb41873728ce9851877e",
     ".agents/quenching/assets/bin/quenching/controls/evaluate.py": "05cdedea2db16edf16b741e5415097b534b15470ac0e77d0e8c67d7a2ba2a386",
     ".agents/quenching/assets/bin/quenching/deploy/__init__.py": "d9efa3062ac0c40e82c0bfc4041b7485a60420e2576afef7e94a72277a8cc0ff",
-    ".agents/quenching/assets/bin/quenching/deploy/cli.py": "912680ef438cae0c04d36b681f9beb95823f6f2d1320950876b9f6a67c9cd299",
+    ".agents/quenching/assets/bin/quenching/deploy/cli.py": "19f9ae92fdf3f4c8fc8649b3e7675ae48ae29ba96d024ae0f9c1999074907584",
     ".agents/quenching/assets/bin/quenching/deploy/mcpfiles.py": "90c586ff3592fcf71ad4f429c65f8e39fec7350108b4c3c9a09a9f0b6c432482",
     ".agents/quenching/assets/bin/quenching/deploy/settings.py": "dc24b41de07969aac1ec96f3137c2158117c5f4aa679ad7af306379925a36485",
     ".agents/quenching/assets/bin/quenching/deploy/translate.py": "865d1395c9e0676f9f7f332d2cb5327845eec44d208257e77506686dbb4e0798",

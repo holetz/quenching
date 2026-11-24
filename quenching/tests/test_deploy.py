@@ -619,6 +619,23 @@ class Deploy(unittest.TestCase):
                          manifest["opencodeConfig"])
         self.assertEqual([], self.run_deploy("--check")[1]["changes"])
 
+    def test_check_keeps_the_patterns_another_machine_recorded(self):
+        self.assertEqual(0, self.run_deploy("--modules", "specs", "--harness", "opencode",
+                                            "--write")[0])
+        other = ["~/elsewhere/repo-slot-*", "~/elsewhere/repo.*"]
+        manifest_path = self.target / ".agents/.quenching-deploy.json"
+        manifest = json.loads(manifest_path.read_text())
+        manifest["opencodeConfig"]["externalDirectory"] = other
+        manifest_path.write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
+        opencode = json.loads((self.target / "opencode.json").read_text())
+        opencode["permission"]["external_directory"] = {p: "allow" for p in other}
+        (self.target / "opencode.json").write_text(json.dumps(opencode, indent=2) + "\n",
+                                                   encoding="utf-8")
+        self.assertEqual([], self.run_deploy("--check")[1]["changes"])
+        self.assertEqual(0, self.run_deploy("--write")[0])
+        rewritten = json.loads((self.target / "opencode.json").read_text())
+        self.assertNotIn(other[0], rewritten["permission"]["external_directory"])
+
     def test_a_slot_resolves_to_its_primary_checkout(self):
         from quenching.deploy.cli import _primary_checkout
         self.git("-c", "user.name=t", "-c", "user.email=t@example.com", "commit", "-q",

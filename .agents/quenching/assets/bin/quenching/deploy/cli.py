@@ -142,12 +142,14 @@ def _primary_checkout(target: Path) -> str | None:
     return os.path.dirname(common)
 
 
-def _opencode_wanted(target: Path, current: str | None, env: dict) -> tuple[dict, list[str]]:
+def _opencode_wanted(target: Path, current: str | None, env: dict,
+                     patterns: list[str] | None = None) -> tuple[dict, list[str]]:
     """The extras `opencode.json` gets, and why the depth was left out: the slot and store
-    patterns of a git target, and `experimental.subagent_depth` unless writing a project
-    `experimental` block would hide a global key (anomalyco/opencode#60410)."""
-    primary = _primary_checkout(target)
-    patterns = mcpfiles.external_patterns(primary, os.path.expanduser("~")) if primary else []
+    patterns of a git target (`patterns` when given), and `experimental.subagent_depth` unless
+    writing a project `experimental` block would hide a global key (anomalyco/opencode#60410)."""
+    if patterns is None:
+        primary = _primary_checkout(target)
+        patterns = mcpfiles.external_patterns(primary, os.path.expanduser("~")) if primary else []
     warnings: list[str] = []
     depth: int | None = mcpfiles.SUBAGENT_DEPTH
     try:
@@ -172,13 +174,15 @@ def _opencode_wanted(target: Path, current: str | None, env: dict) -> tuple[dict
 
 
 def _mcp_merge(target: Path, wanted: dict[str, list[str]], previous: dict | None,
-               env: dict | None = None) -> dict:
+               env: dict | None = None, keep_patterns: bool = False) -> dict:
     """The quenching entry written into (or taken out of) the user's harness files, unwritten.
 
     `wanted` maps each file to the argv its entry carries; a file the last deploy wrote and that is
     no longer wanted loses only that entry. Nothing is touched that cannot be read safely.
     `opencode.json` also carries the extras of `_opencode_wanted`; what a past deploy recorded
     there (`opencodeConfig`) is taken out first, so a changed pattern never lingers.
+    `keep_patterns` (`--check`) reuses the recorded `external_directory` patterns: they name the
+    deploying machine's checkout, so another clone of a committed `opencode.json` is not drift.
     """
     files: list[dict] = []
     warnings: list[str] = []
@@ -193,7 +197,9 @@ def _mcp_merge(target: Path, wanted: dict[str, list[str]], previous: dict | None
         current = _canonical_text(path)
         if rel in wanted and rel == mcpfiles.OPENCODE:
             base = mcpfiles.opencode_strip(current, recorded) if recorded and current else current
-            extras, why = _opencode_wanted(target, base, os.environ if env is None else env)
+            kept = recorded.get("externalDirectory") if keep_patterns and recorded else None
+            extras, why = _opencode_wanted(target, base, os.environ if env is None else env,
+                                           kept if isinstance(kept, list) else None)
             warnings.extend(why)
             new = (None if current is not None and base is None
                    else mcpfiles.merged(rel, base, wanted[rel], extras))
@@ -566,7 +572,7 @@ def main(argv: list[str]) -> int:
                       args.json)
     wanted = {rel: deploy_tree.mcp_argv(mcp) for rel in built["manifest"].get("mcpFiles", [])} \
         if mcp else {}
-    built["mcpMerge"] = _mcp_merge(target, wanted, previous)
+    built["mcpMerge"] = _mcp_merge(target, wanted, previous, keep_patterns=args.check)
     if built["mcpMerge"]["opencode"]:
         # What the deploy wrote into the user's `opencode.json`, so a later run takes it out.
         built["manifest"]["opencodeConfig"] = built["mcpMerge"]["opencode"]
