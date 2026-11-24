@@ -25,7 +25,7 @@ Three tiers, one gate — pick the narrowest that answers the question:
   the `integration` layer;
 - closing a spec: `QUENCHING_TEST_SCOPE=affected bash scripts/verify_repo.sh` runs the whole gate on
   that selection, the coverage floor reporting `SKIPPED`, and the site build and the `claude plugin`
-  steps reporting `SKIPPED` unless the diff touches `docs/`, `quenching/skills|references`,
+  steps reporting `SKIPPED` unless the diff touches `docs/`, `quenching/skills/`, `quenching/references/`,
   `zensical.toml` or `integrations/`; the merge waits for green CI;
 - CI and `/release`: the full gate, floor enforced; `QUENCHING_FULL_GATE=1` forces it locally.
 
