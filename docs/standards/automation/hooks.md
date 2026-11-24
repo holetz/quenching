@@ -120,6 +120,10 @@ too.
 **A separate `.github/hooks/` file is not shipped.** It is Copilot's own format, but Copilot also
 reads `.claude/settings.json`, so a second file would run every hook twice there.
 
+**No `WorktreeCreate` hook is generated.** The worktree belongs to the quenching flow, which takes a
+slot with `cq git worktree acquire`. A harness hook that cut its own worktree would hand a session a
+tree with no slot lock, no `worktreeSetup` and no `branch:` record.
+
 **`deny-claude-coauthor`.** `quenching-specs` declares one rung-2 `PreToolUse` hook matched to
 the shell tools, running `assets/hooks/deny-claude-coauthor.py` (5-second timeout, absence-guarded). It denies a
 message-writing command (`git commit`/`merge`/`tag`/`notes`, `gh pr`, `cq git`) that carries Claude's
