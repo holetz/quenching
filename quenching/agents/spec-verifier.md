@@ -145,7 +145,9 @@ matches (`--root` is an option of the granted verb). Without a worktree, `--work
    (the `spec-orchestrator` passes it as a claim) and compare its counts with the checked tasks. Every checked task should have one `Codex:` line (`wrote`, `fallback`,
    `guard` or `skipped`); list the ids without one, or `sem relato` or no line in the prompt as "missing CODEX: line", as a warning in the evidence.
    The worker's report is a claim: this check accuses an absent line, it does not prove the consultation.
-   `n/a` only when no task is checked.
+   `n/a` when no task is checked, and also when the Codex executor is not enabled: `Read` the worktree's
+   `.agents/quenching.json` and mark the check `n/a` unless it carries `shared.codex.executor.enabled: true`
+   (absent file or key means off; the default is `false`). A repository without the executor gets no `CODEX:` warning.
 
 ## Epic authorization (checks 9 and 10)
 
