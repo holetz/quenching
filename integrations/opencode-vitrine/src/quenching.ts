@@ -1,6 +1,7 @@
 import { readFile } from "node:fs/promises"
 import { join } from "node:path"
 import { git, runCq, toolCq, type Launch } from "./cq.js"
+import { localWarnings } from "./warnings.js"
 
 /**
  * O que o painel precisa saber sobre a instalação do quenching no projeto.
@@ -15,6 +16,8 @@ export type QuenchingHealth = {
   missing: boolean
   root: string
   error: string
+  /** Avisos locais: profundidade de subagentes e servidor MCP, lidos da configuração. */
+  warnings: string[]
 }
 
 export type QuenchingUpdate = {
@@ -101,6 +104,7 @@ export async function health(cwd: string): Promise<QuenchingHealth> {
     missing: !installed,
     root,
     error: tool.error,
+    warnings: installed ? await localWarnings(root) : [],
   }
 }
 

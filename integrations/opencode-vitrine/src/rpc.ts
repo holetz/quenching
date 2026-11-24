@@ -212,8 +212,9 @@ const quenchingHealth = {
     missing: { type: "boolean" },
     root: { type: "string" },
     error: { type: "string" },
+    warnings: { type: "array", items: { type: "string" } },
   },
-  required: ["installed", "version", "available", "outdated", "missing", "root", "error"],
+  required: ["installed", "version", "available", "outdated", "missing", "root", "error", "warnings"],
   additionalProperties: false,
 } as const
 
@@ -331,6 +332,7 @@ export type Quenching = {
   missing: boolean
   root: string
   error: string
+  warnings: string[]
 }
 export type QuenchingUpdate = { ok: boolean; version: string; available: string; output: string }
 export type ConfigRead = { ok: boolean; json: string; error: string }
