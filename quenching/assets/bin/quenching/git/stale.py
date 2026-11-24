@@ -408,7 +408,7 @@ def _groups(entries: list[dict]) -> list[dict]:
 
 def stale_report(cwd: str, remote: str = "origin") -> dict:
     """The report `cq git stale` prints, and the one `cq git prune` re-reads before it acts."""
-    base, _is_default = resolve_base(cwd)
+    base, _is_default = resolve_base(cwd, host_default=False)
     current = _git(cwd, "branch", "--show-current").strip()
     # `base` is permanent by convention, not "safe to delete just because its tip is an
     # ancestor of base". `current` is excluded because you cannot delete the branch you are

@@ -160,6 +160,25 @@ class Base(RepoCase):
             self.assertTrue(_is_host_default(self.repo, "azure-boards", "team/main"))
             self.assertFalse(_is_host_default(self.repo, "azure-boards", "main"))
 
+    def test_host_default_is_asked_once_per_remote_and_then_cached(self):
+        _run(self.repo, "remote", "add", "origin", "https://github.com/o/r.git")
+        with mock.patch("quenching.git.base._is_host_default", return_value=True) as ask:
+            self.assertEqual(("main", True), resolve_base(self.repo))
+            self.assertEqual(("main", True), resolve_base(self.repo))
+        self.assertEqual(1, ask.call_count)
+
+    def test_an_unknown_host_answer_is_never_cached(self):
+        _run(self.repo, "remote", "add", "origin", "https://github.com/o/r.git")
+        with mock.patch("quenching.git.base._is_host_default", return_value=None) as ask:
+            resolve_base(self.repo)
+            resolve_base(self.repo)
+        self.assertEqual(2, ask.call_count)
+
+    def test_host_default_false_makes_no_host_call(self):
+        with mock.patch("quenching.git.base._is_host_default") as ask:
+            self.assertEqual(("main", None), resolve_base(self.repo, host_default=False))
+        ask.assert_not_called()
+
     def test_is_host_default_is_unknown_for_an_unknown_backend(self):
         self.assertIsNone(_is_host_default(self.repo, "unknown-provider", "main"))
 
