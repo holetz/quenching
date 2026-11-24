@@ -49,8 +49,14 @@ ok(clearReset(compacted).resetBy === undefined, "the next reply clears the reset
 // implicit cache: reduced band, no countdown, no light that can expire
 ok(explicitCache({ id: "claude-opus-5-5", providerID: "anthropic" }) && !explicitCache({ id: "gpt-5", providerID: "openai" }), "only Claude routes have breakpoints")
 const reduced = view(first, 500 * MIN, DEFAULTS, W, priceOf, true)
-ok(reduced.implicit && reduced.light === "green" && !reduced.shouldPopup && !/min|left|expired/i.test(reduced.text), "implicit: size and cost, never expired")
+ok(reduced.implicit && reduced.light === "none" && reduced.tone === undefined && !reduced.shouldPopup && !/min|left|expired/i.test(reduced.text), "implicit: size and cost, never expired")
 ok(reduced.text.startsWith("ℹ️"), "implicit: the reduced mark")
+ok(/208K \/ 1M/.test(reduced.text) && /\$/.test(reduced.text), "implicit: size and next-message cost")
+const times = view(first, 500 * MIN, { ...DEFAULTS, costStyle: "times" }, W, priceOf, true)
+ok(!/\$/.test(times.text) && /208K/.test(times.text), "implicit with costStyle times: size only, no dollars")
+const pt = view(first, 500 * MIN, DEFAULTS, WORDS.pt, priceOf, true)
+ok(pt.text.startsWith("ℹ️") && !/expir|restantes/i.test(pt.text), "implicit in pt-BR: still no countdown")
+ok(view(null, 0, DEFAULTS, W, priceOf, true).light === "none", "implicit with no reply yet: the waiting line")
 
 // a model the table does not know is priced by the host
 const odd = { ...first, model: "gpt-x" }

@@ -74,7 +74,8 @@ function reduced(rec: Rec, w: Words, price: PriceSource, s: Settings): string {
 
 export function view(rec: Rec | null, now: number, s: Settings, w: Words, price: PriceSource = priceOf, implicit = false): View {
   if (!rec) return { light: 'none', text: w.waiting, shouldPopup: false, implicit }
-  if (implicit) return { light: 'green', text: reduced(rec, w, price, s), tone: 'success', shouldPopup: false, implicit }
+  // no light: a green or red here would claim a lifetime the provider never promised
+  if (implicit) return { light: 'none', text: reduced(rec, w, price, s), shouldPopup: false, implicit }
   const v = decide(rec, now, s, w, price)
   return { light: v.light, text: v.text, tone: toneOf(v.light), shouldPopup: v.shouldPopup, implicit }
 }
