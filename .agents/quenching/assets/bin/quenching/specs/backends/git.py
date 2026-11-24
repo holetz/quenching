@@ -23,16 +23,17 @@ import hashlib
 import json
 import os
 import random
-import shutil
 import subprocess
 import tempfile
 import time
+import zlib
 from datetime import datetime
 
 from quenching.common import identity
 from quenching.common.cache import cache_path
 from quenching.common.config import find_repo_root
-from quenching.common.git import remember_remote_url, remembered_remote_url
+from quenching.common.git import (remember_remote_absent, remember_remote_url,
+                                   remembered_remote_url, remote_known_absent)
 from quenching.common.leak import guard_store_write, patterns, scan_text, store_refusal
 from quenching.specs.backends.base import (BackendRefusal, SpecBackend, artifact_owner,
                                            check_artifact)
@@ -175,6 +176,15 @@ class GitBackend(SpecBackend):
         self._snapshots: dict[str, dict[str, str]] = {}
         self._blob_text: dict[str, str] = {}
         self._parents: dict[str, str | None] = {}
+        self._trees: dict[str, str] = {}
+        self._objdir: str | None = None
+        self._hash_name: str | None = None
+        self._listings: dict[str, dict[str, tuple[str, str]]] = {}
+        self._written: tuple[str | None, str | None] | None = None
+        self._keep_memo = False
+        self._memo_own = False          # the memo was left by this process's own local write
+        self._shown: dict[tuple[str, str], bytes] = {}
+        self._idents: dict[str, tuple[int, str]] = {}
         self._seen_pending: tuple[str | None] | None = None
         cache_key = f"{self.mirror_dir or self.repo_root}\0{remote}\0{branch}"
         self._cache_file = _cache_path(cache_key)
@@ -264,9 +274,13 @@ class GitBackend(SpecBackend):
         if not self.mirror_dir:
             return self.remote
         if not self.remote_url:
-            run = subprocess.run(["git", "-C", self.repo_root, "remote", "get-url", self.remote],
-                                 capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=GIT_TIMEOUT_S)
-            self.remote_url = run.stdout.strip() if run.returncode == 0 else ""
+            self.remote_url = remembered_remote_url(self.repo_root, self.remote) or ""
+            if not self.remote_url:
+                run = subprocess.run(["git", "-C", self.repo_root, "remote", "get-url", self.remote],
+                                     capture_output=True, text=True, encoding="utf-8", errors="replace",
+                                     timeout=GIT_TIMEOUT_S)
+                self.remote_url = run.stdout.strip() if run.returncode == 0 else ""
+                remember_remote_url(self.repo_root, self.remote, self.remote_url)
             if not self.remote_url:
                 raise _refusal("sp-git-no-remote",
                                f"remote '{self.remote}' has no URL in {self.repo_root}")
@@ -312,8 +326,7 @@ class GitBackend(SpecBackend):
                 code = 1
                 break
             found[name] = sha
-            if name == self.pending_ref:
-                self._parents[sha] = parents[0] if parents and parents[0] else None
+            self._parents[sha] = parents[0] if parents and parents[0] else None
         if code != 0:
             code, out, _ = self._git("rev-parse", "--verify", "--quiet",
                                      f"{self.tracking_ref}^{{commit}}")
@@ -340,12 +353,17 @@ class GitBackend(SpecBackend):
             self._parents[commit] = (out.decode().strip() or None) if code == 0 else None
         return self._parents[commit]
 
+    def _show(self, action: str, fmt: str, commit: str) -> bytes:
+        """One field of a commit, memoized: a commit never changes, so it is asked once."""
+        if (commit, fmt) not in self._shown:
+            self._shown[(commit, fmt)] = self._git_ok(action, "show", "-s", f"--format={fmt}", commit)
+        return self._shown[(commit, fmt)]
+
     def _ops(self, commit: str | None) -> list[str]:
         """The operations a pending commit accumulated, from its message."""
         if commit is None:
             return []
-        body = self._git_ok("reading the pending message", "show", "-s", "--format=%B",
-                            commit).decode("utf-8", "replace").strip()
+        body = self._show("reading the pending message", "%B", commit).decode("utf-8", "replace").strip()
         body = body[len(COMMIT_PREFIX):] if body.startswith(COMMIT_PREFIX) else body
         return [op.strip() for op in body.split(";") if op.strip()]
 
@@ -390,6 +408,7 @@ class GitBackend(SpecBackend):
         tip = self._local_tip()
         pending = self._seen_pending[0] if self._seen_pending else self._pending()
         self._tip_memo = (time.monotonic(), tip, pending)
+        self._memo_own = False
         return tip, pending
 
     # -- the read model -------------------------------------------------------- #
@@ -847,7 +866,9 @@ class GitBackend(SpecBackend):
 
     def _config_text(self, _snapshot=None) -> str | None:
         """The raw `quenching.json` at the current tracking tip, or None."""
-        tip = self._local_tip()
+        memo = getattr(self, "_tip_memo", None)
+        fresh = memo is not None and time.monotonic() - memo[0] <= TIP_MEMO_S
+        tip = memo[1] if fresh else self._local_tip()
         if tip is None:
             return None
         code, out, _ = self._git("cat-file", "blob", f"{tip}:{CONFIG_PATH}")
@@ -863,13 +884,29 @@ class GitBackend(SpecBackend):
                collapse: bool = False) -> dict[str, str]:
         """The one write path: `sync=False` moves only the local pending ref, `sync=True`
         sends the store to the remote."""
-        self._tip_memo = None
+        heads = getattr(self, "_tip_memo", None)
+        if not (sync and self._memo_own):       # a sync starts from the heads our own write left
+            self._tip_memo = None
         try:
             if not sync:
-                return self._store_local(apply, message)
+                self._written = None
+                self._heads_hint = heads if heads and time.monotonic() - heads[0] <= TIP_MEMO_S else None
+                blobs = self._store_local(apply, message)
+                if self._written is not None:
+                    # The local write moved only the pending ref, by a compare-and-swap it just won:
+                    # the next read inside the memo window needs no `for-each-ref`.
+                    self._tip_memo = (time.monotonic(), *self._written)
+                    self._written = None
+                    self._keep_memo = True
+                    self._memo_own = True
+                return blobs
             return self._store_sync(apply, message, drop, collapse)
         finally:
-            self._tip_memo = None
+            if self._keep_memo:
+                self._keep_memo = False
+            else:
+                self._tip_memo = None
+                self._memo_own = False
 
     def _store_local(self, apply, message) -> dict[str, str]:
         """Apply `apply(view) -> (changes, _)` and replace the pending commit by a local
@@ -891,7 +928,16 @@ class GitBackend(SpecBackend):
         for attempt in range(MAX_ATTEMPTS):
             if attempt:
                 time.sleep(random.uniform(0, 0.01 * 2 ** attempt))
-            tip, pending = self._local_tip(), self._pending()
+            hint, self._heads_hint = getattr(self, "_heads_hint", None), None
+            if hint is not None and not attempt:
+                # The heads a read just resolved inside the memo window: the compare-and-swap
+                # below is what guards the pending ref, so a first attempt needs no new read.
+                tip, pending = hint[1], hint[2]
+            else:
+                self._seen_pending = None
+                tip = self._local_tip()
+                # The same `for-each-ref` read the pending ref; the compare-and-swap still guards it.
+                pending = self._seen_pending[0] if self._seen_pending else self._pending()
             replay = self._replay(pending, tip) if pending else \
                 {"view": self._snapshot(tip).blobs, "changes": {}, "conflicts": [], "remote": set()}
             changes, _ = apply(_Tree(self, replay["view"]))
@@ -911,18 +957,21 @@ class GitBackend(SpecBackend):
             ops = self._ops(live)
             ops += [subject] if subject not in ops else []
             # The author date stays the first unsent write's, so `status` can say since when.
-            since = self._git_ok("reading the pending date", "show", "-s", "--format=%aI",
-                                 live).decode().strip() if live else None
+            since = self._show("reading the pending date", "%aI", live).decode().strip() \
+                if live else None
             commit, blobs = self._commit(base, changes, f"{COMMIT_PREFIX} {'; '.join(ops)}",
                                          [parent] if parent else [], author_date=since)
+            landed = pending
             if pending is None and self._empty(commit):
                 code = 0                    # a write that changes nothing leaves no pending ref
             else:
+                landed = commit
                 # Back to the base text, the commit is kept empty rather than deleted: a sync in
                 # flight that sent `pending` must still see this write and carry it (`_close`).
                 code = self._git("update-ref", "-m", "quenching: pending write",
                                  self.pending_ref, commit, pending or "")[0]
             if code == 0:
+                self._written = (tip, landed)       # the heads this very write left behind
                 return blobs
         raise _refusal("sp-git-cas-exhausted",
                        f"the pending ref '{self.pending_ref}' kept moving — {MAX_ATTEMPTS} local "
@@ -930,8 +979,11 @@ class GitBackend(SpecBackend):
                        attempts=MAX_ATTEMPTS)
 
     def _tree(self, commit: str) -> str:
-        return self._git_ok("reading a store tree", "rev-parse", "--verify",
-                            f"{commit}^{{tree}}").decode().strip()
+        """A commit's tree, memoized: a commit never changes, so it is asked once."""
+        if commit not in self._trees:
+            self._trees[commit] = self._git_ok("reading a store tree", "rev-parse", "--verify",
+                                               f"{commit}^{{tree}}").decode().strip()
+        return self._trees[commit]
 
     def _empty(self, commit: str) -> bool:
         """Whether a pending commit holds no change against its base."""
@@ -943,8 +995,13 @@ class GitBackend(SpecBackend):
         """`(tip, pending, replay)` for a sync. A conflict seen on a tip this sync did not fetch
         (a cached tracking ref may be stale) is judged again on a fresh fetch, once, before the
         caller refuses on it."""
-        for _ in range(2):
-            pending = self._pending()
+        for n in range(2):
+            memo = getattr(self, "_tip_memo", None)
+            if n == 0 and memo is not None and memo[1] == tip \
+                    and time.monotonic() - memo[0] <= TIP_MEMO_S:
+                pending = memo[2]           # read with the tip, by the same `for-each-ref`
+            else:
+                pending = self._pending()
             replay = self._replay(pending, tip, drop) if pending else \
                 {"view": self._snapshot(tip).blobs, "changes": {}, "conflicts": []}
             if not replay["conflicts"] or fetched:
@@ -954,7 +1011,8 @@ class GitBackend(SpecBackend):
 
     def _sync_tip(self) -> tuple[str | None, bool]:
         """The tip a sync starts from, and whether reading it fetched."""
-        self._tip_memo = None
+        if not self._memo_own:
+            self._tip_memo = None
         before = self._fetched_at
         tip = self._tip()
         return tip, self._fetched_at != before
@@ -1228,8 +1286,7 @@ class GitBackend(SpecBackend):
                             if p.startswith(ARTIFACTS_DIR + "/") and _path_owner(p) is None)
         if not specs and not standalone:
             return None
-        oldest = self._git_ok("reading the pending date", "show", "-s", "--format=%aI",
-                              pending).decode().strip()
+        oldest = self._show("reading the pending date", "%aI", pending).decode().strip()
         # git 2.45+ prints UTC as `Z` and older releases as `+00:00`: one form for every caller.
         oldest = datetime.fromisoformat(oldest).isoformat()
         return {"specs": specs, "artifacts": standalone, "since": oldest, "commit": pending}
@@ -1245,8 +1302,12 @@ class GitBackend(SpecBackend):
                                   "key": identity.KEY,
                                   "message": f"{invalid}; nothing was written"}) from None
         for var in ("GIT_AUTHOR_IDENT", "GIT_COMMITTER_IDENT"):
-            code, out, _ = self._git("var", var)
-            email = identity.ident_email(out.decode("utf-8", "replace"))
+            # Read once per backend instance; the judgement below still runs on every write.
+            if var not in self._idents:
+                code, out, _ = self._git("var", var)
+                self._idents[var] = (code, out.decode("utf-8", "replace"))
+            code, text = self._idents[var]
+            email = identity.ident_email(text)
             findings = scan_text(f"git var {var}", email, patterns(require_denylist=False)) \
                 if code == 0 else []
             if findings:
@@ -1258,50 +1319,120 @@ class GitBackend(SpecBackend):
                     "message": f"{email} ({var}) is outside {identity.KEY}; "
                                f"{identity.STAGED_REMEDY} — nothing was written"})
 
+    def _objects_dir(self) -> str:
+        """The object directory this repository writes to, asked of git once per instance."""
+        if self._objdir is None:
+            self._objdir = os.path.abspath(os.path.join(self.repo_root, self._git_ok(
+                "locating the object directory", "rev-parse", "--path-format=absolute",
+                "--git-path", "objects").decode("utf-8", "replace").strip()))
+        return self._objdir
+
+    def _algo(self, sample: str | None) -> str:
+        """The repository's object hash: read off a sha it already holds, else asked once."""
+        if self._hash_name is None:
+            if sample:
+                self._hash_name = "sha256" if len(sample) == 64 else "sha1"
+            else:
+                fmt = self._git_ok("reading the object format", "rev-parse",
+                                   "--show-object-format").decode().strip()
+                self._hash_name = "sha256" if fmt == "sha256" else "sha1"
+        return self._hash_name
+
+    def _put(self, kind: str, data: bytes) -> str:
+        """Write one loose object the way git does — `<kind> <size>\\0<data>`, deflated, under
+        `objects/<2>/<rest>`, written aside and renamed — and return its id. An object already
+        loose is left alone, so the call is idempotent."""
+        payload = f"{kind} {len(data)}".encode() + b"\0" + data
+        sha = hashlib.new(self._hash_name or "sha1", payload).hexdigest()
+        folder = os.path.join(self._objects_dir(), sha[:2])
+        target = os.path.join(folder, sha[2:])
+        if not os.path.exists(target):
+            os.makedirs(folder, exist_ok=True)
+            fd, tmp = tempfile.mkstemp(dir=folder, prefix="tmp_obj_")
+            try:
+                with os.fdopen(fd, "wb") as handle:
+                    handle.write(zlib.compress(payload))
+                os.chmod(tmp, 0o444)
+                os.replace(tmp, target)
+            except BaseException:
+                try:
+                    os.unlink(tmp)
+                except OSError:
+                    pass
+                raise
+        return sha
+
+    def _full(self, commit: str) -> dict[str, tuple[str, str]]:
+        """Every non-tree entry of a commit's tree, `path -> (mode, id)`, from one `ls-tree`;
+        a commit this instance built already knows its own."""
+        if commit not in self._listings:
+            out = self._git_ok("listing the store tree", "ls-tree", "-r", "-z", "--full-tree", commit)
+            listing: dict[str, tuple[str, str]] = {}
+            for record in out.split(b"\0"):
+                if record:
+                    meta, path = record.split(b"\t", 1)
+                    mode, _, sha = meta.split(b" ")
+                    listing[path.decode("utf-8")] = (mode.decode(), sha.decode())
+            self._listings[commit] = listing
+        return self._listings[commit]
+
+    def _write_trees(self, listing: dict[str, tuple[str, str]]) -> str:
+        """The tree objects of a flat `path -> (mode, id)` listing, written bottom-up; the root's id."""
+        root: dict = {}
+        for path, entry in listing.items():
+            node = root
+            *folders, name = path.split("/")
+            for folder in folders:
+                node = node.setdefault(folder, {})
+            node[name] = entry
+
+        def write(node: dict) -> str:
+            rows = []
+            for name, value in node.items():
+                if isinstance(value, dict):
+                    rows.append((name.encode("utf-8") + b"/", b"40000 " + name.encode("utf-8"),
+                                 write(value)))
+                else:
+                    rows.append((name.encode("utf-8"), value[0].encode() + b" " + name.encode("utf-8"),
+                                 value[1]))
+            rows.sort(key=lambda row: row[0])        # git orders a folder as `name/`
+            return self._put("tree", b"".join(head + b"\0" + bytes.fromhex(sha)
+                                              for _, head, sha in rows))
+        return write(root)
+
     def _commit(self, base: str | None, changes: dict[str, str | None], message: str,
                 parents: list[str], author_date: str | None = None) -> tuple[str, dict[str, str]]:
-        """Build one commit with `base`'s tree plus `changes`, on `parents`, with a throwaway
-        index: no checkout, no worktree. A `_Blob` change is staged by sha; `blobs` reports
-        only the texts hashed here."""
-        scratch = tempfile.mkdtemp(prefix="quenching-store-")
-        try:
-            env = {**os.environ, "GIT_INDEX_FILE": os.path.join(scratch, "index")}
-            if base:
-                self._git_ok("reading the base tree", "read-tree", base, env=env)
+        """Build one commit with `base`'s tree plus `changes`, on `parents`: no checkout, no
+        worktree, no index. The new blobs and trees are written as loose objects from here and
+        only `commit-tree` signs it. A `_Blob` change is staged by sha; `blobs` reports only the
+        texts hashed here."""
+        listing = dict(self._full(base)) if base else {}
+        self._algo(next((sha for _, sha in listing.values()), base))
+        blobs: dict[str, str] = {}
+        for path, value in changes.items():
+            if value is None:
+                listing.pop(path, None)
+            elif isinstance(value, _Blob):
+                listing[path] = ("100644", str(value))
             else:
-                self._git_ok("starting an empty tree", "read-tree", "--empty", env=env)
-            writes = [(path, text) for path, text in changes.items()
-                      if text is not None and not isinstance(text, _Blob)]
-            stored = {path: str(blob) for path, blob in changes.items() if isinstance(blob, _Blob)}
-            removes = [path for path, text in changes.items() if text is None]
-            blobs: dict[str, str] = {}
-            if writes:
-                files = []
-                for n, (_, text) in enumerate(writes):
-                    name = os.path.join(scratch, f"blob{n}")
-                    with open(name, "wb") as handle:
-                        handle.write(text.encode("utf-8"))
-                    files.append(name)
-                out = self._git_ok("hashing the documents", "hash-object", "-w", "--no-filters",
-                                   "--stdin-paths", stdin="".join(f + "\n" for f in files).encode())
-                shas = out.decode().split()
-                blobs = {path: sha for (path, _), sha in zip(writes, shas)}
-            entries = {**stored, **blobs}
-            if entries:
-                info = "".join(f"100644 {sha}\t{path}\n" for path, sha in entries.items())
-                self._git_ok("staging the documents", "update-index", "--add", "--index-info",
-                             stdin=info.encode("utf-8"), env=env)
-            if removes:
-                self._git_ok("removing the moved document", "update-index", "--force-remove",
-                             "--", *removes, env=env)
-            tree = self._git_ok("writing the tree", "write-tree", env=env).decode().strip()
-            commit = self._git_ok("creating the commit", "commit-tree", tree,
-                                  *[arg for p in parents for arg in ("-p", p)], "-m", message,
-                                  env={**os.environ, "GIT_AUTHOR_DATE": author_date}
-                                  if author_date else None).decode().strip()
-            return commit, blobs
-        finally:
-            shutil.rmtree(scratch, ignore_errors=True)
+                blobs[path] = self._put("blob", value.encode("utf-8"))
+                listing[path] = ("100644", blobs[path])
+        tree = self._write_trees(listing)
+        commit = self._git_ok("creating the commit", "commit-tree", tree,
+                              *[arg for p in parents for arg in ("-p", p)], "-m", message,
+                              env={**os.environ, "GIT_AUTHOR_DATE": author_date}
+                              if author_date else None).decode().strip()
+        self._trees[commit] = tree      # a commit never changes: its tree and parent are known
+        self._parents[commit] = parents[0] if parents else None
+        self._shown[(commit, "%B")] = message.encode("utf-8") + b"\n"
+        self._listings[commit] = listing
+        # The new tree is the base's plus `changes`: its `specs/` listing and the texts hashed
+        # here are known, so the next read of this commit spawns no `ls-tree` nor `cat-file`.
+        self._snapshots[commit] = {path: entry[1] for path, entry in listing.items()
+                                   if path.startswith(SPECS_DIR + "/") and entry[0] != "160000"}
+        for path, sha in blobs.items():
+            self._blob_text[sha] = changes[path]
+        return commit, blobs
 
 
 class _Tree:
@@ -1340,14 +1471,17 @@ _STORES: dict[tuple[str, str], GitBackend] = {}
 
 
 def origin_url(repo: str) -> str | None:
-    """The `origin` URL of `repo`: the one this process already read, else one `remote get-url`."""
+    """The `origin` URL of `repo`: the one this process already read, else one `remote get-url`.
+    A repository that had none is not asked again until its own `.git/config` changes."""
     url = remembered_remote_url(repo, DEFAULT_REMOTE)
-    if url is None and os.path.isdir(repo):
+    if url is None and os.path.isdir(repo) and not remote_known_absent(repo, DEFAULT_REMOTE):
         run = subprocess.run(["git", "-C", repo, "remote", "get-url", DEFAULT_REMOTE],
                              capture_output=True, text=True, encoding="utf-8", errors="replace",
                              timeout=GIT_TIMEOUT_S, check=False)
         url = run.stdout.strip() if run.returncode == 0 else ""
         remember_remote_url(repo, DEFAULT_REMOTE, url)
+        if not url:
+            remember_remote_absent(repo, DEFAULT_REMOTE)
     return url or None
 
 
