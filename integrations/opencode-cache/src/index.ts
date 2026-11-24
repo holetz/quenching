@@ -28,6 +28,7 @@ export default Plugin.define({
     const sessions = new Map<string, Session>()
     const directories = new Map<string, string>()
     const checkouts = new Map<string, Checkout>()
+    const loading = new Map<string, Promise<Checkout>>()
     const timers = new Map<string, ReturnType<typeof setTimeout>>()
     const hostCosts = new Map<string, HostCost[]>()
     const stop = new AbortController()
@@ -101,18 +102,24 @@ export default Plugin.define({
     async function checkoutOf(directory: string): Promise<Checkout> {
       const hit = checkouts.get(directory)
       if (hit && Date.now() - hit.at < CHECKOUT_TTL_MS) return hit
+      // One read in flight per directory: a burst of events asks once, and everyone gets the same answer.
+      const running = loading.get(directory)
+      if (running) return running
       const fallback: Checkout = hit ?? { settings: DEFAULTS, words: WORDS.en, at: Date.now() }
-      const fresh = await (async () => {
+      const work = (async () => {
         const harness = await readFile(join(directory, "AGENTS.md"), "utf8").catch(() => readFile(join(directory, "CLAUDE.md"), "utf8")).catch(() => undefined)
         const shown = await cqRun(directory, ["config", "show", "--effective", "--json"], 20_000).catch(() => undefined)
-        return {
+        const fresh: Checkout = {
           settings: shown && shown.code === 0 ? settingsFromConfig(shown.stdout) : fallback.settings,
           words: WORDS[langOf(harness)],
           at: Date.now(),
         }
-      })()
-      checkouts.set(directory, fresh)
-      return fresh
+        checkouts.set(directory, fresh)
+        return fresh
+      })().finally(() => { loading.delete(directory) })
+      loading.set(directory, work)
+      // The first answer is the defaults, not a wait: the band draws now and redraws when `cq` answers.
+      return hit ? hit : Promise.race([work, new Promise<Checkout>((done) => setTimeout(() => done(fallback), 1_500).unref?.())])
     }
 
     function priceFor(session: Session): PriceSource {
