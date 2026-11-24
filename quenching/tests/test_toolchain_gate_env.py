@@ -68,7 +68,7 @@ class TheAffectedScopeSkipsStepsTheDiffDoesNotTouch(unittest.TestCase):
         self.assertEqual(flags, {"SITE": "0", "PLUGINS": "0"})
 
     def test_docs_and_skills_run_the_site_but_not_the_plugins(self):
-        for path in ("docs/index.md", "quenching/skills/x/SKILL.md", "quenching/references/a.md", "zensical.toml"):
+        for path in ("docs/index.md", "quenching/skills/quenching-align/SKILL.md", "quenching/references/align/convergence.md", "zensical.toml"):
             self.assertEqual(self._flags([path]), {"SITE": "1", "PLUGINS": "0"}, path)
 
     def test_integrations_run_the_plugins_and_the_gate_itself_runs_everything(self):
