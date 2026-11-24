@@ -516,6 +516,7 @@ class Deploy(unittest.TestCase):
         self.assertIn(" -I -c ", own[0])
         warning = [w for w in payload["warnings"] if "runs through uv" in w]
         self.assertTrue(warning, payload["warnings"])
+        self.assertIn("the hooks and the MCP server run", warning[0])
         manifest = json.loads((self.target / ".agents/.quenching-deploy.json").read_text())
         self.assertEqual(own[0].split(" -I -c ")[0].split(" "), manifest["claudeSettings"]["command"])
         self.assertEqual(manifest["claudeSettings"]["command"], manifest["mcp"]["command"])
