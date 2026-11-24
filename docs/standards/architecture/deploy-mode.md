@@ -7,7 +7,7 @@ tags: [architecture, deploy, installation, agents, skills, bridge]
 timestamp: 2026-11-24
 audience: both
 authority: current
-source: deploy-mode implementation (2026-10-28); spec 2126, spec 2160, spec 2168, spec 2174 (absorbs surface-translation.md), spec 314 (harness approvals); retired with surface-translation.md (spec 2174, 2026-11-03); lineage in ADR 0017 and ADR 0019
+source: deploy-mode implementation (2026-10-28); spec 2126, spec 2160, spec 2168, spec 2174 (absorbs surface-translation.md), spec 314 (harness approvals), spec 416 (MCP replaces the covered cq grants); retired with surface-translation.md (spec 2174, 2026-11-03); lineage in ADR 0017 and ADR 0019
 maintainer: quenching
 ---
 
@@ -135,6 +135,17 @@ server and the Claude Code hooks run one and the same direct prefix
 ([hooks.md](../automation/hooks.md)), recorded as `mcp.command` and `claudeSettings.command`, and
 the deploy warns when it replaced a `uv` one. `initialize` plus `tools/list` of the whole server
 answer within one second (`quenching/tests/test_quenching_mcp_startup.py`).
+
+**The registered server closes the CLI door it replaces.** With the whole server (`all`) registered
+and `shared.mcp.cliFallback` absent or `false`, the grants a harness reads — a skill's
+`allowed-tools`, a Claude Code agent's `tools:`, an OpenCode agent's `permission.bash` — carry the
+MCP tools a `Bash(cq <prefix>:*)` covers *instead of* that grant: only the verb paths under the
+prefix with no tool survive as shell grants, on both launchers, collapsed to the shortest path with
+nothing covered below (`coverage.cli_residue`). The `coverage.EXCEPTIONS` verbs (`deploy`,
+`specs serve`, …) stay shell; `specs claim take` is reached by no grant, tool or shell. A prefix
+that names no verb is kept whole, so the narrowing never widens and never guesses. The payload's
+`.agents/quenching/agents/` copy keeps the source grants, because a target-local deploy re-reads
+it; `cliFallback: true`, the `specs` mount and a runtime that registers no server keep both doors.
 
 **The files stay the user's: merged, never owned.** Like `.claude/settings.json`, they are not in the
 manifest's `files`; the manifest records `mcp` and `mcpFiles`, and only the `quenching` entry is the
