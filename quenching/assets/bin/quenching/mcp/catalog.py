@@ -98,7 +98,22 @@ CATALOG: dict[str, Row] = {
     "git_worktree_release": Row("git", ("worktree", "release"), "write", True),
     **_rows("design", "write", "render", "import"),
     **_rows("security", "read", "leak"),
+    # The verbs `references/**` cites beyond the skill and agent bodies.
+    **_rows("specs", "read", "doctor", "schedule"),
+    **_rows("specs", "write", "title", "depends"),
+    **_rows("config", "read", "schema"),
+    **_rows("config", "write", "set"),
 }
+
+
+def tool_names(prefix: tuple[str, ...] = ()) -> list[str]:
+    """The MCP tools a `cq <prefix…>` grant covers: every catalog row and hand-written specs tool
+    whose verb path starts with `prefix` (empty: all of them), sorted. The one map from a `cq`
+    citation to a tool name — the deploy's grants and the coverage scan read the same union."""
+    from quenching.specs import mcp as specs_mcp
+    paths = {name: (row.pillar, *row.path) for name, row in CATALOG.items()}
+    paths.update({name: ("specs", *path) for name, path in specs_mcp.COVERS.items()})
+    return sorted(name for name, path in paths.items() if path[:len(prefix)] == tuple(prefix))
 
 
 _router = None

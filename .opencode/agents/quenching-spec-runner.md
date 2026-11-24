@@ -5,6 +5,7 @@ permission:
   edit: allow
   webfetch: deny
   bash: allow
+  "quenching_*": allow
 tools:
   task: false
 ---

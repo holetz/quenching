@@ -2,7 +2,7 @@
 name: quenching-align
 description: "Align the whole repository on one confirmation. Use for \"alinhar o repositório\", \"configurar o quenching aqui\", \"align the repo\", \"set up quenching here\". Not for: one front → /quenching-<front> align."
 argument-hint: "[optional-scope]"
-allowed-tools: Bash(.agents/quenching/bin/cq:*), Bash(.agents/quenching/bin/cq.cmd:*), Read, Grep, Glob, Bash(python3:*), Bash(py:*), Skill
+allowed-tools: Bash(.agents/quenching/bin/cq:*), Bash(.agents/quenching/bin/cq.cmd:*), Read, Grep, Glob, Bash(python3:*), Bash(py:*), Skill, mcp__quenching
 ---
 <!-- generated from .agents/skills/quenching-align/SKILL.md by cq components bridge; edit the source -->
 

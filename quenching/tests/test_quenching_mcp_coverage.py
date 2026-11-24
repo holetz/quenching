@@ -1,4 +1,4 @@
-"""Every `cq <pillar> <verb>` a skill or agent body cites has an MCP tool, or a declared exception."""
+"""Every `cq <pillar> <verb>` a skill, agent or reference body cites has an MCP tool, or a declared exception."""
 import pathlib
 import sys
 import unittest
@@ -15,10 +15,11 @@ PLUGIN = pathlib.Path(__file__).resolve().parents[1]
 
 
 class Coverage(unittest.TestCase):
-    def test_every_verb_the_skill_and_agent_bodies_cite_has_a_tool(self):
+    def test_every_verb_the_skill_agent_and_reference_bodies_cite_has_a_tool(self):
         bodies = coverage.bodies(str(PLUGIN))
         self.assertTrue(any(label.startswith("agents") for label, _ in bodies))
         self.assertTrue(any(label.startswith("skills") for label, _ in bodies))
+        self.assertTrue(any(label.startswith("references") for label, _ in bodies))
         missing = [f"{label}: cq {' '.join(path)}" for label, path in coverage.uncovered(bodies)]
         self.assertEqual(missing, [], "add a catalog row (quenching/mcp/catalog.py) or an "
                                       "EXCEPTIONS entry with its reason (quenching/mcp/coverage.py)")

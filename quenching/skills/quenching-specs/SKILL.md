@@ -23,7 +23,9 @@ flow's text is read only when the flow runs.
 Resolve `cq` (`.agents/quenching/bin/cq components read` is the section reader every `§X` citation resolves through)
 per [align/tool-resolution.md](.agents/quenching/references/align/tool-resolution.md)
 §Resolving the tool; branch on the **exit code** (0 ok · 1 findings · 2 refusal) and the `--json`,
-never on prose.
+never on prose. With the `quenching` MCP server connected, every `cq <pillar> <verb>` below is
+called as its tool `<pillar>_<verb>` (`specs_status`, `git_state`, `components_read`); the CLI is
+the fallback the report names, only for a verb with no tool or a session without the server.
 
 ## Workflow
 
