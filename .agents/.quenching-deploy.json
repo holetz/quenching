@@ -82,11 +82,11 @@
     ".agents/quenching/assets/bin/quenching/controls/__init__.py": "d7b6251673390a48038fec32359cd43e991f4e64f383fb41873728ce9851877e",
     ".agents/quenching/assets/bin/quenching/controls/evaluate.py": "05cdedea2db16edf16b741e5415097b534b15470ac0e77d0e8c67d7a2ba2a386",
     ".agents/quenching/assets/bin/quenching/deploy/__init__.py": "d9efa3062ac0c40e82c0bfc4041b7485a60420e2576afef7e94a72277a8cc0ff",
-    ".agents/quenching/assets/bin/quenching/deploy/cli.py": "c0f832bbd1af3589cd6ca84dc958b191932c43b5c387474815099b921cb234bc",
-    ".agents/quenching/assets/bin/quenching/deploy/mcpfiles.py": "04b955e9cbec02228f70b3137a836eaf9e3bc95fcb1321dc8f7ccec4ae6f2714",
-    ".agents/quenching/assets/bin/quenching/deploy/settings.py": "7b37c19b599c88d4d2da6f13d3bdbaad530b15ee54346381d85cab94db4de09d",
+    ".agents/quenching/assets/bin/quenching/deploy/cli.py": "f1e6de2bd3c8aa30b53140d8ba211dfdf8c15014f2b944c40387e76f3efd31fa",
+    ".agents/quenching/assets/bin/quenching/deploy/mcpfiles.py": "90c586ff3592fcf71ad4f429c65f8e39fec7350108b4c3c9a09a9f0b6c432482",
+    ".agents/quenching/assets/bin/quenching/deploy/settings.py": "dc24b41de07969aac1ec96f3137c2158117c5f4aa679ad7af306379925a36485",
     ".agents/quenching/assets/bin/quenching/deploy/translate.py": "865d1395c9e0676f9f7f332d2cb5327845eec44d208257e77506686dbb4e0798",
-    ".agents/quenching/assets/bin/quenching/deploy/tree.py": "122c378b239d0d172f92c023c1d977b1d32cb6f9954f237259b9cc56ece24f3f",
+    ".agents/quenching/assets/bin/quenching/deploy/tree.py": "a84a3495b90bff67f7abb741536ce5f5038053a32840721473b74d5a744cdf31",
     ".agents/quenching/assets/bin/quenching/git/__init__.py": "8501760dcf5ab3b77195533888acbe6fe7f2795ad387cedbe869be8aeac11e4b",
     ".agents/quenching/assets/bin/quenching/git/audit.py": "b42ea60bc22ac59a5b805a831b63afb55a3ff04a94d402fdbf2e51b9d904d71d",
     ".agents/quenching/assets/bin/quenching/git/azure_pull.py": "87ab90ff25f82edb88e734deb86e2ab0d8c138cc1f01cd2619c8bc0a8f79026e",
@@ -500,6 +500,14 @@
     "attribution": [],
     "command": [
       "python3"
+    ],
+    "mcpjson": true
+  },
+  "opencodeConfig": {
+    "subagentDepth": 4,
+    "externalDirectory": [
+      "~/Projects/quenching-slot-*",
+      "~/Projects/quenching.*"
     ]
   }
 }

@@ -128,24 +128,79 @@ def _canonical_text(path: Path) -> str | None:
     return path.read_bytes().decode("utf-8", errors="replace").replace("\r\n", "\n")
 
 
-def _mcp_merge(target: Path, wanted: dict[str, list[str]], previous: dict | None) -> dict:
+def _primary_checkout(target: Path) -> str | None:
+    """The primary checkout of the target's repository (a slot resolves to it), else None."""
+    try:
+        done = subprocess.run(["git", "-C", str(target), "rev-parse", "--path-format=absolute",
+                               "--git-common-dir"], capture_output=True, text=True, timeout=15)
+    except (OSError, subprocess.SubprocessError):
+        return None
+    common = done.stdout.strip()
+    if done.returncode != 0 or not common or os.path.basename(common) != ".git":
+        return None
+    return os.path.dirname(common)
+
+
+def _opencode_wanted(target: Path, current: str | None, env: dict) -> tuple[dict, list[str]]:
+    """The extras `opencode.json` gets, and why the depth was left out: the slot and store
+    patterns of a git target, and `experimental.subagent_depth` unless writing a project
+    `experimental` block would hide a global key (anomalyco/opencode#60410)."""
+    primary = _primary_checkout(target)
+    patterns = mcpfiles.external_patterns(primary, os.path.expanduser("~")) if primary else []
+    warnings: list[str] = []
+    depth: int | None = mcpfiles.SUBAGENT_DEPTH
+    try:
+        project = json.loads(current).get("experimental") if current else None
+    except (ValueError, AttributeError):
+        project = None
+    if not (isinstance(project, dict) and project):
+        # A project block already in place hides the global one already; adding the depth to it
+        # hides nothing new.
+        hidden, unreadable = mcpfiles.hidden_by_depth(current, env)
+        for path, keys in hidden.items():
+            depth = None
+            warnings.append(
+                f"{mcpfiles.OPENCODE}: experimental.subagent_depth was not written — a project "
+                f"`experimental` block replaces the global one (anomalyco/opencode#60410), and "
+                f"{path} sets {', '.join(keys)}; add \"subagent_depth\": "
+                f"{mcpfiles.SUBAGENT_DEPTH} to that global block by hand")
+        warnings.extend(f"{path} could not be read as JSONC; experimental.subagent_depth was "
+                        "written without checking which global keys it hides"
+                        for path in unreadable if depth is not None)
+    return {"subagentDepth": depth, "externalDirectory": patterns}, warnings
+
+
+def _mcp_merge(target: Path, wanted: dict[str, list[str]], previous: dict | None,
+               env: dict | None = None) -> dict:
     """The quenching entry written into (or taken out of) the user's harness files, unwritten.
 
     `wanted` maps each file to the argv its entry carries; a file the last deploy wrote and that is
     no longer wanted loses only that entry. Nothing is touched that cannot be read safely.
+    `opencode.json` also carries the extras of `_opencode_wanted`; what a past deploy recorded
+    there (`opencodeConfig`) is taken out first, so a changed pattern never lingers.
     """
     files: list[dict] = []
     warnings: list[str] = []
+    recorded = (previous or {}).get("opencodeConfig")
+    recorded = recorded if isinstance(recorded, dict) else None
+    opencode = None
     for rel in sorted({*wanted, *_mcp_recorded(previous)}):
         path = target / rel
         if not (_safe_relative(rel) and _contained(target, path)) or (path.exists() and not path.is_file()):
             warnings.append(f"{rel} is not a regular file inside the target; its MCP entry was not touched")
             continue
         current = _canonical_text(path)
-        if rel in wanted:
+        if rel in wanted and rel == mcpfiles.OPENCODE:
+            base = mcpfiles.opencode_strip(current, recorded) if recorded and current else current
+            extras, why = _opencode_wanted(target, base, os.environ if env is None else env)
+            warnings.extend(why)
+            new = (None if current is not None and base is None
+                   else mcpfiles.merged(rel, base, wanted[rel], extras))
+            opencode = extras if new is not None else None
+        elif rel in wanted:
             new = mcpfiles.merged(rel, current, wanted[rel])
         elif current is not None and mcpfiles.NAME in current:
-            new = mcpfiles.removed(rel, current)
+            new = mcpfiles.removed(rel, current, recorded if rel == mcpfiles.OPENCODE else None)
         else:
             continue
         if new is None:
@@ -154,7 +209,7 @@ def _mcp_merge(target: Path, wanted: dict[str, list[str]], previous: dict | None
             continue
         if new != current:
             files.append({"rel": rel, "text": new, "delete": new == ""})
-    return {"files": files, "warnings": warnings}
+    return {"files": files, "warnings": warnings, "opencode": opencode}
 
 
 def _edited(target: Path, rel: str, recorded: str | None) -> bool:
@@ -309,9 +364,12 @@ def _settings_merge(target: Path, built: dict, previous: dict | None) -> dict | 
     keys = recorded.get("attribution") if recorded else []
     keys = keys if isinstance(keys, list) else []
     merged = claude_settings.merge(current, wanted["hooks"] if wanted else [],
-                                   wanted["attribution"] if wanted else None, keys)
+                                   wanted["attribution"] if wanted else None, keys,
+                                   mcpjson=bool(wanted and wanted.get("mcpjson")),
+                                   mcpjson_recorded=bool(recorded and recorded.get("mcpjson")))
     if wanted is not None:
         built["manifest"]["claudeSettings"]["attribution"] = sorted(merged.attribution)
+        built["manifest"]["claudeSettings"]["mcpjson"] = merged.mcpjson
     delete = (wanted is None and current is not None and recorded is not None
               and json.loads(merged.text if merged.text is not None else current) == {})
     return {"text": merged.text, "delete": delete, "warnings": merged.warnings,
@@ -508,6 +566,9 @@ def main(argv: list[str]) -> int:
     wanted = {rel: deploy_tree.mcp_argv(mcp) for rel in built["manifest"].get("mcpFiles", [])} \
         if mcp else {}
     built["mcpMerge"] = _mcp_merge(target, wanted, previous)
+    if built["mcpMerge"]["opencode"]:
+        # What the deploy wrote into the user's `opencode.json`, so a later run takes it out.
+        built["manifest"]["opencodeConfig"] = built["mcpMerge"]["opencode"]
     result = plan(target, built, previous)
     result["warnings"] = [*result.get("warnings", []), *mcp_warnings,
                           *_identity_hooks_warnings(target)]
