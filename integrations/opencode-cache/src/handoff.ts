@@ -2,7 +2,7 @@
 // same shared core. Everything the host owns (the conversation, Haiku, the new session, `cq`) comes
 // in as a dependency, so the whole flow runs under plain Node in the checks.
 import type { Words } from './core/i18n.ts'
-import { assemble, briefPrompt, briefSystem, draftPath, isValidBrief } from './core/handoff.ts'
+import { assemble, briefPrompt, briefSystem, draftPath, isValidBrief, parseFacts } from './core/handoff.ts'
 import type { Facts, Numbers } from './core/handoff.ts'
 import type { SessionMessage } from './core/message.ts'
 
@@ -72,7 +72,11 @@ export async function runHandoff(d: HandoffDeps): Promise<HandoffResult> {
 
   const messages = toMessages(await d.context().catch(() => []))
   if (messages.length === 0) return fail('no conversation to read')
-  const facts: Facts = ownFacts(messages)
+  // The facts are `cq`'s, from the OpenCode database; the plugin's own extraction is the rung under it.
+  const asked = await d.cq(['specs', 'handoff', 'facts', '--session', d.sessionID, '--json']).catch(() => null)
+  const said = asked && asked.code === 0 ? parseFacts(asked.stdout) : null
+  // the transcript `cq` names is a database row, not a file anyone can grep
+  const facts: Facts = said ? { ...said, transcript: undefined } : ownFacts(messages)
 
   let brief: string | undefined
   let problem: string | undefined
