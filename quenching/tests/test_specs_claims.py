@@ -232,5 +232,58 @@ class NoRemote(ClaimFixture):
         self.assertEqual(("local", "x:y"), (got["scope"], got["claims"][0]["holder"]))
 
 
+class Snapshot(ClaimFixture):
+    def setUp(self):
+        super().setUp()
+        self.a, self.b = self.clone("a"), self.clone("b")
+        claims._SNAPSHOTS.clear()
+        self.addCleanup(claims._SNAPSHOTS.clear)
+
+    def test_reading_carries_the_shape_and_mine_follows_the_machine(self):
+        self.claim(self.a, "acquire", "7", "--session", "s1", "--label", "laptop")
+        claims._SNAPSHOTS.clear()
+        theirs = claims.reading(claims.snapshot(self.b), "7")
+        self.assertEqual({"holder", "label", "expires", "mine", "live"}, set(theirs))
+        self.assertEqual((False, True, "laptop"), (theirs["mine"], theirs["live"], theirs["label"]))
+        claims._SNAPSHOTS.clear()
+        mine = claims.reading(claims.snapshot(self.a), "7")
+        self.assertTrue(mine["mine"] and mine["live"])
+        self.assertIsNone(claims.reading(claims.snapshot(self.a), "8"))
+
+    def test_an_expired_or_terminal_lease_is_not_live_and_the_read_is_cached(self):
+        self.claim(self.a, "acquire", "7", "--session", "s1")
+        claims._SNAPSHOTS.clear()
+        snap = claims.snapshot(self.b)
+        self.assertFalse(claims.reading(snap, "7", terminal=True)["live"])
+        late = {**snap, "at": snap["at"] + datetime.timedelta(minutes=48)}
+        self.assertFalse(claims.reading(late, "7")["live"])
+        self.claim(self.a, "release", "7")
+        self.assertIs(snap, claims.snapshot(self.b))
+
+    def test_a_released_lease_leaves_the_mirror_on_the_next_read(self):
+        self.claim(self.a, "acquire", "7", "--session", "s1")
+        claims.snapshot(self.b)
+        self.claim(self.a, "release", "7")
+        claims._SNAPSHOTS.clear()
+        self.assertIsNone(claims.reading(claims.snapshot(self.b), "7"))
+
+    def test_the_read_never_writes_the_machine_id_and_never_raises(self):
+        self.assertEqual("", claims.snapshot(self.b)["me"])
+        broken = os.path.join(self.tmp, "not-a-repo")
+        os.makedirs(broken)
+        snap = claims.snapshot(broken)
+        self.assertFalse(snap["available"])
+        self.assertIsNone(claims.reading(snap, "7"))
+
+    def test_without_a_remote_the_local_refs_are_read(self):
+        repo = os.path.join(self.tmp, "solo")
+        _sh(self.tmp, "init", "--quiet", repo)
+        self.claim(repo, "acquire", "3", "--session", "s1")
+        claims._SNAPSHOTS.clear()
+        snap = claims.snapshot(repo)
+        self.assertEqual("local", snap["scope"])
+        self.assertTrue(claims.reading(snap, "3")["mine"])
+
+
 if __name__ == "__main__":
     unittest.main()
