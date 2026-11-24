@@ -137,6 +137,23 @@ class AntivirusPrimaryRootTest(unittest.TestCase):
         self.assertEqual(repo, report["root"])
         self.assertEqual(before, pathlib.Path(index).read_bytes())
 
+    def test_a_primary_with_uncommitted_edits_is_still_the_primary(self):
+        repo, slot = self._repo()
+        with open(os.path.join(repo, "b"), "w", encoding="utf-8") as fh:
+            fh.write("b\n")
+        self._git("-C", repo, "add", "b")
+        self._git("-C", repo, "-c", "user.name=t", "-c", "user.email=t@t", "commit", "-q", "-m", "b")
+        with open(os.path.join(repo, "README.md"), "a", encoding="utf-8") as fh:
+            fh.write("zz\n")
+        index = os.path.join(repo, ".git", "index")
+        before = pathlib.Path(index).read_bytes()
+        report, paths = self._paths(slot)
+        self.assertEqual(repo, report["root"])
+        self.assertEqual("repository (its .git holds the spec store)", report["paths"][0]["what"])
+        self.assertIn(os.path.join(self.tmp, "sep-slot-*"), paths)
+        self.assertNotIn(f"{slot}-slot-*", paths)
+        self.assertEqual(before, pathlib.Path(index).read_bytes())
+
     def test_a_slot_that_cannot_prove_its_primary_falls_back_to_itself(self):
         gd = os.path.join(self.tmp, "gd")
         os.makedirs(gd)
@@ -146,6 +163,16 @@ class AntivirusPrimaryRootTest(unittest.TestCase):
         report, paths = self._paths(odd)
         self.assertEqual(odd, report["root"])
         self.assertNotIn(gd, paths)
+
+    def test_the_fallback_slot_is_no_spec_store_and_gets_no_wildcard(self):
+        repo, slot = self._repo()
+        os.remove(os.path.join(repo, "README.md"))
+        report, paths = self._paths(slot)
+        self.assertEqual(slot, report["root"])
+        self.assertNotIn("repository (its .git holds the spec store)",
+                         [p["what"] for p in report["paths"]])
+        self.assertNotIn(f"{slot}-slot-*", paths)
+        self.assertNotIn(os.path.join(self.tmp, "sep-slot-*"), paths)
 
     def _separate(self, name, *, tracked):
         """`name` checked out with its git dir in `gd<name>/.git`; `tracked` is committed."""
@@ -212,7 +239,7 @@ class AntivirusBroadPathTest(unittest.TestCase):
 
     def test_a_repository_at_the_home_is_refused(self):
         home = os.path.realpath(os.path.expanduser("~"))
-        with mock.patch.object(doctor, "_primary_root", return_value=home):
+        with mock.patch.object(doctor, "_primary_root", return_value=(home, True)):
             report = doctor.antivirus_report(home, which=_which({}))
         self.assertEqual("cq-antivirus-unsafe-root", report["refusal"]["code"])
 

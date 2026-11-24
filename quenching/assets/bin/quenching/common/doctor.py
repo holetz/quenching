@@ -226,39 +226,75 @@ def _owns(candidate: str, common: str) -> bool:
         return _canonical(target) == _canonical(common)
     if not os.path.isdir(dot_git) or _canonical(dot_git) != _canonical(common):
         return False
-    # A bare `.git` parent (`--separate-git-dir`) carries the git dir but none of its files: only
-    # tracked files present with the index's content prove a checkout. `diff` compares content
-    # where the stat is stale and refreshes the index it reads, so it reads a throwaway copy.
+    # A bare `.git` parent (`--separate-git-dir`) carries the git dir but none of its files: a
+    # checkout is proven by one tracked file the index recorded there (its inode, size and mtime,
+    # so uncommitted edits elsewhere do not matter), or by every tracked file carrying the index's
+    # content (a clean checkout whose stat is stale). `diff` refreshes the index it reads, so
+    # both read a throwaway copy and the real index is never written.
     index = os.path.join(common, "index")
-    if not os.path.isfile(index) or not _git(candidate, "--git-dir", common, "ls-files", "-z"):
+    if not os.path.isfile(index):
         return False
-    argv = ["git", "--git-dir", common, "--work-tree", candidate, "diff", "--quiet",
-            "--no-ext-diff", "--no-textconv", "--ignore-submodules"]
     try:
         with tempfile.TemporaryDirectory() as scratch:
-            copy = shutil.copyfile(index, os.path.join(scratch, "index"))
+            env = {**os.environ, "GIT_INDEX_FILE": shutil.copyfile(
+                index, os.path.join(scratch, "index"))}
+            listed = subprocess.run(["git", "--git-dir", common, "ls-files", "-z", "--debug"],
+                                    capture_output=True, cwd=candidate, timeout=COMMAND_TIMEOUT_S,
+                                    env=env)
+            if listed.returncode != 0 or not listed.stdout:
+                return False
+            if _stat_matches(candidate, listed.stdout):
+                return True
+            argv = ["git", "--git-dir", common, "--work-tree", candidate, "diff", "--quiet",
+                    "--no-ext-diff", "--no-textconv", "--ignore-submodules"]
             return subprocess.run(argv, capture_output=True, cwd=candidate,
-                                  timeout=COMMAND_TIMEOUT_S,
-                                  env={**os.environ, "GIT_INDEX_FILE": copy}).returncode == 0
+                                  timeout=COMMAND_TIMEOUT_S, env=env).returncode == 0
     except (OSError, subprocess.SubprocessError):
         return False
 
 
-def _primary_root(root: str) -> str | None:
+_INDEX_ENTRY = re.compile(
+    rb"(?:\A|\n)([^\0\n]+)\0  ctime: [^\n]*\n  mtime: (\d+):(\d+)\n  dev: \d+\tino: (\d+)\n"
+    rb"  uid: [^\n]*\n  size: (\d+)\t")
+
+
+def _stat_matches(candidate: str, listing: bytes) -> bool:
+    """One entry of `ls-files -z --debug` is the file in `candidate`: same inode, size and mtime.
+
+    An inode of 0 (not recorded, as on Git for Windows) proves nothing: a same-named copy could
+    match size and mtime."""
+    mask = 0xFFFFFFFF
+    for match in _INDEX_ENTRY.finditer(listing):
+        rel, sec, nsec, ino, size = match.groups()
+        if not int(ino):
+            continue
+        try:
+            st = os.lstat(os.path.join(candidate, os.fsdecode(rel)))
+        except OSError:
+            continue
+        if ((st.st_ino & mask) == int(ino) and (st.st_size & mask) == int(size)
+                and (st.st_mtime_ns // 10**9) & mask == int(sec)
+                and (not int(nsec) or st.st_mtime_ns % 10**9 == int(nsec))):
+            return True
+    return False
+
+
+def _primary_root(root: str) -> tuple[str | None, bool]:
     """The primary worktree, proven: never the parent of a git dir only by its name.
 
     In the primary worktree it is the toplevel; in a slot it is the first candidate that owns the
     shared git dir — the sibling without `-slot-<n>`, then the parent of a `.git` common dir —
-    else the slot's own toplevel, narrower and never broader. `None` outside a git repository:
-    the raw root is never offered as the repository."""
+    else the slot's own toplevel, narrower and never broader, with `False` beside it: the
+    fallback is no primary. `(None, False)` outside a git repository: the raw root is never
+    offered as the repository."""
     top = _git(root, "rev-parse", "--show-toplevel").strip()
     if not top:
-        return None
+        return None, False
     top = os.path.normpath(top)
     common = _git(root, "rev-parse", "--path-format=absolute", "--git-common-dir").strip()
     git_dir = _git(root, "rev-parse", "--absolute-git-dir").strip()
     if not common or _canonical(git_dir) == _canonical(common):
-        return top
+        return top, True
     candidates = []
     stem = re.sub(r"-slot-\d+$", "", os.path.basename(top))
     if stem != os.path.basename(top):
@@ -267,8 +303,8 @@ def _primary_root(root: str) -> str | None:
         candidates.append(os.path.dirname(common))
     for candidate in candidates:
         if _owns(candidate, common):
-            return os.path.normpath(candidate)
-    return top
+            return os.path.normpath(candidate), True
+    return top, False
 
 
 def _canonical(path: str) -> str:
@@ -305,7 +341,7 @@ def antivirus_report(root: str, *, which: Callable[[str], str | None] | None = N
 
     Read-only: it resolves paths and runs `uv cache dir` when `uv` is on PATH, nothing else."""
     which = which or shutil.which
-    primary = _primary_root(os.path.abspath(root))
+    primary, proven = _primary_root(os.path.abspath(root))
     if primary is None:
         return {"refusal": {
             "code": "cq-antivirus-no-repo",
@@ -321,13 +357,15 @@ def antivirus_report(root: str, *, which: Callable[[str], str | None] | None = N
                        "the home, the system temp or an ancestor of one",
             "remedy": "keep the repository in a folder of its own, then run `cq doctor --antivirus` there",
         }}
-    parent, name = os.path.split(primary)
-    paths = [{"path": primary, "what": "repository (its .git holds the spec store)"}]
-    pattern = os.path.join(parent, f"{name}-slot-*")
-    paths.append({"path": pattern, "what": "worktree slots (wildcard)"})
-    for slot in sorted(glob.glob(pattern)):
-        if os.path.isdir(slot):
-            paths.append({"path": slot, "what": "worktree slot"})
+    if proven:
+        parent, name = os.path.split(primary)
+        paths = [{"path": primary, "what": "repository (its .git holds the spec store)"}]
+        pattern = os.path.join(parent, f"{name}-slot-*")
+        paths.append({"path": pattern, "what": "worktree slots (wildcard)"})
+        paths += [{"path": slot, "what": "worktree slot"}
+                  for slot in sorted(glob.glob(pattern)) if os.path.isdir(slot)]
+    else:
+        paths = [{"path": primary, "what": "worktree (its primary worktree could not be proven)"}]
     paths.append({"path": cache_root(), "what": "quenching cache"})
     venv = os.path.join(primary, ".venv")
     if os.path.isdir(venv):
