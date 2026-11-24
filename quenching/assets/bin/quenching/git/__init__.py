@@ -210,9 +210,9 @@ def build_parser() -> argparse.ArgumentParser:
                     help="deprecated, no effect: declare `shared.ci.enforce` in the project "
                          "layer instead (required | when-present | off)")
     pp.add_argument("--gate-exit", type=int, metavar="N",
-                    help="the exit code of the repository gate just run; `shared.ci.enforce` "
-                         "other than `required` accepts a PR without green CI only with 0. A red, "
-                         "skipped or unreadable check refuses under every value")
+                    help="deprecated, no effect: with `shared.ci.enforce` other than `required` "
+                         "the merge reads the record scripts/verify_repo.sh wrote for the PR's "
+                         "head (.quenching/gate/record.json), never a declared exit")
     pp.add_argument("--json", action="store_true", help="machine-readable output")
 
     sp = sub.add_parser("refresh", help="fast-forward the local base branch to <remote>/<base> — "

@@ -148,10 +148,10 @@ _k("shared.ci.enforce", "enum", CI["enforce"], "git", "project",
    "cq git pr merge, /release, the autopilot and the orchestrator",
    ("Require green CI", "required: every check green; when-present: a PR with no check may merge; "
     "off: also with checks pending. A red check never merges, and a relaxed value needs the "
-    "local gate green (--gate-exit 0)."),
+    "gate record of the PR's head, green (written by verify_repo.sh)."),
    ("Exigir CI verde", "required: todo check verde; when-present: PR sem check pode mergear; "
     "off: também com checks pendentes. Check vermelho nunca mergeia, e um valor relaxado exige "
-    "o gate local verde (--gate-exit 0)."), choices=list(CI_ENFORCE))
+    "o registro do gate da cabeça do PR, verde (gravado pelo verify_repo.sh)."), choices=list(CI_ENFORCE))
 # — Prompt cache (the quenching-cache bar) —
 _k("shared.cache.rebuildLimitUsd", "number", CACHE_BAR["rebuildLimitUsd"], "cache", "either",
    "quenching-cache plugin",
