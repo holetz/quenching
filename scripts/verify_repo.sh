@@ -335,6 +335,16 @@ else
   printf '\n==> opencode-vitrine typecheck\n'
   printf 'SKIPPED: integrations/opencode-vitrine/node_modules is absent (run `npm ci` there); the vitrine was not typechecked.\n'
 fi
+# The warnings bench needs only `node` (strip-types), so it still runs when the typecheck above is
+# skipped: an undefined name in the plugin's status path fails here instead of only inside OpenCode.
+if [ "$RUN_INTEGRATIONS" = 0 ]; then
+  skip_step "opencode-vitrine warnings bench" "$INTEGRATIONS_SKIP_REASON"
+elif command -v node >/dev/null 2>&1 && node --experimental-strip-types -e '' >/dev/null 2>&1; then
+  run_check "opencode-vitrine warnings bench" \
+    node --experimental-strip-types integrations/opencode-vitrine/bench/warnings.check.mjs
+else
+  skip_step "opencode-vitrine warnings bench" "no \`node\` with --experimental-strip-types (22.6+) on PATH; the vitrine's warnings were not exercised."
+fi
 
 # Surface-load checks spawn billed `claude -p` sessions, so they are opt-in: without
 # QUENCHING_FUNCTIONAL=1 the skip is stated and the gate stays deterministic. When asked for, an
