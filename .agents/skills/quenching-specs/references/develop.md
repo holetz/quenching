@@ -17,11 +17,11 @@ says whether refining runs.
 
 **Every `§X` below is an address, and it is loaded as one — never by opening the file.**
 
-```bash
-.agents/quenching/bin/cq components read <the cited file> --sections "§The pass" --sections "§The four shared mechanics"
+```text
+components_read(path="<the cited file>", sections=["§The pass", "§The four shared mechanics"])
 ```
 
-One call, N sections, no frontmatter; a unique prefix resolves. `--rules-only` narrows further to
+One call, N sections, no frontmatter; a unique prefix resolves. `rules_only=true` narrows further to
 the `<!-- rules -->` half where a section carries the marker, and returns the whole section, saying
 so, where it does not.
 
@@ -45,7 +45,7 @@ the same way.
 
 ## Resolving the tool
 
-Resolve `cq` (`.agents/quenching/bin/cq components read` is the section reader every `§X` citation above resolves through)
+Resolve `cq` (`components_read` is the section reader every `§X` citation above resolves through)
 per
 [align/tool-resolution.md](.agents/quenching/references/align/tool-resolution.md)
 §Resolving the tool, §Write the resolved path literally on every invocation; branch on the **exit
@@ -54,7 +54,7 @@ code** (0 ok · 1 findings · 2 refusal) and the `--json`, never on prose.
 ## Doctrine
 
 - **The stage says where composing starts; the calculated pass says who answers and whether refining
-  runs.** `.agents/quenching/bin/cq specs status --spec <id> --json` returns the stage. Never infer the stage by reading
+  runs.** `specs_status(spec=<id>)` returns the stage. Never infer the stage by reading
   the headings, never ask the human which mode they want, and **never ask them to choose a depth**
   — the session calculates it. It enumerates the decisions the execution needs and classifies each
   as resolved by evidence, dependent on the human, or very costly to undo. None depends on the
@@ -81,7 +81,7 @@ code** (0 ok · 1 findings · 2 refusal) and the `--json`, never on prose.
 [align/evidence-doctrine.md](.agents/quenching/references/align/evidence-doctrine.md)
 §1. Extract the aggregate; never paste the raw dump
 §2. Section-address any markdown — a target's `/docs/` included
-— `.agents/quenching/bin/cq components read <path> --sections "§X"`, not the whole file, when only a rule or two
+— `components_read(path=<path>, sections=["§X"])`, not the whole file, when only a rule or two
   governs the question at hand; it resolves `/docs/` the same way it resolves this plugin's own
   references. No OKF bundle in the repo (`/docs/index.md` with `okf_version`) → skip silently.
 - **`complexity` is re-evaluated at the close, never mid-pass.** The close's own recommendation IS
@@ -95,12 +95,12 @@ code** (0 ok · 1 findings · 2 refusal) and the `--json`, never on prose.
 
 | Where | The bounded read(s) |
 | --- | --- |
-| steps 1+2 | `.agents/quenching/bin/cq specs status --spec <id> --json`, which also carries the `path` step 1 announces, the recorded depth, and the `sections`/`ready` map compose drives off. Only an ID that must be *chosen* splits this: `.agents/quenching/bin/cq specs list --json` runs first, because the question depends on its output |
-| step 3b | every stage's own section and the union of the spec sections the pass reads or writes — `.agents/quenching/bin/cq components read` and `.agents/quenching/bin/cq specs section` together, never one call per source or per stage |
-| step 7 | the entire application — the section write, every `.agents/quenching/bin/cq specs discover` line, every `.agents/quenching/bin/cq specs record`, `.agents/quenching/bin/cq specs verification`, `.agents/quenching/bin/cq specs validate` (plus `.agents/quenching/bin/cq specs parallel` where `## Tasks` moved), and the closing `.agents/quenching/bin/cq specs status` that verifies where the pass landed |
+| steps 1+2 | `specs_status(spec=<id>)`, which also carries the `path` step 1 announces, the recorded depth, and the `sections`/`ready` map compose drives off. Only an ID that must be *chosen* splits this: `specs_list` runs first, because the question depends on its output |
+| step 3b | every stage's own section and the union of the spec sections the pass reads or writes — `components_read` and `specs_section` together, never one call per source or per stage |
+| step 7 | the entire application — the section write, every `specs_discover` line, every `specs_record`, `specs_verification`, `specs_validate` (plus `specs_parallel` where `## Tasks` moved), and the closing `specs_status` that verifies where the pass landed |
 
 On the git store every write of step 7 lands in the clone's local pending commit: the remote and
-the card see the pass at the next sync point (`.agents/quenching/bin/cq git push`, `.agents/quenching/bin/cq git pr create`, `.agents/quenching/bin/cq specs push`), and `.agents/quenching/bin/cq specs status` lists the spec as pending until then.
+the card see the pass at the next sync point (`git_push`, `git_pr_create`, `specs_push`), and `specs_status` lists the spec as pending until then.
 
 A call splits only where the next command's **input** depends on the previous one's output. The
 `approved` stamp is the one such split: it waits for step 7's verification to prove `ready` rather
@@ -123,20 +123,20 @@ change it, and alone otherwise.
 ## Workflow
 
 ### 1. Resolve the spec, and announce where it lives
-Take the id from the input, infer it from the conversation, or run `.agents/quenching/bin/cq specs list --json` and ask
+Take the id from the input, infer it from the conversation, or run `specs_list` and ask
 on a decision sheet (most recently modified as option A, recommended). Announce it and how to
 override. Two matches for one id is exit 2 — report both paths and stop, never guess which was
 meant. An archived spec has nothing to develop: say so and stop.
 
 **Announce the spec's URL in the backend along with it** — the `path` field of the
-`.agents/quenching/bin/cq specs status --spec <id> --json` payload step 2 takes in this same call (the card's URL when
+`specs_status(spec=<id>)` payload step 2 takes in this same call (the card's URL when
 one exists, else the spec's file location on the `quenching` branch), stated before anything is
 read and repeated in the report (step 8).
 **Done when:** one spec is resolved and its URL or location has been announced.
 
 ### 2. Read the spec's STATE — not its body
-```bash
-.agents/quenching/bin/cq specs status --spec <id> --json      # stage, section states, ready map, records, tasks, gate, path
+```text
+specs_status(spec=<id>)   # stage, section states, ready map, records, tasks, gate, path
 ```
 **This is the same call as step 1** — §The batching contract's first row. The id either came in
 the input or was inferred, and the payload answers both steps at once.
@@ -181,11 +181,10 @@ here and nowhere else.
 Now that the pass is known, and in **one call** — §The batching contract's second row, both
 commands together, every stage at once:
 
-```bash
-.agents/quenching/bin/cq components read .agents/quenching/references/specs-develop/questions.md \
-  --sections "§Compose" --sections "§Approval"      # + "§Refine" where refine runs,
+```text
+components_read(path=".agents/quenching/references/specs-develop/questions.md", sections=["§Compose", "§Approval"])   # + "§Refine" where refine runs,
                                                     # + "§Who answers", + "§Gathering the evidence"
-.agents/quenching/bin/cq specs section <id> "<every heading this pass reads or writes>"     # the union, once
+specs_section(spec=<id>, headings=<every heading this pass reads or writes>)   # the union, once
 ```
 
 | Stage | Spec sections it reads or writes |
@@ -251,7 +250,7 @@ it never grounds a binding rule alone —
 This is a subject the pass plans, not an execution question like `[P]`/`files:`/`pattern:`.
 Ask the human only what the surface plan cannot answer from evidence, under the pass's track.
 **Done when:** every declared surface path is named by a task carrying `files:` and `verify:`,
-`.agents/quenching/bin/cq specs parallel --spec <id>` exits 0 in step 7, and nothing outside the
+`specs_parallel(spec=<id>)` exits 0 in step 7, and nothing outside the
 spec was written.
 
 ### 4. Compose
@@ -304,11 +303,8 @@ pass did not reach this stage at all.
 ### 6. Consolidate the edit, and narrate it
 Load the authoring doctrine now — the union of `artifacts.md` sections this pass needs, in one call:
 
-```bash
-.agents/quenching/bin/cq components read .agents/quenching/references/specs-develop/artifacts.md \
-  --sections "§Writing a section through stdin" --sections "§The explicit-none rule" \
-  --sections "§The nine definition sections" --sections "§`## Impact`" --sections "§`## Tasks`" \
-  --sections "§Execution metadata"
+```text
+components_read(path=".agents/quenching/references/specs-develop/artifacts.md", sections=["§Writing a section through stdin", "§The explicit-none rule", "§The nine definition sections", "§`## Impact`", "§`## Tasks`", "§Execution metadata"])
 ```
 
 **The consolidation stays; the confirmation goes.** Show every accumulated answer as a single plan —
@@ -327,7 +323,7 @@ this edit will park** — a line, not an offer (§Invariants).
 **Every write of this step is ONE call** — §The batching contract's third row: the section write,
 the `## Discoveries` lines, the records, `verification`, `validate`, and the closing `status`.
 
-Write the narrated sections with `.agents/quenching/bin/cq specs section <id> "<Heading>[,<Heading>…]" --write` (bodies
+Write the narrated sections with `.agents/quenching/bin/cq specs section <id> "<Heading>[,<Heading>…]" --write` (bodies <!-- cli: atomic -->
 on stdin) — it creates each heading in canonical position on first write, so creating and revising
 are the same call. An emptied section becomes an explicit `- none — <reason>`, never a deleted
 heading. The surface group and the `## Impact` sub-heading that declares it land in this same
@@ -335,6 +331,7 @@ single write as the rest; there is no surface-specific write, call or record.
 
 **The bodies go on stdin as one heredoc, in the same call:**
 
+<!-- cli: atomic -->
 ```bash
 .agents/quenching/bin/cq specs section "<id>" "<Heading>,<Other Heading>" --write <<'BODY'
 ## <Heading>
@@ -354,8 +351,8 @@ declared on the command line — a mismatch, a repeat, or a heading outside the 
 refuses (exit 2) **without writing any of them**. One heading with a raw body and no `## ` line is
 the singular form. The N splices land as ONE write.
 
-Every follow-up the plan parked is written in this same edit — `.agents/quenching/bin/cq specs discover <id>
-"<finding>"`, one call per line — and never mid-stage, which
+Every follow-up the plan parked is written in this same edit — `specs_discover(spec=<id>,
+text="<finding>")`, one call per line — and never mid-stage, which
 [questions.md](.agents/quenching/references/specs-develop/questions.md) §The four shared
 mechanics forbids. The call creates `## Discoveries` when the heading is absent, and a filled
 `## Discoveries` moves no derived stage.
@@ -364,23 +361,22 @@ Then the frontmatter records this command owns — read
 [questions.md](.agents/quenching/references/specs-develop/questions.md) §Recording the
 pass for which stage earns which, and
 [spec-driven.md](.agents/quenching/references/specs-develop/spec-driven.md) §Frontmatter
-for the write-once semantics, in one call. Each is stamped through `.agents/quenching/bin/cq specs record`:
+for the write-once semantics, in one call. Each is stamped through `specs_record`:
 
 | Record | When | Call |
 | --- | --- | --- |
-| `refined: {mode, date}` | compose or refine ran; `mode` is the deepest reached | `.agents/quenching/bin/cq specs record <id> refined --set mode=<compose\|refine> --set date=<today>` |
-| `verification` | compose settled the policy | `.agents/quenching/bin/cq specs verification <id> <per-task\|per-section\|end-of-plan>` |
-| `tags` | the pass changed the spec's scope, or the capture presumed wrong | `.agents/quenching/bin/cq specs tags <id> "<whole list>"` |
-| `complexity` (in `priority`) | the pass outgrew its size and the human approved the new level, or the close's recommendation was taken (step 8) | `.agents/quenching/bin/cq specs record <id> priority --set complexity=<level> --set date=<today>` |
+| `refined: {mode, date}` | compose or refine ran; `mode` is the deepest reached | `specs_record(spec=<id>, name="refined", fields={"mode": "<compose\|refine>", "date": "<today>"})` |
+| `verification` | compose settled the policy | `specs_verification(spec=<id>, policy=<per-task\|per-section\|end-of-plan>)` |
+| `tags` | the pass changed the spec's scope, or the capture presumed wrong | `specs_tags(spec=<id>, value=<whole list>)` |
+| `complexity` (in `priority`) | the pass outgrew its size and the human approved the new level, or the close's recommendation was taken (step 8) | `specs_record(spec=<id>, name="priority", fields={"complexity": "<level>", "date": "<today>"})` |
 
 `approved` is **not** stamped here — it waits for the verification below to prove `ready`, and is
 stamped in step 8.
 
-`.agents/quenching/bin/cq specs tags` **replaces** the whole list, never appends — reissue the subject's own fixed tags
+`specs_tags` **replaces** the whole list, never appends — reissue the subject's own fixed tags
 together with whatever this pass adds, or the fixed ones are lost.
 
-The title is the sole short description every ranked listing prints (`.agents/quenching/bin/cq specs next --front
---table`); keep it descriptive when the spec's scope changes.
+The title is the sole short description every ranked listing prints (`specs_next()`); keep it descriptive when the spec's scope changes.
 
 `verification` is a plain frontmatter key with a verb of its own. Omit the value to read what is in
 force; absent means the default, and the default is never stamped to make it explicit.
@@ -388,9 +384,9 @@ force; absent means the default, and the default is never stamped to make it exp
 `complexity` is a field of `priority`, and the record merges — `level` and `criticality` survive
 a re-stamp that touches only the size.
 
-Then, in the same call, **verify where the pass landed**: `.agents/quenching/bin/cq specs validate --spec <id>` and
-`.agents/quenching/bin/cq specs status --spec <id> --json`. **When this pass touched `## Tasks`, run `.agents/quenching/bin/cq specs parallel
---spec <id>` here too** — exit 1 names the `[P]` group whose `files:` sets are not disjoint, and
+Then, in the same call, **verify where the pass landed**: `specs_validate(spec=<id>)` and
+`specs_status(spec=<id>)`. **When this pass touched `## Tasks`, run `specs_parallel(spec=<id>)`
+here too** — exit 1 names the `[P]` group whose `files:` sets are not disjoint, and
 definition time is the only moment that is cheap to fix. Report what each says; a `[P]` nobody
 proved is a promise execution will refuse.
 **Done when:** the pass's one edit is written, the records it earned are stamped, and validate,
@@ -401,14 +397,14 @@ The re-derived stage came back in step 7's call. Compare it with
 where the pass expected to land: a divergence is named and the pass re-enters at step 3 with a pass
 derived from the real stage. **The re-entry is narrated, never offered.**
 
-**No size check runs before approval.** Do not run `.agents/quenching/bin/cq specs estimate`, and
+**No size check runs before approval.** Do not run `specs_estimate`, and
 never ask, block or recommend decomposition over a token budget: a declared-reading estimate is not
 a build's context, and a worker over its size estimate finishes the spec anyway.
 
 Close according to the track — §Approval owns the screen:
 
 - **Simple track** — no screen. With `ready` now **proved** by step 7's payload and `approved`
-  unset, stamp it here: `.agents/quenching/bin/cq specs record <id> approved --set date=<today> --set by=session`. **`by:`
+  unset, stamp it here: `.agents/quenching/bin/cq specs record <id> approved --set date=<today> --set by=session` <!-- cli: by -->. **`by:`
   is never omitted** — a record with no `by:` reads as `human`, so leaving it off silently claims a
   human this pass never had. When the invocation says `autonomous`, stamp
   `--set by=orchestrator-forced` instead. That is the only path that writes this value, and only
@@ -431,9 +427,8 @@ Then report:
 
 **When this run's input carried `autonomous`, skip the read below and the mold with it** — a conductor presents the report, not this run; return the content in the fixed shape the caller specified. Otherwise:
 
-```bash
-.agents/quenching/bin/cq components read .agents/quenching/references/specs-develop/report-mold.md \
-  --sections "§The report mold" --rules-only
+```text
+components_read(path=".agents/quenching/references/specs-develop/report-mold.md", sections=["§The report mold"], rules_only=true)
 ```
 
 Emit §The report mold. The single-spec header line carries the stage **after** the pass; two body
@@ -449,7 +444,7 @@ blocks:
    whether each was taken; the stage before and after, and whether it landed where the pass expected.
 2. **Parked into `## Discoveries`** — optional, and every line **quoted**.
 
-Print §The session-size line before the block — `.agents/quenching/bin/cq components session context --json`, read once; exit 1 turns the `→` line into a recommendation to run the next stage **in a new session**, exit 0 and 2 leave it an offer.
+Print §The session-size line before the block — `components_session_context`, read once; exit 1 turns the `→` line into a recommendation to run the next stage **in a new session**, exit 0 and 2 leave it an offer.
 
 Close on §The next-step block — `/quenching-git branch <id>` once `approved` is stamped, naming it
 the natural moment to isolate before `/quenching-specs execute <id>` writes any code;
@@ -478,10 +473,10 @@ block, and is never asked as a question mid-pass.
   never docs versus code.
 - **Park an out-of-scope follow-up; never mint a spec for it.** A finding this pass raised that does
   not belong to the spec being developed becomes ONE line of `## Discoveries` on that same spec —
-  `.agents/quenching/bin/cq specs discover <id> "<finding>"` — landed inside the step 7 edit, never as a loose call
+  `specs_discover(spec=<id>, text=<finding>)` — landed inside the step 7 edit, never as a loose call
   mid-stage. Turning a follow-up into its own spec stays `/quenching-specs conclude`'s. This route
   is not an offer: nothing is created, so there is nothing to ask for.
-- **Inside a develop pass, `.agents/quenching/bin/cq specs new` runs only as the discoveries stage's `promoted:`
+- **Inside a develop pass, `specs_create` runs only as the discoveries stage's `promoted:`
   resolution.** Nothing else here mints a spec.
 - **Changing the spec's intent is refine's, and only with a human.** Compose may not overturn what a
   human settled; refine may, and a change to `## Proposal` is always put to the human rather than
@@ -511,7 +506,7 @@ block, and is never asked as a question mid-pass.
 - **Never hand this command file `context: fork`** — the complex track asks the human its own
   questions, and step 3c's read-only sub-agent is a step inside that, never a delegation of it.
 - **Never open a cited reference as a file.** `§X` is an address, loaded through
-  `.agents/quenching/bin/cq components read --sections`; and never hoist into the preamble what only one branch reads.
+  `components_read(path=…, sections=[…])`; and never hoist into the preamble what only one branch reads.
 - Never derive the pass from what it intends to write — only from disk, once, and the disk confirms
   at the close where it landed. A divergence re-enters; it is never absorbed in silence.
 - Never run a stage the pass did not name. The whole pass is announced before the first question.

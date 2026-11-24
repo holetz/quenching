@@ -60,6 +60,8 @@ no tool of the catalog.
      `approved` as `by=human`, after asking.
    - **flag** — the call needs a flag the tool does not publish (`specs_create` has no `subject`,
      `specs_next` no `table`, `specs_promote` no `force`).
+   - **fallback** — the block documents the CLI synopsis itself, beside the tool it falls back
+     from (a surface table such as `specs-develop/specs-surface.md`).
 
 ### The fallback: a session with no server
 

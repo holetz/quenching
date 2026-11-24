@@ -42,7 +42,7 @@ Three bands, in this order, always: **header · body · next step**.
 | `—` | no value — a **not-yet**, never a defect |
 | `…` | elision (`… N more`) |
 
-`✓ ! ·` are the three `.agents/quenching/bin/cq specs status` already prints for section state, and mean the same here.
+`✓ ! ·` are the three `specs_status` already prints for section state, and mean the same here.
 
 <!-- rationale -->
 
@@ -67,7 +67,7 @@ One spec:
 executing · 5/9 tasks · quenching:specs/41.md
 ```
 
-**The third field is the locator the tool returned** — the `path` field `.agents/quenching/bin/cq specs new`, `status`,
+**The third field is the locator the tool returned** — the `path` field `specs_create`, `status`,
 `list`, `next --front` and `section --write` all carry — never a filename the body assembled. The git store returns
 `quenching:specs/<id>.md`; a deprecated `github` backend returns the issue URL and `azure-boards`
 the work-item URL. The card's URL is a separate field.
@@ -84,7 +84,7 @@ A body that prints a path the backend never wrote sends a human to a file that d
 One ordered column set. **A command omits any column, never reorders, and never invents one.**
 
 **The tool renders it; a command quotes what the tool printed.**
-`.agents/quenching/bin/cq specs next --front --table [--columns C,C] [--order rank|priority]` prints this table, and
+`.agents/quenching/bin/cq specs next --front --table [--columns C,C] [--order rank|priority]` prints this table, and <!-- cli: flag -->
 `--columns` is the mechanism for the omission rule above — the order is the tool's, so a subset
 cannot come back reordered. A command that composes these cells itself is a second renderer of one
 ranking, which is the fan-out
@@ -204,8 +204,8 @@ comes here.
 **Printed by `/quenching-specs develop`, `/quenching-specs execute` and `/quenching-specs conclude`
 only**, as the last line of the body, right before §The next-step block. One read, once per report:
 
-```bash
-.agents/quenching/bin/cq components session context --json
+```text
+components_session_context()
 ```
 
 ```
@@ -229,7 +229,7 @@ The exit code decides the tone, never the line's presence:
 <!-- rationale -->
 
 Four measured `/quenching-specs execute` sessions peaked between 250k and 370k, each stage paying
-for everything the earlier ones had loaded. `.agents/quenching/bin/cq components session context` (epic 1627 S3) is the
+for everything the earlier ones had loaded. `components_session_context` (epic 1627 S3) is the
 measurement, and the main-session budget is
 `docs/standards/automation/context-discipline.md` §Measured context budgets. The peak excludes
 the request in flight, so the line slightly undercounts; it only sets a tone, so that is accepted.

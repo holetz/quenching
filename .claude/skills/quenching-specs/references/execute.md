@@ -14,12 +14,12 @@ policy, reviewing its diff, committing it alone, and recording the spec task aft
 revealed, merging, and archiving belong to `/quenching-specs conclude` — the archive only after the
 merge.
 
-`Bash` is unrestricted: the verification, `.agents/quenching/bin/cq specs` and Git commands are resolved from the live
-spec. The commit itself is one `.agents/quenching/bin/cq git commit` call, which commits the existing index.
+`Bash` is unrestricted: the verification and Git commands are resolved from the live spec. The
+commit itself is one `.agents/quenching/bin/cq git commit` call in the worktree, which commits the existing index <!-- cli: root -->.
 
 ## Resolving the tool
 
-Resolve `cq` (`.agents/quenching/bin/cq components read` is the section reader every `§X` citation in this body resolves through)
+Resolve `cq` (`components_read` is the section reader every `§X` citation in this body resolves through)
 per [align/tool-resolution.md](.agents/quenching/references/align/tool-resolution.md)
 §Resolving the tool; branch on the **exit code** (0 ok · 1 findings · 2 refusal) and the `--json`,
 never on prose.
@@ -28,31 +28,33 @@ never on prose.
 
 ### 1. Select the spec
 An ID was given → use it. Otherwise infer from the conversation, auto-select when exactly one spec
-is under way, or run `.agents/quenching/bin/cq specs list --json` and pick on a decision sheet ([questions.md](.agents/quenching/references/specs-develop/questions.md) §The four shared mechanics §1). Announce
+is under way, or run `specs_list` and pick on a decision sheet ([questions.md](.agents/quenching/references/specs-develop/questions.md) §The four shared mechanics §1). Announce
 "Building spec: `<id>`" and how to override. A sub-agent does not ask: return `STATE: blocked` with `NOTE: needs-human:` carrying the decision sheet.
 **Done when:** one spec is resolved.
 
 ### 2. Take the tree, the isolation and the state in one read
 **The precondition comes first.** Load the rule that binds this step:
 
-```bash
-.agents/quenching/bin/cq components read .agents/quenching/references/specs-execute/execution.md \
-  --sections "§The precondition"
+```text
+components_read(path=".agents/quenching/references/specs-execute/execution.md", sections=["§The precondition"])
 ```
 
 The rest of this step is read in **one call** — the post-merge close of whatever already merged,
 the tree, the isolation ref, the spec's own state, and the environment probe below:
 
+```text
+specs_reconcile(write=true)   # archives merged specs carrying ## Outcome
+specs_status(spec=<id>)
+specs_config()
+```
+
 ```bash
-.agents/quenching/bin/cq specs reconcile --write --json   # archives merged specs carrying ## Outcome
 git status --porcelain
 git branch --list "plan/<id>-<handle>"
 git branch --show-current
 git worktree list
 git symbolic-ref refs/remotes/origin/HEAD 2>/dev/null
-.agents/quenching/bin/cq specs status --spec "<id>" --json
-.agents/quenching/bin/cq specs config --json
-# and the hook probe of 2b, in this same call
+# and the hook probe of 2b, in this same turn
 ```
 
 `git status --porcelain` non-empty → **refuse to start**, per
@@ -62,15 +64,15 @@ git symbolic-ref refs/remotes/origin/HEAD 2>/dev/null
 **Reserve the build before any isolation** — only the build reserves; `create`, `develop`,
 `triage` and `status` never do (`/docs/standards/workflows/spec-claims.md` where the repo keeps it):
 
-```bash
-.agents/quenching/bin/cq specs claim acquire "<id>" --json
+```text
+specs_claim_acquire(claim_id=<id>)
 ```
 
 Exit 0 → the lease is this machine's for `shared.autonomy.claimMinutes` (45), a re-acquire by the
 same machine in another session included. Exit 1 `held` → another machine is building it: **stop**
 with `held-by: <heldBy.holder> until <heldBy.expires>`, cut and write nothing. Taking a live lease
 (`.agents/quenching/bin/cq specs claim take "<id>"`) is the human's call only, asked on a decision sheet and recorded
-with `.agents/quenching/bin/cq specs discover "<id>" "claim taken from <holder>"`; a sub-agent returns `STATE: blocked`
+with `specs_discover(spec=<id>, text="claim taken from <holder>")`; a sub-agent returns `STATE: blocked`
 with `NOTE: needs-human: held-by: <holder>` and never takes. Exit 2 (git could not answer) → report
 it and build without a reservation: the lease protects, and a remote that cannot answer never
 blocks the build.
@@ -98,15 +100,15 @@ disagreeing with the resolved base means the human already answered the isolatio
 checkout. Show the inference on the same line as the confirmation, before stamping —
 `base: main — inferred; this branch was not cut by this command` — and stamp:
 
-```bash
-.agents/quenching/bin/cq specs record "<id>" branch --set base=<resolved base> --set work=<current branch>
+```text
+specs_record(spec=<id>, name="branch", fields={"base": "<resolved base>", "work": "<current branch>"})
 ```
 
 Never derive `base` from `git merge-base` or `--fork-point`; they answer a commit, not a branch
 name.
 
 **On the base with the work ref alive and unclaimed → take a slot over it, unasked, never a
-second branch.** `.agents/quenching/bin/cq git worktree acquire --branch <work ref> --base <base> --json`
+second branch.** `git_worktree_acquire(branch=<work ref>, base=<base>)`
 switches a free slot (or a new one under `shared.worktreeSlots.max`) to the work ref, links the
 declared shared paths and runs the declared `worktreeSetup` — displayed verbatim, as every cut does —
 inside it. A ref already checked out in a slot returns that slot. **Nothing is stamped** — a
@@ -127,8 +129,8 @@ Skill("quenching-git", "branch <id>")
 
 When it returns, re-read the state it left:
 
-```bash
-.agents/quenching/bin/cq specs status --spec "<id>" --json
+```text
+specs_status(spec=<id>)
 ```
 
 `branch.work` now set → the worktree was cut; continue the loop from the returned worktree checkout,
@@ -165,12 +167,11 @@ verifies.
 ### 3. Settle the approval, off the state step 2 already read
 **Load the stage ladder first** — what the derived stage names and means:
 
-```bash
-.agents/quenching/bin/cq components read .agents/quenching/references/specs-develop/spec-driven.md \
-  --sections "§Derived stages"
+```text
+components_read(path=".agents/quenching/references/specs-develop/spec-driven.md", sections=["§Derived stages"])
 ```
 
-The `.agents/quenching/bin/cq specs status --json` payload is **already in hand** from step 2 — do not read it again.
+The `specs_status` payload is **already in hand** from step 2 — do not read it again.
 From it: the derived stage, the section states, task progress, the blocked tasks, the recorded
 subjects, and **`verification`** — the spec's declared policy, which decides when the suite runs.
 Whether a task goes to an executor sub-agent stays the two conditions
@@ -178,8 +179,8 @@ of [execution-delegation.md](.agents/quenching/references/specs-execute/executio
 §Delegating an executor, at every level.
 
 - **`approved` unset** → ask for it inline, in one question showing what the spec commits to, and
-  on a yes stamp it `--set by=human` (`.agents/quenching/bin/cq specs record "<id>" approved --set date=<today> --set
-  by=human`). **Never refuse over it.** A no ends the run cleanly. **Under `autonomous`, `approved`
+  on a yes stamp it `by=human` (`specs_record(spec=<id>, name="approved")`, which writes the date
+  and `by=human`). **Never refuse over it.** A no ends the run cleanly. **Under `autonomous`, `approved`
   unset is a real block**: never ask, never stamp — return `STATE: blocked` with `NOTE: needs-human:
   approval is develop's`.
 - **`next` reports `write_section`** → the ready gate is not met. Name the missing or malformed
@@ -188,7 +189,7 @@ of [execution-delegation.md](.agents/quenching/references/specs-execute/executio
 - **`[!]` blocked tasks** → name them and their reasons up front. They were tried and stopped, not
   skipped.
 
-Mention any open `.agents/quenching/bin/cq specs validate` warning **once** — `sp-unrefined` (nobody has interrogated
+Mention any open `specs_validate` warning **once** — `sp-unrefined` (nobody has interrogated
 this spec), `sp-impact-uncovered` (a declared standard no task writes) — and offer
 `/quenching-specs develop`. Never gate on it: the ready gate is a floor, not a verdict.
 **Done when:** the state is in hand, `approved` is settled, and any warning has been surfaced once.
@@ -196,15 +197,15 @@ this spec), `sp-impact-uncovered` (a declared standard no task writes) — and o
 ### 4. Read what the tasks must satisfy
 Ask for the `build` moment — the six sections an executor needs — never by naming them:
 
-```bash
-.agents/quenching/bin/cq specs section "<id>" --moment build --scope current --json
+```text
+specs_section(spec=<id>, moment="build", scope="current")
 ```
 
 Branch on the payload, never the exit code. `sections[].state`, already read once in step 2, is
 the same fact this call's own `absent` list repeats: a section not yet `filled` — `## Handoff`
 empty on a spec's first build is the ordinary case, not a finding — is read as empty.
 
-`--scope current` cuts **only** `## Handoff`, and the other five sections arrive whole: the
+`scope="current"` cuts **only** `## Handoff`, and the other five sections arrive whole: the
 evergreen global block plus the `### N.` of the section the next actionable task sits in, flagged
 `"scope": "current"` in the payload. Drop the flag only to audit the whole history of the block.
 The path comes from what `status` resolved; never assume filenames. `## Impact` names the
@@ -220,19 +221,19 @@ contradicts one is surfaced (step 5), never silently resolved. No bundle → ski
 
 A declared bullet may carry a `§`address beside its path — `/docs/standards/automation/skills.md
 §Invocation and permission are authored decisions §The admission criterion`. With one, read
-exactly those sections (`.agents/quenching/bin/cq components read <path> --sections "§A" --sections "§B"`); with none,
+exactly those sections (`components_read(path=<path>, sections=["§A", "§B"])`); with none,
 read the file whole. Reading less is the spec author's assertion, never the executor's economy.
 
 **Nothing scans the folder for a contract nobody declared**
 ([execution-tooling.md](.agents/quenching/references/specs-execute/execution-tooling.md)
-§Tooling asides). The gap costs one line when it shows up — `.agents/quenching/bin/cq specs discover` records it while
+§Tooling asides). The gap costs one line when it shows up — `specs_discover` records it while
 building, and `/quenching-specs develop` repairs `## Impact`.
 **Done when:** the spec's sections and the declared binding standards are read.
 
 ### 5. Implement tasks — loop until done or blocked
 Ask the tool for the next task; **never pick one by reading the file**:
-```bash
-.agents/quenching/bin/cq specs next --spec "<id>" --json
+```text
+specs_next(spec=<id>)
 ```
 It returns that task's `verify`, `files`, `pattern` and `parallel`, plus the spec's `verification`
 policy, and it **skips `[!]` blocked tasks** (`action: "blocked"` once every remaining task is).
@@ -247,30 +248,27 @@ b. **Write the code**, minimal and scoped to the declared files (a task tagged `
    [execution-delegation.md](.agents/quenching/references/specs-execute/execution-delegation.md)
    §Delegating an executor; when it is, load the rules that bound it before dispatching:
 
-   ```bash
-   .agents/quenching/bin/cq components read .agents/quenching/references/specs-execute/execution-delegation.md \
-     --sections "§Delegating an executor"
+   ```text
+   components_read(path=".agents/quenching/references/specs-execute/execution-delegation.md", sections=["§Delegating an executor"])
    ```
 
    **The Codex executor comes first, one task at a time.** For EVERY task, before writing anything and
-   unless stop-loss switched it off in this run, run `cq codex eligible --spec "<id>" --task "<task-id>" --json`:
+   unless stop-loss switched it off in this run, run `codex_eligible(spec=<id>, task=<task-id>)`:
    exit 0 → dispatch it, and act on its exit, per
    [execution-delegation.md](.agents/quenching/references/specs-execute/execution-delegation.md)
    §The Codex executor, loaded then; exit 1 or 2 → the executor above. Every task leaves one `Codex:`
    line, also when `eligible` refuses or stop-loss is on (`skipped`).
 
-   **The `haiku` rung is per task.** For the `Task` executor, `.agents/quenching/bin/cq specs estimate --spec "<id>"
-   --task "<task-id>" --json` reporting `smallTierEligible: true` admits a `haiku` pin for one
+   **The `haiku` rung is per task.** For the `Task` executor, `specs_estimate(spec=<id>,
+   task=<task-id>)` reporting `smallTierEligible: true` admits a `haiku` pin for one
    attempt, under §Delegating an executor; anything else pins the session model.
 
 c. **Write only the `/docs/` this task names.** When this task writes `/docs/`, load the rule that
    draws the line between declared and emergent, and the boundary it crosses:
 
-   ```bash
-   .agents/quenching/bin/cq components read .agents/quenching/references/specs-execute/execution-delegation.md \
-     --sections "§Declared versus emergent"
-   .agents/quenching/bin/cq components read .agents/quenching/references/specs-develop/spec-driven.md \
-     --sections "§Boundary"
+   ```text
+   components_read(path=".agents/quenching/references/specs-execute/execution-delegation.md", sections=["§Declared versus emergent"])
+   components_read(path=".agents/quenching/references/specs-develop/spec-driven.md", sections=["§Boundary"])
    ```
 
    A `/docs/standards/` path declared under `## Impact` and named by this task is part of its
@@ -279,21 +277,18 @@ c. **Write only the `/docs/` this task names.** When this task writes `/docs/`, 
    stamp §Updating `index.md` §Enriching the glossary §Self-check; stamp `authority` honestly and
    self-check against [knowledge-align/conformance.md](.agents/quenching/references/knowledge-align/conformance.md)
    §Concept docs §Resource integrity. Anything else the work reveals costs one line —
-   `.agents/quenching/bin/cq specs discover "<id>" "<finding>"` — and no authoring.
+   `specs_discover(spec=<id>, text=<finding>)` — and no authoring.
 
 d. **On the first pass through 5d–5e, load the rules the chain runs under — once, never per
    task.** The verification policy, the validation loop, the self-review, and the commit's hard rules;
    then the git conventions that name the subject — one call per file:
 
-   ```bash
-   .agents/quenching/bin/cq components read .agents/quenching/references/specs-execute/execution.md \
-     --sections "§The verification policy" --sections "§The validation loop" \
-     --sections "§The diff self-review" --sections "§The commit"
-   .agents/quenching/bin/cq components read .agents/quenching/references/git/conventions.md \
-     --sections "§The declared-directive layer" --sections "§The read-if-present rule"
-   .agents/quenching/bin/cq git conventions --json
-   .agents/quenching/bin/cq components read .agents/quenching/references/git/commit.md --sections "§Commit messages" --sections "§The subject is the anchor"
-   .agents/quenching/bin/cq components read .agents/quenching/references/git/isolation.md --sections "§Marking the branch with the specs it built"
+   ```text
+   components_read(path=".agents/quenching/references/specs-execute/execution.md", sections=["§The verification policy", "§The validation loop", "§The diff self-review", "§The commit"])
+   components_read(path=".agents/quenching/references/git/conventions.md", sections=["§The declared-directive layer", "§The read-if-present rule"])
+   git_conventions()
+   components_read(path=".agents/quenching/references/git/commit.md", sections=["§Commit messages", "§The subject is the anchor"])
+   components_read(path=".agents/quenching/references/git/isolation.md", sections=["§Marking the branch with the specs it built"])
    ```
 
    **Self-review the task's diff** on the four items — reuse · useless defense · obvious comment ·
@@ -305,27 +300,32 @@ e. **Then verify, stage, commit and confirm the spec task as ONE chained operati
    [commit.md](.agents/quenching/references/git/commit.md) §Commit messages
    §The subject is the anchor name, resolved from what 5d already loaded — never reload
    `/quenching-git commit` per task. Execute stages only the task's declared files, commits that
-   index with `.agents/quenching/bin/cq git commit --subject`, which never stages, amends or skips hooks, then sends the
-   subject and sha it reports to `.agents/quenching/bin/cq specs task --check`:
+   index with `.agents/quenching/bin/cq git commit --subject` in the worktree, which never stages, amends or skips hooks <!-- cli: root -->,
+   then sends the subject and sha it reports to `specs_task`:
 
+   <!-- cli: root -->
    ```bash
-   <the task's verify:> \
+   cd <worktree> \
+     && <the task's verify:> \
      && git add <the task's declared files> \
-     && .agents/quenching/bin/cq git commit --subject "<subject>" --json \
-     && .agents/quenching/bin/cq specs task --check <task-id> --spec "<spec-id>" --subject "<subject reported by .agents/quenching/bin/cq git commit>" --commit "<sha reported by .agents/quenching/bin/cq git commit>"
+     && .agents/quenching/bin/cq git commit --subject "<subject>" --json
+   ```
+
+   ```text
+   specs_task(spec=<spec-id>, action="check", task=<task-id>, subject="<subject the commit reported>", commit="<sha the commit reported>")
    ```
 
    **The ordering remains explicit:** verify precedes staging, staging precedes the
    commit, and the spec tick follows the commit. Any failure stops the operation. A commit that
    already succeeded is preserved when the spec write fails; report its sha and retry
-   `.agents/quenching/bin/cq specs task --check` without rebuilding or amending it. Run `verify:` only
+   `specs_task(action="check")` without rebuilding or amending it. Run `verify:` only
    when the spec's declared policy says this task is a gate ([execution.md](.agents/quenching/references/specs-execute/execution.md)
    §The verification policy); otherwise the chain starts at `git add`. A task with
    **no `files:` declared** — the line absent, or `files: []` — has no diff to commit, so its
-   chain *ends* at the tick, run without `--subject` or `--commit`, and with neither `git add` nor
-   run `.agents/quenching/bin/cq git commit`. **A task that runs generators writes files, so it declares their outputs in `files:`**; with `files: []` the spec-verifier fails the scope of whatever it wrote. A `branch:` record also gets the branch marked, per the rule loaded in 5d.
+   chain *ends* at the tick, run without `subject` or `commit`, and with neither `git add` nor
+   the commit. **A task that runs generators writes files, so it declares their outputs in `files:`**; with `files: []` the spec-verifier fails the scope of whatever it wrote. A `branch:` record also gets the branch marked, per the rule loaded in 5d.
 
-   **After every tick, renew the reservation:** `.agents/quenching/bin/cq specs claim renew "<id>" --json`. Exit 0 or
+   **After every tick, renew the reservation:** `specs_claim_renew(claim_id=<id>)`. Exit 0 or
    `reason: absent` (no reservation was taken in step 2) → go on; exit 2 → report it and go on.
    `reason: not-holder` → another machine took the lease: **stop** with `held-by: <holder>`, the
    commit already made kept.
@@ -398,10 +398,10 @@ i. **A red that is not this spec's has its own route, never a dismissal** — a 
    hold together — cause diagnosed and reproduced on the base, few files and no contract changed, an
    existing verification proves it, no human decision — → **fix it in the spec**: append a task
    `[fix-preexistente] <title>` with its own `files:` (generated mirrors included) and a `verify:` that
-   fails before and passes after, through `.agents/quenching/bin/cq specs section "<id>" Tasks --write`
-   (the checked boxes and their `subject:` survive) then `.agents/quenching/bin/cq specs validate`, and
+   fails before and passes after, through `specs_section_write(spec=<id>, heading="Tasks", body=<body>)`
+   (the checked boxes and their `subject:` survive) then `specs_validate`, and
    run it through this loop. Any criterion failing → **capture it now**, while the context is warm:
-   `.agents/quenching/bin/cq specs new` with `## Problem` and the diagnosis (cause, reproduction, files), and
+   `specs_create` with `## Problem` and the diagnosis (cause, reproduction, files), and
    one `## Discoveries` line `promoted: <id>` on this spec. Never skip, `xfail`, suppress or delete a test,
    edit a `verify:` or use `--no-verify` as the fix. An uncorrected pre-existing red stays a FAIL of the
    gate, and the PR names the base red and the spec that captures it.
@@ -419,7 +419,7 @@ action; a required proof that cannot run; `approved` absent. A proof the spec re
 run for a missing environment variable, credential or service is a real block — never skipped in silence,
 never marked as passed. An uncontained pre-existing red (5i) is that real block: capture the spec, name
 it in `needs-human:` and stop. Anything else the evidence or the recorded intent answers is decided and
-recorded as one line, `.agents/quenching/bin/cq specs discover "<id>" "decision: <what> — <evidence or criterion>"`; a
+recorded as one line, `specs_discover(spec=<id>, text="decision: <what> — <evidence or criterion>")`; a
 `decision:` line is not a Handoff event.
 **Done when:** every task is `- [x]` or `- [!]`, or the run pauses with the reason stated.
 
@@ -435,15 +435,15 @@ Rewrite the **relevant block** of `## Handoff` to the state of play a fresh exec
 `## Handoff` is a small evergreen **global block** plus one block per `## Tasks` `### N.` section.
 A rewrite touches ONE of the two — never both, never a closed section's:
 
-```bash
-.agents/quenching/bin/cq specs section "<id>" Handoff --write --scope global   # the evergreen block
-.agents/quenching/bin/cq specs section "<id>" Handoff --write --scope current  # the block of the open section
+```text
+specs_section_write(spec=<id>, heading="Handoff", scope="global", body=<body>)    # the evergreen block
+specs_section_write(spec=<id>, heading="Handoff", scope="current", body=<body>)   # the block of the open section
 ```
 
 Everything a resumed run *can* derive — which tasks are done, which commit carried each — is
 already in `git log` and in the `subjects` `status` returns; the Handoff is not the resumption
 trail. The global block plus the current section's block are sent with every task, so keep both
-small. `--scope current` always resolves to whichever section still has open work.
+small. `scope="current"` always resolves to whichever section still has open work.
 
 **Not after every committed task, and not on a judgment call either** —
 [execution-cadence.md](.agents/quenching/references/specs-execute/execution-cadence.md) §The
@@ -456,9 +456,8 @@ it stands after the run's last commit.
 
 **When this run's input carried `autonomous`, skip the read below and the mold with it** — a conductor presents the report, not this run; return the content in the fixed shape the caller specified. Otherwise:
 
-```bash
-.agents/quenching/bin/cq components read .agents/quenching/references/specs-develop/report-mold.md \
-  --sections "§The report mold" --rules-only
+```text
+components_read(path=".agents/quenching/references/specs-develop/report-mold.md", sections=["§The report mold"], rules_only=true)
 ```
 
 Emit §The report mold. The single-spec header line carries overall progress; three body blocks:
@@ -470,7 +469,7 @@ Emit §The report mold. The single-spec header line carries overall progress; th
    **quoted** as `/quenching-specs develop` quotes them: the same artifact is owed the same fidelity
    whichever command wrote it.
 
-Print §The session-size line before the block — `.agents/quenching/bin/cq components session context --json`, read once; exit 1 turns the `→` line into a recommendation to run the next stage **in a new session**, exit 0 and 2 leave it an offer.
+Print §The session-size line before the block — `components_session_context`, read once; exit 1 turns the `→` line into a recommendation to run the next stage **in a new session**, exit 0 and 2 leave it an offer.
 
 **Name what git needs.** Add one line stating what the git flow owes the branch next and what to review first: `/quenching-git pr-create <id>` (or `/quenching-git merge`) after `/quenching-specs conclude`, over the diff `origin/<base>...HEAD`. Execute runs none of it: git is the main session's flow, and in an orchestrated run the `spec-orchestrator` publishes after the `spec-verifier` PASS.
 
@@ -524,7 +523,7 @@ each is absolute. The three whose failure is **silent and permanent**:
   ref**, never that the ref exists somewhere — and where it is not, cut a worktree over a live ref
   or hand off to `/quenching-git branch` to cut one. The worktree is the default and is taken
   unasked; a plain branch only when the run's input asked for it.
-- Drive off `.agents/quenching/bin/cq specs status` / `next` / `task` and their exit codes. Never assume a path, never
+- Drive off `specs_status` / `next` / `task` and their exit codes. Never assume a path, never
   choose the next task by reading `## Tasks`, and never hand-edit a `- [ ]` / `- [x]` character.
 - Verify per the spec's **declared** policy. Never decide mid-build when to test, and never ask the
   human to decide it then.
@@ -534,17 +533,17 @@ each is absolute. The three whose failure is **silent and permanent**:
 - Never write an ordinary record after the commit it describes. The spec task is the explicit
   post-commit exception and carries that commit's subject and sha; no later history rewrite or
   anchor repair is part of a section close.
-- Never refuse over a missing `approved`; ask inline and stamp it with `.agents/quenching/bin/cq specs record`, never by
+- Never refuse over a missing `approved`; ask inline and stamp it with `specs_record`, never by
   editing the frontmatter. The one exception is `autonomous`, where it is a real block.
 - Stamp `branch:` once the work ref is resolved, taken or declined (`work` then equals `base`) —
-  never over an existing record, through `.agents/quenching/bin/cq specs record`, never the frontmatter.
-- Write **only** the `/docs/` a task explicitly names. Emergent findings are one `.agents/quenching/bin/cq specs discover`
+  never over an existing record, through `specs_record`, never the frontmatter.
+- Write **only** the `/docs/` a task explicitly names. Emergent findings are one `specs_discover`
   line — never an unrequested standard, and never a loose code comment. A pre-existing error is the
   exception (5i): a declared `[fix-preexistente]` task, or a captured spec resolved `promoted: <id>`.
 - Delegate an executor only under
   [execution-delegation.md](.agents/quenching/references/specs-execute/execution-delegation.md)
   §Delegating an executor (declares `files:`, touches no `/docs/`, pinned to the session model —
-  `haiku` only on a task `.agents/quenching/bin/cq specs estimate --task` reports `smallTierEligible`), and run two tasks in parallel only when `.agents/quenching/bin/cq specs parallel` reports the `[P]`
+  `haiku` only on a task `specs_estimate(task=…)` reports `smallTierEligible`), and run two tasks in parallel only when `specs_parallel` reports the `[P]`
   group eligible.
 - Never review the whole branch, merge, or archive from here — that is `/quenching-specs conclude`.
 - Keep changes minimal and scoped to each task; pause on errors, blockers, or unclear requirements
