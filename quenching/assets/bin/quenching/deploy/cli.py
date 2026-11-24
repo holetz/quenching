@@ -484,7 +484,8 @@ def _precompile(target: Path, python: list[str]) -> str | None:
         return None
     try:
         done = subprocess.run([*python, "-m", "compileall", "-q", str(assets)],
-                              capture_output=True, text=True, timeout=120)
+                              capture_output=True, text=True, encoding="utf-8",
+                              errors="replace", timeout=120)
     except (OSError, subprocess.SubprocessError) as exc:
         return f"the payload bytecode was not precompiled with `{' '.join(python)}`: {exc}"
     if done.returncode != 0:

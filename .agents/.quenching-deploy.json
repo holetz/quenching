@@ -68,7 +68,7 @@
 
     ".agents/quenching/assets/bin/quenching/common/git.py": "de1d7f45a71d08eb5c48e65052c3873983ecd602124c53783626aa9fc1c798c0",
 
-    ".agents/quenching/assets/bin/quenching/common/gitcache.py": "218543efc75d90ac9c085f02cc602553891ed52ab1c898d854d97b1abf3c0e58",
+    ".agents/quenching/assets/bin/quenching/common/gitcache.py": "496404bddbbcaeee44bd46f8170e976806bb68ec2acd37acffbc9c9888a9243e",
 
     ".agents/quenching/assets/bin/quenching/common/identity.py": "8f97bcb7abd3297f74bab69f5ba7e39e9d417a0bba9fa25813134dfb855f8529",
 
@@ -138,7 +138,7 @@
 
     ".agents/quenching/assets/bin/quenching/deploy/__init__.py": "d9efa3062ac0c40e82c0bfc4041b7485a60420e2576afef7e94a72277a8cc0ff",
 
-    ".agents/quenching/assets/bin/quenching/deploy/cli.py": "e90dcc2fd6c1f3c36e92af85990871e616fd43ce37e1f1352e7370c4ec5412ab",
+    ".agents/quenching/assets/bin/quenching/deploy/cli.py": "93e20e2af91abb06dc1aa512a1446a953fd889ee4ebcbcc35bd7115ce80dd6ec",
 
     ".agents/quenching/assets/bin/quenching/deploy/mcpfiles.py": "28d6978e136de7ef8760b38b7c03f4ee523493e291262b507008c5bc3f128d28",
 

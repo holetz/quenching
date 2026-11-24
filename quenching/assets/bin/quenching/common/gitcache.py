@@ -17,7 +17,8 @@ COMMAND = "git config core.untrackedCache true"
 def _get(root: str, key: str) -> str | None:
     try:
         done = subprocess.run(["git", "-C", root, "config", "--get", key],
-                              capture_output=True, text=True, timeout=15)
+                              capture_output=True, text=True, encoding="utf-8",
+                              errors="replace", timeout=15)
     except (OSError, subprocess.SubprocessError):
         return None
     return done.stdout.strip().lower() if done.returncode == 0 else None
@@ -29,7 +30,8 @@ def untracked_cache_report(root: str, *, platform: str | None = None) -> dict | 
         return None
     try:
         inside = subprocess.run(["git", "-C", root, "rev-parse", "--is-inside-work-tree"],
-                                capture_output=True, text=True, timeout=15)
+                                capture_output=True, text=True, encoding="utf-8",
+                                errors="replace", timeout=15)
     except (OSError, subprocess.SubprocessError):
         return None
     if inside.returncode != 0 or inside.stdout.strip() != "true":
