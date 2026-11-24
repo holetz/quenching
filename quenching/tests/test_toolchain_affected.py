@@ -8,8 +8,10 @@ must never be confused for each other.
 
 from __future__ import annotations
 
+import atexit
 import json
 import pathlib
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -192,10 +194,25 @@ class GitSide(unittest.TestCase):
         self._tmp = tempfile.TemporaryDirectory()
         self.addCleanup(self._tmp.cleanup)
         self.root = pathlib.Path(self._tmp.name)
-        self.git("init", "-q", "-b", "main")
-        (self.root / "kept.txt").write_text("one\n", encoding="utf-8")
-        self.git("add", "kept.txt")
-        self.git("commit", "-q", "-m", "base")
+        shutil.copytree(self._template(), self.root, dirs_exist_ok=True)
+
+    _TEMPLATE: pathlib.Path | None = None
+
+    @classmethod
+    def _template(cls) -> pathlib.Path:
+        """One initialised repository per process, copied per test instead of re-initialised."""
+        if GitSide._TEMPLATE is None:
+            tmp = tempfile.mkdtemp(prefix="cq-affected-template-")
+            atexit.register(shutil.rmtree, tmp, ignore_errors=True)
+            root = pathlib.Path(tmp)
+            for argv in (("init", "-q", "-b", "main"), ("add", "kept.txt"),
+                         ("commit", "-q", "-m", "base")):
+                if argv[0] == "add":
+                    (root / "kept.txt").write_text("one\n", encoding="utf-8")
+                subprocess.run(["git", "-c", "user.name=t", "-c", "user.email=t@t", *argv],
+                               cwd=root, check=True, capture_output=True, text=True)
+            GitSide._TEMPLATE = root
+        return GitSide._TEMPLATE
 
     def git(self, *argv: str) -> str:
         return subprocess.run(["git", "-c", "user.name=t", "-c", "user.email=t@t", *argv],
