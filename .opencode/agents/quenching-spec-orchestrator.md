@@ -37,6 +37,11 @@ permission:
   quenching_specs_next: allow
   quenching_specs_record: allow
   quenching_specs_reconcile: allow
+  quenching_specs_claim_acquire: allow
+  quenching_specs_claim_list: allow
+  quenching_specs_claim_release: allow
+  quenching_specs_claim_renew: allow
+  quenching_specs_claim_take: allow
   quenching_components_session_cost: allow
   quenching_components_session_cache: allow
   quenching_components_session_context: allow
