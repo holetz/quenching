@@ -83,7 +83,6 @@ WORKTREE: <absolute path>
 STATE: done | continue | blocked | failed
 SHAS: <task commit shas, 7 characters each, oldest first>
 TASKS: <checked>/<total>
-CODEX: <wrote n; fallback n; guard n; skipped n> — ids without a `Codex:` line: <ids or ->
 GATE: pass | fail | not-run — <command>
 GATE_EXIT: <the exit code that command returned, or `not-run`>
 PR: <the url of the spec's `pr` record, or ->
