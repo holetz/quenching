@@ -289,6 +289,7 @@ class SessionChoiceTests(unittest.TestCase):
             write(sub / "agent-1.jsonl", [rec(sid, "opus", out)])
         self.env = mock.patch.dict(os.environ, {"QUENCHING_TRANSCRIPTS_ROOT": str(base / "root")})
         self.env.start()
+        os.environ.pop("OPENCODE_SESSION_ID", None)   # a running OpenCode session would pick its tree instead
         self.old = os.getcwd()
         os.chdir(self.cwd)
 
