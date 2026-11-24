@@ -12,9 +12,10 @@ SOURCES = {
     "opencode-vitrine": REPO / "integrations/opencode-vitrine/src/specs.ts",
 }
 
-# The verbs that never change the store. A new CLI verb must land here or in both WRITE lists.
+# The verbs that never change the store (`claim` moves a ref on the origin, never a spec). A new
+# CLI verb must land here or in both WRITE lists.
 READ = {"schedule", "list", "status", "show", "next", "parallel", "find", "validate", "config",
-        "doctor", "export", "mcp", "serve", "estimate"}
+        "doctor", "export", "mcp", "serve", "estimate", "claim"}
 # Reads by default, writes under `--write`.
 CONDITIONAL = {"section"}
 
