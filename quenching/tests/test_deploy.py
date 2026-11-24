@@ -904,6 +904,61 @@ class McpGrants(unittest.TestCase):
             self.assertGreater(text.index(f'    "{pattern}": allow'), ask)
         self.assertNotIn('"git *"', text)
 
+    def test_a_narrow_claude_agent_drops_the_shell_grant_its_tools_replace(self):
+        text = translate.agent_document(self.VERIFIER, "spec-verifier", narrow=True)
+        tools = next(line for line in text.splitlines() if line.startswith("tools:"))
+        self.assertNotIn("Bash(", tools)
+        for name in ("mcp__quenching__specs_status", "mcp__quenching__git_audit", "Read"):
+            self.assertIn(name, tools)
+        self.assertEqual(tools, next(line for line in translate.agent_document(
+            self.VERIFIER, "spec-verifier").splitlines() if line.startswith("tools:"))
+            .replace("Bash(.agents/quenching/bin/cq specs status:*), ", "")
+            .replace("Bash(.agents/quenching/bin/cq git audit:*), ", ""))
+
+    def test_a_narrow_skill_keeps_only_the_residue_on_both_launchers(self):
+        skill = translate.skill_document(
+            "---\ndescription: s\nallowed-tools: Bash(cq:*), Bash(cq.cmd:*), Bash(git log:*), "
+            "Read\n---\n\n# s\n", "s", narrow=True)
+        grants = next(line for line in skill.splitlines() if line.startswith("allowed-tools:"))
+        self.assertNotIn("Bash(.agents/quenching/bin/cq:*)", grants)
+        self.assertNotIn("Bash(.agents/quenching/bin/cq.cmd:*)", grants)
+        for launcher in ("cq", "cq.cmd"):
+            for verb in ("deploy", "specs serve", "specs sync", "portal"):
+                self.assertIn(f"Bash(.agents/quenching/bin/{launcher} {verb}:*)", grants)
+            self.assertNotIn(f"Bash(.agents/quenching/bin/{launcher} specs status:*)", grants)
+        self.assertNotIn("take", grants)
+        for name in ("Bash(git log:*)", "Read", "mcp__quenching"):
+            self.assertIn(name, grants)
+
+    def test_a_narrow_scoped_grant_keeps_its_uncovered_verbs(self):
+        skill = translate.skill_document(
+            "---\ndescription: s\nallowed-tools: Bash(cq git:*), Bash(cq specs bogus:*)\n---\n\n# s\n",
+            "s", narrow=True)
+        self.assertIn("Bash(.agents/quenching/bin/cq git identity:*)", skill)
+        self.assertNotIn("Bash(.agents/quenching/bin/cq git:*)", skill)
+        self.assertIn("Bash(.agents/quenching/bin/cq specs bogus:*)", skill)
+        self.assertIn("mcp__quenching__git_commit", skill)
+
+    def test_a_narrow_opencode_agent_allows_the_tools_and_not_the_shell(self):
+        text = translate.opencode_agent_document(self.VERIFIER, "spec-verifier", narrow=True)
+        self.assertIn("  bash: deny", text)
+        self.assertNotIn("bin/cq", text)
+        self.assertIn("  quenching_specs_status: allow", text)
+        self.assertIn("  quenching_git_audit: allow", text)
+        raw = ("---\ndescription: o\ntools: Bash(cq specs:*), Bash(gh pr view:*)\n---\n\nbody\n")
+        text = translate.opencode_agent_document(raw, "o", narrow=True)
+        self.assertIn('    ".agents/quenching/bin/cq specs serve *": allow', text)
+        self.assertIn('    "gh pr view *": allow', text)
+        self.assertNotIn('".agents/quenching/bin/cq specs *"', text)
+        self.assertIn("  quenching_specs_status: allow", text)
+
+    def test_a_narrow_translation_is_identical_the_second_time(self):
+        once = translate.agent_document(self.VERIFIER, "spec-verifier", narrow=True)
+        self.assertEqual(once, translate.agent_document(once, "spec-verifier", narrow=True))
+        raw = "---\ndescription: s\nallowed-tools: Bash(cq:*), Read\n---\n\n# s\n"
+        skill = translate.skill_document(raw, "s", narrow=True)
+        self.assertEqual(skill, translate.skill_document(skill, "s", narrow=True))
+
     def test_a_second_translation_is_identical(self):
         once = translate.agent_document(self.VERIFIER, "spec-verifier")
         self.assertEqual(once, translate.agent_document(once, "spec-verifier"))
