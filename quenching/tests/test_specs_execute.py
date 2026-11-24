@@ -210,6 +210,35 @@ class TaskExecutionContractTests(unittest.TestCase):
         self.assertIn("with `model` passed explicitly", orchestrator)
         self.assertIn("call the `spec-verifier` only after it returns", orchestrator)
 
+    def test_autonomous_runner_concludes_in_the_same_spawn(self):
+        runner = " ".join(RUNNER.read_text(encoding="utf-8").split())
+
+        self.assertIn("Under `autonomous`, one spawn runs develop, execute and conclude.", runner)
+        self.assertIn(
+            "invoke `/quenching-specs conclude <id> autonomous --outcome done` in this same spawn", runner)
+        self.assertIn("the `spec-verifier` runs once, after you return and before the merge", runner)
+        self.assertIn("Without `autonomous`, execute and conclude are two spawns.", runner)
+
+    def test_autonomous_orchestrator_runs_one_spawn_and_one_verifier(self):
+        orchestrator = " ".join(
+            (ROOT / "quenching/agents/spec-orchestrator.md").read_text(encoding="utf-8").split())
+
+        self.assertIn("Under `autonomous`, one runner spawn per spec, and the spec-verifier once.", orchestrator)
+        self.assertIn(
+            "call the `spec-verifier` once, after that spawn returns and before you adopt and merge the PR",
+            orchestrator)
+        self.assertIn("Without `autonomous`, execute and conclude are two spawns.", orchestrator)
+        self.assertIn("still returns `execute-done:`", orchestrator)
+
+    def test_autopilot_economy_mode_cites_the_single_autonomous_spawn(self):
+        autopilot = " ".join(
+            (ROOT / "quenching/skills/quenching-specs/references/autopilot.md").read_text(encoding="utf-8").split())
+
+        self.assertIn(
+            "one `autonomous` runner spawn per member that develops, executes and concludes, "
+            "the spec-verifier once before the publish", autopilot)
+        self.assertNotIn("the `execute-done:`/`conclude` two spawns", autopilot)
+
     def test_worker_budget_is_a_size_estimate_not_a_stop(self):
         runner = " ".join(RUNNER.read_text(encoding="utf-8").split())
 
