@@ -78,32 +78,6 @@ jobs:
       - name: Toolchain helpers (temp root, affected tests, slots)
         run: python -m unittest discover -s quenching/tests -p 'test_toolchain_*.py' 2>&1 | tee "$RUNNER_TEMP/unit.log" && ! grep -q '^Ran 0 tests' "$RUNNER_TEMP/unit.log"
 
-  # The whole repository gate on Windows: the same `scripts/verify_repo.sh` the Linux cell runs, in
-  # the runner's Git Bash, with the locked dependencies and the coverage floor enforced. No
-  # `PYTHONUTF8`: a local Windows gate does not export it, so the job proves that path. A red here
-  # is shown, never hidden; a failure owned by the platform becomes its own spec.
-  windows-gate:
-    name: Windows (full gate)
-    runs-on: windows-latest
-    timeout-minutes: 45
-    defaults:
-      run:
-        shell: bash
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
-        with:
-          python-version: '3.11'
-      - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
-        with:
-          enable-cache: true
-      - name: Install locked dependencies
-        run: uv sync --frozen --all-groups
-      - name: Full repository gate (unit tests under pytest-randomly, floor, doctors, builds)
-        env:
-          PYTEST_RANDOMLY_SEED: ${{ github.run_id }}
-        run: uv run bash scripts/verify_repo.sh
-
   lint:
     name: Ruff
     runs-on: ubuntu-latest

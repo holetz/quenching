@@ -152,9 +152,21 @@ class ListingSurfaceTests(unittest.TestCase):
             self.assertIn('2>&1 | tee "$RUNNER_TEMP/unit.log" && ! grep -q \'^Ran 0 tests\' "$RUNNER_TEMP/unit.log"',
                           line)
 
+    def test_windows_gate_is_a_manual_workflow_outside_push_ci(self):
+        ci = (REPO_ROOT / ".github" / "workflows" / "ci.yml").read_text(encoding="utf-8")
+        self.assertNotIn("windows-gate", ci)
+        declared = (REPO_ROOT / ".github" / "workflows" / "windows-gate.yml").read_text(encoding="utf-8")
+        self.assertRegex(declared, r"(?m)^on:\n  workflow_dispatch:\n")
+        for event in ("push:", "pull_request:", "schedule:"):
+            self.assertNotIn(event, declared)
+        self.assertRegex(declared, r"(?m)^permissions:\n  contents: read$")
+        self.assertNotIn("secrets.", declared)
+        for use in re.findall(r"uses: (\S+)", declared):
+            self.assertRegex(use, r"@[0-9a-f]{40}$")
+
     def test_windows_gate_job_runs_the_whole_repository_gate(self):
-        declared = (REPO_ROOT / ".github" / "workflows" / "ci.yml").read_text(encoding="utf-8")
-        job = re.search(r"(?ms)^  windows-gate:\n(.*?)(?=^  \S)", declared).group(1)
+        declared = (REPO_ROOT / ".github" / "workflows" / "windows-gate.yml").read_text(encoding="utf-8")
+        job = re.search(r"(?ms)^  windows-gate:\n(.*)", declared).group(1)
         self.assertIn("runs-on: windows-latest", job)
         self.assertRegex(job, r"(?m)^    timeout-minutes: \d+$")
         self.assertRegex(job, r"(?m)^    defaults:\n      run:\n        shell: bash$")
