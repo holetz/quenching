@@ -106,6 +106,13 @@ This evidence is an ownership map, not an assertion that the plugin repository a
 target `delivery` namespace or a delivery route. The implementation must keep that distinction
 visible when it probes a target repository.
 
+## Push CI is fast; slow work is a manual dispatch
+
+The workflow that runs on push and pull request stays fast. A proof that is slow (the whole gate on
+a second operating system, a long measurement) lives in its own workflow whose only trigger is
+`workflow_dispatch`, and runs when someone needs it. Such a workflow keeps the push workflow's
+bounds: no wider `permissions`, no secrets and the same SHA-pinned actions. A manual workflow is
+evidence on demand, never a merge gate; a spec that adds one proves its merge by the green push CI.
 ## Pipeline shape contract
 
 The delivery verifier and align report the following relationships:

@@ -1,8 +1,8 @@
 ---
 type: standard
 title: Windows without administrator rights — the supported prerequisites and what the port covers
-description: What "supported on Windows without administrator rights" means for the cq tool, the user-scope prerequisites, the three code paths that were POSIX-only (process groups, symlinks, the PATH launcher) and the one CI job that exercises them
-resource: quenching/assets/bin/quenching/codex/probe.py, quenching/assets/bin/quenching/common/tools.py, quenching/assets/bin/quenching/session/live.py, quenching/assets/bin/quenching/git/worktree.py, quenching/assets/bin/quenching/deploy/tree.py, quenching/assets/bin/quenching/opensource/readiness.py, quenching/assets/bin/quenching/git/preflight.py, quenching/assets/bin/quenching/specs/chat.py, quenching/assets/bin/quenching/common/config.py, quenching/tests/capture_golden.py, .github/workflows/ci.yml
+description: What "supported on Windows without administrator rights" means for the cq tool, the user-scope prerequisites, the three code paths that were POSIX-only (process groups, symlinks, the PATH launcher) and the CI jobs that exercise them
+resource: quenching/assets/bin/quenching/codex/probe.py, quenching/assets/bin/quenching/common/tools.py, quenching/assets/bin/quenching/session/live.py, quenching/assets/bin/quenching/git/worktree.py, quenching/assets/bin/quenching/deploy/tree.py, quenching/assets/bin/quenching/opensource/readiness.py, quenching/assets/bin/quenching/git/preflight.py, quenching/assets/bin/quenching/specs/chat.py, quenching/assets/bin/quenching/common/config.py, quenching/tests/capture_golden.py, .github/workflows/ci.yml, .github/workflows/windows-gate.yml
 tags: [windows, platform, prerequisites, junction, process-group]
 timestamp: 2026-11-23
 audience: both
@@ -61,14 +61,17 @@ the official versioned ZIP under `%LOCALAPPDATA%`, without elevation.
 The `claude plugin test integrations/claude-cache` check is skipped on the runner, which has no
 `claude`; that is a skip, never a pass.
 
-**Proof:** two `windows-latest` jobs in the PR gate. `Windows (focused tests…)` runs the
-Windows-sensitive unit tests (`test_windows_process.py`, `test_windows_tools.py`,
-`test_session_live.py`, `test_windows_links.py` and `test_toolchain_*.py`) as the quick signal; it
-patches `os.name` and `os.symlink` for the branches and runs them natively. `Windows (full gate)`
-(`windows-gate` in `.github/workflows/ci.yml`) runs `uv run bash scripts/verify_repo.sh` in the
-runner's Git Bash, with `uv sync --frozen --all-groups`, the coverage floor enforced and no
-`PYTHONUTF8`, so a regression that is exclusive to Windows in any module fails the pull request.
-A red in that job is shown, never hidden: a failure the platform owns becomes its own spec.
+**Proof:** two Windows jobs, with different triggers. `Windows (focused tests…)` is a
+`windows-latest` job in the PR gate (`.github/workflows/ci.yml`): it runs the Windows-sensitive unit
+tests (`test_windows_process.py`, `test_windows_tools.py`, `test_session_live.py`,
+`test_windows_links.py` and `test_toolchain_*.py`) as the quick signal; it patches `os.name` and
+`os.symlink` for the branches and runs them natively. `Windows (full gate)` is the `windows-gate`
+job of `.github/workflows/windows-gate.yml`, a `workflow_dispatch`-only workflow that never runs on
+push or pull request, because push CI stays fast and what is slow runs on demand. It runs
+`uv run bash scripts/verify_repo.sh` in the runner's Git Bash, with `uv sync --frozen --all-groups`,
+the coverage floor enforced and no `PYTHONUTF8`, so dispatching it proves a regression that is
+exclusive to Windows in any module. It carries `contents: read` only and no secrets.
+A red in that run is shown, never hidden: a failure the platform owns becomes its own spec.
 A checkout whose working copy is CRLF over an LF index (a reused slot after a `.gitattributes`
 change) is named by `cq git worktree acquire` and by the gate with the command that fixes it
 (`git rm --cached -r -q . && git reset --hard -q`, on a clean tree); neither rewrites it.

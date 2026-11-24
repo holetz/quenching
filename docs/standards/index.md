@@ -130,7 +130,7 @@ generate list). The **agent-facing pointer** for this home is [AGENTS.md](AGENTS
 
 | Doc | Covers |
 | --- | --- |
-| [windows-support.md](platform/windows-support.md) | What "supported on Windows without administrator rights" means for the cq tool, the user-scope prerequisites, the three code paths that were POSIX-only (process groups, symlinks, the PATH launcher) and the one CI job that exercises them |
+| [windows-support.md](platform/windows-support.md) | What "supported on Windows without administrator rights" means for the cq tool, the user-scope prerequisites, the three code paths that were POSIX-only (process groups, symlinks, the PATH launcher) and the CI jobs that exercise them |
 
 ### quality/
 
