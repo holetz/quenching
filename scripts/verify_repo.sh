@@ -186,6 +186,10 @@ run_check "temp root guard" \
 # private denylist since 2026-10-27).
 run_check "leak gate (generic patterns)" \
   python3 quenching/assets/bin/cq security leak --all --generic-only
+# A skill or agent body that cites a `cq` verb with no MCP tool fails here, whatever the affected
+# scope selected: the body edit that introduces it touches no file this test imports.
+run_check "MCP catalog coverage" \
+  python3 -m unittest discover -s quenching/tests -p test_quenching_mcp_coverage.py
 run_check "open source controls catalog" \
   python3 scripts/check_opensource_controls.py
 run_check "proof doctor" \
