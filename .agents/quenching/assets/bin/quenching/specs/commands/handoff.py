@@ -134,63 +134,110 @@ def _texts(content) -> list[str]:
 
 def transcript_facts(path: Path, root: str) -> dict:
     """Edited files, commits and the last real user message, from a Claude Code transcript."""
+    with path.open(encoding="utf-8", errors="replace") as handle:
+        return facts_from_lines(handle, root)
+
+
+def facts_from_lines(lines, root: str) -> dict:
+    """The same facts from JSON lines in Claude's shape: a transcript, or an OpenCode session
+    `opencode_transcript` reshaped into one."""
     files: list[str] = []
     commits: list[str] = []
     last = None
     base = Path(root).resolve()
-    with path.open(encoding="utf-8", errors="replace") as handle:
-        for line in handle:
-            try:
-                rec = json.loads(line)
-            except ValueError:
-                continue
-            msg = rec.get("message") if isinstance(rec, dict) else None
-            if not isinstance(msg, dict):
-                continue
-            content = msg.get("content")
-            if rec.get("type") == "assistant" and isinstance(content, list):
-                for block in content:
-                    if isinstance(block, dict) and block.get("type") == "tool_use" \
-                            and block.get("name") in EDIT_TOOLS:
-                        target = (block.get("input") or {}).get("file_path") \
-                            or (block.get("input") or {}).get("notebook_path")
-                        if isinstance(target, str) and target:
-                            p = Path(target)
-                            try:
-                                target = str(p.resolve().relative_to(base))
-                            except (ValueError, OSError):
-                                pass
-                            if target not in files:
-                                files.append(target)
-            if rec.get("type") != "user" or rec.get("isMeta"):
-                continue
-            if isinstance(content, list) and any(isinstance(b, dict) and b.get("type") == "tool_result"
-                                                 for b in content):
-                for block in content:
-                    if isinstance(block, dict) and block.get("type") == "tool_result":
-                        for text in _texts(block.get("content")):
-                            for sha, subject in COMMIT.findall(text):
-                                entry = f"{sha[:7]} {subject.strip()}"
-                                if entry not in commits:
-                                    commits.append(entry)
-                continue
-            text = "\n".join(_texts(content)).strip()
-            if text and not text.startswith(META):
-                last = text[:LAST_MESSAGE_CHARS]
+    for line in lines:
+        try:
+            rec = json.loads(line)
+        except ValueError:
+            continue
+        msg = rec.get("message") if isinstance(rec, dict) else None
+        if not isinstance(msg, dict):
+            continue
+        content = msg.get("content")
+        if rec.get("type") == "assistant" and isinstance(content, list):
+            for block in content:
+                if isinstance(block, dict) and block.get("type") == "tool_use" \
+                        and block.get("name") in EDIT_TOOLS:
+                    target = (block.get("input") or {}).get("file_path") \
+                        or (block.get("input") or {}).get("notebook_path")
+                    if isinstance(target, str) and target:
+                        p = Path(target)
+                        try:
+                            target = str(p.resolve().relative_to(base))
+                        except (ValueError, OSError):
+                            pass
+                        if target not in files:
+                            files.append(target)
+        if rec.get("type") != "user" or rec.get("isMeta"):
+            continue
+        if isinstance(content, list) and any(isinstance(b, dict) and b.get("type") == "tool_result"
+                                             for b in content):
+            for block in content:
+                if isinstance(block, dict) and block.get("type") == "tool_result":
+                    for text in _texts(block.get("content")):
+                        for sha, subject in COMMIT.findall(text):
+                            entry = f"{sha[:7]} {subject.strip()}"
+                            if entry not in commits:
+                                commits.append(entry)
+            continue
+        text = "\n".join(_texts(content)).strip()
+        if text and not text.startswith(META):
+            last = text[:LAST_MESSAGE_CHARS]
     return {"filesModified": files, "commits": commits, "lastUserMessage": last}
+
+
+def _wants_opencode(args, env) -> bool:
+    """An OpenCode id (`ses_…`) names an OpenCode session; with nothing named, the running OpenCode
+    session is the default when no Claude Code one is."""
+    named = args.transcript or args.session
+    if named:
+        return args.transcript is None and str(named).startswith("ses_")
+    return not env.get("CLAUDE_CODE_SESSION_ID") and bool(env.get("OPENCODE_SESSION_ID"))
+
+
+def _commits_since(root: str, when: str | None) -> list[str]:
+    """OpenCode keeps no tool output, so the commits a session made are the checkout's own, since
+    its first message."""
+    if not when:
+        return []
+    lines = _git(root, "log", f"--since={when}", "--format=%h %s", "-n", "50") or []
+    return [line.strip() for line in lines if line.strip()]
+
+
+def _opencode_facts(args, root: str, out: Emitter):
+    """(path label, how, facts) for an OpenCode session, or an exit code after the refusal."""
+    import os
+    from quenching.session.opencode_transcript import OpenCodeError, read_opencode
+    try:
+        lines, label, how, _sid = read_opencode(args.session, Path(root), getattr(args, "opencode_db", None))
+    except OpenCodeError as refusal:
+        return out.emit_err(args.json, {"code": "sp-handoff-no-transcript", "exit": 2,
+                                        "message": f"no OpenCode session to read facts from: {refusal.message}"})
+    facts = facts_from_lines(lines, root)
+    first = next((json.loads(x).get("timestamp") for x in lines
+                  if x.startswith("{") and '"type": "user"' in x), None)
+    facts["commits"] = _commits_since(root, first)
+    return label, how, facts
 
 
 def _facts(args, root: str, out: Emitter) -> int:
     from quenching.session.transcript import resolve_transcript   # the session pillar's resolver
     import os
-    sid = args.session or os.environ.get("CLAUDE_CODE_SESSION_ID")
-    path, how = resolve_transcript(args.transcript or sid, Path(root))
-    if path is None:
-        return out.emit_err(args.json, {"code": "sp-handoff-no-transcript", "exit": 2,
-                                        "message": f"no transcript to read facts from: {how}"})
+    if _wants_opencode(args, os.environ):
+        found = _opencode_facts(args, root, out)
+        if isinstance(found, int):
+            return found
+        label, how, facts = found
+        path = label
+    else:
+        sid = args.session or os.environ.get("CLAUDE_CODE_SESSION_ID")
+        path, how = resolve_transcript(args.transcript or sid, Path(root))
+        if path is None:
+            return out.emit_err(args.json, {"code": "sp-handoff-no-transcript", "exit": 2,
+                                            "message": f"no transcript to read facts from: {how}"})
+        facts = transcript_facts(path, root)
     backend, _err = open_backend(root)
     branch = _branch(root)
-    facts = transcript_facts(path, root)
     spec = _spec_for(backend, branch)
     obj = {"ok": True, "transcript": str(path), "resolvedBy": how, "branch": branch, "spec": spec,
            **facts, "inFlight": (live := inflight(root))}
@@ -308,9 +355,12 @@ def add_parser(sub, add_json) -> None:
     hsub = sp.add_subparsers(dest="handoff_cmd", metavar="VERB")
     fp = add_json(hsub.add_parser("facts", help="edited files, commits, the last user message, the "
                                                 "branch and its spec, read from the session transcript"))
-    fp.add_argument("--session", help="the session id (default: CLAUDE_CODE_SESSION_ID, then the "
-                                      "most recent session of this checkout)")
+    fp.add_argument("--session", help="the session id, Claude Code's or OpenCode's `ses_…` (default: "
+                                      "CLAUDE_CODE_SESSION_ID, then OPENCODE_SESSION_ID, then the most "
+                                      "recent session of this checkout)")
     fp.add_argument("--transcript", help="a transcript path, instead of a session id")
+    fp.add_argument("--opencode-db", metavar="PATH", help="the OpenCode database (default: "
+                                                          "QUENCHING_OPENCODE_DB, else the XDG data dir)")
     wp = add_json(hsub.add_parser("write", help="store a handoff beside its spec, read it back and "
                                                 "print the direction block"))
     wp.add_argument("--from", dest="from_path", metavar="PATH", required=True,
