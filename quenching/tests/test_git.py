@@ -551,6 +551,31 @@ class Audit(RepoCase):
         payload = _cq_json(self.repo, *args)
         self.assertTrue([x for x in payload["reflog"]["head"] if x.startswith("reset")])
 
+    def _codex_executor(self, project: dict | None = None, local: dict | None = None):
+        for name, layer in ((".agents/quenching.json", project),
+                            (".agents/quenching.local.json", local)):
+            if layer is not None:
+                path = pathlib.Path(self.wt, name)
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_text(json.dumps(layer), encoding="utf-8")
+        user = os.path.join(self.tmp, "no-user-config.json")
+        with mock.patch.dict(os.environ, {"QUENCHING_USER_CONFIG": user}):
+            payload = _cq_json(self.repo, "audit", "--worktree", self.wt, "--base", "main",
+                               "--branch", "spec/1")
+        self.assertTrue(payload["complete"], payload["errors"])
+        return payload["codexExecutor"]
+
+    def test_codex_executor_is_off_by_default(self):
+        self.assertIs(self._codex_executor(), False)
+
+    def test_codex_executor_reads_the_project_layer(self):
+        on = {"shared": {"codex": {"executor": {"enabled": True}}}}
+        self.assertIs(self._codex_executor(project=on), True)
+
+    def test_codex_executor_reads_the_local_layer_the_project_omits(self):
+        on = {"shared": {"codex": {"executor": {"enabled": True}}}}
+        self.assertIs(self._codex_executor(project={"shared": {}}, local=on), True)
+
     def _reflog_args(self):
         return ("audit", "--worktree", self.wt, "--base", "main", "--branch", "spec/1",
                 "--sha", self.sha)

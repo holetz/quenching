@@ -42,7 +42,7 @@ check is decided by its named source alone. The one exception is check 8, where 
 `archive/` makes `outcome: done` the condition under test, not evidence. A "counts / does not
 count" line below closes a check further.
 
-Checks 2 to 5, 7 and 9 read ONE payload, measured inside the spec's worktree with a fixed argv:
+Checks 2 to 5, 7, 9 and 11 read ONE payload, measured inside the spec's worktree with a fixed argv:
 
 ```bash
 .agents/quenching/bin/cq git audit [--root <repo>] --worktree <wt> --base origin/<base> --branch <branch> --sha <sha> [--sha <sha>…] --json
@@ -168,9 +168,11 @@ matches (`--root` is an option of the granted verb). Without a worktree, `--work
    (the `spec-orchestrator` passes it as a claim) and compare its counts with the checked tasks. Every checked task should have one `Codex:` line (`wrote`, `fallback`,
    `guard` or `skipped`); list the ids without one, or `sem relato` or no line in the prompt as "missing CODEX: line", as a warning in the evidence.
    The worker's report is a claim: this check accuses an absent line, it does not prove the consultation.
-   `n/a` when no task is checked, and also when the Codex executor is not enabled: `Read` the worktree's
-   `.agents/quenching.json` and mark the check `n/a` unless it carries `shared.codex.executor.enabled: true`
-   (absent file or key means off; the default is `false`). A repository without the executor gets no `CODEX:` warning.
+   `n/a` when no task is checked, and also when the Codex executor is not enabled: read the audit payload's
+   `codexExecutor`, the effective `shared.codex.executor.enabled` with every config layer merged (the local
+   `.agents/quenching.local.json` fills a key the project omits), and mark the check `n/a` unless it is `true`.
+   Never decide it from `.agents/quenching.json` alone. `codexExecutor: null` comes with a `config` read in
+   `errors`: the check is `inconclusive` under the payload's `complete` rule above. A repository without the executor gets no `CODEX:` warning.
 
 ## Epic authorization (checks 9 and 10)
 
