@@ -406,6 +406,18 @@ WRITES: dict[str, tuple] = {
 }
 
 
+# The `cq specs` verb path each hand-written tool serves: what the catalog coverage scan
+# (`quenching.mcp.coverage`) counts as covered beside the catalog's own rows.
+COVERS: dict[str, tuple[str, ...]] = {
+    "specs_list": ("list",), "specs_status": ("status",), "specs_show": ("show",),
+    "specs_section": ("section",), "specs_next": ("next",), "specs_epic_progress": ("status",),
+    "specs_create": ("new",), "specs_section_write": ("section",), "specs_record": ("record",),
+    "specs_task": ("task",), "specs_epic_add": ("epic", "add"),
+    "specs_link_add": ("link", "add"), "specs_link_remove": ("link", "remove"),
+    "specs_discover": ("discover",), "specs_promote": ("promote",), "specs_push": ("push",),
+}
+
+
 def run_core(argv: list[str], root: str,
              stdin: str | None = None) -> tuple[int, dict | None, str]:
     """The CLI verb, in this process, with its output captured: `(exit code, payload, stderr)`."""
