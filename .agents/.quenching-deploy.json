@@ -82,11 +82,11 @@
     ".agents/quenching/assets/bin/quenching/controls/__init__.py": "d7b6251673390a48038fec32359cd43e991f4e64f383fb41873728ce9851877e",
     ".agents/quenching/assets/bin/quenching/controls/evaluate.py": "05cdedea2db16edf16b741e5415097b534b15470ac0e77d0e8c67d7a2ba2a386",
     ".agents/quenching/assets/bin/quenching/deploy/__init__.py": "d9efa3062ac0c40e82c0bfc4041b7485a60420e2576afef7e94a72277a8cc0ff",
-    ".agents/quenching/assets/bin/quenching/deploy/cli.py": "1043d7f4721e66bb7062d348012c34608cdbbafe90d6f719c2dd89df7424b3bc",
-    ".agents/quenching/assets/bin/quenching/deploy/mcpfiles.py": "cf068dc235ac070d7a0db79729837b5f37bc5d00053ad9a4b7067c20bf93f4ef",
+    ".agents/quenching/assets/bin/quenching/deploy/cli.py": "c0f832bbd1af3589cd6ca84dc958b191932c43b5c387474815099b921cb234bc",
+    ".agents/quenching/assets/bin/quenching/deploy/mcpfiles.py": "04b955e9cbec02228f70b3137a836eaf9e3bc95fcb1321dc8f7ccec4ae6f2714",
     ".agents/quenching/assets/bin/quenching/deploy/settings.py": "7b37c19b599c88d4d2da6f13d3bdbaad530b15ee54346381d85cab94db4de09d",
     ".agents/quenching/assets/bin/quenching/deploy/translate.py": "a1c4e032adef508f1df0e8512ced9f40356f0093a3cfae77cb08dd144fd7f4ba",
-    ".agents/quenching/assets/bin/quenching/deploy/tree.py": "76c69432182c62f2062d471060131f697905bfa413449d45d58cadcdcbe40211",
+    ".agents/quenching/assets/bin/quenching/deploy/tree.py": "c1ffb21320a3d2dfbd0137dab2622b124b4cb95c945327859fed45bdafd7419f",
     ".agents/quenching/assets/bin/quenching/git/__init__.py": "8501760dcf5ab3b77195533888acbe6fe7f2795ad387cedbe869be8aeac11e4b",
     ".agents/quenching/assets/bin/quenching/git/audit.py": "b42ea60bc22ac59a5b805a831b63afb55a3ff04a94d402fdbf2e51b9d904d71d",
     ".agents/quenching/assets/bin/quenching/git/azure_pull.py": "87ab90ff25f82edb88e734deb86e2ab0d8c138cc1f01cd2619c8bc0a8f79026e",
@@ -120,7 +120,7 @@
     ".agents/quenching/assets/bin/quenching/knowledge/stale.py": "38b15048a5e98cf70af1a63e3b5bc361fb2ac183b42e341699029ccf57ba1958",
     ".agents/quenching/assets/bin/quenching/knowledge/structure.py": "6cc74eb56262c0132118d07424680cd32dd7f014e7b85879fe01bc2b278ae059",
     ".agents/quenching/assets/bin/quenching/knowledge/validate.py": "6e673e47c5dbf5ed925da8cfef8703e71acc62ca9817266512b50e1aa661aa3e",
-    ".agents/quenching/assets/bin/quenching/mcp/catalog.py": "8fb450df2d245802e1b259cfddfffff2a704708751c35438a15d291fa8be3b2a",
+    ".agents/quenching/assets/bin/quenching/mcp/catalog.py": "3459c0bf8300656cf3ae6ed8cf16bfbebcdf199e815bd27321e700e1e4289f67",
     ".agents/quenching/assets/bin/quenching/mcp/cli.py": "168d60922494389e5c02eb624e6178d33ab76f73125b67521e010d08f5e43b55",
     ".agents/quenching/assets/bin/quenching/mcp/resources.py": "61dc6effc7117547fbde0ccc1d8e7796448c59499f976e9968bf0df466bf51d1",
     ".agents/quenching/assets/bin/quenching/mcp/server.py": "43c7294303fc156b7b33c08a9dc97fe489c2f950cceb96366d45de34c5942c44",
@@ -292,7 +292,7 @@
     ".agents/quenching/references/knowledge-align/taxonomy.md": "a57803ea48451dd8b0b188959d295b8aed24c20c140766d267de7b07e7a06f5b",
     ".agents/quenching/references/knowledge-import/sources.md": "b3648df86b186e0a481cd45cdf06d6ec0dff63f2b1a03831ed0bc0875a96c441",
     ".agents/quenching/references/specs-align/conformance.md": "41960c2d35ea68887d5c06697cea036557f030496da46fa644bdd21972fb98f7",
-    ".agents/quenching/references/specs-align/plugin-configuration.md": "a96e70ea652630b79bf15175f493b3befccf5ac728fb3972813f558f83225bb1",
+    ".agents/quenching/references/specs-align/plugin-configuration.md": "80d029bdfb8dafbbded80c3bdfa6097673f3557c2e40c6ffb6e86ea8da10d0e8",
     ".agents/quenching/references/specs-conclude/abandoned.md": "7067f28b0035550d958bdced006af5f55b6794293594ac1f7b6adec82da31cd4",
     ".agents/quenching/references/specs-conclude/auto-discover.md": "64eb6c946416d6c999f1c4219438015fbdb475bcc394a1b4b6525a8dba801fe0",
     ".agents/quenching/references/specs-conclude/distill.md": "d10f84afd69aba16515d51b80d777db8791469f08c91880c7b8954f2e0cac762",
@@ -480,7 +480,7 @@
     ".opencode/agents/quenching-spec-verifier.md": "eb96228d2f834f41226d16a2601dc68628b76e75e2b90c960c3280e3cf28f98f"
   },
   "mcp": {
-    "mount": "specs",
+    "mount": "all",
     "command": [
       "python3"
     ]
