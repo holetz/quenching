@@ -152,6 +152,18 @@ class ListingSurfaceTests(unittest.TestCase):
             self.assertIn('2>&1 | tee "$RUNNER_TEMP/unit.log" && ! grep -q \'^Ran 0 tests\' "$RUNNER_TEMP/unit.log"',
                           line)
 
+    def test_windows_gate_job_runs_the_whole_repository_gate(self):
+        declared = (REPO_ROOT / ".github" / "workflows" / "ci.yml").read_text(encoding="utf-8")
+        job = re.search(r"(?ms)^  windows-gate:\n(.*?)(?=^  \S)", declared).group(1)
+        self.assertIn("runs-on: windows-latest", job)
+        self.assertRegex(job, r"(?m)^    timeout-minutes: \d+$")
+        self.assertRegex(job, r"(?m)^    defaults:\n      run:\n        shell: bash$")
+        self.assertIn("uv sync --frozen --all-groups", job)
+        self.assertRegex(job, r"(?m)^        run: uv run bash scripts/verify_repo\.sh$")
+        self.assertNotIn("PYTHONUTF8", job)
+        self.assertNotIn("QUENCHING_TEST_SCOPE", job)
+        self.assertNotIn("permissions:", job)
+
     def test_zensical_nav_matches_every_published_markdown_document(self):
         config = tomllib.loads(ZENSICAL.read_text(encoding="utf-8"))
         nav = _nav_paths(config["project"]["nav"])
