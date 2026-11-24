@@ -16,7 +16,6 @@ Scope says which layer may hold the key:
 """
 from __future__ import annotations
 
-from quenching.codex.config import CHOICES as CODEX_CHOICES, DEFAULTS as CODEX
 from quenching.config.autonomy import COMPLEXITY, DEFAULTS as AUTONOMY, MERGE
 from quenching.config.ci import DEFAULTS as CI, ENFORCE as CI_ENFORCE
 from quenching.config.host import DEFAULTS as WORK_HOST
@@ -31,7 +30,6 @@ CATEGORIES = (
     ("autonomy", "Autonomy and orchestration", "Autonomia e orquestração"),
     ("specs", "Specs and cards", "Specs e cards"),
     ("git", "Git and PR", "Git e PR"),
-    ("codex", "Codex", "Codex"),
     ("proof", "Proof and tests", "Prova e testes"),
     ("ops", "Operations", "Operações"),
     ("knowledge", "Knowledge", "Conhecimento"),
@@ -238,47 +236,6 @@ _k("shared.gitIdentity.allowedEmails", "strings", None, "git", "project",
 _k("delivery.provider", "string", None, "git", "project", "the delivery front",
    ("Delivery provider", "The CI provider, declared explicitly."),
    ("Provedor de entrega", "O provedor de CI, declarado explicitamente."))
-
-# — Codex —
-_k("shared.codex.maxUsedPercent.primary", "integer", CODEX["maxUsedPercent"]["primary"],
-   "codex", "machine", "cq codex", ("Primary quota ceiling (%)", "Codex stops above this use."),
-   ("Teto da cota primária (%)", "O Codex para acima deste uso."), minimum=0, maximum=100)
-_k("shared.codex.maxUsedPercent.secondary", "integer", CODEX["maxUsedPercent"]["secondary"],
-   "codex", "machine", "cq codex",
-   ("Secondary quota ceiling (%)", "Codex stops above this weekly use."),
-   ("Teto da cota secundária (%)", "O Codex para acima deste uso semanal."), minimum=0,
-   maximum=100)
-_k("shared.codex.timeoutSeconds", "integer", CODEX["timeoutSeconds"], "codex", "either",
-   "cq codex", ("Codex timeout (seconds)", "How long one Codex call may run."),
-   ("Tempo limite do Codex (segundos)", "Quanto uma chamada ao Codex pode durar."), minimum=1)
-_k("shared.codex.executor.enabled", "boolean", CODEX["executor"]["enabled"], "codex", "either",
-   "cq codex implement", ("Codex writes tasks", "Codex writes eligible tasks' code at execute."),
-   ("Codex escreve tarefas", "O Codex escreve o código das tarefas elegíveis no execute."))
-for _name, _en, _pt in (("modelSmall", "Executor model (small)", "Modelo do executor (pequeno)"),
-                        ("modelVerified", "Executor model (verified)",
-                         "Modelo do executor (verificado)"),
-                        ("modelSmallTier", "Executor model (small tier)",
-                         "Modelo do executor (faixa pequena)")):
-    _k(f"shared.codex.executor.{_name}", "string", CODEX["executor"][_name], "codex", "either",
-       "cq codex implement", (_en, "The Codex model for this class of task."),
-       (_pt, "O modelo do Codex para esta classe de tarefa."))
-_k("shared.codex.executor.reasoningEffort", "enum", CODEX["executor"]["reasoningEffort"],
-   "codex", "either", "cq codex implement",
-   ("Executor reasoning effort", "How hard Codex thinks when writing a task."),
-   ("Esforço de raciocínio", "Quanto o Codex pensa ao escrever uma tarefa."),
-   choices=list(CODEX_CHOICES["reasoningEffort"]))
-_k("shared.codex.executor.maxTaskTokens", "integer", CODEX["executor"]["maxTaskTokens"], "codex",
-   "either", "cq codex eligible", ("Largest task (tokens)", "Bigger tasks stay with the agent."),
-   ("Maior tarefa (tokens)", "Tarefas maiores ficam com o agente."), minimum=1)
-_k("shared.codex.executor.reservePercent", "integer", CODEX["executor"]["reservePercent"],
-   "codex", "machine", "cq codex eligible",
-   ("Quota reserve (%)", "Quota kept free below each ceiling."),
-   ("Reserva de cota (%)", "Cota mantida livre abaixo de cada teto."), minimum=0, maximum=100)
-_k("shared.codex.executor.stopLossPercent", "integer", CODEX["executor"]["stopLossPercent"],
-   "codex", "machine", "cq codex implement",
-   ("Stop loss (%)", "Quota one task may burn before it is stopped."),
-   ("Stop loss (%)", "Cota que uma tarefa pode gastar antes de ser parada."), minimum=0,
-   maximum=100)
 
 # — Proof and tests —
 _k("proof.proofRoot", "string", "tests", "proof", "project", "cq proof",

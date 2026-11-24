@@ -39,33 +39,36 @@ class EffectiveConfig(unittest.TestCase):
             payload = effective(str(self.repo))
         return {row["key"]: row for row in payload["values"]}, payload
 
-    def test_codex_defaults_are_listed_leaf_by_leaf(self):
+    def test_autonomy_defaults_are_listed_leaf_by_leaf(self):
         rows, _ = self._rows()
-        self.assertEqual({"value": False, "source": "default"},
-                         {k: rows["shared.codex.executor.enabled"][k] for k in ("value", "source")})
-        self.assertFalse({"shared.codex.crossReview", "shared.codex.model"} & set(rows))
-        self.assertEqual("default", rows["shared.codex.maxUsedPercent.primary"]["source"])
-        self.assertEqual(80, rows["shared.codex.maxUsedPercent.primary"]["value"])
+        self.assertEqual({"value": "policy", "source": "default"},
+                         {k: rows["shared.autonomy.merge"][k] for k in ("value", "source")})
 
     def test_repository_beats_user_and_user_fills_in(self):
         self.user.write_text(json.dumps({
-            "shared": {"codex": {"maxUsedPercent": {"primary": 50}}, "worktreeSetup": "make user"}}))
-        self._repo({"shared": {"codex": {"timeoutSeconds": 60}}})
+            "shared": {"autonomy": {"maxWorkers": 5}, "worktreeSetup": "make user"}}))
+        self._repo({"shared": {"autonomy": {"maxLaunches": 7}}})
         rows, _ = self._rows()
-        # the repository block replaces the user's whole: the ceiling falls back to the default
-        self.assertEqual((80, "default"), (rows["shared.codex.maxUsedPercent.primary"]["value"],
-                                           rows["shared.codex.maxUsedPercent.primary"]["source"]))
-        self.assertEqual(("repository", 60), (rows["shared.codex.timeoutSeconds"]["source"],
-                                              rows["shared.codex.timeoutSeconds"]["value"]))
+        # the repository block replaces the user's whole: maxWorkers falls back to the default
+        self.assertEqual((3, "default"), (rows["shared.autonomy.maxWorkers"]["value"],
+                                          rows["shared.autonomy.maxWorkers"]["source"]))
+        self.assertEqual(("repository", 7), (rows["shared.autonomy.maxLaunches"]["source"],
+                                             rows["shared.autonomy.maxLaunches"]["value"]))
         self.assertEqual(("user", "make user"), (rows["shared.worktreeSetup"]["source"],
                                                  rows["shared.worktreeSetup"]["value"]))
 
-    def test_user_codex_block_is_attributed_to_user(self):
-        self.user.write_text(json.dumps({"shared": {"codex": {"timeoutSeconds": 60}}}))
+    def test_user_autonomy_block_is_attributed_to_user(self):
+        self.user.write_text(json.dumps({"shared": {"autonomy": {"maxWorkers": 5}}}))
         rows, _ = self._rows()
-        self.assertEqual((60, "user"), (rows["shared.codex.timeoutSeconds"]["value"],
-                                        rows["shared.codex.timeoutSeconds"]["source"]))
-        self.assertEqual("default", rows["shared.codex.executor.enabled"]["source"])
+        self.assertEqual((5, "user"), (rows["shared.autonomy.maxWorkers"]["value"],
+                                       rows["shared.autonomy.maxWorkers"]["source"]))
+        self.assertEqual("default", rows["shared.autonomy.merge"]["source"])
+
+    def test_a_leftover_codex_block_is_named_obsolete_and_never_refused(self):
+        self._repo({"shared": {"codex": {"executor": {"enabled": True}}}})
+        rows, payload = self._rows()
+        self.assertFalse([key for key in rows if key.startswith("shared.codex")])
+        self.assertTrue([w for w in payload["warnings"] if "shared.codex is obsolete" in w])
 
     def test_branch_layer_wins_only_with_backend_git(self):
         self._repo({"specs": {"subjects": {"a": 1}}, "backend": "git"})
