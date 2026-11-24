@@ -25,7 +25,11 @@ FAKE_GH = """import os, sys
 verb = " ".join(sys.argv[1:3])
 if verb == "auth status":
     sys.exit(int(os.environ.get("FAKE_GH_AUTH", "0")))
+if os.environ.get("FAKE_GH_LOG"):
+    open(os.environ["FAKE_GH_LOG"], "a").write(verb + "\\n")
 if verb == "run list":
+    if os.environ.get("FAKE_GH_AUTH", "0") != "0":
+        sys.exit(1)
     print('[{"databaseId": 7, "status": "completed", "conclusion": "failure"}]')
 elif verb == "run view":
     steps = '[{"name": "build"}]' if os.environ.get("FAKE_GH_STEPS") == "1" else "[]"
@@ -86,6 +90,39 @@ class Preflight(unittest.TestCase):
         code, out = self.run_cq(FAKE_GH_STEPS="1", FAKE_GH_AUTH="1")
         self.assertEqual(code, 1)
         self.assertEqual(out["failed"], ["ghAuth"])
+
+    def _gh_calls(self, **env):
+        log = os.path.join(os.path.dirname(self.repo), "gh.log")
+        code, out = self.run_cq(FAKE_GH_LOG=log, **env)
+        calls = pathlib.Path(log).read_text().split("\n") if os.path.exists(log) else []
+        return code, out, [c for c in calls if c]
+
+    def test_ghauth_is_derived_from_run_list_without_auth_status_or_repo_view(self):
+        code, out, calls = self._gh_calls(FAKE_GH_STEPS="1")
+        self.assertEqual(code, 0, out)
+        self.assertNotIn("auth status", calls)
+        self.assertNotIn("repo view", calls)
+        self.assertEqual("ok", {c["id"]: c["status"] for c in out["checks"]}["ghAuth"])
+
+    def test_ci_verdict_is_cached_by_run_id_and_run_view_is_skipped(self):
+        _code, _out, first = self._gh_calls(FAKE_GH_STEPS="1")
+        code, out, second = self._gh_calls(FAKE_GH_STEPS="1")
+        self.assertIn("run view", first)
+        self.assertEqual(0, code, out)
+        self.assertEqual(1, second.count("run view"))  # the log is cumulative: no second view
+        self.assertEqual("ok", {c["id"]: c["status"] for c in out["checks"]}["ci"])
+
+    def test_an_unavailable_ci_verdict_is_cached_too(self):
+        self._gh_calls(FAKE_GH_STEPS="0")
+        code, out, calls = self._gh_calls(FAKE_GH_STEPS="1")  # steps flag ignored on a hit
+        self.assertEqual(1, code)
+        self.assertEqual(["ci"], out["failed"])
+        self.assertEqual(1, calls.count("run view"))
+
+    def test_checks_keep_their_order_when_run_concurrently(self):
+        _code, out = self.run_cq(FAKE_GH_STEPS="1")
+        self.assertEqual(["store", "types", "push", "ghAuth", "ci"],
+                         [c["id"] for c in out["checks"]])
 
     def _advance_origin(self, branch):
         other = os.path.join(os.path.dirname(self.repo), "other")

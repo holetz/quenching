@@ -35,6 +35,7 @@ once, and work only there afterwards.
   command there. A refusal is `STATE: blocked` with its message and no further work; never fall back
   to a branch or the base. Report the path it returned on the `WORKTREE:` line.
 - **Never wait in a loop.** Run the repository gate in the foreground with an explicit `timeout`, or wait for the completion notification of a background task. Never match a process with `pgrep -f`: it matches the command line of your own shell and the wait never ends. No `sleep`, `until` or `while` wait either.
+- **Never leave a gate or suite running in the background when you return or stop.** Before you return a report, for any STATE and on a human's stop order too, wait for each gate or suite you launched in the background or kill its process tree (the process group you started), so no `pytest`, xdist worker or `functional-checks.sh` of yours outlives the report. Kill by the PID or group you launched, never by a command-line match.
 - Start with `.agents/quenching/bin/cq specs status --spec <id> --json` and resume from the stage it reports.
 - Read only what a task names.
 - Stay inside each task's `files:`. Anything else you learn is one line:
