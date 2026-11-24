@@ -155,6 +155,11 @@ outcome and, per §Resuming, which stages this run will actually perform.
 
 Open tasks under a `done` outcome are surfaced **now**, before anything is written, so the human
 can choose between finishing them, forcing, or switching to `abandoned`.
+
+**Renew the build's reservation** — the review, the distillation and the gate can outlast it:
+`.agents/quenching/bin/cq specs claim renew "<id>" --json`. Exit 0, `reason: absent` or exit 2 → go on (report exit 2).
+`reason: not-holder` → another machine holds the lease: **stop** with `held-by: <holder>` and
+write nothing; taking it back is the human's call (`.agents/quenching/bin/cq specs claim take`), never this run's.
 **Done when:** one spec, one outcome, and the list of stages still to run are all settled.
 
 ### 2. Review the whole branch diff
@@ -515,8 +520,14 @@ the branch-delete offer per
 §The branch-delete offer, informed rather than defensive, default **keep** (taken unasked under
 `autonomous`), and record the choice and fate in the report.
 
+**Release the reservation once the build is over** — after the handoff above (`done`: the PR
+opened or the handoff named) and after the `abandoned` archive of step 4:
+`.agents/quenching/bin/cq specs claim release "<id>" --json`. `released: false` with `reason: absent` is fine;
+`not-holder` is reported and left to expire, never taken; exit 2 is reported. A red gate keeps
+the lease: the build is not over. The reconcile deletes whatever lease a terminal spec still holds.
 **Done when:** the gate ran green on the branch and the handoff was named, or the run recorded
-why nothing could be handed off — a red gate, or (abandoned) the branch's own fate decided instead.
+why nothing could be handed off — a red gate, or (abandoned) the branch's own fate decided instead;
+and the reservation of a finished build was released.
 
 ### 8. After the merge: archive and release the worktree
 This step runs only once the work is merged — a conclude resumed after the merge (the "already

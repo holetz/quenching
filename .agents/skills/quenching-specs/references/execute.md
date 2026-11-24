@@ -59,6 +59,22 @@ git symbolic-ref refs/remotes/origin/HEAD 2>/dev/null
 [execution.md](.agents/quenching/references/specs-execute/execution.md)
 §The precondition. Offer to commit or stash; do not override this precondition inside execution.
 
+**Reserve the build before any isolation** — only the build reserves; `create`, `develop`,
+`triage` and `status` never do (`/docs/standards/workflows/spec-claims.md` where the repo keeps it):
+
+```bash
+.agents/quenching/bin/cq specs claim acquire "<id>" --json
+```
+
+Exit 0 → the lease is this machine's for `shared.autonomy.claimMinutes` (45), a re-acquire by the
+same machine in another session included. Exit 1 `held` → another machine is building it: **stop**
+with `held-by: <heldBy.holder> until <heldBy.expires>`, cut and write nothing. Taking a live lease
+(`.agents/quenching/bin/cq specs claim take "<id>"`) is the human's call only, asked on a decision sheet and recorded
+with `.agents/quenching/bin/cq specs discover "<id>" "claim taken from <holder>"`; a sub-agent returns `STATE: blocked`
+with `NOTE: needs-human: held-by: <holder>` and never takes. Exit 2 (git could not answer) → report
+it and build without a reservation: the lease protects, and a remote that cannot answer never
+blocks the build.
+
 **Then resolve the work ref, and check before offering.** The spec's work branch is the `branch`
 record's `work` when the `status` payload carries one, else `plan/<id>-<handle>` — the ref already listed.
 A record naming something else costs one more `git branch --list "<work>"` to know whether it is
@@ -141,7 +157,8 @@ and write nothing, until the cause is classified. Reproduce the failure in the b
 the regression belongs to the task that caused it, not to the conclude gate, and nothing is fixed
 here. Nothing checked yet → run the baseline once, before any code: the first task's `verify:` (the narrowest `## Validation` command when it has none), skipping a command that spends billed sessions and saying so in the report. A red there is the base's by construction (clean tree, setup already run): route **5i** directly, no `.quenching/red` worktree — unless it only names code this task itself will create, which is the task's own RED.
 
-**Done when:** the tree is clean, the worktree (or the requested branch) has been taken or found
+**Done when:** the tree is clean, the build is reserved (or stopped `held-by:`, or reported
+unreserved on exit 2), the worktree (or the requested branch) has been taken or found
 already held, any unresolved hook has been reported, and a resume's last checked task still
 verifies.
 
@@ -307,6 +324,11 @@ e. **Then verify, stage, commit and confirm the spec task as ONE chained operati
    **no `files:` declared** — the line absent, or `files: []` — has no diff to commit, so its
    chain *ends* at the tick, run without `--subject` or `--commit`, and with neither `git add` nor
    run `.agents/quenching/bin/cq git commit`. **A task that runs generators writes files, so it declares their outputs in `files:`**; with `files: []` the spec-verifier fails the scope of whatever it wrote. A `branch:` record also gets the branch marked, per the rule loaded in 5d.
+
+   **After every tick, renew the reservation:** `.agents/quenching/bin/cq specs claim renew "<id>" --json`. Exit 0 or
+   `reason: absent` (no reservation was taken in step 2) → go on; exit 2 → report it and go on.
+   `reason: not-holder` → another machine took the lease: **stop** with `held-by: <holder>`, the
+   commit already made kept.
 
 f. **Read the chain's tail, and act on which link broke** — per §The commit, already loaded in
    5d: `verify:`/staging failed → nothing ticked, nothing committed; fix and retry, or block it
