@@ -10,7 +10,7 @@ the open (`plans`) phase.
 It reads every spec in the open front, proposes ONE ordered list, and — on a single confirmation —
 writes each spec's `priority` record.
 
-**This is the only command that ranks.** `.agents/quenching/bin/cq specs next --front` consumes what this writes; with no
+**This is the only command that ranks.** `specs_next()` consumes what this writes; with no
 `priority` anywhere its ordering falls back to age alone.
 
 **It ranks and nothing else.** Closing out is `/quenching-specs conclude`'s, resolving
@@ -64,11 +64,11 @@ close to no supervision) to `xhigh` (a judgment stage joins the plan). A spec to
 
 ### 1. Read the front directly
 Resolve the open front through `.agents/quenching/bin/cq specs`. A store refusal → report it and stop. Then:
-```bash
-.agents/quenching/bin/cq specs list --phase plans --json      # every spec in plans/: folder, derived stage, and its records
-.agents/quenching/bin/cq specs section <id> Problem         # per spec being ranked, for the reason column
+```text
+specs_list(phase="plans")   # every spec in plans/: folder, derived stage, and its records
+specs_section(spec=<id>, headings="Problem")   # per spec being ranked, for the reason column
 ```
-`list --phase plans --json` carries the `records` for exactly the front this sweep ranks, so the
+`specs_list(phase="plans")` carries the `records` for exactly the front this sweep ranks, so the
 current `priority` of every spec in scope arrives in that one call — **never open a spec to read
 it.** Read `/docs/vision/` when present, to ground the ordering in where the repo is going rather
 than in what is loudest.
@@ -109,26 +109,26 @@ rather than asking it open-ended.
 **Done when:** the human has approved, adjusted, or rejected the whole table.
 
 ### 4. Apply exactly what was approved
-One `.agents/quenching/bin/cq specs record` per approved spec, **in sequence** in one Bash block, and never an edit to
+One `specs_record` call per approved spec, **in sequence**, and never an edit to
 the file. On the git store each write is a local compare-and-swap on the clone's pending commit, so
-writers still run one at a time; a refusal stops the block, and the run resumes from the refused
-line (`sp-git-cas-exhausted` is re-run alone). The priorities reach the branch and the cards at the
-next sync point; run `.agents/quenching/bin/cq specs push` after the block when another clone or the board needs the
+writers still run one at a time; a refusal stops the sequence, and the run resumes from the refused
+call (`sp-git-cas-exhausted` is re-run alone). The priorities reach the branch and the cards at the
+next sync point; run `specs_push()` after the sequence when another clone or the board needs the
 ranking now:
-```bash
-.agents/quenching/bin/cq specs record <id1> priority --set level=<n1> --set criticality=<word1> --set complexity=<word1> --set date=<today> \
-&& .agents/quenching/bin/cq specs record <id2> priority --set level=<n2> --set criticality=<word2> --set complexity=<word2> --set date=<today> \
-&& ...
+```text
+specs_record(spec=<id1>, name="priority", fields={"level": "<n1>", "criticality": "<word1>", "complexity": "<word1>", "date": "<today>"})
+specs_record(spec=<id2>, name="priority", fields={"level": "<n2>", "criticality": "<word2>", "complexity": "<word2>", "date": "<today>"})
+...
 ```
-One fully-formed line per approved row — all four `--set` on every line, since `complexity` is
+One fully-formed call per approved row — all four fields on every call, since `complexity` is
 floored at `medium`, never omitted. The tool merges: a field not named survives, and the spec's
 `id`, `title`, `date`, `verification` and its other records are never in reach of this write. The
 record's own `date` is a different key from the spec's capture `date:`.
 **Done when:** each approved row is recorded through `.agents/quenching/bin/cq specs` and no unapproved row was touched.
 
 ### 5. Check
-```bash
-.agents/quenching/bin/cq specs validate --phase plans --json
+```text
+specs_validate(phase="plans")
 ```
 That is the whole check, and it must exit 0. The ranking lives in each spec's own `priority`
 record; nothing else is written and nothing goes into the `/docs/` bundle.
@@ -136,15 +136,15 @@ record; nothing else is written and nothing goes into the `/docs/` bundle.
 
 ### 6. Report
 
-```bash
-.agents/quenching/bin/cq components read .agents/quenching/references/specs-develop/report-mold.md \
-  --sections "§The report mold" --rules-only
+```text
+components_read(path=".agents/quenching/references/specs-develop/report-mold.md", sections=["§The report mold"], rules_only=true)
 ```
 
 Emit §The report mold. Two body blocks:
 
 1. **The ranking as it now stands** — fixed. Run one tool call and quote its output verbatim
    (§Quoting a tool's own output) rather than recomposing the step 2 table in prose:
+   <!-- cli: flag -->
    ```bash
    .agents/quenching/bin/cq specs next --front --table --order priority \
      --columns "spec,summary,stage,tasks,priority,complexity"
@@ -176,10 +176,10 @@ spec the approved ranking put first — the first thing the `priority` this just
   earned it.
 - Never write a field outside the `priority` record. This command ranks; it does not develop,
   execute, or conclude.
-- Never edit a spec's frontmatter directly; `.agents/quenching/bin/cq specs record` is the writer.
+- Never edit a spec's frontmatter directly; `specs_record` is the writer.
 - Never remove a spec, move a spec, tick a checkbox, or resolve a `## Discoveries` line.
 - Never infer completion or abandonment, and never treat staleness as evidence of either.
-- Never fan out sub-agents, and never re-implement a check in prose — run `.agents/quenching/bin/cq specs validate` and
+- Never fan out sub-agents, and never re-implement a check in prose — run `specs_validate` and
   report what it says.
 - **Never print an observation whose `Recommended action` is not runnable as printed** — a bare
   command name, or a literal `<id>` reaching the output, is a defect.

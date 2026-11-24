@@ -3,7 +3,7 @@
 This reference defines the checks for the specs front. The documents on the `quenching` branch are
 the source of truth and tracker cards are their projection; `.agents/quenching/bin/cq specs` is the uniform surface that
 reads and writes both. The `github` and `azure-boards` backends are deprecated, still work, and
-`.agents/quenching/bin/cq specs doctor` flags them (`sp-backend-deprecated`).
+`specs_doctor` flags them (`sp-backend-deprecated`).
 
 ## Store configuration
 
@@ -27,10 +27,10 @@ The configuration details and defaults live in
 
 Run the store checks before reading or changing a spec:
 
-```bash
-.agents/quenching/bin/cq specs doctor --json
-.agents/quenching/bin/cq specs config --json
-.agents/quenching/bin/cq specs validate --json
+```text
+specs_doctor()
+specs_config()
+specs_validate()
 ```
 
 Exit `0` means the store and fetched front are conformant. Exit `1` reports findings that a

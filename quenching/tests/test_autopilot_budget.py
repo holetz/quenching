@@ -38,7 +38,7 @@ class AutopilotTreeCeilingTests(unittest.TestCase):
         body = text(AUTOPILOT)
         self.assertIn("`input + cacheRead + cacheWrite + output`", body)
         self.assertIn("never summing tiers", body)
-        self.assertIn("cq components session cost", body)
+        self.assertIn("`components_session_cost`", body)
 
     def test_budget_continue_is_relaunched_with_progress(self):
         body = text(AUTOPILOT)
