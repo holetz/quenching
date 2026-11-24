@@ -29,12 +29,7 @@ class ProjectsRootTest(unittest.TestCase):
 
     def test_claude_root_when_present(self):
         (self.home / ".claude" / "projects").mkdir(parents=True)
-        (self.home / ".codex" / "sessions").mkdir(parents=True)
         self.assertEqual(projects_root(), self.home / ".claude" / "projects")
-
-    def test_codex_host_reads_sessions_not_projects(self):
-        (self.home / ".codex" / "sessions" / "2026" / "10" / "16").mkdir(parents=True)
-        self.assertEqual(projects_root(), self.home / ".codex" / "sessions")
 
     def test_nothing_present_falls_back_to_claude_root(self):
         self.assertEqual(projects_root(), self.home / ".claude" / "projects")

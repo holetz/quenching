@@ -34,7 +34,7 @@ from quenching.git.pr import (labelled_links, normalize_azure_pull_request,
 from quenching.git.slugs import _read_specs, cmd_specs
 from quenching.git.stale import (_gone_branches, _merged_branches, _merged_remote_branches,
                                  _orphan_worktrees, _unregistered_worktrees, stale_report)
-from quenching.git.worktree import _is_codex_artifact, _is_link, _make_link
+from quenching.git.worktree import _is_link, _make_link
 
 PLUGIN_ROOT = pathlib.Path(__file__).resolve().parent.parent
 CQ = str(PLUGIN_ROOT / "assets" / "bin" / "cq")
@@ -3036,111 +3036,6 @@ class WorktreeRetire(RepoCase):
         proc = self._retire("--discard-ignored")
         self.assertEqual(proc.returncode, 0, proc.stdout + proc.stderr)
         self.assertFalse(os.path.exists(self.wt))
-
-    def test_codex_artifacts_are_recognized_with_a_backslash_separator(self):
-        self.assertTrue(_is_codex_artifact(".quenching\\codex\\r1\\prompt.md", "\\"))
-        self.assertTrue(_is_codex_artifact(".quenching\\codex", "\\"))
-        self.assertTrue(_is_codex_artifact(".quenching/codex/r1/prompt.md"))
-        self.assertFalse(_is_codex_artifact(".quenching\\codexx\\a", "\\"))
-        self.assertFalse(_is_codex_artifact(".env", "\\"))
-
-    def test_ignored_codex_files_are_archived_before_retiring(self):
-        self._merge_through_gh()
-        pathlib.Path(self.repo, ".git", "info", "exclude").write_text(
-            ".quenching/\n", encoding="utf-8")
-        source = pathlib.Path(self.wt, ".quenching", "codex", "1.1.md")
-        source.parent.mkdir(parents=True)
-        source.write_text("keep\n", encoding="utf-8")
-        proc = self._retire()
-        self.assertEqual(proc.returncode, 0, proc.stdout + proc.stderr)
-        self.assertFalse(os.path.exists(self.wt))
-        archived = pathlib.Path(self.repo, ".quenching", "codex", "retired", "wt")
-        self.assertEqual((archived / "1.1.md").read_text(encoding="utf-8"), "keep\n")
-        self.assertEqual(json.loads(proc.stdout)["archived"], str(archived))
-
-    def test_other_ignored_files_prevent_codex_archiving(self):
-        self._merge_through_gh()
-        pathlib.Path(self.repo, ".git", "info", "exclude").write_text(
-            ".quenching/\n.env\n", encoding="utf-8")
-        source = pathlib.Path(self.wt, ".quenching", "codex", "x")
-        source.parent.mkdir(parents=True)
-        source.write_text("keep\n", encoding="utf-8")
-        pathlib.Path(self.wt, ".env").write_text("secret\n", encoding="utf-8")
-        proc = self._retire()
-        self.assertEqual(proc.returncode, 1, proc.stdout)
-        self.assertEqual(json.loads(proc.stdout)["ignored"], [".env"])
-        self.assertIsNone(json.loads(proc.stdout)["archived"])
-        self.assertFalse(pathlib.Path(self.repo, ".quenching", "codex", "retired").exists())
-        self.assertTrue(os.path.isdir(self.wt))
-        self.assertEqual(source.read_text(encoding="utf-8"), "keep\n")
-
-    def test_discard_ignored_still_archives_codex_files(self):
-        self._merge_through_gh()
-        pathlib.Path(self.repo, ".git", "info", "exclude").write_text(
-            ".quenching/\n", encoding="utf-8")
-        source = pathlib.Path(self.wt, ".quenching", "codex", "x")
-        source.parent.mkdir(parents=True)
-        source.write_text("keep\n", encoding="utf-8")
-        proc = self._retire("--discard-ignored")
-        self.assertEqual(proc.returncode, 0, proc.stdout + proc.stderr)
-        self.assertFalse(os.path.exists(self.wt))
-        archived = pathlib.Path(self.repo, ".quenching", "codex", "retired", "wt")
-        self.assertEqual((archived / "x").read_text(encoding="utf-8"), "keep\n")
-        self.assertEqual(json.loads(proc.stdout)["archived"], str(archived))
-
-    def test_codex_archive_uses_a_suffix_when_the_destination_exists(self):
-        self._merge_through_gh()
-        pathlib.Path(self.repo, ".git", "info", "exclude").write_text(
-            ".quenching/\n", encoding="utf-8")
-        source = pathlib.Path(self.wt, ".quenching", "codex", "x")
-        source.parent.mkdir(parents=True)
-        source.write_text("keep\n", encoding="utf-8")
-        existing = pathlib.Path(self.repo, ".quenching", "codex", "retired", "wt")
-        existing.mkdir(parents=True)
-        (existing / "x").write_text("original\n", encoding="utf-8")
-        proc = self._retire()
-        self.assertEqual(proc.returncode, 0, proc.stdout + proc.stderr)
-        archived = existing.with_name("wt-2")
-        self.assertEqual((archived / "x").read_text(encoding="utf-8"), "keep\n")
-        self.assertEqual((existing / "x").read_text(encoding="utf-8"), "original\n")
-        self.assertEqual(json.loads(proc.stdout)["archived"], str(archived))
-
-    def test_a_dirty_worktree_keeps_its_codex_state(self):
-        self._merge_through_gh()
-        pathlib.Path(self.repo, ".git", "info", "exclude").write_text(
-            ".quenching/\n", encoding="utf-8")
-        source = pathlib.Path(self.wt, ".quenching", "codex", "x")
-        source.parent.mkdir(parents=True)
-        source.write_text("keep\n", encoding="utf-8")
-        pathlib.Path(self.wt, "w.txt").write_text("dirty\n", encoding="utf-8")
-        pathlib.Path(self.wt, "new.txt").write_text("untracked\n", encoding="utf-8")
-        proc = self._retire()
-        self.assertEqual(proc.returncode, 1, proc.stdout)
-        payload = json.loads(proc.stdout)
-        self.assertEqual(sorted(payload["dirty"]), ["new.txt", "w.txt"])
-        self.assertIsNone(payload["archived"])
-        self.assertFalse(payload["worktreeRemoved"])
-        self.assertEqual(source.read_text(encoding="utf-8"), "keep\n")
-        self.assertFalse(pathlib.Path(self.repo, ".quenching", "codex", "retired").exists())
-        self.assertIn("plan/1-x", self._heads())
-
-    def test_a_refused_removal_puts_the_codex_state_back(self):
-        self._merge_through_gh()
-        pathlib.Path(self.repo, ".git", "info", "exclude").write_text(
-            ".quenching/\n", encoding="utf-8")
-        source = pathlib.Path(self.wt, ".quenching", "codex", "x")
-        source.parent.mkdir(parents=True)
-        source.write_text("keep\n", encoding="utf-8")
-        _run(self.repo, "worktree", "lock", self.wt)
-        proc = self._retire()
-        self.assertEqual(proc.returncode, 1, proc.stdout)
-        payload = json.loads(proc.stdout)
-        self.assertFalse(payload["worktreeRemoved"])
-        self.assertIsNone(payload["archived"])
-        self.assertTrue(payload["restored"])
-        self.assertEqual(source.read_text(encoding="utf-8"), "keep\n")
-        self.assertFalse(pathlib.Path(self.repo, ".quenching", "codex", "retired", "wt").exists())
-        self.assertIn("plan/1-x", self._heads())
 
     def test_an_ignored_file_stands_under_show_untracked_files_no(self):
         self._merge_through_gh()

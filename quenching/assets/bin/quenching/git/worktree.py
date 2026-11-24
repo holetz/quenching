@@ -9,7 +9,6 @@ relative ``.git`` and would create a different sibling store depending on the ca
 from __future__ import annotations
 
 import os
-import shutil
 import subprocess
 import sys
 from types import SimpleNamespace
@@ -309,13 +308,6 @@ def _registered_worktrees(cwd: str) -> list[tuple[str, str | None]]:
     return found
 
 
-def _is_codex_artifact(entry: str, sep: str = os.sep) -> bool:
-    """Whether an ignored entry is `.quenching/codex` or sits under it; `os.walk` entries carry
-    the platform separator, so it is normalized to `/` before the comparison."""
-    entry = entry.replace(sep, "/")
-    return entry == ".quenching/codex" or entry.startswith(".quenching/codex/")
-
-
 def _retire(args) -> int:
     """Remove a merged spec's worktree and delete its branch with `branch -d`, never `-D`.
 
@@ -326,8 +318,6 @@ def _retire(args) -> int:
     stands, and is read before any write (exit 1, `dirty` lists the paths). A worktree holding
     ignored files that are not symlinks stands too (exit 1, `ignored` lists them) unless
     `shared.regenerablePaths` declares them regenerable or `--discard-ignored` is passed.
-    A real `.quenching/codex` directory is archived in the primary checkout before removal, and put
-    back (`restored`) when `worktree remove` still refuses.
     `branch -d` compares the branch with its upstream when one is configured, so a published branch is
     deleted even while the local base is behind; with no upstream it compares with the checked-out
     HEAD and refuses when the local base is behind: the branch stands, exit 1."""
@@ -382,7 +372,7 @@ def _retire(args) -> int:
                        "message": f"{args.branch} is not merged into {target}; nothing was removed"},
                       args.json)
     payload = {"ok": False, "path": path, "branch": args.branch, "base": target,
-               "worktreeRemoved": False, "branchDeleted": False, "archived": None}
+               "worktreeRemoved": False, "branchDeleted": False}
     ignored = [] if args.discard_ignored else ignored_entries(path)
     if ignored:
         declared = declared_regenerable(load_config(_repo_root(cwd)))
@@ -390,7 +380,6 @@ def _retire(args) -> int:
     if ignored is None:
         return refuse({"code": "git-worktree-retire-status-failed",
                        "message": f"git status failed in {path}; nothing was removed"}, args.json)
-    ignored = [entry for entry in ignored if not _is_codex_artifact(entry)]
     if ignored:
         payload.update(ignored=ignored, message=f"the worktree holds ignored files that removal "
                        f"would delete: {', '.join(ignored)}; pass --discard-ignored to remove anyway")
@@ -400,38 +389,15 @@ def _retire(args) -> int:
     if code != 0:
         return refuse({"code": "git-worktree-retire-status-failed",
                        "message": f"git status failed in {path}; nothing was removed"}, args.json)
-    dirty = [line[3:] for line in out.splitlines() if not _is_codex_artifact(line[3:])]
+    dirty = [line[3:] for line in out.splitlines()]
     if dirty:
         payload.update(dirty=dirty, message=f"the worktree has changes that removal would refuse: "
                        f"{', '.join(dirty)}")
         emit(args.json, payload, f"worktree {path} kept: {payload['message']}")
         return FINDINGS
-    source = os.path.join(path, ".quenching", "codex")
-    if os.path.isdir(source) and not _is_link(source):
-        destination = os.path.join(registered[0][0], ".quenching", "codex", "retired",
-                                   os.path.basename(path))
-        archived = destination
-        suffix = 2
-        while os.path.lexists(archived):
-            archived = f"{destination}-{suffix}"
-            suffix += 1
-        try:
-            os.makedirs(os.path.dirname(archived), exist_ok=True)
-            shutil.move(source, archived)
-        except (OSError, shutil.Error) as exc:
-            return refuse({"code": "git-worktree-retire-archive-failed",
-                           "message": f"could not archive {source}: {exc}"}, args.json)
-        payload["archived"] = archived
     code, _out, err = _git_run(cwd, *SAFE, "worktree", "remove", "--", path)
     if code != 0:
         payload["message"] = err.strip()
-        if payload["archived"]:
-            try:
-                shutil.move(payload["archived"], source)
-                payload.update(archived=None, restored=True)
-            except (OSError, shutil.Error) as exc:
-                payload.update(restored=False, message=f"{err.strip()}; the Codex state stays at "
-                               f"{payload['archived']}: {exc}")
         emit(args.json, payload, f"worktree {path} refused: {payload['message']}")
         return FINDINGS
     payload["worktreeRemoved"] = True

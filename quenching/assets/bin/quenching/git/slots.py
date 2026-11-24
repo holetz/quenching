@@ -231,8 +231,7 @@ def _take(cwd: str, view: dict, cap: int, reason: str, base_sha: str,
     one whose branch is merged, whose tree is clean, which holds no ignored content `release`
     would refuse on, and where no process runs (released first; without `/proc` the process check
     is skipped). A reused slot's `.quenching/handoff/` is moved to the primary checkout
-    (`slot["handoff"]`); a merged holder's `.quenching/codex/` is archived there as `release`
-    does (`slot["archived"]`). `(slot, created)`."""
+    (`slot["handoff"]`). `(slot, created)`."""
     for slot in view["slots"]:
         if slot["state"] == "free" and _lock(cwd, slot["path"], reason):
             if _dirty(slot["path"]) is False:
@@ -263,9 +262,8 @@ def _take(cwd: str, view: dict, cap: int, reason: str, base_sha: str,
             if _lock(cwd, slot["path"], reason):
                 freed.append({"path": slot["path"], "branch": slot["branch"],
                               "spec": slot["holder"].get("spec")})
-                # The previous spec's handoff and Codex state go to the primary checkout, never
-                # left for the next spec and never discarded.
-                slot["archived"] = _archive_codex(slot["path"], view["primary"], slot["branch"])
+                # The previous spec's handoff goes to the primary checkout, never left for the
+                # next spec and never discarded.
                 slot["handoff"] = _move_handoffs(slot["path"], view["primary"])
                 return slot, False
     return None, False
@@ -356,7 +354,7 @@ def acquire(args) -> int:
                      and (setup is None or setup["ok"]),
                "path": path, "slot": slot["n"], "created": created, "reused": not created,
                "branch": args.branch, "base": args.base, "start": start, "startSha": base_sha,
-               "lock": reason, "freed": freed, "archived": slot.get("archived"),
+               "lock": reason, "freed": freed,
                "handoff": slot.get("handoff", []),
                "paths": results or [],
                "linkRefusal": link_refusal, "setup": setup}
@@ -365,8 +363,6 @@ def acquire(args) -> int:
     human = [f"slot {slot['n']}: {path} ({'new' if created else 'reused'})",
              f"branch: {args.branch} from {start} ({base_sha[:12]})"]
     human += [f"freed: {f['path']} (merged {f['branch']})" for f in freed]
-    if slot.get("archived"):
-        human.append(f"codex state archived: {slot['archived']}")
     human += [f"handoff moved: {h['from']} -> {h['to']}" for h in slot.get("handoff", [])]
     human += _link_lines(results or [])
     if link_refusal:
@@ -381,7 +377,7 @@ def acquire(args) -> int:
     return 0 if payload["ok"] else FINDINGS
 
 
-COLLECTED = (".quenching/codex", ".quenching/handoff")
+COLLECTED = (".quenching/handoff",)
 
 
 def _collected(entry: str) -> bool:
@@ -399,22 +395,6 @@ def _ignored_left(path: str, primary: str) -> list[str] | None:
         return None
     rules = declared_regenerable(load_config(primary))
     return [e for e in undeclared(path, ignored, rules) if not _collected(e)]
-
-
-def _archive_codex(path: str, primary: str, branch: str | None) -> str | None:
-    """Move the slot's `.quenching/codex/` under the primary checkout's
-    `.quenching/codex/retired/`, never over an earlier archive; the target, or `None`."""
-    source = os.path.join(path, ".quenching", "codex")
-    if not os.path.isdir(source) or _is_link(source):
-        return None
-    archived = os.path.join(primary, ".quenching", "codex", "retired",
-                            f"{os.path.basename(path)}-{(branch or 'detached').replace('/', '-')}")
-    suffix, target = 2, archived
-    while os.path.lexists(target):
-        target, suffix = f"{archived}-{suffix}", suffix + 1
-    os.makedirs(os.path.dirname(target), exist_ok=True)
-    shutil.move(source, target)
-    return target
 
 
 def _move_handoffs(path: str, primary: str) -> list[dict]:
@@ -531,7 +511,7 @@ def release(args) -> int:
 
     A dirty tree, or ignored content no `shared.regenerablePaths` entry covers, keeps the slot
     held (exit 1): nothing of one spec may leak into the next, and nothing is committed or
-    discarded to free it. `.quenching/codex/` and `.quenching/handoff/` are carried to the
+    discarded to free it. `.quenching/handoff/` is carried to the
     primary checkout instead."""
     cwd = os.getcwd()
     view = survey(cwd)
@@ -555,7 +535,7 @@ def release(args) -> int:
         return refuse({"code": "git-worktree-release-status-failed",
                        "message": f"git status failed in {path}"}, args.json)
     payload = {"ok": False, "path": path, "slot": slot["n"], "branch": branch,
-               "released": False, "branchDeleted": False, "archived": None, "handoff": []}
+               "released": False, "branchDeleted": False, "handoff": []}
     if dirty:
         payload["message"] = f"{path} has uncommitted changes; the slot stays held"
         emit(args.json, payload, payload["message"])
@@ -573,7 +553,6 @@ def release(args) -> int:
     if refusal or base_sha is None:
         return refuse(refusal or {"code": "git-worktree-ref-invalid",
                                   "message": f"the base does not resolve: {base}"}, args.json)
-    payload["archived"] = _archive_codex(path, view["primary"], branch)
     payload["handoff"] = _move_handoffs(path, view["primary"])
     code, _out, err = _git_run(path, *SAFE, "switch", "--detach", base_sha)
     if code != 0:

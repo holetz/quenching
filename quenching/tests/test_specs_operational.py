@@ -255,25 +255,5 @@ class Estimate(Workspace):
                          "an operational task has no files: to pin a small tier on")
 
 
-class CodexEligible(Workspace):
-    def eligible(self, ident: int, task_id: str):
-        from quenching.codex import eligible as eligible_module
-        from quenching.codex.config import DEFAULTS
-        settings = {**DEFAULTS, "maxUsedPercent": dict(DEFAULTS["maxUsedPercent"]),
-                    "executor": {**DEFAULTS["executor"], "enabled": True}}
-        quota = lambda _settings: {"state": "available", "reason": "test"}  # noqa: E731
-        with mock.patch.object(eligible_module, "open_backend",
-                               lambda _root: (self.backend, {})):
-            return eligible_module.run_eligible(self.root, settings, str(ident), task_id,
-                                                quota)
-
-    def test_an_operational_task_is_refused_with_its_own_reason(self):
-        ident = self.write("### 1. One\n\n- [ ] 1.1 Gate\n      files: (operational)\n"
-                           "      verify: make check\n")
-        payload, code = self.eligible(ident, "1.1")
-        self.assertEqual(code, 1)
-        self.assertIn("(operational)", payload["reason"])
-
-
 if __name__ == "__main__":
     unittest.main()
