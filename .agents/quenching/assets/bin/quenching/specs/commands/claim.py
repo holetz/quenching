@@ -41,9 +41,11 @@ def cmd_claim(args, root: str, out: Emitter) -> int:
     action = args.claim_action
     try:
         store = claims.Store(root, args.remote)
-        me = claims.holder_of(claims.machine_id(root), claims.session_id(args.session))
         if action == "list":
+            machine = claims.existing_machine(root)    # a read never generates the id
+            me = claims.holder_of(machine, claims.session_id(args.session)) if machine else None
             return _list(args, root, store, me, out)
+        me = claims.holder_of(claims.machine_id(root), claims.session_id(args.session))
         spec_id = str(args.claim_id or "")
         if not claims.valid_id(spec_id):
             return out.emit_err(args.json, {"code": "sp-claim-id", "exit": 2,
