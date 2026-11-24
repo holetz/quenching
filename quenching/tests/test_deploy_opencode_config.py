@@ -157,3 +157,13 @@ class TheGlobalExperimental(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TheVitrineReadsTheSameGlobals(unittest.TestCase):
+    def test_the_plugin_lists_the_deploys_global_names_in_order(self):
+        source = (PLUGIN_ROOT.parent / "integrations" / "opencode-vitrine" / "src" / "warnings.ts").read_text(encoding="utf-8")
+        import re
+        match = re.search(r"GLOBAL_NAMES = \[([^\]]*)\]", source)
+        self.assertIsNotNone(match)
+        self.assertEqual(list(mcpfiles.GLOBAL_NAMES), re.findall(r'"([^"]+)"', match.group(1)))
+        self.assertIn("OPENCODE_CONFIG", source)

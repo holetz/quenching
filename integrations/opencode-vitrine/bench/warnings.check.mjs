@@ -17,4 +17,13 @@ ok(configWarnings({}, undefined).length === 2, "sem profundidade e sem MCP são 
 ok(configWarnings({ mcp: { quenching: { command: ["uvx", "x"] } }, experimental: { subagent_depth: 3 } }, undefined).length === 2, "uvx e profundidade 3 avisam")
 ok(configWarnings(deployed, { experimental: { subagent_depth: 1 } }).length === 0, "o bloco experimental do projeto vale sozinho")
 ok(/global/.test(configWarnings({ mcp: deployed.mcp }, { experimental: { x: 1 } })[0]), "conflito com o bloco global aponta o global")
+// Caso 1: o bloco global está em $OPENCODE_CONFIG; o aviso nomeia esse arquivo, sem mandar rodar o deploy.
+const mcpOnly = { mcp: deployed.mcp }
+const envFile = { path: "/x/custom.json", json: { experimental: { x: 1 } } }
+const case1 = configWarnings(mcpOnly, [envFile])
+ok(case1.length === 1 && case1[0].includes("/x/custom.json") && case1[0].includes('"subagent_depth": 4') && !case1[0].includes("cq deploy"), "o bloco em OPENCODE_CONFIG é nomeado e o deploy não é aconselhado")
+// Caso 2: dois arquivos; as chaves estão no que o plugin não lia (config.json).
+const two = [{ path: "/c/opencode.json", json: {} }, { path: "/c/config.json", json: { experimental: { x: 1 } } }]
+ok(configWarnings(mcpOnly, two)[0].includes("/c/config.json"), "o bloco em config.json é nomeado")
+ok(configWarnings(mcpOnly, [...two.slice(0, 1), { path: "/c/config.json", json: { experimental: { subagent_depth: 4 } } }]).length === 0, "a profundidade em qualquer global vale")
 console.log("ok")

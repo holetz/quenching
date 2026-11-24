@@ -39,30 +39,39 @@ export function parseJsonc(text: string): Json | undefined {
 const object = (value: unknown): Json | undefined =>
   value && typeof value === "object" && !Array.isArray(value) ? (value as Json) : undefined
 
+/** Um arquivo de configuração global já lido. */
+export type GlobalConfig = { path: string; json: Json }
+
+/** Os nomes que o deploy procura em `$XDG_CONFIG_HOME/opencode/`, na mesma ordem (`mcpfiles.GLOBAL_NAMES`; um teste Python prende as duas listas). */
+export const GLOBAL_NAMES = ["opencode.json", "opencode.jsonc", "config.json"]
+
 /**
- * Os avisos locais do quenching no OpenCode, a partir das duas configurações já lidas.
+ * Os avisos locais do quenching no OpenCode, a partir das configurações já lidas.
  * Só leem; nenhum corpo de comando nem chamada de tool paga por eles.
  *
  * O deploy grava `experimental.subagent_depth` e o servidor MCP no `opencode.json` do projeto
  * (e pula a profundidade só quando um bloco `experimental` global seria escondido pelo do
  * projeto, anomalyco/opencode#60410). O aviso então dispara só no que o deploy não resolveu.
+ * `globals` traz os arquivos globais legíveis, na ordem do deploy.
  */
-export function configWarnings(project: Json | undefined, global: Json | undefined): string[] {
+export function configWarnings(project: Json | undefined, globals: GlobalConfig[] | Json | undefined): string[] {
   const warnings: string[] = []
+  const files: GlobalConfig[] = Array.isArray(globals) ? globals : globals ? [{ path: "o opencode.jsonc global", json: globals }] : []
+  const withBlock = files.filter((file) => Object.keys(object(file.json.experimental) ?? {}).length > 0)
+  const globalDepth = files.map((file) => object(file.json.experimental)?.subagent_depth).find((value) => typeof value === "number")
 
   const projectBlock = object(project?.experimental)
-  const globalBlock = object(global?.experimental)
   // Um bloco `experimental` do projeto substitui o global inteiro.
-  const depth = projectBlock ? projectBlock.subagent_depth : globalBlock?.subagent_depth
+  const depth = projectBlock ? projectBlock.subagent_depth : globalDepth
   if (typeof depth !== "number" || depth < MIN_DEPTH) {
     const have = typeof depth === "number" ? `está em ${depth}` : "não está definida (o padrão do OpenCode é 1)"
-    const fix = !projectBlock && globalBlock && Object.keys(globalBlock).length > 0
-      ? `adicione "subagent_depth": ${MIN_DEPTH} ao bloco experimental do opencode.jsonc global (o deploy não o escreve no projeto para não escondê-lo)`
+    const fix = !projectBlock && withBlock.length > 0
+      ? `acrescente \`"subagent_depth": ${MIN_DEPTH}\` ao bloco \`experimental\` de ${withBlock[0].path} (o deploy não o escreve no projeto para não escondê-lo)`
       : `rode \`cq deploy --target . --write\` ou defina experimental.subagent_depth: ${MIN_DEPTH} no opencode.json do projeto`
     warnings.push(`A profundidade de subagentes ${have}; o fluxo do quenching precisa de ${MIN_DEPTH} — ${fix}, e reinicie o OpenCode.`)
   }
 
-  const entry = object(object(project?.mcp)?.quenching) ?? object(object(global?.mcp)?.quenching)
+  const entry = object(object(project?.mcp)?.quenching) ?? object(object(files.find((file) => object(file.json.mcp)?.quenching)?.json.mcp)?.quenching)
   const command = Array.isArray(entry?.command) ? entry.command.map(String) : []
   if (!entry) {
     warnings.push("O servidor MCP quenching não está em opencode.json; rode `cq deploy --target . --write` (no Windows, declare shared.mcp.command, pois python3 não existe).")
@@ -80,18 +89,20 @@ async function read(path: string): Promise<Json | undefined> {
   }
 }
 
-async function first(paths: string[]): Promise<Json | undefined> {
+/** Os arquivos globais legíveis, na ordem do deploy: `OPENCODE_CONFIG`, depois `$XDG_CONFIG_HOME/opencode/`. */
+async function globalConfigs(): Promise<GlobalConfig[]> {
+  const base = process.env.XDG_CONFIG_HOME || join(homedir(), ".config")
+  const paths = [...(process.env.OPENCODE_CONFIG ? [process.env.OPENCODE_CONFIG] : []), ...GLOBAL_NAMES.map((name) => join(base, "opencode", name))]
+  const found: GlobalConfig[] = []
   for (const path of paths) {
-    const value = await read(path)
-    if (value) return value
+    const json = await read(path)
+    if (json) found.push({ path, json })
   }
-  return undefined
+  return found
 }
 
-/** Lê o opencode.json(c) do projeto e o global, uma vez, e devolve os avisos. */
+/** Lê o opencode.json(c) do projeto e os globais, uma vez, e devolve os avisos. */
 export async function localWarnings(root: string): Promise<string[]> {
-  const base = process.env.XDG_CONFIG_HOME || join(homedir(), ".config")
   const project = await first([join(root, "opencode.json"), join(root, "opencode.jsonc")])
-  const global = await first([join(base, "opencode", "opencode.jsonc"), join(base, "opencode", "opencode.json")])
-  return configWarnings(project, global)
+  return configWarnings(project, await globalConfigs())
 }
