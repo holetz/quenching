@@ -138,6 +138,32 @@ class CanonicalEquivalence(GitStoreFixture):
         self.assertEqual(text, self.remote_file("specs/1.md"))
 
 
+class LeanListCache(GitStoreFixture):
+    """`list --lean` derives each blob once; a warm listing derives nothing and reads no text."""
+
+    def test_a_warm_listing_matches_the_cold_one_and_derives_nothing(self):
+        clone = self.clone("a")
+        backend = GitBackend(clone)
+        for _ in range(3):
+            backend.create_spec("plans", canonical._case_doc())
+        cold = backend.list_specs(lean=True)
+        with mock.patch.object(git_mod, "derive_info",
+                               side_effect=AssertionError("derived on a warm listing")), \
+                mock.patch.object(GitBackend, "_texts",
+                                  side_effect=AssertionError("read text on a warm listing")):
+            warm = GitBackend(clone).list_specs(lean=True)
+        self.assertEqual(cold, warm)
+
+    def test_an_edited_document_is_derived_again(self):
+        backend = GitBackend(self.clone("a"))
+        backend.create_spec("plans", canonical._case_doc())
+        backend.list_specs(lean=True)
+        info, _ = backend.read_spec(1)
+        backend.write_spec(info, info["text"].replace("title:", "title: New ", 1))
+        titles = [r["title"] for r in backend.list_specs(lean=True)]
+        self.assertTrue(titles[0].startswith("New "), titles)
+
+
 class Layout(GitStoreFixture):
     def test_the_first_write_bootstraps_an_orphan_branch(self):
         backend = GitBackend(self.clone("a"))

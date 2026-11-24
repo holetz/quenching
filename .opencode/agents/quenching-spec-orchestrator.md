@@ -24,6 +24,9 @@ permission:
     ".agents/quenching/bin/cq git pr merge *": allow
     ".agents/quenching/bin/cq git base *": allow
     ".agents/quenching/bin/cq git conventions *": allow
+    "git for-each-ref *": allow
+    "git worktree list *": allow
+    "gh pr view *": allow
   "quenching_*": deny
   quenching_specs_epic_progress: allow
   quenching_specs_status: allow

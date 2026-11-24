@@ -208,6 +208,22 @@ def _cq_patterns(names: list[str]) -> list[str]:
     return patterns
 
 
+SHELL_GRANT = re.compile(r"Bash\(([^():]+):\*\)$")
+
+
+def _shell_patterns(names: list[str]) -> list[str]:
+    """One `<command> *` pattern per scoped non-cq `Bash(<command>:*)` grant, in source order."""
+    patterns: list[str] = []
+    for name in names:
+        match = SHELL_GRANT.match(name)
+        if not match or CQ_GRANT.match(name):
+            continue
+        pattern = f"{match.group(1).strip()} *"
+        if pattern not in patterns:
+            patterns.append(pattern)
+    return patterns
+
+
 def opencode_permissions(tools: str | None) -> dict[str, str | dict[str, str]]:
     """A source `tools:` list as OpenCode permissions: deny-first, with the cq grants allowed.
 
@@ -224,7 +240,7 @@ def opencode_permissions(tools: str | None) -> dict[str, str | dict[str, str]]:
     granted["webfetch"] = "allow" if "WebFetch" in heads else "deny"
     if "Bash" in names:
         granted["bash"] = "allow"
-    elif patterns := _cq_patterns(names):
+    elif patterns := _cq_patterns(names) + _shell_patterns(names):
         granted["bash"] = {"*": "ask", **dict.fromkeys(patterns, "allow")}
     else:
         granted["bash"] = "ask" if "Bash" in heads else "deny"
