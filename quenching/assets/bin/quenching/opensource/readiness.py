@@ -213,7 +213,7 @@ def _trufflehog(root: str, timeout: int) -> tuple[list[dict[str, Any]] | None, s
     if scratch is None:
         return None, "pr-scratch-inside-target"
     with scratch:
-        result = _run(["trufflehog", "git", "file://" + root, "--json", "--no-verification", "--no-update"],
+        result = _run(["trufflehog", "git", Path(root).as_uri(), "--json", "--no-verification", "--no-update"],
                       scratch.name, timeout)
     if result is None:
         return None, "pr-scanner-timeout"
