@@ -68,7 +68,9 @@ def build_workspace(dest: pathlib.Path, remote: str, config: dict | None = None)
 
 
 def normalize(text: str, workspace: pathlib.Path) -> str:
-    return text.replace(str(workspace), "<WS>")
+    for form in (str(workspace), json.dumps(str(workspace))[1:-1], workspace.as_posix()):
+        text = text.replace(form, "<WS>")
+    return text
 
 
 def capture_case(name: str, root: pathlib.Path) -> dict:

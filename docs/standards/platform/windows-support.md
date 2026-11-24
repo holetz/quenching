@@ -1,8 +1,8 @@
 ---
 type: standard
-title: Windows without administrator rights — the supported prerequisites and what the port covers
+title: Windows without administrator rights â€” the supported prerequisites and what the port covers
 description: What "supported on Windows without administrator rights" means for the cq tool, the user-scope prerequisites, the three code paths that were POSIX-only (process groups, symlinks, the PATH launcher) and the one CI job that exercises them
-resource: quenching/assets/bin/quenching/common/tools.py, quenching/assets/bin/quenching/session/live.py, quenching/assets/bin/quenching/git/worktree.py, quenching/assets/bin/quenching/deploy/tree.py, quenching/assets/bin/quenching/opensource/readiness.py, quenching/assets/bin/quenching/git/preflight.py, quenching/assets/bin/quenching/specs/chat.py, .github/workflows/ci.yml
+resource: quenching/assets/bin/quenching/common/tools.py, quenching/assets/bin/quenching/session/live.py, quenching/assets/bin/quenching/git/worktree.py, quenching/assets/bin/quenching/deploy/tree.py, quenching/assets/bin/quenching/opensource/readiness.py, quenching/assets/bin/quenching/git/preflight.py, quenching/assets/bin/quenching/specs/chat.py, quenching/assets/bin/quenching/common/config.py, quenching/tests/capture_golden.py, .github/workflows/ci.yml
 tags: [windows, platform, prerequisites, junction, process-group]
 timestamp: 2026-11-23
 audience: both
@@ -46,6 +46,12 @@ the official versioned ZIP under `%LOCALAPPDATA%`, without elevation.
   `Bash(<payload>/bin/cq:*)` and `Bash(<payload>/bin/cq.cmd:*)` and its body says which one to
   call: `cq` on POSIX, `cq.cmd` on Windows. A skill that named only `cq` would be denied the
   command on the platform this port exists for.
+
+- **Paths in JSON payloads.** A file path inside a `cq` JSON payload (`specs config`,
+  `config export|init|check|set`) is POSIX on every platform: `common/config.posix_path` replaces
+  `os.sep` with `/` where the payload is built, and the internal envelope stays native for file
+  I/O. The goldens freeze `<WS>/.agents/quenching.json`, and `capture_golden.normalize` swaps the
+  workspace in its native, JSON-escaped and POSIX forms. Human-readable text may keep the native path.
 
 **What it does not cover:** the whole `scripts/verify_repo.sh` gate (it needs bash and uv), the
 POSIX hook scripts and `scripts/githooks`, and `scripts/run_evals.py`.
