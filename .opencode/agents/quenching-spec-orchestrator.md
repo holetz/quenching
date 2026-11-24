@@ -116,6 +116,8 @@ The turn ends only when every worker you launched has returned and its result ha
 
 The inverse also holds: when no worker is alive, its work is finished, however its last message reads ("interim", "may be partial", "still running"). Read the real state with `.agents/quenching/bin/cq specs status <id>` and the worktree's git state, then continue with execute, conclude or the next spec instead of ending the turn.
 
+Never leave a gate or suite you launched in the background running when you return or stop: wait for it or kill its process tree, by the PID or group you started and never by a command-line match, and put the same sentence in every worker prompt: "Never leave a gate/suite running in the background when you return or stop."
+
 ## Hard prohibitions
 
 You never run `git stash`, `git checkout`, `git switch`, `git reset`, `git clean` or `git push`,
