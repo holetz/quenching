@@ -476,6 +476,12 @@ def main(argv: list[str]) -> int:
     mcp_warnings = ([] if mcp or not harnesses else [
         "the MCP server is not registered: `--runtime uvx` carries no vendored entry point; "
         "use `--runtime vendor` to register it"])
+    recorded_settings = (previous or {}).get("claudeSettings")
+    recorded_hooks = recorded_settings.get("command") if isinstance(recorded_settings, dict) else None
+    hooks_python, hooks_warning = mcpfiles.direct_prefix(
+        python, recorded_hooks if isinstance(recorded_hooks, list) else None)
+    if hooks_warning and "claude" in harnesses:
+        mcp_warnings.append(hooks_warning)
     try:
         manifest = deploy_tree.load_modules(deploy_tree.source_root())
         modules = deploy_tree.normalize_modules(
@@ -483,7 +489,8 @@ def main(argv: list[str]) -> int:
         profiles = (_split(args.profiles) or recorded(previous, "profiles")
                     or deploy_tree.profiles_for(modules))
         built = deploy_tree.build_tree(deploy_tree.source_root(), target, modules, harnesses,
-                                       runtime, profiles, mcp=mcp, python=python)
+                                       runtime, profiles, mcp=mcp, python=python,
+                                       hooks_python=hooks_python)
     except (OSError, ValueError) as exc:
         return refuse({"code": "ct-deploy-source", "message": str(exc),
                        "remedy": "run deploy from a complete quenching checkout or wheel"},

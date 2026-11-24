@@ -45,6 +45,29 @@ def python_prefix(declared: list[str] | None, recorded: list[str] | None) -> lis
     return list(FALLBACK)
 
 
+def _through_uv(prefix: list[str] | tuple[str, ...]) -> bool:
+    head = re.split(r"[\\/]", prefix[0])[-1].lower() if prefix else ""
+    return head.removesuffix(".exe") in {"uv", "uvx"}
+
+
+def direct_prefix(prefix: list[str], recorded: list[str] | None = None) -> tuple[list[str], str | None]:
+    """The prefix the hooks run under, and a warning when it differs from `prefix`.
+
+    A hook runs on every shell call, so it never goes through `uv`/`uvx`: `uv run` resolves the
+    project each time and exits 2 on failure, which Claude Code reads as a block of the tool call.
+    Such a prefix gives way to the one the last deploy recorded for the hooks, else the first of
+    `CANDIDATES` that runs here, else `python3`; any other prefix is kept as it is."""
+    if not _through_uv(prefix):
+        return list(prefix), None
+    if recorded and not _through_uv(recorded):
+        chosen = list(recorded)
+    else:
+        chosen = next((list(c) for c in CANDIDATES if _runs(c)), list(FALLBACK))
+    return chosen, (f"`{' '.join(prefix)}` runs through uv, which resolves the project on every "
+                    f"call and exits 2 on failure, blocking every shell call; the hooks run "
+                    f"`{' '.join(chosen)}` directly, and the MCP server keeps the declared prefix")
+
+
 def _load(text: str | None, section: str) -> dict | None:
     if text is None or not text.strip():
         return {}

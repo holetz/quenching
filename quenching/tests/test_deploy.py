@@ -491,6 +491,21 @@ class Deploy(unittest.TestCase):
                           "command": ["uv", "run", "--no-project", "python"]}, manifest["mcp"])
         self.assertEqual([], self.run_deploy("--check")[1]["changes"])
 
+    def test_a_uv_prefix_reaches_the_mcp_but_never_the_hooks(self):
+        self.configure(self.mcp_config())
+        code, payload = self.run_deploy("--modules", "core", "--write")
+        self.assertEqual(0, code, payload)
+        server = json.loads((self.target / ".mcp.json").read_text())["mcpServers"]["quenching"]
+        self.assertEqual("uv", server["command"])
+        own = [c for c in self.hook_commands() if ".agents/quenching/assets/hooks/" in c]
+        self.assertEqual(1, len(own))
+        self.assertFalse(own[0].startswith("uv"), own[0])
+        self.assertIn(" -I -c ", own[0])
+        self.assertTrue(any("runs through uv" in w for w in payload["warnings"]), payload["warnings"])
+        manifest = json.loads((self.target / ".agents/.quenching-deploy.json").read_text())
+        self.assertEqual(own[0].split(" -I -c ")[0].split(" "), manifest["claudeSettings"]["command"])
+        self.assertEqual((0, []), (self.run_deploy("--check")[0], self.run_deploy("--check")[1]["changes"]))
+
     def test_without_the_option_the_mcp_is_registered_anyway(self):
         self.configure({"shared": {"profiles": {"installed": ["specs"]}}})
         code, payload = self.run_deploy("--modules", "specs", "--write")

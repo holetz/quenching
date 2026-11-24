@@ -12,7 +12,7 @@ import unittest
 PLUGIN_ROOT = pathlib.Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(PLUGIN_ROOT / "assets" / "bin"))
 
-from quenching.deploy import settings  # noqa: E402
+from quenching.deploy import mcpfiles, settings  # noqa: E402
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
 from _tools import bash  # noqa: E402
@@ -157,6 +157,27 @@ class TheSettingsMerge(unittest.TestCase):
         added = settings.merge(None, want(COAUTHOR))
         widened = load(settings.merge(added.text, want({**COAUTHOR, "matcher": "Bash|PowerShell"})))
         self.assertEqual(["Bash|PowerShell"], [g["matcher"] for g in widened["hooks"]["PreToolUse"]])
+
+
+class TheHooksPrefix(unittest.TestCase):
+    """A hook runs on every shell call, so its prefix never goes through uv."""
+
+    def test_a_direct_prefix_is_kept_without_a_warning(self):
+        for prefix in (["python3"], ["py", "-3"], ["C:/Python312/python.exe"]):
+            with self.subTest(prefix=prefix):
+                self.assertEqual((prefix, None), mcpfiles.direct_prefix(prefix))
+
+    def test_uv_and_uvx_give_way_to_the_recorded_direct_prefix(self):
+        for prefix in (["uv", "run", "python"], ["uvx", "python"], ["C:\\bin\\UV.EXE", "run", "python"]):
+            with self.subTest(prefix=prefix):
+                chosen, warning = mcpfiles.direct_prefix(prefix, ["python"])
+                self.assertEqual(["python"], chosen)
+                self.assertIn("runs through uv", warning)
+
+    def test_without_a_record_the_probe_picks_an_interpreter(self):
+        chosen, warning = mcpfiles.direct_prefix(["uv", "run", "python"], ["uv", "run", "python"])
+        self.assertNotIn(chosen[0], ("uv", "uvx"))
+        self.assertIsNotNone(warning)
 
 
 class ThePolyglotCommand(unittest.TestCase):

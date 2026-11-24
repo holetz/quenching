@@ -321,7 +321,8 @@ def _declared_hooks(selected: list[dict]) -> list[dict]:
 
 def build_tree(source: Path, target: Path, modules: list[str], harnesses: list[str],
                runtime: str = "vendor", profiles: list[str] | None = None,
-               mcp: dict | None = None, python: list[str] | None = None) -> dict:
+               mcp: dict | None = None, python: list[str] | None = None,
+               hooks_python: list[str] | None = None) -> dict:
     manifest = load_modules(source)
     selected = _selected_modules(manifest, modules)
     if not selected:
@@ -436,9 +437,11 @@ def build_tree(source: Path, target: Path, modules: list[str], harnesses: list[s
     if "claude" in harnesses:
         # `.claude/settings.json` is the user's file: it is merged by `cli`, never listed in `files`.
         # `attribution` holds the keys this deploy wrote; `cli` replaces it once the merge ran.
-        settings = {"hooks": claude_settings.desired_entries(
-                        hooks, python or claude_settings.PYTHON),
+        # The hooks' own prefix: never `uv` (`mcpfiles.direct_prefix`), recorded so it does not flap.
+        prefix = list(hooks_python or python or claude_settings.PYTHON)
+        settings = {"hooks": claude_settings.desired_entries(hooks, prefix),
                     "attribution": dict(claude_settings.ATTRIBUTION)}
         document["claudeSettings"] = {"hooks": [hook["name"] for hook in hooks],
-                                      "attribution": sorted(claude_settings.ATTRIBUTION)}
+                                      "attribution": sorted(claude_settings.ATTRIBUTION),
+                                      "command": prefix}
     return {"tree": tree, "seeds": seeds, "manifest": document, "settings": settings}
