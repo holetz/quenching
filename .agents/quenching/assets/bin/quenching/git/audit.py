@@ -37,7 +37,8 @@ import os
 import posixpath
 import re
 import shlex
-from quenching.common.git import _git_run
+import subprocess
+from quenching.common.git import COMMAND_TIMEOUT_S, _git_run
 from quenching.common.output import emit, refuse
 
 FILTER_KEY = re.compile(r"^filter\.(.+)\.(clean|smudge|process)$", re.S)
@@ -53,12 +54,24 @@ def _run(cwd: str, *argv: str, env: dict[str, str] | None = None) -> tuple[int, 
     return code, out
 
 
+def _read(cwd: str, env: dict[str, str] | None, cache: dict | None, *argv: str) -> tuple[int, str, str]:
+    """One read under `SAFE`, answered once per audit when a `cache` is passed: the same argv
+    against the same repository state is the same answer, so a fact several checks need (a tree
+    listing, a blob, the module manifest, a reflog) costs one process, never one per reader. A
+    failure is cached too, and every reader still appends its own `errors` entry from it."""
+    if cache is None:
+        return _git_run(cwd, *SAFE, *argv, env=env)
+    if argv not in cache:
+        cache[argv] = _git_run(cwd, *SAFE, *argv, env=env)
+    return cache[argv]
+
+
 def _lines(cwd: str, *argv: str, env: dict[str, str] | None = None,
-           errors: list[dict] | None = None) -> list[str]:
+           errors: list[dict] | None = None, cache: dict | None = None) -> list[str]:
     """The non-empty stdout lines of one read. A read that FAILS (non-zero exit, a timeout, no git)
     is not an empty list: it is appended to `errors` as `{read, code, message}` so the payload says
     the fact is unknown. Without `errors` the caller opted out of that and gets `[]`."""
-    code, out, err = _git_run(cwd, *SAFE, *argv, env=env)
+    code, out, err = _read(cwd, env, cache, *argv)
     if code != 0:
         if errors is not None:
             errors.append(_error(argv, code, err))
@@ -75,20 +88,117 @@ def _paths(cwd: str, rng: str, env: dict[str, str], errors: list[dict]) -> list[
     return [p for p in out.split("\0") if p]
 
 
+RAW = ("diff", "--no-ext-diff", "--no-textconv", "--raw", "-z", "--no-renames")
+
+
+def _raw(cwd: str, rng: str, env: dict[str, str], cache: dict) -> list[tuple[str, str]] | None:
+    """`(raw header, path)` of every path a range changes, from ONE `diff --raw -z`: the changed
+    paths, their status letters and their new modes all read from it. `None` when the read fails,
+    and each reader then repeats its own read so the failure lands in `errors` under its own name."""
+    code, out, _err = _read(cwd, env, cache, *RAW, rng)
+    if code != 0:
+        return None
+    fields = out.split("\0")
+    return [(fields[i], fields[i + 1]) for i in range(0, len(fields) - 1, 2)]
+
+
+PATCH = ("diff", "--no-ext-diff", "--no-textconv", "--text", "-U0", "--no-renames")
+
+
+def _patch(cwd: str, rng: str, path: str, env: dict[str, str], cache: dict,
+           changed: list[str]) -> tuple[int, str, str]:
+    """The `-U0` patch of one path of `rng`, exactly the text `diff <rng> -- <path>` prints. All the
+    paths' patches come from ONE `diff` split at its `diff --git` headers, one block per changed
+    path in the order `--raw` lists them; any doubt (the read fails, the block count is not the
+    path count, the path is not among them) falls back to the per-path read."""
+    key = ("patch", rng)
+    if key not in cache:
+        blocks = None
+        code, out, _err = _read(cwd, env, cache, *PATCH, rng)
+        if code == 0:
+            parts = [b for b in re.split(r"(?m)^(?=diff --git )", out) if b]
+            if len(parts) == len(changed):
+                blocks = dict(zip(changed, parts))
+        cache[key] = blocks
+    blocks = cache[key]
+    if blocks is not None and path in blocks and changed.count(path) == 1:
+        return 0, blocks[path], ""
+    return _git_run(cwd, *SAFE, *PATCH, rng, "--", path, env=env)
+
+
+def _prefetch(cwd: str, env: dict[str, str] | None, cache: dict, specs: list[str]) -> None:
+    """Fill the `show --no-textconv <spec>` answers of every `rev:path` in `specs` from ONE
+    `cat-file --batch`, in the cache `_read` consults: the text a `show` would print (universal
+    newlines, undecodable bytes replaced) for a blob, a missing answer for a path the revision
+    lacks. Whatever is not certain (the read fails, an ambiguous name, a tree) is left out, and its
+    reader asks `show` itself. Only readers that ignore git's message for a missing path ask for this."""
+    want = [s for s in dict.fromkeys(specs)
+            if ("show", "--no-textconv", s) not in cache and "\n" not in s and "\r" not in s]
+    if not want:
+        return
+    try:
+        proc = subprocess.run(["git", *SAFE, "cat-file", "--batch"], capture_output=True, cwd=cwd, env=env,
+                              input="".join(f"{s}\n" for s in want).encode("utf-8"),
+                              timeout=COMMAND_TIMEOUT_S)
+    except (OSError, ValueError, subprocess.SubprocessError):
+        return
+    if proc.returncode != 0:
+        return
+    data, pos, found = proc.stdout, 0, {}
+    for spec in want:
+        end = data.find(b"\n", pos)
+        if end < 0:
+            return
+        head = data[pos:end].decode("utf-8", "replace")
+        pos = end + 1
+        if head.endswith(" missing"):
+            found[spec] = (128, "", f"fatal: {spec} is missing")
+            continue
+        fields = head.split(" ")
+        if len(fields) != 3 or not fields[2].isdigit():
+            return                       # not the shape the protocol promises: trust none of it
+        size = int(fields[2])
+        if fields[1] == "blob":
+            text = data[pos:pos + size].decode("utf-8", "replace").replace("\r\n", "\n").replace("\r", "\n")
+            found[spec] = (0, text, "")
+        pos += size + 1
+    for spec, answer in found.items():
+        cache[("show", "--no-textconv", spec)] = answer
+
+
+def _commits(cwd: str, refs: list[str], env: dict[str, str]) -> list[str | None] | None:
+    """`_commit` of every ref from ONE `cat-file --batch-check`; `None` when the read fails or a ref
+    cannot ride a line-based protocol, and the caller then asks per ref."""
+    if any("\n" in r or "\r" in r for r in refs):
+        return None
+    asked = [r for r in refs if r and not r.startswith("-")]
+    code, out, _err = _git_run(cwd, *SAFE, "cat-file", "--batch-check",
+                               stdin="".join(f"{r}^{{commit}}\n" for r in asked), env=env)
+    lines = out.split("\n")
+    if code != 0 or len(lines) != len(asked) + 1:
+        return None
+    answers = {}
+    for ref, line in zip(asked, lines):
+        fields = line.split(" ")
+        answers[ref] = fields[0] if len(fields) == 3 and fields[1] == "commit" else None
+    return [answers.get(r) for r in refs]
+
+
 def _error(argv: tuple[str, ...], code: int, err: str) -> dict:
     lines = [line for line in (err or "").strip().splitlines() if line.strip()]
     return {"read": " ".join(argv[:2]), "code": code, "message": lines[0] if lines else ""}
 
 
 def _reflog(cwd: str, ref: str, env: dict[str, str] | None = None,
-            errors: list[dict] | None = None) -> list[str]:
+            errors: list[dict] | None = None, cache: dict | None = None) -> list[str]:
     """The reflog entries of `ref` that MOVED it, newest first. The check judges movement, not
     message: an entry whose sha equals the next older entry's moved nothing and is dropped whatever
     it says (`git merge --abort` logs `reset: moving to HEAD`); every other entry stays, and one
     with an empty message (`git update-ref` without `-m`) reads `(no reflog message) <old>..<new>`,
     so a rewrite made silently is still seen. The oldest entry is the ref's creation and stays."""
     entries = [(line.split(" ", 1) + [""])[:2]
-               for line in _lines(cwd, "reflog", "show", "--format=%H %gs", ref, env=env, errors=errors)]
+               for line in _lines(cwd, "reflog", "show", "--format=%H %gs", ref, env=env, errors=errors,
+                                  cache=cache)]
     if not entries and errors is not None:   # a live ref always has its creation entry: none means expired or never logged
         errors.append(_error(("reflog", "show", ref), 0, "reflog empty or expired: the ref's history is unknown, not clean"))
     kept = []
@@ -161,8 +271,58 @@ def _discarded_by_switch(cwd: str, entries: list[list[str]], i: int, branch: str
     return (f"{entries[i][1]} {old[:12]}..{new[:12]} (discards {len(dropped)} commit(s) of {branch})")
 
 
+def _ancestors(cwd: str, env: dict[str, str] | None, pairs: list[tuple[str, str]]) -> dict | None:
+    """`{(older, newer): whether older is an ancestor of newer}` for every pair, from two reads in
+    place of one `merge-base --is-ancestor` per pair: the octopus merge base X of every sha is an
+    ancestor of all of them, so `rev-list --parents` of the shas minus X lists every commit that
+    can matter; an `older` outside that list is X or below it, hence an ancestor of every sha, and
+    one inside it is found by walking the listed parents of `newer`. `None` when any read fails or
+    the shas share no ancestor: the caller then asks per pair, and its own errors stand."""
+    shas = sorted({s for pair in pairs for s in pair})
+    code, out, _err = _git_run(cwd, *SAFE, "merge-base", "--octopus", *shas, env=env)
+    base = out.strip()
+    if code != 0 or not base:
+        return None
+    code, out, _err = _git_run(cwd, *SAFE, "rev-list", "--parents", "--stdin",
+                               stdin="".join(f"{s}\n" for s in shas) + f"^{base}\n", env=env)
+    if code != 0:
+        return None
+    parents = {(f := line.split())[0]: f[1:] for line in out.splitlines() if line.strip()}
+    answer = {}
+    for older, newer in pairs:
+        if older == newer or older not in parents:
+            answer[(older, newer)] = True
+            continue
+        seen, todo, found = set(), [newer], False
+        while todo and not found:
+            cur = todo.pop()
+            if cur == older:
+                found = True
+            elif cur not in seen:
+                seen.add(cur)
+                todo += [p for p in parents.get(cur, ()) if p in parents]
+        answer[(older, newer)] = found
+    return answer
+
+
+def _prime_ancestry(cwd: str, env: dict[str, str] | None, cache: dict, refs: list[str]) -> None:
+    """The ancestry of every reflog move of `refs` in two reads, kept in the cache for `_rewrites`;
+    two moves or fewer cost no more asked one by one, so nothing is primed then."""
+    moves = []
+    for ref in refs:
+        code, out, _err = _read(cwd, env, cache, "reflog", "show", "--format=%H %gs", ref)
+        shas = [line.split(" ", 1)[0] for line in out.splitlines() if line] if code == 0 else []
+        moves += [(shas[i + 1], shas[i]) for i in range(len(shas) - 1) if shas[i + 1] != shas[i]]
+    moves = sorted(set(moves))
+    if len(moves) >= 3:
+        answers = _ancestors(cwd, env, moves)
+        if answers is not None:
+            cache[("ancestry",)] = answers
+
+
 def _rewrites(cwd: str, ref: str, env: dict[str, str] | None = None,
-              errors: list[dict] | None = None, branch: str | None = None) -> list[str]:
+              errors: list[dict] | None = None, branch: str | None = None,
+              cache: dict | None = None) -> list[str]:
     """The reflog moves of `ref` that are not fast-forwards: the older sha is not an ancestor of the
     newer one. The verdict is the graph's, so a rewrite made with no message or a forged one
     (`update-ref -m "commit: tidy"`) is still listed. The oldest entry is the creation and has no
@@ -170,10 +330,11 @@ def _rewrites(cwd: str, ref: str, env: dict[str, str] | None = None,
     With `branch`, `ref` is `HEAD` and only the moves since its last switch onto that branch count
     (`_since_switch`): the switch itself moves `HEAD` between unrelated tips and is no rewrite of the work."""
     entries = [(line.split(" ", 1) + [""])[:2]
-               for line in _lines(cwd, "reflog", "show", "--format=%H %gs", ref, env=env)]
+               for line in _lines(cwd, "reflog", "show", "--format=%H %gs", ref, env=env, cache=cache)]
     if branch is not None:
         held = {line.split(" ", 1)[0] for line in
-                _lines(cwd, "reflog", "show", "--format=%H %gs", f"refs/heads/{branch}", env=env)}
+                _lines(cwd, "reflog", "show", "--format=%H %gs", f"refs/heads/{branch}", env=env,
+                       cache=cache)}
         kept = _since_switch(entries, branch, held)
         discarded = ""
         if len(kept) < len(entries):
@@ -182,9 +343,16 @@ def _rewrites(cwd: str, ref: str, env: dict[str, str] | None = None,
     found = []
     if branch is not None and discarded:
         found.append(discarded)
+    moves = [(entries[i + 1][0], sha) for i, (sha, _s) in enumerate(entries[:-1]) if entries[i + 1][0] != sha]
+    primed = (cache or {}).get(("ancestry",))   # the answers `_prime_ancestry` read for every ref at once
+    batched = primed if primed is not None and all(m in primed for m in moves) else None
     for i, (sha, subject) in enumerate(entries[:-1]):
         older = entries[i + 1][0]
         if older == sha:
+            continue
+        if batched is not None:
+            if not batched[(older, sha)]:
+                found.append(f"{subject or '(no reflog message)'} {older[:12]}..{sha[:12]}")
             continue
         code, _out, err = _git_run(cwd, *SAFE, "merge-base", "--is-ancestor", older, sha, env=env)
         if code > 1:
@@ -296,7 +464,7 @@ def _plugin_components(root: str, manifest) -> list[tuple[str, str]]:
 
 
 def _plugin_roots(cwd: str, revs: tuple[str, ...], env: dict[str, str],
-                  errors: list[dict]) -> list[tuple[str, str]]:
+                  errors: list[dict], cache: dict | None = None) -> list[tuple[str, str]]:
     """Every `(kind, prefix)` a plugin of the base or the tip loads agents, commands and skills from,
     whatever the path's shape: a folder holding `.claude-plugin/plugin.json` is a root even when its
     JSON does not parse (only the declared component paths are lost then), and so is every relative
@@ -304,7 +472,7 @@ def _plugin_roots(cwd: str, revs: tuple[str, ...], env: dict[str, str],
     that cannot be listed is an `errors` entry: the roots are unknown, never empty."""
     found: list[tuple[str, str]] = []
     for rev in revs:
-        code, out, err = _git_run(cwd, *SAFE, "ls-tree", "-r", "--name-only", "-z", rev, env=env)
+        code, out, err = _read(cwd, env, cache, "ls-tree", "-r", "--name-only", "-z", rev)
         if code != 0:
             errors.append(_error(("ls-tree", rev), code, err))
             continue
@@ -313,7 +481,7 @@ def _plugin_roots(cwd: str, revs: tuple[str, ...], env: dict[str, str],
             if not m:
                 continue
             here = posixpath.dirname(posixpath.dirname(path))
-            code, text, _e = _git_run(cwd, *SAFE, "show", "--no-textconv", f"{rev}:{path}", env=env)
+            code, text, _e = _read(cwd, env, cache, "show", "--no-textconv", f"{rev}:{path}")
             try:
                 data = json.loads(text) if code == 0 else None
             except ValueError:
@@ -406,7 +574,7 @@ def _ci_refs(kind: str, path: str, text: str) -> list[str]:
 
 
 def _ci_includes(cwd: str, revs: tuple[str, ...], env: dict[str, str],
-                 errors: list[dict]) -> list[tuple[str, str]]:
+                 errors: list[dict], cache: dict | None = None) -> list[tuple[str, str]]:
     """`("surface", path)` for every file a CI root of the base or the tip includes, transitively
     (an included YAML file is read in turn, as the kind of the root that reached it; of a folder a
     GitHub `uses:` names, only its `action.yml`/`action.yaml`). A path is the file, a folder
@@ -414,7 +582,7 @@ def _ci_includes(cwd: str, revs: tuple[str, ...], env: dict[str, str],
     be read, or more than `CI_READS` files is an `errors` entry: the inclusions are unknown."""
     found: list[tuple[str, str]] = []
     for rev in revs:
-        code, out, err = _git_run(cwd, *SAFE, "ls-tree", "-r", "--name-only", "-z", rev, env=env)
+        code, out, err = _read(cwd, env, cache, "ls-tree", "-r", "--name-only", "-z", rev)
         if code != 0:
             errors.append(_error(("ls-tree", rev), code, err))
             continue
@@ -431,7 +599,7 @@ def _ci_includes(cwd: str, revs: tuple[str, ...], env: dict[str, str],
             if reads > CI_READS:
                 errors.append(_error(("show", rev), 0, f"more than {CI_READS} CI files: the inclusions are unknown"))
                 break
-            code, text, err = _git_run(cwd, *SAFE, "show", "--no-textconv", f"{rev}:{path}", env=env)
+            code, text, err = _read(cwd, env, cache, "show", "--no-textconv", f"{rev}:{path}")
             if code != 0:
                 errors.append(_error(("show", path), code, err))
                 continue
@@ -623,13 +791,13 @@ NAMESPACED = re.compile(r"(?<![\w-])quenching:([a-z][a-z-]*)")
 
 
 def _modules(cwd: str, base: str, env: dict[str, str],
-             errors: list[dict]) -> tuple[str, list[str], dict[str, str]] | None:
+             errors: list[dict], cache: dict | None = None) -> tuple[str, list[str], dict[str, str]] | None:
     """The module manifest of the BASE, never the branch's: `(source, module roots, namespace map)`.
     The map sends each `quenching:<head>` head (an owned command front or root command, and every
     agent of the source when the module owns agents) to its owning module, as `namespace_map` of the
     generator does. Absent manifest -> None (nothing is declared); unreadable or a duplicate head ->
     an `errors` entry and None, so no relocation is ever accepted on a manifest the audit cannot read."""
-    code, out, _err = _git_run(cwd, *SAFE, "show", f"{base}:{MODULES}", env=env)
+    code, out, _err = _read(cwd, env, cache, "show", "--no-textconv", f"{base}:{MODULES}")
     if code != 0:
         return None
     try:
@@ -647,8 +815,8 @@ def _modules(cwd: str, base: str, env: dict[str, str],
             heads = [rel.removesuffix(".md") for rel in owned.get("commands", [])]
             if owned.get("agents"):
                 if agents is None:
-                    c, listing, _e = _git_run(cwd, *SAFE, "ls-tree", "--name-only", base,
-                                              f"{source}/agents/", env=env)
+                    c, listing, _e = _read(cwd, env, cache, "ls-tree", "--name-only", base,
+                                           f"{source}/agents/")
                     agents = [posixpath.basename(n)[:-3] for n in listing.splitlines()
                               if n.endswith(".md")] if c == 0 else []
                 heads += sorted(agents)
@@ -680,7 +848,8 @@ def _origin(path: str, view: tuple[str, list[str], dict[str, str]] | None) -> st
 
 
 def _grants(cwd: str, base: str, tip: str, changed: list[str], env: dict[str, str],
-            errors: list[dict], generated: frozenset[str] | set[str] = frozenset()) -> list[dict]:
+            errors: list[dict], generated: frozenset[str] | set[str] = frozenset(),
+            cache: dict | None = None) -> list[dict]:
     """Every entry the branch ADDS to the grant surface against its merge-base with `base`:
     `tools:`/`allowed-tools:` of an agent, command or skill (an agent with no `tools:` is `*`), a
     deny rule removed (`kind: deny`), and the added lines of a settings file under `.claude/` or
@@ -701,26 +870,35 @@ def _grants(cwd: str, base: str, tip: str, changed: list[str], env: dict[str, st
     itself when it changed; and a `tools:` entry that is exactly the namespace rewrite
     (`quenching:<head>` -> `<module>:<head>`, by the BASE manifest) of an entry the old file held is not
     added. The old file of a new path in a module is its same relative path under the source at the fork."""
-    code, out, err = _git_run(cwd, *SAFE, "merge-base", base, tip, env=env)
+    if cache is None:
+        cache = {}
+    code, out, err = _read(cwd, env, cache, "merge-base", base, tip)
     if code != 0 or not out.strip():
         errors.append(_error(("merge-base", base), code, err or "no common ancestor"))
         return []
     fork = out.strip()
-    code, out, err = _git_run(cwd, *SAFE, "diff", "--no-ext-diff", "--no-textconv", "--raw", "-z",
-                              "--no-renames", f"{fork}..{tip}", env=env)
-    if code != 0:
-        errors.append(_error(("diff", "--raw"), code, err))
-    fields = out.split("\0") if code == 0 else []
-    symlinks = {fields[i + 1] for i in range(0, len(fields) - 1, 2)
-                if fields[i].split(" ")[1:2] == [SYMLINK]}
+    raw = _raw(cwd, f"{base}...{tip}", env, cache)   # `base...tip` is `fork..tip`: the same read the other checks share
+    if raw is None:
+        code, out, err = _git_run(cwd, *SAFE, "diff", "--no-ext-diff", "--no-textconv", "--raw", "-z",
+                                  "--no-renames", f"{fork}..{tip}", env=env)
+        if code != 0:
+            errors.append(_error(("diff", "--raw"), code, err))
+        fields = out.split("\0") if code == 0 else []
+        raw = [(fields[i], fields[i + 1]) for i in range(0, len(fields) - 1, 2)]
+    symlinks = {path for header, path in raw if header.split(" ")[1:2] == [SYMLINK]}
 
     def show(rev: str, path: str) -> str | None:
-        code, text, _e = _git_run(cwd, *SAFE, "show", "--no-textconv", f"{rev}:{path}", env=env)
+        code, text, _e = _read(cwd, env, cache, "show", "--no-textconv", f"{rev}:{path}")
         return text if code == 0 else None
 
-    roots = _plugin_roots(cwd, (fork, tip), env, errors) + _ci_includes(cwd, (fork, tip), env, errors)
-    view = _modules(cwd, base, env, errors)
+    roots = _plugin_roots(cwd, (fork, tip), env, errors, cache) + _ci_includes(cwd, (fork, tip), env, errors, cache)
+    view = _modules(cwd, base, env, errors, cache)
     mapping = view[2] if view else {}
+    _prefetch(cwd, env, cache, [f"{tip}:{p}" for p in changed if p in generated] + [
+        f"{rev}:{p}" for p in changed if p not in generated and p not in symlinks and (
+            ((FRONTMATTER_GRANT.search(p) or _component(p, roots)[0]) and not DOCS.match(p))
+            or SURFACE.search(p) or any(kind == "surface" and _under(p, q) for kind, q in roots))
+        for rev in (tip, fork)])   # the blobs the loop below reads, in one read
     found = []
     for path in changed:
         if path in symlinks:   # its target is never read: a link into the tree or a directory fails closed
@@ -771,8 +949,7 @@ def _grants(cwd: str, base: str, tip: str, changed: list[str], env: dict[str, st
                     found.append({"path": path, "kind": kind, "added": removed})
         if surface:
             # `--text`: a `-diff`/`binary` attribute (the base's or the branch's) would print no line
-            code, out, err = _git_run(cwd, *SAFE, "diff", "--no-ext-diff", "--no-textconv", "--text",
-                                      "-U0", "--no-renames", f"{base}...{tip}", "--", path, env=env)
+            code, out, err = _patch(cwd, f"{base}...{tip}", path, env, cache, changed)
             if code != 0:
                 errors.append(_error(("diff", "-U0"), code, err))
                 continue
@@ -858,7 +1035,8 @@ def _asserts(text: str) -> int:
     return n
 
 
-def _lowered(cwd: str, base: str, tip: str, env: dict[str, str], errors: list[dict]) -> list[dict]:
+def _lowered(cwd: str, base: str, tip: str, env: dict[str, str], errors: list[dict],
+             cache: dict | None = None) -> list[dict]:
     """The ways the branch lowers the bar a gate measures, read from `base...tip`, never judged for
     justification. `severity: fail` — a test file deleted, a test file left with no assert it had at
     the base, a gate file (`scripts/verify_repo.sh`, `quenching/assets/checks/**`) deleted or
@@ -866,21 +1044,30 @@ def _lowered(cwd: str, base: str, tip: str, env: dict[str, str], errors: list[di
     `noqa`, `type: ignore`, `skip`, `skipIf`, `skipUnless` or `xfail` added to a code file. A reworded
     gate step reads as shrunk: the conductor settles it, except a line whose `quenching:<head>`
     ids, rewritten by the BASE manifest's namespace map, are an added line verbatim."""
-    code, out, err = _git_run(cwd, *SAFE, "diff", "--no-ext-diff", "--no-textconv", "--name-status",
-                              "-z", "--no-renames", f"{base}...{tip}", env=env)
-    if code != 0:
-        errors.append(_error(("diff", "--name-status"), code, err))
-        return []
-    fields = [f for f in out.split("\0") if f]
+    if cache is None:
+        cache = {}
+    raw = _raw(cwd, f"{base}...{tip}", env, cache)   # the status letter and the path of every change, shared with the other checks
+    if raw is not None:
+        pairs = [(header.split(" ")[-1], path) for header, path in raw if path]
+    else:
+        code, out, err = _git_run(cwd, *SAFE, "diff", "--no-ext-diff", "--no-textconv", "--name-status",
+                                  "-z", "--no-renames", f"{base}...{tip}", env=env)
+        if code != 0:
+            errors.append(_error(("diff", "--name-status"), code, err))
+            return []
+        fields = [f for f in out.split("\0") if f]
+        pairs = list(zip(fields[0::2], fields[1::2]))
+    changed = [path for _s, path in pairs]
     found = []
 
     def show(rev: str, path: str) -> str:
-        c, text, _e = _git_run(cwd, *SAFE, "show", "--no-textconv", f"{rev}:{path}", env=env)
+        c, text, _e = _read(cwd, env, cache, "show", "--no-textconv", f"{rev}:{path}")
         return text if c == 0 else ""
 
-    pairs = list(zip(fields[0::2], fields[1::2]))
-    view = _modules(cwd, base, env, errors)
+    view = _modules(cwd, base, env, errors, cache)
     mapping = view[2] if view else {}
+    _prefetch(cwd, env, cache, [f"{rev}:{p}" for _s, p in pairs
+                                if TEST_PATH.search(p) or GATE_PATH.search(p) for rev in (base, tip)])
     disc = _read_discover(show(tip, "scripts/verify_repo.sh"))
     root, pattern = disc if disc else (None, "test*.py")
     inconclusive = disc is False
@@ -949,15 +1136,16 @@ def _lowered(cwd: str, base: str, tip: str, env: dict[str, str], errors: list[di
             continue
         if deleted:
             continue
-        code, diff, err = _git_run(cwd, *SAFE, "diff", "--no-ext-diff", "--no-textconv", "--text",
-                                   "-U0", "--no-renames", f"{base}...{tip}", "--", path, env=env)
-        if code != 0:
-            errors.append(_error(("diff", "-U0"), code, err))
-            continue
-        rows = diff.splitlines()
-        body = rows[next((i for i, r in enumerate(rows) if r.startswith("@@")), len(rows)):]
-        plus = [r[1:].strip() for r in body if r.startswith("+")]
-        minus = [r[1:].strip() for r in body if r.startswith("-")]
+        plus = minus = []
+        if gate or CODE_EXT.search(path):   # only these read the changed lines
+            code, diff, err = _patch(cwd, f"{base}...{tip}", path, env, cache, changed)
+            if code != 0:
+                errors.append(_error(("diff", "-U0"), code, err))
+                continue
+            rows = diff.splitlines()
+            body = rows[next((i for i, r in enumerate(rows) if r.startswith("@@")), len(rows)):]
+            plus = [r[1:].strip() for r in body if r.startswith("+")]
+            minus = [r[1:].strip() for r in body if r.startswith("-")]
         if test and _asserts(show(base, path)) and not _asserts(show(tip, path)):
             found.append({"path": path, "severity": "fail", "kind": "test-lost-asserts",
                           "detail": "no assert left"})
@@ -979,13 +1167,27 @@ def _blob(cwd: str, tip: str, path: str, env: dict[str, str]) -> str | None:
     return out.strip() if code == 0 and out.strip() else None
 
 
+def _blobs(cwd: str, tip: str, paths: list[str], env: dict[str, str]) -> dict[str, str | None] | None:
+    """`_blob` of every path in ONE `cat-file --batch-check`; `None` when the read fails or a path
+    cannot ride a line-based protocol, and the caller then asks per path."""
+    if any("\n" in p or "\r" in p for p in paths):
+        return None
+    code, out, _err = _git_run(cwd, *SAFE, "cat-file", "--batch-check",
+                               stdin="".join(f"{tip}:{p}\n" for p in paths), env=env)
+    lines = out.split("\n")
+    if code != 0 or len(lines) != len(paths) + 1:
+        return None
+    return {p: (line.split(" ")[0] if len(line.split(" ")) == 3 and line.split(" ")[1] in ("blob", "tree", "commit")
+                else None) for p, line in zip(paths, lines)}
+
+
 def _generated(cwd: str, base: str, tip: str, changed: list[str], env: dict[str, str],
-               errors: list[dict]) -> list[str]:
+               errors: list[dict], cache: dict | None = None) -> list[str]:
     """The changed paths that are a byte-for-byte copy of their source file in a declared module.
     The manifest is read from the BASE, so the branch cannot declare its own outputs."""
     if not changed:
         return []
-    code, out, err = _git_run(cwd, *SAFE, "show", f"{base}:{MODULES}", env=env)
+    code, out, err = _read(cwd, env, cache, "show", "--no-textconv", f"{base}:{MODULES}")
     if code != 0:
         return []                         # no manifest at the base: nothing is declared generated
     try:
@@ -998,12 +1200,22 @@ def _generated(cwd: str, base: str, tip: str, changed: list[str], env: dict[str,
         errors.append(_error(("show", MODULES), 0, f"unreadable module manifest: {exc}"))
         return []
     found = []
+    sides = {}
+    for path in changed:
+        for root in roots:
+            if root != source and path.startswith(root + "/"):
+                sides[path] = f"{source}/{path[len(root) + 1:]}"
+                break
+    blobs = _blobs(cwd, tip, sorted({q for pair in sides.items() for q in pair}), env) if sides else {}
     for path in changed:
         for root in roots:
             if root != source and path.startswith(root + "/"):
                 rel = path[len(root) + 1:]
-                mine = _blob(cwd, tip, path, env)
-                theirs = _blob(cwd, tip, f"{source}/{rel}", env)
+                if blobs is not None:
+                    mine, theirs = blobs[path], blobs[f"{source}/{rel}"]
+                else:
+                    mine = _blob(cwd, tip, path, env)
+                    theirs = _blob(cwd, tip, f"{source}/{rel}", env)
                 if mine == theirs:
                     found.append(path)
                 break
@@ -1034,14 +1246,20 @@ def cmd_audit(args) -> int:
     errors: list[dict] = []
     env = _inert_env(worktree, errors)
     resolved = {}
-    for label, ref in [("base", args.base), ("branch", f"refs/heads/{args.branch}"),
-                       *(("sha", s) for s in args.sha)]:
-        sha = _commit(worktree, ref, env)
+    asked = [("base", args.base), ("branch", f"refs/heads/{args.branch}"), *(("sha", s) for s in args.sha)]
+    commits = _commits(worktree, [ref for _label, ref in asked], env)   # one read for every ref, or one per ref
+    for n, (label, ref) in enumerate(asked):
+        sha = commits[n] if commits is not None else _commit(worktree, ref, env)
         if sha is None:
             return refuse({"code": "audit-ref-invalid",
                            "message": f"{label} does not resolve to a commit: {ref}"}, args.json)
         resolved[ref] = sha
     base, tip = resolved[args.base], resolved[f"refs/heads/{args.branch}"]
+    cache: dict = {}   # what several checks read, read once
+    raw = _raw(worktree, f"{base}...{tip}", env, cache)
+    _prefetch(worktree, env, cache, [f"{base}:{MODULES}", f"{tip}:scripts/verify_repo.sh"] + [
+        f"{rev}:{p}" for _h, p in raw or [] if TEST_PATH.search(p) or GATE_PATH.search(p) for rev in (base, tip)])
+    _prime_ancestry(worktree, env, cache, [f"refs/heads/{args.branch}", "HEAD"])
 
     ancestry = {}
     for sha in args.sha:
@@ -1059,18 +1277,18 @@ def cmd_audit(args) -> int:
                          "--ignore-submodules=all", env=env, errors=errors),
         "stash": _lines(worktree, "stash", "list", env=env, errors=errors),
         "commits": _lines(worktree, "log", "--oneline", f"{base}..{tip}", env=env, errors=errors),
-        "changed": _paths(worktree, f"{base}...{tip}", env, errors),
+        "changed": [p for _h, p in raw if p] if raw is not None else _paths(worktree, f"{base}...{tip}", env, errors),
         "ancestry": ancestry,
         "grants": [],
-        "reflog": {"branch": _reflog(worktree, f"refs/heads/{args.branch}", env, errors),
-                   "head": _reflog(worktree, "HEAD", env, errors)},
-        "rewrites": {"branch": _rewrites(worktree, f"refs/heads/{args.branch}", env, errors),
-                     "head": _rewrites(worktree, "HEAD", env, errors, branch=args.branch)},
+        "reflog": {"branch": _reflog(worktree, f"refs/heads/{args.branch}", env, errors, cache),
+                   "head": _reflog(worktree, "HEAD", env, errors, cache)},
+        "rewrites": {"branch": _rewrites(worktree, f"refs/heads/{args.branch}", env, errors, cache=cache),
+                     "head": _rewrites(worktree, "HEAD", env, errors, branch=args.branch, cache=cache)},
     }
-    payload["generated"] = _generated(worktree, base, tip, payload["changed"], env, errors)
+    payload["generated"] = _generated(worktree, base, tip, payload["changed"], env, errors, cache)
     payload["grants"] = _grants(worktree, base, tip, payload["changed"], env, errors,
-                                set(payload["generated"]))
-    payload["lowered"] = _lowered(worktree, base, tip, env, errors)
+                                set(payload["generated"]), cache)
+    payload["lowered"] = _lowered(worktree, base, tip, env, errors, cache)
     payload["codexExecutor"] = _codex_executor(worktree, errors)
     payload["errors"] = errors
     payload["complete"] = not errors
