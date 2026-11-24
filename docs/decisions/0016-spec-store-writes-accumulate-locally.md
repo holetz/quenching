@@ -34,7 +34,7 @@ commit counts and subjects.
 - Writes accumulate in ONE local pending commit, `refs/quenching/pending/<branch>` in the common
   `.git`, moved by `git update-ref <new> <old>`. Reads see it, and replay it onto a newly fetched
   tip in memory without moving it.
-- The remote is reached only at sync points: `create`, `archive`/`restore`, `import`, `configure`,
+- The remote is reached only at sync points: `archive`/`restore`, `import`, `configure`,
   `cq specs push`, and the end of `cq git push`, `cq git pr create` and `cq git pr merge`.
 - Every sync replaces the store branch with one parentless commit through
   `--force-with-lease=refs/heads/<branch>:<tip>`, so the branch always holds a single commit and

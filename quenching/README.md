@@ -270,7 +270,7 @@ knowledge back out when a spec closes.
 
 The **unit of work is a spec** — ONE canonical markdown document for its whole lifecycle. It is
 `specs/<id>.md` on the branch (`specs/archive/<id>.md` once closed), written without a checkout into
-ONE local pending commit and sent only at sync points (`cq specs new`, archive and restore,
+ONE local pending commit and sent only at sync points (archive and restore,
 `cq git push`, `cq git pr create|merge`, `cq specs push`): each sync replaces the branch with one
 parentless commit under `--force-with-lease`, so concurrent writes to different specs both land and
 the branch always holds a single commit. `cq specs status` lists the specs with unsent local
