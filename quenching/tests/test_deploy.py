@@ -647,6 +647,17 @@ class Deploy(unittest.TestCase):
                           "https://opencode.ai/config.json"},
                          json.loads((self.target / "opencode.json").read_text()))
 
+    def test_claude_approves_the_registered_server_and_gives_it_back(self):
+        self.write(".claude/settings.json", '{"enabledMcpjsonServers": ["mine"]}\n')
+        self.assertEqual(0, self.run_deploy("--modules", "specs", "--harness", "claude",
+                                            "--write")[0])
+        doc = json.loads((self.target / ".claude/settings.json").read_text())
+        self.assertEqual(["mine", "quenching"], doc["enabledMcpjsonServers"])
+        self.assertEqual([], self.run_deploy("--check")[1]["changes"])
+        self.assertEqual(0, self.run_deploy("--remove", "--write")[0])
+        self.assertEqual({"enabledMcpjsonServers": ["mine"]},
+                         json.loads((self.target / ".claude/settings.json").read_text()))
+
     def test_the_harness_filter_selects_which_mcp_file_is_written(self):
         self.configure(self.mcp_config())
         self.assertEqual(0, self.run_deploy("--modules", "specs", "--harness", "claude",

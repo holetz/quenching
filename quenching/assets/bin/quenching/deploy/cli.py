@@ -364,9 +364,12 @@ def _settings_merge(target: Path, built: dict, previous: dict | None) -> dict | 
     keys = recorded.get("attribution") if recorded else []
     keys = keys if isinstance(keys, list) else []
     merged = claude_settings.merge(current, wanted["hooks"] if wanted else [],
-                                   wanted["attribution"] if wanted else None, keys)
+                                   wanted["attribution"] if wanted else None, keys,
+                                   mcpjson=bool(wanted and wanted.get("mcpjson")),
+                                   mcpjson_recorded=bool(recorded and recorded.get("mcpjson")))
     if wanted is not None:
         built["manifest"]["claudeSettings"]["attribution"] = sorted(merged.attribution)
+        built["manifest"]["claudeSettings"]["mcpjson"] = merged.mcpjson
     delete = (wanted is None and current is not None and recorded is not None
               and json.loads(merged.text if merged.text is not None else current) == {})
     return {"text": merged.text, "delete": delete, "warnings": merged.warnings,

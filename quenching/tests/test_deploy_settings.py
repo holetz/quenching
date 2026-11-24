@@ -230,5 +230,37 @@ class ThePolyglotCommand(unittest.TestCase):
                                                  CLAUDE_PROJECT_DIR=str(self.root / "absent")))
 
 
+class TheMcpjsonApproval(unittest.TestCase):
+    def test_the_registered_server_is_approved_beside_the_users_names(self):
+        merged = settings.merge('{"enabledMcpjsonServers": ["mine"]}', [], None, [], mcpjson=True)
+        self.assertEqual(["mine", "quenching"], load(merged)["enabledMcpjsonServers"])
+        self.assertTrue(merged.mcpjson)
+
+    def test_an_approval_the_user_wrote_is_not_claimed(self):
+        text = '{"enabledMcpjsonServers": ["quenching"]}'
+        merged = settings.merge(text, [], None, [], mcpjson=True)
+        self.assertEqual(text, merged.text)
+        self.assertFalse(merged.mcpjson)
+
+    def test_a_disabled_server_stays_off_with_a_warning(self):
+        text = '{"disabledMcpjsonServers": ["quenching"]}'
+        merged = settings.merge(text, [], None, [], mcpjson=True)
+        self.assertEqual(text, merged.text)
+        self.assertTrue(any("disabledMcpjsonServers" in w for w in merged.warnings))
+
+    def test_removal_takes_out_only_what_the_deploy_wrote(self):
+        text = '{"enabledMcpjsonServers": ["mine", "quenching"]}'
+        self.assertEqual(text, settings.merge(text, [], None, [], mcpjson=False).text)
+        out = settings.merge(text, [], None, [], mcpjson=False, mcpjson_recorded=True)
+        self.assertEqual(["mine"], load(out)["enabledMcpjsonServers"])
+        alone = settings.merge('{"enabledMcpjsonServers": ["quenching"]}', [], None, [],
+                               mcpjson=False, mcpjson_recorded=True)
+        self.assertEqual({}, load(alone))
+
+    def test_a_list_that_is_not_a_list_refuses(self):
+        with self.assertRaises(settings.SettingsRefusal):
+            settings.merge('{"enabledMcpjsonServers": "quenching"}', [], None, [], mcpjson=True)
+
+
 if __name__ == "__main__":
     unittest.main()
