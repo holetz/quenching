@@ -97,6 +97,13 @@ TEST_SCOPE_BASE="${QUENCHING_TEST_BASE:-origin/main}"
 TARGETS=(quenching/tests)
 WITH_COVERAGE=1
 SUITE_SKIP=""
+# The site and the plugin steps are fixed cost the diff usually never touches. Only the affected
+# scope, with a readable diff, may skip them; every other path (full scope, a selector that failed,
+# an unreadable selection) keeps both at 1, so CI and `/release` run them as before.
+RUN_SITE=1
+RUN_INTEGRATIONS=1
+SITE_SKIP_REASON=""
+INTEGRATIONS_SKIP_REASON=""
 if [ "$TEST_SCOPE" = affected ]; then
   WITH_COVERAGE=0
   SELECTION_JSON="$(python3 -m scripts.toolchain.affected --json --base "$TEST_SCOPE_BASE")" || SELECTION_JSON=""
@@ -105,6 +112,26 @@ if [ "$TEST_SCOPE" = affected ]; then
   else
     MODE=full
     TARGETS=()
+    if CHANGED_LINES="$(printf '%s' "$SELECTION_JSON" | python3 -c '
+import json, sys
+doc = json.load(sys.stdin)
+site = ("docs/", "quenching/skills/", "quenching/references/", "zensical.toml",
+        "quenching/assets/zensical/", "quenching/assets/checks/documentation-site-check.py",
+        "quenching/assets/bin/quenching/knowledge/", "scripts/verify_repo.sh")
+plugins = ("integrations/", "scripts/cache_plugin_sync.py", "scripts/verify_repo.sh")
+changed = doc["changed"]
+def hit(prefixes):
+    return any(p == q or p.startswith(q if q.endswith("/") else q + "/") for p in changed for q in prefixes)
+print("SITE\t" + ("1" if hit(site) else "0"))
+print("PLUGINS\t" + ("1" if hit(plugins) else "0"))
+')"; then
+      while IFS=$'\t' read -r tag value; do
+        case "$tag" in
+          SITE) if [ "$value" = 0 ]; then RUN_SITE=0; fi ;;
+          PLUGINS) if [ "$value" = 0 ]; then RUN_INTEGRATIONS=0; fi ;;
+        esac
+      done <<< "$CHANGED_LINES"
+    fi
     if SELECTION_LINES="$(printf '%s' "$SELECTION_JSON" | python3 -c '
 import json, sys
 doc = json.load(sys.stdin)
@@ -225,19 +252,33 @@ if [ -f .agents/.quenching-deploy.json ]; then
 else
   printf '\n==> deployed surface lockstep\nSKIPPED: this checkout does not use deploy mode (no .agents/.quenching-deploy.json).\n'
 fi
+# Pulled out so a step the affected scope skips says so, with the reason, instead of vanishing.
+skip_step() {
+  printf '\n==> %s\nSKIPPED: %s\n' "$1" "$2"
+}
+SITE_SKIP_REASON="QUENCHING_TEST_SCOPE=affected and the diff touches no docs/, quenching/skills|references, zensical.toml or site tooling; the full gate (CI and /release) runs it."
+INTEGRATIONS_SKIP_REASON="QUENCHING_TEST_SCOPE=affected and the diff touches no integrations/; the full gate (CI and /release) runs it."
 # `$BASH` is the shell running this gate: a bare `bash` may be another one (WSL's launcher on Windows).
 run_check "citation checks" \
   "$BASH" quenching/assets/checks/citation-check.sh
-run_check "documentation site source" \
-  python3 quenching/assets/bin/cq knowledge site-source docs site-source --write
-run_check "Zensical strict build" \
-  uv run zensical build --clean --strict
-run_check "built-site checks" \
-  python3 quenching/assets/checks/documentation-site-check.py site --local --remote-policy error
+if [ "$RUN_SITE" = 1 ]; then
+  run_check "documentation site source" \
+    python3 quenching/assets/bin/cq knowledge site-source docs site-source --write
+  run_check "Zensical strict build" \
+    uv run zensical build --clean --strict
+  run_check "built-site checks" \
+    python3 quenching/assets/checks/documentation-site-check.py site --local --remote-policy error
+else
+  skip_step "documentation site source" "$SITE_SKIP_REASON"
+  skip_step "Zensical strict build" "$SITE_SKIP_REASON"
+  skip_step "built-site checks" "$SITE_SKIP_REASON"
+fi
 
 # The quenching-hud mod is validated by the host's own validator. Without `claude` the skip is
 # stated loudly, as with `coverage`: a local gate must not demand an install, but the release has it.
-if command -v claude >/dev/null 2>&1; then
+if [ "$RUN_INTEGRATIONS" = 0 ]; then
+  skip_step "quenching-hud plugin" "$INTEGRATIONS_SKIP_REASON"
+elif command -v claude >/dev/null 2>&1; then
   run_check "quenching-hud plugin" \
     claude plugin validate integrations/claude-hud
 else
@@ -249,7 +290,9 @@ fi
 # template; a stale copy is refused here, with or without `claude`.
 run_check "quenching-cache generated copies" \
   python3 scripts/cache_plugin_sync.py --check
-if command -v claude >/dev/null 2>&1; then
+if [ "$RUN_INTEGRATIONS" = 0 ]; then
+  skip_step "quenching-cache plugin and tests" "$INTEGRATIONS_SKIP_REASON"
+elif command -v claude >/dev/null 2>&1; then
   run_check "quenching-cache plugin" \
     claude plugin validate integrations/claude-cache
   run_check "quenching-cache tests" \
@@ -261,7 +304,9 @@ fi
 
 # The quenching-vitrine mod (the Claude Desktop Specs pane) is validated and tested the same way:
 # the engine type-checks its hooks and runs its UI tests on the terminal and the desktop surface.
-if command -v claude >/dev/null 2>&1; then
+if [ "$RUN_INTEGRATIONS" = 0 ]; then
+  skip_step "quenching-vitrine plugin and tests" "$INTEGRATIONS_SKIP_REASON"
+elif command -v claude >/dev/null 2>&1; then
   run_check "quenching-vitrine plugin" \
     claude plugin validate integrations/claude-vitrine
   run_check "quenching-vitrine plugin tests" \
