@@ -122,7 +122,7 @@
 
     ".agents/quenching/assets/bin/quenching/config/__init__.py": "07638831d3ca774d973dca539a063ebeade8349568bd1b2d4f471ed301ff0b92",
 
-    ".agents/quenching/assets/bin/quenching/config/autonomy.py": "9961bff9eb6afac0b879e42f6bbefa697ddcfe9274bcdc9e2182343f3840d52d",
+    ".agents/quenching/assets/bin/quenching/config/autonomy.py": "e8f1eda3561d3581efb8976216722d44d8979d1adbdc11798080aabd5f6d0257",
 
     ".agents/quenching/assets/bin/quenching/config/ci.py": "78c3ce547ea246980ff045123f6c8dd3d872d9a5abfb8d9504e93748b2db93d6",
 
@@ -130,7 +130,7 @@
 
     ".agents/quenching/assets/bin/quenching/config/host.py": "8142472848a298f09484f327a3c7a2d8bbd2c162ff2636eb823498fdfd8eb504",
 
-    ".agents/quenching/assets/bin/quenching/config/schema.py": "387c8c090c099b772f7300153ec7f1bc741c027047964f24a3e8d31b20ebdb7e",
+    ".agents/quenching/assets/bin/quenching/config/schema.py": "3eb808c3c759a131fbd05ff8b92df28bd280db2d42dc10c5bf66a8f6d12c71e8",
 
     ".agents/quenching/assets/bin/quenching/config/seed.py": "f8311f384057ec0ba225f987071891536da4095c2812550ce767c626c6c51b0d",
 
@@ -152,7 +152,7 @@
 
     ".agents/quenching/assets/bin/quenching/git/__init__.py": "8501760dcf5ab3b77195533888acbe6fe7f2795ad387cedbe869be8aeac11e4b",
 
-    ".agents/quenching/assets/bin/quenching/git/audit.py": "e2ea251d241abb7403172bf11adffcdd1722986cfd8e4da3d5e4530a171dafbc",
+    ".agents/quenching/assets/bin/quenching/git/audit.py": "38f08778d3262768688e63da0bd647f180a7934bfe70b7391ec260c06d270792",
 
     ".agents/quenching/assets/bin/quenching/git/azure_pull.py": "87ab90ff25f82edb88e734deb86e2ab0d8c138cc1f01cd2619c8bc0a8f79026e",
 
@@ -292,9 +292,13 @@
 
     ".agents/quenching/assets/bin/quenching/specs/chat.py": "987e59657e252c05e8bbdc79537f6e016c43649f0e9386103579abb0d0c0ed22",
 
+    ".agents/quenching/assets/bin/quenching/specs/claims.py": "42e9a61fc50d3ef38e05d4ccbbf06f72e8637677968f7a0c08a19be49f72dee0",
+
     ".agents/quenching/assets/bin/quenching/specs/commands/artifacts.py": "7b920d2218de27a351413c743b58d3cfe6279936e617e124b3538a3d92e81d4c",
 
-    ".agents/quenching/assets/bin/quenching/specs/commands/cli.py": "f4ab6c6f654edc65136817f26ac01dabfad3bb3e0e4795552b88a0aa6483cc20",
+    ".agents/quenching/assets/bin/quenching/specs/commands/claim.py": "e500cf9bc13a1aa1d4b4de45c275d56ba486311bf8173b6ad9ffb74e0e1fa9b8",
+
+    ".agents/quenching/assets/bin/quenching/specs/commands/cli.py": "d126c15cd3e4ed51caf849a18d24997d687af4988656558bc42537e7f8850c37",
 
     ".agents/quenching/assets/bin/quenching/specs/commands/create.py": "0055f88ed8138abe9177da504812393006aed9d0348570e4f884fe5067c98161",
 

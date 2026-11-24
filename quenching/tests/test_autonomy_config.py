@@ -76,6 +76,15 @@ class AutonomyBlock(unittest.TestCase):
         for needle in ("maxWorkers", "merge", "livenessMinutes", "colour"):
             self.assertIn(needle, text)
 
+    def test_claim_minutes_defaults_to_45_and_takes_a_positive_integer(self):
+        self.assertEqual(45, DEFAULTS["claimMinutes"])
+        settings, warnings = coerce({"claimMinutes": 10})
+        self.assertEqual((10, []), (settings["claimMinutes"], warnings))
+        for bad in (0, -5, "45", True):
+            settings, warnings = coerce({"claimMinutes": bad})
+            self.assertEqual(45, settings["claimMinutes"])
+            self.assertIn("claimMinutes", "\n".join(warnings))
+
     def test_a_block_that_is_not_an_object_keeps_every_default(self):
         settings, warnings = coerce("fast")
         self.assertEqual(DEFAULTS, settings)

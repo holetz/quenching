@@ -135,6 +135,11 @@ _k("shared.autonomy.livenessMinutes", "integer", AUTONOMY["livenessMinutes"], "a
    "either", "/quenching-specs orchestrate",
    ("Worker liveness (minutes)", "Silence after which a worker is checked on."),
    ("Vida do worker (minutos)", "Silêncio depois do qual um worker é verificado."), minimum=1)
+_k("shared.autonomy.claimMinutes", "integer", AUTONOMY["claimMinutes"], "autonomy", "either",
+   "cq specs claim",
+   ("Spec claim validity (minutes)", "How long a build's reservation of a spec lasts unrenewed."),
+   ("Validade da reserva (minutos)", "Quanto dura a reserva de uma spec sem renovação."),
+   minimum=1)
 _k("shared.contextBudgets.main", "integer", BUDGETS["main"], "autonomy", "machine",
    "cq components session context", ("Main session budget", "Tokens the main session plans around."),
    ("Orçamento da sessão principal", "Tokens que a sessão principal considera."), minimum=1)

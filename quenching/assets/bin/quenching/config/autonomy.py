@@ -15,6 +15,7 @@ DEFAULTS = {
     "maxWorkers": 3,
     "maxLaunches": 40,
     "livenessMinutes": 20,
+    "claimMinutes": 45,
 }
 
 
@@ -39,7 +40,7 @@ def coerce(block) -> tuple[dict, list[str]]:
                 warnings.append(f"shared.autonomy.{key} must be one of {', '.join(allowed)}; "
                                 f"{DEFAULTS[key]} applies")
     for key, low, high in (("maxWorkers", 1, MAX_WORKERS), ("maxLaunches", 1, None),
-                           ("livenessMinutes", 1, None)):
+                           ("livenessMinutes", 1, None), ("claimMinutes", 1, None)):
         if key in block:
             if _integer(block[key], low, high):
                 settings[key] = block[key]
