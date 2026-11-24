@@ -299,7 +299,7 @@ fronts, and `--write` confirms it. It records the deprecated root `backend` of t
 
 ## The autonomy block
 
-`shared.autonomy` holds five keys whose defaults live in code (`config/autonomy.py`) and reproduce the
+`shared.autonomy` holds six keys whose defaults live in code (`config/autonomy.py`) and reproduce the
 behavior before the block existed. A partial block completes leaf by leaf; `cq config show --effective`
 lists each leaf with its value and layer.
 
@@ -310,6 +310,7 @@ lists each leaf with its value and layer.
 | `maxWorkers` | integer 1-8 | `3` | the `orchestrator`'s parallelism |
 | `maxLaunches` | integer ≥ 1 | `40` | `/quenching-specs autopilot`, when `--max-launches` is absent |
 | `livenessMinutes` | integer ≥ 1 | `20` | `/quenching-specs autopilot`'s liveness stop |
+| `claimMinutes` | integer ≥ 1 | `45` | `cq specs claim`: how long a build's reservation lives after its last renewal (`spec-claims.md`) |
 
 A value of the wrong shape falls back to the leaf default and is named in the `warnings` of the
 effective view; it is never applied silently. An explicit flag wins over the key. No value grants a
