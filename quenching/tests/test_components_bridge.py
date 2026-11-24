@@ -117,6 +117,38 @@ class Bridge(unittest.TestCase):
         text = bridge.with_marker("---\r\nname: x\r\n---\r\nBody\r\n", "x")
         self.assertEqual("---\r\nname: x\r\n---\r\n" + bridge.marker("x") + "\r\nBody\r\n", text)
 
+    def _crlf(self, path):
+        path.write_bytes(path.read_bytes().replace(b"\r\n", b"\n").replace(b"\n", b"\r\n"))
+
+    def test_a_crlf_copy_of_a_clean_file_is_neither_edited_nor_rewritten(self):
+        for path in (self.repo / ".agents" / "skills" / "mlops-comum").rglob("*"):
+            if path.is_file():  # `write_text` in setUp gives CRLF on Windows: pin the source to LF
+                path.write_bytes(path.read_bytes().replace(b"\r\n", b"\n"))
+        self.run_cli("--write")
+        for path in (p for p in self.copy.rglob("*") if p.is_file()):
+            self._crlf(path)
+        before = {p: p.read_bytes() for p in self.copy.rglob("*") if p.is_file()}
+        code, payload = self.run_cli("--check")
+        self.assertEqual((0, []), (code, payload["changes"]))
+        self.assertEqual(0, self.run_cli("--write")[0])
+        self.assertEqual(before, {p: p.read_bytes() for p in self.copy.rglob("*") if p.is_file()})
+
+    def test_a_crlf_source_is_generated_and_hashed_as_lf(self):
+        for path in (self.repo / ".agents" / "skills" / "mlops-comum").rglob("*"):
+            if path.is_file():
+                self._crlf(path)
+        self.assertEqual(0, self.run_cli("--write")[0])
+        self.assertEqual(b"notes\n", (self.copy / "references" / "notes.md").read_bytes())
+        manifest = json.loads((self.repo / bridge.MANIFEST).read_text())
+        self.assertEqual(bridge.sha256(b"notes\n"), manifest["files"]["mlops-comum/references/notes.md"])
+
+    def test_a_real_edit_under_crlf_is_still_edited(self):
+        self.run_cli("--write")
+        (self.copy / "references" / "notes.md").write_bytes(b"changed\r\n")
+        code, payload = self.run_cli("--check")
+        self.assertEqual((1, [{"path": "mlops-comum/references/notes.md", "change": "edited"}]),
+                         (code, payload["changes"]))
+
 
 if __name__ == "__main__":
     unittest.main()
