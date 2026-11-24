@@ -68,6 +68,11 @@ LEGACY_DESTINATIONS = {
 }
 
 
+def posix_path(path):
+    """A file path as a cq JSON payload carries it: POSIX separators on every platform."""
+    return path.replace(os.sep, "/") if isinstance(path, str) else path
+
+
 def config_path(repo_root: str) -> str:
     """The configuration file a repository is read from: the legacy file while it exists, else
     the home, which is also where a writer creates one."""
