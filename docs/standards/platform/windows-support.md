@@ -57,12 +57,21 @@ the official versioned ZIP under `%LOCALAPPDATA%`, without elevation.
   I/O. The goldens freeze `<WS>/.agents/quenching.json`, and `capture_golden.normalize` swaps the
   workspace in its native, JSON-escaped and POSIX forms. Human-readable text may keep the native path.
 
-**What it does not cover:** the whole `scripts/verify_repo.sh` gate (it needs bash and uv), the
-POSIX hook scripts and `scripts/githooks`, and `scripts/run_evals.py`.
+**What it does not cover:** the POSIX hook scripts and `scripts/githooks`, and `scripts/run_evals.py`.
+The `claude plugin test integrations/claude-cache` check is skipped on the runner, which has no
+`claude`; that is a skip, never a pass.
 
-**Proof:** one `windows-latest` job in the PR gate runs the Windows-sensitive unit tests. It
-patches `os.name` and `os.symlink` for the branches and runs them natively on a Windows runner.
-The job runs `test_windows_process.py`, `test_windows_tools.py`, `test_session_live.py` and `test_windows_links.py`. The standard stays `background` until that job has run green on a pull request.
+**Proof:** two `windows-latest` jobs in the PR gate. `Windows (focused tests…)` runs the
+Windows-sensitive unit tests (`test_windows_process.py`, `test_windows_tools.py`,
+`test_session_live.py`, `test_windows_links.py` and `test_toolchain_*.py`) as the quick signal; it
+patches `os.name` and `os.symlink` for the branches and runs them natively. `Windows (full gate)`
+(`windows-gate` in `.github/workflows/ci.yml`) runs `uv run bash scripts/verify_repo.sh` in the
+runner's Git Bash, with `uv sync --frozen --all-groups`, the coverage floor enforced and no
+`PYTHONUTF8`, so a regression that is exclusive to Windows in any module fails the pull request.
+A red in that job is shown, never hidden: a failure the platform owns becomes its own spec.
+A checkout whose working copy is CRLF over an LF index (a reused slot after a `.gitattributes`
+change) is named by `cq git worktree acquire` and by the gate with the command that fixes it
+(`git rm --cached -r -q . && git reset --hard -q`, on a clean tree); neither rewrites it.
 
 <!-- rationale -->
 
