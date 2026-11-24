@@ -1,9 +1,10 @@
-"""`cq git preflight` — five deterministic questions answered before a run expands: is the spec
+"""`cq git preflight` — six deterministic questions answered before a run expands: is the spec
 store writable, is the provider's type catalog there, does a push reach the remote, is the PR
-route authenticated (`gh`, or `az` on an Azure DevOps origin), and is the base branch's CI
-available.
+route authenticated (`gh`, or `az` on an Azure DevOps origin), is the base branch's CI
+available, and does the remote accept the reservation refs `refs/quenching/claims/*` (`claims`).
 
-Read-only: pushes use `--dry-run` onto a ref the remote does not have (`PROBE_REF`, with
+Read-only but for the `claims` probe, which creates and deletes one ref of its own: the other
+pushes use `--dry-run` onto a ref the remote does not have (`PROBE_REF`, with
 `--force`), so a branch that is merely behind or diverged never reads as a refused write; a failed
 probe carries the `reason` git's stderr names — `read-only` or `no-credentials` (`fail`), or
 `unreachable` or `probe-failed` (`unknown`). CI is read with `gh run list` / `gh run view` (GitHub only:
@@ -17,6 +18,7 @@ from __future__ import annotations
 
 import json
 import os
+import secrets
 import shutil
 import subprocess
 import time
@@ -83,6 +85,39 @@ def _dry_push(cwd: str, remote: str, source: str) -> tuple[str, str, str | None]
         return "ok", "", None
     reason = _push_reason(code, err)
     return ("fail" if reason in ("read-only", "no-credentials") else "unknown"), err.strip(), reason
+
+
+def _claims(cwd: str, remote: str) -> dict:
+    """Whether `remote` accepts the reservation refs: one `refs/quenching/claims/<probe>` is
+    created and deleted with the same compare-and-swap a real reservation uses, so a server that
+    refuses refs outside `heads/tags` fails here and not in the middle of a round."""
+    from quenching.specs import claims
+
+    probe = f"preflight-probe-{secrets.token_hex(4)}"
+    try:
+        store = claims.Store(cwd, remote)
+        if store.scope == "local":
+            return _check("claims", "skipped", f"no remote {remote}: the reservation is local")
+        sha = store.make(claims.new_lease(probe, "preflight:probe", None, 1, claims.now()))
+        if not store.swap(probe, sha, None):
+            return _check("claims", "unknown", "the probe ref already existed; nothing proven")
+    except claims.ClaimError as e:
+        reason = _push_reason(1, str(e))
+        return _check("claims", "unknown" if reason == "unreachable" else "fail",
+                      f"{remote} does not accept refs/quenching/claims/* ({reason}): {e}",
+                      reason=reason)
+    try:
+        deleted = store.swap(probe, None, sha)
+    except claims.ClaimError as e:
+        deleted = False
+        message = str(e)
+    else:
+        message = "the probe moved under us"
+    if not deleted:
+        return _check("claims", "fail", f"the probe refs/quenching/claims/{probe} was created "
+                                        f"but not deleted ({message}): remove it by hand")
+    return _check("claims", "ok", f"{remote} accepts refs/quenching/claims/* (probe created and "
+                                  "deleted with a compare-and-swap)")
 
 
 def _store(cwd: str, remote: str, backend: str) -> dict:
@@ -255,12 +290,13 @@ def cmd_preflight(args) -> int:
     backend = cfg.get("backend") or "git"
     base, _default = resolve_base(cwd, host_default=False)
     provider = cfg.get("provider")
-    with ThreadPoolExecutor(max_workers=3) as pool:
+    with ThreadPoolExecutor(max_workers=4) as pool:
         store = pool.submit(_store, cwd, args.remote, backend)
         push = pool.submit(_push, cwd, args.remote)
         ci_auth = pool.submit(_ci_and_auth, cwd, base, provider)
+        reserve = pool.submit(_claims, cwd, args.remote)
         ci, auth = ci_auth.result()
-        checks = [store.result(), _types(backend), push.result(), auth, ci]
+        checks = [store.result(), _types(backend), push.result(), auth, ci, reserve.result()]
     bad = [c["id"] for c in checks if c["status"] in BAD]
     ci = next(c for c in checks if c["id"] == "ci")
     from quenching.config.ci import read as read_ci_enforce

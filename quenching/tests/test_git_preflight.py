@@ -75,7 +75,7 @@ class Preflight(unittest.TestCase):
         self.assertEqual(code, 0, out)
         ids = {c["id"]: c["status"] for c in out["checks"]}
         self.assertEqual(ids, {"store": "ok", "types": "skipped", "push": "ok",
-                               "ghAuth": "ok", "ci": "ok"})
+                               "ghAuth": "ok", "ci": "ok", "claims": "ok"})
         self.assertTrue(out["mergesAllowed"])
         self.assertIs(out["checks"][2]["noVerify"], False)
 
@@ -121,7 +121,7 @@ class Preflight(unittest.TestCase):
 
     def test_checks_keep_their_order_when_run_concurrently(self):
         _code, out = self.run_cq(FAKE_GH_STEPS="1")
-        self.assertEqual(["store", "types", "push", "ghAuth", "ci"],
+        self.assertEqual(["store", "types", "push", "ghAuth", "ci", "claims"],
                          [c["id"] for c in out["checks"]])
 
     def _advance_origin(self, branch):
@@ -150,6 +150,29 @@ class Preflight(unittest.TestCase):
         checks = {c["id"]: c for c in out["checks"]}
         self.assertEqual(code, 0, out)
         self.assertEqual("ok", checks["store"]["status"])
+
+    def _origin(self):
+        return os.path.join(os.path.dirname(self.repo), "origin.git")
+
+    def _claim_refs(self):
+        return subprocess.run(["git", "for-each-ref", "refs/quenching/claims/"], cwd=self._origin(),
+                              capture_output=True, text=True, check=True).stdout
+
+    def test_claims_proves_the_origin_takes_reservation_refs_and_leaves_none(self):
+        code, out = self.run_cq(FAKE_GH_STEPS="1")
+        checks = {c["id"]: c for c in out["checks"]}
+        self.assertEqual((0, "ok"), (code, checks["claims"]["status"]), out)
+        self.assertEqual("", self._claim_refs())
+
+    def test_claims_fails_when_the_origin_refuses_refs_outside_heads(self):
+        hook = pathlib.Path(self._origin(), "hooks", "update")
+        hook.write_text("#!/bin/sh\ncase \"$1\" in refs/quenching/*) echo refused >&2; exit 1;; esac\n")
+        hook.chmod(0o755)
+        code, out = self.run_cq(FAKE_GH_STEPS="1")
+        checks = {c["id"]: c for c in out["checks"]}
+        self.assertEqual((1, "fail"), (code, checks["claims"]["status"]), out)
+        self.assertIn("claims", out["failed"])
+        self.assertEqual("", self._claim_refs())
 
     def test_the_probe_never_creates_its_ref(self):
         self.run_cq(FAKE_GH_STEPS="1")
