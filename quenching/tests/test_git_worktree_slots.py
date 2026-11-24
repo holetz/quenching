@@ -357,5 +357,49 @@ class Limits(unittest.TestCase):
         self.assertEqual((got["min"], got["max"], got["pollSeconds"]), (5, 5, 30))
 
 
+class EolDrift(SlotRepo):
+    def _crlf(self, name):
+        with open(os.path.join(self.main, name), "wb") as fh:
+            fh.write(b"one\r\ntwo\r\n")
+
+    def _tracked(self, name):
+        with open(os.path.join(self.main, name), "wb") as fh:
+            fh.write(b"one\ntwo\n")
+        _git(self.main, "-c", "core.autocrlf=false", "add", name)
+        _git(self.main, "-c", "core.autocrlf=false", "commit", "-q", "-m", name)
+
+    def test_a_crlf_working_copy_of_an_lf_index_is_reported_with_the_exact_fix(self):
+        self._tracked("a.txt")
+        self._crlf("a.txt")
+        got = slots.eol_drift(self.main)
+        self.assertEqual((got["sampled"], got["drifted"]), (2, 1))
+        self.assertEqual(got["fix"], "git rm --cached -r -q . && git reset --hard -q")
+        self.assertIn(got["fix"], got["message"])
+
+    def test_a_matching_working_copy_reports_nothing_and_nothing_is_rewritten(self):
+        self._tracked("a.txt")
+        self.assertIsNone(slots.eol_drift(self.main))
+        self._crlf("a.txt")
+        slots.eol_drift(self.main)
+        with open(os.path.join(self.main, "a.txt"), "rb") as fh:
+            self.assertEqual(fh.read(), b"one\r\ntwo\r\n")
+
+    def test_the_sample_bounds_how_many_entries_are_read(self):
+        self._tracked("a.txt")
+        self._tracked("b.txt")
+        self._crlf("b.txt")
+        self.assertIsNone(slots.eol_drift(self.main, sample=2))
+        self.assertEqual(slots.eol_drift(self.main, sample=3)["drifted"], 1)
+
+    def test_acquire_carries_the_drift_in_its_payload(self):
+        self._tracked("a.txt")
+        _git(self.main, "push", "-q", "origin", "main")
+        out = io.StringIO()
+        with contextlib.redirect_stdout(out):
+            code = slots.acquire(_args(branch="plan/1-x"))
+        self.assertEqual(code, 0)
+        self.assertIsNone(json.loads(out.getvalue())["eolDrift"])
+
+
 if __name__ == "__main__":
     unittest.main()

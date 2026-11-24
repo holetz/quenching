@@ -130,6 +130,29 @@ def _dirty(path: str) -> bool | None:
     return None if code != 0 else bool(out.strip())
 
 
+EOL_SAMPLE = 200
+EOL_FIX = "git rm --cached -r -q . && git reset --hard -q"
+
+
+def eol_drift(path: str, sample: int = EOL_SAMPLE) -> dict | None:
+    """The first `sample` tracked files whose working copy is CRLF while the index holds LF.
+
+    A reused slot keeps the line endings it was checked out with, so a `.gitattributes` change
+    leaves it `i/lf w/crlf` and every byte-exact test fails there. This only DETECTS: nothing
+    rewrites the working copy, because the fix discards edits; `fix` is the command a human runs
+    on a clean tree. `None` is no drift, or no answer from git."""
+    code, out, _err = _git_run(path, *SAFE, "ls-files", "--eol")
+    if code != 0:
+        return None
+    rows = [line.split(None, 2) for line in out.splitlines()[:sample]]
+    drifted = [r for r in rows if len(r) >= 2 and r[0] == "i/lf" and r[1] == "w/crlf"]
+    if not drifted:
+        return None
+    return {"sampled": len(rows), "drifted": len(drifted), "fix": EOL_FIX,
+            "message": f"{len(drifted)} of the first {len(rows)} tracked files are CRLF in the "
+                       f"working copy and LF in the index; on a CLEAN tree run: {EOL_FIX}"}
+
+
 def _fetch_base(cwd: str, remote: str, base: str) -> tuple[str | None, str, dict | None]:
     """`(sha, label, refusal)` of the base to switch from: the fetched remote base, or the local
     one when the remote does not exist."""
@@ -352,6 +375,7 @@ def acquire(args) -> int:
     results, link_refusal = _link(path)
     stamp = _stamp_branch(args.spec, args.base, args.branch) if args.spec else None
     setup = None if link_refusal or args.no_setup else _setup(path)
+    drift = eol_drift(path)
     payload = {"ok": link_refusal is None and (stamp is None or stamp["ok"])
                      and (setup is None or setup["ok"]),
                "path": path, "slot": slot["n"], "created": created, "reused": not created,
@@ -359,7 +383,7 @@ def acquire(args) -> int:
                "lock": reason, "freed": freed, "archived": slot.get("archived"),
                "handoff": slot.get("handoff", []),
                "paths": results or [],
-               "linkRefusal": link_refusal, "setup": setup}
+               "linkRefusal": link_refusal, "setup": setup, "eolDrift": drift}
     if stamp:
         payload["branchRecord"] = stamp
     human = [f"slot {slot['n']}: {path} ({'new' if created else 'reused'})",
@@ -377,6 +401,8 @@ def acquire(args) -> int:
     if setup:
         human.append(f"setup ran: {setup['command']}" if setup["ok"]
                      else f"setup failed (exit {setup['exit']}): {setup['command']}")
+    if drift:
+        human.append(f"NOTICE line endings: {drift['message']}")
     emit(args.json, payload, "\n".join(human))
     return 0 if payload["ok"] else FINDINGS
 
