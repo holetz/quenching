@@ -62,6 +62,28 @@ class Catalog(unittest.TestCase):
         self.assertTrue(catalog.annotations(catalog.CATALOG["git_pr_merge"])["destructiveHint"])
 
 
+class ToolNames(unittest.TestCase):
+    def test_a_verb_prefix_names_every_tool_under_it(self):
+        self.assertEqual(catalog.tool_names(("specs", "status")),
+                         ["specs_epic_progress", "specs_status"])
+        self.assertEqual(catalog.tool_names(("git", "history")),
+                         ["git_history_diff", "git_history_log", "git_history_show"])
+        self.assertEqual(catalog.tool_names(("components", "read")), ["components_read"])
+
+    def test_no_prefix_is_the_whole_server_and_an_unknown_verb_is_nothing(self):
+        every = catalog.tool_names()
+        self.assertTrue(set(catalog.CATALOG) <= set(every))
+        self.assertIn("specs_section_write", every)
+        self.assertEqual(catalog.tool_names(("specs", "scrub")), [])
+
+    def test_the_verbs_references_cite_are_catalogued(self):
+        for name, cls in (("specs_doctor", "read"), ("specs_schedule", "read"),
+                          ("specs_title", "write"), ("specs_depends", "write"),
+                          ("config_schema", "read"), ("config_set", "write")):
+            with self.subTest(name):
+                self.assertEqual(catalog.CATALOG[name].cls, cls)
+
+
 class Schema(unittest.TestCase):
     def test_the_schema_is_the_parser_read_back(self):
         verb = catalog.resolve(catalog.CATALOG["components_read"])
