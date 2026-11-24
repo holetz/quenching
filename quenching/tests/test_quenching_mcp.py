@@ -193,6 +193,17 @@ class Argv(unittest.TestCase):
             with self.assertRaises(server.ToolArgs):
                 catalog.argv(catalog.CATALOG[name], {dest: "x"}, "/r")
 
+    def test_no_read_tool_reaches_a_write_to_a_remote(self):
+        reaching = {"push", "probe_claims", "force", "delete"}
+        for name, row in catalog.CATALOG.items():
+            if row.cls != "read":
+                continue
+            with self.subTest(name):
+                props = catalog.schema(catalog.resolve(row))["properties"]
+                self.assertFalse(reaching & set(props), props)
+        with self.assertRaises(server.ToolArgs):
+            catalog.argv(catalog.CATALOG["git_preflight"], {"probe_claims": True}, "/r")
+
     def test_a_specs_row_runs_under_the_router_root(self):
         cmd, as_json = catalog.argv(catalog.CATALOG["specs_validate"], {"spec": "3"}, "/repo")
         self.assertEqual(cmd, ["--root", "/repo", "specs", "validate", "--spec=3", "--json"])

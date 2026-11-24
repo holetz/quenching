@@ -61,7 +61,8 @@ developed by one person and handed to another to build carries no lock.
 
 A git that cannot answer (exit 2) is reported and the build goes on unreserved: the claim protects,
 it never blocks a build because the remote is unreachable. A `claims` check in `fail` from
-`cq git preflight` means the remote refuses the refs, and the run says another machine could pick
+`cq git preflight --probe-claims` (opt-in: the default preflight reads `skipped` and writes nothing
+to the remote) means the remote refuses the refs, and the run says another machine could pick
 the same spec.
 
 ## Choosers
