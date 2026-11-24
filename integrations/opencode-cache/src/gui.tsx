@@ -26,13 +26,13 @@ export default Plugin.define({
       refresh(sessionID, directory)
       setInterval(() => refresh(sessionID, directory), REFRESH_MS)
       rpc().events.on("changed", (event) => {
-        if ((event as unknown as { sessionID: string }).sessionID === sessionID) refresh(sessionID, directory)
+        if ((event.data as { sessionID?: string }).sessionID === sessionID) refresh(sessionID, directory)
       })
     }
 
     // The expiry toast: once per reply, from the server's timer or from sending on a gone cache.
     rpc().events.on("expired", (event) => {
-      const { text } = event as unknown as { sessionID: string; text: string }
+      const { text } = event.data as { text: string }
       ctx.toast.show({ title: "quenching-cache", description: text, variant: "default" })
     })
 
