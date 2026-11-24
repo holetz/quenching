@@ -188,6 +188,7 @@
       "decisions/0017-install-only-by-deploy.md",
       "decisions/0018-retire-omnigent-and-source-manifest.md",
       "decisions/0019-router-skills-and-target-dialect-source.md",
+      "decisions/0020-remove-the-codex-executor-and-harness.md",
     ] },
     "glossary.md",
   ]
