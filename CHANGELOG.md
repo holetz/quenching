@@ -13,6 +13,38 @@ owner: [`ci-cd/versioning-release.md`](docs/standards/ci-cd/versioning-release.m
 short version for a consumer: the version is published once, deliberately, as a release — never at a
 spec's own conclude — and `cq --version` is what answers which one you are running.
 
+## 7.16.0
+
+**O MCP do quenching passa a ser o caminho obrigatório, e completo, em cada harness.** O deploy liga
+  o servidor `cq mcp` inteiro, não só as specs, para OpenCode, Claude Code e Copilot, com timeout
+  adequado e `enabledMcpjsonServers`, e os agentes usam as tools `quenching.*` no lugar do `cq`
+  pela shell. Uma leitura de status cai de 0,58 s para 0,02 s, e o servidor sobe em 0,13 s
+  (#316–#325, #328, #334, #352, #367).
+
+**Os hooks rodam num processo só, sem `uv run`.** Quatro hooks deixam de abrir um `uv run …
+  python` cada, e um `.venv` sem `pyvenv.cfg` não bloqueia mais nada. O deploy por harness grava a
+  profundidade de subagentes do OpenCode a partir da configuração do projeto e libera os
+  diretórios dos worktrees (`external_directory`), para que os slots não travem em permissão.
+
+**O fluxo de specs fica mais barato e mais rápido.** No autopilot, um único runner faz execute e
+  conclude, e o verifier roda uma vez. O preflight cai de 4,8 s para cerca de 2,5 s, `specs list` a
+  frio de 2,3 s para 0,64 s, `specs create` de cerca de 6 s para cerca de 30 ms, e o gate `affected`
+  com diff vazio de 50,7 s para 21,5 s (#333, #340, #342–#350, #353, #361, #363–#366, #368,
+  #372–#377).
+
+**Menos carga de antivírus.** O deploy pré-compila o bytecode do payload, então a primeira chamada
+  ao `cq` num alvo recém-instalado grava 0 `.pyc` em vez de 44, e os caches do quenching ficam sob
+  uma raiz só. O `cq doctor --antivirus` lista os caminhos exatos a excluir (repositório, slots e
+  caches) e imprime os comandos para o Defender, sem aplicar nada. Ele recusa rodar fora de um
+  repositório e nunca sugere a raiz do disco, a home, um ancestral dela ou o temp do sistema. Ele
+  reconhece repositórios com `--separate-git-dir` e o checkout principal a partir de um slot, mesmo
+  com edições não commitadas. O doctor também recomenda `core.untrackedCache` (#387, #388, #391,
+  #394, #397, #400).
+
+**Também:** o plugin OpenCode vitrine volta a carregar (`first()` restaurado) e ganha um bench de
+  warnings no gate (#381). O `cq git audit` passa a reportar o executor Codex efetivo para a check
+  11 do verifier (#382).
+
 ## 7.15.0
 
 **A exigência de CI verde passa a ser configurável.** `shared.ci.enforce` (`required`, que é o

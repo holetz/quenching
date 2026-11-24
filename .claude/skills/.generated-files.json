@@ -5,9 +5,9 @@
   "files": {
     "commands-tighten/SKILL.md": "41574a4774e70deffd6c8c6766a1a24581d579d1f7247b68a93ba86b39b2019b",
 
-    "quenching-align/SKILL.md": "ff93b0078fe1c822027edf3ae1077c12e810e3326cacc8f5b4457e439982dd9d",
+    "quenching-align/SKILL.md": "0028f8d4691b9ad711fe8d560e1cf3f5dac7d866c1ddb52557f4917c247d9df9",
 
-    "quenching-components/SKILL.md": "5bdfefa6ccf871988c5b9dd5be97ee006ed017832ecc859618d730d370a09725",
+    "quenching-components/SKILL.md": "eb2ef009ddfa1287b35c3a93d5ef21018d001c4a9f6b8d70d142c7546e6fe004",
 
     "quenching-components/references/agent-new.md": "f939b24254696f3a4194a6b15efe55b8a069a3d8442e94f06d68f5092f578fcb",
 
@@ -47,7 +47,7 @@
 
     "quenching-design/references/status.md": "21266695064ace61b30879567af92101f498591292df7eb20285c2402c3930e1",
 
-    "quenching-git/SKILL.md": "a74c2ddd200a7c89525e01235b2428b9527f98c1d13b4b3d397a094d86117c23",
+    "quenching-git/SKILL.md": "0f8ba73d6de47b102d86bf93497ec9e4a08ee22a8bf426180dc5c4f09e4c86a1",
 
     "quenching-git/references/branch.md": "a850543d748a644df5c4fb44a4e28ec894265d69601290b07bb3a0b66c2dec04",
 
@@ -71,11 +71,11 @@
 
     "quenching-git/references/sync.md": "1b608cc8c84941e9e385c4e817bd4e1c749bdf1d622337ed2f32baf74fb1d87d",
 
-    "quenching-handoff/SKILL.md": "dafba38290083d62f0254eb9ea218226ef20e3b0864c35bb3d78cb7eba95b0f8",
+    "quenching-handoff/SKILL.md": "7cbf6dd25c954a720d339b2c4cd6fde4c00241ec5eb215548d5e7dd1522b3fae",
 
     "quenching-handoff/references/template.md": "3cadf312ed570714431ee5fcf655a9358b0d97ce12c95d0417e59f7947def1c4",
 
-    "quenching-knowledge/SKILL.md": "9c005a96173f060d8d4266bcb9d733f5d088eb4ab15a0c6b88dca9ce3d708ff3",
+    "quenching-knowledge/SKILL.md": "7a6adb9fc67f2298dee844d498aa2e80903aeaa9e540645d21d3159bfe3628ca",
 
     "quenching-knowledge/references/add.md": "8ece711dec0a4d8805a4fc1e45e54fc76ac8fc54c5107f5415c379e717666106",
 
@@ -169,7 +169,7 @@
 
     "quenching-security/references/status.md": "fab3eea8d174097409fc82097b1a0d794fa6bb8b28124a4f03902f95b7c2f01d",
 
-    "quenching-specs/SKILL.md": "3a4017de2c249cf7b89e25be96bf9097b9b12efe87b0b958214b04dbc67edb90",
+    "quenching-specs/SKILL.md": "e4ef0604b1ea6901d6a9023fd85c3d40ace5ffc1ad7ea4e11c77892400872c69",
 
     "quenching-specs/references/autopilot.md": "74c6571bbefe67ea87aad4fc250262d717cf469b41d5279fd10980919796a388",
 
