@@ -175,6 +175,17 @@ class AcquireRenewRelease(ClaimFixture):
         self.assertEqual((True, False), (rows["7"]["mine"], rows["9"]["mine"]))
         self.assertTrue(all(r["live"] for r in rows.values()))
 
+    def test_list_on_a_clone_without_an_id_writes_no_git_config(self):
+        self.claim(self.b, "acquire", "9", "--session", "s2")
+        fresh = self.clone("fresh")
+        before = _sh(fresh, "config", "--local", "--list")
+        code, got = self.claim(fresh, "list")
+        self.assertEqual(0, code)
+        self.assertEqual(before, _sh(fresh, "config", "--local", "--list"))
+        self.assertNotIn("machineid", before.lower())
+        self.assertIsNone(got["holder"])
+        self.assertEqual([False], [r["mine"] for r in got["claims"]])
+
     def test_a_bad_id_is_a_refusal(self):
         code, got = self.claim(self.a, "acquire", "../x")
         self.assertEqual((2, "sp-claim-id"), (code, got["code"]))
