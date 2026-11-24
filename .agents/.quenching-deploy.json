@@ -171,7 +171,7 @@
     ".agents/quenching/assets/bin/quenching/specs/commands/parallel.py": "b536837a705614469dc4d6a224783f87f932e7f2bb71d56c038c1c45a3c9f524",
     ".agents/quenching/assets/bin/quenching/specs/commands/promote.py": "1d7f0cace67e785c7a9ac724269aea8d9806e27bdc88370b961103d148b81401",
     ".agents/quenching/assets/bin/quenching/specs/commands/push.py": "b12ca94c992aab163f939ee9d8e555090bee99c30519800ad0fa66bec7cecef3",
-    ".agents/quenching/assets/bin/quenching/specs/commands/read.py": "1063c8545b08ba81290d09dff0bbd56376546b3ef28845449ebb2f281616ed2e",
+    ".agents/quenching/assets/bin/quenching/specs/commands/read.py": "affca73009d2ad92c81e1edbaf91def6a9fc1b2ec050f3c2d0c12e7bad55588f",
     ".agents/quenching/assets/bin/quenching/specs/commands/reconcile.py": "0154c1b96ae406ba3021b90ad361ac211d072dfd2a467f648f61e0ad1702d9b8",
     ".agents/quenching/assets/bin/quenching/specs/commands/release.py": "ed6e7f13030611ed85d40529710ae008e549ed062263bf70b3270db975ca9aa6",
     ".agents/quenching/assets/bin/quenching/specs/commands/scrub.py": "629bbcb3dbaa8c1ddae24087d9ed746525b5be02072d3702f96de9dd2593d269",
