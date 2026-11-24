@@ -190,8 +190,15 @@ if want 1; then
   printf '  ok     %-22s sweep sees %s files\n' '(canary)' "$canary"
 
   for pat in "${DEAD_PATTERNS[@]}"; do
-    hits="$(git grep -I -c -E -- "$pat" -- ":!$SELF" "${SCOPE_EXCLUDE[@]}" 2>/dev/null | wc -l)"
-    occ="$(git grep -I -o -E -- "$pat" -- ":!$SELF" "${SCOPE_EXCLUDE[@]}" 2>/dev/null | wc -l)"
+    # One sweep per pattern: `-o` prints `path:match`, so the files are its distinct paths and the
+    # occurrences its lines.
+    matches="$(git grep -I -o -E -- "$pat" -- ":!$SELF" "${SCOPE_EXCLUDE[@]}" 2>/dev/null)"
+    if [ -n "$matches" ]; then
+      occ="$(printf '%s\n' "$matches" | wc -l)"
+      hits="$(printf '%s\n' "$matches" | cut -d: -f1 | sort -u | wc -l)"
+    else
+      occ=0 hits=0
+    fi
     if [ "$hits" -gt 0 ]; then
       printf '  FAIL   %-22s %s occurrence(s) in %s file(s)\n' "$pat" "$occ" "$hits"
       FAIL=$((FAIL+1))
