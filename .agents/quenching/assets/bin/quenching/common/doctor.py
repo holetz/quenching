@@ -12,13 +12,18 @@ completed its provider setup while never making a GitHub repository look like Az
 """
 from __future__ import annotations
 
+import glob
 import importlib
 import os
 import shutil
+import subprocess
 import sys
+import tempfile
 from pathlib import Path
 from typing import Callable
 
+from quenching.common.cache import cache_root
+from quenching.common.git import _git
 from quenching.common.config import (active_provider, detect_profile, load_config,
                                      prepare_minimal_config,
                                      write_minimal_config)
@@ -201,7 +206,97 @@ def _run_setup(as_json: bool, root: str, write: bool) -> int:
     return OK
 
 
-def run(as_json: bool, root: str, *, setup: bool = False, write: bool = False) -> int:
+ANTIVIRUS_CAVEAT = (
+    "Nothing here is applied: excluding a path from the antivirus is a security decision for "
+    "you or your IT. Under Tamper Protection or a managed policy (Intune, Trend Micro Apex One) "
+    "the change is refused locally; hand the plain list to whoever owns the central console.")
+UV_TIMEOUT_S = 10
+
+
+def _primary_root(root: str) -> str:
+    """The primary checkout: the parent of the shared `.git`, so a slot names the same repo."""
+    common = _git(root, "rev-parse", "--path-format=absolute", "--git-common-dir").strip()
+    if common and os.path.basename(common) == ".git":
+        return os.path.dirname(common)
+    top = _git(root, "rev-parse", "--show-toplevel").strip()
+    return os.path.normpath(top) if top else root
+
+
+def _uv_cache_dir(which: Callable[[str], str | None]) -> str | None:
+    uv = which("uv")
+    if not uv:
+        return None
+    try:
+        out = subprocess.run([uv, "cache", "dir"], capture_output=True, text=True,
+                             encoding="utf-8", errors="replace", timeout=UV_TIMEOUT_S)
+    except (OSError, subprocess.SubprocessError):
+        return None
+    path = out.stdout.strip()
+    return path if out.returncode == 0 and path else None
+
+
+def antivirus_report(root: str, *, which: Callable[[str], str | None] | None = None) -> dict:
+    """The paths and processes an on-access scanner should spare for this repository.
+
+    Read-only: it resolves paths and runs `uv cache dir` when `uv` is on PATH, nothing else."""
+    which = which or shutil.which
+    primary = _primary_root(os.path.abspath(root))
+    parent, name = os.path.split(primary)
+    paths = [{"path": primary, "what": "repository (its .git holds the spec store)"}]
+    pattern = os.path.join(parent, f"{name}-slot-*")
+    paths.append({"path": pattern, "what": "worktree slots (wildcard)"})
+    for slot in sorted(glob.glob(pattern)):
+        if os.path.isdir(slot):
+            paths.append({"path": slot, "what": "worktree slot"})
+    paths.append({"path": cache_root(), "what": "quenching cache"})
+    venv = os.path.join(primary, ".venv")
+    if os.path.isdir(venv):
+        paths.append({"path": venv, "what": "virtual environment"})
+    uv_cache = _uv_cache_dir(which)
+    if uv_cache:
+        paths.append({"path": uv_cache, "what": "uv cache"})
+    processes = [{"path": os.path.abspath(sys.executable), "what": "python"}]
+    git = which("git")
+    if git:
+        processes.append({"path": os.path.abspath(git), "what": "git"})
+    return {
+        "root": primary,
+        "paths": paths,
+        "processes": processes,
+        "informational": [{
+            "path": tempfile.gettempdir(),
+            "what": "system temp — not printed as an exclusion: a common malware drop location"}],
+        "caveat": ANTIVIRUS_CAVEAT,
+    }
+
+
+def _ps_quote(value: str) -> str:
+    return "'" + value.replace("'", "''") + "'"
+
+
+def _antivirus_human(report: dict) -> str:
+    lines = [f"cq doctor --antivirus — {report['root']}", "",
+             "Microsoft Defender (an elevated PowerShell):"]
+    lines += [f"  Add-MpPreference -ExclusionPath {_ps_quote(p['path'])}" for p in report["paths"]]
+    lines += [f"  Add-MpPreference -ExclusionProcess {_ps_quote(p['path'])}"
+              for p in report["processes"]]
+    lines += ["", "Plain list (a central console such as Trend Micro):"]
+    lines += [f"  path     {p['path']}  ({p['what']})" for p in report["paths"]]
+    lines += [f"  process  {p['path']}  ({p['what']})" for p in report["processes"]]
+    lines += ["", "Not listed:"]
+    lines += [f"  {p['path']}  ({p['what']})" for p in report["informational"]]
+    lines += ["", report["caveat"]]
+    return "\n".join(lines)
+
+
+def run_antivirus(as_json: bool, root: str) -> int:
+    report = antivirus_report(root)
+    emit(as_json, {"ok": True, **report}, _antivirus_human(report))
+    return OK
+
+
+def run(as_json: bool, root: str, *, setup: bool = False, write: bool = False,
+        antivirus: bool = False) -> int:
     """Render the top-level doctor and preserve the CQ refusal door for missing prerequisites."""
     resolved_root = os.path.abspath(root)
     if not os.path.isdir(resolved_root):
@@ -213,6 +308,14 @@ def run(as_json: bool, root: str, *, setup: bool = False, write: bool = False) -
         }, as_json)
     if setup:
         return _run_setup(as_json, resolved_root, write)
+    if antivirus:
+        if write:
+            return refuse({
+                "code": "cq-setup-write-without-setup",
+                "message": "`--write` is valid only with `--setup`; `--antivirus` writes nothing",
+                "remedy": "run `cq doctor --antivirus` and apply what it prints yourself",
+            }, as_json)
+        return run_antivirus(as_json, resolved_root)
     if write:
         return refuse({
             "code": "cq-setup-write-without-setup",

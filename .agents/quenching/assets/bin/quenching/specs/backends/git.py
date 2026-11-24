@@ -30,6 +30,7 @@ import time
 from datetime import datetime
 
 from quenching.common import identity
+from quenching.common.cache import cache_path
 from quenching.common.config import find_repo_root
 from quenching.common.git import remember_remote_url, remembered_remote_url
 from quenching.common.leak import guard_store_write, patterns, scan_text, store_refusal
@@ -144,9 +145,8 @@ class _Blob(str):
 
 
 def _cache_path(key: str) -> str:
-    base = os.environ.get("XDG_CACHE_HOME") or os.path.join(os.path.expanduser("~"), ".cache")
     digest = hashlib.sha256(key.encode()).hexdigest()[:32]
-    return os.path.join(base, "quenching", "git", f"{digest}.json")
+    return cache_path("git", f"{digest}.json")
 
 
 _UNSET = object()
