@@ -68,6 +68,13 @@ class Selection(unittest.TestCase):
         self.assertTrue(got.complete)
         self.assertIn("no rule covers", got.reasons[0])
 
+    def test_the_harness_config_files_the_deploy_writes_select_the_deploy_tests(self):
+        for path in ("opencode.json", ".mcp.json", ".codex/config.toml", ".claude/settings.json"):
+            with self.subTest(path=path):
+                got = self.selected(path)
+                self.assertFalse(got.complete)
+                self.assertIn("quenching/tests/test_deploy.py", got.tests)
+
     def test_a_generated_tree_alone_selects_nothing_and_is_not_a_failure(self):
         got = self.selected("site/index.html")
         self.assertEqual((), got.tests)
