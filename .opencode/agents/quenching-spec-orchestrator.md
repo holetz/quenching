@@ -24,6 +24,26 @@ permission:
     ".agents/quenching/bin/cq git pr merge *": allow
     ".agents/quenching/bin/cq git base *": allow
     ".agents/quenching/bin/cq git conventions *": allow
+  "quenching_*": deny
+  quenching_specs_epic_progress: allow
+  quenching_specs_status: allow
+  quenching_specs_list: allow
+  quenching_specs_show: allow
+  quenching_specs_parallel: allow
+  quenching_specs_next: allow
+  quenching_specs_record: allow
+  quenching_specs_reconcile: allow
+  quenching_components_session_cost: allow
+  quenching_components_session_cache: allow
+  quenching_components_session_context: allow
+  quenching_git_state: allow
+  quenching_git_push: allow
+  quenching_git_pr_create: allow
+  quenching_git_pr_probe: allow
+  quenching_git_pr_record: allow
+  quenching_git_pr_merge: allow
+  quenching_git_base: allow
+  quenching_git_conventions: allow
   task:
     "*": deny
     "quenching-spec-runner": allow

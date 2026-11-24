@@ -7,6 +7,10 @@ permission:
   bash:
     "*": ask
     ".agents/quenching/bin/cq git history *": allow
+  "quenching_*": deny
+  quenching_git_history_diff: allow
+  quenching_git_history_log: allow
+  quenching_git_history_show: allow
 tools:
   task: false
 ---

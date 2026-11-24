@@ -10,6 +10,12 @@ permission:
     ".agents/quenching/bin/cq specs show *": allow
     ".agents/quenching/bin/cq git audit *": allow
     ".agents/quenching/bin/cq git pr view *": allow
+  "quenching_*": deny
+  quenching_specs_epic_progress: allow
+  quenching_specs_status: allow
+  quenching_specs_show: allow
+  quenching_git_audit: allow
+  quenching_git_pr_view: allow
 tools:
   task: false
 ---

@@ -8,6 +8,9 @@ permission:
     "*": ask
     ".agents/quenching/bin/cq specs show *": allow
     ".agents/quenching/bin/cq components read *": allow
+  "quenching_*": deny
+  quenching_specs_show: allow
+  quenching_components_read: allow
 tools:
   task: false
 ---
