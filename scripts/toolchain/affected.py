@@ -127,6 +127,11 @@ RULES: tuple[Rule, ...] = (
           "test_public_readiness", "test_opensource_controls")),
     Rule(("quenching/assets/hooks/",), ("test_hook_*", "test_deploy_settings")),
     Rule(("quenching/assets/templates/",), ("test_deploy*", "test_components*")),
+    # The harness config files `cq deploy` writes at the repository root; one owner, one test set.
+    # Rules are read before IRRELEVANT, so `.claude/settings.json` is covered while the rest of
+    # `.claude/` stays a generated mirror.
+    Rule(("opencode.json", ".mcp.json", ".codex/config.toml", ".claude/settings.json"),
+         ("test_deploy*",)),
     Rule(("quenching/VERSION",),
          ("test_readme_surface", "test_deploy*", "test_specs_release", "test_opensource_controls",
           "test_public_readiness")),
