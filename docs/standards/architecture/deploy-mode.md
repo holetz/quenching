@@ -293,9 +293,10 @@ and effort survive as prose. Permissions are mapped deny-only from the source `t
 tool → `edit: deny`, no `WebFetch` → `webfetch: deny`, no `Agent`/`Task` → the task tool off,
 unrestricted `Bash` → `bash: allow`, no `Bash` → `bash: deny` — with one decided exception: scoped
 `Bash(cq <verbs>:*)` grants give a `bash` map that opens with `"*": ask`, then one
-`"cq <verbs> *": allow` pattern per grant, in source order. OpenCode applies the last rule that
-matches, so a catch-all written last would override every allow: the order is the policy, and a
-scoped `Bash(...)` with no `cq` → `bash: ask`. Only the verbs the source grants are allowed, so a
+`"cq <verbs> *": allow` pattern per grant, in source order, followed by one `"<command> *": allow`
+pattern per scoped non-cq `Bash(<command>:*)` grant (`git worktree list`, `gh pr view`). OpenCode
+applies the last rule that matches, so a catch-all written last would override every allow: the
+order is the policy, and a `Bash` grant with no scope form → `bash: ask`. Only the commands the source grants are allowed, so a
 read-only agent never runs `cq git push` or `cq specs record` unasked. Per-agent permission sets
 beyond this mapping and hooks are not generated; they widen or reshape grants and stay a human
 decision.
