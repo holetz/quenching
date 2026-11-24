@@ -404,6 +404,14 @@ def _unlink_owned(target: Path, rel: str) -> None:
     if not (path.is_file() and _safe_relative(rel) and _contained(target, path)):
         return
     path.unlink()
+    if path.suffix == ".py":
+        # The bytecode `_precompile` (or the first import) wrote beside it is no one's file once
+        # the source is gone, and it would keep the directory from ever emptying.
+        cache = path.parent / "__pycache__"
+        for stale in cache.glob(f"{path.stem}.*.pyc"):
+            stale.unlink()
+        if cache.is_dir() and not any(cache.iterdir()):
+            cache.rmdir()
     parent = path.parent
     while parent != target and parent.is_dir() and not any(parent.iterdir()):
         parent.rmdir()
@@ -461,6 +469,30 @@ def write(target: Path, built: dict, result: dict, prune_legacy: bool) -> None:
     # `newline="\n"` on every text write: the deployed tree is LF on Windows too.
     (target / MANIFEST).write_text(dumps_hash_manifest(built["manifest"]),
                                    encoding="utf-8", newline="\n")
+
+
+def _precompile(target: Path, python: list[str]) -> str | None:
+    """Write the payload's bytecode once, under the interpreter the hooks and the MCP server run.
+
+    Otherwise every first call of a fresh deploy or slot writes its own `.pyc`, each one a file the
+    target's real-time antivirus scans. The `.pyc` tag is the loading interpreter's, so the compile
+    runs under that prefix, never this process. The bytecode is a cache: no manifest entry, no
+    `--check`, and a failure is a warning, never a refusal of a write that already landed.
+    """
+    assets = target / deploy_tree.PAYLOAD / "assets"
+    if not assets.is_dir():
+        return None
+    try:
+        done = subprocess.run([*python, "-m", "compileall", "-q", str(assets)],
+                              capture_output=True, text=True, encoding="utf-8",
+                              errors="replace", timeout=120)
+    except (OSError, subprocess.SubprocessError) as exc:
+        return f"the payload bytecode was not precompiled with `{' '.join(python)}`: {exc}"
+    if done.returncode != 0:
+        detail = (done.stderr or done.stdout).strip().splitlines()
+        return (f"the payload bytecode was not precompiled with `{' '.join(python)}` "
+                f"(exit {done.returncode}){': ' + detail[-1] if detail else ''}")
+    return None
 
 
 def _human(target: Path, built: dict, result: dict, written: bool) -> str:
@@ -604,6 +636,9 @@ def main(argv: list[str]) -> int:
     if args.write:
         write(target, built, result, args.prune_legacy)
         written = True
+        compile_warning = _precompile(target, hooks_python)
+        if compile_warning:
+            result["warnings"] = [*result["warnings"], compile_warning]
     payload = {"ok": not result["conflicts"], "target": str(target),
                "version": built["manifest"]["version"],
                "installedVersion": installed if isinstance(installed, str) else None,

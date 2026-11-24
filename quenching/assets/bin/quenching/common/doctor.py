@@ -27,6 +27,7 @@ from quenching.common.git import _git
 from quenching.common.config import (active_provider, detect_profile, load_config,
                                      prepare_minimal_config,
                                      write_minimal_config)
+from quenching.common.gitcache import untracked_cache_line, untracked_cache_report
 from quenching.common.io import read_text
 from quenching.common.output import OK, emit, refuse
 
@@ -347,5 +348,10 @@ def run(as_json: bool, root: str, *, setup: bool = False, write: bool = False,
     if config is not None:
         report = {**report, "config": config}
         human += f"\n  {_config_line(config)}"
+    git_cache = untracked_cache_report(resolved_root)
+    if git_cache is not None:
+        report = {**report, "gitCache": git_cache}
+        line = untracked_cache_line(git_cache)
+        human += f"\n  {line}" if line else ""
     emit(as_json, {"ok": True, **report}, human)
     return OK
