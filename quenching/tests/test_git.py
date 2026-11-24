@@ -8,6 +8,7 @@ agnosticas-ao-git`, task 3.5, wrote every case from the four subcommands' own co
 """
 from __future__ import annotations
 
+import atexit
 import contextlib
 import io
 import json
@@ -59,15 +60,31 @@ def _run(cwd: str, *argv: str) -> None:
     subprocess.run(["git", *argv], cwd=cwd, check=True, capture_output=True, text=True)
 
 
+_TEMPLATE: dict[str, str] = {}
+
+
+def _template_repo() -> str:
+    """One initialised repository per process, built once and copied per test: the `git init`,
+    two `git config` calls, `add` and `commit` are five processes a test would otherwise pay."""
+    if "path" not in _TEMPLATE:
+        root = tempfile.mkdtemp(prefix="cq-git-template-")
+        atexit.register(shutil.rmtree, root, ignore_errors=True)
+        path = os.path.join(root, "repo")
+        os.makedirs(path)
+        _run(path, "init", "-q", "-b", "main")
+        _run(path, "config", "user.email", "test@example.com")
+        _run(path, "config", "user.name", "Test")
+        with open(os.path.join(path, "a.txt"), "w", encoding="utf-8") as f:
+            f.write("x\n")
+        _run(path, "add", "a.txt")
+        _run(path, "commit", "-q", "-m", "init")
+        _TEMPLATE["path"] = path
+    return _TEMPLATE["path"]
+
+
 def _init_repo(path: str) -> str:
-    os.makedirs(path, exist_ok=True)
-    _run(path, "init", "-q", "-b", "main")
-    _run(path, "config", "user.email", "test@example.com")
-    _run(path, "config", "user.name", "Test")
-    with open(os.path.join(path, "a.txt"), "w", encoding="utf-8") as f:
-        f.write("x\n")
-    _run(path, "add", "a.txt")
-    _run(path, "commit", "-q", "-m", "init")
+    os.makedirs(os.path.dirname(path) or ".", exist_ok=True)
+    shutil.copytree(_template_repo(), path, dirs_exist_ok=True)
     return path
 
 
