@@ -34,6 +34,7 @@ class SettingsRefusal(ValueError):
 class Merged:
     text: str | None
     attribution: list[str] = field(default_factory=list)   # keys the deploy owns, still ""
+    mcpjson: bool = False  # the deploy wrote `quenching` into `enabledMcpjsonServers`
     warnings: list[str] = field(default_factory=list)
 
 
@@ -164,9 +165,46 @@ def _merge_attribution(doc: dict, wanted: dict | None, recorded: list[str], out:
     doc["attribution"] = current
 
 
+SERVER = "quenching"  # the `.mcp.json` server the deploy registers, approved by name
+
+
+def _names(doc: dict, key: str) -> list:
+    names = doc.get(key)
+    if names is None:
+        return []
+    if not isinstance(names, list):
+        _refuse(f"`{key}` must be a list")
+    return names
+
+
+def _merge_mcpjson(doc: dict, wanted: bool, recorded: bool, out: Merged) -> None:
+    """Approve the registered server in `enabledMcpjsonServers`, unless the user disabled it;
+    take it out again only when the deploy wrote it."""
+    enabled = _names(doc, "enabledMcpjsonServers")
+    if wanted:
+        if SERVER in _names(doc, "disabledMcpjsonServers"):
+            out.warnings.append(f"disabledMcpjsonServers names {SERVER} in .claude/settings.json; "
+                                "left as the user wrote it, so the server stays off")
+            out.mcpjson = recorded and SERVER in enabled
+            return
+        if SERVER not in enabled:
+            doc["enabledMcpjsonServers"] = [*enabled, SERVER]
+            out.mcpjson = True
+        else:
+            out.mcpjson = recorded
+    elif recorded and SERVER in enabled:
+        rest = [name for name in enabled if name != SERVER]
+        if rest:
+            doc["enabledMcpjsonServers"] = rest
+        else:
+            doc.pop("enabledMcpjsonServers", None)
+
+
 def merge(text: str | None, wanted: list[dict], attribution: dict | None = None,
-          recorded: list[str] | None = None) -> Merged:
-    """The settings text after the merge. `text` None means the file does not exist."""
+          recorded: list[str] | None = None, mcpjson: bool = False,
+          mcpjson_recorded: bool = False) -> Merged:
+    """The settings text after the merge. `text` None means the file does not exist. `mcpjson`
+    asks for the registered server's approval; `mcpjson_recorded` says a past deploy wrote it."""
     out = Merged(text=text)
     if text is None:
         original: dict = {}
@@ -180,6 +218,7 @@ def merge(text: str | None, wanted: list[dict], attribution: dict | None = None,
     doc = copy.deepcopy(original)
     _merge_hooks(doc, wanted)
     _merge_attribution(doc, attribution, list(recorded or []), out)
+    _merge_mcpjson(doc, mcpjson, mcpjson_recorded, out)
     if doc == original:
         return out
     out.text = json.dumps(doc, indent=2, ensure_ascii=False) + "\n"
