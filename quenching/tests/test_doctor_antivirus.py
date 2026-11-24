@@ -79,6 +79,65 @@ class AntivirusReportTest(unittest.TestCase):
         self.assertEqual("'C:\\it''s'", doctor._ps_quote("C:\\it's"))
 
 
+class AntivirusPrimaryRootTest(unittest.TestCase):
+    """The repository is the primary worktree, never the folder holding a separate git dir."""
+
+    def setUp(self):
+        self.tmp = os.path.realpath(tempfile.mkdtemp())
+        self.env = mock.patch.dict(os.environ, {"XDG_CACHE_HOME": os.path.join(self.tmp, "c")})
+        self.env.start()
+        self.addCleanup(self.env.stop)
+
+    def _git(self, *argv):
+        subprocess.run(["git", *argv], check=True, capture_output=True)
+
+    def _repo(self, *init):
+        repo = os.path.join(self.tmp, "sep")
+        self._git("init", "-q", *init, repo)
+        self._git("-C", repo, "-c", "user.name=t", "-c", "user.email=t@t", "commit", "-q",
+                  "--allow-empty", "-m", "x")
+        with open(os.path.join(repo, "README.md"), "w", encoding="utf-8") as fh:
+            fh.write("x\n")
+        self._git("-C", repo, "add", "README.md")
+        self._git("-C", repo, "-c", "user.name=t", "-c", "user.email=t@t", "commit", "-q", "-m", "y")
+        slot = os.path.join(self.tmp, "sep-slot-1")
+        self._git("-C", repo, "worktree", "add", "-q", slot)
+        return repo, slot
+
+    def _paths(self, root):
+        report = doctor.antivirus_report(root, which=_which({}))
+        return report, [p["path"] for p in report["paths"]]
+
+    def test_separate_git_dir_lists_the_worktree_never_the_git_dir_parent(self):
+        gd = os.path.join(self.tmp, "gd")
+        os.makedirs(gd)
+        repo, slot = self._repo("--separate-git-dir", os.path.join(gd, ".git"))
+        for root in (repo, slot):
+            report, paths = self._paths(root)
+            self.assertEqual(repo, report["root"], root)
+            self.assertIn(os.path.join(self.tmp, "sep-slot-*"), paths)
+            self.assertNotIn(gd, paths)
+            self.assertNotIn(os.path.join(self.tmp, "gd-slot-*"), paths)
+            self.assertIn(os.path.join(gd, ".git"), [p["path"] for p in report["informational"]])
+
+    def test_a_slot_of_a_plain_repository_lists_the_primary_worktree(self):
+        repo, slot = self._repo()
+        report, paths = self._paths(slot)
+        self.assertEqual(repo, report["root"])
+        self.assertIn(slot, paths)
+        self.assertNotIn(os.path.join(repo, ".git"), [p["path"] for p in report["informational"]])
+
+    def test_a_slot_that_cannot_prove_its_primary_falls_back_to_itself(self):
+        gd = os.path.join(self.tmp, "gd")
+        os.makedirs(gd)
+        repo, _ = self._repo("--separate-git-dir", os.path.join(gd, ".git"))
+        odd = os.path.join(self.tmp, "elsewhere")
+        self._git("-C", repo, "worktree", "add", "-q", odd)
+        report, paths = self._paths(odd)
+        self.assertEqual(odd, report["root"])
+        self.assertNotIn(gd, paths)
+
+
 class AntivirusBroadPathTest(unittest.TestCase):
     def test_disk_root_home_ancestor_and_temp_are_too_broad(self):
         home = os.path.expanduser("~")

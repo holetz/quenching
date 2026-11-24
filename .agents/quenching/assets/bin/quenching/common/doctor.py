@@ -15,6 +15,7 @@ from __future__ import annotations
 import glob
 import importlib
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -214,15 +215,48 @@ ANTIVIRUS_CAVEAT = (
 UV_TIMEOUT_S = 10
 
 
-def _primary_root(root: str) -> str | None:
-    """The primary checkout: the parent of the shared `.git`, so a slot names the same repo.
+def _owns(candidate: str, common: str) -> bool:
+    """`candidate` is a checkout of `common`: its `.git` is that git dir, or a `gitdir:` file to it."""
+    dot_git = os.path.join(candidate, ".git")
+    if os.path.isfile(dot_git):
+        head = read_text(dot_git).strip()
+        if not head.startswith("gitdir:"):
+            return False
+        target = os.path.join(candidate, head[len("gitdir:"):].strip())
+        return _canonical(target) == _canonical(common)
+    if not os.path.isdir(dot_git) or _canonical(dot_git) != _canonical(common):
+        return False
+    # A bare `.git` parent (`--separate-git-dir`) carries the git dir but none of its files.
+    tracked = _git(candidate, "--git-dir", common, "ls-files", "-z").split("\0")
+    tops = {entry.split("/", 1)[0] for entry in tracked if entry}
+    return not tops or any(os.path.lexists(os.path.join(candidate, top)) for top in tops)
 
-    `None` outside a git repository: the raw root is never offered as the repository."""
-    common = _git(root, "rev-parse", "--path-format=absolute", "--git-common-dir").strip()
-    if common and os.path.basename(common) == ".git":
-        return os.path.dirname(common)
+
+def _primary_root(root: str) -> str | None:
+    """The primary worktree, proven: never the parent of a git dir only by its name.
+
+    In the primary worktree it is the toplevel; in a slot it is the first candidate that owns the
+    shared git dir — the sibling without `-slot-<n>`, then the parent of a `.git` common dir —
+    else the slot's own toplevel, narrower and never broader. `None` outside a git repository:
+    the raw root is never offered as the repository."""
     top = _git(root, "rev-parse", "--show-toplevel").strip()
-    return os.path.normpath(top) if top else None
+    if not top:
+        return None
+    top = os.path.normpath(top)
+    common = _git(root, "rev-parse", "--path-format=absolute", "--git-common-dir").strip()
+    git_dir = _git(root, "rev-parse", "--absolute-git-dir").strip()
+    if not common or _canonical(git_dir) == _canonical(common):
+        return top
+    candidates = []
+    stem = re.sub(r"-slot-\d+$", "", os.path.basename(top))
+    if stem != os.path.basename(top):
+        candidates.append(os.path.join(os.path.dirname(top), stem))
+    if os.path.basename(common) == ".git":
+        candidates.append(os.path.dirname(common))
+    for candidate in candidates:
+        if _owns(candidate, common):
+            return os.path.normpath(candidate)
+    return top
 
 
 def _canonical(path: str) -> str:
@@ -298,6 +332,10 @@ def antivirus_report(root: str, *, which: Callable[[str], str | None] | None = N
         "what": "system temp — not printed as an exclusion: a common malware drop location"}]
     informational += [{"path": p["path"], "what": f"{p['what']} — too broad to exclude"}
                       for p in paths if _too_broad(p["path"])]
+    common = _git(primary, "rev-parse", "--path-format=absolute", "--git-common-dir").strip()
+    if common and not _canonical(common).startswith(_canonical(primary).rstrip(os.sep) + os.sep):
+        informational.append({"path": common, "what": "git dir outside the worktree — not listed: "
+                                                      "its folder is not the repository"})
     return {
         "root": primary,
         "paths": [p for p in paths if not _too_broad(p["path"])],
