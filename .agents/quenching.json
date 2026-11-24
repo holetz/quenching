@@ -19,7 +19,6 @@
       ]
     },
     "mcp": {
-      "mount": "specs",
       "command": [
         "python3"
       ]

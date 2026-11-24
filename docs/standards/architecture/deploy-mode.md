@@ -4,7 +4,7 @@ title: Deploy mode — install the surface in a target repository
 description: "`cq deploy` materializes the selected quenching modules in a target's generic layer — AGENTS.md, .agents/skills and a vendored runtime — while Claude Code receives only a generated bridge under .claude; install is not alignment and never calls a model."
 resource: quenching/assets/bin/quenching/deploy/**, quenching/assets/bin/cq, quenching/assets/modules.json, quenching/pyproject.toml, quenching/assets/bin/quenching/components/commands/bridge.py, quenching/assets/bin/quenching/components/commands/migrate.py, integrations/opencode-vitrine/**
 tags: [architecture, deploy, installation, agents, skills, bridge]
-timestamp: 2026-11-20
+timestamp: 2026-11-24
 audience: both
 authority: current
 source: deploy-mode implementation (2026-10-28); spec 2126, spec 2160, spec 2168, spec 2174 (absorbs surface-translation.md); retired with surface-translation.md (spec 2174, 2026-11-03); lineage in ADR 0017 and ADR 0019
@@ -107,17 +107,26 @@ grant is `Bash(.agents/quenching/bin/cq:*)`.
 
 ## MCP registration
 
-Deploy always registers the quenching MCP server, with no declaration. It writes the `quenching`
-entry into one file per selected harness — `.mcp.json` for `claude`, `.codex/config.toml` for
-`codex`, `opencode.json` for `opencode` — with the same argv:
-`<command...> .agents/quenching/assets/bin/cq <mount> mcp`. `shared.mcp` (`{mount: "specs",
-command: [...]}`, see [plugin-configuration.md](../workflows/plugin-configuration.md#the-sharedmcp-block))
-only overrides the mount and the Python prefix.
+Deploy always registers the whole quenching MCP server, with no declaration. It writes the
+`quenching` entry into one file per selected harness — `.mcp.json` for `claude` (which the GitHub
+Copilot harness reads too), `.codex/config.toml` for `codex`, `opencode.json` for `opencode` — with
+the same argv: `<command...> .agents/quenching/assets/bin/cq mcp`, every catalogued tool of the
+pillars present. `shared.mcp` (`{mount: "all"|"specs", command: [...]}`, see
+[plugin-configuration.md](../workflows/plugin-configuration.md#the-sharedmcp-block)) only overrides
+the mount and the Python prefix: `mount: "specs"` registers the specs-only
+`<command...> .agents/quenching/assets/bin/cq specs mcp` instead. The mount comes from the
+declaration alone, never from the manifest, so a target deployed under the old `specs` default
+moves to the whole server on its next `--write`.
 
-**The prefix finds Python without pinning a version.** Declared `shared.mcp.command`, else the
-`mcp.command` the last deploy recorded in the manifest (so two machines never flap), else the first
-of `python3`, `python` and `py -3` that runs a Python 3.11 or later here, else `python3`. The Claude
-Code hooks start with the same prefix.
+**The prefix is a direct interpreter, found without pinning a version.** Declared
+`shared.mcp.command`, else the `mcp.command` the last deploy recorded in the manifest (so two
+machines never flap), else the first of `python3`, `python` and `py -3` that runs a Python 3.11 or
+later here, else `python3`. A prefix through `uv` or `uvx` never reaches the server: `uv run`
+resolves the project before the server answers, which is what timed a harness out at 30 s. The MCP
+server and the Claude Code hooks run one and the same direct prefix
+([hooks.md](../automation/hooks.md)), recorded as `mcp.command` and `claudeSettings.command`, and
+the deploy warns when it replaced a `uv` one. `initialize` plus `tools/list` of the whole server
+answer within one second (`quenching/tests/test_quenching_mcp_startup.py`).
 
 **The files stay the user's: merged, never owned.** Like `.claude/settings.json`, they are not in the
 manifest's `files`; the manifest records `mcp` and `mcpFiles`, and only the `quenching` entry is the

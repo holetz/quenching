@@ -20,7 +20,8 @@ from quenching.deploy import tree as deploy_tree
 LEGACY = (".claude/commands", ".claude/references", ".agents/.generated-from.json")
 GENERATED_ROOTS = (".agents/quenching/", ".agents/skills/quenching-", ".claude/skills/quenching-",
                    ".claude/agents/quenching-")
-MCP_MOUNTS = {"specs"}
+MCP_MOUNTS = {"all", "specs"}  # `all` is `cq mcp`; `specs` is `cq specs mcp`
+MCP_DEFAULT_MOUNT = "all"
 SETTINGS = ".claude/settings.json"
 # Owned files another cq tool rewrites on purpose: `cq components bridge` restamps its marker with
 # its own generator line and hashes. They carry no human work, so a difference is never `edited`.
@@ -30,7 +31,7 @@ HOOKS_PATH = deploy_tree.PAYLOAD + "/assets/githooks"
 
 def _mcp_refusal(message: str, **extra) -> dict:
     return {"code": "ct-deploy-mcp", "message": message, **extra,
-            "remedy": "declare `shared.mcp` as {mount: \"specs\", command: [<python prefix>]} "
+            "remedy": "declare `shared.mcp` as {mount: \"all\"|\"specs\", command: [<python prefix>]} "
                       "to override the default, or remove the key"}
 
 
@@ -74,7 +75,7 @@ def _mcp_option(target: Path) -> tuple[dict | None, dict | None]:
     if unknown:
         return None, _mcp_refusal(f"`shared.mcp` has unknown key(s): {', '.join(unknown)}",
                                   keys=unknown)
-    mount = raw.get("mount", "specs")
+    mount = raw.get("mount", MCP_DEFAULT_MOUNT)
     if mount not in MCP_MOUNTS:
         return None, _mcp_refusal(
             f"`shared.mcp.mount` must be one of: {', '.join(sorted(MCP_MOUNTS))}", mount=mount)
@@ -469,18 +470,20 @@ def main(argv: list[str]) -> int:
     python = mcpfiles.python_prefix(
         declared["command"] if declared else None,
         recorded_mcp.get("command") if isinstance(recorded_mcp, dict) else None)
-    # Registered by default; `shared.mcp` only overrides the mount and the prefix. A uvx runtime
-    # carries no vendored entry point to call, so there the registration is skipped, not refused.
-    mcp = ({"mount": declared["mount"] if declared else "specs", "command": python}
+    recorded_settings = (previous or {}).get("claudeSettings")
+    recorded_hooks = recorded_settings.get("command") if isinstance(recorded_settings, dict) else None
+    # The hooks and the MCP server share one direct interpreter: `uv run` never starts either.
+    hooks_python, hooks_warning = mcpfiles.direct_prefix(
+        python, recorded_hooks if isinstance(recorded_hooks, list) else None)
+    # Registered by default, the whole server; `shared.mcp` only overrides the mount and the
+    # prefix. A uvx runtime carries no vendored entry point to call, so there the registration is
+    # skipped, not refused.
+    mcp = ({"mount": declared["mount"] if declared else MCP_DEFAULT_MOUNT, "command": hooks_python}
            if runtime == "vendor" else None)
     mcp_warnings = ([] if mcp or not harnesses else [
         "the MCP server is not registered: `--runtime uvx` carries no vendored entry point; "
         "use `--runtime vendor` to register it"])
-    recorded_settings = (previous or {}).get("claudeSettings")
-    recorded_hooks = recorded_settings.get("command") if isinstance(recorded_settings, dict) else None
-    hooks_python, hooks_warning = mcpfiles.direct_prefix(
-        python, recorded_hooks if isinstance(recorded_hooks, list) else None)
-    if hooks_warning and "claude" in harnesses:
+    if hooks_warning and harnesses and (mcp or "claude" in harnesses):
         mcp_warnings.append(hooks_warning)
     try:
         manifest = deploy_tree.load_modules(deploy_tree.source_root())

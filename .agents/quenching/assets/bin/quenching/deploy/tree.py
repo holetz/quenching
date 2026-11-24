@@ -311,8 +311,10 @@ def _bridge_tree(tree: dict, target: Path) -> None:
 
 
 def mcp_argv(mcp: dict) -> list[str]:
-    """The Python prefix, the vendored entry point and the mounted pillar's `mcp`."""
-    return [*mcp["command"], PAYLOAD + "/assets/bin/cq", *mcp["mount"].split(), "mcp"]
+    """The Python prefix, the vendored entry point and `mcp`: the whole server for `all`, the
+    mounted pillar's own `mcp` otherwise."""
+    mount = [] if mcp["mount"] == "all" else mcp["mount"].split()
+    return [*mcp["command"], PAYLOAD + "/assets/bin/cq", *mount, "mcp"]
 
 
 def _declared_hooks(selected: list[dict]) -> list[dict]:

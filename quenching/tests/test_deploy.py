@@ -460,8 +460,11 @@ class Deploy(unittest.TestCase):
     def configure(self, document: dict):
         self.write(".agents/quenching.json", json.dumps(document, indent=2) + "\n")
 
-    def mcp_config(self, command=None, mount="specs"):
-        option = {"command": command or ["uv", "run", "--no-project", "python"]}
+    PY = ["/opt/py/bin/python3"]
+    UV = ["uv", "run", "--no-project", "python"]
+
+    def mcp_config(self, command=None, mount=None):
+        option = {"command": command or self.PY}
         if mount is not None:
             option["mount"] = mount
         return {"shared": {"mcp": option}}
@@ -471,51 +474,73 @@ class Deploy(unittest.TestCase):
         code, payload = self.run_deploy("--modules", "specs", "--write")
         self.assertEqual(0, code, payload)
         claude = json.loads((self.target / ".mcp.json").read_text())
-        self.assertEqual({"command": "uv",
-                          "args": ["run", "--no-project", "python",
-                                   ".agents/quenching/assets/bin/cq", "specs", "mcp"]},
+        self.assertEqual({"command": "/opt/py/bin/python3",
+                          "args": [".agents/quenching/assets/bin/cq", "mcp"]},
                          claude["mcpServers"]["quenching"])
         codex = (self.target / ".codex/config.toml").read_text()
         self.assertIn("[mcp_servers.quenching]", codex)
-        self.assertIn('command = "uv"', codex)
-        self.assertIn('".agents/quenching/assets/bin/cq", "specs", "mcp"]', codex)
+        self.assertIn('command = "/opt/py/bin/python3"', codex)
+        self.assertIn('args = [".agents/quenching/assets/bin/cq", "mcp"]', codex)
         opencode = json.loads((self.target / "opencode.json").read_text())
-        self.assertEqual(["uv", "run", "--no-project", "python",
-                          ".agents/quenching/assets/bin/cq", "specs", "mcp"],
+        self.assertEqual(["/opt/py/bin/python3", ".agents/quenching/assets/bin/cq", "mcp"],
                          opencode["mcp"]["quenching"]["command"])
         self.assertTrue(opencode["mcp"]["quenching"]["enabled"])
         for rel in (".mcp.json", ".codex/config.toml", "opencode.json"):
             self.assertIn(rel, [c["path"] for c in payload["changes"]])
         manifest = json.loads((self.target / ".agents/.quenching-deploy.json").read_text())
-        self.assertEqual({"mount": "specs",
-                          "command": ["uv", "run", "--no-project", "python"]}, manifest["mcp"])
+        self.assertEqual({"mount": "all", "command": self.PY}, manifest["mcp"])
         self.assertEqual([], self.run_deploy("--check")[1]["changes"])
 
-    def test_a_uv_prefix_reaches_the_mcp_but_never_the_hooks(self):
-        self.configure(self.mcp_config())
+    def test_the_specs_mount_stays_a_declared_option(self):
+        self.configure(self.mcp_config(mount="specs"))
+        code, payload = self.run_deploy("--modules", "specs", "--write")
+        self.assertEqual(0, code, payload)
+        server = json.loads((self.target / ".mcp.json").read_text())["mcpServers"]["quenching"]
+        self.assertEqual([".agents/quenching/assets/bin/cq", "specs", "mcp"], server["args"])
+        self.configure(self.mcp_config(mount="all"))
+        self.assertEqual(0, self.run_deploy("--modules", "specs", "--write")[0])
+        server = json.loads((self.target / ".mcp.json").read_text())["mcpServers"]["quenching"]
+        self.assertEqual([".agents/quenching/assets/bin/cq", "mcp"], server["args"])
+        self.assertEqual([], self.run_deploy("--check")[1]["changes"])
+
+    def test_a_uv_prefix_reaches_neither_the_mcp_nor_the_hooks(self):
+        self.configure(self.mcp_config(command=self.UV))
         code, payload = self.run_deploy("--modules", "core", "--write")
         self.assertEqual(0, code, payload)
         server = json.loads((self.target / ".mcp.json").read_text())["mcpServers"]["quenching"]
-        self.assertEqual("uv", server["command"])
+        self.assertNotIn(server["command"], ("uv", "uvx"))
+        self.assertNotIn("run", server["args"])
         own = [c for c in self.hook_commands() if ".agents/quenching/assets/hooks/" in c]
         self.assertEqual(1, len(own))
         self.assertFalse(own[0].startswith("uv"), own[0])
         self.assertIn(" -I -c ", own[0])
-        self.assertTrue(any("runs through uv" in w for w in payload["warnings"]), payload["warnings"])
+        warning = [w for w in payload["warnings"] if "runs through uv" in w]
+        self.assertTrue(warning, payload["warnings"])
+        self.assertIn("the hooks and the MCP server run", warning[0])
         manifest = json.loads((self.target / ".agents/.quenching-deploy.json").read_text())
         self.assertEqual(own[0].split(" -I -c ")[0].split(" "), manifest["claudeSettings"]["command"])
+        self.assertEqual(manifest["claudeSettings"]["command"], manifest["mcp"]["command"])
+        self.assertEqual([server["command"], *server["args"][:-2]], manifest["mcp"]["command"])
         self.assertEqual((0, []), (self.run_deploy("--check")[0], self.run_deploy("--check")[1]["changes"]))
 
-    def test_without_the_option_the_mcp_is_registered_anyway(self):
+    def test_a_uv_prefix_warns_without_the_claude_harness(self):
+        self.configure(self.mcp_config(command=self.UV))
+        code, payload = self.run_deploy("--modules", "specs", "--harness", "opencode", "--write")
+        self.assertEqual(0, code, payload)
+        command = json.loads((self.target / "opencode.json").read_text())["mcp"]["quenching"]["command"]
+        self.assertNotIn(command[0], ("uv", "uvx"))
+        self.assertTrue(any("runs through uv" in w for w in payload["warnings"]), payload["warnings"])
+
+    def test_without_the_option_the_whole_server_is_registered_anyway(self):
         self.configure({"shared": {"profiles": {"installed": ["specs"]}}})
         code, payload = self.run_deploy("--modules", "specs", "--write")
         self.assertEqual(0, code, payload)
         server = json.loads((self.target / ".mcp.json").read_text())["mcpServers"]["quenching"]
-        self.assertEqual([".agents/quenching/assets/bin/cq", "specs", "mcp"], server["args"][-3:])
+        self.assertEqual([".agents/quenching/assets/bin/cq", "mcp"], server["args"][-2:])
         self.assertTrue((self.target / ".codex/config.toml").exists())
         self.assertTrue((self.target / "opencode.json").exists())
         manifest = json.loads((self.target / ".agents/.quenching-deploy.json").read_text())
-        self.assertEqual("specs", manifest["mcp"]["mount"])
+        self.assertEqual("all", manifest["mcp"]["mount"])
         self.assertEqual([".codex/config.toml", ".mcp.json", "opencode.json"],
                          sorted(manifest["mcpFiles"]))
         self.assertEqual([], self.run_deploy("--check")[1]["changes"])
@@ -527,7 +552,7 @@ class Deploy(unittest.TestCase):
         code, payload = self.run_deploy("--modules", "specs", "--write")
         self.assertEqual(0, code, payload)
         server = json.loads((self.target / ".mcp.json").read_text())["mcpServers"]["quenching"]
-        self.assertEqual("uv", server["command"])
+        self.assertEqual("/opt/py/bin/python3", server["command"])
 
     def test_a_hand_written_mcp_file_keeps_its_own_entries(self):
         self.configure(self.mcp_config())

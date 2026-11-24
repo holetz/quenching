@@ -131,10 +131,11 @@ def _pillar_parser(pillar: str) -> argparse.ArgumentParser:
     return built[0] if isinstance(built, tuple) else built
 
 
-def resolve(row: Row) -> Verb:
-    """Walk the pillar's parser along the verb path. A path element no subparser names fills the
-    first positional whose `choices` carry it (`git worktree add`, `security audit`)."""
-    parser, fixed, help_text = _pillar_parser(row.pillar), {}, ""
+def resolve(row: Row, parser: argparse.ArgumentParser | None = None) -> Verb:
+    """Walk the pillar's parser (built here unless given) along the verb path. A path element no
+    subparser names fills the first positional whose `choices` carry it (`git worktree add`,
+    `security audit`)."""
+    parser, fixed, help_text = parser or _pillar_parser(row.pillar), {}, ""
     for word in row.path:
         subs = _subparsers(parser)
         if subs is not None and word in subs.choices:
@@ -217,6 +218,21 @@ def annotations(row: Row) -> dict:
     return {**ANNOTATIONS[row.cls], **({"destructiveHint": True} if row.destructive else {})}
 
 
+_described: dict[str, dict] = {}
+
+
+def described(rows: dict[str, Row]) -> list[dict]:
+    """`tools/list`: each pillar's `build_parser()` runs once per pass, and a tool once described
+    is kept for the life of the process — the parsers it reads do not change while it runs."""
+    parsers: dict[str, argparse.ArgumentParser] = {}
+    for name, row in rows.items():
+        if name not in _described:
+            if row.pillar not in parsers:
+                parsers[row.pillar] = _pillar_parser(row.pillar)
+            _described[name] = describe(name, row, parsers[row.pillar])
+    return [_described[name] for name in rows]
+
+
 def available(present=None) -> dict[str, Row]:
     """The rows whose pillar is present in this process — an absent pillar publishes nothing."""
     present = present or router().present
@@ -224,8 +240,8 @@ def available(present=None) -> dict[str, Row]:
     return {name: row for name, row in CATALOG.items() if shown[row.pillar]}
 
 
-def describe(name: str, row: Row) -> dict:
-    verb = resolve(row)
+def describe(name: str, row: Row, parser: argparse.ArgumentParser | None = None) -> dict:
+    verb = resolve(row, parser)
     head = f"`cq {row.pillar} {' '.join(row.path)}`"
     return {"name": name,
             "description": f"{head} — {verb.help} [class: {row.cls}]" if verb.help
@@ -344,7 +360,7 @@ class CatalogSurface:
         return name in self.tools()
 
     def list_tools(self) -> list[dict]:
-        return [describe(name, row) for name, row in self.tools().items()]
+        return described(self.tools())
 
     def call_tool(self, name, args, root, session):
         return call(name, args, root)

@@ -332,14 +332,14 @@ With `QUENCHING_SPECS_SYNC=1` and the `azure-boards` backend, every read is answ
 ### The quenching MCP server — the CLI catalog and references
 
 `cq mcp` starts the stdio `quenching` server. The Claude Code plugin registers it from its own
-`.mcp.json`; a deployed target instead gets `cq deploy`'s entry merged into its own harness files,
-always (`shared.mcp` only overrides the mount and the Python prefix, and the target's other
-entries are kept); a harness that reads neither manifest launches `cq mcp` itself.
+`.mcp.json`; a deployed target instead gets `cq deploy`'s entry for the whole server
+(`.agents/quenching/assets/bin/cq mcp`, started by a direct interpreter, never `uv run`) merged into
+its own harness files, always (`shared.mcp` only overrides the mount — `specs` for the specs-only
+server — and the Python prefix, and the target's other entries are kept); a harness that reads
+neither manifest launches `cq mcp` itself.
 It exposes a closed catalog of available CLI verbs, including the specs tools below. Tool names
 follow `<pillar>_<verb>[_<subverb>]` (`components_read`, `git_pr_create`); `tools/list` reports
 which are available. Schemas come from each verb's parser. An absent pillar contributes no tool.
-Every `cq` verb a skill or agent body cites has a tool or a declared exception; the gate's
-`MCP catalog coverage` check holds it.
 The `read`, `write` and `external` classes describe effects through MCP annotations, without
 adding grants. The workspace is the launch cwd or launch-time `--root`, never a tool argument.
 
@@ -611,7 +611,8 @@ The full contract, including the surface translation, is [deploy-mode.md](../doc
 CLI read the target's `.claude/settings.json` hooks and its `.mcp.json` as their own, so a Copilot
 session gets the same guards and the `quenching` MCP server with no file of its own. The hook
 command is one polyglot line that bash, PowerShell and cmd parse alike, started by the repository's
-`shared.mcp.command` prefix (else the Python the deploy finds on the machine, no version pinned):
+`shared.mcp.command` prefix (else the Python the deploy finds on the machine, no version pinned; a
+`uv`/`uvx` prefix is replaced by a direct interpreter, for the hooks and the MCP server alike):
 override it with `shared.mcp.command` when a machine needs another
 ([hooks.md](../docs/standards/automation/hooks.md)). Open a Copilot session with **Branch**
 isolation, not **New Worktree**: Copilot's worktree starts at the current HEAD, carries no ignored
@@ -674,7 +675,7 @@ updates the published artifacts in lockstep. See
 contract.
 
 <!-- quenching-proof-readme-start -->
-<!-- quenching-proof-readme-sha256 cbff01db6262e0b48178b57b33086f5918e55002e009295aa32a0acd0ffac7ac -->
+<!-- quenching-proof-readme-sha256 f07b98f3df30ca3ebb272be53df7af108b6a8c75a84d0fdc223b481d3ebf6474 -->
 ## Declared proof layers
 
 ### tests
@@ -683,7 +684,7 @@ contract.
 - Reach: tree
 - Budget: not declared
 - Required: yes
-- Test modules: 186
+- Test modules: 187
 - Fixture modules: none
 
 ### Declared cost contract

@@ -6,7 +6,6 @@
       "command": [
         "python3",
         ".agents/quenching/assets/bin/cq",
-        "specs",
         "mcp"
       ],
       "enabled": true
