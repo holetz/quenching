@@ -209,3 +209,54 @@ def new_lease(spec_id: str, holder: str, label: str | None, minutes: int,
     if label:
         lease["label"] = label
     return lease
+
+
+_SNAPSHOTS: dict[tuple[str, str], dict] = {}
+
+
+def _existing_machine(root: str) -> str:
+    """The id of this clone when it has one; a read never generates it."""
+    code, out, _ = _git_run(root, "config", "--local", "--get", "quenching.machineId")
+    return out.strip() if code == 0 else ""
+
+
+def snapshot(root: str, remote: str = "origin") -> dict:
+    """Every lease, read once per process: `{available, scope, me, at, leases}`.
+
+    One fetch (`--prune`) mirrors `refs/quenching/claims/*` into `refs/quenching/remote-claims/*`
+    and the rest is local. A repository that git cannot read answers `available: False` with no
+    leases: reading the reservations never fails the caller."""
+    key = (os.path.abspath(root), remote)
+    if key in _SNAPSHOTS:
+        return _SNAPSHOTS[key]
+    me = _existing_machine(root)
+    snap = {"available": False, "scope": None, "me": me, "at": now(), "leases": {}}
+    try:
+        store = Store(root, remote)
+        if store.scope == "local":
+            found = store.read_all()
+        else:
+            store._git("fetch", "--quiet", "--no-tags", "--prune", "--", remote,
+                       f"+{CLAIMS}*:{REMOTE_CLAIMS}*")
+            out = store._git("for-each-ref", "--format=%(objectname) %(refname)", REMOTE_CLAIMS)
+            found = {}
+            for line in out.splitlines():
+                sha, _, ref = line.strip().partition(" ")
+                if ref.startswith(REMOTE_CLAIMS):
+                    found[ref[len(REMOTE_CLAIMS):]] = (sha, store.lease(sha))
+        snap.update(available=True, scope=store.scope,
+                    leases={i: lease for i, (_, lease) in found.items()})
+    except ClaimError:
+        pass
+    _SNAPSHOTS[key] = snap
+    return snap
+
+
+def reading(snap: dict, spec_id, terminal: bool = False) -> dict | None:
+    """What a chooser needs of one spec's lease — `{holder, label, expires, mine, live}` — or
+    `None` when the spec holds none (or the snapshot could not be read)."""
+    lease = snap["leases"].get(str(spec_id))
+    if lease is None:
+        return None
+    v = view({**lease, "spec": str(spec_id)}, snap["me"], snap["at"], terminal)
+    return {k: v[k] for k in ("holder", "label", "expires", "mine", "live")}

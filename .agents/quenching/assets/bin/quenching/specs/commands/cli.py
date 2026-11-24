@@ -220,6 +220,9 @@ def _add_next_and_epic(sub) -> None:
                          "ranking alone")
     sp.add_argument("--front", action="store_true",
                     help="rank every active spec: executing, closest to done, priority, age")
+    sp.add_argument("--include-claimed", action="store_true",
+                    help="with --front: also list specs another machine holds a live lease on "
+                         "(left out by default)")
     sp.add_argument("--epic", help="a spec ID: its member specs ready to run now — "
                                    "dependencies done, approved or ready, not blocked")
     sp.add_argument("--limit", type=int, help="with --epic: at most N ready specs")

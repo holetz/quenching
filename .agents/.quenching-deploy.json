@@ -170,7 +170,7 @@
 
     ".agents/quenching/assets/bin/quenching/git/pr.py": "747e5dbffa41d6226a9a056693d0796a6a385969852424d3732ca4d7a904b5fd",
 
-    ".agents/quenching/assets/bin/quenching/git/preflight.py": "f0cb9f565fe0e4b4ab347f67878b34039116f78a447ee1c3a0aaa791be437839",
+    ".agents/quenching/assets/bin/quenching/git/preflight.py": "a7e20b590ef392e9ec88b1f91af370b6ab25555ec31f40d343bb13b01a1cf4a9",
 
     ".agents/quenching/assets/bin/quenching/git/prune.py": "2674ba0be750de026c1438cd6b500cc11990fdb1820c786d48ae8666ffa05863",
 
@@ -292,13 +292,13 @@
 
     ".agents/quenching/assets/bin/quenching/specs/chat.py": "987e59657e252c05e8bbdc79537f6e016c43649f0e9386103579abb0d0c0ed22",
 
-    ".agents/quenching/assets/bin/quenching/specs/claims.py": "42e9a61fc50d3ef38e05d4ccbbf06f72e8637677968f7a0c08a19be49f72dee0",
+    ".agents/quenching/assets/bin/quenching/specs/claims.py": "757c3a7a9cf4ec7687ac7b44e232be325c25d0ae8a6dc8e7fc8ea5ae78ec0566",
 
     ".agents/quenching/assets/bin/quenching/specs/commands/artifacts.py": "7b920d2218de27a351413c743b58d3cfe6279936e617e124b3538a3d92e81d4c",
 
     ".agents/quenching/assets/bin/quenching/specs/commands/claim.py": "e500cf9bc13a1aa1d4b4de45c275d56ba486311bf8173b6ad9ffb74e0e1fa9b8",
 
-    ".agents/quenching/assets/bin/quenching/specs/commands/cli.py": "d126c15cd3e4ed51caf849a18d24997d687af4988656558bc42537e7f8850c37",
+    ".agents/quenching/assets/bin/quenching/specs/commands/cli.py": "2e30c62eb3cc0ae6ee51e2959853050ca68be37f65ad8130650ba1fa245f2afb",
 
     ".agents/quenching/assets/bin/quenching/specs/commands/create.py": "0055f88ed8138abe9177da504812393006aed9d0348570e4f884fe5067c98161",
 
@@ -320,7 +320,7 @@
 
     ".agents/quenching/assets/bin/quenching/specs/commands/migrate.py": "5943bce7d0a23a5fb6fa990681b98990f7b67b94fe78f2072e5ecae60b271afd",
 
-    ".agents/quenching/assets/bin/quenching/specs/commands/next.py": "169bf960302093a97b67e04bc246ae1c3086b3eec7cdfa0c374e345dc80dcd11",
+    ".agents/quenching/assets/bin/quenching/specs/commands/next.py": "3d4f9e00c3c00bc156ab36b176109cd58e64fcb62a6e19a40528e9be2f2cfe6e",
 
     ".agents/quenching/assets/bin/quenching/specs/commands/output.py": "989f1e3773a0f61b7e8f0096fe3dfe9e116d76bf8704d0969d74796d264da662",
 
@@ -330,7 +330,7 @@
 
     ".agents/quenching/assets/bin/quenching/specs/commands/push.py": "b12ca94c992aab163f939ee9d8e555090bee99c30519800ad0fa66bec7cecef3",
 
-    ".agents/quenching/assets/bin/quenching/specs/commands/read.py": "affca73009d2ad92c81e1edbaf91def6a9fc1b2ec050f3c2d0c12e7bad55588f",
+    ".agents/quenching/assets/bin/quenching/specs/commands/read.py": "32d3f60e46e5ce843c31e3fb20d8e9f1ca4dd80b8f09cdc914214a86a6780b95",
 
     ".agents/quenching/assets/bin/quenching/specs/commands/reconcile.py": "0154c1b96ae406ba3021b90ad361ac211d072dfd2a467f648f61e0ad1702d9b8",
 

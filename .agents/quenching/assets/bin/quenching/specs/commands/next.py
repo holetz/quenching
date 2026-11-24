@@ -17,6 +17,7 @@ import json
 from quenching.common.dates import today
 from quenching.common.git import _git
 from quenching.specs.backends import open_backend
+from quenching.specs import claims
 from quenching.specs.backends.base import SpecBackend
 from quenching.specs.commands.epic import cmd_next_epic, pr_states
 from quenching.specs.commands.output import Emitter, display_locator, front_fields, read_one
@@ -327,9 +328,19 @@ def _next_front(args, root: str, out: Emitter) -> int:
     cands.sort(key=_order_key(getattr(args, "order", "rank")))
     ranked = []
     merged_not_archived = []
+    claim_snap = claims.snapshot(root)
+    include_claimed = getattr(args, "include_claimed", False)
+    claimed_excluded = []
     for c in cands:
         c = dict(c)
         info = c.pop("_info")
+        fm = info["frontmatter"]
+        c["claim"] = claims.reading(claim_snap, c["id"],
+                                    bool(fm.get("outcome") or fm.get("merge")))
+        if c["claim"] and c["claim"]["live"] and not c["claim"]["mine"] and not include_claimed:
+            # Another machine is building it: a chooser that offered it would start a second run.
+            claimed_excluded.append(c["id"])
+            continue
         if promote.isolated(info):
             merged, reason = promote.merge_evidence(info, root, fetch=False, ask_pr=False)
             if merged:
@@ -353,6 +364,8 @@ def _next_front(args, root: str, out: Emitter) -> int:
            "top": ranked[0]["id"] if ranked else None,
            "needsTriage": needs_triage,
            "mergedNotArchived": merged_not_archived,
+           "claimsAvailable": claim_snap["available"],
+           "claimedExcluded": claimed_excluded,
            "candidates": ranked}
     if args.json:
         print(json.dumps(obj, indent=2, ensure_ascii=False))
@@ -370,6 +383,9 @@ def _next_front(args, root: str, out: Emitter) -> int:
     if needs_triage:
         print("\n  nothing is in flight and nothing carries a priority record — this order "
               "is age alone.\n  `cq specs`-driven triage would give it something to stand on.")
+    if claimed_excluded:
+        print(f"\n  {len(claimed_excluded)} reserved by another machine, left out "
+              f"({', '.join(str(i) for i in claimed_excluded)}) — `--include-claimed` lists them")
     if merged_not_archived:
         print(f"\n  {len(merged_not_archived)} merged but not archived — run "
               "`cq specs reconcile --write`")

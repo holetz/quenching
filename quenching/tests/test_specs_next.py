@@ -10,6 +10,7 @@ branch comes from owns the rule; `test_specs_find.py` asserts the sibling guard 
 import pathlib
 import argparse
 import contextlib
+import datetime
 import importlib
 import io
 import json
@@ -29,6 +30,105 @@ from test_specs_promote_gate import _document
 next_module = importlib.import_module("quenching.specs.commands.next")
 
 
+def _snapshot(leases=None, available=True):
+    return {"available": available, "scope": "remote", "me": "mine", "leases": leases or {},
+            "at": datetime.datetime(2026, 11, 24, 12, 0, tzinfo=datetime.timezone.utc)}
+
+
+def _lease(holder, minutes=30):
+    expires = datetime.datetime(2026, 11, 24, 12, 0) + datetime.timedelta(minutes=minutes)
+    return {"holder": f"{holder}:s", "label": "box", "expires": expires.strftime("%Y-%m-%dT%H:%M:%SZ")}
+
+
+class ClaimedFront(unittest.TestCase):
+    """`next --front` leaves out what another machine is building, and says so."""
+
+    def setUp(self):
+        self.backend = MemoryBackend()
+        for _ in range(2):
+            self.backend.create_spec("plans", _document("- [ ] 1.1 Open\n"))
+        p = patch.object(next_module, "open_backend", return_value=(self.backend, {}))
+        p.start()
+        self.addCleanup(p.stop)
+        for name, value in (("_git_refs", (set(), None)), ("front_fields", {})):
+            q = patch.object(next_module, name, return_value=value)
+            q.start()
+            self.addCleanup(q.stop)
+
+    def front(self, snap, **flags):
+        with patch.object(next_module.claims, "snapshot", return_value=snap):
+            buf = io.StringIO()
+            with contextlib.redirect_stdout(buf):
+                code = next_module._next_front(
+                    argparse.Namespace(json=True, **flags), ".", Emitter())
+        self.assertEqual(0, code)
+        return json.loads(buf.getvalue())
+
+    def ids(self, payload):
+        return [c["id"] for c in payload["candidates"]]
+
+    def test_a_live_lease_of_another_machine_is_left_out_and_named(self):
+        got = self.front(_snapshot({"1": _lease("other")}))
+        self.assertEqual([2], self.ids(got))
+        self.assertEqual(([1], 2, True), (got["claimedExcluded"], got["top"], got["claimsAvailable"]))
+
+    def test_include_claimed_lists_it_with_the_claim(self):
+        got = self.front(_snapshot({"1": _lease("other")}), include_claimed=True)
+        self.assertEqual([1, 2], sorted(self.ids(got)))
+        claim = next(c for c in got["candidates"] if c["id"] == 1)["claim"]
+        self.assertEqual((True, False, "box"), (claim["live"], claim["mine"], claim["label"]))
+        self.assertEqual([], got["claimedExcluded"])
+
+    def test_my_own_an_expired_and_an_unreadable_lease_do_not_exclude(self):
+        for snap in (_snapshot({"1": _lease("mine")}), _snapshot({"1": _lease("other", -30)}),
+                     _snapshot(available=False)):
+            self.assertEqual([1, 2], sorted(self.ids(self.front(snap))))
+        self.assertTrue(next(c for c in self.front(_snapshot({"1": _lease("mine")}))["candidates"]
+                             if c["id"] == 1)["claim"]["mine"])
+
+    def test_the_flag_is_on_the_cli(self):
+        from quenching.specs.commands.cli import build_parser
+        parser, _ = build_parser()
+        self.assertTrue(parser.parse_args(["next", "--front", "--include-claimed"]).include_claimed)
+        self.assertFalse(parser.parse_args(["next", "--front"]).include_claimed)
+
+
+class ReadVerbs(unittest.TestCase):
+    """`list --lean` and `status --json` carry `claim` from the snapshot."""
+
+    def setUp(self):
+        self.backend = MemoryBackend()
+        self.backend.create_spec("plans", _document("- [ ] 1.1 Open\n"))
+        read = importlib.import_module("quenching.specs.commands.read")
+        self.read = read
+        p = patch.object(read, "open_backend", return_value=(self.backend, {}))
+        p.start()
+        self.addCleanup(p.stop)
+        snap = _snapshot({"1": _lease("other")})
+        q = patch.object(next_module.claims, "snapshot", return_value=snap)
+        q.start()
+        self.addCleanup(q.stop)
+
+    def run_verb(self, fn, **flags):
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf):
+            code = fn(argparse.Namespace(json=True, **flags), ".", Emitter())
+        self.assertEqual(0, code)
+        return json.loads(buf.getvalue())
+
+    def test_list_lean_rows_carry_the_claim(self):
+        got = self.run_verb(self.read.cmd_list, lean=True, phase=None)
+        claim = got["specs"][0]["claim"]
+        self.assertEqual((True, False, "box"), (claim["live"], claim["mine"], claim["label"]))
+
+    def test_status_carries_the_claim_and_no_fetch_carries_none(self):
+        got = self.run_verb(self.read.cmd_status, spec=1, epic=None, no_fetch=False)
+        self.assertTrue(got["claim"]["live"])
+        with patch.object(self.backend, "has_local_ref", return_value=True, create=True):
+            got = self.run_verb(self.read.cmd_status, spec=1, epic=None, no_fetch=True)
+        self.assertIsNone(got["claim"])
+
+
 class PostMergeNext(unittest.TestCase):
     def setUp(self):
         self.backend = MemoryBackend()
@@ -39,6 +139,9 @@ class PostMergeNext(unittest.TestCase):
         p = patch.object(next_module, "open_backend", return_value=(self.backend, {}))
         p.start()
         self.addCleanup(p.stop)
+        q = patch.object(next_module.claims, "snapshot", return_value=_snapshot())
+        q.start()
+        self.addCleanup(q.stop)
 
     def test_front_reports_merged_specs_offline_without_reading_them_twice(self):
         with patch.object(next_module, "_git_refs", return_value=(set(), None)), \
