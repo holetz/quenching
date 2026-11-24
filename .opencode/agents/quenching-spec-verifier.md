@@ -142,12 +142,6 @@ matches (`--root` is an option of the granted verb). Without a worktree, `--work
    When a worker reports a `BASE-RED:` line, the evidence names the base command and the spec that captures
    or fixes it; the red stays a gate FAIL (checks 3 and 4 unchanged). Empty is ok. A gate line removed from a gate file is absolved only when its namespace rewrite by the same BASE map is a line the branch added; an unknown head never absolves, and a deleted or relocated gate stays FAIL. A weakened task `verify:` is not read here: the spec store is not in the diff.
 
-11. Codex: warning level, never FAIL. You execute nothing: read the worker's `CODEX:` line from the prompt
-   (the `spec-orchestrator` passes it as a claim) and compare its counts with the checked tasks. Every checked task should have one `Codex:` line (`wrote`, `fallback`,
-   `guard` or `skipped`); list the ids without one, or `sem relato` or no line in the prompt as "missing CODEX: line", as a warning in the evidence.
-   The worker's report is a claim: this check accuses an absent line, it does not prove the consultation.
-   `n/a` only when no task is checked.
-
 If a check does not apply (no PR yet; scope with an empty `changed`), mark it `n/a`; do not fail on it. An absent `files:` never makes scope `n/a` while `changed` is non-empty.
 
 ## Not checked here
@@ -169,7 +163,6 @@ VERDICT: PASS | FAIL
 8 conclusion: ...
 9 grants: ok|fail|n/a — <evidence>
 10 ruler: ok|fail|n/a — <evidence; warnings listed>
-11 codex: ok|warn|n/a — <ids without a `Codex:` line, or ->
 ```
 
 Each check's evidence is one line of at most 200 characters; quote the offending item, not the list.

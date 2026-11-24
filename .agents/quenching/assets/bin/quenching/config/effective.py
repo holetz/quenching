@@ -11,7 +11,6 @@ longer knows which file a key came from. The `branch` layer is the `quenching` b
 """
 from __future__ import annotations
 
-from quenching.codex.config import DEFAULTS as CODEX_DEFAULTS
 from quenching.common.config import (NAMESPACES, _load_local_layer, _load_user_layer,
                                      find_repo_root, repository_document)
 from quenching.config.autonomy import DEFAULTS as AUTONOMY_DEFAULTS, coerce as coerce_autonomy
@@ -23,7 +22,7 @@ from quenching.session.cachebar import DEFAULTS as CACHE_BAR
 
 # Namespace keys whose defaults live in code as data: the key is shown leaf by leaf, because the
 # owning front completes a partial block leaf by leaf.
-DEFAULT_BLOCKS = {("shared", "codex"): CODEX_DEFAULTS, ("shared", "autonomy"): AUTONOMY_DEFAULTS,
+DEFAULT_BLOCKS = {("shared", "autonomy"): AUTONOMY_DEFAULTS,
                   ("shared", "worktreeSlots"): SLOTS, ("shared", "workHost"): WORK_HOST_DEFAULTS,
                   ("shared", "contextBudgets"): BUDGETS, ("shared", "cache"): CACHE_BAR,
                    ("shared", "ci"): CI_DEFAULTS}
@@ -85,6 +84,12 @@ def effective(root: str) -> dict:
     warnings: list[str] = []
     for key, (value, layer) in declared.items():
         rows[key] = {"key": key, "value": value, "source": layer}
+    if "shared.codex" in declared:
+        # the Codex executor was removed: a leftover block is named, never refused, so the
+        # doctor and the deploy of an already-installed target stay green for one version
+        warnings.append("shared.codex is obsolete: the Codex executor was removed (ignored)")
+        declared.pop("shared.codex")
+        rows.pop("shared.codex", None)
     for (name, key), defaults in DEFAULT_BLOCKS.items():
         base = f"{name}.{key}"
         block, layer = declared.pop(base, (None, "default"))

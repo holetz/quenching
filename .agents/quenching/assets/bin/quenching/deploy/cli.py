@@ -108,7 +108,7 @@ def _recorded_hashes(previous: dict | None) -> dict[str, str]:
     manifest that still lists them (written before the merge) no longer owns them."""
     files = (previous or {}).get("files")
     return {rel: digest for rel, digest in files.items()
-            if isinstance(digest, str) and rel not in mcpfiles.FILES} \
+            if isinstance(digest, str) and rel not in (*mcpfiles.FILES, *mcpfiles.LEGACY)} \
         if isinstance(files, dict) else {}
 
 
@@ -116,9 +116,10 @@ def _mcp_recorded(previous: dict | None) -> list[str]:
     """The harness files whose quenching entry the last deploy wrote."""
     listed = (previous or {}).get("mcpFiles")
     if isinstance(listed, list):
-        return [rel for rel in listed if rel in mcpfiles.FILES]
+        return [rel for rel in listed if rel in (*mcpfiles.FILES, *mcpfiles.LEGACY)]
     files = (previous or {}).get("files")
-    return [rel for rel in mcpfiles.FILES if isinstance(files, dict) and rel in files]
+    return [rel for rel in (*mcpfiles.FILES, *mcpfiles.LEGACY)
+            if isinstance(files, dict) and rel in files]
 
 
 def _canonical_text(path: Path) -> str | None:
@@ -419,7 +420,7 @@ def _parser() -> argparse.ArgumentParser:
     p.add_argument("--profiles", action="append", default=None,
                    help="shared.profiles.installed, comma separated (default: derived)")
     p.add_argument("--harness", action="append", default=None,
-                   help="claude, codex, opencode, none (default: claude,codex,opencode)")
+                   help="claude, opencode, none (default: claude,opencode)")
     p.add_argument("--runtime", choices=("vendor", "uvx"), default=None,
                    help="vendored runtime (offline) or a pinned uvx shim; defaults to the "
                         "manifest's recorded runtime, then vendor")
@@ -449,12 +450,15 @@ def main(argv: list[str]) -> int:
     previous = read_manifest(str(target))
     if args.remove:
         return _remove_main(target, previous, args)
-    harnesses = (_split(args.harness) or recorded(previous, "harnesses")
-                 or ["claude", "codex", "opencode"])
+    # A manifest an earlier version wrote may still list the removed `codex` harness; only an
+    # explicit `--harness codex` is refused.
+    harnesses = (_split(args.harness)
+                 or [h for h in recorded(previous, "harnesses") or [] if h != "codex"]
+                 or ["claude", "opencode"])
     if "none" in harnesses:
         harnesses = [h for h in harnesses if h != "none"]
     for harness in harnesses:
-        if harness not in {"claude", "codex", "opencode"}:
+        if harness not in {"claude", "opencode"}:
             return refuse({"code": "ct-deploy-harness", "harness": harness,
                            "message": f"unknown harness: {harness}"}, args.json)
     runtime = args.runtime or recorded(previous, "runtime", {"vendor", "uvx"}) or "vendor"

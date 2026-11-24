@@ -122,9 +122,6 @@ PILLARS: dict[str, Pillar] = {
     "opensource": Pillar(
         "quenching.opensource.cli", True,
         "the open source front — every owner's catalog answers and the baseline level"),
-    "codex": Pillar(
-        "quenching.codex", True,
-        "the Codex CLI — quota probe, an independent read-only review, and the per-task executor"),
     "git": Pillar(
         "quenching.git", False,
         "a repository's git facts — the base branch, and whether it is the host's own default"),
@@ -231,7 +228,7 @@ def build_parser() -> argparse.ArgumentParser:
                  "`cq <pillar> --help` prints that pillar's own subcommands.")
     p.add_argument("--root",
                     help="forwarded to the pillar as its own --root; design, specs, "
-                    "components, ops, proof, delivery, toolchain, security, opensource, codex, config, and mcp declare one")
+                    "components, ops, proof, delivery, toolchain, security, opensource, config, and mcp declare one")
     # Bare, so `cq --version` IS the lockstep probe: the whole assertion is
     # `test "$(cq --version)" = "$(cat VERSION)"`, with nothing to strip first. A pillar
     # named before it keeps its own prefixed line — this option only answers for the plugin.
