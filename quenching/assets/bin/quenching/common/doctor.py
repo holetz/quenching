@@ -214,13 +214,31 @@ ANTIVIRUS_CAVEAT = (
 UV_TIMEOUT_S = 10
 
 
-def _primary_root(root: str) -> str:
-    """The primary checkout: the parent of the shared `.git`, so a slot names the same repo."""
+def _primary_root(root: str) -> str | None:
+    """The primary checkout: the parent of the shared `.git`, so a slot names the same repo.
+
+    `None` outside a git repository: the raw root is never offered as the repository."""
     common = _git(root, "rev-parse", "--path-format=absolute", "--git-common-dir").strip()
     if common and os.path.basename(common) == ".git":
         return os.path.dirname(common)
     top = _git(root, "rev-parse", "--show-toplevel").strip()
-    return os.path.normpath(top) if top else root
+    return os.path.normpath(top) if top else None
+
+
+def _canonical(path: str) -> str:
+    return os.path.normcase(os.path.realpath(path))
+
+
+def _too_broad(path: str) -> bool:
+    """A disk root, the home or an ancestor of it, or the system temp or an ancestor of it."""
+    target = _canonical(path)
+    if os.path.dirname(target) == target:
+        return True
+    for anchor in (os.path.expanduser("~"), tempfile.gettempdir()):
+        anchor = _canonical(anchor)
+        if target == anchor or anchor.startswith(target.rstrip(os.sep) + os.sep):
+            return True
+    return False
 
 
 def _uv_cache_dir(which: Callable[[str], str | None]) -> str | None:
@@ -242,6 +260,21 @@ def antivirus_report(root: str, *, which: Callable[[str], str | None] | None = N
     Read-only: it resolves paths and runs `uv cache dir` when `uv` is on PATH, nothing else."""
     which = which or shutil.which
     primary = _primary_root(os.path.abspath(root))
+    if primary is None:
+        return {"refusal": {
+            "code": "cq-antivirus-no-repo",
+            "root": os.path.abspath(root),
+            "message": f"not inside a git repository: {os.path.abspath(root)}",
+            "remedy": "run `cq doctor --antivirus` inside the repository (rode dentro do repositório)",
+        }}
+    if _too_broad(primary):
+        return {"refusal": {
+            "code": "cq-antivirus-unsafe-root",
+            "root": primary,
+            "message": f"the repository root is too broad to exclude: {primary} is a disk root, "
+                       "the home, the system temp or an ancestor of one",
+            "remedy": "keep the repository in a folder of its own, then run `cq doctor --antivirus` there",
+        }}
     parent, name = os.path.split(primary)
     paths = [{"path": primary, "what": "repository (its .git holds the spec store)"}]
     pattern = os.path.join(parent, f"{name}-slot-*")
@@ -260,13 +293,16 @@ def antivirus_report(root: str, *, which: Callable[[str], str | None] | None = N
     git = which("git")
     if git:
         processes.append({"path": os.path.abspath(git), "what": "git"})
+    informational = [{
+        "path": tempfile.gettempdir(),
+        "what": "system temp — not printed as an exclusion: a common malware drop location"}]
+    informational += [{"path": p["path"], "what": f"{p['what']} — too broad to exclude"}
+                      for p in paths if _too_broad(p["path"])]
     return {
         "root": primary,
-        "paths": paths,
+        "paths": [p for p in paths if not _too_broad(p["path"])],
         "processes": processes,
-        "informational": [{
-            "path": tempfile.gettempdir(),
-            "what": "system temp — not printed as an exclusion: a common malware drop location"}],
+        "informational": informational,
         "caveat": ANTIVIRUS_CAVEAT,
     }
 
@@ -292,6 +328,8 @@ def _antivirus_human(report: dict) -> str:
 
 def run_antivirus(as_json: bool, root: str) -> int:
     report = antivirus_report(root)
+    if "refusal" in report:
+        return refuse(report["refusal"], as_json)
     emit(as_json, {"ok": True, **report}, _antivirus_human(report))
     return OK
 
