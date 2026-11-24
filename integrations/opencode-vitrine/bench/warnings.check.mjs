@@ -3,7 +3,10 @@
  *
  *   node --experimental-strip-types integrations/opencode-vitrine/bench/warnings.check.mjs
  */
-import { configWarnings, parseJsonc } from "../src/warnings.ts"
+import { mkdtempSync, writeFileSync } from "node:fs"
+import { tmpdir } from "node:os"
+import { join } from "node:path"
+import { configWarnings, localWarnings, parseJsonc } from "../src/warnings.ts"
 
 const ok = (condition, message) => {
   if (!condition) {
@@ -26,4 +29,12 @@ ok(case1.length === 1 && case1[0].includes("/x/custom.json") && case1[0].include
 const two = [{ path: "/c/opencode.json", json: {} }, { path: "/c/config.json", json: { experimental: { x: 1 } } }]
 ok(configWarnings(mcpOnly, two)[0].includes("/c/config.json"), "o bloco em config.json é nomeado")
 ok(configWarnings(mcpOnly, [...two.slice(0, 1), { path: "/c/config.json", json: { experimental: { subagent_depth: 4 } } }]).length === 0, "a profundidade em qualquer global vale")
+// localWarnings lê o disco de verdade: um projeto configurado não avisa, um diretório vazio dá dois avisos.
+const scratch = mkdtempSync(join(tmpdir(), "vitrine-warnings-"))
+process.env.XDG_CONFIG_HOME = mkdtempSync(join(scratch, "xdg-"))
+delete process.env.OPENCODE_CONFIG
+const project = mkdtempSync(join(scratch, "project-"))
+writeFileSync(join(project, "opencode.jsonc"), '{ // c\n "mcp": { "quenching": { "command": ["python3", "cq", "mcp"], }, }, "experimental": { "subagent_depth": 4 } }')
+ok((await localWarnings(project)).length === 0, "localWarnings lê o opencode.jsonc do projeto")
+ok((await localWarnings(mkdtempSync(join(scratch, "empty-")))).length === 2, "localWarnings sem configuração dá dois avisos")
 console.log("ok")

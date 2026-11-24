@@ -89,6 +89,15 @@ async function read(path: string): Promise<Json | undefined> {
   }
 }
 
+/** O primeiro arquivo legível da lista, na ordem dada. */
+async function first(paths: string[]): Promise<Json | undefined> {
+  for (const path of paths) {
+    const value = await read(path)
+    if (value) return value
+  }
+  return undefined
+}
+
 /** Os arquivos globais legíveis, na ordem do deploy: `OPENCODE_CONFIG`, depois `$XDG_CONFIG_HOME/opencode/`. */
 async function globalConfigs(): Promise<GlobalConfig[]> {
   const base = process.env.XDG_CONFIG_HOME || join(homedir(), ".config")
