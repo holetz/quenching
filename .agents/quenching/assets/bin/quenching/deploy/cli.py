@@ -132,7 +132,8 @@ def _primary_checkout(target: Path) -> str | None:
     """The primary checkout of the target's repository (a slot resolves to it), else None."""
     try:
         done = subprocess.run(["git", "-C", str(target), "rev-parse", "--path-format=absolute",
-                               "--git-common-dir"], capture_output=True, text=True, timeout=15)
+                               "--git-common-dir"], capture_output=True, text=True,
+                              encoding="utf-8", errors="replace", timeout=15)
     except (OSError, subprocess.SubprocessError):
         return None
     common = done.stdout.strip()
