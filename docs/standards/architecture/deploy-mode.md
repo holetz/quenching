@@ -7,7 +7,7 @@ tags: [architecture, deploy, installation, agents, skills, bridge]
 timestamp: 2026-11-24
 audience: both
 authority: current
-source: deploy-mode implementation (2026-10-28); spec 2126, spec 2160, spec 2168, spec 2174 (absorbs surface-translation.md); retired with surface-translation.md (spec 2174, 2026-11-03); lineage in ADR 0017 and ADR 0019
+source: deploy-mode implementation (2026-10-28); spec 2126, spec 2160, spec 2168, spec 2174 (absorbs surface-translation.md), spec 314 (harness approvals); retired with surface-translation.md (spec 2174, 2026-11-03); lineage in ADR 0017 and ADR 0019
 maintainer: quenching
 ---
 
@@ -39,7 +39,7 @@ for deployment; this verb installs the tool surface. It never invokes a model, n
 | `.opencode/agents/quenching-<name>.md` | OpenCode subagents, `mode: subagent` | generated when the `opencode` harness is selected |
 | `.mcp.json` | Claude Code project MCP registration | target; the `quenching` entry merged when the `claude` harness is selected |
 | `.codex/config.toml` | Codex MCP registration | target; the `quenching` entry merged when the `codex` harness is selected |
-| `opencode.json` | OpenCode MCP registration | target; the `quenching` entry merged when the `opencode` harness is selected |
+| `opencode.json` | OpenCode MCP registration, subagent depth and sibling directories | target; the `quenching` entry, `experimental.subagent_depth` and the `external_directory` allows merged when the `opencode` harness is selected |
 | `CLAUDE.md` | legacy pointer to `AGENTS.md` | never created; removed only by `--prune-legacy` |
 | `.claude/commands/`, `.claude/references/` | legacy layout | refused; run `cq components migrate` first |
 
@@ -147,8 +147,36 @@ out of the files it left and deletes a file only when nothing else remains in it
 **The runtime.** The command points at the vendored entry point, which a `uvx` runtime omits: with
 a declared `shared.mcp` that runtime refuses (`ct-deploy-mcp`); without one it registers nothing
 and warns.
-Approving a registered `.mcp.json` server (`enabledMcpjsonServers`) stays a human step in the
-harness; deploy never writes it.
+
+**The registered server is approved, so it starts without a prompt.** With `claude` among the
+harnesses and the server registered, deploy adds `quenching` to `enabledMcpjsonServers` in
+`.claude/settings.json`, keeping every other name. Claude Code honours that project approval only
+in a trusted folder (code.claude.com/docs/en/mcp, "Project server approvals and workspace trust").
+A `disabledMcpjsonServers` that names `quenching` stays as the user wrote it and becomes a warning.
+The manifest records `claudeSettings.mcpjson` only when deploy added the name, and removal takes
+out only that name.
+
+**OpenCode gets the depth and the sibling directories.** With `opencode`, the `opencode.json`
+merge also writes:
+
+- `experimental.subagent_depth: 4`, the conductor → orchestrator → runner → child chain (OpenCode
+  defaults to 1). A higher project value stays.
+- `permission.external_directory` set to `allow` for exactly two patterns: the slots
+  (`<parent>/<repo>-slot-*`) and the sibling store (`<primary>.*`). Both come from the git common
+  directory, so a deploy run inside a slot writes the same patterns. They are written with `~/`
+  when under the home directory. A target outside git gets neither.
+
+Nothing else is granted. The permission uses the V1 object form, which OpenCode still reads and
+which the generated agents use.
+
+A project `experimental` block replaces the user's global one instead of merging with it
+(anomalyco/opencode#60410). So when the global config (`$OPENCODE_CONFIG`, then
+`$XDG_CONFIG_HOME/opencode/`, read as JSONC) sets an `experimental` key that the project lacks,
+deploy writes no depth and warns with the keys and the line to add by hand. A project block that
+already exists hides nothing new, so the depth goes into it.
+
+The manifest records what was written as `opencodeConfig`. A later run takes that out first. A
+value still equal to the recorded one leaves when the harness is dropped or on `--remove`.
 
 ## The `.claude/settings.json` merge
 

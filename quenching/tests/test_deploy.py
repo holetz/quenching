@@ -10,6 +10,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from unittest import mock
 
 try:
     import _paths  # noqa: F401
@@ -42,6 +43,11 @@ class Deploy(unittest.TestCase):
         self.addCleanup(tmp.cleanup)
         self.target = pathlib.Path(tmp.name)
         self.git("init", "-q")
+        # The user's global OpenCode config decides whether the depth is written; keep it out.
+        self.xdg = pathlib.Path(tempfile.mkdtemp(dir=tmp.name, prefix="xdg-"))
+        env = mock.patch.dict(os.environ, {"XDG_CONFIG_HOME": str(self.xdg), "OPENCODE_CONFIG": ""})
+        env.start()
+        self.addCleanup(env.stop)
 
     def git(self, *argv):
         return subprocess.run(["git", "-C", str(self.target), *argv], check=True,
@@ -598,6 +604,77 @@ class Deploy(unittest.TestCase):
         for rel in (".mcp.json", ".codex/config.toml", "opencode.json"):
             self.assertFalse((self.target / rel).exists(), rel)
         self.assertTrue(any("MCP" in w for w in payload["warnings"]))
+
+    def test_opencode_gets_the_depth_and_the_sibling_allows(self):
+        code, payload = self.run_deploy("--modules", "specs", "--harness", "opencode", "--write")
+        self.assertEqual(0, code, payload)
+        opencode = json.loads((self.target / "opencode.json").read_text())
+        self.assertEqual(4, opencode["experimental"]["subagent_depth"])
+        primary = os.path.realpath(self.target).replace(os.sep, "/")
+        home = os.path.expanduser("~").replace(os.sep, "/")
+        wanted = [f"{os.path.dirname(primary)}/{os.path.basename(primary)}-slot-*", f"{primary}.*"]
+        wanted = ["~" + p[len(home):] if p.startswith(home + "/") else p for p in wanted]
+        self.assertEqual({p: "allow" for p in wanted}, opencode["permission"]["external_directory"])
+        manifest = json.loads((self.target / ".agents/.quenching-deploy.json").read_text())
+        self.assertEqual({"subagentDepth": 4, "externalDirectory": wanted},
+                         manifest["opencodeConfig"])
+        self.assertEqual([], self.run_deploy("--check")[1]["changes"])
+
+    def test_check_keeps_the_patterns_another_machine_recorded(self):
+        self.assertEqual(0, self.run_deploy("--modules", "specs", "--harness", "opencode",
+                                            "--write")[0])
+        other = ["~/elsewhere/repo-slot-*", "~/elsewhere/repo.*"]
+        manifest_path = self.target / ".agents/.quenching-deploy.json"
+        manifest = json.loads(manifest_path.read_text())
+        manifest["opencodeConfig"]["externalDirectory"] = other
+        manifest_path.write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
+        opencode = json.loads((self.target / "opencode.json").read_text())
+        opencode["permission"]["external_directory"] = {p: "allow" for p in other}
+        (self.target / "opencode.json").write_text(json.dumps(opencode, indent=2) + "\n",
+                                                   encoding="utf-8")
+        self.assertEqual([], self.run_deploy("--check")[1]["changes"])
+        self.assertEqual(0, self.run_deploy("--write")[0])
+        rewritten = json.loads((self.target / "opencode.json").read_text())
+        self.assertNotIn(other[0], rewritten["permission"]["external_directory"])
+
+    def test_a_slot_resolves_to_its_primary_checkout(self):
+        from quenching.deploy.cli import _primary_checkout
+        self.git("-c", "user.name=t", "-c", "user.email=t@example.com", "commit", "-q",
+                 "--allow-empty", "-m", "seed")
+        slot = self.target / "slot"
+        self.git("worktree", "add", "-q", "--detach", str(slot))
+        self.assertEqual(os.path.realpath(self.target), os.path.realpath(_primary_checkout(slot)))
+
+    def test_a_global_experimental_key_keeps_the_depth_out_with_a_warning(self):
+        (self.xdg / "opencode").mkdir()
+        (self.xdg / "opencode" / "opencode.jsonc").write_text(
+            '{\n  // mine\n  "experimental": {"todo": true},\n}\n', encoding="utf-8")
+        code, payload = self.run_deploy("--modules", "specs", "--harness", "opencode", "--write")
+        self.assertEqual(0, code, payload)
+        opencode = json.loads((self.target / "opencode.json").read_text())
+        self.assertNotIn("experimental", opencode)
+        self.assertIn("external_directory", opencode["permission"])
+        self.assertTrue(any("subagent_depth" in w and "todo" in w for w in payload["warnings"]))
+
+    def test_dropping_the_opencode_harness_takes_the_extras_out(self):
+        self.write("opencode.json", '{"theme": "dark", "permission": {"edit": "ask"}}\n')
+        self.assertEqual(0, self.run_deploy("--modules", "specs", "--harness", "opencode",
+                                            "--write")[0])
+        self.assertEqual(0, self.run_deploy("--harness", "claude", "--write")[0])
+        self.assertEqual({"theme": "dark", "permission": {"edit": "ask"}, "$schema":
+                          "https://opencode.ai/config.json"},
+                         json.loads((self.target / "opencode.json").read_text()))
+
+    def test_claude_approves_the_registered_server_and_gives_it_back(self):
+        self.write(".claude/settings.json", '{"enabledMcpjsonServers": ["mine"]}\n')
+        self.assertEqual(0, self.run_deploy("--modules", "specs", "--harness", "claude",
+                                            "--write")[0])
+        doc = json.loads((self.target / ".claude/settings.json").read_text())
+        self.assertEqual(["mine", "quenching"], doc["enabledMcpjsonServers"])
+        self.assertEqual([], self.run_deploy("--check")[1]["changes"])
+        self.assertEqual(0, self.run_deploy("--remove", "--write")[0])
+        self.assertEqual({"enabledMcpjsonServers": ["mine"]},
+                         json.loads((self.target / ".claude/settings.json").read_text()))
 
     def test_the_harness_filter_selects_which_mcp_file_is_written(self):
         self.configure(self.mcp_config())
