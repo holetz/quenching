@@ -143,7 +143,7 @@ and warns.
 **The registered server is approved, so it starts without a prompt.** With `claude` among the
 harnesses and the server registered, deploy adds `quenching` to `enabledMcpjsonServers` in
 `.claude/settings.json`, keeping every other name. Claude Code honours that project approval only
-in a trusted folder (code.claude.com/docs/en/mcp §Project server approvals and workspace trust).
+in a trusted folder (code.claude.com/docs/en/mcp, "Project server approvals and workspace trust").
 A `disabledMcpjsonServers` that names `quenching` stays as the user wrote it and becomes a warning.
 The manifest records `claudeSettings.mcpjson` only when deploy added the name, and removal takes
 out only that name.
