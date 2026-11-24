@@ -99,7 +99,12 @@ def findings(body: str, where: dict) -> list[dict]:
         number = index + 1
         if index not in skip:
             for match in coverage.CITE.finditer(line):
-                path = coverage.verb_path(match.group(1).split())
+                try:
+                    path = coverage.verb_path(match.group(1).split())
+                except ImportError:
+                    # A pillar this install does not ship (a core-only target citing
+                    # `cq security`) publishes no tool here, so the CLI form stands.
+                    path = None
                 if path is None or path not in tools:
                     continue
                 cited = "cq " + " ".join(path)
