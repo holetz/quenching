@@ -31,7 +31,8 @@ HOOKS_PATH = deploy_tree.PAYLOAD + "/assets/githooks"
 
 def _mcp_refusal(message: str, **extra) -> dict:
     return {"code": "ct-deploy-mcp", "message": message, **extra,
-            "remedy": "declare `shared.mcp` as {mount: \"all\"|\"specs\", command: [<python prefix>]} "
+            "remedy": "declare `shared.mcp` as {mount: \"all\"|\"specs\", command: [<python prefix>], "
+                      "cliFallback: true|false} "
                       "to override the default, or remove the key"}
 
 
@@ -71,7 +72,7 @@ def _mcp_option(target: Path) -> tuple[dict | None, dict | None]:
         return None, None
     if not isinstance(raw, dict):
         return None, _mcp_refusal("`shared.mcp` must be an object with `mount` and `command`")
-    unknown = sorted(set(raw) - {"mount", "command"})
+    unknown = sorted(set(raw) - {"mount", "command", "cliFallback"})
     if unknown:
         return None, _mcp_refusal(f"`shared.mcp` has unknown key(s): {', '.join(unknown)}",
                                   keys=unknown)
@@ -80,13 +81,18 @@ def _mcp_option(target: Path) -> tuple[dict | None, dict | None]:
         return None, _mcp_refusal(
             f"`shared.mcp.mount` must be one of: {', '.join(sorted(MCP_MOUNTS))}", mount=mount)
     command = raw.get("command")
-    if (not isinstance(command, list) or not command
-            or not all(isinstance(part, str) and part for part in command)):
+    if command is not None and (not isinstance(command, list) or not command
+                                or not all(isinstance(part, str) and part for part in command)):
         return None, _mcp_refusal(
             "`shared.mcp.command` must be a non-empty list of strings — the prefix that finds "
             "Python, e.g. [\"uv\", \"run\", \"--no-project\", \"python\"]; the runtime path and "
             "the mount are appended by deploy")
-    return {"mount": mount, "command": list(command)}, None
+    fallback = raw.get("cliFallback", False)
+    if not isinstance(fallback, bool):
+        return None, _mcp_refusal("`shared.mcp.cliFallback` must be true or false",
+                                  cliFallback=fallback)
+    declared = {"mount": mount, "command": list(command) if command is not None else None}
+    return {**declared, "cliFallback": True} if fallback else declared, None
 
 
 def _split(values: list[str] | None) -> list[str]:
@@ -569,7 +575,7 @@ def main(argv: list[str]) -> int:
             "`.agents/quenching/assets/bin/cq`, which a uvx runtime does not carry"), args.json)
     recorded_mcp = (previous or {}).get("mcp")
     python = mcpfiles.python_prefix(
-        declared["command"] if declared else None,
+        declared.get("command") if declared else None,
         recorded_mcp.get("command") if isinstance(recorded_mcp, dict) else None)
     recorded_settings = (previous or {}).get("claudeSettings")
     recorded_hooks = recorded_settings.get("command") if isinstance(recorded_settings, dict) else None
@@ -579,7 +585,8 @@ def main(argv: list[str]) -> int:
     # Registered by default, the whole server; `shared.mcp` only overrides the mount and the
     # prefix. A uvx runtime carries no vendored entry point to call, so there the registration is
     # skipped, not refused.
-    mcp = ({"mount": declared["mount"] if declared else MCP_DEFAULT_MOUNT, "command": hooks_python}
+    mcp = ({"mount": declared["mount"] if declared else MCP_DEFAULT_MOUNT, "command": hooks_python,
+            **({"cliFallback": True} if declared and declared.get("cliFallback") else {})}
            if runtime == "vendor" else None)
     mcp_warnings = ([] if mcp or not harnesses else [
         "the MCP server is not registered: `--runtime uvx` carries no vendored entry point; "

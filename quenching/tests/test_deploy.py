@@ -153,8 +153,11 @@ class Deploy(unittest.TestCase):
     def test_generated_skill_grants_both_launchers_and_names_the_platform(self):
         self.assertEqual(0, self.run_deploy("--modules", "core", "--write")[0])
         skill = (self.target / ".agents/skills/quenching-components/SKILL.md").read_text()
-        self.assertIn("Bash(.agents/quenching/bin/cq:*)", skill)
-        self.assertIn("Bash(.agents/quenching/bin/cq.cmd:*)", skill)
+        # The registered server replaces the covered verbs; the residue keeps both launchers.
+        self.assertNotIn("Bash(.agents/quenching/bin/cq:*)", skill)
+        self.assertIn("Bash(.agents/quenching/bin/cq deploy:*)", skill)
+        self.assertIn("Bash(.agents/quenching/bin/cq.cmd deploy:*)", skill)
+        self.assertIn("mcp__quenching", skill)
         self.assertIn("on Windows it calls `cq.cmd`", skill)
         self.assertEqual(1, skill.count("**Launcher.**"))
         agent = (self.target / ".agents/quenching/agents/spec-runner.md").read_text()
@@ -480,7 +483,8 @@ class Deploy(unittest.TestCase):
         agent = self.target / ".opencode/agents/quenching-spec-verifier.md"
         text = agent.read_text(encoding="utf-8")
         self.assertIn("mode: subagent", text)
-        self.assertIn('".agents/quenching/bin/cq git audit *": allow', text)
+        self.assertIn("  quenching_git_audit: allow", text)
+        self.assertNotIn('".agents/quenching/bin/cq git audit *": allow', text)
         self.assertIn("Source model tier: `sonnet`.", text)
         self.assertIn("tools:\n  task: false", text)
 
@@ -540,6 +544,44 @@ class Deploy(unittest.TestCase):
         manifest = json.loads((self.target / ".agents/.quenching-deploy.json").read_text())
         self.assertEqual({"mount": "all", "command": self.PY}, manifest["mcp"])
         self.assertEqual([], self.run_deploy("--check")[1]["changes"])
+
+    def test_the_cli_fallback_keeps_both_doors(self):
+        self.configure({"shared": {"mcp": {"cliFallback": True}}})
+        code, payload = self.run_deploy("--modules", "core", "--write")
+        self.assertEqual(0, code, payload)
+        skill = (self.target / ".agents/skills/quenching-components/SKILL.md").read_text()
+        self.assertIn("Bash(.agents/quenching/bin/cq:*)", skill)
+        self.assertIn("Bash(.agents/quenching/bin/cq.cmd:*)", skill)
+        self.assertIn("mcp__quenching", skill)
+        opencode = (self.target / ".opencode/agents/quenching-spec-verifier.md").read_text()
+        self.assertIn('".agents/quenching/bin/cq git audit *": allow', opencode)
+        claude = (self.target / ".claude/agents/quenching-spec-verifier.md").read_text()
+        self.assertIn("Bash(.agents/quenching/bin/cq git audit:*)", claude)
+        manifest = json.loads((self.target / ".agents/.quenching-deploy.json").read_text())
+        self.assertTrue(manifest["mcp"]["cliFallback"])
+        self.assertEqual([], self.run_deploy("--check")[1]["changes"])
+
+    def test_the_narrow_default_reaches_every_harness_but_the_payload(self):
+        self.assertEqual(0, self.run_deploy("--modules", "core", "--write")[0])
+        claude = (self.target / ".claude/agents/quenching-spec-verifier.md").read_text()
+        tools = next(line for line in claude.splitlines() if line.startswith("tools:"))
+        self.assertNotIn("bin/cq", tools)
+        self.assertIn("mcp__quenching__specs_status", tools)
+        payload = (self.target / ".agents/quenching/agents/spec-verifier.md").read_text()
+        self.assertIn("Bash(.agents/quenching/bin/cq specs status:*)", payload)
+        manifest = json.loads((self.target / ".agents/.quenching-deploy.json").read_text())
+        self.assertNotIn("cliFallback", manifest["mcp"])
+        for rel in (".agents/skills", ".claude/agents", ".opencode/agents"):
+            for path in (self.target / rel).rglob("*.md"):
+                head = path.read_text(encoding="utf-8").split("\n---\n", 1)[0]
+                self.assertNotIn("claim take", head, path)
+        self.assertEqual([], self.run_deploy("--check")[1]["changes"])
+
+    def test_the_specs_mount_keeps_both_doors(self):
+        self.configure(self.mcp_config(mount="specs"))
+        self.assertEqual(0, self.run_deploy("--modules", "core", "--write")[0])
+        skill = (self.target / ".agents/skills/quenching-components/SKILL.md").read_text()
+        self.assertIn("Bash(.agents/quenching/bin/cq:*)", skill)
 
     def test_the_specs_mount_stays_a_declared_option(self):
         self.configure(self.mcp_config(mount="specs"))
@@ -736,7 +778,8 @@ class Deploy(unittest.TestCase):
         for option in ({"shared": {"mcp": {"command": []}}},
                        {"shared": {"mcp": {"command": "uv"}}},
                        {"shared": {"mcp": {"mount": "chat", "command": ["uv"]}}},
-                       {"shared": {"mcp": {"command": ["uv"], "extra": True}}}):
+                       {"shared": {"mcp": {"command": ["uv"], "extra": True}}},
+                       {"shared": {"mcp": {"cliFallback": "yes"}}}):
             self.configure(option)
             code, payload = self.run_deploy("--modules", "specs", "--write")
             self.assertEqual(2, code, option)
