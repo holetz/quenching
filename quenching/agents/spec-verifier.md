@@ -15,6 +15,11 @@ leaves the record at `not-run`, which is the honest value for a verdict nobody r
 
 ## Checks (given a spec id, its base and its branch or worktree)
 
+**Each check is closed.** The evidence of a check is only the source its own definition names. The
+spec's `run` and `outcome` records, and the `verifier=` stamp a previous pass wrote, are never
+evidence for any check: a FAIL reason that rests on one of them is dropped and the check is decided
+by its named source alone. A "counts / does not count" line below closes a check further.
+
 Checks 2 to 5, 7 and 9 read ONE payload, measured inside the spec's worktree with a fixed argv:
 
 ```bash
@@ -36,12 +41,14 @@ worktree and any ref that does not resolve to a commit. Your only shell grants a
 matches (`--root` is an option of the granted verb). Without a worktree, `--worktree` is the base checkout itself.
 
 1. Tasks: `.agents/quenching/bin/cq specs status --spec <id> --json` shows checked == total. For a spec of another repository add `--root <repo>` after the verb (`.agents/quenching/bin/cq specs status --root <repo> --spec <id> --json`, same for `show`): a flag before the verb matches no grant.
+   Counts: the payload's `tasks.checked` and `tasks.total`. Does not count: the worker's `TASKS:` line.
 2. Commits: the payload's `commits` is non-empty, and each task sha the worker named is in it.
    A checked task whose `files:` is the reserved `(operational)` annotation writes no repository
    file, so it is the ONE kind of checked task that owes no sha: `.agents/quenching/bin/cq specs show --spec <id>
    --task <t> --json` reports it as `"operational": true` with `"files": []`. Every other
    checked task without a sha is FAIL — the declaration is the whole excuse, and it never
    extends to a task that declared paths.
+   Counts: the payload's `commits` and each task's `operational` marker. Does not count: the worker's `SHAS` line as proof, or a commit message.
 3. Gate: you execute nothing. Read the code the worker reported on its own `GATE_EXIT:` line as
    a CLAIM, not a verdict: the gate is certified by CI on the PR before the merge
    (the `spec-orchestrator` `merge` step). An absent line and `not-run` are both INCONCLUSIVE,
@@ -60,9 +67,11 @@ matches (`--root` is an option of the granted verb). Without a worktree, `--work
    Every remaining path outside the union is FAIL, including when the union is empty; list each
    one. A non-empty `changed` containing only proven generated copies passes scope, never `n/a`.
    An authored file, and a derived output the manifest does not list, stay listed.
-5. Hygiene: the payload's `stash` and `status` are both empty.
+5. Hygiene: the payload's `stash` and `status` are both empty. Counts: only those two fields. Does not count: the
+   worker's `GIT AUDIT:` line.
 6. Delivery: when the worker reported a PR, `.agents/quenching/bin/cq git pr view --number <n> --json` is `ok` and its
    `base` is the base (it reads GitHub or Azure DevOps, whichever the origin names).
+   Counts: the `ok` and `base` of `pr view`. Does not count: the PR's checks, reviews or mergeability.
 
 7. History: every sha the worker named in `SHAS` is `true` under the payload's `ancestry`, and
    `rewrites.branch` plus `rewrites.head` are empty. A rewrite is a reflog move that is not a
@@ -87,7 +96,9 @@ matches (`--root` is an option of the granted verb). Without a worktree, `--work
 8. Conclusion: `.agents/quenching/bin/cq specs status --spec <id> --json` shows `## Outcome` filled. Before the
    merge the spec stays in `plans/` — the archive waits for the merge — and that is PASS. A spec
    without a filled `## Outcome` is FAIL: the worker's `conclude` did not run, whatever its report
-   says. A spec already in `archive/` with `outcome: done` whose work ref is not an ancestor of
+   says. Counts: the `Outcome` entry of the payload's `sections` (`state: filled`). Does not count
+   for a pre-merge spec: the `outcome` record (absent or empty is no FAIL by itself), the `run` record
+   or a previous `verifier=` stamp. A spec already in `archive/` with `outcome: done` whose work ref is not an ancestor of
    `origin/<base>` is FAIL too: it was archived before the merge. `n/a` only when the worker reported
    `STATE: continue` or `blocked`.
 
