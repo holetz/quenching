@@ -338,6 +338,8 @@ entries are kept); a harness that reads neither manifest launches `cq mcp` itsel
 It exposes a closed catalog of available CLI verbs, including the specs tools below. Tool names
 follow `<pillar>_<verb>[_<subverb>]` (`components_read`, `git_pr_create`); `tools/list` reports
 which are available. Schemas come from each verb's parser. An absent pillar contributes no tool.
+Every `cq` verb a skill or agent body cites has a tool or a declared exception; the gate's
+`MCP catalog coverage` check holds it.
 The `read`, `write` and `external` classes describe effects through MCP annotations, without
 adding grants. The workspace is the launch cwd or launch-time `--root`, never a tool argument.
 
@@ -672,7 +674,7 @@ updates the published artifacts in lockstep. See
 contract.
 
 <!-- quenching-proof-readme-start -->
-<!-- quenching-proof-readme-sha256 9a84f8e57c81d24e71e2f99678f016385b8cfbe0d4ae1b68da4e305bd62861ad -->
+<!-- quenching-proof-readme-sha256 cbff01db6262e0b48178b57b33086f5918e55002e009295aa32a0acd0ffac7ac -->
 ## Declared proof layers
 
 ### tests
@@ -681,7 +683,7 @@ contract.
 - Reach: tree
 - Budget: not declared
 - Required: yes
-- Test modules: 185
+- Test modules: 186
 - Fixture modules: none
 
 ### Declared cost contract
