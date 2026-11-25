@@ -429,8 +429,9 @@ date, `git show -s --format=%cI`, never creation or last use; `null` with a name
 unknown), the reasons, the exact action and a `recommended` flag. The legacy
 `staleBranches`/`keptBranches`/`remoteBranches`/`orphanWorktrees` lists keep their shape. A linked
 worktree is a candidate only when inspection succeeded, its HEAD is merged into the base, it holds no
-tracked or untracked content and no ignored content outside the regenerable class, is not locked, is
-not the main or current checkout or the base branch, and has no open PR with the PR lookup available.
+tracked or untracked content and no ignored content outside the regenerable class, is not locked by
+another holder (a slot's own free lock never blocks it), is not the main or current checkout or the
+base branch, and has no open PR with the PR lookup available.
 The ignored content is reported per worktree as `ignored: {regenerable, unrecognized}`: a path the
 built-in cache list or `shared.regenerablePaths` covers is regenerable and does not block, while any
 other ignored file is unrecognized, is named by path and blocks with `ignored-content-unrecognized`.
@@ -450,8 +451,11 @@ its cwd inside it. Any missing or contrary fact keeps it `preserved` with a name
 `unmerged-head`, `inspection-failed`, `dirty`, `ignored-content-unrecognized`,
 `process-lookup-unavailable`, `process-in-slot`). Its action is `cq git prune --slot <path> --id
 <id> --expect-tip <tip> --confirm-inactive`, which re-reads the report and gives the slot back
-through `cq git worktree release` — detached at the base, unlocked, its merged branch deleted with
-`-d` — and never removes the directory. The release moves every file under the slot's
+through `cq git worktree release` — detached at the base, re-locked as free under `quenching:
+available`, its merged branch deleted with `-d` — and never removes the directory. A free slot keeps
+that pool lock: `git worktree remove` without `-f -f` refuses a locked tree, so a client's own
+cleanup never deletes the warm `.venv`. The removal `cq git prune --worktree` performs unlocks a
+free slot first, on the fresh report, and puts the pool lock back if the removal fails. The release moves every file under the slot's
 `.quenching/handoff/` to the same place in the main checkout; a name already taken there gets a
 `-<slot>-<n>` suffix, so a handoff is never overwritten and never discarded.
 

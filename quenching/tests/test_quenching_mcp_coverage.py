@@ -92,7 +92,7 @@ class Coverage(unittest.TestCase):
             with self.subTest(prefix):
                 self.assertEqual(coverage.cli_residue(prefix), [])
         self.assertEqual(coverage.cli_residue(("git", "worktree")),
-                         [("git", "worktree", "adopt")])
+                         [("git", "worktree", "workspace"), ("git", "worktree", "adopt")])
 
     def test_the_residue_keeps_the_exceptions_and_the_verbs_with_no_tool(self):
         specs = coverage.cli_residue(("specs",))
@@ -100,7 +100,8 @@ class Coverage(unittest.TestCase):
             self.assertIn(path, specs)
         self.assertNotIn(("specs", "status"), specs)
         self.assertEqual(coverage.cli_residue(("git",)),
-                         [("git", "worktree", "adopt"), ("git", "identity")])
+                         [("git", "worktree", "workspace"), ("git", "worktree", "adopt"),
+                          ("git", "identity")])
         self.assertEqual(coverage.cli_residue(("deploy",)), [("deploy",)])
 
     def test_a_pillar_with_no_tool_below_collapses_to_one_path(self):
