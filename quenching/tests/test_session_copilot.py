@@ -129,3 +129,61 @@ class NoContent(Fixture):
         dumped = repr([copilot.sessions(self.home), copilot.requests(self.home, ["s1"])])
         self.assertNotIn("SECRET", dumped)
         self.assertNotIn("summary", dumped)
+
+
+MAIN, ORCH, RUNNER = "main-1", "orch-1", "run-1"
+
+
+def started(agent, name, call, at="2026-11-25T10:00:00Z"):
+    return {"type": "subagent.started", "agentId": agent, "timestamp": at,
+            "data": {"agentName": name, "toolCallId": call}}
+
+
+def launch(call, agent=None, at="2026-11-25T09:59:59Z"):
+    record = {"type": "tool.execution_start", "timestamp": at,
+              "data": {"toolCallId": call, "toolName": "Agent"}}
+    if agent is not None:
+        record["agentId"] = agent
+    return record
+
+
+class TheEventLog(Fixture):
+    def test_the_tree_comes_from_the_launch_call_and_names_from_the_start(self):
+        event_log(self.home, records=[
+            {"type": "session.start", "data": {"producer": "copilot-agent",
+                                               "context": {"cwd": str(REPO), "gitRoot": str(REPO)}}},
+            launch("c1"), started(ORCH, "quenching-spec-orchestrator", "c1"),
+            launch("c2", ORCH), started(RUNNER, "quenching-spec-runner", "c2"),
+            {"type": "subagent.completed", "agentId": RUNNER, "timestamp": "2026-11-25T10:05:00Z",
+             "data": {"agentName": "quenching-spec-runner"}}])
+        agents, facts = copilot.events(self.home, "s1")
+        self.assertEqual("quenching-spec-runner", agents[RUNNER]["name"])
+        self.assertEqual(ORCH, agents[RUNNER]["parent"])
+        self.assertIsNone(agents[ORCH]["parent"])
+        self.assertEqual([RUNNER], copilot.descendant_ids(agents, ORCH))
+        self.assertEqual([], copilot.descendant_ids(agents, RUNNER))
+        self.assertEqual("copilot-agent", facts["producer"])
+        self.assertEqual([], facts["anomalies"])
+        self.assertEqual("main", copilot.agent_name(None, agents))
+        self.assertEqual("quenching-spec-runner", copilot.agent_name(RUNNER, agents))
+        self.assertTrue(copilot.agent_name("abcdef123456", agents).startswith("unknown"))
+
+    def test_the_client_and_git_root_come_from_the_workspace(self):
+        folder = event_log(self.home, records=[])
+        (folder / "workspace.yaml").write_text(
+            f"cwd: {SLOT}\ngit_root: {REPO}\nclient_name: vscode-agent-host\n"
+            "name: |-\n  SECRET prompt\n", encoding="utf-8")
+        agents, facts = copilot.events(self.home, "s1")
+        self.assertEqual("vscode-agent-host", facts["client"])
+        self.assertEqual(str(SLOT), facts["cwd"])
+        self.assertEqual(str(REPO), facts["gitRoot"])
+        self.assertNotIn("SECRET", repr(facts))
+
+    def test_a_missing_or_unparsable_log_is_an_anomaly_not_a_crash(self):
+        agents, facts = copilot.events(self.home, "none")
+        self.assertEqual({}, agents)
+        self.assertIn("no event log", facts["anomalies"][0]["message"])
+        event_log(self.home, records=["{not json", "[]", json.dumps(launch("c1"))])
+        agents, facts = copilot.events(self.home, "s1")
+        self.assertEqual(2, len(facts["anomalies"]))
+        self.assertEqual([], copilot.descendant_ids(agents, ORCH))

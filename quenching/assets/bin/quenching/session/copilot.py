@@ -18,6 +18,7 @@ the difference, clamped at zero; the arithmetic inverting is an anomaly, never a
 
 from __future__ import annotations
 
+import json
 import os
 import sqlite3
 from datetime import datetime, timezone
@@ -201,3 +202,95 @@ def _workspace(root: Path, session: str) -> dict:
             found[{"git_root": "gitRoot", "client_name": "client",
                    "last_client_name": "client"}.get(key, key)] = value
     return found
+
+
+def events(root: Path, session: str) -> tuple[dict, dict]:
+    """(agents by id, the session's own facts) from its event log, with the read's anomalies.
+
+    Each agent carries `name`, `parent` — the `agentId` of the tool call that launched it, absent
+    for one the main agent launched — `start` and `end`. `facts` names the client that wrote the
+    session, its `cwd` and `gitRoot`, and `producer`. A missing log is a fact (the agents stay
+    unnamed and unparented), not a refusal: the ledger still measures the requests."""
+    path = root / STATE / session / "events.jsonl"
+    agents: dict = {}
+    launches: dict = {}
+    tools: dict = {}
+    facts: dict = {"client": None, "cwd": None, "gitRoot": None, "producer": None, "anomalies": []}
+    if not path.is_file():
+        facts["anomalies"].append({"file": path.name, "line": 0,
+                                   "message": f"no event log at {path}; agents stay unnamed and unparented"})
+        return agents, facts
+    try:
+        stream = path.open(encoding="utf-8", errors="replace")
+    except OSError as error:
+        facts["anomalies"].append({"file": path.name, "line": 0, "message": f"unreadable event log: {error}"})
+        return agents, facts
+    with stream:
+        for line, raw in enumerate(stream, 1):
+            if not raw.strip():
+                continue
+            try:
+                record = json.loads(raw)
+            except ValueError:
+                facts["anomalies"].append({"file": path.name, "line": line, "message": "unparsable record"})
+                continue
+            if not isinstance(record, dict):
+                facts["anomalies"].append({"file": path.name, "line": line,
+                                           "message": "record is not a JSON object"})
+                continue
+            kind, data = record.get("type"), record.get("data")
+            data = data if isinstance(data, dict) else {}
+            agent = record.get("agentId") if isinstance(record.get("agentId"), str) else None
+            if kind == "session.start":
+                facts["producer"] = data.get("producer") if isinstance(data.get("producer"), str) else None
+                context = data.get("context") if isinstance(data.get("context"), dict) else {}
+                for key in ("cwd", "gitRoot"):
+                    if isinstance(context.get(key), str) and context[key]:
+                        facts[key] = context[key]
+            elif kind == "tool.execution_start":
+                call = data.get("toolCallId")
+                if isinstance(call, str):
+                    tools[call] = agent
+            elif kind == "subagent.started":
+                child = record.get("agentId")
+                if isinstance(child, str):
+                    name = data.get("agentName") or data.get("agentType")
+                    agents[child] = {"name": name if isinstance(name, str) and name else None,
+                                     "parent": None, "start": parse_instant(record.get("timestamp")),
+                                     "end": None}
+                    call = data.get("toolCallId")
+                    if isinstance(call, str):
+                        launches[child] = call
+            elif kind == "subagent.completed":
+                child = record.get("agentId")
+                if isinstance(child, str) and child in agents:
+                    agents[child]["end"] = parse_instant(record.get("timestamp"))
+    for child, call in launches.items():
+        agents[child]["parent"] = tools.get(call)
+    workspace = _workspace(root, session)
+    facts["client"] = workspace.get("client")
+    facts["cwd"] = facts["cwd"] or workspace.get("cwd")
+    facts["gitRoot"] = facts["gitRoot"] or workspace.get("gitRoot")
+    return agents, facts
+
+
+def agent_name(agent_id: str | None, agents: dict) -> str:
+    """The name for a request's `agent_id`: `main` without one, else the log's name or `unknown <id>`."""
+    if agent_id is None:
+        return "main"
+    found = agents.get(agent_id, {}).get("name")
+    return found if found else f"{UNKNOWN} {agent_id[:8]}"
+
+
+def descendant_ids(agents: dict, root_agent: str) -> list[str]:
+    """Every agent launched, directly or not, by `root_agent` — the tree as the log recorded it."""
+    children: dict = {}
+    for agent_id, row in agents.items():
+        children.setdefault(row.get("parent"), []).append(agent_id)
+    out, queue = [], [root_agent]
+    while queue:
+        parent = queue.pop()
+        for child in children.get(parent, []):
+            out.append(child)
+            queue.append(child)
+    return out
