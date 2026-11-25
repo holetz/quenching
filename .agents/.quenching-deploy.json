@@ -1170,8 +1170,8 @@
   "opencodeConfig": {
     "subagentDepth": null,
     "externalDirectory": [
-      "~/Projects/quenching-slot-*",
-      "~/Projects/quenching.*"
+      "~/Projetos/quenching-slot-*",
+      "~/Projetos/quenching.*"
     ],
     "bash": [
       ".agents/quenching/bin/cq",
