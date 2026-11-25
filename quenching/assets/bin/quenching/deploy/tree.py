@@ -9,6 +9,7 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+import re
 from pathlib import Path, PurePosixPath
 
 from quenching.common.deploy import dumps_hash_manifest, read_manifest
@@ -367,12 +368,27 @@ def _declared_hooks(selected: list[dict]) -> list[dict]:
     return [hook for module in selected for hook in module.get("owned", {}).get("hooks", [])]
 
 
+def _python_file(target: Path) -> str | None:
+    """The target's own Python declaration, as an `actions/setup-python` version file: a
+    `.python-version` pin first, then a `pyproject.toml` that really declares `requires-python`
+    (setup-python reads the file and fails when the key is absent), else None for the floor."""
+    if (target / ".python-version").is_file():
+        return ".python-version"
+    pyproject = target / "pyproject.toml"
+    try:
+        text = pyproject.read_text(encoding="utf-8")
+    except OSError:
+        return None
+    return "pyproject.toml" if re.search(r"(?m)^\s*requires-python\s*=", text) else None
+
+
 def build_tree(source: Path, target: Path, modules: list[str], harnesses: list[str],
                runtime: str = "vendor", profiles: list[str] | None = None,
                mcp: dict | None = None, python: list[str] | None = None,
                hooks_python: list[str] | None = None,
                projections: list[str] | None = None,
-               workspace: bool = False) -> dict:
+               workspace: bool = False,
+               worktree_setup: str | None = None) -> dict:
     manifest = load_modules(source)
     selected = _selected_modules(manifest, modules)
     if not selected:
@@ -521,6 +537,11 @@ def build_tree(source: Path, target: Path, modules: list[str], harnesses: list[s
                  translate.copilot_agent_document(path.read_text(encoding="utf-8"), name,
                                                   narrow, mount).encode(),
                  0o644)
+        # The cloud agent's environment: the client's setup workflow, generated from what the
+        # target already declares, never from a client branch in the deploy.
+        _add(tree, translate.COPILOT_SETUP,
+             translate.copilot_setup_document(_python_file(target), worktree_setup,
+                                              runtime).encode("utf-8"), 0o644)
 
     seeds = {
         "AGENTS.md": _agents_md(target),
