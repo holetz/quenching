@@ -152,6 +152,35 @@ class Deploy(unittest.TestCase):
             self.assertIn(rel, projected["manifest"]["files"])
         self.assertNotIn(".github/agents", "".join(plain["manifest"]["files"]))
 
+    def configure_projections(self, value):
+        self.write(".agents/quenching.json",
+                   json.dumps({"shared": {"projections": value}}, indent=2) + "\n")
+
+    def test_the_copilot_agents_are_written_and_removed_with_the_declaration(self):
+        self.configure_projections(["github"])
+        self.assertEqual(0, self.run_deploy("--modules", "specs", "--write")[0])
+        agents = sorted((self.target / ".github/agents").glob("quenching-*.agent.md"))
+        self.assertEqual(5, len(agents), agents)
+        text = (self.target / ".github/agents/quenching-spec-verifier.agent.md").read_text()
+        self.assertIn("target: github-copilot", text)
+        self.assertNotIn("Bash(", text.split("---", 2)[1])
+        self.configure_projections([])
+        self.assertEqual(0, self.run_deploy("--modules", "specs", "--write")[0])
+        self.assertFalse((self.target / ".github/agents").exists())
+
+    def test_an_unknown_projection_is_refused_before_anything_is_written(self):
+        self.configure_projections(["copilot"])
+        code, payload = self.run_deploy("--modules", "specs", "--write")
+        self.assertEqual((2, "ct-deploy-projection"), (code, payload["code"]))
+        self.assertIn("copilot", payload["message"])
+        self.assertFalse((self.target / ".agents/.quenching-deploy.json").exists())
+
+    def test_a_projection_of_the_wrong_shape_is_refused(self):
+        self.configure_projections("github")
+        code, payload = self.run_deploy("--modules", "specs", "--write")
+        self.assertEqual((2, "ct-deploy-projection"), (code, payload["code"]))
+        self.assertFalse((self.target / ".agents/.quenching-deploy.json").exists())
+
     def test_a_local_skill_and_agent_survive_a_deploy(self):
         self.assertEqual(0, self.run_deploy("--modules", "core", "--write")[0])
         skill = self.target / ".agents/skills/bundle-local/SKILL.md"
