@@ -381,11 +381,13 @@ def lint_agents(root: str, base: str) -> list[dict]:
 
 
 def _frontmatter_strict_issues(text: str) -> list[dict]:
-    """Find the three frontmatter shapes whose YAML meaning is unambiguous here.
+    """Find the four frontmatter shapes whose YAML meaning is unambiguous here.
 
     This is intentionally a small structural reader, not a second YAML parser. It reports a
     folded scalar swallowing a known top-level key, an unquoted flow sequence nested inside
-    itself, and an unquoted plain scalar containing ``: ``. Other YAML that this plugin does not
+    itself, an unquoted plain scalar containing ``: ``, and an unquoted flow sequence in
+    ``argument-hint`` — a field a client reads through a string getter, so an unquoted `[...]`
+    reaches it as a list rather than the string it expects. Other YAML that this plugin does not
     model remains outside the lint's claim rather than being guessed at.
     """
     if not text.startswith("---"):
@@ -443,6 +445,14 @@ def _frontmatter_strict_issues(text: str) -> list[dict]:
                         "line": i + 1,
                         "remedy": (f"quote the complete `{key}` value or use a flat sequence; "
                                    "do not nest `[` inside an unquoted hint"),
+                    })
+                elif key == "argument-hint":
+                    issues.append({
+                        "kind": "unquoted-flow-sequence",
+                        "key": key,
+                        "line": i + 1,
+                        "remedy": (f"quote the complete `{key}` value — a YAML client reads the "
+                                   "unquoted `[...]` as a sequence, not as the string it expects"),
                     })
             elif ": " in value:
                 issues.append({

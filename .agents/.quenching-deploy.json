@@ -94,7 +94,7 @@
 
     ".agents/quenching/assets/bin/quenching/common/version.py": "7ba60d5cf6a0c8a9ea5fd390e598ac4564375cddf42e7ba328c961b0f1292185",
 
-    ".agents/quenching/assets/bin/quenching/components/commands/bridge.py": "e4e4abfb68e2452df9ac8d3abaed40bb6e89f96a95cb3964de97cb3a8a7d65d9",
+    ".agents/quenching/assets/bin/quenching/components/commands/bridge.py": "9fde81167f9ecb64ea54b9d5b018b34a923977d0e5b4d68a346375a5393028aa",
 
     ".agents/quenching/assets/bin/quenching/components/commands/cli.py": "59d00afb136ea822cb45acb89e6f8d156f8b67604a559a7007eeb9f9333c49ff",
 
@@ -102,7 +102,7 @@
 
     ".agents/quenching/assets/bin/quenching/components/commands/doctor.py": "06a5e47a0eeafe645272664c39b9212ca32fcba79ffe0ba16eee3f6981634f7a",
 
-    ".agents/quenching/assets/bin/quenching/components/commands/lint.py": "33f598b558713b74d8b4b319899313c2f6f32c2bb66ff38880cbd4d8b3a15407",
+    ".agents/quenching/assets/bin/quenching/components/commands/lint.py": "f2682394d7b58385e2ee8cf76e3295da1f2552b1949c3b1ff8f1e9be320aa4f0",
 
     ".agents/quenching/assets/bin/quenching/components/commands/migrate.py": "df80b3b151b3981cbdeb3312b0decec8bd28930634eea49d2ceabdeddc437ee3",
 
@@ -150,7 +150,7 @@
 
     ".agents/quenching/assets/bin/quenching/deploy/translate.py": "20480db888bf99bef7283a91ba590b94c3e1c3a7d5f98424980c880efafe45cf",
 
-    ".agents/quenching/assets/bin/quenching/deploy/tree.py": "023bc2f43b3f8e605709f3773c0576b27ba3adccd25d9c8ed2fcd91b313fd463",
+    ".agents/quenching/assets/bin/quenching/deploy/tree.py": "1048e0fdd7bb0559014da5d842aebee3f573384fdfb062a716370800eb0cb961",
 
     ".agents/quenching/assets/bin/quenching/git/__init__.py": "8bc51f3f279e9269b53e485515e81d003684f7bb22ee558502f5449db2744e19",
 
@@ -734,7 +734,7 @@
 
     ".claude/agents/quenching-spec-verifier.md": "958ae7cf54a87906770dd23f0316798871a693f76a879b5593cd84d9818a0b57",
 
-    ".claude/skills/.generated-files.json": "f5bbd55056ad5b09f9a0952ad6c827fc3715163e73c75c12248415a4f6f1fcce",
+    ".claude/skills/.generated-files.json": "7b827057c37424f9998383f203648e9ef3e9f60bb8247fabb29df2876fcd0dc1",
 
     ".claude/skills/commands-tighten/SKILL.md": "41574a4774e70deffd6c8c6766a1a24581d579d1f7247b68a93ba86b39b2019b",
 
@@ -936,7 +936,7 @@
 
     ".claude/skills/references-tighten/SKILL.md": "02e15aa8d31c490909873e404ecdbaa5a64765a7976d684ce141a9e71ba98d1a",
 
-    ".claude/skills/release/SKILL.md": "a2b07e450140391fbb6b469e2c96dc8c026282b3500aa7d4519496b57489ea0b",
+    ".claude/skills/release/SKILL.md": "001bbe3d5828c91a524af796bf6baa317e3b618bfa6fd7d34376fe79f2057a22",
 
     ".claude/skills/skill-map/SKILL.md": "eb309cf9d098a5daccbabff27d97f3da24a967c888bbde88f0400cc6af09b5be",
 
