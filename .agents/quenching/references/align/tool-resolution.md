@@ -36,9 +36,14 @@ arguments named as the tool's `inputSchema` names them —
 `specs_record(spec=<id>, name="run", fields={"state": "<STATE>", "date": "<today>"})`. Values are a
 `<placeholder>`, a quoted string, `true`, a list `[…]` or an object `{…}`. A mention that calls
 nothing names the tool bare: `` `specs_status` ``. The harness adds its prefix — Claude Code calls
-`mcp__quenching__<tool>`, OpenCode `quenching_<tool>` — and the body never writes it. `--root` and
-`--json` are the server's and are never written. `cq deploy` grants each agent and skill exactly
-the tools its `Bash(cq …)` grants cover.
+`mcp__quenching__<tool>`, OpenCode `quenching_<tool>` — and the body never writes it. `--json` is
+the server's and is never written. A call that acts on a tree other than the server's workspace —
+a worktree, a target repository — names it as `root`, which every tool takes:
+`git_commit(subject="<subject>", root="<worktree>")`, `delivery_status(root="<target root>")`.
+Several spec sections go in ONE `specs_section_write(spec=<id>, sections=[{"heading": …, "body":
+…}, …])`, atomic as the CLI's stream, and an `approved` the human did not decide carries its
+`by`: `specs_record(spec=<id>, name="approved", by="session")`. `cq deploy` grants each agent and
+skill exactly the tools its `Bash(cq …)` grants cover.
 
 `cq components lint` holds the form: `sk-cq-cli-citation` names a `cq <pillar> <verb>` whose verb
 has a tool, in a body the check enforces; `sk-mcp-unknown-tool` names a `<pillar>_<verb>(` that is
@@ -52,14 +57,8 @@ no tool of the catalog.
 2. **A line marked `cli: <reason>`** — `<!-- cli: <reason> -->` at the end of the line, or alone on
    the line before a block (it then covers that whole paragraph or fenced block), and
    `# cli: <reason>` at the end of a line inside a fenced block. The reasons are closed:
-   - **root** — the server acts on its own root, the session's directory. A verb that reads or
-     writes the working tree (`git commit`, `git state`, a test) called for a worktree that is not
-     that root runs `cd <worktree> && cq …`.
-   - **atomic** — a write of several spec sections in one call; `specs_section_write` writes one.
-   - **by** — `approved` stamped `by=session` or `by=orchestrator-forced`; `specs_record` writes
-     `approved` as `by=human`, after asking.
-   - **flag** — the call needs a flag the tool does not publish (`specs_create` has no `subject`,
-     `specs_next` no `table`, `specs_promote` no `force`).
+   - **flag** — the call needs a flag the tool does not publish (`specs_next` no `table`,
+     `specs_promote` no `force`).
    - **fallback** — the block documents the CLI synopsis itself, beside the tool it falls back
      from (a surface table such as `specs-develop/specs-surface.md`).
 
