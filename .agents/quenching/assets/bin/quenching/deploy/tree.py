@@ -12,6 +12,7 @@ import os
 from pathlib import Path, PurePosixPath
 
 from quenching.common.deploy import dumps_hash_manifest, read_manifest
+from quenching.common.workspace import snippet as workspace_snippet
 from quenching.common.version import VERSION
 from quenching.components.commands import bridge
 from quenching.deploy import mcpfiles
@@ -373,7 +374,7 @@ def _declared_hooks(selected: list[dict]) -> list[dict]:
 def build_tree(source: Path, target: Path, modules: list[str], harnesses: list[str],
                runtime: str = "vendor", profiles: list[str] | None = None,
                mcp: dict | None = None, python: list[str] | None = None,
-               hooks_python: list[str] | None = None) -> dict:
+               hooks_python: list[str] | None = None, workspace: bool = False) -> dict:
     manifest = load_modules(source)
     selected = _selected_modules(manifest, modules)
     if not selected:
@@ -503,6 +504,10 @@ def build_tree(source: Path, target: Path, modules: list[str], harnesses: list[s
         "AGENTS.md": _agents_md(target, dirs),
         ".agents/quenching.json": _seed_config(target, profiles or profiles_for(modules)),
     }
+    if workspace:
+        # A client projection, opted in by the repository's own `shared.workspace.vscode`:
+        # created only when absent, never listed in the manifest, never drift-checked.
+        seeds[".vscode/settings.json"] = workspace_snippet()
     document = {
         "generator": "cq deploy",
         "version": VERSION,

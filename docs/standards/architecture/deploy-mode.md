@@ -31,6 +31,7 @@ for deployment; this verb installs the tool surface. It never invokes a model, n
 | --- | --- | --- |
 | `AGENTS.md` | instructions | target; seeded only when absent |
 | `.agents/quenching.json` | configuration | target; seeded only when absent |
+| `.vscode/settings.json` | VS Code workspace settings: the generated trees out of search and the semantic index, and room for long agent runs | target; seeded only when absent and `shared.workspace.vscode` is true |
 | `.agents/skills/quenching-<command>/SKILL.md` | one-segment skills, published when a declared harness reads the generic layer | generated |
 | `.agents/quenching/` | vendored payload: runtime, references, templates, commands, agent protocols | generated, read-only |
 | `.agents/.quenching-deploy.json` | manifest: version, modules, profiles, hashes, skills | generated; one blank line separates each entry of `files` |
@@ -224,6 +225,35 @@ merged, never owned, so it is not in the manifest's `files`.
 - **Refusal.** Invalid JSON, a root that is not an object, or `hooks` / `hooks.<event>` of the
   wrong type is `ct-deploy-settings` (exit 2) and nothing is written. A successful merge rewrites
   the file once with two-space indentation; later runs are idempotent.
+
+## The `.vscode/settings.json` seed
+
+The VS Code workspace settings that keep the flow quiet are a **seed**, opted in by the
+repository's own `shared.workspace.vscode` (`true`/`false`, scope `project`, read from the
+repository document and never from the merged envelope, so the file does not vary by machine). The
+key is off by default: a target that does not use VS Code never receives the file.
+
+- **The block.** `files.exclude` for `.agents/quenching`, `.claude/skills`, `site` and
+  `site-source`, all root-relative, plus `chat.agent.maxRequests: 100`. `files.exclude` is the
+  setting that excludes from the Explorer, from text search and from the semantic index; the
+  client's `search.exclude` would only narrow text search and grep. The default ceiling is 25 and
+  the long flows (`execute`, `orchestrate`, `autopilot`) need more. `common/workspace.py` is the one
+  source of the block, the snippet and the per-key report.
+- **Created only when absent.** The file is a seed like `AGENTS.md`: it is written only when the
+  target does not carry one, it is not listed in the manifest's `files`, `--check` does not compare
+  its contents, and `--remove` never deletes it. An edit made in the target survives every later
+  deploy.
+- **`--check`.** A declared key with no file is a `seed` change (exit 1) until the first write; a
+  file that exists is never drift, whatever it carries.
+- **Suggestions, never a rewrite.** `cq deploy` reports three cases as `suggestions`, which are
+  advice and never a drift finding: a `.vscode/` workspace that does not declare the key, a declared
+  seed whose file lacks a recommended key or carries a lower ceiling, and a file that cannot be read
+  as JSONC. The deploy never edits an existing `.vscode/settings.json`; rewriting it would discard
+  the JSONC comments and formatting that belong to the user.
+- **Reporting.** `cq doctor` prints one `workspace:` line when the file exists, when the key is
+  declared or when the target carries a `.vscode/` directory, and `cq doctor --workspace` prints the
+  per-key state and the block. Both only report: neither writes, and a missing key is information,
+  never a failed prerequisite.
 
 ## What deploy does not do
 
