@@ -20,6 +20,7 @@ Resolve `cq` per
 [tool-resolution.md](.agents/quenching/references/align/tool-resolution.md)
 §Resolving the tool. Set `TARGET_ROOT` to the supplied root, or to `.` when omitted, and run:
 
+<!-- cli: root -->
 ```bash
 .agents/quenching/bin/cq --root "$TARGET_ROOT" opensource readiness --json [--evidence "<path>"] [--denylist "<path>"]
 ```

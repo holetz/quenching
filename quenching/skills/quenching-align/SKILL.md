@@ -58,7 +58,7 @@ inside one, probe only that front and mark the others skipped by scope.
 
 - **`knowledge`** — run `knowledge_validate()`; record the bundle, validator counts,
   project memory and harness files.
-- **`design`** — run `.agents/quenching/bin/cq --root . design status --json` when installed; when absent, run
+- **`design`** — run `design_status()` when installed; when absent, run
   `design align --check --json` only when scope or root `PRODUCT.md`/`DESIGN.md` artifacts signal
   adoption.
 - **`components`** — run `components_doctor()`, `components_migrate()`
