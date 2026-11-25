@@ -244,13 +244,16 @@ const LINE = 'Read the handoff at quenching:specs/artifacts/7/handoff-2027-01-15
 const FACTS = { ok: true, branch: 'plan/7-x', spec: 7, filesModified: ['hooks/register.tsx'], commits: ['abc1234 Fix the bar'], lastUserMessage: 'ship it', transcript: '/t/chat-1.jsonl' }
 const WROTE = { ok: true, spec: 7, name: 'handoff-2027-01-15-continue-this-chat.md', locator: 'quenching:specs/artifacts/7/handoff-2027-01-15-continue-this-chat.md', sent: true, local: false, prompt: LINE, block: '## Handoff' }
 
+// The engine hands hooks the host's own separators (`C:\Users\x\proj\...` on Windows): the fakes match on `/`.
+const slashed = (p: unknown) => String(p).replace(/\\/g, '/')
+
 type CqOpts = { noCq?: boolean; writeExit?: number; config?: object; cache?: { chat?: object; project?: object }; harness?: string }
 // `cq` as a fixed argv: the deployed binary is found by fs.stat, every call answered by its verb.
 function cqEngine(on: On, o: CqOpts = {}) {
   const argv: string[][] = []
   on('session.cwd', () => ({ value: '/Users/x/proj' }))
   on('fs.stat', (_, e) => {
-    if (!o.noCq && String((e as { path: string }).path).endsWith('.agents/quenching/bin/cq')) return { value: { kind: 'file' } } as never
+    if (!o.noCq && slashed((e as { path: string }).path).endsWith('.agents/quenching/bin/cq')) return { value: { kind: 'file' } } as never
     throw new Error('ENOENT')
   })
   on('process.run', (_, e) => {
@@ -273,7 +276,7 @@ function handoffEngine(on: On, opts: { store?: Record<string, unknown>; reply?: 
   const argv = cqEngine(on, opts)
   const calls = { argv, model: [] as { model: string; system?: unknown; prompt: unknown; effort?: string; maxTokens?: number; timeoutMs?: number }[], writes: [] as { path: string; text: string }[], clears: 0, fills: [] as string[], copies: [] as string[], notices: [] as string[] }
   on('fs.read', (_, e) => {
-    const path = String((e as { path: string }).path)
+    const path = slashed((e as { path: string }).path)
     if (path.endsWith('/hooks/handoff-brief.md')) return { value: 'Rules for Haiku.' }
     if (path.endsWith('/hooks/handoff-template.md')) return { value: '<!-- generated -->\n# Handoff template\n\n## Last Request\n## Next Actions\n' }
     if (path.endsWith('/AGENTS.md') && opts.harness) return { value: opts.harness }
@@ -328,10 +331,12 @@ test('handoff: Haiku writes it on quenching\'s template from facts cq read; the 
   const cq = '/Users/x/proj/.agents/quenching/bin/cq'
   expect(h.calls.argv).toContainEqual([cq, 'specs', 'handoff', 'facts', '--session', 'chat-1', '--json'])
   const draft = h.calls.writes[0]!
-  expect(draft.path).toMatch(/^\/Users\/x\/proj\/\.quenching\/handoff\/draft-\d+-chat-1\.md$/)
+  // the write event carries the host's form of the path; the plugin passes `cq` the one it built
+  const drafted = slashed(draft.path).replace(/^[A-Za-z]:/, '')
+  expect(drafted).toMatch(/^\/Users\/x\/proj\/\.quenching\/handoff\/draft-\d+-chat-1\.md$/)
   expect(draft.text.startsWith(BRIEF)).toBe(true)
   expect(draft.text).toContain('### Commits\n- abc1234 Fix the bar')
-  expect(h.calls.argv).toContainEqual([cq, 'specs', 'handoff', 'write', '--from', draft.path, '--focus', 'ship the release', '--push', '--json'])
+  expect(h.calls.argv).toContainEqual([cq, 'specs', 'handoff', 'write', '--from', drafted, '--focus', 'ship the release', '--push', '--json'])
   // the line is a notice kept in the old chat, not command output that goes unseen after the clear
   expect(r.text).toBe(undefined)
   expect(h.calls.notices).toEqual([`Handoff saved to ${WROTE.locator}. This command never resent the chat to the main model: no cache read, no rebuild.`])
@@ -449,7 +454,7 @@ test('the checkout\'s shared.cache block and main budget reach the bar', async (
 test('a pt-BR root harness speaks Portuguese', async ($, on) => {
   const w = engine(on)
   cqEngine(on)
-  on('fs.read', (_, e) => (String((e as { path: string }).path).endsWith('/AGENTS.md') ? { value: 'Language: pt-BR — the contract is x' } : (() => { throw new Error('ENOENT') })()))
+  on('fs.read', (_, e) => (slashed((e as { path: string }).path).endsWith('/AGENTS.md') ? { value: 'Language: pt-BR — the contract is x' } : (() => { throw new Error('ENOENT') })()))
   await start($)
   await w8()
   await expectBar($, '⚪️ o quenching-cache começa depois da sua primeira mensagem')
