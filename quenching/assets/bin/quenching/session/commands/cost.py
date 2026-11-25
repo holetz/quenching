@@ -389,6 +389,8 @@ def _copilot_scope(rows: list, agents: dict, descendants_of: str | None, nested:
         floor = datetime.min.replace(tzinfo=timezone.utc)
         descendants_of = max(found, key=lambda agent_id: agents[agent_id].get("start") or floor)
     if descendants_of:
+        if descendants_of == "main":       # the ledger's own name for the root of the tree
+            return [r for r in rows if r.agent_id in agents], None
         if descendants_of not in agents:
             return [], {"code": "se-unknown-agent", "message":
                         f"--descendants-of: agent {descendants_of} is not in the launch tree of {session}"}

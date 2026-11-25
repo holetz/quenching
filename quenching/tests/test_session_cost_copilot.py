@@ -199,3 +199,49 @@ class CostCopilot(unittest.TestCase):
         self.assertEqual("se-no-transcript", data["code"])
         self.assertIn("session store", data["message"])
 
+
+
+class CostCopilotScopes(CostCopilot):
+    def test_descendants_of_keeps_only_the_subtree(self):
+        store(self.home, usage())
+        tree(self.home)
+        data = self.visible("--descendants-of", ORCH)[1]
+        self.assertEqual({("spec-runner", "gpt"), ("spec-runner", "other")}, set(self.rows(data)))
+
+    def test_descendants_of_main_keeps_every_subagent_and_never_the_root(self):
+        store(self.home, usage())
+        tree(self.home)
+        data = self.visible("--descendants-of", "main")[1]
+        self.assertEqual({"spec-orchestrator", "spec-runner", "spec-scout"},
+                         {g["agentType"] for g in data["groups"]})
+        self.assertNotIn("main", {a["agentId"] for a in data["agents"]})
+
+    def test_nested_keeps_only_agents_that_have_a_parent(self):
+        store(self.home, usage())
+        tree(self.home)
+        data = self.visible("--nested")[1]
+        self.assertEqual({"spec-runner"}, {g["agentType"] for g in data["groups"]})
+
+    def test_latest_orchestrator_keeps_the_last_one_started(self):
+        store(self.home, usage())
+        tree(self.home)
+        data = self.visible("--latest-orchestrator")[1]
+        self.assertEqual({("spec-runner", "other")}, set(self.rows(data)))
+        self.assertEqual({RUN3}, {a["agentId"] for a in data["agents"]})
+
+    def test_an_unknown_agent_and_a_missing_orchestrator_refuse(self):
+        store(self.home, usage())
+        tree(self.home)
+        code, data = self.visible("--descendants-of", "nope")
+        self.assertEqual((2, "se-unknown-agent"), (code, data["code"]))
+        log(self.home, [])
+        code, data = self.visible("--latest-orchestrator")
+        self.assertEqual((2, "se-no-orchestrator"), (code, data["code"]))
+
+    def test_since_keeps_only_the_window(self):
+        store(self.home, usage())
+        tree(self.home)
+        data = self.visible("--since", "2026-11-25T09:27:00Z")[1]
+        self.assertEqual({("spec-runner", "other"), ("spec-scout", "other"),
+                          ("spec-orchestrator", "other")}, set(self.rows(data)))
+        self.assertEqual({RUN2, RUN3, SCOUT, OTHER_ORCH}, {a["agentId"] for a in data["agents"]})
