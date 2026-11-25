@@ -51,7 +51,7 @@
 
     ".agents/quenching/assets/bin/quenching/common/deploy.py": "0afbd9b2f40979800c1f61783e88ec7a76d3a30419cad86242aa9f8d220c0d2e",
 
-    ".agents/quenching/assets/bin/quenching/common/doctor.py": "1322e3871b230ba9776d694dea3aae4962819ca7d29cb0fedbf078d1e585c6e4",
+    ".agents/quenching/assets/bin/quenching/common/doctor.py": "a62283312886a22beb8e8568ebb0f11bf8acfd45fdb2ed239a2bc6eedb8b830d",
 
     ".agents/quenching/assets/bin/quenching/common/front.py": "464e0ddf1118b20bc19e981e86016f56b49099afb8441d4a941191b955f53baf",
 
@@ -85,7 +85,7 @@
 
     ".agents/quenching/assets/bin/quenching/common/version.py": "7ba60d5cf6a0c8a9ea5fd390e598ac4564375cddf42e7ba328c961b0f1292185",
 
-    ".agents/quenching/assets/bin/quenching/common/workspace.py": "bdb58c502b8f9edec423289b3f898ef514ba79a1e318bd231127e740e956ca2b",
+    ".agents/quenching/assets/bin/quenching/common/workspace.py": "7c901265515bd3d4ccde016584283c26e8e02b4dc44009f5610c158f2896e6b1",
 
     ".agents/quenching/assets/bin/quenching/components/commands/bridge.py": "e4e4abfb68e2452df9ac8d3abaed40bb6e89f96a95cb3964de97cb3a8a7d65d9",
 
@@ -149,7 +149,7 @@
 
     ".agents/quenching/assets/bin/quenching/deploy/__init__.py": "d9efa3062ac0c40e82c0bfc4041b7485a60420e2576afef7e94a72277a8cc0ff",
 
-    ".agents/quenching/assets/bin/quenching/deploy/cli.py": "762b3763e152ea232dafe99614e62af9769c3027f9bd5d5a759daab231d19a2d",
+    ".agents/quenching/assets/bin/quenching/deploy/cli.py": "77825a4aa0d89cc2b21714525601db7d2e63bf21e8dd749206b1e19ee59b55d1",
 
     ".agents/quenching/assets/bin/quenching/deploy/mcpfiles.py": "e4f20bb6d2b4275890fdb8b4b096424f130bcb32bc18cfb3db4c5ab047ebfb08",
 
@@ -157,7 +157,7 @@
 
     ".agents/quenching/assets/bin/quenching/deploy/translate.py": "756ec893d9ad81d74cc299dd44749dc21317b5dfa5ff344807257824b6941029",
 
-    ".agents/quenching/assets/bin/quenching/deploy/tree.py": "034c302d92d0f25333e0fc308e7e4f0e0bc9881bb7c2b6586a88b8a0fce59a41",
+    ".agents/quenching/assets/bin/quenching/deploy/tree.py": "caa23f115f120a295270619aa5851b618e8647ef103337c7a9c775877bc28eb5",
 
     ".agents/quenching/assets/bin/quenching/design/align.py": "6d29622f4b63ce0710271398eb72f4f44d22eae297f99aa782007bcac0e6f632",
 

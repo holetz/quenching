@@ -12,7 +12,7 @@ import os
 from pathlib import Path, PurePosixPath
 
 from quenching.common.deploy import dumps_hash_manifest, read_manifest
-from quenching.common.workspace import snippet as workspace_snippet
+from quenching.common.workspace import TASKS_PATH, snippet as workspace_snippet, tasks_snippet
 from quenching.common.version import VERSION
 from quenching.components.commands import bridge
 from quenching.deploy import mcpfiles
@@ -494,6 +494,7 @@ def build_tree(source: Path, target: Path, modules: list[str], harnesses: list[s
         # A client projection, opted in by the repository's own `shared.workspace.vscode`:
         # created only when absent, never listed in the manifest, never drift-checked.
         seeds[".vscode/settings.json"] = workspace_snippet()
+        seeds[TASKS_PATH] = tasks_snippet()
     document = {
         "generator": "cq deploy",
         "version": VERSION,
