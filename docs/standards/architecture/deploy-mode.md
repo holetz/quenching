@@ -309,15 +309,13 @@ directories the declared harnesses read:
 | Harnesses (`--harness`) | Directories that receive the generated skills |
 | --- | --- |
 | `claude` (alone or with `opencode`) | `.claude/skills` |
-| `claude` and `codex` (with or without `opencode`) | both |
-| `codex` (alone or with `opencode`) | `.agents/skills` |
 | `opencode`, or no harness | `.agents/skills` |
 
-The rule follows from the read sets: `claude` reads only `.claude/skills` and `codex` only
-`.agents/skills`, so each forces its own directory; `opencode` reads both and never forces a second
-copy; a deploy with no harness keeps the generic layer. Only a target that declares two exclusive
-readers keeps two copies — each one is the only path of its client — and a client that reads both
-deduplicates by name.
+The rule follows from the read sets: `claude` reads only `.claude/skills`; `opencode` reads both and
+never forces a second copy; a deploy with no harness keeps the generic layer. The `codex` harness
+was removed ([ADR 0020](../../decisions/0020-remove-the-codex-executor-and-harness.md)); a client
+that reads only `.agents/skills` would force that copy if it ever returns as a harness, and until
+then no declared harness is in that position.
 
 **Changing the harness set is an ordinary three-way update.** Passing a target deployed with both
 copies to a set that needs one reports the copies that leave as `delete` in `--check`; `--write`
