@@ -197,10 +197,15 @@ def _agents_md(target: Path, dirs: tuple[str, ...]) -> str:
     else:
         skills = ("- Skills: `.agents/skills/` (source; a target's own skill is authored "
                   "here).\n")
-    return (
-        "# AGENTS.md\n\n"
+    interface = (
         "This repository uses quenching. The editable automation surface is `.agents/`; the\n"
         "Claude Code bridge under `.claude/skills/` is generated from it.\n\n"
+        if CLAUDE_SKILLS in dirs else
+        "This repository uses quenching. The editable automation surface is `.agents/`.\n\n"
+    )
+    return (
+        "# AGENTS.md\n\n"
+        + interface +
         "- Configuration: [`.agents/quenching.json`](.agents/quenching.json).\n"
         + knowledge + skills +
         "- Deployed runtime: `.agents/quenching/` (generated; do not edit).\n"
@@ -276,20 +281,23 @@ def skill_dirs(harnesses: list[str]) -> tuple[str, ...]:
     """The directories this deploy publishes skills into: the minimal cover of what the
     declared harnesses read.
 
-    Measured 2026-11-25: Claude Code 2.1.332 reads `.claude/skills` only, Codex 0.165.0 reads
-    `.agents/skills` only, and OpenCode reads both, the `.agents` copy winning a repeated name.
-    So `claude` forces `.claude/skills`, `codex` forces `.agents/skills`, and a client that reads
-    several directories never forces a second copy: a `claude`+`opencode` target publishes once
-    in `.claude/skills`, and `opencode` alone publishes once in `.agents/skills`. With no
-    harness the generic layer stays.
+    Measured 2026-11-25: Claude Code 2.1.332 reads `.claude/skills` only, and OpenCode reads both,
+    the `.agents` copy winning a repeated name. So a target declaring `claude` publishes once in
+    `.claude/skills` — `opencode` reads it — and a deploy without `claude` (opencode alone, or no
+    harness) keeps the generic layer. The `codex` harness was removed (ADR 0020); a client that
+    reads only `.agents/skills` would force that copy if it ever returns as a harness.
     """
-    declared = set(harnesses)
-    dirs: list[str] = []
-    if "claude" in declared:
-        dirs.append(CLAUDE_SKILLS)
-    if "codex" in declared or "claude" not in declared:
-        dirs.append(SKILLS)
-    return tuple(dirs)
+    return (CLAUDE_SKILLS,) if "claude" in harnesses else (SKILLS,)
+
+
+def _without_marker(text: str, name: str) -> str:
+    """The source form of a Claude copy.
+
+    A target's vendored payload carries no skill source, so the installed folder is the last-resort
+    source for a generated skill; the `.claude` copy's `SKILL.md` carries the bridge marker, and the
+    publication loop adds it back only when it writes `.claude`.
+    """
+    return text.replace(bridge.marker(name) + "\n", "", 1)
 
 
 def _bridge_tree(tree: dict, target: Path, dirs: tuple[str, ...],
@@ -438,8 +446,14 @@ def build_tree(source: Path, target: Path, modules: list[str], harnesses: list[s
             # A vendored payload carries no skill source: the installed folder is already the
             # generated form, so it is re-asserted byte for byte.
             installed = not root.is_dir()
+            from_claude = False
             if installed:
                 root = target / SKILLS / name
+            if installed and not root.is_dir():
+                # A target deployed for a claude-only client has the generated form only in
+                # `.claude/skills`; its own `cq deploy --check` must re-assert that copy.
+                root = target / CLAUDE_SKILLS / name
+                from_claude = root.is_dir()
             if not root.is_dir():
                 continue
             files = generated.setdefault(name, {})
@@ -449,6 +463,8 @@ def build_tree(source: Path, target: Path, modules: list[str], harnesses: list[s
                 rel = path.relative_to(root).as_posix()
                 if installed:
                     data = _read(path)
+                    if from_claude and rel == "SKILL.md":
+                        data = _without_marker(data.decode("utf-8"), name).encode("utf-8")
                 elif rel == "SKILL.md":
                     data = translate.skill_document(path.read_text(encoding="utf-8"), name,
                                                     narrow, mount).encode("utf-8")
