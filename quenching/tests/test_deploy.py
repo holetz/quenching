@@ -20,6 +20,7 @@ except ModuleNotFoundError:
 from quenching.common.deploy import dumps_hash_manifest
 from quenching.deploy import translate
 from quenching.deploy import cli as deploy_cli
+from quenching.deploy import tree as deploy_tree
 from quenching.deploy.cli import main as deploy_main
 
 PLUGIN_ROOT = pathlib.Path(__file__).resolve().parent.parent
@@ -133,6 +134,23 @@ class Deploy(unittest.TestCase):
         self.assertIn("someone@corp.example", refused.stdout + refused.stderr)
         self.git("-c", "user.email=dev@example.org", "commit", "-q", "-m", "inside")
         self.assertEqual("dev@example.org", self.git("log", "-1", "--format=%ae").strip())
+
+    def test_build_tree_writes_the_copilot_projection_only_when_asked(self):
+        names = ("spec-orchestrator", "spec-reviewer", "spec-runner", "spec-scout",
+                 "spec-verifier")
+        plain = deploy_tree.build_tree(PLUGIN_ROOT, self.target, ["quenching-specs"],
+                                       ["claude"])
+        self.assertFalse([rel for rel in plain["tree"] if rel.startswith(".github/")])
+        projected = deploy_tree.build_tree(PLUGIN_ROOT, self.target, ["quenching-specs"],
+                                           ["claude"], projections=["github"])
+        for name in names:
+            rel = f".github/agents/quenching-{name}.agent.md"
+            self.assertIn(rel, projected["tree"])
+            text = projected["tree"][rel][0].decode("utf-8")
+            self.assertTrue(text.startswith(f"---\nname: quenching-{name}\n"))
+            self.assertIn("target: github-copilot", text)
+            self.assertIn(rel, projected["manifest"]["files"])
+        self.assertNotIn(".github/agents", "".join(plain["manifest"]["files"]))
 
     def test_a_local_skill_and_agent_survive_a_deploy(self):
         self.assertEqual(0, self.run_deploy("--modules", "core", "--write")[0])
