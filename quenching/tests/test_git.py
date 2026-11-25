@@ -3611,6 +3611,44 @@ class PullRequestVerbs(RepoCase):
         value = json.loads(read.stdout)["value"]
         self.assertEqual((str(value["number"]), value["url"]), ("42", self.URL))
 
+    def test_create_with_spec_from_a_linked_worktree_writes_the_pr_record(self):
+        # The orchestrator opens the PR from a linked worktree with an explicit --head: the
+        # record must land in the same store the main checkout reads, never get lost silently.
+        spec, specs = self._store_spec()
+        head = f"plan/{spec}-x"
+        tree = os.path.join(self.tmp, "wt")
+        _run(self.repo, "worktree", "add", "-q", "-b", head, tree)
+        os.makedirs(os.path.join(tree, ".claude"), exist_ok=True)   # the fixture's config is untracked
+        shutil.copy(os.path.join(self.repo, ".claude", "quenching.json"),
+                    os.path.join(tree, ".claude", "quenching.json"))
+        proc = _cq(tree, "pr", "create", "--base", "main", "--head", head,
+                   "--title", "t", "--body", "Closes #1", "--spec", spec, "--json", env=self.env)
+        self.assertEqual(proc.returncode, 0, proc.stdout + proc.stderr)
+        self.assertTrue(json.loads(proc.stdout)["pr"]["ok"], proc.stdout)
+        for cwd in (self.repo, tree):
+            read = subprocess.run([*specs, "record", spec, "pr", "--json"], cwd=cwd,
+                                  capture_output=True, text=True, env=self.env,
+                                  stdin=subprocess.DEVNULL, timeout=60)
+            self.assertEqual(read.returncode, 0, (cwd, read.stdout + read.stderr))
+            self.assertEqual(str(json.loads(read.stdout)["value"]["number"]), "42")
+
+    def test_create_with_spec_reports_an_unsynced_record_as_store_not_synced(self):
+        from quenching.git import pull
+        args = SimpleNamespace(base="main", head="plan/1-x", title="t", body="Closes #1",
+                               spec="1", json=True, **NO_AZURE_FLAGS)
+        for sync, code, reason in (({"ok": False, "message": "push rejected"}, 1, "store-not-synced"),
+                                   ({"ok": True, "skipped": "nothing pending"}, 0, None)):
+            with mock.patch.object(pull, "_gh", return_value=(0, self.URL + "\n", "")), \
+                    mock.patch.object(pull, "_stamp", return_value={"ok": True, "value": {}}), \
+                    mock.patch.object(pull, "sync_store", return_value=sync), \
+                    mock.patch.object(pull, "_spec_vs_head", return_value=None), \
+                    mock.patch.object(pull, "_branch_ok", return_value=True), \
+                    contextlib.redirect_stdout(io.StringIO()) as out:
+                got = pull.cmd_pr(SimpleNamespace(action="create", **vars(args)))
+            payload = json.loads(out.getvalue())
+            self.assertEqual((got, payload.get("reason")), (code, reason))
+            self.assertEqual((payload["number"], payload["url"]), (42, self.URL))
+
     def _read_pr(self, specs, spec):
         return subprocess.run([*specs, "record", spec, "pr", "--json"], cwd=self.repo,
                               capture_output=True, text=True, env=self.env,
