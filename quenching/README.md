@@ -651,7 +651,7 @@ updates the published artifacts in lockstep. See
 contract.
 
 <!-- quenching-proof-readme-start -->
-<!-- quenching-proof-readme-sha256 bd04383928441df7dd355ce939dd227946728052f6b0e1591a0cf0ff37eb5996 -->
+<!-- quenching-proof-readme-sha256 f151f6773a3ebdb30da11aeed438d306cca9350783a0d55b7cf8444c609fc77f -->
 ## Declared proof layers
 
 ### tests
@@ -660,7 +660,7 @@ contract.
 - Reach: tree
 - Budget: not declared
 - Required: yes
-- Test modules: 198
+- Test modules: 201
 - Fixture modules: none
 
 ### Declared cost contract

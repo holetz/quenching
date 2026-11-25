@@ -227,13 +227,13 @@
 
     ".agents/quenching/assets/bin/quenching/session/cachebar.py": "fc2585e0a91ae2527e9a8313fd3553983706dd19441247751df92ddf8c972721",
 
-    ".agents/quenching/assets/bin/quenching/session/commands/cache.py": "95e3e2c4d55217086ec2ff1fc783b72c1613fca8b211e7eb046566dee87100cb",
+    ".agents/quenching/assets/bin/quenching/session/commands/cache.py": "dac271d4a975cc23aebac06af99381d362b3c1b107ef492ae195c359a31a2116",
 
-    ".agents/quenching/assets/bin/quenching/session/commands/cli.py": "fe8e7e3f5490ec323cd72f67ef18036edfecb825daa5826e1c0a443403ef0f07",
+    ".agents/quenching/assets/bin/quenching/session/commands/cli.py": "916bf9f07c301ed3aa8707e3d8b6d32214472fdd50e0f46f9957bc79a5d901fc",
 
     ".agents/quenching/assets/bin/quenching/session/commands/context.py": "199377bebf3df2af3411f510395103ae4580200d99f20d985ca790bc8789722f",
 
-    ".agents/quenching/assets/bin/quenching/session/commands/cost.py": "5234f51e2c029cf33daed1421e69309d34a883ceff21a24dd0a0721ae67d6c83",
+    ".agents/quenching/assets/bin/quenching/session/commands/cost.py": "0dac6beb2348e23c0bb4ef3dcac7f457c68dd90f0a02bfce45b6bf0f7f4ab510",
 
     ".agents/quenching/assets/bin/quenching/session/commands/digest.py": "9f73a1cf6b8c21a5dcfd993d8b5b18ebc067db1a87de4e3062be2f1b622e70d1",
 
@@ -242,6 +242,8 @@
     ".agents/quenching/assets/bin/quenching/session/commands/live.py": "fa3b045f405b1d68c2bcc9397c4b4f4d4242fa9ef10a8d89f8221bb62d074e53",
 
     ".agents/quenching/assets/bin/quenching/session/commands/read.py": "898bd5e9a96cd8d24f95c78b0f2e66afdd906641cc6d65fd61d21ad6383b2721",
+
+    ".agents/quenching/assets/bin/quenching/session/copilot.py": "07da8a59510605b7ae9a314fab363cee78255c3ecf695ccf664c285063ed334c",
 
     ".agents/quenching/assets/bin/quenching/session/cqcalls.py": "7a0d693aad6806cc370beb4d3e6300d43347e8e1d50f4fec0f34f94d654851e4",
 
@@ -259,9 +261,9 @@
 
     ".agents/quenching/assets/bin/quenching/session/portal.py": "29c8dbf037ff83d43fee008c57d2095e59bd08e8d19593db1e7cda61662a736d",
 
-    ".agents/quenching/assets/bin/quenching/session/pricing.json": "a185d49817fed95a195059ea8147454b17c8c3bdef4df775b7e41b2a9c959989",
+    ".agents/quenching/assets/bin/quenching/session/pricing.json": "b322ee29cd47316811427ba357c1fac172684c6da81473e7857bc0ae542a07c7",
 
-    ".agents/quenching/assets/bin/quenching/session/pricing.py": "52d54755dbe41678e227000c5866636d2f1d744433da38354450d6061ed37eda",
+    ".agents/quenching/assets/bin/quenching/session/pricing.py": "1c2a0cd159122e7ca1b40e3a7e230c916ac39be3d17d31d4f9680f9d0495cce0",
 
     ".agents/quenching/assets/bin/quenching/session/quotabar.py": "dd681ae232dadf29eaea06d8681d690a8dbbcb9fa1ae075637e2dd53e18d5908",
 
