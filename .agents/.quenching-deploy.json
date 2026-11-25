@@ -383,7 +383,7 @@
 
     ".agents/quenching/assets/githooks/pre-push": "d9421efdd85092a3bafb3fd9eaae00228563cdf8aee1af976d96871f888ae471",
 
-    ".agents/quenching/assets/hooks/deny-claude-coauthor.py": "0755db09e71e36adab51a13b919a4972ffe3725c1e3af8ad7837c06af06dc5c9",
+    ".agents/quenching/assets/hooks/deny-claude-coauthor.py": "051685cda9c0bda644d11b1312f8dd2cd6eeb033f074e9f2fa56c8f71328f6d6",
 
     ".agents/quenching/assets/hooks/dispatch.py": "7f4fed0684fbd5a2c87416403d187ff82ef20c739fe44d21e8f3a2bba651684d",
 
