@@ -288,6 +288,13 @@ readers that hand a task on carry `operational: true` beside `files: []` (`specs
 `specs_show(tasks=[…])`), and that flag — never the empty list — is what excuses the sha: a task with
 no `files:` line parses to the same `[]`, and only the flag tells the two apart.
 
+**An abandoned task replaced by another is marked `(dropped → <id>)`** in its checkbox line, naming
+the live task that delivered the work (`- [x] 1.3 Root por chamada (dropped → 1.6)`). `validate`
+refuses a target that is missing, the task itself or another dropped task (`sp-dropped-target`), and
+the readers that hand a task on carry `dropped: "<id>"`. The verifier excuses the abandoned task's
+missing sha only when the replacement is checked and carries its own; never point the abandoned task
+at the replacement's commit.
+
 **Declare the source, not the mirror.** A task lists in `files:` what it edits. What the deploy
 regenerates from it (the mirrors under `.agents/`, `.claude/`, `.opencode/` and the deploy manifest)
 is implicit in the verifier's scope check when a path under `quenching/` changed; run the

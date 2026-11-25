@@ -313,6 +313,41 @@ def _tests_importing(root: pathlib.Path, modules: set[str]) -> set[str]:
     return found
 
 
+PROSE_DIRS = ("quenching/agents/", "quenching/skills/")
+
+
+def _prose_needles(path: str) -> tuple[str, ...]:
+    """The literals a test uses to read a prose file: its path, and its short name."""
+    if not path.endswith(".md") or not path.startswith(PROSE_DIRS):
+        return ()
+    posix = pathlib.PurePosixPath(path)
+    needles = [path, path[len("quenching/"):]]
+    if path.startswith("quenching/agents/"):
+        needles.append(posix.stem)
+    elif "/references/" in path:
+        needles.append("references/" + "/".join(path.split("/references/", 1)[1:]))
+    return tuple(needles)
+
+
+class _TestUnreadable(Exception):
+    """A test file cannot be read, so which prose it cites is unknown."""
+
+
+def _tests_citing(root: pathlib.Path, needles: set[str]) -> set[str]:
+    """Every test whose source text contains one of `needles`."""
+    if not needles:
+        return set()
+    found: set[str] = set()
+    for path in sorted((root / TESTS_DIR).glob("test_*.py")):
+        try:
+            text = path.read_text(encoding="utf-8")
+        except (OSError, UnicodeDecodeError) as exc:
+            raise _TestUnreadable(f"{path.name} is unreadable: {exc}") from exc
+        if any(needle in text for needle in needles):
+            found.add(str(path.relative_to(root)).replace("\\", "/"))
+    return found
+
+
 def _rule_for(path: str) -> Rule | None:
     for rule in RULES:
         if any(_covers(path, prefix) for prefix in rule.prefixes):
@@ -369,6 +404,7 @@ def select(root: pathlib.Path, base: str | None = None,
     modules: set[str] = set()
     reasons: list[str] = []
     covered = 0
+    needles: set[str] = set()
     for path in changed:
         if any(_covers(path, prefix) for prefix in GLOBAL):
             return Selection(base, changed, (), (f"fail-open: {path} is global",), True)
@@ -394,6 +430,7 @@ def select(root: pathlib.Path, base: str | None = None,
         module = _module_of(path)
         if module:
             modules.add(module)
+        needles.update(_prose_needles(path))
         covered += 1
 
     if not covered:
@@ -403,6 +440,12 @@ def select(root: pathlib.Path, base: str | None = None,
     except _GraphUndecided as exc:
         return Selection(base, changed, (), (f"fail-open: {exc}",), True)
     selected.update(_tests_importing(root, modules))
+    try:
+        cited = _tests_citing(root, needles)
+    except _TestUnreadable as exc:
+        return Selection(base, changed, (), (f"fail-open: {exc}",), True)
+    selected.update(cited)
+    reasons.extend(f"{test} cites a changed prose file" for test in sorted(cited))
     if not selected:
         return Selection(base, changed, (), (f"fail-open: {changed[0]} selected no test",), True)
     return Selection(base, changed, _reduce(list(selected)), tuple(dict.fromkeys(reasons)), False)

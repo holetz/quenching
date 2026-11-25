@@ -97,6 +97,22 @@ class Selection(unittest.TestCase):
         self.assertTrue(got.complete)
         self.assertIn("is global", got.reasons[0])
 
+    def test_an_agent_body_selects_the_tests_that_cite_it(self):
+        got = self.selected("quenching/agents/spec-runner.md")
+        self.assertFalse(got.complete)
+        # Read by name, not by import: only the citation scan reaches it.
+        self.assertIn("quenching/tests/test_specs_run_record.py", got.tests)
+        self.assertIn("quenching/tests/test_git.py", self.selected("quenching/agents/spec-verifier.md").tests)
+
+    def test_a_skill_reference_selects_the_tests_that_cite_it(self):
+        got = self.selected("quenching/skills/quenching-specs/references/conclude.md")
+        self.assertIn("quenching/tests/test_specs_conclude_autonomous.py", got.tests)
+
+    def test_an_unreadable_test_makes_the_citation_scan_fail_open(self):
+        with mock.patch.object(affected, "_tests_citing", side_effect=affected._TestUnreadable("t.py")):
+            got = self.selected("quenching/agents/spec-runner.md")
+        self.assertTrue(got.complete)
+
     def test_a_changed_test_selects_the_tests_that_import_it(self):
         got = self.selected("quenching/tests/test_specs_git_backend.py")
         self.assertFalse(got.complete)
