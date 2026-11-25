@@ -2,7 +2,7 @@
 name: quenching-handoff
 description: "Compact the conversation into a handoff stored beside its spec. Use for \"gerar um handoff\", \"preparar a próxima sessão\", \"generate a handoff\". Not for: implementing → the owning command."
 argument-hint: "What will the next session be used for?"
-allowed-tools: Read, Write, mcp__quenching__specs_handoff_facts, mcp__quenching__specs_handoff_write, mcp__quenching__specs_artifact_list, mcp__quenching__specs_artifact_read, mcp__quenching__specs_artifact_rm, mcp__quenching__specs_artifact_write
+allowed-tools: Bash(.agents/quenching/bin/cq specs handoff:*), Bash(.agents/quenching/bin/cq specs artifact:*), Read, Write, mcp__quenching__specs_handoff_facts, mcp__quenching__specs_handoff_write, mcp__quenching__specs_artifact_list, mcp__quenching__specs_artifact_read, mcp__quenching__specs_artifact_rm, mcp__quenching__specs_artifact_write
 ---
 <!-- generated from .agents/skills/quenching-handoff/SKILL.md by cq components bridge; edit the source -->
 

@@ -20,7 +20,8 @@ from quenching.deploy import tree as deploy_tree
 LEGACY = (".claude/commands", ".claude/references", ".agents/.generated-from.json")
 GENERATED_ROOTS = (".agents/quenching/", ".agents/skills/quenching-", ".claude/skills/quenching-",
                    ".claude/agents/quenching-")
-MCP_MOUNTS = {"all", "specs"}  # `all` is `cq mcp`; `specs` is `cq specs mcp`
+MCP_MOUNTS = {"all", "specs"}  # `all` is `cq mcp`; `specs` is `cq specs mcp`; a name of
+# `quenching.mcp.catalog.MOUNTS` (`core`) or a comma list of pillars reaches the rest
 MCP_DEFAULT_MOUNT = "all"
 SETTINGS = ".claude/settings.json"
 # Owned files another cq tool rewrites on purpose: `cq components bridge` restamps its marker with
@@ -77,9 +78,13 @@ def _mcp_option(target: Path) -> tuple[dict | None, dict | None]:
         return None, _mcp_refusal(f"`shared.mcp` has unknown key(s): {', '.join(unknown)}",
                                   keys=unknown)
     mount = raw.get("mount", MCP_DEFAULT_MOUNT)
-    if mount not in MCP_MOUNTS:
+    from quenching.mcp import catalog
+    unknown_pillars = catalog.mount_refusal(mount)
+    if unknown_pillars:
         return None, _mcp_refusal(
-            f"`shared.mcp.mount` must be one of: {', '.join(sorted(MCP_MOUNTS))}", mount=mount)
+            "`shared.mcp.mount` must be `all`, `specs`, one of the named mounts "
+            f"({', '.join(sorted(catalog.MOUNTS))}), or a comma-separated list of pillars; it "
+            f"names no pillar this process routes: {', '.join(unknown_pillars)}", mount=mount)
     command = raw.get("command")
     if command is not None and (not isinstance(command, list) or not command
                                 or not all(isinstance(part, str) and part for part in command)):

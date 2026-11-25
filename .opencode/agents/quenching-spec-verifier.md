@@ -4,7 +4,12 @@ mode: subagent
 permission:
   edit: deny
   webfetch: deny
-  bash: deny
+  bash:
+    "*": ask
+    ".agents/quenching/bin/cq specs status *": allow
+    ".agents/quenching/bin/cq specs show *": allow
+    ".agents/quenching/bin/cq git audit *": allow
+    ".agents/quenching/bin/cq git pr view *": allow
   "quenching_*": deny
   quenching_specs_epic_progress: allow
   quenching_specs_status: allow

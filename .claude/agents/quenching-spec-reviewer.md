@@ -1,7 +1,7 @@
 ---
 name: quenching-spec-reviewer
 description: "Reviews an epic's accepted commits for correctness, and for security when they touch a grant, hook or executable, reporting only findings it reproduced. Use once per epic, launched by the autopilot conductor. Read-only; never edits or fixes."
-tools: Read, Grep, Glob, Bash(bash scripts/verify_repo.sh:*), mcp__quenching__git_history_diff, mcp__quenching__git_history_log, mcp__quenching__git_history_show
+tools: Read, Grep, Glob, Bash(.agents/quenching/bin/cq git history:*), Bash(bash scripts/verify_repo.sh:*), mcp__quenching__git_history_diff, mcp__quenching__git_history_log, mcp__quenching__git_history_show
 model: opus
 effort: high
 ---
