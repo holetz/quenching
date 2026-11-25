@@ -1,5 +1,6 @@
 """A bancada lê os formatos que o deploy ainda não escreve, e ausência é `absent`, nunca erro."""
 
+import collections
 import pathlib
 import sys
 import tempfile
@@ -92,13 +93,17 @@ class TheDisposableTarget(unittest.TestCase):
         cls.root, cls.facts = copilot_bench.deploy_target("all")
         cls.payload = copilot_bench.bench(cls.root, "deploy", "all", cls.facts)
 
-    def test_the_server_the_target_registers_answers_the_same_tool_count_as_the_source(self):
+    def test_the_server_the_target_registers_answers_the_catalog_it_deployed(self):
+        # The source checkout declares its own mount (454: `core`), so comparing it with a
+        # disposable target deployed at the default would compare two different mounts. The
+        # catalog is the invariant: the target publishes what the catalog carries.
+        from quenching.mcp import catalog
         target = self.payload["measurements"]["mcp"]
-        source = copilot_bench.measure_mcp(REPO_ROOT)
         self.assertEqual("ok", target["state"], target)
-        self.assertEqual("ok", source["state"], source)
-        self.assertEqual(source["tools"], target["tools"])
-        self.assertEqual(source["byPillar"], target["byPillar"])
+        self.assertEqual(len(catalog.tool_names()), target["tools"])
+        counts = collections.Counter(catalog.pillar_of(name) for name in catalog.tool_names())
+        self.assertEqual(dict(sorted(counts.items(), key=lambda kv: (-kv[1], kv[0]))),
+                         target["byPillar"])
 
     def test_both_skill_copies_exist_and_the_bridge_is_byte_identical(self):
         skills = self.payload["measurements"]["skills"]
