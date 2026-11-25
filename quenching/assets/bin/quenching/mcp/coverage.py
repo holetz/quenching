@@ -35,7 +35,10 @@ EXCEPTIONS: dict[tuple[str, ...], str] = {
 # the bodies load cite verbs too.
 SOURCES = ("skills", "agents", "references")
 
-CITE = re.compile(r"\bcq(?:\.cmd)?((?:[ \t]+[a-z][a-z0-9-]*)+)")
+# A launch-time `--root <path>` may sit between the launcher and the pillar
+# (`cq --root "$TARGET_ROOT" delivery status`): it is skipped, never read as the verb.
+CITE = re.compile(r"\bcq(?:\.cmd)?(?:[ \t]+--root(?:=|[ \t]+)(?:\"[^\"\n]*\"|'[^'\n]*'|[^\s`]+))?"
+                  r"((?:[ \t]+[a-z][a-z0-9-]*)+)")
 
 
 def _unfilled_choice(parser, filled: set) -> bool:

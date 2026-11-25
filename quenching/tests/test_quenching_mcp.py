@@ -172,12 +172,13 @@ class Argv(unittest.TestCase):
         expected = {
             "read": {"specs_config", "specs_validate", "specs_parallel", "specs_estimate",
                      "specs_handoff_facts", "specs_artifact_list", "specs_artifact_read",
-                     "components_status", "git_worktree_slots", "security_leak"},
+                     "components_status", "git_worktree_slots", "security_leak",
+                     "ops_inventory", "proof_inventory"},
             "write": {"specs_reconcile", "specs_tags", "specs_verification",
                       "specs_handoff_write", "specs_artifact_write", "specs_artifact_rm",
                       "components_bridge", "components_migrate", "proof_readme",
                       "git_worktree_acquire", "git_worktree_release", "git_refresh",
-                      "design_render", "design_import"},
+                      "design_render", "design_import", "design_align", "design_genre_new"},
         }
         for cls, names in expected.items():
             for name in names:

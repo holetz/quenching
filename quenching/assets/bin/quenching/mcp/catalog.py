@@ -101,6 +101,11 @@ CATALOG: dict[str, Row] = {
     **_rows("git", "write", "worktree acquire", "refresh"),
     "git_worktree_release": Row("git", ("worktree", "release"), "write", True),
     **_rows("design", "write", "render", "import"),
+    # The verbs the align and genre flows cite behind a launch-time `--root`, which the coverage
+    # scan did not see before it skipped the flag.
+    **_rows("ops", "read", "inventory"),
+    **_rows("proof", "read", "inventory"),
+    **_rows("design", "write", "align", "genre new"),
     **_rows("security", "read", "leak"),
     # The verbs `references/**` cites beyond the skill and agent bodies.
     **_rows("specs", "read", "doctor", "schedule"),
