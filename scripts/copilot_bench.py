@@ -334,9 +334,20 @@ def measure_skills(root: pathlib.Path) -> dict:
                    if (path / "SKILL.md").is_file()) if source.is_dir() else []
     bridged = sorted(path.name for path in bridge.iterdir()
                      if (path / "SKILL.md").is_file()) if bridge.is_dir() else []
+    # A generated skill has no `.agents/skills` copy any more: the projection the declared clients
+    # read is its only home, so the published set is the union of both directories, one entry per
+    # name — the client deduplicates by name.
+    try:
+        import_payload()
+        from quenching.common.deploy import generated_skills
+        generated = sorted(generated_skills(str(root)))
+    except (ImportError, OSError):
+        generated = []
+    published = {name: source / name for name in names}
+    published |= {name: bridge / name for name in bridged if name not in published}
     descriptions = []
-    for name in names:
-        fields = frontmatter_fields((source / name / "SKILL.md").read_text(encoding="utf-8"))
+    for name in sorted(published):
+        fields = frontmatter_fields((published[name] / "SKILL.md").read_text(encoding="utf-8"))
         descriptions.append({"skill": name, "chars": len(fields.get("description") or "")})
     cut = THRESHOLDS[1]["value"]
     changes: list = []
@@ -347,15 +358,15 @@ def measure_skills(root: pathlib.Path) -> dict:
             changes = bridge_plan(root)["changes"]
         except (ImportError, OSError) as error:
             changes = [{"path": str(error), "change": "unverifiable"}]
-    section |= {"state": "present" if source.is_dir() else "absent",
+    section |= {"state": "present" if source.is_dir() or bridge.is_dir() else "absent",
                 "source": {"count": len(names), "names": names},
                 "bridge": {"count": len(bridged), "names": bridged,
                            "changes": changes},
+                "generated": {"count": len(generated), "names": generated},
                 "descriptions": {
-                    "count": len(descriptions) * (2 if bridged else 1),
+                    "count": len(descriptions),
                     "perCopy": sum(item["chars"] for item in descriptions),
-                    "total": sum(item["chars"] for item in descriptions) *
-                             (2 if bridged else 1),
+                    "total": sum(item["chars"] for item in descriptions),
                     "largest": max(descriptions, key=lambda item: item["chars"], default=None),
                     "cut": cut,
                     "overCut": [item for item in descriptions if item["chars"] > cut]},
@@ -381,7 +392,8 @@ def measure_skills(root: pathlib.Path) -> dict:
         section["hypotheses"] = {
             "H1": {"verdict": UNMEASURED,
                    "observation": (f"{len(names)} skills em `.agents/skills` e {len(bridged)} em "
-                                   f"`.claude/skills`; a ponte tem {len(changes)} divergência(s)"
+                                   f"`.claude/skills` ({len(generated)} geradas pelo deploy); "
+                                   f"a ponte tem {len(changes)} divergência(s)"
                                    f"{'' if not changes else ': ' + ', '.join(change['path'] for change in changes[:5])}"
                                    f"; a desduplicação pelo cliente é live")},
             "H4": {"verdict": UNMEASURED,
@@ -393,9 +405,8 @@ def measure_skills(root: pathlib.Path) -> dict:
                                    f"; o disparo é live")},
             "H10": {"verdict": CONFIRMED if not section["descriptions"]["overCut"] else REFUTED,
                     "observation": (
-                        f"{section['descriptions']['count']} descrições, "
-                        f"{section['descriptions']['total']} caracteres somados "
-                        f"({section['descriptions']['perCopy']} por cópia), a maior com "
+                        f"{section['descriptions']['count']} descrições publicadas, "
+                        f"{section['descriptions']['total']} caracteres somados, a maior com "
                         f"{section['descriptions']['largest']['chars']} "
                         f"(`{section['descriptions']['largest']['skill']}`), "
                         f"{len(section['descriptions']['overCut'])} acima do corte de {cut}")}}
