@@ -30,6 +30,8 @@ EXCEPTIONS: dict[tuple[str, ...], str] = {
     ("specs", "claim", "take"): "taking a live lease is the human's call only; no agent grant may reach it",
     ("git", "worktree", "adopt"): "the SessionStart hook runs it before the MCP server is connected, "
                                   "and the orchestrator's grant is the CLI; it prepares one checkout",
+    ("git", "worktree", "workspace"): "writes a machine-local editor file for the operator; the tasks "
+                                      "seed runs it and no agent grant needs it",
 }
 
 # The bodies the coverage holds for, relative to the plugin root (`quenching/`): the references
