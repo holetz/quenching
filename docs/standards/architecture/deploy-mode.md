@@ -119,12 +119,16 @@ Deploy always registers the whole quenching MCP server, with no declaration. It 
 `quenching` entry into one file per selected harness — `.mcp.json` for `claude` (which the GitHub
 Copilot harness reads too), `.codex/config.toml` for `codex`, `opencode.json` for `opencode` — with
 the same argv: `<command...> .agents/quenching/assets/bin/cq mcp`, every catalogued tool of the
-pillars present. `shared.mcp` (`{mount: "all"|"specs", command: [...]}`, see
+pillars present. `shared.mcp` (`{mount: "all"|"specs"|"core"|<pillars>, command: [...]}`, see
 [plugin-configuration.md](../workflows/plugin-configuration.md#the-sharedmcp-block)) only overrides
 the mount and the Python prefix: `mount: "specs"` registers the specs-only
-`<command...> .agents/quenching/assets/bin/cq specs mcp` instead. The mount comes from the
-declaration alone, never from the manifest, so a target deployed under the old `specs` default
-moves to the whole server on its next `--write`.
+`<command...> .agents/quenching/assets/bin/cq specs mcp` instead, `mount: "core"` registers
+`<command...> .agents/quenching/assets/bin/cq mcp --only specs,git,components` (the pillars a spec
+cycle reaches through MCP, the `MOUNTS` table in `mcp/catalog.py`), and a comma list of pillars
+registers exactly those. The name is expanded in the argv, so the registered file says which pillars
+it publishes, and `cq mcp --only` refuses a pillar the router does not have (`ct-mcp-only`). The
+mount comes from the declaration alone, never from the manifest, so a target deployed under the old
+`specs` default moves to the whole server on its next `--write`.
 
 **The prefix is a direct interpreter, found without pinning a version.** Declared
 `shared.mcp.command`, else the `mcp.command` the last deploy recorded in the manifest (so two
@@ -145,7 +149,10 @@ nothing covered below (`coverage.cli_residue`). The `coverage.EXCEPTIONS` verbs 
 `specs serve`, …) stay shell; `specs claim take` is reached by no grant, tool or shell. A prefix
 that names no verb is kept whole, so the narrowing never widens and never guesses. The payload's
 `.agents/quenching/agents/` copy keeps the source grants, because a target-local deploy re-reads
-it; `cliFallback: true`, the `specs` mount and a runtime that registers no server keep both doors.
+it; `cliFallback: true`, a narrower mount (`specs`, `core`, a list) and a runtime that registers no
+server keep both doors. A narrower mount narrows no door but does filter the names: the MCP tools a
+grant enumerates are only the ones the mount publishes (`mcp_tools(names, mount)`), so a skill's
+`allowed-tools` and an agent's `tools:` never name a tool the server does not serve.
 
 **The files stay the user's: merged, never owned.** Like `.claude/settings.json`, they are not in the
 manifest's `files`; the manifest records `mcp` and `mcpFiles`, and only the `quenching` entry is the

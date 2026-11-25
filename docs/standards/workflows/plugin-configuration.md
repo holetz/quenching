@@ -265,11 +265,15 @@ by [security-pillar.md](../architecture/security-pillar.md) §The identity allow
 
 `cq deploy` registers the whole quenching MCP server in the target's harnesses with no
 declaration; `shared.mcp` only overrides how. It is `{mount, command, cliFallback}`, every key
-optional: `mount` is `all` (the default, the whole server) or `specs` (the specs-only mount), and
-`command` is the non-empty list of strings that finds Python — for example `["python3"]` or
-`["py", "-3"]`. Deploy appends the vendored
-entry point and the mount, so the generated argv is `<command...> .agents/quenching/assets/bin/cq
-mcp`, or `<command...> .agents/quenching/assets/bin/cq specs mcp` under `mount: "specs"`. Without a
+optional: `mount` is `all` (the default, the whole server), `specs` (the specs-only mount), a named
+set of pillars (`core`: `specs`, `git` and `components`, the table `mcp/catalog.py` carries) or a
+comma list of pillar names (`specs,git`), and `command` is the non-empty list of strings that finds
+Python — for example `["python3"]` or `["py", "-3"]`. Deploy appends the vendored entry point and
+the mount, so the generated argv is `<command...> .agents/quenching/assets/bin/cq
+mcp`, `<command...> .agents/quenching/assets/bin/cq specs mcp` under `mount: "specs"`, and
+`<command...> .agents/quenching/assets/bin/cq mcp --only <pillars>` for a named set or a list, the
+name expanded into the pillars it publishes. A mount naming no pillar the router has is refused
+before anything is written (`ct-deploy-mcp`). Without a
 `command`, deploy takes the prefix the last deploy recorded, else the first of `python3`, `python`
 and `py -3` that runs a Python 3.11 or later on the deploying machine, else `python3`; no version is
 pinned, and the same prefix starts the Claude Code hooks. A `command` through `uv` or `uvx` is
@@ -279,7 +283,8 @@ replaced by a direct interpreter for both, with a warning
 `cliFallback` (boolean, default `false`) keeps the CLI door open beside the server. With the whole
 server registered and no fallback, the generated grants drop every `Bash(cq …)` an MCP tool
 replaces and keep only the verbs with no tool; `true` restores both doors for a harness that runs
-without the server. The `specs` mount, which serves no other pillar, always keeps both
+without the server. A narrower mount narrows no door — it keeps both — and filters the names
+instead: the MCP tools a grant enumerates are only the ones the mount publishes
 ([deploy-mode.md](../architecture/deploy-mode.md#mcp-registration)).
 
 The key is read through `repository_document`, not through the merged envelope: the user layer
@@ -338,7 +343,7 @@ explicit flag wins over the key.
 | `shared.quota` | `{warnPercent, dangerPercent: integers 1–100, intervalSeconds: integer ≥ 60, showSonnet: boolean}` | `70` / `90` / `300` / `true` | the `quenching-quota` OpenCode plugin's 5-hour and weekly band, through `cq config show --effective`; one usage reading is reused for `intervalSeconds`, never under 60 s |
 | `shared.autonomy.maxLaunches` | integer ≥ 1 | `40` | `/quenching-specs autopilot` (see the autonomy block); the launch ceiling lives only there |
 | `shared.workHost` | `{target, dockerContext, runner, remoteRoot, syncFlags, syncExclude, pullBack, protectedPaths, minFreeGb}` | disabled | `cq config host --plan`; see [work-host.md](work-host.md) |
-| `shared.mcp` | `{mount: "all"\|"specs", command: [strings], cliFallback: boolean}` | absent; the whole MCP server (`all`) is registered with a resolved direct Python prefix, and the grants keep only the `cq` verbs no MCP tool replaces (`cliFallback: false`) | `cq deploy`; read from the repository document only, never the merged envelope |
+| `shared.mcp` | `{mount: "all"\|"specs"\|"core"\|<pillars>, command: [strings], cliFallback: boolean}` | absent; the whole MCP server (`all`) is registered with a resolved direct Python prefix, and the grants keep only the `cq` verbs no MCP tool replaces (`cliFallback: false`) | `cq deploy`; read from the repository document only, never the merged envelope |
 | `specs.chat` | `{model: string, budgetUsd: number > 0, timeoutSeconds: number > 0}` | `sonnet`, `0.50`, `300` | the portal's `--chat`; `--chat-budget-usd` wins over `budgetUsd` |
 | `specs.estimate.writeOnly` | a list of repo-relative paths, exact or `fnmatch` globs | `[]` | `cq specs estimate`: a task file it matches is listed with `writeOnly: "declared by repo"`, keeps its size and adds no bytes; an Impact standard is always counted; `--task` ignores it |
 
