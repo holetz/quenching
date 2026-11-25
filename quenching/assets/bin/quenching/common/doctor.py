@@ -23,6 +23,7 @@ import tempfile
 from pathlib import Path
 from typing import Callable
 
+from quenching.common import access as client_access
 from quenching.common import workspace as workspace_settings
 from quenching.common.cache import cache_root
 from quenching.common.git import COMMAND_TIMEOUT_S, _git
@@ -423,6 +424,16 @@ def run_antivirus(as_json: bool, root: str) -> int:
     return OK
 
 
+def run_access(as_json: bool, root: str) -> int:
+    """`cq doctor --access`: what each client declares for the slots and the sibling stores.
+
+    Read-only and never a refusal: an absent file, a stale pattern or a missing key is a fact the
+    report names, not an error that stops the run."""
+    report = client_access.report(root)
+    emit(as_json, {"ok": True, **report}, client_access.human(report))
+    return OK
+
+
 def _workspace_line(report: dict) -> str:
     """One line for the standard report: what the file carries, or the gap that matters."""
     path = report["path"]
@@ -482,7 +493,8 @@ def run_workspace(as_json: bool, root: str) -> int:
 
 
 def run(as_json: bool, root: str, *, setup: bool = False, write: bool = False,
-        antivirus: bool = False, workspace: bool = False) -> int:
+        antivirus: bool = False, access: bool = False,
+        workspace: bool = False) -> int:
     """Render the top-level doctor and preserve the CQ refusal door for missing prerequisites."""
     resolved_root = os.path.abspath(root)
     if not os.path.isdir(resolved_root):
@@ -502,6 +514,14 @@ def run(as_json: bool, root: str, *, setup: bool = False, write: bool = False,
                 "remedy": "run `cq doctor --antivirus` and apply what it prints yourself",
             }, as_json)
         return run_antivirus(as_json, resolved_root)
+    if access:
+        if write:
+            return refuse({
+                "code": "cq-setup-write-without-setup",
+                "message": "`--write` is valid only with `--setup`; `--access` writes nothing",
+                "remedy": "run `cq doctor --access` and paste the block it prints yourself",
+            }, as_json)
+        return run_access(as_json, resolved_root)
     if workspace:
         if write:
             return refuse({
@@ -551,5 +571,8 @@ def run(as_json: bool, root: str, *, setup: bool = False, write: bool = False,
         report = {**report, "gitCache": git_cache}
         line = untracked_cache_line(git_cache)
         human += f"\n  {line}" if line else ""
+    client = client_access.report(resolved_root)
+    report = {**report, "access": client}
+    human += f"\n  {client_access.summary(client)}"
     emit(as_json, {"ok": True, **report}, human)
     return OK

@@ -34,5 +34,19 @@
   },
   "enabledMcpjsonServers": [
     "quenching"
-  ]
+  ],
+  "permissions": {
+    "allow": [
+      "Bash(.agents/quenching/bin/cq:*)",
+      "Bash(./.agents/quenching/bin/cq:*)",
+      "Bash(python3 .agents/quenching/bin/cq:*)",
+      "Bash(python .agents/quenching/bin/cq:*)",
+      "Read(~/Projetos/quenching-slot-*/**)",
+      "Edit(~/Projetos/quenching-slot-*/**)",
+      "Write(~/Projetos/quenching-slot-*/**)",
+      "Read(~/Projetos/quenching.*/**)",
+      "Edit(~/Projetos/quenching.*/**)",
+      "Write(~/Projetos/quenching.*/**)"
+    ]
+  }
 }
