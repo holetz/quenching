@@ -223,7 +223,7 @@ Ownership follows the meaning of the key, not the module that happens to read it
 | Namespace | Owned declarations | Boundary |
 | --- | --- | --- |
 | root | `backend` | legacy/provider metadata only; provider selection comes from `origin` |
-| `shared` | `worktreeSetup`, `sharedPaths`, `regenerablePaths`, `hooks`, `profiles`, `gitConventions`, `gitIdentity`, `guidance`, `autonomy`, `workHost`, `okfValidate`, `contextBudgets`, `codex`, `cache` | settings used by more than one local surface or by isolation |
+| `shared` | `worktreeSetup`, `sharedPaths`, `regenerablePaths`, `hooks`, `profiles`, `gitConventions`, `gitIdentity`, `guidance`, `autonomy`, `workHost`, `okfValidate`, `contextBudgets`, `codex`, `cache`, `projections` | settings used by more than one local surface or by isolation |
 | `specs` | Azure state and placement mappings, `subjects`, `tagCatalog`, `workItemTypes`, `chat`, `estimate`, `artifactLanguage`, `card`, `cardAt` | provider-owned plan lifecycle and proposal conventions |
 | `delivery` | `provider` | the delivery front's explicit provider declaration; it chooses no pipeline policy |
 | `ops` | `opsRoot`, `router`, `registry` | operations inventory, router and generated registry |
@@ -295,6 +295,20 @@ because the `uvx` runtime does not carry the vendored entry point; without a dec
 runtime registers nothing and warns. `cq config seed` does not emit the key: absence is the
 default. See [deploy-mode.md](../architecture/deploy-mode.md#mcp-registration).
 
+## The `shared.projections` block
+
+`shared.projections` is the list of client file families `cq deploy` writes from the same source;
+an absent key writes no client projection. `github` is the family that writes
+`.github/agents/quenching-<name>.agent.md` from `quenching/agents/*.md` in the Copilot custom-agent
+format — the tool aliases, the model band and `include-custom-instructions`
+([deploy-mode.md](../architecture/deploy-mode.md#copilot-agents)). The key is read through
+`repository_document`, not the merged envelope, for the same reason `shared.mcp` is: a generated
+file belongs to the repository and must not vary by machine. A value that is not a list of known
+client names refuses with `ct-deploy-projection` before anything is written, and every generated
+file is in the manifest, so removing the value removes the files on the next `--write`. It is
+`project` scope: the team decides. A target without Copilot carries no second register, and
+`.github/instructions/` is not this key's projection.
+
 ## Settings read outside the file
 
 Three things configure the plugin without being keys of the configuration file, and none is a
@@ -344,6 +358,7 @@ explicit flag wins over the key.
 | `shared.autonomy.maxLaunches` | integer ≥ 1 | `40` | `/quenching-specs autopilot` (see the autonomy block); the launch ceiling lives only there |
 | `shared.workHost` | `{target, dockerContext, runner, remoteRoot, syncFlags, syncExclude, pullBack, protectedPaths, minFreeGb}` | disabled | `cq config host --plan`; see [work-host.md](work-host.md) |
 | `shared.mcp` | `{mount: "all"\|"specs"\|"core"\|<pillars>, command: [strings], cliFallback: boolean}` | absent; the whole MCP server (`all`) is registered with a resolved direct Python prefix, and the grants keep only the `cq` verbs no MCP tool replaces (`cliFallback: false`) | `cq deploy`; read from the repository document only, never the merged envelope |
+| `shared.projections` | a list of client families; `github` today | `[]` — no client projection is written | `cq deploy`; read from the repository document only, `github` writes `.github/agents/` from the same agent source |
 | `specs.chat` | `{model: string, budgetUsd: number > 0, timeoutSeconds: number > 0}` | `sonnet`, `0.50`, `300` | the portal's `--chat`; `--chat-budget-usd` wins over `budgetUsd` |
 | `specs.estimate.writeOnly` | a list of repo-relative paths, exact or `fnmatch` globs | `[]` | `cq specs estimate`: a task file it matches is listed with `writeOnly: "declared by repo"`, keeps its size and adds no bytes; an Impact standard is always counted; `--task` ignores it |
 
