@@ -13,6 +13,44 @@ owner: [`ci-cd/versioning-release.md`](docs/standards/ci-cd/versioning-release.m
 short version for a consumer: the version is published once, deliberately, as a release — never at a
 spec's own conclude — and `cq --version` is what answers which one you are running.
 
+## 7.17.0
+
+**Duas máquinas podem rodar o autopilot no mesmo repositório sem pegar a mesma spec.** O execute
+  reserva a spec com um lease em `refs/quenching/claims/<id>` no origin, gravado com
+  `--force-with-lease`, que é atômico. O lease vale 45 min (`shared.autonomy.claimMinutes`), é
+  renovado enquanto o trabalho anda e expira sozinho. Uma spec nunca fica presa porque ninguém a
+  liberou. Só o build reserva: desenvolver uma spec e passá-la para outra pessoa executar não prende
+  nada. O dono do lease é um id aleatório da máquina mais a sessão, nunca hostname ou e-mail. O
+  `specs next`, o `list` e o `status` mostram as reservas. O `take`, que toma uma reserva viva, é só
+  humano e não está em nenhum grant de agente. O preflight é só leitura por padrão; testar a
+  reserva no origin exige `--probe-claims` (#408, #411, #414, #424, #428).
+
+**O gate abre muito menos processos git.** Os fixtures das specs abrem 60% menos processos, e o
+  `cq git audit` 52% menos (#409, #412).
+
+**O quenching passa a trabalhar só por MCP onde isso é possível.** O deploy troca as permissões
+  `Bash(cq …)` dos agentes pelas ferramentas `quenching.*` correspondentes. O retorno à CLI
+  (`shared.mcp.cliFallback`) é opt-in e vem desligado. Num repositório instalado sem o servidor
+  `quenching` registrado, ligue essa chave ou registre o servidor antes de atualizar. Os corpos de
+  comandos, agentes e references citam a ferramenta (`specs_show(spec=…, full=true)`). Um lint
+  recusa citações `cq` sem motivo declarado e opções que a ferramenta não tem. O servidor ganhou o
+  que faltava para a paridade: `full` no `specs_show`, gravação atômica de várias seções, `by` no
+  `specs_record` e `root` por chamada. O gate, o CI, os hooks e os scripts continuam na CLI (#423,
+  #425, #433, #436, #439, #443, #446).
+
+**Dois plugins novos para o OpenCode.** O `opencode-cache` leva para o OpenCode a faixa de cache de
+  prompt, o handoff e as estatísticas do `claude-cache`, sobre um núcleo compartilhado gerado por
+  `scripts/cache_plugin_sync.py`. O TTL é lido de cada escrita do provedor. O `opencode-quota`
+  mostra o uso de 5 horas e o semanal do Claude sem passar pelo modelo. O token é só lido e vai
+  apenas para `api.anthropic.com`. O plugin deriva de `slkiser/opencode-quota` (MIT) (#434, #440,
+  #444).
+
+**Também:** o painel do OpenCode faz o deploy a partir da última release remota, sem depender de
+  um clone local (#410). O escopo `affected` do gate seleciona os testes que leem corpos de prosa
+  (#448). Uma tarefa abandonada pode ser marcada `(dropped → <id>)`, e o check 2 do verifier a
+  aceita quando a substituta foi entregue (#449). Um executor sem `Task` roda o develop e a
+  varredura de dependências sem sub-agente (#451).
+
 ## 7.16.0
 
 **O MCP do quenching passa a ser o caminho obrigatório, e completo, em cada harness.** O deploy liga
