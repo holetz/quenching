@@ -10,6 +10,7 @@ import sys
 from pathlib import Path
 
 from quenching.common.deploy import MANIFEST, dumps_hash_manifest, read_manifest
+from quenching.common import workspace as workspace_settings
 from quenching.common.config import repository_document
 from quenching.common.output import FINDINGS, OK, REFUSAL, NoAbbrevParser, emit, refuse
 from quenching.common.version import VERSION
@@ -316,7 +317,34 @@ def recorded(previous: dict | None, key: str, allowed: set[str] | None = None):
     return None
 
 
-def plan(target: Path, built: dict, previous: dict | None) -> dict:
+def _workspace_suggestions(target: Path, declared: bool) -> list[str]:
+    """Advice for `.vscode/settings.json`, which the deploy seeds and never rewrites.
+
+    The seed change covers a declared key with no file; this covers a file someone edited and a
+    VS Code workspace that never declared the key. Both are advice, never a drift failure.
+    """
+    report = workspace_settings.report(str(target), declared_value=declared)
+    if report["state"] == "unreadable":
+        return [f"`.vscode/settings.json` could not be read as JSONC ({report['reason']}); the "
+                "deploy left it untouched — `cq doctor --workspace` prints the recommended block"]
+    if declared:
+        if report["state"] == "present" and not report["complete"]:
+            gaps = list(report["missingExclusions"]) + list(report["missing"])
+            if (report["maxRequests"] or 0) < workspace_settings.MAX_REQUESTS:
+                gaps.append(f"chat.agent.maxRequests >= {workspace_settings.MAX_REQUESTS}")
+            return [f"`.vscode/settings.json` lacks the recommended setting(s) "
+                    f"({', '.join(dict.fromkeys(gaps))}); `cq doctor --workspace` prints them — "
+                    "the deploy never rewrites the file"]
+        return []
+    if (target / ".vscode").is_dir():
+        return ["this is a VS Code workspace and `shared.workspace.vscode` is not declared: "
+                "declare it to seed `.vscode/settings.json` (`cq doctor --workspace` prints the "
+                "block)"]
+    return []
+
+
+def plan(target: Path, built: dict, previous: dict | None,
+         workspace: bool = False) -> dict:
     tree, seeds = built["tree"], built["seeds"]
     hashes = _recorded_hashes(previous)
     owned = set(hashes)
@@ -372,7 +400,8 @@ def plan(target: Path, built: dict, previous: dict | None) -> dict:
             changes.append(_change("manifest", MANIFEST))
     else:
         changes.append(_change("create", MANIFEST))
-    return {"changes": changes, "conflicts": conflicts, "warnings": warnings}
+    return {"changes": changes, "conflicts": conflicts, "warnings": warnings,
+            "suggestions": _workspace_suggestions(target, workspace)}
 
 
 def _settings_merge(target: Path, built: dict, previous: dict | None) -> dict | None:
@@ -527,6 +556,8 @@ def _human(target: Path, built: dict, result: dict, written: bool) -> str:
         lines.append(f"  conflict: {conflict['path']} — {conflict['why']}")
     for warning in result.get("warnings", []):
         lines.append(f"  warning: {warning}")
+    for suggestion in result.get("suggestions", []):
+        lines.append(f"  suggestion: {suggestion}")
     return "\n".join(lines)
 
 
@@ -582,6 +613,14 @@ def main(argv: list[str]) -> int:
     declared, refusal = _mcp_option(target)
     if refusal:
         return refuse(refusal, args.json)
+    workspace_declared, workspace_error = workspace_settings.declared(str(target))
+    if workspace_error:
+        return refuse({
+            "code": "ct-deploy-workspace",
+            "message": workspace_error,
+            "remedy": "declare `shared.workspace.vscode` as true or false, or remove the "
+                      "`shared.workspace` object",
+        }, args.json)
     if declared and runtime != "vendor":
         return refuse(_mcp_refusal(
             "`shared.mcp` needs `--runtime vendor`: the generated command points at "
@@ -614,7 +653,7 @@ def main(argv: list[str]) -> int:
                     or deploy_tree.profiles_for(modules))
         built = deploy_tree.build_tree(deploy_tree.source_root(), target, modules, harnesses,
                                        runtime, profiles, mcp=mcp, python=python,
-                                       hooks_python=hooks_python)
+                                       hooks_python=hooks_python, workspace=workspace_declared)
     except (OSError, ValueError) as exc:
         return refuse({"code": "ct-deploy-source", "message": str(exc),
                        "remedy": "run deploy from a complete quenching checkout or wheel"},
@@ -632,7 +671,7 @@ def main(argv: list[str]) -> int:
     if built["mcpMerge"]["opencode"]:
         # What the deploy wrote into the user's `opencode.json`, so a later run takes it out.
         built["manifest"]["opencodeConfig"] = built["mcpMerge"]["opencode"]
-    result = plan(target, built, previous)
+    result = plan(target, built, previous, workspace=workspace_declared)
     result["warnings"] = [*result.get("warnings", []), *mcp_warnings,
                           *_identity_hooks_warnings(target)]
     installed = (previous or {}).get("version")
@@ -665,7 +704,8 @@ def main(argv: list[str]) -> int:
                "modules": modules,
                "profiles": profiles, "harnesses": harnesses, "runtime": runtime,
                "changes": result["changes"], "conflicts": result["conflicts"],
-               "warnings": result.get("warnings", []), "written": written}
+               "warnings": result.get("warnings", []),
+               "suggestions": result.get("suggestions", []), "written": written}
     emit(args.json, payload, _human(target, built, result, written))
     if result["conflicts"]:
         return REFUSAL

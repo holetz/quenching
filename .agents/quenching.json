@@ -56,7 +56,10 @@
       "site",
       "site-source",
       ".quenching/coverage"
-    ]
+    ],
+    "workspace": {
+      "vscode": true
+    }
   },
   "proof": {
     "proofRoot": "quenching",
