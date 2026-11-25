@@ -32,6 +32,14 @@ class CitationForm(unittest.TestCase):
         self.assertEqual(codes("cq git commit --subject s", ".agents/skills/quenching-specs/SKILL.md"),
                          ["sk-cq-cli-citation"])
 
+    def test_every_quenching_front_and_shared_reference_is_enforced(self):
+        for path in ("skills/quenching-git/references/branch.md",
+                     "skills/quenching-knowledge/SKILL.md",
+                     "references/git/isolation.md", "references/align/convergence.md",
+                     ".agents/quenching/references/knowledge-align/conformance.md"):
+            with self.subTest(path):
+                self.assertEqual(codes("cq git state --json", path), ["sk-cq-cli-citation"])
+
     def test_the_tool_form_passes(self):
         body = ("Call `specs_status(spec=<id>)`, then "
                 "`components_read(path=\"x.md\", sections=[\"§A\"], rules_only=true)` and "
@@ -69,7 +77,8 @@ class CitationForm(unittest.TestCase):
         self.assertEqual(codes("call `specs_inexistente(spec=3)`"), ["sk-mcp-unknown-tool"])
 
     def test_a_body_outside_the_enforced_fronts_is_not_checked(self):
-        for path in ("skills/quenching-git/references/branch.md", "agents/spec-runner.md",
+        for path in ("agents/spec-runner.md", ".claude/skills/my-own/SKILL.md",
+                     ".agents/skills/my-own/references/notes.md",
                      "references/align/tool-resolution.md"):
             with self.subTest(path):
                 self.assertEqual(codes("cq specs status --spec 3; specs_nope(x)", path), [])
