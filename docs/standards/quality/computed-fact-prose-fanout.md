@@ -88,6 +88,20 @@ current, and it is — but only when the tool is invoked, which is not part of w
 derived zone is stale between sweeps by design**, so the task that changes the fact still owns the
 copy, exactly as the hand-maintained row above it.
 
+## A figure in a spec's own `## Validation` is the same fact, restated
+
+A spec's `## Validation` that states a measured figure — a count, a total, the largest item — restates
+what a command prints, and nothing recomputes it. Measured on spec 452 (2026-11-25): the section said
+13,414 description characters, the largest 1,062; the probe on the same base printed 18,552 and 1,010.
+Every task's `verify:` passed anyway, because `copilot_bench.py --target . --json | grep '"skills"'`
+matches the key, never the figure, so the contradiction crossed the whole execute and was fixed by hand
+in the conclude review.
+
+The rule: **no figure without its reproducing command.** A figure enters `## Validation` only beside
+the command and the key that print it, and a `verify:` that covers it matches the figure, not only the
+key. A contradiction between the figure and the execute artifact is corrected in `## Validation` before
+conclude, never left as a `## Discoveries` line alone.
+
 ## Historical mentions stay, and are the reason a checker cannot be written
 
 Not every hit is a defect. A changelog entry, a `source:` line, or a paragraph narrating what a past
