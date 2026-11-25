@@ -147,7 +147,7 @@ class ListingSurfaceTests(unittest.TestCase):
         job = re.search(r"(?ms)^  windows:\n(.*?)(?=^  \S)", declared).group(1)
         self.assertRegex(job, r"(?m)^    defaults:\n      run:\n        shell: bash$")
         runs = [line for line in job.splitlines() if "unittest discover" in line]
-        self.assertGreaterEqual(len(runs), 5)
+        self.assertGreaterEqual(len(runs), 4)
         for line in runs:
             self.assertIn('2>&1 | tee "$RUNNER_TEMP/unit.log" && ! grep -q \'^Ran 0 tests\' "$RUNNER_TEMP/unit.log"',
                           line)

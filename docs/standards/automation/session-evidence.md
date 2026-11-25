@@ -127,15 +127,6 @@ catalog coverage scan uses; a bare `cq specs` in prose is none.
 - A subagent's measure is the digest of its own transcript; the per-command counts carry the same
   upper-bound honesty as every other count of an unclosed stage.
 
-<!-- rationale -->
-
-`codex implement` (`codex/implement.py`) runs `codex exec --ignore-user-config`. That flag also drops
-the project's `.codex/` layer, its MCP servers included (openai/codex#49333, reported against
-codex-cli 0.157.1 on 2026-09-29), and since 0.169.0 `--trust` cannot be combined with it. So the
-Codex executor does not load the `quenching` server declared in the project's `.codex/config.toml`
-and its `cq` calls are shell by construction. Not reproduced here: the host has no `codex` binary.
-Whether to change the `argv` is the human's, tracked in the spec's `## Open Decisions`.
-
 ## Silence is a refusal, never a clean report
 
 A non-empty transcript that yields zero commands exits **2**, distinguishing `se-empty-transcript`
