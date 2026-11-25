@@ -10,7 +10,6 @@ import json
 import re
 import os
 import subprocess
-from concurrent.futures import ThreadPoolExecutor
 
 from quenching.common.config import detect_provider
 from quenching.common.tools import spawn_argv
@@ -127,6 +126,7 @@ def pr_states(members: dict, root: str | None = None, timeout: int = 15) -> dict
         return _pr_view(w[1], key(w)[0], root, timeout, w[2])
 
     if len(wanted) > 1:
+        from concurrent.futures import ThreadPoolExecutor   # lazy: a leaf status never pays it
         with ThreadPoolExecutor(max_workers=min(PR_LOOKUPS, len(wanted))) as pool:
             views = list(pool.map(view, wanted))
     else:
