@@ -37,7 +37,7 @@
 
     ".agents/quenching/agents/spec-scout.md": "82da98399dd8e0b10533e4a6600f6c90d405e1873234e94cc1877b75ebc8f0e4",
 
-    ".agents/quenching/agents/spec-verifier.md": "b97ff366900da468acc53efab50a0d2b70de5f2d92d6fbf7a34b42b6f8c1e352",
+    ".agents/quenching/agents/spec-verifier.md": "b7e5499c50acd4d03f85b6290a1886f0779d95715c6116222279b8946f68484b",
 
     ".agents/quenching/assets/bin/cq": "002918fda0dab8ce7a5e6fe9c14b51235ee240954d596524681cb1b863fb2304",
 
@@ -145,7 +145,7 @@
 
     ".agents/quenching/assets/bin/quenching/git/__init__.py": "8bc51f3f279e9269b53e485515e81d003684f7bb22ee558502f5449db2744e19",
 
-    ".agents/quenching/assets/bin/quenching/git/audit.py": "98cc8071691830eed9a94c16f0431db520358acc2fca90419a3e0a5a67fff210",
+    ".agents/quenching/assets/bin/quenching/git/audit.py": "559437c4cdb137f479c23526026e3ffdd54778057cccf332ac19f75a5691bf2c",
 
     ".agents/quenching/assets/bin/quenching/git/azure_pull.py": "87ab90ff25f82edb88e734deb86e2ab0d8c138cc1f01cd2619c8bc0a8f79026e",
 
@@ -699,7 +699,7 @@
 
     ".agents/skills/quenching-specs/references/board.md": "f23f25a70443e60cb15174e2763370280b57c7396d5a4cf424b5319a867017dc",
 
-    ".agents/skills/quenching-specs/references/conclude.md": "c2948e3cc353a22d06f0f293611060e907745a4617822a800294ac8f5a7e647d",
+    ".agents/skills/quenching-specs/references/conclude.md": "b1603d8781a8e48a9b14717cf73aed5881af5659f01edde1a64e5d0f6f6a9d4b",
 
     ".agents/skills/quenching-specs/references/create.md": "06a34793ccf9491e678a6e236c645628cb274b3424e669cf9512951f5dac250b",
 
@@ -725,9 +725,9 @@
 
     ".claude/agents/quenching-spec-scout.md": "82da98399dd8e0b10533e4a6600f6c90d405e1873234e94cc1877b75ebc8f0e4",
 
-    ".claude/agents/quenching-spec-verifier.md": "b97ff366900da468acc53efab50a0d2b70de5f2d92d6fbf7a34b42b6f8c1e352",
+    ".claude/agents/quenching-spec-verifier.md": "b7e5499c50acd4d03f85b6290a1886f0779d95715c6116222279b8946f68484b",
 
-    ".claude/skills/.generated-files.json": "5c23a96f3ff49dc5f47b0f6d36d9d5aae5985d7c684b842e3ad7fd9b6d298612",
+    ".claude/skills/.generated-files.json": "c3985450ad5fc155d12708baaff67d7b40a92b57f286320087cab43846a5e78e",
 
     ".claude/skills/commands-tighten/SKILL.md": "41574a4774e70deffd6c8c6766a1a24581d579d1f7247b68a93ba86b39b2019b",
 
@@ -901,7 +901,7 @@
 
     ".claude/skills/quenching-specs/references/board.md": "f23f25a70443e60cb15174e2763370280b57c7396d5a4cf424b5319a867017dc",
 
-    ".claude/skills/quenching-specs/references/conclude.md": "c2948e3cc353a22d06f0f293611060e907745a4617822a800294ac8f5a7e647d",
+    ".claude/skills/quenching-specs/references/conclude.md": "b1603d8781a8e48a9b14717cf73aed5881af5659f01edde1a64e5d0f6f6a9d4b",
 
     ".claude/skills/quenching-specs/references/create.md": "06a34793ccf9491e678a6e236c645628cb274b3424e669cf9512951f5dac250b",
 
@@ -941,7 +941,7 @@
 
     ".github/agents/quenching-spec-scout.agent.md": "b4809f5ecde62c62db51f87c8497f0e0f76a1683abefd8119c95c50319625df1",
 
-    ".github/agents/quenching-spec-verifier.agent.md": "973df422e02df0916e188b5f57a1cdd66f85378927b84207e824ae8b01755085",
+    ".github/agents/quenching-spec-verifier.agent.md": "5bffbc4c281cf347d79d661a51bc770fcbd900b1cfab33c684cbfbdd89adf3a9",
 
     ".opencode/agents/quenching-spec-orchestrator.md": "34121b15b618313390b00d1a52ecc070a22305674bb4d7c9480f1adcc506a806",
 
@@ -951,7 +951,7 @@
 
     ".opencode/agents/quenching-spec-scout.md": "ee738936fe384b222e7ac8524e6b0d56a68651f46ea83506512485f032858d79",
 
-    ".opencode/agents/quenching-spec-verifier.md": "ba54c8ddba01c8cb84d6dd0e416b055a9a6ff1257594de1214a94f65e6694dc0"
+    ".opencode/agents/quenching-spec-verifier.md": "4403ff70b8bedb2d6ffb10bb1eee58047388c33e6a7c6233fd28910afbf96500"
   },
   "mcp": {
     "mount": "core",
