@@ -510,6 +510,27 @@ class Deploy(unittest.TestCase):
         self.assertEqual(0, code)
         self.assertEqual([], payload["changes"])
 
+    def test_a_tracked_mirror_outside_the_selection_is_checked_against_the_source(self):
+        """A module the selection left out but whose mirror the target tracks cannot age quietly."""
+        self.assertEqual(0, self.run_deploy("--modules", "core", "--harness", "claude",
+                                            "--write")[0])
+        stale = {".agents/skills/quenching-design/SKILL.md": "stale skill\n",
+                 ".agents/quenching/assets/bin/quenching/design/align.py": "# stale\n"}
+        for rel, text in stale.items():
+            self.write(rel, text)
+        code, payload = self.run_deploy("--check")
+        self.assertEqual(1, code)
+        self.assertEqual(stale.keys(), {c["path"] for c in payload["changes"]
+                                        if c["path"] in stale and c["change"] == "update"})
+        self.assertEqual([], payload["conflicts"])
+        self.assertEqual(0, self.run_deploy("--write")[0])
+        for rel in stale:
+            self.assertNotEqual(stale[rel], (self.target / rel).read_text(encoding="utf-8"), rel)
+        code, payload = self.run_deploy("--check")
+        self.assertEqual((0, []), (code, payload["changes"]))
+        # The module stays outside the selection: nothing else of it appeared.
+        self.assertFalse((self.target / ".agents/skills/quenching-ops").exists())
+
     def test_modules_all_expands_in_registry_order_under_any_hash_seed(self):
         # Hash randomization is fixed at interpreter start, so each seed needs its own child.
         probe = ("import json; from quenching.deploy import tree; "
