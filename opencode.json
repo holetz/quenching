@@ -13,13 +13,10 @@
       "enabled": true
     }
   },
-  "experimental": {
-    "subagent_depth": 4
-  },
   "permission": {
     "external_directory": {
-      "~/Projects/quenching-slot-*": "allow",
-      "~/Projects/quenching.*": "allow"
+      "~/Projetos/quenching-slot-*": "allow",
+      "~/Projetos/quenching.*": "allow"
     }
   }
 }
