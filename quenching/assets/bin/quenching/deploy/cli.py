@@ -403,8 +403,12 @@ def _settings_merge(target: Path, built: dict, previous: dict | None,
     keys = keys if isinstance(keys, list) else []
     rules = recorded.get("permissions") if recorded else []
     rules = rules if isinstance(rules, list) else []
-    wanted_rules = (list(rules) if keep and rules
-                    else access.claude_rules(str(target), os.path.expanduser("~")))
+    if keep and rules:
+        wanted_rules = list(rules)
+    else:
+        primary_root = _primary_checkout(target)
+        wanted_rules = (access.claude_rules(primary_root, os.path.expanduser("~"))
+                        if primary_root else [])
     merged = claude_settings.merge(current, wanted["hooks"] if wanted else [],
                                    wanted["attribution"] if wanted else None, keys,
                                    mcpjson=bool(wanted and wanted.get("mcpjson")),

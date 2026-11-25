@@ -75,7 +75,7 @@ def primary(root: str) -> tuple[str | None, str | None]:
 
 def patterns(primary_root: str, home: str | None = None) -> list[str]:
     """The family as OpenCode/Claude read it: slots and store, `~/` when under the home dir."""
-    path = os.path.normpath(primary_root).replace(os.sep, "/")
+    path = os.path.abspath(primary_root).replace(os.sep, "/")
     parent, name = path.rsplit("/", 1)
     found = [f"{parent}/{name}-slot-*", f"{path}.*"]
     if home:

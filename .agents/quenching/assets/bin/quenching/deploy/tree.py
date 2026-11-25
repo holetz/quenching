@@ -471,5 +471,6 @@ def build_tree(source: Path, target: Path, modules: list[str], harnesses: list[s
                     "mcpjson": bool(mcp)}
         document["claudeSettings"] = {"hooks": [hook["name"] for hook in hooks],
                                       "attribution": sorted(claude_settings.ATTRIBUTION),
-                                      "command": prefix, "mcpjson": bool(mcp)}
+                                      "command": prefix, "mcpjson": bool(mcp),
+                                      "permissions": []}
     return {"tree": tree, "seeds": seeds, "manifest": document, "settings": settings}

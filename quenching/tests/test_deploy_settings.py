@@ -326,6 +326,7 @@ class TheSettingsPlanCarriesTheAccessRules(unittest.TestCase):
         self.cli = cli
         self.tmp = tempfile.mkdtemp()
         self.addCleanup(shutil.rmtree, self.tmp, True)
+        subprocess.run(["git", "init", "-q", self.tmp], check=True, capture_output=True)
 
     def built(self):
         return {"settings": {"hooks": [], "attribution": None, "mcpjson": False},
