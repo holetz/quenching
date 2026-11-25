@@ -7,7 +7,7 @@ bootstrap files and the recommended layer directories.
 
 ## Contents
 
-`.agents/quenching/bin/cq components read <this file>` returns the heading index; `--sections` addresses one.
+`components_read(path=<this file>)` returns the heading index; `sections=["§X"]` addresses one.
 
 ## 1. One declared proof root
 

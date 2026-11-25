@@ -7,7 +7,7 @@ failure collection, order evidence, CI parity, run cost and conditional operatio
 
 ## Contents
 
-`.agents/quenching/bin/cq components read <this file>` returns the heading index; `--sections` addresses one.
+`components_read(path=<this file>)` returns the heading index; `sections=["§X"]` addresses one.
 
 ## The six gate rules
 
@@ -98,7 +98,7 @@ The gate contract owns these codes and no other reference defines them:
 | `pf-temp-shared` | The declared temp root is the machine's directory, so each run writes the disk. | `error` | judgement |
 | `pf-scope-wide` | The close scope equals the CI scope, so every local run pays the whole suite. | `error` | judgement |
 | `pf-task-wide` | The task scope equals the close scope, so every task pays the close's selection. | `error` | judgement |
-| `pf-coverage-missing` | `.agents/quenching/bin/cq proof ratchet` found no coverage artifact; the target's gate has not produced one. | refusal (exit 2) | refusal |
+| `pf-coverage-missing` | `proof_ratchet()` found no coverage artifact; the target's gate has not produced one. | refusal (exit 2) | refusal |
 | `pf-coverage-invalid` | The coverage artifact exists but cannot be read. | refusal (exit 2) | refusal |
 | `pf-coverage-no-measured-root` | The coverage artifact measures none of the declared measured roots. | refusal (exit 2) | refusal |
 | `pf-floor-invalid` | The floor file exists but is malformed. | refusal (exit 2) | refusal |
