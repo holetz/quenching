@@ -1,0 +1,113 @@
+// The quenching VS Code tasks: the gate, the deploy check, the spec status and the slot
+// report run in the terminal, with no model turn. `cq doctor --workspace` checks this file;
+// the deploy seeds it only when absent.
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "quenching: gate",
+      "type": "shell",
+      "command": "bash scripts/verify_repo.sh",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "group": {
+        "kind": "test",
+        "isDefault": true
+      },
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated"
+      }
+    },
+    {
+      "label": "quenching: deploy check",
+      "type": "shell",
+      "command": ".agents/quenching/bin/cq deploy --target . --check",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated"
+      },
+      "windows": {
+        "command": ".agents\\quenching\\bin\\cq.cmd deploy --target . --check"
+      }
+    },
+    {
+      "label": "quenching: specs status",
+      "type": "shell",
+      "command": ".agents/quenching/bin/cq specs status ${input:specId}",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated"
+      },
+      "windows": {
+        "command": ".agents\\quenching\\bin\\cq.cmd specs status ${input:specId}"
+      }
+    },
+    {
+      "label": "quenching: worktree slots",
+      "type": "shell",
+      "command": ".agents/quenching/bin/cq git worktree slots",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated"
+      },
+      "windows": {
+        "command": ".agents\\quenching\\bin\\cq.cmd git worktree slots"
+      }
+    },
+    {
+      "label": "quenching: slots workspace",
+      "type": "shell",
+      "command": ".agents/quenching/bin/cq git worktree workspace --write",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated"
+      },
+      "windows": {
+        "command": ".agents\\quenching\\bin\\cq.cmd git worktree workspace --write"
+      }
+    },
+    {
+      "label": "quenching: open slots",
+      "type": "shell",
+      "command": "code -n \"${workspaceFolder}/.vscode/quenching-slots.code-workspace\"",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "dependsOn": [
+        "quenching: slots workspace"
+      ],
+      "dependsOrder": "sequence",
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated"
+      }
+    }
+  ],
+  "inputs": [
+    {
+      "id": "specId",
+      "type": "promptString",
+      "description": "Spec id"
+    }
+  ]
+}

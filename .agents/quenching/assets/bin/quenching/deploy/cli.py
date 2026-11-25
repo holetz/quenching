@@ -367,28 +367,37 @@ def recorded(previous: dict | None, key: str, allowed: set[str] | None = None):
 
 
 def _workspace_suggestions(target: Path, declared: bool) -> list[str]:
-    """Advice for `.vscode/settings.json`, which the deploy seeds and never rewrites.
+    """Advice for the two `.vscode` seeds, which the deploy seeds and never rewrites.
 
     The seed change covers a declared key with no file; this covers a file someone edited and a
     VS Code workspace that never declared the key. Both are advice, never a drift failure.
     """
     report = workspace_settings.report(str(target), declared_value=declared)
+    tasks = workspace_settings.tasks_report(str(target))
     if report["state"] == "unreadable":
         return [f"`.vscode/settings.json` could not be read as JSONC ({report['reason']}); the "
                 "deploy left it untouched — `cq doctor --workspace` prints the recommended block"]
+    if tasks["state"] == "unreadable":
+        return [f"`.vscode/tasks.json` could not be read as JSONC ({tasks['reason']}); the "
+                "deploy left it untouched — `cq doctor --workspace` prints the recommended tasks"]
     if declared:
+        out = []
         if report["state"] == "present" and not report["complete"]:
             gaps = list(report["missingExclusions"]) + list(report["missing"])
             if (report["maxRequests"] or 0) < workspace_settings.MAX_REQUESTS:
                 gaps.append(f"chat.agent.maxRequests >= {workspace_settings.MAX_REQUESTS}")
-            return [f"`.vscode/settings.json` lacks the recommended setting(s) "
-                    f"({', '.join(dict.fromkeys(gaps))}); `cq doctor --workspace` prints them — "
-                    "the deploy never rewrites the file"]
-        return []
+            out.append(f"`.vscode/settings.json` lacks the recommended setting(s) "
+                       f"({', '.join(dict.fromkeys(gaps))}); `cq doctor --workspace` prints them "
+                       "— the deploy never rewrites the file")
+        if tasks["state"] == "present" and not tasks["complete"]:
+            out.append(f"`.vscode/tasks.json` lacks the recommended task(s) "
+                       f"({', '.join(tasks['missing'])}); `cq doctor --workspace` prints them — "
+                       "the deploy never rewrites the file")
+        return out
     if (target / ".vscode").is_dir():
         return ["this is a VS Code workspace and `shared.workspace.vscode` is not declared: "
-                "declare it to seed `.vscode/settings.json` (`cq doctor --workspace` prints the "
-                "block)"]
+                "declare it to seed `.vscode/settings.json` and `.vscode/tasks.json` "
+                "(`cq doctor --workspace` prints both)"]
     return []
 
 

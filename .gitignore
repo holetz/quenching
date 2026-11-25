@@ -1,6 +1,7 @@
 # Editor / OS
 .vscode/*
 !.vscode/settings.json
+!.vscode/tasks.json
 .idea/
 .DS_Store
 *.swp

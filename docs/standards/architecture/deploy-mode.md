@@ -32,6 +32,7 @@ for deployment; this verb installs the tool surface. It never invokes a model, n
 | `AGENTS.md` | instructions | target; seeded only when absent |
 | `.agents/quenching.json` | configuration | target; seeded only when absent |
 | `.vscode/settings.json` | VS Code workspace settings: the generated trees out of search and the semantic index, and room for long agent runs | target; seeded only when absent and `shared.workspace.vscode` is true |
+| `.vscode/tasks.json` | VS Code tasks: the gate, the deploy check, the spec status and the slot report run in the terminal, with no model turn | target; seeded only when absent and `shared.workspace.vscode` is true |
 | `.agents/skills/quenching-<command>/SKILL.md` | one-segment skills | generated |
 | `.agents/quenching/` | vendored payload: runtime, references, templates, commands, agent protocols | generated, read-only |
 | `.agents/.quenching-deploy.json` | manifest: version, modules, profiles, hashes, skills | generated; one blank line separates each entry of `files` |
@@ -307,6 +308,27 @@ key is off by default: a target that does not use VS Code never receives the fil
   declared or when the target carries a `.vscode/` directory, and `cq doctor --workspace` prints the
   per-key state and the block. Both only report: neither writes, and a missing key is information,
   never a failed prerequisite.
+
+## The `.vscode/tasks.json` seed
+
+The zero-token half of the same opt-in: `shared.workspace.vscode` also seeds a tasks file, created
+only when absent, never listed in the manifest, never drift-checked and never removed.
+`common/workspace.py` is the one source of the document and of its report.
+
+- **The tasks.** `quenching: gate` (`bash scripts/verify_repo.sh`, the default test task),
+  `quenching: deploy check`, `quenching: specs status` (prompting for a `specId`),
+  `quenching: worktree slots`, `quenching: slots workspace` (writes the machine-local
+  `.code-workspace`) and `quenching: open slots` (depends on the previous task and opens that file
+  in a new window). Each runs in `${workspaceFolder}` with an empty `problemMatcher` and a
+  dedicated panel; the `cq` tasks use the target-local `.agents/quenching/bin/cq`, with `cq.cmd`
+  in the `windows` override. A task runs in the client's terminal and spends no model turn.
+- **Created only when absent.** Like the settings file: `--write` seeds it when the file does not
+  exist, `--check` reports the seed change until the first write, an edit survives every later
+  deploy, and `--remove` never deletes it.
+- **Reporting and suggestions.** `cq doctor` prints a `tasks:` line when the file exists, when the
+  key is declared or when the target carries a `.vscode/` directory; `cq doctor --workspace`
+  prints both blocks and their per-key state. A declared file missing a recommended task is a
+  suggestion naming the labels, never a drift failure and never a rewrite.
 
 ## What deploy does not do
 
