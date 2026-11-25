@@ -3,6 +3,7 @@ message content ever reaches a payload."""
 import json
 import os
 import pathlib
+import re
 import sqlite3
 import tempfile
 import unittest
@@ -227,3 +228,26 @@ class TheRequests(Fixture):
         self.assertEqual([1, 5], [r.input for r in rows["s1"]])
         self.assertEqual(copilot.UNKNOWN, rows["s1"][1].model)
         self.assertIsNone(rows["s1"][0].nano_aiu)   # a negative count is not a credit
+
+
+REPO = pathlib.Path(__file__).resolve().parents[2]
+
+
+class TheStandardNamesEverySource(unittest.TestCase):
+    def prose(self):
+        text = (REPO / "docs/standards/automation/context-discipline.md").read_text(encoding="utf-8")
+        return re.sub(r"\s+", " ", text.replace("**", "").replace("`", ""))
+
+    def test_the_budget_line_is_not_claude_only(self):
+        text = self.prose()
+        self.assertIn("The BUDGET: line is therefore not Claude-only", text)
+        self.assertIn("GitHub Copilot through the running client's store", text)
+        self.assertIn("COPILOT_HOME", text)
+        self.assertNotIn("stays Claude-only", text)
+
+    def test_the_copilot_input_and_credit_semantics_are_declared(self):
+        text = self.prose()
+        self.assertIn("reports the prompt total in inputTokens", text)
+        self.assertIn("cacheReadTokens and cacheWriteTokens a subset of it", text)
+        self.assertIn("request exposure, never a per-iteration window", text)
+        self.assertIn("never converted to USD", text)
