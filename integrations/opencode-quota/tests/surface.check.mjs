@@ -40,8 +40,16 @@ const token = readFileSync(join(root, "src/token.ts"), "utf8")
 const imports = [...token.matchAll(/from\s+"([^"]+)"/g)].map((m) => m[1]).sort()
 if (JSON.stringify(imports) !== JSON.stringify(["node:fs/promises", "node:os", "node:path"])) fail.push(`src/token.ts importa ${imports.join(", ")}`)
 for (const path of files) {
-  if (/\.refresh\w*|\[\s*["']refresh|grant_type/.test(readFileSync(path, "utf8"))) fail.push(`${relative(root, path)}: lê o refresh token`)
+  const text = readFileSync(path, "utf8")
+  const file = relative(root, path).replaceAll("\\", "/")
+  if (/refresh_?token|grant_type/i.test(text)) fail.push(`${file}: lê o refresh token`)
+  if (["src/token.ts", "src/fetch.ts"].includes(file) && /\.refresh\b|\[\s*["']refresh["']/.test(text)) fail.push(`${file}: lê o campo refresh`)
 }
+// O único processo tem argv fixo: `cq.ts` exporta só `configShow`, e o argv é a constante.
+const cq = readFileSync(join(root, "src/cq.ts"), "utf8")
+const exported = [...cq.matchAll(/^export\s+(?:async\s+)?(?:function|const|let|class)\s+(\w+)/gm)].map((m) => m[1])
+if (JSON.stringify(exported) !== JSON.stringify(["configShow"])) fail.push(`src/cq.ts exporta ${exported.join(", ")}`)
+if (!cq.includes('const ARGV = ["config", "show", "--effective", "--json"] as const')) fail.push("src/cq.ts sem o argv fixo")
 if (fail.length) {
   console.error(`FALHOU:\n${fail.join("\n")}`)
   process.exit(1)
