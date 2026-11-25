@@ -30,6 +30,19 @@ GROUP_NUMBER_RE = re.compile(r"^\d+\.\s*")
 HELD = ("blocked", "dropped", "missing", "unmerged", "unverified", "unreadable")
 # `az repos pr` `status` in `gh pr view`'s `state` vocabulary, so the derivation reads one.
 AZURE_PR_STATE = {"completed": "MERGED", "active": "OPEN", "abandoned": "CLOSED"}
+# The most PR lookups `pr_states` keeps in flight at once.
+PR_LOOKUPS = 8
+# `(provider, repo, root, target) -> (state, head)` of the PRs already seen MERGED, a terminal
+# state whose head never changes either. None keeps it off: only a long-lived server turns it on
+# (`remember_merged`), because a one-shot CLI process would never read it back.
+_MERGED: dict | None = None
+
+
+def remember_merged() -> None:
+    """Keep every MERGED PR lookup for the rest of this process."""
+    global _MERGED
+    if _MERGED is None:
+        _MERGED = {}
 
 
 def _refuse(out: Emitter, args, code: str, message: str, **extra) -> int:
@@ -98,23 +111,38 @@ def pr_states(members: dict, root: str | None = None, timeout: int = 15) -> dict
     recorded `branch.work`, is left out, and the derivation then marks it `unverified` — unless the
     member's `merge:` record names that same merged PR, which is what a branch renamed after the
     write-once `branch:` stamp looks like. A member with no `branch.work` has nothing to
-    contradict."""
+    contradict. The lookups run concurrently (each is one network round trip), so a composite
+    pays the slowest of them rather than their sum; the answer keeps the members' order."""
+    wanted = [(str(sid), m, split_ref(sid)[0]) for sid, m in members.items()
+              if m and m["phase"] == "archive" and pr_number(m)]
+    provider = (_provider(root) or "github") if any(r is None for _, _, r in wanted) else None
+
+    def key(w):
+        return (None if w[2] else provider, w[2], root, _pr_target(w[1]))
+
+    def view(w):
+        if _MERGED is not None and key(w) in _MERGED:
+            return _MERGED[key(w)]
+        return _pr_view(w[1], key(w)[0], root, timeout, w[2])
+
+    if len(wanted) > 1:
+        from concurrent.futures import ThreadPoolExecutor   # lazy: a leaf status never pays it
+        with ThreadPoolExecutor(max_workers=min(PR_LOOKUPS, len(wanted))) as pool:
+            views = list(pool.map(view, wanted))
+    else:
+        views = [view(w) for w in wanted]
     out: dict[str, str] = {}
-    provider = None
-    for sid, m in members.items():
-        if not m or m["phase"] != "archive" or not pr_number(m):
-            continue
-        repo = split_ref(sid)[0]
-        if repo is None:
-            provider = provider or _provider(root) or "github"
-        got = _pr_view(m, provider, root, timeout, repo)
+    for w, got in zip(wanted, views):
+        sid, m = w[0], w[1]
         if got is None:
             continue
+        if _MERGED is not None and got[0] == "MERGED":
+            _MERGED[key(w)] = got
         rec = m["frontmatter"].get("branch")
         work = str(rec.get("work", "")).strip() if isinstance(rec, dict) else ""
         if work and got[1] != work and not _merge_record_explains_the_head(m, got[0]):
             continue
-        out[str(sid)] = got[0]
+        out[sid] = got[0]
     return out
 
 

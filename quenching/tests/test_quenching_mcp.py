@@ -110,8 +110,8 @@ class Schema(unittest.TestCase):
     def test_every_option_of_every_tool_is_typed(self):
         for name, row in catalog.CATALOG.items():
             for prop in catalog.schema(catalog.resolve(row))["properties"].values():
-                self.assertIn(prop["type"], ("boolean", "string", "integer", "number", "array"),
-                              name)
+                kind = ["string"] if prop["type"] == ["string", "integer"] else [prop["type"]]
+                self.assertIn(kind[0], ("boolean", "string", "integer", "number", "array"), name)
 
 
 class Argv(unittest.TestCase):

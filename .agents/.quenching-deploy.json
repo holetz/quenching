@@ -149,7 +149,7 @@
 
     ".agents/quenching/assets/bin/quenching/deploy/__init__.py": "d9efa3062ac0c40e82c0bfc4041b7485a60420e2576afef7e94a72277a8cc0ff",
 
-    ".agents/quenching/assets/bin/quenching/deploy/cli.py": "cc64b7e8b5490a1b92fa99337d5d5ad36f768994d1509c41497f6229b21904cd",
+    ".agents/quenching/assets/bin/quenching/deploy/cli.py": "fe155a23dcd57a6d8be8ca49c57aa6cd0c0352f4b0c9d453770a1c5da6980a04",
 
     ".agents/quenching/assets/bin/quenching/deploy/mcpfiles.py": "73f6915f5ad2cd4094870c00f3b075db1f0ec7d5e8b422e2cf138959362ddbb5",
 
@@ -241,9 +241,9 @@
 
     ".agents/quenching/assets/bin/quenching/knowledge/validate.py": "6e673e47c5dbf5ed925da8cfef8703e71acc62ca9817266512b50e1aa661aa3e",
 
-    ".agents/quenching/assets/bin/quenching/mcp/catalog.py": "208b2821ff5b7e8b003812ec6b3b754eb0807489fd88b9368b8867f31885e96a",
+    ".agents/quenching/assets/bin/quenching/mcp/catalog.py": "02a4f32bffa7b2d2525a0efc1d7d1ed4e3a31c23b051a10d146f1ad4a84229a7",
 
-    ".agents/quenching/assets/bin/quenching/mcp/cli.py": "e7fcb628982d71c0cd9ebde741c78ff2ddf21a0d389a1833cf09b0302d8786dd",
+    ".agents/quenching/assets/bin/quenching/mcp/cli.py": "f816e0eda4c88d2b07f461d75f3a2d9bc4ab91a6ada69e16588e3a75df3c616a",
 
     ".agents/quenching/assets/bin/quenching/mcp/coverage.py": "97a0b30a0241225f33455ce1e76f2f5556ffa5e009b73308dae9688c69f5774f",
 
@@ -385,7 +385,7 @@
 
     ".agents/quenching/assets/bin/quenching/specs/commands/doctor.py": "8eadb59e7fe5342f18fc4f3c132eccb7645adb452f789b44d3378baae9cb5e5c",
 
-    ".agents/quenching/assets/bin/quenching/specs/commands/epic.py": "2535ca0058a67574c86476e87ccceb745b620a6a04d4259e6c9640a35fdbd027",
+    ".agents/quenching/assets/bin/quenching/specs/commands/epic.py": "bf9ab363777da909081f2aeb5490ef75396193ba62cf901785f9b72ec8ecb3bd",
 
     ".agents/quenching/assets/bin/quenching/specs/commands/estimate.py": "9bd4a61484e22f5b380ca2ed976e5ec0dce1298262fe0f7d80cbe9b4b59a241a",
 
@@ -425,7 +425,7 @@
 
     ".agents/quenching/assets/bin/quenching/specs/config.py": "3b21d2a35ccbe3b3e41361c8f0e5e92ca462f977a7ca34fee81677a88a118763",
 
-    ".agents/quenching/assets/bin/quenching/specs/mcp.py": "60ca37507c57bea5656196ee78afa292464aab6063204064337a3ec07217689e",
+    ".agents/quenching/assets/bin/quenching/specs/mcp.py": "073ffc1266a7887834869fd9d3393d206735d3996b13beb9621eee2960627360",
 
     ".agents/quenching/assets/bin/quenching/specs/members.py": "37199b9fcac8eb5a958e9e3e8441d1c8432542aa908d5fa6607690e7ed31ad83",
 
