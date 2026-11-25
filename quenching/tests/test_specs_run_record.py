@@ -88,12 +88,12 @@ class RunRecord(unittest.TestCase):
         path = pathlib.Path(__file__).resolve().parents[1] / "agents" / "spec-runner.md"
         text = path.read_text()
         self.assertIn("NEVER the source of `verifier`", text)
-        self.assertIn("OMIT `--set verifier=`", text)
+        self.assertIn("OMIT `verifier`", text)
         self.assertNotIn("verdict of the repository gate or verifier", text)
-        self.assertIn("`--set by=verifier`", text)
+        self.assertIn("`by` set to `verifier`", text)
         orchestrator = (path.parent / "spec-orchestrator.md").read_text()
-        self.assertIn("--set verifier=<pass|fail> --set by=verifier", orchestrator)
-        self.assertIn("cq git pr merge --url <url> --spec <id> --wait 90 --json`", orchestrator)
+        self.assertIn("\"verifier\": \"<pass|fail>\", \"by\": \"verifier\"", orchestrator)
+        self.assertIn("git_pr_merge(url=<url>, spec=<id>, wait=90)`", orchestrator)
         self.assertFalse((path.parent / "git-steward.md").exists())
 
 

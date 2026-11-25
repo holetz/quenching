@@ -19,10 +19,10 @@
       ]
     },
     "mcp": {
-      "mount": "specs",
       "command": [
         "python3"
-      ]
+      ],
+      "mount": "core"
     },
     "hooks": {
       "after_specs_execute_task": [

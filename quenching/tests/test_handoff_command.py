@@ -53,7 +53,7 @@ class TheBodySendsTheHandoffThroughTheVerb(unittest.TestCase):
         self.assertIn("--from .quenching/handoff/<name>", self.text)
 
     def test_it_reads_the_facts_and_stores_through_one_verb(self):
-        self.assertIn(".agents/quenching/bin/cq specs handoff facts --json", self.text)
+        self.assertIn("specs_handoff_facts()", self.text)
         self.assertIn(".agents/quenching/bin/cq specs handoff write --from", self.text)
         self.assertIn("--push", self.text)
         self.assertIn("specs/artifacts/_handoffs/", self.text)   # the no-spec destination

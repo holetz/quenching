@@ -28,7 +28,7 @@ def section(body, heading):
 class StageEndContractTests(unittest.TestCase):
     def test_mold_owns_the_session_size_line(self):
         rules = section(text(MOLD), "### The session-size line").split("<!-- rationale -->")[0]
-        self.assertIn("cq components session context --json", rules)
+        self.assertIn("components_session_context", rules)
         for exit_code in ("| `0` |", "| `1` |", "| `2` |"):
             self.assertIn(exit_code, rules)
         self.assertIn("in a new session", rules)

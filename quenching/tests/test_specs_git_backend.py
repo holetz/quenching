@@ -138,6 +138,44 @@ class CanonicalEquivalence(GitStoreFixture):
         self.assertEqual(text, self.remote_file("specs/1.md"))
 
 
+class LeanListCache(GitStoreFixture):
+    """`list --lean` derives each blob once; a warm listing derives nothing and reads no text."""
+
+    def test_a_warm_listing_matches_the_cold_one_and_derives_nothing(self):
+        clone = self.clone("a")
+        backend = GitBackend(clone)
+        for _ in range(3):
+            backend.create_spec("plans", canonical._case_doc())
+        cold = backend.list_specs(lean=True)
+        with mock.patch.object(git_mod, "derive_info",
+                               side_effect=AssertionError("derived on a warm listing")), \
+                mock.patch.object(GitBackend, "_texts",
+                                  side_effect=AssertionError("read text on a warm listing")):
+            warm = GitBackend(clone).list_specs(lean=True)
+        self.assertEqual(cold, warm)
+
+    def test_an_edited_document_is_derived_again(self):
+        backend = GitBackend(self.clone("a"))
+        backend.create_spec("plans", canonical._case_doc())
+        backend.list_specs(lean=True)
+        info, _ = backend.read_spec(1)
+        backend.write_spec(info, info["text"].replace("title:", "title: New ", 1))
+        titles = [r["title"] for r in backend.list_specs(lean=True)]
+        self.assertTrue(titles[0].startswith("New "), titles)
+
+
+    def test_an_archived_spec_does_not_keep_the_open_phase_records(self):
+        clone = self.clone("a")
+        backend = GitBackend(clone)
+        doc = canonical._case_doc() + "\n## Tasks\n\n### 1. One\n\n- [x] 1.1 Done\n"
+        backend.create_spec("plans", doc)
+        self.assertIn("spec:built", backend.list_specs(lean=True)[0]["records"])
+        info, _ = backend.read_spec(1)
+        backend.move_spec(info, "archive")  # same blob, other phase
+        archived = GitBackend(clone).list_specs(lean=True)[0]
+        self.assertEqual("archive", archived["phase"])
+        self.assertNotIn("spec:built", archived["records"])
+
 class Layout(GitStoreFixture):
     def test_the_first_write_bootstraps_an_orphan_branch(self):
         backend = GitBackend(self.clone("a"))
@@ -349,6 +387,55 @@ class PendingWrites(GitStoreFixture):
     def _append(self, backend: GitBackend, spec_id: int, line: str) -> None:
         info, _ = backend.read_spec(spec_id)
         backend.write_spec(info, info["text"] + f"\n{line}\n")
+
+    def test_list_reads_the_front_in_one_batch_not_one_read_per_spec(self):
+        from quenching.specs.commands import read as read_mod
+        _, backend = self._seeded(3)
+        emitter = mock.Mock()
+        args = mock.Mock(json=True, lean=False, phase=None)
+        with mock.patch.object(read_mod, "open_backend", return_value=(backend, None)), \
+                mock.patch.object(GitBackend, "read_spec", side_effect=AssertionError("per-spec read")), \
+                mock.patch.object(read_mod, "front_fields", return_value={}), \
+                contextlib.redirect_stdout(__import__("io").StringIO()) as buf:
+            self.assertEqual(0, read_mod.cmd_list(args, backend.repo_root, emitter))
+        self.assertEqual([1, 2, 3], [r["id"] for r in json.loads(buf.getvalue())["specs"]])
+
+    def test_a_local_creation_pushes_nothing_and_the_sync_sends_it(self):
+        path, backend = self._seeded(1)
+        before = self.remote_tip()
+        with _git_spawns() as spawns:
+            first = backend.create_spec("plans", canonical._case_doc("Two"), push=False)
+            second = backend.create_spec("plans", canonical._case_doc("Three"), push=False)
+        self.assertEqual(("quenching:specs/2.md", "quenching:specs/3.md"), (first, second))
+        self.assertNotIn("push", spawns)
+        self.assertNotIn("fetch", spawns)
+        self.assertEqual(before, self.remote_tip())
+        self.assertEqual([2, 3], backend.pending_state()["specs"])
+        backend.push()
+        self.assertEqual("4\n", self.remote_file(COUNTER_PATH))
+        self.assertTrue(self.remote_file("specs/3.md"))
+        self.assertIsNone(backend._pending())
+
+    def test_a_local_creation_allocates_over_the_remote_counter(self):
+        _, mine = self._seeded(1)
+        other = GitBackend(self.clone("b"))
+        other.create_spec("plans", canonical._case_doc("Elsewhere"))      # id 2, pushed
+        with mock.patch.object(git_mod, "FETCH_TTL_S", 0):
+            self.assertEqual("quenching:specs/3.md",
+                             mine.create_spec("plans", canonical._case_doc("Mine"), push=False))
+
+    def test_two_clones_creating_locally_collide_at_the_push_and_never_overwrite(self):
+        _, one = self._seeded(1)
+        two = GitBackend(self.clone("b"))
+        self.assertEqual("quenching:specs/2.md",
+                         one.create_spec("plans", canonical._case_doc("One"), push=False))
+        self.assertEqual("quenching:specs/2.md",
+                         two.create_spec("plans", canonical._case_doc("Two"), push=False))
+        one.push()
+        with self.assertRaises(BackendRefusal):
+            two.push()
+        self.assertIn("One", self.remote_file("specs/2.md"))
+        self.assertIsNotNone(two._pending())
 
     def test_a_deferred_write_leaves_the_remote_untouched(self):
         _, backend = self._seeded()

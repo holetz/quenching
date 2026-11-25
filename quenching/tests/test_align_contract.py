@@ -42,10 +42,10 @@ class KnowledgeAlignmentContract(unittest.TestCase):
             "### 9. Report", 1
         )[0]
         checks = (
-            "cq knowledge validate docs --json",
-            "cq knowledge project docs --check",
-            "cq knowledge nav docs --check",
-            "cq knowledge site-source docs site-source --check",
+            "knowledge_validate()",
+            "knowledge_project(check=true)",
+            "knowledge_nav(check=true)",
+            "knowledge_site_source(check=true)",
             "strict site build",
             "documentation-site-check.py",
         )
@@ -74,14 +74,14 @@ class KnowledgeAlignmentContract(unittest.TestCase):
         collect = status.split("### 2. Collect (read-only)", 1)[1].split("### 3.", 1)[0]
         report = status.split("### 4. Report", 1)[1].split("### 5.", 1)[0]
 
-        self.assertIn("cq knowledge status docs --json", collect)
-        self.assertNotIn("cq knowledge validate docs --json", collect)
-        self.assertIn("cq knowledge validate docs --activity --json", collect)
+        self.assertIn("knowledge_status()", collect)
+        self.assertNotIn("knowledge_validate()", collect)
+        self.assertIn("knowledge_validate(activity=true)", collect)
         self.assertIn("`Glob` `/docs/**/*.md` for the density counts", collect)
         controls = report.split("6. **Catalog controls**", 1)[1]
         self.assertIn("status payload", controls)
         self.assertLess(
-            status.index("cq knowledge status docs --json"), status.index("**Catalog controls**")
+            status.index("knowledge_status()"), status.index("**Catalog controls**")
         )
 
     def test_conductor_order_follows_the_architecture_declaration(self):

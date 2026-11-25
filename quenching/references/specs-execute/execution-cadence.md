@@ -13,8 +13,8 @@ The four events are the command body's. Why four events rather than a threshold 
 **The four events say when a Handoff update happens; they do not add another boundary event.** Since
 `## Handoff` gained per-section blocks — a small global block plus one `### N.` block per `## Tasks`
 section — an update at any of the four events targets ONE of the two:
-`.agents/quenching/bin/cq specs section <id> Handoff --write --scope global` for the evergreen block, or `--scope
-current` for the block of whichever `### N.` still has open work. A section's block closes — stops
+`specs_section_write(spec=<id>, heading="Handoff", scope="global", body=<body>)` for the evergreen block, or
+`scope="current"` for the block of whichever `### N.` still has open work. A section's block closes — stops
 being targeted — the moment its last task commits, but that close adds no fifth event: `--scope
 current` always resolves to whichever section still has an open task, so once `### N.` has none
 left, the NEXT of the four events to fire already writes `### (N+1).` instead, wherever in the run
@@ -33,7 +33,7 @@ the loop keeps the task commits and continues with the next task.
   printed and no new session is offered; the loop starts the next task. The conductor budget,
   measured by the orchestrator between waves, is the one that ends an autonomous run. A count never
   stops a task midway.
-- **Nothing extra is written.** `## Handoff`, `git log`, and the `subjects` `.agents/quenching/bin/cq specs status`
+- **Nothing extra is written.** `## Handoff`, `git log`, and the `subjects` `specs_status`
   returns already carry everything a fresh session needs; the boundary adds no record and no fifth
   Handoff event.
 - **Only a human-required question or a real blocker pauses the loop.** A section boundary is
@@ -73,8 +73,8 @@ records and stops only on a real block; this section is its loop-side procedure.
 - **Decide what the evidence answers.** The spec, the code, the standards declared under `## Impact`
   and the glossary answer most questions; the recorded intent covers the rest by criterion. The loop
   does not ask.
-- **Record each decision as one line.** `.agents/quenching/bin/cq specs discover "<id>" "decision: <what> — <evidence or
-  criterion>"`. A `decision:` line is not one of the four Handoff events and writes no Handoff.
+- **Record each decision as one line.** `specs_discover(spec=<id>, text="decision: <what> — <evidence or
+  criterion>")`. A `decision:` line is not one of the four Handoff events and writes no Handoff.
 - **Stop only on a real block**, the closed list of the standard: attempts stop converging; a task
   contradicts a standard and the evidence does not choose; the plan needs a new grant, a changed
   frontmatter key or a lowered bar; an undeclared irreversible, merge, push or deploy action; a

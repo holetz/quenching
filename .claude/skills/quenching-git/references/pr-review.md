@@ -13,9 +13,12 @@ resolved.
 ## Workflow
 
 ### 1. Resolve the provider, PR and repository
-```bash
+```text
 # Read `backend` from this result before choosing a host CLI.
-.agents/quenching/bin/cq specs config --json
+specs_config()
+```
+
+```bash
 git remote get-url origin
 # github
 gh repo view --json owner,name -q '.owner.login + " " + .name'

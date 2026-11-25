@@ -19,8 +19,11 @@ language, while commit subjects and messages remain canonical English artifacts.
 
 Read the target's git conventions, then collect one initial snapshot:
 
+```text
+git_conventions()
+```
+
 ```bash
-.agents/quenching/bin/cq git conventions --json
 git status --short
 git diff --name-status
 git diff --cached --name-status

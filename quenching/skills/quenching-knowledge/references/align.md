@@ -19,7 +19,7 @@ The payload (skeleton, molds, validator) lives at `.agents/quenching/assets/`; t
 - [knowledge-align/conformance.md](.agents/quenching/references/knowledge-align/conformance.md) §Bundle level §Structural integrity (whole-tree — CLI + `Stop` only) §Resource integrity (per-doc — every mode) — the exact checks the validator applies.
 - [knowledge-align/cycle.md](.agents/quenching/references/knowledge-align/cycle.md) §The stage pipeline §Finding → owning-command routing table — the stage pipeline, the parallel-prep flow, and the finding → owning-command routing table.
 
-The executable checker is the target-local `.agents/quenching/bin/cq` (`.agents/quenching/bin/cq knowledge validate docs` → exit 0 = conforms), the one
+The executable checker is the target-local `.agents/quenching/bin/cq` (`knowledge_validate()` → exit 0 = conforms), the one
 form every body writes —
 [align/tool-resolution.md](.agents/quenching/references/align/tool-resolution.md)
 §Resolving the tool.
@@ -76,8 +76,11 @@ write stays gated by the workflow below.
 ### 1. Probe — the three reads that decide whether anything else runs
 Resolve the bundle at its fixed root `/docs/`, then read all three signals and nothing
 else:
+```text
+knowledge_validate()   # structure: exit 0 = conformant
+```
+
 ```bash
-.agents/quenching/bin/cq knowledge validate docs --json          # structure: exit 0 = conformant
 ls ~/.claude/projects/<cwd>/memory/    # out-of-band store 1: any undrained memory?
 ```
 plus one `Read` of each harness file that exists (`AGENTS.md`, and a legacy root `AGENTS.md` that
@@ -191,8 +194,8 @@ plan was rejected and nothing was written.
   a freshly folded cluster, and a catalog schema dir all get a front door). Each listing links
   its real children (no `dir-no-index`, no `index-broken-link`, no `index-orphan` left behind);
   strip stray frontmatter; for `standards/index.md` rebuild only the
-  `<!-- BEGIN/END GENERATED -->` zone with `.agents/quenching/bin/cq knowledge listing --write`, then confirm it with
-  `.agents/quenching/bin/cq knowledge listing --check`.
+  `<!-- BEGIN/END GENERATED -->` zone with `knowledge_listing(write=true)`, then confirm it with
+  `knowledge_listing(check=true)`.
 - **Write** `okf_version: "0.2"` into the root `/docs/index.md` frontmatter.
 - **Never create a `log.md`, and never touch one that is already there.**
 
@@ -237,7 +240,7 @@ let the user merge), filling `site_name`/`site_description`; `quenching.css` →
 request, `ci-github-pages.yml` → `.github/workflows/docs.yml` (opt-in, platform-specific), or
 `azure-pipelines-docs.yml` → `azure-pipelines-docs.yml` only when the target remote is Azure DevOps.
 The first install also stages the bounded source with
-`.agents/quenching/bin/cq knowledge site-source docs site-source --write`; `catalog/` and `external/` are absent from
+`knowledge_site_source(write=true)`; `catalog/` and `external/` are absent from
 that tree.
 
 This is the **first install only**; every later update, dependency sync, nav regeneration, config
@@ -280,9 +283,9 @@ run. Never run the sweep to discover whether it had work.
 the offer was deliberately not made.
 
 ### 8. Verify, then decide: loop or stop
-Re-run the applicable convergence checks in this order: `.agents/quenching/bin/cq knowledge validate docs --json`,
-`.agents/quenching/bin/cq knowledge project docs --check`, `.agents/quenching/bin/cq knowledge nav docs --check`,
-`.agents/quenching/bin/cq knowledge site-source docs site-source --check`, a strict site build, and the rendered site
+Re-run the applicable convergence checks in this order: `knowledge_validate()`,
+`knowledge_project(check=true)`, `knowledge_nav(check=true)`,
+`knowledge_site_source(check=true)`, a strict site build, and the rendered site
 checker (`documentation-site-check.py`) immediately after that build. The projection, navigation and bounded-source checks are
 skipped only when their site layer is absent or the accepted map marks that publication
 `not-applicable`; a catalog checker runs only when the map exposes a catalog route. When the

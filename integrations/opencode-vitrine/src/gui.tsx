@@ -73,7 +73,7 @@ function quenchLabel(state: Quenching): string {
 
 function quenchTitle(state: Quenching): string {
   if (state.error) return state.error
-  const tool = state.available ? `cq ${state.available} no PATH` : "cq não encontrado no PATH"
+  const tool = state.available ? `disponível ${state.available} (${state.origin})` : `cq não encontrado (${state.origin})`
   if (state.missing) return `quenching não instalado em ${state.root}; ${tool}`
   return `instalado ${state.version} em ${state.root}; ${tool}`
 }
@@ -474,9 +474,10 @@ function SpecsPanel(props: PanelProps) {
     const question = state.missing
       ? `Instalar quenching ${state.available}?`
       : `Atualizar quenching ${state.version} → ${state.available}?`
-    const description = state.missing
+    const body = state.missing
       ? `O cq deploy instala a superfície OpenCode em ${state.root} (.agents/ e .opencode/agents/). As specs não são alteradas.`
       : `O cq deploy reescreve a superfície já instalada em ${state.root}, preservando os harnesses do manifesto. As specs não são alteradas.`
+    const description = `${body} Origem: ${state.origin}.`
     const ok = await ctx.dialogs.confirm({
       title: question,
       description,
@@ -550,6 +551,12 @@ function SpecsPanel(props: PanelProps) {
               {state.available ? `OK ${state.version}` : "sem cq"}
             </span>
           )}
+        </Show>
+        <Show when={(quench()?.warnings ?? []).length > 0}>
+          <span class="qs-quench warn" title={(quench()?.warnings ?? []).join("\n")}>
+            <span class="qs-health-dot" />
+            {`${quench()?.warnings.length} aviso(s)`}
+          </span>
         </Show>
         <ctx.ui.Button size="small" busy={busy()} onClick={() => void openBoard()}>Board</ctx.ui.Button>
         <Show when={hasSettingsPage(ctx)}>

@@ -190,6 +190,9 @@ def cmd_new(args, root: str, out: Emitter) -> int:
         if item["body"].strip() and section_state(cur["sections"], "Problem") != "filled":
             body, _ = upsert_section(cur, "Problem", f"## Problem\n\n{item['body'].strip()}\n")
         card_args = {"card": args.card}
+    if backend.name == "git":
+        # A capture is a local pending write; the push belongs to the sync point, not to it.
+        card_args["push"] = False
     path = backend.create_spec("plans", body, **card_args)
     # The provider-native id is the locator's trailing number (issue or work-item URL); a
     # caller chaining `validate --spec <id>` must not have to parse the URL to get it.

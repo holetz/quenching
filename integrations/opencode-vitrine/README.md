@@ -61,16 +61,30 @@ Which `cq` answers:
 
 | Use | Order |
 | --- | --- |
-| spec reads and the Board | the target's `.agents/quenching/bin/cq`, then the plugin's checkout, then `PATH` |
-| available version and the deploy | `QUENCHING_CQ`, then the plugin's checkout, then `PATH` |
+| spec reads and the Board | the target's `.agents/quenching/bin/cq`, then `QUENCHING_CQ`, then the plugin's checkout, then `PATH` |
+| available version and the deploy | `QUENCHING_CQ`; the target's own tree when the target is this source repository; the latest remote release through `uvx`; the plugin's checkout; `PATH` |
 
-`QUENCHING_CQ` is optional: the path of a `cq` file that should win over the checkout. A Python
+**The deploy comes from the latest release by default.** The available version is the highest
+`X.Y.Z` tag that `git ls-remote --tags` lists on `https://github.com/holetz/quenching` (cached
+10 min, a failure 1 min), and the deploy runs
+`uvx --from "git+<repo>@<tag>#subdirectory=quenching" cq deploy …` with a 10 min timeout, since
+the first run of a tag clones and builds it. Opening the panel pays only the `ls-remote`, never the
+`uvx`. With no `uvx`, no `git` or no network the order falls through to the plugin's checkout and
+`PATH`, as before. `QUENCHING_REMOTE=0` turns the remote off; `QUENCHING_REPO` points it at a fork
+or mirror. When the target is this repository (it carries `quenching/assets/bin/cq` and
+`quenching/skills/`), its own tree deploys, because the `deployed surface lockstep` check refuses a
+surface that came from a release. The pill's tooltip and the confirmation dialog name the origin.
+Spec reads never go remote: one `uvx` per read would break the load budget below.
+
+`QUENCHING_CQ` is optional: the path of a `cq` file that should win over everything else. A Python
 `cq` runs through the interpreter above; on Windows, a `cq` that is not Python (the `--runtime
 uvx` shim) runs through its `cq.cmd` sibling via `cmd.exe`, because Node does not start a `.cmd`
 without a shell.
 
 When the target's quenching is older than that `cq`, or absent, the panel offers
 **Atualizar** / **Instalar** and runs `cq deploy --target <root> --write` after confirmation.
+
+The pill also shows `N aviso(s)` (tooltip: each one, with the fix) from a local read of `opencode.json(c)` and the global `opencode.jsonc`: `experimental.subagent_depth` below 4, or the `quenching` MCP entry missing from `opencode.json` or using `uvx`. No command body and no tool call pays for it.
 When it is current, the same place shows a green **OK <version>** chip with the installed version.
 A target already installed reuses its manifest; a new target receives `--harness opencode`.
 
@@ -91,9 +105,10 @@ because the bundled `cq` lives beside it. On Windows write the path with forward
 escaped backslashes (`"C:/src/quenching/integrations/opencode-vitrine"`). Restart the session
 after adding or removing the entry. Removing the entry is the uninstall.
 
-Updating is updating the checkout: `git pull` on its primary branch, or `git checkout <tag>` for
-a release, then restart OpenCode. The panel's `cq` and the version it offers to install move with
-it.
+Updating the plugin itself is updating the checkout: `git pull` on its primary branch, or
+`git checkout <tag>` for a release, then restart OpenCode. The version the panel offers to install
+does not move with it: it is the latest remote release (above), unless the remote is off or
+unreachable.
 
 ## Build
 

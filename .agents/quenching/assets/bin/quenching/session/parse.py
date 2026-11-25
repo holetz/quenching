@@ -70,6 +70,7 @@ import json
 import re
 from pathlib import Path
 
+from quenching.session.cqcalls import mcp_tools, shell_verbs, tally
 from quenching.session.model import Command, normalize, read_window
 
 COMMAND_NAME_RE = re.compile(r"<command-name>([^<]+)</command-name>")
@@ -153,137 +154,155 @@ def close_attribution(ordered: list, timeline: list, anomalies: list) -> None:
 
 def read_session(path: Path) -> dict:
     """One streaming pass. Never holds the transcript, only the model built from it."""
+    with path.open(encoding="utf-8", errors="replace") as fh:
+        return read_lines(fh, str(path))
+
+
+def read_lines(source, label: str) -> dict:
+    """The same pass over any iterable of JSON lines — a file, or the records another harness
+    store was reshaped into (`session/opencode_transcript.py`). `label` names where they came from."""
     commands: dict[str, Command] = {}
     anomalies, seen_uuids, corrections = [], set(), []
     timeline = []                  # (line, command) for every attributed record, in order
     lines = unparsed = unattributed_tools = 0
+    cq = {"shell": {}, "mcp": {}}      # the whole session's `cq` calls, attributed or not
     session = {"sessionId": None, "cwd": None, "gitBranch": None, "version": None}
 
     def command(name: str) -> Command:
         return commands.setdefault(name, Command(name))
 
-    with path.open(encoding="utf-8", errors="replace") as fh:
-        for index, raw in enumerate(fh, start=1):
-            raw = raw.strip()
-            if not raw:
-                continue
-            lines += 1
-            try:
-                rec = json.loads(raw)
-            except (ValueError, TypeError):
-                rec = None
-            if not isinstance(rec, dict):
-                # Both arms are the same fact — this line contributed no evidence — so both
-                # are counted and reported. Silence here is what makes an unreadable file
-                # look like a clean one.
-                unparsed += 1
-                if len(anomalies) < 10:
-                    anomalies.append({"code": "se-unparsed-line", "line": index,
-                                      "message": "line is not a JSON object and was skipped"})
-                continue
+    for index, raw in enumerate(source, start=1):
+        raw = raw.strip()
+        if not raw:
+            continue
+        lines += 1
+        try:
+            rec = json.loads(raw)
+        except (ValueError, TypeError):
+            rec = None
+        if not isinstance(rec, dict):
+            # Both arms are the same fact — this line contributed no evidence — so both
+            # are counted and reported. Silence here is what makes an unreadable file
+            # look like a clean one.
+            unparsed += 1
+            if len(anomalies) < 10:
+                anomalies.append({"code": "se-unparsed-line", "line": index,
+                                  "message": "line is not a JSON object and was skipped"})
+            continue
 
-            for key in session:
-                if session[key] is None and rec.get(key) is not None:
-                    session[key] = rec[key]
+        for key in session:
+            if session[key] is None and rec.get(key) is not None:
+                session[key] = rec[key]
 
-            # A compact summary re-embeds earlier turns; counting them doubles the run.
-            uuid = rec.get("uuid")
-            if uuid is not None:
-                if uuid in seen_uuids:
-                    continue
-                seen_uuids.add(uuid)
-            if rec.get("isCompactSummary"):
+        # A compact summary re-embeds earlier turns; counting them doubles the run.
+        uuid = rec.get("uuid")
+        if uuid is not None:
+            if uuid in seen_uuids:
                 continue
+            seen_uuids.add(uuid)
+        if rec.get("isCompactSummary"):
+            continue
 
-            ts = rec.get("timestamp")
-            attributed = rec.get("attributionSkill")
+        ts = rec.get("timestamp")
+        attributed = rec.get("attributionSkill")
+        if attributed:
+            cmd = command(normalize(attributed))
+            if cmd.plugin is None:
+                cmd.plugin = rec.get("attributionPlugin")
+            cmd.touch(index, ts)
+            timeline.append((index, cmd.name))
+
+        if rec.get("type") == "user":
+            content = (rec.get("message") or {}).get("content")
+            # A human turn reaches the transcript BOTH ways: as a bare string, and as
+            # `text` blocks in a list beside the tool_results the harness also files
+            # under "user". Reading only the string form loses every interjection and
+            # every interrupt — measured, not assumed: the string form in this repo's
+            # largest transcript holds nothing but compaction notices.
+            if isinstance(content, str):
+                text = content
+            else:
+                text = "\n".join(b.get("text") or "" for b in blocks(rec)
+                                 if b.get("type") == "text").strip()
+
+            # Entry form 1 — a typed `/` invocation.
+            if "<command-name>" in text:
+                for name in COMMAND_NAME_RE.findall(text):
+                    args = COMMAND_ARGS_RE.search(text)
+                    cmd = command(normalize(name))
+                    cmd.touch(index, ts)
+                    cmd.invocations.append({
+                        "form": "typed", "line": index, "timestamp": ts,
+                        "args": (args.group(1).strip() if args else "") or None,
+                        "invokedBy": None,
+                    })
+            elif text and not rec.get("isMeta"):
+                # isMeta marks a turn the HARNESS wrote into the user slot — chiefly the
+                # expanded body of the command just invoked. It reads like a long human
+                # message and is the opposite of one; counting it would score every
+                # command as having been corrected at its own first turn.
+                kind = classify_user_turn(text)
+                if kind:
+                    corrections.append({"line": index, "timestamp": ts, "kind": kind,
+                                        "text": " ".join(text.split())})
+
+        # Entry form 2 — a conductor's stage, as a `Skill` tool_use.
+        for block in blocks(rec):
+            if block.get("type") != "tool_use":
+                continue
+            name = block.get("name")
+            inp_ = block.get("input") or {}
+            shell_cq = [" ".join(v) for v in shell_verbs(inp_.get("command"))] if name == "Bash" else []
+            mcp_cq = mcp_tools(name, inp_)
+            for verb in shell_cq:
+                tally(cq["shell"], verb)
+            for tool in mcp_cq:
+                tally(cq["mcp"], tool)
             if attributed:
                 cmd = command(normalize(attributed))
-                if cmd.plugin is None:
-                    cmd.plugin = rec.get("attributionPlugin")
-                cmd.touch(index, ts)
-                timeline.append((index, cmd.name))
-
-            if rec.get("type") == "user":
-                content = (rec.get("message") or {}).get("content")
-                # A human turn reaches the transcript BOTH ways: as a bare string, and as
-                # `text` blocks in a list beside the tool_results the harness also files
-                # under "user". Reading only the string form loses every interjection and
-                # every interrupt — measured, not assumed: the string form in this repo's
-                # largest transcript holds nothing but compaction notices.
-                if isinstance(content, str):
-                    text = content
-                else:
-                    text = "\n".join(b.get("text") or "" for b in blocks(rec)
-                                     if b.get("type") == "text").strip()
-
-                # Entry form 1 — a typed `/` invocation.
-                if "<command-name>" in text:
-                    for name in COMMAND_NAME_RE.findall(text):
-                        args = COMMAND_ARGS_RE.search(text)
-                        cmd = command(normalize(name))
-                        cmd.touch(index, ts)
-                        cmd.invocations.append({
-                            "form": "typed", "line": index, "timestamp": ts,
-                            "args": (args.group(1).strip() if args else "") or None,
-                            "invokedBy": None,
-                        })
-                elif text and not rec.get("isMeta"):
-                    # isMeta marks a turn the HARNESS wrote into the user slot — chiefly the
-                    # expanded body of the command just invoked. It reads like a long human
-                    # message and is the opposite of one; counting it would score every
-                    # command as having been corrected at its own first turn.
-                    kind = classify_user_turn(text)
-                    if kind:
-                        corrections.append({"line": index, "timestamp": ts, "kind": kind,
-                                            "text": " ".join(text.split())})
-
-            # Entry form 2 — a conductor's stage, as a `Skill` tool_use.
-            for block in blocks(rec):
-                if block.get("type") != "tool_use":
-                    continue
-                name = block.get("name")
-                inp_ = block.get("input") or {}
-                if attributed:
-                    cmd = command(normalize(attributed))
-                    cmd.tools[name] = cmd.tools.get(name, 0) + 1
-                    # Only what identifies a target is kept — never the payload. `Edit` and
-                    # `Write` carry whole file bodies in `new_string`/`content`, so touching
-                    # those inputs at all is how a digest quietly becomes the transcript.
-                    target = inp_.get("file_path")
-                    if target and name == "Read":
-                        cmd.reads.setdefault(target, []).append(read_window(inp_))
-                    elif target and name in ("Edit", "Write", "NotebookEdit"):
-                        # A write is NOT a read. Lumping them together reported 51 edits to
-                        # one file as a "redundant read x72" — a confident, plausible,
-                        # entirely wrong finding of exactly the kind this tool must not make.
-                        cmd.touches[target] = cmd.touches.get(target, 0) + 1
-                    elif name == "Bash":
-                        shell = (inp_.get("command") or "").strip()
-                        if shell:
-                            cmd.shell[shell] = cmd.shell.get(shell, 0) + 1
-                else:
-                    unattributed_tools += 1
-                if name == "Skill":
-                    target = inp_.get("skill")
-                    if target:
-                        callee = command(normalize(target))
-                        callee.touch(index, ts)
-                        callee.invocations.append({
-                            "form": "skill", "line": index, "timestamp": ts,
-                            "args": (inp_.get("args") or None),
-                            "invokedBy": normalize(attributed) if attributed else None,
-                        })
+                cmd.tools[name] = cmd.tools.get(name, 0) + 1
+                for verb in shell_cq:
+                    tally(cmd.cq_shell, verb)
+                for tool in mcp_cq:
+                    tally(cmd.cq_mcp, tool)
+                # Only what identifies a target is kept — never the payload. `Edit` and
+                # `Write` carry whole file bodies in `new_string`/`content`, so touching
+                # those inputs at all is how a digest quietly becomes the transcript.
+                target = inp_.get("file_path")
+                if target and name == "Read":
+                    cmd.reads.setdefault(target, []).append(read_window(inp_))
+                elif target and name in ("Edit", "Write", "NotebookEdit"):
+                    # A write is NOT a read. Lumping them together reported 51 edits to
+                    # one file as a "redundant read x72" — a confident, plausible,
+                    # entirely wrong finding of exactly the kind this tool must not make.
+                    cmd.touches[target] = cmd.touches.get(target, 0) + 1
+                elif name == "Bash":
+                    shell = (inp_.get("command") or "").strip()
+                    if shell:
+                        cmd.shell[shell] = cmd.shell.get(shell, 0) + 1
+            else:
+                unattributed_tools += 1
+            if name == "Skill":
+                target = inp_.get("skill")
+                if target:
+                    callee = command(normalize(target))
+                    callee.touch(index, ts)
+                    callee.invocations.append({
+                        "form": "skill", "line": index, "timestamp": ts,
+                        "args": (inp_.get("args") or None),
+                        "invokedBy": normalize(attributed) if attributed else None,
+                    })
 
     ordered = sorted(commands.values(), key=lambda c: (c.first if c.first is not None else 0))
     close_attribution(ordered, timeline, anomalies)
     return {
-        "transcript": str(path),
+        "transcript": label,
         "session": session,
         "lines": lines,
         "unparsed": unparsed,
         "anomalies": anomalies,
         "unattributedToolCalls": unattributed_tools,
+        "cq": cq,
         "commands": [c.as_dict() for c in ordered],
         "_commands": ordered,          # the objects, for digest; never serialised
         "corrections": corrections,

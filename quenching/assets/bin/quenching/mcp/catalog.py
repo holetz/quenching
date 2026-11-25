@@ -6,8 +6,9 @@ new flag on a catalogued verb shows up in the tool with no edit here, and a new 
 when it gets its row.
 
 * Closed: the argv is built only from the schema's properties (`additionalProperties: false`), so
-  no argument reaches a verb or a flag the row does not name. `--root` and `--json` are the
-  server's, never the model's.
+  no argument reaches a verb or a flag the row does not name. `--json` is the server's; `--root`
+  is the server's workspace unless the call names its own `root`, which is validated
+  (`server.call_root`) and becomes both the verb's `--root` and the dispatch's cwd.
 * Classes: `read` (`readOnlyHint`), `write` (changes the workspace or the specs store) and
   `external` (leaves the machine: `openWorldHint`, `destructiveHint` where the row says so). The
   class is what a sub-agent grant is given by.
@@ -30,6 +31,11 @@ from quenching.mcp.server import ToolArgs
 
 ROUTER_PATH = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(
     os.path.abspath(__file__)))), "cq")
+# The named mounts a repository may declare in `shared.mcp.mount`: each is the set of pillars the
+# server publishes, and `core` is the set a spec cycle reaches through MCP. The deploy expands the
+# name into the registered argv (`cq mcp --only specs,git,components`), so the file says what it
+# mounts instead of hiding a shorthand. `all` and `specs` are the two forms that predate the table.
+MOUNTS = {"core": ("specs", "git", "components")}
 SERVER_OWNED = {"root", "json", "help", "version"}
 # A pillar whose `--root` names something narrower than the workspace (`components`: the surface
 # root holding commands/) gets no `--root`; the workspace reaches it as the cwd, from which its own
@@ -44,6 +50,7 @@ class Row(NamedTuple):
     cls: str
     destructive: bool = False
     hidden: frozenset = frozenset()   # parser dests the tool never publishes
+    open_world: bool = False          # a read row whose verb reads the remote: `openWorldHint`
 
 
 def _rows(pillar: str, cls: str, *paths: str) -> dict[str, Row]:
@@ -58,12 +65,14 @@ CATALOG: dict[str, Row] = {
     **_rows("knowledge", "read", "validate", "status"),
     **_rows("knowledge", "write", "site-source", "project", "nav", "listing"),
     **_rows("git", "read", "base", "state", "conventions", "history log", "history show",
-            "history diff", "audit", "stale", "preflight", "pr probe", "pr view"),
+            "history diff", "audit", "stale", "pr probe", "pr view"),
+    # `--probe-claims` writes a ref to the remote: a read grant never reaches it.
+    "git_preflight": Row("git", ("preflight",), "read", False, frozenset({"probe_claims"})),
     **_rows("git", "write", "commit", "worktree link", "worktree add", "specs"),
     **_rows("git", "external", "push", "pr create", "pr record"),
-    # `--spec` would stamp the `merge` record with no `specs_record` call behind it: the
-    # record is written by `cq specs record` once the merge landed, not by the merge verb.
-    "git_pr_merge": Row("git", ("pr", "merge"), "external", True, frozenset({"spec"})),
+    # `spec` stamps the `merge` record once the PR merged, as the CLI's `--spec` does: the
+    # record is not a gated decision (the approval already covers the close-out).
+    "git_pr_merge": Row("git", ("pr", "merge"), "external", True),
     "git_worktree_retire": Row("git", ("worktree", "retire"), "write", True),
     "git_prune": Row("git", ("prune",), "external", True),
     **_rows("config", "read", "show", "check", "host"),
@@ -80,7 +89,49 @@ CATALOG: dict[str, Row] = {
     **_rows("opensource", "read", "doctor", "status", "readiness"),
     **_rows("opensource", "write", "apply"),
     **_rows("codex", "read", "eligible", "probe"),
+    # The verbs skill and agent bodies cite beyond the hand-written specs tools.
+    **_rows("specs", "read", "config", "validate", "parallel", "estimate", "handoff facts",
+            "artifact list"),
+    # `--out` would write a file from a read tool: the artifact comes back in the payload.
+    "specs_artifact_read": Row("specs", ("artifact", "read"), "read", hidden=frozenset({"out"})),
+    **_rows("specs", "write", "reconcile", "tags", "verification", "artifact write"),
+    # `--push` would publish from a write tool: publishing stays `specs_push`'s.
+    "specs_handoff_write": Row("specs", ("handoff", "write"), "write",
+                               hidden=frozenset({"push"})),
+    "specs_artifact_rm": Row("specs", ("artifact", "rm"), "write", True),
+    **_rows("components", "read", "status"),
+    **_rows("components", "write", "bridge", "migrate"),
+    **_rows("proof", "write", "readme"),
+    **_rows("git", "read", "worktree slots"),
+    **_rows("git", "write", "worktree acquire", "refresh"),
+    "git_worktree_release": Row("git", ("worktree", "release"), "write", True),
+    **_rows("design", "write", "render", "import"),
+    # The verbs the align and genre flows cite behind a launch-time `--root`, which the coverage
+    # scan did not see before it skipped the flag.
+    **_rows("ops", "read", "inventory"),
+    **_rows("proof", "read", "inventory"),
+    **_rows("design", "write", "align", "genre new"),
+    **_rows("security", "read", "leak"),
+    # The verbs `references/**` cites beyond the skill and agent bodies.
+    **_rows("specs", "read", "doctor", "schedule"),
+    **_rows("specs", "write", "title", "depends"),
+    **_rows("config", "read", "schema"),
+    **_rows("config", "write", "set"),
+    # A build's reservation lives on the `origin`: every change to it is a push.
+    "specs_claim_list": Row("specs", ("claim", "list"), "read", open_world=True),
+    **_rows("specs", "external", "claim acquire", "claim renew"),
+    "specs_claim_release": Row("specs", ("claim", "release"), "external", True),
 }
+
+
+def tool_names(prefix: tuple[str, ...] = ()) -> list[str]:
+    """The MCP tools a `cq <prefix…>` grant covers: every catalog row and hand-written specs tool
+    whose verb path starts with `prefix` (empty: all of them), sorted. The one map from a `cq`
+    citation to a tool name — the deploy's grants and the coverage scan read the same union."""
+    from quenching.specs import mcp as specs_mcp
+    paths = {name: (row.pillar, *row.path) for name, row in CATALOG.items()}
+    paths.update({name: ("specs", *path) for name, path in specs_mcp.COVERS.items()})
+    return sorted(name for name, path in paths.items() if path[:len(prefix)] == tuple(prefix))
 
 
 _router = None
@@ -113,10 +164,11 @@ def _pillar_parser(pillar: str) -> argparse.ArgumentParser:
     return built[0] if isinstance(built, tuple) else built
 
 
-def resolve(row: Row) -> Verb:
-    """Walk the pillar's parser along the verb path. A path element no subparser names fills the
-    first positional whose `choices` carry it (`git worktree add`, `security audit`)."""
-    parser, fixed, help_text = _pillar_parser(row.pillar), {}, ""
+def resolve(row: Row, parser: argparse.ArgumentParser | None = None) -> Verb:
+    """Walk the pillar's parser (built here unless given) along the verb path. A path element no
+    subparser names fills the first positional whose `choices` carry it (`git worktree add`,
+    `security audit`)."""
+    parser, fixed, help_text = parser or _pillar_parser(row.pillar), {}, ""
     for word in row.path:
         subs = _subparsers(parser)
         if subs is not None and word in subs.choices:
@@ -176,8 +228,11 @@ def _required(action: argparse.Action) -> bool:
 
 
 def schema(verb: Verb) -> dict:
+    """The verb's own arguments, plus `root`: the one call's working tree, which the server turns
+    into the verb's `--root` and the dispatch's cwd."""
     actions = _arguments(verb)
-    out = {"type": "object", "properties": {a.dest: _property(a) for a in actions},
+    out = {"type": "object",
+           "properties": {**{a.dest: _property(a) for a in actions}, "root": server.ROOT},
            "additionalProperties": False}
     required = [a.dest for a in actions if _required(a)]
     if required:
@@ -196,18 +251,64 @@ ANNOTATIONS = {
 
 
 def annotations(row: Row) -> dict:
-    return {**ANNOTATIONS[row.cls], **({"destructiveHint": True} if row.destructive else {})}
+    return {**ANNOTATIONS[row.cls], **({"destructiveHint": True} if row.destructive else {}),
+            **({"openWorldHint": True} if row.open_world else {})}
 
 
-def available(present=None) -> dict[str, Row]:
-    """The rows whose pillar is present in this process — an absent pillar publishes nothing."""
+_described: dict[str, dict] = {}
+
+
+def described(rows: dict[str, Row]) -> list[dict]:
+    """`tools/list`: each pillar's `build_parser()` runs once per pass, and a tool once described
+    is kept for the life of the process — the parsers it reads do not change while it runs."""
+    parsers: dict[str, argparse.ArgumentParser] = {}
+    for name, row in rows.items():
+        if name not in _described:
+            if row.pillar not in parsers:
+                parsers[row.pillar] = _pillar_parser(row.pillar)
+            _described[name] = describe(name, row, parsers[row.pillar])
+    return [_described[name] for name in rows]
+
+
+def mount_pillars(value: str) -> tuple[str, ...]:
+    """The pillars a declared mount publishes: a name of `MOUNTS`, else the comma-separated list."""
+    if value in MOUNTS:
+        return MOUNTS[value]
+    return tuple(part.strip() for part in value.split(",") if part.strip())
+
+
+def mount_refusal(value: object) -> list[str]:
+    """The pillar names a declared mount carries that the router does not have; empty when the
+    mount is `all` or names only pillars this process routes."""
+    if value == "all":
+        return []
+    if not isinstance(value, str) or not value.strip():
+        return ["<empty>"]
+    known = set(router().PILLARS)
+    return [pillar for pillar in mount_pillars(value) if pillar not in known]
+
+
+def pillar_of(name: str) -> str | None:
+    """The pillar a tool name belongs to: the catalog row's, or the specs adapter's."""
+    row = CATALOG.get(name)
+    if row is not None:
+        return row.pillar
+    from quenching.specs import mcp as specs_mcp
+    return "specs" if name in specs_mcp.COVERS else None
+
+
+def available(present=None, only=None) -> dict[str, Row]:
+    """The rows whose pillar is present in this process — an absent pillar publishes nothing —
+    and, when `only` names pillars, no row of a pillar outside it."""
     present = present or router().present
     shown = {pillar: present(pillar) for pillar in {row.pillar for row in CATALOG.values()}}
-    return {name: row for name, row in CATALOG.items() if shown[row.pillar]}
+    keep = None if only is None else set(only)
+    return {name: row for name, row in CATALOG.items()
+            if shown[row.pillar] and (keep is None or row.pillar in keep)}
 
 
-def describe(name: str, row: Row) -> dict:
-    verb = resolve(row)
+def describe(name: str, row: Row, parser: argparse.ArgumentParser | None = None) -> dict:
+    verb = resolve(row, parser)
     head = f"`cq {row.pillar} {' '.join(row.path)}`"
     return {"name": name,
             "description": f"{head} — {verb.help} [class: {row.cls}]" if verb.help
@@ -289,7 +390,10 @@ def call(name: str, args: dict, root: str) -> tuple[dict, bool]:
     """`(payload, is_error)` for one catalogued tool. Raises KeyError for an unknown name."""
     row = CATALOG[name]
     try:
-        cmd, as_json = argv(row, args, root)
+        if not isinstance(args, dict):
+            raise ToolArgs("`arguments` must be an object")
+        root = server.call_root(args, root)
+        cmd, as_json = argv(row, {k: v for k, v in args.items() if k != "root"}, root)
     except ToolArgs as exc:
         return {"ok": False, "code": "mcp-bad-arguments", "message": str(exc)}, True
     try:
@@ -316,17 +420,18 @@ class CatalogSurface:
 
     name = "quenching"
 
-    def __init__(self, present=None):
+    def __init__(self, present=None, only=None):
         self.present = present
+        self.only = only
 
     def tools(self) -> dict[str, Row]:
-        return available(self.present)
+        return available(self.present, self.only)
 
     def has_tool(self, name: str) -> bool:
         return name in self.tools()
 
     def list_tools(self) -> list[dict]:
-        return [describe(name, row) for name, row in self.tools().items()]
+        return described(self.tools())
 
     def call_tool(self, name, args, root, session):
         return call(name, args, root)
@@ -341,11 +446,13 @@ class CatalogSurface:
         raise server.ResourceError(server.NOT_FOUND, f"unknown resource: {uri}")
 
 
-def surface(present=None) -> server.Composite:
-    """The whole `quenching` server: the catalog, plus the specs tools when `specs` is present."""
+def surface(present=None, only=None) -> server.Composite:
+    """The whole `quenching` server: the catalog, plus the specs tools when `specs` is present —
+    and, when `only` names pillars, nothing outside them."""
     present = present or router().present
-    parts = [CatalogSurface(present)]
-    if present("specs"):
+    keep = None if only is None else set(only)
+    parts = [CatalogSurface(present, only)]
+    if present("specs") and (keep is None or "specs" in keep):
         from quenching.specs import mcp as specs_mcp
         parts.append(specs_mcp.SURFACE)
     return server.Composite("quenching", parts)

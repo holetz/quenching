@@ -51,6 +51,9 @@ SUBJECT_RE = re.compile(r"^[^\r\n]+$")
 COMMIT_SHA_RE = re.compile(r"^[0-9a-fA-F]{7,40}$")
 DEFAULT_META_INDENT = "      "
 PARALLEL_RE = re.compile(r"^\[P\](?:\s|$)")
+# `(dropped → 1.6)` — an ABANDONED task names the task that replaced it. The task id after
+# the arrow is the whole payload; `->` is accepted for a keyboard without the arrow.
+DROPPED_RE = re.compile(r"\(\s*dropped\s*(?:→|->)\s*(\d+(?:\.\d+)*)\s*\)", re.IGNORECASE)
 BLOCKED_REASON_RE = re.compile(r"—\s*blocked\s*:\s*(.+?)\s*$", re.IGNORECASE)
 
 
@@ -133,7 +136,7 @@ def parse_tasks(text: str) -> list[dict]:
     `state` is `" "` (open), `"x"` (done) or `"!"` (blocked). The blocked marker is
     deliberately IN THE FILE rather than in sidecar state: it is what a human reads when
     they come to unblock it, and v1's hidden attempt counter was read by nobody."""
-    sections = parse_sections(mask_comments(text))
+    sections = parse_sections(mask_comments(text), compute_filled=False)
     if "Tasks" not in sections:
         return []
     base = sections["Tasks"]["lineno"] + 1
@@ -210,6 +213,7 @@ def parse_tasks(text: str) -> list[dict]:
             # under the open form, a `constraint:` line following `verify:` overwrote it, and
             # the loop would have run that prose as the task's shell command.
         operational = is_operational(files)
+        dropped_m = DROPPED_RE.search(body)
         out.append({
             "index": idx,
             "id": idm.group(1) if idm else None,
@@ -236,6 +240,7 @@ def parse_tasks(text: str) -> list[dict]:
             # commit" keeps its single path, and no reader has to know the annotation.
             "files": [] if operational else files,
             "operational": operational,
+            "dropped": dropped_m.group(1) if dropped_m else None,
             "pattern": pattern,
             "cwd": cwd,
             "verify": verify,

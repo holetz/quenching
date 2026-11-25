@@ -15,11 +15,16 @@ leaves the record at `not-run`, which is the honest value for a verdict nobody r
 
 ## Checks (given a spec id, its base and its branch or worktree)
 
-Checks 2 to 5, 7 and 9 read ONE payload, measured inside the spec's worktree with a fixed argv:
+**Each check is closed.** The evidence of a check is only the source its own definition names. The
+spec's `run` and `outcome` records, and the `verifier=` stamp a previous pass wrote, are never
+evidence for any check before the merge: a FAIL reason that rests on one of them is dropped and the
+check is decided by its named source alone. The one exception is check 8, where a spec already in
+`archive/` makes `outcome: done` the condition under test, not evidence. A "counts / does not
+count" line below closes a check further.
 
-```bash
-.agents/quenching/bin/cq git audit [--root <repo>] --worktree <wt> --base origin/<base> --branch <branch> --sha <sha> [--sha <sha>…] --json
-```
+Checks 2 to 5, 7, 9 and 11 read ONE payload, measured inside the spec's worktree with a fixed argv:
+
+`git_audit(worktree=<wt>, base="origin/<base>", branch=<branch>, sha=[<sha>, …])`
 
 `--base` is `origin/<base>` wherever `origin` exists, the ref a worktree is cut from and a PR merged
 through `gh` moves; a local `<base>` reads stale there and would charge a dependency's files to this
@@ -30,18 +35,20 @@ is an entry of `errors` with `complete: false`, never an empty list. When `compl
 check that reads a field whose read is named in `errors` is `inconclusive`, not `ok`, and the
 verdict is FAIL with the error quoted; an empty `status` or `stash` proves nothing then.
 
-Run it from the base checkout, or from any other cwd with `--root <repo>` (add it when the audited repository is not the session's, never a `cd <repo> &&` prefix); it refuses (exit 2) a path the repository does not register as a
-worktree and any ref that does not resolve to a commit. Your only shell grants are this verb,
-`.agents/quenching/bin/cq specs status`/`show` and `.agents/quenching/bin/cq git pr view`: never `git`, `bash` or `cd <wt> && …`, which no grant
-matches (`--root` is an option of the granted verb). Without a worktree, `--worktree` is the base checkout itself.
+Run it from the base checkout (when the audited repository is not the session's, the prompt names it, never a `cd <repo> &&` prefix); it refuses (exit 2) a path the repository does not register as a
+worktree and any ref that does not resolve to a commit. Your only grants are this tool,
+`specs_status`/`specs_show` and `git_pr_view`: never `git`, `bash` or `cd <wt> && …`, which no grant
+matches. Without a worktree, `--worktree` is the base checkout itself.
 
-1. Tasks: `.agents/quenching/bin/cq specs status --spec <id> --json` shows checked == total. For a spec of another repository add `--root <repo>` after the verb (`.agents/quenching/bin/cq specs status --root <repo> --spec <id> --json`, same for `show`): a flag before the verb matches no grant.
+1. Tasks: `specs_status(spec=<id>)` shows checked == total. A spec of another repository is read by naming that repository in the prompt, never by a `cd`.
+   Counts: the payload's `tasks.checked` and `tasks.total`. Does not count: the worker's `TASKS:` line.
 2. Commits: the payload's `commits` is non-empty, and each task sha the worker named is in it.
    A checked task whose `files:` is the reserved `(operational)` annotation writes no repository
-   file, so it is the ONE kind of checked task that owes no sha: `.agents/quenching/bin/cq specs show --spec <id>
-   --task <t> --json` reports it as `"operational": true` with `"files": []`. Every other
+   file, so it is the ONE kind of checked task that owes no sha: `specs_show(spec=<id>, tasks=[<t>])` reports it as `"operational": true` with `"files": []`. Every other
    checked task without a sha is FAIL — the declaration is the whole excuse, and it never
    extends to a task that declared paths.
+   A checked task whose text carries `(dropped → <id>)` was abandoned and replaced: `specs_show(spec=<id>, tasks=[<t>])` reports it as `"dropped": "<id>"`. It owes no sha only when the task named there (read the same way) is checked and carries a `commit:` or `subject:` anchor; a replacement with no sha leaves the abandoned task FAIL like any other checked task without one.
+   Counts: the payload's `commits`, each task's `operational` marker and `dropped` target. Does not count: the worker's `SHAS` line as proof, or a commit message.
 3. Gate: you execute nothing. Read the code the worker reported on its own `GATE_EXIT:` line as
    a CLAIM, not a verdict: the gate is certified by CI on the PR before the merge
    (the `spec-orchestrator` `merge` step). An absent line and `not-run` are both INCONCLUSIVE,
@@ -53,16 +60,18 @@ matches (`--root` is an option of the granted verb). Without a worktree, `--work
    `quenching/`: `.agents/.quenching-deploy.json` itself and each changed path that is a key of the
    `files` of the branch's `.agents/.quenching-deploy.json` (`Read` it); any other path stays listed.
    Compare the remaining paths with the union of the tasks' `files:` (plus spec records).
-   The `tasks` list of `.agents/quenching/bin/cq specs show --spec <id> --json` carries no `files:`: read it per task with
-   `.agents/quenching/bin/cq specs show --spec <id> --task <t> --json` (`--task` repeats). An operational task
+   The `tasks` list of `specs_show(spec=<id>)` carries no `files:`: read it per task with
+   `specs_show(spec=<id>, tasks=[<t>])` (`tasks` repeats). An operational task
    contributes no path to the union, so a file it wrote stays outside and is FAIL: the marker
    declares a task that writes nothing, it never hides a diff.
    Every remaining path outside the union is FAIL, including when the union is empty; list each
    one. A non-empty `changed` containing only proven generated copies passes scope, never `n/a`.
    An authored file, and a derived output the manifest does not list, stay listed.
-5. Hygiene: the payload's `stash` and `status` are both empty.
-6. Delivery: when the worker reported a PR, `.agents/quenching/bin/cq git pr view --number <n> --json` is `ok` and its
+5. Hygiene: the payload's `stash` and `status` are both empty. Counts: only those two fields. Does not count: the
+   worker's `GIT AUDIT:` line.
+6. Delivery: when the worker reported a PR, `git_pr_view(number=<n>)` is `ok` and its
    `base` is the base (it reads GitHub or Azure DevOps, whichever the origin names).
+   Counts: the `ok` and `base` of `pr view`. Does not count: the PR's checks, reviews or mergeability.
 
 7. History: every sha the worker named in `SHAS` is `true` under the payload's `ancestry`, and
    `rewrites.branch` plus `rewrites.head` are empty. A rewrite is a reflog move that is not a
@@ -84,11 +93,14 @@ matches (`--root` is an option of the granted verb). Without a worktree, `--work
    entry, so this check cannot see them. An empty `reflog` list marks that half `n/a`; a `false`
    ancestry is still FAIL.
 
-8. Conclusion: `.agents/quenching/bin/cq specs status --spec <id> --json` shows `## Outcome` filled. Before the
+8. Conclusion: `specs_status(spec=<id>)` shows `## Outcome` filled. Before the
    merge the spec stays in `plans/` — the archive waits for the merge — and that is PASS. A spec
    without a filled `## Outcome` is FAIL: the worker's `conclude` did not run, whatever its report
-   says. A spec already in `archive/` with `outcome: done` whose work ref is not an ancestor of
-   `origin/<base>` is FAIL too: it was archived before the merge. `n/a` only when the worker reported
+   says. Counts: the `Outcome` entry of the payload's `sections` (`state: filled`). Does not count
+   for a pre-merge spec: the `outcome` record (absent or empty is no FAIL by itself), the `run` record
+   or a previous `verifier=` stamp. After archiving the rule flips: a spec already in `archive/`
+   with `outcome: done` whose work ref is not an ancestor of `origin/<base>` is FAIL: it was
+   archived before the merge, and no line above discards that FAIL. `n/a` only when the worker reported
    `STATE: continue` or `blocked`.
 
 9. Grants: the payload's `grants` lists every entry the branch ADDS to an agent's `tools:`, a command's
@@ -108,8 +120,9 @@ matches (`--root` is an option of the granted verb). Without a worktree, `--work
    changed frontmatter it cannot read whole (`(unparsed frontmatter)`), and a deleted settings file,
    hook, workflow, agent, command or skill (`(deleted)`). Unchanged never appears, nor a narrowing that removes no surface line, nor a relocation proved by the audit: a file that is a byte-for-byte copy of its source (the payload's `generated`) and a `tools:` entry that is exactly the namespace rewrite (`quenching:<head>` to `<module>:<head>`) of an entry the source had, by the map of the BASE manifest (the branch's own manifest never proves its equivalence). In an autonomous
    run a non-empty `grants` is FAIL with `needs-human: alargamento`, quoting each `path` and its
-   `added` entries: the `spec-orchestrator` takes the spec to the human epic, and the verifier never
-   judges whether the widening is justified. Empty is ok; a non-autonomous run reports the list.
+   `added` entries, except the entries an epic authorization covers (§Epic authorization): the
+   `spec-orchestrator` takes the rest to the human epic, and the verifier never judges whether a
+   widening is justified. Empty is ok; a non-autonomous run reports the list.
    The limit is declared: `grants` catches the widening a worker that follows the protocol makes by mistake;
    it is no sandbox against one who circumvents it on purpose (a worker with free `Bash` writes outside the diff anyway).
 
@@ -117,7 +130,8 @@ matches (`--root` is an option of the granted verb). Without a worktree, `--work
    `{path, severity, kind, detail}`. Any `severity: fail` entry (`test-deleted`, `test-lost-asserts`,
    `gate-shrunk`: a test file deleted or left with no assert, a step removed from
    `scripts/verify_repo.sh` or `quenching/assets/checks/**`) is FAIL with
-   `needs-human: régua rebaixada`, quoting each `path` and `detail`. When the spec's own `## Problem` or
+   `needs-human: régua rebaixada`, quoting each `path` and `detail`, except the entries an epic
+   authorization covers (§Epic authorization). When the spec's own `## Problem` or
    `## Proposal` declares that removal as its objective, the FAIL quotes that declaration for the
    conductor; it never dispenses the FAIL by itself. `severity: warn` entries (`suppression-added`: a new
    `noqa`, `type: ignore`, `skip`, `skipIf`, `skipUnless`, `xfail`; `discover-unrecognized`: the gate's test-discovery command was not recognised, so a moved
@@ -132,7 +146,15 @@ matches (`--root` is an option of the granted verb). Without a worktree, `--work
    (the `spec-orchestrator` passes it as a claim) and compare its counts with the checked tasks. Every checked task should have one `Codex:` line (`wrote`, `fallback`,
    `guard` or `skipped`); list the ids without one, or `sem relato` or no line in the prompt as "missing CODEX: line", as a warning in the evidence.
    The worker's report is a claim: this check accuses an absent line, it does not prove the consultation.
-   `n/a` only when no task is checked.
+   `n/a` when no task is checked, and also when the Codex executor is not enabled: read the audit payload's
+   `codexExecutor`, the effective `shared.codex.executor.enabled` with every config layer merged (the local
+   `.agents/quenching.local.json` fills a key the project omits), and mark the check `n/a` unless it is `true`.
+   Never decide it from `.agents/quenching.json` alone. `codexExecutor: null` comes with a `config` read in
+   `errors`: the check is `inconclusive` under the payload's `complete` rule above. A repository without the executor gets no `CODEX:` warning.
+
+## Epic authorization (checks 9 and 10)
+
+The prompt names the epic id. Read its `## Design` with `specs_show(spec=<epic>, full=true)` (a tool you already hold; no grant is added). A `grants` or `lowered` entry passes only when a bullet of that Design carries a date (`YYYY-MM-DD`), names this spec's id or the entry's exact path, and describes the change the diff makes. The evidence quotes that bullet. An entry no such bullet covers stays FAIL with `needs-human`; so does every entry when the prompt names no epic or the Design has no such bullet. An authorization covers only what it names and never extends to another entry or another spec; the spec's own `## Problem` or `## Proposal` never authorizes by itself. This narrows what the verifier refuses by mistake and never stops it refusing an unauthorized widening or lowering.
 
 If a check does not apply (no PR yet; scope with an empty `changed`), mark it `n/a`; do not fail on it. An absent `files:` never makes scope `n/a` while `changed` is non-empty.
 

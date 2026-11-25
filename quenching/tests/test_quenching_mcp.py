@@ -62,6 +62,28 @@ class Catalog(unittest.TestCase):
         self.assertTrue(catalog.annotations(catalog.CATALOG["git_pr_merge"])["destructiveHint"])
 
 
+class ToolNames(unittest.TestCase):
+    def test_a_verb_prefix_names_every_tool_under_it(self):
+        self.assertEqual(catalog.tool_names(("specs", "status")),
+                         ["specs_epic_progress", "specs_status"])
+        self.assertEqual(catalog.tool_names(("git", "history")),
+                         ["git_history_diff", "git_history_log", "git_history_show"])
+        self.assertEqual(catalog.tool_names(("components", "read")), ["components_read"])
+
+    def test_no_prefix_is_the_whole_server_and_an_unknown_verb_is_nothing(self):
+        every = catalog.tool_names()
+        self.assertTrue(set(catalog.CATALOG) <= set(every))
+        self.assertIn("specs_section_write", every)
+        self.assertEqual(catalog.tool_names(("specs", "scrub")), [])
+
+    def test_the_verbs_references_cite_are_catalogued(self):
+        for name, cls in (("specs_doctor", "read"), ("specs_schedule", "read"),
+                          ("specs_title", "write"), ("specs_depends", "write"),
+                          ("config_schema", "read"), ("config_set", "write")):
+            with self.subTest(name):
+                self.assertEqual(catalog.CATALOG[name].cls, cls)
+
+
 class Schema(unittest.TestCase):
     def test_the_schema_is_the_parser_read_back(self):
         verb = catalog.resolve(catalog.CATALOG["components_read"])
@@ -71,7 +93,7 @@ class Schema(unittest.TestCase):
         props = shape["properties"]
         self.assertEqual(props["rules_only"]["type"], "boolean")
         self.assertEqual(props["sections"]["type"], "array")
-        self.assertNotIn("root", props)
+        self.assertEqual(props["root"], server.ROOT)  # the one call's tree, never the verb's flag
         self.assertNotIn("json", props)
 
     def test_choices_become_an_enum_and_int_an_integer(self):
@@ -132,18 +154,62 @@ class Argv(unittest.TestCase):
             catalog.argv(catalog.CATALOG["git_pr_create"],
                          {"base": "main", "head": "b", "title": "t", "body": "a\0b"}, "/repo")
 
-    def test_pr_merge_cannot_stamp_the_gated_merge_record(self):
-        # The `merge` record is a gated move: it goes through `specs_record` and its elicitation.
-        props = catalog.schema(catalog.resolve(catalog.CATALOG["git_pr_merge"]))["properties"]
-        self.assertNotIn("spec", props)
-        with self.assertRaises(server.ToolArgs):
-            catalog.argv(catalog.CATALOG["git_pr_merge"],
-                         {"url": "https://github.com/o/r/pull/1", "spec": "1"}, "/repo")
+    def test_pr_merge_stamps_the_merge_record_as_the_cli_does(self):
+        # `--spec` stamps `merge` once the PR merged; the record is no gated decision.
+        row = catalog.CATALOG["git_pr_merge"]
+        self.assertTrue(catalog.annotations(row)["destructiveHint"])
+        self.assertIn("spec", catalog.schema(catalog.resolve(row))["properties"])
+        cmd, _ = catalog.argv(row, {"url": "https://github.com/o/r/pull/1", "spec": "1"},
+                              "/repo")
+        self.assertIn("--spec=1", cmd)
 
     def test_worktree_retire_is_announced_destructive(self):
         notes = catalog.annotations(catalog.CATALOG["git_worktree_retire"])
         self.assertTrue(notes["destructiveHint"])
         self.assertFalse(notes["readOnlyHint"])
+
+    def test_the_verbs_the_bodies_cite_carry_their_class(self):
+        expected = {
+            "read": {"specs_config", "specs_validate", "specs_parallel", "specs_estimate",
+                     "specs_handoff_facts", "specs_artifact_list", "specs_artifact_read",
+                     "components_status", "git_worktree_slots", "security_leak",
+                     "ops_inventory", "proof_inventory"},
+            "write": {"specs_reconcile", "specs_tags", "specs_verification",
+                      "specs_handoff_write", "specs_artifact_write", "specs_artifact_rm",
+                      "components_bridge", "components_migrate", "proof_readme",
+                      "git_worktree_acquire", "git_worktree_release", "git_refresh",
+                      "design_render", "design_import", "design_align", "design_genre_new"},
+        }
+        for cls, names in expected.items():
+            for name in names:
+                with self.subTest(name):
+                    self.assertEqual(catalog.CATALOG[name].cls, cls)
+        for name in ("specs_artifact_rm", "git_worktree_release"):
+            self.assertTrue(catalog.annotations(catalog.CATALOG[name])["destructiveHint"], name)
+
+    def test_a_read_or_write_tool_never_publishes_a_file_or_a_push(self):
+        hidden = {"specs_artifact_read": "out", "specs_handoff_write": "push"}
+        for name, dest in hidden.items():
+            props = catalog.schema(catalog.resolve(catalog.CATALOG[name]))["properties"]
+            self.assertNotIn(dest, props, name)
+            with self.assertRaises(server.ToolArgs):
+                catalog.argv(catalog.CATALOG[name], {dest: "x"}, "/r")
+
+    def test_no_read_tool_reaches_a_write_to_a_remote(self):
+        reaching = {"push", "probe_claims", "force", "delete"}
+        for name, row in catalog.CATALOG.items():
+            if row.cls != "read":
+                continue
+            with self.subTest(name):
+                props = catalog.schema(catalog.resolve(row))["properties"]
+                self.assertFalse(reaching & set(props), props)
+        with self.assertRaises(server.ToolArgs):
+            catalog.argv(catalog.CATALOG["git_preflight"], {"probe_claims": True}, "/r")
+
+    def test_a_specs_row_runs_under_the_router_root(self):
+        cmd, as_json = catalog.argv(catalog.CATALOG["specs_validate"], {"spec": "3"}, "/repo")
+        self.assertEqual(cmd, ["--root", "/repo", "specs", "validate", "--spec=3", "--json"])
+        self.assertTrue(as_json)
 
     def test_a_pillar_without_router_root_gets_the_verbs_own_root(self):
         cmd, _ = catalog.argv(catalog.CATALOG["git_base"], {}, "/repo")
@@ -184,6 +250,9 @@ class Surface(unittest.TestCase):
             self.assertEqual(by_name[name]["inputSchema"]["type"], "object")
         self.assertTrue(by_name["git_base"]["annotations"]["readOnlyHint"])
         self.assertTrue(by_name["git_push"]["annotations"]["openWorldHint"])
+        listed = by_name["specs_claim_list"]["annotations"]
+        self.assertEqual((True, True), (listed["readOnlyHint"], listed["openWorldHint"]))
+        self.assertFalse(by_name["git_base"]["annotations"]["openWorldHint"])
 
     def test_an_absent_pillar_publishes_no_tool(self):
         surface = catalog.surface(present=lambda pillar: pillar not in ("ops", "specs"))
@@ -223,6 +292,40 @@ class Calls(unittest.TestCase):
         result = self.call("git_base", {"nope": True})
         self.assertTrue(result["isError"])
         self.assertEqual(json.loads(result["content"][0]["text"])["code"], "mcp-bad-arguments")
+        self.assertEqual(os.getcwd(), held)
+
+
+class CallRoot(unittest.TestCase):
+    """`root` names the tree one call acts on: the verb's `--root` and the dispatch's cwd."""
+
+    def setUp(self):
+        self._tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self._tmp.cleanup)
+        self.root = git_repo(os.path.join(self._tmp.name, "a"))
+        self.other = git_repo(os.path.join(self._tmp.name, "b"))
+        subprocess.run(["git", "-C", self.other, "branch", "-m", "trunk"], check=True)
+
+    def test_every_tool_publishes_root(self):
+        for name, row in catalog.CATALOG.items():
+            with self.subTest(name):
+                self.assertIn("root", catalog.schema(catalog.resolve(row))["properties"])
+
+    def test_a_read_and_a_write_tool_act_on_the_named_root(self):
+        payload, failed = catalog.call("git_state", {"root": self.other}, self.root)
+        self.assertFalse(failed, payload)
+        self.assertEqual(os.path.realpath(payload["root"]), os.path.realpath(self.other))
+        payload, failed = catalog.call("git_specs", {"branch": "trunk", "add": "7",
+                                                     "root": "../b"}, self.root)
+        self.assertFalse(failed, payload)
+        described = subprocess.run(["git", "-C", self.other, "config", "branch.trunk.description"],
+                                   capture_output=True, text=True).stdout
+        self.assertIn("quenching-specs: 7", described)
+
+    def test_a_root_that_names_no_directory_is_refused_before_the_verb_runs(self):
+        held = os.getcwd()
+        for bad in ("missing", "-x", "a\nb", "", 3):
+            payload, failed = catalog.call("git_state", {"root": bad}, self.root)
+            self.assertEqual((failed, payload["code"]), (True, "mcp-bad-arguments"), bad)
         self.assertEqual(os.getcwd(), held)
 
 

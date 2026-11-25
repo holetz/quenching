@@ -4,8 +4,9 @@
       "command": "python3",
       "args": [
         ".agents/quenching/assets/bin/cq",
-        "specs",
-        "mcp"
+        "mcp",
+        "--only",
+        "specs,git,components"
       ]
     }
   }
