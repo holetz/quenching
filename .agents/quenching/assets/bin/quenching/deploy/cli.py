@@ -29,6 +29,9 @@ SETTINGS = ".claude/settings.json"
 # its own generator line and hashes. They carry no human work, so a difference is never `edited`.
 TOOL_REWRITTEN = {deploy_tree.CLAUDE_SKILLS + "/.generated-files.json"}
 HOOKS_PATH = deploy_tree.PAYLOAD + "/assets/githooks"
+# The client families a repository may ask the deploy to project. `github` is the `.github/agents`
+# tree; 463 and 464 extend the same value with their own artifacts, never a harness branch.
+PROJECTIONS = ("github",)
 
 
 def _mcp_refusal(message: str, **extra) -> dict:
@@ -36,6 +39,35 @@ def _mcp_refusal(message: str, **extra) -> dict:
             "remedy": "declare `shared.mcp` as {mount: \"all\"|\"specs\", command: [<python prefix>], "
                       "cliFallback: true|false} "
                       "to override the default, or remove the key"}
+
+
+def _projection_refusal(message: str, **extra) -> dict:
+    return {"code": "ct-deploy-projection", "message": message, **extra,
+            "remedy": f"declare `shared.projections` as a list chosen from "
+                      f"{', '.join(PROJECTIONS)}, or remove the key for no client projection"}
+
+
+def _projections_option(target: Path) -> tuple[list[str], dict | None]:
+    """`shared.projections` from the repository layer, validated before anything is written.
+
+    Read through `repository_document`, never the merged envelope: a projection is the
+    repository's, and the user layer would make the generated files vary by machine."""
+    document, _info, refusal = repository_document(str(target))
+    if refusal:
+        return [], refusal
+    shared = (document or {}).get("shared")
+    raw = shared.get("projections") if isinstance(shared, dict) else None
+    if raw is None:
+        return [], None
+    if not isinstance(raw, list) or not all(isinstance(item, str) and item for item in raw):
+        return [], _projection_refusal("`shared.projections` must be a list of client names",
+                                       projections=raw)
+    unknown = [item for item in raw if item not in PROJECTIONS]
+    if unknown:
+        return [], _projection_refusal(
+            f"`shared.projections` names a client this deploy does not project: "
+            f"{', '.join(unknown)}", clients=unknown)
+    return list(dict.fromkeys(raw)), None
 
 
 def _identity_hooks_warnings(target: Path) -> list[str]:
@@ -622,6 +654,9 @@ def main(argv: list[str]) -> int:
     declared, refusal = _mcp_option(target)
     if refusal:
         return refuse(refusal, args.json)
+    projections, projection_refusal = _projections_option(target)
+    if projection_refusal:
+        return refuse(projection_refusal, args.json)
     workspace_declared, workspace_error = workspace_settings.declared(str(target))
     if workspace_error:
         return refuse({
@@ -662,7 +697,8 @@ def main(argv: list[str]) -> int:
                     or deploy_tree.profiles_for(modules))
         built = deploy_tree.build_tree(deploy_tree.source_root(), target, modules, harnesses,
                                        runtime, profiles, mcp=mcp, python=python,
-                                       hooks_python=hooks_python, workspace=workspace_declared)
+                                       hooks_python=hooks_python, projections=projections,
+                                       workspace=workspace_declared)
     except (OSError, ValueError) as exc:
         return refuse({"code": "ct-deploy-source", "message": str(exc),
                        "remedy": "run deploy from a complete quenching checkout or wheel"},
