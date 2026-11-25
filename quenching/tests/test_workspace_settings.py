@@ -350,6 +350,47 @@ class TheDeploy(unittest.TestCase):
         self.assertEqual(0, code)
         self.assertIn("// user edit", path.read_text(encoding="utf-8"))
 
+    def test_declared_key_seeds_the_tasks_file_only_when_absent(self):
+        self.config({"shared": {"workspace": {"vscode": True}}})
+        code, payload = self.deploy("--modules", "specs", "--check")
+        self.assertEqual(1, code)
+        self.assertIn({"change": "seed", "path": ".vscode/tasks.json"}, payload["changes"])
+        code, payload = self.deploy("--modules", "specs", "--write")
+        self.assertEqual(0, code)
+        path = self.target / ".vscode" / "tasks.json"
+        self.assertEqual(workspace.tasks_document(), jsonc_loads(path.read_text(encoding="utf-8")))
+        path.write_text(path.read_text(encoding="utf-8") + "\n// user edit\n", encoding="utf-8")
+        code, payload = self.deploy("--modules", "specs", "--write")
+        self.assertEqual(0, code)
+        self.assertIn("// user edit", path.read_text(encoding="utf-8"))
+
+    def test_a_declared_partial_tasks_file_is_suggested_and_never_rewritten(self):
+        self.config({"shared": {"workspace": {"vscode": True}}})
+        document = workspace.tasks_document()
+        del document["tasks"][0]
+        partial = json.dumps(document)
+        path = self.target / ".vscode" / "tasks.json"
+        path.parent.mkdir()
+        path.write_text(partial, encoding="utf-8")
+        code, payload = self.deploy("--modules", "specs", "--check")
+        self.assertTrue(any(".vscode/tasks.json" in line and "quenching: gate" in line
+                            for line in payload["suggestions"]), payload["suggestions"])
+        code, payload = self.deploy("--modules", "specs", "--write")
+        self.assertEqual(0, code)
+        self.assertEqual(partial, path.read_text(encoding="utf-8"))
+
+    def test_an_unreadable_tasks_file_is_a_suggestion_and_is_left_alone(self):
+        self.config({"shared": {"workspace": {"vscode": True}}})
+        path = self.target / ".vscode" / "tasks.json"
+        path.parent.mkdir()
+        path.write_text("{ nope", encoding="utf-8")
+        code, payload = self.deploy("--modules", "specs", "--check")
+        self.assertTrue(any("tasks.json" in line and "could not be read" in line
+                            for line in payload["suggestions"]), payload["suggestions"])
+        code, payload = self.deploy("--modules", "specs", "--write")
+        self.assertEqual(0, code)
+        self.assertEqual("{ nope", path.read_text(encoding="utf-8"))
+
     def deploy_human(self, *argv):
         out = io.StringIO()
         with contextlib.redirect_stdout(out), contextlib.redirect_stderr(io.StringIO()):
