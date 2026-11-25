@@ -6,8 +6,9 @@ new flag on a catalogued verb shows up in the tool with no edit here, and a new 
 when it gets its row.
 
 * Closed: the argv is built only from the schema's properties (`additionalProperties: false`), so
-  no argument reaches a verb or a flag the row does not name. `--root` and `--json` are the
-  server's, never the model's.
+  no argument reaches a verb or a flag the row does not name. `--json` is the server's; `--root`
+  is the server's workspace unless the call names its own `root`, which is validated
+  (`server.call_root`) and becomes both the verb's `--root` and the dispatch's cwd.
 * Classes: `read` (`readOnlyHint`), `write` (changes the workspace or the specs store) and
   `external` (leaves the machine: `openWorldHint`, `destructiveHint` where the row says so). The
   class is what a sub-agent grant is given by.
@@ -217,8 +218,11 @@ def _required(action: argparse.Action) -> bool:
 
 
 def schema(verb: Verb) -> dict:
+    """The verb's own arguments, plus `root`: the one call's working tree, which the server turns
+    into the verb's `--root` and the dispatch's cwd."""
     actions = _arguments(verb)
-    out = {"type": "object", "properties": {a.dest: _property(a) for a in actions},
+    out = {"type": "object",
+           "properties": {**{a.dest: _property(a) for a in actions}, "root": server.ROOT},
            "additionalProperties": False}
     required = [a.dest for a in actions if _required(a)]
     if required:
@@ -346,7 +350,10 @@ def call(name: str, args: dict, root: str) -> tuple[dict, bool]:
     """`(payload, is_error)` for one catalogued tool. Raises KeyError for an unknown name."""
     row = CATALOG[name]
     try:
-        cmd, as_json = argv(row, args, root)
+        if not isinstance(args, dict):
+            raise ToolArgs("`arguments` must be an object")
+        root = server.call_root(args, root)
+        cmd, as_json = argv(row, {k: v for k, v in args.items() if k != "root"}, root)
     except ToolArgs as exc:
         return {"ok": False, "code": "mcp-bad-arguments", "message": str(exc)}, True
     try:

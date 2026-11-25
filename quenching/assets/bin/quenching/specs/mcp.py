@@ -169,8 +169,9 @@ def _epic(args: dict) -> list[str]:
 
 
 def _schema(props: dict, required: list[str] | None = None) -> dict:
-    return {"type": "object", "properties": props, "required": required or [],
-            "additionalProperties": False}
+    """Every specs tool also takes `root`: the CLI's `--root`, for one call."""
+    return {"type": "object", "properties": {**props, "root": server.ROOT},
+            "required": required or [], "additionalProperties": False}
 
 
 SPEC = {"type": ["string", "integer"], "description": "the spec id"}
@@ -791,6 +792,7 @@ def _refusal(code: str, message: str) -> tuple[dict, bool]:
 def call_write(name: str, args: dict, root: str, session: Session) -> tuple[dict, bool]:
     _, _, build, stdin, gate, pre = WRITES[name]
     try:
+        root = server.call_root(args, root)
         argv = build(args)
         body = stdin(args) if stdin else None
         question = gate(args) if gate else None
@@ -821,6 +823,7 @@ def call_tool(name: str, args: dict, root: str,
         return call_write(name, args, root, session or Session())
     _, _, build, page_key = TOOLS[name]
     try:
+        root = server.call_root(args, root)
         argv = build(args)
     except ToolArgs as exc:
         return {"ok": False, "code": "mcp-bad-arguments", "message": str(exc)}, True

@@ -293,6 +293,27 @@ class Writes(unittest.TestCase):
         self.assertIn("It breaks.", json.dumps(read))
         self.assertIn("Fix it.", json.dumps(read))
 
+    def test_root_points_one_call_at_another_repository(self):
+        other = os.path.realpath(tempfile.mkdtemp(prefix="quenching-mcp-o-"))
+        self.addCleanup(__import__("shutil").rmtree, other, True)
+        subprocess.run(["git", "init", "-q", other], check=True)
+        theirs = MemoryBackend()
+        backends_mod._BACKEND_CACHE[other] = theirs
+        theirs.create_spec("plans", DOC.format(title="Theirs", problem="Over there."))
+        for name, schema in [*((n, s[1]) for n, s in mcp.TOOLS.items()),
+                             *((n, s[1]) for n, s in mcp.WRITES.items())]:
+            self.assertIn("root", schema["properties"], name)
+        read, failed = mcp.call_tool("specs_status", {"spec": 1, "root": other}, self.tmp)
+        self.assertFalse(failed, read)
+        self.assertEqual(read["title"], "Theirs")
+        payload, failed, _ = self.call("specs_discover", {"spec": 1, "text": "there",
+                                                          "root": other})
+        self.assertFalse(failed, payload)
+        self.assertIn("there", theirs.read_spec(1)[0]["text"])
+        self.assertNotIn("there", self.backend.read_spec(1)[0]["text"])
+        payload, failed, _ = self.call("specs_status", {"spec": 1, "root": "missing"})
+        self.assertEqual((failed, payload["code"]), (True, "mcp-bad-arguments"))
+
     def test_a_blocking_task_needs_a_reason_and_a_free_record_needs_no_question(self):
         payload, failed, _ = self.call("specs_task", {"spec": 1, "action": "block", "task": "1.2"})
         self.assertEqual((failed, payload["code"]), (True, "mcp-bad-arguments"))

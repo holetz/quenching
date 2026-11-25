@@ -93,7 +93,7 @@ class Schema(unittest.TestCase):
         props = shape["properties"]
         self.assertEqual(props["rules_only"]["type"], "boolean")
         self.assertEqual(props["sections"]["type"], "array")
-        self.assertNotIn("root", props)
+        self.assertEqual(props["root"], server.ROOT)  # the one call's tree, never the verb's flag
         self.assertNotIn("json", props)
 
     def test_choices_become_an_enum_and_int_an_integer(self):
@@ -290,6 +290,40 @@ class Calls(unittest.TestCase):
         result = self.call("git_base", {"nope": True})
         self.assertTrue(result["isError"])
         self.assertEqual(json.loads(result["content"][0]["text"])["code"], "mcp-bad-arguments")
+        self.assertEqual(os.getcwd(), held)
+
+
+class CallRoot(unittest.TestCase):
+    """`root` names the tree one call acts on: the verb's `--root` and the dispatch's cwd."""
+
+    def setUp(self):
+        self._tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self._tmp.cleanup)
+        self.root = git_repo(os.path.join(self._tmp.name, "a"))
+        self.other = git_repo(os.path.join(self._tmp.name, "b"))
+        subprocess.run(["git", "-C", self.other, "branch", "-m", "trunk"], check=True)
+
+    def test_every_tool_publishes_root(self):
+        for name, row in catalog.CATALOG.items():
+            with self.subTest(name):
+                self.assertIn("root", catalog.schema(catalog.resolve(row))["properties"])
+
+    def test_a_read_and_a_write_tool_act_on_the_named_root(self):
+        payload, failed = catalog.call("git_state", {"root": self.other}, self.root)
+        self.assertFalse(failed, payload)
+        self.assertEqual(os.path.realpath(payload["root"]), os.path.realpath(self.other))
+        payload, failed = catalog.call("git_specs", {"branch": "trunk", "add": "7",
+                                                     "root": "../b"}, self.root)
+        self.assertFalse(failed, payload)
+        described = subprocess.run(["git", "-C", self.other, "config", "branch.trunk.description"],
+                                   capture_output=True, text=True).stdout
+        self.assertIn("quenching-specs: 7", described)
+
+    def test_a_root_that_names_no_directory_is_refused_before_the_verb_runs(self):
+        held = os.getcwd()
+        for bad in ("missing", "-x", "a\nb", "", 3):
+            payload, failed = catalog.call("git_state", {"root": bad}, self.root)
+            self.assertEqual((failed, payload["code"]), (True, "mcp-bad-arguments"), bad)
         self.assertEqual(os.getcwd(), held)
 
 
