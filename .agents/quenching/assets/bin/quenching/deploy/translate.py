@@ -225,6 +225,86 @@ def reference_document(raw: str) -> str:
     return transform_platform(raw)
 
 
+# A path-scoped rule is the target's own source under `.agents/rules/`. The frontmatter is the
+# neutral dialect: `paths:` as a block list (what Claude reads) and an optional `description`. The
+# Copilot instruction gets the same globs as one quoted `applyTo:` list.
+RULE_NAME = re.compile(r"^[a-z0-9][a-z0-9._-]*$")
+RULE_KEYS = {"paths", "description"}
+
+
+def _rule_source(raw: str, name: str) -> tuple[list[str], str, str]:
+    """The neutral rule frontmatter and its body. A rule without `paths:` refuses: an always-on
+    instruction belongs in `AGENTS.md`, which every client reads."""
+    if not raw.startswith("---\n"):
+        raise ValueError(f"rule has no frontmatter: {name}")
+    end = raw.find("\n---\n", 4)
+    if end < 0:
+        raise ValueError(f"rule frontmatter is not closed: {name}")
+    paths: list[str] = []
+    description = ""
+    key = ""
+    for line in raw[4:end].splitlines():
+        if not line.strip() or line.lstrip().startswith("#"):
+            continue
+        if line.startswith((" ", "\t")):
+            item = line.strip()
+            if key != "paths" or not item.startswith("- "):
+                raise ValueError(f"rule {name} has an indented line outside `paths:`")
+            value = scalar_value(item[2:].strip())
+            if not value:
+                raise ValueError(f"rule {name} has an empty `paths:` item")
+            paths.append(value)
+            continue
+        field, sep, value = line.partition(":")
+        field, value = field.strip(), value.strip()
+        if not sep or field not in RULE_KEYS:
+            raise ValueError(f"rule {name} has an unknown frontmatter key: {field or line}")
+        if field == "paths":
+            if value:
+                raise ValueError(f"rule {name} writes `paths:` inline; use a block list")
+            key = "paths"
+        else:
+            description = scalar_value(value)
+            key = "description"
+    if not paths:
+        raise ValueError(f"rule {name} declares no `paths:`; an always-on rule belongs in AGENTS.md")
+    return paths, description, raw[end + len("\n---\n"):]
+
+
+def _rule_body(raw: str) -> str:
+    return transform_platform(_body(raw))
+
+
+def claude_rule_document(raw: str, name: str) -> str:
+    """The rule in the format Claude Code reads (`.claude/rules/<name>.md`)."""
+    paths, description, body = _rule_source(raw, name)
+    lines = ["---", "paths:"]
+    lines.extend(f"  - {json.dumps(path, ensure_ascii=False)}" for path in paths)
+    if description:
+        lines.append(f"description: {json.dumps(description, ensure_ascii=False)}")
+    lines.append("---")
+    return "\n".join(lines) + "\n\n" + HEADER + "\n\n" + _rule_body(body)
+
+
+def copilot_instruction_document(raw: str, name: str) -> str:
+    """The rule in the format the Copilot harness applies by path
+    (`.github/instructions/<name>.instructions.md`). `applyTo` is one quoted, comma-separated
+    list — the client's scalar form of the same globs."""
+    paths, description, body = _rule_source(raw, name)
+    lines = ["---", f"applyTo: {json.dumps(', '.join(paths), ensure_ascii=False)}"]
+    if description:
+        lines.append(f"description: {json.dumps(description, ensure_ascii=False)}")
+    lines.append("---")
+    return "\n".join(lines) + "\n\n" + HEADER + "\n\n" + _rule_body(body)
+
+
+def rule_documents(raw: str, name: str) -> tuple[str, str]:
+    """One `.agents/rules/` source as its Claude rule and its Copilot instruction."""
+    if not RULE_NAME.match(name):
+        raise ValueError(f"rule name is not a flat slug: {name}")
+    return claude_rule_document(raw, name), copilot_instruction_document(raw, name)
+
+
 def _cq_patterns(names: list[str]) -> list[str]:
     """One `<target cq> <verbs> *` pattern per scoped `Bash(cq <verbs>:*)` grant, in order."""
     patterns: list[str] = []

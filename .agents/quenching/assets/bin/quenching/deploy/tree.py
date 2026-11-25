@@ -21,6 +21,9 @@ from quenching.deploy import translate
 
 PAYLOAD = ".agents/quenching"
 SKILLS = ".agents/skills"
+RULES = ".agents/rules"
+CLAUDE_RULES = ".claude/rules"
+GITHUB_INSTRUCTIONS = ".github/instructions"
 CLAUDE_SKILLS = ".claude/skills"
 CLAUDE_AGENTS = ".claude/agents"
 OPENCODE_AGENTS = ".opencode/agents"
@@ -316,6 +319,35 @@ def _bridge_tree(tree: dict, target: Path) -> None:
              dumps_hash_manifest(document).encode(), 0o644)
 
 
+def _rules_tree(tree: dict, target: Path, harnesses: list[str],
+                projections: list[str]) -> None:
+    """The target's `.agents/rules/*.md`, projected to the client directories it reads.
+
+    The source is the target's, like `.agents/skills/`: the deploy never owns it. A client
+    directory is written only when a declared client reads it — `.claude/rules/` for the
+    `claude` harness, `.github/instructions/` for the `github` projection — and the generated
+    copy is in the manifest, so `--check` owns the drift.
+    """
+    source = target / RULES
+    if not source.is_dir():
+        return
+    claude = "claude" in harnesses
+    github = "github" in (projections or [])
+    if not claude and not github:
+        return
+    for path in sorted(source.glob("*.md")):
+        if not path.is_file() or _is_build(path):
+            continue
+        name = path.stem
+        claude_document, copilot_document = translate.rule_documents(
+            _read(path).decode("utf-8"), name)
+        if claude:
+            _add(tree, f"{CLAUDE_RULES}/{name}.md", claude_document.encode("utf-8"))
+        if github:
+            _add(tree, f"{GITHUB_INSTRUCTIONS}/{name}.instructions.md",
+                 copilot_document.encode("utf-8"))
+
+
 def mcp_argv(mcp: dict) -> list[str]:
     """The Python prefix, the vendored entry point and the mount: the whole server for `all`, the
     mounted pillar's own `mcp` for `specs`, and `mcp --only <pillars>` for a named mount (`core`) or
@@ -477,6 +509,10 @@ def build_tree(source: Path, target: Path, modules: list[str], harnesses: list[s
                  translate.opencode_agent_document(path.read_text(encoding="utf-8"), name,
                                                    narrow, mount).encode(),
                  0o644)
+
+    # Path-scoped rules: the target's source in the generic layer, one generated copy per client
+    # directory a declared client reads.
+    _rules_tree(tree, target, harnesses, projections or [])
     if "github" in (projections or []):
         # The GitHub Copilot harness reads the native format, not the Claude one; a repository
         # declares the projection, so a target without Copilot pays no second register.

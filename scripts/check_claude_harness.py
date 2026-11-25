@@ -2,8 +2,8 @@
 """Validate the repository harness: AGENTS.md is the source; CLAUDE.md is legacy, not required.
 
 Checks meaning, not size: the import exists, the `Language:` and `Ephemeral writes:` lines exist,
-the single gate and both safety rules are stated, the scoped rules exist with `paths:`, and every
-repository path the harness cites resolves.
+the single gate and both safety rules are stated, the scoped rule sources exist with `paths:`, and
+every repository path the harness cites resolves.
 """
 
 from __future__ import annotations
@@ -17,7 +17,9 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 AGENTS_MD = ROOT / "AGENTS.md"
 CLAUDE_MD = ROOT / "CLAUDE.md"
-RULES_DIR = ROOT / ".claude" / "rules"
+# The source of a path-scoped rule; `.claude/rules/` and `.github/instructions/` are the deploy's
+# generated projections of it.
+RULES_DIR = ROOT / ".agents" / "rules"
 
 REQUIRED_AGENTS = {
     "Language line": r"(?m)^Language: [A-Za-z]{2,3}(-[A-Za-z0-9]+)* — the contract is /docs/standards/agents/[a-z-]+\.md\.?$",
@@ -58,13 +60,13 @@ def check() -> list[str]:
     for filename, (path_glob, needle) in SCOPED_RULES.items():
         rule = RULES_DIR / filename
         if not rule.is_file():
-            errors.append(f"missing scoped rule: .claude/rules/{filename}")
+            errors.append(f"missing scoped rule: .agents/rules/{filename}")
             continue
         body = rule.read_text(encoding="utf-8")
         if not body.startswith("---\n") or "paths:" not in body.split("---", 2)[1]:
-            errors.append(f".claude/rules/{filename} has no `paths:` frontmatter")
+            errors.append(f".agents/rules/{filename} has no `paths:` frontmatter")
         if path_glob not in body or needle not in body:
-            errors.append(f".claude/rules/{filename} does not scope `{needle}` to {path_glob}")
+            errors.append(f".agents/rules/{filename} does not scope `{needle}` to {path_glob}")
     for match in CITED.finditer(agents):
         cited = next(group for group in match.groups() if group)
         target = ROOT / cited.lstrip("/")

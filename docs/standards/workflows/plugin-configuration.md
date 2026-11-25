@@ -300,16 +300,18 @@ default. See [deploy-mode.md](../architecture/deploy-mode.md#mcp-registration).
 ## The `shared.projections` block
 
 `shared.projections` is the list of client file families `cq deploy` writes from the same source;
-an absent key writes no client projection. `github` is the family that writes
+an absent key writes no client projection. `github` is the family that writes two artifacts:
 `.github/agents/quenching-<name>.agent.md` from `quenching/agents/*.md` in the Copilot custom-agent
 format — the tool aliases, the model band and `include-custom-instructions`
-([deploy-mode.md](../architecture/deploy-mode.md#copilot-agents)). The key is read through
-`repository_document`, not the merged envelope, for the same reason `shared.mcp` is: a generated
-file belongs to the repository and must not vary by machine. A value that is not a list of known
-client names refuses with `ct-deploy-projection` before anything is written, and every generated
-file is in the manifest, so removing the value removes the files on the next `--write`. It is
-`project` scope: the team decides. A target without Copilot carries no second register, and
-`.github/instructions/` is not this key's projection.
+([deploy-mode.md](../architecture/deploy-mode.md#copilot-agents)) — and
+`.github/instructions/<name>.instructions.md`, the `applyTo:` projection of the target's
+`.agents/rules/<name>.md` ([deploy-mode.md](../architecture/deploy-mode.md#path-scoped-rules)).
+The key is read through `repository_document`, not the merged envelope, for the same reason
+`shared.mcp` is: a generated file belongs to the repository and must not vary by machine. A value
+that is not a list of known client names refuses with `ct-deploy-projection` before anything is
+written, and every generated file is in the manifest, so removing the value removes the files on
+the next `--write`. It is `project` scope: the team decides. A target without Copilot carries no
+second register.
 
 ## Settings read outside the file
 
