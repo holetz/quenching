@@ -2215,7 +2215,7 @@ class PullRequestPayload(unittest.TestCase):
         cls.payload_step = cls.command.split("### 2. Resolve title, body and the provider link", 1)[1]
 
     def test_spec_payload_names_the_canonical_sections_in_order(self):
-        self.assertIn('cq specs section "<id>" \\', self.payload_step)
+        self.assertIn('specs_section(spec=<id>, headings="Problem,Proposal,Impact,Validation,Tasks")', self.payload_step)
         positions = [self.payload_step.index(f"`{heading}`") for heading in
                      ("Problem", "Proposal", "Impact", "Validation")]
         self.assertEqual(positions, sorted(positions))
@@ -2225,9 +2225,9 @@ class PullRequestPayload(unittest.TestCase):
     def test_pr_create_selects_a_named_remote_and_defaults_to_origin(self):
         command = self.command.lower()
         self.assertIn("remote:<name>", command)
-        self.assertIn("cq git state --json", command)
-        self.assertIn("cq git push --branch <branch> --remote <remote>", command)
-        self.assertIn("cq git pr create --base <base> --head <branch>", command)
+        self.assertIn("git_state()", command)
+        self.assertIn("git_push(branch=<branch>, remote=<remote>)", command)
+        self.assertIn("git_pr_create(base=<base>, head=<branch>", command)
         self.assertNotIn("git push -u", command)
         self.assertIn("origin", command)
 
@@ -2247,7 +2247,7 @@ class PullRequestPayload(unittest.TestCase):
     def test_provider_locator_fixture_keeps_github_and_azure_native(self):
         github = "append exactly `Closes #<n>` to the generated body"
         self.assertIn("take it from the status id, never from path", _normalise_prose(self.payload_step))
-        azure = "pass it as `--work-item <n>` to `.agents/quenching/bin/cq git pr create`"
+        azure = "pass it as `work_item=<n>` to `git_pr_create`"
         self.assertIn(github, self.payload_step)
         self.assertIn(azure, self.payload_step)
         self.assertIn("do not invent a `Closes #<n>` sentence", self.payload_step)
@@ -2262,7 +2262,7 @@ class PullRequestPayload(unittest.TestCase):
         reference = MERGE_REFERENCE.read_text(encoding="utf-8").lower()
         combined = f"{command}\n{reference}"
         self.assertIn("separate source-branch deletion offer", combined)
-        self.assertIn("[--delete-source-branch]", command)
+        self.assertIn("delete_source_branch=true", command)
         self.assertIn("squash", reference)
 
     def test_status_command_routes_both_providers_and_normalizes_the_snapshot(self):
@@ -2270,7 +2270,7 @@ class PullRequestPayload(unittest.TestCase):
         reference = PR_REFERENCE.read_text(encoding="utf-8")
         combined = f"{command}\n{reference}"
         for phrase in (
-            "cq specs config --json",
+            "specs_config()",
             "git remote get-url origin",
             "gh repo view",
             "gh pr view",
@@ -2324,7 +2324,7 @@ class PullRequestPayload(unittest.TestCase):
             "git branch --show-current",
             "git remote -v",
             "git remote get-url <remote>",
-            "cq git base --json",
+            "git_base()",
             "git ls-remote",
             "git rev-list --left-right --count",
             "git log",
@@ -2371,7 +2371,7 @@ class PullRequestPayload(unittest.TestCase):
         for phrase in (
             "commit:<ref>",
             "spec:<id> task:<id>",
-            "cq specs status --spec",
+            "specs_status(spec=",
             "git log --grep",
             "--fixed-strings",
             "git rev-parse --verify",
@@ -2386,9 +2386,9 @@ class PullRequestPayload(unittest.TestCase):
             "git revert --abort",
             "askuserquestion",
             "no spec record",
-            "cq specs task --spec",
-            "--uncheck",
-            "--reason",
+            "specs_task(spec=",
+            'action="uncheck"',
+            "reason=",
             "## discoveries",
         ):
             self.assertIn(phrase.lower(), lower)
@@ -2414,9 +2414,9 @@ class PullRequestPayload(unittest.TestCase):
         cleanup = CLEANUP_COMMAND.read_text(encoding="utf-8").lower()
         self.assertIn("remoteBranches".lower(), cleanup)
         self.assertIn("git push <remote> --delete", cleanup)
-        self.assertIn("cq git prune --remote-branch <branch> --remote <remote>", cleanup)
+        self.assertIn("git_prune(remote_branch=<branch>, remote=<remote>", cleanup)
         self.assertIn("remote:<name>", cleanup)
-        self.assertIn("--remote <remote>", cleanup)
+        self.assertIn("remote=<remote>", cleanup)
         self.assertIn("local selection", cleanup)
         self.assertIn("remote selection", cleanup)
         self.assertIn("remote branch is never", cleanup)

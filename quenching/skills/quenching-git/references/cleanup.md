@@ -94,7 +94,7 @@ is reported.
 ```text
 git_prune(worktree=<path>, expect_tip=<tip>, id=<id>, confirm_inactive=true)
 ```
-`--confirm-inactive` is passed only for a worktree the owner confirmed inactive. Orphan worktrees (directory missing) take neither flag. Worktree removal is **never --force**. A refusal (modified or untracked files inside) is reported with git's own
+`confirm_inactive=true` is passed only for a worktree the owner confirmed inactive. Orphan worktrees (directory missing) take neither flag. Worktree removal is **never --force**. A refusal (modified or untracked files inside) is reported with git's own
 message, and that worktree is left standing. **Done when:** every chosen worktree is
 removed, or its refusal is reported.
 
