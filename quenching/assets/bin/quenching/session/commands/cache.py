@@ -221,6 +221,34 @@ def _listings(db: sqlite3.Connection, tables: set, sessions: dict, directory: Pa
     return rows
 
 
+
+def copilot_requests(home: Path, directory: Path | None, anomalies: list) -> tuple:
+    """Requests in scope and the anomalies of the read, from the client's ledger and event log.
+
+    The ledger is the request source; each session in scope is named and parented from its own
+    event log, and `host` is the client that wrote it. A store the reader cannot open raises
+    `CopilotError`, which the command reports as `unavailable`, never as an empty measurement."""
+    from quenching.session import copilot
+    known = copilot.sessions(home)
+    keep = [sid for sid, row in known.items() if directory is None or copilot.in_scope(row, directory)]
+    if directory is not None and not keep:
+        return [], anomalies          # the client's store holds no session for what was asked
+    by_session, anomalies_read = copilot.requests(home, keep)
+    anomalies.extend(anomalies_read)
+    reqs: list = []
+    for sid in keep:
+        agents, facts = copilot.events(home, sid)
+        anomalies.extend(facts.get("anomalies") or [])
+        host = facts.get("client") or ""
+        for request in by_session.get(sid, []):
+            agent = bare(copilot.agent_name(request.agent_id, agents))
+            # The request's session key carries the agent: one Copilot session holds the main agent
+            # and every subagent, and a gap between two agents is not a prompt-cache gap.
+            reqs.append(Req("copilot", f"{sid}/{agent}", "subagent" if request.agent_id else "main",
+                            agent, request.model, request.at, request.fresh, request.cache_read,
+                            request.cache_write, 0, 0, request.output, host))
+    return reqs, anomalies
+
 def _median(values: list) -> int | None:
     import statistics        # the config registry reaches this module; keep it off the import path
     return int(statistics.median(values)) if values else None
@@ -323,12 +351,25 @@ def listing_summary(rows: list) -> list:
             for (role, agent), values in sorted(grouped.items())]
 
 
+def _copilot_source(args) -> bool:
+    """Whether this call reads the Copilot store: `copilot` asked for, or `all` with its home declared.
+
+    The bare `~/.copilot` is never read unasked: a machine that ran the client once keeps that store
+    forever, and `all` means "every store that answers this question", not "every store on the
+    disk". A Copilot session always exports its home."""
+    from quenching.session import copilot
+    return args.harness == "copilot" or (
+        args.harness == "all" and copilot.wants_copilot(None, getattr(args, "copilot_home", None)))
+
+
 def cmd_inflow(args, directory: Path | None, since: datetime | None) -> int:
     """What entered the context by origin and how much of it was re-read (`--inflow`)."""
     from quenching.session.commands import inflow
     anomalies: list = []
     unavailable: dict = {}
     tally = inflow.Tally()
+    if _copilot_source(args):
+        unavailable["copilot"] = "the Copilot event log is not read by --inflow"
     if args.harness in ("all", "claude"):
         files, _, why = claude_files(directory)
         if why:
@@ -405,6 +446,17 @@ def cmd_cache(args) -> int:
                 unavailable["opencode"] = f"{path}: {exc}"
         else:
             unavailable["opencode"] = f"no OpenCode database at {path}"
+    if _copilot_source(args):
+        from quenching.session import copilot
+        home = copilot.home(getattr(args, "copilot_home", None))
+        try:
+            found, _ = copilot_requests(home, directory, anomalies)
+            reqs += found
+            sources["copilot"] = str(copilot.store(home))
+        except copilot.CopilotError as error:
+            unavailable["copilot"] = error.message
+        except (OSError, sqlite3.Error) as exc:
+            unavailable["copilot"] = f"{home}: {exc}"
     if since is not None:
         reqs = [r for r in reqs if r.at is not None and r.at >= since]
     session = getattr(args, "session", None)

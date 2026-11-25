@@ -115,14 +115,17 @@ def add_subcommands(sub: argparse._SubParsersAction) -> argparse._SubParsersActi
                     help="add each row's list-price estimate from quenching's price table")
     co.add_argument("--json", action="store_true", help="machine-readable output")
     co.set_defaults(func=cmd_cost)
-    ca = sub.add_parser("cache", help="the prompt cache Claude Code and OpenCode delivered, in one shape")
-    ca.add_argument("--harness", choices=("all", "claude", "opencode"), default="all",
+    ca = sub.add_parser("cache", help="the prompt cache the harnesses delivered, in one shape")
+    ca.add_argument("--harness", choices=("all", "claude", "opencode", "copilot"), default="all",
                     help="which store to read (default: every store present)")
     where = ca.add_mutually_exclusive_group()
     where.add_argument("--directory", metavar="PATH", help="project to measure (default: this cwd)")
     where.add_argument("--all", action="store_true", help="every project in each store")
     ca.add_argument("--opencode-db", metavar="PATH",
                     help="OpenCode database (default: QUENCHING_OPENCODE_DB, else the XDG data dir)")
+    ca.add_argument("--copilot-home", metavar="PATH",
+                    help="GitHub Copilot client home (default: QUENCHING_COPILOT_HOME, COPILOT_HOME, "
+                         "then ~/.copilot)")
     ca.add_argument("--since", metavar="ISO8601", help="count only requests at or after this instant")
     ca.add_argument("--session", metavar="ID", help="count only this session's requests (its id)")
     ca.add_argument("--usd", action="store_true",
