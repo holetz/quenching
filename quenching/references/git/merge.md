@@ -7,7 +7,7 @@ rule and the two prohibitions bind here too.
 
 ## Contents
 
-`.agents/quenching/bin/cq components read <this file>` returns the heading index; `--sections` addresses one.
+`components_read(path=<this file>)` returns the heading index; `sections=["§X"]` addresses one.
 
 ## Merge strategies
 
@@ -53,7 +53,7 @@ merge:
     base branch's history
 ```
 
-`.agents/quenching/bin/cq specs validate` reports the mismatched cases both ways — an
+`specs_validate()` reports the mismatched cases both ways — an
 anchorless strategy carrying a real subject, and a merge-producing strategy carrying an explicit
 none (`sp-bad-merge`).
 
@@ -103,9 +103,9 @@ the worktree stays.
 
 Three bounds: only after a merge verified at exit 0, never for an abandoned spec, and it does
 **not** delete the branch — that stays the separate offer it already was. A worktree **slot** is
-never removed: `cq specs reconcile --write` releases it (detached at the remote base, unlocked, its
+never removed: `specs_reconcile(write=true)` releases it (detached at the remote base, unlocked, its
 caches kept) — see [isolation.md](isolation.md) §Worktrees are slots. When the spec was archived
 before the merge's own `reconcile` (an earlier `push` or `record` archived it), `reconcile` returns no
-row and the slot stays locked to the merged branch: `cq git worktree release --path <slot>` frees it.
-`cq git worktree retire` is the wrong verb for a slot — it removes a worktree and refuses the slot's
+row and the slot stays locked to the merged branch: `git_worktree_release(path=<slot>)` frees it.
+`git_worktree_retire` is the wrong verb for a slot — it removes a worktree and refuses the slot's
 lock.

@@ -15,12 +15,15 @@ pull request.
 
 Read the current branch, working-tree status, remotes, remote URL and the base from:
 
+```text
+git_base()
+```
+
 ```bash
 git status --porcelain --untracked-files=all
 git branch --show-current
 git remote -v
 git remote get-url <remote>
-.agents/quenching/bin/cq git base --json
 ```
 
 Refuse a dirty tree, detached HEAD, missing remote, missing branch, or target equal to the resolved

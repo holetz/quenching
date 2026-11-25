@@ -13,7 +13,7 @@ rule; both are why it was written down.
 
 ## Contents
 
-`.agents/quenching/bin/cq components read <this file>` returns the heading index; `--sections` addresses one.
+`components_read(path=<this file>)` returns the heading index; `sections=["§X"]` addresses one.
 
 ## 1. Extract the aggregate; never paste the raw dump
 
@@ -47,7 +47,7 @@ question for a few dozen.
 
 <!-- rules -->
 
-`.agents/quenching/bin/cq components read <path> --sections "§X"` resolves **any** markdown file, not only
+`components_read(path=<path>, sections=["§X"])` resolves **any** markdown file, not only
 `references/**` — a target repo's own `/docs/standards/**.md` and
 `/docs/glossary.md` included. Where a step needs only the one or two sections that
 govern its decision, address them the same way this plugin already addresses its own references;
@@ -67,14 +67,14 @@ the bullet carries a `§`address.
 body that cites it. A target's `/docs/` carries no such guarantee: the standard a target holds
 may have been born from `assets/templates/automation/skills-standard.md` and never touched, or
 evolved past it, and the two heading sets differ — `§Single-axis classification` exists only in the
-evolved one. An unresolved section is a **refusal**, not a degradation: `.agents/quenching/bin/cq components read` exits
+evolved one. An unresolved section is a **refusal**, not a degradation: `components_read` exits
 with 2, naming the headings the file does have. So a command body may hardcode a `§`address against
 a target's `/docs/` only where it also says what to do on that exit 2. A path discovered at
 runtime and read whole is unaffected — there is no address to be wrong.
 
 <!-- rationale -->
 
-The mechanism already generalizes — nothing about `.agents/quenching/bin/cq components read` is specific to the plugin's
+The mechanism already generalizes — nothing about `components_read` is specific to the plugin's
 own `references/`, and a doctrine site that still reaches for the plain file-reading tool on
 a target's `/docs/` is paying for that gap, not for a real constraint. A rule two sections long
 costs the same to read narrow as it does to read whole; only the surrounding rules that were not

@@ -30,6 +30,7 @@ Resolve `cq` per
 
 Resolve the tool, then run the verifier before reading the operations tree:
 
+<!-- cli: root -->
 ```bash
 .agents/quenching/bin/cq --root "$TARGET_ROOT" ops doctor --json
 ```
@@ -48,6 +49,7 @@ non-clean verifier result has authorized the inventory stage below.
 
 Only after exit `1`, read the verifier's JSON and run the single inventory pass:
 
+<!-- cli: root -->
 ```bash
 .agents/quenching/bin/cq --root "$TARGET_ROOT" ops inventory --json
 ```
@@ -91,12 +93,13 @@ If the plan is rejected, write nothing and stop.
 ### 5. Apply only the first two bands
 
 Under the authorization, apply the mechanical closures and the bounded structural repairs. Use
-`.agents/quenching/bin/cq ops registry --write` only for a mechanical registry finding, and edit only the declared
+`ops_registry(write=true)` only for a mechanical registry finding, and edit only the declared
 operations root or registry path for a structural finding. Never arm a write-capable entry point,
 archive an entry point, re-enable a disabled check, or select a router the target did not declare.
 
 After the edits, run the same probe again:
 
+<!-- cli: root -->
 ```bash
 .agents/quenching/bin/cq --root "$TARGET_ROOT" ops doctor --json
 ```
@@ -124,5 +127,5 @@ human-owned action for every judgement finding.
 - One plan and one routine confirmation cover the pass; code-coupled and irreversible actions keep
   their own confirmation.
 - Mechanical and structural findings may be applied; judgement findings are report-only.
-- The closing verifier is the same `.agents/quenching/bin/cq ops doctor --json` program as the probe.
+- The closing verifier is the same `ops_doctor()` program as the probe.
 - The operations front's own report is the only run record; no sweep log is written.

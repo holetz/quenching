@@ -25,6 +25,7 @@ every `.agents/quenching/bin/cq delivery` call. Resolve `cq` per
 
 Run the verifier before interpreting the workflow tree:
 
+<!-- cli: root -->
 ```bash
 .agents/quenching/bin/cq --root "$TARGET_ROOT" delivery doctor --json
 ```
@@ -61,6 +62,7 @@ branch, publish scope, permission set or deployment command. Never run a release
 
 After authorized edits, run the same probe again:
 
+<!-- cli: root -->
 ```bash
 .agents/quenching/bin/cq --root "$TARGET_ROOT" delivery doctor --json
 ```
@@ -84,7 +86,7 @@ residual owner action.
 ## Invariants
 
 - Applicability is probed before inventory, classification and confirmation.
-- `.agents/quenching/bin/cq delivery status` remains read-only; align never invents a workflow tree.
+- `delivery_status()` remains read-only; align never invents a workflow tree.
 - Mechanical and bounded structural findings may be repaired only under one authorization.
 - Provider, environment, promotion, publication, permission and deployment choices remain human-owned.
-- The closing verifier is the same `.agents/quenching/bin/cq delivery doctor --json` program as the probe.
+- The closing verifier is the same `delivery_doctor()` program as the probe.

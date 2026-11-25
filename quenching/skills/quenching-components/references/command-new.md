@@ -9,7 +9,7 @@ allowed-tools: Bash(cq:*), Bash(cq.cmd:*), Bash(python3:*), Bash(py:*), Read, Gr
 Creates or edits **ONE FILE** in the **target repo's own** automation surface — a
 `.agents/skills/<name>/SKILL.md` carrying both the description that routes to it and the body that
 runs, invocable as `/<name>`. `.agents/` is the only editable source: the host does not read
-`.agents/skills/`, so `.agents/quenching/bin/cq components bridge` generates its `.claude/skills/<name>/` copy, never
+`.agents/skills/`, so `components_bridge()` generates its `.claude/skills/<name>/` copy, never
 edited by hand. `<name>` is **one segment** — the host does not discover a nested
 `.claude/skills/<a>/<b>/SKILL.md` — and it IS the skill's identity. The axis, naming, and
 registry format live in
@@ -36,7 +36,7 @@ Molds live at
   confirmation. A declined plan writes nothing.
 - **MERGE, never clobber.** An edit preserves the skill's body and any hand-written
   content; only the gap being fixed changes. This skill never deletes a skill.
-- **The registry zone is regenerated, never composed.** `.agents/quenching/bin/cq components registry reindex` owns the
+- **The registry zone is regenerated, never composed.** `components_registry_reindex()` owns the
   zone's format; the zone is never written between the markers by hand.
 
 ## Resolving the tool
@@ -142,8 +142,8 @@ its case count and that the rerun is yours to run, not this command's. Wait for 
 ### 7. Write, then bridge
 Write `.agents/skills/<name>/SKILL.md` from `automation/command.md` — frontmatter and body in the
 one file; write the rule if planned. Then generate the Claude copy from the source:
-```bash
-.agents/quenching/bin/cq components bridge --target . --write --json
+```text
+components_bridge(write=true)
 ```
 Exit 2 `ct-bridge-unowned` names a `.claude/skills/<name>/` the bridge did not generate: report it
 and stop the bridge there, never overwrite it. **Done when:** every planned file exists with its
@@ -152,8 +152,8 @@ planned content and `bridge --write` exited 0.
 ### 8. OKF tail (bundle present)
 Create `/docs/project/automation.md` from `automation/registry.md` first if it is
 absent (it was in the plan). Then regenerate the zone:
-```bash
-.agents/quenching/bin/cq components registry reindex --json
+```text
+components_registry_reindex()
 ```
 Update `project/`'s `index.md` per the procedure in
 [knowledge-add/homes.md](.agents/quenching/references/knowledge-add/homes.md). If the
@@ -162,11 +162,11 @@ decides. **Done when:** `registry reindex` exits 0 and the index is honest.
 
 ### 9. Self-check
 Ask the tool, do not read for it:
-```bash
-.agents/quenching/bin/cq components lint <skill-file> --json     # this skill's conformance
-.agents/quenching/bin/cq components doctor --json                # the surface invariant it just changed
-.agents/quenching/bin/cq components bridge --target . --check --json  # exit 0 — the Claude copy matches the source
-.agents/quenching/bin/cq components registry reindex --json      # `changed: false` — nothing wrote inside the markers after the description pass
+```text
+components_lint(path=<skill-file>)   # this skill's conformance
+components_doctor()   # the surface invariant it just changed
+components_bridge(check=true)   # exit 0 — the Claude copy matches the source
+components_registry_reindex()   # `changed: false` — nothing wrote inside the markers after the description pass
 ```
 Fix every `error`; report every `warn` with its `sk-*` code. What no parser can decide — the no-op
 test, sediment, sprawl, positive prescription — is read by eye against

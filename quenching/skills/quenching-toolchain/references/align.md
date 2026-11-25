@@ -24,6 +24,7 @@ per [tool-resolution.md](.agents/quenching/references/align/tool-resolution.md)
 
 Run the route before reading or editing a target:
 
+<!-- cli: root -->
 ```bash
 .agents/quenching/bin/cq --root "$TARGET_ROOT" toolchain doctor --json
 ```
@@ -86,6 +87,7 @@ already made them deterministic.
 
 Re-run the same closing verifier:
 
+<!-- cli: root -->
 ```bash
 .agents/quenching/bin/cq --root "$TARGET_ROOT" toolchain doctor --json
 ```
@@ -113,5 +115,5 @@ and every residual owner action.
 - `not-applicable` and refusal are explicit states, never guessed healthy configuration.
 - The doctor payload is the authoritative finding and inventory source for this pass.
 - Mechanical and bounded structural findings may be applied; build policy and judgement remain report-only.
-- The closing verifier is the same `.agents/quenching/bin/cq toolchain doctor --json` program as the probe.
+- The closing verifier is the same `toolchain_doctor()` program as the probe.
 - The command never rewrites `.agents/quenching.json` into a toolchain artifact or creates a second configuration home.

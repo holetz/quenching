@@ -3,9 +3,9 @@
 The sections every quenching handoff carries, in this order, each as a `## ` heading exactly as
 named. Both doors write it: `/quenching-handoff` (the main model, while the prompt cache is warm)
 and `/quenching-cache handoff` (Haiku, once it has expired; the plugin carries a generated copy of
-this file). `.agents/quenching/bin/cq specs handoff write` refuses a handoff without
+this file). `specs_handoff_write` refuses a handoff without
 `## Last Request` and `## Next Actions`. Leave out any other section that would be empty. Do not
-list edited files or commits: `.agents/quenching/bin/cq specs handoff facts` adds those exactly,
+list edited files or commits: `specs_handoff_facts()` adds those exactly,
 under `## Facts`.
 
 ## Handoff Confidence

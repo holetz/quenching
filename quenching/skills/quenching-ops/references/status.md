@@ -31,6 +31,7 @@ The payload and target tree are defined by
 
 Set `TARGET_ROOT` to the supplied argument, or to `.` when the argument is omitted, and run:
 
+<!-- cli: root -->
 ```bash
 .agents/quenching/bin/cq --root "$TARGET_ROOT" ops status --json
 ```

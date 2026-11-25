@@ -14,21 +14,18 @@ plain branch in the current checkout only when the human asks for it. The mechan
 [git/isolation.md](.agents/quenching/references/git/isolation.md), cited below rather
 than restated; this command is its standalone entry point for a caller with no build loop of its own.
 
-**Grants.** `allowed-tools` holds only the `cq` verbs a caller that holds no `Skill` also holds, so the body stays followable from a `tools:` list of `cq` verbs and a call outside them here would leave the step blocked. `git checkout -b` and the `.agents/quenching/bin/cq specs record` stamps go through the normal permission prompt. The declared `worktreeSetup` runs inside `cq git worktree add`, so its grant covers it: the declaration in the target's tracked configuration is the consent ([git/isolation.md](.agents/quenching/references/git/isolation.md)).
+**Grants.** `allowed-tools` holds only the `cq` verbs a caller that holds no `Skill` also holds, so the body stays followable from a `tools:` list of `cq` verbs and a call outside them here would leave the step blocked. `git checkout -b` and the `specs_record` stamps go through the normal permission prompt. The declared `worktreeSetup` runs inside `git_worktree_add`, so its grant covers it: the declaration in the target's tracked configuration is the consent ([git/isolation.md](.agents/quenching/references/git/isolation.md)).
 
 ## Workflow
 
 ### 1. Load the rules and the state in one read
-```bash
-.agents/quenching/bin/cq components read .agents/quenching/references/git/isolation.md \
-  --sections "§Isolation happens on the way into a build" --sections "§Branch and worktree names" \
-  --sections "§Recording the isolation"
-.agents/quenching/bin/cq components read .agents/quenching/references/git/conventions.md \
-  --sections "§The declared-directive layer" --sections "§The read-if-present rule"
-.agents/quenching/bin/cq git conventions --json   # `config.branchName`, or absent
-.agents/quenching/bin/cq git state --json           # `branch`, `status` (porcelain), `staged`, `remotes`
-.agents/quenching/bin/cq git base --json
-.agents/quenching/bin/cq specs config --json        # `worktreeSetup`, `sharedPaths`, or their empty values — exit 0 either way
+```text
+components_read(path=".agents/quenching/references/git/isolation.md", sections=["§Isolation happens on the way into a build", "§Branch and worktree names", "§Recording the isolation"])
+components_read(path=".agents/quenching/references/git/conventions.md", sections=["§The declared-directive layer", "§The read-if-present rule"])
+git_conventions()   # `config.branchName`, or absent
+git_state()   # `branch`, `status` (porcelain), `staged`, `remotes`
+git_base()
+specs_config()   # `worktreeSetup`, `sharedPaths`, or their empty values — exit 0 either way
 ```
 `status` non-empty → **an authorized cut is the one exception, and the authorization is the
 caller's word, never this command's inference.** The autopilot's step 1 authorizes a worktree cut
@@ -44,7 +41,7 @@ was already sitting there into the first commit on the new ref, silently.
 under an authorized cut, and the base branch is resolved.
 
 ### 2. Resolve the ID, when one was given
-`$ARGUMENTS` naming a spec → `.agents/quenching/bin/cq specs status --spec "<id>" --json` and read its `records.branch`.
+`$ARGUMENTS` naming a spec → `specs_status(spec=<id>)` and read its `records.branch`.
 Already stamped → report it (`base`, `work`) and **stop**; a second isolation for an already-isolated
 spec is a no-op, not a fresh cut. No record → continue to the cut below, carrying the ID through
 to step 4. `$ARGUMENTS` naming no spec (or empty) → continue with no ID; nothing gets stamped in
@@ -77,8 +74,8 @@ default, Branch only on an explicit request — or the run stops on a git error.
 Take a slot; a failure is reported verbatim and nothing is stamped. **The branch starts from the
 remote base**, because a PR merged through `gh` moves no local ref and the local `<base>` may miss
 the dependency the run waited on:
-```bash
-.agents/quenching/bin/cq git worktree acquire --branch <branch> --base <base> [--spec "<id>"] --json
+```text
+git_worktree_acquire(branch=<branch>, base=<base>, spec=<id>)   # spec= only with an ID from step 2
 ```
 `acquire` locks a free clean slot (`git worktree lock` is the mutex, its reason naming spec,
 session, host and date), else cuts a new one while fewer than `shared.worktreeSlots.max` (12) exist,
@@ -107,11 +104,11 @@ command, so from here on each command carries the worktree explicitly — `cd <w
 the same call, `git -C <worktree>`, `.agents/quenching/bin/cq --root <worktree>` — or a cwd-dependent tool (`cq` without
 `--root`, `git diff`, tests) reads the base checkout and reports green over a tree that did not
 change. `.agents/quenching/bin/cq git …` takes no `--root` on its write verbs
-(a usage error): it always runs as `cd <worktree> && .agents/quenching/bin/cq git …`. Then, only with an ID from step 2
+(a usage error): it always runs as `cd <worktree> && .agents/quenching/bin/cq git …`. A `quenching` MCP tool acts on the server's root, the session's directory, and never on the worktree: a verb that reads or writes the tree (`git_state`, `git_commit`, a test) runs there in that CLI form <!-- cli: root -->. Then, only with an ID from step 2
 (the Worktree form already stamped `branch:` through `--spec`; **Branch** form stamps it by hand):
-```bash
-.agents/quenching/bin/cq specs record "<id>" branch --set base=<base> --set work=<branch>   # Branch form only
-.agents/quenching/bin/cq git specs <branch> --add "<id>" --json
+```text
+specs_record(spec=<id>, name="branch", fields={"base": "<base>", "work": "<branch>"})   # Branch form only
+git_specs(branch=<branch>, add=<id>)
 ```
 **Done when:** the worktree (or the requested branch) exists on disk, the setup ran and was reported
 (worktree only), and — with an ID — `branch:` and the `quenching-specs:` marking are stamped.

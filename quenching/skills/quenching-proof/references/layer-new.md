@@ -25,6 +25,7 @@ and branch on exit code and JSON: `0` is clean, `1` carries findings, and `2` is
 
 Set `TARGET_ROOT` to the supplied root, or `.` when it is omitted. Read the current state first:
 
+<!-- cli: root -->
 ```bash
 .agents/quenching/bin/cq --root "$TARGET_ROOT" proof inventory --json
 ```
@@ -71,7 +72,7 @@ Present one plan for the five coupled structural edits:
 4. add the recognizable path-to-marker block to `tests/conftest.py`, installing the collection
    hook template when no hook exists;
 5. create `tests/fixtures/<layer>.py` when the reach requires shared setup, then run
-   `.agents/quenching/bin/cq proof readme --write` to regenerate the layer README.
+   `proof_readme(write=true)` to regenerate the layer README.
 
 Ask once for authorization of this structural batch. Present the proposed existing-test moves as a
 second, separately confirmed item with the count and every path. A declined migration leaves every
@@ -93,6 +94,7 @@ tests, invent another layer, retire an existing layer, install CI, or run the ta
 
 Regenerate the README:
 
+<!-- cli: root -->
 ```bash
 .agents/quenching/bin/cq --root "$TARGET_ROOT" proof readme --write --json
 ```
@@ -113,6 +115,7 @@ unconfirmed test move or target-suite execution occurred.
 
 Run the static verifier:
 
+<!-- cli: root -->
 ```bash
 .agents/quenching/bin/cq --root "$TARGET_ROOT" proof doctor --json
 ```
@@ -137,5 +140,5 @@ and the report hands back every remaining decision without writing anything else
   confirmation.
 - Existing hook rules and authored README prose survive; generated zones are the only bytes the
   generator replaces.
-- The target suite is never run. `.agents/quenching/bin/cq proof doctor` is the closing verifier, not a test runner.
+- The target suite is never run. `proof_doctor()` is the closing verifier, not a test runner.
 - A new layer may be empty by design; the report states that fact instead of manufacturing proof.

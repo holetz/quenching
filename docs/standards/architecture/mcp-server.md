@@ -68,8 +68,8 @@ CLI stays where no tool covers the verb and on a line marked `cli: <reason>`, fr
 argument can name), `atomic` (a multi-section write), `by` (an `approved` stamp other than
 `by=human`), `flag` (a flag the tool does not publish) and `fallback` (a CLI synopsis beside its
 tool). `cq components lint` holds the form with `sk-cq-cli-citation` and `sk-mcp-unknown-tool` over
-the fronts `components/mcp_citations.py`'s `ENFORCED` names; each front joins it when its bodies are
-converted.
+the bodies `components/mcp_citations.py`'s `ENFORCED` names: every `quenching-*` skill and every
+shared reference; the agents under `quenching/agents/` join it when theirs are converted.
 
 | Class | Meaning | MCP annotation |
 | --- | --- | --- |

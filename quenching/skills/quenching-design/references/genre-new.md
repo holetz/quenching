@@ -7,7 +7,7 @@ allowed-tools: Bash(cq:*), Bash(cq.cmd:*), Read, Grep, Glob, Bash(python3:*), As
 **Input**: `$ARGUMENTS` (one genre name or a short description of it).
 
 This command mints one stable editorial contract. It does not produce an instance of the document;
-`.agents/quenching/bin/cq design render` does that after fields have data.
+`design_render` does that after fields have data.
 
 ## Workflow
 

@@ -5,7 +5,7 @@ allowed-tools: Bash(cq git commit:*), Bash(cq git conventions:*), Bash(cq git sp
 # /quenching-git commit — commit what is staged, under the target's own convention
 
 This command is the single commit boundary for standalone commits. `/quenching-specs execute` does
-not delegate here per task: it commits each task through `.agents/quenching/bin/cq git commit --subject`. This command
+not delegate here per task: it commits each task through `.agents/quenching/bin/cq git commit --subject` in the worktree <!-- cli: root -->. This command
 resolves the subject, commits the existing index and reports the subject actually written. It never receives a request to stage an unrelated path.
 
 **Input**: `$ARGUMENTS` — an optional explicit commit subject. When omitted, resolve one from the
@@ -17,13 +17,13 @@ never a guess at which files belong together.
 ## Workflow
 
 ### 1. Read-if-present, and the staged diff
-```bash
-.agents/quenching/bin/cq components read .agents/quenching/references/git/conventions.md \
-  --sections "§The declared-directive layer" --sections "§The read-if-present rule"
-.agents/quenching/bin/cq git conventions --json
-.agents/quenching/bin/cq git state --json   # `staged` is the index, `branch` the current branch
+```text
+components_read(path=".agents/quenching/references/git/conventions.md", sections=["§The declared-directive layer", "§The read-if-present rule"])
+git_conventions()
+git_state()   # `staged` is the index, `branch` the current branch
 ```
-One `.agents/quenching/bin/cq git conventions` call answers both declared layers: `config.commitSubject` is the target's
+In a worktree that is not the server's root, the state is that tree's: `cd <worktree> && .agents/quenching/bin/cq git state --json` <!-- cli: root -->.
+One `git_conventions()` call answers both declared layers: `config.commitSubject` is the target's
 directive for this artifact, `governs`/`declared` the docs layer. Nothing staged → refuse: name that
 the index is empty and say what to stage. **Done when:** which layer governs the subject
 (`gitConventions.commitSubject`, the target's docs, or the plugin default below) and the staged file
@@ -33,15 +33,15 @@ list are both known.
 §The declared-directive layer's table governs, for this one artifact: `config.commitSubject` from
 step 1 wins where it is declared; else a target doc naming a subject format wins outright, and a doc
 covering only part of it governs that part. With neither declared:
-```bash
-.agents/quenching/bin/cq components read .agents/quenching/references/git/commit.md --sections "§Commit messages"
+```text
+components_read(path=".agents/quenching/references/git/commit.md", sections=["§Commit messages"])
 ```
 `$ARGUMENTS` given → use it verbatim, wrapped rather than truncated past 72 characters where the
 title allows; an explicit subject always wins. When it is omitted, resolve the current branch and
 its `quenching-specs:` mark:
-```bash
-.agents/quenching/bin/cq git specs <current-branch> --json   # <current-branch>: `branch` from step 1's `.agents/quenching/bin/cq git state`
-.agents/quenching/bin/cq specs next --spec <spec-id> --json
+```text
+git_specs(branch=<current-branch>)   # <current-branch>: `branch` from step 1's `git_state()`
+specs_next(spec=<spec-id>)
 ```
 If that produces exactly one spec and one actionable task, derive the subject with the governing
 convention from the spec id, task id and task title. If the execution caller already supplies a
@@ -52,8 +52,16 @@ recency, branch order or staged-diff content. **Done when:** the exact subject s
 the refusal is reported.
 
 ### 3. Commit
+```text
+git_commit(subject=<subject>)
+```
+
+The tool commits the index of the server's root, the session's directory. Staged in a worktree that
+is not that root, the same commit runs there:
+
+<!-- cli: root -->
 ```bash
-.agents/quenching/bin/cq git commit --subject "<subject>" --json
+cd <worktree> && .agents/quenching/bin/cq git commit --subject "<subject>" --json
 ```
 The verb reports the `sha`, the `subject` git recorded and `subjectMatches`; exit 1 is git refusing
 the commit (a hook, an identity) with HEAD unchanged, exit 2 a blank subject or an empty index.
