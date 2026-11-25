@@ -154,13 +154,14 @@ class Argv(unittest.TestCase):
             catalog.argv(catalog.CATALOG["git_pr_create"],
                          {"base": "main", "head": "b", "title": "t", "body": "a\0b"}, "/repo")
 
-    def test_pr_merge_cannot_stamp_the_gated_merge_record(self):
-        # The `merge` record is a gated move: it goes through `specs_record` and its elicitation.
-        props = catalog.schema(catalog.resolve(catalog.CATALOG["git_pr_merge"]))["properties"]
-        self.assertNotIn("spec", props)
-        with self.assertRaises(server.ToolArgs):
-            catalog.argv(catalog.CATALOG["git_pr_merge"],
-                         {"url": "https://github.com/o/r/pull/1", "spec": "1"}, "/repo")
+    def test_pr_merge_stamps_the_merge_record_as_the_cli_does(self):
+        # `--spec` stamps `merge` once the PR merged; the record is no gated decision.
+        row = catalog.CATALOG["git_pr_merge"]
+        self.assertTrue(catalog.annotations(row)["destructiveHint"])
+        self.assertIn("spec", catalog.schema(catalog.resolve(row))["properties"])
+        cmd, _ = catalog.argv(row, {"url": "https://github.com/o/r/pull/1", "spec": "1"},
+                              "/repo")
+        self.assertIn("--spec=1", cmd)
 
     def test_worktree_retire_is_announced_destructive(self):
         notes = catalog.annotations(catalog.CATALOG["git_worktree_retire"])

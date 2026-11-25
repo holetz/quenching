@@ -65,9 +65,9 @@ CATALOG: dict[str, Row] = {
     "git_preflight": Row("git", ("preflight",), "read", False, frozenset({"probe_claims"})),
     **_rows("git", "write", "commit", "worktree link", "worktree add", "specs"),
     **_rows("git", "external", "push", "pr create", "pr record"),
-    # `--spec` would stamp the `merge` record with no `specs_record` call behind it: the
-    # record is written by `cq specs record` once the merge landed, not by the merge verb.
-    "git_pr_merge": Row("git", ("pr", "merge"), "external", True, frozenset({"spec"})),
+    # `spec` stamps the `merge` record once the PR merged, as the CLI's `--spec` does: the
+    # record is not a gated decision (the approval already covers the close-out).
+    "git_pr_merge": Row("git", ("pr", "merge"), "external", True),
     "git_worktree_retire": Row("git", ("worktree", "retire"), "write", True),
     "git_prune": Row("git", ("prune",), "external", True),
     **_rows("config", "read", "show", "check", "host"),
