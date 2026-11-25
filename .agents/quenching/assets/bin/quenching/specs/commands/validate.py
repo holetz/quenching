@@ -21,6 +21,8 @@ from quenching.specs.parse.text import body_after_frontmatter
 from quenching.specs.parse.sections import (duplicate_headings, gate_report, parse_impact_standards, ready_report,
                                             section_spans, section_state, stray_headings)
 from quenching.specs.parse.tasks import _files_bad_annotation, operational_entries
+
+DESCOPED_RE = re.compile(r"—\s*descoped\s*:", re.IGNORECASE)
 from quenching.specs.schema import (MERGE_ANCHORLESS_STRATEGIES, MERGE_NO_PR_STRATEGIES,
                                     MERGE_STRATEGIES, RECORD_NONE_RE, VERIFICATION_POLICIES,
                                     canonical_headings, load_schema)
@@ -178,6 +180,8 @@ def validate_spec(backend: SpecBackend, s: dict,
     # executor as a path that exists nowhere, which is the exact silence `_split_files`
     # exists to stop. Refuse it at the points that hand paths out and report it here.
     for t in tasks:
+        if t["checked"] and DESCOPED_RE.search(t["text"]):
+            continue   # closed as out of scope: its `files:` never reaches an executor
         for entry in t["files"]:
             note = _files_bad_annotation(entry)
             if note:
