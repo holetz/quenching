@@ -23,6 +23,7 @@ from quenching.common.version import VERSION
 from quenching.specs.backends.base import BackendRefusal
 from quenching.specs.parse.fields import UnclosedFence
 from quenching.specs.commands.claim import add_parser as add_claim_parser
+from quenching.specs.commands.delegate import add_parser as add_delegate_parser
 from quenching.specs.commands.handoff import add_parser as add_handoff_parser
 from quenching.specs.commands.output import Emitter
 from quenching.specs.config import find_repo_root
@@ -37,7 +38,7 @@ def add_json(sp):
 
 # Verbs that take the spec id as a positional as well as `--spec`; True = the id is required.
 SPEC_POSITIONAL = {"status": False, "show": True, "parallel": True, "estimate": True,
-                   "depends": True, "schedule": False}
+                   "depends": True, "schedule": False, "delegate": True}
 
 
 def add_spec(sp, required: bool):
@@ -306,6 +307,7 @@ def _add_inspection(sub) -> None:
     pad.add_argument("--spec")
     pad.add_argument("--name", required=True)
 
+    add_delegate_parser(sub, add_json)
     add_handoff_parser(sub, add_json)
 
     sp = add_json(sub.add_parser("discover", help="append a line to ## Discoveries"))
@@ -475,6 +477,7 @@ DISPATCH: dict = _LazyDispatch({
     "push": "quenching.specs.commands.push:cmd_push",
     "artifact": "quenching.specs.commands.artifacts:cmd_artifact",
     "handoff": "quenching.specs.commands.handoff:cmd_handoff",
+    "delegate": "quenching.specs.commands.delegate:cmd_delegate",
     "epic": "quenching.specs.commands.epic:cmd_epic",
     "link": "quenching.specs.commands.epic:cmd_epic",
     "validate": "quenching.specs.commands.validate:cmd_validate",
