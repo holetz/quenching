@@ -152,7 +152,7 @@ def unclosed_fence_at(text: str) -> tuple[int, str] | None:
 
 
 _MOJIBAKE_WORD = re.compile(r"(?<=[^\W\d_])\?{1,4}(?=[^\W\d_])")
-_CODE_SPAN = re.compile(r"`[^`\n]*`")
+_CODE_SPAN = re.compile(r"(?<!`)(`+)(?!`).+?(?<!`)\1(?!`)")
 MOJIBAKE_THRESHOLD = 2
 
 
