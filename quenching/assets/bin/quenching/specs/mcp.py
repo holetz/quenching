@@ -12,7 +12,10 @@ same one `cq mcp` mounts with these tables inside its wider catalog.
 * One human decision, asked once. `approved` is the only gated write: the server asks the human
   through the client (`elicitation/create`) and runs the verb only on an accept, writing
   `by=human` and only on a spec that met the ready gate. There is no argument that confirms: a
-  client without the `elicitation` capability gets a refusal, never a silent pass. Everything the
+  client without the `elicitation` capability gets a refusal, never a silent pass. A stamp that
+  claims no human (`by` session or orchestrator-forced, the values the CLI writes for the simple
+  track and declared autonomy) is not that decision and writes without asking, still only on a
+  spec that met the ready gate. Everything the
   flow concludes after that approval — the `reviewed`, `merge` and `outcome` records and
   `promote` — writes without asking, because the approval already covers the run and the verbs
   behind them are mechanical.
@@ -54,6 +57,10 @@ MAX_SECTIONS = 13
 GATED_RECORDS = ("approved",)
 FREE_RECORDS = ("priority", "refined", "branch", "pr", "reviewed", "merge", "buildCost", "run")
 TASK_ACTIONS = ("check", "uncheck", "block", "descope")
+# Who decided an `approved` stamp: `human` is asked through the client; `session` and
+# `orchestrator-forced` claim no human, so they write without asking, as the CLI does.
+# `low-gear` is historical and never written.
+APPROVED_BY = ("human", "session", "orchestrator-forced")
 
 
 def _text(args: dict, key: str, required: bool = False) -> str | None:
@@ -305,14 +312,24 @@ def _record_name(args: dict) -> str:
     return name
 
 
+def _approved_by(args: dict) -> str:
+    """`by` of an `approved` stamp: `human` unless the call names who else decided."""
+    if _record_name(args) != "approved":
+        if args.get("by") is not None:
+            raise ToolArgs("`by` belongs to `approved`; another record carries it in `fields`")
+        return ""
+    return _choice(args, "by", APPROVED_BY) or "human"
+
+
 def _w_record(args: dict) -> list[str]:
     name = _record_name(args)
+    by = _approved_by(args)
     if name == "approved":
         if args.get("fields") is not None:
-            raise ToolArgs("`approved` takes no fields: the server writes date and by=human "
-                           "after the human confirms")
+            raise ToolArgs("`approved` takes no fields: the server writes date and `by` "
+                           "(human after the human confirms)")
         return ["record", _id(args, "spec", True), name,
-                "--set", f"date={date.today().isoformat()}", "--set", "by=human"]
+                "--set", f"date={date.today().isoformat()}", "--set", f"by={by}"]
     return ["record", _id(args, "spec", True), name, *_rec_fields(args)]
 
 
@@ -375,7 +392,7 @@ def _w_promote(args: dict) -> list[str]:
 
 def _gate_record(args: dict) -> str | None:
     name = _record_name(args)
-    if name not in GATED_RECORDS:
+    if name not in GATED_RECORDS or _approved_by(args) != "human":
         return None
     return f"Stamp the `{name}` record on spec {_id(args, 'spec', True)}? This records a human decision."
 
@@ -418,13 +435,17 @@ WRITES: dict[str, tuple] = {
                  "scope": {"type": "string", "enum": list(SCOPES)}, "sections": SECTIONS},
                 ["spec"]), _w_section, _w_section_stdin, None, None),
     "specs_record": (
-        f"Merge fields into ONE record. `approved` asks the human first and takes no fields (the "
-        "server writes date and by=human after the confirmation, and only on a spec that met the "
-        f"ready gate); {', '.join(FREE_RECORDS)} write without asking. `outcome` is not here: "
-        "`specs_promote` is its one writer.",
+        "Merge fields into ONE record. `approved` takes no fields and only stamps a spec that met "
+        "the ready gate: with `by` human (the default) it asks the human first and writes date "
+        "and by=human after the confirmation; `by` session or orchestrator-forced claims no human "
+        f"and writes without asking. {', '.join(FREE_RECORDS)} write without asking. `outcome` "
+        "is not here: `specs_promote` is its one writer.",
         _schema({"spec": SPEC, "name": {"type": "string",
                                          "enum": list(FREE_RECORDS + GATED_RECORDS)},
-                 "fields": {"type": "object"}}, ["spec", "name"]),
+                 "fields": {"type": "object"},
+                 "by": {"type": "string", "enum": list(APPROVED_BY),
+                        "description": "approved only: who decided (default human)"}},
+                ["spec", "name"]),
         _w_record, None, _gate_record, _preflight_record),
     "specs_task": (
         "Check, uncheck, block or descope ONE task (`action`, `task`); block and descope need a "
