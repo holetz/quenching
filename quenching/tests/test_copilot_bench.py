@@ -4,6 +4,7 @@ import pathlib
 import sys
 import tempfile
 import unittest
+from unittest import mock
 
 PLUGIN_ROOT = pathlib.Path(__file__).resolve().parent.parent
 REPO_ROOT = PLUGIN_ROOT.parent
@@ -60,6 +61,21 @@ class TheReader(unittest.TestCase):
             self.assertIn(row["verdict"], copilot_bench.VERDICTS, row)
             self.assertTrue(row["member"], row)
             self.assertTrue(row["observation"], row)
+
+    def test_the_insiders_directories_are_read_like_the_stable_ones(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            home = pathlib.Path(tmp)
+            (home / ".vscode-insiders" / "extensions" / "ms.example-1.0").mkdir(parents=True)
+            (home / ".config" / "Code - Insiders" / "logs" / "20260101T000000").mkdir(parents=True)
+            (home / ".copilot" / "session-state").mkdir(parents=True)
+            with mock.patch.object(copilot_bench, "home", return_value=home):
+                clients = copilot_bench.measure_clients(home)
+        states = {item["name"]: item["state"] for item in clients["cost"]}
+        self.assertEqual("present", states["copilot-cli-session-state"])
+        self.assertEqual("present", states["vscode-insiders-logs"])
+        self.assertEqual("absent", states["vscode-logs"])
+        self.assertEqual(1, clients["extensions"]["count"])
+        self.assertIn("ms.example-1.0", clients["extensions"]["installed"])
 
     def test_the_threshold_table_carries_value_source_and_date(self):
         for limit in copilot_bench.THRESHOLDS:

@@ -402,18 +402,31 @@ def measure_skills(root: pathlib.Path) -> dict:
 
 
 # --- 1.5 · agents, .github/, .vscode/ and the cost sources -------------------------------------
-HOME = pathlib.Path.home()
 GITHUB_FORMATS = ("instructions", "agents", "copilot-setup-steps.yml")
 VSCODE_KEYS = ("chat.tools.terminal.autoApprove", "search.exclude", "chat.agent.maxRequests")
-# What a session's cost can be read from, and where the client puts it. A path that is not there
-# is `absent`, never an error: most machines have some of them and no machine has all.
-COST_SOURCES = (
-    {"name": "copilot-cli-session-state", "path": HOME / ".copilot" / "session-state"},
-    {"name": "copilot-cli-session-store", "path": HOME / ".copilot" / "session-store.db"},
-    {"name": "vscode-agent-debug-logs", "path": HOME / ".config" / "Code" / "logs"},
-    {"name": "vscode-server-logs", "path": HOME / ".vscode-server" / "data" / "logs"},
-    {"name": "opentelemetry-env", "env": ("OTEL_EXPORTER_OTLP_ENDPOINT", "COPILOT_OTEL_ENABLED")},
-)
+# Every directory the editor ships under: stable, Insiders, and their remote servers. The client is
+# a capability, never a name — a machine with Insiders alone still has to be measured.
+EXTENSION_DIRS = (".vscode/extensions", ".vscode-insiders/extensions",
+                  ".vscode-server/extensions", ".vscode-server-insiders/extensions")
+LOG_DIRS = (("vscode-logs", ".config/Code/logs"),
+            ("vscode-insiders-logs", ".config/Code - Insiders/logs"),
+            ("vscode-server-logs", ".vscode-server/data/logs"),
+            ("vscode-server-insiders-logs", ".vscode-server-insiders/data/logs"))
+
+
+def home() -> pathlib.Path:
+    """Read at call time, so a test can point it at a machine of its own."""
+    return pathlib.Path.home()
+
+
+def cost_sources(home_dir: pathlib.Path) -> list[dict]:
+    """What a session's cost can be read from, and where the client puts it. A path that is not
+    there is `absent`, never an error: most machines have some of them and no machine has all."""
+    return [{"name": "copilot-cli-session-state", "path": home_dir / ".copilot" / "session-state"},
+            {"name": "copilot-cli-session-store", "path": home_dir / ".copilot" / "session-store.db"},
+            *({"name": name, "path": home_dir / path} for name, path in LOG_DIRS),
+            {"name": "opentelemetry-env",
+             "env": ("OTEL_EXPORTER_OTLP_ENDPOINT", "COPILOT_OTEL_ENABLED")}]
 
 
 def markdown_files(folder: pathlib.Path) -> list[str]:
@@ -493,8 +506,9 @@ def measure_clients(root: pathlib.Path) -> dict:
     formats = {name: (github / name).exists() for name in GITHUB_FORMATS}
     rules = {"claude": markdown_files(root / ".claude" / "rules"),
              "github": markdown_files(github / "instructions")}
+    home_dir = home()
     costs = []
-    for source in COST_SOURCES:
+    for source in cost_sources(home_dir):
         if "path" in source:
             costs.append({"name": source["name"], "state": "present" if source["path"].exists()
                           else "absent", "path": str(source["path"])})
@@ -503,8 +517,7 @@ def measure_clients(root: pathlib.Path) -> dict:
                      if os.environ.get(name)}
             costs.append({"name": source["name"], "state": "present" if found else "absent",
                           **({"env": found} if found else {})})
-    bases = [base for base in (HOME / ".vscode" / "extensions",
-                               HOME / ".vscode-server" / "extensions") if base.is_dir()]
+    bases = [base for base in (home_dir / path for path in EXTENSION_DIRS) if base.is_dir()]
     installed = sorted(path.name for base in bases for path in base.iterdir() if path.is_dir())
     worktrees = worktree_facts(root)
     external = external_directory(root)
