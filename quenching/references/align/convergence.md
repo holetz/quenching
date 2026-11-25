@@ -17,7 +17,7 @@ saying the same thing, not by pointing at each other.
 
 ## Contents
 
-`.agents/quenching/bin/cq components read <this file>` returns the heading index; `--sections` addresses one.
+`components_read(path=<this file>)` returns the heading index; `sections=["§X"]` addresses one.
 
 ## The cycle-authorization contract
 
@@ -126,12 +126,12 @@ what the low mode exists to avoid.
 
 <!-- rules -->
 Let a pass be **empty** when every applicable stage reports "nothing to do." Let a front be
-**clean** when its own verifier passes: `.agents/quenching/bin/cq knowledge validate <knowledge> --json` exiting 0 **and**
+**clean** when its own verifier passes: `knowledge_validate(bundle=<knowledge>)` exiting 0 **and**
 reporting zero `dir-no-index` / `index-broken-link` / `index-orphan` for `knowledge/` (these are
-WARN — exit 0 alone does not prove them clear, read the findings); `.agents/quenching/bin/cq specs doctor` +
-`.agents/quenching/bin/cq specs validate` clean, and nothing else, for `specs/`; `.agents/quenching/bin/cq components lint` + `.agents/quenching/bin/cq components doctor` exiting 0
-**and** `.agents/quenching/bin/cq components registry reindex` reporting `changed: false` for `.claude/`; `.agents/quenching/bin/cq ops doctor`
-plus `.agents/quenching/bin/cq ops registry --check` for `ops/`; and `.agents/quenching/bin/cq proof doctor` plus its generated README check
+WARN — exit 0 alone does not prove them clear, read the findings); `specs_doctor()` +
+`specs_validate()` clean, and nothing else, for `specs/`; `components_lint()` + `components_doctor()` exiting 0
+**and** `components_registry_reindex()` reporting `changed: false` for `.claude/`; `ops_doctor()`
+plus `ops_registry(check=true)` for `ops/`; and `proof_doctor()` plus its generated README check
 for `proof/`.
 
 - **Converged (stop, success):** a pass is **empty** *and* the front is **clean**. This is the
