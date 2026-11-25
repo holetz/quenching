@@ -347,7 +347,12 @@ class TheSettingsPlanCarriesTheAccessRules(unittest.TestCase):
             json.dumps({"permissions": {"allow": ["Bash(mine:*)"]}}), encoding="utf-8")
         kept = self.cli._settings_merge(pathlib.Path(self.tmp), self.built(), recorded, keep=True)
         self.assertFalse(kept["changed"])
-        derived = self.cli._settings_merge(pathlib.Path(self.tmp), self.built(), recorded)
+        # A write over a file that carries every recorded rule keeps them too.
+        written = self.cli._settings_merge(pathlib.Path(self.tmp), self.built(), recorded)
+        self.assertFalse(written["changed"])
+        # With a recorded rule the file lacks, a write derives the rules for this machine.
+        lacking = {"claudeSettings": {"permissions": ["Bash(mine:*)", "Bash(gone:*)"]}}
+        derived = self.cli._settings_merge(pathlib.Path(self.tmp), self.built(), lacking)
         self.assertTrue(derived["changed"])
         self.assertTrue(first["changed"])
 
