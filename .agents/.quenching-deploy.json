@@ -133,7 +133,7 @@
 
     ".agents/quenching/assets/bin/quenching/deploy/mcpfiles.py": "9d6caa5bb1ac6b1b59cefebe6e3e8f47f79a203038f814fa9a898380c188e94a",
 
-    ".agents/quenching/assets/bin/quenching/deploy/settings.py": "dc24b41de07969aac1ec96f3137c2158117c5f4aa679ad7af306379925a36485",
+    ".agents/quenching/assets/bin/quenching/deploy/settings.py": "065148d2df83ab57e0ea28b3bbe9907b1fb1eaf3467b1c2a8220158bed1805c8",
 
     ".agents/quenching/assets/bin/quenching/deploy/translate.py": "20480db888bf99bef7283a91ba590b94c3e1c3a7d5f98424980c880efafe45cf",
 
@@ -715,7 +715,7 @@
 
     ".claude/agents/quenching-spec-reviewer.md": "b976951e7fb4d56ae20971354e3efb69c44391523c9e15b68d92b602b712067c",
 
-    ".claude/agents/quenching-spec-runner.md": "36cd4030e6a75b395dd8b39c56b01bd484755000d34e107cf2c95fb7ee9ab9eb",
+    ".claude/agents/quenching-spec-runner.md": "eb4e1967ee4e5e517f2344770e55d3b372bb89023820101a8ddb3d3a106da29d",
 
     ".claude/agents/quenching-spec-scout.md": "82da98399dd8e0b10533e4a6600f6c90d405e1873234e94cc1877b75ebc8f0e4",
 
@@ -959,10 +959,10 @@
     "mcpjson": true
   },
   "opencodeConfig": {
-    "subagentDepth": 4,
+    "subagentDepth": null,
     "externalDirectory": [
-      "~/Projects/quenching-slot-*",
-      "~/Projects/quenching.*"
+      "~/Projetos/quenching-slot-*",
+      "~/Projetos/quenching.*"
     ]
   }
 }
