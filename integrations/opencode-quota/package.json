@@ -1,0 +1,30 @@
+{
+  "name": "quenching-quota-opencode",
+  "version": "0.1.0",
+  "private": true,
+  "license": "MIT",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./rpc": "./src/rpc.ts",
+    "./tui": "./src/tui.tsx",
+    "./gui-experimental": "./dist/gui-experimental.cjs"
+  },
+  "scripts": {
+    "build": "tsc && vite build",
+    "test": "node --experimental-strip-types tests/usage.check.mjs && node --experimental-strip-types tests/fetch.check.mjs && node tests/surface.check.mjs"
+  },
+  "dependencies": {
+    "@opencode/plugin": "2.3.0"
+  },
+  "devDependencies": {
+    "@opentui/core": "^0.8.4",
+    "@opentui/solid": "^0.8.4",
+    "@types/node": "^22",
+    "electron": "*",
+    "solid-js": "^1.9",
+    "typescript": "^5",
+    "vite": "^7",
+    "vite-plugin-solid": "^2.11"
+  }
+}

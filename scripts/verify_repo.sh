@@ -377,6 +377,27 @@ else
   fi
 fi
 
+# The OpenCode quota band reads a credential and talks to the network, so its checks also hold the
+# security contour (one destination, one process, no write, no log). They need only `node`; the
+# typecheck needs the local `npm ci`, and says so when it is absent.
+if [ "$RUN_INTEGRATIONS" = 0 ]; then
+  skip_step "opencode-quota typecheck" "$INTEGRATIONS_SKIP_REASON"
+  skip_step "opencode-quota checks" "$INTEGRATIONS_SKIP_REASON"
+else
+  if [ -d integrations/opencode-quota/node_modules ] && command -v npx >/dev/null 2>&1; then
+    run_check "opencode-quota typecheck" \
+      npx --prefix integrations/opencode-quota tsc --noEmit -p integrations/opencode-quota
+  else
+    skip_step "opencode-quota typecheck" "integrations/opencode-quota/node_modules is absent (run \`npm ci\` there); the quota band was not typechecked."
+  fi
+  if command -v node >/dev/null 2>&1 && node --experimental-strip-types -e '' >/dev/null 2>&1; then
+    run_check "opencode-quota checks" \
+      bash -c 'cd integrations/opencode-quota && node --experimental-strip-types tests/usage.check.mjs && node --experimental-strip-types tests/fetch.check.mjs && node tests/surface.check.mjs'
+  else
+    skip_step "opencode-quota checks" "no \`node\` with --experimental-strip-types (22.6+) on PATH; the quota band was not exercised."
+  fi
+fi
+
 # Surface-load checks spawn billed `claude -p` sessions, so they are opt-in: without
 # QUENCHING_FUNCTIONAL=1 the skip is stated and the gate stays deterministic. When asked for, an
 # inconclusive run (exit 2) or a missing `claude` is a measurement that did not happen, so it fails.

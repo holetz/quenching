@@ -128,11 +128,11 @@
 
     ".agents/quenching/assets/bin/quenching/config/ci.py": "78c3ce547ea246980ff045123f6c8dd3d872d9a5abfb8d9504e93748b2db93d6",
 
-    ".agents/quenching/assets/bin/quenching/config/effective.py": "b601dcd070ecdd8bee54245dab3cd7a834ac36de1927bc37621b12034ecc9db5",
+    ".agents/quenching/assets/bin/quenching/config/effective.py": "bc9c24a3e7f81085bd2ac409a88d0e14e353864e117c2b1d160d6896cee2cc26",
 
     ".agents/quenching/assets/bin/quenching/config/host.py": "8142472848a298f09484f327a3c7a2d8bbd2c162ff2636eb823498fdfd8eb504",
 
-    ".agents/quenching/assets/bin/quenching/config/schema.py": "3eb808c3c759a131fbd05ff8b92df28bd280db2d42dc10c5bf66a8f6d12c71e8",
+    ".agents/quenching/assets/bin/quenching/config/schema.py": "f1dd1285f7534a5e29b455c808dff3e546b1dc3b63d47c31e4789f8755bb04fc",
 
     ".agents/quenching/assets/bin/quenching/config/seed.py": "f8311f384057ec0ba225f987071891536da4095c2812550ce767c626c6c51b0d",
 
@@ -271,6 +271,8 @@
     ".agents/quenching/assets/bin/quenching/session/pricing.json": "a185d49817fed95a195059ea8147454b17c8c3bdef4df775b7e41b2a9c959989",
 
     ".agents/quenching/assets/bin/quenching/session/pricing.py": "52d54755dbe41678e227000c5866636d2f1d744433da38354450d6061ed37eda",
+
+    ".agents/quenching/assets/bin/quenching/session/quotabar.py": "dd681ae232dadf29eaea06d8681d690a8dbbcb9fa1ae075637e2dd53e18d5908",
 
     ".agents/quenching/assets/bin/quenching/session/transcript.py": "e432aa946d31c96a8734bcc16c90499a97b788284eeb85e7f41f3044b93c11f6",
 
@@ -460,7 +462,7 @@
 
     ".agents/quenching/assets/knowledge/vision/index.md": "dc13b667167f73aba65a968c877e20441134a8c17b04d7975d15bebdc3535803",
 
-    ".agents/quenching/assets/modules.json": "8a04fe5ed07e3929768a8cbe9eaa258221ed9068a0a98ce35d8f30aa8dadda62",
+    ".agents/quenching/assets/modules.json": "439dda73002d54172e1ebbcfb88f1d96f4a148db30c65e0af2fa767a239889a5",
 
     ".agents/quenching/assets/portal/app.css": "b607835f404328c511bb005687ae545f6e642cfcef843f9366ca846d7be64c9e",
 
@@ -576,7 +578,7 @@
 
     ".agents/quenching/references/specs-align/conformance.md": "d74789417677580fe04ba6cfba05ce647e7b9f7d644ed85ea7ffa3d7ddff564d",
 
-    ".agents/quenching/references/specs-align/plugin-configuration.md": "a9eaca9695f9614b6a1916f1433c9017ca115ab2205b8dd74bbaf35b4e824552",
+    ".agents/quenching/references/specs-align/plugin-configuration.md": "6bb0b3e2e2681847e41bb83513511e3d91ef8014755d647c6956dba0017c6c3f",
 
     ".agents/quenching/references/specs-conclude/abandoned.md": "7067f28b0035550d958bdced006af5f55b6794293594ac1f7b6adec82da31cd4",
 
