@@ -595,7 +595,7 @@
 
     ".agents/quenching/references/specs-execute/execution-tooling.md": "6328fb5653f9460032fc16d40c423932c20659f2168f1bca300336fb7ac1abd7",
 
-    ".agents/quenching/references/specs-execute/execution.md": "9a424178d44867773321167ca8ee539e2dd3d81d2dd71713d330311e9d774f18",
+    ".agents/quenching/references/specs-execute/execution.md": "ce8a7c2f3c38aae600f71570ca081132beef53167af0dc4c4750138481deeafa",
 
     ".agents/skills/quenching-align/SKILL.md": "8c1a8dbacac035126c71e0717ca66787602573eb27deea7aae7c9279a438563e",
 
@@ -705,7 +705,7 @@
 
     ".agents/skills/quenching-specs/references/develop.md": "5e783f14c72c1165bcfa7b2daf41ae0622aae690fdde3b97a00df03424138d6e",
 
-    ".agents/skills/quenching-specs/references/execute.md": "ed92d449dec0383d3ed4132415d559d13400f7d5306abc8997077d992cc3a54a",
+    ".agents/skills/quenching-specs/references/execute.md": "e68292e1d47b16ead3b978ba9cab521e08f3dce0843060d9d2c8199e18c4b78b",
 
     ".agents/skills/quenching-specs/references/improve.md": "b4e65cd68186c0c43a847a71f326913208a5a7da843ba5cd45cd4294afc7b707",
 
@@ -727,7 +727,7 @@
 
     ".claude/agents/quenching-spec-verifier.md": "b97ff366900da468acc53efab50a0d2b70de5f2d92d6fbf7a34b42b6f8c1e352",
 
-    ".claude/skills/.generated-files.json": "5c23a96f3ff49dc5f47b0f6d36d9d5aae5985d7c684b842e3ad7fd9b6d298612",
+    ".claude/skills/.generated-files.json": "cd5c4336dd5d24df51a8be061ed6d6e0e05cbb8873348d4e84a899b260b7ffc8",
 
     ".claude/skills/commands-tighten/SKILL.md": "41574a4774e70deffd6c8c6766a1a24581d579d1f7247b68a93ba86b39b2019b",
 
@@ -907,7 +907,7 @@
 
     ".claude/skills/quenching-specs/references/develop.md": "5e783f14c72c1165bcfa7b2daf41ae0622aae690fdde3b97a00df03424138d6e",
 
-    ".claude/skills/quenching-specs/references/execute.md": "ed92d449dec0383d3ed4132415d559d13400f7d5306abc8997077d992cc3a54a",
+    ".claude/skills/quenching-specs/references/execute.md": "e68292e1d47b16ead3b978ba9cab521e08f3dce0843060d9d2c8199e18c4b78b",
 
     ".claude/skills/quenching-specs/references/improve.md": "b4e65cd68186c0c43a847a71f326913208a5a7da843ba5cd45cd4294afc7b707",
 
