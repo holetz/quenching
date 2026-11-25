@@ -88,10 +88,11 @@ HYPOTHESES = (
      "artifact": ".vscode/settings.json (JSONC)",
      "protocol": "um comando de terminal aprovado sem prompt sob a chave, e a busca sem os "
                  "diretórios excluídos"},
-    {"id": "H7", "member": "458", "method": "live",
+    {"id": "H7", "member": "458", "method": "static+live",
      "capability": "`New Worktree` produz um worktree que o fluxo adota sem cortar outro",
-     "artifact": "git worktree list",
-     "protocol": "New Worktree no VS Code e o `branch:` que `cq specs status` grava ali"},
+     "artifact": "git worktree list + `cq git worktree adopt`",
+     "protocol": "`cq git worktree adopt` no worktree do cliente e o `branch:` que "
+                 "`cq specs status` grava ali"},
     {"id": "H8", "member": "461", "method": "static+live",
      "capability": "O custo de uma sessão sai do session-state do CLI, do OpenTelemetry ou do "
                    "Agent Debug Logs",
@@ -464,9 +465,25 @@ def read_vscode(root: pathlib.Path) -> dict:
             if isinstance(document.get("search.exclude"), dict) else []}
 
 
+def _git_worktrees(root: pathlib.Path) -> list[dict]:
+    """Every linked worktree git registers, the primary checkout first, as `{path, branch}`."""
+    done = subprocess.run(["git", "-C", str(root), "worktree", "list", "--porcelain"],
+                          capture_output=True, text=True, timeout=20)
+    found, cur = [], {}
+    for line in (done.stdout.splitlines() if done.returncode == 0 else []) + [""]:
+        if line.startswith("worktree "):
+            cur = {"path": line[len("worktree "):], "branch": None}
+        elif line.startswith("branch ") and cur:
+            cur["branch"] = line[len("branch "):].removeprefix("refs/heads/")
+        elif not line and cur:
+            found.append(cur)
+            cur = {}
+    return found
+
+
 def worktree_facts(root: pathlib.Path) -> dict:
-    """The primary checkout, its slots and its sibling stores — asked of git, so a target that is
-    itself a slot still reports the family it belongs to."""
+    """The primary checkout, its slots, its sibling stores and the worktrees a harness cut — asked
+    of git, so a target that is itself a slot still reports the family it belongs to."""
     try:
         done = subprocess.run(["git", "-C", str(root), "rev-parse", "--path-format=absolute",
                                "--git-common-dir"], capture_output=True, text=True, timeout=20)
@@ -476,9 +493,21 @@ def worktree_facts(root: pathlib.Path) -> dict:
         return {"state": "absent", "reason": "not a git checkout"}
     primary = pathlib.Path(done.stdout.strip()).parent
     parent, name = primary.parent, primary.name
+    family = parent / f"{name}.worktrees"
+    trees = _git_worktrees(primary)
+    linked = [tree for tree in trees[1:]]
+    harness = []
+    for tree in linked:
+        branch = tree.get("branch") or ""
+        path = pathlib.Path(tree["path"])
+        if family in path.parents or branch.startswith(("copilot/", "agents/")):
+            harness.append(tree["path"])
     return {"state": "present", "primary": str(primary),
             "slots": sorted(path.name for path in parent.glob(f"{name}-slot-*") if path.is_dir()),
-            "stores": sorted(path.name for path in parent.glob(f"{name}.*") if path.is_dir())}
+            "stores": sorted(path.name for path in parent.glob(f"{name}.*")
+                             if path.is_dir() and path.name != f"{name}.worktrees"),
+            "linked": linked,
+            "harness": sorted(harness)}
 
 
 def external_directory(root: pathlib.Path) -> dict:
@@ -539,6 +568,7 @@ def measure_clients(root: pathlib.Path) -> dict:
     missing = [name for name in GITHUB_FORMATS if not formats[name]]
     vscode = section["vscode"]
     slots = worktrees.get("slots") or []
+    harness = worktrees.get("harness") or []
     patterns = external.get("patterns") or []
     section["hypotheses"] = {
         "H2": {"verdict": UNMEASURED,
@@ -551,8 +581,9 @@ def measure_clients(root: pathlib.Path) -> dict:
                                f"{'' if vscode['state'] != 'present' else ': ' + ', '.join(key + (' presente' if present else ' ausente') for key, present in vscode['keys'].items())}"
                                f"; se cada chave vale no workspace é live")},
         "H7": {"verdict": UNMEASURED,
-               "observation": (f"{len(slots)} slot(s) irmãos do checkout primário; o `New "
-                               f"Worktree` do cliente e o `branch:` que ele grava são live")},
+               "observation": (f"{len(worktrees.get('linked') or [])} worktree(s) ligados, "
+                               f"{len(harness)} da família de worktrees do cliente; a adoção e o "
+                               f"`branch:` são live")},
         "H8": {"verdict": UNMEASURED,
                "observation": "; ".join(f"{item['name']} {item['state']}" for item in costs)
                               + "; qual delas entrega o custo é live"},

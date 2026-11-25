@@ -128,5 +128,39 @@ class TheDisposableTarget(unittest.TestCase):
                          clients["github"]["formats"])
 
 
+class TheWorktreeFamily(unittest.TestCase):
+    """H7's static half: the linked worktrees git registers and the family the client cuts."""
+
+    def setUp(self):
+        import subprocess
+        self.subprocess = subprocess
+        tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
+        self.base = pathlib.Path(tmp.name)
+        self.main = self.base / "repo"
+        self.main.mkdir()
+        self.git("init", "-q", "-b", "main")
+        self.git("commit", "-q", "--allow-empty", "-m", "init")
+        self.git("worktree", "add", "-q", "-b", "slot-x", str(self.base / "repo-slot-1"))
+        (self.base / "repo.worktrees").mkdir()
+        self.harness = self.base / "repo.worktrees" / "copilot-x"
+        self.git("worktree", "add", "-q", "-b", "copilot/x", str(self.harness))
+        self.agents = self.base / "agents-tree"
+        self.git("worktree", "add", "-q", "-b", "agents/y", str(self.agents))
+
+    def git(self, *args):
+        return self.subprocess.run(["git", "-C", str(self.main), "-c", "user.name=t",
+                                    "-c", "user.email=t@t", *args], check=True,
+                                   capture_output=True, text=True)
+
+    def test_linked_worktrees_are_listed_and_the_harness_family_is_flagged(self):
+        facts = copilot_bench.worktree_facts(self.main)
+        self.assertEqual("present", facts["state"])
+        self.assertEqual(3, len(facts["linked"]))
+        self.assertEqual(["repo-slot-1"], facts["slots"])
+        self.assertEqual([], facts["stores"])
+        self.assertEqual(sorted([str(self.harness), str(self.agents)]), facts["harness"])
+
+
 if __name__ == "__main__":
     unittest.main()
