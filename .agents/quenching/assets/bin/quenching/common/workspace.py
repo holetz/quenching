@@ -5,7 +5,7 @@ One source for the block, the snippet and the per-key report: `cq deploy` seeds
 excludes a path from the Explorer, from text search and from the semantic index; `search.exclude`
 would keep the files visible and only narrow text search and grep, so it is not part of the block.
 
-The seeds are opted in by the repository's own `shared.workspace.vscode`, read from the repository
+The seed is opted in by the repository's own `shared.workspace.vscode`, read from the repository
 document and never from the merged envelope: a client projection written here must not vary by
 machine.
 """
