@@ -37,6 +37,7 @@ tree. Other namespaces are read by their owning front.
 | `shared.codex` | `{maxUsedPercent: {primary, secondary}, timeoutSeconds, executor}` — a bad leaf falls back to its default and is named in `warnings`, and so does a leftover `crossReview` or `model` of the removed cross review | `{{80, 90}, 900}` and `executor.enabled: false`, leaf by leaf — Codex is opt-in | `cq codex` |
 | `shared.gitIdentity` | `{allowedEmails: [address or fnmatch pattern, …]}` | none — nothing is judged | the identity gate (`git_commit`), failing closed on a malformed value |
 | `shared.mcp` | `{mount: "all"\|"specs", command: [strings], cliFallback: boolean}` | none — the whole MCP server (`all`, `cq mcp`) is registered with a resolved direct Python prefix, and the grants drop each `Bash(cq …)` an MCP tool replaces unless `cliFallback: true` | `cq deploy`, from the repository document only |
+| `shared.projections` | a list of client families; `github` today | `[]` — no client projection is written | `cq deploy`, from the repository document only; `github` writes `.github/agents/` from the same agent source |
 | `delivery.provider` | a provider name, declared explicitly | none — absent declares no provider; it chooses no pipeline policy | the delivery front (`delivery/config.py`) |
 | `specs.artifactLanguage` | a non-empty string | none | `.agents/quenching/bin/cq specs`, on the branch or here |
 | `specs.cardAt` | the sibling spelling of `specs.card.at` | none | the card layer, on the branch or here |
