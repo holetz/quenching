@@ -21,9 +21,7 @@ def projects_root() -> Path:
     configured = os.environ.get("QUENCHING_TRANSCRIPTS_ROOT")
     if configured:
         return Path(configured).expanduser()
-    # Codex writes rollouts under sessions/AAAA/MM/DD/, not projects/.
-    roots = (Path.home() / ".claude" / "projects", Path.home() / ".codex" / "sessions")
-    return next((root for root in roots if root.is_dir()), roots[0])
+    return Path.home() / ".claude" / "projects"
 
 
 def resolve_project_dir(cwd: Path) -> tuple[Path | None, str]:

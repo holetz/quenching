@@ -69,7 +69,7 @@ class Selection(unittest.TestCase):
         self.assertIn("no rule covers", got.reasons[0])
 
     def test_the_harness_config_files_the_deploy_writes_select_the_deploy_tests(self):
-        for path in ("opencode.json", ".mcp.json", ".codex/config.toml", ".claude/settings.json"):
+        for path in ("opencode.json", ".mcp.json", ".claude/settings.json"):
             with self.subTest(path=path):
                 got = self.selected(path)
                 self.assertFalse(got.complete)

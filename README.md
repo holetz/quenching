@@ -5,7 +5,7 @@ specs and version-control workflow in one canonical, verifiable shape. It is not
 boundary: a command declared read-only does not contain an assistant that has a shell.
 
 quenching reaches a repository only through `cq deploy`, which installs the surface into that
-repository for Claude Code, Codex and OpenCode
+repository for Claude Code and OpenCode
 ([ADR 0017](docs/decisions/0017-install-only-by-deploy.md)). The single editable source lives in
 [`quenching/`](quenching/) ([source-layout](docs/standards/architecture/source-layout.md); the
 deploy contract is [deploy-mode](docs/standards/architecture/deploy-mode.md)). Four satellites that
@@ -91,7 +91,7 @@ uvx --from "git+https://github.com/holetz/quenching@<tag>#subdirectory=quenching
 keeps its modules, while `--modules core` narrows a wider install and deletes the rest.
 
 `--modules` takes `core` (the default: specs, git, knowledge and components), `all` or a comma
-list; `--harness` takes `claude`, `codex`, `opencode` or `none`; `--runtime vendor` (default,
+list; `--harness` takes `claude`, `opencode` or `none`; `--runtime vendor` (default,
 offline) vendors the runtime while `--runtime uvx` writes a pinned shim; `--check` reports drift.
 Deploy writes `AGENTS.md` (only when absent), `.agents/skills/`, `.agents/quenching/` and the
 generated `.claude/skills/` bridge. It does not create `CLAUDE.md` and does not run alignment; the

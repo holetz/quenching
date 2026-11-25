@@ -49,7 +49,7 @@ class CitationForm(unittest.TestCase):
 
     def test_a_verb_with_no_tool_stays_cli(self):
         for text in ("cq deploy --target . --write", "cq specs migrate --to git",
-                     "cq specs claim take 3", "cq codex implement --spec 3", "cq specs serve"):
+                     "cq specs claim take 3", "cq specs serve"):
             with self.subTest(text):
                 self.assertEqual(codes(text), [])
 
