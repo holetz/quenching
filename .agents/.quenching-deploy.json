@@ -155,7 +155,7 @@
 
     ".agents/quenching/assets/bin/quenching/deploy/settings.py": "31aa50c067d47fc8721519963218b48245d8d3f2f0faa3442b8433428d483fb2",
 
-    ".agents/quenching/assets/bin/quenching/deploy/translate.py": "829ff0bd18a74ad345e2b4ad22b165cab41f75a82ec8cb1e8f33b67bf3a021b4",
+    ".agents/quenching/assets/bin/quenching/deploy/translate.py": "69913b2f7ee565b3b0646b9da44cb1343e883278bb292fd182852edbecfab062",
 
     ".agents/quenching/assets/bin/quenching/deploy/tree.py": "d6faf6eaf936ca35dbe0f1d05bf226c10fd0b26574a9c2219fc8585ead92cf16",
 
@@ -1107,15 +1107,15 @@
 
     ".claude/skills/skill-map/SKILL.md": "eb309cf9d098a5daccbabff27d97f3da24a967c888bbde88f0400cc6af09b5be",
 
-    ".github/agents/quenching-spec-orchestrator.agent.md": "5f06e2913847cb72bb5b5800398723122c9377f97c9dbc03640df58a08aece65",
+    ".github/agents/quenching-spec-orchestrator.agent.md": "1ced0263bd063dc7e6e7755e39dbbc85ebdd775d01559513016c80710b79ad65",
 
-    ".github/agents/quenching-spec-reviewer.agent.md": "4fac1ea7a339c10b671ac304b53c6ae5b4d817253627122c26078302989eb130",
+    ".github/agents/quenching-spec-reviewer.agent.md": "4436468416c555b1ebcd48b417f89d80949f2af458c4ecc088a684dc8b9e8498",
 
     ".github/agents/quenching-spec-runner.agent.md": "2f9585793ef4224222454607bdd3d837be127a3ba16fd97ee2628890704f7eb5",
 
-    ".github/agents/quenching-spec-scout.agent.md": "b4809f5ecde62c62db51f87c8497f0e0f76a1683abefd8119c95c50319625df1",
+    ".github/agents/quenching-spec-scout.agent.md": "f7f17e0bf04c6bd79f25f28a93de2ad86922b614612655f689344494ac721830",
 
-    ".github/agents/quenching-spec-verifier.agent.md": "5bffbc4c281cf347d79d661a51bc770fcbd900b1cfab33c684cbfbdd89adf3a9",
+    ".github/agents/quenching-spec-verifier.agent.md": "61ed2b1b055cc9f19c70a43b0c92bb8b2580dc769f450d3c3b7eae751cf3254d",
 
     ".github/instructions/command-fork.instructions.md": "8297a240756681cf23873b51395935e1eb175a1e3020af5bbb58bc2b93e826a9",
 

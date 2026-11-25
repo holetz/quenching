@@ -1215,6 +1215,16 @@ class CopilotAgents(unittest.TestCase):
         self.assertIn("quenching/specs_status", tools)
         self.assertIn("quenching/git_audit", tools)
 
+    def test_a_scoped_shell_grant_stays_in_the_text_execute_cannot_carry(self):
+        text = translate.copilot_agent_document(self.VERIFIER, "spec-verifier")
+        self.assertIn("execute", self.field(text, "tools"))
+        self.assertIn(translate.SHELL_NOTE + "`.agents/quenching/bin/cq specs status`, "
+                      "`.agents/quenching/bin/cq git audit`.", text)
+
+    def test_a_bare_bash_or_no_shell_writes_no_shell_note(self):
+        for raw in (self.RUNNER, "---\ndescription: x\ntools: Read\n---\n\nb\n"):
+            self.assertNotIn(translate.SHELL_NOTE, translate.copilot_agent_document(raw, "x"))
+
     def test_the_mount_keeps_a_tool_out_of_the_projection(self):
         self.assertEqual(["execute"],
                          translate.copilot_tools("Bash(cq specs status:*)",
