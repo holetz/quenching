@@ -1,10 +1,11 @@
 """A client that reads several directories still gets each generated skill once.
 
-Measured 2026-11-25: Claude Code 2.1.332 reads `.claude/skills` only, Codex 0.165.0 reads
-`.agents/skills` only, and VS Code + Copilot Chat discovers every `SKILL.md` under `.agents/skills`,
-`.github/skills` and `.claude/skills` before deduplicating by name. The deploy publishes into the
-minimal cover of what the declared harnesses read; a target that declares two exclusive readers
-(`claude` and `codex`) keeps the two copies because neither client reads the other's directory.
+Measured 2026-11-25: Claude Code 2.1.332 reads `.claude/skills` only, OpenCode reads both and
+prefers `.agents/skills`, and VS Code + Copilot Chat discovers every `SKILL.md` under
+`.agents/skills`, `.github/skills` and `.claude/skills` before deduplicating by name. The deploy
+publishes into the minimal cover of what the declared harnesses read: `claude` forces
+`.claude/skills` (OpenCode reads it too), and a deploy without `claude` keeps `.agents/skills`.
+The `codex` harness was removed (ADR 0020); its client read set is no longer a deploy option.
 """
 from __future__ import annotations
 
@@ -74,26 +75,19 @@ class Publication(unittest.TestCase):
     def test_a_client_that_reads_both_does_not_force_a_second_copy(self):
         self.assert_published_once({CLAUDE_SKILLS}, "claude", "opencode")
 
-    def test_codex_alone_publishes_only_the_generic_copy(self):
-        self.assert_published_once({AGENTS_SKILLS}, "codex")
-
     def test_opencode_alone_publishes_once_in_the_generic_layer_it_prefers(self):
         self.assert_published_once({AGENTS_SKILLS}, "opencode")
 
     def test_no_harness_keeps_the_generic_layer(self):
         self.assert_published_once({AGENTS_SKILLS})
 
-    def test_two_exclusive_readers_keep_the_two_copies(self):
-        self.assert_published_once(BOTH, "claude", "codex")
-        self.assert_published_once(BOTH, "claude", "codex", "opencode")
-
     def test_only_the_claude_copy_carries_the_bridge_marker(self):
-        tree = self.build("claude", "codex")["tree"]
+        tree = self.build("claude")["tree"]
         name = "quenching-specs"
         claude = tree[f"{CLAUDE_SKILLS}/{name}/SKILL.md"][0].decode()
-        agents = tree[f"{AGENTS_SKILLS}/{name}/SKILL.md"][0].decode()
         self.assertIn(bridge.marker(name), claude)
-        self.assertNotIn(bridge.marker(name), agents)
+        with self.assertRaises(KeyError):
+            tree[f"{AGENTS_SKILLS}/{name}/SKILL.md"]
 
     def test_the_seed_names_the_published_directory(self):
         built = self.build("claude")
@@ -129,9 +123,10 @@ class Upgrade(unittest.TestCase):
         return code, json.loads(out.getvalue() or "{}")
 
     def test_switching_to_claude_only_deletes_the_generic_copy(self):
-        self.assertEqual(0, self.deploy("--modules", "specs", "--harness", "claude",
-                                        "--harness", "codex", "--write")[0])
+        self.assertEqual(0, self.deploy("--modules", "specs", "--harness", "opencode",
+                                        "--write")[0])
         self.assertTrue((self.target / AGENTS_SKILLS / "quenching-specs/SKILL.md").is_file())
+        self.assertFalse((self.target / CLAUDE_SKILLS / "quenching-specs").exists())
         code, payload = self.deploy("--harness", "claude", "--check")
         self.assertEqual(1, code)
         self.assertIn({"path": f"{AGENTS_SKILLS}/quenching-specs/SKILL.md",
