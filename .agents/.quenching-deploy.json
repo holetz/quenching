@@ -588,7 +588,7 @@
 
     ".agents/quenching/references/specs-develop/artifacts.md": "30ff3bf044593298082b207e3c178b7b4003b0379f97d13ef46ab57203e0f485",
 
-    ".agents/quenching/references/specs-develop/questions.md": "a89255d013cedca8b3d4d8bad0d63797723fa935de56aac663d60628c0c92ed9",
+    ".agents/quenching/references/specs-develop/questions.md": "6a126277fa1111c1b2be91af6510aab2afd1763cd28a72ebcffe4e450e63a552",
 
     ".agents/quenching/references/specs-develop/report-mold.md": "f50c1c0bb700738a0c0e9e3b43a08f87ca5c31d5d20e190fa83d20e9b43720ef",
 
@@ -710,7 +710,7 @@
 
     ".agents/skills/quenching-specs/references/create.md": "5b4dd3117e13aae3b8ab2e381e05a397dda0fdb6c4d163d1a4f6c6d3f60280d6",
 
-    ".agents/skills/quenching-specs/references/develop.md": "3d937e6ee0c76485d81ea2629f4371557e06544f4c535ede95002498200079c0",
+    ".agents/skills/quenching-specs/references/develop.md": "5e783f14c72c1165bcfa7b2daf41ae0622aae690fdde3b97a00df03424138d6e",
 
     ".agents/skills/quenching-specs/references/execute.md": "f7357d2b4c3d2b86b4618ef62bdac178f8bb6d4e1d7a3d131b359b4d080a75bc",
 
@@ -734,7 +734,7 @@
 
     ".claude/agents/quenching-spec-verifier.md": "2a62928c845bb4ae44e0df256fa3bac1294d3bcd75367179db21e4bb1a7358c7",
 
-    ".claude/skills/.generated-files.json": "9270fc982e237ca5388f6508ca4ae46d637ae897e08a8143dfdc3f6a2660477e",
+    ".claude/skills/.generated-files.json": "1daaa42493393c3f3bb536eae12aa7e24cf58532c2c99ef367507b09b5d2fc5a",
 
     ".claude/skills/commands-tighten/SKILL.md": "41574a4774e70deffd6c8c6766a1a24581d579d1f7247b68a93ba86b39b2019b",
 
@@ -912,7 +912,7 @@
 
     ".claude/skills/quenching-specs/references/create.md": "5b4dd3117e13aae3b8ab2e381e05a397dda0fdb6c4d163d1a4f6c6d3f60280d6",
 
-    ".claude/skills/quenching-specs/references/develop.md": "3d937e6ee0c76485d81ea2629f4371557e06544f4c535ede95002498200079c0",
+    ".claude/skills/quenching-specs/references/develop.md": "5e783f14c72c1165bcfa7b2daf41ae0622aae690fdde3b97a00df03424138d6e",
 
     ".claude/skills/quenching-specs/references/execute.md": "f7357d2b4c3d2b86b4618ef62bdac178f8bb6d4e1d7a3d131b359b4d080a75bc",
 
