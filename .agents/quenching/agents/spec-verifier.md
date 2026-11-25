@@ -26,9 +26,7 @@ count" line below closes a check further.
 
 Checks 2 to 5, 7, 9 and 11 read ONE payload, measured inside the spec's worktree with a fixed argv:
 
-```bash
-.agents/quenching/bin/cq git audit [--root <repo>] --worktree <wt> --base origin/<base> --branch <branch> --sha <sha> [--sha <sha>…] --json
-```
+`git_audit(worktree=<wt>, base="origin/<base>", branch=<branch>, sha=[<sha>, …])`
 
 `--base` is `origin/<base>` wherever `origin` exists, the ref a worktree is cut from and a PR merged
 through `gh` moves; a local `<base>` reads stale there and would charge a dependency's files to this
@@ -39,17 +37,16 @@ is an entry of `errors` with `complete: false`, never an empty list. When `compl
 check that reads a field whose read is named in `errors` is `inconclusive`, not `ok`, and the
 verdict is FAIL with the error quoted; an empty `status` or `stash` proves nothing then.
 
-Run it from the base checkout, or from any other cwd with `--root <repo>` (add it when the audited repository is not the session's, never a `cd <repo> &&` prefix); it refuses (exit 2) a path the repository does not register as a
-worktree and any ref that does not resolve to a commit. Your only shell grants are this verb,
-`.agents/quenching/bin/cq specs status`/`show` and `.agents/quenching/bin/cq git pr view`: never `git`, `bash` or `cd <wt> && …`, which no grant
-matches (`--root` is an option of the granted verb). Without a worktree, `--worktree` is the base checkout itself.
+Run it from the base checkout (when the audited repository is not the session's, the prompt names it, never a `cd <repo> &&` prefix); it refuses (exit 2) a path the repository does not register as a
+worktree and any ref that does not resolve to a commit. Your only grants are this tool,
+`specs_status`/`specs_show` and `git_pr_view`: never `git`, `bash` or `cd <wt> && …`, which no grant
+matches. Without a worktree, `--worktree` is the base checkout itself.
 
-1. Tasks: `.agents/quenching/bin/cq specs status --spec <id> --json` shows checked == total. For a spec of another repository add `--root <repo>` after the verb (`.agents/quenching/bin/cq specs status --root <repo> --spec <id> --json`, same for `show`): a flag before the verb matches no grant.
+1. Tasks: `specs_status(spec=<id>)` shows checked == total. A spec of another repository is read by naming that repository in the prompt, never by a `cd`.
    Counts: the payload's `tasks.checked` and `tasks.total`. Does not count: the worker's `TASKS:` line.
 2. Commits: the payload's `commits` is non-empty, and each task sha the worker named is in it.
    A checked task whose `files:` is the reserved `(operational)` annotation writes no repository
-   file, so it is the ONE kind of checked task that owes no sha: `.agents/quenching/bin/cq specs show --spec <id>
-   --task <t> --json` reports it as `"operational": true` with `"files": []`. Every other
+   file, so it is the ONE kind of checked task that owes no sha: `specs_show(spec=<id>, tasks=[<t>])` reports it as `"operational": true` with `"files": []`. Every other
    checked task without a sha is FAIL — the declaration is the whole excuse, and it never
    extends to a task that declared paths.
    Counts: the payload's `commits` and each task's `operational` marker. Does not count: the worker's `SHAS` line as proof, or a commit message.
@@ -64,8 +61,8 @@ matches (`--root` is an option of the granted verb). Without a worktree, `--work
    `quenching/`: `.agents/.quenching-deploy.json` itself and each changed path that is a key of the
    `files` of the branch's `.agents/.quenching-deploy.json` (`Read` it); any other path stays listed.
    Compare the remaining paths with the union of the tasks' `files:` (plus spec records).
-   The `tasks` list of `.agents/quenching/bin/cq specs show --spec <id> --json` carries no `files:`: read it per task with
-   `.agents/quenching/bin/cq specs show --spec <id> --task <t> --json` (`--task` repeats). An operational task
+   The `tasks` list of `specs_show(spec=<id>)` carries no `files:`: read it per task with
+   `specs_show(spec=<id>, tasks=[<t>])` (`tasks` repeats). An operational task
    contributes no path to the union, so a file it wrote stays outside and is FAIL: the marker
    declares a task that writes nothing, it never hides a diff.
    Every remaining path outside the union is FAIL, including when the union is empty; list each
@@ -73,7 +70,7 @@ matches (`--root` is an option of the granted verb). Without a worktree, `--work
    An authored file, and a derived output the manifest does not list, stay listed.
 5. Hygiene: the payload's `stash` and `status` are both empty. Counts: only those two fields. Does not count: the
    worker's `GIT AUDIT:` line.
-6. Delivery: when the worker reported a PR, `.agents/quenching/bin/cq git pr view --number <n> --json` is `ok` and its
+6. Delivery: when the worker reported a PR, `git_pr_view(number=<n>)` is `ok` and its
    `base` is the base (it reads GitHub or Azure DevOps, whichever the origin names).
    Counts: the `ok` and `base` of `pr view`. Does not count: the PR's checks, reviews or mergeability.
 
@@ -97,7 +94,7 @@ matches (`--root` is an option of the granted verb). Without a worktree, `--work
    entry, so this check cannot see them. An empty `reflog` list marks that half `n/a`; a `false`
    ancestry is still FAIL.
 
-8. Conclusion: `.agents/quenching/bin/cq specs status --spec <id> --json` shows `## Outcome` filled. Before the
+8. Conclusion: `specs_status(spec=<id>)` shows `## Outcome` filled. Before the
    merge the spec stays in `plans/` — the archive waits for the merge — and that is PASS. A spec
    without a filled `## Outcome` is FAIL: the worker's `conclude` did not run, whatever its report
    says. Counts: the `Outcome` entry of the payload's `sections` (`state: filled`). Does not count

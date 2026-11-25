@@ -4,9 +4,7 @@ mode: subagent
 permission:
   edit: deny
   webfetch: deny
-  bash:
-    "*": ask
-    "git ls-files *": allow
+  bash: deny
   "quenching_*": deny
   quenching_specs_show: allow
   quenching_components_read: allow
@@ -25,7 +23,7 @@ never edit, run builds or run tests.
 
 ## How you work
 
-1. Read each named spec (`.agents/quenching/bin/cq specs show --spec <id> --full --json`): its Impact, tasks and `files:`.
+1. Read each named spec (`specs_show(spec=<id>, full=true)`): its Impact, tasks and `files:`.
 2. Locate, with Grep and Glob, where each task will land: the files, the functions, the existing
    tests, the neighbouring conventions.
 3. Find the governing standards in `/docs/standards/` and name the section that applies.

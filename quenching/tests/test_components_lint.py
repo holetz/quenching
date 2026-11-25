@@ -575,7 +575,8 @@ class AgentGrantGap(unittest.TestCase):
                 "---\nname: a\ntools: Read, Bash(cq specs task:*)\n---\n"
                 "Run `cq specs task --check 1.1` then `cq specs record 1 branch`.\n", encoding="utf-8")
             codes = sorted(f["code"] for f in lint_agents(root, root))
-        self.assertEqual(codes, ["sk-agent-grant-gap", "sk-cq-flag"])
+        self.assertEqual(codes, ["sk-agent-grant-gap", "sk-cq-cli-citation", "sk-cq-cli-citation",
+                                 "sk-cq-flag"])
 
     def test_lint_without_commands_still_checks_the_agents(self):
         from quenching.components.commands.lint import cmd_lint

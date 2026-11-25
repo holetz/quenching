@@ -366,6 +366,7 @@ def lint_agents(root: str, base: str) -> list[dict]:
         body = body_after_frontmatter(read_text(path) or "")
         where = {"command": f"agent:{filename[:-3]}", "path": rel(path, base)}
         out.extend(_cq_call_findings(body, where))
+        out.extend(mcp_citations.findings(body, where))
         disallowed = fm.get("disallowedTools", "")
         if isinstance(disallowed, list):
             disallowed = ", ".join(str(item) for item in disallowed)

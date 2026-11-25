@@ -8,9 +8,9 @@ bodies `ENFORCED` names:
   `EXCEPTIONS` entry of `mcp/coverage.py`, or one no row publishes — is the CLI's by right.
 * `sk-mcp-unknown-tool` — a `<pillar>_<verb>(` citation that is no tool of the catalog.
 
-`ENFORCED` is a ratchet: every quenching skill and every shared reference is held to it; the
-agents under `agents/` join it with their own conversion, and the tuple then goes. `skills/quenching-`
-keeps a target's own skills, which quenching does not author, out of it.
+`ENFORCED` is a ratchet: every quenching skill, every shared reference and every flow agent under
+`agents/` is held to it, and the tuple stays as the one place a new body class would be added.
+`skills/quenching-` keeps a target's own skills, which quenching does not author, out of it.
 """
 from __future__ import annotations
 
@@ -20,9 +20,9 @@ from quenching.common.output import finding
 from quenching.mcp import catalog, coverage
 
 # Path fragments, relative to the plugin root or to a target's `.agents/`, of the bodies held to
-# the tool form. `references/` is the shared payload's: a skill's own `references/` is reached
+# the tool form. `agents/` is the flow agents' own folder; `references/` is the shared payload's: a skill's own `references/` is reached
 # through its `skills/quenching-` folder, and a target's own skill never is.
-ENFORCED = ("skills/quenching-", "references/")
+ENFORCED = ("skills/quenching-", "references/", "agents/")
 
 # The one body whose job is to spell the CLI: the fallback of the convention itself.
 CLI_HOMES = ("references/align/tool-resolution.md",)
