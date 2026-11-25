@@ -741,6 +741,17 @@ class Deploy(unittest.TestCase):
         self.assertIn("external_directory", opencode["permission"])
         self.assertTrue(any("subagent_depth" in w and "todo" in w for w in payload["warnings"]))
 
+    def test_check_keeps_the_depth_a_global_key_kept_out_of_this_machine(self):
+        # The recorded depth names the machine that wrote the manifest; re-deriving it under this
+        # machine's global config would read a committed `opencode.json` as drift.
+        self.assertEqual(0, self.run_deploy("--modules", "specs", "--harness", "opencode",
+                                            "--write")[0])
+        (self.xdg / "opencode").mkdir()
+        (self.xdg / "opencode" / "opencode.jsonc").write_text(
+            '{"experimental": {"todo": true}}\n', encoding="utf-8")
+        code, payload = self.run_deploy("--check")
+        self.assertEqual([], payload["changes"], payload)
+
     def test_dropping_the_opencode_harness_takes_the_extras_out(self):
         self.write("opencode.json", '{"theme": "dark", "permission": {"edit": "ask"}}\n')
         self.assertEqual(0, self.run_deploy("--modules", "specs", "--harness", "opencode",
