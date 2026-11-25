@@ -18,11 +18,10 @@ commands, fronts and finding codes without choosing an axis or repairing a body.
 
 Set `TARGET_ROOT` to `$ARGUMENTS`, or to `.` when the argument is omitted, and run:
 
-<!-- cli: root -->
-```bash
-.agents/quenching/bin/cq --root "$TARGET_ROOT" components status --json
-.agents/quenching/bin/cq components migrate --target "$TARGET_ROOT" --json
-.agents/quenching/bin/cq components bridge --target "$TARGET_ROOT" --check --json
+```text
+components_status(root="$TARGET_ROOT")
+components_migrate(target="$TARGET_ROOT")
+components_bridge(target="$TARGET_ROOT", check=true)
 ```
 
 `migrate` without `--write` and `bridge --check` only plan: neither writes.

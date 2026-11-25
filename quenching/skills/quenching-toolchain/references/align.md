@@ -24,9 +24,8 @@ per [tool-resolution.md](.agents/quenching/references/align/tool-resolution.md)
 
 Run the route before reading or editing a target:
 
-<!-- cli: root -->
-```bash
-.agents/quenching/bin/cq --root "$TARGET_ROOT" toolchain doctor --json
+```text
+toolchain_doctor(root="$TARGET_ROOT")
 ```
 
 The probe establishes applicability from recognized toolchain artifacts. `not-applicable` is an
@@ -87,9 +86,8 @@ already made them deterministic.
 
 Re-run the same closing verifier:
 
-<!-- cli: root -->
-```bash
-.agents/quenching/bin/cq --root "$TARGET_ROOT" toolchain doctor --json
+```text
+toolchain_doctor(root="$TARGET_ROOT")
 ```
 
 If findings remain, distinguish unresolved judgement residue from a failed mechanical or structural

@@ -121,39 +121,28 @@ Write `## Problem` — the problem or opportunity in the source's own framing, t
 sentence path.
 
 **Plan-source path:** additionally write every section the plan actually supports, its own
-`## <Heading>` block in the same stream. Where the plan was
+entry of `sections` in the same call. Where the plan was
 silent on a section you are writing others around, write `- none — <what the source did not
 record>`. Never fabricate.
 
-Everything step 4 resolved, everything above, and the closing `validate` — **one Bash block**,
-chained with `&&` per
-[align/tool-resolution.md](.agents/quenching/references/align/tool-resolution.md)
-§Resolving the tool — the CLI, because `specs_create` takes neither `subject` nor the section bodies:
+Everything step 4 resolved and everything above go in **one** `specs_create`, then the closing
+`validate`:
 
-<!-- cli: atomic -->
-```bash
-.agents/quenching/bin/cq specs new "<title>" \
-  [--subject <key>] [--type <key>] [--tags "<subject's fixed tags>,<confirmed catalog tags>"] \
-  --complexity <level> <<'EOF' \
-&& .agents/quenching/bin/cq specs validate --spec <id>
-## Problem
-
-<two sentences, or what the source supports>
-
-## <Heading>
-
-<plan-source path only: every other section the plan actually supports>
-EOF
+```text
+specs_create(name="<title>", subject=<key>, type=<key>,
+             tags="<subject's fixed tags>,<confirmed catalog tags>", complexity=<level>,
+             sections=[{"heading": "Problem", "body": "<two sentences, or what the source supports>"},
+                       {"heading": "<Heading>", "body": "<plan-source path only: every other section the plan actually supports>"}])
+specs_validate(spec=<id>)   # <id>: the `id` the create returned
 ```
 
-Quote the delimiter (`<<'EOF'`) so nothing in the prose is expanded by the shell. `--subject`/
-`--type`/`--tags` only where step 4 resolved one; `--tags`, when present, carries the **whole**
+`subject`/`type`/`tags` only where step 4 resolved one; `tags`, when present, carries the **whole**
 list — the subject's own fixed tags are folded in by the tool, never lost.
 
 **Refusals, all before anything is written:** `sp-bad-complexity` means step 4's computed level
 is wrong — recompute and retry the same call. `sp-stray-heading` (`source: stream`)
-or `sp-write-duplicate-heading` means the stdin stream is malformed — fix the stream and retry the
-same call, never split it into smaller ones. `sp-no-subject`/`sp-subject-unknown`/`sp-type-unknown`
+or `sp-write-duplicate-heading` means `sections` is malformed — fix it and retry the same call,
+never split it into smaller ones. `sp-no-subject`/`sp-subject-unknown`/`sp-type-unknown`
 means step 4's own resolution disagrees with the target's declared config RIGHT NOW (a race, or a
 stale read) — re-run `specs_config` and redo step 4 rather than retrying blind.
 `sp-az-workitemtype-only-answer` means the target still declares the retired
@@ -167,8 +156,8 @@ died past its POST) is never retried blind: search the target by exact title fir
 (`specs_list`, matched on the title), and finish or reuse the issue that exists instead
 of running `new` again — a blind retry duplicates it.
 
-The chained `specs_validate(spec=<id>)` is the whole check — its own finding, if any, is named
-verbatim in step 6, never swallowed by the `&&`.
+The closing `specs_validate(spec=<id>)` is the whole check — its own finding, if any, is named
+verbatim in step 6, never swallowed.
 **Done when:** `specs_create` exited 0, `validate` ran in the same call, and the locator it
 returned is in hand.
 

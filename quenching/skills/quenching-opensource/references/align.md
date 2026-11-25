@@ -27,9 +27,8 @@ per [tool-resolution.md](.agents/quenching/references/align/tool-resolution.md)
 
 Run the route before reading or editing a target:
 
-<!-- cli: root -->
-```bash
-.agents/quenching/bin/cq --root "$TARGET_ROOT" opensource doctor --json
+```text
+opensource_doctor(root="$TARGET_ROOT")
 ```
 
 The probe reports `applicability`, template integrity and the `os-*` findings. Invoked directly,
@@ -84,10 +83,9 @@ value in hand, or rejected without a target edit.
 
 For each authorized artifact, first dry-run, then write:
 
-<!-- cli: root -->
-```bash
-.agents/quenching/bin/cq --root "$TARGET_ROOT" opensource apply --artifact <name> --var <key>=<value> ... --dry-run --json
-.agents/quenching/bin/cq --root "$TARGET_ROOT" opensource apply --artifact <name> --var <key>=<value> ... --json
+```text
+opensource_apply(artifact=<name>, var=["<key>=<value>", …], dry_run=true, root="$TARGET_ROOT")
+opensource_apply(artifact=<name>, var=["<key>=<value>", …], root="$TARGET_ROOT")
 ```
 
 The license takes `--var spdx=<id>` as its selector. Never write, paste or adapt a template's text
@@ -96,9 +94,8 @@ placeholders. A refusal — `os-artifact-unknown`, `os-license-unvendored`, `os-
 `os-var-unknown`, `os-target-exists` — is reported as it came and that artifact is skipped; an
 existing file is never overwritten. Then re-run the closing verifier:
 
-<!-- cli: root -->
-```bash
-.agents/quenching/bin/cq --root "$TARGET_ROOT" opensource status --json
+```text
+opensource_status(root="$TARGET_ROOT")
 ```
 
 If findings remain, distinguish unanswered judgement residue from a refused or failed apply. Do not

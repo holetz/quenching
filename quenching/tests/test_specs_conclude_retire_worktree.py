@@ -23,8 +23,9 @@ class ConcludeRetiresTheWorktree(unittest.TestCase):
         self.assertIn("Then give the worktree back", text)
         self.assertIn("`reconcile` already released it", text)
         self.assertIn("never `retire` a slot", text)
-        self.assertIn("cd <the base's checkout> && .agents/quenching/bin/cq git worktree retire", text)
-        self.assertIn("--branch <branch.work> --base <branch.base>", text)
+        self.assertIn("git_worktree_retire(path=", text)
+        self.assertIn('branch="<branch.work>", base="<branch.base>", root="<the base\'s checkout>"',
+                      text)
 
     def test_the_step_never_forces_and_reports_a_refusal(self):
         text = step(8)

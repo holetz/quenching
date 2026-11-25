@@ -55,6 +55,17 @@ class Coverage(unittest.TestCase):
             with self.subTest(text):
                 self.assertEqual(coverage.uncovered([("a.md", text)]), [])
 
+    def test_a_launch_root_before_the_pillar_is_skipped_not_read_as_the_verb(self):
+        for text in ('cq --root "$TARGET_ROOT" delivery status --json',
+                     "cq --root '/tmp/x' ops doctor", "cq --root=. proof status",
+                     ".agents/quenching/bin/cq --root <worktree> security audit"):
+            with self.subTest(text):
+                match = coverage.CITE.search(text)
+                self.assertIsNotNone(match)
+                path = coverage.verb_path(match.group(1).split())
+                self.assertIn(path[0], ("delivery", "ops", "proof", "security"))
+        self.assertIsNone(coverage.CITE.search("`cq --root <worktree>` is the form"))
+
     def test_a_choices_positional_is_part_of_the_verb(self):
         self.assertEqual(coverage.verb_path(["git", "worktree", "release", "--path"]),
                          ("git", "worktree", "release"))

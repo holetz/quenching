@@ -155,9 +155,9 @@ not. Invoking the command is the authorization, and the human's window on the ed
 URL in the backend.
 
 **The edit lands per pass, not per stage** — compose and refine write together, in one call, and the
-tool is built for exactly that: `.agents/quenching/bin/cq specs section <id> "<H1>,<H2>,…" --write` splices N headings and <!-- cli: atomic -->
-**lands them as ONE write**, so a mismatched heading set refuses (exit 2) without writing any of
-them. A pass is therefore all-or-nothing: an abandoned one leaves the spec exactly as it was.
+tool is built for exactly that: `specs_section_write(spec=<id>, sections=[…])` splices N headings and
+**lands them as ONE write**, so a repeated or non-canonical heading refuses (exit 2) without writing
+any of them. A pass is therefore all-or-nothing: an abandoned one leaves the spec exactly as it was.
 
 <!-- rationale -->
 - Later answers routinely revise earlier ones, and refine exists to revise what compose just wrote.
@@ -592,7 +592,7 @@ names what the argument settled. Recommending the raise a human has already take
 decide the same thing twice.
 
 **On the simple track, the pass approves, and the record says so.**
-`.agents/quenching/bin/cq specs record "<id>" approved --set date=<today> --set by=session` <!-- cli: by -->. There is no screen, because
+`specs_record(spec=<id>, name="approved", by="session")`, which writes the date with it. There is no screen, because
 the simple track is the one with nothing left for a human to decide. The review window is **the
 spec's URL in the backend**, announced before the pass read anything and repeated in its report. The
 stamp is not an inference from the sections and never claims to be one. When the conductor declared

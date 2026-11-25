@@ -6,8 +6,9 @@ new flag on a catalogued verb shows up in the tool with no edit here, and a new 
 when it gets its row.
 
 * Closed: the argv is built only from the schema's properties (`additionalProperties: false`), so
-  no argument reaches a verb or a flag the row does not name. `--root` and `--json` are the
-  server's, never the model's.
+  no argument reaches a verb or a flag the row does not name. `--json` is the server's; `--root`
+  is the server's workspace unless the call names its own `root`, which is validated
+  (`server.call_root`) and becomes both the verb's `--root` and the dispatch's cwd.
 * Classes: `read` (`readOnlyHint`), `write` (changes the workspace or the specs store) and
   `external` (leaves the machine: `openWorldHint`, `destructiveHint` where the row says so). The
   class is what a sub-agent grant is given by.
@@ -64,9 +65,9 @@ CATALOG: dict[str, Row] = {
     "git_preflight": Row("git", ("preflight",), "read", False, frozenset({"probe_claims"})),
     **_rows("git", "write", "commit", "worktree link", "worktree add", "specs"),
     **_rows("git", "external", "push", "pr create", "pr record"),
-    # `--spec` would stamp the `merge` record with no `specs_record` call behind it: the
-    # record is written by `cq specs record` once the merge landed, not by the merge verb.
-    "git_pr_merge": Row("git", ("pr", "merge"), "external", True, frozenset({"spec"})),
+    # `spec` stamps the `merge` record once the PR merged, as the CLI's `--spec` does: the
+    # record is not a gated decision (the approval already covers the close-out).
+    "git_pr_merge": Row("git", ("pr", "merge"), "external", True),
     "git_worktree_retire": Row("git", ("worktree", "retire"), "write", True),
     "git_prune": Row("git", ("prune",), "external", True),
     **_rows("config", "read", "show", "check", "host"),
@@ -100,6 +101,11 @@ CATALOG: dict[str, Row] = {
     **_rows("git", "write", "worktree acquire", "refresh"),
     "git_worktree_release": Row("git", ("worktree", "release"), "write", True),
     **_rows("design", "write", "render", "import"),
+    # The verbs the align and genre flows cite behind a launch-time `--root`, which the coverage
+    # scan did not see before it skipped the flag.
+    **_rows("ops", "read", "inventory"),
+    **_rows("proof", "read", "inventory"),
+    **_rows("design", "write", "align", "genre new"),
     **_rows("security", "read", "leak"),
     # The verbs `references/**` cites beyond the skill and agent bodies.
     **_rows("specs", "read", "doctor", "schedule"),
@@ -217,8 +223,11 @@ def _required(action: argparse.Action) -> bool:
 
 
 def schema(verb: Verb) -> dict:
+    """The verb's own arguments, plus `root`: the one call's working tree, which the server turns
+    into the verb's `--root` and the dispatch's cwd."""
     actions = _arguments(verb)
-    out = {"type": "object", "properties": {a.dest: _property(a) for a in actions},
+    out = {"type": "object",
+           "properties": {**{a.dest: _property(a) for a in actions}, "root": server.ROOT},
            "additionalProperties": False}
     required = [a.dest for a in actions if _required(a)]
     if required:
@@ -346,7 +355,10 @@ def call(name: str, args: dict, root: str) -> tuple[dict, bool]:
     """`(payload, is_error)` for one catalogued tool. Raises KeyError for an unknown name."""
     row = CATALOG[name]
     try:
-        cmd, as_json = argv(row, args, root)
+        if not isinstance(args, dict):
+            raise ToolArgs("`arguments` must be an object")
+        root = server.call_root(args, root)
+        cmd, as_json = argv(row, {k: v for k, v in args.items() if k != "root"}, root)
     except ToolArgs as exc:
         return {"ok": False, "code": "mcp-bad-arguments", "message": str(exc)}, True
     try:

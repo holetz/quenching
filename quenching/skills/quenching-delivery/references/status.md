@@ -16,9 +16,8 @@ Resolve `cq` per
 [tool-resolution.md](.agents/quenching/references/align/tool-resolution.md)
 §Resolving the tool. Set `TARGET_ROOT` to `$ARGUMENTS`, or `.` when omitted, and run:
 
-<!-- cli: root -->
-```bash
-.agents/quenching/bin/cq --root "$TARGET_ROOT" delivery status --json
+```text
+delivery_status(root="$TARGET_ROOT")
 ```
 
 Branch on the JSON and exit code: `0` is clean, `1` carries findings, and `2` is a refusal. On

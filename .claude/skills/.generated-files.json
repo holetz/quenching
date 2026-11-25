@@ -5,9 +5,9 @@
   "files": {
     "commands-tighten/SKILL.md": "41574a4774e70deffd6c8c6766a1a24581d579d1f7247b68a93ba86b39b2019b",
 
-    "quenching-align/SKILL.md": "84d406f43eb31955c5a79b95114add5ac9886a748387e1800f767fc63af291ca",
+    "quenching-align/SKILL.md": "ea37230cbfabb6746f98ad288f5b402c7464aa433805d0ea1c5b63002574c605",
 
-    "quenching-components/SKILL.md": "b73ae8be3bcdd34a8cbaf127a56505f8d19d7d975e05e247a54f9bf91029e4c3",
+    "quenching-components/SKILL.md": "01bca6477bdc9a0743fb3014d01edcd1a67e1e3f29af6620bd3c1b56392e1c35",
 
     "quenching-components/references/agent-new.md": "8eec5f375d0664d9815574bc4af3e407095c10469eed8d11a7ff9692b35f23ad",
 
@@ -27,7 +27,7 @@
 
     "quenching-components/references/hook-new.md": "6513d79bd584f04813899949b10b639a19a48ef94e583862360aa5124d67e25c",
 
-    "quenching-components/references/status.md": "4f84ef3e1bcc1ec5852c079e5f36822bdc8bcbff9dbe0fa7222e754a3238e13d",
+    "quenching-components/references/status.md": "652966b0901a1a260abe2b86d48804f007d5f4c7a755de5467a2a240e7bf3564",
 
     "quenching-delivery/SKILL.md": "aa485d4db9d6f9f74923146425d2ff6d126e7e7e490a0bef06e6df59162962d4",
 
@@ -47,15 +47,15 @@
 
     "quenching-design/references/status.md": "21266695064ace61b30879567af92101f498591292df7eb20285c2402c3930e1",
 
-    "quenching-git/SKILL.md": "85b43687aee2079bf8113fb5fb55b3ed2739415bc6f5618d3f74b8a7640473a0",
+    "quenching-git/SKILL.md": "71ca0e8d556b374a8884bf41fa187fe87b1bd135b2b37ac924052806e177280a",
 
-    "quenching-git/references/branch.md": "cb60cadf2bfc5b19b916fcb6abdab4df8a54aabc640d44f1a16f5ae2e8548635",
+    "quenching-git/references/branch.md": "acbd338d1cac4a05bac00e1e7d47f5c99c01aa6931bb06e37dec07f37b96c5b1",
 
     "quenching-git/references/cleanup.md": "c8f9db2f163b6d31d3e89ebd14fa4884499ebcdbf2913d322f8cad9e45a4a54b",
 
     "quenching-git/references/commit-incremental.md": "4ca79a81e11e3ef3a0fa5dde1bf190d5ff1c5a6cfb70de6d79e2bb4619871c56",
 
-    "quenching-git/references/commit.md": "0318ef48b1aea67b084d07e076315058b9cf696ba8986156e403cb5ecdcab8bd",
+    "quenching-git/references/commit.md": "6095d459e7c00a226c82639b570154f622e15c40dab08036999d82687c3ca95f",
 
     "quenching-git/references/merge.md": "474830576e5eecee9fee4936f6927f3a6ebb0ab0825e7fb69fbb3655d4d4ce62",
 
@@ -175,13 +175,13 @@
 
     "quenching-specs/references/board.md": "f23f25a70443e60cb15174e2763370280b57c7396d5a4cf424b5319a867017dc",
 
-    "quenching-specs/references/conclude.md": "a73cf14d60fab5a33e7aa720622ef9f97cfb23a603f2a74b076cf7bdae4a499a",
+    "quenching-specs/references/conclude.md": "c2948e3cc353a22d06f0f293611060e907745a4617822a800294ac8f5a7e647d",
 
-    "quenching-specs/references/create.md": "111611acef697c04d403e8c1c887fea015ca13b26df99cf4d02c73a61a79e02b",
+    "quenching-specs/references/create.md": "5b4dd3117e13aae3b8ab2e381e05a397dda0fdb6c4d163d1a4f6c6d3f60280d6",
 
-    "quenching-specs/references/develop.md": "81292773033cb44a2eb32d50bc7c0d718d156b7465481de9c7a433bff37e9b88",
+    "quenching-specs/references/develop.md": "3d937e6ee0c76485d81ea2629f4371557e06544f4c535ede95002498200079c0",
 
-    "quenching-specs/references/execute.md": "9d45e875ff0e414c23a0ba665cd9358b07319060a3f891cb631ae952e4842890",
+    "quenching-specs/references/execute.md": "f7357d2b4c3d2b86b4618ef62bdac178f8bb6d4e1d7a3d131b359b4d080a75bc",
 
     "quenching-specs/references/improve.md": "b4e65cd68186c0c43a847a71f326913208a5a7da843ba5cd45cd4294afc7b707",
 

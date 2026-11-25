@@ -323,33 +323,23 @@ this edit will park** — a line, not an offer (§Invariants).
 **Every write of this step is ONE call** — §The batching contract's third row: the section write,
 the `## Discoveries` lines, the records, `verification`, `validate`, and the closing `status`.
 
-Write the narrated sections with `.agents/quenching/bin/cq specs section <id> "<Heading>[,<Heading>…]" --write` (bodies <!-- cli: atomic -->
-on stdin) — it creates each heading in canonical position on first write, so creating and revising
+Write the narrated sections with ONE `specs_section_write(spec=<id>, sections=[…])` — it creates
+each heading in canonical position on first write, so creating and revising
 are the same call. An emptied section becomes an explicit `- none — <reason>`, never a deleted
 heading. The surface group and the `## Impact` sub-heading that declares it land in this same
 single write as the rest; there is no surface-specific write, call or record.
 
-**The bodies go on stdin as one heredoc, in the same call:**
+**Every body goes in that one call:**
 
-<!-- cli: atomic -->
-```bash
-.agents/quenching/bin/cq specs section "<id>" "<Heading>,<Other Heading>" --write <<'BODY'
-## <Heading>
-
-<the drafted section, verbatim>
-
-## <Other Heading>
-
-<the other drafted section, verbatim>
-BODY
+```text
+specs_section_write(spec=<id>, sections=[
+  {"heading": "<Heading>", "body": "<the drafted section, verbatim>"},
+  {"heading": "<Other Heading>", "body": "<the other drafted section, verbatim>"}])
 ```
 
-Quote the delimiter (`<<'BODY'`) so nothing in the prose is expanded by the shell.
-
-The `## <Heading>` lines in the stream are the delimiter, and the set they carry must equal the set
-declared on the command line — a mismatch, a repeat, or a heading outside the canonical thirteen
-refuses (exit 2) **without writing any of them**. One heading with a raw body and no `## ` line is
-the singular form. The N splices land as ONE write.
+A repeat or a heading outside the canonical thirteen refuses (exit 2) **without writing any of
+them**. `heading` and `body` instead of `sections` is the singular form. The N splices land as ONE
+write.
 
 Every follow-up the plan parked is written in this same edit — `specs_discover(spec=<id>,
 text="<finding>")`, one call per line — and never mid-stage, which
@@ -404,10 +394,10 @@ a build's context, and a worker over its size estimate finishes the spec anyway.
 Close according to the track — §Approval owns the screen:
 
 - **Simple track** — no screen. With `ready` now **proved** by step 7's payload and `approved`
-  unset, stamp it here: `.agents/quenching/bin/cq specs record <id> approved --set date=<today> --set by=session` <!-- cli: by -->. **`by:`
+  unset, stamp it here: `specs_record(spec=<id>, name="approved", by="session")`, which writes the date. **`by:`
   is never omitted** — a record with no `by:` reads as `human`, so leaving it off silently claims a
   human this pass never had. When the invocation says `autonomous`, stamp
-  `--set by=orchestrator-forced` instead. That is the only path that writes this value, and only
+  `by="orchestrator-forced"` instead. That is the only path that writes this value, and only
   after step 7 proved `ready`.
 - **Complex track** — ONE closing decision sheet that **recommends** rather than defaulting to
   approve. Judge what the pass produced against §Refine's three signals and lead with the move they

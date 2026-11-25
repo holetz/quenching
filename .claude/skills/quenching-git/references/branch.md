@@ -101,10 +101,13 @@ is exit 1 and does not undo the worktree — report it apart from the cut. Do no
 second time; `--no-setup` skips it only when the human asks. **A worktree outside the project
 directory is not the shell's cwd:** the harness may return the cwd to the base checkout after every
 command, so from here on each command carries the worktree explicitly — `cd <worktree> && …` in
-the same call, `git -C <worktree>`, `.agents/quenching/bin/cq --root <worktree>` — or a cwd-dependent tool (`cq` without
+the same call, `git -C <worktree>`, `root=<worktree>` on a `quenching` tool — or a cwd-dependent tool (`cq` without
 `--root`, `git diff`, tests) reads the base checkout and reports green over a tree that did not
-change. `.agents/quenching/bin/cq git …` takes no `--root` on its write verbs
-(a usage error): it always runs as `cd <worktree> && .agents/quenching/bin/cq git …`. A `quenching` MCP tool acts on the server's root, the session's directory, and never on the worktree: a verb that reads or writes the tree (`git_state`, `git_commit`, a test) runs there in that CLI form <!-- cli: root -->. Then, only with an ID from step 2
+change. On the CLI fallback `.agents/quenching/bin/cq git …` takes no `--root` on its write verbs
+(a usage error) and runs as `cd <worktree> && .agents/quenching/bin/cq git …`. <!-- cli: fallback -->
+A `quenching` MCP tool acts on the server's root, the session's directory, unless the call names
+`root=<worktree>`: a verb that reads or writes the tree (`git_state`, `git_commit`) takes it on
+every call. Then, only with an ID from step 2
 (the Worktree form already stamped `branch:` through `--spec`; **Branch** form stamps it by hand):
 ```text
 specs_record(spec=<id>, name="branch", fields={"base": "<base>", "work": "<branch>"})   # Branch form only

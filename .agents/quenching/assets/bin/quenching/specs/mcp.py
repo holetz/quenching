@@ -12,7 +12,10 @@ same one `cq mcp` mounts with these tables inside its wider catalog.
 * One human decision, asked once. `approved` is the only gated write: the server asks the human
   through the client (`elicitation/create`) and runs the verb only on an accept, writing
   `by=human` and only on a spec that met the ready gate. There is no argument that confirms: a
-  client without the `elicitation` capability gets a refusal, never a silent pass. Everything the
+  client without the `elicitation` capability gets a refusal, never a silent pass. A stamp that
+  claims no human (`by` session or orchestrator-forced, the values the CLI writes for the simple
+  track and declared autonomy) is not that decision and writes without asking, still only on a
+  spec that met the ready gate. Everything the
   flow concludes after that approval — the `reviewed`, `merge` and `outcome` records and
   `promote` — writes without asking, because the approval already covers the run and the verbs
   behind them are mechanical.
@@ -50,9 +53,14 @@ MAX_TERMS = 20
 ID = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]*$")
 FIELD = re.compile(r"^[A-Za-z][A-Za-z0-9_]*$")
 MAX_BODY = 200_000
+MAX_SECTIONS = 13
 GATED_RECORDS = ("approved",)
 FREE_RECORDS = ("priority", "refined", "branch", "pr", "reviewed", "merge", "buildCost", "run")
 TASK_ACTIONS = ("check", "uncheck", "block", "descope")
+# Who decided an `approved` stamp: `human` is asked through the client; `session` and
+# `orchestrator-forced` claim no human, so they write without asking, as the CLI does.
+# `low-gear` is historical and never written.
+APPROVED_BY = ("human", "session", "orchestrator-forced")
 
 
 def _text(args: dict, key: str, required: bool = False) -> str | None:
@@ -161,14 +169,20 @@ def _epic(args: dict) -> list[str]:
 
 
 def _schema(props: dict, required: list[str] | None = None) -> dict:
-    return {"type": "object", "properties": props, "required": required or [],
-            "additionalProperties": False}
+    """Every specs tool also takes `root`: the CLI's `--root`, for one call."""
+    return {"type": "object", "properties": {**props, "root": server.ROOT},
+            "required": required or [], "additionalProperties": False}
 
 
 SPEC = {"type": ["string", "integer"], "description": "the spec id"}
 PAGE = {"limit": {"type": "integer", "minimum": 1, "maximum": MAX_LIMIT,
                   "description": f"page size (default {DEFAULT_LIMIT})"},
         "offset": {"type": "integer", "minimum": 0, "description": "rows to skip"}}
+SECTIONS = {"type": "array", "minItems": 1, "maxItems": MAX_SECTIONS,
+            "description": "several sections in one atomic write, in canonical headings",
+            "items": {"type": "object", "properties": {"heading": {"type": "string"},
+                                                       "body": {"type": "string"}},
+                      "required": ["heading", "body"], "additionalProperties": False}}
 
 # name -> (description, input schema, argv builder, paged payload key or None)
 TOOLS: dict[str, tuple] = {
@@ -221,10 +235,39 @@ def _rec_fields(args: dict) -> list[str]:
     return argv
 
 
+def _sections(args: dict) -> list[tuple[str, str]] | None:
+    """`sections` as `(heading, body)` pairs, or None when the call does not carry it."""
+    sections = args.get("sections")
+    if sections is None:
+        return None
+    if not isinstance(sections, list) or not 1 <= len(sections) <= MAX_SECTIONS:
+        raise ToolArgs(f"`sections` must be a list of 1 to {MAX_SECTIONS} objects")
+    out = []
+    for item in sections:
+        if not isinstance(item, dict) or set(item) != {"heading", "body"}:
+            raise ToolArgs("each of `sections` is an object with exactly `heading` and `body`")
+        heading = _text(item, "heading", True)
+        if "," in heading:
+            raise ToolArgs("a `sections` heading names one heading")
+        body = item["body"]
+        if not isinstance(body, str) or not body.strip():
+            raise ToolArgs(f"`{heading}` needs a non-empty `body`")
+        out.append((heading, body))
+    return out
+
+
+def _stream(pairs: list[tuple[str, str]]) -> str:
+    """The CLI's multi-section stdin: one `## <Heading>` line opening each body."""
+    text = "\n".join(f"## {heading}\n\n{body.strip(chr(10))}\n" for heading, body in pairs)
+    if len(text) > MAX_BODY:
+        raise ToolArgs(f"the sections are above {MAX_BODY} characters; write them in parts")
+    return text
+
+
 def _w_new(args: dict) -> list[str]:
     argv = ["new", _text(args, "name", True)]
-    for key, flag in (("title", "--title"), ("type", "--type"), ("tags", "--tags"),
-                      ("complexity", "--complexity")):
+    for key, flag in (("title", "--title"), ("subject", "--subject"), ("type", "--type"),
+                      ("tags", "--tags"), ("complexity", "--complexity")):
         value = _text(args, key)
         if value:
             argv += [flag, value]
@@ -232,16 +275,29 @@ def _w_new(args: dict) -> list[str]:
     return argv + (["--verification", policy] if policy else [])
 
 
+def _w_new_stdin(args: dict) -> str | None:
+    pairs = _sections(args)
+    return _stream(pairs) if pairs else None
+
+
 def _w_section(args: dict) -> list[str]:
+    pairs = _sections(args)
+    if pairs is not None:
+        if any(args.get(key) is not None for key in ("heading", "body", "scope")):
+            raise ToolArgs("give `sections`, or `heading` and `body` — not both")
+        return ["section", _id(args, "spec", True), ",".join(h for h, _ in pairs), "--write"]
     heading = _text(args, "heading", True)
     if "," in heading:
-        raise ToolArgs("write one `heading` per call")
+        raise ToolArgs("one `heading` per call; several go in `sections`")
     argv = ["section", _id(args, "spec", True), heading, "--write"]
     scope = _choice(args, "scope", SCOPES)
     return argv + (["--scope", scope] if scope else [])
 
 
 def _w_section_stdin(args: dict) -> str:
+    pairs = _sections(args)
+    if pairs is not None:
+        return _stream(pairs)
     body = args.get("body")
     if not isinstance(body, str) or not body.strip():
         raise ToolArgs("`body` is required")
@@ -257,14 +313,24 @@ def _record_name(args: dict) -> str:
     return name
 
 
+def _approved_by(args: dict) -> str:
+    """`by` of an `approved` stamp: `human` unless the call names who else decided."""
+    if _record_name(args) != "approved":
+        if args.get("by") is not None:
+            raise ToolArgs("`by` belongs to `approved`; another record carries it in `fields`")
+        return ""
+    return _choice(args, "by", APPROVED_BY) or "human"
+
+
 def _w_record(args: dict) -> list[str]:
     name = _record_name(args)
+    by = _approved_by(args)
     if name == "approved":
         if args.get("fields") is not None:
-            raise ToolArgs("`approved` takes no fields: the server writes date and by=human "
-                           "after the human confirms")
+            raise ToolArgs("`approved` takes no fields: the server writes date and `by` "
+                           "(human after the human confirms)")
         return ["record", _id(args, "spec", True), name,
-                "--set", f"date={date.today().isoformat()}", "--set", "by=human"]
+                "--set", f"date={date.today().isoformat()}", "--set", f"by={by}"]
     return ["record", _id(args, "spec", True), name, *_rec_fields(args)]
 
 
@@ -327,7 +393,7 @@ def _w_promote(args: dict) -> list[str]:
 
 def _gate_record(args: dict) -> str | None:
     name = _record_name(args)
-    if name not in GATED_RECORDS:
+    if name not in GATED_RECORDS or _approved_by(args) != "human":
         return None
     return f"Stamp the `{name}` record on spec {_id(args, 'spec', True)}? This records a human decision."
 
@@ -350,28 +416,37 @@ def _preflight_record(args: dict, root: str) -> dict | None:
 # name -> (description, schema, argv builder, stdin builder, gate text builder, preflight)
 WRITES: dict[str, tuple] = {
     "specs_create": (
-        "Capture a new spec into plans/ (`name`, optional `title`, `type`, `tags`, "
-        "`complexity`, `verification`).",
+        "Capture a new spec into plans/ (`name`, optional `title`, `subject`, `type`, `tags`, "
+        "`complexity`, `verification`); `sections` writes the first bodies in the same capture "
+        "(`## Problem` among them), refused whole on a repeated or non-canonical heading.",
         _schema({"name": {"type": "string"}, "title": {"type": "string"},
+                 "subject": {"type": "string"},
                  "type": {"type": "string"}, "tags": {"type": "string"},
                  "complexity": {"type": "string", "enum": ["low", "medium", "high", "xhigh"]},
                  "verification": {"type": "string",
-                                  "enum": ["per-task", "per-section", "end-of-plan"]}},
-                ["name"]), _w_new, None, None, None),
+                                  "enum": ["per-task", "per-section", "end-of-plan"]},
+                 "sections": SECTIONS},
+                ["name"]), _w_new, _w_new_stdin, None, None),
     "specs_section_write": (
-        "Replace ONE section's body (`heading`, `body`); `scope` narrows ## Handoff to one block. "
-        f"A body is at most {MAX_BODY} characters: write a long section in parts.",
+        "Replace ONE section's body (`heading`, `body`; `scope` narrows ## Handoff to one block), "
+        "or several in ONE atomic write (`sections`: `{heading, body}` objects), refused whole — "
+        "nothing written — on a repeated or non-canonical heading. At most "
+        f"{MAX_BODY} characters per call: write a long section in parts.",
         _schema({"spec": SPEC, "heading": {"type": "string"}, "body": {"type": "string"},
-                 "scope": {"type": "string", "enum": list(SCOPES)}},
-                ["spec", "heading", "body"]), _w_section, _w_section_stdin, None, None),
+                 "scope": {"type": "string", "enum": list(SCOPES)}, "sections": SECTIONS},
+                ["spec"]), _w_section, _w_section_stdin, None, None),
     "specs_record": (
-        f"Merge fields into ONE record. `approved` asks the human first and takes no fields (the "
-        "server writes date and by=human after the confirmation, and only on a spec that met the "
-        f"ready gate); {', '.join(FREE_RECORDS)} write without asking. `outcome` is not here: "
-        "`specs_promote` is its one writer.",
+        "Merge fields into ONE record. `approved` takes no fields and only stamps a spec that met "
+        "the ready gate: with `by` human (the default) it asks the human first and writes date "
+        "and by=human after the confirmation; `by` session or orchestrator-forced claims no human "
+        f"and writes without asking. {', '.join(FREE_RECORDS)} write without asking. `outcome` "
+        "is not here: `specs_promote` is its one writer.",
         _schema({"spec": SPEC, "name": {"type": "string",
                                          "enum": list(FREE_RECORDS + GATED_RECORDS)},
-                 "fields": {"type": "object"}}, ["spec", "name"]),
+                 "fields": {"type": "object"},
+                 "by": {"type": "string", "enum": list(APPROVED_BY),
+                        "description": "approved only: who decided (default human)"}},
+                ["spec", "name"]),
         _w_record, None, _gate_record, _preflight_record),
     "specs_task": (
         "Check, uncheck, block or descope ONE task (`action`, `task`); block and descope need a "
@@ -717,6 +792,7 @@ def _refusal(code: str, message: str) -> tuple[dict, bool]:
 def call_write(name: str, args: dict, root: str, session: Session) -> tuple[dict, bool]:
     _, _, build, stdin, gate, pre = WRITES[name]
     try:
+        root = server.call_root(args, root)
         argv = build(args)
         body = stdin(args) if stdin else None
         question = gate(args) if gate else None
@@ -747,6 +823,7 @@ def call_tool(name: str, args: dict, root: str,
         return call_write(name, args, root, session or Session())
     _, _, build, page_key = TOOLS[name]
     try:
+        root = server.call_root(args, root)
         argv = build(args)
     except ToolArgs as exc:
         return {"ok": False, "code": "mcp-bad-arguments", "message": str(exc)}, True

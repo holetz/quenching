@@ -249,6 +249,71 @@ class Writes(unittest.TestCase):
         shown, _ = mcp.call_tool("specs_show", {"spec": 1, "tasks": ["1.2"]}, self.tmp)
         self.assertTrue(shown["tasks"][0]["checked"])
 
+    def test_sections_write_several_headings_in_one_call(self):
+        payload, failed, _ = self.call("specs_section_write", {"spec": 1, "sections": [
+            {"heading": "Proposal", "body": "Do the thing."},
+            {"heading": "Risks", "body": "- none — nothing risky"}]})
+        self.assertFalse(failed, payload)
+        read, _ = mcp.call_tool("specs_section", {"spec": 1, "headings": "Proposal,Risks"},
+                                self.tmp)
+        self.assertIn("Do the thing.", json.dumps(read))
+        self.assertIn("nothing risky", json.dumps(read))
+
+    def test_a_repeated_heading_in_sections_writes_none_of_them(self):
+        payload, failed, _ = self.call("specs_section_write", {"spec": 1, "sections": [
+            {"heading": "Proposal", "body": "One."}, {"heading": "Proposal", "body": "Two."}]})
+        self.assertTrue(failed, payload)
+        payload, failed, _ = self.call("specs_section_write", {"spec": 1, "sections": [
+            {"heading": "Proposal", "body": "One."}, {"heading": "Bogus", "body": "Two."}]})
+        self.assertTrue(failed, payload)
+        read, _ = mcp.call_tool("specs_section", {"spec": 1, "headings": "Proposal"}, self.tmp)
+        self.assertNotIn("One.", json.dumps(read))
+
+    def test_sections_excludes_heading_body_and_scope(self):
+        for extra in ({"heading": "Risks"}, {"body": "x"}, {"scope": "global"}):
+            payload, failed, _ = self.call("specs_section_write", {
+                "spec": 1, "sections": [{"heading": "Proposal", "body": "One."}], **extra})
+            self.assertEqual((failed, payload["code"]), (True, "mcp-bad-arguments"), extra)
+        for bad in ([], [{"heading": "Proposal"}], [{"heading": "A,B", "body": "x"}],
+                    [{"heading": "Proposal", "body": "  "}], "Proposal"):
+            payload, failed, _ = self.call("specs_section_write", {"spec": 1, "sections": bad})
+            self.assertEqual((failed, payload["code"]), (True, "mcp-bad-arguments"), bad)
+
+    def test_create_takes_the_first_sections_and_a_subject_in_the_capture(self):
+        self.assertIn("subject", mcp.WRITES["specs_create"][1]["properties"])
+        self.assertEqual(mcp._w_new({"name": "g", "subject": "plugin"})[-2:],
+                         ["--subject", "plugin"])
+        payload, failed, _ = self.call("specs_create", {"name": "gamma", "sections": [
+            {"heading": "Problem", "body": "It breaks."},
+            {"heading": "Proposal", "body": "Fix it."}]})
+        self.assertFalse(failed, payload)
+        new = payload.get("id")
+        read, _ = mcp.call_tool("specs_section", {"spec": new, "headings": "Problem,Proposal"},
+                                self.tmp)
+        self.assertIn("It breaks.", json.dumps(read))
+        self.assertIn("Fix it.", json.dumps(read))
+
+    def test_root_points_one_call_at_another_repository(self):
+        other = os.path.realpath(tempfile.mkdtemp(prefix="quenching-mcp-o-"))
+        self.addCleanup(__import__("shutil").rmtree, other, True)
+        subprocess.run(["git", "init", "-q", other], check=True)
+        theirs = MemoryBackend()
+        backends_mod._BACKEND_CACHE[other] = theirs
+        theirs.create_spec("plans", DOC.format(title="Theirs", problem="Over there."))
+        for name, schema in [*((n, s[1]) for n, s in mcp.TOOLS.items()),
+                             *((n, s[1]) for n, s in mcp.WRITES.items())]:
+            self.assertIn("root", schema["properties"], name)
+        read, failed = mcp.call_tool("specs_status", {"spec": 1, "root": other}, self.tmp)
+        self.assertFalse(failed, read)
+        self.assertEqual(read["title"], "Theirs")
+        payload, failed, _ = self.call("specs_discover", {"spec": 1, "text": "there",
+                                                          "root": other})
+        self.assertFalse(failed, payload)
+        self.assertIn("there", theirs.read_spec(1)[0]["text"])
+        self.assertNotIn("there", self.backend.read_spec(1)[0]["text"])
+        payload, failed, _ = self.call("specs_status", {"spec": 1, "root": "missing"})
+        self.assertEqual((failed, payload["code"]), (True, "mcp-bad-arguments"))
+
     def test_a_blocking_task_needs_a_reason_and_a_free_record_needs_no_question(self):
         payload, failed, _ = self.call("specs_task", {"spec": 1, "action": "block", "task": "1.2"})
         self.assertEqual((failed, payload["code"]), (True, "mcp-bad-arguments"))
@@ -306,6 +371,42 @@ class Writes(unittest.TestCase):
         self.assertFalse(failed, payload)
         self.assertEqual(len(asked), 1)
         self.assertEqual(self.frontmatter()["approved"]["by"], "human")
+
+    def fill_ready(self):
+        payload, failed, _ = self.call("specs_section_write", {"spec": 1, "sections": [
+            {"heading": h, "body": "Filled."} for h in (
+                "Proposal", "Out of Scope", "Impact", "Validation", "Design",
+                "Alternatives Considered", "Open Decisions", "Risks")]})
+        self.assertFalse(failed, payload)
+
+    def test_approved_by_a_session_or_a_conductor_writes_without_asking(self):
+        self.fill_ready()
+        payload, failed, asked = self.call(
+            "specs_record", {"spec": 1, "name": "approved", "by": "orchestrator-forced"},
+            {"action": "decline"})
+        if payload.get("code") == "mcp-not-ready":
+            self.skipTest("the memory fixture cannot reach ready: " + str(payload.get("missing")))
+        self.assertFalse(failed, payload)
+        self.assertEqual(asked, [])
+        self.assertEqual(self.frontmatter()["approved"]["by"], "orchestrator-forced")
+
+    def test_approved_by_session_still_needs_the_ready_gate(self):
+        payload, failed, asked = self.call("specs_record",
+                                           {"spec": 1, "name": "approved", "by": "session"})
+        self.assertEqual((failed, payload["code"], asked), (True, "mcp-not-ready", []))
+        self.assertNotIn("approved", self.frontmatter())
+
+    def test_approved_by_human_is_still_asked_and_by_is_closed(self):
+        self.assertIsNotNone(mcp._gate_record({"spec": 1, "name": "approved", "by": "human"}))
+        self.assertIsNotNone(mcp._gate_record({"spec": 1, "name": "approved"}))
+        self.assertIsNone(mcp._gate_record({"spec": 1, "name": "approved", "by": "session"}))
+        self.assertEqual(mcp._w_record({"spec": 1, "name": "approved", "by": "session"})[-1],
+                         "by=session")
+        for args in ({"spec": 1, "name": "approved", "by": "low-gear"},
+                     {"spec": 1, "name": "refined", "by": "session",
+                      "fields": {"mode": "compose"}}):
+            payload, failed, _ = self.call("specs_record", args)
+            self.assertEqual((failed, payload["code"]), (True, "mcp-bad-arguments"), args)
 
     def test_promote_never_forces(self):
         self.assertNotIn("force", mcp.WRITES["specs_promote"][1]["properties"])

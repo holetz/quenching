@@ -19,7 +19,7 @@ The common front contract lives in
 keep the layer, fixture, measurement and gate evidence separate from the shared mold.
 
 Set `TARGET_ROOT` to the supplied argument, or to `.` when the argument is omitted, and pass that
-same root to every `.agents/quenching/bin/cq proof` call. Resolve `cq` per
+same root to every `proof_*` call as `root`. Resolve `cq` per
 [tool-resolution.md](.agents/quenching/references/align/tool-resolution.md) and branch
 on exit code and JSON: `0` is clean, `1` carries findings, and `2` is a refusal.
 
@@ -29,9 +29,8 @@ on exit code and JSON: `0` is clean, `1` carries findings, and `2` is a refusal.
 
 Run the verifier before reading the proof tree:
 
-<!-- cli: root -->
-```bash
-.agents/quenching/bin/cq --root "$TARGET_ROOT" proof doctor --json
+```text
+proof_doctor(root="$TARGET_ROOT")
 ```
 
 When it exits `0` with no findings, report "proof conformant, nothing to align" and stop. Do not
@@ -46,9 +45,8 @@ has authorized the inventory stage below.
 
 Only after exit `1`, run the single inventory pass:
 
-<!-- cli: root -->
-```bash
-.agents/quenching/bin/cq --root "$TARGET_ROOT" proof inventory --json
+```text
+proof_inventory(root="$TARGET_ROOT")
 ```
 
 Read `proof-align/bands.md`, `proof-align/gate-contract.md`, `proof-align/layer-contract.md`, and
@@ -93,9 +91,8 @@ Under the authorization, apply `pf-unmarked`, `pf-stop-first`, `pf-loose-fixture
 only when `bands.md`'s non-blocking condition is satisfied. Raise a floor only after the surface
 scope is unchanged and the target has produced the artifact the ratchet reads:
 
-<!-- cli: root -->
-```bash
-.agents/quenching/bin/cq --root "$TARGET_ROOT" proof ratchet --raise --json
+```text
+proof_ratchet(raise_floor=true, root="$TARGET_ROOT")
 ```
 
 Read the result by the codes in `findings`, not by the exit code alone:
@@ -116,9 +113,8 @@ not call the ratchet; state the reason in the report.
 
 After edits, run the same probe again:
 
-<!-- cli: root -->
-```bash
-.agents/quenching/bin/cq --root "$TARGET_ROOT" proof doctor --json
+```text
+proof_doctor(root="$TARGET_ROOT")
 ```
 
 Distinguish remaining judgement residue from a failed structural convergence. Do not loop an empty

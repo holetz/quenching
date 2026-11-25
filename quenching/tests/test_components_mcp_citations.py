@@ -56,6 +56,11 @@ class CitationForm(unittest.TestCase):
     def test_prose_that_names_no_verb_is_not_counted(self):
         self.assertEqual(codes("the cq specs write operations; cq git pr; cq is the launcher"), [])
 
+    def test_a_launch_root_does_not_hide_the_citation(self):
+        self.assertEqual(codes('cq --root "$TARGET_ROOT" delivery status --json'),
+                         ["sk-cq-cli-citation"])
+        self.assertEqual(codes('cq --root "$T" delivery status --json <!-- cli: flag -->'), [])
+
     def test_a_marked_line_passes(self):
         self.assertEqual(codes("cd w && cq git commit --subject s <!-- cli: root -->"), [])
 

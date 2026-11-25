@@ -33,6 +33,28 @@ class ToolArgs(ValueError):
     """A tool argument that fails validation — reported as a tool error, never a crash."""
 
 
+ROOT = {"type": "string",
+        "description": "act on this directory instead of the server's workspace (a worktree, "
+                       "another repository); relative resolves against the workspace"}
+
+
+def call_root(args: dict, root: str) -> str:
+    """The directory one call acts on: `args["root"]` when given, else the server's workspace.
+
+    The same reach as the CLI's `--root`: any existing directory, a relative one resolved against
+    the workspace. A value that is not one line, starts with `-` or names no directory is refused."""
+    value = args.get("root")
+    if value is None:
+        return root
+    if not isinstance(value, str) or not value.strip() or "\0" in value or "\n" in value \
+            or value.strip().startswith("-"):
+        raise ToolArgs("`root` must be a directory path")
+    path = os.path.realpath(os.path.join(root, os.path.expanduser(value.strip())))
+    if not os.path.isdir(path):
+        raise ToolArgs(f"`root` is not a directory: {value.strip()}")
+    return path
+
+
 class ResourceError(Exception):
     """A resource read that fails: a JSON-RPC error with the MCP code, never a crash."""
 

@@ -354,14 +354,16 @@ result only when neither the digest nor the run evidences a defect; a sweep that
 every time is inventing.
 
 **One spec per candidate, captured and not designed** — the design costs a session, and the session
-that takes it should be the one that argues with the defect — the CLI, because `specs_create`
-takes no section body:
+that takes it should be the one that argues with the defect — one `specs_create` that carries
+`## Problem`:
 
-<!-- cli: atomic -->
-```bash
-.agents/quenching/bin/cq specs new "<the defect, in one line>" --complexity medium <<'EOF'
-## Problem
+```text
+specs_create(name="<the defect, in one line>", complexity="medium", sections=[{"heading": "Problem", "body": "<the body below>"}])
+```
 
+The `## Problem` body:
+
+```markdown
 <what happened, in this run's own facts: the step, the command and its output, the file:line of the
 reference that misled, the spec and the date — and what the improvement has to make impossible>
 
@@ -372,7 +374,6 @@ Minimal fix proposed: <the smallest fix that fits the defect, in one line>
 - <path:line of the reference, the standard, the agent definition>
 - <the command that failed, with its exit code and its output quoted>
 - <the spec id and the step of this run where it happened>
-EOF
 ```
 
 A fix that would need a new layer, a new step in a command body or tokens with no measured return is
@@ -466,8 +467,8 @@ sits between the zone's delimiters (`…-start` / `…-end`): a marker outside t
 in authored text. Resolve only the conflicting hunks, never the whole file, so what merged cleanly
 outside the zone survives: write the stages to scratch files (`git show :1:<path>`, `:2:`, `:3:`),
 run `git merge-file --theirs <ours> <base> <theirs>`, copy the result over `<path>`, then run the
-zone's owner verb in the worktree (`cd <worktree> && .agents/quenching/bin/cq proof readme --write` for `quenching-proof-readme`, <!-- cli: root -->
-`cd <worktree> && .agents/quenching/bin/cq ops registry --write` for the operations registry) <!-- cli: root --> **before** `cq deploy --target . --write`, which mirrors
+zone's owner verb in the worktree (`proof_readme(write=true, root="<worktree>")` for `quenching-proof-readme`,
+`ops_registry(write=true, root="<worktree>")` for the operations registry) **before** `cq deploy --target . --write`, which mirrors
 the README, and `git add` what they rewrote. Then the owner's `--check` and `cq deploy --target .
 --check` exit 0. Any marker outside a zone, or a zone with no owner verb → `git merge --abort`
 and `needs-human` naming the paths.
@@ -556,10 +557,8 @@ with no question and no extra flag. The recorded fact is the `branch` record (`w
 the worktree path from `git worktree list`; skip silently when the work was done in the base
 checkout or in a plain branch. Run it from the base's checkout, never from the worktree it removes:
 
-<!-- cli: root -->
-```bash
-cd <the base's checkout> && .agents/quenching/bin/cq git worktree retire --path <the spec's worktree> \
-  --branch <branch.work> --base <branch.base> --json
+```text
+git_worktree_retire(path="<the spec's worktree>", branch="<branch.work>", base="<branch.base>", root="<the base's checkout>")
 ```
 
 `retire` fetches the remote base, requires the branch tip to be an ancestor of it, refuses a dirty

@@ -5,7 +5,7 @@ allowed-tools: Bash(cq git commit:*), Bash(cq git conventions:*), Bash(cq git sp
 # /quenching-git commit — commit what is staged, under the target's own convention
 
 This command is the single commit boundary for standalone commits. `/quenching-specs execute` does
-not delegate here per task: it commits each task through `.agents/quenching/bin/cq git commit --subject` in the worktree <!-- cli: root -->. This command
+not delegate here per task: it commits each task through `git_commit(subject=…, root=<worktree>)`. This command
 resolves the subject, commits the existing index and reports the subject actually written. It never receives a request to stage an unrelated path.
 
 **Input**: `$ARGUMENTS` — an optional explicit commit subject. When omitted, resolve one from the
@@ -22,7 +22,7 @@ components_read(path=".agents/quenching/references/git/conventions.md", sections
 git_conventions()
 git_state()   # `staged` is the index, `branch` the current branch
 ```
-In a worktree that is not the server's root, the state is that tree's: `cd <worktree> && .agents/quenching/bin/cq git state --json` <!-- cli: root -->.
+In a worktree that is not the server's root, the state is that tree's: `git_state(root=<worktree>)`.
 One `git_conventions()` call answers both declared layers: `config.commitSubject` is the target's
 directive for this artifact, `governs`/`declared` the docs layer. Nothing staged → refuse: name that
 the index is empty and say what to stage. **Done when:** which layer governs the subject
@@ -57,11 +57,10 @@ git_commit(subject=<subject>)
 ```
 
 The tool commits the index of the server's root, the session's directory. Staged in a worktree that
-is not that root, the same commit runs there:
+is not that root, the same commit names it:
 
-<!-- cli: root -->
-```bash
-cd <worktree> && .agents/quenching/bin/cq git commit --subject "<subject>" --json
+```text
+git_commit(subject=<subject>, root=<worktree>)
 ```
 The verb reports the `sha`, the `subject` git recorded and `subjectMatches`; exit 1 is git refusing
 the commit (a hook, an identity) with HEAD unchanged, exit 2 a blank subject or an empty index.

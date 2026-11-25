@@ -17,7 +17,7 @@ come from `.agents/quenching/assets/templates/ops/router-snippets.md`.
 
 Resolve `cq` per
 [align/tool-resolution.md](.agents/quenching/references/align/tool-resolution.md)
-§Resolving the tool. Use the resolved path literally, pass the target root to every `.agents/quenching/bin/cq ops` call,
+§Resolving the tool. Use the resolved path literally, pass the target root to every `ops_*` call as `root`,
 and branch on exit code and JSON: `0` is clean, `1` carries findings, and `2` is a refusal.
 
 ## Workflow
@@ -27,9 +27,8 @@ and branch on exit code and JSON: `0` is clean, `1` carries findings, and `2` is
 Set `TARGET_ROOT` to the target repository root, or `.` when the caller did not provide a separate
 target. Run:
 
-<!-- cli: root -->
-```bash
-.agents/quenching/bin/cq --root "$TARGET_ROOT" ops doctor --json
+```text
+ops_doctor(root="$TARGET_ROOT")
 ```
 
 Read the returned configuration and inventory state. Stop on exit `2`, naming every missing key;
@@ -96,9 +95,8 @@ Apply the snippet for the declared router from
 `.agents/quenching/assets/templates/ops/router-snippets.md`. Register an active entry point;
 leave an archived entry point out of the active router. Then regenerate the registry:
 
-<!-- cli: root -->
-```bash
-.agents/quenching/bin/cq --root "$TARGET_ROOT" ops registry --write --json
+```text
+ops_registry(write=true, root="$TARGET_ROOT")
 ```
 
 The generator owns the marked block. Preserve authored prose around it and do not edit generated
@@ -112,10 +110,9 @@ the new entry point with its purpose, invocation, lifecycle and write signal.
 Run the closing verifier and, when it reports a finding, fix only the new entry point, its declared
 router registration or the generated registry block:
 
-<!-- cli: root -->
-```bash
-.agents/quenching/bin/cq --root "$TARGET_ROOT" ops doctor --json
-.agents/quenching/bin/cq --root "$TARGET_ROOT" ops registry --check --json
+```text
+ops_doctor(root="$TARGET_ROOT")
+ops_registry(check=true, root="$TARGET_ROOT")
 ```
 
 For a write-capable entry point, exercise the preview path without `--apply` and confirm no
