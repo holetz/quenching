@@ -634,7 +634,9 @@ A spec is swept **at most once**, and never for having crossed a `complexity` le
 small exactly while nobody has read its dependencies. Its sub-agent runs the **wider** profile —
 read-only in full, everything but `Edit`, `Write`, `NotebookEdit` and `Agent`, `Bash` included —
 because a dependency map is exactly the aggregate a `grep`/`gh`/`cq` call produces, and the narrower
-profile below could not return it.
+profile below could not return it. Where the executor has no `Task` tool (a profile declaring
+`task: false`), it runs the sweep itself, inline, under the same wider profile and writes nothing
+but the table; the map's date line then says `(varredura inline: executor sem Task)`.
 
 **Compose and refine** additionally ask questions that only a reading answers: which alternatives
 the codebase actually admits, which `docs/standards/` contract a task would violate, which term
