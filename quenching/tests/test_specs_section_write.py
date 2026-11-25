@@ -530,6 +530,10 @@ class NoWriteCarriesALostAccent(_Workspace):
                  "```\nx = a?b : c?d\n```\nUm só a?b passa.\n")
         self.assertEqual(mojibake_words(legit), ["a?b"])
 
+    def test_a_code_span_of_n_backticks_is_not_read(self):
+        self.assertEqual(mojibake_words("Dois ``a?b`` e ``c?d`` e ```e?f``` aqui.\n"), [])
+        self.assertEqual(mojibake_words("`` ` `` ``a?b`` descri??o\n"), ["descri??o"])
+
     def test_a_legitimate_body_still_writes(self):
         code, obj = self.run_section(heading="Proposal", write=True,
                                      stdin="Funciona? Sim, acentuação é ção: `a?b`, `c?d`.\n")
