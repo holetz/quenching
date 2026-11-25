@@ -12,6 +12,9 @@ what you should observe at every step. If the plugin is new to you, take the
   declare roots, close judgement residue, then establish a measured floor in the safe order.
 - **[Drive a spec from idea to merge](drive-a-spec.md)** — one unit of work, one canonical
   document on your issue tracker: capture, refine, build task by task, close with the merge last.
+- **[Work in VS Code with GitHub Copilot](work-in-vs-code.md)** — seed the workspace, run the
+  zero-token tasks, open the slots, use the built-in worktree flow, and install the extensions the
+  flow recommends.
 - **[Publish the documentation site](publish-the-docs-site.md)** — turn the `/docs/` bundle into a
   rendered Diátaxis site, planned, sourced, reviewed and gated by a strict build.
 - **[Set up a machine for the test suite](set-up-a-machine-for-the-test-suite.md)** — confirm the
