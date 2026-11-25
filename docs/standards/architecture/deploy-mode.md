@@ -36,6 +36,9 @@ for deployment; this verb installs the tool surface. It never invokes a model, n
 | `.agents/quenching/` | vendored payload: runtime, references, templates, commands, agent protocols | generated, read-only |
 | `.agents/.quenching-deploy.json` | manifest: version, modules, profiles, hashes, skills | generated; one blank line separates each entry of `files` |
 | `.claude/skills/<name>/` | Claude bridge, byte copy of every skill | generated |
+| `.agents/rules/<name>.md` | path-scoped rule source: `paths:` globs and a markdown body | target; the deploy projects it, never owns it |
+| `.claude/rules/<name>.md` | Claude rules, the source's `paths:` frontmatter | generated when the `claude` harness is selected |
+| `.github/instructions/<name>.instructions.md` | Copilot path-scoped instructions, the same globs as one quoted `applyTo:` | generated when the repository declares `shared.projections: ["github"]` |
 | `.claude/agents/quenching-<name>.md` | Claude subagents | generated when the `claude` harness is selected |
 | `.opencode/agents/quenching-<name>.md` | OpenCode subagents, `mode: subagent` | generated when the `opencode` harness is selected |
 | `.github/agents/quenching-<name>.agent.md` | Copilot subagents, the native custom-agent format | generated when the repository declares `shared.projections: ["github"]` |
@@ -273,10 +276,10 @@ The source, `quenching/`, is written in the target dialect: `/quenching-<vertica
 header, the grants (and the OpenCode permissions) and the `cq.cmd` launcher; a source that still
 carries a plugin-root marker or a plugin-surface id is refused. It writes a target repository's
 generic layer — `.agents/skills/` (read by OpenCode), the payload under
-`.agents/quenching/`, the Claude bridge under `.claude/skills/`, the subagents under
-`.claude/agents/` and `.opencode/agents/`, and — when the repository declares
-`shared.projections: ["github"]` — the Copilot projection under `.github/agents/` (§The target
-layout above). No Codex package, no `codex` harness ([ADR 0020](../../decisions/0020-remove-the-codex-executor-and-harness.md)) and no
+`.agents/quenching/`, the Claude bridge under `.claude/skills/`, the rules under `.claude/rules/`,
+the subagents under `.claude/agents/` and `.opencode/agents/`, and — when the repository declares
+`shared.projections: ["github"]` — the Copilot projections under `.github/agents/` and
+`.github/instructions/`, all from the same generic sources (§The target layout above). No Codex package, no `codex` harness ([ADR 0020](../../decisions/0020-remove-the-codex-executor-and-harness.md)) and no
 user-level OpenCode distribution exist since [ADR 0017](../../decisions/0017-install-only-by-deploy.md).
 A target's `.claude/commands/` is the legacy layout, which `cq components migrate` converts; the
 `cq components translate` that once copied it into `.agents/` is retired, and a copy it wrote beside
@@ -298,6 +301,7 @@ A target repository's single editable source is the generic layer. Each artifact
 | reference | `.agents/references/**` | cited by the skills beside them |
 | eval | `.agents/evals/<name>/` | beside the skill it scores |
 | instructions | `AGENTS.md` at the root; subfolder `AGENTS.md` loads with that folder | read natively by Claude Code 2.1.277+ and OpenCode |
+| rule | `.agents/rules/<name>.md`, one flat file per rule | projected to the directories the clients read; no client reads `.agents/` itself (§Path-scoped rules) |
 | configuration | `.agents/quenching.json`, `.claude/quenching.json` read as legacy ([plugin-configuration.md](../workflows/plugin-configuration.md)) | one editable file |
 
 There is no root `CLAUDE.md` in a conformant target: Claude Code reads `AGENTS.md` itself when
@@ -387,8 +391,35 @@ unmapped head refuses the deploy (`ct-deploy-source`). `model` is an ordered ban
 model ids derived from the source's `model`, with `effort` as `reasoning-effort`; the small tier is
 refused. `include-custom-instructions` carries the repository's `AGENTS.md` into the subagent, and
 `target: github-copilot` pins the schema. The key is read from the repository document only; an
-unknown value refuses with `ct-deploy-projection` before anything is written, and
-`.github/instructions/` is not written here — path-scoped instructions are another projection's.
+unknown value refuses with `ct-deploy-projection` before anything is written. The same `github`
+projection also writes `.github/instructions/` from the target's `.agents/rules/` (§Path-scoped
+rules).
+
+### Path-scoped rules
+
+A path-scoped rule is authored once, in the target's generic layer: `.agents/rules/<name>.md`, a
+flat file whose frontmatter carries `paths:` — a non-empty block list of globs — and an optional
+`description`, with a markdown body. No client reads `.agents/rules/` itself; the deploy writes one
+generated copy per client directory a declared client reads:
+
+| Client | Generated copy | Gate |
+| --- | --- | --- |
+| Claude Code | `.claude/rules/<name>.md`, the same `paths:` list | the `claude` harness is selected |
+| VS Code + GitHub Copilot | `.github/instructions/<name>.instructions.md`, the same globs in one quoted `applyTo:` | the repository declares `shared.projections: ["github"]` |
+
+The projection translates the frontmatter and nothing else: `paths:` stays a list in the Claude
+copy, and the Copilot copy joins the same globs with commas into the client's quoted scalar form.
+`description` crosses both. A source with no frontmatter, no `paths:`, an inline `paths:`, an empty
+or non-list item, an unknown key, or a file name that is not a flat slug refuses the deploy
+(`ct-deploy-source`) before anything is written: an always-on instruction belongs in `AGENTS.md`,
+which every client reads.
+
+The copies are generated with the deploy header and their hashes are in the manifest; the source
+never is. `--check` reports an edited copy as drift, `--write` refuses it (`ct-deploy-edited`), and
+removing a source — or the `github` projection — deletes the copy on the next `--write`. A copy the
+manifest does not own is `ct-deploy-unowned`, never overwritten; `cq components migrate` moves a
+target's tracked `.claude/rules/**` to `.agents/rules/**` first, skipping the copies the deploy
+already owns, and reports two editable copies as the usual conflict.
 
 ## Verify
 
