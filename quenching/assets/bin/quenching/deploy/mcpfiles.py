@@ -12,6 +12,8 @@ import re
 import shutil
 import subprocess
 
+from quenching.common.jsonc import jsonc_loads
+
 NAME = "quenching"
 CLAUDE = ".mcp.json"
 CODEX = ".codex/config.toml"
@@ -209,29 +211,6 @@ def opencode_strip(text: str | None, extras: dict) -> str | None:
         return None
     _opencode_strip(document, extras)
     return _dump(document)
-
-
-def jsonc_loads(text: str):
-    """JSON with `//` and `/* */` comments and trailing commas, as OpenCode reads its config."""
-    out, index, size = [], 0, len(text)
-    while index < size:
-        char = text[index]
-        if char == '"':
-            end = index + 1
-            while end < size and text[end] != '"':
-                end += 2 if text[end] == "\\" else 1
-            out.append(text[index:end + 1])
-            index = end + 1
-        elif text.startswith("//", index):
-            newline = text.find("\n", index)
-            index = size if newline < 0 else newline
-        elif text.startswith("/*", index):
-            close = text.find("*/", index + 2)
-            index = size if close < 0 else close + 2
-        else:
-            out.append(char)
-            index += 1
-    return json.loads(re.sub(r",(\s*[}\]])", r"\1", "".join(out)))
 
 
 def external_patterns(primary: str, home: str | None) -> list[str]:
