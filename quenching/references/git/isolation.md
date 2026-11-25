@@ -163,6 +163,31 @@ where the target declares one.
 own words. It runs `git checkout -b` in the checkout the session already has, stamps the same
 `branch:` record, and skips the setup: there is no new tree to prepare.
 
+### A worktree the harness cut is adopted, never cut again
+
+<!-- rules -->
+
+The client may open the session already inside a worktree it cut — VS Code's **New Worktree** and
+the Copilot CLI put it under `<repo>.worktrees/<branch with slashes as dashes>`, on a `copilot/*`
+or `agents/*` branch. It is **not a slot**: `git_worktree_slots()` lists it among the others,
+never counts it, and `acquire` neither takes nor reuses it. Adoption is the whole handling:
+
+- **A `SessionStart` hook runs `cq git worktree adopt` in the session's checkout.** The verb links
+  the declared `sharedPaths`, symlinks each declared `shared.regenerablePaths` directory the
+  primary holds and the worktree lacks — never overwriting a path already present — runs the
+  declared `worktreeSetup` once per worktree (a marker in the worktree's own git dir), and reports
+  the path, the branch and the inferred base.
+- **The hook's message is a convenience; the side effects are the contract.** A client that
+  discards SessionStart output still gets the tree prepared, and the runner and the orchestrator
+  detect the linked worktree from git: `--git-dir` differing from `--git-common-dir`.
+- **A worker given no worktree asks before cutting.** In a linked worktree it runs `adopt`, stamps
+  `branch: {base, work}` from what the verb reports and works there; in a slot it uses the slot as
+  it stands; only on the base does it cut. The orchestrator that stands in an adopted worktree
+  holds one worker at a time and names that path in every prompt — one checkout cannot host two
+  indexes, two HEADs or two branches.
+- **Adoption takes no lock.** The harness opens one session per worktree; the slot protection and
+  the visibility of these worktrees wait on 460.
+
 ### A target may declare a setup command
 
 <!-- rules -->

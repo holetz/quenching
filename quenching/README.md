@@ -587,10 +587,12 @@ command is one polyglot line that bash, PowerShell and cmd parse alike, started 
 `shared.mcp.command` prefix (else the Python the deploy finds on the machine, no version pinned; a
 `uv`/`uvx` prefix is replaced by a direct interpreter, for the hooks and the MCP server alike):
 override it with `shared.mcp.command` when a machine needs another
-([hooks.md](../docs/standards/automation/hooks.md)). Open a Copilot session with **Branch**
-isolation, not **New Worktree**: Copilot's worktree starts at the current HEAD, carries no ignored
-file and runs no `worktreeSetup`, and the agent would then cut a second one with
-`cq git worktree add` — the worktree is the quenching flow's to cut.
+([hooks.md](../docs/standards/automation/hooks.md)). Open a Copilot session with **New Worktree**
+(or **Branch**, when you prefer it): a `SessionStart` hook runs `cq git worktree adopt` in the
+checkout the client cut — it links the declared `sharedPaths` and the declared
+`shared.regenerablePaths` directories from the primary checkout, runs the declared
+`worktreeSetup` once, and tells the agent it is already isolated. The agent adopts that worktree
+and never cuts a second one.
 
 **Each harness gets what an orchestrated run needs.** Claude Code (and Copilot through the same
 file) gets `quenching` in `enabledMcpjsonServers`, so the registered server starts in a trusted
@@ -658,7 +660,7 @@ updates the published artifacts in lockstep. See
 contract.
 
 <!-- quenching-proof-readme-start -->
-<!-- quenching-proof-readme-sha256 de5a4dd68f0c2a907818f8766871ab96b4ec6939222f3d02da5afc380ddc17ae -->
+<!-- quenching-proof-readme-sha256 b9d6ec91762bd3357f9b987caa1e4543599299a4e8f7573a954b70a865a34d7f -->
 ## Declared proof layers
 
 ### tests
@@ -667,7 +669,7 @@ contract.
 - Reach: tree
 - Budget: not declared
 - Required: yes
-- Test modules: 204
+- Test modules: 207
 - Fixture modules: none
 
 ### Declared cost contract
