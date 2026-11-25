@@ -9,7 +9,6 @@ from __future__ import annotations
 import contextlib
 import io
 import json
-import os
 import pathlib
 import sys
 import unittest
@@ -21,7 +20,6 @@ except ModuleNotFoundError:
     sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
     import _paths  # noqa: F401
 
-import test_specs_git_backend as fixture
 from test_specs_git_backend import GitStoreFixture, _sh
 from quenching.specs import backends as backends_mod
 from quenching.specs.backends import git as git_mod
