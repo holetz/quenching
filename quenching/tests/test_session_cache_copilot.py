@@ -170,3 +170,44 @@ class CacheCopilot(unittest.TestCase):
         code, data = self.measure("--inflow")
         self.assertEqual(2, code)
         self.assertIn("not read by --inflow", data["unavailable"]["copilot"])
+
+
+class CacheCopilotAnalysis(CacheCopilot):
+    def test_a_cache_write_is_reported_and_an_inverted_read_clamps_to_zero(self):
+        store(self.home, [
+            ("s1", None, MODEL, 10_000, 5, 0, 3_000, 0, None, "2026-11-25T10:00:00Z"),
+            ("s1", None, MODEL, 10_000, 5, 20_000, 0, 0, None, "2026-11-25T10:10:00Z")])
+        log(self.home)
+        code, data = self.measure()
+        self.assertEqual(1, code)                        # the inverted record is a finding
+        self.assertIn("more cache tokens than prompt tokens", data["anomalies"][0]["message"])
+        row = data["rows"][0]
+        self.assertEqual((3_000, 7_000), (row["cacheWrite"], row["input"]))   # the write is prompt too
+        self.assertEqual(3_750, data["rows"][0]["ttl"]["writeNow"])  # 3000 writes at the 5-minute rate
+
+    def test_a_boundary_needs_ten_requests_in_the_bucket(self):
+        rows = [("s1", None, MODEL, 10_000, 5, 0, 0, 0, None,
+                 f"2026-11-25T{hour:02d}:00:00Z") for hour in range(10, 21)]
+        store(self.home, rows)
+        log(self.home)
+        data = self.measure()[1]
+        self.assertEqual([{"harness": "copilot", "model": MODEL, "role": "main",
+                           "coldFromGap": ">60m"}], data["boundaries"])
+
+    def test_since_keeps_only_the_window(self):
+        store(self.home, usage())
+        log(self.home)
+        data = self.measure("--since", "2026-11-25T10:15:00Z")[1]
+        rows = {(r["role"], r["agent"], r["model"]): r["input"] for r in data["rows"]}
+        self.assertEqual(3, sum(r["requests"] for r in data["rows"]))
+        self.assertEqual(10_000, rows[("subagent", "spec-runner", MODEL)])
+        self.assertEqual(12_000, rows[("main", "main", "other")])
+
+    def test_every_row_carries_the_same_shape_as_the_other_harnesses(self):
+        store(self.home, usage())
+        log(self.home)
+        row = self.measure()[1]["rows"][0]
+        for key in ("harness", "host", "model", "role", "agent", "sessions", "requests", "input",
+                    "cacheRead", "cacheWrite", "output", "hitRate", "firstRequestMedian",
+                    "peakMedian", "readAfterGap5m", "missedAfterGap5to60", "ttl"):
+            self.assertIn(key, row)
