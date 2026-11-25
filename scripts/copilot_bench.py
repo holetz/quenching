@@ -28,6 +28,7 @@ import os
 import pathlib
 import shutil
 import subprocess
+import time
 import sys
 import tempfile
 from datetime import datetime
@@ -176,8 +177,98 @@ def deploy_target(modules: str) -> tuple[pathlib.Path, dict]:
 
 
 # --- 1.3 · the MCP server ---------------------------------------------------------------------
+def import_payload() -> None:
+    """Make the installed payload importable, for the JSONC reader the deploy already owns."""
+    payload = REPO / "quenching" / "assets" / "bin"
+    if str(payload) not in sys.path:
+        sys.path.insert(0, str(payload))
+
+
+def read_mcp_entry(root: pathlib.Path) -> dict:
+    """.mcp.json as the client reads it: the `quenching` entry, the other servers left named."""
+    path = root / ".mcp.json"
+    if not path.is_file():
+        return {"state": "absent", "path": ".mcp.json"}
+    try:
+        import_payload()
+        from quenching.deploy.mcpfiles import jsonc_loads
+        document = jsonc_loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError) as error:
+        return {"state": "unreadable", "path": ".mcp.json", "reason": str(error)}
+    servers = document.get("mcpServers") if isinstance(document, dict) else None
+    if not isinstance(servers, dict) or "quenching" not in servers:
+        return {"state": "absent", "path": ".mcp.json", "reason": "sem a entrada `quenching`",
+                "servers": sorted(servers or {})}
+    entry = servers["quenching"] if isinstance(servers["quenching"], dict) else {}
+    return {"state": "present", "path": ".mcp.json", "servers": sorted(servers),
+            "command": entry.get("command"), "args": list(entry.get("args") or [])}
+
+
+def probe_server(root: pathlib.Path, command: str, args: list[str]) -> dict:
+    """One stdio session: `initialize`, `initialized`, `tools/list`; what the client would pay."""
+    messages = [
+        {"jsonrpc": "2.0", "id": 1, "method": "initialize",
+         "params": {"protocolVersion": "2025-06-18", "capabilities": {},
+                    "clientInfo": {"name": "copilot_bench", "version": "1"}}},
+        {"jsonrpc": "2.0", "method": "notifications/initialized"},
+        {"jsonrpc": "2.0", "id": 2, "method": "tools/list", "params": {}},
+    ]
+    started = time.monotonic()
+    try:
+        done = subprocess.run([command, *args],
+                              input="\n".join(json.dumps(message) for message in messages) + "\n",
+                              cwd=root, capture_output=True, text=True, timeout=120)
+    except (OSError, subprocess.SubprocessError) as error:
+        return {"state": "failed", "reason": str(error)}
+    seconds = round(time.monotonic() - started, 3)
+    replies = {}
+    for line in done.stdout.splitlines():
+        try:
+            message = json.loads(line)
+        except ValueError:
+            continue
+        if isinstance(message, dict) and "id" in message:
+            replies[message["id"]] = message
+    listing = (replies.get(2) or {}).get("result") or {}
+    tools = listing.get("tools")
+    if not isinstance(tools, list):
+        error = (replies.get(2) or {}).get("error") or done.stderr.strip()[-300:]
+        return {"state": "failed", "reason": f"tools/list ausente: {error}", "seconds": seconds}
+    by_pillar: dict[str, int] = {}
+    for tool in tools:
+        pillar = str(tool.get("name", "")).split("_", 1)[0]
+        by_pillar[pillar] = by_pillar.get(pillar, 0) + 1
+    largest = max(tools, key=lambda t: len(t.get("description") or ""), default={})
+    info = ((replies.get(1) or {}).get("result") or {}).get("serverInfo") or {}
+    return {"state": "ok", "seconds": seconds, "tools": len(tools),
+            "byPillar": dict(sorted(by_pillar.items(), key=lambda kv: (-kv[1], kv[0]))),
+            "schemaBytes": len(json.dumps(tools, ensure_ascii=False)),
+            "descriptionChars": sum(len(tool.get("description") or "") for tool in tools),
+            "largestDescription": {"tool": largest.get("name"),
+                                   "chars": len(largest.get("description") or "")},
+            "server": info}
+
+
 def measure_mcp(root: pathlib.Path) -> dict:
-    return not_measured("mcp")
+    entry = read_mcp_entry(root)
+    if entry["state"] != "present":
+        return entry | {"hypotheses": {}}
+    server = probe_server(root, str(entry["command"]), [str(arg) for arg in entry["args"]])
+    section = {**entry, **server}
+    if server["state"] != "ok":
+        observation = (f"o servidor `quenching` não respondeu `tools/list` "
+                       f"({server.get('reason')})")
+        verdict = UNMEASURED
+    else:
+        limit = THRESHOLDS[0]["value"]
+        pillars = ", ".join(f"{name} {count}" for name, count in server["byPillar"].items())
+        observation = (f"{server['tools']} ferramentas ({pillars}), "
+                       f"{server['schemaBytes']} bytes de definição, respondidas em "
+                       f"{server['seconds']} s; o teto de {limit} é por requisição e inclui as "
+                       f"nativas e as das extensões")
+        verdict = UNMEASURED
+    section["hypotheses"] = {"H3": {"observation": observation, "verdict": verdict}}
+    return section
 
 
 # --- 1.4 · hooks, permissions and skills ------------------------------------------------------
