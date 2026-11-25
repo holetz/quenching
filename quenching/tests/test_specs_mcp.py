@@ -154,6 +154,18 @@ class Tools(unittest.TestCase):
         payload, _ = self.call("specs_show", {"spec": 1, "tasks": ["1.2"]})
         self.assertEqual([t["id"] for t in payload["tasks"]], ["1.2"])
 
+    def test_show_full_returns_the_same_payload_as_the_cli_and_refuses_tasks_with_it(self):
+        payload, failed = self.call("specs_show", {"spec": 1, "full": True})
+        self.assertFalse(failed)
+        self.assertEqual(payload["view"], "full")
+        self.assertIn("## Problem", payload["document"])
+        self.assertEqual(payload["lines"], len(payload["document"].splitlines()))
+        payload, failed = self.call("specs_show", {"spec": 1, "full": True, "tasks": ["1.2"]})
+        self.assertTrue(failed)
+        self.assertEqual(payload["code"], "mcp-bad-arguments")
+        payload, failed = self.call("specs_show", {"spec": 1, "full": "yes"})
+        self.assertTrue(failed)
+
     def test_section_reads_the_named_headings(self):
         payload, failed = self.call("specs_section", {"spec": 1, "headings": "Problem,Tasks"})
         self.assertFalse(failed)
