@@ -414,8 +414,164 @@ def measure_skills(root: pathlib.Path) -> dict:
 
 
 # --- 1.5 · agents, .github/, .vscode/ and the cost sources -------------------------------------
+HOME = pathlib.Path.home()
+GITHUB_FORMATS = ("instructions", "agents", "copilot-setup-steps.yml")
+VSCODE_KEYS = ("chat.tools.terminal.autoApprove", "search.exclude", "chat.agent.maxRequests")
+# What a session's cost can be read from, and where the client puts it. A path that is not there
+# is `absent`, never an error: most machines have some of them and no machine has all.
+COST_SOURCES = (
+    {"name": "copilot-cli-session-state", "path": HOME / ".copilot" / "session-state"},
+    {"name": "copilot-cli-session-store", "path": HOME / ".copilot" / "session-store.db"},
+    {"name": "vscode-agent-debug-logs", "path": HOME / ".config" / "Code" / "logs"},
+    {"name": "vscode-server-logs", "path": HOME / ".vscode-server" / "data" / "logs"},
+    {"name": "opentelemetry-env", "env": ("OTEL_EXPORTER_OTLP_ENDPOINT", "COPILOT_OTEL_ENABLED")},
+)
+
+
+def markdown_files(folder: pathlib.Path) -> list[str]:
+    if not folder.is_dir():
+        return []
+    return sorted(path.relative_to(folder).as_posix() for path in folder.rglob("*")
+                  if path.is_file())
+
+
+def agent_rows(folder: pathlib.Path) -> list[dict]:
+    rows = []
+    for path in sorted(folder.glob("*.md")) if folder.is_dir() else []:
+        fields = frontmatter_fields(path.read_text(encoding="utf-8", errors="replace"))
+        rows.append({"name": path.stem, "description": bool(fields.get("description")),
+                     "tools": fields.get("tools") or fields.get("allowed-tools") or "",
+                     "model": fields.get("model") or ""})
+    return rows
+
+
+def read_vscode(root: pathlib.Path) -> dict:
+    path = root / ".vscode" / "settings.json"
+    if not path.is_file():
+        return {"state": "absent", "path": ".vscode/settings.json"}
+    try:
+        import_payload()
+        from quenching.deploy.mcpfiles import jsonc_loads
+        document = jsonc_loads(path.read_text(encoding="utf-8"))
+    except (ImportError, OSError, ValueError) as error:
+        return {"state": "unreadable", "path": ".vscode/settings.json", "reason": str(error)}
+    document = document if isinstance(document, dict) else {}
+    return {"state": "present", "path": ".vscode/settings.json",
+            "keys": {key: key in document for key in VSCODE_KEYS},
+            "sandbox": sorted(key for key in document if "sandbox" in key),
+            "searchExclude": sorted((document.get("search.exclude") or {}).keys())
+            if isinstance(document.get("search.exclude"), dict) else []}
+
+
+def worktree_facts(root: pathlib.Path) -> dict:
+    """The primary checkout, its slots and its sibling stores — asked of git, so a target that is
+    itself a slot still reports the family it belongs to."""
+    try:
+        done = subprocess.run(["git", "-C", str(root), "rev-parse", "--path-format=absolute",
+                               "--git-common-dir"], capture_output=True, text=True, timeout=20)
+    except (OSError, subprocess.SubprocessError) as error:
+        return {"state": "absent", "reason": str(error)}
+    if done.returncode != 0:
+        return {"state": "absent", "reason": "not a git checkout"}
+    primary = pathlib.Path(done.stdout.strip()).parent
+    parent, name = primary.parent, primary.name
+    return {"state": "present", "primary": str(primary),
+            "slots": sorted(path.name for path in parent.glob(f"{name}-slot-*") if path.is_dir()),
+            "stores": sorted(path.name for path in parent.glob(f"{name}.*") if path.is_dir())}
+
+
+def external_directory(root: pathlib.Path) -> dict:
+    path = root / "opencode.json"
+    if not path.is_file():
+        return {"state": "absent", "path": "opencode.json"}
+    try:
+        import_payload()
+        from quenching.deploy.mcpfiles import jsonc_loads
+        document = jsonc_loads(path.read_text(encoding="utf-8"))
+    except (ImportError, OSError, ValueError) as error:
+        return {"state": "unreadable", "path": "opencode.json", "reason": str(error)}
+    permission = document.get("permission") if isinstance(document, dict) else None
+    directories = permission.get("external_directory") if isinstance(permission, dict) else None
+    return {"state": "present", "path": "opencode.json",
+            "patterns": sorted(directories or {})}
+
+
 def measure_clients(root: pathlib.Path) -> dict:
-    return not_measured("clients")
+    github = root / ".github"
+    agents = {"claude": agent_rows(root / ".claude" / "agents"),
+              "opencode": agent_rows(root / ".opencode" / "agents"),
+              "github": agent_rows(github / "agents"),
+              "source": agent_rows(root / ".agents" / "quenching" / "agents")}
+    formats = {name: (github / name).exists() for name in GITHUB_FORMATS}
+    rules = {"claude": markdown_files(root / ".claude" / "rules"),
+             "github": markdown_files(github / "instructions")}
+    costs = []
+    for source in COST_SOURCES:
+        if "path" in source:
+            costs.append({"name": source["name"], "state": "present" if source["path"].exists()
+                          else "absent", "path": str(source["path"])})
+        else:
+            found = {name: os.environ.get(name) for name in source["env"]
+                     if os.environ.get(name)}
+            costs.append({"name": source["name"], "state": "present" if found else "absent",
+                          **({"env": found} if found else {})})
+    bases = [base for base in (HOME / ".vscode" / "extensions",
+                               HOME / ".vscode-server" / "extensions") if base.is_dir()]
+    installed = sorted(path.name for base in bases for path in base.iterdir() if path.is_dir())
+    worktrees = worktree_facts(root)
+    external = external_directory(root)
+    section = {"state": "present",
+               "agents": {name: {"count": len(rows), "rows": rows} for name, rows in agents.items()},
+               "github": {"state": "present" if github.is_dir() else "absent",
+                          "formats": formats},
+               "vscode": read_vscode(root),
+               "rules": {name: {"count": len(paths), "paths": paths}
+                         for name, paths in rules.items()},
+               "cost": costs,
+               "worktrees": worktrees,
+               "externalDirectory": external,
+               "extensions": {"state": "present" if installed else "absent",
+                              "count": len(installed),
+                              "installed": installed[:40]},
+               "hypotheses": {}}
+    claude = agents["claude"]
+    missing = [name for name in GITHUB_FORMATS if not formats[name]]
+    vscode = section["vscode"]
+    slots = worktrees.get("slots") or []
+    patterns = external.get("patterns") or []
+    section["hypotheses"] = {
+        "H2": {"verdict": UNMEASURED,
+               "observation": (f"{len(claude)} agentes em `.claude/agents` e "
+                               f"{len(agents['opencode'])} em `.opencode/agents`, "
+                               f"{len(agents['github'])} em `.github/agents`; a descoberta pelo "
+                               f"cliente é live")},
+        "H6": {"verdict": UNMEASURED,
+               "observation": (f"`.vscode/settings.json` {vscode['state']}"
+                               f"{'' if vscode['state'] != 'present' else ': ' + ', '.join(key + (' presente' if present else ' ausente') for key, present in vscode['keys'].items())}"
+                               f"; se cada chave vale no workspace é live")},
+        "H7": {"verdict": UNMEASURED,
+               "observation": (f"{len(slots)} slot(s) irmãos do checkout primário; o `New "
+                               f"Worktree` do cliente e o `branch:` que ele grava são live")},
+        "H8": {"verdict": UNMEASURED,
+               "observation": "; ".join(f"{item['name']} {item['state']}" for item in costs)
+                              + "; qual delas entrega o custo é live"},
+        "H9": {"verdict": UNMEASURED,
+               "observation": (f"{section['extensions']['count']} extensões instaladas nos "
+                               f"diretórios do VS Code; nenhuma é recomendada por esta sonda"
+                               if installed else
+                               "nenhum diretório de extensões do VS Code nesta máquina; o "
+                               "inventário é live")},
+        "H11": {"verdict": UNMEASURED,
+                "observation": (f"{len(rules['claude'])} regra(s) em `.claude/rules` e "
+                                f"{len(rules['github'])} em `.github/instructions`"
+                                f"{'' if not missing else '; `.github/` sem ' + ', '.join(missing)}"
+                                f"; a entrega por caminho é live")},
+        "H12": {"verdict": UNMEASURED,
+                "observation": (f"{len(slots)} slot(s) e {len(worktrees.get('stores') or [])} "
+                                f"store(s) irmãos do checkout primário; "
+                                f"{len(patterns)} padrão(ões) em `external_directory`; o acesso "
+                                f"sem prompt é live")}}
+    return section
 
 
 # --- 1.6 · the harness refusal ----------------------------------------------------------------
