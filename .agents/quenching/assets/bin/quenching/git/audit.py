@@ -27,6 +27,7 @@ base or the tip includes (GitLab `include`, top level or under a job's `trigger:
 surface like the root itself. `generated` is the part of `changed` that is a byte-for-byte copy of its
 source file under a module the BASE's `quenching/assets/modules.json` declares (same relative
 path, same blob at the tip, or absent from both); derived outputs that are no copy are never in it.
+`concluded` is the part of `changed` only commits titled `<branch>: conclude …` touched.
 Nothing here executes the
 audited branch's code: the gate is certified by CI before the merge, never by this verb."""
 from __future__ import annotations
@@ -1222,6 +1223,31 @@ def _generated(cwd: str, base: str, tip: str, changed: list[str], env: dict[str,
     return found
 
 
+def _concluded(cwd: str, base: str, tip: str, branch: str, changed: list[str],
+               env: dict[str, str], errors: list[dict]) -> list[str]:
+    """The changed paths that only the conclude's own commits touched: non-merge commits of
+    `base..tip` whose subject is `<branch>: conclude <…>`. A path any other commit also touched
+    stays out, so a task's undeclared file is never hidden behind a later conclude fix. The
+    subject is the conclude's declaration, not a proof of who wrote it."""
+    if not changed:
+        return []
+    code, out, err = _git_run(cwd, *SAFE, "log", "--no-merges", "--no-renames", "-z", "--name-only",
+                              "--format=%x1e%s", f"{base}..{tip}", env=env)
+    if code != 0:
+        errors.append(_error(("log", "--name-only"), code, err))
+        return []
+    marker = f"{branch}: conclude "
+    by_conclude: set[str] = set()
+    by_other: set[str] = set()
+    for chunk in out.split("\x1e"):
+        if not chunk:
+            continue
+        subject, *names = chunk.split("\0")
+        paths = {n.lstrip("\n") for n in names if n.lstrip("\n")}
+        (by_conclude if subject.startswith(marker) else by_other).update(paths)
+    return [p for p in changed if p in by_conclude and p not in by_other]
+
+
 def cmd_audit(args) -> int:
     cwd = os.getcwd()
     worktree = os.path.realpath(args.worktree)
@@ -1275,6 +1301,7 @@ def cmd_audit(args) -> int:
                      "head": _rewrites(worktree, "HEAD", env, errors, branch=args.branch, cache=cache)},
     }
     payload["generated"] = _generated(worktree, base, tip, payload["changed"], env, errors, cache)
+    payload["concluded"] = _concluded(worktree, base, tip, args.branch, payload["changed"], env, errors)
     payload["grants"] = _grants(worktree, base, tip, payload["changed"], env, errors,
                                 set(payload["generated"]), cache)
     payload["lowered"] = _lowered(worktree, base, tip, env, errors, cache)
@@ -1284,6 +1311,7 @@ def cmd_audit(args) -> int:
     lines = [f"worktree: {worktree}", f"branch: {args.branch} ({tip[:12]}) over {args.base}",
              f"commits: {len(payload['commits'])}", f"changed: {len(payload['changed'])} path(s)",
              f"generated: {len(payload['generated'])} path(s)",
+             f"concluded: {len(payload['concluded'])} path(s)",
              f"status: {len(payload['status'])} entries", f"stash: {len(payload['stash'])} entries",
              f"grants added: {sum(len(g['added']) for g in payload['grants'])}",
              f"lowered: {len(payload['lowered'])} entr(ies)"]
