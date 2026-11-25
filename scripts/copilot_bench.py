@@ -22,13 +22,20 @@ cliente é uma linha da tabela, não uma varredura.
 from __future__ import annotations
 
 import argparse
+import atexit
 import json
+import os
 import pathlib
+import shutil
+import subprocess
 import sys
+import tempfile
 from datetime import datetime
 
 REPO = pathlib.Path(__file__).resolve().parent.parent
-CQ = REPO / ".agents" / "quenching" / "bin" / "cq"
+# The source payload, which carries `skills/`; the deployed copy (`.agents/quenching`) does not, so
+# a disposable target installed from it would silently receive no skill at all.
+SOURCE_CQ = REPO / "quenching" / "assets" / "bin" / "cq"
 
 CONFIRMED = "confirmed"
 REFUTED = "refuted"
@@ -136,11 +143,36 @@ def not_measured(section: str) -> dict:
 
 
 # --- 1.2 · the disposable target --------------------------------------------------------------
-def deploy_target(modules: str) -> pathlib.Path:
-    """Install the surface into a temporary directory and hand back the root to measure."""
-    raise BenchRefusal("cb-deploy",
-                       "`--deploy` ainda não instala um alvo descartável (task 1.2); meça um "
-                       "alvo já instalado com `--target`")
+def deploy_target(modules: str) -> tuple[pathlib.Path, dict]:
+    """Install the surface into a temporary directory and hand back the root and the deploy facts.
+
+    The deploy runs the source payload (`quenching/assets/bin/cq`), which carries `skills/`: the
+    installed copy would find neither its own skill source nor a target one and write none. The
+    user's global OpenCode config stays out, as in `test_deploy`, so the target is the deploy's.
+    """
+    if not SOURCE_CQ.is_file():
+        raise BenchRefusal("cb-source", f"o payload-fonte não existe: {SOURCE_CQ}")
+    root = pathlib.Path(tempfile.mkdtemp(prefix="quenching-copilot-bench-"))
+    atexit.register(shutil.rmtree, str(root), True)
+    target = root / "target"
+    target.mkdir()
+    env = dict(os.environ, XDG_CONFIG_HOME=str(root / "xdg"), OPENCODE_CONFIG="")
+    done = subprocess.run([sys.executable, str(SOURCE_CQ), "deploy", "--target", str(target),
+                           "--modules", modules, "--write", "--json"],
+                          capture_output=True, text=True, env=env, timeout=600)
+    try:
+        payload = json.loads(done.stdout or "{}")
+    except ValueError:
+        payload = {}
+    if done.returncode != 0 or not payload.get("ok"):
+        code = payload.get("code") or f"exit {done.returncode}"
+        detail = payload.get("message") or (done.stderr.strip().splitlines() or [""])[-1]
+        raise BenchRefusal("cb-deploy", f"o deploy descartável falhou: {code}: {detail}")
+    return target, {"version": payload.get("version"),
+                    "modules": payload.get("modules"),
+                    "harnesses": payload.get("harnesses"),
+                    "runtime": payload.get("runtime"),
+                    "written": len(payload.get("changes") or [])}
 
 
 # --- 1.3 · the MCP server ---------------------------------------------------------------------
@@ -163,8 +195,9 @@ def measure_harness(root: pathlib.Path) -> dict:
     return not_measured("harness")
 
 
-def measure_sections(root: pathlib.Path) -> dict:
-    return {"deploy": not_measured("deploy") | {"target": str(root)},
+def measure_sections(root: pathlib.Path, deploy: dict | None = None) -> dict:
+    return {"deploy": {"state": "ok" if deploy is not None else "target",
+                       "target": str(root), **(deploy or {}), "hypotheses": {}},
             "mcp": measure_mcp(root),
             "skills": measure_skills(root),
             "clients": measure_clients(root),
@@ -186,26 +219,27 @@ def matrix(sections: dict) -> list[dict]:
     return rows
 
 
-def bench(root: pathlib.Path, mode: str, modules: str = "all") -> dict:
-    sections = measure_sections(root)
-    if mode == "deploy":
-        sections["deploy"] = sections["deploy"] | {"mode": "deploy", "modules": modules}
+def bench(root: pathlib.Path, mode: str, modules: str = "all",
+          deploy: dict | None = None) -> dict:
+    sections = measure_sections(root, deploy)
     return {"ok": True,
             "target": str(root),
             "mode": mode,
+            "modules": modules,
             "measuredAt": datetime.now().astimezone().isoformat(timespec="seconds"),
             "thresholds": list(THRESHOLDS),
             "measurements": sections,
             "hypotheses": matrix(sections)}
 
 
-def resolve_root(args: argparse.Namespace) -> tuple[pathlib.Path, str]:
+def resolve_root(args: argparse.Namespace) -> tuple[pathlib.Path, str, dict | None]:
     if args.deploy:
-        return deploy_target(args.modules), "deploy"
+        root, facts = deploy_target(args.modules)
+        return root, "deploy", facts
     root = pathlib.Path(args.target).expanduser().resolve()
     if not root.is_dir():
         raise BenchRefusal("cb-target", f"`--target` não é um diretório: {args.target}")
-    return root, "target"
+    return root, "target", None
 
 
 # --- rendering --------------------------------------------------------------------------------
@@ -272,10 +306,10 @@ def parser() -> argparse.ArgumentParser:
 def main(argv: list[str]) -> int:
     args = parser().parse_args(argv)
     try:
-        root, mode = resolve_root(args)
+        root, mode, deploy = resolve_root(args)
     except BenchRefusal as error:
         return refuse(error, args.json)
-    payload = bench(root, mode, args.modules)
+    payload = bench(root, mode, args.modules, deploy)
     if args.json:
         print(json.dumps(payload, ensure_ascii=False, indent=2))
     elif args.md:
