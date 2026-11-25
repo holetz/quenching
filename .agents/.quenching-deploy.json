@@ -37,7 +37,7 @@
 
     ".agents/quenching/agents/spec-scout.md": "82da98399dd8e0b10533e4a6600f6c90d405e1873234e94cc1877b75ebc8f0e4",
 
-    ".agents/quenching/agents/spec-verifier.md": "b97ff366900da468acc53efab50a0d2b70de5f2d92d6fbf7a34b42b6f8c1e352",
+    ".agents/quenching/agents/spec-verifier.md": "b7e5499c50acd4d03f85b6290a1886f0779d95715c6116222279b8946f68484b",
 
     ".agents/quenching/assets/bin/cq": "002918fda0dab8ce7a5e6fe9c14b51235ee240954d596524681cb1b863fb2304",
 
@@ -725,7 +725,7 @@
 
     ".claude/agents/quenching-spec-scout.md": "82da98399dd8e0b10533e4a6600f6c90d405e1873234e94cc1877b75ebc8f0e4",
 
-    ".claude/agents/quenching-spec-verifier.md": "b97ff366900da468acc53efab50a0d2b70de5f2d92d6fbf7a34b42b6f8c1e352",
+    ".claude/agents/quenching-spec-verifier.md": "b7e5499c50acd4d03f85b6290a1886f0779d95715c6116222279b8946f68484b",
 
     ".claude/skills/.generated-files.json": "60101d96bd6af2e9111b3e72497fe7ef22347415f93ea09de45257447dc8db68",
 
@@ -941,7 +941,7 @@
 
     ".opencode/agents/quenching-spec-scout.md": "ee738936fe384b222e7ac8524e6b0d56a68651f46ea83506512485f032858d79",
 
-    ".opencode/agents/quenching-spec-verifier.md": "ba54c8ddba01c8cb84d6dd0e416b055a9a6ff1257594de1214a94f65e6694dc0"
+    ".opencode/agents/quenching-spec-verifier.md": "4403ff70b8bedb2d6ffb10bb1eee58047388c33e6a7c6233fd28910afbf96500"
   },
   "mcp": {
     "mount": "core",

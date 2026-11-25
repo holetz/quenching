@@ -1797,6 +1797,14 @@ class VerifierScopeCheck(unittest.TestCase):
         self.assertIn("`files` of the branch's `.agents/.quenching-deploy.json`", check)
         self.assertIn("any other path stays listed", check)
 
+    def test_check_4_subtracts_the_conclude_commits_and_lists_them_apart(self):
+        text = (PLUGIN_ROOT / "agents" / "spec-verifier.md").read_text(encoding="utf-8")
+        check = " ".join(text.split("4. Scope:", 1)[1].split("5. Hygiene:", 1)[0].split())
+        self.assertIn("remove the payload's `concluded`", check)
+        self.assertIn("`conclude: <paths>`", check)
+        self.assertLess(check.index("remove the payload's `concluded`"),
+                        check.index("Compare the remaining paths"))
+
 
 class OrchestratorGrants(unittest.TestCase):
     """The `orchestrator` reads the wave audit through `cq git state`, never a raw `git status`
