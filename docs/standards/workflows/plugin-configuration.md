@@ -297,18 +297,22 @@ default. See [deploy-mode.md](../architecture/deploy-mode.md#mcp-registration).
 ## The `shared.projections` block
 
 `shared.projections` is the list of client file families `cq deploy` writes from the same source;
-an absent key writes no client projection. `github` is the family that writes two artifacts:
+an absent key writes no client projection. `github` is the family that writes four artifacts:
 `.github/agents/quenching-<name>.agent.md` from `quenching/agents/*.md` in the Copilot custom-agent
 format — the tool aliases, the model band and `include-custom-instructions`
-([deploy-mode.md](../architecture/deploy-mode.md#copilot-agents)) — and
+([deploy-mode.md](../architecture/deploy-mode.md#copilot-agents)) —,
 `.github/instructions/<name>.instructions.md`, the `applyTo:` projection of the target's
-`.agents/rules/<name>.md` ([deploy-mode.md](../architecture/deploy-mode.md#path-scoped-rules)).
+`.agents/rules/<name>.md` ([deploy-mode.md](../architecture/deploy-mode.md#path-scoped-rules)),
+`.github/workflows/copilot-setup-steps.yml` from the target's Python, the `uvx` runtime and
+`shared.worktreeSetup`, and it **seeds** `REVIEW.md` when the target carries the standards index
+([deploy-mode.md](../architecture/deploy-mode.md#copilot-setup-steps-and-the-review-seed)).
 The key is read through `repository_document`, not the merged envelope, for the same reason
 `shared.mcp` is: a generated file belongs to the repository and must not vary by machine. A value
 that is not a list of known client names refuses with `ct-deploy-projection` before anything is
 written, and every generated file is in the manifest, so removing the value removes the files on
-the next `--write`. It is `project` scope: the team decides. A target without Copilot carries no
-second register.
+the next `--write`. The review file is the exception: a seed in the target's hand, outside the
+manifest, never removed. It is `project` scope: the team decides. A target without Copilot carries
+no second register.
 
 ## Settings read outside the file
 

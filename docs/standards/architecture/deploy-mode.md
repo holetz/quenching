@@ -42,6 +42,8 @@ for deployment; this verb installs the tool surface. It never invokes a model, n
 | `.claude/agents/quenching-<name>.md` | Claude subagents | generated when the `claude` harness is selected |
 | `.opencode/agents/quenching-<name>.md` | OpenCode subagents, `mode: subagent` | generated when the `opencode` harness is selected |
 | `.github/agents/quenching-<name>.agent.md` | Copilot subagents, the native custom-agent format | generated when the repository declares `shared.projections: ["github"]` |
+| `.github/workflows/copilot-setup-steps.yml` | Copilot cloud-agent setup: the target's Python, `uv` on the `uvx` runtime and `shared.worktreeSetup` verbatim | generated when the repository declares `shared.projections: ["github"]` |
+| `REVIEW.md` | Copilot code review's instruction: points at `/docs/standards/index.md` and `/docs/glossary.md` | target; seeded only when absent, with the `github` projection and an OKF standards index |
 | `.mcp.json` | Claude Code project MCP registration | target; the `quenching` entry merged when the `claude` harness is selected |
 | `opencode.json` | OpenCode MCP registration, subagent depth, sibling directories and shell grants | target; the `quenching` entry, `experimental.subagent_depth`, the `external_directory` allows and the `permission.bash` allows merged when the `opencode` harness is selected |
 | `CLAUDE.md` | legacy pointer to `AGENTS.md` | never created; removed only by `--prune-legacy` |
@@ -324,7 +326,8 @@ generic layer — `.agents/skills/` (read by OpenCode), the payload under
 `.agents/quenching/`, the Claude bridge under `.claude/skills/`, the rules under `.claude/rules/`,
 the subagents under `.claude/agents/` and `.opencode/agents/`, and — when the repository declares
 `shared.projections: ["github"]` — the Copilot projections under `.github/agents/` and
-`.github/instructions/`, all from the same generic sources (§The target layout above). No Codex package, no `codex` harness ([ADR 0020](../../decisions/0020-remove-the-codex-executor-and-harness.md)) and no
+`.github/instructions/`, the setup workflow under `.github/workflows/` and the `REVIEW.md` seed,
+all from the target's own declarations and generic sources (§The target layout above). No Codex package, no `codex` harness ([ADR 0020](../../decisions/0020-remove-the-codex-executor-and-harness.md)) and no
 user-level OpenCode distribution exist since [ADR 0017](../../decisions/0017-install-only-by-deploy.md).
 A target's `.claude/commands/` is the legacy layout, which `cq components migrate` converts; the
 `cq components translate` that once copied it into `.agents/` is retired, and a copy it wrote beside
@@ -439,6 +442,26 @@ refused. `include-custom-instructions` carries the repository's `AGENTS.md` into
 unknown value refuses with `ct-deploy-projection` before anything is written. The same `github`
 projection also writes `.github/instructions/` from the target's `.agents/rules/` (§Path-scoped
 rules).
+
+### Copilot setup steps and the review seed
+
+The same `github` key writes `.github/workflows/copilot-setup-steps.yml`: one job named
+`copilot-setup-steps`, `contents: read`, `workflow_dispatch` plus the file's own path triggers, and
+the steps that make a cloud session usable — checkout, the Python the target declares
+(`.python-version`, else a `pyproject.toml` with `requires-python`, else the 3.11 floor), `uv` when
+the deploy runtime is `uvx` (its launcher needs it) and the declared `shared.worktreeSetup`
+verbatim. It is a projection of declarations, not a harness: the path and the job name are dated
+client facts, and the file is in the manifest, so `--check` owns its drift and removing the key
+deletes it on the next `--write`. The client only runs it from the default branch.
+
+The key also **seeds** `REVIEW.md` at the root when the target carries the OKF bundle
+(`docs/index.md` with `okf_version` and `docs/standards/index.md`). It is a seed like `AGENTS.md`,
+not a projection: created only when absent, never in the manifest, never drift-checked, never
+removed with the key, and a target's own `REVIEW.md` is preserved. The file points the Copilot code
+review at the repository's standards and glossary instead of copying them; the review policy stays
+the target's. No `.github/copilot-instructions.md` is generated — the root `AGENTS.md` is the
+shared instruction and the code review reads it ([agents.md](../automation/agents.md) §The client
+projections).
 
 ### Path-scoped rules
 
