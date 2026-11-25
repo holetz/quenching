@@ -1,9 +1,15 @@
 """O desvio do `az` no Windows, dirigido em qualquer host por `os.name` e `which` mockados."""
+import json
+import os
+import subprocess
+import tempfile
 import unittest
+from pathlib import Path
 from unittest import mock
 
 import _paths  # noqa: F401
 from quenching.common import doctor, tools
+from quenching.deploy import tree
 
 
 class SpawnArgv(unittest.TestCase):
@@ -51,6 +57,32 @@ class Doctor(unittest.TestCase):
             report = doctor.inspect_environment(".", config={"data": {"backend": "azure-boards"}})
         self.assertIn("az", [item["name"] for item in report["requirements"]])
         self.assertTrue(next(item for item in report["requirements"] if item["name"] == "az")["found"])
+
+
+@unittest.skipUnless(os.name == "nt", "o cmd.exe só existe no Windows")
+class LauncherArgv(unittest.TestCase):
+    """O `cq.cmd` gerado entrega um argv acentuado ao Python sem trocar a codificação."""
+
+    STUB = ("import json, sys\n"
+            "sys.stdout.write(json.dumps(sys.argv[1:]))\n"  # ensure_ascii: a saída não depende da página
+            "sys.exit(3)\n")
+
+    def _run(self, *args):
+        with tempfile.TemporaryDirectory() as root:
+            (Path(root) / "bin").mkdir()
+            (Path(root) / "assets" / "bin").mkdir(parents=True)
+            (Path(root) / "bin" / "cq.cmd").write_bytes(tree._VENDOR_CMD.encode())
+            (Path(root) / "assets" / "bin" / "cq").write_text(self.STUB, encoding="utf-8")
+            return subprocess.run([str(Path(root) / "bin" / "cq.cmd"), *args],
+                                  capture_output=True, text=True, check=False)
+
+    def test_o_argv_acentuado_chega_ao_cq_intacto(self):
+        argv = ["não a do usuário", "ação"]
+        done = self._run(*argv)
+        self.assertEqual(json.loads(done.stdout), argv, done.stderr)
+
+    def test_o_codigo_de_saida_do_cq_atravessa_o_lancador(self):
+        self.assertEqual(self._run("x").returncode, 3)
 
 
 if __name__ == "__main__":
