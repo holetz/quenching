@@ -3,7 +3,8 @@
 The source is written in the target dialect.  This module rewrites only frontmatter, the
 generated header, the grants (and OpenCode permissions) and the ``cq.cmd`` launcher note, and
 refuses a source that still carries a plugin-surface id.  It never decides what to deploy; `tree`
-does.
+does.  An agent has three projections of the one source — Claude, OpenCode and the Copilot file
+under `.github/agents/` — and each reads the same role, grant and model band.
 """
 from __future__ import annotations
 
@@ -135,15 +136,16 @@ def _with_mcp(value: str, enumerate_all: bool, mount: frozenset[str] | None = No
     return ", ".join([value, *missing]) if missing else value
 
 
-def narrowed(names: list[str]) -> list[str]:
+def narrowed(names: list[str], mount: frozenset[str] | None = None) -> list[str]:
     """Each `Bash(cq <prefix>:*)` replaced by the shell grants its verbs with no MCP tool still
     need (`coverage.cli_residue`), on the same launcher; every other grant, and a prefix that
-    names no verb, kept as is. Never wider than the source: the residue sits under its prefix."""
+    names no verb, kept as is. Never wider than the source: the residue sits under its prefix.
+    A `mount` keeps the shell grant of a pillar the mount hides, so no door closes."""
     from quenching.mcp import coverage
     out: list[str] = []
     for name in names:
         match = CQ_GRANT.match(name)
-        residue = (coverage.cli_residue(tuple((match.group(2) or "").split()))
+        residue = (coverage.cli_residue(tuple((match.group(2) or "").split()), mount)
                    if match else None)
         grants = [name] if residue is None else [
             f"Bash({match.group(1)} {' '.join(path)}:*)" for path in residue]
@@ -159,7 +161,7 @@ def transform_tools(value: str, enumerate_mcp: bool = False, narrow: bool = Fals
     the named tools inside the pillars the mount publishes."""
     value = _with_mcp(value, enumerate_mcp, mount)
     if narrow:
-        value = ", ".join(narrowed(_grant_names(value)))
+        value = ", ".join(narrowed(_grant_names(value), mount))
     value = re.sub(r"Bash\(cq((?:\.cmd)?[^)]*):\*\)",
                    lambda m: f"Bash({CQ}{m.group(1)}:*)", value)
     def target_agent(item: str) -> str:
@@ -263,7 +265,7 @@ def opencode_permissions(tools: str | None, narrow: bool = False,
     if tools is None:
         return {}
     source = _grant_names(tools)
-    names = narrowed(source) if narrow else source
+    names = narrowed(source, mount) if narrow else source
     heads = {name.split("(", 1)[0] for name in names}
     granted: dict[str, str | dict[str, str]] = {}
     granted["edit"] = "allow" if heads & {"Edit", "Write", "NotebookEdit"} else "deny"
@@ -329,6 +331,89 @@ def opencode_agent_document(raw: str, name: str, narrow: bool = False,
         preferences.append(f"Declared effort: `{scalar_value(fields['effort'])}`.")
     preamble = "\n\n".join(preferences) + "\n\n" if preferences else ""
     return "\n".join(out) + "\n\n" + HEADER + "\n\n" + preamble + transform_platform(_body(body))
+
+
+# A plugin agent is judgment work: `opus` and `sonnet` are the band, strongest first, and the small
+# tier never enters it (`haiku` is refused below). One line per client change, dated like the
+# bench's THRESHOLDS — the model inventory belongs to the client, not to this repository.
+COPILOT_MODEL_BANDS = {
+    "opus": ("Claude Opus 4.6", "Claude Sonnet 4.6"),
+    "sonnet": ("Claude Sonnet 4.6", "Claude Opus 4.6"),
+}
+# The documented Copilot tool aliases (VS Code custom agent reference, 2026-11-25). `Skill` has no
+# alias: the harness discovers skills itself, so the item is dropped rather than widened to `*`.
+COPILOT_TOOLS = {"Read": "read", "Grep": "search", "Glob": "search", "Edit": "edit",
+                 "Write": "edit", "NotebookEdit": "edit", "WebFetch": "web", "WebSearch": "web",
+                 "TodoWrite": "todo", "Agent": "agent", "Task": "agent"}
+COPILOT_DROPPED = {"Skill"}
+
+
+def copilot_tools(value: str, narrow: bool = False, mount: frozenset[str] | None = None) -> list[str]:
+    """The source grant as Copilot tool names, never wider than the Claude grant it mirrors.
+
+    The already-translated grant is the input: `mcp__quenching__<tool>` becomes
+    `quenching/<tool>` and the server-wide `mcp__quenching` becomes `quenching/*`, so the mount and
+    the narrowing decide the list. A head with no alias refuses, because a silent drop loses a
+    capability the source still declares."""
+    names = _grant_names(transform_tools(value, enumerate_mcp=True, narrow=narrow, mount=mount))
+    out: list[str] = []
+    for name in names:
+        head = name.split("(", 1)[0]
+        if head == "mcp__quenching" and name == head:
+            mapped = f"{MCP_SERVER}/*"
+        elif name.startswith(f"mcp__{MCP_SERVER}__"):
+            mapped = f"{MCP_SERVER}/{name.split('__', 2)[2]}"
+        elif head == "Bash":
+            mapped = "execute"
+        elif head in COPILOT_DROPPED:
+            continue
+        elif head in COPILOT_TOOLS:
+            mapped = COPILOT_TOOLS[head]
+        else:
+            raise ValueError(f"agent tool has no Copilot projection: {name}")
+        if mapped not in out:
+            out.append(mapped)
+    return out
+
+
+def copilot_models(value: str, name: str) -> str | None:
+    """A source model band as the Copilot ordered list; the small tier is refused, never mapped."""
+    band = scalar_value(value)
+    if not band or band == "inherit":
+        return None
+    if band == "haiku":
+        raise ValueError(f"agent {name} declares the small tier, which a plugin agent never uses")
+    if band not in COPILOT_MODEL_BANDS:
+        raise ValueError(f"agent {name} declares an unknown model band: {band}")
+    return json.dumps(list(COPILOT_MODEL_BANDS[band]), ensure_ascii=False)
+
+
+def _flow_list(items: list[str]) -> str:
+    """A YAML flow sequence of plain scalars; every Copilot tool name is safe unquoted."""
+    return "[" + ", ".join(items) + "]"
+
+
+def copilot_agent_document(raw: str, name: str, narrow: bool = False,
+                           mount: frozenset[str] | None = None) -> str:
+    """The same agent in the Copilot custom-agent format (`.github/agents/<name>.agent.md`)."""
+    fields, body = split_frontmatter(raw)
+    description = scalar_value(fields.get("description", ""))
+    if not description:
+        raise ValueError(f"agent has no description: {name}")
+    out: list[tuple[str, str]] = [("name", agent_name(name)),
+                                  ("description", json.dumps(transform_platform(description),
+                                                             ensure_ascii=False))]
+    tools = copilot_tools(fields.get("tools", ""), narrow, mount)
+    if tools:
+        out.append(("tools", _flow_list(tools)))
+    if fields.get("model"):
+        models = copilot_models(fields["model"], name)
+        if models:
+            out.append(("model", models))
+    if fields.get("effort"):
+        out.append(("reasoning-effort", scalar_value(fields["effort"])))
+    out.extend([("include-custom-instructions", "true"), ("target", "github-copilot")])
+    return _frontmatter(out) + HEADER + "\n\n" + transform_platform(_body(body))
 
 
 def agent_document(raw: str, name: str, narrow: bool = False,
