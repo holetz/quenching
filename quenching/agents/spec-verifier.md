@@ -47,7 +47,8 @@ matches. Without a worktree, `--worktree` is the base checkout itself.
    file, so it is the ONE kind of checked task that owes no sha: `specs_show(spec=<id>, tasks=[<t>])` reports it as `"operational": true` with `"files": []`. Every other
    checked task without a sha is FAIL — the declaration is the whole excuse, and it never
    extends to a task that declared paths.
-   Counts: the payload's `commits` and each task's `operational` marker. Does not count: the worker's `SHAS` line as proof, or a commit message.
+   A checked task whose text carries `(dropped → <id>)` was abandoned and replaced: `specs_show(spec=<id>, tasks=[<t>])` reports it as `"dropped": "<id>"`. It owes no sha only when the task named there (read the same way) is checked and carries a `commit:` or `subject:` anchor; a replacement with no sha leaves the abandoned task FAIL like any other checked task without one.
+   Counts: the payload's `commits`, each task's `operational` marker and `dropped` target. Does not count: the worker's `SHAS` line as proof, or a commit message.
 3. Gate: you execute nothing. Read the code the worker reported on its own `GATE_EXIT:` line as
    a CLAIM, not a verdict: the gate is certified by CI on the PR before the merge
    (the `spec-orchestrator` `merge` step). An absent line and `not-run` are both INCONCLUSIVE,
