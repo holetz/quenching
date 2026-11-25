@@ -10,6 +10,7 @@ import json
 import pathlib
 import sys
 import tempfile
+import threading
 import unittest
 from unittest import mock
 
@@ -620,6 +621,35 @@ class PrStatesTarget(unittest.TestCase):
 
     def test_an_azure_head_other_than_the_members_branch_is_left_out(self):
         self.assertEqual({}, self.azure("completed", head="refs/heads/plan/9-y")[0])
+
+
+class PrStatesConcurrency(unittest.TestCase):
+    """The lookups of one composite are in flight together, and the answer keeps member order."""
+
+    def members(self, n):
+        return {str(i): {"phase": "archive", "frontmatter": {"pr": {"number": i}}}
+                for i in range(n, 0, -1)}
+
+    def test_the_lookups_overlap_instead_of_running_one_after_another(self):
+        gate = threading.Barrier(3, timeout=5)
+
+        def view(member, *_):
+            gate.wait()   # a serial loop never gets three callers here at once
+            return ("MERGED", None)
+
+        with mock.patch.object(epic_cmd, "_provider", return_value="github"), \
+                mock.patch.object(epic_cmd, "_pr_view", side_effect=view):
+            got = epic_cmd.pr_states(self.members(3), "/r")
+        self.assertEqual(["3", "2", "1"], list(got))
+
+    def test_a_failed_lookup_leaves_only_that_member_out(self):
+        def view(member, *_):
+            return None if member["frontmatter"]["pr"]["number"] == 2 else ("OPEN", None)
+
+        with mock.patch.object(epic_cmd, "_provider", return_value="github"), \
+                mock.patch.object(epic_cmd, "_pr_view", side_effect=view):
+            got = epic_cmd.pr_states(self.members(3), "/r")
+        self.assertEqual({"3": "OPEN", "1": "OPEN"}, got)
 
 
 if __name__ == "__main__":
