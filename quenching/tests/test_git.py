@@ -1550,7 +1550,7 @@ class Audit(RepoCase):
             text = (PLUGIN_ROOT / rel).read_text(encoding="utf-8")
             self.assertIn("origin/<base>", text, rel)
         verifier = (PLUGIN_ROOT / "agents" / "spec-verifier.md").read_text(encoding="utf-8")
-        self.assertIn("--base origin/<base>", verifier)
+        self.assertIn("base=\"origin/<base>\"", verifier)
 
 
 SRC, MOD = "quenching", "integrations/" + "m"
@@ -1760,7 +1760,7 @@ class VerifierScopeCheck(unittest.TestCase):
 
     def test_check_4_names_where_the_tasks_files_are_read(self):
         text = " ".join((PLUGIN_ROOT / "agents" / "spec-verifier.md").read_text(encoding="utf-8").split())
-        self.assertIn("cq specs show --spec <id> --task <t> --json", text)
+        self.assertIn("specs_show(spec=<id>, tasks=[<t>])", text)
         self.assertIn("carries no `files:`", text)
 
     def test_check_4_subtracts_the_audits_generated_paths(self):
@@ -4079,7 +4079,8 @@ class OrchestratorPublishGrants(unittest.TestCase):
         self.assertNotIn("cq git:*", self.grants)
         self.assertEqual([g for g in self.grants if g.startswith("cq git ")], [
             "cq git state:*", "cq git push:*", "cq git pr create:*", "cq git pr probe:*",
-            "cq git pr record:*", "cq git pr merge:*", "cq git base:*", "cq git conventions:*"])
+            "cq git pr record:*", "cq git pr merge:*", "cq git base:*", "cq git conventions:*",
+            "cq git worktree slots:*"])
         for unused in ("stale", "prune", "audit", "commit", "worktree retire", "worktree add"):
             for grant in self.grants:
                 self.assertFalse(self._admits(grant, f"cq git {unused}"), (grant, unused))
