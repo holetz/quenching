@@ -43,7 +43,7 @@ for deployment; this verb installs the tool surface. It never invokes a model, n
 | `.opencode/agents/quenching-<name>.md` | OpenCode subagents, `mode: subagent` | generated when the `opencode` harness is selected |
 | `.github/agents/quenching-<name>.agent.md` | Copilot subagents, the native custom-agent format | generated when the repository declares `shared.projections: ["github"]` |
 | `.mcp.json` | Claude Code project MCP registration | target; the `quenching` entry merged when the `claude` harness is selected |
-| `opencode.json` | OpenCode MCP registration, subagent depth and sibling directories | target; the `quenching` entry, `experimental.subagent_depth` and the `external_directory` allows merged when the `opencode` harness is selected |
+| `opencode.json` | OpenCode MCP registration, subagent depth, sibling directories and shell grants | target; the `quenching` entry, `experimental.subagent_depth`, the `external_directory` allows and the `permission.bash` allows merged when the `opencode` harness is selected |
 | `CLAUDE.md` | legacy pointer to `AGENTS.md` | never created; removed only by `--prune-legacy` |
 | `.claude/commands/`, `.claude/references/` | legacy layout | refused; run `cq components migrate` first |
 
@@ -189,14 +189,18 @@ merge also writes:
   (`<parent>/<repo>-slot-*`) and the sibling store (`<primary>.*`). Both come from the git common
   directory, so a deploy run inside a slot writes the same patterns. They are written with `~/`
   when under the home directory. A target outside git gets neither.
+- `permission.bash` set to `allow` for exactly the `cq` entry point: `.agents/quenching/bin/cq`
+  and its argument form, the `./` form and the `python3`/`python` forms. The list is the same on
+  every machine, so it is written on every deploy and recorded like the patterns.
 
-`--check` reuses the depth and the patterns the manifest records (`opencodeConfig`) instead of
-deriving them again: both name the deploying machine's global config and checkout, so a committed
-`opencode.json` read on another machine is not drift. `--write` derives them for the machine it
-runs on.
+`--check` reuses the depth, the patterns and the shell rules the manifest records
+(`opencodeConfig`) instead of deriving them again: the first two name the deploying machine's
+global config and checkout, so a committed `opencode.json` read on another machine is not drift.
+`--write` derives them for the machine it runs on.
 
-Nothing else is granted. The permission uses the V1 object form, which OpenCode still reads and
-which the generated agents use.
+Nothing else is granted: an existing `deny` on a pattern or a shell rule is the user's refusal and
+is neither overwritten nor recorded. The permission uses the V1 object form, which OpenCode still
+reads and which the generated agents use.
 
 A project `experimental` block replaces the user's global one instead of merging with it
 (anomalyco/opencode#60410). So when the global config (`$OPENCODE_CONFIG`, then
@@ -220,13 +224,46 @@ merged, never owned, so it is not in the manifest's `files`.
 - **`attribution`.** Deploy writes `commit: ""` and `pr: ""` only for keys that are absent. A value
   the user set stays and becomes a warning, not drift. Removal deletes only the keys that are still
   `""` and that the manifest records (`claudeSettings.attribution`) as written by deploy.
+- **`permissions.allow`.** Deploy appends the access rules for the slots and the sibling stores —
+  `Bash(…cq:*)` for the entry point and `Read/Edit/Write(~/<family>/**)` for the two patterns —
+  only when the rule is absent, and records the ones it added in `claudeSettings.permissions`. A
+  rule the user already wrote is theirs and is not recorded; `deny` and `ask` are never touched.
+  `--check` reuses the recorded rules instead of deriving them again: they name the deploying
+  machine's checkout, so another clone is not drift. A target outside git gets no rule.
 - **`--check`.** The merge result differing from the file is `settings` drift (exit 1).
 - **Removal.** Selecting fewer modules drops the hooks of the module that left; a harness list
-  without `claude` (`opencode`, `none`) wants nothing, so only deploy's own entries leave.
-  A file reduced to `{}` by that removal is deleted.
-- **Refusal.** Invalid JSON, a root that is not an object, or `hooks` / `hooks.<event>` of the
-  wrong type is `ct-deploy-settings` (exit 2) and nothing is written. A successful merge rewrites
-  the file once with two-space indentation; later runs are idempotent.
+  without `claude` (`opencode`, `none`) wants nothing, so only deploy's own entries leave,
+  including the `permissions.allow` rules still equal to the recorded ones. A file reduced to `{}`
+  by that removal is deleted.
+- **Refusal.** Invalid JSON, a root that is not an object, or `hooks` / `hooks.<event>` /
+  `permissions` / `permissions.allow` of the wrong type is `ct-deploy-settings` (exit 2) and nothing
+  is written. A successful merge rewrites the file once with two-space indentation; later runs are
+  idempotent.
+
+## Access to the slots and the sibling stores
+
+The slots (`<parent>/<repo>-slot-*`) and the sibling stores (`<primary>.*`) live outside the project
+folder, and each client asks for them in its own artifact. One derivation, in
+`quenching/common/access.py`, reads the family from the git common directory — so a command run
+inside a slot names the primary's family — and renders every declaration; a target outside git has
+no family and no grant.
+
+| Client | Artifact | What deploy writes |
+| --- | --- | --- |
+| OpenCode | `opencode.json` | `permission.external_directory` and `permission.bash`, recorded in `opencodeConfig` |
+| Claude Code | `.claude/settings.json` | `permissions.allow`, recorded in `claudeSettings.permissions` |
+| VS Code | `.vscode/settings.json` | nothing — `cq doctor --access` prints the block |
+| Copilot CLI | the invocation | nothing — `cq doctor --access` prints `copilot --add-dir …` |
+
+**`cq doctor --access` is the read-only report and the paste-ready block.** It names, per client,
+the path, the state and what is missing; a recorded pattern whose directory before the first glob no
+longer exists is `stale`, with the remedy `cq deploy --target . --write`. It prints the VS Code
+block — `chat.tools.terminal.autoApprove` with the three `cq` forms and
+`chat.tools.terminal.blockDetectedFileWrites: "never"`, the only value that stops the
+outside-workspace write block — and the Copilot CLI invocation, one `--add-dir` per existing slot or
+store. The file stays the user's: the deploy never writes or rewrites `.vscode/settings.json`, and
+the block is pasted into the workspace by whoever opts in. The CLI accepts no permission or
+directory key at the repository level, so the invocation is the only path.
 
 ## The `.vscode/settings.json` seed
 

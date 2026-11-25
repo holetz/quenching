@@ -37,6 +37,15 @@ class FilesDeclaresItsTests(unittest.TestCase):
         self.assertIn("that flag — never the empty list — is what excuses the sha", body)
 
 
+class FilesDeclaresTheDerivedArtifacts(unittest.TestCase):
+    def test_artifacts_names_the_two_triggers_and_what_each_brings(self):
+        body = text(ARTIFACTS)
+        self.assertIn("A new published document under `docs/` brings `zensical.toml`", body)
+        self.assertIn("A new `cq` verb cited in a skill, reference or agent body brings "
+                      "`quenching/assets/bin/quenching/mcp/catalog.py`", body)
+        self.assertIn("`## Tasks` is append-only after `approved`", body)
+
+
 class ComposeAsksForTheTests(unittest.TestCase):
     def test_develop_asks_the_question_beside_the_three_execution_decisions(self):
         body = text(DEVELOP)

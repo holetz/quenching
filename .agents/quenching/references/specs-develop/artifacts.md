@@ -301,6 +301,14 @@ is implicit in the verifier's scope check when a path under `quenching/` changed
 generators in the task, but do not list their outputs. A derived output the deploy does not
 regenerate (a golden, a hand-written `plugin.json`) still has to be declared.
 
+**Two triggers bring derived files the author must declare up front.** A new published document
+under `docs/` brings `zensical.toml` (the nav), because the nav test refuses a page it does not
+list. A new `cq` verb cited in a skill, reference or agent body brings
+`quenching/assets/bin/quenching/mcp/catalog.py`, because the coverage test refuses a verb with no
+tool; the agent mirrors that catalog regenerates follow the paragraph above and are not listed.
+Name both in the same task as the document or the citation: `## Tasks` is append-only after
+`approved`, so a path found at build time costs a corrective task.
+
 **Scope each `verify:` to what its own task could break** — not to what the repo can check. A gate
 that re-runs a check whose inputs the section could not have touched is a `verify:` written too
 wide, not a policy to be filtered at build time.
