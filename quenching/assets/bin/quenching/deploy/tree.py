@@ -382,6 +382,19 @@ def _python_file(target: Path) -> str | None:
     return "pyproject.toml" if re.search(r"(?m)^\s*requires-python\s*=", text) else None
 
 
+def _standards_index(target: Path) -> bool:
+    """Whether the target carries the OKF bundle and the standards index the review seed points
+    at: `docs/index.md` with `okf_version` in its frontmatter, and `docs/standards/index.md`."""
+    if not (target / "docs/standards/index.md").is_file():
+        return False
+    try:
+        text = (target / "docs/index.md").read_text(encoding="utf-8")
+    except OSError:
+        return False
+    parts = text.split("---", 2)
+    return len(parts) >= 3 and re.search(r"(?m)^okf_version\s*:", parts[1]) is not None
+
+
 def build_tree(source: Path, target: Path, modules: list[str], harnesses: list[str],
                runtime: str = "vendor", profiles: list[str] | None = None,
                mcp: dict | None = None, python: list[str] | None = None,
@@ -547,6 +560,10 @@ def build_tree(source: Path, target: Path, modules: list[str], harnesses: list[s
         "AGENTS.md": _agents_md(target),
         ".agents/quenching.json": _seed_config(target, profiles or profiles_for(modules)),
     }
+    if "github" in (projections or []) and _standards_index(target):
+        # The code review's own instruction file: a seed, like AGENTS.md, because the review
+        # policy is the repository's; the deploy writes the pointer once and never owns it.
+        seeds["REVIEW.md"] = translate.REVIEW_SEED
     if workspace:
         # A client projection, opted in by the repository's own `shared.workspace.vscode`:
         # created only when absent, never listed in the manifest, never drift-checked.
