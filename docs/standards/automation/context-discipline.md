@@ -563,9 +563,34 @@ OpenCode sessions measured also carry skills from other sources, and whether Ope
 surface and `skillListing` reports it. Raw artifacts: `after-2026-11-02.json` and
 `listing-2026-11-02.json` in the store of spec 2157.
 
-What stays unmeasured, and why: the three real specs, one per trajectory, with questions and refinements
-counted. They need live sessions and paid spend. DeepSeek through the gateway stays in tokens, with no
-price.
+Spec 2159 measured the autonomous trajectory only, on 2026-11-25, over the sessions epic 483 ran through
+the orchestrator (`cq components session cache --since 2026-11-25T00:00:00 --json`, this repository,
+Claude Code and OpenCode stores; the window is the whole day, so it also holds a few sessions that are not
+the epic's). An autonomous run asks no question and runs no refine by construction, so the counts that
+vary are the stops (a `blocked` return) and the cache read after a wait:
+
+| Role (OpenCode, subagent) | Sessions | Requests | Hit rate | Median first request | Tokens read after a gap over 5 min | Tokens missed after a 5–60 min gap |
+| --- | --- | --- | --- | --- | --- | --- |
+| `spec-runner` on Sonnet | 24 | 849 | 97.2% | 33,328 | 1,143,561 | 9,147 (0.8%) |
+| `spec-runner` on Opus | 7 | 558 | 98.7% | 33,718 | 834,171 | 32,764 (3.9%) |
+| `spec-orchestrator` on Opus | 3 | 168 | 98.6% | 45,700 | 1,622,315 | 23,984 (1.5%) |
+| `spec-verifier` on Sonnet | 35 | 181 | 92.8% | 33,431 | 0 | 0 |
+
+Indicative only, like the comparison above: the sample is one day on one machine and the percentages are
+the ratio of the two reported fields, never a price. A cache drop after a human wait is not in this
+sample, because no human waited inside these runs.
+
+Three gaps stay open, stated rather than estimated:
+
+- **No baseline to compare with.** The artifact `baseline-2026-11-02.json` of spec 2149 is in neither the
+  repository nor the `quenching` branch, so the autonomous numbers above have no "before".
+- **The simple trajectory is unmeasured**: it needs a live session where a human reads the announcement
+  and the session composes everything, with the questions asked (none by design) and the stops counted.
+- **The complex trajectory is unmeasured**: it needs a human answering batched questions and choosing
+  refinements, with the cache drop after each wait read by `session cache`. Both need live sessions and
+  paid spend, and neither can be produced inside an orchestrated spawn.
+
+DeepSeek through the gateway stays in tokens, with no price.
 
 ## What a delegated executor costs
 

@@ -37,6 +37,8 @@ ROUTER_PATH = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(
 # mounts instead of hiding a shorthand. `all` and `specs` are the two forms that predate the table.
 MOUNTS = {"core": ("specs", "git", "components")}
 SERVER_OWNED = {"root", "json", "help", "version"}
+# Destinations that carry a spec id: published as string|integer, an integer coerced to its string.
+SPEC_ID_DESTS = {"spec", "spec_id", "claim_id"}
 # A pillar whose `--root` names something narrower than the workspace (`components`: the surface
 # root holding commands/) gets no `--root`; the workspace reaches it as the cwd, from which its own
 # default discovery (nearest `.claude/` upward) runs.
@@ -213,6 +215,8 @@ def _property(action: argparse.Action) -> dict:
         item = _scalar(action)
         if action.choices:
             item = {**item, "enum": list(action.choices)}
+        elif action.dest in SPEC_ID_DESTS and item["type"] == "string":
+            item = {"type": ["string", "integer"]}
         prop = {"type": "array", "items": item} if _many(action) else item
     if action.help and action.help is not argparse.SUPPRESS:
         prop["description"] = action.help % {"default": action.default} \
@@ -323,7 +327,10 @@ def _check(action: argparse.Action, value):
     if kind == "array" and (not isinstance(value, list) or not value):
         raise ToolArgs(f"`{action.dest}` must be a non-empty array")
     for one in values:
-        if item["type"] == "boolean":
+        if item["type"] == ["string", "integer"]:
+            ok = (isinstance(one, int) and not isinstance(one, bool)) or (
+                isinstance(one, str) and "\0" not in one and "\n" not in one)
+        elif item["type"] == "boolean":
             ok = isinstance(one, bool)
         elif item["type"] == "integer":
             ok = isinstance(one, int) and not isinstance(one, bool)
@@ -366,6 +373,8 @@ def argv(row: Row, args: dict, root: str) -> tuple[list[str], bool]:
             continue
         value = args[dest]
         _check(action, value)
+        if action.dest in SPEC_ID_DESTS and isinstance(value, int):
+            value = str(value)
         if not action.option_strings:
             if skipped:
                 raise ToolArgs(f"`{dest}` needs `{skipped}` first")
