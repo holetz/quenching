@@ -13,6 +13,7 @@ import io
 import json
 import os
 import pathlib
+import subprocess
 import sys
 import tempfile
 import unittest
@@ -111,7 +112,6 @@ class Upgrade(unittest.TestCase):
         tmp = tempfile.TemporaryDirectory()
         self.addCleanup(tmp.cleanup)
         self.target = pathlib.Path(tmp.name)
-        import subprocess
         subprocess.run(["git", "-C", str(self.target), "init", "-q"], check=True,
                        capture_output=True)
         env = mock.patch.dict(os.environ, {"XDG_CONFIG_HOME": str(self.target / ".xdg"),

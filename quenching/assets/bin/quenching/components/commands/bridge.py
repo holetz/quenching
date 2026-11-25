@@ -9,6 +9,10 @@ file and the Claude Code version the bridge was verified against; freshness is a
 against it.
 
 A `.claude/skills/<name>/` the manifest does not list is the human's, and is never overwritten.
+
+A skill `.agents/.quenching-deploy.json` declares under `skills` is the deploy's: `cq deploy` writes
+its `.claude` copy and hashes both in its own manifest, and this verb skips the name in its expected
+set, its conflicts and its orphans.
 """
 from __future__ import annotations
 
