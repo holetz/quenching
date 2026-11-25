@@ -273,6 +273,49 @@ class TheDeploy(unittest.TestCase):
         self.assertEqual(0, code)
         self.assertIn("// user edit", path.read_text(encoding="utf-8"))
 
+    def deploy_human(self, *argv):
+        out = io.StringIO()
+        with contextlib.redirect_stdout(out), contextlib.redirect_stderr(io.StringIO()):
+            code = deploy_main(["--target", str(self.target), *argv])
+        return code, out.getvalue()
+
+    def test_a_vscode_workspace_without_the_key_gets_a_suggestion(self):
+        (self.target / ".vscode").mkdir()
+        code, payload = self.deploy("--modules", "specs", "--check")
+        self.assertEqual(1, code)
+        self.assertTrue(any("shared.workspace.vscode" in line
+                            for line in payload["suggestions"]), payload["suggestions"])
+        code, human = self.deploy_human("--modules", "specs", "--check")
+        self.assertIn("suggestion:", human)
+
+    def test_no_vscode_workspace_means_no_suggestion(self):
+        code, payload = self.deploy("--modules", "specs", "--check")
+        self.assertEqual([], payload["suggestions"])
+
+    def test_a_declared_partial_file_is_suggested_and_never_rewritten(self):
+        self.config({"shared": {"workspace": {"vscode": True}}})
+        partial = json.dumps({"chat.agent.maxRequests": 25})
+        path = self.target / ".vscode" / "settings.json"
+        path.parent.mkdir()
+        path.write_text(partial, encoding="utf-8")
+        code, payload = self.deploy("--modules", "specs", "--check")
+        self.assertTrue(any("chat.agent.maxRequests >= 100" in line
+                            for line in payload["suggestions"]), payload["suggestions"])
+        code, payload = self.deploy("--modules", "specs", "--write")
+        self.assertEqual(0, code)
+        self.assertEqual(partial, path.read_text(encoding="utf-8"))
+
+    def test_an_unreadable_file_is_a_suggestion_and_is_left_alone(self):
+        path = self.target / ".vscode" / "settings.json"
+        path.parent.mkdir()
+        path.write_text("{ nope", encoding="utf-8")
+        code, payload = self.deploy("--modules", "specs", "--check")
+        self.assertTrue(any("could not be read" in line
+                            for line in payload["suggestions"]), payload["suggestions"])
+        code, payload = self.deploy("--modules", "specs", "--write")
+        self.assertEqual(0, code)
+        self.assertEqual("{ nope", path.read_text(encoding="utf-8"))
+
     def test_a_malformed_workspace_block_is_refused_before_any_write(self):
         self.config({"shared": {"workspace": {"vscode": "yes"}}})
         code, payload = self.deploy("--modules", "specs", "--write")
