@@ -554,6 +554,11 @@ def _create(args) -> int:
                                      f"{stamp['message']}")
             return FINDINGS
     payload["specs"] = specs = sync_store(find_repo_root(os.getcwd()))
+    if args.spec and not specs["ok"]:   # the record lives only in this clone until the sync lands
+        payload.update(ok=False, reason="store-not-synced", message=specs.get("message", ""))
+        emit(args.json, payload, f"PR #{number}: {url} opened and `pr` record stamped; "
+                                 f"spec store not synced: {specs.get('message', '')}")
+        return FINDINGS
     notes = "".join(f"\nfinding: {f['message']}" for f in payload.get("findings", []))
     emit(args.json, payload, f"PR #{number}: {url}" + _specs_note(specs) + notes)
     return OK

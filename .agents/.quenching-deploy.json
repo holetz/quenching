@@ -199,7 +199,7 @@
 
     ".agents/quenching/assets/bin/quenching/git/prune.py": "2674ba0be750de026c1438cd6b500cc11990fdb1820c786d48ae8666ffa05863",
 
-    ".agents/quenching/assets/bin/quenching/git/pull.py": "f2e489b14b7a8c60b6c229b387f9a5a020af2942795ed074805f5a4fddc4734e",
+    ".agents/quenching/assets/bin/quenching/git/pull.py": "b85c2bede56c23d18d914608d19e02f4a8d09275a463aea143134cd6bd68828c",
 
     ".agents/quenching/assets/bin/quenching/git/push.py": "3a7e189f8027c17ac3a2226c1bf412d6158728e4337ae713fa5b7e7ff7be4c9f",
 
@@ -743,7 +743,7 @@
 
     ".agents/skills/quenching-git/references/merge.md": "474830576e5eecee9fee4936f6927f3a6ebb0ab0825e7fb69fbb3655d4d4ce62",
 
-    ".agents/skills/quenching-git/references/pr-create.md": "c3b593f838820dfd2e35456867dc0316190125cb17eb00da7b9cf7c559cb9ed7",
+    ".agents/skills/quenching-git/references/pr-create.md": "08a2ca4b324cf75314fdd83a5b9cae4286a4d32964302cfd2258fe768bbd22cd",
 
     ".agents/skills/quenching-git/references/pr-review.md": "ad2346afd5e5126a2b0c8bc50afed70564bf731a5f7d1ec99a56752fb18b6d0a",
 
@@ -895,7 +895,7 @@
 
     ".claude/agents/quenching-spec-verifier.md": "b7e5499c50acd4d03f85b6290a1886f0779d95715c6116222279b8946f68484b",
 
-    ".claude/skills/.generated-files.json": "a47cf455f647b3abeb00c96a1a45dc28d1bda4b3290016572da4fbeb14208dcc",
+    ".claude/skills/.generated-files.json": "228fdf7023e90047e736d2b659ed2bd7dcc933fe2cf8ec29d90038c4b786fe16",
 
     ".claude/skills/commands-tighten/SKILL.md": "41574a4774e70deffd6c8c6766a1a24581d579d1f7247b68a93ba86b39b2019b",
 
@@ -953,7 +953,7 @@
 
     ".claude/skills/quenching-git/references/merge.md": "474830576e5eecee9fee4936f6927f3a6ebb0ab0825e7fb69fbb3655d4d4ce62",
 
-    ".claude/skills/quenching-git/references/pr-create.md": "c3b593f838820dfd2e35456867dc0316190125cb17eb00da7b9cf7c559cb9ed7",
+    ".claude/skills/quenching-git/references/pr-create.md": "08a2ca4b324cf75314fdd83a5b9cae4286a4d32964302cfd2258fe768bbd22cd",
 
     ".claude/skills/quenching-git/references/pr-review.md": "ad2346afd5e5126a2b0c8bc50afed70564bf731a5f7d1ec99a56752fb18b6d0a",
 
