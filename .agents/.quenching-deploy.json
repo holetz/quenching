@@ -699,7 +699,7 @@
 
     ".agents/skills/quenching-specs/references/board.md": "f23f25a70443e60cb15174e2763370280b57c7396d5a4cf424b5319a867017dc",
 
-    ".agents/skills/quenching-specs/references/conclude.md": "c2948e3cc353a22d06f0f293611060e907745a4617822a800294ac8f5a7e647d",
+    ".agents/skills/quenching-specs/references/conclude.md": "b1603d8781a8e48a9b14717cf73aed5881af5659f01edde1a64e5d0f6f6a9d4b",
 
     ".agents/skills/quenching-specs/references/create.md": "06a34793ccf9491e678a6e236c645628cb274b3424e669cf9512951f5dac250b",
 
@@ -727,7 +727,7 @@
 
     ".claude/agents/quenching-spec-verifier.md": "b7e5499c50acd4d03f85b6290a1886f0779d95715c6116222279b8946f68484b",
 
-    ".claude/skills/.generated-files.json": "60101d96bd6af2e9111b3e72497fe7ef22347415f93ea09de45257447dc8db68",
+    ".claude/skills/.generated-files.json": "89e8871fb4890c0016ab54b2cd7aa0f669b7d50529cf2995511e0d76246a0c99",
 
     ".claude/skills/commands-tighten/SKILL.md": "41574a4774e70deffd6c8c6766a1a24581d579d1f7247b68a93ba86b39b2019b",
 
@@ -901,7 +901,7 @@
 
     ".claude/skills/quenching-specs/references/board.md": "f23f25a70443e60cb15174e2763370280b57c7396d5a4cf424b5319a867017dc",
 
-    ".claude/skills/quenching-specs/references/conclude.md": "c2948e3cc353a22d06f0f293611060e907745a4617822a800294ac8f5a7e647d",
+    ".claude/skills/quenching-specs/references/conclude.md": "b1603d8781a8e48a9b14717cf73aed5881af5659f01edde1a64e5d0f6f6a9d4b",
 
     ".claude/skills/quenching-specs/references/create.md": "06a34793ccf9491e678a6e236c645628cb274b3424e669cf9512951f5dac250b",
 
