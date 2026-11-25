@@ -74,5 +74,19 @@ class TheHookStandard(unittest.TestCase):
         self.assertIn("it cuts nothing and takes no slot", body)
 
 
+class TheSetupStandard(unittest.TestCase):
+    def test_adopt_is_the_third_preparation_entry_point(self):
+        body = text("docs/standards/workflows/worktree-setup.md")
+        self.assertIn("cq git worktree adopt", body)
+        self.assertIn("once per worktree the harness cut", body)
+        self.assertIn("no second entry point outside that set", body)
+
+    def test_the_adopted_tree_shares_the_declared_regenerable_directories(self):
+        body = text("docs/standards/workflows/worktree-setup.md")
+        self.assertIn("shared.regenerablePaths", body)
+        self.assertIn("shares the primary's", body)
+        self.assertIn("never replaced", body)
+
+
 if __name__ == "__main__":
     unittest.main()
