@@ -221,7 +221,6 @@ def _listings(db: sqlite3.Connection, tables: set, sessions: dict, directory: Pa
     return rows
 
 
-
 def copilot_requests(home: Path, directory: Path | None, anomalies: list) -> tuple:
     """Requests in scope and the anomalies of the read, from the client's ledger and event log.
 
@@ -232,7 +231,7 @@ def copilot_requests(home: Path, directory: Path | None, anomalies: list) -> tup
     known = copilot.sessions(home)
     keep = [sid for sid, row in known.items() if directory is None or copilot.in_scope(row, directory)]
     if directory is not None and not keep:
-        return [], anomalies          # the client's store holds no session for what was asked
+        return []                     # the client's store holds no session for what was asked
     by_session, anomalies_read = copilot.requests(home, keep)
     anomalies.extend(anomalies_read)
     reqs: list = []
@@ -248,6 +247,7 @@ def copilot_requests(home: Path, directory: Path | None, anomalies: list) -> tup
                             agent, request.model, request.at, request.fresh, request.cache_read,
                             request.cache_write, 0, 0, request.output, host))
     return reqs, anomalies
+
 
 def _median(values: list) -> int | None:
     import statistics        # the config registry reaches this module; keep it off the import path

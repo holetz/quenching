@@ -236,13 +236,13 @@
 
     ".agents/quenching/assets/bin/quenching/session/cachebar.py": "fc2585e0a91ae2527e9a8313fd3553983706dd19441247751df92ddf8c972721",
 
-    ".agents/quenching/assets/bin/quenching/session/commands/cache.py": "10776b6bb2de399f40ad79e8ea78278d001cb16e4ad257832fd769a3d616f769",
+    ".agents/quenching/assets/bin/quenching/session/commands/cache.py": "dac271d4a975cc23aebac06af99381d362b3c1b107ef492ae195c359a31a2116",
 
     ".agents/quenching/assets/bin/quenching/session/commands/cli.py": "916bf9f07c301ed3aa8707e3d8b6d32214472fdd50e0f46f9957bc79a5d901fc",
 
     ".agents/quenching/assets/bin/quenching/session/commands/context.py": "199377bebf3df2af3411f510395103ae4580200d99f20d985ca790bc8789722f",
 
-    ".agents/quenching/assets/bin/quenching/session/commands/cost.py": "529d768cae0690db545f44c58925bb7d6b5535840d672f66cfae3d0a32a66f8e",
+    ".agents/quenching/assets/bin/quenching/session/commands/cost.py": "0dac6beb2348e23c0bb4ef3dcac7f457c68dd90f0a02bfce45b6bf0f7f4ab510",
 
     ".agents/quenching/assets/bin/quenching/session/commands/digest.py": "9f73a1cf6b8c21a5dcfd993d8b5b18ebc067db1a87de4e3062be2f1b622e70d1",
 

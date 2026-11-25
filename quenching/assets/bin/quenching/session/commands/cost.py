@@ -310,8 +310,8 @@ def _copilot_asked(args) -> bool:
     """Whether this call is about the Copilot store: a home named, its session id, or the running client.
 
     The client exports `COPILOT_HOME` to every child, so that is the default source — but only when
-    its store has a session for this checkout: a repository with no Copilot session recorded keeps
-    answering from Claude, which is what a test running under a Copilot shell expects."""
+    its store has a session for this checkout: a client that never opened this repository keeps
+    answering from Claude, which is the session the caller meant."""
     from quenching.session import copilot
     if getattr(args, "copilot_home", None):
         return True
@@ -449,6 +449,7 @@ def _cost_copilot(args) -> int:
     if getattr(args, "usd", False):
         price_rows(out)
     return _print(out, args, how)
+
 
 def cmd_cost(args) -> int:
     from quenching.session.opencode_cost import wants_opencode_cost  # circular at module level
