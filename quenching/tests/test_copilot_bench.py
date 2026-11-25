@@ -38,6 +38,15 @@ class TheReader(unittest.TestCase):
         self.assertEqual(["**/.agents/quenching/assets/**"], vscode["searchExclude"])
         self.assertEqual(["chat.agent.sandbox"], vscode["sandbox"])
 
+    def test_the_access_report_is_measured_alongside_the_clients(self):
+        clients = copilot_bench.measure_clients(FIXTURE)
+        self.assertEqual("present", clients["access"]["family"]["state"])
+        self.assertIn("copilotCli", clients["access"])
+        with tempfile.TemporaryDirectory() as empty:
+            rows = copilot_bench.bench(pathlib.Path(empty), "target")["hypotheses"]
+        h12 = next(row for row in rows if row["id"] == "H12")
+        self.assertIn("regra(s)", h12["observation"])
+
     def test_the_agent_frontmatter_carries_the_fields_a_client_discovers(self):
         row = copilot_bench.measure_clients(FIXTURE)["agents"]["github"]["rows"][0]
         self.assertTrue(row["description"])
