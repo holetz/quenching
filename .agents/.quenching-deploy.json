@@ -145,7 +145,7 @@
 
     ".agents/quenching/assets/bin/quenching/git/__init__.py": "8bc51f3f279e9269b53e485515e81d003684f7bb22ee558502f5449db2744e19",
 
-    ".agents/quenching/assets/bin/quenching/git/audit.py": "98cc8071691830eed9a94c16f0431db520358acc2fca90419a3e0a5a67fff210",
+    ".agents/quenching/assets/bin/quenching/git/audit.py": "559437c4cdb137f479c23526026e3ffdd54778057cccf332ac19f75a5691bf2c",
 
     ".agents/quenching/assets/bin/quenching/git/azure_pull.py": "87ab90ff25f82edb88e734deb86e2ab0d8c138cc1f01cd2619c8bc0a8f79026e",
 

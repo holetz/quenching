@@ -1582,6 +1582,52 @@ class AuditGenerated(RepoCase):
                                           "integrations/other/commands/" + "z.md": "z\n"}), [])
 
 
+class AuditConcluded(RepoCase):
+    """`concluded`: the changed paths only the conclude's own `<branch>: conclude …` commits touched."""
+
+    def setUp(self):
+        super().setUp()
+        self.wt = os.path.join(self.tmp, "wt")
+        _run(self.repo, "worktree", "add", "-q", "-b", "spec/1", self.wt)
+        _run(self.wt, "config", "user.email", "test@example.com")
+        _run(self.wt, "config", "user.name", "Test")
+
+    def _commit(self, rel: str, text: str, msg: str):
+        path = pathlib.Path(self.wt, rel)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(text, encoding="utf-8")
+        _run(self.wt, "add", rel)
+        _run(self.wt, "commit", "-q", "-m", msg)
+
+    def _concluded(self) -> list[str]:
+        payload = _cq_json(self.repo, "audit", "--worktree", self.wt, "--base", "main",
+                           "--branch", "spec/1")
+        self.assertTrue(payload["complete"], payload["errors"])
+        return payload["concluded"]
+
+    def test_a_path_only_the_conclude_touched_is_concluded(self):
+        self._commit("task.txt", "t\n", "spec/1: 1.1 the task")
+        self._commit("docs/emergent.md", "d\n", "spec/1: conclude docs: the revealed rule")
+        self.assertEqual(self._concluded(), ["docs/emergent.md"])
+
+    def test_a_path_a_task_also_touched_is_not_concluded(self):
+        self._commit("task.txt", "t\n", "spec/1: 1.1 the task")
+        self._commit("task.txt", "fixed\n", "spec/1: conclude review: fix the task")
+        self.assertEqual(self._concluded(), [])
+
+    def test_another_branchs_conclude_subject_is_not_concluded(self):
+        self._commit("x.txt", "x\n", "spec/2: conclude docs: not this branch")
+        self.assertEqual(self._concluded(), [])
+
+    def test_a_merge_commit_is_not_read_as_a_conclude_commit(self):
+        self._commit("task.txt", "t\n", "spec/1: 1.1 the task")
+        pathlib.Path(self.repo, "base.txt").write_text("b\n", encoding="utf-8")
+        _run(self.repo, "add", "base.txt")
+        _run(self.repo, "commit", "-q", "-m", "base moved")
+        _run(self.wt, "merge", "-q", "--no-edit", "-m", "spec/1: conclude merge main", "main")
+        self.assertEqual(self._concluded(), [])
+
+
 class AuditRelocation(RepoCase):
     """`grants` and `lowered` accept a relocation only on proof: a byte-for-byte copy of its source, or
     the namespace rewrite the BASE manifest assigns. A grant added, a source-less surface and a head the
