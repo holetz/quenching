@@ -13,7 +13,6 @@ try:
 except ModuleNotFoundError:  # package-qualified unittest invocation from the repository root
     sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
     import _paths  # noqa: F401
-from quenching.codex import eligible
 from quenching.common.config import find_repo_root
 from quenching.common.paths import escapes_repo, native_path, repo_path
 
@@ -77,9 +76,6 @@ class RepoPath(unittest.TestCase):
         self.assertFalse(escapes_repo("..x/a"))
         self.assertFalse(escapes_repo("a/.."))
         self.assertFalse(escapes_repo("."))
-
-    def test_the_codex_pillar_compares_through_the_same_function(self):
-        self.assertIs(eligible.repo_path, repo_path)
 
 
 if __name__ == "__main__":

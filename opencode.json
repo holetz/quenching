@@ -13,9 +13,6 @@
       "enabled": true
     }
   },
-  "experimental": {
-    "subagent_depth": 4
-  },
   "permission": {
     "external_directory": {
       "~/Projetos/quenching-slot-*": "allow",
@@ -28,5 +25,8 @@
       "python3 .agents/quenching/bin/cq *": "allow",
       "python .agents/quenching/bin/cq *": "allow"
     }
+  },
+  "experimental": {
+    "subagent_depth": 4
   }
 }

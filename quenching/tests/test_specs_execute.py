@@ -267,18 +267,6 @@ class TaskExecutionContractTests(unittest.TestCase):
         self.assertNotIn("cq specs section", head)
         self.assertNotIn("Bash(cq specs show:*), Bash(cq specs show:*)", head)
 
-    def test_verifier_codex_check_reads_the_effective_executor_from_the_audit(self):
-        verifier = " ".join(
-            (ROOT / "quenching/agents/spec-verifier.md").read_text(encoding="utf-8").split())
-
-        self.assertIn("Checks 2 to 5, 7, 9 and 11 read ONE payload", verifier)
-        self.assertIn("read the audit payload's `codexExecutor`, the effective "
-                      "`shared.codex.executor.enabled` with every config layer merged", verifier)
-        self.assertIn("Never decide it from `.agents/quenching.json` alone.", verifier)
-        self.assertNotIn("`Read` the worktree's `.agents/quenching.json`", verifier)
-        # the effective value comes through `cq git audit`: no `cq config` grant is added
-        self.assertNotIn("cq config", verifier.split("---")[1])
-
     def test_worker_budget_is_a_size_estimate_not_a_stop(self):
         runner = " ".join(RUNNER.read_text(encoding="utf-8").split())
 

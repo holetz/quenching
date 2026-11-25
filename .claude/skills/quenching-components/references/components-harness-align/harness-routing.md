@@ -128,7 +128,7 @@ A root `CLAUDE.md` that carries its own instructions is consolidated into `AGENT
 **Fact, and the version it was verified on.** the host 2.1.312 (2026-10-28) reads `AGENTS.md`
 directly when there is no `CLAUDE.md`/`CLAUDE.local.md` in the working directory or above it
 (default `claude-md-or-agents-md`, added in 2.1.277). With both files side by side, only
-`CLAUDE.md` loads unless the setting is `claude-md-and-agents-md`. OpenCode 1.18.35 and Codex read
+`CLAUDE.md` loads unless the setting is `claude-md-and-agents-md`. OpenCode 1.18.35 reads
 `AGENTS.md`. A host before 2.1.277 still needs the one-line `CLAUDE.md` import; that is a legacy
 fallback, not the conformant layout.
 

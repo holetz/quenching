@@ -78,7 +78,7 @@ class TheRegistryCoversTheReaders(unittest.TestCase):
         for key in specs - shared:
             self.assertTrue(covered(f"specs.{key}"), key)
         for key in shared | {"regenerablePaths", "contextBudgets", "okfValidate", "workHost",
-                             "worktreeSlots", "autonomy", "codex", "gitConventions"}:
+                             "worktreeSlots", "autonomy", "gitConventions"}:
             self.assertTrue(any(k.startswith(f"shared.{key}") for k in REGISTRY), key)
         for key in GIT_CONVENTION_KEYS:
             self.assertIn(f"shared.gitConventions.{key}", REGISTRY)

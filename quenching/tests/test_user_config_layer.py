@@ -37,10 +37,10 @@ class UserConfigLayer(unittest.TestCase):
 
     def test_repository_wins_key_by_key(self):
         self.user.write_text(json.dumps({
-            "shared": {"codex": {"timeoutSeconds": 30}, "worktreeSetup": "make user"}}))
-        self._repo({"shared": {"codex": {"timeoutSeconds": 60}}})
+            "shared": {"worktreeSlots": {"max": 30}, "worktreeSetup": "make user"}}))
+        self._repo({"shared": {"worktreeSlots": {"max": 60}}})
         shared = namespace(self._load(), "shared")
-        self.assertEqual(shared["codex"], {"timeoutSeconds": 60})   # replaced whole, not merged
+        self.assertEqual(shared["worktreeSlots"], {"max": 60})   # replaced whole, not merged
         self.assertEqual(shared["worktreeSetup"], "make user")       # filled from the user
 
     def test_user_layer_alone_and_absent(self):

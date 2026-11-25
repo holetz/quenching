@@ -17,7 +17,6 @@ try:
 except ModuleNotFoundError:
     sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
     import _paths  # noqa: F401
-from quenching.codex import config as codex_config
 from quenching.common import doctor
 from quenching.config import main as config_main
 from quenching.config import autonomy, host, seed
@@ -37,7 +36,7 @@ class SeedDocument(unittest.TestCase):
     def test_seed_covers_every_default_tree(self):
         doc = seed.seed_document(str(self.repo))
         shared = doc["shared"]
-        self.assertEqual(codex_config.DEFAULTS, shared["codex"])
+        self.assertNotIn("codex", shared)
         self.assertEqual(autonomy.DEFAULTS, shared["autonomy"])
         self.assertEqual(context_mod.BUDGETS, shared["contextBudgets"])
         self.assertEqual({"warnAsError", "ignoreGlobs"}, set(shared["okfValidate"]))
@@ -61,27 +60,26 @@ class SeedDocument(unittest.TestCase):
         root = str(self.repo)
         self.assertEqual([], autonomy.coerce(seed.seed_document(root)["shared"]["autonomy"])[1])
         self.assertEqual([], host.load_settings(root)[1])
-        self.assertEqual([], codex_config.load_settings(root)[1])
         for role in context_mod.BUDGETS:
             self.assertEqual(context_mod.BUDGETS[role], context_mod.effective_budgets(root)[role])
 
     def test_seed_is_a_copy_not_the_owner_dict(self):
-        seed.seed_document(str(self.repo))["shared"]["codex"]["executor"]["enabled"] = True
-        self.assertFalse(codex_config.DEFAULTS["executor"]["enabled"])
+        seed.seed_document(str(self.repo))["shared"]["autonomy"]["merge"] = "changed"
+        self.assertNotEqual("changed", autonomy.DEFAULTS["merge"])
 
     def test_missing_keys_lists_exactly_the_deleted_leaves(self):
         doc = seed.seed_document(str(self.repo))
         self.assertEqual([], seed.missing_keys(doc, str(self.repo)))
         cut = copy.deepcopy(doc)
-        del cut["shared"]["codex"]["executor"]["reasoningEffort"]
+        del cut["shared"]["autonomy"]["merge"]
         del cut["specs"]["chat"]
-        self.assertEqual(["shared.codex.executor.reasoningEffort", "specs.chat.budgetUsd",
+        self.assertEqual(["shared.autonomy.merge", "specs.chat.budgetUsd",
                           "specs.chat.model", "specs.chat.timeoutSeconds"],
                          seed.missing_keys(cut, str(self.repo)))
 
     def test_extra_keys_are_not_reported(self):
         doc = seed.seed_document(str(self.repo))
-        doc["shared"]["codex"]["unknown"] = 1
+        doc["shared"]["autonomy"]["unknown"] = 1
         self.assertEqual([], seed.missing_keys(doc, str(self.repo)))
 
 
@@ -168,7 +166,7 @@ class DoctorReport(unittest.TestCase):
         (self.repo / ".claude" / "quenching.json").write_text(json.dumps({"shared": {}}))
         report = doctor.config_report(str(self.repo))
         self.assertTrue(report["present"])
-        self.assertIn("shared.codex.executor.reasoningEffort", report["missing"])
+        self.assertIn("shared.autonomy.merge", report["missing"])
         self.assertIn("missing", doctor._config_line(report))
 
     def test_a_module_without_the_seed_reports_nothing(self):
