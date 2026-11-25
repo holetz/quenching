@@ -95,6 +95,26 @@ class TheReader(unittest.TestCase):
             self.assertRegex(limit["date"], r"^\d{4}-\d{2}-\d{2}$")
 
 
+class TheNativeProjection(unittest.TestCase):
+    """The bench measures `.github/agents` in the native format when the repository projects it."""
+
+    def test_this_repository_measures_five_native_agents(self):
+        clients = copilot_bench.measure_clients(REPO_ROOT)
+        rows = clients["agents"]["github"]["rows"]
+        self.assertEqual(5, len(rows), rows)
+        for row in rows:
+            self.assertTrue(row["description"], row)
+            self.assertTrue(copilot_bench.native_agent(row), row)
+            self.assertNotIn("haiku", row["model"].lower())
+
+    def test_h2_names_both_formats(self):
+        with tempfile.TemporaryDirectory() as empty:
+            rows = copilot_bench.bench(pathlib.Path(empty), "target")["hypotheses"]
+        h2 = next(row for row in rows if row["id"] == "H2")
+        self.assertIn(".github/agents", h2["capability"])
+        self.assertIn(".github/agents", h2["artifact"])
+
+
 class TheDisposableTarget(unittest.TestCase):
     """The probe against a target the deploy really installed: the user's surface, not the source."""
 

@@ -16,8 +16,11 @@ maintainer: quenching
 <!-- rules -->
 
 A **subagent** is a delegation: work runs in a fresh context and only its result returns.
-One definition per file at `.claude/agents/<name>.md`, minted by `/quenching-components agent-new` under
-one plan → one OK, inventoried (report-only) by `/quenching-components align`.
+A target's own definition lives in one file at `.claude/agents/<name>.md`, minted by
+`/quenching-components agent-new` under one plan → one OK, inventoried (report-only) by
+`/quenching-components align`. The plugin's five agents are one source in `quenching/agents/*.md`
+with three generated projections; a target's own agent is never projected (§The client
+projections).
 
 ## When work is a subagent — and when it is not
 
@@ -51,6 +54,42 @@ and a command may invoke an agent as one step.
   per-run cost.
 - **The body is a system prompt, in second person** ("You are…") — a command body is
   imperative; the two voices never mix.
+
+## The client projections
+
+A plugin agent is ONE declaration in `quenching/agents/*.md` and three generated files:
+`.claude/agents/quenching-<name>.md` (the Claude format, with `--harness claude`),
+`.opencode/agents/quenching-<name>.md` (`mode: subagent`, with `--harness opencode`) and, when the
+target declares `shared.projections: ["github"]`, `.github/agents/quenching-<name>.agent.md` (the
+Copilot custom-agent format). `cq deploy` writes all three from the same bytes; none is edited by
+hand, and `cq deploy --check` owns the drift.
+
+The Copilot projection maps the grant the Claude one already carries, never the raw source:
+`Read` → `read`, `Grep`/`Glob` → `search`, `Edit`/`Write` → `edit`, `WebFetch`/`WebSearch` → `web`,
+`TodoWrite` → `todo`, `Agent`/`Task` → `agent`, every `Bash` grant → `execute`, and
+`mcp__quenching__<tool>` → `quenching/<tool>` (`quenching/*` for the whole server). `Skill` has no
+Copilot alias and is dropped; a head with no mapping refuses the deploy (`ct-deploy-source`), so a
+capability never disappears in silence. The mount filters the names the same way: a pillar the
+server does not publish declares no tool, and a narrowed deploy keeps the shell grant of a verb
+whose tool the mount hides (`mcp/coverage.py`).
+
+The model band projects too. The source's `model`/`effort` are a band, not a client id: `opus` and
+`sonnet` map to an ordered list of the client's models, strongest first, written as `model` with
+`effort` as `reasoning-effort`. The small tier never enters a plugin agent's band: `haiku` refuses
+(`ct-deploy-source`), because judgment never descends and `import-memory` stays never-`haiku`
+(ADR 0014). The list is dated client data — one line per client change, like the bench's
+`THRESHOLDS`.
+
+`include-custom-instructions: true` carries the repository's `AGENTS.md` into the Copilot
+subagent's context, and `target: github-copilot` interprets the file with the Copilot schema. No
+`.github/copilot-instructions.md` is generated: the root `AGENTS.md` is already the shared
+instruction format.
+
+**The projection is opt-in by the repository.** `shared.projections: ["github"]` writes
+`.github/agents/`; without the key a target gets no `.github/` file, so a repository without Copilot
+carries no second register. An unknown value refuses with `ct-deploy-projection` before anything is
+written, and each projection is listed in the deploy manifest, so removing the key removes the files
+on the next `--write`.
 
 ## The verifier shape
 
@@ -91,9 +130,11 @@ three facts beside the claim it supports.
 ## Plugin-shipped agents
 
 The plugin ships exactly five agents in `quenching/agents/`, all prefixed `spec-` (as opposed
-to a target's own `.claude/agents/`). Git (branch, commit, PR, merge, cleanup) and decomposition into
-slices are flows of their verticals, not agents: `/quenching-specs develop` proposes and captures
-the slices in the main session, and the orchestrator publishes after the verifier's PASS.
+to a target's own `.claude/agents/`). Each is one declaration with the three projections above; a
+target's own agent stays Claude's interface and is never projected. Git (branch, commit, PR, merge,
+cleanup) and decomposition into slices are flows of their verticals, not agents:
+`/quenching-specs develop` proposes and captures the slices in the main session, and the
+orchestrator publishes after the verifier's PASS.
 
 | Agent | Pin | Role |
 |---|---|---|
@@ -105,7 +146,8 @@ the slices in the main session, and the orchestrator publishes after the verifie
 
 Rules:
 
-- One file per agent, `name` matching the filename, `description` within the command cap.
+- One source file per plugin agent, `name` matching the filename, `description` within the command
+  cap; the three projections are generated from it and are never edited.
 - `tools` is the narrowest allowlist: an orchestrator holds no `Edit`/`Write`, a verifier and a
   scout are read-only, and delegation is limited to the plugin's own `quenching-specs:spec-*` agent types.
 - The shared protocol lives once, in the orchestrator body, which the cache reuses across sessions;

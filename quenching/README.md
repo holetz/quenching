@@ -568,14 +568,21 @@ keeps its modules, while `--modules core` narrows a wider install and deletes th
 
 Deploy writes `AGENTS.md` and `.agents/quenching.json` only when absent, plus the generated
 `.agents/skills/`, `.agents/quenching/` (with the target's own `.agents/quenching/bin/cq`), the
-`.claude/skills/` bridge and, per selected harness, the Claude and OpenCode subagents. It records
-what it owns in `.agents/.quenching-deploy.json`. `CLAUDE.md` is not created. Deploy installs the
-surface only: the target's `/quenching-knowledge align` installs `/docs/` and converges the fronts.
+`.claude/skills/` bridge, per selected harness the Claude and OpenCode subagents, and — when the
+repository declares `shared.projections: ["github"]` — the Copilot subagents under
+`.github/agents/`, all from the same `quenching/agents/*.md`. It records what it owns in
+`.agents/.quenching-deploy.json`. `CLAUDE.md` is not created. Deploy installs the surface only: the
+target's `/quenching-knowledge align` installs `/docs/` and converges the fronts.
 The full contract, including the surface translation, is [deploy-mode.md](../docs/standards/architecture/deploy-mode.md).
 
 **The GitHub Copilot harness reads the `claude` files.** The VS Code Agents window and the Copilot
 CLI read the target's `.claude/settings.json` hooks and its `.mcp.json` as their own, so a Copilot
-session gets the same guards and the `quenching` MCP server with no file of its own. The hook
+session gets the same guards and the `quenching` MCP server with no settings or MCP file of its own.
+For subagents, declare `shared.projections: ["github"]`: the deploy writes
+`.github/agents/quenching-<name>.agent.md`
+from the same five agent sources, with the Copilot tool aliases, the model band and
+`include-custom-instructions: true`, so the repository's `AGENTS.md` reaches the subagent. Without
+the key nothing in `.github/` changes. The hook
 command is one polyglot line that bash, PowerShell and cmd parse alike, started by the repository's
 `shared.mcp.command` prefix (else the Python the deploy finds on the machine, no version pinned; a
 `uv`/`uvx` prefix is replaced by a direct interpreter, for the hooks and the MCP server alike):
