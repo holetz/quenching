@@ -136,15 +136,16 @@ def _with_mcp(value: str, enumerate_all: bool, mount: frozenset[str] | None = No
     return ", ".join([value, *missing]) if missing else value
 
 
-def narrowed(names: list[str]) -> list[str]:
+def narrowed(names: list[str], mount: frozenset[str] | None = None) -> list[str]:
     """Each `Bash(cq <prefix>:*)` replaced by the shell grants its verbs with no MCP tool still
     need (`coverage.cli_residue`), on the same launcher; every other grant, and a prefix that
-    names no verb, kept as is. Never wider than the source: the residue sits under its prefix."""
+    names no verb, kept as is. Never wider than the source: the residue sits under its prefix.
+    A `mount` keeps the shell grant of a pillar the mount hides, so no door closes."""
     from quenching.mcp import coverage
     out: list[str] = []
     for name in names:
         match = CQ_GRANT.match(name)
-        residue = (coverage.cli_residue(tuple((match.group(2) or "").split()))
+        residue = (coverage.cli_residue(tuple((match.group(2) or "").split()), mount)
                    if match else None)
         grants = [name] if residue is None else [
             f"Bash({match.group(1)} {' '.join(path)}:*)" for path in residue]
@@ -160,7 +161,7 @@ def transform_tools(value: str, enumerate_mcp: bool = False, narrow: bool = Fals
     the named tools inside the pillars the mount publishes."""
     value = _with_mcp(value, enumerate_mcp, mount)
     if narrow:
-        value = ", ".join(narrowed(_grant_names(value)))
+        value = ", ".join(narrowed(_grant_names(value), mount))
     value = re.sub(r"Bash\(cq((?:\.cmd)?[^)]*):\*\)",
                    lambda m: f"Bash({CQ}{m.group(1)}:*)", value)
     def target_agent(item: str) -> str:
@@ -264,7 +265,7 @@ def opencode_permissions(tools: str | None, narrow: bool = False,
     if tools is None:
         return {}
     source = _grant_names(tools)
-    names = narrowed(source) if narrow else source
+    names = narrowed(source, mount) if narrow else source
     heads = {name.split("(", 1)[0] for name in names}
     granted: dict[str, str | dict[str, str]] = {}
     granted["edit"] = "allow" if heads & {"Edit", "Write", "NotebookEdit"} else "deny"
