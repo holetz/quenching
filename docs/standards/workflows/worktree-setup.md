@@ -4,10 +4,10 @@ title: Worktree setup contract
 description: The `worktreeSetup` hook prepares a code-isolation worktree from `.agents/quenching.json`; its absence is normal, the declaration is displayed verbatim before it runs, and provider-owned specs never use this hook as persistent storage
 resource: quenching/assets/bin/quenching/specs/**, quenching/skills/quenching-specs/references/execute.md, quenching/skills/quenching-git/references/branch.md, quenching/references/git/isolation.md
 tags: [workflows, specs, worktree, configuration, consent]
-timestamp: 2026-10-30
+timestamp: 2026-11-25
 audience: both
 authority: current
-source: prefer-worktree-isolation plan (task 4.2), revised by remover-backend-local-do-plugin (task 4.6); aligned to the loader by spec 1912 (namespaced example, real specs store); consent rewritten when the worktree became the unasked default (2026-10-30)
+source: prefer-worktree-isolation plan (task 4.2), revised by remover-backend-local-do-plugin (task 4.6); aligned to the loader by spec 1912 (namespaced example, real specs store); consent rewritten when the worktree became the unasked default (2026-10-30); `adopt` entry point by spec 458 (2026-11-25)
 maintainer: quenching
 ---
 
@@ -52,10 +52,12 @@ other command still works. Neither it nor a truncated JSON file is ever raised a
 
 ## Who runs it, and where
 
-The isolation cut runs it — `cq git worktree acquire`, on **every** acquire of a worktree slot,
-immediately after the slot is switched to the spec's branch and linked, with **cwd inside the
-slot** (`cq git worktree add`, the one-off form, runs it once after the cut). The cwd is the entire point: the tree that lacks
-the dependencies is the tree that must install them.
+A verb that prepares a checkout runs it, and only those — `cq git worktree acquire`, on **every**
+acquire of a worktree slot, immediately after the slot is switched to the spec's branch and linked,
+with **cwd inside the slot**; `cq git worktree add`, the one-off form, once after the cut; and
+`cq git worktree adopt`, once per worktree the harness cut, marked in the worktree's own git dir so
+a resumed session does not run it again. The cwd is the entire point: the tree that lacks the
+dependencies is the tree that must install them.
 
 `cq specs` reads the value and never executes it. That split is not ceremony — whether the command
 resolves can only be judged relative to the new worktree, whose path `cq specs` is never told. The
@@ -67,7 +69,8 @@ isolation. `/quenching-specs execute` reports the output and the exit code, and 
 happened. A command whose first token does not resolve is reported as not run, for that reason,
 rather than executed and blamed on the shell.
 
-Only the isolation cut runs it; there is no second entry point for the same hook.
+Only a verb that prepares a checkout runs it; there is no second entry point outside that set
+(`acquire`, `add`, `adopt`). A command that cuts no tree never runs it.
 
 ## The setup must be idempotent
 
@@ -76,6 +79,13 @@ over a tree that already holds the `.venv`, the installed dependencies and whate
 created. **A declared `worktreeSetup` must be safe to run again** — install into an existing
 environment instead of creating it, skip what is already present, and never fail because a
 directory or a link it makes already exists.
+
+**A slot keeps its own caches; an adopted worktree shares the primary's.** `cq git worktree adopt`
+symlinks the declared `shared.regenerablePaths` directories from the primary checkout before the
+setup runs — the declaration is the consent for sharing, and a setup that writes through the link
+changes the primary checkout's copy. That is the price of not rebuilding, and it is why
+`shared.regenerablePaths` is only for disposable content. A path the worktree already holds is
+never replaced, and `--no-setup` skips the command.
 
 `cq specs doctor` warns `sp-config-setup-idempotence` while `worktreeSetup` is declared and the
 target has not said so. The target says so once, after checking its script:

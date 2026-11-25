@@ -35,6 +35,12 @@
             "event": "PreToolUse",
             "matcher": "Bash|PowerShell|bash|powershell",
             "timeout": 5
+          },
+          {
+            "name": "adopt-worktree",
+            "event": "SessionStart",
+            "matcher": "startup|resume|clear|compact",
+            "timeout": 300
           }
         ],
         "mcp": true,

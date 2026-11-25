@@ -1,5 +1,6 @@
 """`cq git worktree link` — materialise the target's declared shared paths; `cq git worktree add`
-— cut a branch from the fetched remote base into a new worktree, then link it. The reusable slots
+— cut a branch from the fetched remote base into a new worktree, then link it; `cq git worktree
+adopt` — prepare a linked worktree the harness cut, without taking a slot. The reusable slots
 (`acquire`, `release`, `slots`) live in `slots.py`.
 
 The store is derived from git's common directory rather than from the checkout path.  Asking
@@ -28,22 +29,25 @@ def _repo_root(cwd: str) -> str:
     return native_path(_git(cwd, "rev-parse", "--show-toplevel").strip())
 
 
-def _declared_paths(config: dict) -> list[str]:
-    values = namespace(config, "shared").get("sharedPaths")
+def _declared_relative(values) -> list[str]:
+    """The repo-relative paths of one declared list, never absolute and never escaping the root."""
     if not isinstance(values, list):
         return []
-
     paths = []
     for value in values:
         if not isinstance(value, str) or not value.strip():
             continue
         relative = os.path.normpath(value.strip())
-        if os.path.isabs(relative) or relative == "." or relative == "..":
+        if os.path.isabs(relative) or relative in (".", ".."):
             continue
         if relative.startswith(f"..{os.sep}"):
             continue
         paths.append(relative)
     return paths
+
+
+def _declared_paths(config: dict) -> list[str]:
+    return _declared_relative(namespace(config, "shared").get("sharedPaths"))
 
 
 def _store_names(repo: str, relative: str) -> tuple[str, str] | None:
@@ -208,6 +212,150 @@ def _setup(path: str) -> dict | None:
     except OSError as exc:
         return {"command": command, "exit": None, "ok": False, "message": str(exc)}
     return {"command": command, "exit": code, "ok": code == 0}
+
+
+SETUP_MARKER = "quenching-setup"
+_GLOB = set("*?[")
+
+
+def _declared_regenerable(config: dict) -> list[str]:
+    """`shared.regenerablePaths` as sanitized repo-relative paths, in declaration order.
+
+    The projection links directories only, so an entry that is a pattern (`*.py[cod]`) is
+    returned as is and skipped by the caller: whether it matches a file or a directory is a
+    question only the filesystem answers, and this verb never copies a file."""
+    return _declared_relative(namespace(config, "shared").get("regenerablePaths"))
+
+
+def _project_regenerable(worktree: str, primary: str, config: dict) -> list[dict]:
+    """Symlink each declared regenerable directory the primary holds and the worktree lacks.
+
+    `shared.regenerablePaths` is the target's own word that the path is disposable and
+    rebuildable, which is exactly what makes sharing it safe. A path already present in the
+    worktree — tracked content, or a tree the harness copied — is never replaced, and a pattern
+    or a file is left to `worktreeSetup`."""
+    results = []
+    for relative in _declared_regenerable(config):
+        source = os.path.join(primary, relative)
+        target = os.path.join(worktree, relative)
+        item = {"path": relative, "source": source}
+        if any(char in relative for char in _GLOB):
+            item["state"] = "pattern"
+        elif os.path.lexists(target):
+            item["state"] = "present"
+        elif not os.path.isdir(source):
+            item["state"] = "absent" if not os.path.lexists(source) else "not-a-directory"
+        else:
+            try:
+                os.makedirs(os.path.dirname(target), exist_ok=True)
+                _make_link(source, target)
+            except OSError as exc:
+                item.update(state="failed", message=str(exc))
+            else:
+                item["state"] = "linked"
+        results.append(item)
+    return results
+
+
+def _adopt_setup(worktree: str, gitdir: str, config: dict, no_setup: bool) -> tuple[dict | None, bool]:
+    """Run the declared `worktreeSetup` once per worktree, or report it already ran.
+
+    The marker lives in the worktree's own git dir, which git removes with the worktree, so a
+    recycled path starts clean. A setup that fails writes no marker: the next session retries
+    the tree it could not finish."""
+    marker = os.path.join(gitdir, SETUP_MARKER)
+    if os.path.isfile(marker):
+        return None, True
+    if no_setup:
+        return None, False
+    result = _setup(worktree)
+    if result is not None and result.get("ok"):
+        try:
+            with open(marker, "w", encoding="utf-8") as stream:
+                stream.write(f"{result.get('command', '')}\n")
+        except OSError:
+            pass
+    return result, False
+
+
+def _adopt_lines(payload: dict) -> list[str]:
+    human = [f"adopted {payload['worktree']} on {payload['branch'] or '(detached)'}",
+             f"base: {payload['base']} — inferred"]
+    for item in payload["shared"]:
+        human.append(f"shared {item['path']}: {item['state']}")
+    linked = [item["path"] for item in payload["regenerable"] if item["state"] == "linked"]
+    human.append("regenerable: " + (", ".join(linked) if linked else "none"))
+    setup = payload.get("setup")
+    if payload.get("alreadySetup"):
+        human.append("setup: already ran in this worktree")
+    elif setup is None:
+        human.append("setup: none declared" if not payload.get("noSetup") else "setup: skipped")
+    else:
+        human.append(f"setup: {setup.get('command')} -> exit {setup.get('exit')}")
+    return human
+
+
+def _adopt(args) -> int:
+    """Prepare a linked worktree the quenching flow did not cut, without taking a slot.
+
+    The harness (VS Code's New Worktree, the Copilot CLI) opens a session with cwd already in
+    its own worktree; adoption is what makes that tree usable — the declared `sharedPaths`, the
+    declared regenerable directories linked from the primary checkout, and the `worktreeSetup`
+    once. A slot is refused: its lock, release and reuse belong to `acquire`/`release`, and a
+    slot already ran its setup."""
+    cwd = native_path(args.path) if getattr(args, "path", None) else os.getcwd()
+    if not os.path.isdir(cwd):
+        return refuse({"code": "git-worktree-not-directory",
+                        "message": f"not a directory: {cwd}"}, args.json)
+    repo = _repo_root(cwd)
+    if not repo:
+        return refuse({"code": "git-worktree-not-repository",
+                        "message": "the current directory is not inside a git repository"},
+                       args.json)
+    from quenching.git.slots import _default_base, _slot_pattern, _worktrees
+    trees = _worktrees(repo)
+    primary = trees[0]["path"] if trees else repo
+    worktree = native_path(repo)
+    if os.path.realpath(worktree) == os.path.realpath(primary):
+        return refuse({"code": "git-worktree-primary",
+                        "message": "the checkout is the repository's primary checkout; there is "
+                                   "no linked worktree to adopt"}, args.json)
+    pattern = _slot_pattern(primary)
+    if (pattern.match(os.path.basename(os.path.realpath(worktree)))
+            and os.path.dirname(os.path.realpath(worktree))
+            == os.path.dirname(os.path.realpath(primary))):
+        return refuse({"code": "git-worktree-slot",
+                        "message": "the checkout is a quenching slot; it belongs to "
+                                   "`cq git worktree acquire`/`release`, not to adoption"},
+                       args.json)
+    branch = _git(worktree, "rev-parse", "--abbrev-ref", "HEAD").strip()
+    if not branch or branch == "HEAD":
+        branch = None
+    base = _default_base(worktree, "origin")
+    config = load_config(worktree)
+    shared, refusal = _link(worktree)
+    if refusal:
+        return refuse(refusal, args.json)
+    regenerable = _project_regenerable(worktree, primary, config)
+    gitdir = native_path(_git(worktree, "rev-parse", "--path-format=absolute", "--git-dir").strip())
+    setup, already = (_adopt_setup(worktree, gitdir, config, args.no_setup)
+                      if gitdir else (None, False))
+    payload = {
+        "ok": True,
+        "adopted": True,
+        "worktree": worktree,
+        "primary": primary,
+        "branch": branch,
+        "base": base,
+        "baseInferred": True,
+        "shared": shared,
+        "regenerable": regenerable,
+        "setup": setup,
+        "alreadySetup": already,
+        "noSetup": bool(args.no_setup),
+    }
+    emit(args.json, payload, "\n".join(_adopt_lines(payload)))
+    return 0
 
 
 def _add(args) -> int:
@@ -417,6 +565,8 @@ def cmd_worktree(args) -> int:
         return getattr(slots, args.action)(args)
     if args.action == "add":
         return _add(args)
+    if args.action == "adopt":
+        return _adopt(args)
     if args.action == "retire":
         return _retire(args)
     repo = _repo_root(os.getcwd())
