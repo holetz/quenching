@@ -204,7 +204,7 @@ less often already fixed *when* the resend happened; this fixes *how much* each 
 
 The implementation checklist `.agents/quenching/bin/cq specs` parses: checkboxes `- [ ] <id> <text>` grouped under
 `### N. <Section>` headings. `specs_task(spec=<id>, action="check", task=<id>)` flips a box mechanically —
-never hand-edit the checkbox character. After `approved`, `specs_section_write(spec=<id>, heading="Tasks", body=<body>)` is append-only: it refuses (`sp-tasks-frozen`) when an existing id disappears or its text, `verify:`, `files:` or `cwd:` changes; scope leaves only through `specs_task(action="descope", reason=…)`.
+never hand-edit the checkbox character. After `approved`, `specs_section_write(spec=<id>, heading="Tasks", body=<body>)` is append-only: it refuses (`sp-tasks-frozen`) when an existing id disappears or its text, `verify:`, `files:` or `cwd:` changes; scope leaves only through `specs_task(action="descope", reason=…)`; a task rebuilt as another is descoped with `replaced_by=<id>`, which writes the `(dropped → <id>)` marker below so the verifier owes it no sha.
 
 Shape it so `/quenching-specs execute` can walk it top to bottom:
 
