@@ -31,7 +31,10 @@ const five = applyStep(first, { tokens: usage(100, 1, 8_000), native: { usage: {
 ok(five.ttlMin === 5, "a 5m write sets the 5-minute lifetime")
 const keep = applyStep(five, { tokens: usage(100, 9_000, 0), at: 0, model }, DEFAULTS)
 ok(keep.ttlMin === 5, "a reply that wrote nothing keeps the previous lifetime")
-ok(applyStep(null, { tokens: usage(1, 1, 1), at: 0, model }, { ...DEFAULTS, ttlMinutes: "5" }).ttlMin === 5, "shared.cache.ttlMinutes forces it")
+ok(applyStep(null, { tokens: usage(1, 1, 1), at: 0, model }, { ...DEFAULTS, ttlMinutes: "5" }).ttlMin === 5, "shared.cache.ttlMinutes applies when native has no split")
+const oneH = { usage: { cache_creation: { ephemeral_5m_input_tokens: 0, ephemeral_1h_input_tokens: 8_000 } } }
+ok(applyStep(null, { tokens: usage(1, 1, 1), native: oneH, at: 0, model }, { ...DEFAULTS, ttlMinutes: "5" }).ttlMin === 60, "a native 1h write beats ttlMinutes 5")
+ok(applyStep(null, { tokens: usage(1, 1, 1), native: { usage: { cache_creation: { ephemeral_5m_input_tokens: 9, ephemeral_1h_input_tokens: 0 } } }, at: 0, model }, { ...DEFAULTS, ttlMinutes: "60" }).ttlMin === 5, "a native 5m write beats ttlMinutes 60")
 
 // the verdict, by time
 ok(view(null, 0, DEFAULTS, W).light === "none", "no record yet: the waiting line")

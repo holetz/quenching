@@ -37,6 +37,13 @@ export function ephemeralOf(native: unknown): { ephemeral_5m_input_tokens?: numb
   return out
 }
 
+/** The lifetime the provider recorded on this write wins; `shared.cache.ttlMinutes` only applies when `native` carries no split. */
+function ttlOf(s: Settings, native: unknown, prev: Rec | null): number {
+  const u = ephemeralOf(native)
+  const written = (u.ephemeral_1h_input_tokens ?? 0) > 0 || (u.ephemeral_5m_input_tokens ?? 0) > 0
+  return ttlFromUsage(written ? 'auto' : s.ttlMinutes, u, prev?.ttlMin)
+}
+
 /** The record a finished step leaves: the next request re-sends everything this one saw. */
 export function applyStep(prev: Rec | null, step: { tokens: Usage; native?: unknown; at: number; model: string; window?: number }, s: Settings): Rec {
   const prefix = step.tokens.input + step.tokens.cache.read + step.tokens.cache.write
@@ -47,7 +54,7 @@ export function applyStep(prev: Rec | null, step: { tokens: Usage; native?: unkn
     model: step.model,
     read: step.tokens.cache.read,
     write: step.tokens.cache.write,
-    ttlMin: ttlFromUsage(s.ttlMinutes, ephemeralOf(step.native), prev?.ttlMin),
+    ttlMin: ttlOf(s, step.native, prev),
     warned: false,
     window: step.window ?? prev?.window,
   }
