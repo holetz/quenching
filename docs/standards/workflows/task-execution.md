@@ -127,6 +127,16 @@ Declared at authoring time, on the task, next to `files:`/`pattern:`/`verify:` â
 the executor and never a spec-wide default, because one spec routinely needs two different answers
 for two different tasks.
 
+### The exit that ticks a task is the `verify:`'s own
+
+A `verify:` runs without a pipe, and the exit the executor reads is the command's own. A pipe
+returns the exit of its last stage: `python3 -m unittest â€¦ | tail` exits 0 while the suite is red,
+and a task ticked and committed over that exit carries the red (spec 332, task 1.1: commit 07c0fa2
+entered with a failing test, and only a second commit, ca65e16, fixed it). When a pipe is
+unavoidable, the command runs under `set -o pipefail`, and the exit is read before anything
+shortens the output. Shortening (`tail`, `head`) belongs to reading the result afterwards, never to
+the run that decides the tick.
+
 ### A `verify:` that cannot fail proves nothing when it passes
 
 A declared check is a claim about what it would catch, and that claim is itself unverified until
