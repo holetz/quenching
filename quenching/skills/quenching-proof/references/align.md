@@ -29,6 +29,7 @@ on exit code and JSON: `0` is clean, `1` carries findings, and `2` is a refusal.
 
 Run the verifier before reading the proof tree:
 
+<!-- cli: root -->
 ```bash
 .agents/quenching/bin/cq --root "$TARGET_ROOT" proof doctor --json
 ```
@@ -45,6 +46,7 @@ has authorized the inventory stage below.
 
 Only after exit `1`, run the single inventory pass:
 
+<!-- cli: root -->
 ```bash
 .agents/quenching/bin/cq --root "$TARGET_ROOT" proof inventory --json
 ```
@@ -64,7 +66,7 @@ Build one plan grouped by the three bands in `bands.md`:
 | Band | Finding codes | Disposition |
 | --- | --- | --- |
 | Mechanical | none in the current contract | report that no generated proof artifact is owned by this band |
-| Structural | `pf-unmarked`, `pf-stop-first`, `pf-loose-fixture`, `pf-fat-conftest`, `pf-no-floor`, and conditionally `pf-order-unproven` | make bounded gate or fixture-ownership edits; use `.agents/quenching/bin/cq proof ratchet --raise --json` only when the measured surface is unchanged and an artifact exists |
+| Structural | `pf-unmarked`, `pf-stop-first`, `pf-loose-fixture`, `pf-fat-conftest`, `pf-no-floor`, and conditionally `pf-order-unproven` | make bounded gate or fixture-ownership edits; use `proof_ratchet(raise_floor=true)` only when the measured surface is unchanged and an artifact exists |
 | Judgement | `pf-unlayered`, `pf-empty-layer`, `pf-unmeasured-surface`, `pf-no-ci`, `pf-untested-entrypoint`, `pf-cost-undeclared`, `pf-temp-shared`, `pf-scope-wide`, `pf-task-wide`, and conditional `pf-order-unproven` | report evidence and the command that closes it; never drive the change |
 
 When no layers are declared, keep every unlayered test as judgement residue and do not infer a
@@ -91,6 +93,7 @@ Under the authorization, apply `pf-unmarked`, `pf-stop-first`, `pf-loose-fixture
 only when `bands.md`'s non-blocking condition is satisfied. Raise a floor only after the surface
 scope is unchanged and the target has produced the artifact the ratchet reads:
 
+<!-- cli: root -->
 ```bash
 .agents/quenching/bin/cq --root "$TARGET_ROOT" proof ratchet --raise --json
 ```
@@ -113,6 +116,7 @@ not call the ratchet; state the reason in the report.
 
 After edits, run the same probe again:
 
+<!-- cli: root -->
 ```bash
 .agents/quenching/bin/cq --root "$TARGET_ROOT" proof doctor --json
 ```
@@ -142,5 +146,5 @@ next target-owned action for every judgement finding.
   their own confirmation.
 - `pf-unmeasured-surface` defers `pf-no-floor`'s write in the same pass.
 - Judgement findings are report-only, and no subcommand runs the target suite.
-- The closing verifier is the same `.agents/quenching/bin/cq proof doctor --json` program as the probe.
+- The closing verifier is the same `proof_doctor()` program as the probe.
 - The proof align's report is the only run record; no sweep log is written.

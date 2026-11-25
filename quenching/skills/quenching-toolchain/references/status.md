@@ -17,6 +17,7 @@ Resolve `cq` per
 [tool-resolution.md](.agents/quenching/references/align/tool-resolution.md)
 §Resolving the tool. Set `TARGET_ROOT` to the supplied argument, or to `.` when omitted, and run:
 
+<!-- cli: root -->
 ```bash
 .agents/quenching/bin/cq --root "$TARGET_ROOT" toolchain status --json
 ```
@@ -30,7 +31,7 @@ returned payload as the complete read model and do not invoke a write-capable co
 
 ### 1. Read the status payload
 
-Re-read the status payload using the `.agents/quenching/bin/cq toolchain status --json` invocation above. Branch on its
+Re-read the status payload using the invocation above. Branch on its
 exit code and preserve its applicability, refusal or findings.
 
 **Done when:** the payload is captured, or the refusal is preserved with its reason.
