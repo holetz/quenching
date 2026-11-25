@@ -13,7 +13,7 @@ allowed-tools: Read, Write, mcp__quenching__specs_handoff_facts, mcp__quenching_
 **Input**: `$ARGUMENTS` (the focus of the next session).
 
 The handoff is a file the next session READS BEFORE IT ACTS, and it belongs to a spec whenever one
-exists: `.agents/quenching/bin/cq specs handoff write` stores it on the `quenching` branch under
+exists: `specs_handoff_write` stores it on the `quenching` branch under
 `specs/artifacts/<id>/` (or `specs/artifacts/_handoffs/` when no spec owns the branch), sends it,
 and prints the block the next session starts from. This skill is the warm door: it spends the main
 model. When the prompt cache has expired (the `quenching-cache` bar is 🔴 or 🟠),
@@ -29,8 +29,8 @@ current conversation as the focus. **Done when:** the focus is fixed in one sent
 
 ### 2. Read the facts, never recall them
 
-```bash
-.agents/quenching/bin/cq specs handoff facts --json
+```text
+specs_handoff_facts()
 ```
 
 It reads this session's transcript and returns the branch, the spec that owns it (`spec`, or
@@ -53,9 +53,13 @@ context to resume the work, and points to existing artifacts rather than copying
 
 ### 4. Store it through the door
 
+<!-- cli: flag -->
 ```bash
 .agents/quenching/bin/cq specs handoff write --from .quenching/handoff/<name> --focus "<focus>" --push --json
 ```
+
+`specs_handoff_write` publishes no `push`, and the push is what makes the handoff reach the next
+session, so this one call stays on the CLI.
 
 Add `--spec <id>` when step 2's id came from the conversation. The verb names the handoff
 `handoff-<YYYY-MM-DD>-<focus-slug>.md`, stores it, reads it back and pushes it. Branch on the exit
@@ -75,8 +79,9 @@ code, never on prose:
 Print the `block` the verb returned, verbatim. Its structure is literal: the locator, the command
 that reads it, and the prompt that starts the next session, in that order. Its words follow the
 conversation's language, which the verb reads from the root harness's `Language:` line — this
-repository is `pt-BR`, so its printed form is:
+repository is `pt-BR`, so its printed form is (the verb prints the CLI read):
 
+<!-- cli: fallback -->
 ```
 ## Handoff
 
@@ -92,7 +97,7 @@ The verb makes three substitutions, and nothing else changes:
 
 - **No spec** → the last sentence becomes `nenhuma spec está atrelada; pergunte o que fazer`, and
   the read command loses `--spec`.
-- **Not sent** → one line under the block says `não enviado — .agents/quenching/bin/cq specs push`.
+- **Not sent** → one line under the block says `não enviado — .agents/quenching/bin/cq specs push` <!-- cli: fallback -->.
 - **Fallback** → the locator becomes `.quenching/handoff/<name>`, the prompt asks for a plain file
   read, and one line says `só local — este repositório não tem store git de specs`.
 

@@ -8,8 +8,9 @@ bodies `ENFORCED` names:
   `EXCEPTIONS` entry of `mcp/coverage.py`, or one no row publishes — is the CLI's by right.
 * `sk-mcp-unknown-tool` — a `<pillar>_<verb>(` citation that is no tool of the catalog.
 
-`ENFORCED` is a ratchet: each front joins it when its bodies are converted, until it covers every
-body and the tuple goes.
+`ENFORCED` is a ratchet: every quenching skill and every shared reference is held to it; the
+agents under `agents/` join it with their own conversion, and the tuple then goes. `skills/quenching-`
+keeps a target's own skills, which quenching does not author, out of it.
 """
 from __future__ import annotations
 
@@ -19,8 +20,9 @@ from quenching.common.output import finding
 from quenching.mcp import catalog, coverage
 
 # Path fragments, relative to the plugin root or to a target's `.agents/`, of the bodies held to
-# the tool form.
-ENFORCED = ("skills/quenching-specs/", "references/specs-")
+# the tool form. `references/` is the shared payload's: a skill's own `references/` is reached
+# through its `skills/quenching-` folder, and a target's own skill never is.
+ENFORCED = ("skills/quenching-", "references/")
 
 # The one body whose job is to spell the CLI: the fallback of the convention itself.
 CLI_HOMES = ("references/align/tool-resolution.md",)
@@ -34,7 +36,8 @@ def enforced(path: str) -> bool:
     path = path.replace("\\", "/")
     if any(path.endswith(home) for home in CLI_HOMES):
         return False
-    return any(path.startswith(frag) or f"/{frag}" in path for frag in ENFORCED)
+    return any(path.startswith(frag) or f"/{frag}" in path if frag.startswith("skills/")
+               else path.startswith(frag) or f"/quenching/{frag}" in path for frag in ENFORCED)
 
 
 def tool_paths() -> dict[tuple[str, ...], str]:

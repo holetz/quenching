@@ -154,7 +154,7 @@ every platform. Never enumerate the whole tree (`catalog/` and `external/reposit
 overflow the session):
 
 - `Read` — `/docs/standards/index.md` and `/docs/concepts/index.md` (a missing file means that
-  home is empty). For what the `plans` phase already holds, run `.agents/quenching/bin/cq specs list --json`.
+  home is empty). For what the `plans` phase already holds, run `specs_list()`.
 - `Glob` — `/docs/standards/*/index.md` and `/docs/concepts/*/index.md` for the existing subject
   folders, so a new concept path does not collide. One level only, and never a recursive file dump.
 
@@ -181,12 +181,12 @@ stamp → index → glossary → self-check (against
 §Concept docs (`check_concept`) §Resource integrity (per-doc — every mode)) —
 with this skill's deltas kept inline:
 - `source` defaults to "project memory"; salvage the terse body into a structured doc.
-- A **unit of work** row instead follows the `/quenching-specs create` path: run `.agents/quenching/bin/cq specs new
-  <name>` and write the memory's content into `## Problem` and nothing else, then `.agents/quenching/bin/cq specs
-  validate --spec <id>` — the ID the create reported — as the self-check per
+- A **unit of work** row instead follows the `/quenching-specs create` path: run `specs_create(name=<name>)` and
+  write the memory's content into `## Problem` and nothing else, then
+  `specs_validate(spec=<id>)` — the ID the create reported — as the self-check per
   [specs-develop/spec-driven.md](.agents/quenching/references/specs-develop/spec-driven.md)
   §The spec document §The gates and the stage-scoped explicit-none rule
-  (`.agents/quenching/bin/cq knowledge validate` never covers the specs front); carry the memory source in the spec's
+  (`knowledge_validate()` never covers the specs front); carry the memory source in the spec's
   own record.
   **Never stamp an OKF `type:` on it** — a spec is not a concept doc, and never invent a
   `priority`: an unranked spec is `/quenching-specs triage`'s to place.

@@ -5,7 +5,7 @@ The runbook for validating the generated site. It builds into the gitignored `si
 
 ## Contents
 
-`.agents/quenching/bin/cq components read .agents/skills/quenching-knowledge/references/knowledge-documentation/validation.md`
+`components_read(path=".agents/skills/quenching-knowledge/references/knowledge-documentation/validation.md")`
 returns the heading index; `--sections <name>` addresses one.
 
 <!-- rules -->
@@ -16,10 +16,10 @@ From the target repository root, first materialize the bounded source tree. Zens
 processes every Markdown below `docs_dir` and has no supported `exclude_docs`/`not_in_nav` escape
 hatch, so raw `catalog/` and `external/` homes must not be present in the tree it reads:
 
-```bash
-.agents/quenching/bin/cq knowledge project docs --check
-.agents/quenching/bin/cq knowledge site-source docs site-source --write
-.agents/quenching/bin/cq knowledge site-source docs site-source --check
+```text
+knowledge_project(check=true)
+knowledge_site_source(write=true)
+knowledge_site_source(check=true)
 ```
 
 Run the build using the project's existing dependency manager:
@@ -74,8 +74,11 @@ python3 <plugin>/assets/checks/documentation-site-check.py site
 When the canonical glossary exists and the map does not explicitly say `do not publish`, first
 verify the deterministic source projection and then pass the same contract to the rendered check:
 
+```text
+knowledge_project(check=true)
+```
+
 ```bash
-.agents/quenching/bin/cq knowledge project docs --check
 python3 <plugin>/assets/checks/documentation-site-check.py site \
   --require-glossary \
   --glossary-source docs/glossary.md \

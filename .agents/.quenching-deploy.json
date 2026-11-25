@@ -116,7 +116,7 @@
 
     ".agents/quenching/assets/bin/quenching/components/hooks.py": "2881cec7dde92566348e13ac9362ec711706fdbb3e49a1adce73b11cebb894af",
 
-    ".agents/quenching/assets/bin/quenching/components/mcp_citations.py": "4f7d0344f04d780a8095c909132cc5bd6ce170215e5ca4d73c66bc430723bd22",
+    ".agents/quenching/assets/bin/quenching/components/mcp_citations.py": "6cf471f730b8e13be80de589bd526b5a0cf6ed0901cbb7e8677336b1d922bcbd",
 
     ".agents/quenching/assets/bin/quenching/components/sections.py": "8343fba43a2922960e0fc41c12590c3b075dff0f13a557c6b07d607aac18ae1d",
 
@@ -534,43 +534,43 @@
 
     ".agents/quenching/bin/cq.cmd": "9636ea6bdfd9421b15b723b6849c320476beebd7efdfdabbcf7a6c761928d3ad",
 
-    ".agents/quenching/references/align/convergence.md": "e708ca90abe9f7cc454a42972aea9c1f00de8be78e30145f8b8b80db42d698f1",
+    ".agents/quenching/references/align/convergence.md": "3a9841809d0fcc3b9208337022e914ede84b2d5d870d51823e03d2b163f8e733",
 
-    ".agents/quenching/references/align/evidence-doctrine.md": "fb22b40a7198c0fcbdd5dc59d3552f4edf17f028b18f217dc853abf9721f4ab2",
+    ".agents/quenching/references/align/evidence-doctrine.md": "87195c2b2b4f77ef12ab601dfafd1cc6043f4ee482a83171bcd4d81ffcd742c7",
 
-    ".agents/quenching/references/align/sweep-doctrine.md": "656e61190eb6ebbe3ef1116188f6ff9aae189dbecfe463c6b3a0ec6817baaa3c",
+    ".agents/quenching/references/align/sweep-doctrine.md": "de597693548977678ab591b12ffa87ae00ceffcaecbd545d04fea7b577ba1652",
 
     ".agents/quenching/references/align/tool-resolution.md": "167c737f4b0d38ae9ae11d427bb47c34ba65a7244b9e2152572bb3873792ac25",
 
-    ".agents/quenching/references/components-command-new/capabilities.md": "d235823b1b77cbee67fd9977f75b3d4bcd7d6bc6c392b4331c7f0722c94aa0ee",
+    ".agents/quenching/references/components-command-new/capabilities.md": "096a15aaa72e092b827e212cad15847820379c8f938419178622649e54e14e42",
 
-    ".agents/quenching/references/components-command-new/doctrine.md": "90f3baf181bdb4d49aaa2338e4770d759d5969d88266cd2bbf47d8632335ffe5",
+    ".agents/quenching/references/components-command-new/doctrine.md": "9752c841b33c06a33c996fba1e242ad799494fb2ad15061bea05fc7dae6b978e",
 
-    ".agents/quenching/references/components-command-new/taxonomy.md": "40497d19a394c31cdb0b9b6feb46fa055bf8759cebf3ddab1a38f65b8ff3e496",
+    ".agents/quenching/references/components-command-new/taxonomy.md": "13a48e2fbcbf4eb23cccd38bd3b302cbaafbc40c609a129f78d3e271738ce413",
 
-    ".agents/quenching/references/front-align/mold.md": "73137c0cdedea592d56f1b4b115e0191efcbf0d9c79e4583477d734176583210",
+    ".agents/quenching/references/front-align/mold.md": "edb43ea44cedc4934b8387cf7cd5372675be70ebcf9fcb5787e482a54212097f",
 
-    ".agents/quenching/references/git/commit.md": "b586b1c6db1e794b0d4e78dce8f808e3bd25cc98aaf2b4e2bacbeb70abc6cab9",
+    ".agents/quenching/references/git/commit.md": "f5cf8f775cbcf23c1fd08494e055a5421677a5862eee2701236fb5c0b18543de",
 
-    ".agents/quenching/references/git/conventions.md": "be77c2996d31867724f8da923fb546ccbfa5cc90bb13b339f00a2e5955f257cc",
+    ".agents/quenching/references/git/conventions.md": "0f00da694e9d3fdc7110a3865a985529bd29add453dc056876dac05d0d6f3bcc",
 
-    ".agents/quenching/references/git/isolation.md": "02f4ac8672db6b97d28fa55328954ee918a238b183e9a2643033b97761358d9f",
+    ".agents/quenching/references/git/isolation.md": "f097275c2937a488f14aade66f04b170ae1bd8a6846730905f9661c984ad037c",
 
-    ".agents/quenching/references/git/merge.md": "4e9779a6c18c37ba7c15f8bdd777768f38d5e4ac16f730b79313761403f41664",
+    ".agents/quenching/references/git/merge.md": "6ac6b1345129b15b8b8e8bd76f6fbdc2efd26ba327dbfe3077365c871c8b5e83",
 
-    ".agents/quenching/references/git/pr.md": "cf22e3db45ec4fc90ba577f2261ebe335196950e4e962338d348a7b12a7f3560",
+    ".agents/quenching/references/git/pr.md": "4aa72e0669bae285fda7a76107589935823b68ec8a5bf555221e9db0062ef286",
 
-    ".agents/quenching/references/knowledge-add/homes.md": "e5c88763eba5457562bea60f337e477755d12486a9c3c2bfbcea438234e0fda2",
+    ".agents/quenching/references/knowledge-add/homes.md": "3d9938857fed1e26a8b92c342ff129f82fde30362fd03259b7bce05465f23e18",
 
-    ".agents/quenching/references/knowledge-align/conformance.md": "f92cee35930c108a0a45f82ea9ded98a94455e1aa62a3e7b666993bb27945ddf",
+    ".agents/quenching/references/knowledge-align/conformance.md": "30f8100f2a01a71daede53115208a1f27868457b3adf26d2b4630b169b87d77e",
 
-    ".agents/quenching/references/knowledge-align/cycle.md": "172a56716b650fc93df10c1ec063266f9e0f666db7eb54a4b46c2e9346d3146d",
+    ".agents/quenching/references/knowledge-align/cycle.md": "9f250370faa5f375fc0f3a06f7866efc1d020f064fa7a1d679e4dde7c5d916a8",
 
-    ".agents/quenching/references/knowledge-align/migration.md": "0fccf67885f809723649576e126f9696a6c7ec4675765411a81c81714fe27429",
+    ".agents/quenching/references/knowledge-align/migration.md": "1f102b61bc0240f6fef99c160721a4a9eab3b55b04edcbd389e0e85d11808197",
 
-    ".agents/quenching/references/knowledge-align/okf-spec.md": "95c40951f5fbc053dcf758e3649c24f861efc0af14c97329560082d14d0cab6f",
+    ".agents/quenching/references/knowledge-align/okf-spec.md": "0638d188c92abaf17b1677aca773d2746c9bcb1c84f372be0aa54ac77ad7e63d",
 
-    ".agents/quenching/references/knowledge-align/taxonomy.md": "a57803ea48451dd8b0b188959d295b8aed24c20c140766d267de7b07e7a06f5b",
+    ".agents/quenching/references/knowledge-align/taxonomy.md": "e41a388ed727ce829604b0a0c6d40938bb7b7b44f360de1da8ddb5cb17f0e1e0",
 
     ".agents/quenching/references/knowledge-import/sources.md": "b3648df86b186e0a481cd45cdf06d6ec0dff63f2b1a03831ed0bc0875a96c441",
 
@@ -602,105 +602,105 @@
 
     ".agents/quenching/references/specs-execute/execution.md": "eb199e3ddca00557218007ba3ba14034473323400f196874b20bf5af4f9beb41",
 
-    ".agents/skills/quenching-align/SKILL.md": "53d4976725888d6313cac1e4faa20f9c28739e8aaa2aebb92ade63767ef5620c",
+    ".agents/skills/quenching-align/SKILL.md": "3901ab1e4f0bba8824cd76477ab108aba4338884997a72290233d4b5b0f16475",
 
-    ".agents/skills/quenching-components/SKILL.md": "8d10a8232f1bc5826c8478c3fb19280cfe9cd0ea1104143b0245c76beefc02de",
+    ".agents/skills/quenching-components/SKILL.md": "bbc792eca38386d7c6ae8e618d8a168ce966d5cba97718fc245105fe39337d56",
 
-    ".agents/skills/quenching-components/references/agent-new.md": "f939b24254696f3a4194a6b15efe55b8a069a3d8442e94f06d68f5092f578fcb",
+    ".agents/skills/quenching-components/references/agent-new.md": "8eec5f375d0664d9815574bc4af3e407095c10469eed8d11a7ff9692b35f23ad",
 
-    ".agents/skills/quenching-components/references/align.md": "6a4983194ff6573966a13f4de5fde9ad6792dc4faa39b1921f8647a087298c4a",
+    ".agents/skills/quenching-components/references/align.md": "da81eb366431ac70c0881973464b5d6fbfe4a4eadc93d40c450da4748e28b384",
 
-    ".agents/skills/quenching-components/references/command-eval.md": "7db772484823cbdfb79b7a6abc9a8ca1da86e06d6795e8dddadd366eea0a0e82",
+    ".agents/skills/quenching-components/references/command-eval.md": "a8ae9929d9de6d716a5360b7ba3217bb92818cd89db5e089afaa104f213463cc",
 
-    ".agents/skills/quenching-components/references/command-new.md": "3f5f0a1af828694585f76446df80e0ecddc1fbff0fb172ec4f93550494c68722",
+    ".agents/skills/quenching-components/references/command-new.md": "2405e0274dced9f495ee475a8036f6e5b12bba5ae9a38117bf0f01318570764b",
 
-    ".agents/skills/quenching-components/references/command-retro.md": "47ce5af0b9cb328218cf693551652b3f38a643530fe83e6236a834d88948e4c5",
+    ".agents/skills/quenching-components/references/command-retro.md": "af97840deda78b25bbabcaa0f98e24fea399a6b98f9d7b68107812546564204d",
 
-    ".agents/skills/quenching-components/references/components-command-eval/evaluation.md": "3498910c6d1321199a875657484880255a39d217e9bbdc0f83d48761b3beb37f",
+    ".agents/skills/quenching-components/references/components-command-eval/evaluation.md": "9cfa77bab44867d0717a85112022eb568e3ff0d1062db767832ddb1860955696",
 
-    ".agents/skills/quenching-components/references/components-harness-align/harness-routing.md": "76ce20dc13b64406d4fcda56f5e9f43ef33e158f5817b5b7e53e6561cbefea2a",
+    ".agents/skills/quenching-components/references/components-harness-align/harness-routing.md": "e432590fcf535d5527aa407de754bbcaa456ca02ce1dfa0062916847679ebd62",
 
-    ".agents/skills/quenching-components/references/harness-align.md": "1bd307adeb7eb24d6f47b2b48f7b2aa32fc92ed00e27be4913b77806f104cbf3",
+    ".agents/skills/quenching-components/references/harness-align.md": "ac51f785a9c55693e761861cc25bc4b1dd48b2c20675c7a056398b3eb398560b",
 
-    ".agents/skills/quenching-components/references/hook-new.md": "90cc40590349f11e973d82c8ccacd2564afc5e1f3024a212bfc7f45f89b28a32",
+    ".agents/skills/quenching-components/references/hook-new.md": "6513d79bd584f04813899949b10b639a19a48ef94e583862360aa5124d67e25c",
 
-    ".agents/skills/quenching-components/references/status.md": "6e2cc612a5d83ec68146fcc9aca038a73225a3fa5f919ac291f0b581c9eaf156",
+    ".agents/skills/quenching-components/references/status.md": "4f84ef3e1bcc1ec5852c079e5f36822bdc8bcbff9dbe0fa7222e754a3238e13d",
 
-    ".agents/skills/quenching-git/SKILL.md": "91d3044bf9f650c3a7372f80658bb9acca874a81a8f840742c5ba5c9ffaea471",
+    ".agents/skills/quenching-git/SKILL.md": "96c1ce6f7b39c6848b50f182232aeb0d1f81dad8e33836ffe8884543514c00ec",
 
-    ".agents/skills/quenching-git/references/branch.md": "a850543d748a644df5c4fb44a4e28ec894265d69601290b07bb3a0b66c2dec04",
+    ".agents/skills/quenching-git/references/branch.md": "cb60cadf2bfc5b19b916fcb6abdab4df8a54aabc640d44f1a16f5ae2e8548635",
 
-    ".agents/skills/quenching-git/references/cleanup.md": "977d97b0131f68833371d5b0156cfd381862c49e579920ab35ade1b6c40fe04d",
+    ".agents/skills/quenching-git/references/cleanup.md": "c8f9db2f163b6d31d3e89ebd14fa4884499ebcdbf2913d322f8cad9e45a4a54b",
 
-    ".agents/skills/quenching-git/references/commit-incremental.md": "c88f914c6e848dca4632d66fd10db4c8317bddd649847626713875285aaa9ab9",
+    ".agents/skills/quenching-git/references/commit-incremental.md": "4ca79a81e11e3ef3a0fa5dde1bf190d5ff1c5a6cfb70de6d79e2bb4619871c56",
 
-    ".agents/skills/quenching-git/references/commit.md": "4484162250c498565182c1783ef77c2192d27d83afb9a019d7597e2353119138",
+    ".agents/skills/quenching-git/references/commit.md": "0318ef48b1aea67b084d07e076315058b9cf696ba8986156e403cb5ecdcab8bd",
 
-    ".agents/skills/quenching-git/references/merge.md": "17e39fd1632b66cb44758210ce2b6f9d3066128f0b9a65157df36227f5bc6b4a",
+    ".agents/skills/quenching-git/references/merge.md": "474830576e5eecee9fee4936f6927f3a6ebb0ab0825e7fb69fbb3655d4d4ce62",
 
-    ".agents/skills/quenching-git/references/pr-create.md": "fb9a56c7ad03193932eff40a1ebfae9b7026c50c2d57148f2e41b20218b98960",
+    ".agents/skills/quenching-git/references/pr-create.md": "c3b593f838820dfd2e35456867dc0316190125cb17eb00da7b9cf7c559cb9ed7",
 
-    ".agents/skills/quenching-git/references/pr-review.md": "ef996d6b9a73d64ea0520c92ca09f3cda02187ca2e847cb27d506d5f07ed8772",
+    ".agents/skills/quenching-git/references/pr-review.md": "ad2346afd5e5126a2b0c8bc50afed70564bf731a5f7d1ec99a56752fb18b6d0a",
 
-    ".agents/skills/quenching-git/references/pr-status.md": "ef21ce42ca2643281eedf5723a6f3482e9677a2248ad6ccc9e2f30ab3d0a3a11",
+    ".agents/skills/quenching-git/references/pr-status.md": "61a80bbd179e2f01a0a4f46fe461293395fdcdc8dd8acc994f63c8cd57443cb5",
 
-    ".agents/skills/quenching-git/references/push.md": "5a6e2e1fd602e775395eb58624969455d3c10f6cbe01dc4bacdf09e327fb0f75",
+    ".agents/skills/quenching-git/references/push.md": "84159bbc93b677fddbf28ee56206d2d7e7f215b031f60863d7c00669799e8e06",
 
-    ".agents/skills/quenching-git/references/revert.md": "d43f2c69c088820acb38fdb1c0b873b36ae7e4a9642fa0f7426827472812445d",
+    ".agents/skills/quenching-git/references/revert.md": "f4d97bbf5e0b52cfafc040123c64c4f7151e8858f1830d3b4408818c0e9a28a5",
 
-    ".agents/skills/quenching-git/references/sync.md": "1b608cc8c84941e9e385c4e817bd4e1c749bdf1d622337ed2f32baf74fb1d87d",
+    ".agents/skills/quenching-git/references/sync.md": "fb92ec347dfafb5279913ef056465ebacc7ef5edaf8765cc044703bbc2471029",
 
-    ".agents/skills/quenching-handoff/SKILL.md": "21e50ad6baa06e1226cded6ff47c30f9e2a29c4b71bfc4a697cc82c3ed94f1bc",
+    ".agents/skills/quenching-handoff/SKILL.md": "07fd3eb0daa6190e8a15225be6d012232e792e9715a1e37a5f20bada65feb592",
 
-    ".agents/skills/quenching-handoff/references/template.md": "3cadf312ed570714431ee5fcf655a9358b0d97ce12c95d0417e59f7947def1c4",
+    ".agents/skills/quenching-handoff/references/template.md": "78fe82fece53e07ebf2a0152f0b1c1a2cf64f31350220d69ffdcbce550668eee",
 
-    ".agents/skills/quenching-knowledge/SKILL.md": "81b14c20f22b5f84a9162001158f0090b549889637013609efa77175c9ecc966",
+    ".agents/skills/quenching-knowledge/SKILL.md": "a8d16d5592851835e58b56e12c932aeab65ac01245c32aa0202352c590d88292",
 
-    ".agents/skills/quenching-knowledge/references/add.md": "8ece711dec0a4d8805a4fc1e45e54fc76ac8fc54c5107f5415c379e717666106",
+    ".agents/skills/quenching-knowledge/references/add.md": "4d6671e228db3890f6868c3f826b9e5a2f1627e250e38992dbea25f89107a1e0",
 
-    ".agents/skills/quenching-knowledge/references/align.md": "b6c82fb8572ee971af88c6dea310fd2691c7fc26f1f604d709e57b1aa20d5222",
+    ".agents/skills/quenching-knowledge/references/align.md": "f6764cfcbdcd0970eefc863d0cb05dccbdcc06951bdf9233288466dd938543cc",
 
     ".agents/skills/quenching-knowledge/references/define.md": "0e66162cdf5bd332114b0f078d340423d7a027f1049f9483d93b7138ab799de9",
 
-    ".agents/skills/quenching-knowledge/references/documentation-build.md": "48d7434802b8c04ff278ca0a72818e14a41dd90b9a02d1cf620ed27c91456838",
+    ".agents/skills/quenching-knowledge/references/documentation-build.md": "30939d6f1671eb264ec60991fdd7b85bccb01ffc8da503987f67e4783d406059",
 
     ".agents/skills/quenching-knowledge/references/documentation-plan.md": "174232bf38699d46e8436b030a68ed7df05779b9cd68ccafc59e3f4ae21d526b",
 
-    ".agents/skills/quenching-knowledge/references/documentation-produce.md": "0e77123442c70a54f8eed6f8bc8d5e143a5fd6f35e13231a9459c265eb50f4a8",
+    ".agents/skills/quenching-knowledge/references/documentation-produce.md": "fcd3a53cc7ba0a81bd5d4ab92c5426940a3dfe8a98d6de280791e71d22b6cc81",
 
     ".agents/skills/quenching-knowledge/references/documentation-review.md": "f985432c976fbf31e3553eb527486edfb7c0d9e1ef0afc203dc09ca8c42d5c0e",
 
-    ".agents/skills/quenching-knowledge/references/documentation-write.md": "c83a9b95deae59c8239422a3220ba8c8e01a792e6ec022bf602187c5b8e7e90e",
+    ".agents/skills/quenching-knowledge/references/documentation-write.md": "aee829adc0ee872cd6b4ad070ee57daec73dae5f3b632ed5c38be06ad4ee1761",
 
     ".agents/skills/quenching-knowledge/references/glossary-backfill.md": "d42b80d7c5481d29996fb090825fcbad8fc51fb4d796c5244ca930b4e958a6b9",
 
-    ".agents/skills/quenching-knowledge/references/import-memory.md": "9d9b6f688c77841514afa49cad65fb119448605d9ee9426c9469a3d124ac74d8",
+    ".agents/skills/quenching-knowledge/references/import-memory.md": "843685dea106fed14f5fc2f3115a5b29ca25e114efdf420447316ef91339fd68",
 
-    ".agents/skills/quenching-knowledge/references/import.md": "5920972f8a319852c00e93c6fd2815920725f590d53ce9dc6593770dbd6fc730",
+    ".agents/skills/quenching-knowledge/references/import.md": "53ecaf68e43bd2a0448173060c9b2dc6ec6c0513d103d4c96f249aac2f6e09a2",
 
-    ".agents/skills/quenching-knowledge/references/knowledge-documentation/agent-readability.md": "02a1ab8736e93d916f0f49cdeb1a8ae14b7daa11e9c8272ec6ea1f0de85859c0",
+    ".agents/skills/quenching-knowledge/references/knowledge-documentation/agent-readability.md": "727fb1d8963870957f34ba6306451bc275277a8bc5d4fc3779925f4328fb0702",
 
-    ".agents/skills/quenching-knowledge/references/knowledge-documentation/architecture.md": "4158c02e9f67b6c2ea931a9f5a72fccedb58c8ec4901d3b785daa771da0dbcb8",
+    ".agents/skills/quenching-knowledge/references/knowledge-documentation/architecture.md": "b0577842a9404d3d8827aefe940f1d464f5c7c61dd14922c4a355a81619d6fc2",
 
-    ".agents/skills/quenching-knowledge/references/knowledge-documentation/craft.md": "5921e4590606b45087f47b137e566554675763f54073d058b8b4b71c8318196d",
+    ".agents/skills/quenching-knowledge/references/knowledge-documentation/craft.md": "64a6e173edf6a925cf79988e4c8502e4a2f9757d1371699058f15a13be657965",
 
-    ".agents/skills/quenching-knowledge/references/knowledge-documentation/quality.md": "a2d1e81ab36f7a00b9ad9d45adc1280a01f641f29b8399ae837691940f4e4c36",
+    ".agents/skills/quenching-knowledge/references/knowledge-documentation/quality.md": "d1452b33ed73b6dd4256345f3bee7c4d6ca4519591708eac15d7b89b4d4ff519",
 
-    ".agents/skills/quenching-knowledge/references/knowledge-documentation/validation.md": "98fbd6e0996e8943b60e961c3712cf8eca62d0a05215c27895d388f0b77cda92",
+    ".agents/skills/quenching-knowledge/references/knowledge-documentation/validation.md": "9cd4a416de26d55ada32d52745a2cbcdd82b5908b2bf51464933d8325229bf8d",
 
-    ".agents/skills/quenching-knowledge/references/knowledge-documentation/visual.md": "7c188cfaa0624eb9cb312c29dd0b4baf961f2ec09cb5e5742261330077a25e4d",
+    ".agents/skills/quenching-knowledge/references/knowledge-documentation/visual.md": "fba99a0ead5e6e258a8831ac7f3da224d9c6edcd2c28d24c3e14b66d8aa92850",
 
     ".agents/skills/quenching-knowledge/references/knowledge-documentation/zensical-capabilities.md": "53a4c8d37b0fc9b2c257b73eeb5ed2fbb7a130aabd048c19c239d2b4b1361eef",
 
     ".agents/skills/quenching-knowledge/references/knowledge-import-memory/memory-routing.md": "9b21f7eb82e6f1bdb3d4390fb1390c145863b8c928355ad6b44f6d5b16d6ca4a",
 
-    ".agents/skills/quenching-knowledge/references/learn.md": "c1ea2c3f9468bc691e40e4b96990ffde5cc6f7d8492795582004a3a28f5b30ce",
+    ".agents/skills/quenching-knowledge/references/learn.md": "93e8ef730061015da4d39bbbade8af2e0c51edae2aed4b3055e449307bc6a182",
 
-    ".agents/skills/quenching-knowledge/references/status.md": "7f3cd7e828ea47e4be8c8c3cde883754122440eaf699140f525cfeec3dbe25c0",
+    ".agents/skills/quenching-knowledge/references/status.md": "7e567304b62c50454a656be7b0c19a81393a4b95f0c7a509e678853a6cafcfee",
 
     ".agents/skills/quenching-specs/SKILL.md": "d045d41972d88ee4fc6058886feea45b847abda1fbe6476f2822d6897fac706b",
 
-    ".agents/skills/quenching-specs/references/autopilot.md": "e8549ad350c2633ce8c4b16e68b196423972d6c440de991c112e20f858c476c7",
+    ".agents/skills/quenching-specs/references/autopilot.md": "9790edbc7f421ff6a2e4552f903244791b0cfe94d0198bd9e1db24823706aead",
 
     ".agents/skills/quenching-specs/references/board.md": "f23f25a70443e60cb15174e2763370280b57c7396d5a4cf424b5319a867017dc",
 
@@ -732,33 +732,33 @@
 
     ".claude/agents/quenching-spec-verifier.md": "2ad3be621e4be3e3f611b27c0c4334dbab124cabc2524e2ad66e9868cb7d0a3b",
 
-    ".claude/skills/.generated-files.json": "b4c0560faa35eb3447ccc0e2c7ee175a653a1a21787294e5d902482ea977e26d",
+    ".claude/skills/.generated-files.json": "9940b9fdef2c7844db17579887f82d0e1cd2379eceaa0278b7312b458c73603e",
 
     ".claude/skills/commands-tighten/SKILL.md": "41574a4774e70deffd6c8c6766a1a24581d579d1f7247b68a93ba86b39b2019b",
 
-    ".claude/skills/quenching-align/SKILL.md": "055995f2834d373c407c8eb93311a9f9b9f77195a5e2119f78a221c13ad941cf",
+    ".claude/skills/quenching-align/SKILL.md": "84d406f43eb31955c5a79b95114add5ac9886a748387e1800f767fc63af291ca",
 
-    ".claude/skills/quenching-components/SKILL.md": "6e16b156b34b2af92e471a3636c4d9a71b234f635686555533a373fa0b8296f6",
+    ".claude/skills/quenching-components/SKILL.md": "b73ae8be3bcdd34a8cbaf127a56505f8d19d7d975e05e247a54f9bf91029e4c3",
 
-    ".claude/skills/quenching-components/references/agent-new.md": "f939b24254696f3a4194a6b15efe55b8a069a3d8442e94f06d68f5092f578fcb",
+    ".claude/skills/quenching-components/references/agent-new.md": "8eec5f375d0664d9815574bc4af3e407095c10469eed8d11a7ff9692b35f23ad",
 
-    ".claude/skills/quenching-components/references/align.md": "6a4983194ff6573966a13f4de5fde9ad6792dc4faa39b1921f8647a087298c4a",
+    ".claude/skills/quenching-components/references/align.md": "da81eb366431ac70c0881973464b5d6fbfe4a4eadc93d40c450da4748e28b384",
 
-    ".claude/skills/quenching-components/references/command-eval.md": "7db772484823cbdfb79b7a6abc9a8ca1da86e06d6795e8dddadd366eea0a0e82",
+    ".claude/skills/quenching-components/references/command-eval.md": "a8ae9929d9de6d716a5360b7ba3217bb92818cd89db5e089afaa104f213463cc",
 
-    ".claude/skills/quenching-components/references/command-new.md": "3f5f0a1af828694585f76446df80e0ecddc1fbff0fb172ec4f93550494c68722",
+    ".claude/skills/quenching-components/references/command-new.md": "2405e0274dced9f495ee475a8036f6e5b12bba5ae9a38117bf0f01318570764b",
 
-    ".claude/skills/quenching-components/references/command-retro.md": "47ce5af0b9cb328218cf693551652b3f38a643530fe83e6236a834d88948e4c5",
+    ".claude/skills/quenching-components/references/command-retro.md": "af97840deda78b25bbabcaa0f98e24fea399a6b98f9d7b68107812546564204d",
 
-    ".claude/skills/quenching-components/references/components-command-eval/evaluation.md": "3498910c6d1321199a875657484880255a39d217e9bbdc0f83d48761b3beb37f",
+    ".claude/skills/quenching-components/references/components-command-eval/evaluation.md": "9cfa77bab44867d0717a85112022eb568e3ff0d1062db767832ddb1860955696",
 
-    ".claude/skills/quenching-components/references/components-harness-align/harness-routing.md": "76ce20dc13b64406d4fcda56f5e9f43ef33e158f5817b5b7e53e6561cbefea2a",
+    ".claude/skills/quenching-components/references/components-harness-align/harness-routing.md": "e432590fcf535d5527aa407de754bbcaa456ca02ce1dfa0062916847679ebd62",
 
-    ".claude/skills/quenching-components/references/harness-align.md": "1bd307adeb7eb24d6f47b2b48f7b2aa32fc92ed00e27be4913b77806f104cbf3",
+    ".claude/skills/quenching-components/references/harness-align.md": "ac51f785a9c55693e761861cc25bc4b1dd48b2c20675c7a056398b3eb398560b",
 
-    ".claude/skills/quenching-components/references/hook-new.md": "90cc40590349f11e973d82c8ccacd2564afc5e1f3024a212bfc7f45f89b28a32",
+    ".claude/skills/quenching-components/references/hook-new.md": "6513d79bd584f04813899949b10b639a19a48ef94e583862360aa5124d67e25c",
 
-    ".claude/skills/quenching-components/references/status.md": "6e2cc612a5d83ec68146fcc9aca038a73225a3fa5f919ac291f0b581c9eaf156",
+    ".claude/skills/quenching-components/references/status.md": "4f84ef3e1bcc1ec5852c079e5f36822bdc8bcbff9dbe0fa7222e754a3238e13d",
 
     ".claude/skills/quenching-delivery/SKILL.md": "aa485d4db9d6f9f74923146425d2ff6d126e7e7e490a0bef06e6df59162962d4",
 
@@ -778,77 +778,77 @@
 
     ".claude/skills/quenching-design/references/status.md": "21266695064ace61b30879567af92101f498591292df7eb20285c2402c3930e1",
 
-    ".claude/skills/quenching-git/SKILL.md": "3e700c694652840ecbe9575c267f616f5111feeb905054761ebacebffa028a42",
+    ".claude/skills/quenching-git/SKILL.md": "85b43687aee2079bf8113fb5fb55b3ed2739415bc6f5618d3f74b8a7640473a0",
 
-    ".claude/skills/quenching-git/references/branch.md": "a850543d748a644df5c4fb44a4e28ec894265d69601290b07bb3a0b66c2dec04",
+    ".claude/skills/quenching-git/references/branch.md": "cb60cadf2bfc5b19b916fcb6abdab4df8a54aabc640d44f1a16f5ae2e8548635",
 
-    ".claude/skills/quenching-git/references/cleanup.md": "977d97b0131f68833371d5b0156cfd381862c49e579920ab35ade1b6c40fe04d",
+    ".claude/skills/quenching-git/references/cleanup.md": "c8f9db2f163b6d31d3e89ebd14fa4884499ebcdbf2913d322f8cad9e45a4a54b",
 
-    ".claude/skills/quenching-git/references/commit-incremental.md": "c88f914c6e848dca4632d66fd10db4c8317bddd649847626713875285aaa9ab9",
+    ".claude/skills/quenching-git/references/commit-incremental.md": "4ca79a81e11e3ef3a0fa5dde1bf190d5ff1c5a6cfb70de6d79e2bb4619871c56",
 
-    ".claude/skills/quenching-git/references/commit.md": "4484162250c498565182c1783ef77c2192d27d83afb9a019d7597e2353119138",
+    ".claude/skills/quenching-git/references/commit.md": "0318ef48b1aea67b084d07e076315058b9cf696ba8986156e403cb5ecdcab8bd",
 
-    ".claude/skills/quenching-git/references/merge.md": "17e39fd1632b66cb44758210ce2b6f9d3066128f0b9a65157df36227f5bc6b4a",
+    ".claude/skills/quenching-git/references/merge.md": "474830576e5eecee9fee4936f6927f3a6ebb0ab0825e7fb69fbb3655d4d4ce62",
 
-    ".claude/skills/quenching-git/references/pr-create.md": "fb9a56c7ad03193932eff40a1ebfae9b7026c50c2d57148f2e41b20218b98960",
+    ".claude/skills/quenching-git/references/pr-create.md": "c3b593f838820dfd2e35456867dc0316190125cb17eb00da7b9cf7c559cb9ed7",
 
-    ".claude/skills/quenching-git/references/pr-review.md": "ef996d6b9a73d64ea0520c92ca09f3cda02187ca2e847cb27d506d5f07ed8772",
+    ".claude/skills/quenching-git/references/pr-review.md": "ad2346afd5e5126a2b0c8bc50afed70564bf731a5f7d1ec99a56752fb18b6d0a",
 
-    ".claude/skills/quenching-git/references/pr-status.md": "ef21ce42ca2643281eedf5723a6f3482e9677a2248ad6ccc9e2f30ab3d0a3a11",
+    ".claude/skills/quenching-git/references/pr-status.md": "61a80bbd179e2f01a0a4f46fe461293395fdcdc8dd8acc994f63c8cd57443cb5",
 
-    ".claude/skills/quenching-git/references/push.md": "5a6e2e1fd602e775395eb58624969455d3c10f6cbe01dc4bacdf09e327fb0f75",
+    ".claude/skills/quenching-git/references/push.md": "84159bbc93b677fddbf28ee56206d2d7e7f215b031f60863d7c00669799e8e06",
 
-    ".claude/skills/quenching-git/references/revert.md": "d43f2c69c088820acb38fdb1c0b873b36ae7e4a9642fa0f7426827472812445d",
+    ".claude/skills/quenching-git/references/revert.md": "f4d97bbf5e0b52cfafc040123c64c4f7151e8858f1830d3b4408818c0e9a28a5",
 
-    ".claude/skills/quenching-git/references/sync.md": "1b608cc8c84941e9e385c4e817bd4e1c749bdf1d622337ed2f32baf74fb1d87d",
+    ".claude/skills/quenching-git/references/sync.md": "fb92ec347dfafb5279913ef056465ebacc7ef5edaf8765cc044703bbc2471029",
 
-    ".claude/skills/quenching-handoff/SKILL.md": "efe4ed0b43bc9180f3a1d6ec049c11c64e8f2f546d8562053383dc0b09632c20",
+    ".claude/skills/quenching-handoff/SKILL.md": "cc48759c640216cd387aaf47c50747213b1483857705c426369ac7c9f5ec51fa",
 
-    ".claude/skills/quenching-handoff/references/template.md": "3cadf312ed570714431ee5fcf655a9358b0d97ce12c95d0417e59f7947def1c4",
+    ".claude/skills/quenching-handoff/references/template.md": "78fe82fece53e07ebf2a0152f0b1c1a2cf64f31350220d69ffdcbce550668eee",
 
-    ".claude/skills/quenching-knowledge/SKILL.md": "7a6adb9fc67f2298dee844d498aa2e80903aeaa9e540645d21d3159bfe3628ca",
+    ".claude/skills/quenching-knowledge/SKILL.md": "aa8715884f5f094a4a7fe26a00e5a0bf93a8ac9fae52e975a0533dd0d42decf3",
 
-    ".claude/skills/quenching-knowledge/references/add.md": "8ece711dec0a4d8805a4fc1e45e54fc76ac8fc54c5107f5415c379e717666106",
+    ".claude/skills/quenching-knowledge/references/add.md": "4d6671e228db3890f6868c3f826b9e5a2f1627e250e38992dbea25f89107a1e0",
 
-    ".claude/skills/quenching-knowledge/references/align.md": "b6c82fb8572ee971af88c6dea310fd2691c7fc26f1f604d709e57b1aa20d5222",
+    ".claude/skills/quenching-knowledge/references/align.md": "f6764cfcbdcd0970eefc863d0cb05dccbdcc06951bdf9233288466dd938543cc",
 
     ".claude/skills/quenching-knowledge/references/define.md": "0e66162cdf5bd332114b0f078d340423d7a027f1049f9483d93b7138ab799de9",
 
-    ".claude/skills/quenching-knowledge/references/documentation-build.md": "48d7434802b8c04ff278ca0a72818e14a41dd90b9a02d1cf620ed27c91456838",
+    ".claude/skills/quenching-knowledge/references/documentation-build.md": "30939d6f1671eb264ec60991fdd7b85bccb01ffc8da503987f67e4783d406059",
 
     ".claude/skills/quenching-knowledge/references/documentation-plan.md": "174232bf38699d46e8436b030a68ed7df05779b9cd68ccafc59e3f4ae21d526b",
 
-    ".claude/skills/quenching-knowledge/references/documentation-produce.md": "0e77123442c70a54f8eed6f8bc8d5e143a5fd6f35e13231a9459c265eb50f4a8",
+    ".claude/skills/quenching-knowledge/references/documentation-produce.md": "fcd3a53cc7ba0a81bd5d4ab92c5426940a3dfe8a98d6de280791e71d22b6cc81",
 
     ".claude/skills/quenching-knowledge/references/documentation-review.md": "f985432c976fbf31e3553eb527486edfb7c0d9e1ef0afc203dc09ca8c42d5c0e",
 
-    ".claude/skills/quenching-knowledge/references/documentation-write.md": "c83a9b95deae59c8239422a3220ba8c8e01a792e6ec022bf602187c5b8e7e90e",
+    ".claude/skills/quenching-knowledge/references/documentation-write.md": "aee829adc0ee872cd6b4ad070ee57daec73dae5f3b632ed5c38be06ad4ee1761",
 
     ".claude/skills/quenching-knowledge/references/glossary-backfill.md": "d42b80d7c5481d29996fb090825fcbad8fc51fb4d796c5244ca930b4e958a6b9",
 
-    ".claude/skills/quenching-knowledge/references/import-memory.md": "9d9b6f688c77841514afa49cad65fb119448605d9ee9426c9469a3d124ac74d8",
+    ".claude/skills/quenching-knowledge/references/import-memory.md": "843685dea106fed14f5fc2f3115a5b29ca25e114efdf420447316ef91339fd68",
 
-    ".claude/skills/quenching-knowledge/references/import.md": "5920972f8a319852c00e93c6fd2815920725f590d53ce9dc6593770dbd6fc730",
+    ".claude/skills/quenching-knowledge/references/import.md": "53ecaf68e43bd2a0448173060c9b2dc6ec6c0513d103d4c96f249aac2f6e09a2",
 
-    ".claude/skills/quenching-knowledge/references/knowledge-documentation/agent-readability.md": "02a1ab8736e93d916f0f49cdeb1a8ae14b7daa11e9c8272ec6ea1f0de85859c0",
+    ".claude/skills/quenching-knowledge/references/knowledge-documentation/agent-readability.md": "727fb1d8963870957f34ba6306451bc275277a8bc5d4fc3779925f4328fb0702",
 
-    ".claude/skills/quenching-knowledge/references/knowledge-documentation/architecture.md": "4158c02e9f67b6c2ea931a9f5a72fccedb58c8ec4901d3b785daa771da0dbcb8",
+    ".claude/skills/quenching-knowledge/references/knowledge-documentation/architecture.md": "b0577842a9404d3d8827aefe940f1d464f5c7c61dd14922c4a355a81619d6fc2",
 
-    ".claude/skills/quenching-knowledge/references/knowledge-documentation/craft.md": "5921e4590606b45087f47b137e566554675763f54073d058b8b4b71c8318196d",
+    ".claude/skills/quenching-knowledge/references/knowledge-documentation/craft.md": "64a6e173edf6a925cf79988e4c8502e4a2f9757d1371699058f15a13be657965",
 
-    ".claude/skills/quenching-knowledge/references/knowledge-documentation/quality.md": "a2d1e81ab36f7a00b9ad9d45adc1280a01f641f29b8399ae837691940f4e4c36",
+    ".claude/skills/quenching-knowledge/references/knowledge-documentation/quality.md": "d1452b33ed73b6dd4256345f3bee7c4d6ca4519591708eac15d7b89b4d4ff519",
 
-    ".claude/skills/quenching-knowledge/references/knowledge-documentation/validation.md": "98fbd6e0996e8943b60e961c3712cf8eca62d0a05215c27895d388f0b77cda92",
+    ".claude/skills/quenching-knowledge/references/knowledge-documentation/validation.md": "9cd4a416de26d55ada32d52745a2cbcdd82b5908b2bf51464933d8325229bf8d",
 
-    ".claude/skills/quenching-knowledge/references/knowledge-documentation/visual.md": "7c188cfaa0624eb9cb312c29dd0b4baf961f2ec09cb5e5742261330077a25e4d",
+    ".claude/skills/quenching-knowledge/references/knowledge-documentation/visual.md": "fba99a0ead5e6e258a8831ac7f3da224d9c6edcd2c28d24c3e14b66d8aa92850",
 
     ".claude/skills/quenching-knowledge/references/knowledge-documentation/zensical-capabilities.md": "53a4c8d37b0fc9b2c257b73eeb5ed2fbb7a130aabd048c19c239d2b4b1361eef",
 
     ".claude/skills/quenching-knowledge/references/knowledge-import-memory/memory-routing.md": "9b21f7eb82e6f1bdb3d4390fb1390c145863b8c928355ad6b44f6d5b16d6ca4a",
 
-    ".claude/skills/quenching-knowledge/references/learn.md": "c1ea2c3f9468bc691e40e4b96990ffde5cc6f7d8492795582004a3a28f5b30ce",
+    ".claude/skills/quenching-knowledge/references/learn.md": "93e8ef730061015da4d39bbbade8af2e0c51edae2aed4b3055e449307bc6a182",
 
-    ".claude/skills/quenching-knowledge/references/status.md": "7f3cd7e828ea47e4be8c8c3cde883754122440eaf699140f525cfeec3dbe25c0",
+    ".claude/skills/quenching-knowledge/references/status.md": "7e567304b62c50454a656be7b0c19a81393a4b95f0c7a509e678853a6cafcfee",
 
     ".claude/skills/quenching-opensource/SKILL.md": "0267419694adbae59b611b65d2e146a0a3eb969e739ce35bcbfb3297f57c3cd1",
 
@@ -902,7 +902,7 @@
 
     ".claude/skills/quenching-specs/SKILL.md": "5c0b698240ef184f4736dc9cbfc3bee6c0697f0804c4e5f084cb4c65b95613d2",
 
-    ".claude/skills/quenching-specs/references/autopilot.md": "e8549ad350c2633ce8c4b16e68b196423972d6c440de991c112e20f858c476c7",
+    ".claude/skills/quenching-specs/references/autopilot.md": "9790edbc7f421ff6a2e4552f903244791b0cfe94d0198bd9e1db24823706aead",
 
     ".claude/skills/quenching-specs/references/board.md": "f23f25a70443e60cb15174e2763370280b57c7396d5a4cf424b5319a867017dc",
 
