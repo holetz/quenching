@@ -251,6 +251,28 @@ class TheDeploy(unittest.TestCase):
             code = deploy_main(["--target", str(self.target), *argv, "--json"])
         return code, json.loads(out.getvalue() or "{}")
 
+    def test_without_the_key_no_vscode_file_is_planned_or_written(self):
+        code, payload = self.deploy("--modules", "specs", "--check")
+        self.assertEqual(1, code)  # the fresh target still owes the whole surface
+        self.assertNotIn(".vscode/settings.json",
+                         [change["path"] for change in payload["changes"]])
+        self.assertFalse((self.target / ".vscode").exists())
+
+    def test_declared_key_seeds_the_block_only_when_absent(self):
+        self.config({"shared": {"workspace": {"vscode": True}}})
+        code, payload = self.deploy("--modules", "specs", "--check")
+        self.assertEqual(1, code)
+        self.assertIn({"change": "seed", "path": ".vscode/settings.json"}, payload["changes"])
+        self.assertFalse((self.target / ".vscode").exists())
+        code, payload = self.deploy("--modules", "specs", "--write")
+        self.assertEqual(0, code)
+        path = self.target / ".vscode" / "settings.json"
+        self.assertEqual(workspace.recommended(), jsonc_loads(path.read_text(encoding="utf-8")))
+        path.write_text(path.read_text(encoding="utf-8") + "\n// user edit\n", encoding="utf-8")
+        code, payload = self.deploy("--modules", "specs", "--write")
+        self.assertEqual(0, code)
+        self.assertIn("// user edit", path.read_text(encoding="utf-8"))
+
     def test_a_malformed_workspace_block_is_refused_before_any_write(self):
         self.config({"shared": {"workspace": {"vscode": "yes"}}})
         code, payload = self.deploy("--modules", "specs", "--write")
