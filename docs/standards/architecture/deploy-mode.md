@@ -201,7 +201,11 @@ merge also writes:
 `--check` reuses the depth, the patterns and the shell rules the manifest records
 (`opencodeConfig`) instead of deriving them again: the first two name the deploying machine's
 global config and checkout, so a committed `opencode.json` read on another machine is not drift.
-`--write` derives them for the machine it runs on.
+`--write` reuses them too when `opencode.json` already carries every recorded value (the depth,
+each pattern and each shell rule at `allow`), so a deploy never swaps a checkout's own for this
+machine's and leaves the file and the `opencodeConfig` block unchanged. It derives them for the
+machine it runs on only when the file lacks one of them — a first deploy, or an entry removed to
+adopt this machine's values.
 
 Nothing else is granted: an existing `deny` on a pattern or a shell rule is the user's refusal and
 is neither overwritten nor recorded. The permission uses the V1 object form, which OpenCode still
@@ -234,7 +238,9 @@ merged, never owned, so it is not in the manifest's `files`.
   only when the rule is absent, and records the ones it added in `claudeSettings.permissions`. A
   rule the user already wrote is theirs and is not recorded; `deny` and `ask` are never touched.
   `--check` reuses the recorded rules instead of deriving them again: they name the deploying
-  machine's checkout, so another clone is not drift. A target outside git gets no rule.
+  machine's checkout, so another clone is not drift. `--write` does the same when `permissions.allow`
+  already holds every recorded rule, so it never swaps a checkout's own rules for this machine's;
+  with one missing it derives them again. A target outside git gets no rule.
 - **`--check`.** The merge result differing from the file is `settings` drift (exit 1).
 - **Removal.** Selecting fewer modules drops the hooks of the module that left; a harness list
   without `claude` (`opencode`, `none`) wants nothing, so only deploy's own entries leave,
