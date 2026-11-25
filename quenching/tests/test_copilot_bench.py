@@ -68,5 +68,44 @@ class TheReader(unittest.TestCase):
             self.assertRegex(limit["date"], r"^\d{4}-\d{2}-\d{2}$")
 
 
+class TheDisposableTarget(unittest.TestCase):
+    """The probe against a target the deploy really installed: the user's surface, not the source."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.root, cls.facts = copilot_bench.deploy_target("all")
+        cls.payload = copilot_bench.bench(cls.root, "deploy", "all", cls.facts)
+
+    def test_the_server_the_target_registers_answers_the_same_tool_count_as_the_source(self):
+        target = self.payload["measurements"]["mcp"]
+        source = copilot_bench.measure_mcp(REPO_ROOT)
+        self.assertEqual("ok", target["state"], target)
+        self.assertEqual("ok", source["state"], source)
+        self.assertEqual(source["tools"], target["tools"])
+        self.assertEqual(source["byPillar"], target["byPillar"])
+
+    def test_both_skill_copies_exist_and_the_bridge_is_byte_identical(self):
+        skills = self.payload["measurements"]["skills"]
+        self.assertEqual("present", skills["state"])
+        self.assertEqual(13, skills["source"]["count"])
+        self.assertEqual(skills["source"]["count"], skills["bridge"]["count"])
+        self.assertEqual([], skills["bridge"]["changes"])
+
+    def test_the_largest_description_is_the_same_one_the_source_file_carries(self):
+        skills = self.payload["measurements"]["skills"]
+        largest = skills["descriptions"]["largest"]
+        source = (PLUGIN_ROOT / "skills" / largest["skill"] / "SKILL.md").read_text(encoding="utf-8")
+        self.assertEqual(len(copilot_bench.frontmatter_fields(source)["description"]),
+                         largest["chars"])
+        self.assertLessEqual(largest["chars"], skills["descriptions"]["cut"])
+        self.assertEqual([], skills["descriptions"]["overCut"])
+
+    def test_the_deploy_writes_no_github_surface(self):
+        clients = self.payload["measurements"]["clients"]
+        self.assertEqual("absent", clients["github"]["state"])
+        self.assertEqual({name: False for name in copilot_bench.GITHUB_FORMATS},
+                         clients["github"]["formats"])
+
+
 if __name__ == "__main__":
     unittest.main()
