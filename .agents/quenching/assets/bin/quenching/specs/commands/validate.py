@@ -21,11 +21,11 @@ from quenching.specs.parse.text import body_after_frontmatter
 from quenching.specs.parse.sections import (duplicate_headings, gate_report, parse_impact_standards, ready_report,
                                             section_spans, section_state, stray_headings)
 from quenching.specs.parse.tasks import _files_bad_annotation, operational_entries
-
-DESCOPED_RE = re.compile(r"—\s*descoped\s*:", re.IGNORECASE)
 from quenching.specs.schema import (MERGE_ANCHORLESS_STRATEGIES, MERGE_NO_PR_STRATEGIES,
                                     MERGE_STRATEGIES, RECORD_NONE_RE, VERIFICATION_POLICIES,
                                     canonical_headings, load_schema)
+
+DESCOPED_RE = re.compile(r"—\s*descoped\s*:", re.IGNORECASE)
 
 
 # A task whose title or `verify:` runs a generator writes files; with `files:` empty the
