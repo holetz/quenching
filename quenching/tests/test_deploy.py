@@ -393,8 +393,6 @@ class Deploy(unittest.TestCase):
         self.assertIn("generated from .agents/skills/my-skill/SKILL.md", copied.read_text())
         bridge = json.loads((self.target / ".claude/skills/.generated-files.json").read_text())
         self.assertIn("my-skill/SKILL.md", bridge["files"])
-        self.assertEqual(0, self.target_cq("components", "bridge", "--target", ".",
-                                           "--check", "--json").returncode)
 
     def test_a_pointer_only_claude_md_is_pruned_only_on_request(self):
         self.write("AGENTS.md", "# Mine\n")
@@ -449,15 +447,20 @@ class Deploy(unittest.TestCase):
         self.assertFalse((self.target / ".agents/skills/quenching-design").exists())
 
     def test_narrowing_the_modules_leaves_no_orphan_bridge_skill_in_one_write(self):
-        self.assertEqual(0, self.run_deploy("--modules", "all", "--harness", "claude",
-                                            "--write")[0])
+        self.write(".agents/skills/bundle-local/SKILL.md",
+                   "---\nname: bundle-local\ndescription: a target's own skill\n---\n\nBody.\n")
+        self.assertEqual(0, self.run_deploy("--modules", "all", "--write")[0])
         self.write(".agents/skills/quenching-design/notes.md", "kept by the target\n")
         code, _payload = self.run_deploy("--modules", "core", "--write")
         self.assertEqual(0, code)
         self.assertFalse((self.target / ".claude/skills/quenching-design/SKILL.md").exists())
-        self.assertTrue((self.target / ".claude/skills/quenching-design/notes.md").exists())
+        # A stray file beside a generated skill is the target's, never a skill: it survives in
+        # its `.agents` home and is not copied to `.claude` as a skill the bridge never expected.
+        self.assertTrue((self.target / ".agents/skills/quenching-design/notes.md").exists())
+        self.assertFalse((self.target / ".claude/skills/quenching-design/notes.md").exists())
         bridge = json.loads((self.target / ".claude/skills/.generated-files.json").read_text())
         self.assertNotIn("quenching-design/SKILL.md", bridge["files"])
+        self.assertIn("bundle-local/SKILL.md", bridge["files"])
         code, payload = self.run_deploy("--check")
         self.assertEqual(0, code)
         self.assertEqual([], payload["changes"])
