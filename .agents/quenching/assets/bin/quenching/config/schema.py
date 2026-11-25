@@ -28,6 +28,7 @@ TYPES = ("string", "integer", "boolean", "enum", "paths", "strings", "prose", "n
 
 CATEGORIES = (
     ("worktrees", "Worktrees and isolation", "Worktrees e isolamento"),
+    ("workspace", "Workspace files", "Arquivos de workspace"),
     ("autonomy", "Autonomy and orchestration", "Autonomia e orquestração"),
     ("specs", "Specs and cards", "Specs e cards"),
     ("git", "Git and PR", "Git e PR"),
@@ -113,6 +114,13 @@ _k("shared.workHost.protectedPaths", "paths", WORK_HOST["protectedPaths"], "work
 _k("shared.workHost.minFreeGb", "integer", WORK_HOST["minFreeGb"], "worktrees", "machine",
    "cq config host", ("Minimum free disk (GB)", "The host must keep this much disk free."),
    ("Disco livre mínimo (GB)", "O host precisa manter este espaço livre."), minimum=0)
+_k("shared.workspace.vscode", "boolean", False, "workspace", "project",
+   "cq deploy, cq doctor",
+   ("VS Code workspace settings",
+    "Seed .vscode/settings.json with the search and request settings that keep long flows running."),
+   ("Configurações do workspace do VS Code",
+    "Semeia .vscode/settings.json com as configurações de busca e de requisições que mantêm "
+    "fluxos longos rodando."))
 
 # — Autonomy and orchestration —
 _k("shared.autonomy.runAloneUpTo", "enum", AUTONOMY["runAloneUpTo"], "autonomy", "either",

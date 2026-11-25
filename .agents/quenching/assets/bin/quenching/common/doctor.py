@@ -24,6 +24,7 @@ from pathlib import Path
 from typing import Callable
 
 from quenching.common import access as client_access
+from quenching.common import workspace as workspace_settings
 from quenching.common.cache import cache_root
 from quenching.common.git import COMMAND_TIMEOUT_S, _git
 from quenching.common.config import (active_provider, detect_profile, load_config,
@@ -433,8 +434,67 @@ def run_access(as_json: bool, root: str) -> int:
     return OK
 
 
+def _workspace_line(report: dict) -> str:
+    """One line for the standard report: what the file carries, or the gap that matters."""
+    path = report["path"]
+    if report["state"] == "unreadable":
+        return f"workspace: {path} could not be read as JSONC — `cq doctor --workspace` prints the block"
+    if report["state"] == "absent":
+        if report["declared"]:
+            return (f"workspace: {path} is absent — `cq deploy --write` seeds it "
+                    "(shared.workspace.vscode)")
+        return (f"workspace: {path} is absent — `cq doctor --workspace` prints the block; "
+                "declare `shared.workspace.vscode` to let `cq deploy` seed it")
+    if report["complete"]:
+        return (f"workspace: {path} — {len(report['keys'])}/{len(report['keys'])} "
+                "recommended key(s) present")
+    gaps: list[str] = []
+    if "files.exclude" in report["missing"]:
+        gaps.append("files.exclude")
+    else:
+        gaps += report["missingExclusions"]
+    ceiling = report["maxRequests"]
+    if "chat.agent.maxRequests" in report["missing"] or ceiling is None \
+            or ceiling < workspace_settings.MAX_REQUESTS:
+        gaps.append(f"chat.agent.maxRequests >= {workspace_settings.MAX_REQUESTS}")
+    return (f"workspace: {path} — gap(s): {', '.join(gaps)} — `cq doctor --workspace` "
+            "prints the block")
+
+
+def _workspace_human(root: str, report: dict) -> str:
+    lines = [f"cq doctor --workspace — {os.path.abspath(root)}",
+             f"  .vscode/settings.json: {report['state']}"
+             + (f" — {report['reason']}" if report.get("reason") else ""),
+             f"  shared.workspace.vscode: "
+             f"{'declared' if report['declared'] else 'not declared'}"]
+    if report["state"] == "present":
+        lines.append(f"  files.exclude: {len(report['excluded'])}/{len(workspace_settings.EXCLUDED)}"
+                     " path(s) excluded")
+        ceiling = report["maxRequests"]
+        lines.append(f"  chat.agent.maxRequests: "
+                     f"{ceiling if ceiling is not None else 'absent'} "
+                     f"(recommended {workspace_settings.MAX_REQUESTS})")
+    lines += ["", "The block to write (this prints; nothing is applied):",
+              workspace_settings.snippet().rstrip("\n"),
+              "",
+              "The live half is not proved here: open the workspace in VS Code (Copilot) and",
+              "search a term that only exists under .agents/quenching; a result outside the",
+              "block means the client ignored the key in this workspace."]
+    return "\n".join(lines)
+
+
+def run_workspace(as_json: bool, root: str) -> int:
+    """Report the recommended workspace settings and what the file carries; write nothing."""
+    report = workspace_settings.report(root)
+    emit(as_json, {"ok": True, "root": os.path.abspath(root), "workspace": report,
+                   "snippet": workspace_settings.snippet()},
+         _workspace_human(root, report))
+    return OK
+
+
 def run(as_json: bool, root: str, *, setup: bool = False, write: bool = False,
-        antivirus: bool = False, access: bool = False) -> int:
+        antivirus: bool = False, access: bool = False,
+        workspace: bool = False) -> int:
     """Render the top-level doctor and preserve the CQ refusal door for missing prerequisites."""
     resolved_root = os.path.abspath(root)
     if not os.path.isdir(resolved_root):
@@ -462,6 +522,14 @@ def run(as_json: bool, root: str, *, setup: bool = False, write: bool = False,
                 "remedy": "run `cq doctor --access` and paste the block it prints yourself",
             }, as_json)
         return run_access(as_json, resolved_root)
+    if workspace:
+        if write:
+            return refuse({
+                "code": "cq-setup-write-without-setup",
+                "message": "`--write` is valid only with `--setup`; `--workspace` writes nothing",
+                "remedy": "run `cq doctor --workspace` and apply what it prints yourself",
+            }, as_json)
+        return run_workspace(as_json, resolved_root)
     if write:
         return refuse({
             "code": "cq-setup-write-without-setup",
@@ -493,6 +561,11 @@ def run(as_json: bool, root: str, *, setup: bool = False, write: bool = False,
     if config is not None:
         report = {**report, "config": config}
         human += f"\n  {_config_line(config)}"
+    workspace_report = workspace_settings.report(resolved_root)
+    if (workspace_report["state"] != "absent" or workspace_report["declared"]
+            or os.path.isdir(os.path.join(resolved_root, ".vscode"))):
+        report = {**report, "workspace": workspace_report}
+        human += f"\n  {_workspace_line(workspace_report)}"
     git_cache = untracked_cache_report(resolved_root)
     if git_cache is not None:
         report = {**report, "gitCache": git_cache}

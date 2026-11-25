@@ -34,6 +34,7 @@ class TheReader(unittest.TestCase):
         vscode = copilot_bench.measure_clients(FIXTURE)["vscode"]
         self.assertEqual("present", vscode["state"])
         self.assertTrue(all(vscode["keys"].values()), vscode["keys"])
+        self.assertEqual(["**/.agents/quenching/assets/**"], vscode["filesExclude"])
         self.assertEqual(["**/.agents/quenching/assets/**"], vscode["searchExclude"])
         self.assertEqual(["chat.agent.sandbox"], vscode["sandbox"])
 

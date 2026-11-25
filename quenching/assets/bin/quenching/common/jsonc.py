@@ -1,9 +1,7 @@
-"""JSON with comments, as the clients that read a `.jsonc`/JSONC settings file do.
+"""JSON with comments and trailing commas, as VS Code and OpenCode read their settings files.
 
-`.vscode/settings.json` and `opencode.jsonc` are JSONC in the world: the first one carries
-comments and a trailing comma in most workspaces, so a `json.load` would refuse the very file the
-deploy and the doctor must read. This reader keeps strings intact, drops `//` and `/* */`
-comments and the trailing commas, and hands the result to `json.loads`.
+The reader is shared by the deploy (`opencode.json`, and the `.vscode/settings.json` report) and by
+the workspace report, so it lives in `common` rather than in either caller.
 """
 from __future__ import annotations
 
@@ -12,7 +10,7 @@ import re
 
 
 def jsonc_loads(text: str):
-    """JSON with `//` and `/* */` comments and trailing commas, as the clients read it."""
+    """JSON with `//` and `/* */` comments and trailing commas, as both clients write it."""
     out, index, size = [], 0, len(text)
     while index < size:
         char = text[index]
