@@ -20,6 +20,13 @@
     "external_directory": {
       "~/Projects/quenching-slot-*": "allow",
       "~/Projects/quenching.*": "allow"
+    },
+    "bash": {
+      ".agents/quenching/bin/cq": "allow",
+      ".agents/quenching/bin/cq *": "allow",
+      "./.agents/quenching/bin/cq *": "allow",
+      "python3 .agents/quenching/bin/cq *": "allow",
+      "python .agents/quenching/bin/cq *": "allow"
     }
   }
 }

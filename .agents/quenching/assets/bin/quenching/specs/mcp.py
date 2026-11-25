@@ -343,12 +343,12 @@ def _w_task(args: dict) -> list[str]:
     reason = args.get("reason")
     if action in ("block", "descope") and not reason:
         raise ToolArgs(f"`reason` is required to {action}")
-    for key in ("reason", "subject", "commit"):
+    for key in ("reason", "subject", "commit", "replaced_by"):
         value = args.get(key)
         if value is not None:
             if not isinstance(value, str) or not value.strip() or "\n" in value:
                 raise ToolArgs(f"`{key}` must be a one-line string")
-            argv += [f"--{key}", value.strip()]
+            argv += [f"--{key.replace('_', '-')}", value.strip()]
     return argv
 
 
@@ -451,10 +451,12 @@ WRITES: dict[str, tuple] = {
         _w_record, None, _gate_record, _preflight_record),
     "specs_task": (
         "Check, uncheck, block or descope ONE task (`action`, `task`); block and descope need a "
-        "`reason`; check takes optional `subject` and `commit`.",
+        "`reason`; check takes optional `subject` and `commit`; descope takes optional `replaced_by`, the task that "
+        "delivers the work instead.",
         _schema({"spec": SPEC, "action": {"type": "string", "enum": list(TASK_ACTIONS)},
                  "task": {"type": "string"}, "reason": {"type": "string"},
-                 "subject": {"type": "string"}, "commit": {"type": "string"}},
+                 "subject": {"type": "string"}, "commit": {"type": "string"},
+                 "replaced_by": {"type": "string"}},
                 ["spec", "action", "task"]), _w_task, None, None, None),
     "specs_epic_add": (
         "Historical alias of `specs_link_add`: list a spec as a member of another.",

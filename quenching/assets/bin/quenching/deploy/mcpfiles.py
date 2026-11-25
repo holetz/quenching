@@ -13,7 +13,8 @@ import re
 import shutil
 import subprocess
 
-from quenching.common.jsonc import jsonc_loads  # noqa: F401 — re-exported
+from quenching.common import access
+from quenching.common.jsonc import jsonc_loads
 
 NAME = "quenching"
 CLAUDE = ".mcp.json"
@@ -104,6 +105,12 @@ def _depth_wanted(current, depth: int) -> bool:
     return not (isinstance(current, int) and not isinstance(current, bool) and current >= depth)
 
 
+def _writable(mapping: dict, key: str) -> bool:
+    """The merge may set `allow` here: absent or an `ask`. A `deny` is the user's refusal and an
+    `allow` is already theirs, so neither is written nor recorded."""
+    return mapping.get(key) not in ("allow", "deny")
+
+
 def written_extras(text: str | None, extras: dict) -> dict:
     """What merging `extras` into `text` changes — the only part the manifest may record, so that
     removal never deletes a depth or an allow the user already had. A key already holding the
@@ -119,9 +126,12 @@ def written_extras(text: str | None, extras: dict) -> dict:
     permission = document.get("permission")
     directories = permission.get("external_directory") if isinstance(permission, dict) else None
     directories = directories if isinstance(directories, dict) else {}
+    bash = permission.get("bash") if isinstance(permission, dict) else None
+    bash = bash if isinstance(bash, dict) else {}
     return {"subagentDepth": depth if depth is not None and _depth_wanted(current, depth) else None,
             "externalDirectory": [p for p in extras.get("externalDirectory") or []
-                                  if directories.get(p) != "allow"]}
+                                  if _writable(directories, p)],
+            "bash": [p for p in extras.get("bash") or [] if _writable(bash, p)]}
 
 
 def _opencode_extras(document: dict, extras: dict) -> bool:
@@ -136,15 +146,25 @@ def _opencode_extras(document: dict, extras: dict) -> bool:
         if _depth_wanted(current, depth):
             experimental["subagent_depth"] = depth
     patterns = extras.get("externalDirectory") or []
-    if patterns:
+    shell_rules = extras.get("bash") or []
+    if patterns or shell_rules:
         permission = _object(document, "permission")
         if permission is None:
             return False
-        directories = _object(permission, "external_directory")
-        if directories is None:
-            return False
-        for pattern in patterns:
-            directories[pattern] = "allow"
+        if patterns:
+            directories = _object(permission, "external_directory")
+            if directories is None:
+                return False
+            for pattern in patterns:
+                if _writable(directories, pattern):
+                    directories[pattern] = "allow"
+        if shell_rules:
+            bash = _object(permission, "bash")
+            if bash is None:
+                return False
+            for pattern in shell_rules:
+                if _writable(bash, pattern):
+                    bash[pattern] = "allow"
     return True
 
 
@@ -174,6 +194,12 @@ def _opencode_strip(document: dict, extras: dict) -> None:
             if directories.get(pattern) == "allow":
                 del directories[pattern]
         _prune(document, "permission", "external_directory")
+    bash = permission.get("bash") if isinstance(permission, dict) else None
+    if isinstance(bash, dict):
+        for pattern in extras.get("bash") or []:
+            if bash.get(pattern) == "allow":
+                del bash[pattern]
+        _prune(document, "permission", "bash")
 
 
 def _json_merge(text: str | None, section: str, entry: dict, schema: bool,
@@ -217,15 +243,9 @@ def opencode_strip(text: str | None, extras: dict) -> str | None:
 
 def external_patterns(primary: str, home: str | None) -> list[str]:
     """The `external_directory` patterns of the primary checkout's siblings: the slots
-    (`<parent>/<repo>-slot-*`) and the store (`<primary>.*`), `~/` when under `home`. OpenCode
-    matches `<dir>/*` and its `*` crosses `/`, so each pattern covers every file below."""
-    primary = os.path.normpath(primary).replace(os.sep, "/")
-    parent, name = primary.rsplit("/", 1)
-    patterns = [f"{parent}/{name}-slot-*", f"{primary}.*"]
-    if home:
-        home = os.path.normpath(home).replace(os.sep, "/").rstrip("/")
-        patterns = ["~" + p[len(home):] if p.startswith(home + "/") else p for p in patterns]
-    return patterns
+    (`<parent>/<repo>-slot-*`) and the store (`<primary>.*`), `~/` when under `home`. One
+    derivation, in `common.access`, shared by every client's declaration and by the doctor."""
+    return access.patterns(primary, home)
 
 
 GLOBAL_NAMES = ("opencode.json", "opencode.jsonc", "config.json")
