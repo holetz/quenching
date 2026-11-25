@@ -215,6 +215,58 @@ class Revalidation(RepoCase):
         self.assertTrue(os.path.isdir(path))
 
 
+class FreeSlots(RepoCase):
+    def _free_slot(self, n):
+        path = os.path.realpath(os.path.join(self.tmp, f"repo-slot-{n}"))
+        _run(self.repo, "worktree", "add", "-q", "--detach", "--lock",
+             "--reason", "quenching: available", path, "HEAD")
+        return path
+
+    def _five_free_slots(self):
+        # The default floor preserves the four lowest-numbered free slots; the fifth is the
+        # candidate a cleanup may remove.
+        paths = [self._free_slot(n) for n in range(1, 6)]
+        return paths, paths[-1]
+
+    def test_the_pool_lock_does_not_block_eligibility(self):
+        paths = [self._free_slot(n) for n in range(1, 6)]
+        with NO_PRS:
+            report = stale_report(self.repo)
+        row = next(w for w in report["worktrees"] if w["path"] == paths[4])
+        self.assertTrue(row["eligible"], row["blockers"])
+        held = next(w for w in report["worktrees"] if w["path"] == paths[0])
+        self.assertIn("slot-floor", held["blockers"])
+
+    def test_prune_unlocks_a_free_slot_before_removing_it(self):
+        _paths, candidate = self._five_free_slots()
+        tip = subprocess.run(["git", "rev-parse", "HEAD"], cwd=candidate, capture_output=True,
+                             text=True).stdout.strip()
+        code, out = _prune(self.repo, worktree=candidate, expect_tip=tip, confirm_inactive=True,
+                           id=entry_id("worktree", candidate))
+        self.assertEqual(code, 0, out)
+        self.assertFalse(os.path.isdir(candidate))
+
+    def test_a_failed_removal_puts_the_pool_lock_back(self):
+        _paths, candidate = self._five_free_slots()
+        tip = subprocess.run(["git", "rev-parse", "HEAD"], cwd=candidate, capture_output=True,
+                             text=True).stdout.strip()
+        real = cmd_prune.__globals__["_git_run"]
+
+        def fake(cwd, *argv, **kw):
+            if "worktree" in argv and "remove" in argv:
+                return 1, "", "boom"
+            return real(cwd, *argv, **kw)
+
+        with mock.patch("quenching.git.prune._git_run", side_effect=fake):
+            code, _out = _prune(self.repo, worktree=candidate, expect_tip=tip,
+                                confirm_inactive=True, id=entry_id("worktree", candidate))
+        self.assertEqual(code, 1)
+        listed = subprocess.run(["git", "worktree", "list", "--porcelain"], cwd=self.repo,
+                                capture_output=True, text=True).stdout
+        self.assertIn("quenching: available", listed)
+        self.assertTrue(os.path.isdir(candidate))
+
+
 class CommandBody(unittest.TestCase):
     def test_cleanup_shows_dates_groups_and_separate_worktree_confirmation(self):
         text = CLEANUP_COMMAND.read_text(encoding="utf-8")

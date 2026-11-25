@@ -219,19 +219,28 @@ def _registered_worktrees(cwd: str) -> list[dict]:
     for line in out.splitlines() + [""]:
         if line.startswith("worktree "):
             row = {"path": native_path(line[len("worktree "):]), "head": None, "branch": None,
-                   "locked": False}
+                   "locked": False, "lockReason": None}
         elif row is None:
             continue
         elif line.startswith("HEAD "):
             row["head"] = line[len("HEAD "):]
         elif line.startswith("branch "):
             row["branch"] = line[len("branch "):].removeprefix("refs/heads/")
-        elif line == "locked" or line.startswith("locked "):
+        elif line == "locked":
             row["locked"] = True
+        elif line.startswith("locked "):
+            row["locked"] = True
+            row["lockReason"] = line[len("locked "):]
         elif not line:
             rows.append(row)
             row = None
     return rows
+
+
+def _free_lock(reason: str | None) -> bool:
+    """Whether a lock reason is the pool's own; a free slot is warm, not held."""
+    from quenching.git import slots as slot_pool
+    return slot_pool.is_free_lock(reason)
 
 
 def _assess_worktrees(cwd: str, base: str, open_prs: set[str] | None) -> list[dict]:
@@ -249,7 +258,7 @@ def _assess_worktrees(cwd: str, base: str, open_prs: set[str] | None) -> list[di
         blockers = []
         if real == here:
             blockers.append("current-checkout")
-        if row["locked"]:
+        if row["locked"] and not _free_lock(row.get("lockReason")):
             blockers.append("locked")
         if row["branch"] == base:
             blockers.append("base-branch")
