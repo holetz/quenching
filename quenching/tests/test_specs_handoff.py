@@ -6,9 +6,12 @@ import contextlib
 import io
 import json
 import os
+import sqlite3
 import subprocess
 import tempfile
 import unittest
+from datetime import datetime, timezone
+from unittest import mock
 from pathlib import Path
 
 import _paths  # noqa: F401  — must precede the `quenching` import; see its docstring
@@ -124,6 +127,85 @@ class Pieces(unittest.TestCase):
         self.assertNotIn("não enviado", local["block"])
         self.assertEqual("Leia o handoff em .quenching/handoff/h.md antes de agir. "
                          "Ele pertence à spec 7; siga com `/quenching-specs execute 7`.", local["prompt"])
+
+
+class OpenCodeFacts(unittest.TestCase):
+    """`handoff facts` on an OpenCode session: files, last words and the commits since it began."""
+
+    def setUp(self):
+        tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
+        self.root = os.path.realpath(tmp.name)
+        subprocess.run(["git", "init", "-q", "-b", "main", self.root], check=True)
+        env = {"GIT_AUTHOR_NAME": "t", "GIT_AUTHOR_EMAIL": "t@t", "GIT_COMMITTER_NAME": "t",
+               "GIT_COMMITTER_EMAIL": "t@t", "GIT_AUTHOR_DATE": "2026-11-20T10:00:00+0000",
+               "GIT_COMMITTER_DATE": "2026-11-20T10:00:00+0000"}
+        Path(self.root, "f").write_text("1")
+        subprocess.run(["git", "-C", self.root, "add", "f"], check=True)
+        subprocess.run(["git", "-C", self.root, "commit", "-q", "-m", "before the session"], check=True,
+                       env={**os.environ, **env})
+        Path(self.root, "g").write_text("2")
+        subprocess.run(["git", "-C", self.root, "add", "g"], check=True)
+        subprocess.run(["git", "-C", self.root, "commit", "-q", "-m", "made in the session"], check=True,
+                       env={**os.environ, **env, "GIT_COMMITTER_DATE": "2026-11-20T12:00:00+0000",
+                            "GIT_AUTHOR_DATE": "2026-11-20T12:00:00+0000"})
+        self.db = Path(self.root) / "opencode.db"
+        db = sqlite3.connect(self.db)
+        db.executescript("""
+            CREATE TABLE session_v2 (id TEXT, parent_id TEXT, agent TEXT, directory TEXT, time_updated INT);
+            CREATE TABLE session_message (id TEXT, session_id TEXT, type TEXT, seq INT, data TEXT);
+            CREATE TABLE session_part (message_id TEXT, session_id TEXT, ordinal INT, type TEXT, data TEXT);""")
+        db.execute("INSERT INTO session_v2 VALUES ('ses_one', NULL, 'build', ?, 1)", (self.root,))
+
+        def message(mid, seq, kind, data):
+            db.execute("INSERT INTO session_message VALUES (?, 'ses_one', ?, ?, ?)", (mid, kind, seq, json.dumps(data)))
+
+        # 2026-11-20T11:00:00Z, between the two commits' dates
+        begun = int(datetime(2026, 11, 20, 11, tzinfo=timezone.utc).timestamp() * 1000)
+        message("m1", 1, "user", {"time": {"created": begun}, "text": "fix the parser"})
+        message("m2", 2, "assistant", {"time": {"created": begun + 1}, "content": [
+            {"type": "tool", "id": "t1", "name": "edit", "state": {"input": {"path": f"{self.root}/src/a.py"}}},
+            {"type": "tool", "id": "t2", "name": "read", "state": {"input": {"path": f"{self.root}/b.py"}}}]})
+        message("m3", 3, "user", {"time": {"created": begun + 2}, "text": "now ship it"})
+        db.commit()
+        db.close()
+        patcher = mock.patch.dict(os.environ, {"QUENCHING_OPENCODE_DB": str(self.db)})
+        patcher.start()
+        self.addCleanup(patcher.stop)
+        for var in ("CLAUDE_CODE_SESSION_ID", "OPENCODE_SESSION_ID"):
+            os.environ.pop(var, None)
+
+    def facts(self, *argv: str) -> tuple[int, dict]:
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf):
+            code = cli.main(["--root", self.root, "handoff", "facts", *argv, "--json"])
+        return code, json.loads(buf.getvalue())
+
+    def test_a_session_id_reads_the_opencode_database(self):
+        code, got = self.facts("--session", "ses_one")
+        self.assertEqual(0, code, got)
+        self.assertEqual(["src/a.py"], got["filesModified"])           # an edit, never the read
+        self.assertEqual("now ship it", got["lastUserMessage"])
+        self.assertEqual("OpenCode session id", got["resolvedBy"])
+        self.assertTrue(got["transcript"].endswith("#ses_one"))
+        self.assertEqual(["made in the session"], [c.split(" ", 1)[1] for c in got["commits"]])
+
+    def test_opencode_session_id_in_the_environment_is_the_default(self):
+        with mock.patch.dict(os.environ, {"OPENCODE_SESSION_ID": "ses_one"}):
+            code, got = self.facts()
+        self.assertEqual(0, code, got)
+        self.assertEqual("OPENCODE_SESSION_ID", got["resolvedBy"])
+
+    def test_claude_code_keeps_priority_when_both_are_in_the_environment(self):
+        with mock.patch.dict(os.environ, {"OPENCODE_SESSION_ID": "ses_one", "CLAUDE_CODE_SESSION_ID": "nope"}):
+            code, got = self.facts()
+        self.assertEqual(2, code)
+        self.assertEqual("sp-handoff-no-transcript", got["code"])
+
+    def test_an_unknown_opencode_session_is_a_refusal_not_an_empty_handoff(self):
+        code, got = self.facts("--session", "ses_missing")
+        self.assertEqual(2, code)
+        self.assertIn("ses_missing", got["message"])
 
 
 class Write(GitStoreFixture):

@@ -2,7 +2,7 @@
 type: standard
 title: Source layout — what lives under quenching/ and integrations/
 description: one editable source, quenching/, reaches a repository only through cq deploy, and the satellites that install into no repository sit beside it under integrations/<name>/; in the source, skills/<name>/SKILL.md is the only entry point and the skill name is the folder name, a reference lives inside the skill that cites it or in the common references/ when two skills cite it, and everything that is not an entry point lives under assets/ or references/ and is cited by absolute path in the target dialect
-resource: quenching/skills/**, quenching/references/**, quenching/agents/**, quenching/assets/**, quenching/tests/**, integrations/claude-hud/**, integrations/claude-vitrine/**, integrations/claude-cache/**, integrations/opencode-vitrine/**
+resource: quenching/skills/**, quenching/references/**, quenching/agents/**, quenching/assets/**, quenching/tests/**, integrations/claude-hud/**, integrations/claude-vitrine/**, integrations/claude-cache/**, integrations/opencode-cache/**, integrations/opencode-vitrine/**
 tags: [architecture, source, skills, layout, deploy]
 timestamp: 2026-11-20
 audience: both
@@ -28,6 +28,7 @@ one folder per harness satellite. The skill surface reaches a repository only th
 | `integrations/claude-hud/` | the band above the Claude Code prompt, an entry of `.claude-plugin/marketplace.json` | hand-written; the gate runs `claude plugin validate` |
 | `integrations/claude-vitrine/` | the Specs pane and the configuration view for Claude Desktop and the terminal, a hooks-module mod (TypeScript, no build) and the second entry of `.claude-plugin/marketplace.json`; it installs with `/plugin install quenching-vitrine@quenching`, separately from the skills, and `cq deploy` neither installs nor references it | hand-written, outside every translation; the gate runs `claude plugin validate` and `claude plugin test` |
 | `integrations/claude-cache/` | `quenching-cache`, the prompt-cache band above the Claude Code prompt, an entry of `.claude-plugin/marketplace.json`; derived from [cache-maxxing](https://github.com/5m0k3/cache-maxxing) by 5m0k3 (MIT), both copyrights in its `LICENSE` and every change in its `NOTICE.md`. It reads `shared.cache` and writes handoffs through `cq`; `hooks/prices.ts` and `hooks/handoff-template.md` are generated from `session/pricing.json` and the `quenching-handoff` template by `scripts/cache_plugin_sync.py` | hand-written but the two generated copies; the gate checks the copies and runs `claude plugin validate` and `claude plugin test` |
+| `integrations/opencode-cache/` | the OpenCode port of `quenching-cache` (TypeScript + Solid, `npm run build` writes the committed `dist/gui-experimental.cjs`); same derivation, `LICENSE` and `NOTICE.md` as the Claude Code band. `src/core/` is the shared logic generated from `integrations/claude-cache/hooks/` by `scripts/cache_plugin_sync.py` | hand-written but `src/core/`; the gate checks the copy, typechecks the port and runs its tracker, handoff and load checks |
 | `integrations/opencode-vitrine/` | the OpenCode Desktop GUI plugin (TypeScript + Solid); `npm run build` writes the committed `dist/gui-experimental.cjs`, `node_modules/` is ignored, and OpenCode installs it from the `plugins` array of its configuration | hand-written |
 
 Inside `quenching/` each folder has one job:
@@ -48,7 +49,9 @@ copy step that could have shared code between the two vitrines was retired with 
 its own code over the same pinned `cq` JSON contracts.
 The cache band carries two generated copies, `hooks/prices.ts` and `hooks/handoff-template.md`:
 edit `session/pricing.json` or the `quenching-handoff` template, then run
-`python3 scripts/cache_plugin_sync.py --write`.
+`python3 scripts/cache_plugin_sync.py --write`. The OpenCode port has no logic of its own to drift: its
+`src/core/` is the Claude Code band's `logic`, `handoff`, `i18n`, `message` and `prices` copied by the same
+command, so the core is edited only in `integrations/claude-cache/hooks/`.
 
 A new harness gets a new first-level directory under `integrations/`, never a `quenching-<harness>/`
 sibling of the source. A move between these paths is a `git mv` followed by the path changes in the
