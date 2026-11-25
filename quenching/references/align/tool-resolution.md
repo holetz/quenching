@@ -2,7 +2,7 @@
 
 Front-neutral: every command body shells out to the same single entry point, `cq`, naming its
 front as the first argument. The fronts are `specs`, `git`, `knowledge`, `components`, `design`,
-`ops`, `proof`, `toolchain`, `delivery`, `security` and `codex`; all resolve it the same way.
+`ops`, `proof`, `toolchain`, `delivery`, and `security`; all resolve it the same way.
 
 ## Resolving the tool
 
@@ -16,7 +16,7 @@ widen it to `Bash(python3:*)` to reach the tool.
 
 The command is followed by the front and its subcommand: `.agents/quenching/bin/cq specs ...`, `.agents/quenching/bin/cq git ...`,
 `.agents/quenching/bin/cq knowledge ...`, `.agents/quenching/bin/cq components ...`, `.agents/quenching/bin/cq design ...`, `.agents/quenching/bin/cq ops ...`, `.agents/quenching/bin/cq proof ...`,
-`.agents/quenching/bin/cq toolchain ...`, `.agents/quenching/bin/cq delivery ...`, `.agents/quenching/bin/cq security ...`, `cq codex ...`. **There is no second form and no third
+`.agents/quenching/bin/cq toolchain ...`, `.agents/quenching/bin/cq delivery ...` and `.agents/quenching/bin/cq security ...`. **There is no second form and no third
 rung**: never look for a copy under a target's `.claude/hooks/`, never install one there, never
 merge anything into a target's `.claude/settings.json` to make a tool resolve.
 
@@ -52,7 +52,7 @@ no tool of the catalog.
 ### Where a body still writes the CLI
 
 1. **The verb has no tool**: the exceptions of `mcp/coverage.py` (`cq deploy`, `cq modules`,
-   `cq specs migrate`, `cq specs export`, `cq specs serve`, `cq codex implement`,
+   `cq specs migrate`, `cq specs export`, `cq specs serve`,
    `cq specs claim take`, …) and any verb the server's `tools/list` does not name.
 2. **A line marked `cli: <reason>`** — `<!-- cli: <reason> -->` at the end of the line, or alone on
    the line before a block (it then covers that whole paragraph or fenced block), and

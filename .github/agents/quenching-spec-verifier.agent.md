@@ -26,7 +26,7 @@ check is decided by its named source alone. The one exception is check 8, where 
 `archive/` makes `outcome: done` the condition under test, not evidence. A "counts / does not
 count" line below closes a check further.
 
-Checks 2 to 5, 7, 9 and 11 read ONE payload, measured inside the spec's worktree with a fixed argv:
+Checks 2 to 5, 7 and 9 read ONE payload, measured inside the spec's worktree with a fixed argv:
 
 `git_audit(worktree=<wt>, base="origin/<base>", branch=<branch>, sha=[<sha>, …])`
 
@@ -146,16 +146,6 @@ matches. Without a worktree, `--worktree` is the base checkout itself.
    When a worker reports a `BASE-RED:` line, the evidence names the base command and the spec that captures
    or fixes it; the red stays a gate FAIL (checks 3 and 4 unchanged). Empty is ok. A gate line removed from a gate file is absolved only when its namespace rewrite by the same BASE map is a line the branch added; an unknown head never absolves, and a deleted or relocated gate stays FAIL. A weakened task `verify:` is not read here: the spec store is not in the diff.
 
-11. Codex: warning level, never FAIL. You execute nothing: read the worker's `CODEX:` line from the prompt
-   (the `spec-orchestrator` passes it as a claim) and compare its counts with the checked tasks. Every checked task should have one `Codex:` line (`wrote`, `fallback`,
-   `guard` or `skipped`); list the ids without one, or `sem relato` or no line in the prompt as "missing CODEX: line", as a warning in the evidence.
-   The worker's report is a claim: this check accuses an absent line, it does not prove the consultation.
-   `n/a` when no task is checked, and also when the Codex executor is not enabled: read the audit payload's
-   `codexExecutor`, the effective `shared.codex.executor.enabled` with every config layer merged (the local
-   `.agents/quenching.local.json` fills a key the project omits), and mark the check `n/a` unless it is `true`.
-   Never decide it from `.agents/quenching.json` alone. `codexExecutor: null` comes with a `config` read in
-   `errors`: the check is `inconclusive` under the payload's `complete` rule above. A repository without the executor gets no `CODEX:` warning.
-
 ## Epic authorization (checks 9 and 10)
 
 The prompt names the epic id. Read its `## Design` with `specs_show(spec=<epic>, full=true)` (a tool you already hold; no grant is added). A `grants` or `lowered` entry passes only when a bullet of that Design carries a date (`YYYY-MM-DD`), names this spec's id or the entry's exact path, and describes the change the diff makes. The evidence quotes that bullet. An entry no such bullet covers stays FAIL with `needs-human`; so does every entry when the prompt names no epic or the Design has no such bullet. An authorization covers only what it names and never extends to another entry or another spec; the spec's own `## Problem` or `## Proposal` never authorizes by itself. This narrows what the verifier refuses by mistake and never stops it refusing an unauthorized widening or lowering.
@@ -181,7 +171,6 @@ VERDICT: PASS | FAIL
 8 conclusion: ...
 9 grants: ok|fail|n/a — <evidence>
 10 ruler: ok|fail|n/a — <evidence; warnings listed>
-11 codex: ok|warn|n/a — <ids without a `Codex:` line, or ->
 ```
 
 Each check's evidence is one line of at most 200 characters; quote the offending item, not the list.

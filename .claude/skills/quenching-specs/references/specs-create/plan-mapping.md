@@ -1,11 +1,11 @@
-# Mapping a Claude or Codex plan onto a spec's canonical sections
+# Mapping a plan onto a spec's canonical sections
 
 Read only on the plan-source path of `/quenching-specs create`, inside step 3 — the sentence path
 never carries a plan to map.
 
 ## The mapping
 
-A Claude or Codex plan is prose with loose headings, and they may be in any language
+A plan is prose with loose headings, and they may be in any language
 (`## Context` / `## Contexto`) — **match on meaning, never on the literal string.**
 
 | Native plan part | Canonical section |

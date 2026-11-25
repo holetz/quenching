@@ -50,7 +50,7 @@ uvx --from "git+https://github.com/holetz/quenching@<tag>#subdirectory=quenching
 keeps its modules, while `--modules core` narrows a wider install and deletes the rest.
 
 This writes `AGENTS.md` (only when absent), `.agents/skills/`, the vendored runtime under
-`.agents/quenching/` and the generated `.claude/skills/` bridge, for Claude Code, Codex and OpenCode
+`.agents/quenching/` and the generated `.claude/skills/` bridge, for Claude Code and OpenCode
 by default (`--harness` narrows it). It never creates `CLAUDE.md`; Claude Code 2.1.277+ reads
 `AGENTS.md` directly. Deploy does not install `/docs/` — that is step 4. The contract is
 [deploy-mode.md](../standards/architecture/deploy-mode.md). Start Claude Code in the target once

@@ -84,11 +84,12 @@ HYPOTHESES = (
      "artifact": "git commit",
      "protocol": "`git log -1 --format=%B` de um commit feito pelo agente"},
     {"id": "H6", "member": "457", "method": "static+live",
-     "capability": "`chat.tools.terminal.autoApprove`, `search.exclude`, `chat.agent.maxRequests` "
-                   "e o sandbox valem em `.vscode/settings.json`",
+     "capability": "`files.exclude`, `chat.agent.maxRequests`, `chat.tools.terminal.autoApprove` "
+                   "e o sandbox valem em `.vscode/settings.json`; só `files.exclude` alimenta a "
+                   "exclusão do índice semântico",
      "artifact": ".vscode/settings.json (JSONC)",
-     "protocol": "um comando de terminal aprovado sem prompt sob a chave, e a busca sem os "
-                 "diretórios excluídos"},
+     "protocol": "um comando de terminal aprovado sem prompt sob a chave, e a busca e o índice "
+                 "sem os diretórios excluídos"},
     {"id": "H7", "member": "458", "method": "live",
      "capability": "`New Worktree` produz um worktree que o fluxo adota sem cortar outro",
      "artifact": "git worktree list",
@@ -119,7 +120,7 @@ HYPOTHESES = (
      "protocol": "rodar `cq` dentro do slot e ler o store irmão sem prompt"},
     {"id": "H13", "member": "452", "method": "static",
      "capability": "`cq deploy` recusa `--harness copilot` com `ct-deploy-harness` e aceita "
-                   "claude, codex, opencode e none",
+                   "claude, opencode e none",
      "artifact": "deploy CLI",
      "protocol": "—"},
 )
@@ -404,7 +405,8 @@ def measure_skills(root: pathlib.Path) -> dict:
 
 # --- 1.5 · agents, .github/, .vscode/ and the cost sources -------------------------------------
 GITHUB_FORMATS = ("instructions", "agents", "copilot-setup-steps.yml")
-VSCODE_KEYS = ("chat.tools.terminal.autoApprove", "search.exclude", "chat.agent.maxRequests")
+VSCODE_KEYS = ("files.exclude", "search.exclude", "chat.agent.maxRequests",
+               "chat.tools.terminal.autoApprove")
 # Every directory the editor ships under: stable, Insiders, and their remote servers. The client is
 # a capability, never a name — a machine with Insiders alone still has to be measured.
 EXTENSION_DIRS = (".vscode/extensions", ".vscode-insiders/extensions",
@@ -467,6 +469,8 @@ def read_vscode(root: pathlib.Path) -> dict:
     return {"state": "present", "path": ".vscode/settings.json",
             "keys": {key: key in document for key in VSCODE_KEYS},
             "sandbox": sorted(key for key in document if "sandbox" in key),
+            "filesExclude": sorted((document.get("files.exclude") or {}).keys())
+            if isinstance(document.get("files.exclude"), dict) else [],
             "searchExclude": sorted((document.get("search.exclude") or {}).keys())
             if isinstance(document.get("search.exclude"), dict) else []}
 
@@ -584,7 +588,7 @@ def measure_clients(root: pathlib.Path) -> dict:
 
 
 # --- 1.6 · the harness refusal ----------------------------------------------------------------
-ACCEPTED_HARNESSES = ("claude", "codex", "opencode", "none")
+ACCEPTED_HARNESSES = ("claude", "opencode", "none")
 REFUSAL_CODE = "ct-deploy-harness"
 
 

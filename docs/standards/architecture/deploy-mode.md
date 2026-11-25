@@ -31,6 +31,7 @@ for deployment; this verb installs the tool surface. It never invokes a model, n
 | --- | --- | --- |
 | `AGENTS.md` | instructions | target; seeded only when absent |
 | `.agents/quenching.json` | configuration | target; seeded only when absent |
+| `.vscode/settings.json` | VS Code workspace settings: the generated trees out of search and the semantic index, and room for long agent runs | target; seeded only when absent and `shared.workspace.vscode` is true |
 | `.agents/skills/quenching-<command>/SKILL.md` | one-segment skills | generated |
 | `.agents/quenching/` | vendored payload: runtime, references, templates, commands, agent protocols | generated, read-only |
 | `.agents/.quenching-deploy.json` | manifest: version, modules, profiles, hashes, skills | generated; one blank line separates each entry of `files` |
@@ -39,7 +40,6 @@ for deployment; this verb installs the tool surface. It never invokes a model, n
 | `.opencode/agents/quenching-<name>.md` | OpenCode subagents, `mode: subagent` | generated when the `opencode` harness is selected |
 | `.github/agents/quenching-<name>.agent.md` | Copilot subagents, the native custom-agent format | generated when the repository declares `shared.projections: ["github"]` |
 | `.mcp.json` | Claude Code project MCP registration | target; the `quenching` entry merged when the `claude` harness is selected |
-| `.codex/config.toml` | Codex MCP registration | target; the `quenching` entry merged when the `codex` harness is selected |
 | `opencode.json` | OpenCode MCP registration, subagent depth and sibling directories | target; the `quenching` entry, `experimental.subagent_depth` and the `external_directory` allows merged when the `opencode` harness is selected |
 | `CLAUDE.md` | legacy pointer to `AGENTS.md` | never created; removed only by `--prune-legacy` |
 | `.claude/commands/`, `.claude/references/` | legacy layout | refused; run `cq components migrate` first |
@@ -118,7 +118,7 @@ grant is `Bash(.agents/quenching/bin/cq:*)`.
 
 Deploy always registers the whole quenching MCP server, with no declaration. It writes the
 `quenching` entry into one file per selected harness — `.mcp.json` for `claude` (which the GitHub
-Copilot harness reads too), `.codex/config.toml` for `codex`, `opencode.json` for `opencode` — with
+Copilot harness reads too), `opencode.json` for `opencode` — with
 the same argv: `<command...> .agents/quenching/assets/bin/cq mcp`, every catalogued tool of the
 pillars present. `shared.mcp` (`{mount: "all"|"specs"|"core"|<pillars>, command: [...]}`, see
 [plugin-configuration.md](../workflows/plugin-configuration.md#the-sharedmcp-block)) only overrides
@@ -219,11 +219,40 @@ merged, never owned, so it is not in the manifest's `files`.
   `""` and that the manifest records (`claudeSettings.attribution`) as written by deploy.
 - **`--check`.** The merge result differing from the file is `settings` drift (exit 1).
 - **Removal.** Selecting fewer modules drops the hooks of the module that left; a harness list
-  without `claude` (`codex`, `opencode`, `none`) wants nothing, so only deploy's own entries leave.
+  without `claude` (`opencode`, `none`) wants nothing, so only deploy's own entries leave.
   A file reduced to `{}` by that removal is deleted.
 - **Refusal.** Invalid JSON, a root that is not an object, or `hooks` / `hooks.<event>` of the
   wrong type is `ct-deploy-settings` (exit 2) and nothing is written. A successful merge rewrites
   the file once with two-space indentation; later runs are idempotent.
+
+## The `.vscode/settings.json` seed
+
+The VS Code workspace settings that keep the flow quiet are a **seed**, opted in by the
+repository's own `shared.workspace.vscode` (`true`/`false`, scope `project`, read from the
+repository document and never from the merged envelope, so the file does not vary by machine). The
+key is off by default: a target that does not use VS Code never receives the file.
+
+- **The block.** `files.exclude` for `.agents/quenching`, `.claude/skills`, `site` and
+  `site-source`, all root-relative, plus `chat.agent.maxRequests: 100`. `files.exclude` is the
+  setting that excludes from the Explorer, from text search and from the semantic index; the
+  client's `search.exclude` would only narrow text search and grep. The default ceiling is 25 and
+  the long flows (`execute`, `orchestrate`, `autopilot`) need more. `common/workspace.py` is the one
+  source of the block, the snippet and the per-key report.
+- **Created only when absent.** The file is a seed like `AGENTS.md`: it is written only when the
+  target does not carry one, it is not listed in the manifest's `files`, `--check` does not compare
+  its contents, and `--remove` never deletes it. An edit made in the target survives every later
+  deploy.
+- **`--check`.** A declared key with no file is a `seed` change (exit 1) until the first write; a
+  file that exists is never drift, whatever it carries.
+- **Suggestions, never a rewrite.** `cq deploy` reports three cases as `suggestions`, which are
+  advice and never a drift finding: a `.vscode/` workspace that does not declare the key, a declared
+  seed whose file lacks a recommended key or carries a lower ceiling, and a file that cannot be read
+  as JSONC. The deploy never edits an existing `.vscode/settings.json`; rewriting it would discard
+  the JSONC comments and formatting that belong to the user.
+- **Reporting.** `cq doctor` prints one `workspace:` line when the file exists, when the key is
+  declared or when the target carries a `.vscode/` directory, and `cq doctor --workspace` prints the
+  per-key state and the block. Both only report: neither writes, and a missing key is information,
+  never a failed prerequisite.
 
 ## What deploy does not do
 
@@ -243,11 +272,11 @@ The source, `quenching/`, is written in the target dialect: `/quenching-<vertica
 ([source-layout.md](source-layout.md)). **`cq deploy`** rewrites only the frontmatter, the generated
 header, the grants (and the OpenCode permissions) and the `cq.cmd` launcher; a source that still
 carries a plugin-root marker or a plugin-surface id is refused. It writes a target repository's
-generic layer — `.agents/skills/` (read by Codex and OpenCode), the payload under
+generic layer — `.agents/skills/` (read by OpenCode), the payload under
 `.agents/quenching/`, the Claude bridge under `.claude/skills/`, the subagents under
 `.claude/agents/` and `.opencode/agents/`, and — when the repository declares
 `shared.projections: ["github"]` — the Copilot projection under `.github/agents/` (§The target
-layout above). No Codex package and no
+layout above). No Codex package, no `codex` harness ([ADR 0020](../../decisions/0020-remove-the-codex-executor-and-harness.md)) and no
 user-level OpenCode distribution exist since [ADR 0017](../../decisions/0017-install-only-by-deploy.md).
 A target's `.claude/commands/` is the legacy layout, which `cq components migrate` converts; the
 `cq components translate` that once copied it into `.agents/` is retired, and a copy it wrote beside
@@ -265,10 +294,10 @@ A target repository's single editable source is the generic layer. Each artifact
 
 | Artifact | Home | Why there |
 | --- | --- | --- |
-| skill | `.agents/skills/<name>/SKILL.md`, sibling files in the same folder | read by Codex and OpenCode; the name is one segment ([command-surface.md](../naming/command-surface.md)) |
+| skill | `.agents/skills/<name>/SKILL.md`, sibling files in the same folder | read by OpenCode; the name is one segment ([command-surface.md](../naming/command-surface.md)) |
 | reference | `.agents/references/**` | cited by the skills beside them |
 | eval | `.agents/evals/<name>/` | beside the skill it scores |
-| instructions | `AGENTS.md` at the root; subfolder `AGENTS.md` loads with that folder | read natively by Claude Code 2.1.277+, Codex and OpenCode |
+| instructions | `AGENTS.md` at the root; subfolder `AGENTS.md` loads with that folder | read natively by Claude Code 2.1.277+ and OpenCode |
 | configuration | `.agents/quenching.json`, `.claude/quenching.json` read as legacy ([plugin-configuration.md](../workflows/plugin-configuration.md)) | one editable file |
 
 There is no root `CLAUDE.md` in a conformant target: Claude Code reads `AGENTS.md` itself when
@@ -310,7 +339,7 @@ overwrite it. No symbolic link is used ([windows-support.md](../platform/windows
 
 `cq components migrate --target <repo> [--write] --json` plans the move from the legacy layout and
 applies it with `git mv`/`git rm`, preserving history: `.claude/commands/<a>/<b>.md` becomes
-`.agents/skills/<a>-<b>/SKILL.md` (replacing a generated Codex translation of the same command),
+`.agents/skills/<a>-<b>/SKILL.md` (replacing a generated translation of the same command),
 `.claude/references/**` becomes `.agents/references/**`, a hand-written `.claude/skills/<n>/` moves
 to `.agents/skills/<n>/`, the old translation manifests are removed, `.claude/quenching.json` moves to
 `.agents/quenching.json`, and `CLAUDE.md` content moves to `AGENTS.md`. A pointer-only `CLAUDE.md`
@@ -320,34 +349,15 @@ conflict (two divergent configurations, two harness files with their own content
 the plan (exit 1), and `--write` refuses it (exit 2, `ct-migrate-conflict`) and writes nothing. A target is **conformant** when `migrate` reports an empty plan
 (`conformant: true`) and `bridge --check` exits 0.
 
-### Codex runtime policy
+### Model pins
 
 Deployed skills carry no model pin: `cq deploy` drops `model` and `effort` from their
-frontmatter. The project's role mapping for a Codex run is `opus` → `gpt-6-astra`, `sonnet` → `gpt-6.1-sol`, and
-`haiku` → `gpt-6-luna`; these are project routing choices, not measured model equivalence.
-Luna writes product code only on ONE task whose
-`cq specs estimate --task` reports `oracleProtected` and `smallTierEligible` — an executable
-`verify:` whose tests sit outside the task's `files:`, nothing under `/docs/`, projected context
-at or under 80k — the same conditions as `haiku` (ADR 0014); a failed `verify:` returns the task
-to the session model. Judgment roles and import-memory classifiers/executors never use Luna.
-Source Claude model pins remain intact.
-
-A Codex run delegates exclusively through the Codex host's subagent tools, with explicit
-models and role protocols. It must never launch Claude CLI or fall back to Claude models.
-Claude workflows may still delegate development to Codex, and may also ask Codex for an
-independent review of their own work. That review runs only as `codex exec` under the bypass with
-`--ignore-user-config` and no native sandbox, a git guard proving the tree unchanged, and runs in parallel with the Claude review, by default when quota is
-available. When Codex is unavailable or out of quota the workflow reports the fallback and keeps
-the Claude review rather than skipping the step in silence. A Codex run never launches Codex or
-Claude CLI, so the review step belongs to the Claude surface; this grants no new `allowed-tools`
-or `tools:`. Host capabilities determine
-spawn, messaging, interruption and completion mechanics; unavailable independent delegation
-is reported rather than replaced by self-review. Token usage is reported per model and role
-only when the Codex host exposes it, otherwise `not measured`; Claude transcript telemetry
-cannot measure a Codex run. The shared configuration file (`.agents/quenching.json`, or the legacy `.claude/quenching.json`) remains the configuration home.
+frontmatter. Source Claude model pins remain intact. The shared configuration file
+(`.agents/quenching.json`, or the legacy `.claude/quenching.json`) remains the configuration home.
+The Codex executor and its quota guard were removed ([ADR 0020](../../decisions/0020-remove-the-codex-executor-and-harness.md)).
 
 Import-memory may read existing Claude-format memory files as data, with the original source path
-explicit; it invents no Codex memory layout.
+explicit.
 
 ### OpenCode agents
 

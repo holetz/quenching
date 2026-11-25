@@ -4,7 +4,7 @@
 Each case runs in a disposable fixture: the suite's `fixture/` tree copied into a temporary
 directory, committed as a git repository, then prepared by the suite's optional `setup.sh`. The
 harness is a profile from `eval_harnesses.json` (an argv template), so the same cases run under
-Claude Code, Codex, OpenCode or any command line. After the arm, the observable state of the
+Claude Code, OpenCode or any command line. After the arm, the observable state of the
 fixture is snapshotted and handed with the arm's output to the grader profile, which is the same
 for every arm and model compared (default: the Flash 1017 model service through the gateway profile; an
 `unknown` regraded only by a declared escalation grader). A grade whose evidence is not a verbatim excerpt of that
@@ -240,31 +240,8 @@ def arm_argv(args, profile: dict, arm: str, values: dict, mount: str) -> list[st
                           mount, values["workdir"])
 
 
-def codex_output(stdout: str) -> tuple[str, int | None]:
-    """The agent messages of a `codex exec --json` event stream, and the turn's tokens."""
-    messages, tokens = [], None
-    for line in stdout.splitlines():
-        try:
-            event = json.loads(line)
-        except json.JSONDecodeError:
-            continue
-        if not isinstance(event, dict):
-            continue
-        item = event.get("item")
-        if event.get("type") == "item.completed" and isinstance(item, dict) \
-                and item.get("type") == "agent_message":
-            messages.append(str(item.get("text", "")))
-        usage = event.get("usage") if event.get("type") == "turn.completed" else None
-        if isinstance(usage, dict):
-            counted = [usage.get(k) for k in ("input_tokens", "output_tokens")]
-            tokens = (tokens or 0) + sum(v for v in counted if isinstance(v, int))
-    return ("\n\n".join(messages) if messages else stdout), tokens or None
-
-
 def output_text(profile: dict, stdout: str) -> tuple[str, int | None]:
     """The text to grade and the tokens the run reported, when the profile can parse them."""
-    if profile.get("output") == "codex-jsonl":
-        return codex_output(stdout)
     if profile.get("output") != "claude-json":
         return stdout, None
     try:

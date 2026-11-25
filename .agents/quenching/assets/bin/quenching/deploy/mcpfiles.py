@@ -1,8 +1,9 @@
 """The quenching MCP entry in the harness files a target already owns, and the Python prefix it calls.
 
 Pure: each function takes the current text (or None) and returns the new text, or None when the
-file is not safe to touch. `.mcp.json`, `.codex/config.toml` and `opencode.json` belong to the user;
-only the `quenching` entry is the deploy's, so every other entry survives a write and a removal.
+file is not safe to touch. `.mcp.json` and `opencode.json` belong to the user; only the `quenching`
+entry is the deploy's, so every other entry survives a write and a removal. `.codex/config.toml`
+is written no more, but the entry an earlier deploy wrote there is still taken out.
 """
 from __future__ import annotations
 
@@ -12,11 +13,14 @@ import re
 import shutil
 import subprocess
 
+from quenching.common.jsonc import jsonc_loads  # noqa: F401 — re-exported
+
 NAME = "quenching"
 CLAUDE = ".mcp.json"
 CODEX = ".codex/config.toml"
 OPENCODE = "opencode.json"
-FILES = (CLAUDE, CODEX, OPENCODE)
+FILES = (CLAUDE, OPENCODE)
+LEGACY = (CODEX,)   # the removed `codex` harness: only the recorded entry is taken out
 FALLBACK = ("python3",)
 # The prefixes tried in order on this machine; no version is pinned, only a floor (`pyproject.toml`).
 CANDIDATES = (("python3",), ("python",), ("py", "-3"))
@@ -211,29 +215,6 @@ def opencode_strip(text: str | None, extras: dict) -> str | None:
     return _dump(document)
 
 
-def jsonc_loads(text: str):
-    """JSON with `//` and `/* */` comments and trailing commas, as OpenCode reads its config."""
-    out, index, size = [], 0, len(text)
-    while index < size:
-        char = text[index]
-        if char == '"':
-            end = index + 1
-            while end < size and text[end] != '"':
-                end += 2 if text[end] == "\\" else 1
-            out.append(text[index:end + 1])
-            index = end + 1
-        elif text.startswith("//", index):
-            newline = text.find("\n", index)
-            index = size if newline < 0 else newline
-        elif text.startswith("/*", index):
-            close = text.find("*/", index + 2)
-            index = size if close < 0 else close + 2
-        else:
-            out.append(char)
-            index += 1
-    return json.loads(re.sub(r",(\s*[}\]])", r"\1", "".join(out)))
-
-
 def external_patterns(primary: str, home: str | None) -> list[str]:
     """The `external_directory` patterns of the primary checkout's siblings: the slots
     (`<parent>/<repo>-slot-*`) and the store (`<primary>.*`), `~/` when under `home`. OpenCode
@@ -311,26 +292,6 @@ def _block_ends(lines: list[str]) -> tuple[int, int] | None:
     return start, end
 
 
-def _toml_string(value: str) -> str:
-    return json.dumps(value, ensure_ascii=False)
-
-
-def toml_merge(text: str | None, argv: list[str]) -> str:
-    block = [f"[mcp_servers.{NAME}]", f"command = {_toml_string(argv[0])}",
-             "args = [" + ", ".join(_toml_string(part) for part in argv[1:]) + "]"]
-    lines = (text or "").splitlines()
-    span = _block_ends(lines)
-    if span is None:
-        kept = lines
-        if kept and kept[-1].strip():
-            kept = [*kept, ""]
-        return "\n".join([*kept, *block]) + "\n"
-    start, end = span
-    tail = lines[end:]
-    spacer = [""] if tail and tail[0].strip() else []
-    return "\n".join([*lines[:start], *block, *spacer, *tail]) + "\n"
-
-
 def toml_remove(text: str | None) -> str:
     lines = (text or "").splitlines()
     span = _block_ends(lines)
@@ -344,8 +305,6 @@ def toml_remove(text: str | None) -> str:
 def merged(rel: str, text: str | None, argv: list[str], extras: dict | None = None) -> str | None:
     """The file with the quenching entry written, or None when it is not safe to touch. `extras`
     (`opencode.json` only) is `{subagentDepth, externalDirectory}`."""
-    if rel == CODEX:
-        return toml_merge(text, argv)
     if rel == OPENCODE:
         entry = {"type": "local", "command": list(argv), "enabled": True}
         return _json_merge(text, "mcp", entry, schema=True, extras=extras)
@@ -363,5 +322,5 @@ def removed(rel: str, text: str | None, extras: dict | None = None) -> str | Non
 
 
 def harness_files(harnesses: list[str]) -> list[str]:
-    wanted = {"claude": CLAUDE, "codex": CODEX, "opencode": OPENCODE}
+    wanted = {"claude": CLAUDE, "opencode": OPENCODE}
     return [wanted[harness] for harness in harnesses if harness in wanted]
