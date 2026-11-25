@@ -249,6 +249,50 @@ class Writes(unittest.TestCase):
         shown, _ = mcp.call_tool("specs_show", {"spec": 1, "tasks": ["1.2"]}, self.tmp)
         self.assertTrue(shown["tasks"][0]["checked"])
 
+    def test_sections_write_several_headings_in_one_call(self):
+        payload, failed, _ = self.call("specs_section_write", {"spec": 1, "sections": [
+            {"heading": "Proposal", "body": "Do the thing."},
+            {"heading": "Risks", "body": "- none — nothing risky"}]})
+        self.assertFalse(failed, payload)
+        read, _ = mcp.call_tool("specs_section", {"spec": 1, "headings": "Proposal,Risks"},
+                                self.tmp)
+        self.assertIn("Do the thing.", json.dumps(read))
+        self.assertIn("nothing risky", json.dumps(read))
+
+    def test_a_repeated_heading_in_sections_writes_none_of_them(self):
+        payload, failed, _ = self.call("specs_section_write", {"spec": 1, "sections": [
+            {"heading": "Proposal", "body": "One."}, {"heading": "Proposal", "body": "Two."}]})
+        self.assertTrue(failed, payload)
+        payload, failed, _ = self.call("specs_section_write", {"spec": 1, "sections": [
+            {"heading": "Proposal", "body": "One."}, {"heading": "Bogus", "body": "Two."}]})
+        self.assertTrue(failed, payload)
+        read, _ = mcp.call_tool("specs_section", {"spec": 1, "headings": "Proposal"}, self.tmp)
+        self.assertNotIn("One.", json.dumps(read))
+
+    def test_sections_excludes_heading_body_and_scope(self):
+        for extra in ({"heading": "Risks"}, {"body": "x"}, {"scope": "global"}):
+            payload, failed, _ = self.call("specs_section_write", {
+                "spec": 1, "sections": [{"heading": "Proposal", "body": "One."}], **extra})
+            self.assertEqual((failed, payload["code"]), (True, "mcp-bad-arguments"), extra)
+        for bad in ([], [{"heading": "Proposal"}], [{"heading": "A,B", "body": "x"}],
+                    [{"heading": "Proposal", "body": "  "}], "Proposal"):
+            payload, failed, _ = self.call("specs_section_write", {"spec": 1, "sections": bad})
+            self.assertEqual((failed, payload["code"]), (True, "mcp-bad-arguments"), bad)
+
+    def test_create_takes_the_first_sections_and_a_subject_in_the_capture(self):
+        self.assertIn("subject", mcp.WRITES["specs_create"][1]["properties"])
+        self.assertEqual(mcp._w_new({"name": "g", "subject": "plugin"})[-2:],
+                         ["--subject", "plugin"])
+        payload, failed, _ = self.call("specs_create", {"name": "gamma", "sections": [
+            {"heading": "Problem", "body": "It breaks."},
+            {"heading": "Proposal", "body": "Fix it."}]})
+        self.assertFalse(failed, payload)
+        new = payload.get("id")
+        read, _ = mcp.call_tool("specs_section", {"spec": new, "headings": "Problem,Proposal"},
+                                self.tmp)
+        self.assertIn("It breaks.", json.dumps(read))
+        self.assertIn("Fix it.", json.dumps(read))
+
     def test_a_blocking_task_needs_a_reason_and_a_free_record_needs_no_question(self):
         payload, failed, _ = self.call("specs_task", {"spec": 1, "action": "block", "task": "1.2"})
         self.assertEqual((failed, payload["code"]), (True, "mcp-bad-arguments"))
