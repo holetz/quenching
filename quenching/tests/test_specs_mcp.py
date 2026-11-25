@@ -113,6 +113,18 @@ class Arguments(unittest.TestCase):
             self.assertTrue(failed, (name, args))
             self.assertEqual(payload["code"], "mcp-bad-arguments")
 
+    def test_every_tool_refuses_an_argument_its_schema_does_not_declare(self):
+        for name in (*mcp.TOOLS, *mcp.WRITES):
+            payload, failed = mcp.call_tool(name, {"spec": 1, "bogusArg": True}, "/x")
+            self.assertTrue(failed, name)
+            self.assertEqual(payload["code"], "mcp-bad-arguments", name)
+            self.assertIn("bogusArg", payload["message"], name)
+            self.assertIn("reload the MCP server", payload["message"], name)
+
+    def test_an_argument_the_schema_declares_is_not_refused_as_unknown(self):
+        payload, _ = mcp.call_tool("specs_status", {"spec": "--help", "root": "/x"}, "/x")
+        self.assertNotIn("unknown argument", payload.get("message", ""))
+
     def test_section_needs_exactly_one_of_headings_or_moment(self):
         for args in ({"spec": 1}, {"spec": 1, "headings": "Problem", "moment": "build"}):
             self.assertTrue(mcp.call_tool("specs_section", args, "/x")[1])

@@ -34,6 +34,7 @@ import re
 from datetime import date
 from urllib.parse import parse_qs, urlsplit
 
+from quenching.common.version import VERSION
 from quenching.mcp import server
 from quenching.mcp.server import (BAD_PARAMS, MAX_CHARS, NOT_FOUND,  # noqa: F401 — re-exported
                                   PROTOCOL_VERSIONS, ResourceError, Session, ToolArgs)
@@ -789,9 +790,23 @@ def _refusal(code: str, message: str) -> tuple[dict, bool]:
     return {"ok": False, "code": code, "message": message}, True
 
 
+def _reject_unknown(schema: dict, args: dict) -> None:
+    """Refuse an argument the tool's `inputSchema` does not declare, never ignore it: a dropped
+    argument answers a different question than the one asked, and `ok: true` hides it."""
+    if not isinstance(args, dict):
+        raise ToolArgs("`arguments` must be an object")
+    unknown = sorted(set(args) - set(schema["properties"]))
+    if unknown:
+        raise ToolArgs(
+            f"unknown argument(s): {', '.join(unknown)}; this server (quenching "
+            f"{VERSION}) accepts: {', '.join(sorted(schema['properties']))}. If the repository's "
+            "source declares it, the loaded server is older: reload the MCP server")
+
+
 def call_write(name: str, args: dict, root: str, session: Session) -> tuple[dict, bool]:
-    _, _, build, stdin, gate, pre = WRITES[name]
+    _, schema, build, stdin, gate, pre = WRITES[name]
     try:
+        _reject_unknown(schema, args)
         root = server.call_root(args, root)
         argv = build(args)
         body = stdin(args) if stdin else None
@@ -821,8 +836,9 @@ def call_tool(name: str, args: dict, root: str,
     """`(payload, is_error)` for one tool call. Raises KeyError for an unknown tool."""
     if name in WRITES:
         return call_write(name, args, root, session or Session())
-    _, _, build, page_key = TOOLS[name]
+    _, schema, build, page_key = TOOLS[name]
     try:
+        _reject_unknown(schema, args)
         root = server.call_root(args, root)
         argv = build(args)
     except ToolArgs as exc:
