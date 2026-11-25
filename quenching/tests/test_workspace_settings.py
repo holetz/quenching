@@ -236,6 +236,11 @@ class TheDoctor(unittest.TestCase):
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(text, encoding="utf-8")
 
+    def tasks(self, text: str):
+        path = self.root / workspace.TASKS_PATH
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(text, encoding="utf-8")
+
     def run_doctor(self, **kwargs):
         out = io.StringIO()
         with contextlib.redirect_stdout(out):
@@ -260,6 +265,28 @@ class TheDoctor(unittest.TestCase):
         self.assertEqual(0, code)
         self.assertIn("not declared", human)
         self.assertIn("live half is not proved here", human)
+
+    def test_workspace_prints_both_blocks_and_writes_nothing(self):
+        code, payload = self.payload(workspace=True)
+        self.assertEqual(0, code)
+        self.assertEqual("absent", payload["tasks"]["state"])
+        self.assertEqual(workspace.tasks_document(), jsonc_loads(payload["tasksSnippet"]))
+        self.assertFalse((self.root / workspace.TASKS_PATH).exists())
+
+    def test_workspace_human_names_the_tasks_file_and_its_labels(self):
+        code, human = self.run_doctor(workspace=True)
+        self.assertEqual(0, code)
+        self.assertIn(".vscode/tasks.json", human)
+        self.assertIn("quenching: gate", human)
+
+    def test_the_standard_report_carries_the_tasks_when_the_file_exists(self):
+        self.tasks(workspace.tasks_snippet())
+        code, payload = self.payload()
+        self.assertEqual(0, code)
+        self.assertTrue(payload["tasks"]["complete"])
+        code, human = self.run_doctor()
+        self.assertEqual(0, code)
+        self.assertIn("tasks:", human)
 
     def test_workspace_with_write_is_refused(self):
         code, payload = self.payload(workspace=True, write=True)
