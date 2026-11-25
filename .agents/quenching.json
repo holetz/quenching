@@ -24,6 +24,9 @@
       ],
       "mount": "core"
     },
+    "projections": [
+      "github"
+    ],
     "hooks": {
       "after_specs_execute_task": [
         {

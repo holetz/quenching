@@ -341,6 +341,10 @@ _k("shared.mcp", "object", None, "ops", "project", "cq deploy",
    ("MCP registration", "Overrides the mount and the Python prefix of the MCP server deploy always registers; edit in the file."),
    ("Registro do MCP", "Sobrescreve o mount e o prefixo de Python do servidor MCP que o deploy sempre registra; edite no arquivo."))
 
+_k("shared.projections", "strings", [], "ops", "project", "cq deploy",
+   ("Client projections", "The client file families cq deploy writes from the same source; `github` writes `.github/agents/`."),
+   ("Projeções por cliente", "As famílias de arquivos por cliente que o cq deploy escreve da mesma fonte; `github` escreve `.github/agents/`."))
+
 # — Knowledge —
 _k("shared.okfValidate.warnAsError", "boolean", False, "knowledge", "either",
    "cq knowledge validate", ("Warnings fail validation", "Treat knowledge warnings as errors."),
