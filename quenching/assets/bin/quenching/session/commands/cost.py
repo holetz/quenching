@@ -307,16 +307,23 @@ def _cost_opencode(args) -> int:
 
 
 def _copilot_asked(args) -> bool:
-    """Whether this call is about the Copilot store: a home named, its session id, or the running client."""
+    """Whether this call is about the Copilot store: a home named, its session id, or the running client.
+
+    The client exports `COPILOT_HOME` to every child, so that is the default source — but only when
+    its store has a session for this checkout: a repository with no Copilot session recorded keeps
+    answering from Claude, which is what a test running under a Copilot shell expects."""
     from quenching.session import copilot
     if getattr(args, "copilot_home", None):
         return True
+    try:
+        known = copilot.sessions(copilot.home(None))
+    except copilot.CopilotError:
+        return False
     if getattr(args, "transcript", None):
-        try:
-            return args.transcript in copilot.sessions(copilot.home(None))
-        except copilot.CopilotError:
-            return False
-    return copilot.wants_copilot(None, None)
+        return args.transcript in known
+    if not copilot.wants_copilot(None, None):
+        return False
+    return any(copilot.in_scope(row, Path.cwd().resolve()) for row in known.values())
 
 
 def _copilot_rows(rows: list, agents: dict) -> tuple[list, list]:
