@@ -42,6 +42,83 @@ class TheBlock(unittest.TestCase):
                          ["chat.agent.maxRequests"])
 
 
+class TheTasksBlock(unittest.TestCase):
+    def test_the_snippet_parses_and_carries_every_task(self):
+        document = jsonc_loads(workspace.tasks_snippet())
+        self.assertEqual("2.0.0", document["version"])
+        self.assertEqual(list(workspace.TASK_LABELS),
+                         [task["label"] for task in document["tasks"]])
+
+    def test_every_cq_task_runs_the_target_local_launcher_with_its_windows_twin(self):
+        document = jsonc_loads(workspace.tasks_snippet())
+        for task in document["tasks"]:
+            if not task["command"].startswith(workspace.CQ):
+                continue
+            self.assertEqual({"cwd": "${workspaceFolder}"}, task["options"])
+            self.assertEqual([], task["problemMatcher"])
+            self.assertTrue(task["windows"]["command"].startswith(workspace.CQ_WINDOWS))
+
+    def test_the_spec_status_task_prompts_for_an_id(self):
+        document = jsonc_loads(workspace.tasks_snippet())
+        status = next(task for task in document["tasks"]
+                      if task["label"] == "quenching: specs status")
+        self.assertIn("${input:specId}", status["command"])
+        self.assertEqual([{"id": "specId", "type": "promptString", "description": "Spec id"}],
+                         document["inputs"])
+
+    def test_the_gate_is_the_default_test_task(self):
+        document = jsonc_loads(workspace.tasks_snippet())
+        gate = next(task for task in document["tasks"] if task["label"] == "quenching: gate")
+        self.assertEqual("bash scripts/verify_repo.sh", gate["command"])
+        self.assertEqual({"kind": "test", "isDefault": True}, gate["group"])
+
+    def test_open_slots_waits_for_the_workspace_projection(self):
+        document = jsonc_loads(workspace.tasks_snippet())
+        opener = next(task for task in document["tasks"]
+                      if task["label"] == "quenching: open slots")
+        self.assertEqual(["quenching: slots workspace"], opener["dependsOn"])
+        self.assertIn("quenching-slots.code-workspace", opener["command"])
+
+
+class TheTasksReport(unittest.TestCase):
+    def setUp(self):
+        tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
+        self.root = pathlib.Path(tmp.name)
+
+    def write(self, text: str):
+        path = self.root / workspace.TASKS_PATH
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(text, encoding="utf-8")
+
+    def test_an_absent_file_names_every_label(self):
+        report = workspace.tasks_report(str(self.root))
+        self.assertEqual("absent", report["state"])
+        self.assertFalse(report["complete"])
+        self.assertEqual(list(workspace.TASK_LABELS), report["missing"])
+
+    def test_the_snippet_is_complete(self):
+        self.write(workspace.tasks_snippet())
+        report = workspace.tasks_report(str(self.root))
+        self.assertEqual("present", report["state"])
+        self.assertTrue(report["complete"], report)
+        self.assertEqual([], report["missing"])
+
+    def test_a_partial_file_names_the_missing_label(self):
+        document = workspace.tasks_document()
+        del document["tasks"][1]
+        self.write(json.dumps(document))
+        report = workspace.tasks_report(str(self.root))
+        self.assertFalse(report["complete"])
+        self.assertEqual(["quenching: deploy check"], report["missing"])
+
+    def test_an_unreadable_file_is_a_state_never_an_error(self):
+        self.write("{ nope")
+        report = workspace.tasks_report(str(self.root))
+        self.assertEqual("unreadable", report["state"])
+        self.assertTrue(report["reason"])
+
+
 class TheReport(unittest.TestCase):
     def setUp(self):
         tmp = tempfile.TemporaryDirectory()
