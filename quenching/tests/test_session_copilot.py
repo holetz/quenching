@@ -251,3 +251,12 @@ class TheStandardNamesEverySource(unittest.TestCase):
         self.assertIn("cacheReadTokens and cacheWriteTokens a subset of it", text)
         self.assertIn("request exposure, never a per-iteration window", text)
         self.assertIn("never converted to USD", text)
+
+
+class TheGateIsolatesTheOperator(unittest.TestCase):
+    def test_the_gate_unsets_the_copilot_home_like_the_other_selectors(self):
+        text = (REPO / "scripts/verify_repo.sh").read_text(encoding="utf-8")
+        line = next(line for line in text.splitlines() if line.startswith("unset "))
+        for name in ("OPENCODE_SESSION_ID", "CLAUDE_CODE_SESSION_ID", "COPILOT_HOME",
+                     "QUENCHING_COPILOT_HOME"):
+            self.assertIn(name, line)

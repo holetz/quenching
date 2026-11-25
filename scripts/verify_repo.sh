@@ -8,9 +8,10 @@ set -Eeuo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"
 
-# A harness that runs the gate exports its own live session selector (OPENCODE_SESSION_ID here).
-# A test that resolves a session must never measure the operator's session: the tree decides.
-unset OPENCODE_SESSION_ID CLAUDE_CODE_SESSION_ID
+# A harness that runs the gate exports its own live session selector (OPENCODE_SESSION_ID here,
+# COPILOT_HOME for the Copilot client). A test that resolves a session must never measure the
+# operator's session: the tree decides.
+unset OPENCODE_SESSION_ID CLAUDE_CODE_SESSION_ID COPILOT_HOME QUENCHING_COPILOT_HOME
 
 # Every `python3` below is the project's own environment when one exists: on Windows the PATH's
 # `python3` is the Microsoft Store alias, a different interpreter with none of the dev group.
