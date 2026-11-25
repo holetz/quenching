@@ -51,13 +51,13 @@ into `--root`; there is no generic argv passthrough. `components` never receives
 because its `--root` names the surface root holding `commands/`; it runs with the workspace as cwd
 and finds the nearest `.claude/` from there. A new parser option on a catalogued verb is exposed without
 editing the catalog; a new verb requires a new row. Interactive or long-running entry points,
-including `specs serve`, `specs mcp`, `portal serve` and `codex implement`, are not catalogued.
+including `specs serve`, `specs mcp` and `portal serve`, are not catalogued.
 
 **Catalog coverage.** Every `cq <pillar> <verb>` that a body under `quenching/skills/**` or
 `quenching/agents/**` cites has a tool: a catalog row, a hand-written specs tool (whose verb path
 `specs/mcp.py`'s `COVERS` names), or an entry of `quenching/mcp/coverage.py`'s `EXCEPTIONS`, which
-carries its reason (`deploy`, `modules`, `mcp`, `specs mcp`, `specs serve`, `portal serve`,
-`codex implement`). The verb path is what the pillar's parser consumes, so a citation that ends on a
+carries its reason (`deploy`, `modules`, `mcp`, `specs mcp`, `specs serve`, `portal serve`).
+The verb path is what the pillar's parser consumes, so a citation that ends on a
 group names no verb and is prose. The gate's `MCP catalog coverage` check fails on any other
 citation. A parameter that would move a row out of its class is hidden from the tool rather than
 reclassifying it: `specs_artifact_read` takes no `out`, and `specs_handoff_write` takes no `push`,

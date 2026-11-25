@@ -88,7 +88,6 @@ CATALOG: dict[str, Row] = {
     **_rows("security", "read", "audit", "status"),
     **_rows("opensource", "read", "doctor", "status", "readiness"),
     **_rows("opensource", "write", "apply"),
-    **_rows("codex", "read", "eligible", "probe"),
     # The verbs skill and agent bodies cite beyond the hand-written specs tools.
     **_rows("specs", "read", "config", "validate", "parallel", "estimate", "handoff facts",
             "artifact list"),

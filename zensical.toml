@@ -50,7 +50,6 @@
         "standards/architecture/index.md",
         "standards/architecture/align-surface.md",
         "standards/architecture/bundle-root.md",
-        "standards/architecture/codex-pillar.md",
         "standards/architecture/configuration-arbitration.md",
         "standards/architecture/delivery-front.md",
         "standards/architecture/deploy-mode.md",
@@ -190,6 +189,7 @@
       "decisions/0017-install-only-by-deploy.md",
       "decisions/0018-retire-omnigent-and-source-manifest.md",
       "decisions/0019-router-skills-and-target-dialect-source.md",
+      "decisions/0020-remove-the-codex-executor-and-harness.md",
     ] },
     "glossary.md",
   ]

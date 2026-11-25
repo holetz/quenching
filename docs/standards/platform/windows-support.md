@@ -1,8 +1,8 @@
 ---
 type: standard
-title: Windows without administrator rights — the supported prerequisites and what the port covers
+title: Windows without administrator rights â€” the supported prerequisites and what the port covers
 description: What "supported on Windows without administrator rights" means for the cq tool, the user-scope prerequisites, the three code paths that were POSIX-only (process groups, symlinks, the PATH launcher) and the one CI job that exercises them
-resource: quenching/assets/bin/quenching/codex/probe.py, quenching/assets/bin/quenching/common/tools.py, quenching/assets/bin/quenching/session/live.py, quenching/assets/bin/quenching/git/worktree.py, quenching/assets/bin/quenching/deploy/tree.py, quenching/assets/bin/quenching/opensource/readiness.py, quenching/assets/bin/quenching/git/preflight.py, quenching/assets/bin/quenching/specs/chat.py, quenching/assets/bin/quenching/common/config.py, quenching/tests/capture_golden.py, .github/workflows/ci.yml
+resource: quenching/assets/bin/quenching/common/tools.py, quenching/assets/bin/quenching/session/live.py, quenching/assets/bin/quenching/git/worktree.py, quenching/assets/bin/quenching/deploy/tree.py, quenching/assets/bin/quenching/opensource/readiness.py, quenching/assets/bin/quenching/git/preflight.py, quenching/assets/bin/quenching/specs/chat.py, quenching/assets/bin/quenching/common/config.py, quenching/tests/capture_golden.py, .github/workflows/ci.yml
 tags: [windows, platform, prerequisites, junction, process-group]
 timestamp: 2026-11-23
 audience: both
@@ -25,10 +25,6 @@ the official versioned ZIP under `%LOCALAPPDATA%`, without elevation.
 
 **What the port covers:**
 
-- **Process groups.** `group_kwargs()` and `stop()` in `codex/probe.py` own starting a child in its
-  own group and stopping its whole tree: `start_new_session` and `os.killpg` on POSIX,
-  `CREATE_NEW_PROCESS_GROUP` and `taskkill /F /T` on Windows. `implement.py` and `review.py` call
-  them and name no POSIX signal.
 - **External tools without `cmd.exe`.** `common/tools.spawn_argv` leaves every argv alone on POSIX;
   on Windows, an `az` call is resolved to the `python.exe` that ships beside `az.cmd` and runs as
   `python.exe -IBm azure.cli <argv>`. A title carrying `&`, `%` or quotes reaches the CLI intact,
@@ -62,7 +58,7 @@ POSIX hook scripts and `scripts/githooks`, and `scripts/run_evals.py`.
 
 **Proof:** one `windows-latest` job in the PR gate runs the Windows-sensitive unit tests. It
 patches `os.name` and `os.symlink` for the branches and runs them natively on a Windows runner.
-The job runs `test_windows_process.py`, `test_windows_tools.py`, `test_session_live.py` and `test_windows_links.py`. The standard stays `background` until that job has run green on a pull request.
+The job runs `test_windows_tools.py`, `test_session_live.py` and `test_windows_links.py`. The standard stays `background` until that job has run green on a pull request.
 
 <!-- rationale -->
 

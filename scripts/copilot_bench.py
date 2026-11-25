@@ -119,7 +119,7 @@ HYPOTHESES = (
      "protocol": "rodar `cq` dentro do slot e ler o store irmão sem prompt"},
     {"id": "H13", "member": "452", "method": "static",
      "capability": "`cq deploy` recusa `--harness copilot` com `ct-deploy-harness` e aceita "
-                   "claude, codex, opencode e none",
+                   "claude, opencode e none",
      "artifact": "deploy CLI",
      "protocol": "—"},
 )
@@ -580,7 +580,7 @@ def measure_clients(root: pathlib.Path) -> dict:
 
 
 # --- 1.6 · the harness refusal ----------------------------------------------------------------
-ACCEPTED_HARNESSES = ("claude", "codex", "opencode", "none")
+ACCEPTED_HARNESSES = ("claude", "opencode", "none")
 REFUSAL_CODE = "ct-deploy-harness"
 
 
