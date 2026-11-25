@@ -317,5 +317,49 @@ class ThePermissionsMerge(unittest.TestCase):
                            permissions=[self.RULE])
 
 
+class TheSettingsPlanCarriesTheAccessRules(unittest.TestCase):
+    """`cli._settings_merge`: the deploy derives the rules, records what it wrote and reuses it."""
+
+    def setUp(self):
+        sys.path.insert(0, str(PLUGIN_ROOT / "assets" / "bin"))
+        from quenching.deploy import cli
+        self.cli = cli
+        self.tmp = tempfile.mkdtemp()
+        self.addCleanup(shutil.rmtree, self.tmp, True)
+
+    def built(self):
+        return {"settings": {"hooks": [], "attribution": None, "mcpjson": False},
+                "manifest": {"claudeSettings": {}}}
+
+    def test_the_rules_land_in_the_file_and_the_manifest(self):
+        merged = self.cli._settings_merge(pathlib.Path(self.tmp), self.built(), None)
+        doc = json.loads(merged["text"])
+        rules = doc["permissions"]["allow"]
+        self.assertTrue(any(rule.startswith("Bash(.agents/quenching/bin/cq") for rule in rules))
+        self.assertTrue(any(rule.startswith("Read(") for rule in rules))
+
+    def test_check_reuses_the_recorded_rules_instead_of_deriving_them(self):
+        first = self.cli._settings_merge(pathlib.Path(self.tmp), self.built(), None)
+        recorded = {"claudeSettings": {"permissions": ["Bash(mine:*)"]}}
+        (pathlib.Path(self.tmp) / ".claude").mkdir(parents=True, exist_ok=True)
+        (pathlib.Path(self.tmp) / ".claude" / "settings.json").write_text(
+            json.dumps({"permissions": {"allow": ["Bash(mine:*)"]}}), encoding="utf-8")
+        kept = self.cli._settings_merge(pathlib.Path(self.tmp), self.built(), recorded, keep=True)
+        self.assertFalse(kept["changed"])
+        derived = self.cli._settings_merge(pathlib.Path(self.tmp), self.built(), recorded)
+        self.assertTrue(derived["changed"])
+        self.assertTrue(first["changed"])
+
+    def test_removal_takes_only_the_recorded_rules(self):
+        target = pathlib.Path(self.tmp)
+        (target / ".claude").mkdir(parents=True, exist_ok=True)
+        (target / ".claude" / "settings.json").write_text(json.dumps(
+            {"permissions": {"allow": ["Bash(mine:*)", "Bash(ours:*)"]}}), encoding="utf-8")
+        previous = {"claudeSettings": {"permissions": ["Bash(ours:*)"]}}
+        merged = self.cli._settings_merge(target, {"settings": None, "manifest": {}}, previous)
+        self.assertEqual(["Bash(mine:*)"],
+                         json.loads(merged["text"])["permissions"]["allow"])
+
+
 if __name__ == "__main__":
     unittest.main()

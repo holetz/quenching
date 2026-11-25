@@ -9,6 +9,7 @@ import subprocess
 import sys
 from pathlib import Path
 
+from quenching.common import access
 from quenching.common.deploy import MANIFEST, dumps_hash_manifest, read_manifest
 from quenching.common.config import repository_document
 from quenching.common.output import FINDINGS, OK, REFUSAL, NoAbbrevParser, emit, refuse
@@ -375,12 +376,16 @@ def plan(target: Path, built: dict, previous: dict | None) -> dict:
     return {"changes": changes, "conflicts": conflicts, "warnings": warnings}
 
 
-def _settings_merge(target: Path, built: dict, previous: dict | None) -> dict | None:
-    """Merge quenching's own hooks into the user's `.claude/settings.json` without writing.
+def _settings_merge(target: Path, built: dict, previous: dict | None,
+                    keep: bool = False) -> dict | None:
+    """Merge quenching's own hooks and access rules into the user's `.claude/settings.json`
+    without writing.
 
     Returns None when there is nothing to do, else `{"text": <new text or None>, "delete": bool,
     "warnings": [...]}`; raises `SettingsRefusal` on a file that cannot be merged safely. With no
-    Claude harness the wanted set is empty, so only entries a past deploy wrote leave.
+    Claude harness the wanted set is empty, so only entries a past deploy wrote leave. `keep`
+    (`--check`) reuses the recorded permission rules: they name the deploying machine's checkout,
+    so another clone of a committed settings file is not drift.
     """
     wanted = built.get("settings")
     recorded = (previous or {}).get("claudeSettings")
@@ -393,13 +398,20 @@ def _settings_merge(target: Path, built: dict, previous: dict | None) -> dict | 
     current = path.read_text(encoding="utf-8") if path.is_file() else None
     keys = recorded.get("attribution") if recorded else []
     keys = keys if isinstance(keys, list) else []
+    rules = recorded.get("permissions") if recorded else []
+    rules = rules if isinstance(rules, list) else []
+    wanted_rules = (list(rules) if keep and rules
+                    else access.claude_rules(str(target), os.path.expanduser("~")))
     merged = claude_settings.merge(current, wanted["hooks"] if wanted else [],
                                    wanted["attribution"] if wanted else None, keys,
                                    mcpjson=bool(wanted and wanted.get("mcpjson")),
-                                   mcpjson_recorded=bool(recorded and recorded.get("mcpjson")))
+                                   mcpjson_recorded=bool(recorded and recorded.get("mcpjson")),
+                                   permissions=wanted_rules if wanted is not None else None,
+                                   permissions_recorded=rules)
     if wanted is not None:
         built["manifest"]["claudeSettings"]["attribution"] = sorted(merged.attribution)
         built["manifest"]["claudeSettings"]["mcpjson"] = merged.mcpjson
+        built["manifest"]["claudeSettings"]["permissions"] = sorted(merged.permissions)
     delete = (wanted is None and current is not None and recorded is not None
               and json.loads(merged.text if merged.text is not None else current) == {})
     return {"text": merged.text, "delete": delete, "warnings": merged.warnings,
@@ -620,7 +632,7 @@ def main(argv: list[str]) -> int:
                        "remedy": "run deploy from a complete quenching checkout or wheel"},
                       args.json)
     try:
-        built["merged"] = _settings_merge(target, built, previous)
+        built["merged"] = _settings_merge(target, built, previous, keep=args.check)
     except claude_settings.SettingsRefusal as exc:
         return refuse({"code": "ct-deploy-settings", "path": SETTINGS,
                        "message": f"{target / SETTINGS} cannot be merged: {exc}; nothing was written",
