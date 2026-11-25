@@ -266,7 +266,7 @@ A `hooks:` block cannot ride a flow loaded through the router, so a flow that ne
 own skill; the `git` router drops the warn-level hook of `commit`, since it only warned.
 
 **The conductor calls the router.** `spec-runner`, `spec-orchestrator` and the translated surfaces
-(Codex, OpenCode) invoke the router with the `flow` argument and the id.
+(OpenCode) invoke the router with the `flow` argument and the id.
 
 ### The description of a router
 
@@ -282,7 +282,7 @@ the limit comes last**, so the description keeps working if the host truncates i
    No full stop sits inside a clause, so the sentence splitter of `sk-trigger-position` does not cut
    the map.
 3. **Last:** `Not for: <the likeliest neighbour> → /quenching-<x> <flow>.`
-4. **At most 1,024 characters** of the parsed value — the Agent Skills limit that Codex and OpenCode
+4. **At most 1,024 characters** of the parsed value — the Agent Skills limit that OpenCode
    read. The 1,536 Claude cap is slack, not a target.
 
 The 250-character `sk-description-budget` binds only a skill **without a table of flows**

@@ -25,7 +25,6 @@ EXCEPTIONS: dict[tuple[str, ...], str] = {
     ("specs", "mcp"): "the specs-only mount of the server itself",
     ("specs", "serve"): "long-running local portal",
     ("portal", "serve"): "long-running central portal",
-    ("codex", "implement"): "long-running per-task executor",
     ("specs", "migrate"): "one-time store migration the operator runs; may create remote work items",
     ("specs", "export"): "writes a directory of files outside the store, for the operator",
     ("specs", "claim", "take"): "taking a live lease is the human's call only; no agent grant may reach it",

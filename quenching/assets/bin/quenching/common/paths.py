@@ -1,5 +1,5 @@
 """One `files:` entry as the repository path git reports — the single normalisation every
-consumer of `files:` compares through (`cq specs parallel`, the Codex pillar)."""
+consumer of `files:` compares through (`cq specs parallel`)."""
 from __future__ import annotations
 
 import ntpath

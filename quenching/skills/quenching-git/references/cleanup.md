@@ -26,7 +26,7 @@ lowest-numbered free slots up to `shared.worktreeSlots.min` are `preserved` with
 `kind: worktree`, and in `heldSlots` with its evidence: it is a `candidate` with reason
 `archived-holder` only when every fact is in favour — the spec its lock names is in `archive`, its
 HEAD is contained in `<remote>/<base>`, its porcelain is clean, no ignored content sits outside the
-regenerable class (`.quenching/handoff/` and `.quenching/codex/` excepted: the release carries them
+regenerable class (`.quenching/handoff/` excepted: the release carries it
 to the main checkout), and no process has its cwd inside it. Anything missing or contrary keeps it
 `preserved` with the blocker named (`holder-not-archived`, `holder-unknown`, `holder-not-a-spec`,
 `foreign-lock`, `base-unresolved`, `unmerged-head`, `dirty`, `ignored-content-unrecognized`,

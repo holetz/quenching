@@ -34,8 +34,8 @@ tree. Other namespaces are read by their owning front.
 | `shared.contextBudgets` | `{main, worker, conductor}`, positive integers | `{main: 200000, worker: 200000, conductor: 150000}` | `components_session_context`: `worker` is a **size estimate**, never a stop, and `conductor` is the stop checked between waves; `worker` is also the default of `specs_estimate(worker_budget=…)` |
 | `shared.cache` | `{rebuildLimitUsd: number ≥ 0, warnMinutes: integer ≥ 1, ttlMinutes: auto \| 5 \| 60, costStyle: dollars \| times}` — a bad leaf falls back to its default and is named in `warnings` | `{rebuildLimitUsd: 0.5, warnMinutes: 15, ttlMinutes: auto, costStyle: dollars}`, leaf by leaf; a long chat is `shared.contextBudgets.main` | the `quenching-cache` plugin's bar above the prompt, through `config_show(effective=true)` |
 | `shared.quota` | `{warnPercent: integer 1–100, dangerPercent: integer 1–100, intervalSeconds: integer ≥ 60, showSonnet: boolean}` — a bad leaf falls back to its default in the plugin | `{warnPercent: 70, dangerPercent: 90, intervalSeconds: 300, showSonnet: true}`, leaf by leaf | the `quenching-quota` OpenCode plugin's 5-hour and weekly band, through `config_show(effective=true)` |
-| `shared.codex` | `{maxUsedPercent: {primary, secondary}, timeoutSeconds, executor}` — a bad leaf falls back to its default and is named in `warnings`, and so does a leftover `crossReview` or `model` of the removed cross review | `{{80, 90}, 900}` and `executor.enabled: false`, leaf by leaf — Codex is opt-in | `cq codex` |
 | `shared.gitIdentity` | `{allowedEmails: [address or fnmatch pattern, …]}` | none — nothing is judged | the identity gate (`git_commit`), failing closed on a malformed value |
+| `shared.workspace.vscode` | `true` · `false` | `false` — no client file is written without the key | `cq deploy` seeds `.vscode/settings.json` (the block of `common/workspace.py`) and `cq doctor` reports it; read from the repository document only |
 | `shared.mcp` | `{mount: "all"\|"specs", command: [strings], cliFallback: boolean}` | none — the whole MCP server (`all`, `cq mcp`) is registered with a resolved direct Python prefix, and the grants drop each `Bash(cq …)` an MCP tool replaces unless `cliFallback: true` | `cq deploy`, from the repository document only |
 | `delivery.provider` | a provider name, declared explicitly | none — absent declares no provider; it chooses no pipeline policy | the delivery front (`delivery/config.py`) |
 | `specs.artifactLanguage` | a non-empty string | none | `.agents/quenching/bin/cq specs`, on the branch or here |
@@ -72,10 +72,11 @@ and no value is merged.
 The checker's `warnAsError` and `ignoreGlobs` are `shared.okfValidate`; `.claude/hooks/hooks-config.json`
 stays the layer below, and the bundle root is the fixed `/docs/` convention no configuration names.
 
-`config_init(write=true)` seeds the file with every default above spelled out (the `shared.codex`,
+`config_init(write=true)` seeds the file with every default above spelled out (the
 `autonomy`, `contextBudgets`, `okfValidate` and `workHost` blocks and `specs.chat`); `config_check`
 and `cq doctor` list the seeded keys a file lacks. They only report: an existing file is never
-rewritten.
+rewritten. A leftover `shared.codex` block (the removed Codex executor) is accepted and named in
+`warnings` as obsolete for one version; it is never seeded and nothing reads it.
 
 ## The local layer, the scopes and the one writer
 
@@ -87,8 +88,8 @@ git through `.git/info/exclude`. Each key carries a **scope** in the registry
 
 | Scope | The local layer | Keys |
 | --- | --- | --- |
-| `machine` | wins over every file | `shared.worktreeSlots` (but `setupIdempotent`), `shared.workHost`, `shared.contextBudgets`, `shared.cache.ttlMinutes`, `shared.quota.intervalSeconds`, the Codex quota ceilings |
-| `either` | fills a key the project leaves out; the project wins | `shared.autonomy`, the rest of `shared.codex`, the rest of `shared.cache`, the rest of `shared.quota`, `shared.okfValidate`, `specs.chat` |
+| `machine` | wins over every file | `shared.worktreeSlots` (but `setupIdempotent`), `shared.workHost`, `shared.contextBudgets`, `shared.cache.ttlMinutes`, `shared.quota.intervalSeconds` |
+| `either` | fills a key the project leaves out; the project wins | `shared.autonomy`, the rest of `shared.cache`, the rest of `shared.quota`, `shared.okfValidate`, `specs.chat` |
 | `project` | ignored and named in `localConfig.ignored` | everything else — the team's contract |
 
 `config_set(key=<key>, value=<value>, layer="project|local")` and `unset <key> --layer …`

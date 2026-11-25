@@ -98,7 +98,6 @@ RULES: tuple[Rule, ...] = (
     Rule(("quenching/assets/bin/quenching/config/",),
          ("test_config_*", "test_user_config_layer", "test_owner_controls")),
     Rule(("quenching/assets/bin/quenching/controls/",), ("test_owner_controls",)),
-    Rule(("quenching/assets/bin/quenching/codex/",), ("test_codex_*",)),
     Rule(("quenching/skills/quenching-specs/",),
          ("test_specs_*", "test_autopilot_*", "test_handoff_command", "test_spec_runner_wait",
           "test_orchestrator_*")),
@@ -130,7 +129,7 @@ RULES: tuple[Rule, ...] = (
     # The harness config files `cq deploy` writes at the repository root; one owner, one test set.
     # Rules are read before IRRELEVANT, so `.claude/settings.json` is covered while the rest of
     # `.claude/` stays a generated mirror.
-    Rule(("opencode.json", ".mcp.json", ".codex/config.toml", ".claude/settings.json"),
+    Rule(("opencode.json", ".mcp.json", ".claude/settings.json"),
          ("test_deploy*",)),
     Rule(("quenching/VERSION",),
          ("test_readme_surface", "test_deploy*", "test_specs_release", "test_opensource_controls",

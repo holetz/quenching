@@ -2,7 +2,7 @@
   "backend": "git",
   "shared": {
     "gitConventions": {
-      "commitSubject": "Spec work: `plan/<id>-<handle>: <task-id> <task title>`, with the same `<id>-<handle>` as the branch, so the commit log reads like the spec's `## Tasks`. Outside a spec: a short imperative, no trailing period and no type prefix — `Regenerate Codex descriptions`.",
+      "commitSubject": "Spec work: `plan/<id>-<handle>: <task-id> <task title>`, with the same `<id>-<handle>` as the branch, so the commit log reads like the spec's `## Tasks`. Outside a spec: a short imperative, no trailing period and no type prefix — `Regenerate the skill descriptions`.",
       "branchName": "`plan/<id>-<handle>`, with the spec id leading; the handle is the kebab-case title and is never parsed back.",
       "prTitle": "The spec title verbatim, as `cq specs status` returns it — never a commit subject and never a rewritten summary.",
       "prBody": "The spec's `Problem`, `Proposal`, `Impact` and `Validation` sections under headings of those names, the `Tasks` summary with counts, and `Closes #<n>` at the end. Nothing beyond what the spec carries.",
@@ -56,7 +56,10 @@
       "site",
       "site-source",
       ".quenching/coverage"
-    ]
+    ],
+    "workspace": {
+      "vscode": true
+    }
   },
   "proof": {
     "proofRoot": "quenching",

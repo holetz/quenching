@@ -8,7 +8,11 @@ a cache write costs `cacheWrite` × input, output costs `output` × input, a `-f
 
 An unknown model prices as `None`, never as a neighbour's rate: `claude-opus-5-6` is not Opus 5.
 The figures are list prices, an estimate for comparison: a gateway or a subscription bills
-otherwise, which is why no command prices anything unless asked with `--usd`."""
+otherwise, which is why no command prices anything unless asked with `--usd`.
+
+The table also declares the unit a client bills in without a list price — GitHub Copilot's AI
+credits, reported as nano-AIU. It carries the unit and its scale, never a USD rate: `aiu()` turns
+the client's own count into AIU, and a Copilot model stays unpriced in USD."""
 from __future__ import annotations
 
 import json
@@ -62,12 +66,26 @@ def usd(model: str, *, input: int = 0, cache_read: int = 0, write5m: int = 0, wr
     return round(total / 1e6, 6)
 
 
+def aiu(nano) -> float | None:
+    """AI credits from the client's nano-AIU count, or None when the count was not reported."""
+    if isinstance(nano, bool) or not isinstance(nano, int) or nano < 0:
+        return None
+    return round(nano / table()["aiCredits"]["nanoPerUnit"], 6)
+
+
 def problems(data: dict | None = None) -> list[str]:
     """What makes the table unusable: the gate refuses a table with any."""
     data = table() if data is None else data
     out = []
     if not re.fullmatch(r"\d{4}-\d{2}-\d{2}", str(data.get("sourceDate", ""))):
         out.append("sourceDate is not YYYY-MM-DD")
+    credits = data.get("aiCredits")
+    if not isinstance(credits, dict) or not isinstance(credits.get("unit"), str) \
+            or not credits["unit"].strip():
+        out.append("aiCredits needs a unit (the credit a client bills in)")
+    elif isinstance(credits.get("nanoPerUnit"), bool) or not isinstance(credits["nanoPerUnit"], int) \
+            or credits["nanoPerUnit"] < 1:
+        out.append("aiCredits.nanoPerUnit must be a positive integer")
     models = data.get("models")
     if not isinstance(models, dict) or not models:
         return out + ["models is empty"]

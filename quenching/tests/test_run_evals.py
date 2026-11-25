@@ -209,7 +209,7 @@ class Runner(unittest.TestCase):
         self.assertEqual({"with": "claude", "without": None}, deploy)
         self.assertNotIn("--plugin-dir", by_arm["with"])
         self.assertEqual(by_arm["with"][-1], "Make the file please.")
-        for harness in ("codex", "opencode"):
+        for harness in ("opencode",):
             buffer = io.StringIO()
             with contextlib.redirect_stdout(buffer):
                 self.assertEqual(runner.main(["--host", "--suite", str(self.suite), "--case", "c1", "--dry-run",
@@ -541,17 +541,6 @@ class Grades(unittest.TestCase):
     def test_a_grade_for_another_assertion_is_never_reused(self):
         grades = runner.verify_grades(["a", "b"], [{"assertion": "b", "result": "pass", "evidence": "x"}], "x")
         self.assertEqual([g["result"] for g in grades], ["unknown", "pass"])
-
-    def test_the_codex_event_stream_yields_its_agent_messages(self):
-        stream = "\n".join(json.dumps(e) for e in (
-            {"type": "thread.started"},
-            {"type": "item.completed", "item": {"type": "command_execution", "command": "ls"}},
-            {"type": "item.completed", "item": {"type": "agent_message",
-                                                "text": '[{"assertion": "a", "result": "pass", "evidence": "x"}]'}},
-            {"type": "turn.completed", "usage": {"input_tokens": 10, "cached_input_tokens": 8, "output_tokens": 2}}))
-        text, tokens = runner.output_text({"output": "codex-jsonl"}, stream)
-        self.assertEqual(tokens, 12)
-        self.assertEqual(runner.parse_grades(text)[0]["result"], "pass")
 
     def test_evidence_matches_across_whitespace(self):
         grades = runner.verify_grades(["a"], [{"assertion": "a", "result": "fail",

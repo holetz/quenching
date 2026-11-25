@@ -2,6 +2,11 @@
   "sourceDate": "2026-11-17",
   "source": "Anthropic list prices (platform.claude.com/docs/en/about-claude/pricing), first tabulated by cache-maxxing (github.com/5m0k3/cache-maxxing, MIT); quenching owns this copy",
   "unit": "USD per million tokens",
+  "aiCredits": {
+    "unit": "AIU",
+    "nanoPerUnit": 1000000000,
+    "source": "GitHub Copilot AI credits as the client reports them, in nano-AIU; a plan bills them and no USD rate is implied"
+  },
   "cacheWrite": {"5m": 1.25, "1h": 2},
   "output": 5,
   "fast": 2,
