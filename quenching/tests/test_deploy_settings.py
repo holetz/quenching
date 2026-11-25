@@ -262,5 +262,60 @@ class TheMcpjsonApproval(unittest.TestCase):
             settings.merge('{"enabledMcpjsonServers": "quenching"}', [], None, [], mcpjson=True)
 
 
+class ThePermissionsMerge(unittest.TestCase):
+    RULE = "Bash(.agents/quenching/bin/cq:*)"
+    OTHER = "Read(~/src/proj-slot-*/**)"
+
+    def test_a_missing_file_gets_allow_with_only_the_wanted_rules(self):
+        merged = settings.merge(None, [], settings.ATTRIBUTION, [],
+                                permissions=[self.RULE, self.OTHER])
+        rules = load(merged)["permissions"]["allow"]
+        self.assertEqual([self.RULE, self.OTHER], rules)
+        self.assertEqual([self.RULE, self.OTHER], merged.permissions)
+
+    def test_a_user_rule_and_the_deny_list_survive(self):
+        text = json.dumps({"permissions": {"allow": ["Bash(git status)"],
+                                           "deny": ["Read(~/.ssh/**)"]}})
+        merged = settings.merge(text, [], settings.ATTRIBUTION, [], permissions=[self.RULE])
+        doc = load(merged)
+        self.assertEqual(["Bash(git status)", self.RULE], doc["permissions"]["allow"])
+        self.assertEqual(["Read(~/.ssh/**)"], doc["permissions"]["deny"])
+        self.assertEqual([self.RULE], merged.permissions)
+
+    def test_a_rule_the_user_already_wrote_is_not_claimed(self):
+        text = json.dumps({"permissions": {"allow": [self.RULE]}})
+        merged = settings.merge(text, [], None, [], permissions=[self.RULE])
+        self.assertEqual(text, merged.text)
+        self.assertEqual([], merged.permissions)
+
+    def test_it_is_idempotent_and_reuses_the_recorded_rules(self):
+        first = settings.merge(None, [], settings.ATTRIBUTION, [], permissions=[self.RULE])
+        second = settings.merge(first.text, [], settings.ATTRIBUTION, first.attribution,
+                                permissions=[self.RULE], permissions_recorded=first.permissions)
+        self.assertEqual(first.text, second.text)
+        self.assertEqual([self.RULE], second.permissions)
+
+    def test_removal_takes_out_only_the_recorded_rule(self):
+        text = json.dumps({"permissions": {"allow": ["Bash(git status)", self.RULE],
+                                           "deny": ["Read(~/.ssh/**)"]}})
+        out = settings.merge(text, [], None, [], permissions=None,
+                             permissions_recorded=[self.RULE])
+        doc = load(out)
+        self.assertEqual(["Bash(git status)"], doc["permissions"]["allow"])
+        self.assertEqual(["Read(~/.ssh/**)"], doc["permissions"]["deny"])
+        alone = settings.merge(json.dumps({"permissions": {"allow": [self.RULE]}}), [], None, [],
+                               permissions_recorded=[self.RULE])
+        self.assertEqual({}, load(alone))
+
+    def test_a_permissions_shape_that_is_not_an_object_refuses(self):
+        with self.assertRaises(settings.SettingsRefusal):
+            settings.merge('{"permissions": "allow"}', [], None, [], permissions=[self.RULE])
+
+    def test_an_allow_that_is_not_a_list_refuses(self):
+        with self.assertRaises(settings.SettingsRefusal):
+            settings.merge('{"permissions": {"allow": "all"}}', [], None, [],
+                           permissions=[self.RULE])
+
+
 if __name__ == "__main__":
     unittest.main()
