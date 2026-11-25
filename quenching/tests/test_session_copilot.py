@@ -187,3 +187,43 @@ class TheEventLog(Fixture):
         agents, facts = copilot.events(self.home, "s1")
         self.assertEqual(2, len(facts["anomalies"]))
         self.assertEqual([], copilot.descendant_ids(agents, ORCH))
+
+
+class TheRequests(Fixture):
+    def test_fresh_input_is_the_prompt_total_minus_what_the_cache_served(self):
+        ledger(self.home, [("s1", None, "gpt", 1000, 7, 900, 50, 3, 2_500_000_000, "2026-11-25T10:00:01Z")])
+        rows, anomalies = copilot.requests(self.home, ["s1"])
+        request = rows["s1"][0]
+        self.assertEqual((1000, 900, 50, 50, 3, 2_500_000_000),
+                         (request.input, request.cache_read, request.cache_write, request.fresh,
+                          request.reasoning, request.nano_aiu))
+        self.assertEqual([], anomalies)
+
+    def test_the_cache_above_the_total_is_an_anomaly_and_a_zero_fresh(self):
+        ledger(self.home, [("s1", None, "gpt", 10, 1, 20, 0, 0, None, "2026-11-25T10:00:01Z")])
+        rows, anomalies = copilot.requests(self.home, ["s1"])
+        self.assertEqual(0, rows["s1"][0].fresh)
+        self.assertEqual(1, len(anomalies))
+        self.assertIn("more cache tokens than prompt tokens", anomalies[0]["message"])
+
+    def test_since_drops_old_requests_and_flags_one_with_no_timestamp(self):
+        ledger(self.home, [
+            ("s1", None, "gpt", 10, 1, 0, 0, 0, None, "2026-11-25T09:00:00Z"),
+            ("s1", None, "gpt", 20, 1, 0, 0, 0, None, "not a timestamp"),
+            ("s1", None, "gpt", 30, 1, 0, 0, 0, None, "2026-11-25T11:00:00Z")])
+        cutoff = copilot.parse_instant("2026-11-25T10:00:00Z")
+        rows, anomalies = copilot.requests(self.home, ["s1"], since=cutoff)
+        self.assertEqual([30], [r.input for r in rows["s1"]])
+        self.assertEqual(1, len(anomalies))
+        everything, _ = copilot.requests(self.home, ["s1"])
+        self.assertEqual({10, 20, 30}, {r.input for r in everything["s1"]})
+        self.assertIsNone(next(r for r in everything["s1"] if r.input == 20).at)
+
+    def test_requests_stay_oldest_first_and_unknown_fields_are_not_invented(self):
+        ledger(self.home, [
+            ("s1", ORCH, "", 5, 2, 0, 0, 0, None, "2026-11-25T10:02:00Z"),
+            ("s1", None, "gpt", 1, 1, 0, 0, 0, -1, "2026-11-25T10:01:00Z")])
+        rows, _ = copilot.requests(self.home, ["s1"])
+        self.assertEqual([1, 5], [r.input for r in rows["s1"]])
+        self.assertEqual(copilot.UNKNOWN, rows["s1"][1].model)
+        self.assertIsNone(rows["s1"][0].nano_aiu)   # a negative count is not a credit

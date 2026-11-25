@@ -171,7 +171,7 @@ def requests(root: Path, session_ids: list[str], since: datetime | None = None) 
             request = Request(sid, agent_id if isinstance(agent_id, str) and agent_id else None,
                               model if isinstance(model, str) and model else UNKNOWN, when,
                               _n(inp), _n(read), _n(write), _n(out_tokens), _n(reasoning),
-                              nano if isinstance(nano, int) and not isinstance(nano, bool) else None)
+                              nano if isinstance(nano, int) and not isinstance(nano, bool) and nano >= 0 else None)
             if request.cache_read + request.cache_write > request.input:
                 anomalies.append({"file": STORE, "line": 0, "message":
                                   "a request reports more cache tokens than prompt tokens; its fresh "
