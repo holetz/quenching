@@ -2,6 +2,7 @@
 `quenching-cache` plugin price with, and the gate's refusal of an unusable or stale copy."""
 import contextlib
 import io
+import importlib.util
 import json
 import os
 import pathlib
@@ -113,6 +114,19 @@ class TheGeneratedCopies(unittest.TestCase):
         run = subprocess.run([sys.executable, str(REPO / "scripts" / "cache_plugin_sync.py"), "--check"],
                              capture_output=True, text=True)
         self.assertEqual(0, run.returncode, run.stdout + run.stderr)
+
+    def test_the_opencode_core_is_the_claude_core_with_file_imports(self):
+        spec = importlib.util.spec_from_file_location("cache_plugin_sync", REPO / "scripts" / "cache_plugin_sync.py")
+        sync = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(sync)
+        by_name = {path.name: text for path, text in sync.targets() if "opencode-cache" in path.as_posix()}
+        self.assertEqual({"logic.ts", "handoff.ts", "i18n.ts", "message.ts", "prices.ts", "types.ts",
+                          "handoff-template.md", "handoff-brief.md"}, set(by_name))
+        for name, text in by_name.items():
+            if name.endswith(".ts"):
+                self.assertNotRegex(text, r"from '\.{1,2}/[\w-]+'", name)  # every relative import names its file
+        self.assertIn("from './types.ts'", by_name["logic.ts"])
+        self.assertNotIn("claude-code", by_name["handoff.ts"])
 
 
 if __name__ == "__main__":

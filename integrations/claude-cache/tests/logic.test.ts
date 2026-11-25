@@ -3,7 +3,7 @@
 import { expect, test } from 'claude-code/testing'
 
 import type { Rec } from '../types'
-import { DEFAULTS, HAIKU_ESTIMATE, clock, costs, decide, fromSessionStart, handoffSaving, haikuUsd, money, priceOf, sendWarning, setFreshStart, settingsFromConfig, statsText, tokens, ttlFor, ttlFromUsage } from '../hooks/logic'
+import { DEFAULTS, HAIKU_ESTIMATE, clock, hostPrice, costs, decide, fromSessionStart, handoffSaving, haikuUsd, money, priceOf, sendWarning, setFreshStart, settingsFromConfig, statsText, tokens, ttlFor, ttlFromUsage } from '../hooks/logic'
 import { savedText } from '../hooks/handoff'
 import { WORDS, langOf } from '../hooks/i18n'
 
@@ -265,4 +265,29 @@ test('stats: this chat and this project from cq components session cache --usd',
     '| This project | **total** | | | | $1.70 |',
   ].join('\n'))
   expect(statsText(null, '{"ok":false}', W)).toBe(null)
+})
+
+// --- price as an interface ---------------------------------------------------
+
+test('priceOf keeps quenching\'s table; hostPrice reads a host\'s own cost rows', async () => {
+  const host = hostPrice([{ input: 3, cacheRead: 0.3, cacheWrite: 3.75 }, { input: 6, cacheRead: 0.6, cacheWrite: 7.5, above: 200_000 }])
+  expect(host('any-model', 100_000)).toEqual({ input: 3, read: 0.3, write: 3.75 })
+  expect(host('any-model', 250_000)).toEqual({ input: 6, read: 0.6, write: 7.5 })
+  expect(hostPrice(undefined)('any-model', 1)).toBe(null)
+  expect(hostPrice([{ input: Number.NaN, cacheRead: 1 }])('m', 1)).toBe(null)
+})
+
+test('costs: a host price replaces the table, and its published write replaces the multiplier', async () => {
+  const host = hostPrice([{ input: 3, cacheRead: 0.3, cacheWrite: 3.75 }])
+  const c = costs(rec({ model: 'gpt-x', prefix: 1_000_000, ttlMin: 5 }), host)!
+  expect(Math.abs(c.warm - 0.3) < 1e-9).toBe(true)
+  expect(Math.abs(c.cold - 3.75) < 1e-9).toBe(true)
+  expect(costs(rec({ model: 'gpt-x' }))).toBe(null) // no table price, no host: still unknown
+})
+
+test('decide with a host price speaks about a model the table does not know', async () => {
+  const host = hostPrice([{ input: 3, cacheRead: 0.3, cacheWrite: 3.75 }])
+  const v = decide(rec({ model: 'gpt-x', at: 0, ttlMin: 60 }), 1 * MIN, DEFAULTS, W, host)
+  expect(v.light).toBe('green')
+  expect(v.text.includes('$')).toBe(true)
 })

@@ -295,8 +295,9 @@ else
   printf 'SKIPPED: `claude` is not on PATH; integrations/claude-hud was not validated.\n'
 fi
 
-# The quenching-cache band carries generated copies of quenching's price table and handoff
-# template; a stale copy is refused here, with or without `claude`.
+# The quenching-cache bands (Claude Code and OpenCode) carry generated copies of quenching's price
+# table and handoff template, and the OpenCode one the shared core too; a stale copy is refused
+# here, with or without `claude`.
 run_check "quenching-cache generated copies" \
   python3 scripts/cache_plugin_sync.py --check
 if [ "$RUN_INTEGRATIONS" = 0 ]; then
@@ -348,6 +349,32 @@ elif command -v node >/dev/null 2>&1 && node --experimental-strip-types -e '' >/
 else
   skip_step "opencode-vitrine warnings bench" "no \`node\` with --experimental-strip-types (22.6+) on PATH; the vitrine's warnings were not exercised."
   skip_step "opencode-vitrine remote deploy bench" "no \`node\` with --experimental-strip-types (22.6+) on PATH; the vitrine's deploy origin was not exercised."
+fi
+
+# The OpenCode quenching-cache port: its tracker, handoff and load checks need only `node`
+# (strip-types); the typecheck needs the SDK it pins, so without `node_modules` that skip is stated.
+if [ "$RUN_INTEGRATIONS" = 0 ]; then
+  skip_step "opencode-cache typecheck, checks and bench" "$INTEGRATIONS_SKIP_REASON"
+else
+  if [ -d integrations/opencode-cache/node_modules ] && command -v npx >/dev/null 2>&1; then
+    run_check "opencode-cache typecheck" \
+      npx --prefix integrations/opencode-cache tsc --noEmit -p integrations/opencode-cache
+  else
+    printf '\n==> opencode-cache typecheck\n'
+    printf 'SKIPPED: integrations/opencode-cache/node_modules is absent (run `npm ci` there); the port was not typechecked.\n'
+  fi
+  if command -v node >/dev/null 2>&1 && node --experimental-strip-types -e '' >/dev/null 2>&1; then
+    run_check "opencode-cache tracker and handoff checks" \
+      bash -c 'cd integrations/opencode-cache && node --experimental-strip-types tests/track.check.mjs && node --experimental-strip-types tests/handoff.check.mjs'
+    if [ -d integrations/opencode-cache/node_modules ]; then
+      run_check "opencode-cache load bench" \
+        bash -c 'cd integrations/opencode-cache && node --experimental-strip-types bench/load.ts'
+    else
+      skip_step "opencode-cache load bench" "integrations/opencode-cache/node_modules is absent (run \`npm ci\` there); the bench loads the SDK."
+    fi
+  else
+    skip_step "opencode-cache checks and bench" "no \`node\` with --experimental-strip-types (22.6+) on PATH; the port was not exercised."
+  fi
 fi
 
 # Surface-load checks spawn billed `claude -p` sessions, so they are opt-in: without
