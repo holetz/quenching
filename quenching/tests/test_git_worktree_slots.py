@@ -90,6 +90,31 @@ class AcquireAndRelease(SlotRepo):
         self.assertFalse(second["created"])
         self.assertTrue(os.path.isdir(os.path.join(second["path"], ".venv", "lib")))
 
+    def test_a_released_slot_stays_locked_and_the_client_cannot_remove_it(self):
+        _code, first = self.run_verb("acquire", branch="plan/1-a")
+        code, out = self.run_verb("release", path=first["path"])
+        self.assertEqual(code, 0, out)
+        self.assertTrue(out["freeLock"])
+        slot = slots.survey(self.main)["slots"][0]
+        self.assertEqual(slot["state"], "free")
+        self.assertEqual(slot["locked"], slots.FREE_REASON)
+        self.assertIsNone(slot["holder"])
+        done = subprocess.run(["git", "-C", self.main, "worktree", "remove", first["path"]],
+                              capture_output=True, text=True)
+        self.assertNotEqual(0, done.returncode)
+        self.assertIn("cannot remove a locked working tree", done.stderr)
+        self.assertTrue(os.path.isdir(first["path"]))
+
+    def test_acquiring_a_free_slot_swaps_the_pool_lock_for_the_holder(self):
+        _code, first = self.run_verb("acquire", branch="plan/1-a")
+        self.assertEqual(self.run_verb("release", path=first["path"])[0], 0)
+        _code, second = self.run_verb("acquire", branch="plan/2-b")
+        self.assertEqual(second["path"], first["path"])
+        self.assertTrue(second["lock"].startswith("quenching: plan/2-b"))
+        slot = slots.survey(self.main)["slots"][0]
+        self.assertEqual(slot["state"], "held")
+        self.assertEqual(slot["holder"]["spec"], "plan/2-b")
+
     def test_a_dirty_slot_is_never_released(self):
         _code, got = self.run_verb("acquire", branch="plan/1-a")
         with open(os.path.join(got["path"], "work.txt"), "w") as fh:

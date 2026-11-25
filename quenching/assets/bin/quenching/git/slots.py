@@ -33,6 +33,10 @@ from quenching.git.push import remote_probe
 DEFAULTS = {"min": 4, "max": 12, "waitMinutes": 30, "pollSeconds": 30}
 REASON_PREFIX = "quenching: "
 SEP = " · "
+# A slot returned to the pool stays locked under this reason: the client's own worktree cleanup
+# runs `git worktree remove` without `-f -f`, and git refuses a locked tree, so the warm `.venv`
+# survives. It carries no holder and is never the mutex: `acquire` swaps it for its own reason.
+FREE_REASON = REASON_PREFIX + "available"
 
 
 def limits(repo: str) -> dict:
@@ -96,6 +100,11 @@ def parse_reason(reason: str | None) -> dict | None:
     return dict(zip(("spec", "session", "host", "date"), parts[:4]))
 
 
+def is_free_lock(reason: str | None) -> bool:
+    """Whether a lock reason is the pool's own, not a holder's."""
+    return reason == FREE_REASON
+
+
 def lock_reason(holder: str, session: str | None) -> str:
     session = session or os.environ.get("OPENCODE_SESSION_ID") \
         or os.environ.get("CLAUDE_SESSION_ID") or "-"
@@ -113,9 +122,10 @@ def survey(cwd: str) -> dict:
     for tree in trees[1:]:
         match = pattern.match(os.path.basename(tree["path"]))
         if match and os.path.dirname(os.path.realpath(tree["path"])) == parent:
+            free = tree["locked"] is None or is_free_lock(tree["locked"])
             slots.append({**tree, "n": int(match.group(1)),
-                          "state": "held" if tree["locked"] is not None else "free",
-                          "holder": parse_reason(tree["locked"])})
+                          "state": "free" if free else "held",
+                          "holder": None if free else parse_reason(tree["locked"])})
         else:
             kind = ("opencode" if "/opencode/worktree/" in tree["path"].replace(os.sep, "/")
                     else "legacy")
@@ -197,8 +207,33 @@ def _lock(cwd: str, path: str, reason: str) -> bool:
     return _git_run(cwd, *SAFE, "worktree", "lock", "--reason", reason, "--", path)[0] == 0
 
 
-def _unlock(cwd: str, path: str) -> None:
-    _git_run(cwd, *SAFE, "worktree", "unlock", "--", path)
+def _unlock(cwd: str, path: str) -> bool:
+    return _git_run(cwd, *SAFE, "worktree", "unlock", "--", path)[0] == 0
+
+
+def _claim(cwd: str, path: str, locked: str | None, reason: str) -> bool:
+    """Take a free slot's lock for `reason`: re-lock an available one, lock a legacy unlocked
+    one. `git worktree lock` fails on an already locked tree, so only one taker wins."""
+    if locked is not None:
+        _unlock(cwd, path)
+    return _lock(cwd, path, reason)
+
+
+def free_slot(cwd: str, path: str) -> dict | None:
+    """The free slot at `path`, or None when the path is not a slot or not free."""
+    want = os.path.realpath(path)
+    return next((slot for slot in survey(cwd)["slots"] if slot["state"] == "free"
+                 and os.path.realpath(slot["path"]) == want), None)
+
+
+def unlock_free(cwd: str, path: str) -> bool:
+    """Unlock a free slot for the one removal `stale` reports; a held slot is never unlocked."""
+    return free_slot(cwd, path) is not None and _unlock(cwd, path)
+
+
+def relock_free(cwd: str, path: str) -> bool:
+    """Put the pool's own lock back after a removal that failed."""
+    return _lock(cwd, path, FREE_REASON)
 
 
 OWN_WORK = ("commit", "cherry-pick", "revert")
@@ -233,7 +268,7 @@ def _take(cwd: str, view: dict, cap: int, reason: str, base_sha: str,
     is skipped). A reused slot's `.quenching/handoff/` is moved to the primary checkout
     (`slot["handoff"]`). `(slot, created)`."""
     for slot in view["slots"]:
-        if slot["state"] == "free" and _lock(cwd, slot["path"], reason):
+        if slot["state"] == "free" and _claim(cwd, slot["path"], slot["locked"], reason):
             if _dirty(slot["path"]) is False:
                 slot["handoff"] = _move_handoffs(slot["path"], view["primary"])
                 return slot, False
@@ -559,7 +594,7 @@ def release(args) -> int:
         payload["message"] = f"git switch --detach failed in {path}: {err.strip()}"
         emit(args.json, payload, payload["message"])
         return FINDINGS
-    _unlock(cwd, path)
+    payload["freeLock"] = _unlock(cwd, path) and _lock(cwd, path, FREE_REASON)
     payload.update(ok=True, released=True, base=start)
     tip = _commit(cwd, f"refs/heads/{branch}") if branch else None
     if tip and _run(cwd, "merge-base", "--is-ancestor", tip, base_sha)[0] == 0:
