@@ -524,9 +524,10 @@ class Containment(unittest.TestCase):
     def test_a_timeout_kills_the_grandchildren_too(self):
         with tempfile.TemporaryDirectory() as tmp:
             mark = Path(tmp) / "M"
-            record = runner.invoke([bash(), "-c", f"(sleep 2; touch {mark.as_posix()}) & sleep 30"], Path(tmp),
+            start = runner.time.monotonic()
+            record = runner.invoke([bash(), "-c", f"(sleep 5; touch {mark.as_posix()}) & sleep 30"], Path(tmp),
                                    runner.os.environ.copy(), 1)
-            runner.time.sleep(3)
+            runner.time.sleep(max(0.0, start + 7 - runner.time.monotonic()))
             self.assertIn("timeout", record["error"])
             self.assertFalse(mark.exists(), "a grandchild outlived the timeout")
 

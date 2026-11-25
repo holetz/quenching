@@ -439,53 +439,97 @@ def build_tree(source: Path, target: Path, modules: list[str], harnesses: list[s
     # A skill is its whole folder: the `SKILL.md` and the `references/` beside it. Each skill is
     # rendered once and published into the directories the declared clients read.
     dirs = skill_dirs(harnesses)
+    # A module outside the selection whose mirror the target already tracks: the files stay, so
+    # they are regenerated from the source like a selected module's, never left to age while
+    # `--check` reads green. A module the target never carried adds nothing.
+    # A folder the last deploy owned is a module the caller just deselected: that one leaves with
+    # the write, it is not a mirror.
+    outside = [module for module in manifest["modules"] if module not in selected]
+    previous = read_manifest(str(target)) or {}
+    left = set(previous.get("files") or {})
+    kept_before = set(previous.get("mirrors") or [])
+    mirrored: list[str] = []
+    folders: list[str] = []
+
+    def kept(rel: str, marker: str) -> bool:
+        present = ((target / rel / marker).is_file() if marker != "*.py"
+                   else any((target / rel).glob("*.py")))
+        return present and (rel in kept_before
+                            or not any(owned.startswith(rel + "/") for owned in left))
+
+    for package in _packages(outside):
+        folder = "assets/bin/quenching/" + package
+        if package not in packages and kept(PAYLOAD + "/" + folder, "*.py") and (source / folder).is_dir():
+            before = set(tree)
+            folders.append(PAYLOAD + "/" + folder)
+            _add_tree(tree, source, folder)
+            mirrored.extend(sorted(set(tree) - before))
+
     skill_names: list[str] = []
     generated: dict[str, dict[str, tuple[bytes, int]]] = {}
-    for module in selected:
-        for name in module["owned"]["skills"]:
-            if name in skill_names:
-                continue
+    mirrors: set[str] = set()
+    # A skill mirror is read from the directory this deploy publishes: `.claude/skills` for a
+    # target declaring `claude`, `.agents/skills` otherwise. There is no second generated copy:
+    # a target's own skill stays under `.agents/skills` and is bridged.
+    published = dirs[0]
+    skill_sources = [(name, True) for module in selected for name in module["owned"]["skills"]]
+    skill_sources += [(name, False) for module in outside
+                      for name in module.get("owned", {}).get("skills", [])
+                      # A mirror read where this deploy publishes it, or recorded at its old
+                      # `.agents/skills` home by a manifest written before this layout: the
+                      # source stays the truth and the copy moves to the new directory.
+                      if (kept(published + "/" + name, bridge.SKILL_FILE)
+                          or f"{SKILLS}/{name}" in kept_before)
+                      and (source / "skills" / name).is_dir()]
+    for name, chosen in skill_sources:
+        if name in skill_names:
+            continue
+        if chosen:
             skill_names.append(name)
-            root = source / "skills" / name
-            # A vendored payload carries no skill source: the installed folder is already the
-            # generated form, so it is re-asserted byte for byte.
-            installed = not root.is_dir()
-            from_claude = False
-            if installed:
-                root = target / SKILLS / name
-            if installed and not root.is_dir():
-                # A target deployed for a claude-only client has the generated form only in
-                # `.claude/skills`; its own `cq deploy --check` must re-assert that copy.
-                root = target / CLAUDE_SKILLS / name
-                from_claude = root.is_dir()
-            if not root.is_dir():
+        else:
+            mirrors.add(name)
+        root = source / "skills" / name
+        # A vendored payload carries no skill source: the installed folder is already the
+        # generated form, so it is re-asserted byte for byte.
+        installed = not root.is_dir()
+        from_claude = False
+        if installed:
+            root = target / SKILLS / name
+        if installed and not root.is_dir():
+            # A target deployed for a claude-only client has the generated form only in
+            # `.claude/skills`; its own `cq deploy --check` must re-assert that copy.
+            root = target / CLAUDE_SKILLS / name
+            from_claude = root.is_dir()
+        if not root.is_dir():
+            continue
+        files = generated.setdefault(name, {})
+        for path in sorted(root.rglob("*")):
+            if not path.is_file() or _is_build(path):
                 continue
-            files = generated.setdefault(name, {})
-            for path in sorted(root.rglob("*")):
-                if not path.is_file() or _is_build(path):
-                    continue
-                rel = path.relative_to(root).as_posix()
-                if installed:
-                    data = _read(path)
-                    if from_claude and rel == "SKILL.md":
-                        data = _without_marker(data.decode("utf-8"), name).encode("utf-8")
-                elif rel == "SKILL.md":
-                    data = translate.skill_document(path.read_text(encoding="utf-8"), name,
-                                                    narrow, mount).encode("utf-8")
-                elif path.suffix == ".md":
-                    data = translate.reference_document(path.read_text(encoding="utf-8")).encode("utf-8")
-                else:
-                    data = _read(path)
-                files[rel] = (data, _mode(path))
+            rel = path.relative_to(root).as_posix()
+            if installed:
+                data = _read(path)
+                if from_claude and rel == "SKILL.md":
+                    data = _without_marker(data.decode("utf-8"), name).encode("utf-8")
+            elif rel == "SKILL.md":
+                data = translate.skill_document(path.read_text(encoding="utf-8"), name,
+                                                narrow, mount).encode("utf-8")
+            elif path.suffix == ".md":
+                data = translate.reference_document(path.read_text(encoding="utf-8")).encode("utf-8")
+            else:
+                data = _read(path)
+            files[rel] = (data, _mode(path))
 
     for name, files in generated.items():
         for rel, (data, mode) in files.items():
-            if SKILLS in dirs:
-                _add(tree, f"{SKILLS}/{name}/{rel}", data, mode)
-            if CLAUDE_SKILLS in dirs:
+            for out in dirs:
                 bridged = (bridge.with_marker(data.decode("utf-8"), name).encode("utf-8")
-                           if rel == bridge.SKILL_FILE else data)
-                _add(tree, f"{CLAUDE_SKILLS}/{name}/{rel}", bridged, mode)
+                           if out == CLAUDE_SKILLS and rel == bridge.SKILL_FILE else data)
+                _add(tree, f"{out}/{name}/{rel}", bridged, mode)
+                if name in mirrors:
+                    mirrored.append(f"{out}/{name}/{rel}")
+                    if f"{out}/{name}" not in folders:
+                        folders.append(f"{out}/{name}")
 
     if CLAUDE_SKILLS in dirs:
         _bridge_tree(tree, target, dirs, set(generated))
@@ -530,6 +574,9 @@ def build_tree(source: Path, target: Path, modules: list[str], harnesses: list[s
         "skills": sorted(skill_names),
         "files": {rel: hashlib.sha256(data).hexdigest() for rel, (data, _mode_) in sorted(tree.items())},
     }
+    if folders:
+        # The tracked mirrors of modules outside the selection, kept in step with the source.
+        document["mirrors"] = sorted(folders)
     if mcp:
         # The harness files are the user's and merged by `cli`; the manifest names which ones.
         document["mcp"] = mcp
@@ -548,4 +595,5 @@ def build_tree(source: Path, target: Path, modules: list[str], harnesses: list[s
                                       "attribution": sorted(claude_settings.ATTRIBUTION),
                                       "command": prefix, "mcpjson": bool(mcp),
                                       "permissions": []}
-    return {"tree": tree, "seeds": seeds, "manifest": document, "settings": settings}
+    return {"tree": tree, "seeds": seeds, "manifest": document, "settings": settings,
+            "mirrored": sorted(set(mirrored))}

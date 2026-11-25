@@ -94,6 +94,7 @@ costs one line.
   produce, the fixtures, the invariants that must still hold. **Load-bearing**: a `## Tasks` item
   with no `verify:` line falls back to it. `- none — <reason>` here is a claim that the spec is
   unverifiable by construction — make it deliberately or fill the section in.
+  **A measured figure** (a count, a total, a largest item) enters only beside the command and the key that print it: no figure without its reproducing command. A contradiction between the figure and what the execute artifact prints is fixed here before conclude, never left only in `## Discoveries`.
 - **`## Design`** — each decision with the alternatives weighed and why this one, plus the binding
   contracts the design must not contradict (the relevant `docs/standards/`, the existing code
   shape, external limits). State a decision as a **durable rule**, not a diary entry: this is the
@@ -203,7 +204,7 @@ less often already fixed *when* the resend happened; this fixes *how much* each 
 
 The implementation checklist `.agents/quenching/bin/cq specs` parses: checkboxes `- [ ] <id> <text>` grouped under
 `### N. <Section>` headings. `specs_task(spec=<id>, action="check", task=<id>)` flips a box mechanically —
-never hand-edit the checkbox character. After `approved`, `specs_section_write(spec=<id>, heading="Tasks", body=<body>)` is append-only: it refuses (`sp-tasks-frozen`) when an existing id disappears or its text, `verify:`, `files:` or `cwd:` changes; scope leaves only through `specs_task(action="descope", reason=…)`.
+never hand-edit the checkbox character. After `approved`, `specs_section_write(spec=<id>, heading="Tasks", body=<body>)` is append-only: it refuses (`sp-tasks-frozen`) when an existing id disappears or its text, `verify:`, `files:` or `cwd:` changes; scope leaves only through `specs_task(action="descope", reason=…)`; a task rebuilt as another is descoped with `replaced_by=<id>`, which writes the `(dropped → <id>)` marker below so the verifier owes it no sha.
 
 Shape it so `/quenching-specs execute` can walk it top to bottom:
 
@@ -314,6 +315,8 @@ that re-runs a check whose inputs the section could not have touched is a `verif
 wide, not a policy to be filtered at build time.
 
 **A Python test `verify:` takes the gate's form** — `python3 -m unittest discover -s <tests dir> -p test_x.py`, run from the repo root. `unittest <path to .py>` and `unittest tests.test_x` fail with `ModuleNotFoundError` when the test imports a sibling helper (`_paths`), because only `discover -s` puts the tests directory at the head of `sys.path`.
+
+**A `verify:` that covers a measured figure must match the figure, never only the key.** `grep '"skills"'` matches the key whatever the count; `grep '"total": 18552'` fails when the figure drifts.
 
 And **a `verify:` that cannot fail proves nothing when it passes.** Run each one against the tree
 *before* the fix and require it to exit non-zero; only then does its later exit 0 mean the task did

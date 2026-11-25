@@ -89,6 +89,14 @@ target). `--check` reports both (exit 1). `--write` applies updates but refuses 
 edit belongs in a target-owned skill or in the quenching source, and `--force` discards it on
 purpose. A manifest entry without a hash cannot tell the two apart and is read as `update`.
 
+A **tracked mirror of a module outside the selection** is kept in step with the source. A skill
+folder carrying its `SKILL.md`, or a package carrying a `.py`, that the target already holds for a
+module the selection left out and that the previous manifest did not own is built from the source
+like a selected module's. A stale copy is an `update` (never `ct-deploy-unowned`): `--check`
+reports it (exit 1) and `--write` refreshes it. The manifest lists those folders under `mirrors`,
+so the next run still treats them as mirrors; a folder the manifest owns without a `mirrors` entry
+is a deselected module and leaves with the write. A module the target never carried adds nothing.
+
 A generated path is written only when it **resolves inside the target**: a symlinked directory that
 carries it elsewhere is a conflict in the plan, never a write through the link.
 

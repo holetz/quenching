@@ -22,6 +22,7 @@ from quenching.specs.commands import estimate as estimate_module
 from quenching.specs.commands import granular as granular_module
 from quenching.specs.commands import next as next_module
 from quenching.specs.commands import parallel as parallel_module
+from quenching.specs.commands import task as task_module
 from quenching.specs.commands import validate as validate_module
 from quenching.specs.commands.cli import DISPATCH
 from quenching.specs.commands.output import Emitter
@@ -154,6 +155,62 @@ class Dropped(Workspace):
                            "- [x] 1.4 Mid (dropped → 1.6)\n      verify: true\n"
                            "- [x] 1.6 New\n      verify: true\n")
         self.assertIn("sp-dropped-target", self.codes(ident))
+
+
+class DescopeReplacedBy(Workspace):
+    TWO = ("### 1. A\n\n"
+           "- [ ] 1.1 Old\n      files: a.py\n      verify: true\n"
+           "- [x] 1.2 New\n      files: b.py\n      verify: true\n      commit: abc1234\n")
+
+    def descope(self, ident: int, **kw):
+        return self.dispatch("task", task_module, spec=str(ident), check=None, uncheck=None,
+                             block=None, descope="1.1", reason="rebuilt as 1.2", subject=None,
+                             commit=None, **kw)
+
+    def test_replaced_by_writes_the_dropped_marker_the_verifier_reads(self):
+        ident = self.write(self.TWO)
+        code, payload = self.descope(ident, replaced_by="1.2")
+        self.assertEqual(code, 0, payload)
+        self.assertIn("- [x] 1.1 Old (dropped → 1.2) — descoped: rebuilt as 1.2",
+                      self.backend.docs[ident][1])
+        _, shown = self.dispatch("show", granular_module, spec=str(ident), task=["1.1"],
+                                 full=False, section=None, line=None, grep=None)
+        self.assertEqual(shown["tasks"][0]["dropped"], "1.2")
+        self.assertNotIn("sp-dropped-target", self.codes(ident))
+
+    def test_without_replaced_by_the_line_carries_no_marker(self):
+        ident = self.write(self.TWO)
+        code, _ = self.descope(ident, replaced_by=None)
+        self.assertEqual(code, 0)
+        self.assertNotIn("dropped →", self.backend.docs[ident][1])
+
+    def test_an_unknown_or_own_target_is_refused_and_writes_nothing(self):
+        ident = self.write(self.TWO)
+        before = self.backend.docs[ident][1]
+        for target in ("9.9", "1.1"):
+            code, payload = self.descope(ident, replaced_by=target)
+            self.assertEqual(code, 1)
+            self.assertFalse(payload["ok"])
+        self.assertEqual(self.backend.docs[ident][1], before)
+
+    def test_replaced_by_without_descope_is_refused(self):
+        ident = self.write(self.TWO)
+        code, payload = self.dispatch("task", task_module, spec=str(ident), check="1.1",
+                                      uncheck=None, block=None, descope=None, reason=None,
+                                      subject=None, commit=None, replaced_by="1.2")
+        self.assertEqual(code, 1)
+        self.assertFalse(payload["ok"])
+
+    def test_a_descoped_task_with_a_stale_annotation_is_not_flagged(self):
+        ident = self.write("### 1. A\n\n"
+                           "- [x] 1.1 Old (dropped → 1.2) — descoped: rebuilt\n"
+                           "      files: a.py (comentario velho)\n      verify: true\n"
+                           "- [x] 1.2 New\n      files: b.py\n      verify: true\n"
+                           "      commit: abc1234\n")
+        self.assertNotIn("sp-files-annotation", self.codes(ident))
+        live = self.write("### 1. A\n\n- [ ] 1.1 Old\n"
+                          "      files: a.py (comentario velho)\n      verify: true\n")
+        self.assertIn("sp-files-annotation", self.codes(live))
 
 
 class VerifierBody(unittest.TestCase):

@@ -73,17 +73,21 @@ def build_parser() -> argparse.ArgumentParser:
                                              "plugin's defaults govern")
     sp.add_argument("--json", action="store_true", help="machine-readable output")
 
-    sp = sub.add_parser("worktree", help="take or give back a reusable worktree slot, materialise "
-                                          "declared shared paths, or cut and retire a worktree")
-    sp.add_argument("action", choices=("acquire", "release", "slots", "link", "add", "retire"),
+    sp = sub.add_parser("worktree", help="take or give back a reusable worktree slot, adopt a "
+                                          "linked worktree, materialise declared shared paths, or "
+                                          "cut and retire a worktree")
+    sp.add_argument("action", choices=("acquire", "release", "slots", "link", "adopt", "add", "retire"),
                     help="acquire: lock a free slot (or a new one under shared.worktreeSlots.max), "
                          "switch it to --branch, link and run `worktreeSetup`; release: detach a "
                          "clean slot at the remote base and unlock it; slots: list the slots and "
-                         "who holds each; link: link each declared shared path; add: fetch, cut, "
-                         "link and run the declared `worktreeSetup` in a one-off worktree; "
-                         "retire: remove a merged spec's worktree and `branch -d` its branch")
-    sp.add_argument("--path", metavar="PATH", help="add: the new worktree's directory; "
-                                                    "retire/release: the worktree to give back")
+                         "who holds each; link: link each declared shared path; adopt: prepare a "
+                         "linked worktree the quenching flow did not cut; add: fetch, cut, link "
+                         "and run the declared `worktreeSetup` in a one-off worktree; retire: "
+                         "remove a merged spec's worktree and `branch -d` its branch")
+    sp.add_argument("--path", metavar="PATH", help="adopt: the checkout to prepare (default: the "
+                                                    "current directory); add: the new worktree's "
+                                                    "directory; retire/release: the worktree to "
+                                                    "give back")
     sp.add_argument("--branch", metavar="BRANCH", help="acquire/add: the branch to switch to or "
                                                         "create; retire/release: the branch it holds")
     sp.add_argument("--base", metavar="BASE", help="acquire/add: the base branch to cut from; "
@@ -105,8 +109,8 @@ def build_parser() -> argparse.ArgumentParser:
                     help="acquire: the session named in the lock reason (default "
                          "$OPENCODE_SESSION_ID or $CLAUDE_SESSION_ID)")
     sp.add_argument("--no-setup", action="store_true",
-                    help="acquire/add: do not run the declared `worktreeSetup` in the new worktree "
-                         "(it runs by default, once, after the link)")
+                    help="acquire/adopt/add: do not run the declared `worktreeSetup` in the "
+                         "worktree (it runs by default, once, after the link)")
     sp.add_argument("--discard-ignored", action="store_true",
                     help="retire: remove the worktree even though it holds ignored files "
                          "that are not symlinks")
@@ -213,9 +217,9 @@ def build_parser() -> argparse.ArgumentParser:
                     help="deprecated, no effect: declare `shared.ci.enforce` in the project "
                          "layer instead (required | when-present | off)")
     pp.add_argument("--gate-exit", type=int, metavar="N",
-                    help="the exit code of the repository gate just run; `shared.ci.enforce` "
-                         "other than `required` accepts a PR without green CI only with 0. A red, "
-                         "skipped or unreadable check refuses under every value")
+                    help="deprecated, no effect: with `shared.ci.enforce` other than `required` "
+                         "the merge reads the record scripts/verify_repo.sh wrote for the PR's "
+                         "head (.quenching/gate/record.json), never a declared exit")
     pp.add_argument("--json", action="store_true", help="machine-readable output")
 
     sp = sub.add_parser("refresh", help="fast-forward the local base branch to <remote>/<base> — "

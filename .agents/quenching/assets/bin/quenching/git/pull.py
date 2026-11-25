@@ -188,16 +188,18 @@ def _merged(args, payload: dict, human: str) -> int:
     return OK
 
 
-def ci_refusal(args, payload: dict, state: str) -> tuple[str | None, str | None] | None:
+def ci_refusal(args, payload: dict, state: str, head: str | None = None
+               ) -> tuple[str | None, str | None] | None:
     """Judge the checks against `shared.ci.enforce` (project layer, default `required`).
 
     `state` is `green`, `none` or `pending`; anything else (red, skipped, unreadable) is refused
     under every value. `None` accepts — and a relaxed accept records `ciRelaxed` in `payload`;
-    otherwise `(reason, message)`, with `reason` None when the caller keeps its own."""
+    otherwise `(reason, message)`, with `reason` None when the caller keeps its own. The gate's
+    proof is the record `verify_repo.sh` wrote for `head`, never a flag the caller declares."""
     from quenching.config import ci
 
     mode, warnings = ci.read(os.getcwd())
-    gate_exit = getattr(args, "gate_exit", None)
+    gate_exit = ci.proven_exit(os.getcwd(), head)
     accepted, reason = ci.judge(mode, state, gate_exit)
     if warnings:
         payload["ciWarnings"] = warnings
@@ -247,7 +249,7 @@ def _merge(args) -> int:
                    and (c.get("bucket") not in GREEN or state == "skipped"))
     payload = {"ok": False, "url": args.url, "number": int(match.group(1)), "checks": state,
                "notGreen": names}
-    refusal = ci_refusal(args, payload, state)
+    refusal = ci_refusal(args, payload, state, head)
     if refusal is not None:
         payload["reason"] = refusal[0] or {"red": "failed", "pending": "pending",
                                            "none": "no-checks", "skipped": "skipped-required"}.get(
@@ -552,6 +554,11 @@ def _create(args) -> int:
                                      f"{stamp['message']}")
             return FINDINGS
     payload["specs"] = specs = sync_store(find_repo_root(os.getcwd()))
+    if args.spec and not specs["ok"]:   # the record lives only in this clone until the sync lands
+        payload.update(ok=False, reason="store-not-synced", message=specs.get("message", ""))
+        emit(args.json, payload, f"PR #{number}: {url} opened and `pr` record stamped; "
+                                 f"spec store not synced: {specs.get('message', '')}")
+        return FINDINGS
     notes = "".join(f"\nfinding: {f['message']}" for f in payload.get("findings", []))
     emit(args.json, payload, f"PR #{number}: {url}" + _specs_note(specs) + notes)
     return OK
