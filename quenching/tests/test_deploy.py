@@ -20,6 +20,7 @@ except ModuleNotFoundError:
 from quenching.common.deploy import dumps_hash_manifest
 from quenching.deploy import translate
 from quenching.deploy import cli as deploy_cli
+from quenching.deploy import tree as deploy_tree
 from quenching.deploy.cli import main as deploy_main
 
 PLUGIN_ROOT = pathlib.Path(__file__).resolve().parent.parent
@@ -133,6 +134,52 @@ class Deploy(unittest.TestCase):
         self.assertIn("someone@corp.example", refused.stdout + refused.stderr)
         self.git("-c", "user.email=dev@example.org", "commit", "-q", "-m", "inside")
         self.assertEqual("dev@example.org", self.git("log", "-1", "--format=%ae").strip())
+
+    def test_build_tree_writes_the_copilot_projection_only_when_asked(self):
+        names = ("spec-orchestrator", "spec-reviewer", "spec-runner", "spec-scout",
+                 "spec-verifier")
+        plain = deploy_tree.build_tree(PLUGIN_ROOT, self.target, ["quenching-specs"],
+                                       ["claude"])
+        self.assertFalse([rel for rel in plain["tree"] if rel.startswith(".github/")])
+        projected = deploy_tree.build_tree(PLUGIN_ROOT, self.target, ["quenching-specs"],
+                                           ["claude"], projections=["github"])
+        for name in names:
+            rel = f".github/agents/quenching-{name}.agent.md"
+            self.assertIn(rel, projected["tree"])
+            text = projected["tree"][rel][0].decode("utf-8")
+            self.assertTrue(text.startswith(f"---\nname: quenching-{name}\n"))
+            self.assertIn("target: github-copilot", text)
+            self.assertIn(rel, projected["manifest"]["files"])
+        self.assertNotIn(".github/agents", "".join(plain["manifest"]["files"]))
+
+    def configure_projections(self, value):
+        self.write(".agents/quenching.json",
+                   json.dumps({"shared": {"projections": value}}, indent=2) + "\n")
+
+    def test_the_copilot_agents_are_written_and_removed_with_the_declaration(self):
+        self.configure_projections(["github"])
+        self.assertEqual(0, self.run_deploy("--modules", "specs", "--write")[0])
+        agents = sorted((self.target / ".github/agents").glob("quenching-*.agent.md"))
+        self.assertEqual(5, len(agents), agents)
+        text = (self.target / ".github/agents/quenching-spec-verifier.agent.md").read_text()
+        self.assertIn("target: github-copilot", text)
+        self.assertNotIn("Bash(", text.split("---", 2)[1])
+        self.configure_projections([])
+        self.assertEqual(0, self.run_deploy("--modules", "specs", "--write")[0])
+        self.assertFalse((self.target / ".github/agents").exists())
+
+    def test_an_unknown_projection_is_refused_before_anything_is_written(self):
+        self.configure_projections(["copilot"])
+        code, payload = self.run_deploy("--modules", "specs", "--write")
+        self.assertEqual((2, "ct-deploy-projection"), (code, payload["code"]))
+        self.assertIn("copilot", payload["message"])
+        self.assertFalse((self.target / ".agents/.quenching-deploy.json").exists())
+
+    def test_a_projection_of_the_wrong_shape_is_refused(self):
+        self.configure_projections("github")
+        code, payload = self.run_deploy("--modules", "specs", "--write")
+        self.assertEqual((2, "ct-deploy-projection"), (code, payload["code"]))
+        self.assertFalse((self.target / ".agents/.quenching-deploy.json").exists())
 
     def test_a_local_skill_and_agent_survive_a_deploy(self):
         self.assertEqual(0, self.run_deploy("--modules", "core", "--write")[0])
@@ -1038,6 +1085,77 @@ class McpGrants(unittest.TestCase):
             "---\ndescription: s\nallowed-tools: Bash(cq specs handoff:*)\n---\n\n# s\n", "s")
         self.assertIn("mcp__quenching__specs_handoff_write", skill)
         self.assertEqual(skill, translate.skill_document(skill, "s"))
+
+
+class CopilotAgents(unittest.TestCase):
+    """The third projection: the same source as the Copilot custom-agent format, never wider."""
+
+    VERIFIER = ("---\ndescription: v\n"
+                "tools: Read, Grep, Glob, Bash(cq specs status:*), Bash(cq git audit:*)\n"
+                "model: sonnet\neffort: low\n---\n\nbody\n")
+    RUNNER = "---\ndescription: r\ntools: Bash, Read, Skill\nmodel: sonnet\neffort: medium\n---\n\nbody\n"
+
+    def field(self, text: str, key: str) -> str:
+        line = next(line for line in text.splitlines() if line.startswith(f"{key}:"))
+        return line[len(key) + 1:].strip()
+
+    def test_a_copilot_agent_names_the_documented_aliases_and_the_mcp_tools(self):
+        text = translate.copilot_agent_document(self.VERIFIER, "spec-verifier")
+        self.assertEqual("quenching-spec-verifier", self.field(text, "name"))
+        tools = self.field(text, "tools")
+        for alias in ("read", "search"):
+            self.assertIn(alias, tools)
+        for name in ("quenching/specs_status", "quenching/git_audit"):
+            self.assertIn(name, tools)
+        for claude in ("Bash(", "Read", "Grep", "Glob", "Skill"):
+            self.assertNotIn(claude, tools)
+        self.assertEqual("true", self.field(text, "include-custom-instructions"))
+        self.assertEqual("github-copilot", self.field(text, "target"))
+        self.assertIn("Claude Sonnet 4.6", self.field(text, "model"))
+        self.assertEqual("low", self.field(text, "reasoning-effort"))
+
+    def test_the_small_tier_never_enters_the_band(self):
+        for text in (translate.copilot_agent_document(self.VERIFIER, "spec-verifier"),
+                     translate.copilot_agent_document(self.RUNNER, "spec-runner")):
+            self.assertNotIn("haiku", text.lower())
+
+    def test_a_full_bash_grant_names_the_tools_and_never_the_catch_all(self):
+        tools = self.field(translate.copilot_agent_document(self.RUNNER, "spec-runner"), "tools")
+        self.assertIn("execute", tools)
+        self.assertIn("quenching/specs_section_write", tools)
+        self.assertIn("quenching/git_commit", tools)
+        self.assertNotIn("*", tools)
+        self.assertNotIn("Skill", tools)
+
+    def test_a_narrow_agent_drops_the_covered_shell_and_keeps_the_mcp_names(self):
+        text = translate.copilot_agent_document(self.VERIFIER, "spec-verifier", narrow=True)
+        tools = self.field(text, "tools")
+        self.assertNotIn("execute", tools)
+        self.assertIn("quenching/specs_status", tools)
+        self.assertIn("quenching/git_audit", tools)
+
+    def test_the_mount_keeps_a_tool_out_of_the_projection(self):
+        self.assertEqual(["execute"],
+                         translate.copilot_tools("Bash(cq specs status:*)",
+                                                 mount=frozenset({"git"})))
+
+    def test_the_model_band_refuses_the_small_tier_and_an_unknown_band(self):
+        with self.assertRaises(ValueError):
+            translate.copilot_agent_document(
+                "---\ndescription: x\ntools: Read\nmodel: haiku\n---\n\nb\n", "x")
+        with self.assertRaises(ValueError):
+            translate.copilot_agent_document(
+                "---\ndescription: x\ntools: Read\nmodel: gpt\n---\n\nb\n", "x")
+
+    def test_an_unmapped_tool_head_is_refused_instead_of_dropped(self):
+        with self.assertRaises(ValueError):
+            translate.copilot_agent_document(
+                "---\ndescription: x\ntools: Magic\n---\n\nb\n", "x")
+
+    def test_no_model_band_omits_the_model_field(self):
+        text = translate.copilot_agent_document(
+            "---\ndescription: x\ntools: Read\n---\n\nb\n", "x")
+        self.assertFalse(any(line.startswith("model:") for line in text.splitlines()))
 
 
 class TargetLauncher(unittest.TestCase):

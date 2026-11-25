@@ -106,6 +106,82 @@ class ClientContract(unittest.TestCase):
         self.assertEqual(2, code)
         self.assertEqual("ct-deploy-harness", payload["code"])
 
+    def test_without_the_key_no_client_projection_is_written(self):
+        self.assertFalse((self.target / ".github").exists())
+
+
+class TheClientProjection(unittest.TestCase):
+    """`shared.projections: ["github"]`: the Copilot subagents, from the same source, opt-in."""
+
+    ALIASES = {"read", "search", "edit", "execute", "agent", "web", "todo"}
+
+    def setUp(self):
+        tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
+        self.tmp = pathlib.Path(tmp.name)
+        xdg = pathlib.Path(tempfile.mkdtemp(dir=str(self.tmp), prefix="xdg-"))
+        env = mock.patch.dict(os.environ, {"XDG_CONFIG_HOME": str(xdg), "OPENCODE_CONFIG": ""})
+        env.start()
+        self.addCleanup(env.stop)
+        precompile = mock.patch("quenching.deploy.cli._precompile", return_value=None)
+        precompile.start()
+        self.addCleanup(precompile.stop)
+
+    def deploy(self, projections, name="target"):
+        target = self.tmp / name
+        target.mkdir()
+        subprocess.run(["git", "-C", str(target), "init", "-q"], check=True, capture_output=True)
+        document = {} if projections is None else {"shared": {"projections": projections}}
+        path = target / ".agents/quenching.json"
+        path.parent.mkdir(parents=True)
+        path.write_text(json.dumps(document), encoding="utf-8")
+        out = io.StringIO()
+        with contextlib.redirect_stdout(out), contextlib.redirect_stderr(io.StringIO()):
+            code = deploy_main(["--target", str(target), "--modules", "all", "--write", "--json"])
+        return code, json.loads(out.getvalue() or "{}"), target
+
+    def frontmatter(self, path: pathlib.Path) -> dict[str, str]:
+        body = path.read_text(encoding="utf-8").split("---", 2)[1]
+        return {line.split(":", 1)[0]: line.split(":", 1)[1].strip()
+                for line in body.splitlines() if ":" in line}
+
+    def test_the_five_agents_carry_the_native_format(self):
+        code, payload, target = self.deploy(["github"])
+        self.assertEqual(0, code, payload)
+        agents = sorted((target / ".github/agents").glob("quenching-*.agent.md"))
+        self.assertEqual(5, len(agents), agents)
+        self.assertFalse((target / ".github/instructions").exists())
+        self.assertFalse((target / ".github/copilot-setup-steps.yml").exists())
+        for path in agents:
+            fields = self.frontmatter(path)
+            self.assertTrue(fields["description"])
+            self.assertEqual("true", fields["include-custom-instructions"])
+            self.assertEqual("github-copilot", fields["target"])
+            self.assertIn("Claude ", fields["model"])
+            self.assertNotIn("haiku", fields["model"].lower())
+            tools = fields["tools"].strip("[]").split(", ")
+            self.assertTrue(tools)
+            for tool in tools:
+                self.assertTrue(tool in self.ALIASES or tool.startswith("quenching/"), tool)
+            for claude in ("Bash(", "Read", "Grep", "Glob", "Skill", "*"):
+                self.assertNotIn(claude, fields["tools"])
+
+    def test_an_unknown_projection_is_refused_and_writes_nothing(self):
+        code, payload, target = self.deploy(["copilot"])
+        self.assertEqual((2, "ct-deploy-projection"), (code, payload["code"]))
+        self.assertFalse((target / ".agents/.quenching-deploy.json").exists())
+        self.assertFalse((target / ".github").exists())
+
+    def test_removing_the_key_removes_the_projection(self):
+        code, payload, target = self.deploy(["github"])
+        self.assertEqual(0, code, payload)
+        (target / ".agents/quenching.json").write_text(json.dumps({}), encoding="utf-8")
+        out = io.StringIO()
+        with contextlib.redirect_stdout(out), contextlib.redirect_stderr(io.StringIO()):
+            code = deploy_main(["--target", str(target), "--modules", "all", "--write", "--json"])
+        self.assertEqual(0, code, json.loads(out.getvalue() or "{}"))
+        self.assertFalse((target / ".github/agents").exists())
+
 
 if __name__ == "__main__":
     unittest.main()

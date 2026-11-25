@@ -113,6 +113,10 @@ Fifteen terms to read first; each has its full entry under *Terms*.
 - **Claim** (`standards/workflows/spec-claims.md`) — a build's reservation of a spec (*reserva*),
   held as a lease on the `origin`: only `/quenching-specs execute` acquires it, so creating or
   developing a spec never locks it.
+- [**Client projection**](standards/automation/agents.md) — a client file family `cq deploy` writes
+  from one source: the `github` family is `.github/agents/*.agent.md`, built from
+  `quenching/agents/*.md`, never a second register, and opt-in by `shared.projections` in the
+  repository's configuration.
 - [**Commit record**](standards/workflows/plan-git-record.md) — the `subject: <line>` field on a
   completed task line, written mechanically by `cq specs task --check --subject`, that links the
   checkbox to the commit implementing it by naming that commit's **subject** and resolving with `git

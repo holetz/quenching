@@ -64,10 +64,11 @@ HYPOTHESES = (
      "artifact": ".agents/skills + .claude/skills",
      "protocol": "o seletor `/` do chat lista cada `quenching-*` uma vez ou duas"},
     {"id": "H2", "member": "456", "method": "static+live",
-     "capability": "O harness descobre `.claude/agents/*.md` no formato Claude",
-     "artifact": ".claude/agents",
+     "capability": "O harness descobre `.claude/agents` no formato Claude e `.github/agents` no "
+                   "formato nativo, quando a projeção é declarada",
+     "artifact": ".claude/agents + .github/agents",
      "protocol": "o painel de agentes/modos customizados do VS Code lista os cinco "
-                 "`quenching-spec-*`"},
+                 "`quenching-spec-*` em cada formato"},
     {"id": "H3", "member": "454", "method": "static+live",
      "capability": "As ferramentas do servidor, somadas às nativas, passam do teto de 128",
      "artifact": ".mcp.json + tools/list",
@@ -439,6 +440,12 @@ def markdown_files(folder: pathlib.Path) -> list[str]:
                   if path.is_file())
 
 
+def native_agent(row: dict) -> bool:
+    """A `.github/agents` row in the Copilot format: no Claude tool name in its `tools`."""
+    return bool(row.get("tools")) and not any(name in row["tools"]
+                                              for name in ("Bash(", "Read", "Grep", "Glob"))
+
+
 def agent_rows(folder: pathlib.Path) -> list[dict]:
     rows = []
     for path in sorted(folder.glob("*.md")) if folder.is_dir() else []:
@@ -576,10 +583,11 @@ def measure_clients(root: pathlib.Path) -> dict:
     patterns = external.get("patterns") or []
     section["hypotheses"] = {
         "H2": {"verdict": UNMEASURED,
-               "observation": (f"{len(claude)} agentes em `.claude/agents` e "
-                               f"{len(agents['opencode'])} em `.opencode/agents`, "
-                               f"{len(agents['github'])} em `.github/agents`; a descoberta pelo "
-                               f"cliente é live")},
+               "observation": (f"{len(claude)} agentes em `.claude/agents`, "
+                               f"{len(agents['opencode'])} em `.opencode/agents` e "
+                               f"{len(agents['github'])} em `.github/agents` "
+                               f"({sum(1 for row in agents['github'] if native_agent(row))} no "
+                               f"formato nativo); a descoberta pelo cliente é live")},
         "H6": {"verdict": UNMEASURED,
                "observation": (f"`.vscode/settings.json` {vscode['state']}"
                                f"{'' if vscode['state'] != 'present' else ': ' + ', '.join(key + (' presente' if present else ' ausente') for key, present in vscode['keys'].items())}"

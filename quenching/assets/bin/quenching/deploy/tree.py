@@ -24,6 +24,7 @@ SKILLS = ".agents/skills"
 CLAUDE_SKILLS = ".claude/skills"
 CLAUDE_AGENTS = ".claude/agents"
 OPENCODE_AGENTS = ".opencode/agents"
+GITHUB_AGENTS = ".github/agents"
 MODULE_SHORT = {
     "quenching-specs": "specs",
     "quenching-git": "git",
@@ -337,7 +338,9 @@ def _declared_hooks(selected: list[dict]) -> list[dict]:
 def build_tree(source: Path, target: Path, modules: list[str], harnesses: list[str],
                runtime: str = "vendor", profiles: list[str] | None = None,
                mcp: dict | None = None, python: list[str] | None = None,
-               hooks_python: list[str] | None = None, workspace: bool = False) -> dict:
+               hooks_python: list[str] | None = None,
+               projections: list[str] | None = None,
+               workspace: bool = False) -> dict:
     manifest = load_modules(source)
     selected = _selected_modules(manifest, modules)
     if not selected:
@@ -439,6 +442,14 @@ def build_tree(source: Path, target: Path, modules: list[str], harnesses: list[s
             _add(tree, f"{OPENCODE_AGENTS}/{translate.agent_name(name)}.md",
                  translate.opencode_agent_document(path.read_text(encoding="utf-8"), name,
                                                    narrow, mount).encode(),
+                 0o644)
+    if "github" in (projections or []):
+        # The GitHub Copilot harness reads the native format, not the Claude one; a repository
+        # declares the projection, so a target without Copilot pays no second register.
+        for name, path in _agents(source).items():
+            _add(tree, f"{GITHUB_AGENTS}/{translate.agent_name(name)}.agent.md",
+                 translate.copilot_agent_document(path.read_text(encoding="utf-8"), name,
+                                                  narrow, mount).encode(),
                  0o644)
 
     seeds = {
