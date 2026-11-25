@@ -122,7 +122,7 @@ records pass. A target that carries `standards/workflows/plan-git-record.md` sta
 On both providers the verb of step 4 already stamped it: pass `spec=<id>` there and skip this
 step. The verb checks `spec` (it exists, and owns `head`) before the PR is created, so a wrong id
 opens nothing, and it writes the record through `specs_record`'s function, so the `spec-orchestrator`, which holds no spec write, stamps it too; exit 1 with `reason: stamp-failed` means the PR
-exists and the record does not. A PR opened outside the verb is stamped with
+exists and the record does not, and exit 1 with `reason: store-not-synced` means the PR exists and the record is stamped only in this clone, because the store sync after it failed (`cq specs push` sends it). Either way the payload keeps `url` and `number`: adopt that PR, never open a second. A PR opened outside the verb is stamped with
 `git_pr_record(spec=<id>, head="<branch>", number=<provider-pr-id>, url=<webUrl>)`.
 `pr:` is **write-many** — a later PR on the same spec is a new fact.
 No ID → nothing to stamp; report the PR number and URL only. **Done when:** the record is stamped
