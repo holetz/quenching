@@ -166,7 +166,8 @@ def _opencode_wanted(target: Path, current: str | None, env: dict,
     committed `opencode.json` is not drift."""
     if recorded is not None:
         return {"subagentDepth": recorded.get("subagentDepth"),
-                "externalDirectory": list(recorded.get("externalDirectory") or [])}, []
+                "externalDirectory": list(recorded.get("externalDirectory") or []),
+                "bash": list(recorded.get("bash") or [])}, []
     if patterns is None:
         primary = _primary_checkout(target)
         patterns = mcpfiles.external_patterns(primary, os.path.expanduser("~")) if primary else []
@@ -190,7 +191,8 @@ def _opencode_wanted(target: Path, current: str | None, env: dict,
         warnings.extend(f"{path} could not be read as JSONC; experimental.subagent_depth was "
                         "written without checking which global keys it hides"
                         for path in unreadable if depth is not None)
-    return {"subagentDepth": depth, "externalDirectory": patterns}, warnings
+    return {"subagentDepth": depth, "externalDirectory": patterns,
+            "bash": list(access.OPENCODE_BASH)}, warnings
 
 
 def _mcp_merge(target: Path, wanted: dict[str, list[str]], previous: dict | None,
@@ -227,7 +229,8 @@ def _mcp_merge(target: Path, wanted: dict[str, list[str]], previous: dict | None
             # theirs, and the removal must not take it out.
             written = mcpfiles.written_extras(base, extras)
             opencode = written if new is not None and (
-                written["subagentDepth"] is not None or written["externalDirectory"]) else None
+                written["subagentDepth"] is not None or written["externalDirectory"]
+                or written["bash"]) else None
         elif rel in wanted:
             new = mcpfiles.merged(rel, current, wanted[rel])
         elif current is not None and mcpfiles.NAME in current:
