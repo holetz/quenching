@@ -42,5 +42,22 @@ class TheOrchestratorAdopts(unittest.TestCase):
         self.assertIn("names that path instead of none", body)
 
 
+
+class TheDoctrine(unittest.TestCase):
+    def test_the_isolation_reference_names_adoption_and_its_two_sources(self):
+        body = text("quenching/references/git/isolation.md")
+        self.assertIn("A worktree the harness cut is adopted, never cut again", body)
+        self.assertIn("cq git worktree adopt", body)
+        self.assertIn("sharedPaths", body)
+        self.assertIn("shared.regenerablePaths", body)
+        self.assertIn("never overwriting a path already present", body)
+
+    def test_the_manual_recommends_new_worktree_and_the_hook(self):
+        body = text("quenching/README.md")
+        self.assertIn("New Worktree", body)
+        self.assertIn("cq git worktree adopt", body)
+        self.assertIn("never cuts a second one", body)
+        self.assertNotIn("Open a Copilot session with Branch isolation, not", body)
+
 if __name__ == "__main__":
     unittest.main()

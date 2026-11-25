@@ -617,10 +617,12 @@ command is one polyglot line that bash, PowerShell and cmd parse alike, started 
 `shared.mcp.command` prefix (else the Python the deploy finds on the machine, no version pinned; a
 `uv`/`uvx` prefix is replaced by a direct interpreter, for the hooks and the MCP server alike):
 override it with `shared.mcp.command` when a machine needs another
-([hooks.md](../docs/standards/automation/hooks.md)). Open a Copilot session with **Branch**
-isolation, not **New Worktree**: Copilot's worktree starts at the current HEAD, carries no ignored
-file and runs no `worktreeSetup`, and the agent would then cut a second one with
-`cq git worktree add` — the worktree is the quenching flow's to cut.
+([hooks.md](../docs/standards/automation/hooks.md)). Open a Copilot session with **New Worktree**
+(or **Branch**, when you prefer it): a `SessionStart` hook runs `cq git worktree adopt` in the
+checkout the client cut — it links the declared `sharedPaths` and the declared
+`shared.regenerablePaths` directories from the primary checkout, runs the declared
+`worktreeSetup` once, and tells the agent it is already isolated. The agent adopts that worktree
+and never cuts a second one.
 
 **Each harness gets what an orchestrated run needs.** Claude Code (and Copilot through the same
 file) gets `quenching` in `enabledMcpjsonServers`, so the registered server starts in a trusted
