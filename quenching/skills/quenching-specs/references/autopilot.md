@@ -114,11 +114,20 @@ the dirty paths named. The answer is written in the round record as `dirty: <n> 
 spec|cut from origin/<base>>` before anything launches, and step 4 copies it into the epic's
 `## Design`.
 
-Then run
-`git_preflight` once (covered by the existing `Bash(cq:*)`; no new grant) and write its
+Then run the preflight once, **with the reservation probe**: a multi-machine run depends on the
+origin accepting `refs/quenching/claims/*`, and only the probe proves it. The probe creates and
+deletes one ref on the origin, so `git_preflight` never publishes it (no `read` tool reaches a
+push); the autopilot asks for it on the CLI, under the human's delegation for the run:
+
+<!-- cli: flag -->
+```bash
+.agents/quenching/bin/cq git preflight --probe-claims --json
+```
+
+The call is covered by the existing `Bash` grant; no new grant. Write its
 six checks (`store`, `types`, `push`, `ghAuth`, `ci`, `claims`) in the round block as `preflight:`. `store`,
 `push` or `ghAuth` in `fail` → fixing it is this round's first spec, like a red gate. `claims` in
-`fail` → the remote refuses the reservation refs: the round runs unreserved (execute reports its
+`fail` (or `skipped`, the probe not run) → the remote refuses the reservation refs, or nothing proved it accepts them: the round runs unreserved (execute reports its
 exit 2 and builds), and the report says another machine could pick the same spec. `mergesAllowed:
 false` (CI unavailable) → steps 4–5 plan no merges and no chain that depends on a merge, and the
 report says why. Hooks are never disabled and `--no-verify` is never passed. Read the
