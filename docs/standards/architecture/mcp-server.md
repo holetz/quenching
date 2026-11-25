@@ -69,7 +69,8 @@ argument can name), `atomic` (a multi-section write), `by` (an `approved` stamp 
 `by=human`), `flag` (a flag the tool does not publish) and `fallback` (a CLI synopsis beside its
 tool). `cq components lint` holds the form with `sk-cq-cli-citation` and `sk-mcp-unknown-tool` over
 the bodies `components/mcp_citations.py`'s `ENFORCED` names: every `quenching-*` skill and every
-shared reference; the agents under `quenching/agents/` join it when theirs are converted.
+shared reference, and the flow agents under `quenching/agents/`; an agent's `tools:` grants no raw `git`
+or `gh` for a verb a tool covers.
 
 | Class | Meaning | MCP annotation |
 | --- | --- | --- |

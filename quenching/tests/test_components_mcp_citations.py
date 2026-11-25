@@ -77,11 +77,18 @@ class CitationForm(unittest.TestCase):
         self.assertEqual(codes("call `specs_inexistente(spec=3)`"), ["sk-mcp-unknown-tool"])
 
     def test_a_body_outside_the_enforced_fronts_is_not_checked(self):
-        for path in ("agents/spec-runner.md", ".claude/skills/my-own/SKILL.md",
+        for path in (".claude/skills/my-own/SKILL.md",
                      ".agents/skills/my-own/references/notes.md",
                      "references/align/tool-resolution.md"):
             with self.subTest(path):
                 self.assertEqual(codes("cq specs status --spec 3; specs_nope(x)", path), [])
+
+    def test_the_flow_agents_are_enforced(self):
+        for path in ("agents/spec-runner.md", ".agents/quenching/agents/spec-verifier.md"):
+            with self.subTest(path):
+                self.assertEqual(codes("cq git audit --worktree w", path), ["sk-cq-cli-citation"])
+                self.assertEqual(codes("call `git_nope(x)`", path), ["sk-mcp-unknown-tool"])
+                self.assertEqual(codes("call `git_audit(worktree=<wt>)`", path), [])
 
 
 if __name__ == "__main__":
