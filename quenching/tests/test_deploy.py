@@ -839,6 +839,27 @@ class Deploy(unittest.TestCase):
         self.assertNotIn("~/elsewhere/repo.*", derived["permission"]["external_directory"])
         self.assertEqual(4, derived["experimental"]["subagent_depth"])
 
+    def test_write_keeps_the_claude_permission_rules_the_checkout_declares(self):
+        self.assertEqual(0, self.run_deploy("--modules", "specs", "--harness", "claude",
+                                            "--write")[0])
+        manifest_path = self.target / ".agents/.quenching-deploy.json"
+        settings_path = self.target / ".claude/settings.json"
+        manifest = json.loads(manifest_path.read_text())
+        recorded = manifest["claudeSettings"]["permissions"]
+        self.assertTrue(recorded)
+        elsewhere = [rule.replace("quenching", "elsewhere") for rule in recorded]
+        manifest["claudeSettings"]["permissions"] = elsewhere
+        manifest_path.write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
+        settings = json.loads(settings_path.read_text())
+        settings["permissions"]["allow"] = [r for r in settings["permissions"]["allow"]
+                                            if r not in recorded] + elsewhere
+        settings_path.write_text(json.dumps(settings, indent=2) + "\n", encoding="utf-8")
+        before = settings_path.read_bytes()
+        self.assertEqual(0, self.run_deploy("--write")[0])
+        self.assertEqual(before, settings_path.read_bytes())
+        self.assertEqual(sorted(elsewhere),
+                         json.loads(manifest_path.read_text())["claudeSettings"]["permissions"])
+
     def test_a_slot_resolves_to_its_primary_checkout(self):
         from quenching.deploy.cli import _primary_checkout
         self.git("-c", "user.name=t", "-c", "user.email=t@example.com", "commit", "-q",

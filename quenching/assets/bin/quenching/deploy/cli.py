@@ -448,6 +448,17 @@ def plan(target: Path, built: dict, previous: dict | None,
             "suggestions": _workspace_suggestions(target, workspace)}
 
 
+def _held_allow(text: str | None) -> list:
+    """The `permissions.allow` entries of a settings text, empty when it holds none."""
+    try:
+        document = json.loads(text) if text else None
+    except ValueError:
+        return []
+    permissions = document.get("permissions") if isinstance(document, dict) else None
+    allow = permissions.get("allow") if isinstance(permissions, dict) else None
+    return allow if isinstance(allow, list) else []
+
+
 def _settings_merge(target: Path, built: dict, previous: dict | None,
                     keep: bool = False) -> dict | None:
     """Merge quenching's own hooks and access rules into the user's `.claude/settings.json`
@@ -472,7 +483,8 @@ def _settings_merge(target: Path, built: dict, previous: dict | None,
     keys = keys if isinstance(keys, list) else []
     rules = recorded.get("permissions") if recorded else []
     rules = rules if isinstance(rules, list) else []
-    if keep and rules:
+    held = _held_allow(current)
+    if rules and (keep or all(rule in held for rule in rules)):
         wanted_rules = list(rules)
     else:
         primary_root = _primary_checkout(target)
