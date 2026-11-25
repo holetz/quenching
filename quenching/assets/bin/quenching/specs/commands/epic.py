@@ -33,6 +33,17 @@ HELD = ("blocked", "dropped", "missing", "unmerged", "unverified", "unreadable")
 AZURE_PR_STATE = {"completed": "MERGED", "active": "OPEN", "abandoned": "CLOSED"}
 # The most PR lookups `pr_states` keeps in flight at once.
 PR_LOOKUPS = 8
+# `(provider, repo, root, target) -> (state, head)` of the PRs already seen MERGED, a terminal
+# state whose head never changes either. None keeps it off: only a long-lived server turns it on
+# (`remember_merged`), because a one-shot CLI process would never read it back.
+_MERGED: dict | None = None
+
+
+def remember_merged() -> None:
+    """Keep every MERGED PR lookup for the rest of this process."""
+    global _MERGED
+    if _MERGED is None:
+        _MERGED = {}
 
 
 def _refuse(out: Emitter, args, code: str, message: str, **extra) -> int:
@@ -107,8 +118,13 @@ def pr_states(members: dict, root: str | None = None, timeout: int = 15) -> dict
               if m and m["phase"] == "archive" and pr_number(m)]
     provider = (_provider(root) or "github") if any(r is None for _, _, r in wanted) else None
 
+    def key(w):
+        return (None if w[2] else provider, w[2], root, _pr_target(w[1]))
+
     def view(w):
-        return _pr_view(w[1], None if w[2] else provider, root, timeout, w[2])
+        if _MERGED is not None and key(w) in _MERGED:
+            return _MERGED[key(w)]
+        return _pr_view(w[1], key(w)[0], root, timeout, w[2])
 
     if len(wanted) > 1:
         with ThreadPoolExecutor(max_workers=min(PR_LOOKUPS, len(wanted))) as pool:
@@ -116,9 +132,12 @@ def pr_states(members: dict, root: str | None = None, timeout: int = 15) -> dict
     else:
         views = [view(w) for w in wanted]
     out: dict[str, str] = {}
-    for (sid, m, _), got in zip(wanted, views):
+    for w, got in zip(wanted, views):
+        sid, m = w[0], w[1]
         if got is None:
             continue
+        if _MERGED is not None and got[0] == "MERGED":
+            _MERGED[key(w)] = got
         rec = m["frontmatter"].get("branch")
         work = str(rec.get("work", "")).strip() if isinstance(rec, dict) else ""
         if work and got[1] != work and not _merge_record_explains_the_head(m, got[0]):

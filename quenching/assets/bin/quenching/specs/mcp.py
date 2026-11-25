@@ -918,4 +918,6 @@ def cmd_mcp(args, root: str, out) -> int:
     # Same reason as `cmd_serve`: `specs_push` runs the git store's push in this process, and
     # `_git` inherits the environment rather than taking one.
     os.environ.setdefault("GIT_TERMINAL_PROMPT", "0")
+    from quenching.specs.commands import epic   # a long-lived process keeps merged PR lookups
+    epic.remember_merged()
     return server.run_stdio(root, SURFACE)

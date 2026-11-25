@@ -213,7 +213,7 @@
 
     ".agents/quenching/assets/bin/quenching/mcp/catalog.py": "208b2821ff5b7e8b003812ec6b3b754eb0807489fd88b9368b8867f31885e96a",
 
-    ".agents/quenching/assets/bin/quenching/mcp/cli.py": "e7fcb628982d71c0cd9ebde741c78ff2ddf21a0d389a1833cf09b0302d8786dd",
+    ".agents/quenching/assets/bin/quenching/mcp/cli.py": "a8d7800764470851f11266b6e03b531e786a04bfcd220eb423fcea75988ab30f",
 
     ".agents/quenching/assets/bin/quenching/mcp/coverage.py": "2a78a3782a576150bb0fe99df6709471c471cec13c5d74f8c53e0466b9e761d8",
 
@@ -307,7 +307,7 @@
 
     ".agents/quenching/assets/bin/quenching/specs/commands/doctor.py": "8eadb59e7fe5342f18fc4f3c132eccb7645adb452f789b44d3378baae9cb5e5c",
 
-    ".agents/quenching/assets/bin/quenching/specs/commands/epic.py": "ebb734455ae22ae157a68f7c299292003811ecc61131d6a04932d16162d9386d",
+    ".agents/quenching/assets/bin/quenching/specs/commands/epic.py": "d5ec70ee882e0823cae83811d8dace86c98187c2067b543b324db53a143c5d39",
 
     ".agents/quenching/assets/bin/quenching/specs/commands/estimate.py": "9bd4a61484e22f5b380ca2ed976e5ec0dce1298262fe0f7d80cbe9b4b59a241a",
 
@@ -347,7 +347,7 @@
 
     ".agents/quenching/assets/bin/quenching/specs/config.py": "3b21d2a35ccbe3b3e41361c8f0e5e92ca462f977a7ca34fee81677a88a118763",
 
-    ".agents/quenching/assets/bin/quenching/specs/mcp.py": "60ca37507c57bea5656196ee78afa292464aab6063204064337a3ec07217689e",
+    ".agents/quenching/assets/bin/quenching/specs/mcp.py": "ae5383ac3f57bf7e154facb99d73a7b55b19d7dba3f9be55b44f5f69ab98e0f4",
 
     ".agents/quenching/assets/bin/quenching/specs/members.py": "37199b9fcac8eb5a958e9e3e8441d1c8432542aa908d5fa6607690e7ed31ad83",
 

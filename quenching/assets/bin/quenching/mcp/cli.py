@@ -54,4 +54,6 @@ def main(argv: list[str]) -> int:
     if refusal:
         print(json.dumps(refusal, ensure_ascii=False))
         return 2
+    from quenching.specs.commands import epic   # a long-lived process keeps merged PR lookups
+    epic.remember_merged()
     return server.run_stdio(os.path.abspath(args.root or os.getcwd()), surface(only=only))

@@ -652,5 +652,43 @@ class PrStatesConcurrency(unittest.TestCase):
         self.assertEqual({"3": "OPEN", "1": "OPEN"}, got)
 
 
+class PrStatesMergedMemo(unittest.TestCase):
+    """A long-lived process reads a MERGED PR once; nothing else is remembered, and off by default."""
+
+    def calls(self, memo, states):
+        seen = []
+
+        def view(member, *_):
+            n = member["frontmatter"]["pr"]["number"]
+            seen.append(n)
+            return (states[n], "plan/x")
+
+        members = {str(n): {"phase": "archive",
+                            "frontmatter": {"pr": {"number": n},
+                                            "branch": {"work": "plan/x"}}} for n in states}
+        with mock.patch.object(epic_cmd, "_MERGED", memo), \
+                mock.patch.object(epic_cmd, "_provider", return_value="github"), \
+                mock.patch.object(epic_cmd, "_pr_view", side_effect=view):
+            first = epic_cmd.pr_states(members, "/r")
+            second = epic_cmd.pr_states(members, "/r")
+        return first, second, seen
+
+    def test_a_merged_pr_is_looked_up_once_and_an_open_one_every_time(self):
+        first, second, seen = self.calls({}, {1: "MERGED", 2: "OPEN"})
+        self.assertEqual({"1": "MERGED", "2": "OPEN"}, first)
+        self.assertEqual(first, second)
+        self.assertEqual([1, 2], sorted(seen[:2]))
+        self.assertEqual([2], seen[2:])
+
+    def test_without_the_server_every_call_looks_up_again(self):
+        _, _, seen = self.calls(None, {1: "MERGED"})
+        self.assertEqual([1, 1], seen)
+
+    def test_remember_merged_turns_the_memo_on(self):
+        with mock.patch.object(epic_cmd, "_MERGED", None):
+            epic_cmd.remember_merged()
+            self.assertEqual({}, epic_cmd._MERGED)
+
+
 if __name__ == "__main__":
     unittest.main()
