@@ -252,6 +252,8 @@
 
     ".agents/quenching/assets/bin/quenching/session/commands/read.py": "898bd5e9a96cd8d24f95c78b0f2e66afdd906641cc6d65fd61d21ad6383b2721",
 
+    ".agents/quenching/assets/bin/quenching/session/copilot.py": "8dac55afacb30665a2817bbdb5603a1fa63d58e41af6211dab87ff5fae8ec026",
+
     ".agents/quenching/assets/bin/quenching/session/cqcalls.py": "7a0d693aad6806cc370beb4d3e6300d43347e8e1d50f4fec0f34f94d654851e4",
 
     ".agents/quenching/assets/bin/quenching/session/evidence.py": "e4f6ee72add4139994aa63feec7855b090d52d176b05fb14ebd4813dc5893db3",
