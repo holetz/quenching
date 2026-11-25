@@ -10,6 +10,7 @@ import sys
 from pathlib import Path
 
 from quenching.common.deploy import MANIFEST, dumps_hash_manifest, read_manifest
+from quenching.common import workspace as workspace_settings
 from quenching.common.config import repository_document
 from quenching.common.output import FINDINGS, OK, REFUSAL, NoAbbrevParser, emit, refuse
 from quenching.common.version import VERSION
@@ -582,6 +583,14 @@ def main(argv: list[str]) -> int:
     declared, refusal = _mcp_option(target)
     if refusal:
         return refuse(refusal, args.json)
+    workspace_declared, workspace_error = workspace_settings.declared(str(target))
+    if workspace_error:
+        return refuse({
+            "code": "ct-deploy-workspace",
+            "message": workspace_error,
+            "remedy": "declare `shared.workspace.vscode` as true or false, or remove the "
+                      "`shared.workspace` object",
+        }, args.json)
     if declared and runtime != "vendor":
         return refuse(_mcp_refusal(
             "`shared.mcp` needs `--runtime vendor`: the generated command points at "

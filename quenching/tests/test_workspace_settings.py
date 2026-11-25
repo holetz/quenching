@@ -7,9 +7,11 @@ import io
 import json
 import os
 import pathlib
+import subprocess
 import sys
 import tempfile
 import unittest
+from unittest import mock
 
 try:
     import _paths  # noqa: F401
@@ -19,6 +21,7 @@ except ModuleNotFoundError:
 from quenching.common import doctor
 from quenching.common import workspace
 from quenching.common.jsonc import jsonc_loads
+from quenching.deploy.cli import main as deploy_main
 
 
 class TheBlock(unittest.TestCase):
@@ -220,3 +223,38 @@ class TheDoctor(unittest.TestCase):
         self.assertEqual(0, code)
         self.assertIn("site", human)
         self.assertIn("cq doctor --workspace", human)
+
+
+class TheDeploy(unittest.TestCase):
+    def setUp(self):
+        tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
+        self.target = pathlib.Path(tmp.name)
+        subprocess.run(["git", "-C", str(self.target), "init", "-q"], check=True,
+                       capture_output=True)
+        xdg = pathlib.Path(tempfile.mkdtemp(dir=tmp.name, prefix="xdg-"))
+        env = mock.patch.dict(os.environ, {"XDG_CONFIG_HOME": str(xdg), "OPENCODE_CONFIG": ""})
+        env.start()
+        self.addCleanup(env.stop)
+        precompile = mock.patch("quenching.deploy.cli._precompile", return_value=None)
+        precompile.start()
+        self.addCleanup(precompile.stop)
+
+    def config(self, document):
+        path = self.target / ".agents" / "quenching.json"
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(json.dumps(document), encoding="utf-8")
+
+    def deploy(self, *argv):
+        out = io.StringIO()
+        with contextlib.redirect_stdout(out), contextlib.redirect_stderr(io.StringIO()):
+            code = deploy_main(["--target", str(self.target), *argv, "--json"])
+        return code, json.loads(out.getvalue() or "{}")
+
+    def test_a_malformed_workspace_block_is_refused_before_any_write(self):
+        self.config({"shared": {"workspace": {"vscode": "yes"}}})
+        code, payload = self.deploy("--modules", "specs", "--write")
+        self.assertEqual(2, code)
+        self.assertEqual("ct-deploy-workspace", payload["code"])
+        self.assertFalse((self.target / ".vscode").exists())
+        self.assertFalse((self.target / ".agents" / ".quenching-deploy.json").exists())
