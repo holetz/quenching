@@ -385,6 +385,7 @@ def plan(target: Path, built: dict, previous: dict | None,
     tree, seeds = built["tree"], built["seeds"]
     hashes = _recorded_hashes(previous)
     owned = set(hashes)
+    mirrored = set(built.get("mirrored", ()))
     changes: list[dict] = []
     conflicts: list[dict] = []
     for rel, (data, _mode_) in sorted(tree.items()):
@@ -397,7 +398,11 @@ def plan(target: Path, built: dict, previous: dict | None,
         elif not path.is_file():
             conflicts.append({"path": rel, "why": "a directory occupies a generated file's path"})
         elif rel not in owned:
-            if not _same(path, data):
+            if not _same(path, data) and rel in mirrored:
+                # A tracked mirror of a module outside the selection, no manifest owned it yet:
+                # the source is the truth, so it is refreshed, never refused.
+                changes.append(_change("update", rel))
+            elif not _same(path, data):
                 conflicts.append({"path": rel, "why": "exists but no deploy manifest owns it"})
             elif _mode_drift(path, _mode_):
                 changes.append(_change("mode", rel))
