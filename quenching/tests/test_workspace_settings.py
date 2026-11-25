@@ -42,6 +42,83 @@ class TheBlock(unittest.TestCase):
                          ["chat.agent.maxRequests"])
 
 
+class TheTasksBlock(unittest.TestCase):
+    def test_the_snippet_parses_and_carries_every_task(self):
+        document = jsonc_loads(workspace.tasks_snippet())
+        self.assertEqual("2.0.0", document["version"])
+        self.assertEqual(list(workspace.TASK_LABELS),
+                         [task["label"] for task in document["tasks"]])
+
+    def test_every_cq_task_runs_the_target_local_launcher_with_its_windows_twin(self):
+        document = jsonc_loads(workspace.tasks_snippet())
+        for task in document["tasks"]:
+            if not task["command"].startswith(workspace.CQ):
+                continue
+            self.assertEqual({"cwd": "${workspaceFolder}"}, task["options"])
+            self.assertEqual([], task["problemMatcher"])
+            self.assertTrue(task["windows"]["command"].startswith(workspace.CQ_WINDOWS))
+
+    def test_the_spec_status_task_prompts_for_an_id(self):
+        document = jsonc_loads(workspace.tasks_snippet())
+        status = next(task for task in document["tasks"]
+                      if task["label"] == "quenching: specs status")
+        self.assertIn("${input:specId}", status["command"])
+        self.assertEqual([{"id": "specId", "type": "promptString", "description": "Spec id"}],
+                         document["inputs"])
+
+    def test_the_gate_is_the_default_test_task(self):
+        document = jsonc_loads(workspace.tasks_snippet())
+        gate = next(task for task in document["tasks"] if task["label"] == "quenching: gate")
+        self.assertEqual("bash scripts/verify_repo.sh", gate["command"])
+        self.assertEqual({"kind": "test", "isDefault": True}, gate["group"])
+
+    def test_open_slots_waits_for_the_workspace_projection(self):
+        document = jsonc_loads(workspace.tasks_snippet())
+        opener = next(task for task in document["tasks"]
+                      if task["label"] == "quenching: open slots")
+        self.assertEqual(["quenching: slots workspace"], opener["dependsOn"])
+        self.assertIn("quenching-slots.code-workspace", opener["command"])
+
+
+class TheTasksReport(unittest.TestCase):
+    def setUp(self):
+        tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
+        self.root = pathlib.Path(tmp.name)
+
+    def write(self, text: str):
+        path = self.root / workspace.TASKS_PATH
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(text, encoding="utf-8")
+
+    def test_an_absent_file_names_every_label(self):
+        report = workspace.tasks_report(str(self.root))
+        self.assertEqual("absent", report["state"])
+        self.assertFalse(report["complete"])
+        self.assertEqual(list(workspace.TASK_LABELS), report["missing"])
+
+    def test_the_snippet_is_complete(self):
+        self.write(workspace.tasks_snippet())
+        report = workspace.tasks_report(str(self.root))
+        self.assertEqual("present", report["state"])
+        self.assertTrue(report["complete"], report)
+        self.assertEqual([], report["missing"])
+
+    def test_a_partial_file_names_the_missing_label(self):
+        document = workspace.tasks_document()
+        del document["tasks"][1]
+        self.write(json.dumps(document))
+        report = workspace.tasks_report(str(self.root))
+        self.assertFalse(report["complete"])
+        self.assertEqual(["quenching: deploy check"], report["missing"])
+
+    def test_an_unreadable_file_is_a_state_never_an_error(self):
+        self.write("{ nope")
+        report = workspace.tasks_report(str(self.root))
+        self.assertEqual("unreadable", report["state"])
+        self.assertTrue(report["reason"])
+
+
 class TheReport(unittest.TestCase):
     def setUp(self):
         tmp = tempfile.TemporaryDirectory()
@@ -159,6 +236,11 @@ class TheDoctor(unittest.TestCase):
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(text, encoding="utf-8")
 
+    def tasks(self, text: str):
+        path = self.root / workspace.TASKS_PATH
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(text, encoding="utf-8")
+
     def run_doctor(self, **kwargs):
         out = io.StringIO()
         with contextlib.redirect_stdout(out):
@@ -183,6 +265,28 @@ class TheDoctor(unittest.TestCase):
         self.assertEqual(0, code)
         self.assertIn("not declared", human)
         self.assertIn("live half is not proved here", human)
+
+    def test_workspace_prints_both_blocks_and_writes_nothing(self):
+        code, payload = self.payload(workspace=True)
+        self.assertEqual(0, code)
+        self.assertEqual("absent", payload["tasks"]["state"])
+        self.assertEqual(workspace.tasks_document(), jsonc_loads(payload["tasksSnippet"]))
+        self.assertFalse((self.root / workspace.TASKS_PATH).exists())
+
+    def test_workspace_human_names_the_tasks_file_and_its_labels(self):
+        code, human = self.run_doctor(workspace=True)
+        self.assertEqual(0, code)
+        self.assertIn(".vscode/tasks.json", human)
+        self.assertIn("quenching: gate", human)
+
+    def test_the_standard_report_carries_the_tasks_when_the_file_exists(self):
+        self.tasks(workspace.tasks_snippet())
+        code, payload = self.payload()
+        self.assertEqual(0, code)
+        self.assertTrue(payload["tasks"]["complete"])
+        code, human = self.run_doctor()
+        self.assertEqual(0, code)
+        self.assertIn("tasks:", human)
 
     def test_workspace_with_write_is_refused(self):
         code, payload = self.payload(workspace=True, write=True)
@@ -272,6 +376,47 @@ class TheDeploy(unittest.TestCase):
         code, payload = self.deploy("--modules", "specs", "--write")
         self.assertEqual(0, code)
         self.assertIn("// user edit", path.read_text(encoding="utf-8"))
+
+    def test_declared_key_seeds_the_tasks_file_only_when_absent(self):
+        self.config({"shared": {"workspace": {"vscode": True}}})
+        code, payload = self.deploy("--modules", "specs", "--check")
+        self.assertEqual(1, code)
+        self.assertIn({"change": "seed", "path": ".vscode/tasks.json"}, payload["changes"])
+        code, payload = self.deploy("--modules", "specs", "--write")
+        self.assertEqual(0, code)
+        path = self.target / ".vscode" / "tasks.json"
+        self.assertEqual(workspace.tasks_document(), jsonc_loads(path.read_text(encoding="utf-8")))
+        path.write_text(path.read_text(encoding="utf-8") + "\n// user edit\n", encoding="utf-8")
+        code, payload = self.deploy("--modules", "specs", "--write")
+        self.assertEqual(0, code)
+        self.assertIn("// user edit", path.read_text(encoding="utf-8"))
+
+    def test_a_declared_partial_tasks_file_is_suggested_and_never_rewritten(self):
+        self.config({"shared": {"workspace": {"vscode": True}}})
+        document = workspace.tasks_document()
+        del document["tasks"][0]
+        partial = json.dumps(document)
+        path = self.target / ".vscode" / "tasks.json"
+        path.parent.mkdir()
+        path.write_text(partial, encoding="utf-8")
+        code, payload = self.deploy("--modules", "specs", "--check")
+        self.assertTrue(any(".vscode/tasks.json" in line and "quenching: gate" in line
+                            for line in payload["suggestions"]), payload["suggestions"])
+        code, payload = self.deploy("--modules", "specs", "--write")
+        self.assertEqual(0, code)
+        self.assertEqual(partial, path.read_text(encoding="utf-8"))
+
+    def test_an_unreadable_tasks_file_is_a_suggestion_and_is_left_alone(self):
+        self.config({"shared": {"workspace": {"vscode": True}}})
+        path = self.target / ".vscode" / "tasks.json"
+        path.parent.mkdir()
+        path.write_text("{ nope", encoding="utf-8")
+        code, payload = self.deploy("--modules", "specs", "--check")
+        self.assertTrue(any("tasks.json" in line and "could not be read" in line
+                            for line in payload["suggestions"]), payload["suggestions"])
+        code, payload = self.deploy("--modules", "specs", "--write")
+        self.assertEqual(0, code)
+        self.assertEqual("{ nope", path.read_text(encoding="utf-8"))
 
     def deploy_human(self, *argv):
         out = io.StringIO()

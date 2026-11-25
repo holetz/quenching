@@ -121,7 +121,10 @@ what the OpenCode settings page reads.
 `{min, max, waitMinutes, pollSeconds}`, positive integers, and `setupIdempotent: boolean` —
 defaults `4`, `12`, `30`, `30`, `false`, completed leaf by leaf; `max` never drops below `min`.
 `max` is the ceiling `cq git worktree acquire` never cuts past, `min` the floor of free slots
-`cq git stale` keeps out of cleanup, and the wait pair paces `acquire --wait`. `setupIdempotent`
+`cq git stale` keeps out of cleanup, and the wait pair paces `acquire --wait`. A free slot keeps the
+pool lock `quenching: available`: `git worktree remove`, which a client's own cleanup runs without
+`-f -f`, refuses a locked tree, so the warm caches survive; `stale` treats that lock as free, and
+`prune` unlocks the slot only for the removal it reports and re-locks it on failure. `setupIdempotent`
 is the target's word that its `worktreeSetup` survives a second run in a reused slot, which
 silences `cq specs doctor`'s `sp-config-setup-idempotence`. See
 [isolation.md](../../../quenching/references/git/isolation.md) §Worktrees are slots.
@@ -364,7 +367,7 @@ explicit flag wins over the key.
 | `shared.workHost` | `{target, dockerContext, runner, remoteRoot, syncFlags, syncExclude, pullBack, protectedPaths, minFreeGb}` | disabled | `cq config host --plan`; see [work-host.md](work-host.md) |
 | `shared.mcp` | `{mount: "all"\|"specs"\|"core"\|<pillars>, command: [strings], cliFallback: boolean}` | absent; the whole MCP server (`all`) is registered with a resolved direct Python prefix, and the grants keep only the `cq` verbs no MCP tool replaces (`cliFallback: false`) | `cq deploy`; read from the repository document only, never the merged envelope |
 | `shared.projections` | a list of client families; `github` today | `[]` — no client projection is written | `cq deploy`; read from the repository document only, `github` writes `.github/agents/` from the same agent source |
-| `shared.workspace.vscode` | boolean | `false` | `cq deploy` seeds `.vscode/settings.json` (`files.exclude` for the four generated trees, `chat.agent.maxRequests: 100`) when true, and `cq doctor` reports the file; read from the repository document only |
+| `shared.workspace.vscode` | boolean | `false` | `cq deploy` seeds `.vscode/settings.json` (`files.exclude` for the four generated trees, `chat.agent.maxRequests: 100`) and `.vscode/tasks.json` (the zero-token tasks of `common/workspace.py`) when true, and `cq doctor` reports both; read from the repository document only |
 | `specs.chat` | `{model: string, budgetUsd: number > 0, timeoutSeconds: number > 0}` | `sonnet`, `0.50`, `300` | the portal's `--chat`; `--chat-budget-usd` wins over `budgetUsd` |
 | `specs.estimate.writeOnly` | a list of repo-relative paths, exact or `fnmatch` globs | `[]` | `cq specs estimate`: a task file it matches is listed with `writeOnly: "declared by repo"`, keeps its size and adds no bytes; an Impact standard is always counted; `--task` ignores it |
 
