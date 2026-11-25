@@ -49,6 +49,12 @@ class ClientContract(unittest.TestCase):
         precompile = mock.patch("quenching.deploy.cli._precompile", return_value=None)
         precompile.start()
         cls.addClassCleanup(precompile.stop)
+        # A target's own skill, so the bridge has one file to prove: the deploy-generated
+        # skills are the deploy's, and the bridge never expects or orphans them.
+        own = cls.target / ".agents" / "skills" / "target-own" / "SKILL.md"
+        own.parent.mkdir(parents=True)
+        own.write_text("---\nname: target-own\ndescription: A target's own skill.\n---\n\nBody.\n",
+                       encoding="utf-8")
         cls.code, cls.payload = cls.deploy("--modules", "all", "--write")
 
     @classmethod
@@ -85,6 +91,13 @@ class ClientContract(unittest.TestCase):
         code, _, bodies = ours[0].partition(' -I -c "')[2].partition('"')
         self.assertIsNone(EXPANSIVE.search(code), code)
         self.assertEqual(list(BODIES), bodies.split())
+
+    def test_the_bridge_owns_the_targets_skills_and_not_the_deploys(self):
+        expected = bridge.expected_tree(self.target)
+        self.assertEqual({"target-own/SKILL.md"}, set(expected))
+        result = bridge.plan(self.target)
+        self.assertEqual([], result["changes"])
+        self.assertEqual([], result["conflicts"])
 
     def test_the_claude_skills_copy_is_byte_identical_to_the_source(self):
         expected = bridge.expected_tree(self.target)

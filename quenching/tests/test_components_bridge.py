@@ -113,6 +113,25 @@ class Bridge(unittest.TestCase):
             self.assertEqual((1, [{"path": "mlops-comum/run.sh", "change": "update"}]),
                              (code, payload["changes"]))
 
+    def test_a_deploy_generated_skill_is_not_the_bridge_s_to_create_or_orphan(self):
+        # `.agents/.quenching-deploy.json` names the skills the deploy generates; it writes their
+        # `.claude` copy and hashes both in its own manifest. The bridge must not expect the copy
+        # (it may be absent) nor report a stale entry as an orphan.
+        (self.repo / ".agents" / ".quenching-deploy.json").write_text(
+            json.dumps({"skills": ["mlops-comum"]}), encoding="utf-8")
+        (self.repo / bridge.MANIFEST).parent.mkdir(parents=True, exist_ok=True)
+        (self.repo / bridge.MANIFEST).write_text(
+            json.dumps({"generator": "stale", "files": {"mlops-comum/SKILL.md": "stale"}}),
+            encoding="utf-8")
+        self.assertEqual(set(), set(bridge.expected_tree(self.repo)))
+        code, payload = self.run_cli("--check")
+        self.assertEqual((0, []), (code, payload["changes"]))
+        self.assertEqual(0, payload["skills"])
+        self.copy.mkdir(parents=True)
+        (self.copy / "SKILL.md").write_text("the deploy's own copy\n", encoding="utf-8")
+        self.assertEqual(0, self.run_cli("--write")[0])
+        self.assertEqual("the deploy's own copy\n", (self.copy / "SKILL.md").read_text())
+
     def test_the_marker_follows_a_crlf_frontmatter(self):
         text = bridge.with_marker("---\r\nname: x\r\n---\r\nBody\r\n", "x")
         self.assertEqual("---\r\nname: x\r\n---\r\n" + bridge.marker("x") + "\r\nBody\r\n", text)
