@@ -315,10 +315,18 @@ def _bridge_tree(tree: dict, target: Path) -> None:
 
 
 def mcp_argv(mcp: dict) -> list[str]:
-    """The Python prefix, the vendored entry point and `mcp`: the whole server for `all`, the
-    mounted pillar's own `mcp` otherwise."""
-    mount = [] if mcp["mount"] == "all" else mcp["mount"].split()
-    return [*mcp["command"], PAYLOAD + "/assets/bin/cq", *mount, "mcp"]
+    """The Python prefix, the vendored entry point and the mount: the whole server for `all`, the
+    mounted pillar's own `mcp` for `specs`, and `mcp --only <pillars>` for a named mount (`core`) or
+    a comma list, with the name expanded so the registered file says which pillars it publishes."""
+    from quenching.mcp import catalog
+    mount = mcp["mount"]
+    if mount == "all":
+        tail = ["mcp"]
+    elif mount == "specs":
+        tail = ["specs", "mcp"]
+    else:
+        tail = ["mcp", "--only", ",".join(catalog.mount_pillars(mount))]
+    return [*mcp["command"], PAYLOAD + "/assets/bin/cq", *tail]
 
 
 def _declared_hooks(selected: list[dict]) -> list[dict]:
@@ -337,6 +345,11 @@ def build_tree(source: Path, target: Path, modules: list[str], harnesses: list[s
     # The registered whole server replaces every `cq` verb it serves: the grants the harness reads
     # drop that shell door unless `shared.mcp.cliFallback` keeps both.
     narrow = bool(mcp) and mcp["mount"] == "all" and not mcp.get("cliFallback")
+    # A named mount publishes fewer tools: the grants it writes never name a tool the server does
+    # not publish, so `.claude/agents` and `.opencode/agents` do not declare phantom tools.
+    from quenching.mcp import catalog as mcp_catalog
+    mount = (None if not mcp or mcp["mount"] == "all"
+             else frozenset(mcp_catalog.mount_pillars(mcp["mount"])))
     missing = [package for package in packages
                if not (source / "assets" / "bin" / "quenching" / package).is_dir()]
     if missing:
@@ -405,7 +418,7 @@ def build_tree(source: Path, target: Path, modules: list[str], harnesses: list[s
                     data = _read(path)
                 elif rel == "SKILL.md":
                     data = translate.skill_document(path.read_text(encoding="utf-8"), name,
-                                                    narrow).encode("utf-8")
+                                                    narrow, mount).encode("utf-8")
                 elif path.suffix == ".md":
                     data = translate.reference_document(path.read_text(encoding="utf-8")).encode("utf-8")
                 else:
@@ -417,14 +430,14 @@ def build_tree(source: Path, target: Path, modules: list[str], harnesses: list[s
         for name, path in _agents(source).items():
             _add(tree, f"{CLAUDE_AGENTS}/{translate.agent_name(name)}.md",
                  translate.agent_document(path.read_text(encoding="utf-8"), name,
-                                          narrow).encode(), 0o644)
+                                          narrow, mount).encode(), 0o644)
     if "opencode" in harnesses:
         # OpenCode reads `.opencode/agents/`, not `.claude/agents/`; without this copy a target
         # would keep every skill and lose the operator agents.
         for name, path in _agents(source).items():
             _add(tree, f"{OPENCODE_AGENTS}/{translate.agent_name(name)}.md",
                  translate.opencode_agent_document(path.read_text(encoding="utf-8"), name,
-                                                   narrow).encode(),
+                                                   narrow, mount).encode(),
                  0o644)
 
     seeds = {

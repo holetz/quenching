@@ -96,10 +96,11 @@ def _grant_names(tools: str) -> list[str]:
     return [item.strip() for item in re.split(r",\s*(?![^()]*\))", tools) if item.strip()]
 
 
-def mcp_tools(names: list[str]) -> list[str] | None:
+def mcp_tools(names: list[str], mount: frozenset[str] | None = None) -> list[str] | None:
     """The `quenching` MCP tools a grant list covers: `None` for the whole server (`Bash`, or an
     unscoped `Bash(cq:*)`), else every tool under each scoped `Bash(cq <verbs>:*)` prefix — never
-    wider than the shell grant it mirrors."""
+    wider than the shell grant it mirrors. `mount` keeps only the tools of the pillars the declared
+    mount publishes: a name the server does not publish is not a grant."""
     from quenching.mcp import catalog
     if "Bash" in names:
         return None
@@ -111,21 +112,23 @@ def mcp_tools(names: list[str]) -> list[str] | None:
         if not match.group(2):
             return None
         granted.extend(tool for tool in catalog.tool_names(tuple(match.group(2).split()))
-                       if tool not in granted)
+                       if (mount is None or catalog.pillar_of(tool) in mount)
+                       and tool not in granted)
     return granted
 
 
-def _with_mcp(value: str, enumerate_all: bool) -> str:
+def _with_mcp(value: str, enumerate_all: bool, mount: frozenset[str] | None = None) -> str:
     """Append the Claude Code names of the MCP tools the grant covers, once: `mcp__quenching` for
     the whole server where a rule may name it (skills), every tool by name where only a list of
     names is read (a subagent's `tools:`)."""
     from quenching.mcp import catalog
     names = _grant_names(value)
-    tools = mcp_tools(names)
+    tools = mcp_tools(names, mount)
     prefix = f"mcp__{MCP_SERVER}"
     if tools is None:
-        wanted = [f"{prefix}__{tool}" for tool in catalog.tool_names()] if enumerate_all \
-            else [prefix]
+        wanted = ([f"{prefix}__{tool}" for tool in catalog.tool_names()
+                   if mount is None or catalog.pillar_of(tool) in mount] if enumerate_all
+                  else [prefix])
     else:
         wanted = [f"{prefix}__{tool}" for tool in tools]
     missing = [name for name in wanted if name not in names]
@@ -148,11 +151,13 @@ def narrowed(names: list[str]) -> list[str]:
     return out
 
 
-def transform_tools(value: str, enumerate_mcp: bool = False, narrow: bool = False) -> str:
+def transform_tools(value: str, enumerate_mcp: bool = False, narrow: bool = False,
+                    mount: frozenset[str] | None = None) -> str:
     """Keep the shipped grant, re-rooted at the target-local `cq` and its `cq.cmd` twin, plus the
     `quenching` MCP tools that grant covers. `narrow` (the server registered, no CLI fallback)
-    drops the shell grant each MCP tool replaces, keeping only `narrowed`'s residue."""
-    value = _with_mcp(value, enumerate_mcp)
+    drops the shell grant each MCP tool replaces, keeping only `narrowed`'s residue; `mount` keeps
+    the named tools inside the pillars the mount publishes."""
+    value = _with_mcp(value, enumerate_mcp, mount)
     if narrow:
         value = ", ".join(narrowed(_grant_names(value)))
     value = re.sub(r"Bash\(cq((?:\.cmd)?[^)]*):\*\)",
@@ -194,7 +199,8 @@ def _with_launcher_note(body: str) -> str:
     return LAUNCHER_NOTE + body
 
 
-def skill_document(raw: str, name: str, narrow: bool = False) -> str:
+def skill_document(raw: str, name: str, narrow: bool = False,
+                   mount: frozenset[str] | None = None) -> str:
     fields, body = split_frontmatter(raw)
     description = scalar_value(fields.get("description", ""))
     if not description:
@@ -204,7 +210,8 @@ def skill_document(raw: str, name: str, narrow: bool = False) -> str:
                                                              ensure_ascii=False))]
     for key in ("argument-hint", "allowed-tools", "disable-model-invocation", "user-invocable"):
         if key in fields:
-            value = (transform_tools(fields[key], narrow=narrow) if key == "allowed-tools"
+            value = (transform_tools(fields[key], narrow=narrow, mount=mount)
+                     if key == "allowed-tools"
                      else scalar_value(fields[key]))
             out.append((key, json.dumps(transform_platform(value), ensure_ascii=False)
                         if key == "argument-hint" else transform_platform(value)))
@@ -244,8 +251,8 @@ def _shell_patterns(names: list[str]) -> list[str]:
     return patterns
 
 
-def opencode_permissions(tools: str | None,
-                         narrow: bool = False) -> dict[str, str | dict[str, str]]:
+def opencode_permissions(tools: str | None, narrow: bool = False,
+                         mount: frozenset[str] | None = None) -> dict[str, str | dict[str, str]]:
     """A source `tools:` list as OpenCode permissions: deny-first, with the cq grants allowed —
     under `narrow`, only the cq grants no MCP tool replaces (`narrowed`).
 
@@ -268,7 +275,7 @@ def opencode_permissions(tools: str | None,
     else:
         granted["bash"] = "ask" if "Bash" in heads else "deny"
     # Last match wins: the server-wide deny first, then the tools the cq grants cover.
-    mcp = mcp_tools(source)
+    mcp = mcp_tools(source, mount)
     granted[f"{MCP_SERVER}_*"] = "allow" if mcp is None else "deny"
     granted.update(dict.fromkeys((f"{MCP_SERVER}_{tool}" for tool in mcp or []), "allow"))
     granted["task"] = _task_grant(names)
@@ -290,13 +297,14 @@ def _task_grant(names: list[str]) -> str | dict[str, str]:
     return {"*": "deny", **dict.fromkeys(allowed, "allow")}
 
 
-def opencode_agent_document(raw: str, name: str, narrow: bool = False) -> str:
+def opencode_agent_document(raw: str, name: str, narrow: bool = False,
+                            mount: frozenset[str] | None = None) -> str:
     """An OpenCode subagent: `mode: subagent`, deny-first permissions and the translated body."""
     fields, body = split_frontmatter(raw)
     description = scalar_value(fields.get("description", ""))
     if not description:
         raise ValueError(f"agent has no description: {name}")
-    granted = opencode_permissions(fields.get("tools"), narrow)
+    granted = opencode_permissions(fields.get("tools"), narrow, mount)
     task = granted.pop("task", "allow")
     denies_task = task == "deny"
     if isinstance(task, dict):
@@ -323,7 +331,8 @@ def opencode_agent_document(raw: str, name: str, narrow: bool = False) -> str:
     return "\n".join(out) + "\n\n" + HEADER + "\n\n" + preamble + transform_platform(_body(body))
 
 
-def agent_document(raw: str, name: str, narrow: bool = False) -> str:
+def agent_document(raw: str, name: str, narrow: bool = False,
+                   mount: frozenset[str] | None = None) -> str:
     fields, body = split_frontmatter(raw)
     description = scalar_value(fields.get("description", ""))
     if not description:
@@ -332,7 +341,8 @@ def agent_document(raw: str, name: str, narrow: bool = False) -> str:
                                   ("description", json.dumps(transform_platform(description),
                                                              ensure_ascii=False))]
     if fields.get("tools"):
-        out.append(("tools", transform_tools(fields["tools"], enumerate_mcp=True, narrow=narrow)))
+        out.append(("tools", transform_tools(fields["tools"], enumerate_mcp=True, narrow=narrow,
+                                             mount=mount)))
     for key in ("model", "effort"):
         if fields.get(key):
             out.append((key, fields[key]))

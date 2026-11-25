@@ -6,6 +6,7 @@ permission:
   webfetch: deny
   bash:
     "*": ask
+    ".agents/quenching/bin/cq git history *": allow
     "bash scripts/verify_repo.sh *": allow
   "quenching_*": deny
   quenching_git_history_diff: allow
