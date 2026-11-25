@@ -59,5 +59,20 @@ class TheDoctrine(unittest.TestCase):
         self.assertIn("never cuts a second one", body)
         self.assertNotIn("Open a Copilot session with Branch isolation, not", body)
 
+class TheHookStandard(unittest.TestCase):
+    def test_hooks_md_declares_the_session_start_adoption_at_rung_4(self):
+        body = text("docs/standards/automation/hooks.md")
+        self.assertIn("adopt-worktree", body)
+        self.assertIn("rung-4", body)
+        self.assertIn("SessionStart", body)
+        self.assertIn("discards the answer", body)
+        self.assertIn("zero tokens", body)
+
+    def test_a_session_start_adoption_is_not_a_worktree_create(self):
+        body = text("docs/standards/automation/hooks.md")
+        self.assertIn("A SessionStart hook is not a WorktreeCreate", body)
+        self.assertIn("it cuts nothing and takes no slot", body)
+
+
 if __name__ == "__main__":
     unittest.main()
