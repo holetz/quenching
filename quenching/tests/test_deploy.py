@@ -818,6 +818,10 @@ class Deploy(unittest.TestCase):
         return [h["command"] for g in self.settings().get("hooks", {}).get("PreToolUse", [])
                 for h in g["hooks"]]
 
+    def session_hooks(self):
+        return [h for g in self.settings().get("hooks", {}).get("SessionStart", [])
+                for h in g["hooks"]]
+
     def test_write_merges_the_hooks_and_keeps_the_users_entries(self):
         user = {"enabledPlugins": {"context7": True},
                 "hooks": {"PreToolUse": [{"matcher": "Bash", "hooks": [{"type": "command", "command": "guard.sh"}]}]}}
@@ -832,10 +836,15 @@ class Deploy(unittest.TestCase):
         self.assertTrue(own[0].endswith('" deny-claude-coauthor warn-git-add-all'), own[0])
         self.assertEqual({"commit": "", "pr": ""}, self.settings()["attribution"])
         self.assertEqual({"context7": True}, self.settings()["enabledPlugins"])
-        for name in ("dispatch", "deny-claude-coauthor", "warn-git-add-all"):
+        for name in ("dispatch", "adopt-worktree", "deny-claude-coauthor", "warn-git-add-all"):
             self.assertTrue((self.target / f".agents/quenching/assets/hooks/{name}.py").is_file(), name)
+        session = self.session_hooks()
+        self.assertEqual(1, len(session))
+        self.assertIn("adopt-worktree", session[0]["command"])
+        self.assertEqual(300, session[0]["timeout"])
         manifest = json.loads((self.target / ".agents/.quenching-deploy.json").read_text())
-        self.assertEqual(["deny-claude-coauthor", "warn-git-add-all"], sorted(manifest["claudeSettings"]["hooks"]))
+        self.assertEqual(["adopt-worktree", "deny-claude-coauthor", "warn-git-add-all"],
+                         sorted(manifest["claudeSettings"]["hooks"]))
         self.assertNotIn(".claude/settings.json", manifest["files"])
         before = (self.target / ".claude/settings.json").read_text()
         code, again = self.run_deploy("--modules", "core", "--write")
