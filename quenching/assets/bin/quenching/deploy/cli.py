@@ -267,6 +267,16 @@ def _mcp_merge(target: Path, wanted: dict[str, list[str]], previous: dict | None
             opencode = written if new is not None and (
                 written["subagentDepth"] is not None or written["externalDirectory"]
                 or written["bash"]) else None
+            if (opencode is None and recorded is None and not keep_patterns and new is not None
+                    and current is not None and mcpfiles.NAME in current
+                    and (extras["subagentDepth"] is not None or extras["externalDirectory"]
+                         or extras["bash"])):
+                # A merge dropped the record of an `opencode.json` that already carries this
+                # machine's extras: write nothing there, but record them again, so another
+                # machine's `--check` reuses them instead of deriving its own.
+                opencode = {"subagentDepth": extras["subagentDepth"],
+                            "externalDirectory": list(extras["externalDirectory"]),
+                            "bash": list(extras["bash"])}
         elif rel in wanted:
             new = mcpfiles.merged(rel, current, wanted[rel])
         elif current is not None and mcpfiles.NAME in current:

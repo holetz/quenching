@@ -786,6 +786,20 @@ class Deploy(unittest.TestCase):
                           "bash": list(access.OPENCODE_BASH)}, manifest["opencodeConfig"])
         self.assertEqual([], self.run_deploy("--check")[1]["changes"])
 
+    def test_write_records_again_the_extras_a_merge_dropped_from_the_manifest(self):
+        self.assertEqual(0, self.run_deploy("--modules", "specs", "--harness", "opencode",
+                                            "--write")[0])
+        manifest_path = self.target / ".agents/.quenching-deploy.json"
+        manifest = json.loads(manifest_path.read_text())
+        block = manifest.pop("opencodeConfig")
+        manifest_path.write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
+        before = (self.target / "opencode.json").read_bytes()
+        code, payload = self.run_deploy("--write")
+        self.assertEqual(0, code, payload)
+        self.assertEqual(before, (self.target / "opencode.json").read_bytes())
+        self.assertEqual(block, json.loads(manifest_path.read_text())["opencodeConfig"])
+        self.assertEqual([], self.run_deploy("--check")[1]["changes"])
+
     def test_check_keeps_the_patterns_another_machine_recorded(self):
         self.assertEqual(0, self.run_deploy("--modules", "specs", "--harness", "opencode",
                                             "--write")[0])
