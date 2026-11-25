@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import contextlib
+import io
 import json
 import os
 import pathlib
@@ -14,6 +16,7 @@ try:
 except ModuleNotFoundError:
     sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
     import _paths  # noqa: F401
+from quenching.common import doctor
 from quenching.common import workspace
 from quenching.common.jsonc import jsonc_loads
 
@@ -137,3 +140,83 @@ class TheDeclaration(unittest.TestCase):
         value, error = workspace.declared(str(self.root))
         self.assertFalse(value)
         self.assertIn("unknown key", error)
+
+
+class TheDoctor(unittest.TestCase):
+    def setUp(self):
+        tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
+        self.root = pathlib.Path(tmp.name)
+        (self.root / ".agents").mkdir()
+        (self.root / ".agents" / "quenching.json").write_text(
+            json.dumps({"backend": "git"}), encoding="utf-8")
+
+    def settings(self, text: str):
+        path = self.root / workspace.PATH
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(text, encoding="utf-8")
+
+    def run_doctor(self, **kwargs):
+        out = io.StringIO()
+        with contextlib.redirect_stdout(out):
+            code = doctor.run(False, str(self.root), **kwargs)
+        return code, out.getvalue()
+
+    def payload(self, **kwargs):
+        out = io.StringIO()
+        with contextlib.redirect_stdout(out):
+            code = doctor.run(True, str(self.root), **kwargs)
+        return code, json.loads(out.getvalue())
+
+    def test_workspace_prints_the_block_and_writes_nothing(self):
+        code, payload = self.payload(workspace=True)
+        self.assertEqual(0, code)
+        self.assertEqual("absent", payload["workspace"]["state"])
+        self.assertEqual(workspace.recommended(), jsonc_loads(payload["snippet"]))
+        self.assertFalse((self.root / workspace.PATH).exists())
+
+    def test_workspace_human_names_the_state_and_the_live_half(self):
+        code, human = self.run_doctor(workspace=True)
+        self.assertEqual(0, code)
+        self.assertIn("not declared", human)
+        self.assertIn("live half is not proved here", human)
+
+    def test_workspace_with_write_is_refused(self):
+        code, payload = self.payload(workspace=True, write=True)
+        self.assertEqual(2, code)
+        self.assertTrue(payload["message"].endswith("`--workspace` writes nothing"))
+
+    def test_the_standard_report_carries_the_workspace_when_the_file_exists(self):
+        self.settings(workspace.snippet())
+        code, payload = self.payload()
+        self.assertEqual(0, code)
+        self.assertTrue(payload["workspace"]["complete"])
+        code, human = self.run_doctor()
+        self.assertEqual(0, code)
+        self.assertIn("workspace:", human)
+        self.assertIn("2/2 recommended key(s) present", human)
+
+    def test_the_standard_report_is_silent_without_the_file_or_the_key(self):
+        code, payload = self.payload()
+        self.assertEqual(0, code)
+        self.assertNotIn("workspace", payload)
+        code, human = self.run_doctor()
+        self.assertEqual(0, code)
+        self.assertNotIn("workspace:", human)
+
+    def test_a_declared_seed_names_the_command_that_writes_it(self):
+        (self.root / ".agents" / "quenching.json").write_text(
+            json.dumps({"backend": "git", "shared": {"workspace": {"vscode": True}}}),
+            encoding="utf-8")
+        code, human = self.run_doctor()
+        self.assertEqual(0, code)
+        self.assertIn("`cq deploy --write` seeds it", human)
+
+    def test_a_partial_file_names_the_gap(self):
+        document = workspace.recommended()
+        del document["files.exclude"]["site"]
+        self.settings(json.dumps(document))
+        code, human = self.run_doctor()
+        self.assertEqual(0, code)
+        self.assertIn("site", human)
+        self.assertIn("cq doctor --workspace", human)
