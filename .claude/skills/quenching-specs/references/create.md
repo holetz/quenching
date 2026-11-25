@@ -4,7 +4,7 @@ allowed-tools: Bash(cq:*), Bash(cq.cmd:*), Read, Grep, Glob, Bash(python3:*), Ba
 
 # /quenching-specs create — capture one spec, one screen, one turn
 
-**Input**: `$ARGUMENTS` — a short description of the problem, a path to a Claude or Codex plan
+**Input**: `$ARGUMENTS` — a short description of the problem, a path to a plan
 file, or a plan already developed in this session (including a `<proposed_plan>` block). With no
 argument and no identifiable plan in the conversation, ask what to capture.
 
@@ -28,7 +28,7 @@ what you were given, and nothing more.**
 | Input                   | What gets written                        |
 | ----------------------- | ----------------------------------------- |
 | a sentence              | a descriptive title, `## Problem` |
-| a Claude or Codex plan, from a file or this session | every section the plan actually supports |
+| a plan, from a file or this session | every section the plan actually supports |
 
 The same richness decides the `complexity` this command computes and writes (step 4), **inversely**:
 a sentence carries the least evidence, so its definition questions still need a human, while a plan

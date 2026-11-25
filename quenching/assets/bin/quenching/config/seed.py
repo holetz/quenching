@@ -10,7 +10,6 @@ from __future__ import annotations
 
 import copy
 
-from quenching.codex.config import DEFAULTS as CODEX
 from quenching.common.config import detect_profile, find_repo_root, repository_document
 from quenching.config.autonomy import DEFAULTS as AUTONOMY
 from quenching.config.host import DEFAULTS as WORK_HOST
@@ -28,7 +27,6 @@ def seed_document(root: str) -> dict:
         "backend": "git",
         "shared": {
             "autonomy": AUTONOMY,
-            "codex": CODEX,
             "contextBudgets": BUDGETS,
             "okfValidate": OKF_VALIDATE,
             "profiles": {"installed": profile},

@@ -442,8 +442,8 @@ A worktree slot held under a quenching lock is reported apart, as `kind: slot` i
 and with its evidence in `heldSlots`, never as `kind: worktree`. It is a `candidate` with reason
 `archived-holder` only with every piece of evidence in favour: the spec its lock names is in
 `archive`, its HEAD is contained in the already fetched `<remote>/<base>`, its porcelain is clean,
-no ignored content sits outside the regenerable class (`.quenching/handoff/` and `.quenching/codex/`
-excepted, because the release carries them to the main checkout), and `/proc` shows no process with
+no ignored content sits outside the regenerable class (`.quenching/handoff/`
+excepted, because the release carries it to the main checkout), and `/proc` shows no process with
 its cwd inside it. Any missing or contrary fact keeps it `preserved` with a named blocker
 (`foreign-lock`, `holder-not-a-spec`, `holder-unknown`, `holder-not-archived`, `base-unresolved`,
 `unmerged-head`, `inspection-failed`, `dirty`, `ignored-content-unrecognized`,
