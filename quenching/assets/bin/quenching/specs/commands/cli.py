@@ -195,6 +195,9 @@ def _add_record_promote_task(sub) -> None:
     sp.add_argument("--descope", help="close TASK as deliberately out of scope (requires --reason)")
     sp.add_argument("--reason", help="why the task is blocked, reopened or descoped — written "
                                       "into the spec")
+    sp.add_argument("--replaced-by", dest="replaced_by",
+                    help="with --descope: the task that delivers the work instead — writes "
+                         "`(dropped → <id>)` so the verifier owes the descoped task no sha")
     sp.add_argument("--subject", help="the subject of the commit that implements the task, "
                                       "recorded as a `subject:` metadata line "
                                       "(goes with --check)")
