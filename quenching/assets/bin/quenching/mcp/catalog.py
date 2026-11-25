@@ -31,6 +31,11 @@ from quenching.mcp.server import ToolArgs
 
 ROUTER_PATH = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(
     os.path.abspath(__file__)))), "cq")
+# The named mounts a repository may declare in `shared.mcp.mount`: each is the set of pillars the
+# server publishes, and `core` is the set a spec cycle reaches through MCP. The deploy expands the
+# name into the registered argv (`cq mcp --only specs,git,components`), so the file says what it
+# mounts instead of hiding a shorthand. `all` and `specs` are the two forms that predate the table.
+MOUNTS = {"core": ("specs", "git", "components")}
 SERVER_OWNED = {"root", "json", "help", "version"}
 # A pillar whose `--root` names something narrower than the workspace (`components`: the surface
 # root holding commands/) gets no `--root`; the workspace reaches it as the cwd, from which its own
@@ -265,11 +270,41 @@ def described(rows: dict[str, Row]) -> list[dict]:
     return [_described[name] for name in rows]
 
 
-def available(present=None) -> dict[str, Row]:
-    """The rows whose pillar is present in this process — an absent pillar publishes nothing."""
+def mount_pillars(value: str) -> tuple[str, ...]:
+    """The pillars a declared mount publishes: a name of `MOUNTS`, else the comma-separated list."""
+    if value in MOUNTS:
+        return MOUNTS[value]
+    return tuple(part.strip() for part in value.split(",") if part.strip())
+
+
+def mount_refusal(value: object) -> list[str]:
+    """The pillar names a declared mount carries that the router does not have; empty when the
+    mount is `all` or names only pillars this process routes."""
+    if value == "all":
+        return []
+    if not isinstance(value, str) or not value.strip():
+        return ["<empty>"]
+    known = set(router().PILLARS)
+    return [pillar for pillar in mount_pillars(value) if pillar not in known]
+
+
+def pillar_of(name: str) -> str | None:
+    """The pillar a tool name belongs to: the catalog row's, or the specs adapter's."""
+    row = CATALOG.get(name)
+    if row is not None:
+        return row.pillar
+    from quenching.specs import mcp as specs_mcp
+    return "specs" if name in specs_mcp.COVERS else None
+
+
+def available(present=None, only=None) -> dict[str, Row]:
+    """The rows whose pillar is present in this process — an absent pillar publishes nothing —
+    and, when `only` names pillars, no row of a pillar outside it."""
     present = present or router().present
     shown = {pillar: present(pillar) for pillar in {row.pillar for row in CATALOG.values()}}
-    return {name: row for name, row in CATALOG.items() if shown[row.pillar]}
+    keep = None if only is None else set(only)
+    return {name: row for name, row in CATALOG.items()
+            if shown[row.pillar] and (keep is None or row.pillar in keep)}
 
 
 def describe(name: str, row: Row, parser: argparse.ArgumentParser | None = None) -> dict:
@@ -385,11 +420,12 @@ class CatalogSurface:
 
     name = "quenching"
 
-    def __init__(self, present=None):
+    def __init__(self, present=None, only=None):
         self.present = present
+        self.only = only
 
     def tools(self) -> dict[str, Row]:
-        return available(self.present)
+        return available(self.present, self.only)
 
     def has_tool(self, name: str) -> bool:
         return name in self.tools()
@@ -410,11 +446,13 @@ class CatalogSurface:
         raise server.ResourceError(server.NOT_FOUND, f"unknown resource: {uri}")
 
 
-def surface(present=None) -> server.Composite:
-    """The whole `quenching` server: the catalog, plus the specs tools when `specs` is present."""
+def surface(present=None, only=None) -> server.Composite:
+    """The whole `quenching` server: the catalog, plus the specs tools when `specs` is present —
+    and, when `only` names pillars, nothing outside them."""
     present = present or router().present
-    parts = [CatalogSurface(present)]
-    if present("specs"):
+    keep = None if only is None else set(only)
+    parts = [CatalogSurface(present, only)]
+    if present("specs") and (keep is None or "specs" in keep):
         from quenching.specs import mcp as specs_mcp
         parts.append(specs_mcp.SURFACE)
     return server.Composite("quenching", parts)
