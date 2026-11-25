@@ -7,7 +7,7 @@ tags: [architecture, mcp, distribution, tooling]
 timestamp: 2026-11-24
 audience: both
 authority: current
-source: specs 2110, 1020213, 309 and 417; protocol, catalog, resources and installed-launcher tests
+source: specs 2110, 1020213, 309, 417 and 429; protocol, catalog, resources and installed-launcher tests
 maintainer: quenching
 ---
 
@@ -29,7 +29,10 @@ prefix;
 `cq mcp` itself.
 The `mcp` package belongs to `quenching-specs`, under [source-layout.md](source-layout.md).
 
-The workspace is the launch cwd or launch-time `--root`. It is never a tool argument.
+The workspace is the launch cwd or launch-time `--root`. One call may name another tree with
+`root`, which every tool takes: the CLI's `--root`, an existing directory, relative to the
+workspace; the call runs with it as the verb's `--root` and as its cwd, and anything else is a
+`mcp-bad-arguments` refusal.
 Each call isolates stdin and captures stdout/stderr, restores cwd and stdin in `finally`, and turns
 `SystemExit` into an exit code. A verb without JSON output returns `{ok, exit, text}`.
 
@@ -43,8 +46,8 @@ Specs keep their existing names, including `specs_section_write` and `specs_reco
 
 The schema comes from each pillar's `build_parser()`: flags become booleans, choices become enums,
 repeated values become arrays, and positional arguments become properties. Required arguments stay
-required. Every schema rejects additional properties. The server owns `--root` and `--json`;
-there is no generic argv passthrough. `components` never receives the workspace as `--root`,
+required. Every schema rejects additional properties. The server owns `--json` and turns `root`
+into `--root`; there is no generic argv passthrough. `components` never receives the workspace as `--root`,
 because its `--root` names the surface root holding `commands/`; it runs with the workspace as cwd
 and finds the nearest `.claude/` from there. A new parser option on a catalogued verb is exposed without
 editing the catalog; a new verb requires a new row. Interactive or long-running entry points,
@@ -64,10 +67,10 @@ which stays with `specs_push`.
 the `inputSchema`'s argument names — `specs_status(spec=<id>)` — never as `cq <pillar> <verb>`
 ([tool-resolution.md](/quenching/references/align/tool-resolution.md) §Citing a verb in a body). The
 CLI stays where no tool covers the verb and on a line marked `cli: <reason>`, from a closed set:
-`root` (the call must act on a working tree that is not the server's workspace, which no tool
-argument can name), `atomic` (a multi-section write), `by` (an `approved` stamp other than
-`by=human`), `flag` (a flag the tool does not publish) and `fallback` (a CLI synopsis beside its
-tool). `cq components lint` holds the form with `sk-cq-cli-citation` and `sk-mcp-unknown-tool` over
+`flag` (a flag the tool does not publish) and `fallback` (a CLI synopsis beside its tool). A call
+on another tree passes `root`, a multi-section write passes `sections` to `specs_section_write` or
+`specs_create` (one atomic write, refused whole like the CLI's stream), and an `approved` stamp
+other than `by=human` passes `by`. `cq components lint` holds the form with `sk-cq-cli-citation` and `sk-mcp-unknown-tool` over
 the bodies `components/mcp_citations.py`'s `ENFORCED` names: every `quenching-*` skill and every
 shared reference, and the flow agents under `quenching/agents/`; an agent's `tools:` grants no raw `git`
 or `gh` for a verb a tool covers.
@@ -79,13 +82,14 @@ or `gh` for a verb a tool covers.
 | `external` | Can act outside the machine | `openWorldHint: true`; destructive merge/prune also set `destructiveHint: true` |
 
 Annotations describe capabilities; they grant no permission. The specs surface asks the human once:
-`approved` is the only gated record, and only a client acceptance writes it (`by=human`, and only on
-a spec that met the ready gate); missing capability, decline or cancel refuses without a write. What
+`approved` is the only gated record, and only a client acceptance writes it as `by=human`, and only
+on a spec that met the ready gate; missing capability, decline or cancel refuses without a write.
+`by` `session` or `orchestrator-forced` claims no human, so it writes without asking, still only on
+a ready spec — the values the CLI writes for the simple track and declared autonomy. What
 the flow concludes after that approval is not a second decision — the `reviewed`, `merge` and
 `outcome` records and `specs_promote` run without asking, exactly as their CLI verbs do, so an
-autonomous run archives a spec without stopping to ask again. `git_pr_merge` still publishes no
-`spec` argument: the `merge` record is stamped by `cq specs record` once the merge landed, not by
-the merge verb.
+autonomous run archives a spec without stopping to ask again. `git_pr_merge(spec=<id>)` stamps the
+`merge` record once the PR merged, as the CLI's `--spec` does.
 
 `specs_push` is the one write tool with no confirmation gate: it publishes every pending local write
 of the clone with one push of the store branch, exactly like `cq specs push`, and calling the tool is
