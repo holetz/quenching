@@ -179,29 +179,28 @@ then tick the spec task with its subject and commit**. Every task with a diff ge
 and stays resumable from it. The spec write is deliberately last: the specs store cannot
 travel inside the local commit, and a failed write must leave the commit available for a retry.
 
-Run the shell half as **one chained call** in the worktree, gate included, and tick only after it
-exits 0:
+Run the shell half as **one chained call** in the worktree, gate included; commit only after it
+exits 0, and tick only after the commit:
 
-<!-- cli: root -->
 ```bash
 cd <worktree> \
   && <the task's verify:> \
-  && git add <the task's files> \
-  && .agents/quenching/bin/cq git commit --subject "<subject>" --json
+  && git add <the task's files>
 ```
 
 ```text
+git_commit(subject="<subject>", root="<worktree>")
 specs_task(spec=<spec-id>, action="check", task=<task-id>, subject="<subject the commit reported>", commit="<sha the commit reported>")
 ```
 
 **The `&&` is the ordering:** verify before staging, staging before the commit, the
-commit before the spec tick, and a broken link short-circuits every link after it — the tick
-included. When the
+commit before the spec tick, and a broken link short-circuits every link after it — the commit
+and the tick included: neither call runs unless the shell half exited 0. When the
 spec's declared policy says this task is not a gate, the chain simply starts at `git add`.
 
 Stage only the task's declared `files:`, never the whole tree and never an assumed spec file —
 `git add -A` also picks up whatever an editor or a tool wrote while the task ran, which is the same
-contamination §The precondition refuses at the start. `cq git commit` commits the existing index and never stages <!-- cli: root -->; execute resolves the subject from the
+contamination §The precondition refuses at the start. `git_commit` commits the existing index and never stages; execute resolves the subject from the
 conventions it already loaded and passes the subject and sha the verb reports to the spec write.
 
 If verification, staging or the commit **fails** — a rejecting hook or nothing staged — no spec

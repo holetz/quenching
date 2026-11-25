@@ -15,7 +15,7 @@ revealed, merging, and archiving belong to `/quenching-specs conclude` — the a
 merge.
 
 `Bash` is unrestricted: the verification and Git commands are resolved from the live spec. The
-commit itself is one `.agents/quenching/bin/cq git commit` call in the worktree, which commits the existing index <!-- cli: root -->.
+commit itself is one `git_commit(subject=…, root=<worktree>)` call, which commits the worktree's existing index.
 
 ## Resolving the tool
 
@@ -135,9 +135,9 @@ specs_status(spec=<id>)
 
 `branch.work` now set → the worktree was cut; continue the loop from the returned worktree checkout,
 never from the base checkout — and carry that path on every command of the loop (`cd <worktree> &&
-…` in the same call, `git -C <worktree>`, `.agents/quenching/bin/cq --root <worktree>`), because the harness may return
+…` in the same call, `git -C <worktree>`, `root=<worktree>` on every `quenching` tool), because the harness may return
 the shell cwd to the base checkout after each command and a cwd-dependent command would then
-measure or write the wrong tree. **`.agents/quenching/bin/cq git …` takes no `--root` on its write verbs** (a usage error there): run it as `cd <worktree> && .agents/quenching/bin/cq git …`, in the same call as the `git add` it commits. No record at all → the
+measure or write the wrong tree. A tool given `root=<worktree>` runs there, the `git` write verbs included. No record at all → the
 git command it ran failed (a name already taken, a dirty path, a locked worktree) and nothing was
 stamped — report it verbatim and stop; never fall back to a branch or the base, which is the
 outcome the worktree default exists to prevent.
@@ -300,18 +300,17 @@ e. **Then verify, stage, commit and confirm the spec task as ONE chained operati
    [commit.md](.agents/quenching/references/git/commit.md) §Commit messages
    §The subject is the anchor name, resolved from what 5d already loaded — never reload
    `/quenching-git commit` per task. Execute stages only the task's declared files, commits that
-   index with `.agents/quenching/bin/cq git commit --subject` in the worktree, which never stages, amends or skips hooks <!-- cli: root -->,
-   then sends the subject and sha it reports to `specs_task`:
+   index with `git_commit(root=<worktree>)`, which never stages, amends or skips hooks, only after
+   the shell half exited 0, then sends the subject and sha it reports to `specs_task`:
 
-   <!-- cli: root -->
    ```bash
    cd <worktree> \
      && <the task's verify:> \
-     && git add <the task's declared files> \
-     && .agents/quenching/bin/cq git commit --subject "<subject>" --json
+     && git add <the task's declared files>
    ```
 
    ```text
+   git_commit(subject="<subject>", root="<worktree>")
    specs_task(spec=<spec-id>, action="check", task=<task-id>, subject="<subject the commit reported>", commit="<sha the commit reported>")
    ```
 

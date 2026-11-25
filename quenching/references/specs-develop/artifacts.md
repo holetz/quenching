@@ -19,35 +19,31 @@ in a spec are machine contracts — the `## Tasks` checkboxes and the one parsed
 
 <!-- rules -->
 
-`.agents/quenching/bin/cq specs section <slug> "<Heading>[,<Heading>…]" --write` (bodies on stdin) creates each heading in <!-- cli: atomic -->
+`specs_section_write(spec=<slug>, sections=[{"heading": "<Heading>", "body": <body>}, …])` creates each heading in
 canonical position on first write, so creating and revising are the same call. An emptied section
 becomes an explicit `- none — <reason>`, never a deleted heading (§The explicit-none rule).
 
 **An empty body refuses** (exit 2, `sp-write-empty-body`, naming the empty headings) and writes
-nothing — a tty stdin, a producer that failed upstream of the pipe, or a `## <Heading>` block with
-no body in the stream. `--clear` beside `--write` is the explicit ask that lets an empty body
+nothing — an empty `body` in `sections`, or, on the CLI fallback, a tty stdin, a producer that
+failed upstream of the pipe, or a `## <Heading>` block with no body in the stream. `--clear` beside `--write` is the explicit ask that lets an empty body
 through and puts the template's guidance back under that heading; without `--write` it refuses
 (`sp-clear-without-write`).
 
-**The bodies go on stdin as one heredoc, in the same call** — a scratch file, a `mkdir` and a `cat`
-are three turns buying what one already does, and a pass that filled six sections over six calls
-paid six round trips for one edit. `specs_section_write(spec=<slug>, heading="<Heading>", body=<body>)`
-writes one heading per call; the N-heading write is the CLI's:
+**The bodies go in ONE call** — a scratch file, a `mkdir` and a `cat` are three turns buying what
+one already does, and a pass that filled six sections over six calls paid six round trips for one
+edit. `specs_section_write(spec=<slug>, heading="<Heading>", body=<body>)` writes one heading; the
+N-heading write is the same tool with `sections`:
 
-<!-- cli: atomic -->
-```bash
-.agents/quenching/bin/cq specs section "<slug>" "<Heading>,<Other Heading>" --write <<'BODY'
-## <Heading>
-
-<the drafted section, verbatim>
-
-## <Other Heading>
-
-<the other drafted section, verbatim>
-BODY
+```text
+specs_section_write(spec=<slug>, sections=[
+  {"heading": "<Heading>", "body": "<the drafted section, verbatim>"},
+  {"heading": "<Other Heading>", "body": "<the other drafted section, verbatim>"}])
 ```
 
-Quote the delimiter (`<<'BODY'`) so nothing in the prose is expanded by the shell.
+A repeated heading or one outside the canonical thirteen refuses (exit 2) **without writing any of
+them**. With no server, the fallback is the CLI's stream — each body opened by its `## <Heading>`
+line on the stdin of `cq specs section "<slug>" "<Heading>,<Other Heading>" --write`, <!-- cli: fallback -->
+the heredoc delimiter quoted (`<<'BODY'`) so nothing in the prose is expanded by the shell.
 
 The `## <Heading>` lines in the stream are the delimiter, and the set they carry must equal the set
 declared on the command line — a mismatch, a repeat, or a heading outside the canonical thirteen
