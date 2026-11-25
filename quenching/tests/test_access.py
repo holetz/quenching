@@ -1,5 +1,7 @@
 """`quenching.common.access`: the family derivation and the per-client declarations."""
 
+import contextlib
+import io
 import json
 import os
 import pathlib
@@ -7,9 +9,12 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from unittest import mock
 
 import _paths  # noqa: F401  — must precede the `quenching` import; see its docstring
-from quenching.common import access
+from quenching.common import access, doctor
+
+CQ = pathlib.Path(__file__).resolve().parents[1] / "assets" / "bin" / "cq"
 
 
 def _git(*args, cwd):
@@ -162,6 +167,51 @@ class ReportTest(unittest.TestCase):
         self.assertEqual("absent", value["family"]["state"])
         self.assertFalse(value["complete"])
         self.assertIn("no family", access.summary(value))
+
+
+class TheDoctorAccessReport(unittest.TestCase):
+    def setUp(self):
+        self.tmp = tempfile.mkdtemp()
+        self.repo = os.path.join(self.tmp, "proj")
+        _git("init", "-q", self.repo, cwd=self.tmp)
+        os.makedirs(os.path.join(self.tmp, "proj-slot-1"))
+
+    def run_cli(self, *args):
+        return subprocess.run([sys.executable, str(CQ), "doctor", *args, "--root", self.repo],
+                              capture_output=True, text=True, encoding="utf-8")
+
+    def test_the_cli_prints_the_payload_and_writes_nothing(self):
+        done = self.run_cli("--access", "--json")
+        self.assertEqual(0, done.returncode, done.stderr)
+        payload = json.loads(done.stdout)
+        self.assertTrue(payload["ok"])
+        self.assertEqual("present", payload["family"]["state"])
+        self.assertIn("copilotCli", payload)
+        self.assertFalse(os.path.exists(os.path.join(self.repo, ".vscode", "settings.json")))
+
+    def test_the_cli_prints_the_human_block(self):
+        done = self.run_cli("--access")
+        self.assertEqual(0, done.returncode, done.stderr)
+        self.assertIn("chat.tools.terminal.autoApprove", done.stdout)
+        self.assertIn("copilot --add-dir", done.stdout)
+
+    def test_access_with_write_refuses(self):
+        with contextlib.redirect_stdout(io.StringIO()), \
+                contextlib.redirect_stderr(io.StringIO()):
+            code = doctor.run(False, self.repo, access=True, write=True)
+        self.assertEqual(2, code)
+
+    def test_the_default_report_carries_the_access_line(self):
+        minimal = {"root": self.repo,
+                   "python": {"available": True, "version": "3.12", "required": "3.11"},
+                   "requirements": [], "missing": [], "backend": None,
+                   "profile": {"effective": []}}
+        out = io.StringIO()
+        with mock.patch.object(doctor, "inspect_environment", return_value=minimal), \
+                contextlib.redirect_stdout(out), contextlib.redirect_stderr(io.StringIO()):
+            code = doctor.run(False, self.repo)
+        self.assertEqual(0, code)
+        self.assertIn("access:", out.getvalue())
 
 
 if __name__ == "__main__":
