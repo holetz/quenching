@@ -18,6 +18,11 @@
       "name": "quenching-cache",
       "path": "integrations/claude-cache",
       "marketplace": true
+    },
+    {
+      "name": "quenching-quota",
+      "path": "integrations/opencode-quota",
+      "marketplace": false
     }
   ],
   "modules": [
