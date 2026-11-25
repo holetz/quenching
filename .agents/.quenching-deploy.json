@@ -29,15 +29,15 @@
   "files": {
     ".agents/quenching/VERSION": "26fc6a53c41aacfac3889c7275bfdb81d2de7d35e9906fb926614b351c347fbd",
 
-    ".agents/quenching/agents/spec-orchestrator.md": "4867baa672ae7f21b00b9cd1ecee171994ad67bcdeac960aa7673e9e188c3cd9",
+    ".agents/quenching/agents/spec-orchestrator.md": "c704188d52a467e48624f700d7e9d07d71af60eea0308de4261afaf3ce6c5666",
 
-    ".agents/quenching/agents/spec-reviewer.md": "68d69b9d30f5ffdcaa216bc63e8b081bc12a86079ce51e8fa9c02b79a40171f2",
+    ".agents/quenching/agents/spec-reviewer.md": "1a6302d01c452501e59f9c8924f3ee7fcdc2ebb8d150e54b2b4a53441428e1b6",
 
-    ".agents/quenching/agents/spec-runner.md": "a5ec2038f8c3c91a298307405890f1cd6e00cf1fa1ed83183f1307564a47635f",
+    ".agents/quenching/agents/spec-runner.md": "9cc5c50847c5ae38e3c998a9b28491e5d1b00147ce776947193c49d6a3f6067a",
 
-    ".agents/quenching/agents/spec-scout.md": "e421613aaa1048f695c7f0a5ebdc3a58d487287d8fef56fc94663697e5e801fb",
+    ".agents/quenching/agents/spec-scout.md": "fb14fd6eca42f5eee9d0883e4e876fd9d64d009fa4b60f187a02b2f25c75c628",
 
-    ".agents/quenching/agents/spec-verifier.md": "41fc7bdb9742acae4b17751730aebf9539992efe389ec1d5589f4ac6569c0701",
+    ".agents/quenching/agents/spec-verifier.md": "bc2597c3e1a12bccdb5759de4242e78f58ad71eafda76b5e52935d8ba8f2e999",
 
     ".agents/quenching/assets/bin/cq": "885d05b78621413dd9ce513b26b68df580d6f394635566b1c6962f570116997f",
 
@@ -887,15 +887,15 @@
 
     ".agents/skills/quenching-toolchain/references/toolchain-align/bands.md": "d73941d0034ffd0cbc3b3c79bc992d432b1a802e3d86926730a5943309034b97",
 
-    ".claude/agents/quenching-spec-orchestrator.md": "4867baa672ae7f21b00b9cd1ecee171994ad67bcdeac960aa7673e9e188c3cd9",
+    ".claude/agents/quenching-spec-orchestrator.md": "c704188d52a467e48624f700d7e9d07d71af60eea0308de4261afaf3ce6c5666",
 
-    ".claude/agents/quenching-spec-reviewer.md": "68d69b9d30f5ffdcaa216bc63e8b081bc12a86079ce51e8fa9c02b79a40171f2",
+    ".claude/agents/quenching-spec-reviewer.md": "1a6302d01c452501e59f9c8924f3ee7fcdc2ebb8d150e54b2b4a53441428e1b6",
 
-    ".claude/agents/quenching-spec-runner.md": "42d2f615701f0c562744a25f5bcdd079ed317b78f09d2e9f227e3a87ec4da948",
+    ".claude/agents/quenching-spec-runner.md": "724079b042377feb2b18e9fc94c4b0d7752ec39a32276063118609c906c3a189",
 
-    ".claude/agents/quenching-spec-scout.md": "e421613aaa1048f695c7f0a5ebdc3a58d487287d8fef56fc94663697e5e801fb",
+    ".claude/agents/quenching-spec-scout.md": "fb14fd6eca42f5eee9d0883e4e876fd9d64d009fa4b60f187a02b2f25c75c628",
 
-    ".claude/agents/quenching-spec-verifier.md": "41fc7bdb9742acae4b17751730aebf9539992efe389ec1d5589f4ac6569c0701",
+    ".claude/agents/quenching-spec-verifier.md": "bc2597c3e1a12bccdb5759de4242e78f58ad71eafda76b5e52935d8ba8f2e999",
 
     ".claude/rules/command-fork.md": "51277745e7dd071f8d34adc6ef87d173c52e3e00b4def442a7f869c54a04d782",
 
@@ -1107,29 +1107,29 @@
 
     ".claude/skills/skill-map/SKILL.md": "eb309cf9d098a5daccbabff27d97f3da24a967c888bbde88f0400cc6af09b5be",
 
-    ".github/agents/quenching-spec-orchestrator.agent.md": "b013450bb783c665e1d89c8043fb63849e0e13988b2c4658427b0c6091c6ec62",
+    ".github/agents/quenching-spec-orchestrator.agent.md": "d65f75064f5d8133b50d2c8de80e56affcfd69e9278effaebf001aaba1230bdb",
 
-    ".github/agents/quenching-spec-reviewer.agent.md": "c164c99192c6625ed1d29b3cdd2c221e2449512eda89c2efeb91ed7f9c621ba0",
+    ".github/agents/quenching-spec-reviewer.agent.md": "62bb5ec0ac88330e4d64e50558c31312a489f362e50e4147d6db9cefee302662",
 
-    ".github/agents/quenching-spec-runner.agent.md": "79f523f4a88e80ab4eb35f5dd72cd13d21af61f2e8a7127ad32740c89b2004df",
+    ".github/agents/quenching-spec-runner.agent.md": "4fbf413d4b52872e18dc544eb372895998db3229c32f743410c80c209dfc4d88",
 
-    ".github/agents/quenching-spec-scout.agent.md": "2152b00585f03f5f381dade2de672521baa9364be7fccd8263072898ba6a9eea",
+    ".github/agents/quenching-spec-scout.agent.md": "bf93d72b7fe75f5feadb5fa5397254dabb318c5f3166d90d58a9acbabeff72aa",
 
-    ".github/agents/quenching-spec-verifier.agent.md": "dae11d9b82464b46d7f2b661f6843912b5013f11b3ab4c0b1722f23c6e68265a",
+    ".github/agents/quenching-spec-verifier.agent.md": "15b04b1d2edbba70af7eead5f4d96e8f1762d800d536e166ac05e226bb05ea60",
 
     ".github/instructions/command-fork.instructions.md": "8297a240756681cf23873b51395935e1eb175a1e3020af5bbb58bc2b93e826a9",
 
     ".github/instructions/import-memory-models.instructions.md": "47cf9a95b9ca21b9124cdd90fd5c7d3c75a39296c14f998bc9bcec5d861cda8d",
 
-    ".opencode/agents/quenching-spec-orchestrator.md": "620d0edc8e9b4ed02b431acaa127dc6ed38e6db283d2d1d5762cc94724a67576",
+    ".opencode/agents/quenching-spec-orchestrator.md": "939a7bb3afd2a39a74f4fd107a4a0c619e06d266f683b42e03891de677b6ba13",
 
-    ".opencode/agents/quenching-spec-reviewer.md": "8ffc466c9d5a32a8c4192e2956626863e38f87dac8c3593f2a7d23a74742169a",
+    ".opencode/agents/quenching-spec-reviewer.md": "1ee7168eaa09561df1e163c088a7922eb557b49d1004417f66f3d05962dc270e",
 
-    ".opencode/agents/quenching-spec-runner.md": "b0792d5d8cd220fb18ee7c56ebebc01df96e9ce52e08c8d1ab70880210edd0e6",
+    ".opencode/agents/quenching-spec-runner.md": "1361ac267c652c3fd9780a697e072eb38c732833cfeb6253faa6b4d894d432fe",
 
-    ".opencode/agents/quenching-spec-scout.md": "88453b22b7e14669c01284f12cbe9be032b0c9dec7cf40ca82f8df1aea0a1d8d",
+    ".opencode/agents/quenching-spec-scout.md": "43ea8cec684e208c694e837b21b7343a4ae96d824a1686699b539b4bbb5dda30",
 
-    ".opencode/agents/quenching-spec-verifier.md": "e0bf8be6f2b4af285183194c1d0042c22511899750bec522333ce5cebe2cd0a9"
+    ".opencode/agents/quenching-spec-verifier.md": "5c2ac72f24fb04f283c8647690c1798a1cc274fed6d406517d7076533e5819f7"
   },
   "mirrors": [
     ".agents/quenching/assets/bin/quenching/delivery",

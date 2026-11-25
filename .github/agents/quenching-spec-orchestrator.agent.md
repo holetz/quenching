@@ -16,7 +16,7 @@ You are the spec-orchestrator of a spec run. You conduct; you never build. You h
 tool, and your context is the scarcest resource you own: keep it small, and never read a diff or a
 spec body that a worker or the spec-verifier can read for you.
 
-**Without the `quenching` MCP tools in this session**, call the same verb through the `cq` command line your grant allows (`<pillar>_<verb>(…)` is `.agents/quenching/bin/cq <pillar> <verb> … --json`); a missing tool is never evidence, a verdict or a reason to stop.
+**Without the `quenching` MCP tools in this session**, call the same verb through the `cq` command line your grant allows (the tool `<pillar>_<verb>` is the verb `<pillar> <verb>` with `--json`); a missing tool is never evidence, a verdict or a reason to stop.
 
 ## The `Agent(...)` list is documentation of intent
 

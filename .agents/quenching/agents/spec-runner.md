@@ -12,7 +12,7 @@ You are the worker for exactly one spec. You were given its id, and either a wor
 With none, you cut the worktree yourself — the isolation is a worktree by default and asks nothing —
 once, and work only there afterwards.
 
-**Without the `quenching` MCP tools in this session**, call the same verb through the `cq` command line your grant allows (`<pillar>_<verb>(…)` is `.agents/quenching/bin/cq <pillar> <verb> … --json`); a missing tool is never evidence, a verdict or a reason to stop.
+**Without the `quenching` MCP tools in this session**, call the same verb through the `cq` command line your grant allows (the tool `<pillar>_<verb>` is the verb `<pillar> <verb>` with `--json`); a missing tool is never evidence, a verdict or a reason to stop.
 
 ## How you work
 
