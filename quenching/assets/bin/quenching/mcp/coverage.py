@@ -107,18 +107,22 @@ def _residue(path: tuple[str, ...], parser, tools: set) -> tuple[list[tuple[str,
     return ([path], True) if whole else (out, False)
 
 
-def cli_residue(prefix: tuple[str, ...]) -> list[tuple[str, ...]] | None:
+def cli_residue(prefix: tuple[str, ...],
+                mount: frozenset[str] | None = None) -> list[tuple[str, ...]] | None:
     """The fewest verb paths under a `cq <prefix…>` grant that no MCP tool covers: the shell
     grants a narrowed deploy keeps. `EXCEPTIONS` count as uncovered, `DENIED` is never reached,
     and an empty prefix is the whole router. `None` when the prefix names no verb path, so the
-    caller keeps the grant it cannot reason about."""
+    caller keeps the grant it cannot reason about. `mount` counts only the pillars the server
+    publishes, so a verb whose tools the mount hides stays uncovered and keeps its shell door."""
     from quenching.specs import mcp as specs_mcp
     tools = ({(row.pillar, *row.path) for row in catalog.CATALOG.values()}
              | {("specs", *path) for path in specs_mcp.COVERS.values()})
+    if mount is not None:
+        tools = {tool for tool in tools if tool[0] in mount}
     if not prefix:
         out: list[tuple[str, ...]] = [(verb,) for verb in (*ROUTER_VERBS, "mcp")]
         for pillar in catalog.router().PILLARS:
-            out.extend(path for path in cli_residue((pillar,)) or [] if path not in out)
+            out.extend(path for path in cli_residue((pillar,), mount) or [] if path not in out)
         return out
     if prefix[0] in ROUTER_VERBS or prefix == ("mcp",):
         return [prefix]

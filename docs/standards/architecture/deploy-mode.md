@@ -38,6 +38,7 @@ for deployment; this verb installs the tool surface. It never invokes a model, n
 | `.claude/skills/<name>/` | Claude bridge, byte copy of every skill | generated |
 | `.claude/agents/quenching-<name>.md` | Claude subagents | generated when the `claude` harness is selected |
 | `.opencode/agents/quenching-<name>.md` | OpenCode subagents, `mode: subagent` | generated when the `opencode` harness is selected |
+| `.github/agents/quenching-<name>.agent.md` | Copilot subagents, the native custom-agent format | generated when the repository declares `shared.projections: ["github"]` |
 | `.mcp.json` | Claude Code project MCP registration | target; the `quenching` entry merged when the `claude` harness is selected |
 | `opencode.json` | OpenCode MCP registration, subagent depth and sibling directories | target; the `quenching` entry, `experimental.subagent_depth` and the `external_directory` allows merged when the `opencode` harness is selected |
 | `CLAUDE.md` | legacy pointer to `AGENTS.md` | never created; removed only by `--prune-legacy` |
@@ -152,7 +153,9 @@ that names no verb is kept whole, so the narrowing never widens and never guesse
 it; `cliFallback: true`, a narrower mount (`specs`, `core`, a list) and a runtime that registers no
 server keep both doors. A narrower mount narrows no door but does filter the names: the MCP tools a
 grant enumerates are only the ones the mount publishes (`mcp_tools(names, mount)`), so a skill's
-`allowed-tools` and an agent's `tools:` never name a tool the server does not serve.
+`allowed-tools` and an agent's `tools:` never name a tool the server does not serve. The narrowed
+residue is computed against the mount too (`coverage.cli_residue(prefix, mount)`): a verb whose MCP
+tool the mount hides keeps its shell grant, so a pillar outside the mount never loses both doors.
 
 **The files stay the user's: merged, never owned.** Like `.claude/settings.json`, they are not in the
 manifest's `files`; the manifest records `mcp` and `mcpFiles`, and only the `quenching` entry is the
@@ -270,8 +273,10 @@ The source, `quenching/`, is written in the target dialect: `/quenching-<vertica
 header, the grants (and the OpenCode permissions) and the `cq.cmd` launcher; a source that still
 carries a plugin-root marker or a plugin-surface id is refused. It writes a target repository's
 generic layer — `.agents/skills/` (read by OpenCode), the payload under
-`.agents/quenching/`, the Claude bridge under `.claude/skills/` and the subagents under
-`.claude/agents/` and `.opencode/agents/` (§The target layout above). No Codex package, no `codex` harness ([ADR 0020](../../decisions/0020-remove-the-codex-executor-and-harness.md)) and no
+`.agents/quenching/`, the Claude bridge under `.claude/skills/`, the subagents under
+`.claude/agents/` and `.opencode/agents/`, and — when the repository declares
+`shared.projections: ["github"]` — the Copilot projection under `.github/agents/` (§The target
+layout above). No Codex package, no `codex` harness ([ADR 0020](../../decisions/0020-remove-the-codex-executor-and-harness.md)) and no
 user-level OpenCode distribution exist since [ADR 0017](../../decisions/0017-install-only-by-deploy.md).
 A target's `.claude/commands/` is the legacy layout, which `cq components migrate` converts; the
 `cq components translate` that once copied it into `.agents/` is retired, and a copy it wrote beside
@@ -369,6 +374,21 @@ order is the policy, and a `Bash` grant with no scope form → `bash: ask`. Only
 read-only agent never runs `cq git push` or `cq specs record` unasked. Per-agent permission sets
 beyond this mapping and hooks are not generated; they widen or reshape grants and stay a human
 decision.
+
+### Copilot agents
+
+With `github` in `shared.projections`, `cq deploy` writes each source agent to
+`.github/agents/quenching-<agent>.agent.md`: `name`, `description`, `tools`, `model`,
+`reasoning-effort`, `include-custom-instructions: true` and `target: github-copilot`. The tool list
+is the Claude grant re-spelled in the client's aliases — `read`, `search`, `edit`, `web`, `todo`,
+`agent`, `execute`, and `quenching/<tool>` (or `quenching/*` for a bare `Bash`) — so it is never
+wider than the grant the Claude projection carries; `Skill` has no alias and is dropped, and an
+unmapped head refuses the deploy (`ct-deploy-source`). `model` is an ordered band of the client's
+model ids derived from the source's `model`, with `effort` as `reasoning-effort`; the small tier is
+refused. `include-custom-instructions` carries the repository's `AGENTS.md` into the subagent, and
+`target: github-copilot` pins the schema. The key is read from the repository document only; an
+unknown value refuses with `ct-deploy-projection` before anything is written, and
+`.github/instructions/` is not written here — path-scoped instructions are another projection's.
 
 ## Verify
 
