@@ -963,6 +963,31 @@
       "python3"
     ],
     "mcpjson": true,
-    "permissions": []
+    "permissions": [
+      "Bash(./.agents/quenching/bin/cq:*)",
+      "Bash(.agents/quenching/bin/cq:*)",
+      "Bash(python .agents/quenching/bin/cq:*)",
+      "Bash(python3 .agents/quenching/bin/cq:*)",
+      "Edit(~/Projetos/quenching-slot-*/**)",
+      "Edit(~/Projetos/quenching.*/**)",
+      "Read(~/Projetos/quenching-slot-*/**)",
+      "Read(~/Projetos/quenching.*/**)",
+      "Write(~/Projetos/quenching-slot-*/**)",
+      "Write(~/Projetos/quenching.*/**)"
+    ]
+  },
+  "opencodeConfig": {
+    "subagentDepth": null,
+    "externalDirectory": [
+      "~/Projetos/quenching-slot-*",
+      "~/Projetos/quenching.*"
+    ],
+    "bash": [
+      ".agents/quenching/bin/cq",
+      ".agents/quenching/bin/cq *",
+      "./.agents/quenching/bin/cq *",
+      "python3 .agents/quenching/bin/cq *",
+      "python .agents/quenching/bin/cq *"
+    ]
   }
 }
