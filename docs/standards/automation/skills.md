@@ -188,6 +188,12 @@ also differ in what they cost: `disable-model-invocation: true` removes the desc
 always-on context entirely, while `user-invocable: false` saves nothing — the description still
 loads.
 
+**`argument-hint` is a string, and a bracketed hint is quoted.** `argument-hint: [flow] [input]`
+without quotes is a YAML flow sequence: this repository's parser keeps the literal, but a client that
+reads YAML receives a list where it expects the string it renders. Write
+`argument-hint: "[flow] [input]"`; `sk-frontmatter-strict` warns on an unquoted flow sequence in this
+field, so the defect is caught at the source rather than found as a missing hint in a client.
+
 ### What `disable-model-invocation` closes, and how we know
 
 The row above and the paragraph above both assert that the field stops a conductor. That claim
