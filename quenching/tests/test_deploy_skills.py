@@ -94,6 +94,12 @@ class Publication(unittest.TestCase):
         self.assertIn("`.claude/skills/` (published", built["seeds"]["AGENTS.md"])
         self.assertNotIn("`.agents/skills/` (source)", built["seeds"]["AGENTS.md"])
 
+    def test_a_generic_target_seed_names_no_bridge_it_does_not_have(self):
+        for harnesses in (("opencode",), ()):
+            seed = self.build(*harnesses)["seeds"]["AGENTS.md"]
+            self.assertIn("`.agents/skills/` (source", seed)
+            self.assertNotIn(".claude/skills", seed)
+
     def test_a_claude_only_target_without_own_skills_has_no_bridge_manifest(self):
         tree = self.build("claude")["tree"]
         self.assertNotIn(f"{CLAUDE_SKILLS}/.generated-files.json", tree)

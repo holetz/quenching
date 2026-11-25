@@ -197,10 +197,15 @@ def _agents_md(target: Path, dirs: tuple[str, ...]) -> str:
     else:
         skills = ("- Skills: `.agents/skills/` (source; a target's own skill is authored "
                   "here).\n")
-    return (
-        "# AGENTS.md\n\n"
+    interface = (
         "This repository uses quenching. The editable automation surface is `.agents/`; the\n"
         "Claude Code bridge under `.claude/skills/` is generated from it.\n\n"
+        if CLAUDE_SKILLS in dirs else
+        "This repository uses quenching. The editable automation surface is `.agents/`.\n\n"
+    )
+    return (
+        "# AGENTS.md\n\n"
+        + interface +
         "- Configuration: [`.agents/quenching.json`](.agents/quenching.json).\n"
         + knowledge + skills +
         "- Deployed runtime: `.agents/quenching/` (generated; do not edit).\n"

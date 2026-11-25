@@ -87,10 +87,12 @@ Fifteen terms to read first; each has its full entry under *Terms*.
   whatever language the repo declared), as opposed to a restatement, which repeats a fact the citing
   place neither owns nor can change.
 - [**Branch record**](standards/workflows/plan-git-record.md) — the `branch: {base, work}`
-- **Bridge** — the generated `.claude/skills/` copy of a target's own `.agents/skills/`; Claude Code does not discover the generic directory itself. A skill `cq deploy` generates is published per its own harness cover, and the bridge neither expects nor orphans it.
   frontmatter entry stamped by `/quenching-specs execute` once the work ref is resolved, write-once
   — for **any** branch that is not the repo's base (the one it cut and the one a human already had
   open alike), and for work done in place, where `work` equals `base`.
+- **Bridge** — the generated `.claude/skills/` copy of a target's own `.agents/skills/`; Claude
+  Code does not discover the generic directory itself. A skill `cq deploy` generates is published
+  per its own harness cover, and the bridge neither expects nor orphans it.
 - [**Bundle density**](standards/quality/bundle-verification.md) — the figures
   `/quenching-knowledge status` prints alongside conformance (concept docs per home, empty homes
   shown as `0`, glossary size, which `standards/` subjects hold anything), carrying **no finding
