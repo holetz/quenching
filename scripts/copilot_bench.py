@@ -123,24 +123,12 @@ HYPOTHESES = (
      "protocol": "—"},
 )
 
-NOT_MEASURED = "não medido por esta build"
-# Which task of the spec fills each section; a section not yet filled says so instead of guessing.
-SECTION_TASK = {"deploy": "1.2", "mcp": "1.3", "skills": "1.4", "clients": "1.5",
-                "harness": "1.6"}
-
-
 class BenchRefusal(ValueError):
     """The bench cannot measure what was asked; exit 2 with a code and a reason."""
 
     def __init__(self, code: str, message: str):
         super().__init__(message)
         self.code, self.message = code, message
-
-
-def not_measured(section: str) -> dict:
-    """A section `tasks 1.2..1.6` has not filled yet, honest about it and claiming no verdict."""
-    return {"state": "not-measured", "reason": f"task {SECTION_TASK[section]}",
-            "hypotheses": {}}
 
 
 # --- 1.2 · the disposable target --------------------------------------------------------------
@@ -575,8 +563,48 @@ def measure_clients(root: pathlib.Path) -> dict:
 
 
 # --- 1.6 · the harness refusal ----------------------------------------------------------------
-def measure_harness(root: pathlib.Path) -> dict:
-    return not_measured("harness")
+ACCEPTED_HARNESSES = ("claude", "codex", "opencode", "none")
+REFUSAL_CODE = "ct-deploy-harness"
+
+
+def run_deploy_check(target: pathlib.Path, harness: str) -> tuple[int, dict]:
+    done = subprocess.run([sys.executable, str(SOURCE_CQ), "deploy", "--target", str(target),
+                           "--modules", "core", "--harness", harness, "--check", "--json"],
+                          capture_output=True, text=True, timeout=300)
+    try:
+        payload = json.loads(done.stdout or "{}")
+    except ValueError:
+        payload = {}
+    return done.returncode, payload
+
+
+def measure_harness(_root: pathlib.Path) -> dict:
+    """Which harnesses the deploy accepts, and the refusal `--harness copilot` must keep."""
+    scratch = pathlib.Path(tempfile.mkdtemp(prefix="quenching-copilot-bench-deploy-"))
+    atexit.register(shutil.rmtree, str(scratch), True)
+    accepted, wrongly_refused = {}, []
+    for harness in ACCEPTED_HARNESSES:
+        code, payload = run_deploy_check(scratch, harness)
+        refused = payload.get("code") == REFUSAL_CODE
+        accepted[harness] = {"exit": code, "refused": refused}
+        if refused:
+            wrongly_refused.append(harness)
+    code, payload = run_deploy_check(scratch, "copilot")
+    copilot = {"exit": code, "code": payload.get("code"), "message": payload.get("message")}
+    refused = code == 2 and copilot["code"] == REFUSAL_CODE
+    if refused and not wrongly_refused:
+        verdict = CONFIRMED
+    elif not refused:
+        verdict = REFUTED
+    else:
+        verdict = REFORMULATED
+    observation = (f"`--harness copilot` sai {code}"
+                   f"{'' if not copilot['code'] else ' com ' + copilot['code']}; aceitos: "
+                   + ", ".join(f"{name} (exit {accepted[name]['exit']})" for name in ACCEPTED_HARNESSES)
+                   + ("" if not wrongly_refused else
+                      f"; recusados por engano: {', '.join(wrongly_refused)}"))
+    return {"state": "present", "accepted": accepted, "copilot": copilot,
+            "hypotheses": {"H13": {"verdict": verdict, "observation": observation}}}
 
 
 def measure_sections(root: pathlib.Path, deploy: dict | None = None) -> dict:
@@ -598,7 +626,7 @@ def matrix(sections: dict) -> list[dict]:
     for hypothesis in HYPOTHESES:
         row = claimed.get(hypothesis["id"]) or {}
         rows.append({**hypothesis,
-                     "observation": row.get("observation") or NOT_MEASURED,
+                     "observation": row.get("observation") or f"live: {hypothesis['protocol']}",
                      "verdict": row.get("verdict") or UNMEASURED})
     return rows
 
