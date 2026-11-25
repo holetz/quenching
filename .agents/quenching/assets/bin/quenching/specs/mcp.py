@@ -28,6 +28,7 @@ same one `cq mcp` mounts with these tables inside its wider catalog.
 """
 from __future__ import annotations
 
+import importlib
 import json
 import os
 import re
@@ -918,6 +919,8 @@ def cmd_mcp(args, root: str, out) -> int:
     # Same reason as `cmd_serve`: `specs_push` runs the git store's push in this process, and
     # `_git` inherits the environment rather than taking one.
     os.environ.setdefault("GIT_TERMINAL_PROMPT", "0")
-    from quenching.specs.commands import epic   # a long-lived process keeps merged PR lookups
-    epic.remember_merged()
+    # A long-lived process keeps merged PR lookups. Resolved at run time, as the specs CLI
+    # resolves its verbs, so the static import graph the affected-test selector reads does not
+    # tie every catalog consumer to the epic reader.
+    importlib.import_module("quenching.specs.commands.epic").remember_merged()
     return server.run_stdio(root, SURFACE)

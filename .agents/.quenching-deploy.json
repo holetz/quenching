@@ -243,7 +243,7 @@
 
     ".agents/quenching/assets/bin/quenching/mcp/catalog.py": "208b2821ff5b7e8b003812ec6b3b754eb0807489fd88b9368b8867f31885e96a",
 
-    ".agents/quenching/assets/bin/quenching/mcp/cli.py": "a8d7800764470851f11266b6e03b531e786a04bfcd220eb423fcea75988ab30f",
+    ".agents/quenching/assets/bin/quenching/mcp/cli.py": "f816e0eda4c88d2b07f461d75f3a2d9bc4ab91a6ada69e16588e3a75df3c616a",
 
     ".agents/quenching/assets/bin/quenching/mcp/coverage.py": "97a0b30a0241225f33455ce1e76f2f5556ffa5e009b73308dae9688c69f5774f",
 
@@ -425,7 +425,7 @@
 
     ".agents/quenching/assets/bin/quenching/specs/config.py": "3b21d2a35ccbe3b3e41361c8f0e5e92ca462f977a7ca34fee81677a88a118763",
 
-    ".agents/quenching/assets/bin/quenching/specs/mcp.py": "ae5383ac3f57bf7e154facb99d73a7b55b19d7dba3f9be55b44f5f69ab98e0f4",
+    ".agents/quenching/assets/bin/quenching/specs/mcp.py": "073ffc1266a7887834869fd9d3393d206735d3996b13beb9621eee2960627360",
 
     ".agents/quenching/assets/bin/quenching/specs/members.py": "37199b9fcac8eb5a958e9e3e8441d1c8432542aa908d5fa6607690e7ed31ad83",
 
