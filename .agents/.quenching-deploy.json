@@ -987,14 +987,20 @@
       "Bash(./.agents/quenching/bin/cq:*)",
       "Bash(.agents/quenching/bin/cq:*)",
       "Bash(python .agents/quenching/bin/cq:*)",
-      "Bash(python3 .agents/quenching/bin/cq:*)"
+      "Bash(python3 .agents/quenching/bin/cq:*)",
+      "Edit(~/Projects/quenching-slot-*/**)",
+      "Edit(~/Projects/quenching.*/**)",
+      "Read(~/Projects/quenching-slot-*/**)",
+      "Read(~/Projects/quenching.*/**)",
+      "Write(~/Projects/quenching-slot-*/**)",
+      "Write(~/Projects/quenching.*/**)"
     ]
   },
   "opencodeConfig": {
     "subagentDepth": null,
     "externalDirectory": [
-      "~/Projetos/quenching-slot-*",
-      "~/Projetos/quenching.*"
+      "~/Projects/quenching-slot-*",
+      "~/Projects/quenching.*"
     ],
     "bash": [
       ".agents/quenching/bin/cq",

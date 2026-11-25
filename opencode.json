@@ -18,8 +18,8 @@
   },
   "permission": {
     "external_directory": {
-      "~/Projetos/quenching-slot-*": "allow",
-      "~/Projetos/quenching.*": "allow"
+      "~/Projects/quenching-slot-*": "allow",
+      "~/Projects/quenching.*": "allow"
     },
     "bash": {
       ".agents/quenching/bin/cq": "allow",
