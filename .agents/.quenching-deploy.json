@@ -175,7 +175,7 @@
 
     ".agents/quenching/assets/bin/quenching/design/model.py": "c5eadfaabaad3e3959cd77e7d58fd19b007ecac8ff2ed026f73e774efe4bcb42",
 
-    ".agents/quenching/assets/bin/quenching/git/__init__.py": "96574fdf7119610e8e64c03541f4af3f212f8bdd97d39e4611fd3200b825253d",
+    ".agents/quenching/assets/bin/quenching/git/__init__.py": "f801735c6b4253bb279276c8737b032f20d2e2503ea271fcf69d3d35a2f428f0",
 
     ".agents/quenching/assets/bin/quenching/git/audit.py": "559437c4cdb137f479c23526026e3ffdd54778057cccf332ac19f75a5691bf2c",
 
@@ -197,7 +197,7 @@
 
     ".agents/quenching/assets/bin/quenching/git/preflight.py": "a349bf6086336b559341c84c3b92d97ff9139799b284685677315be70598cd91",
 
-    ".agents/quenching/assets/bin/quenching/git/prune.py": "2674ba0be750de026c1438cd6b500cc11990fdb1820c786d48ae8666ffa05863",
+    ".agents/quenching/assets/bin/quenching/git/prune.py": "ef3d8d85ec81a0030f7916194a54f8afb258d7a9079fe30d7e70e116e89207cc",
 
     ".agents/quenching/assets/bin/quenching/git/pull.py": "b85c2bede56c23d18d914608d19e02f4a8d09275a463aea143134cd6bd68828c",
 
@@ -205,15 +205,15 @@
 
     ".agents/quenching/assets/bin/quenching/git/refresh.py": "b90f4c71c87c129b4e4c8827795d23d3741c2ee75da6d44df7e88de028e68e79",
 
-    ".agents/quenching/assets/bin/quenching/git/slots.py": "8923994ca4bb1d19ffdde2506d11b556c61013bd9f6d707db6bee9538ac551d4",
+    ".agents/quenching/assets/bin/quenching/git/slots.py": "80b328bbf2ca779831eedd9947df6985701b5425d0967dce01772f56ef840fed",
 
     ".agents/quenching/assets/bin/quenching/git/slugs.py": "810953ab971b319caf6fa84617afff9a7cbaa0589585ac163314b6e0392c7127",
 
-    ".agents/quenching/assets/bin/quenching/git/stale.py": "ee63ce27b4c95eb650918f77da2d2e8a74d0b3fe3301487a117cab9fca44ca9c",
+    ".agents/quenching/assets/bin/quenching/git/stale.py": "9ae77cfb86b2070b0a17d56b0598366d1d2163f6d4d84f4facc5f48f27ec1d78",
 
     ".agents/quenching/assets/bin/quenching/git/state.py": "986789548179bef9d5102f87f76f6402baf4f94e52e38172b4ef68e8344b7175",
 
-    ".agents/quenching/assets/bin/quenching/git/worktree.py": "4bcd1a1730af7b3b650c92e62c6fd7e0f647729d553d47aef26acb91d2df846c",
+    ".agents/quenching/assets/bin/quenching/git/worktree.py": "a685e67c1e756e8b298e6417c7f252d5f7b1cd0140882712c946f05460af1d61",
 
     ".agents/quenching/assets/bin/quenching/knowledge/checks.py": "703d285f6ed49faa860a32c90dfafbd6f41f0c829cb5e8d7347fdeb6f13be2bd",
 
@@ -643,7 +643,7 @@
 
     ".agents/quenching/references/git/conventions.md": "0f00da694e9d3fdc7110a3865a985529bd29add453dc056876dac05d0d6f3bcc",
 
-    ".agents/quenching/references/git/isolation.md": "09b1f7519ccc6253f3ccd642ad4d6427f0fccac289de0dfbdc802482622ea99d",
+    ".agents/quenching/references/git/isolation.md": "503a6427ffe717c252fef47a827d28f84b6957e84b7824c83a051647f9c83092",
 
     ".agents/quenching/references/git/merge.md": "6ac6b1345129b15b8b8e8bd76f6fbdc2efd26ba327dbfe3077365c871c8b5e83",
 
@@ -665,7 +665,7 @@
 
     ".agents/quenching/references/specs-align/conformance.md": "d74789417677580fe04ba6cfba05ce647e7b9f7d644ed85ea7ffa3d7ddff564d",
 
-    ".agents/quenching/references/specs-align/plugin-configuration.md": "46f26a5f72b473719d2109fe952be4cc31bfd3d8761a1963a5cb4b114258324f",
+    ".agents/quenching/references/specs-align/plugin-configuration.md": "5418ecc80e75687e26e2f509bdfa7d51a1eb4c83a22bb0beeac77fdc97b8958d",
 
     ".agents/quenching/references/specs-conclude/abandoned.md": "7067f28b0035550d958bdced006af5f55b6794293594ac1f7b6adec82da31cd4",
 
