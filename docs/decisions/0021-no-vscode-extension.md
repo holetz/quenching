@@ -23,7 +23,8 @@ the client still gets no extension of its own — and no agent plugin — and wh
 
 - The client measured is VS Code Insiders 1.149.0-insider with `GitHub.copilot-chat`
   0.77.2026112501. It reads `.claude/skills` and `.agents/skills` (H1), `.claude/agents` and
-  `.github/agents` (H2), `.claude/settings.json` hooks (H4) and `.mcp.json` natively.
+  `.github/agents` (H2), `.claude/settings.json` hooks — H4, confirmed on Linux, its timeout
+  fail-open still `unmeasured-live` — and `.mcp.json` natively.
 - The only capability in the original problem that the deployed surface does not reach is a
   persistent status bar with the current spec, the slot, the cost and the quota. Everything else —
   skills, agents, MCP, hooks, rules, settings, tasks, slot projection, worktree creation — is
@@ -34,8 +35,8 @@ the client still gets no extension of its own — and no agent plugin — and wh
 
 ## Decision
 
-- **quenching publishes no VS Code extension.** The status bar is presentation of data `cq` and
-  the tasks already expose; a thin extension would add a publisher, a VSIX, an editor test
+- **quenching publishes no VS Code extension.** The status bar is presentation of data `cq`
+  already exposes; a thin extension would add a publisher, a VSIX, an editor test
   harness, a release owner and a version lockstep — a second release surface — without a measured
   demand that pays for it. The gap is accepted, not closed.
 - **quenching publishes no agent plugin.** A plugin bundles skills, agents, MCP and hooks that the
