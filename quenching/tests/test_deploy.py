@@ -17,6 +17,7 @@ try:
 except ModuleNotFoundError:
     sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
     import _paths  # noqa: F401
+from quenching.common import access
 from quenching.common.deploy import dumps_hash_manifest
 from quenching.deploy import translate
 from quenching.deploy import cli as deploy_cli
@@ -700,9 +701,11 @@ class Deploy(unittest.TestCase):
         wanted = [f"{os.path.dirname(primary)}/{os.path.basename(primary)}-slot-*", f"{primary}.*"]
         wanted = ["~" + p[len(home):] if p.startswith(home + "/") else p for p in wanted]
         self.assertEqual({p: "allow" for p in wanted}, opencode["permission"]["external_directory"])
+        self.assertEqual({p: "allow" for p in access.OPENCODE_BASH},
+                         opencode["permission"]["bash"])
         manifest = json.loads((self.target / ".agents/.quenching-deploy.json").read_text())
-        self.assertEqual({"subagentDepth": 4, "externalDirectory": wanted},
-                         manifest["opencodeConfig"])
+        self.assertEqual({"subagentDepth": 4, "externalDirectory": wanted,
+                          "bash": list(access.OPENCODE_BASH)}, manifest["opencodeConfig"])
         self.assertEqual([], self.run_deploy("--check")[1]["changes"])
 
     def test_check_keeps_the_patterns_another_machine_recorded(self):
