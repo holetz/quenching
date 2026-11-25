@@ -3,8 +3,9 @@
     cq [--root PATH] mcp
 
 The server is the references resources plus the catalog of CLI verbs (with the specs tools when
-the `specs` pillar is present). The workspace is the cwd it is launched in, or `--root`; it is
-never a tool argument. `cq specs mcp` stays the specs-only mount of the same core.
+the `specs` pillar is present). The workspace is the cwd it is launched in, or `--root`; one call
+names another tree with its `root` argument. `cq specs mcp` stays the specs-only mount of the same
+core.
 """
 from __future__ import annotations
 

@@ -343,7 +343,8 @@ It exposes a closed catalog of available CLI verbs, including the specs tools be
 follow `<pillar>_<verb>[_<subverb>]` (`components_read`, `git_pr_create`); `tools/list` reports
 which are available. Schemas come from each verb's parser. An absent pillar contributes no tool.
 The `read`, `write` and `external` classes describe effects through MCP annotations, without
-adding grants. The workspace is the launch cwd or launch-time `--root`, never a tool argument.
+adding grants. The workspace is the launch cwd or launch-time `--root`; one call names another tree
+with `root`, which every tool takes.
 
 Run a released version without installing the plugin manually:
 
