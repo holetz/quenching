@@ -124,7 +124,12 @@ def _show(args: dict) -> list[str]:
         raise ToolArgs("`tasks` must be a list of at most 20 task ids")
     for task in tasks:
         argv += ["--task", _text({"task": task}, "task", True)]
-    return argv
+    full = args.get("full", False)
+    if not isinstance(full, bool):
+        raise ToolArgs("`full` must be true or false")
+    if full and tasks:
+        raise ToolArgs("`full` asks for the whole document and `tasks` for a slice — give one")
+    return argv + (["--full"] if full else [])
 
 
 def _section(args: dict) -> list[str]:
@@ -176,9 +181,11 @@ TOOLS: dict[str, tuple] = {
         _schema({"spec": SPEC}, ["spec"]), _status, None),
     "specs_show": (
         "One spec's map, or only the named tasks (`tasks`: ids) with their files, pattern and "
-        "verify. Never the whole document.",
+        "verify, or the whole document with `full` (never together with `tasks`; above the "
+        "ceiling it is cut and flagged `truncated`).",
         _schema({"spec": SPEC, "tasks": {"type": "array", "items": {"type": "string"},
-                                          "maxItems": 20}}, ["spec"]), _show, None),
+                                          "maxItems": 20},
+                 "full": {"type": "boolean"}}, ["spec"]), _show, None),
     "specs_section": (
         "Read spec sections: `headings` (comma-separated canonical headings) or `moment` "
         "(decision, build, close); `scope` narrows ## Handoff. An answer above the ceiling is cut "
