@@ -305,10 +305,148 @@ def _cost_opencode(args) -> int:
     return _print(out, args, how)
 
 
+
+def _copilot_asked(args) -> bool:
+    """Whether this call is about the Copilot store: a home named, its session id, or the running client."""
+    from quenching.session import copilot
+    if getattr(args, "copilot_home", None):
+        return True
+    if getattr(args, "transcript", None):
+        try:
+            return args.transcript in copilot.sessions(copilot.home(None))
+        except copilot.CopilotError:
+            return False
+    return copilot.wants_copilot(None, None)
+
+
+def _copilot_rows(rows: list, agents: dict) -> tuple[list, list]:
+    """(groups by agent and model, byModel) with `input` the fresh tokens and `maxWindow` the prompt total."""
+    from quenching.session import copilot
+    groups: dict = {}
+    for request in rows:
+        agent = bare_agent(copilot.agent_name(request.agent_id, agents))
+        g = groups.setdefault((agent, request.model), {
+            "agentType": agent, "model": request.model, "sessions": 1, "requests": 0,
+            "input": 0, "cacheRead": 0, "cacheWrite": 0, "output": 0, "reasoning": 0,
+            "maxWindow": 0, "_nano": 0, "_creditsReported": True})
+        g["requests"] += 1
+        g["input"] += request.fresh
+        g["cacheRead"] += request.cache_read
+        g["cacheWrite"] += request.cache_write
+        g["output"] += request.output
+        g["reasoning"] += request.reasoning
+        g["maxWindow"] = max(g["maxWindow"], request.input)
+        if request.nano_aiu is None:
+            g["_creditsReported"] = False
+        else:
+            g["_nano"] += request.nano_aiu
+    out = sorted(groups.values(), key=lambda g: (g["agentType"], g["model"]))
+    models: dict = {}
+    for g in out:
+        m = models.setdefault(g["model"], {"model": g["model"], "sessions": 1, "requests": 0, "input": 0,
+                                           "cacheRead": 0, "cacheWrite": 0, "output": 0, "reasoning": 0,
+                                           "_nano": 0, "_creditsReported": True})
+        for key in ("requests", "input", "cacheRead", "cacheWrite", "output", "reasoning"):
+            m[key] += g[key]
+        m["_nano"] += g["_nano"]
+        m["_creditsReported"] = m["_creditsReported"] and g["_creditsReported"]
+    from quenching.session import pricing
+    for row in [*out, *models.values()]:
+        reported, nano = row.pop("_creditsReported"), row.pop("_nano")
+        row["aiCredits"] = pricing.aiu(nano) if reported else None
+    return out, sorted(models.values(), key=lambda m: m["model"])
+
+
+def _copilot_agents(rows: list, agents: dict, budgets: dict) -> list:
+    """Each agent's prompt peak against its role budget; unknown topology or role stays unmeasured."""
+    from quenching.session import copilot
+    from quenching.session.commands.context import ROLES
+    peaks: dict = {}
+    for request in rows:
+        peaks[request.agent_id] = max(peaks.get(request.agent_id, 0), request.input)
+    out = []
+    for agent_id, peak in peaks.items():
+        name = bare_agent(copilot.agent_name(agent_id, agents))
+        role = "main" if agent_id is None else ROLES.get(bare_agent(name), "unknown")
+        budget = budgets.get(role)
+        out.append({"agentId": agent_id if agent_id else "main", "agentType": name, "role": role,
+                    "peakContext": peak, "budget": budget,
+                    "exceeded": peak > budget if budget is not None else None})
+    return sorted(out, key=lambda row: row["agentId"])
+
+
+def _copilot_scope(rows: list, agents: dict, descendants_of: str | None, nested: bool,
+                   latest: bool, session: str) -> tuple:
+    """(kept requests, refusal): a subtree of the launch tree, parented agents, or the last orchestrator's."""
+    from datetime import datetime, timezone
+    from quenching.session import copilot
+    if latest:
+        found = [agent_id for agent_id, row in agents.items()
+                 if bare_agent(row.get("name") or "") in ("spec-orchestrator", "orchestrator")]
+        if not found:
+            return [], {"code": "se-no-orchestrator", "message":
+                        f"--latest-orchestrator: no orchestrator agent under session {session}"}
+        floor = datetime.min.replace(tzinfo=timezone.utc)
+        descendants_of = max(found, key=lambda agent_id: agents[agent_id].get("start") or floor)
+    if descendants_of:
+        if descendants_of not in agents:
+            return [], {"code": "se-unknown-agent", "message":
+                        f"--descendants-of: agent {descendants_of} is not in the launch tree of {session}"}
+        keep = set(copilot.descendant_ids(agents, descendants_of))
+        return [r for r in rows if r.agent_id in keep], None
+    if nested:
+        keep = {agent_id for agent_id, row in agents.items() if row.get("parent")}
+        return [r for r in rows if r.agent_id in keep], None
+    return rows, None
+
+
+def _cost_copilot(args) -> int:
+    """The tree of a Copilot session from the client's ledger and its event log."""
+    from quenching.session import copilot
+    from quenching.session.commands.context import effective_budgets
+    if getattr(args, "self_marker", None):
+        return refuse({"code": "se-copilot-self", "message":
+                       "--self has no Copilot marker; scope with --descendants-of <agent id> or "
+                       "--latest-orchestrator"}, args.json)
+    since, bad = _since(args)
+    if bad:
+        return refuse(bad, args.json)
+    home = copilot.home(getattr(args, "copilot_home", None))
+    try:
+        session, how = copilot.resolve(home, getattr(args, "transcript", None), Path.cwd().resolve())
+        agents, facts = copilot.events(home, session)
+        by_session, anomalies = copilot.requests(home, [session], since)
+    except copilot.CopilotError as error:
+        return refuse({"code": error.code, "message": error.message}, args.json)
+    except OSError as error:
+        return refuse({"code": "se-unreadable-transcript", "message": str(error)}, args.json)
+    rows, refusal = _copilot_scope(by_session[session], agents, getattr(args, "descendants_of", None),
+                                   getattr(args, "nested", False),
+                                   getattr(args, "latest_orchestrator", False), session)
+    if refusal:
+        return refuse(refusal, args.json)
+    if not rows:
+        return refuse({"code": "se-no-requests", "message": f"no Copilot request with usage under {session}"},
+                      args.json)
+    budgets = effective_budgets(Path.cwd())
+    groups, models = _copilot_rows(rows, agents)
+    measured = _copilot_agents(rows, agents, budgets)
+    out = {"groups": groups, "byModel": models, "agents": measured,
+           "overBudget": [a["agentId"] for a in measured if a["exceeded"]],
+           "anomalies": [*facts.pop("anomalies", []), *anomalies],
+           "session": {"id": session, "client": facts.get("client"), "producer": facts.get("producer"),
+                       "cwd": facts.get("cwd"), "gitRoot": facts.get("gitRoot")}}
+    out.update(ok=True, subagents=f"{copilot.store(home)}#{session}", resolvedBy=how)
+    if getattr(args, "usd", False):
+        price_rows(out)
+    return _print(out, args, how)
+
 def cmd_cost(args) -> int:
     from quenching.session.opencode_cost import wants_opencode_cost  # circular at module level
     if wants_opencode_cost(args.transcript, getattr(args, "opencode_db", None)):
         return _cost_opencode(args)
+    if _copilot_asked(args):
+        return _cost_copilot(args)
     directory, how = subagents_dir(args.transcript)
     if directory is None:
         code = ("se-ambiguous-session" if how.startswith("several sessions")
