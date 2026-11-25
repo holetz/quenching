@@ -560,7 +560,7 @@ def _retire(args) -> int:
 
 
 def cmd_worktree(args) -> int:
-    if args.action in ("acquire", "release", "slots"):
+    if args.action in ("acquire", "release", "slots", "workspace"):
         from quenching.git import slots
         return getattr(slots, args.action)(args)
     if args.action == "add":
