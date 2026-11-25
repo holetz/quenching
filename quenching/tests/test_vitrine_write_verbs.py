@@ -17,7 +17,7 @@ SOURCES = {
 READ = {"schedule", "list", "status", "show", "next", "parallel", "find", "validate", "config",
         "doctor", "export", "mcp", "serve", "estimate", "claim"}
 # Reads by default, writes under `--write`.
-CONDITIONAL = {"section"}
+CONDITIONAL = {"section", "delegate"}
 
 
 def write_set(source: Path) -> set[str]:
@@ -49,6 +49,12 @@ class VitrineWriteVerbs(unittest.TestCase):
             with self.subTest(vitrine=name):
                 self.assertRegex(text, r"""verb === ['"]section['"] && /\(\?:\^\|\\s\)--write\\b/""")
 
+
+    def test_delegate_weighs_as_a_write_only_under_send_flag(self):
+        for name, path in SOURCES.items():
+            text = path.read_text(encoding="utf-8")
+            with self.subTest(vitrine=name):
+                self.assertRegex(text, r"""verb === ['"]delegate['"] && /\(\?:\^\|\\s\)--send\\b/""")
 
 if __name__ == "__main__":
     unittest.main()
