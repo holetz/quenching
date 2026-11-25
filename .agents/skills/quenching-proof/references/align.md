@@ -19,7 +19,7 @@ The common front contract lives in
 keep the layer, fixture, measurement and gate evidence separate from the shared mold.
 
 Set `TARGET_ROOT` to the supplied argument, or to `.` when the argument is omitted, and pass that
-same root to every `.agents/quenching/bin/cq proof` call. Resolve `cq` per
+same root to every `proof_*` call as `root`. Resolve `cq` per
 [tool-resolution.md](.agents/quenching/references/align/tool-resolution.md) and branch
 on exit code and JSON: `0` is clean, `1` carries findings, and `2` is a refusal.
 
@@ -29,8 +29,8 @@ on exit code and JSON: `0` is clean, `1` carries findings, and `2` is a refusal.
 
 Run the verifier before reading the proof tree:
 
-```bash
-.agents/quenching/bin/cq --root "$TARGET_ROOT" proof doctor --json
+```text
+proof_doctor(root="$TARGET_ROOT")
 ```
 
 When it exits `0` with no findings, report "proof conformant, nothing to align" and stop. Do not
@@ -45,8 +45,8 @@ has authorized the inventory stage below.
 
 Only after exit `1`, run the single inventory pass:
 
-```bash
-.agents/quenching/bin/cq --root "$TARGET_ROOT" proof inventory --json
+```text
+proof_inventory(root="$TARGET_ROOT")
 ```
 
 Read `proof-align/bands.md`, `proof-align/gate-contract.md`, `proof-align/layer-contract.md`, and
@@ -64,7 +64,7 @@ Build one plan grouped by the three bands in `bands.md`:
 | Band | Finding codes | Disposition |
 | --- | --- | --- |
 | Mechanical | none in the current contract | report that no generated proof artifact is owned by this band |
-| Structural | `pf-unmarked`, `pf-stop-first`, `pf-loose-fixture`, `pf-fat-conftest`, `pf-no-floor`, and conditionally `pf-order-unproven` | make bounded gate or fixture-ownership edits; use `.agents/quenching/bin/cq proof ratchet --raise --json` only when the measured surface is unchanged and an artifact exists |
+| Structural | `pf-unmarked`, `pf-stop-first`, `pf-loose-fixture`, `pf-fat-conftest`, `pf-no-floor`, and conditionally `pf-order-unproven` | make bounded gate or fixture-ownership edits; use `proof_ratchet(raise_floor=true)` only when the measured surface is unchanged and an artifact exists |
 | Judgement | `pf-unlayered`, `pf-empty-layer`, `pf-unmeasured-surface`, `pf-no-ci`, `pf-untested-entrypoint`, `pf-cost-undeclared`, `pf-temp-shared`, `pf-scope-wide`, `pf-task-wide`, and conditional `pf-order-unproven` | report evidence and the command that closes it; never drive the change |
 
 When no layers are declared, keep every unlayered test as judgement residue and do not infer a
@@ -91,8 +91,8 @@ Under the authorization, apply `pf-unmarked`, `pf-stop-first`, `pf-loose-fixture
 only when `bands.md`'s non-blocking condition is satisfied. Raise a floor only after the surface
 scope is unchanged and the target has produced the artifact the ratchet reads:
 
-```bash
-.agents/quenching/bin/cq --root "$TARGET_ROOT" proof ratchet --raise --json
+```text
+proof_ratchet(raise_floor=true, root="$TARGET_ROOT")
 ```
 
 Read the result by the codes in `findings`, not by the exit code alone:
@@ -113,8 +113,8 @@ not call the ratchet; state the reason in the report.
 
 After edits, run the same probe again:
 
-```bash
-.agents/quenching/bin/cq --root "$TARGET_ROOT" proof doctor --json
+```text
+proof_doctor(root="$TARGET_ROOT")
 ```
 
 Distinguish remaining judgement residue from a failed structural convergence. Do not loop an empty
@@ -142,5 +142,5 @@ next target-owned action for every judgement finding.
   their own confirmation.
 - `pf-unmeasured-surface` defers `pf-no-floor`'s write in the same pass.
 - Judgement findings are report-only, and no subcommand runs the target suite.
-- The closing verifier is the same `.agents/quenching/bin/cq proof doctor --json` program as the probe.
+- The closing verifier is the same `proof_doctor()` program as the probe.
 - The proof align's report is the only run record; no sweep log is written.

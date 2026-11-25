@@ -377,6 +377,32 @@ def agent_grants(root: Path) -> QuestionResult:
                           {"findings": findings} if findings else {})
 
 
+_CI_QUESTION = "Does the merge still demand green CI, or has the project declared otherwise?"
+
+
+def ci_enforcement(root: Path) -> QuestionResult:
+    """Report `shared.ci.enforce`: `present` when CI is required (the default), `relaxed` when the
+    project layer declares `when-present` or `off`, which lets a merge run on the local gate
+    alone. A declaration in the user or local layer is named as ignored, never obeyed."""
+    from quenching.common.config import (_load_local_layer, _load_user_layer, find_repo_root)
+    from quenching.config import ci
+
+    enforce, warnings = ci.read(str(root))
+    ignored = [name for name, layer in (("local", _load_local_layer(find_repo_root(str(root)))),
+                                         ("user", _load_user_layer()))
+               if isinstance(layer["namespaces"].get("shared"), dict)
+               and "ci" in layer["namespaces"]["shared"]]
+    details: dict[str, object] = {"enforce": enforce}
+    if warnings:
+        details["warnings"] = warnings
+    if ignored:
+        details["ignoredLayers"] = ignored
+    return QuestionResult("ci-enforcement", _CI_QUESTION,
+                          "present" if enforce == "required" else "relaxed",
+                          ({"path": ".agents/quenching.json", "key": "shared.ci.enforce"},),
+                          details)
+
+
 def build_report(root: str) -> SecurityReport:
     """Build all security answers from static files under ``root``."""
     repository = Path(root).resolve()
@@ -386,5 +412,6 @@ def build_report(root: str) -> SecurityReport:
         advisory_dependency_configuration(repository),
         access_ownership(repository),
         agent_grants(repository),
+        ci_enforcement(repository),
     )
     return SecurityReport(str(repository), questions)

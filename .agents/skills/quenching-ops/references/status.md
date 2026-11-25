@@ -31,8 +31,8 @@ The payload and target tree are defined by
 
 Set `TARGET_ROOT` to the supplied argument, or to `.` when the argument is omitted, and run:
 
-```bash
-.agents/quenching/bin/cq --root "$TARGET_ROOT" ops status --json
+```text
+ops_status(root="$TARGET_ROOT")
 ```
 
 On exit `2`, report the refusal and every missing configuration key exactly as returned. Do not

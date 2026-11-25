@@ -11,8 +11,8 @@ without owning a security tree, selecting a target policy or repairing a finding
 [tool-resolution.md](.agents/quenching/references/align/tool-resolution.md)
 §Resolving the tool. Set `TARGET_ROOT` to `$ARGUMENTS`, or `.` when omitted, and run:
 
-```bash
-.agents/quenching/bin/cq --root "$TARGET_ROOT" security --json
+```text
+security_audit(root="$TARGET_ROOT")
 ```
 
 Branch on the JSON and exit code: `0` is a measured report, `1` carries reported observations, and
@@ -24,7 +24,7 @@ complete read model and do not invoke a write-capable command.
 
 ### 1. Read the status payload
 
-Re-read the payload using the `.agents/quenching/bin/cq security --json` invocation above. Branch on its exit code and
+Re-read the payload using the `security_audit` call above. Branch on its exit code and
 preserve its measured, refused or not-measured state.
 
 **Done when:** the payload is captured, or the refusal is preserved with its reason.
@@ -40,6 +40,7 @@ Report one compact table:
 | `advisory-dependency-configuration` | `present`/`missing`/`refused` | recognized advisory configuration paths |
 | `access-ownership` | `present`/`missing` | recognized ownership declaration paths, never owner values |
 | `agent-grants` | `present`/`missing`/`not-measured`/`refused` | `.claude/settings.json` and `.mcp.json`, each finding's code and value |
+| `ci-enforcement` | `present`/`relaxed` | `shared.ci.enforce` and any user or local layer that declares it (ignored); `relaxed` means a merge can rest on the local gate alone |
 
 Then report the payload's `controls` block — each catalog control id, its requirement ids with `present`, `missing`, `not-measured`, `refused` or `retired`, and the evidence paths. `present` is candidate evidence, never conformance; the block never changes `ok` or the exit code.
 
