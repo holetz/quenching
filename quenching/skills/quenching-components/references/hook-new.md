@@ -73,7 +73,7 @@ python3 -m json.tool .claude/settings.json          # the merge left valid JSON
 echo '{"hook_event_name":"<other>"}' | python3 .claude/hooks/<name>.py   # fast path → {}
 ```
 Then feed one **matching** synthetic payload and confirm the finding fires with the chosen
-action. A frontmatter wiring is checked with `.agents/quenching/bin/cq components lint <owning-command> --json`
+action. A frontmatter wiring is checked with `components_lint(path=<owning-command>)`
 instead. **Done when:** the fast path prints `{}`, the matching payload fires, and the wiring
 parses.
 

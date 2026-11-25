@@ -15,7 +15,9 @@ export type Launch = {
   prefix: string[]
   verbatim?: boolean
   file?: string
-  source: "env" | "project" | "plugin" | "path"
+  source: "env" | "project" | "source" | "remote" | "plugin" | "path"
+  /** A tag de release que um lançamento `remote` executa; é também a versão que ele oferece. */
+  tag?: string
 }
 
 const WINDOWS = process.platform === "win32"
@@ -210,8 +212,81 @@ function pathCq(): Launch {
   return WINDOWS ? viaCmd("cq", "path") : { command: "cq", prefix: [], source: "path" }
 }
 
-/** O `cq` disponível para instalar: `QUENCHING_CQ`, o do checkout do plugin, o do PATH. */
-export async function toolCq(): Promise<Launch> {
+// ── o release remoto ─────────────────────────────────────────────────────────
+
+/** O repositório de onde saem as releases; `QUENCHING_REPO` troca (um fork, um espelho). */
+export function remoteRepo(): string {
+  return process.env.QUENCHING_REPO?.trim() || "https://github.com/holetz/quenching"
+}
+
+/** `QUENCHING_REMOTE=0|off|false|no` desliga o remoto: versão e deploy voltam ao checkout e ao PATH. */
+export function remoteEnabled(): boolean {
+  return !/^(0|off|false|no)$/i.test(process.env.QUENCHING_REMOTE?.trim() ?? "")
+}
+
+/**
+ * A maior tag `X.Y.Z` da saída de `git ls-remote --tags --refs`; vazio quando nenhuma é uma
+ * versão numérica pura (pré-releases e outros nomes ficam de fora).
+ */
+export function latestTag(listing: string): string {
+  let best: number[] | undefined
+  for (const line of listing.split("\n")) {
+    const match = /refs\/tags\/(\d+)\.(\d+)\.(\d+)\s*$/.exec(line)
+    if (!match) continue
+    const parts = [Number(match[1]), Number(match[2]), Number(match[3])]
+    const order = best ? parts.map((value, index) => value - best![index]).find((delta) => delta !== 0) ?? 0 : 1
+    if (order > 0) best = parts
+  }
+  return best ? best.join(".") : ""
+}
+
+let tagCache: { at: number; ttl: number; value: Promise<string> } | undefined
+
+/**
+ * A última release publicada, por `git ls-remote`: uma tag achada vale 10 min, uma falha
+ * (sem rede, sem git) vale 1 min, para o painel não pagar a rede a cada abertura.
+ */
+export function remoteTag(): Promise<string> {
+  if (tagCache && Date.now() - tagCache.at < tagCache.ttl) return tagCache.value
+  const value = gitSlot(() => exec("git", ["ls-remote", "--tags", "--refs", remoteRepo()], process.cwd(), 15_000))
+    .then((run) => (run.code === 0 ? latestTag(run.stdout) : ""))
+  const entry = { at: Date.now(), ttl: 600_000, value }
+  tagCache = entry
+  void value.then((tag) => { if (!tag) entry.ttl = 60_000 })
+  return value
+}
+
+let uvx: Promise<boolean> | undefined
+
+/** Se o `uvx` responde; resolvido uma vez por processo. */
+function hasUvx(): Promise<boolean> {
+  uvx ??= runProcess("uvx", ["--version"], process.cwd(), 10_000).then((run) => run.code === 0)
+  return uvx
+}
+
+/** O `cq` de uma release, sem clone: `uvx --from git+<repo>@<tag>#subdirectory=quenching cq`. */
+export function remoteLaunch(tag: string): Launch {
+  return { command: "uvx", prefix: ["--from", `git+${remoteRepo()}@${tag}#subdirectory=quenching`, "cq"], source: "remote", tag }
+}
+
+async function remoteCq(): Promise<Launch | undefined> {
+  if (!remoteEnabled() || !(await hasUvx())) return undefined
+  const tag = await remoteTag()
+  return tag ? remoteLaunch(tag) : undefined
+}
+
+/**
+ * O `cq` da própria árvore quando o alvo é o repositório-fonte do quenching: ali a superfície
+ * instalada é gerada da árvore de trabalho (o gate recusa uma instalação vinda de uma release).
+ */
+export function sourceCq(root: string | undefined): string | undefined {
+  if (!root) return undefined
+  const file = join(root, "quenching/assets/bin/cq")
+  return existsSync(file) && existsSync(join(root, "quenching/skills")) ? file : undefined
+}
+
+/** O `cq` local: `QUENCHING_CQ`, o do checkout do plugin, o do PATH. */
+async function localCq(): Promise<Launch> {
   const env = fromEnv()
   const envLaunch = env ? await launchFile(env, "env") : undefined
   if (envLaunch) return envLaunch
@@ -220,12 +295,30 @@ export async function toolCq(): Promise<Launch> {
   return bundledLaunch ?? pathCq()
 }
 
-/** O `cq` do repositório quando existe; senão o disponível (`toolCq`). */
+/**
+ * O `cq` que oferece a versão e faz o deploy em `root`: `QUENCHING_CQ`; o da própria árvore
+ * quando `root` é o repositório-fonte; a última release remota (`uvx`); o checkout do plugin;
+ * o PATH.
+ */
+export async function toolCq(root?: string): Promise<Launch> {
+  const env = fromEnv()
+  const envLaunch = env ? await launchFile(env, "env") : undefined
+  if (envLaunch) return envLaunch
+  const source = sourceCq(root)
+  const sourceLaunch = source ? await launchFile(source, "source") : undefined
+  if (sourceLaunch) return sourceLaunch
+  return (await remoteCq()) ?? localCq()
+}
+
+/**
+ * O `cq` do repositório quando existe; senão o local. As leituras nunca vão ao remoto: um
+ * `uvx` por leitura estouraria o orçamento de carga do painel.
+ */
 export async function cqBinary(cwd: string): Promise<{ launch: Launch; root?: string }> {
   const hit = binaries.get(cwd)
   if (hit && Date.now() - hit.at < 60_000) return hit.value
   const root = await mainRoot(cwd)
-  const value = { launch: (await projectCq(root)) ?? (await toolCq()), root }
+  const value = { launch: (await projectCq(root)) ?? (await localCq()), root }
   binaries.set(cwd, { at: Date.now(), value })
   return value
 }

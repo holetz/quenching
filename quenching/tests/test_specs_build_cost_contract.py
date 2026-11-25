@@ -36,13 +36,13 @@ class ObservedCostAtConclude(unittest.TestCase):
     def test_measurement_precedes_archive_and_has_explicit_build_scope(self):
         text = prose("skills/quenching-specs/references/conclude.md")
         step = text[text.index("### 4. Write"):text.index("### 5. Distil")]
-        self.assertLess(step.index("cq components session cost"), step.index("cq specs promote"))
+        self.assertLess(step.index("components_session_cost("), step.index("specs_promote("))
         self.assertNotIn("cq session cost", text)
         for marker in ("buildCost", "build-only", "explicit", "per model", "maxRequestExposureTokens",
                        "unavailable", "Codex", "Never infer", "provenance", "never a context peak"):
             self.assertIn(marker, step)
-        self.assertIn("measurements=", step)
-        self.assertIn("status=unavailable", step)
+        self.assertIn('"measurements":', step)
+        self.assertIn('"status": "unavailable"', step)
 
 
 if __name__ == "__main__":

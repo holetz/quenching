@@ -10,7 +10,7 @@ home boundaries.
 
 ## Contents
 
-`.agents/quenching/bin/cq components read <this file>` returns the heading index; `--sections` addresses one.
+`components_read(path=<this file>)` returns the heading index; `sections=["§X"]` addresses one.
 
 ## 1. What a harness file is
 
@@ -20,7 +20,7 @@ repo-wide, a subfolder `AGENTS.md` only when working under its folder. the host 
 reads `AGENTS.md` directly; `CLAUDE.md` is the legacy fallback of older hosts and is removed by
 the migration, never created.
 OKF-strict point 7 ([knowledge-align/okf-spec.md](.agents/quenching/references/knowledge-align/okf-spec.md))
-says they are **not** OKF concepts, and the validator (`.agents/quenching/bin/cq knowledge validate`) **skips them entirely**
+says they are **not** OKF concepts, and the validator (`knowledge_validate()`) **skips them entirely**
 — including link checks (`index-broken-link` runs only on `index.md`). The target shape is the
 shipped exemplar [docs/standards/AGENTS.md](.agents/quenching/assets/knowledge/standards/AGENTS.md)
 ("thin pointer, never a copy").
@@ -128,7 +128,7 @@ A root `CLAUDE.md` that carries its own instructions is consolidated into `AGENT
 **Fact, and the version it was verified on.** the host 2.1.312 (2026-10-28) reads `AGENTS.md`
 directly when there is no `CLAUDE.md`/`CLAUDE.local.md` in the working directory or above it
 (default `claude-md-or-agents-md`, added in 2.1.277). With both files side by side, only
-`CLAUDE.md` loads unless the setting is `claude-md-and-agents-md`. OpenCode 1.18.35 and Codex read
+`CLAUDE.md` loads unless the setting is `claude-md-and-agents-md`. OpenCode 1.18.35 reads
 `AGENTS.md`. A host before 2.1.277 still needs the one-line `CLAUDE.md` import; that is a legacy
 fallback, not the conformant layout.
 

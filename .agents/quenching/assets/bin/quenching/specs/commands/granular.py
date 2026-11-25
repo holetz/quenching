@@ -403,7 +403,7 @@ def cmd_section(args, root: str, out: Emitter) -> int:
 # empty list — the verifier would then excuse a sha it owes (`files: (operational)`) or
 # charge one the task does not owe.
 SHOWN_TASK_KEYS = ("index", "id", "state", "checked", "blocked", "reason", "text",
-                   "section", "parallel", "files", "operational", "pattern", "verify",
+                   "section", "parallel", "files", "operational", "dropped", "pattern", "verify",
                    "subject", "commit", "lineno")
 
 

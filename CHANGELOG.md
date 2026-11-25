@@ -13,6 +13,76 @@ owner: [`ci-cd/versioning-release.md`](docs/standards/ci-cd/versioning-release.m
 short version for a consumer: the version is published once, deliberately, as a release — never at a
 spec's own conclude — and `cq --version` is what answers which one you are running.
 
+## 7.17.0
+
+**Duas máquinas podem rodar o autopilot no mesmo repositório sem pegar a mesma spec.** O execute
+  reserva a spec com um lease em `refs/quenching/claims/<id>` no origin, gravado com
+  `--force-with-lease`, que é atômico. O lease vale 45 min (`shared.autonomy.claimMinutes`), é
+  renovado enquanto o trabalho anda e expira sozinho. Uma spec nunca fica presa porque ninguém a
+  liberou. Só o build reserva: desenvolver uma spec e passá-la para outra pessoa executar não prende
+  nada. O dono do lease é um id aleatório da máquina mais a sessão, nunca hostname ou e-mail. O
+  `specs next`, o `list` e o `status` mostram as reservas. O `take`, que toma uma reserva viva, é só
+  humano e não está em nenhum grant de agente. O preflight é só leitura por padrão; testar a
+  reserva no origin exige `--probe-claims` (#408, #411, #414, #424, #428).
+
+**O gate abre muito menos processos git.** Os fixtures das specs abrem 60% menos processos, e o
+  `cq git audit` 52% menos (#409, #412).
+
+**O quenching passa a trabalhar só por MCP onde isso é possível.** O deploy troca as permissões
+  `Bash(cq …)` dos agentes pelas ferramentas `quenching.*` correspondentes. O retorno à CLI
+  (`shared.mcp.cliFallback`) é opt-in e vem desligado. Num repositório instalado sem o servidor
+  `quenching` registrado, ligue essa chave ou registre o servidor antes de atualizar. Os corpos de
+  comandos, agentes e references citam a ferramenta (`specs_show(spec=…, full=true)`). Um lint
+  recusa citações `cq` sem motivo declarado e opções que a ferramenta não tem. O servidor ganhou o
+  que faltava para a paridade: `full` no `specs_show`, gravação atômica de várias seções, `by` no
+  `specs_record` e `root` por chamada. O gate, o CI, os hooks e os scripts continuam na CLI (#423,
+  #425, #433, #436, #439, #443, #446).
+
+**Dois plugins novos para o OpenCode.** O `opencode-cache` leva para o OpenCode a faixa de cache de
+  prompt, o handoff e as estatísticas do `claude-cache`, sobre um núcleo compartilhado gerado por
+  `scripts/cache_plugin_sync.py`. O TTL é lido de cada escrita do provedor. O `opencode-quota`
+  mostra o uso de 5 horas e o semanal do Claude sem passar pelo modelo. O token é só lido e vai
+  apenas para `api.anthropic.com`. O plugin deriva de `slkiser/opencode-quota` (MIT) (#434, #440,
+  #444).
+
+**Também:** o painel do OpenCode faz o deploy a partir da última release remota, sem depender de
+  um clone local (#410). O escopo `affected` do gate seleciona os testes que leem corpos de prosa
+  (#448). Uma tarefa abandonada pode ser marcada `(dropped → <id>)`, e o check 2 do verifier a
+  aceita quando a substituta foi entregue (#449). Um executor sem `Task` roda o develop e a
+  varredura de dependências sem sub-agente (#451).
+
+## 7.16.0
+
+**O MCP do quenching passa a ser o caminho obrigatório, e completo, em cada harness.** O deploy liga
+  o servidor `cq mcp` inteiro, não só as specs, para OpenCode, Claude Code e Copilot, com timeout
+  adequado e `enabledMcpjsonServers`, e os agentes usam as tools `quenching.*` no lugar do `cq`
+  pela shell. Uma leitura de status cai de 0,58 s para 0,02 s, e o servidor sobe em 0,13 s
+  (#316–#325, #328, #334, #352, #367).
+
+**Os hooks rodam num processo só, sem `uv run`.** Quatro hooks deixam de abrir um `uv run …
+  python` cada, e um `.venv` sem `pyvenv.cfg` não bloqueia mais nada. O deploy por harness grava a
+  profundidade de subagentes do OpenCode a partir da configuração do projeto e libera os
+  diretórios dos worktrees (`external_directory`), para que os slots não travem em permissão.
+
+**O fluxo de specs fica mais barato e mais rápido.** No autopilot, um único runner faz execute e
+  conclude, e o verifier roda uma vez. O preflight cai de 4,8 s para cerca de 2,5 s, `specs list` a
+  frio de 2,3 s para 0,64 s, `specs create` de cerca de 6 s para cerca de 30 ms, e o gate `affected`
+  com diff vazio de 50,7 s para 21,5 s (#333, #340, #342–#350, #353, #361, #363–#366, #368,
+  #372–#377).
+
+**Menos carga de antivírus.** O deploy pré-compila o bytecode do payload, então a primeira chamada
+  ao `cq` num alvo recém-instalado grava 0 `.pyc` em vez de 44, e os caches do quenching ficam sob
+  uma raiz só. O `cq doctor --antivirus` lista os caminhos exatos a excluir (repositório, slots e
+  caches) e imprime os comandos para o Defender, sem aplicar nada. Ele recusa rodar fora de um
+  repositório e nunca sugere a raiz do disco, a home, um ancestral dela ou o temp do sistema. Ele
+  reconhece repositórios com `--separate-git-dir` e o checkout principal a partir de um slot, mesmo
+  com edições não commitadas. O doctor também recomenda `core.untrackedCache` (#387, #388, #391,
+  #394, #397, #400).
+
+**Também:** o plugin OpenCode vitrine volta a carregar (`first()` restaurado) e ganha um bench de
+  warnings no gate (#381). O `cq git audit` passa a reportar o executor Codex efetivo para a check
+  11 do verifier (#382).
+
 ## 7.15.0
 
 **A exigência de CI verde passa a ser configurável.** `shared.ci.enforce` (`required`, que é o

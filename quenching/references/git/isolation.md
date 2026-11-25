@@ -8,7 +8,7 @@ rule and the two prohibitions bind here too.
 
 ## Contents
 
-`.agents/quenching/bin/cq components read <this file>` returns the heading index; `--sections` addresses one.
+`components_read(path=<this file>)` returns the heading index; `sections=["§X"]` addresses one.
 
 ## Isolation happens on the way into a build
 
@@ -51,7 +51,7 @@ not a cut, because two checkouts building one spec fork it.
 trade is deliberate: the isolation costs a worktree, and the stage where it reliably pays is the one
 about to write code.
 
-**Asking "am I isolated?" writes nothing and is answered elsewhere.** `.agents/quenching/bin/cq specs next --front`
+**Asking "am I isolated?" writes nothing and is answered elsewhere.** `specs_next()`
 reads the live ref and reports it, and demotes a spec whose branch is checked out somewhere else.
 `/quenching-specs status` reads the frontmatter records and deliberately never asks git.
 
@@ -62,7 +62,7 @@ archived, and would have to duplicate every refusal `conclude` already owns.
 <!-- rationale -->
 
 **On `plan/<id>-<handle>` as the default name.** A branch named to it is greppable against
-`.agents/quenching/bin/cq specs list`,
+`specs_list()`,
 and `git branch --list 'plan/*'` is the list of work cut by the default. A human who already checked
 out `fix/isolate-flow` or `123-my-branch` before running `execute` gets that branch recorded, not a
 second one cut beside it.
@@ -106,7 +106,7 @@ plan/<id>-<handle>
 The **default** when the isolation cuts the worktree. The **ID leads and
 is the whole identity** — `plan/974` resolves the spec on its own; the `<handle>`, kebab-case from
 the title, rides along so `git branch` reads as names rather than as numbers and is never parsed
-back. `.agents/quenching/bin/cq specs next --front` ranks on whether `plan/<id>-<handle>` is **alive**, so a branch named
+back. `specs_next()` ranks on whether `plan/<id>-<handle>` is **alive**, so a branch named
 to the default is what tells that ranking this spec is already under way without a stamped `branch`
 record.
 
@@ -116,8 +116,8 @@ rename, no refusal, and no requirement that it match `plan/<id>-<handle>`.
 
 A worktree goes beside the repo, never inside it, and it is a **slot**:
 
-```bash
-.agents/quenching/bin/cq git worktree acquire --branch plan/<id>-<handle> --base <base> --spec <id>
+```text
+git_worktree_acquire(branch="plan/<id>-<handle>", base=<base>, spec=<id>)
 ```
 
 ### Worktrees are slots
@@ -125,17 +125,17 @@ A worktree goes beside the repo, never inside it, and it is a **slot**:
 <!-- rules -->
 
 A slot is a registered worktree at `../<repo>-slot-<n>` that outlives its spec. `acquire` locks one
-and switches it to the spec's branch; `.agents/quenching/bin/cq specs reconcile --write` releases it
+and switches it to the spec's branch; `specs_reconcile(write=true)` releases it
 after the merge — detached at the remote base, unlocked, `.venv` and every regenerable cache kept.
-`.agents/quenching/bin/cq git worktree slots` lists who holds each.
+`git_worktree_slots` lists who holds each.
 
 - `shared.worktreeSlots.max` (default 12) is a **ceiling**: at it, `acquire` refuses, or with
   `--wait` waits, and a timed-out wait is reported to the human. No worktree is cut past it.
 - At the ceiling, `acquire` takes a held slot only when its branch has a commit of its own in its
   reflog (`commit`, `cherry-pick`, `revert`) and its tip is in the base, its tree is clean, it holds
   no ignored content `release` would refuse on, and no process has its cwd inside it. A branch that
-  only fast-forwarded to the base is never taken. The taken slot's `.quenching/codex/` is archived
-  in the primary checkout, as `release` does.
+  only fast-forwarded to the base is never taken. The taken slot's `.quenching/handoff/` is moved
+  to the primary checkout, as `release` does.
 - `shared.worktreeSlots.min` (default 4) is a **floor**: `/quenching-git cleanup` never offers
   the lowest-numbered free slots up to it (`slot-floor`); free slots above it are candidates.
 - A slot is released only clean: a dirty tree, or ignored content no `shared.regenerablePaths`
@@ -181,7 +181,7 @@ The same file may declare repo-relative paths that must survive across checkouts
 ```
 
 The isolation displays the declared list **verbatim** before it links anything. After
-`git worktree add`, `.agents/quenching/bin/cq git worktree link` materialises each path as a link to its sibling store
+`git worktree add`, `git_worktree_link` materialises each path as a link to its sibling store
 before the setup command runs. A setup script must not re-create, replace or remove a path declared
 in `sharedPaths`; the link command owns that path for every checkout.
 
@@ -196,8 +196,8 @@ See
 [plugin-configuration.md](.agents/quenching/references/specs-align/plugin-configuration.md)
 §The envelope and recognised namespaces.
 
-Read by `.agents/quenching/bin/cq specs config --json` (exit 0 whether or not anything is declared) and run **once** by
-`.agents/quenching/bin/cq git worktree add`, immediately after the worktree is cut and linked, with **cwd inside the
+Read by `specs_config()` (exit 0 whether or not anything is declared) and run **once** by
+`git_worktree_add`, immediately after the worktree is cut and linked, with **cwd inside the
 new worktree** — the tree lacking the dependencies is the tree that must install them. The verb
 reads the declaration from the worktree it just cut, the fetched base, never from the caller's
 tree, so an uncommitted edit cannot choose what runs; `--no-setup` skips it. A raw
@@ -205,7 +205,7 @@ tree, so an uncommitted edit cannot choose what runs; `--no-setup` skips it. A r
 `.agents/quenching/bin/cq specs` reads the value and never executes it.
 
 No file, no key, or a command that does not resolve all mean **no setup**, and none of them is a
-finding — most repos declare nothing, and declaring nothing must cost nothing. `.agents/quenching/bin/cq specs doctor`
+finding — most repos declare nothing, and declaring nothing must cost nothing. `specs_doctor()`
 reports only the two ways it can be *wrong*, both `warn`: `sp-config-unknown-key` and
 `sp-config-unparseable`. They exist for the one real failure mode of a machine-read config —
 `worktree_setup` written where `worktreeSetup` was expected, and silence afterwards.
@@ -221,8 +221,8 @@ worktree**.
 
 <!-- rules -->
 
-```bash
-.agents/quenching/bin/cq specs record <id> branch --set base=main --set work=plan/<id>-<handle>
+```text
+specs_record(spec=<id>, name="branch", fields={"base": "main", "work": "plan/<id>-<handle>"})
 ```
 
 `base` is whatever was checked out when the branch was cut. It is **not** assumed to be `main`.
@@ -238,7 +238,7 @@ decided yet, versus a human declined isolation.
 
 **`work == base` means no isolation was taken, and every consumer must read it that way.** It is
 not a work ref that happens to be alive: the base is always alive, so anything ranking, diffing or
-merging on the mere PRESENCE of the record gets the in-place case backwards. `.agents/quenching/bin/cq specs next` guards
+merging on the mere PRESENCE of the record gets the in-place case backwards. `specs_next()` guards
 it explicitly, and `/quenching-specs conclude` branches on `work != base` rather than on the record
 existing — there is no branch diff to review and nothing to merge when the work never left the base.
 
@@ -256,7 +256,7 @@ write-once and that is the only moment disagreeing with it is cheap. Never deriv
 `git merge-base` or `--fork-point`: both answer a **commit**, not a branch name, and a commit
 ancestral to three branches identifies none of them.
 
-The record is `writeOnce: true`, and `.agents/quenching/bin/cq specs record` enforces it: a second stamp refuses (exit 2)
+The record is `writeOnce: true`, and `specs_record` enforces it: a second stamp refuses (exit 2)
 naming the value already held. A later run **reads** it rather than rewriting it, and a current
 branch that disagrees with `work` is a finding to report, never a value to correct. Never edit the
 frontmatter to get past that refusal — the refusal is the rule, working.
@@ -290,8 +290,8 @@ rather than writing a second one, and the line is rewritten on every task commit
 current with HEAD without a separate cleanup pass. The read-merge-write, run by
 `/quenching-specs execute` after every task's commit:
 
-```bash
-.agents/quenching/bin/cq git specs <work> --add <id> --json
+```text
+git_specs(branch=<work>, add=<id>)
 ```
 
 **Never marked on the base.** The mark exists only when this command controls the branch it is

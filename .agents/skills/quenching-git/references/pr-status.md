@@ -23,13 +23,16 @@ missing, ambiguous, mismatched or unauthenticated route.
 
 For the initial facts, use the bundled `cq` route and the local git identity:
 
+```text
+specs_config()
+```
+
 ```bash
-.agents/quenching/bin/cq specs config --json
 git remote get-url origin
 git branch --show-current
 ```
 
-For `spec:<id>`, also read `.agents/quenching/bin/cq specs status --spec <id> --json` and use only its recorded PR
+For `spec:<id>`, also read `specs_status(spec=<id>)` and use only its recorded PR
 number or URL. Do not substitute an issue number for a PR number. **Done when:** the provider
 route and one selector are known, or a refusal names the missing, ambiguous, mismatched or
 unauthenticated route.
@@ -70,7 +73,7 @@ read-only snapshot is returned and its evidence boundaries are explicit.
 
 ## Invariants
 
-- Use only the provider selected by `.agents/quenching/bin/cq specs config --json` and the matching `origin` host.
+- Use only the provider selected by `specs_config()` and the matching `origin` host.
 - Keep the normalized **Link para revisão** and **API URL** labels distinct; never expose an
   Azure `/_apis/` endpoint as the human review link.
 - Preserve not-found, authentication, permission and unknown states; none is a green result.

@@ -8,6 +8,7 @@ agnosticas-ao-git`, task 3.5, wrote every case from the four subcommands' own co
 """
 from __future__ import annotations
 
+import atexit
 import contextlib
 import io
 import json
@@ -34,7 +35,7 @@ from quenching.git.pr import (labelled_links, normalize_azure_pull_request,
 from quenching.git.slugs import _read_specs, cmd_specs
 from quenching.git.stale import (_gone_branches, _merged_branches, _merged_remote_branches,
                                  _orphan_worktrees, _unregistered_worktrees, stale_report)
-from quenching.git.worktree import _is_codex_artifact, _is_link, _make_link
+from quenching.git.worktree import _is_link, _make_link
 
 PLUGIN_ROOT = pathlib.Path(__file__).resolve().parent.parent
 CQ = str(PLUGIN_ROOT / "assets" / "bin" / "cq")
@@ -59,15 +60,31 @@ def _run(cwd: str, *argv: str) -> None:
     subprocess.run(["git", *argv], cwd=cwd, check=True, capture_output=True, text=True)
 
 
+_TEMPLATE: dict[str, str] = {}
+
+
+def _template_repo() -> str:
+    """One initialised repository per process, built once and copied per test: the `git init`,
+    two `git config` calls, `add` and `commit` are five processes a test would otherwise pay."""
+    if "path" not in _TEMPLATE:
+        root = tempfile.mkdtemp(prefix="cq-git-template-")
+        atexit.register(shutil.rmtree, root, ignore_errors=True)
+        path = os.path.join(root, "repo")
+        os.makedirs(path)
+        _run(path, "init", "-q", "-b", "main")
+        _run(path, "config", "user.email", "test@example.com")
+        _run(path, "config", "user.name", "Test")
+        with open(os.path.join(path, "a.txt"), "w", encoding="utf-8") as f:
+            f.write("x\n")
+        _run(path, "add", "a.txt")
+        _run(path, "commit", "-q", "-m", "init")
+        _TEMPLATE["path"] = path
+    return _TEMPLATE["path"]
+
+
 def _init_repo(path: str) -> str:
-    os.makedirs(path, exist_ok=True)
-    _run(path, "init", "-q", "-b", "main")
-    _run(path, "config", "user.email", "test@example.com")
-    _run(path, "config", "user.name", "Test")
-    with open(os.path.join(path, "a.txt"), "w", encoding="utf-8") as f:
-        f.write("x\n")
-    _run(path, "add", "a.txt")
-    _run(path, "commit", "-q", "-m", "init")
+    os.makedirs(os.path.dirname(path) or ".", exist_ok=True)
+    shutil.copytree(_template_repo(), path, dirs_exist_ok=True)
     return path
 
 
@@ -159,6 +176,25 @@ class Base(RepoCase):
                         return_value=(0, "refs/heads/team/main\n", "")):
             self.assertTrue(_is_host_default(self.repo, "azure-boards", "team/main"))
             self.assertFalse(_is_host_default(self.repo, "azure-boards", "main"))
+
+    def test_host_default_is_asked_once_per_remote_and_then_cached(self):
+        _run(self.repo, "remote", "add", "origin", "https://github.com/o/r.git")
+        with mock.patch("quenching.git.base._is_host_default", return_value=True) as ask:
+            self.assertEqual(("main", True), resolve_base(self.repo))
+            self.assertEqual(("main", True), resolve_base(self.repo))
+        self.assertEqual(1, ask.call_count)
+
+    def test_an_unknown_host_answer_is_never_cached(self):
+        _run(self.repo, "remote", "add", "origin", "https://github.com/o/r.git")
+        with mock.patch("quenching.git.base._is_host_default", return_value=None) as ask:
+            resolve_base(self.repo)
+            resolve_base(self.repo)
+        self.assertEqual(2, ask.call_count)
+
+    def test_host_default_false_makes_no_host_call(self):
+        with mock.patch("quenching.git.base._is_host_default") as ask:
+            self.assertEqual(("main", None), resolve_base(self.repo, host_default=False))
+        ask.assert_not_called()
 
     def test_is_host_default_is_unknown_for_an_unknown_backend(self):
         self.assertIsNone(_is_host_default(self.repo, "unknown-provider", "main"))
@@ -1489,7 +1525,7 @@ class Audit(RepoCase):
             text = (PLUGIN_ROOT / rel).read_text(encoding="utf-8")
             self.assertIn("origin/<base>", text, rel)
         verifier = (PLUGIN_ROOT / "agents" / "spec-verifier.md").read_text(encoding="utf-8")
-        self.assertIn("--base origin/<base>", verifier)
+        self.assertIn("base=\"origin/<base>\"", verifier)
 
 
 SRC, MOD = "quenching", "integrations/" + "m"
@@ -1699,7 +1735,7 @@ class VerifierScopeCheck(unittest.TestCase):
 
     def test_check_4_names_where_the_tasks_files_are_read(self):
         text = " ".join((PLUGIN_ROOT / "agents" / "spec-verifier.md").read_text(encoding="utf-8").split())
-        self.assertIn("cq specs show --spec <id> --task <t> --json", text)
+        self.assertIn("specs_show(spec=<id>, tasks=[<t>])", text)
         self.assertIn("carries no `files:`", text)
 
     def test_check_4_subtracts_the_audits_generated_paths(self):
@@ -2154,7 +2190,7 @@ class PullRequestPayload(unittest.TestCase):
         cls.payload_step = cls.command.split("### 2. Resolve title, body and the provider link", 1)[1]
 
     def test_spec_payload_names_the_canonical_sections_in_order(self):
-        self.assertIn('cq specs section "<id>" \\', self.payload_step)
+        self.assertIn('specs_section(spec=<id>, headings="Problem,Proposal,Impact,Validation,Tasks")', self.payload_step)
         positions = [self.payload_step.index(f"`{heading}`") for heading in
                      ("Problem", "Proposal", "Impact", "Validation")]
         self.assertEqual(positions, sorted(positions))
@@ -2164,9 +2200,9 @@ class PullRequestPayload(unittest.TestCase):
     def test_pr_create_selects_a_named_remote_and_defaults_to_origin(self):
         command = self.command.lower()
         self.assertIn("remote:<name>", command)
-        self.assertIn("cq git state --json", command)
-        self.assertIn("cq git push --branch <branch> --remote <remote>", command)
-        self.assertIn("cq git pr create --base <base> --head <branch>", command)
+        self.assertIn("git_state()", command)
+        self.assertIn("git_push(branch=<branch>, remote=<remote>)", command)
+        self.assertIn("git_pr_create(base=<base>, head=<branch>", command)
         self.assertNotIn("git push -u", command)
         self.assertIn("origin", command)
 
@@ -2186,7 +2222,7 @@ class PullRequestPayload(unittest.TestCase):
     def test_provider_locator_fixture_keeps_github_and_azure_native(self):
         github = "append exactly `Closes #<n>` to the generated body"
         self.assertIn("take it from the status id, never from path", _normalise_prose(self.payload_step))
-        azure = "pass it as `--work-item <n>` to `.agents/quenching/bin/cq git pr create`"
+        azure = "pass it as `work_item=<n>` to `git_pr_create`"
         self.assertIn(github, self.payload_step)
         self.assertIn(azure, self.payload_step)
         self.assertIn("do not invent a `Closes #<n>` sentence", self.payload_step)
@@ -2201,7 +2237,7 @@ class PullRequestPayload(unittest.TestCase):
         reference = MERGE_REFERENCE.read_text(encoding="utf-8").lower()
         combined = f"{command}\n{reference}"
         self.assertIn("separate source-branch deletion offer", combined)
-        self.assertIn("[--delete-source-branch]", command)
+        self.assertIn("delete_source_branch=true", command)
         self.assertIn("squash", reference)
 
     def test_status_command_routes_both_providers_and_normalizes_the_snapshot(self):
@@ -2209,7 +2245,7 @@ class PullRequestPayload(unittest.TestCase):
         reference = PR_REFERENCE.read_text(encoding="utf-8")
         combined = f"{command}\n{reference}"
         for phrase in (
-            "cq specs config --json",
+            "specs_config()",
             "git remote get-url origin",
             "gh repo view",
             "gh pr view",
@@ -2263,7 +2299,7 @@ class PullRequestPayload(unittest.TestCase):
             "git branch --show-current",
             "git remote -v",
             "git remote get-url <remote>",
-            "cq git base --json",
+            "git_base()",
             "git ls-remote",
             "git rev-list --left-right --count",
             "git log",
@@ -2310,7 +2346,7 @@ class PullRequestPayload(unittest.TestCase):
         for phrase in (
             "commit:<ref>",
             "spec:<id> task:<id>",
-            "cq specs status --spec",
+            "specs_status(spec=",
             "git log --grep",
             "--fixed-strings",
             "git rev-parse --verify",
@@ -2325,9 +2361,9 @@ class PullRequestPayload(unittest.TestCase):
             "git revert --abort",
             "askuserquestion",
             "no spec record",
-            "cq specs task --spec",
-            "--uncheck",
-            "--reason",
+            "specs_task(spec=",
+            'action="uncheck"',
+            "reason=",
             "## discoveries",
         ):
             self.assertIn(phrase.lower(), lower)
@@ -2353,9 +2389,9 @@ class PullRequestPayload(unittest.TestCase):
         cleanup = CLEANUP_COMMAND.read_text(encoding="utf-8").lower()
         self.assertIn("remoteBranches".lower(), cleanup)
         self.assertIn("git push <remote> --delete", cleanup)
-        self.assertIn("cq git prune --remote-branch <branch> --remote <remote>", cleanup)
+        self.assertIn("git_prune(remote_branch=<branch>, remote=<remote>", cleanup)
         self.assertIn("remote:<name>", cleanup)
-        self.assertIn("--remote <remote>", cleanup)
+        self.assertIn("remote=<remote>", cleanup)
         self.assertIn("local selection", cleanup)
         self.assertIn("remote selection", cleanup)
         self.assertIn("remote branch is never", cleanup)
@@ -3037,111 +3073,6 @@ class WorktreeRetire(RepoCase):
         self.assertEqual(proc.returncode, 0, proc.stdout + proc.stderr)
         self.assertFalse(os.path.exists(self.wt))
 
-    def test_codex_artifacts_are_recognized_with_a_backslash_separator(self):
-        self.assertTrue(_is_codex_artifact(".quenching\\codex\\r1\\prompt.md", "\\"))
-        self.assertTrue(_is_codex_artifact(".quenching\\codex", "\\"))
-        self.assertTrue(_is_codex_artifact(".quenching/codex/r1/prompt.md"))
-        self.assertFalse(_is_codex_artifact(".quenching\\codexx\\a", "\\"))
-        self.assertFalse(_is_codex_artifact(".env", "\\"))
-
-    def test_ignored_codex_files_are_archived_before_retiring(self):
-        self._merge_through_gh()
-        pathlib.Path(self.repo, ".git", "info", "exclude").write_text(
-            ".quenching/\n", encoding="utf-8")
-        source = pathlib.Path(self.wt, ".quenching", "codex", "1.1.md")
-        source.parent.mkdir(parents=True)
-        source.write_text("keep\n", encoding="utf-8")
-        proc = self._retire()
-        self.assertEqual(proc.returncode, 0, proc.stdout + proc.stderr)
-        self.assertFalse(os.path.exists(self.wt))
-        archived = pathlib.Path(self.repo, ".quenching", "codex", "retired", "wt")
-        self.assertEqual((archived / "1.1.md").read_text(encoding="utf-8"), "keep\n")
-        self.assertEqual(json.loads(proc.stdout)["archived"], str(archived))
-
-    def test_other_ignored_files_prevent_codex_archiving(self):
-        self._merge_through_gh()
-        pathlib.Path(self.repo, ".git", "info", "exclude").write_text(
-            ".quenching/\n.env\n", encoding="utf-8")
-        source = pathlib.Path(self.wt, ".quenching", "codex", "x")
-        source.parent.mkdir(parents=True)
-        source.write_text("keep\n", encoding="utf-8")
-        pathlib.Path(self.wt, ".env").write_text("secret\n", encoding="utf-8")
-        proc = self._retire()
-        self.assertEqual(proc.returncode, 1, proc.stdout)
-        self.assertEqual(json.loads(proc.stdout)["ignored"], [".env"])
-        self.assertIsNone(json.loads(proc.stdout)["archived"])
-        self.assertFalse(pathlib.Path(self.repo, ".quenching", "codex", "retired").exists())
-        self.assertTrue(os.path.isdir(self.wt))
-        self.assertEqual(source.read_text(encoding="utf-8"), "keep\n")
-
-    def test_discard_ignored_still_archives_codex_files(self):
-        self._merge_through_gh()
-        pathlib.Path(self.repo, ".git", "info", "exclude").write_text(
-            ".quenching/\n", encoding="utf-8")
-        source = pathlib.Path(self.wt, ".quenching", "codex", "x")
-        source.parent.mkdir(parents=True)
-        source.write_text("keep\n", encoding="utf-8")
-        proc = self._retire("--discard-ignored")
-        self.assertEqual(proc.returncode, 0, proc.stdout + proc.stderr)
-        self.assertFalse(os.path.exists(self.wt))
-        archived = pathlib.Path(self.repo, ".quenching", "codex", "retired", "wt")
-        self.assertEqual((archived / "x").read_text(encoding="utf-8"), "keep\n")
-        self.assertEqual(json.loads(proc.stdout)["archived"], str(archived))
-
-    def test_codex_archive_uses_a_suffix_when_the_destination_exists(self):
-        self._merge_through_gh()
-        pathlib.Path(self.repo, ".git", "info", "exclude").write_text(
-            ".quenching/\n", encoding="utf-8")
-        source = pathlib.Path(self.wt, ".quenching", "codex", "x")
-        source.parent.mkdir(parents=True)
-        source.write_text("keep\n", encoding="utf-8")
-        existing = pathlib.Path(self.repo, ".quenching", "codex", "retired", "wt")
-        existing.mkdir(parents=True)
-        (existing / "x").write_text("original\n", encoding="utf-8")
-        proc = self._retire()
-        self.assertEqual(proc.returncode, 0, proc.stdout + proc.stderr)
-        archived = existing.with_name("wt-2")
-        self.assertEqual((archived / "x").read_text(encoding="utf-8"), "keep\n")
-        self.assertEqual((existing / "x").read_text(encoding="utf-8"), "original\n")
-        self.assertEqual(json.loads(proc.stdout)["archived"], str(archived))
-
-    def test_a_dirty_worktree_keeps_its_codex_state(self):
-        self._merge_through_gh()
-        pathlib.Path(self.repo, ".git", "info", "exclude").write_text(
-            ".quenching/\n", encoding="utf-8")
-        source = pathlib.Path(self.wt, ".quenching", "codex", "x")
-        source.parent.mkdir(parents=True)
-        source.write_text("keep\n", encoding="utf-8")
-        pathlib.Path(self.wt, "w.txt").write_text("dirty\n", encoding="utf-8")
-        pathlib.Path(self.wt, "new.txt").write_text("untracked\n", encoding="utf-8")
-        proc = self._retire()
-        self.assertEqual(proc.returncode, 1, proc.stdout)
-        payload = json.loads(proc.stdout)
-        self.assertEqual(sorted(payload["dirty"]), ["new.txt", "w.txt"])
-        self.assertIsNone(payload["archived"])
-        self.assertFalse(payload["worktreeRemoved"])
-        self.assertEqual(source.read_text(encoding="utf-8"), "keep\n")
-        self.assertFalse(pathlib.Path(self.repo, ".quenching", "codex", "retired").exists())
-        self.assertIn("plan/1-x", self._heads())
-
-    def test_a_refused_removal_puts_the_codex_state_back(self):
-        self._merge_through_gh()
-        pathlib.Path(self.repo, ".git", "info", "exclude").write_text(
-            ".quenching/\n", encoding="utf-8")
-        source = pathlib.Path(self.wt, ".quenching", "codex", "x")
-        source.parent.mkdir(parents=True)
-        source.write_text("keep\n", encoding="utf-8")
-        _run(self.repo, "worktree", "lock", self.wt)
-        proc = self._retire()
-        self.assertEqual(proc.returncode, 1, proc.stdout)
-        payload = json.loads(proc.stdout)
-        self.assertFalse(payload["worktreeRemoved"])
-        self.assertIsNone(payload["archived"])
-        self.assertTrue(payload["restored"])
-        self.assertEqual(source.read_text(encoding="utf-8"), "keep\n")
-        self.assertFalse(pathlib.Path(self.repo, ".quenching", "codex", "retired", "wt").exists())
-        self.assertIn("plan/1-x", self._heads())
-
     def test_an_ignored_file_stands_under_show_untracked_files_no(self):
         self._merge_through_gh()
         info = os.path.join(self.repo, ".git", "info", "exclude")
@@ -3631,6 +3562,26 @@ class PullRequestVerbs(RepoCase):
                               capture_output=True, text=True, env=self.env,
                               stdin=subprocess.DEVNULL, timeout=60)
 
+    def test_create_without_body_or_spec_refuses_and_opens_no_pr(self):
+        proc = _cq(self.repo, "pr", "create", "--base", "main", "--head", "plan/1-x",
+                   "--title", "t", "--json", env=self.env)
+        self.assertEqual(proc.returncode, 2, proc.stdout + proc.stderr)
+        self.assertEqual(json.loads(proc.stdout)["code"], "git-pr-body-empty")
+        self.assertEqual(self._calls(), [])
+
+    def test_create_with_spec_and_no_body_builds_it_from_the_spec(self):
+        spec, specs = self._store_spec()
+        wrote = subprocess.run([*specs, "section", spec, "Problem", "--write"], cwd=self.repo,
+                               input="Um problema real.\n", capture_output=True, text=True,
+                               env=self.env, timeout=60)
+        self.assertEqual(wrote.returncode, 0, wrote.stdout + wrote.stderr)
+        proc = _cq(self.repo, "pr", "create", "--base", "main", "--head", f"plan/{spec}-x",
+                   "--title", "t", "--spec", spec, "--json", env=self.env)
+        self.assertEqual(proc.returncode, 0, proc.stdout + proc.stderr)
+        (call,) = self._calls()
+        self.assertIn("## Problem", call["stdin"])
+        self.assertIn("Um problema real.", call["stdin"])
+
     def test_create_with_an_unknown_spec_opens_no_pr(self):
         spec, specs = self._store_spec()
         proc = _cq(self.repo, "pr", "create", "--base", "main", "--head", "plan/999-x",
@@ -3739,7 +3690,7 @@ class PullRequestVerbs(RepoCase):
                 mock.patch.object(pull, "_branch_ok", return_value=True), \
                 contextlib.redirect_stdout(io.StringIO()) as out:
             code = pull.cmd_pr(SimpleNamespace(action="create", base="main", head="x", title="t",
-                                               body="", spec="1", json=True, **NO_AZURE_FLAGS))
+                                               body="b", spec="1", json=True, **NO_AZURE_FLAGS))
         payload = json.loads(out.getvalue())
         self.assertEqual((code, payload["number"], payload["reason"], payload["message"]),
                          (1, 42, "stamp-failed", "refused"))
@@ -3803,7 +3754,7 @@ class PullRequestVerbs(RepoCase):
                 mock.patch.object(pull, "_branch_ok", return_value=True), \
                 contextlib.redirect_stdout(io.StringIO()) as out:
             code = pull.cmd_pr(SimpleNamespace(action="create", base="main", head="plan/1-x",
-                                               title="t", body="", spec="1", json=True,
+                                               title="t", body="b", spec="1", json=True,
                                                **NO_AZURE_FLAGS))
         self.assertEqual(code, 0, out.getvalue())
         (sets,) = seen
@@ -3998,7 +3949,8 @@ class OrchestratorPublishGrants(unittest.TestCase):
         self.assertNotIn("cq git:*", self.grants)
         self.assertEqual([g for g in self.grants if g.startswith("cq git ")], [
             "cq git state:*", "cq git push:*", "cq git pr create:*", "cq git pr probe:*",
-            "cq git pr record:*", "cq git pr merge:*", "cq git base:*", "cq git conventions:*"])
+            "cq git pr record:*", "cq git pr merge:*", "cq git base:*", "cq git conventions:*",
+            "cq git worktree slots:*"])
         for unused in ("stale", "prune", "audit", "commit", "worktree retire", "worktree add"):
             for grant in self.grants:
                 self.assertFalse(self._admits(grant, f"cq git {unused}"), (grant, unused))

@@ -12,6 +12,10 @@ cd "$ROOT"
 # A test that resolves a session must never measure the operator's session: the tree decides.
 unset OPENCODE_SESSION_ID CLAUDE_CODE_SESSION_ID
 
+# The Copilot client exports its own session selector through its home; a test that resolves a
+# session must never measure the operator's store either.
+unset COPILOT_HOME QUENCHING_COPILOT_HOME
+
 # Every `python3` below is the project's own environment when one exists: on Windows the PATH's
 # `python3` is the Microsoft Store alias, a different interpreter with none of the dev group.
 if [ -x "$ROOT/.venv/bin/python" ]; then
@@ -109,6 +113,13 @@ TEST_SCOPE_BASE="${QUENCHING_TEST_BASE:-origin/main}"
 TARGETS=(quenching/tests)
 WITH_COVERAGE=1
 SUITE_SKIP=""
+# The site and the plugin steps are fixed cost the diff usually never touches. Only the affected
+# scope, with a readable diff, may skip them; every other path (full scope, a selector that failed,
+# an unreadable selection) keeps both at 1, so CI and `/release` run them as before.
+RUN_SITE=1
+RUN_INTEGRATIONS=1
+SITE_SKIP_REASON=""
+INTEGRATIONS_SKIP_REASON=""
 if [ "$TEST_SCOPE" = affected ]; then
   WITH_COVERAGE=0
   SELECTION_JSON="$(python3 -m scripts.toolchain.affected --json --base "$TEST_SCOPE_BASE")" || SELECTION_JSON=""
@@ -117,6 +128,27 @@ if [ "$TEST_SCOPE" = affected ]; then
   else
     MODE=full
     TARGETS=()
+    if CHANGED_LINES="$(printf '%s' "$SELECTION_JSON" | python3 -c '
+import json, sys
+doc = json.load(sys.stdin)
+site = ("docs/", "quenching/skills/", "quenching/references/", "zensical.toml",
+        "quenching/assets/zensical/", "quenching/assets/checks/documentation-site-check.py",
+        "quenching/assets/bin/quenching/knowledge/", "scripts/verify_repo.sh")
+plugins = ("integrations/", "scripts/cache_plugin_sync.py", "scripts/verify_repo.sh")
+changed = doc["changed"]
+unreadable = doc.get("diffUnreadable", False)
+def hit(prefixes):
+    return unreadable or any(p == q or p.startswith(q if q.endswith("/") else q + "/") for p in changed for q in prefixes)
+print("SITE\t" + ("1" if hit(site) else "0"))
+print("PLUGINS\t" + ("1" if hit(plugins) else "0"))
+')"; then
+      while IFS=$'\t' read -r tag value; do
+        case "$tag" in
+          SITE) if [ "$value" = 0 ]; then RUN_SITE=0; fi ;;
+          PLUGINS) if [ "$value" = 0 ]; then RUN_INTEGRATIONS=0; fi ;;
+        esac
+      done <<< "$CHANGED_LINES"
+    fi
     if SELECTION_LINES="$(printf '%s' "$SELECTION_JSON" | python3 -c '
 import json, sys
 doc = json.load(sys.stdin)
@@ -154,6 +186,14 @@ fi
 
 pytest_args=("${TARGETS[@]}" -q -p randomly -p scripts.toolchain.slots -n "$TEST_WORKERS")
 if [ "$WITH_COVERAGE" = 1 ]; then
+  # Python >= 3.12 measures through `sys.monitoring` (`COVERAGE_CORE=sysmon`), cheaper than the C
+  # tracer older interpreters default to; the totals are identical, so the floor is unchanged. An
+  # operator's own `COVERAGE_CORE` wins. Data left by a killed run is dropped so the combine never
+  # reads a stale `.coverage.*`.
+  if [ -z "${COVERAGE_CORE:-}" ] && uv run python -c "import sys; sys.exit(0 if sys.version_info >= (3, 12) else 1)" >/dev/null 2>&1; then
+    export COVERAGE_CORE=sysmon
+  fi
+  rm -f "$COVERAGE_FILE" "$COVERAGE_FILE".*
   pytest_args+=(--cov=quenching/assets/bin/quenching --cov-report="json:$COVERAGE_JSON")
 fi
 if [ -n "${PYTEST_RANDOMLY_SEED:-}" ]; then
@@ -198,6 +238,10 @@ run_check "temp root guard" \
 # private denylist since 2026-10-27).
 run_check "leak gate (generic patterns)" \
   python3 quenching/assets/bin/cq security leak --all --generic-only
+# A skill or agent body that cites a `cq` verb with no MCP tool fails here, whatever the affected
+# scope selected: the body edit that introduces it touches no file this test imports.
+run_check "MCP catalog coverage" \
+  python3 -m unittest discover -s quenching/tests -p test_quenching_mcp_coverage.py
 run_check "open source controls catalog" \
   python3 scripts/check_opensource_controls.py
 run_check "proof doctor" \
@@ -233,19 +277,33 @@ if [ -f .agents/.quenching-deploy.json ]; then
 else
   printf '\n==> deployed surface lockstep\nSKIPPED: this checkout does not use deploy mode (no .agents/.quenching-deploy.json).\n'
 fi
+# Pulled out so a step the affected scope skips says so, with the reason, instead of vanishing.
+skip_step() {
+  printf '\n==> %s\nSKIPPED: %s\n' "$1" "$2"
+}
+SITE_SKIP_REASON="QUENCHING_TEST_SCOPE=affected and the diff touches no docs/, quenching/skills|references, zensical.toml or site tooling; the full gate (CI and /release) runs it."
+INTEGRATIONS_SKIP_REASON="QUENCHING_TEST_SCOPE=affected and the diff touches no integrations/; the full gate (CI and /release) runs it."
 # `$BASH` is the shell running this gate: a bare `bash` may be another one (WSL's launcher on Windows).
 run_check "citation checks" \
   "$BASH" quenching/assets/checks/citation-check.sh
-run_check "documentation site source" \
-  python3 quenching/assets/bin/cq knowledge site-source docs site-source --write
-run_check "Zensical strict build" \
-  uv run zensical build --clean --strict
-run_check "built-site checks" \
-  python3 quenching/assets/checks/documentation-site-check.py site --local --remote-policy error
+if [ "$RUN_SITE" = 1 ]; then
+  run_check "documentation site source" \
+    python3 quenching/assets/bin/cq knowledge site-source docs site-source --write
+  run_check "Zensical strict build" \
+    uv run zensical build --clean --strict
+  run_check "built-site checks" \
+    python3 quenching/assets/checks/documentation-site-check.py site --local --remote-policy error
+else
+  skip_step "documentation site source" "$SITE_SKIP_REASON"
+  skip_step "Zensical strict build" "$SITE_SKIP_REASON"
+  skip_step "built-site checks" "$SITE_SKIP_REASON"
+fi
 
 # The quenching-hud mod is validated by the host's own validator. Without `claude` the skip is
 # stated loudly, as with `coverage`: a local gate must not demand an install, but the release has it.
-if command -v claude >/dev/null 2>&1; then
+if [ "$RUN_INTEGRATIONS" = 0 ]; then
+  skip_step "quenching-hud plugin" "$INTEGRATIONS_SKIP_REASON"
+elif command -v claude >/dev/null 2>&1; then
   run_check "quenching-hud plugin" \
     claude plugin validate integrations/claude-hud
 else
@@ -253,11 +311,14 @@ else
   printf 'SKIPPED: `claude` is not on PATH; integrations/claude-hud was not validated.\n'
 fi
 
-# The quenching-cache band carries generated copies of quenching's price table and handoff
-# template; a stale copy is refused here, with or without `claude`.
+# The quenching-cache bands (Claude Code and OpenCode) carry generated copies of quenching's price
+# table and handoff template, and the OpenCode one the shared core too; a stale copy is refused
+# here, with or without `claude`.
 run_check "quenching-cache generated copies" \
   python3 scripts/cache_plugin_sync.py --check
-if command -v claude >/dev/null 2>&1; then
+if [ "$RUN_INTEGRATIONS" = 0 ]; then
+  skip_step "quenching-cache plugin and tests" "$INTEGRATIONS_SKIP_REASON"
+elif command -v claude >/dev/null 2>&1; then
   run_check "quenching-cache plugin" \
     claude plugin validate integrations/claude-cache
   run_check "quenching-cache tests" \
@@ -269,7 +330,9 @@ fi
 
 # The quenching-vitrine mod (the Claude Desktop Specs pane) is validated and tested the same way:
 # the engine type-checks its hooks and runs its UI tests on the terminal and the desktop surface.
-if command -v claude >/dev/null 2>&1; then
+if [ "$RUN_INTEGRATIONS" = 0 ]; then
+  skip_step "quenching-vitrine plugin and tests" "$INTEGRATIONS_SKIP_REASON"
+elif command -v claude >/dev/null 2>&1; then
   run_check "quenching-vitrine plugin" \
     claude plugin validate integrations/claude-vitrine
   run_check "quenching-vitrine plugin tests" \
@@ -288,6 +351,67 @@ if [ -d integrations/opencode-vitrine/node_modules ] && command -v npx >/dev/nul
 else
   printf '\n==> opencode-vitrine typecheck\n'
   printf 'SKIPPED: integrations/opencode-vitrine/node_modules is absent (run `npm ci` there); the vitrine was not typechecked.\n'
+fi
+# The warnings bench needs only `node` (strip-types), so it still runs when the typecheck above is
+# skipped: an undefined name in the plugin's status path fails here instead of only inside OpenCode.
+if [ "$RUN_INTEGRATIONS" = 0 ]; then
+  skip_step "opencode-vitrine warnings bench" "$INTEGRATIONS_SKIP_REASON"
+  skip_step "opencode-vitrine remote deploy bench" "$INTEGRATIONS_SKIP_REASON"
+elif command -v node >/dev/null 2>&1 && node --experimental-strip-types -e '' >/dev/null 2>&1; then
+  run_check "opencode-vitrine warnings bench" \
+    node --experimental-strip-types integrations/opencode-vitrine/bench/warnings.check.mjs
+  run_check "opencode-vitrine remote deploy bench" \
+    node --experimental-strip-types integrations/opencode-vitrine/bench/remote.check.mjs
+else
+  skip_step "opencode-vitrine warnings bench" "no \`node\` with --experimental-strip-types (22.6+) on PATH; the vitrine's warnings were not exercised."
+  skip_step "opencode-vitrine remote deploy bench" "no \`node\` with --experimental-strip-types (22.6+) on PATH; the vitrine's deploy origin was not exercised."
+fi
+
+# The OpenCode quenching-cache port: its tracker, handoff and load checks need only `node`
+# (strip-types); the typecheck needs the SDK it pins, so without `node_modules` that skip is stated.
+if [ "$RUN_INTEGRATIONS" = 0 ]; then
+  skip_step "opencode-cache typecheck, checks and bench" "$INTEGRATIONS_SKIP_REASON"
+else
+  if [ -d integrations/opencode-cache/node_modules ] && command -v npx >/dev/null 2>&1; then
+    run_check "opencode-cache typecheck" \
+      npx --prefix integrations/opencode-cache tsc --noEmit -p integrations/opencode-cache
+  else
+    printf '\n==> opencode-cache typecheck\n'
+    printf 'SKIPPED: integrations/opencode-cache/node_modules is absent (run `npm ci` there); the port was not typechecked.\n'
+  fi
+  if command -v node >/dev/null 2>&1 && node --experimental-strip-types -e '' >/dev/null 2>&1; then
+    run_check "opencode-cache tracker and handoff checks" \
+      bash -c 'cd integrations/opencode-cache && node --experimental-strip-types tests/track.check.mjs && node --experimental-strip-types tests/handoff.check.mjs'
+    if [ -d integrations/opencode-cache/node_modules ]; then
+      run_check "opencode-cache load bench" \
+        bash -c 'cd integrations/opencode-cache && node --experimental-strip-types bench/load.ts'
+    else
+      skip_step "opencode-cache load bench" "integrations/opencode-cache/node_modules is absent (run \`npm ci\` there); the bench loads the SDK."
+    fi
+  else
+    skip_step "opencode-cache checks and bench" "no \`node\` with --experimental-strip-types (22.6+) on PATH; the port was not exercised."
+  fi
+fi
+
+# The OpenCode quota band reads a credential and talks to the network, so its checks also hold the
+# security contour (one destination, one process, no write, no log). They need only `node`; the
+# typecheck needs the local `npm ci`, and says so when it is absent.
+if [ "$RUN_INTEGRATIONS" = 0 ]; then
+  skip_step "opencode-quota typecheck" "$INTEGRATIONS_SKIP_REASON"
+  skip_step "opencode-quota checks" "$INTEGRATIONS_SKIP_REASON"
+else
+  if [ -d integrations/opencode-quota/node_modules ] && command -v npx >/dev/null 2>&1; then
+    run_check "opencode-quota typecheck" \
+      npx --prefix integrations/opencode-quota tsc --noEmit -p integrations/opencode-quota
+  else
+    skip_step "opencode-quota typecheck" "integrations/opencode-quota/node_modules is absent (run \`npm ci\` there); the quota band was not typechecked."
+  fi
+  if command -v node >/dev/null 2>&1 && node --experimental-strip-types -e '' >/dev/null 2>&1; then
+    run_check "opencode-quota checks" \
+      bash -c 'cd integrations/opencode-quota && node --experimental-strip-types tests/usage.check.mjs && node --experimental-strip-types tests/fetch.check.mjs && node tests/surface.check.mjs'
+  else
+    skip_step "opencode-quota checks" "no \`node\` with --experimental-strip-types (22.6+) on PATH; the quota band was not exercised."
+  fi
 fi
 
 # Surface-load checks spawn billed `claude -p` sessions, so they are opt-in: without

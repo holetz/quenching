@@ -122,9 +122,6 @@ PILLARS: dict[str, Pillar] = {
     "opensource": Pillar(
         "quenching.opensource.cli", True,
         "the open source front — every owner's catalog answers and the baseline level"),
-    "codex": Pillar(
-        "quenching.codex", True,
-        "the Codex CLI — quota probe, an independent read-only review, and the per-task executor"),
     "git": Pillar(
         "quenching.git", False,
         "a repository's git facts — the base branch, and whether it is the host's own default"),
@@ -231,7 +228,7 @@ def build_parser() -> argparse.ArgumentParser:
                  "`cq <pillar> --help` prints that pillar's own subcommands.")
     p.add_argument("--root",
                     help="forwarded to the pillar as its own --root; design, specs, "
-                    "components, ops, proof, delivery, toolchain, security, opensource, codex, config, and mcp declare one")
+                    "components, ops, proof, delivery, toolchain, security, opensource, config, and mcp declare one")
     # Bare, so `cq --version` IS the lockstep probe: the whole assertion is
     # `test "$(cq --version)" = "$(cat VERSION)"`, with nothing to strip first. A pillar
     # named before it keeps its own prefixed line — this option only answers for the plugin.
@@ -258,6 +255,12 @@ def build_doctor_parser() -> argparse.ArgumentParser:
                    help="preview a minimal .claude/quenching.json from detected provider/fronts")
     p.add_argument("--write", action="store_true",
                    help="confirm writing the setup preview (requires --setup)")
+    p.add_argument("--antivirus", action="store_true",
+                   help="print the paths and processes to exclude from an on-access antivirus; "
+                        "applies nothing")
+    p.add_argument("--workspace", action="store_true",
+                   help="print the recommended .vscode/settings.json block and whether the file "
+                        "carries it; applies nothing")
     return p
 
 
@@ -286,7 +289,8 @@ def _run_top_doctor(argv: list[str], command_index: int) -> int:
     args = argv[:command_index] + argv[command_index + 1:]
     parsed = build_doctor_parser().parse_args(args)
     return run_doctor(parsed.json, os.path.abspath(parsed.root), setup=parsed.setup,
-                      write=parsed.write)
+                      write=parsed.write, antivirus=parsed.antivirus,
+                      workspace=parsed.workspace)
 
 
 def _provider_refusal() -> int | None:

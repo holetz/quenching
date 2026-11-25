@@ -78,7 +78,7 @@ class TheRegistryCoversTheReaders(unittest.TestCase):
         for key in specs - shared:
             self.assertTrue(covered(f"specs.{key}"), key)
         for key in shared | {"regenerablePaths", "contextBudgets", "okfValidate", "workHost",
-                             "worktreeSlots", "autonomy", "codex", "gitConventions"}:
+                             "worktreeSlots", "autonomy", "gitConventions"}:
             self.assertTrue(any(k.startswith(f"shared.{key}") for k in REGISTRY), key)
         for key in GIT_CONVENTION_KEYS:
             self.assertIn(f"shared.gitConventions.{key}", REGISTRY)
@@ -107,6 +107,20 @@ class Validation(unittest.TestCase):
         self.assertIsNotNone(validate("specs.subjects", {})[1])
         self.assertIsNotNone(validate("nope.key", 1)[1])
         self.assertEqual(validate("shared.sharedPaths", ["a"]), (["a"], None))
+
+    def test_the_quota_band_keys(self):
+        self.assertEqual(validate("shared.quota.intervalSeconds", 60), (60, None))
+        self.assertIsNotNone(validate("shared.quota.intervalSeconds", 59)[1])
+        self.assertIsNotNone(validate("shared.quota.warnPercent", 101)[1])
+        self.assertIsNotNone(validate("shared.quota.showSonnet", "yes")[1])
+        self.assertEqual(REGISTRY["shared.quota.intervalSeconds"]["scope"], "machine")
+        for (ns, key), defaults in DEFAULT_BLOCKS.items():
+            if (ns, key) == ("shared", "quota"):
+                self.assertEqual(defaults, {"warnPercent": 70, "dangerPercent": 90,
+                                            "intervalSeconds": 300, "showSonnet": True})
+                break
+        else:
+            self.fail("shared.quota has no default block")
 
 
 class Guidance(unittest.TestCase):

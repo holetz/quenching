@@ -39,7 +39,7 @@ class TaskExecutionContractTests(unittest.TestCase):
         command = COMMAND.read_text(encoding="utf-8")
         commit = (ROOT / "quenching/skills/quenching-git/references/commit.md").read_text(encoding="utf-8")
 
-        self.assertIn('cq git commit --subject "<subject>"', command)
+        self.assertIn('git_commit(subject="<subject>", root="<worktree>")', command)
         self.assertNotIn('Skill("quenching-specs:git:commit"', command)
         self.assertIn("single commit boundary", commit)
         self.assertNotIn("git commit -m", command)
@@ -122,10 +122,10 @@ class TaskExecutionContractTests(unittest.TestCase):
         reference = REFERENCE.read_text(encoding="utf-8")
 
         self.assertLess(command.index("git add <the task's declared files>"),
-                        command.index('cq git commit --subject "<subject>"'))
-        self.assertLess(command.index('cq git commit --subject "<subject>"'),
-                        command.index("cq specs task --check <task-id>"))
-        self.assertIn('--commit "<sha reported by .agents/quenching/bin/cq git commit>"', command)
+                        command.index('git_commit(subject="<subject>", root="<worktree>")'))
+        self.assertLess(command.index('git_commit(subject="<subject>", root="<worktree>")'),
+                        command.index('specs_task(spec=<spec-id>, action="check", task=<task-id>'))
+        self.assertIn('commit="<sha the commit reported>"', command)
         self.assertIn("spec tick **fails**", reference)
         self.assertIn("preserve the commit", reference)
         self.assertNotIn("<the spec file>", reference)
@@ -210,6 +210,63 @@ class TaskExecutionContractTests(unittest.TestCase):
         self.assertIn("with `model` passed explicitly", orchestrator)
         self.assertIn("call the `spec-verifier` only after it returns", orchestrator)
 
+    def test_autonomous_runner_concludes_in_the_same_spawn(self):
+        runner = " ".join(RUNNER.read_text(encoding="utf-8").split())
+
+        self.assertIn("Under `autonomous`, one spawn runs develop, execute and conclude.", runner)
+        self.assertIn(
+            "invoke `/quenching-specs conclude <id> autonomous --outcome done` in this same spawn", runner)
+        self.assertIn("the `spec-verifier` runs once, after you return and before the merge", runner)
+        self.assertIn("Without `autonomous`, execute and conclude are two spawns.", runner)
+
+    def test_autonomous_orchestrator_runs_one_spawn_and_one_verifier(self):
+        orchestrator = " ".join(
+            (ROOT / "quenching/agents/spec-orchestrator.md").read_text(encoding="utf-8").split())
+
+        self.assertIn("Under `autonomous`, one runner spawn per spec, and the spec-verifier once.", orchestrator)
+        self.assertIn(
+            "call the `spec-verifier` once, after that spawn returns and before you adopt and merge the PR",
+            orchestrator)
+        self.assertIn("Without `autonomous`, execute and conclude are two spawns.", orchestrator)
+        self.assertIn("still returns `execute-done:`", orchestrator)
+
+    def test_autopilot_economy_mode_cites_the_single_autonomous_spawn(self):
+        autopilot = " ".join(
+            (ROOT / "quenching/skills/quenching-specs/references/autopilot.md").read_text(encoding="utf-8").split())
+
+        self.assertIn(
+            "one `autonomous` runner spawn per member that develops, executes and concludes, "
+            "the spec-verifier once before the publish", autopilot)
+        self.assertNotIn("the `execute-done:`/`conclude` two spawns", autopilot)
+
+    def test_verifier_checks_are_closed_to_their_named_evidence(self):
+        verifier = " ".join(
+            (ROOT / "quenching/agents/spec-verifier.md").read_text(encoding="utf-8").split())
+
+        self.assertIn("**Each check is closed.**", verifier)
+        self.assertIn(
+            "The spec's `run` and `outcome` records, and the `verifier=` stamp a previous pass wrote, "
+            "are never evidence for any check", verifier)
+        self.assertIn(
+            "Counts: the `Outcome` entry of the payload's `sections` (`state: filled`).", verifier)
+        self.assertIn("the `outcome` record (absent or empty is no FAIL by itself)", verifier)
+        self.assertEqual(verifier.count("Counts:"), 5)
+
+    def test_verifier_reads_epic_authorization_for_grants_and_ruler(self):
+        verifier = " ".join(
+            (ROOT / "quenching/agents/spec-verifier.md").read_text(encoding="utf-8").split())
+
+        self.assertIn("## Epic authorization (checks 9 and 10)", verifier)
+        self.assertIn("`specs_show(spec=<epic>, full=true)`", verifier)
+        self.assertIn("carries a date (`YYYY-MM-DD`), names this spec's id or the entry's exact path", verifier)
+        self.assertIn("An entry no such bullet covers stays FAIL with `needs-human`", verifier)
+        self.assertIn("never stops it refusing an unauthorized widening or lowering", verifier)
+        self.assertEqual(verifier.count("(§Epic authorization)"), 2)
+        # no grant is added: the tools line keeps its closed list
+        head = verifier.split("---")[1]
+        self.assertNotIn("cq specs section", head)
+        self.assertNotIn("Bash(cq specs show:*), Bash(cq specs show:*)", head)
+
     def test_worker_budget_is_a_size_estimate_not_a_stop(self):
         runner = " ".join(RUNNER.read_text(encoding="utf-8").split())
 
@@ -222,10 +279,12 @@ class TaskExecutionContractTests(unittest.TestCase):
             with self.subTest(carrier=carrier):
                 text = (ROOT / "quenching" / carrier).read_text(encoding="utf-8")
                 flat = " ".join(re.sub(r"[`*_]", "", text).split())
-                self.assertIn("cq specs status --spec <id> --json", flat)
+                self.assertTrue("cq specs status --spec <id> --json" in flat
+                                or "specsstatus(spec=<id>)" in flat, carrier)
                 self.assertIn("records.priority.complexity", flat)
                 self.assertIn("records.approved", flat)
-                self.assertIn("cq specs show --spec <id> --json", flat)
+                self.assertTrue("cq specs show --spec <id> --json" in flat
+                                or "specsshow(spec=<id>)" in flat, carrier)
                 self.assertNotRegex(flat, r"Read complexity and approved from each spec's show")
                 self.assertNotIn("Split the set from the show payloads", flat)
                 self.assertNotIn("show --full", flat)

@@ -17,6 +17,7 @@ import json
 import os
 from pathlib import Path
 
+from quenching.common.deploy import dumps_hash_manifest
 from quenching.common.output import FINDINGS, OK, emit, refuse
 
 SOURCE = Path(".agents") / "skills"
@@ -144,7 +145,7 @@ def write(repo: Path, result: dict) -> None:
     }
     if result["expected"] or (repo / MANIFEST).exists():
         destination.mkdir(parents=True, exist_ok=True)
-        (repo / MANIFEST).write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
+        (repo / MANIFEST).write_text(dumps_hash_manifest(manifest), encoding="utf-8")
 
 
 def add_arguments(sp) -> None:

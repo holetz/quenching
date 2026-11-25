@@ -98,7 +98,7 @@ these tables and `skills/**` disagree
 
 **The listing cost.** All thirteen descriptions are resident in every session, so the descriptions are
 the always-on cost of the plugin. Each router's description is a map of intent per flow with pt-BR and
-English triggers, at most 1,024 characters (the Agent Skills limit Codex and OpenCode read; Claude's own
+English triggers, at most 1,024 characters (the Agent Skills limit OpenCode reads; Claude's own
 cap is 1,536). Today the thirteen total about 6.4 thousand characters (about 1.6 thousand tokens); the
 ceiling is 13 × 1,024 = 13.3 thousand characters (about 3.3 thousand tokens). Before the non-core fronts
 had routers, the six resident descriptions were about 1.4 thousand characters.
@@ -270,7 +270,7 @@ knowledge back out when a spec closes.
 
 The **unit of work is a spec** — ONE canonical markdown document for its whole lifecycle. It is
 `specs/<id>.md` on the branch (`specs/archive/<id>.md` once closed), written without a checkout into
-ONE local pending commit and sent only at sync points (`cq specs new`, archive and restore,
+ONE local pending commit and sent only at sync points (archive and restore,
 `cq git push`, `cq git pr create|merge`, `cq specs push`): each sync replaces the branch with one
 parentless commit under `--force-with-lease`, so concurrent writes to different specs both land and
 the branch always holds a single commit. `cq specs status` lists the specs with unsent local
@@ -300,6 +300,8 @@ write-only, nothing reads it back, so it is never a second store.
 `cq config show --effective [--json]` prints every configuration key with its effective value and the layer it came from (`default`, `user`, `repository`, `branch`), plus the path and state of each layer; it only reads.
 
 `cq config init [--write]` seeds `.agents/quenching.json` with every adjustable default spelled out (preview without `--write`; an existing file is refused, never merged), and `cq config check [--json]` lists the seeded keys the file lacks and the leaves inside a known namespace that nothing reads, such as a typo like `shared.autonomy.maxWorker` (exit 1; `cq specs doctor` warns on the same leaves as `sp-config-unknown-leaf`). `cq doctor` prints the same list in a `config` block and only reports it; `/quenching-align` runs the check and seeds an absent file under its one authorization.
+
+`cq doctor --antivirus [--json]` lists the paths and processes an on-access antivirus (Defender, Trend Micro) should spare for this repository — the repository (its primary worktree, never the folder that holds a separate git dir), its `<repo>-slot-*` worktrees, the quenching cache (one root: `$XDG_CACHE_HOME/quenching`, else `%LOCALAPPDATA%\quenching` on Windows, else `~/.cache/quenching`), the `.venv` and the `uv` cache — as `Add-MpPreference` commands and a plain list for a central console. It applies nothing: the exclusion is your or your IT's decision, and Tamper Protection refuses it on managed machines. It refuses outside a git repository (exit 2, `cq-antivirus-no-repo`) and when the repository root is itself a disk root, the home, the system temp or an ancestor of one (`cq-antivirus-unsafe-root`); any other listed path that broad moves to "Not listed" instead of becoming an exclusion.
 
 The repository layer is read through a configuration provider. `file` is the default and the compatibility read: with nothing declared, every value, refusal and `cq config show --effective` row is what it was, `.agents/quenching.json` included (and the legacy `.claude/quenching.json`). `QUENCHING_CONFIG_PROVIDER=<name>` (read from the environment, never from the file) selects another registered provider; a name nothing answers to is a refusal (exit 2) naming the registered providers, never a fallback to the file. Under a non-file provider the repository needs no `.agents/quenching.json`, `cq doctor` stops asking for it, `cq config show --effective` names the provider as the repository layer's source, and `cq config init` and `cq config check` refuse, because a write the provider did not receive would be a silent divergence. `cq config export [--json]` prints the repository layer as the envelope a service would hold, so the file can be loaded there and then deleted; it only reads. No service provider ships yet: this release delivers the seam.
 
@@ -332,14 +334,17 @@ With `QUENCHING_SPECS_SYNC=1` and the `azure-boards` backend, every read is answ
 ### The quenching MCP server — the CLI catalog and references
 
 `cq mcp` starts the stdio `quenching` server. The Claude Code plugin registers it from its own
-`.mcp.json`; a deployed target instead gets `cq deploy`'s entry merged into its own harness files,
-always (`shared.mcp` only overrides the mount and the Python prefix, and the target's other
-entries are kept); a harness that reads neither manifest launches `cq mcp` itself.
+`.mcp.json`; a deployed target instead gets `cq deploy`'s entry for the whole server
+(`.agents/quenching/assets/bin/cq mcp`, started by a direct interpreter, never `uv run`) merged into
+its own harness files, always (`shared.mcp` only overrides the mount — `specs` for the specs-only
+server — and the Python prefix, and the target's other entries are kept); a harness that reads
+neither manifest launches `cq mcp` itself.
 It exposes a closed catalog of available CLI verbs, including the specs tools below. Tool names
 follow `<pillar>_<verb>[_<subverb>]` (`components_read`, `git_pr_create`); `tools/list` reports
 which are available. Schemas come from each verb's parser. An absent pillar contributes no tool.
 The `read`, `write` and `external` classes describe effects through MCP annotations, without
-adding grants. The workspace is the launch cwd or launch-time `--root`, never a tool argument.
+adding grants. The workspace is the launch cwd or launch-time `--root`; one call names another tree
+with `root`, which every tool takes.
 
 Run a released version without installing the plugin manually:
 
@@ -414,42 +419,6 @@ reads one section. `quenching://glossary?term=<term>` reads the entries (comma-s
 A URI resolves only to those two fixed files or to a `.md` inside `docs/standards/`: any other path, a
 traversal or an unknown URI is a JSON-RPC error (`-32602` bad parameters, `-32002` not found), never a file
 read. The same 60,000-character ceiling cuts an oversized answer with `truncated: true` and a `hint`.
-
-### O executor Codex
-
-Step 5b of `/quenching-specs execute` hands **one task at a time** to Codex when the code
-admits it; Claude keeps the self-review, the `verify:`, the commit, the tick and the verifier. It
-is **off by default**, under `shared.codex.executor` in `.agents/quenching.json`
-(`executor.enabled: true` is its opt-in); a repository that declares nothing never calls Codex, and
-`cq config init` seeds that same value. There is no Codex cross review: a leftover
-`shared.codex.crossReview` or `shared.codex.model` is ignored and named in `warnings`.
-
-- **Quota probe** — `cq codex probe [--json]` answers whether Codex may be called now, without
-  spending quota: exit `0` available, `1` unavailable (a window over its ceiling, no `codex` on
-  `PATH`), `2` unknown (no readable source or a stale snapshot). The ceilings default to
-  `maxUsedPercent` `80` (primary) and `90` (secondary), and one call to `timeoutSeconds` `900`.
-
-- **Eligibility** — `cq codex eligible --spec <id> --task <tid> --json`: an open task that declares
-  `files:`, writes nothing under `docs/` or `knowledge/`, and is small (bytes of its `files:` / 4 ≤
-  `maxTaskTokens`, `20000`) or carries a `verify:`. A cheap model (`modelSmall`, `modelVerified`)
-  at `reasoningEffort` `medium`.
-- **Quota** — one dispatch at a time, only under `maxUsedPercent − reservePercent` (`80 − 10`) in
-  both windows. A task that moves the primary window by more than `stopLossPercent` (`15` points)
-  keeps its diff and turns the executor off for the rest of the run.
-- **Failure** — a red `verify:` is fixed by Claude on top of Codex's diff; a timeout, a Codex error
-  or a spent quota falls back to Claude. Codex never gets a second attempt.
-
-**Bypass, and its risk.** `cq codex implement` always runs `codex exec
---dangerously-bypass-approvals-and-sandbox -C <worktree>`; Codex's native sandbox is never asked
-for, because most machines lack the admin rights it needs. The bounds are the plugin's: `--ignore-user-config`, an
-environment without `GH_TOKEN`, `GITHUB_TOKEN`, `AWS_*`, `AZURE_*` or `GOOGLE_*`, a prompt that
-forbids git, and a **git guard** that compares the worktree's `HEAD`, branch, reflog, stash
-and `git status` before and after — any divergence or a path outside `files:` is exit `2`,
-the diff is discarded inside `files:` and Claude writes the task. What remains is a command run
-outside the worktree that git cannot see. There is no sandbox setting: a leftover
-`shared.codex.executor.sandbox` or `windowsSandbox` is ignored.
-
-The Codex surface (`quenching-codex`) has no executor: a Codex run never launches Codex.
 
 The shared facts live once — the spec document, the thirteen canonical sections, the
 gates, the record vocabulary, and the `cq specs` surface in
@@ -529,8 +498,7 @@ substitution, conductor reachability and description routing. Each check is a **
 session** owned by the command that changes the surface; the default is the body subset and
 spoken routing is opt-in (`--only 3`).
 
-**The model policy is conservative — judgment is never downgraded:** the small tier (`haiku` in
-Claude, `gpt-6-luna` in Codex) writes product code only as the executor of ONE testable task —
+**The model policy is conservative — judgment is never downgraded:** the small tier (`haiku`) writes product code only as the executor of ONE testable task —
 an executable `verify:` whose tests sit outside the task's `files:`, a disposable worktree,
 nothing under `/docs/`, and a projected context at or under 80k (`cq specs estimate --task`
 reports `smallTierEligible`). One attempt; a failed `verify:` returns the task to the session
@@ -592,7 +560,7 @@ keeps its modules, while `--modules core` narrows a wider install and deletes th
 | Option | Values |
 | --- | --- |
 | `--modules` | `core` (default: `quenching-specs` plus `quenching-align` — specs, git, knowledge, components), `all`, or a comma list of modules; `specs` is always included because it owns the one `cq` |
-| `--harness` | `claude`, `codex`, `opencode` (default: all three) or `none`; `claude` also serves the GitHub Copilot harness (below) |
+| `--harness` | `claude`, `opencode` (default: both) or `none`; `claude` also serves the GitHub Copilot harness (below) |
 | `--runtime` | `vendor` (default, offline) copies the runtime; `uvx` writes a shim pinned to the release tag |
 | `--profiles` | overrides the derived `shared.profiles.installed` |
 | `--check` | exit 1 on drift instead of writing |
@@ -609,12 +577,23 @@ The full contract, including the surface translation, is [deploy-mode.md](../doc
 CLI read the target's `.claude/settings.json` hooks and its `.mcp.json` as their own, so a Copilot
 session gets the same guards and the `quenching` MCP server with no file of its own. The hook
 command is one polyglot line that bash, PowerShell and cmd parse alike, started by the repository's
-`shared.mcp.command` prefix (else the Python the deploy finds on the machine, no version pinned):
+`shared.mcp.command` prefix (else the Python the deploy finds on the machine, no version pinned; a
+`uv`/`uvx` prefix is replaced by a direct interpreter, for the hooks and the MCP server alike):
 override it with `shared.mcp.command` when a machine needs another
 ([hooks.md](../docs/standards/automation/hooks.md)). Open a Copilot session with **Branch**
 isolation, not **New Worktree**: Copilot's worktree starts at the current HEAD, carries no ignored
 file and runs no `worktreeSetup`, and the agent would then cut a second one with
 `cq git worktree add` — the worktree is the quenching flow's to cut.
+
+**Each harness gets what an orchestrated run needs.** Claude Code (and Copilot through the same
+file) gets `quenching` in `enabledMcpjsonServers`, so the registered server starts in a trusted
+folder without a prompt. OpenCode gets `experimental.subagent_depth: 4` in `opencode.json` for the
+conductor → orchestrator → runner → child chain, and `permission.external_directory` allows for the
+slots (`<repo>-slot-*`) and the sibling store (`<repo>.*`) only, so a worktree build never stops on
+an `ask`. A global OpenCode `experimental` block with other keys keeps the depth out, because a
+project block would hide them; the deploy warns with the line to add by hand
+([deploy-mode.md](../docs/standards/architecture/deploy-mode.md)). No `WorktreeCreate` hook is
+written: the slot is the flow's to take.
 
 A deployed target runs the same ids this manual writes: `/quenching-<vertical> <flow>`, for
 example `/quenching-specs create`, with the source written in that dialect
@@ -672,7 +651,7 @@ updates the published artifacts in lockstep. See
 contract.
 
 <!-- quenching-proof-readme-start -->
-<!-- quenching-proof-readme-sha256 b5b50ed9d87c85ef81bdb0180ade5f97d6f7551ea08edf2a0f55fd02a3ac1f3a -->
+<!-- quenching-proof-readme-sha256 f151f6773a3ebdb30da11aeed438d306cca9350783a0d55b7cf8444c609fc77f -->
 ## Declared proof layers
 
 ### tests
@@ -681,7 +660,7 @@ contract.
 - Reach: tree
 - Budget: not declared
 - Required: yes
-- Test modules: 184
+- Test modules: 201
 - Fixture modules: none
 
 ### Declared cost contract

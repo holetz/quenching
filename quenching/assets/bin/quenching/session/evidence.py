@@ -4,6 +4,7 @@ are about, and one command's bounded digest.
 Moved verbatim out of the pre-refactor session script."""
 from __future__ import annotations
 
+from quenching.session.cqcalls import summarize
 from quenching.session.model import Command
 
 
@@ -45,8 +46,12 @@ def assign_corrections(corrections: list, ordered: list) -> tuple[dict, list]:
     return out, unassigned
 
 
-def digest_command(cmd: Command, corrections: list, limit: int, cap: int) -> dict:
-    """One command's evidence, bounded. Counts are exact; quotes are clipped."""
+def digest_command(cmd: Command, corrections: list, limit: int, cap: int,
+                   connected: bool | None = None) -> dict:
+    """One command's evidence, bounded. Counts are exact; quotes are clipped.
+
+    `connected` is the session's reading of the MCP server (`cqcalls.summarize`); left out, the
+    command's own MCP calls decide."""
     repeated_reads = []
     for target, windows in cmd.reads.items():
         if len(windows) < 2:
@@ -86,7 +91,10 @@ def digest_command(cmd: Command, corrections: list, limit: int, cap: int) -> dic
         "repeatedShellCommands": len(repeated_shell),
         "interrupts": sum(1 for c in mine if c["kind"] == "interrupt"),
         "interjections": sum(1 for c in mine if c["kind"] == "interjection"),
+        "cqShell": sum(cmd.cq_shell.values()),
+        "cqMcp": sum(cmd.cq_mcp.values()),
     }
+    out["cq"] = summarize(cmd.cq_shell, cmd.cq_mcp, connected)
     for key in ("repeatedReads", "repeatedShell", "corrections"):
         dropped = {"repeatedReads": len(repeated_reads), "repeatedShell": len(repeated_shell),
                    "corrections": len(mine)}[key] - len(out[key])

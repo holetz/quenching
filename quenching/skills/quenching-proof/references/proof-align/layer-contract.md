@@ -7,7 +7,7 @@ fixtures and decide when a declared layer is empty.
 
 ## Contents
 
-`.agents/quenching/bin/cq components read <this file>` returns the heading index; `--sections` addresses one.
+`components_read(path=<this file>)` returns the heading index; `sections=["§X"]` addresses one.
 
 ## The four layer rules
 

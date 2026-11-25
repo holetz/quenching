@@ -2,6 +2,7 @@
 `quenching-cache` plugin price with, and the gate's refusal of an unusable or stale copy."""
 import contextlib
 import io
+import importlib.util
 import json
 import os
 import pathlib
@@ -48,9 +49,29 @@ class TheTable(unittest.TestCase):
                "models": {"Opus 6": {"input": 5, "cacheRead": 6}}}
         found = pricing.problems(bad)
         self.assertTrue(any("sourceDate" in p for p in found))
+        self.assertTrue(any("aiCredits" in p for p in found))
         self.assertTrue(any("family-version" in p for p in found))
         self.assertTrue(any("implausible" in p for p in found))
         self.assertTrue(any("cacheWrite" in p for p in found))
+
+    def test_the_credit_unit_is_declared_and_never_a_dollar_rate(self):
+        credits = pricing.table()["aiCredits"]
+        self.assertEqual("AIU", credits["unit"])
+        self.assertEqual(1_000_000_000, credits["nanoPerUnit"])
+        self.assertIn("no USD rate", credits["source"])
+        self.assertIsNone(pricing.usd("github-copilot/gpt-5"))
+
+    def test_aiu_reads_the_clients_own_count_and_nothing_else(self):
+        self.assertEqual(1.5, pricing.aiu(1_500_000_000))
+        self.assertEqual(0.0, pricing.aiu(0))
+        self.assertIsNone(pricing.aiu(None))        # not reported is not zero credits
+        self.assertIsNone(pricing.aiu(-1))
+        self.assertIsNone(pricing.aiu(True))
+        self.assertIsNone(pricing.aiu("3"))
+        bad = {"sourceDate": "2026-11-25", "aiCredits": {"unit": "AIU", "nanoPerUnit": 0},
+               "output": 5, "fast": 2, "cacheWrite": {"5m": 1.25, "1h": 2},
+               "models": {"opus-5-5": {"input": 4, "cacheRead": 0.2}}}
+        self.assertTrue(any("nanoPerUnit" in p for p in pricing.problems(bad)))
 
 
 def assistant(mid, at, model="claude-opus-5-5", read=0, write=0, ttl1h=0, out=0):
@@ -113,6 +134,19 @@ class TheGeneratedCopies(unittest.TestCase):
         run = subprocess.run([sys.executable, str(REPO / "scripts" / "cache_plugin_sync.py"), "--check"],
                              capture_output=True, text=True)
         self.assertEqual(0, run.returncode, run.stdout + run.stderr)
+
+    def test_the_opencode_core_is_the_claude_core_with_file_imports(self):
+        spec = importlib.util.spec_from_file_location("cache_plugin_sync", REPO / "scripts" / "cache_plugin_sync.py")
+        sync = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(sync)
+        by_name = {path.name: text for path, text in sync.targets() if "opencode-cache" in path.as_posix()}
+        self.assertEqual({"logic.ts", "handoff.ts", "i18n.ts", "message.ts", "prices.ts", "types.ts",
+                          "handoff-template.md", "handoff-brief.md"}, set(by_name))
+        for name, text in by_name.items():
+            if name.endswith(".ts"):
+                self.assertNotRegex(text, r"from '\.{1,2}/[\w-]+'", name)  # every relative import names its file
+        self.assertIn("from './types.ts'", by_name["logic.ts"])
+        self.assertNotIn("claude-code", by_name["handoff.ts"])
 
 
 if __name__ == "__main__":

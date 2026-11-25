@@ -16,26 +16,27 @@ Scope says which layer may hold the key:
 """
 from __future__ import annotations
 
-from quenching.codex.config import CHOICES as CODEX_CHOICES, DEFAULTS as CODEX
 from quenching.config.autonomy import COMPLEXITY, DEFAULTS as AUTONOMY, MERGE
 from quenching.config.ci import DEFAULTS as CI, ENFORCE as CI_ENFORCE
 from quenching.config.host import DEFAULTS as WORK_HOST
 from quenching.session.commands.context import BUDGETS
 from quenching.session.cachebar import COST_STYLES, DEFAULTS as CACHE_BAR, TTL_CHOICES
+from quenching.session.quotabar import DEFAULTS as QUOTA_BAR, MIN_INTERVAL_SECONDS
 
 SCOPES = ("project", "machine", "either")
 TYPES = ("string", "integer", "boolean", "enum", "paths", "strings", "prose", "number", "object")
 
 CATEGORIES = (
     ("worktrees", "Worktrees and isolation", "Worktrees e isolamento"),
+    ("workspace", "Workspace files", "Arquivos de workspace"),
     ("autonomy", "Autonomy and orchestration", "Autonomia e orquestração"),
     ("specs", "Specs and cards", "Specs e cards"),
     ("git", "Git and PR", "Git e PR"),
-    ("codex", "Codex", "Codex"),
     ("proof", "Proof and tests", "Prova e testes"),
     ("ops", "Operations", "Operações"),
     ("knowledge", "Knowledge", "Conhecimento"),
     ("cache", "Prompt cache", "Cache de prompt"),
+    ("quota", "Subscription quota", "Cota da assinatura"),
 )
 
 SLOTS = {"min": 4, "max": 12, "waitMinutes": 30, "pollSeconds": 30, "setupIdempotent": False}
@@ -113,6 +114,13 @@ _k("shared.workHost.protectedPaths", "paths", WORK_HOST["protectedPaths"], "work
 _k("shared.workHost.minFreeGb", "integer", WORK_HOST["minFreeGb"], "worktrees", "machine",
    "cq config host", ("Minimum free disk (GB)", "The host must keep this much disk free."),
    ("Disco livre mínimo (GB)", "O host precisa manter este espaço livre."), minimum=0)
+_k("shared.workspace.vscode", "boolean", False, "workspace", "project",
+   "cq deploy, cq doctor",
+   ("VS Code workspace settings",
+    "Seed .vscode/settings.json with the search and request settings that keep long flows running."),
+   ("Configurações do workspace do VS Code",
+    "Semeia .vscode/settings.json com as configurações de busca e de requisições que mantêm "
+    "fluxos longos rodando."))
 
 # — Autonomy and orchestration —
 _k("shared.autonomy.runAloneUpTo", "enum", AUTONOMY["runAloneUpTo"], "autonomy", "either",
@@ -135,6 +143,11 @@ _k("shared.autonomy.livenessMinutes", "integer", AUTONOMY["livenessMinutes"], "a
    "either", "/quenching-specs orchestrate",
    ("Worker liveness (minutes)", "Silence after which a worker is checked on."),
    ("Vida do worker (minutos)", "Silêncio depois do qual um worker é verificado."), minimum=1)
+_k("shared.autonomy.claimMinutes", "integer", AUTONOMY["claimMinutes"], "autonomy", "either",
+   "cq specs claim",
+   ("Spec claim validity (minutes)", "How long a build's reservation of a spec lasts unrenewed."),
+   ("Validade da reserva (minutos)", "Quanto dura a reserva de uma spec sem renovação."),
+   minimum=1)
 _k("shared.contextBudgets.main", "integer", BUDGETS["main"], "autonomy", "machine",
    "cq components session context", ("Main session budget", "Tokens the main session plans around."),
    ("Orçamento da sessão principal", "Tokens que a sessão principal considera."), minimum=1)
@@ -172,6 +185,26 @@ _k("shared.cache.costStyle", "enum", CACHE_BAR["costStyle"], "cache", "either",
    ("Show cost as", "dollars at list price, or times more than a normal message."),
    ("Mostrar custo como", "dólares a preço de tabela, ou quantas vezes mais que uma mensagem normal."),
    choices=list(COST_STYLES))
+# — Subscription quota (the quenching-quota band) —
+_k("shared.quota.warnPercent", "integer", QUOTA_BAR["warnPercent"], "quota", "either",
+   "quenching-quota plugin",
+   ("Warning level (%)", "From this usage of the 5-hour or weekly window the band turns yellow."),
+   ("Nível de aviso (%)", "A partir deste uso da janela de 5 horas ou semanal a faixa fica amarela."),
+   minimum=1, maximum=100)
+_k("shared.quota.dangerPercent", "integer", QUOTA_BAR["dangerPercent"], "quota", "either",
+   "quenching-quota plugin",
+   ("Danger level (%)", "From this usage of either window the band turns red."),
+   ("Nível crítico (%)", "A partir deste uso de qualquer janela a faixa fica vermelha."),
+   minimum=1, maximum=100)
+_k("shared.quota.intervalSeconds", "integer", QUOTA_BAR["intervalSeconds"], "quota", "machine",
+   "quenching-quota plugin",
+   ("Refresh interval (seconds)", "How long one usage reading is reused; never below 60."),
+   ("Intervalo de leitura (segundos)", "Por quanto tempo uma leitura de uso é reaproveitada; nunca abaixo de 60."),
+   minimum=MIN_INTERVAL_SECONDS)
+_k("shared.quota.showSonnet", "boolean", QUOTA_BAR["showSonnet"], "quota", "either",
+   "quenching-quota plugin",
+   ("Show per-model weeks", "The detail also lists the Sonnet and Opus weekly windows when they come."),
+   ("Mostrar semanas por modelo", "O detalhe também lista as janelas semanais do Sonnet e do Opus quando vierem."))
 _k("shared.hooks", "object", {}, "autonomy", "project", "the command that owns the event",
    ("Hooks", "Commands run on flow events; edit in the file."),
    ("Hooks", "Comandos executados em eventos do fluxo; edite no arquivo."))
@@ -238,47 +271,6 @@ _k("shared.gitIdentity.allowedEmails", "strings", None, "git", "project",
 _k("delivery.provider", "string", None, "git", "project", "the delivery front",
    ("Delivery provider", "The CI provider, declared explicitly."),
    ("Provedor de entrega", "O provedor de CI, declarado explicitamente."))
-
-# — Codex —
-_k("shared.codex.maxUsedPercent.primary", "integer", CODEX["maxUsedPercent"]["primary"],
-   "codex", "machine", "cq codex", ("Primary quota ceiling (%)", "Codex stops above this use."),
-   ("Teto da cota primária (%)", "O Codex para acima deste uso."), minimum=0, maximum=100)
-_k("shared.codex.maxUsedPercent.secondary", "integer", CODEX["maxUsedPercent"]["secondary"],
-   "codex", "machine", "cq codex",
-   ("Secondary quota ceiling (%)", "Codex stops above this weekly use."),
-   ("Teto da cota secundária (%)", "O Codex para acima deste uso semanal."), minimum=0,
-   maximum=100)
-_k("shared.codex.timeoutSeconds", "integer", CODEX["timeoutSeconds"], "codex", "either",
-   "cq codex", ("Codex timeout (seconds)", "How long one Codex call may run."),
-   ("Tempo limite do Codex (segundos)", "Quanto uma chamada ao Codex pode durar."), minimum=1)
-_k("shared.codex.executor.enabled", "boolean", CODEX["executor"]["enabled"], "codex", "either",
-   "cq codex implement", ("Codex writes tasks", "Codex writes eligible tasks' code at execute."),
-   ("Codex escreve tarefas", "O Codex escreve o código das tarefas elegíveis no execute."))
-for _name, _en, _pt in (("modelSmall", "Executor model (small)", "Modelo do executor (pequeno)"),
-                        ("modelVerified", "Executor model (verified)",
-                         "Modelo do executor (verificado)"),
-                        ("modelSmallTier", "Executor model (small tier)",
-                         "Modelo do executor (faixa pequena)")):
-    _k(f"shared.codex.executor.{_name}", "string", CODEX["executor"][_name], "codex", "either",
-       "cq codex implement", (_en, "The Codex model for this class of task."),
-       (_pt, "O modelo do Codex para esta classe de tarefa."))
-_k("shared.codex.executor.reasoningEffort", "enum", CODEX["executor"]["reasoningEffort"],
-   "codex", "either", "cq codex implement",
-   ("Executor reasoning effort", "How hard Codex thinks when writing a task."),
-   ("Esforço de raciocínio", "Quanto o Codex pensa ao escrever uma tarefa."),
-   choices=list(CODEX_CHOICES["reasoningEffort"]))
-_k("shared.codex.executor.maxTaskTokens", "integer", CODEX["executor"]["maxTaskTokens"], "codex",
-   "either", "cq codex eligible", ("Largest task (tokens)", "Bigger tasks stay with the agent."),
-   ("Maior tarefa (tokens)", "Tarefas maiores ficam com o agente."), minimum=1)
-_k("shared.codex.executor.reservePercent", "integer", CODEX["executor"]["reservePercent"],
-   "codex", "machine", "cq codex eligible",
-   ("Quota reserve (%)", "Quota kept free below each ceiling."),
-   ("Reserva de cota (%)", "Cota mantida livre abaixo de cada teto."), minimum=0, maximum=100)
-_k("shared.codex.executor.stopLossPercent", "integer", CODEX["executor"]["stopLossPercent"],
-   "codex", "machine", "cq codex implement",
-   ("Stop loss (%)", "Quota one task may burn before it is stopped."),
-   ("Stop loss (%)", "Cota que uma tarefa pode gastar antes de ser parada."), minimum=0,
-   maximum=100)
 
 # — Proof and tests —
 _k("proof.proofRoot", "string", "tests", "proof", "project", "cq proof",

@@ -16,10 +16,10 @@ not create a local specs store or infer missing configuration.
 
 1. Resolve `cq` through the repository's declared tool-resolution rule.
    **Done when:** the tool path is resolved or refusal is reported.
-2. With an ID, run `.agents/quenching/bin/cq specs status --spec <id> --json`; without one, run `.agents/quenching/bin/cq specs list --json`.
+2. With an ID, run `specs_status(spec=<id>)`; without one, run `specs_list`.
    The command's payload is the source of the stage, records, task progress and provider locator.
    **Done when:** the requested spec list or record is in hand.
-3. Run `.agents/quenching/bin/cq specs config --json` when the report needs to explain provider selection. A missing or
+3. Run `specs_config` when the report needs to explain provider selection. A missing or
    unrecognised provider is a refusal, never a fallback to local files. **Done when:** provider
    configuration is reported when needed.
 4. Report the tool's JSON and exit code. Do not enumerate local folders, infer a filesystem root,

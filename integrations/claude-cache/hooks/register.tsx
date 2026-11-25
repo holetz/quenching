@@ -7,6 +7,7 @@ import type { EngineInterface, Register } from 'claude-code'
 import type { Rec } from '../types'
 import { assemble, briefPrompt, briefSystem, draftPath, isValidBrief, parseFacts, savedText } from './handoff'
 import type { Numbers } from './handoff'
+import type { SessionMessage as Msg } from './message'
 import { WORDS, langOf } from './i18n'
 import type { Words } from './i18n'
 import { DEFAULTS, costs, decide, fromSessionStart, haikuUsd, sendWarning, setFreshStart, settingsFromConfig, statsText, ttlFor, ttlFromUsage } from './logic'
@@ -155,7 +156,8 @@ async function handoff($: EngineInterface, focus: string) {
     const rec = await read($, last)
     const factsRun = await runCq($, ['specs', 'handoff', 'facts', '--session', sessionId, '--json'])
     const facts = parseFacts(factsRun?.exitCode === 0 ? factsRun.stdout : null)
-    const messages = await $.session.messages()
+    // the adapter for this host: Claude Code's own rows already have the shared shape
+    const messages: Msg[] = await $.session.messages()
     const nums: Numbers = rec ? { tokens: rec.prefix, window: rec.window, model: rec.model, bar: decide(rec, now, settings, words).text } : {}
     const preamble = String(await $.fs.read(`${$.plugin.root}/hooks/handoff-brief.md`))
     const template = String(await $.fs.read(`${$.plugin.root}/hooks/handoff-template.md`))

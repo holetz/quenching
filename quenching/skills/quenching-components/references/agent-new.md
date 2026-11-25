@@ -89,9 +89,9 @@ in this run, one curated registry-prose line for the agent surface and `/quenchi
 for a coined repo-specific term; the user decides both. **Done when:** each offer is answered.
 
 ### 8. Self-check
-```bash
-.agents/quenching/bin/cq components doctor --json
-.agents/quenching/bin/cq components lint --json
+```text
+components_doctor()
+components_lint()
 ```
 `lint` takes no argument here: `lint <file>` never reaches the agents. Keep every finding whose
 `path` is this file, from either payload, whatever its code (`sk-cq-flag` included). Then read the definition against the contract by eye: tools scoped, voice second-person, a

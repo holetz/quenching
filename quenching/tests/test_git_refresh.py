@@ -128,7 +128,7 @@ class TheCloseNamesTheVerb(unittest.TestCase):
         for rel in ("quenching/skills/quenching-specs/references/conclude.md",
                     "quenching/skills/quenching-git/references/merge.md"):
             text = " ".join((ROOT / rel).read_text(encoding="utf-8").split())
-            self.assertIn("cq git refresh", text, rel)
+            self.assertTrue(any(form in text for form in ("cq git refresh", "`git_refresh`", "git_refresh(")), rel)
 
 
 if __name__ == "__main__":

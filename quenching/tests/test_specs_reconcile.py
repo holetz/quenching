@@ -8,6 +8,7 @@ import shutil
 import subprocess
 import tempfile
 import unittest
+import unittest.mock
 from unittest.mock import patch
 
 import _paths  # noqa: F401
@@ -110,9 +111,13 @@ class Reconcile(unittest.TestCase):
             payload = self.run_reconcile(remote="upstream")
         self.assertEqual(payload["count"], 2)
         self.assertEqual(payload["remote"], "upstream")
-        fetch.assert_called_once_with(["git", "fetch", "--quiet", "upstream"],
-                                      cwd=self.root, capture_output=True, text=True,
-                                      encoding="utf-8", errors="replace", timeout=30)
+        # The claim read goes through git too; only the fetch is counted here.
+        fetches = [c for c in fetch.call_args_list if c.args[0][:2] == ["git", "fetch"]]
+        self.assertEqual(1, len(fetches))
+        self.assertEqual(unittest.mock.call(["git", "fetch", "--quiet", "upstream"],
+                                            cwd=self.root, capture_output=True, text=True,
+                                            encoding="utf-8", errors="replace", timeout=30),
+                         fetches[0])
         self.assertEqual(evidence.call_count, 2)
         for call in evidence.call_args_list:
             self.assertEqual(call.args[2], "upstream")
@@ -151,3 +156,57 @@ class ReconcileReleasesTheSlot(Reconcile):
     def test_a_spec_built_outside_a_slot_releases_nothing(self):
         self.spec()
         self.assertIsNone(self.run_reconcile(write=True)["specs"][0]["slot"])
+
+
+class ReconcileDeletesTerminalClaims(Reconcile):
+    """A lease of a terminal spec is deleted by compare-and-swap; an open spec keeps its lease."""
+
+    def lease(self, spec_id):
+        from quenching.specs import claims
+        store = claims.Store(self.root)
+        lease = claims.new_lease(str(spec_id), "m:s", None, 45, claims.now())
+        self.assertTrue(store.swap(str(spec_id), store.make(lease), None))
+        return store
+
+    def test_a_terminal_lease_is_released_with_write_and_listed_without(self):
+        spec_id = self.spec()
+        store = self.lease(spec_id)
+        self.backend.move_spec({"id": spec_id}, "archive")
+        dry = self.run_reconcile()["claims"]
+        self.assertEqual([{"spec": str(spec_id), "action": "would-release", "why": ""}],
+                         dry["released"])
+        self.assertIn(str(spec_id), store.heads())
+        got = self.run_reconcile(write=True)["claims"]
+        self.assertEqual("released", got["released"][0]["action"])
+        self.assertEqual({}, store.heads())
+
+    def test_the_spec_archived_in_the_same_run_has_its_lease_released(self):
+        spec_id = self.spec()
+        store = self.lease(spec_id)
+        payload = self.run_reconcile(write=True)
+        self.assertEqual("archived", payload["specs"][0]["action"])
+        self.assertEqual("released", payload["claims"]["released"][0]["action"])
+        self.assertEqual({}, store.heads())
+
+    def test_an_open_spec_keeps_its_lease(self):
+        spec_id = self.spec(merged=False)
+        store = self.lease(spec_id)
+        self.assertEqual([], self.run_reconcile(write=True)["claims"]["released"])
+        self.assertIn(str(spec_id), store.heads())
+
+    def test_a_lease_that_moved_since_the_read_is_kept(self):
+        from quenching.specs import claims
+        spec_id = self.spec()
+        self.lease(spec_id)
+        self.backend.move_spec({"id": spec_id}, "archive")
+        with patch.object(claims.Store, "swap", return_value=False):
+            row = self.run_reconcile(write=True)["claims"]["released"][0]
+        self.assertEqual(("kept", "the lease moved since it was read"), (row["action"], row["why"]))
+
+    def test_git_that_cannot_answer_never_fails_the_reconcile(self):
+        from quenching.specs import claims
+        self.spec()
+        with patch.object(claims.Store, "heads", side_effect=claims.ClaimError("no git")):
+            payload = self.run_reconcile(write=True)
+        self.assertEqual({"available": False, "released": []}, payload["claims"])
+        self.assertEqual("archived", payload["specs"][0]["action"])

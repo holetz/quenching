@@ -24,7 +24,7 @@ specs it built, not restated here. No branch, no description, or no such line �
 
 <!-- rules -->
 
-Every marked ID is checked with `.agents/quenching/bin/cq specs status --spec <id> --json` before it is offered as a
+Every marked ID is checked with `specs_status(spec=<id>)` before it is offered as a
 candidate. One that resolves under `plans/` is valid. One that errors (`sp-unknown-id`) or now
 resolves under `archive/` is **invalid** — a branch reused after the spec that marked it was already
 concluded, still carrying its old ID. An invalid ID is dropped silently before resolution: never
@@ -50,7 +50,7 @@ surfaced as a choice, and never assumed to be the answer because it was the only
    `init.defaultBranch`, else `main`.
 2. **Always ask — never a size threshold.** Show the measurement and ask, on a
    decision sheet, whether to materialize a minimal spec from this diff before concluding:
-   `.agents/quenching/bin/cq specs new`, with a title and `## Problem` drafted from the diff summary. No diff size skips
+   `specs_create`, with a title and `## Problem` drafted from the diff summary. No diff size skips
    the question or answers it by default — "big enough to matter" is a human judgment that changes
    by repository, and the question is already cheap.
    - **Accepted** → the new spec is minted, and its ID threads into the rest of `conclude` exactly

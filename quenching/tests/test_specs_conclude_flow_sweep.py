@@ -41,7 +41,7 @@ class ConcludeFlowSweep(unittest.TestCase):
         self.assertIn("how the work was carried", text)
         self.assertIn("Zero is a valid result only when neither the digest nor the run evidences a defect", text)
         self.assertNotIn("Zero is the normal result", text)
-        self.assertIn("cq components session digest --json", text)
+        self.assertIn("components_session_digest(", text)
         self.assertIn("Minimal fix proposed:", text)
         self.assertIn("a decision for the human", text)
         self.assertIn("**Insumos**", text)
@@ -69,20 +69,20 @@ class ConcludeArchivesAfterTheMerge(unittest.TestCase):
     def test_no_done_archive_before_the_hand_off(self):
         before_merge = CONCLUDE[:CONCLUDE.index("### 8. ")]
         commands = [line for block in before_merge.split("```")[1::2]
-                    for line in block.splitlines() if "specs promote" in line]
+                    for line in block.splitlines() if "specs_promote(" in line]
         self.assertTrue(commands)
         for line in commands:
-            self.assertIn("--outcome abandoned", line)
-            self.assertNotIn("--outcome done", line)
+            self.assertIn('outcome="abandoned"', line)
+            self.assertNotIn('outcome="done"', line)
 
     def test_step_four_writes_the_outcome_and_archives_only_an_abandonment(self):
         text = step(4)
         self.assertIn("### 4. Write `## Outcome`", text)
         self.assertIn("Do not archive it here", text)
-        self.assertIn("--outcome abandoned", text)
+        self.assertIn('outcome="abandoned"', text)
 
     def test_the_post_merge_close_follows_the_hand_off(self):
         self.assertLess(CONCLUDE.index("### 7. Prove the gate green"),
                         CONCLUDE.index("### 8. After the merge: archive and release the worktree"))
-        self.assertIn("cq specs reconcile --write", step(8))
+        self.assertIn("specs_reconcile(write=true)", step(8))
         self.assertIn("Never archive a `done` spec before its merge", CONCLUDE)

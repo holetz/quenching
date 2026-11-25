@@ -105,7 +105,8 @@ Dev Drive, or with `fsutil devdrv create`. The resolver prefers an existing Dev 
 
 A RAM disk is not recommended on Windows: it needs a driver and admin rights, and a Dev Drive gets
 most of the gain without either. Defender exclusions are blocked under Tamper Protection on managed
-machines, so do not plan around them.
+machines, so do not plan around them; where you or your IT do want them, `cq doctor --antivirus`
+prints the exact paths and processes for this repository and applies nothing.
 
 ## Tune one run
 

@@ -218,7 +218,7 @@ class Revalidation(RepoCase):
 class CommandBody(unittest.TestCase):
     def test_cleanup_shows_dates_groups_and_separate_worktree_confirmation(self):
         text = CLEANUP_COMMAND.read_text(encoding="utf-8")
-        for needle in ("manifest", "--expect-tip", "--confirm-inactive", "tipDate", "groups"):
+        for needle in ("manifest", "expect_tip=", "confirm_inactive=true", "tipDate", "groups"):
             self.assertIn(needle, text)
         self.assertNotIn("git branch -D", text.replace("Never `git branch -D`", ""))
 
@@ -236,7 +236,7 @@ class CommandBody(unittest.TestCase):
     def test_cleanup_offers_archived_slots_as_their_own_decision(self):
         text = " ".join(CLEANUP_COMMAND.read_text(encoding="utf-8").split())
         for needle in ("D4 — archived slots", "kind: slot", "archived-holder",
-                       "cq git prune --slot", ".quenching/handoff/", "process-in-slot"):
+                       "git_prune(slot=", ".quenching/handoff/", "process-in-slot"):
             self.assertIn(needle, text)
 
 

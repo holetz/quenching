@@ -37,9 +37,9 @@ this skill's doctrine. What follows is specific to the automation surface:
   that owns it (`/quenching-components agent-new`, `/quenching-components hook-new`).
 - **`.agents/` is the source; `.claude/skills/` is the generated bridge.** A target's skills live
   in `.agents/skills/<name>/SKILL.md` (one segment, `/<name>`), its references in
-  `.agents/references/**`, its instructions in `AGENTS.md`. `.agents/quenching/bin/cq components migrate --target .`
+  `.agents/references/**`, its instructions in `AGENTS.md`. `components_migrate()`
   plans the move off the legacy layout (`.claude/commands/**`, `.claude/references/**`, the old
-  Codex translation under `.agents/`); `.agents/quenching/bin/cq components bridge --target . --check` names the drift
+  Codex translation under `.agents/`); `components_bridge(check=true)` names the drift
   of the generated `.claude/skills/<name>/` copies. **Conformant means both**: an empty migrate
   plan (`conformant: true`) and `bridge --check` exit 0.
 - **A family is a router, with no shortcuts.** Three or more skills of the target sharing the first
@@ -71,11 +71,11 @@ size, step criteria, unscoped `Bash`). Neither decides the **axis**: classificat
 
 ### 1. Probe — the checks that decide whether anything else runs
 Before any inventory, ask the tool whether there is work at all:
-```bash
-.agents/quenching/bin/cq components migrate --target . --json
-.agents/quenching/bin/cq components bridge --target . --check --json
-.agents/quenching/bin/cq components doctor --json
-.agents/quenching/bin/cq components lint --json
+```text
+components_migrate()
+components_bridge(check=true)
+components_doctor()
+components_lint()
 ```
 plus one `Glob` for the legacy pairs the tool cannot see (below). Branch as
 [sweep-doctrine](.agents/quenching/references/align/sweep-doctrine.md) §1. Probe before the inventory prescribes:
@@ -157,8 +157,8 @@ Wait for the single confirmation; code-coupled items each await their own.
 **Done when:** the user has answered; declined → nothing written, run ends.
 
 ### 5. Apply
-Execute the confirmed plan: **the migration first** — `.agents/quenching/bin/cq components migrate --target . --write
---json` plus one `--router <family>` per family answered A, which leaves every `openspec-*`
+Execute the confirmed plan: **the migration first** — `components_migrate(write=true,
+router=[<family>, …])` with every family answered A in `router`, which leaves every `openspec-*`
 skill and `opsx/` command where it stands — then
 **collapse each pair per §6**, rename command paths, create/rewrite
 commands from `automation/command.md`, fix frontmatter gaps per the doctrine (description within
@@ -194,7 +194,7 @@ Delete `skills/<name>/` only once its body is in place and its neighbours are re
 
 **A pair that is not a clean pair is reported, never guessed:** a skill with no wrapper needs a
 path chosen (a human decision), and a wrapper naming no skill has no body to take.
-Then regenerate the bridge from the edited bodies: `.agents/quenching/bin/cq components bridge --target . --write --json`.
+Then regenerate the bridge from the edited bodies: `components_bridge(write=true)`.
 **Done when:** every confirmed pair is one file, `skills/` holds nothing that was migrated, the
 bridge was written after the last body edit, and every unclean pair is listed with what it needs.
 
@@ -215,7 +215,7 @@ read-only `Task` collectors — one per slice — that report *what each body co
 its frontmatter, what it cites, where its numbered steps end) and nothing else; every doctrine
 verdict stays with the orchestrator.
 
-**A local family** is no finding of §7: `families` from `.agents/quenching/bin/cq components status --json`
+**A local family** is no finding of §7: `families` from `components_status()`
 and `routers` from `migrate --json` are decided in §4 and applied in §5, per
 `/docs/standards/automation/skills.md` §A target extends a vertical with its own router.
 A family the human answered B stays as loose skills and is not reported as a defect.
@@ -270,14 +270,14 @@ deleted.
 
 ### 9. Verify, decide, report
 Regenerate the zone, then let the tool judge the surface the migration produced:
-```bash
-.agents/quenching/bin/cq components registry reindex --json   # the zone, from the post-migration surface and §8's descriptions
-.agents/quenching/bin/cq components bridge --target . --write --json # the bridge, from §8's descriptions
-.agents/quenching/bin/cq components migrate --target . --json        # `conformant: true` — an empty plan
-.agents/quenching/bin/cq components bridge --target . --check --json # exit 0 — the bridge matches .agents/skills/
-.agents/quenching/bin/cq components doctor --json             # the surface invariant the migration just changed
-.agents/quenching/bin/cq components lint --json               # the gaps the migration was supposed to close — §8's codes
-.agents/quenching/bin/cq components registry reindex --json   # `changed: false` — the zone now matches disk
+```text
+components_registry_reindex()   # the zone, from the post-migration surface and §8's descriptions
+components_bridge(write=true)   # the bridge, from §8's descriptions
+components_migrate()   # `conformant: true` — an empty plan
+components_bridge(check=true)   # exit 0 — the bridge matches .agents/skills/
+components_doctor()   # the surface invariant the migration just changed
+components_lint()   # the gaps the migration was supposed to close — §8's codes
+components_registry_reindex()   # `changed: false` — the zone now matches disk
 ```
 Every renamed reference site greps clean, and no citation still points into a deleted
 `skills/` tree. `reindex` runs **after** §8: the zone's `Typical trigger` column is each
