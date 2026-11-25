@@ -116,7 +116,10 @@ command that edits the surface — `/quenching-components command-new`, or `/que
 For each task the policy says to verify:
 
 1. Run the task's `verify:` command, from its declared `cwd:` — or, absent one, from the session's
-   or worktree's root, exactly as before this key existed.
+   or worktree's root, exactly as before this key existed. **Run it without a pipe, and read the
+   command's own exit**: a pipe returns the last stage's exit (`… | tail` exits 0 over a red suite).
+   When a pipe is unavoidable, run under `set -o pipefail` and read the exit before shortening
+   anything; `tail` and `head` belong to reading the output, never to the run that decides the tick.
 2. **Passes** → the task is done; go to the diff self-review.
 3. **Fails** → classify it first. Reproduce the failure in the base worktree (`.quenching/red`): it
    reproduces there → it is **pre-existing**, not this task's, and

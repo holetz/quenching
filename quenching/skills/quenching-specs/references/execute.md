@@ -306,6 +306,9 @@ e. **Then verify, stage, commit and confirm the spec task as ONE chained operati
    specs_task(spec=<spec-id>, action="check", task=<task-id>, subject="<subject the commit reported>", commit="<sha the commit reported>")
    ```
 
+   **The `verify:` runs with no pipe, or under `set -o pipefail`:** the exit that gates the chain is
+   the command's own, never a `tail` or `head` stage's; shorten the output when reading it.
+
    **The ordering remains explicit:** verify precedes staging, staging precedes the
    commit, and the spec tick follows the commit. Any failure stops the operation. A commit that
    already succeeded is preserved when the spec write fails; report its sha and retry
