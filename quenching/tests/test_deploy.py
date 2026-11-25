@@ -801,7 +801,43 @@ class Deploy(unittest.TestCase):
         self.assertEqual([], self.run_deploy("--check")[1]["changes"])
         self.assertEqual(0, self.run_deploy("--write")[0])
         rewritten = json.loads((self.target / "opencode.json").read_text())
-        self.assertNotIn(other[0], rewritten["permission"]["external_directory"])
+        self.assertEqual({p: "allow" for p in other}, rewritten["permission"]["external_directory"])
+
+    def test_write_keeps_what_the_checkout_already_declares(self):
+        # A checkout carrying another machine's patterns and a depth this machine's global config
+        # would hide: a write must leave `opencode.json` and the manifest block as they are.
+        self.assertEqual(0, self.run_deploy("--modules", "specs", "--harness", "opencode",
+                                            "--write")[0])
+        other = ["~/elsewhere/repo-slot-*", "~/elsewhere/repo.*"]
+        manifest_path = self.target / ".agents/.quenching-deploy.json"
+        manifest = json.loads(manifest_path.read_text())
+        manifest["opencodeConfig"]["externalDirectory"] = other
+        manifest_path.write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
+        opencode = json.loads((self.target / "opencode.json").read_text())
+        opencode["permission"]["external_directory"] = {p: "allow" for p in other}
+        (self.target / "opencode.json").write_text(json.dumps(opencode, indent=2) + "\n",
+                                                   encoding="utf-8")
+        (self.xdg / "opencode").mkdir()
+        (self.xdg / "opencode" / "opencode.jsonc").write_text(
+            '{"experimental": {"todo": true}}\n', encoding="utf-8")
+        before = (self.target / "opencode.json").read_bytes()
+        block = json.loads(manifest_path.read_text())["opencodeConfig"]
+        self.assertEqual(0, self.run_deploy("--write")[0])
+        self.assertEqual(before, (self.target / "opencode.json").read_bytes())
+        self.assertEqual(block, json.loads(manifest_path.read_text())["opencodeConfig"])
+        self.assertEqual([], self.run_deploy("--check")[1]["changes"])
+
+    def test_write_derives_again_when_the_file_lost_a_recorded_value(self):
+        self.assertEqual(0, self.run_deploy("--modules", "specs", "--harness", "opencode",
+                                            "--write")[0])
+        manifest_path = self.target / ".agents/.quenching-deploy.json"
+        manifest = json.loads(manifest_path.read_text())
+        manifest["opencodeConfig"]["externalDirectory"] = ["~/elsewhere/repo.*"]
+        manifest_path.write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
+        self.assertEqual(0, self.run_deploy("--write")[0])
+        derived = json.loads((self.target / "opencode.json").read_text())
+        self.assertNotIn("~/elsewhere/repo.*", derived["permission"]["external_directory"])
+        self.assertEqual(4, derived["experimental"]["subagent_depth"])
 
     def test_a_slot_resolves_to_its_primary_checkout(self):
         from quenching.deploy.cli import _primary_checkout

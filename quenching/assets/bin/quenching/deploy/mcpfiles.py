@@ -134,6 +134,35 @@ def written_extras(text: str | None, extras: dict) -> dict:
             "bash": [p for p in extras.get("bash") or [] if _writable(bash, p)]}
 
 
+def carries(text: str | None, recorded: dict | None) -> bool:
+    """`text` already holds everything `recorded` says a deploy wrote — the depth, every pattern
+    and every shell rule at `allow` — so a deploy on another machine has nothing to derive."""
+    if not recorded or not text:
+        return False
+    try:
+        document = json.loads(text)
+    except ValueError:
+        return False
+    if not isinstance(document, dict):
+        return False
+    depth = recorded.get("subagentDepth")
+    patterns = recorded.get("externalDirectory") or []
+    rules = recorded.get("bash") or []
+    if depth is None and not patterns and not rules:
+        return False
+    experimental = document.get("experimental")
+    if depth is not None and not (isinstance(experimental, dict)
+                                  and experimental.get("subagent_depth") == depth):
+        return False
+    permission = document.get("permission")
+    permission = permission if isinstance(permission, dict) else {}
+    for key, wanted in (("external_directory", patterns), ("bash", rules)):
+        held = permission.get(key)
+        if any(not isinstance(held, dict) or held.get(item) != "allow" for item in wanted):
+            return False
+    return True
+
+
 def _opencode_extras(document: dict, extras: dict) -> bool:
     """Write `experimental.subagent_depth` and the `external_directory` allows; False when a key
     holds a shape the merge cannot extend."""

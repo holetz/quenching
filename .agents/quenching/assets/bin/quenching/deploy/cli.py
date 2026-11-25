@@ -239,7 +239,8 @@ def _mcp_merge(target: Path, wanted: dict[str, list[str]], previous: dict | None
     there (`opencodeConfig`) is taken out first, so a changed pattern never lingers.
     `keep_patterns` (`--check`) reuses the recorded `external_directory` patterns and depth: they
     name the deploying machine's checkout and global config, so another clone of a committed
-    `opencode.json` is not drift.
+    `opencode.json` is not drift. A write does the same when the file already carries every
+    recorded value, so it never swaps a checkout's own for this machine's.
     """
     files: list[dict] = []
     warnings: list[str] = []
@@ -254,8 +255,9 @@ def _mcp_merge(target: Path, wanted: dict[str, list[str]], previous: dict | None
         current = _canonical_text(path)
         if rel in wanted and rel == mcpfiles.OPENCODE:
             base = mcpfiles.opencode_strip(current, recorded) if recorded and current else current
+            reuse = keep_patterns or mcpfiles.carries(current, recorded)
             extras, why = _opencode_wanted(target, base, os.environ if env is None else env,
-                                           recorded=recorded if keep_patterns else None)
+                                           recorded=recorded if reuse else None)
             warnings.extend(why)
             new = (None if current is not None and base is None
                    else mcpfiles.merged(rel, base, wanted[rel], extras))
