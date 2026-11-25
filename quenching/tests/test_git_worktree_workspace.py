@@ -13,7 +13,6 @@ import os
 import pathlib
 import subprocess
 import sys
-import unittest
 
 import _paths  # noqa: F401  — must precede the `quenching` import
 from quenching.common.jsonc import jsonc_loads

@@ -238,7 +238,7 @@ class FreeSlots(RepoCase):
         self.assertIn("slot-floor", held["blockers"])
 
     def test_prune_unlocks_a_free_slot_before_removing_it(self):
-        _paths, candidate = self._five_free_slots()
+        _slots, candidate = self._five_free_slots()
         tip = subprocess.run(["git", "rev-parse", "HEAD"], cwd=candidate, capture_output=True,
                              text=True).stdout.strip()
         code, out = _prune(self.repo, worktree=candidate, expect_tip=tip, confirm_inactive=True,
@@ -247,7 +247,7 @@ class FreeSlots(RepoCase):
         self.assertFalse(os.path.isdir(candidate))
 
     def test_a_failed_removal_puts_the_pool_lock_back(self):
-        _paths, candidate = self._five_free_slots()
+        _slots, candidate = self._five_free_slots()
         tip = subprocess.run(["git", "rev-parse", "HEAD"], cwd=candidate, capture_output=True,
                              text=True).stdout.strip()
         real = cmd_prune.__globals__["_git_run"]
