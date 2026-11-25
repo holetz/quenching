@@ -169,7 +169,7 @@ own words. It runs `git checkout -b` in the checkout the session already has, st
 
 The client may open the session already inside a worktree it cut — VS Code's **New Worktree** and
 the Copilot CLI put it under `<repo>.worktrees/<branch with slashes as dashes>`, on a `copilot/*`
-or `agents/*` branch. It is **not a slot**: `cq git worktree slots` lists it among the others,
+or `agents/*` branch. It is **not a slot**: `git_worktree_slots()` lists it among the others,
 never counts it, and `acquire` neither takes nor reuses it. Adoption is the whole handling:
 
 - **A `SessionStart` hook runs `cq git worktree adopt` in the session's checkout.** The verb links

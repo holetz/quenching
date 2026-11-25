@@ -222,7 +222,7 @@
 
     ".agents/quenching/assets/bin/quenching/mcp/cli.py": "e7fcb628982d71c0cd9ebde741c78ff2ddf21a0d389a1833cf09b0302d8786dd",
 
-    ".agents/quenching/assets/bin/quenching/mcp/coverage.py": "ef6e97007db24b946a7c94249153888db37cdf14ca28c0944ae5f8c1e9519225",
+    ".agents/quenching/assets/bin/quenching/mcp/coverage.py": "22c0fe8924f8fc5f912e271686058355617a078d327ac0f759522185197197fd",
 
     ".agents/quenching/assets/bin/quenching/mcp/resources.py": "61dc6effc7117547fbde0ccc1d8e7796448c59499f976e9968bf0df466bf51d1",
 
@@ -558,7 +558,7 @@
 
     ".agents/quenching/references/git/conventions.md": "0f00da694e9d3fdc7110a3865a985529bd29add453dc056876dac05d0d6f3bcc",
 
-    ".agents/quenching/references/git/isolation.md": "04ad3a4d0cb6b65571122b2877778ed5cc90d4282841f6fa6149c0ae56e12577",
+    ".agents/quenching/references/git/isolation.md": "26b465d5653625e2f95543902e961a90d7f55ea6ac514c3d04f603cf102982be",
 
     ".agents/quenching/references/git/merge.md": "6ac6b1345129b15b8b8e8bd76f6fbdc2efd26ba327dbfe3077365c871c8b5e83",
 
