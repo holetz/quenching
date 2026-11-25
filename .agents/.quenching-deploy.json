@@ -29,15 +29,15 @@
   "files": {
     ".agents/quenching/VERSION": "26fc6a53c41aacfac3889c7275bfdb81d2de7d35e9906fb926614b351c347fbd",
 
-    ".agents/quenching/agents/spec-orchestrator.md": "a389f7ad92be6ba10a92b67e32e0cb54c5a007f2f1f18550ef9fd9ed2bc108ca",
+    ".agents/quenching/agents/spec-orchestrator.md": "c704188d52a467e48624f700d7e9d07d71af60eea0308de4261afaf3ce6c5666",
 
-    ".agents/quenching/agents/spec-reviewer.md": "b976951e7fb4d56ae20971354e3efb69c44391523c9e15b68d92b602b712067c",
+    ".agents/quenching/agents/spec-reviewer.md": "1a6302d01c452501e59f9c8924f3ee7fcdc2ebb8d150e54b2b4a53441428e1b6",
 
-    ".agents/quenching/agents/spec-runner.md": "8ab210b9fb733357d603c0a47569ddcbdf47b7bb9f2cb4b4f23bdcd08a60550b",
+    ".agents/quenching/agents/spec-runner.md": "9cc5c50847c5ae38e3c998a9b28491e5d1b00147ce776947193c49d6a3f6067a",
 
-    ".agents/quenching/agents/spec-scout.md": "82da98399dd8e0b10533e4a6600f6c90d405e1873234e94cc1877b75ebc8f0e4",
+    ".agents/quenching/agents/spec-scout.md": "fb14fd6eca42f5eee9d0883e4e876fd9d64d009fa4b60f187a02b2f25c75c628",
 
-    ".agents/quenching/agents/spec-verifier.md": "b7e5499c50acd4d03f85b6290a1886f0779d95715c6116222279b8946f68484b",
+    ".agents/quenching/agents/spec-verifier.md": "bc2597c3e1a12bccdb5759de4242e78f58ad71eafda76b5e52935d8ba8f2e999",
 
     ".agents/quenching/assets/bin/cq": "885d05b78621413dd9ce513b26b68df580d6f394635566b1c6962f570116997f",
 
@@ -155,7 +155,7 @@
 
     ".agents/quenching/assets/bin/quenching/deploy/settings.py": "31aa50c067d47fc8721519963218b48245d8d3f2f0faa3442b8433428d483fb2",
 
-    ".agents/quenching/assets/bin/quenching/deploy/translate.py": "829ff0bd18a74ad345e2b4ad22b165cab41f75a82ec8cb1e8f33b67bf3a021b4",
+    ".agents/quenching/assets/bin/quenching/deploy/translate.py": "69913b2f7ee565b3b0646b9da44cb1343e883278bb292fd182852edbecfab062",
 
     ".agents/quenching/assets/bin/quenching/deploy/tree.py": "69e6c612674c61febab365a5e9fc0f4772a68b8ddb1bdb40b174942005fbbb17",
 
@@ -887,15 +887,15 @@
 
     ".agents/skills/quenching-toolchain/references/toolchain-align/bands.md": "d73941d0034ffd0cbc3b3c79bc992d432b1a802e3d86926730a5943309034b97",
 
-    ".claude/agents/quenching-spec-orchestrator.md": "a389f7ad92be6ba10a92b67e32e0cb54c5a007f2f1f18550ef9fd9ed2bc108ca",
+    ".claude/agents/quenching-spec-orchestrator.md": "c704188d52a467e48624f700d7e9d07d71af60eea0308de4261afaf3ce6c5666",
 
-    ".claude/agents/quenching-spec-reviewer.md": "b976951e7fb4d56ae20971354e3efb69c44391523c9e15b68d92b602b712067c",
+    ".claude/agents/quenching-spec-reviewer.md": "1a6302d01c452501e59f9c8924f3ee7fcdc2ebb8d150e54b2b4a53441428e1b6",
 
-    ".claude/agents/quenching-spec-runner.md": "45ccba56054853ab42d840833d828e7d755c7403ff63e142624dc80fc7cdd630",
+    ".claude/agents/quenching-spec-runner.md": "724079b042377feb2b18e9fc94c4b0d7752ec39a32276063118609c906c3a189",
 
-    ".claude/agents/quenching-spec-scout.md": "82da98399dd8e0b10533e4a6600f6c90d405e1873234e94cc1877b75ebc8f0e4",
+    ".claude/agents/quenching-spec-scout.md": "fb14fd6eca42f5eee9d0883e4e876fd9d64d009fa4b60f187a02b2f25c75c628",
 
-    ".claude/agents/quenching-spec-verifier.md": "b7e5499c50acd4d03f85b6290a1886f0779d95715c6116222279b8946f68484b",
+    ".claude/agents/quenching-spec-verifier.md": "bc2597c3e1a12bccdb5759de4242e78f58ad71eafda76b5e52935d8ba8f2e999",
 
     ".claude/rules/command-fork.md": "51277745e7dd071f8d34adc6ef87d173c52e3e00b4def442a7f869c54a04d782",
 
@@ -1107,29 +1107,29 @@
 
     ".claude/skills/skill-map/SKILL.md": "eb309cf9d098a5daccbabff27d97f3da24a967c888bbde88f0400cc6af09b5be",
 
-    ".github/agents/quenching-spec-orchestrator.agent.md": "5f06e2913847cb72bb5b5800398723122c9377f97c9dbc03640df58a08aece65",
+    ".github/agents/quenching-spec-orchestrator.agent.md": "d65f75064f5d8133b50d2c8de80e56affcfd69e9278effaebf001aaba1230bdb",
 
-    ".github/agents/quenching-spec-reviewer.agent.md": "4fac1ea7a339c10b671ac304b53c6ae5b4d817253627122c26078302989eb130",
+    ".github/agents/quenching-spec-reviewer.agent.md": "62bb5ec0ac88330e4d64e50558c31312a489f362e50e4147d6db9cefee302662",
 
-    ".github/agents/quenching-spec-runner.agent.md": "2f9585793ef4224222454607bdd3d837be127a3ba16fd97ee2628890704f7eb5",
+    ".github/agents/quenching-spec-runner.agent.md": "4fbf413d4b52872e18dc544eb372895998db3229c32f743410c80c209dfc4d88",
 
-    ".github/agents/quenching-spec-scout.agent.md": "b4809f5ecde62c62db51f87c8497f0e0f76a1683abefd8119c95c50319625df1",
+    ".github/agents/quenching-spec-scout.agent.md": "bf93d72b7fe75f5feadb5fa5397254dabb318c5f3166d90d58a9acbabeff72aa",
 
-    ".github/agents/quenching-spec-verifier.agent.md": "5bffbc4c281cf347d79d661a51bc770fcbd900b1cfab33c684cbfbdd89adf3a9",
+    ".github/agents/quenching-spec-verifier.agent.md": "15b04b1d2edbba70af7eead5f4d96e8f1762d800d536e166ac05e226bb05ea60",
 
     ".github/instructions/command-fork.instructions.md": "8297a240756681cf23873b51395935e1eb175a1e3020af5bbb58bc2b93e826a9",
 
     ".github/instructions/import-memory-models.instructions.md": "47cf9a95b9ca21b9124cdd90fd5c7d3c75a39296c14f998bc9bcec5d861cda8d",
 
-    ".opencode/agents/quenching-spec-orchestrator.md": "e9ae90c91b02d7c466ff11274f0d035f264c4d67ced3e991c9601b3bd8b1c009",
+    ".opencode/agents/quenching-spec-orchestrator.md": "939a7bb3afd2a39a74f4fd107a4a0c619e06d266f683b42e03891de677b6ba13",
 
-    ".opencode/agents/quenching-spec-reviewer.md": "bf65c61025d693bd358c38f90f230ddee403e1a7a750d09ca8220070b778103e",
+    ".opencode/agents/quenching-spec-reviewer.md": "1ee7168eaa09561df1e163c088a7922eb557b49d1004417f66f3d05962dc270e",
 
-    ".opencode/agents/quenching-spec-runner.md": "25cb5359465cea9a2631ac2ff0881e169464911a6b3310e54fe117e9edb93087",
+    ".opencode/agents/quenching-spec-runner.md": "1361ac267c652c3fd9780a697e072eb38c732833cfeb6253faa6b4d894d432fe",
 
-    ".opencode/agents/quenching-spec-scout.md": "ee738936fe384b222e7ac8524e6b0d56a68651f46ea83506512485f032858d79",
+    ".opencode/agents/quenching-spec-scout.md": "43ea8cec684e208c694e837b21b7343a4ae96d824a1686699b539b4bbb5dda30",
 
-    ".opencode/agents/quenching-spec-verifier.md": "4403ff70b8bedb2d6ffb10bb1eee58047388c33e6a7c6233fd28910afbf96500"
+    ".opencode/agents/quenching-spec-verifier.md": "5c2ac72f24fb04f283c8647690c1798a1cc274fed6d406517d7076533e5819f7"
   },
   "mirrors": [
     ".agents/quenching/assets/bin/quenching/delivery",
