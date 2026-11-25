@@ -356,6 +356,25 @@ class TheSettingsPlanCarriesTheAccessRules(unittest.TestCase):
         self.assertTrue(derived["changed"])
         self.assertTrue(first["changed"])
 
+    def test_write_never_adds_this_machines_path_rules_to_a_file_holding_the_recorded_ones(self):
+        # The shape this repository commits: the manifest records only the `cq` rules, and the
+        # path rules in the file belong to another machine's home.
+        from quenching.common import access
+        target = pathlib.Path(self.tmp)
+        recorded = list(access.CLAUDE_BASH)
+        foreign = ["Read(~/elsewhere/repo-slot-*/**)", "Write(~/elsewhere/repo.*/**)"]
+        (target / ".claude").mkdir(parents=True, exist_ok=True)
+        (target / ".claude" / "settings.json").write_text(
+            json.dumps({"permissions": {"allow": recorded + foreign}}), encoding="utf-8")
+        derived = [rule for rule in access.claude_rules(self.tmp, os.path.expanduser("~"))
+                   if rule not in recorded]
+        self.assertTrue(derived)
+        merged = self.cli._settings_merge(
+            target, self.built(), {"claudeSettings": {"permissions": recorded}})
+        self.assertFalse(merged["changed"])
+        text = merged["text"] or (target / ".claude" / "settings.json").read_text()
+        self.assertFalse([rule for rule in derived if rule in text])
+
     def test_removal_takes_only_the_recorded_rules(self):
         target = pathlib.Path(self.tmp)
         (target / ".claude").mkdir(parents=True, exist_ok=True)

@@ -6,7 +6,7 @@ check, or with checks still pending, may merge). A **red**, skipped-required or 
 is refused under every value: the key only decides what to do when there is no check, or when a
 check is still pending. Whatever relaxes the exigence puts the local gate in its place: the merge
 then needs the gate record (`.quenching/gate/record.json`) that `scripts/verify_repo.sh` wrote for
-the PR's head, with exit 0 on a clean tree. A caller's own claim of a green gate proves nothing.
+the PR's head, with exit 0, scope `full` and a clean tree. A caller's own claim of a green gate proves nothing.
 
 The key lives in the project layer only. It is read raw from the repository document, never from
 the merged envelope, so a user or a local layer cannot widen what merges without proof. A value
@@ -27,7 +27,9 @@ def proven_exit(root: str, head: str | None) -> int | None:
     """The exit of the gate that ran on `head`, or `None` when no record proves it.
 
     The record is written only by `scripts/verify_repo.sh`: it must be readable, of the known
-    schema, name exactly `head`, come from a clean tree and carry an integer exit."""
+    schema, name exactly `head`, come from a clean tree, carry an integer exit and record the
+    `full` scope. An `affected` run skips the coverage floor, the site and the integrations, so it
+    never stands in for CI; `unknown`, absent or any other scope proves nothing either."""
     from quenching.common.config import find_repo_root
 
     if not head:
@@ -41,6 +43,7 @@ def proven_exit(root: str, head: str | None) -> int | None:
         return None
     exit_code = record.get("exit")
     if (record.get("head") != head or record.get("dirty") is not False
+            or record.get("scope") != "full"
             or not isinstance(exit_code, int) or isinstance(exit_code, bool)):
         return None
     return exit_code
@@ -88,5 +91,6 @@ def judge(enforce: str, state: str, gate_exit: int | None) -> tuple[bool, str | 
 
 def proof_message(enforce: str, state: str) -> str:
     return (f"CI is not required for this PR (shared.ci.enforce={enforce}, checks {state}); "
-            f"the local gate stands in for it: run scripts/verify_repo.sh on this PR's head; the "
+            f"the full local gate stands in for it: run scripts/verify_repo.sh on this PR's head "
+            f"with QUENCHING_TEST_SCOPE=full (an affected run proves nothing); the "
             f"merge reads its record ({GATE_RECORD}), never a declared --gate-exit")

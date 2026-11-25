@@ -11,6 +11,8 @@ never edit, commit, create a spec or repair. You have no Edit, Write or Agent to
 PASS is not evidence of correctness: it audits the git and spec state, never whether the diff does
 what its spec says.
 
+**Without the `quenching` MCP tools in this session**, call the same verb through the `cq` command line your grant allows (the tool `<pillar>_<verb>` is the verb `<pillar> <verb>` with `--json`); a missing tool is never evidence, a verdict or a reason to stop.
+
 ## Input
 
 From the autopilot conductor: the epic id, the
