@@ -73,17 +73,21 @@ def build_parser() -> argparse.ArgumentParser:
                                              "plugin's defaults govern")
     sp.add_argument("--json", action="store_true", help="machine-readable output")
 
-    sp = sub.add_parser("worktree", help="take or give back a reusable worktree slot, materialise "
-                                          "declared shared paths, or cut and retire a worktree")
-    sp.add_argument("action", choices=("acquire", "release", "slots", "link", "add", "retire"),
+    sp = sub.add_parser("worktree", help="take or give back a reusable worktree slot, adopt a "
+                                          "linked worktree, materialise declared shared paths, or "
+                                          "cut and retire a worktree")
+    sp.add_argument("action", choices=("acquire", "release", "slots", "link", "adopt", "add", "retire"),
                     help="acquire: lock a free slot (or a new one under shared.worktreeSlots.max), "
                          "switch it to --branch, link and run `worktreeSetup`; release: detach a "
                          "clean slot at the remote base and unlock it; slots: list the slots and "
-                         "who holds each; link: link each declared shared path; add: fetch, cut, "
-                         "link and run the declared `worktreeSetup` in a one-off worktree; "
-                         "retire: remove a merged spec's worktree and `branch -d` its branch")
-    sp.add_argument("--path", metavar="PATH", help="add: the new worktree's directory; "
-                                                    "retire/release: the worktree to give back")
+                         "who holds each; link: link each declared shared path; adopt: prepare a "
+                         "linked worktree the quenching flow did not cut; add: fetch, cut, link "
+                         "and run the declared `worktreeSetup` in a one-off worktree; retire: "
+                         "remove a merged spec's worktree and `branch -d` its branch")
+    sp.add_argument("--path", metavar="PATH", help="adopt: the checkout to prepare (default: the "
+                                                    "current directory); add: the new worktree's "
+                                                    "directory; retire/release: the worktree to "
+                                                    "give back")
     sp.add_argument("--branch", metavar="BRANCH", help="acquire/add: the branch to switch to or "
                                                         "create; retire/release: the branch it holds")
     sp.add_argument("--base", metavar="BASE", help="acquire/add: the base branch to cut from; "
@@ -105,8 +109,8 @@ def build_parser() -> argparse.ArgumentParser:
                     help="acquire: the session named in the lock reason (default "
                          "$OPENCODE_SESSION_ID or $CLAUDE_SESSION_ID)")
     sp.add_argument("--no-setup", action="store_true",
-                    help="acquire/add: do not run the declared `worktreeSetup` in the new worktree "
-                         "(it runs by default, once, after the link)")
+                    help="acquire/adopt/add: do not run the declared `worktreeSetup` in the "
+                         "worktree (it runs by default, once, after the link)")
     sp.add_argument("--discard-ignored", action="store_true",
                     help="retire: remove the worktree even though it holds ignored files "
                          "that are not symlinks")
