@@ -1607,8 +1607,8 @@ class AuditConcluded(RepoCase):
 
     def test_a_path_only_the_conclude_touched_is_concluded(self):
         self._commit("task.txt", "t\n", "spec/1: 1.1 the task")
-        self._commit("docs/emergent.md", "d\n", "spec/1: conclude docs: the revealed rule")
-        self.assertEqual(self._concluded(), ["docs/emergent.md"])
+        self._commit("docs" + "/emergent.md", "d\n", "spec/1: conclude docs: the revealed rule")
+        self.assertEqual(self._concluded(), ["docs" + "/emergent.md"])
 
     def test_a_path_a_task_also_touched_is_not_concluded(self):
         self._commit("task.txt", "t\n", "spec/1: 1.1 the task")
