@@ -119,7 +119,7 @@
 
     ".agents/quenching/assets/bin/quenching/config/autonomy.py": "e8f1eda3561d3581efb8976216722d44d8979d1adbdc11798080aabd5f6d0257",
 
-    ".agents/quenching/assets/bin/quenching/config/ci.py": "e967adf5615999f7fb4c8fff06eb19cd23daf6bfb8128f5458689688a83d331e",
+    ".agents/quenching/assets/bin/quenching/config/ci.py": "81fb993df5870a1e15510e6047cf6a0d7bf0c487e23cedfd4498e2be0501a57f",
 
     ".agents/quenching/assets/bin/quenching/config/effective.py": "9c00e95606190d0d9ffc5e706e8e013400fa700b7e3422d58b15a1d5d46ef1ca",
 
@@ -665,7 +665,7 @@
 
     ".agents/quenching/references/specs-align/conformance.md": "d74789417677580fe04ba6cfba05ce647e7b9f7d644ed85ea7ffa3d7ddff564d",
 
-    ".agents/quenching/references/specs-align/plugin-configuration.md": "c5437d5f540f6ef37437ae92d1bbeb46b95908338c2a2e1834e6c1b8f0a6044c",
+    ".agents/quenching/references/specs-align/plugin-configuration.md": "85b1d88fd4ba1bf0f74b6cf9c5861c104246348db678c73a458435a55024ae12",
 
     ".agents/quenching/references/specs-conclude/abandoned.md": "7067f28b0035550d958bdced006af5f55b6794293594ac1f7b6adec82da31cd4",
 

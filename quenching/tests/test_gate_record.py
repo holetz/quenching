@@ -72,6 +72,22 @@ class TheRecordRoundTrip(unittest.TestCase):
         self.assertTrue(gate_record.write(self.root, 0, "full")["dirty"])
         self.assertIsNone(ci.proven_exit(str(self.root), self.head))
 
+    def test_only_a_full_scope_gate_proves_its_head(self):
+        for scope in ("affected", "unknown", "FULL", ""):
+            with self.subTest(scope=scope):
+                gate_record.write(self.root, 0, scope)
+                self.assertIsNone(ci.proven_exit(str(self.root), self.head))
+
+    def test_a_record_without_scope_proves_nothing(self):
+        record = gate_record.write(self.root, 0, "full")
+        del record["scope"]
+        (self.root / gate_record.RECORD).write_text(json.dumps(record), encoding="utf-8")
+        self.assertIsNone(ci.proven_exit(str(self.root), self.head))
+
+    def test_the_cli_default_scope_proves_nothing(self):
+        self.assertEqual(0, gate_record.main(["--root", str(self.root), "write", "--exit", "0"]))
+        self.assertIsNone(ci.proven_exit(str(self.root), self.head))
+
     def test_clear_removes_the_record_and_a_missing_one_proves_nothing(self):
         gate_record.write(self.root, 0, "full")
         gate_record.clear(self.root)

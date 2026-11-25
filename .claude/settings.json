@@ -46,13 +46,7 @@
       "Write(~/Projetos/quenching-slot-*/**)",
       "Read(~/Projetos/quenching.*/**)",
       "Edit(~/Projetos/quenching.*/**)",
-      "Write(~/Projetos/quenching.*/**)",
-      "Read(~/Projects/quenching-slot-*/**)",
-      "Edit(~/Projects/quenching-slot-*/**)",
-      "Write(~/Projects/quenching-slot-*/**)",
-      "Read(~/Projects/quenching.*/**)",
-      "Edit(~/Projects/quenching.*/**)",
-      "Write(~/Projects/quenching.*/**)"
+      "Write(~/Projetos/quenching.*/**)"
     ]
   }
 }
