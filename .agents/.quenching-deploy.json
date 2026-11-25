@@ -966,5 +966,12 @@
       "python3"
     ],
     "mcpjson": true
+  },
+  "opencodeConfig": {
+    "subagentDepth": null,
+    "externalDirectory": [
+      "~/Projetos/quenching-slot-*",
+      "~/Projetos/quenching.*"
+    ]
   }
 }
