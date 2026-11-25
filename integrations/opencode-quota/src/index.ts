@@ -13,7 +13,7 @@ const CHECKOUT_TTL_MS = 5 * 60_000
 
 function viewOf(reading: Reading, settings: Settings, lang: Lang, hidden: boolean, now: number): QuotaView {
   const words = WORDS[lang]
-  const plain = (text: string, tone = ""): QuotaView => ({ text, tone, hidden, title: words.detailTitle, detail: text })
+  const plain = (text: string, tone = ""): QuotaView => ({ text, tone, hidden, title: words.detailTitle, detail: text, lang })
   switch (reading.state) {
     case "ok":
       return {
@@ -22,6 +22,7 @@ function viewOf(reading: Reading, settings: Settings, lang: Lang, hidden: boolea
         hidden,
         title: words.detailTitle,
         detail: detailText(reading.usage, now, settings, lang, reading.source, reading.readAt),
+        lang,
       }
     case "none": return plain(words.noToken)
     case "expired": return plain(words.expired, "danger")

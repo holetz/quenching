@@ -8,7 +8,7 @@ and no context spent. One line, coloured by how full the fuller window is:
 ```
 
 - **Desktop**: a composer pill beside the `quenching-cache` band (the cache keeps the first place),
-  with **Detalhe**, **Atualizar** and **Esconder**.
+  with **Detail**, **Refresh** and **Hide** (**Detalhe**, **Atualizar**, **Esconder** in Portuguese).
 - **TUI**: the same line in the prompt footer's status slot (`prompt.footer.status`).
 - **`/quenching-quota`** shows the detail in a toast: both windows with their reset, the Sonnet and
   Opus weekly windows when the reply carries them, where the token came from and when it was read.

@@ -8,8 +8,9 @@ const view = {
     hidden: { type: "boolean" },
     title: { type: "string" },
     detail: { type: "string" },
+    lang: { type: "string" },
   },
-  required: ["text", "tone", "hidden", "title", "detail"],
+  required: ["text", "tone", "hidden", "title", "detail", "lang"],
   additionalProperties: false,
 } as const
 
@@ -20,8 +21,8 @@ const ref = {
   additionalProperties: false,
 } as const
 
-/** What a window draws: the band, its tone, whether the person hid it, and the detail's title and lines. */
-export type QuotaView = { text: string; tone: string; hidden: boolean; title: string; detail: string }
+/** What a window draws: the band, its tone, whether the person hid it, the detail, and the language its labels speak. */
+export type QuotaView = { text: string; tone: string; hidden: boolean; title: string; detail: string; lang: string }
 
 /** The contract between the plugin's server and its windows; it never carries the token. */
 export const Quota = Rpc.define({

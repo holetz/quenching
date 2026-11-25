@@ -5,6 +5,11 @@ import { Quota, type QuotaView } from "./rpc.ts"
 // The window asks at most once a minute; the server reuses a reply for `shared.quota.intervalSeconds`.
 const REFRESH_MS = 60_000
 
+const LABELS = {
+  pt: { detail: "Detalhe", refresh: "Atualizar", hide: "Esconder" },
+  en: { detail: "Detail", refresh: "Refresh", hide: "Hide" },
+} as const
+
 const ICON = { success: "circle-check", warning: "warning", danger: "circle-exclamation", "": "status" } as const
 
 export default Plugin.define({
@@ -43,10 +48,11 @@ export default Plugin.define({
         watch(directory)
         const view = views()[directory]
         if (!view || view.hidden) return undefined
+        const label = LABELS[view.lang === "pt" ? "pt" : "en"]
         const rows: ComposerPillRow[] = [
-          { id: "detail", label: "Detalhe", icon: "window-analytics", run: () => detail(directory) },
-          { id: "refresh", label: "Atualizar", icon: "refresh", run: () => refresh(directory) },
-          { id: "hide", label: "Esconder", icon: "outline-eye-slash", run: () => toggle(directory) },
+          { id: "detail", label: label.detail, icon: "window-analytics", run: () => detail(directory) },
+          { id: "refresh", label: label.refresh, icon: "refresh", run: () => refresh(directory) },
+          { id: "hide", label: label.hide, icon: "outline-eye-slash", run: () => toggle(directory) },
         ]
         return {
           label: view.text,
