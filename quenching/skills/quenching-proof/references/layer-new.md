@@ -25,9 +25,8 @@ and branch on exit code and JSON: `0` is clean, `1` carries findings, and `2` is
 
 Set `TARGET_ROOT` to the supplied root, or `.` when it is omitted. Read the current state first:
 
-<!-- cli: root -->
-```bash
-.agents/quenching/bin/cq --root "$TARGET_ROOT" proof inventory --json
+```text
+proof_inventory(root="$TARGET_ROOT")
 ```
 
 Refuse if the proof root is missing, the layer name already exists, the name is empty or unsafe as
@@ -94,9 +93,8 @@ tests, invent another layer, retire an existing layer, install CI, or run the ta
 
 Regenerate the README:
 
-<!-- cli: root -->
-```bash
-.agents/quenching/bin/cq --root "$TARGET_ROOT" proof readme --write --json
+```text
+proof_readme(write=true, root="$TARGET_ROOT")
 ```
 
 The operation must either leave all five declarations complete or leave a state the doctor names
@@ -115,9 +113,8 @@ unconfirmed test move or target-suite execution occurred.
 
 Run the static verifier:
 
-<!-- cli: root -->
-```bash
-.agents/quenching/bin/cq --root "$TARGET_ROOT" proof doctor --json
+```text
+proof_doctor(root="$TARGET_ROOT")
 ```
 
 Report the layer name, purpose, reach, budget, required state, marker, fixture module, test paths

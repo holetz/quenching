@@ -32,9 +32,8 @@ on exit code and JSON: `0` is a clean report, `1` carries findings, and `2` is a
 
 Set `TARGET_ROOT` to the supplied argument, or to `.` when the argument is omitted, and run:
 
-<!-- cli: root -->
-```bash
-.agents/quenching/bin/cq --root "$TARGET_ROOT" proof status --json
+```text
+proof_status(root="$TARGET_ROOT")
 ```
 
 On exit `2`, report the refusal and every missing or invalid declaration exactly as returned. Do

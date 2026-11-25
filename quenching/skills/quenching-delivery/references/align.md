@@ -14,7 +14,7 @@ target owner. The finding bands live in
 front floor lives in [front-align/mold.md](.agents/quenching/references/front-align/mold.md).
 
 Set `TARGET_ROOT` to the supplied argument, or to `.` when omitted, and pass that same root to
-every `.agents/quenching/bin/cq delivery` call. Resolve `cq` per
+every `delivery_*` call as `root`. Resolve `cq` per
 [tool-resolution.md](.agents/quenching/references/align/tool-resolution.md)
 §Resolving the tool. Branch on JSON and exit code: `0` is conformant, `1` carries findings, and
 `2` is a refusal.
@@ -25,9 +25,8 @@ every `.agents/quenching/bin/cq delivery` call. Resolve `cq` per
 
 Run the verifier before interpreting the workflow tree:
 
-<!-- cli: root -->
-```bash
-.agents/quenching/bin/cq --root "$TARGET_ROOT" delivery doctor --json
+```text
+delivery_doctor(root="$TARGET_ROOT")
 ```
 
 On exit `0`, report the applicability state and "delivery conformant, nothing to align"; do not
@@ -62,9 +61,8 @@ branch, publish scope, permission set or deployment command. Never run a release
 
 After authorized edits, run the same probe again:
 
-<!-- cli: root -->
-```bash
-.agents/quenching/bin/cq --root "$TARGET_ROOT" delivery doctor --json
+```text
+delivery_doctor(root="$TARGET_ROOT")
 ```
 
 If structural residue remains, report it rather than widening the plan. Judgement findings remain
