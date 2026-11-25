@@ -4,10 +4,10 @@ title: Context discipline — open less, run for less time, and emit fewer turns
 description: The two halves of a run's integral `tokens × turns remaining` and the three ways to cut it — open less (the declared files rather than the folder, the cited sections rather than the file, N sections in ONE call, the block rather than the section where a section has blocks, and the rules/rationale marker convention), run for less time (the section boundary as a legitimate stopping point, with measured role budgets checked only at existing boundaries), and emit fewer turns per unit of work (the batching contract, and the ban on a turn that exists only to announce the next tool call); plus the two things measured and refused, segmenting the bundle into more files and deleting rationale to compact it
 resource: quenching/skills/**, quenching/references/**, quenching/assets/bin/quenching/components/**, quenching/assets/bin/quenching/specs/**, quenching/agents/**, scripts/measure_context_distribution.py
 tags: [automation, context, reading, cost, commands, references]
-timestamp: 2026-11-04
+timestamp: 2026-11-25
 audience: both
 authority: background
-source: read-by-section-not-by-file, narrow-the-execute-preamble, extensible-surface-and-budget-retirement, 2026-08-06, 2026-08-04, scope-the-handoff-rewrite; specs 1629 (2026-10-13), 1631, 1633 (2026-10-14), 1754 (2026-10-16), 1632, 1875 (2026-10-17); cross-harness cache measurement (2026-11-02); spec 2163 (2026-11-03), 2175 (2026-11-04); lineage in ADR 0004
+source: read-by-section-not-by-file, narrow-the-execute-preamble, extensible-surface-and-budget-retirement, 2026-08-06, 2026-08-04, scope-the-handoff-rewrite; specs 1629 (2026-10-13), 1631, 1633 (2026-10-14), 1754 (2026-10-16), 1632, 1875 (2026-10-17); cross-harness cache measurement (2026-11-02); spec 2163 (2026-11-03), 2175 (2026-11-04), 461 (2026-11-25); lineage in ADR 0004
 maintainer: quenching
 ---
 
@@ -234,10 +234,14 @@ boundary, and a build offers to stop there.
   nothing is recorded. **The worker budget is a size estimate, not a stop limit:** a worker over it
   finishes the spec, and the `spec-runner` never returns `budget:`. The
   orchestrator's totals line still reports `BUDGET:` from `cq components session cost --json`'s
-  `overBudget`, as telemetry that blocks no acceptance. Exit 2 never stops a run. On
-  OpenCode the same command measures the session named by `OPENCODE_SESSION_ID`, which a subagent
-  has of its own, so `--self` needs no marker there; `session cost` does not read OpenCode, so the
-  `BUDGET:` line stays Claude-only. **The
+  `overBudget`, as telemetry that blocks no acceptance. Exit 2 never stops a run. `session cost`
+  reads whichever harness answers: Claude Code, OpenCode through the session named by
+  `OPENCODE_SESSION_ID` (which a subagent has of its own, so `context --self` needs no marker
+  there), and GitHub Copilot through the running client's store (`COPILOT_HOME`, overridable with
+  `QUENCHING_COPILOT_HOME` or `--copilot-home`) when that store holds a session for this checkout.
+  The `BUDGET:` line is therefore not Claude-only; the source that answered is reported in
+  `resolvedBy`, and a harness whose store answers nothing is named in the refusal, never read as
+  zero. **The
   conductor budget of the `spec-orchestrator` is enforced by code between waves:** it measures itself
   with `cq components session context --self orchestrator-<id> --json` before admitting each wave
   and, over budget (exit 1), lets the workers in flight finish (a stop is never mid-wave) and
@@ -337,7 +341,12 @@ A request's reported input is `input_tokens + cache_read_input_tokens +
 cache_creation_input_tokens`, deduplicated by `message.id` with final usage. For context peak,
 use the maximum executor `type: message` iteration when `usage.iterations` is available:
 top-level input fields can sum multiple executor iterations. Declare missing iteration coverage;
-do not silently call aggregated request exposure a single context window. Keep model tiers
+do not silently call aggregated request exposure a single context window. On GitHub Copilot the
+client reports the prompt total in `inputTokens`, with `cacheReadTokens` and `cacheWriteTokens` a
+subset of it, so a request's reported input is that total and the peak is the maximum request
+input — always request exposure, never a per-iteration window, and the fresh input a cache claim
+counts is the difference. Copilot's credit is reported in AIU (`aiCredits`, the client's
+nano-AIU count) and never converted to USD: no list price names a plan's credit. Keep model tiers
 separate for cost claims. Unknown command attribution stays unknown; an unclosed conducted
 stage remains an upper bound under [session-evidence.md](session-evidence.md).
 
