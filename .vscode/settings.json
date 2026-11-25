@@ -1,0 +1,12 @@
+// The quenching workspace settings: keep the generated copies out of the Explorer, the
+// text search and the semantic index, and give a long agent run room before it asks to
+// continue. `cq doctor --workspace` checks this file.
+{
+  "files.exclude": {
+    ".agents/quenching": true,
+    ".claude/skills": true,
+    "site": true,
+    "site-source": true
+  },
+  "chat.agent.maxRequests": 100
+}
