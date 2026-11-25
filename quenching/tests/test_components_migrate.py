@@ -212,6 +212,41 @@ class Migrate(unittest.TestCase):
         self.assertEqual("#!/bin/sh\necho ok\n", (copy / "scripts/run.sh").read_text())
         self.assertEqual("notes\n", (copy / "references/notes.md").read_text())
 
+    def test_scoped_rules_move_to_the_generic_layer(self):
+        self.write(".claude/rules/guard.md",
+                   "---\npaths:\n  - \"src/**\"\n---\n\nA rule.\n")
+        self.commit()
+        code, payload = self.run_cli()
+        self.assertEqual(1, code)
+        self.assertIn({"op": "move", "from": ".claude/rules/guard.md",
+                       "to": ".agents/rules/guard.md"}, payload["operations"])
+        self.assertEqual(0, self.run_cli("--write")[0])
+        self.assertEqual("---\npaths:\n  - \"src/**\"\n---\n\nA rule.\n",
+                         (self.repo / ".agents/rules/guard.md").read_text())
+        self.assertFalse((self.repo / ".claude/rules").exists())
+        self.assertEqual(0, self.run_cli()[0])
+
+    def test_a_rule_beside_its_source_is_a_conflict_and_nothing_is_written(self):
+        self.write(".claude/rules/guard.md", "---\npaths:\n  - \"src/**\"\n---\n\nMine.\n")
+        self.write(".agents/rules/guard.md", "---\npaths:\n  - \"lib/**\"\n---\n\nTheirs.\n")
+        self.commit()
+        code, payload = self.run_cli()
+        self.assertEqual(1, code)
+        self.assertIn({"path": ".agents/rules/guard.md",
+                       "with": ".claude/rules/guard.md",
+                       "why": "two editable copies"}, payload["conflicts"])
+        self.assertEqual(2, self.run_cli("--write")[0])
+        self.assertTrue((self.repo / ".claude/rules/guard.md").is_file())
+
+    def test_a_deploy_owned_rule_projection_is_not_the_migrations(self):
+        self.write(".claude/rules/guard.md", "---\npaths:\n  - \"src/**\"\n---\n\nMine.\n")
+        self.write(".agents/.quenching-deploy.json", json.dumps({
+            "files": {".claude/rules/guard.md": "h"}}))
+        self.commit()
+        code, payload = self.run_cli()
+        touched = json.dumps(payload["operations"]) + json.dumps(payload["conflicts"])
+        self.assertNotIn(".claude/rules/guard.md", touched)
+
     def test_what_the_deploy_installed_is_never_the_migrations(self):
         self.write(".agents/skills/quenching-git/SKILL.md", "---\nname: quenching-git\n---\n")
         self.write(".agents/skills/quenching-git/references/nested/x.md", "x\n")
