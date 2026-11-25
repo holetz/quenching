@@ -396,35 +396,69 @@ def build_tree(source: Path, target: Path, modules: list[str], harnesses: list[s
         _add(tree, PAYLOAD + "/bin/cq", sh, 0o755)
         _add(tree, PAYLOAD + "/bin/cq.cmd", cmd, 0o644)
 
+    # A module outside the selection whose mirror the target already tracks: the files stay, so
+    # they are regenerated from the source like a selected module's, never left to age while
+    # `--check` reads green. A module the target never carried adds nothing.
+    # A folder the last deploy owned is a module the caller just deselected: that one leaves with
+    # the write, it is not a mirror.
+    outside = [module for module in manifest["modules"] if module not in selected]
+    previous = read_manifest(str(target)) or {}
+    left = set(previous.get("files") or {})
+    kept_before = set(previous.get("mirrors") or [])
+    mirrored: list[str] = []
+    folders: list[str] = []
+
+    def kept(rel: str, marker: str) -> bool:
+        present = ((target / rel / marker).is_file() if marker != "*.py"
+                   else any((target / rel).glob("*.py")))
+        return present and (rel in kept_before
+                            or not any(owned.startswith(rel + "/") for owned in left))
+
+    for package in _packages(outside):
+        folder = "assets/bin/quenching/" + package
+        if package not in packages and kept(PAYLOAD + "/" + folder, "*.py") and (source / folder).is_dir():
+            before = set(tree)
+            folders.append(PAYLOAD + "/" + folder)
+            _add_tree(tree, source, folder)
+            mirrored.extend(sorted(set(tree) - before))
+
     # A skill is its whole folder: the `SKILL.md` and the `references/` beside it.
     skill_names: list[str] = []
-    for module in selected:
-        for name in module["owned"]["skills"]:
-            if name in skill_names:
-                continue
+    skill_sources = [(name, True) for module in selected for name in module["owned"]["skills"]]
+    skill_sources += [(name, False) for module in outside
+                      for name in module.get("owned", {}).get("skills", [])
+                      if kept(SKILLS + "/" + name, "SKILL.md") and (source / "skills" / name).is_dir()]
+    for name, chosen in skill_sources:
+        if name in skill_names:
+            continue
+        if chosen:
             skill_names.append(name)
-            root = source / "skills" / name
-            # A vendored payload carries no skill source: the installed folder is already the
-            # generated form, so it is re-asserted byte for byte.
-            installed = not root.is_dir()
-            if installed:
-                root = target / SKILLS / name
-            if not root.is_dir():
+        root = source / "skills" / name
+        # A vendored payload carries no skill source: the installed folder is already the
+        # generated form, so it is re-asserted byte for byte.
+        installed = not root.is_dir()
+        if installed:
+            root = target / SKILLS / name
+        if not root.is_dir():
+            continue
+        for path in sorted(root.rglob("*")):
+            if not path.is_file() or _is_build(path):
                 continue
-            for path in sorted(root.rglob("*")):
-                if not path.is_file() or _is_build(path):
-                    continue
-                rel = path.relative_to(root).as_posix()
-                if installed:
-                    data = _read(path)
-                elif rel == "SKILL.md":
-                    data = translate.skill_document(path.read_text(encoding="utf-8"), name,
-                                                    narrow, mount).encode("utf-8")
-                elif path.suffix == ".md":
-                    data = translate.reference_document(path.read_text(encoding="utf-8")).encode("utf-8")
-                else:
-                    data = _read(path)
-                _add(tree, f"{SKILLS}/{name}/{rel}", data, _mode(path))
+            rel = path.relative_to(root).as_posix()
+            if installed:
+                data = _read(path)
+            elif rel == "SKILL.md":
+                data = translate.skill_document(path.read_text(encoding="utf-8"), name,
+                                                narrow, mount).encode("utf-8")
+            elif path.suffix == ".md":
+                data = translate.reference_document(path.read_text(encoding="utf-8")).encode("utf-8")
+            else:
+                data = _read(path)
+            _add(tree, f"{SKILLS}/{name}/{rel}", data, _mode(path))
+            if not chosen:
+                mirrored.append(f"{SKILLS}/{name}/{rel}")
+                if f"{SKILLS}/{name}" not in folders:
+                    folders.append(f"{SKILLS}/{name}")
 
     if "claude" in harnesses:
         _bridge_tree(tree, target)
@@ -460,6 +494,9 @@ def build_tree(source: Path, target: Path, modules: list[str], harnesses: list[s
         "skills": sorted(skill_names),
         "files": {rel: hashlib.sha256(data).hexdigest() for rel, (data, _mode_) in sorted(tree.items())},
     }
+    if folders:
+        # The tracked mirrors of modules outside the selection, kept in step with the source.
+        document["mirrors"] = sorted(folders)
     if mcp:
         # The harness files are the user's and merged by `cli`; the manifest names which ones.
         document["mcp"] = mcp
@@ -477,4 +514,5 @@ def build_tree(source: Path, target: Path, modules: list[str], harnesses: list[s
         document["claudeSettings"] = {"hooks": [hook["name"] for hook in hooks],
                                       "attribution": sorted(claude_settings.ATTRIBUTION),
                                       "command": prefix, "mcpjson": bool(mcp)}
-    return {"tree": tree, "seeds": seeds, "manifest": document, "settings": settings}
+    return {"tree": tree, "seeds": seeds, "manifest": document, "settings": settings,
+            "mirrored": sorted(set(mirrored))}

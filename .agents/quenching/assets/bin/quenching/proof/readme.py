@@ -124,5 +124,5 @@ def write_readme(inventory: ProofInventory) -> bool:
     updated = render_readme_document(document, inventory)
     if updated == document:
         return False
-    path.write_text(updated, encoding="utf-8")
+    path.write_text(updated, encoding="utf-8", newline="\n")  # LF on Windows too
     return True
