@@ -52,7 +52,24 @@ function modelKey(model: string): string | null {
   return m[3] ? `${m[1]}-${m[2]}-${m[3]}` : `${m[1]}-${m[2]}`
 }
 
-export function priceOf(model: string, prefix: number): { input: number; read: number } | null {
+/** USD per million tokens for one request; `write` is set only by a host that publishes it. */
+export type Price = { input: number; read: number; write?: number }
+/** Where a price comes from: quenching's table (`priceOf`) or what the host says the model costs. */
+export type PriceSource = (model: string, prefix: number) => Price | null
+/** One row of a host's own cost list, normalised: `above` is the prompt size the row starts at. */
+export type HostCost = { input: number; cacheRead: number; cacheWrite?: number; above?: number }
+
+/** A price source over a host's cost rows (largest `above` the prompt reaches wins); null when it has none. */
+export function hostPrice(rows: readonly HostCost[] | undefined): PriceSource {
+  const usable = (rows ?? []).filter(r => [r.input, r.cacheRead].every(n => Number.isFinite(n) && n >= 0))
+    .sort((a, b) => (a.above ?? 0) - (b.above ?? 0))
+  return (_model, prefix) => {
+    const row = usable.filter(r => prefix >= (r.above ?? 0)).pop() ?? usable[0]
+    return row ? { input: row.input, read: row.cacheRead, write: row.cacheWrite } : null
+  }
+}
+
+export function priceOf(model: string, prefix: number): Price | null {
   const key = modelKey(model)
   const p = key ? PRICES[key] : undefined
   if (!key || !p) return null
@@ -64,10 +81,10 @@ export function priceOf(model: string, prefix: number): { input: number; read: n
 
 // warm: the cached part is read; the last reply's output (and your new message) is written.
 // cold: everything is written. A write costs MULTIPLIERS.write5m or write1h × input.
-export function costs(rec: Rec): { warm: number; cold: number } | null {
-  const p = priceOf(rec.model, rec.prefix)
+export function costs(rec: Rec, price: PriceSource = priceOf): { warm: number; cold: number } | null {
+  const p = price(rec.model, rec.prefix)
   if (!p) return null
-  const write = p.input * (rec.ttlMin >= 60 ? MULTIPLIERS.write1h : MULTIPLIERS.write5m)
+  const write = p.write ?? p.input * (rec.ttlMin >= 60 ? MULTIPLIERS.write1h : MULTIPLIERS.write5m)
   const out = Number.isFinite(rec.out) ? Math.min(rec.out, rec.prefix) : 0
   return { warm: ((rec.prefix - out) * p.read + out * write) / 1e6, cold: (rec.prefix * write) / 1e6 }
 }
@@ -142,9 +159,9 @@ export function clock(ms: number): string {
 
 // The rules, top to bottom; first match wins. The light says the state, so the text is only:
 // time, next-message cost, context, recommendation.
-export function decide(rec: Rec, now: number, s: Settings, w: Words): Verdict {
+export function decide(rec: Rec, now: number, s: Settings, w: Words, price: PriceSource = priceOf): Verdict {
   const left = rec.at + rec.ttlMin * 60_000 - now
-  const c = costs(rec)
+  const c = costs(rec, price)
   const r = c && c.warm > 0 ? Math.round(c.cold / c.warm) : null
   const ratio = r && r >= 2 ? r : null
   const dollars = s.costStyle === 'dollars' && c !== null
