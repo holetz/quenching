@@ -8,7 +8,7 @@ any of them.
 
 ## Contents
 
-`.agents/quenching/bin/cq components read <this file>` returns the heading index; `--sections` addresses one.
+`components_read(path=<this file>)` returns the heading index; `sections=["§X"]` addresses one.
 
 ## The declared-directive layer
 
@@ -46,8 +46,8 @@ target's own notation for its own reader, not a field this pillar fills.
 Both declared layers arrive in **one** read, and it is the same call §The read-if-present rule
 already runs:
 
-```bash
-.agents/quenching/bin/cq git conventions --json
+```text
+git_conventions()
 ```
 
 `config` carries the declared directives, `configUnknown` the sub-keys nothing reads; `governs`

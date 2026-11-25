@@ -139,10 +139,13 @@ def build_parser() -> argparse.ArgumentParser:
                     help="a configured remote (default: origin)")
     sp.add_argument("--json", action="store_true", help="machine-readable output")
 
-    sp = sub.add_parser("preflight", help="read-only: store writable, type catalog, push reach, "
-                                           "gh auth and base CI availability — never skips a hook")
+    sp = sub.add_parser("preflight", help="read-only by default: store writable, type catalog, push "
+                                           "reach, gh auth and base CI availability — never skips a hook")
     sp.add_argument("--remote", default="origin", metavar="REMOTE",
                     help="the remote probed (default: origin)")
+    sp.add_argument("--probe-claims", action="store_true",
+                    help="also create and delete one refs/quenching/claims/* ref on the remote "
+                         "(a write; off by default)")
     sp.add_argument("--json", action="store_true", help="machine-readable output")
 
     sp = sub.add_parser("prune", help="act on one item `cq git stale` reports — `branch -d`, "

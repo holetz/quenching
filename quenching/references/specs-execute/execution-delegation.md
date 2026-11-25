@@ -16,13 +16,13 @@ actually proved the rule, `background` when it is agreed but not yet proven.
 Everything else the work reveals — a gotcha, a second-order consequence, a rule nobody had thought
 of — costs **one line and no authoring**:
 
-```bash
-.agents/quenching/bin/cq specs discover "<id>" "<what was found, one line>"
+```text
+specs_discover(spec=<id>, text=<what was found, one line>)
 ```
 
 The exception is a **pre-existing error** diagnosed and proved on the base
 (`/docs/standards/workflows/task-execution.md` §Pre-existing errors): a declared `[fix-preexistente]`
-task, whose own `files:` the executor honours as any other, or a spec captured with `cq specs new` and the
+task, whose own `files:` the executor honours as any other, or a spec captured with `specs_create` and the
 line `promoted: <id>`.
 
 It is captured **indiscriminately**. The lines are resolved by `/quenching-specs develop`'s
@@ -41,7 +41,7 @@ A per-task executor sub-agent (`Task`) is **permitted** when both hold:
 - the task writes nothing under `knowledge/`.
 
 Pin it to the session model, with one exception: **the `haiku` rung, per task.** When
-`.agents/quenching/bin/cq specs estimate --spec <id> --task <tid> --json` reports `smallTierEligible: true` — an
+`specs_estimate(spec=<id>, task=<tid>)` reports `smallTierEligible: true` — an
 executable `verify:` whose tests sit outside the task's `files:` (`oracleProtected`), nothing under
 `/docs/` or `knowledge/`, and a projected context at or under 80k — the executor may be pinned to
 `haiku` for ONE attempt. A failed `verify:` returns the task to the session model, which corrects on
@@ -51,8 +51,8 @@ never descends, and `/quenching-knowledge import-memory`'s classifiers stay neve
 they authorize a deletion and have no oracle.
 
 **The orchestrator keeps, without exception:** spec selection, the isolation, every
-confirmation, every `.agents/quenching/bin/cq specs task --check` flip, every `.agents/quenching/bin/cq specs task --block` marker, every
-`docs/standards/` write, every `.agents/quenching/bin/cq specs discover` line, the commit, and the decision to pause. The
+confirmation, every `specs_task(action="check")` flip, every `specs_task(action="block")` marker, every
+`docs/standards/` write, every `specs_discover` line, the commit, and the decision to pause. The
 sub-agent writes code inside its declared files and reports back — it never talks to the human and
 never touches the spec's bookkeeping.
 
@@ -90,8 +90,8 @@ trades wall-clock for merge conflicts and loses on both.
 
 <!-- rules -->
 
-```bash
-.agents/quenching/bin/cq specs parallel --spec "<id>" [--json]
+```text
+specs_parallel(spec=<id>, spec="[--json]")
 ```
 
 Reports each `[P]` group and whether it is `eligible`. Exit **0** when every marked group is

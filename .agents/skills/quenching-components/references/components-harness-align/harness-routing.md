@@ -10,7 +10,7 @@ home boundaries.
 
 ## Contents
 
-`.agents/quenching/bin/cq components read <this file>` returns the heading index; `--sections` addresses one.
+`components_read(path=<this file>)` returns the heading index; `sections=["§X"]` addresses one.
 
 ## 1. What a harness file is
 
@@ -20,7 +20,7 @@ repo-wide, a subfolder `AGENTS.md` only when working under its folder. the host 
 reads `AGENTS.md` directly; `CLAUDE.md` is the legacy fallback of older hosts and is removed by
 the migration, never created.
 OKF-strict point 7 ([knowledge-align/okf-spec.md](.agents/quenching/references/knowledge-align/okf-spec.md))
-says they are **not** OKF concepts, and the validator (`.agents/quenching/bin/cq knowledge validate`) **skips them entirely**
+says they are **not** OKF concepts, and the validator (`knowledge_validate()`) **skips them entirely**
 — including link checks (`index-broken-link` runs only on `index.md`). The target shape is the
 shipped exemplar [docs/standards/AGENTS.md](.agents/quenching/assets/knowledge/standards/AGENTS.md)
 ("thin pointer, never a copy").

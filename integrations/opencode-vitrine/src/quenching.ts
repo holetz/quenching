@@ -1,11 +1,12 @@
 import { readFile } from "node:fs/promises"
 import { join } from "node:path"
-import { git, runCq, toolCq, type Launch } from "./cq.js"
+import { git, remoteRepo, runCq, toolCq, type Launch } from "./cq.js"
+import { localWarnings } from "./warnings.js"
 
 /**
  * O que o painel precisa saber sobre a instalação do quenching no projeto.
- * `available` é a versão do `cq` que um upgrade usaria: `QUENCHING_CQ`, o checkout do
- * plugin ou, por último, o PATH.
+ * `available` é a versão do `cq` que um upgrade usaria (`toolCq`): `QUENCHING_CQ`, a árvore
+ * do repositório-fonte, a última release remota, o checkout do plugin ou, por último, o PATH.
  */
 export type QuenchingHealth = {
   installed: boolean
@@ -15,6 +16,10 @@ export type QuenchingHealth = {
   missing: boolean
   root: string
   error: string
+  /** De onde vem o `cq` de `available`, em uma frase curta para o tooltip. */
+  origin: string
+  /** Avisos locais: profundidade de subagentes e servidor MCP, lidos da configuração. */
+  warnings: string[]
 }
 
 export type QuenchingUpdate = {
@@ -66,12 +71,30 @@ export function isOlder(installed: string, available: string): boolean {
   return false
 }
 
-function absence(launch: Launch): string {
-  if (launch.source === "path") return "cq não encontrado: nem o checkout do plugin, nem QUENCHING_CQ, nem o PATH"
-  return `Python 3.11+ não encontrado (${launch.command}) para rodar o cq do ${launch.source === "env" ? "QUENCHING_CQ" : "checkout do plugin"}`
+const ORIGIN: Record<Launch["source"], string> = {
+  env: "QUENCHING_CQ",
+  project: "cq do projeto",
+  source: "árvore do repositório-fonte",
+  remote: "release remota",
+  plugin: "checkout do plugin",
+  path: "PATH",
 }
 
+export function originOf(launch: Launch): string {
+  return launch.source === "remote" ? `release ${launch.tag} (${remoteRepo()}, via uvx)` : ORIGIN[launch.source]
+}
+
+function absence(launch: Launch): string {
+  if (launch.source === "path") return "cq não encontrado: nem QUENCHING_CQ, nem release remota (uvx), nem o checkout do plugin, nem o PATH"
+  return `Python 3.11+ não encontrado (${launch.command}) para rodar o cq de ${ORIGIN[launch.source]}`
+}
+
+/** O primeiro `uvx` de uma tag clona e monta o pacote; o deploy remoto ganha mais folga. */
+const DEPLOY_TIMEOUT = { local: 180_000, remote: 600_000 }
+
 async function toolVersion(cwd: string, launch: Launch): Promise<{ version: string; error: string }> {
+  // A tag já é a versão: abrir o painel não paga um clone pelo `uvx`.
+  if (launch.source === "remote" && launch.tag) return { version: launch.tag, error: "" }
   const run = await runCq(launch, ["--version"], cwd, 10_000)
   if (run.code !== 0) {
     const raw = (run.stderr || "").trim()
@@ -91,7 +114,8 @@ async function rootOf(cwd: string): Promise<string> {
 export async function health(cwd: string): Promise<QuenchingHealth> {
   const root = await rootOf(cwd)
   const version = await installedVersion(root)
-  const tool = await toolVersion(root, await toolCq())
+  const launch = await toolCq(root)
+  const tool = await toolVersion(root, launch)
   const installed = version !== ""
   return {
     installed,
@@ -101,21 +125,23 @@ export async function health(cwd: string): Promise<QuenchingHealth> {
     missing: !installed,
     root,
     error: tool.error,
+    origin: originOf(launch),
+    warnings: installed ? await localWarnings(root) : [],
   }
 }
 
 /**
- * Escreve a superfície do quenching no projeto com o mesmo `cq` (`toolCq`) cujo
- * `--version` alimenta o aviso. Um alvo já instalado reusa o manifesto; um alvo
- * novo recebe só o harness OpenCode.
+ * Escreve a superfície do quenching no projeto com o mesmo `cq` (`toolCq`) que deu a
+ * versão do aviso — por padrão a última release, pelo `uvx`. Um alvo já instalado reusa
+ * o manifesto; um alvo novo recebe só o harness OpenCode.
  */
 export async function upgrade(cwd: string): Promise<QuenchingUpdate> {
   const root = await rootOf(cwd)
   const before = await installedVersion(root)
   const args = ["deploy", "--target", root, "--write", "--json"]
   if (!before) args.push("--harness", "opencode")
-  const launch = await toolCq()
-  const run = await runCq(launch, args, root, 180_000)
+  const launch = await toolCq(root)
+  const run = await runCq(launch, args, root, launch.source === "remote" ? DEPLOY_TIMEOUT.remote : DEPLOY_TIMEOUT.local)
   const version = await installedVersion(root)
   const tool = await toolVersion(root, launch)
   const output = `${run.stdout}\n${run.stderr}`.trim()

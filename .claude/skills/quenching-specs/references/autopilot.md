@@ -7,7 +7,7 @@ allowed-tools: Bash(cq:*), Bash(cq.cmd:*), Bash(git:*), Bash, Read, Grep, Glob, 
 **Input**: `$ARGUMENTS` — no flag runs **ONE round** (steps 1–8) and stops. `--until-dry` repeats
 rounds until the queue runs dry; `--until <date-time with offset>` (e.g. `2026-10-09T07:00-03:00`)
 repeats them until the deadline (and still stops at a dry queue). `--max-launches <n>` sets the
-launch ceiling; without it the ceiling is `shared.autonomy.maxLaunches` from `.agents/quenching/bin/cq config show --effective --json`
+launch ceiling; without it the ceiling is `shared.autonomy.maxLaunches` from `config_show(effective=true)`
 (default **40**, provisional: it is fixed only after the human reads the measurement of the last three runs), and the flag wins over the key. `--max-tree-tokens <n>` sets an opt-in ceiling on the tokens measured per
 model across the tree, with **no default**: without it nothing is read or compared. Optionally focus areas as in `/quenching-specs improve`.
 Typed by the human only: **the invocation is the human's delegation** for the whole run — every
@@ -55,7 +55,7 @@ non-`cq`, non-`git` command is run.
   and reports `continue`. The count covers what the conductor and the returned reports show; what
   is in flight is declared `not measured`.
 - **The tree-token ceiling is opt-in and per model.** Only with `--max-tree-tokens <n>`, before each
-  launch the conductor reads `.agents/quenching/bin/cq components session cost --json` (its default is the most recent session for this cwd, the conductor's own) and
+  launch the conductor reads `components_session_cost` (its default is the most recent session for this cwd, the conductor's own) and
   compares, per model, the measured tokens (`input + cacheRead + cacheWrite + output` of that
   model's `byModel` row) with `<n>`, never summing tiers. A model already at the ceiling, or with no
   margin (its measured total plus the largest measured total of a single agent of that model in the
@@ -75,7 +75,7 @@ non-`cq`, non-`git` command is run.
   first (step 4's read, append, write), then hand it back to the SAME agent with
   `SendMessage({to: <agentId>})`, naming the epic and the bullet: the transcript is still warm, and
   a fresh launch pays to re-read spec, protocol and code for a question decided in minutes. **The
-  window is not a constant:** read `.agents/quenching/bin/cq components session cache --json` (`boundaries`, per harness
+  window is not a constant:** read `components_session_cache` (`boundaries`, per harness
   and model) and compare it with the elapsed time; `docs/standards/automation/context-discipline.md`
   §The prompt cache is a per-harness measurement measures the documented five-minute subagent
   lifetime of the host as the case, and this body assumes no number of its own. A cold relaunch stays, and is
@@ -96,10 +96,10 @@ non-`cq`, non-`git` command is run.
 ### 1. Health
 Resolve `cq` per [align/tool-resolution.md](.agents/quenching/references/align/tool-resolution.md)
 §Resolving the tool; branch on the exit code. Read the root harness for the gate command and the
-ephemeral area, and `shared.guidance.autopilot` from `.agents/quenching/bin/cq config show --effective --json` when declared: the project's focus and cautions, a criterion for
+ephemeral area, and `shared.guidance.autopilot` from `config_show(effective=true)` when declared: the project's focus and cautions, a criterion for
 steps 2–3 that never widens a grant or authorizes what **never forced** forbids. Check, on `main`: `git stash list` is empty, `git worktree list` holds only this
 run's worktrees, and the gate is green. Anything red there → this round's first spec is fixing it
-(`.agents/quenching/bin/cq specs new`, then steps 4–5 on it alone).
+(`specs_create`, then steps 4–5 on it alone).
 
 **A dirty checkout is decided HERE, never discovered at the first worktree cut.** Read
 `git status --short` and split what it shows. A path the round record's `dirty:` line already names
@@ -114,10 +114,21 @@ the dirty paths named. The answer is written in the round record as `dirty: <n> 
 spec|cut from origin/<base>>` before anything launches, and step 4 copies it into the epic's
 `## Design`.
 
-Then run
-`.agents/quenching/bin/cq git preflight --json` once (covered by the existing `Bash(cq:*)`; no new grant) and write its
-five checks (`store`, `types`, `push`, `ghAuth`, `ci`) in the round block as `preflight:`. `store`,
-`push` or `ghAuth` in `fail` → fixing it is this round's first spec, like a red gate. `mergesAllowed:
+Then run the preflight once, **with the reservation probe**: a multi-machine run depends on the
+origin accepting `refs/quenching/claims/*`, and only the probe proves it. The probe creates and
+deletes one ref on the origin, so `git_preflight` never publishes it (no `read` tool reaches a
+push); the autopilot asks for it on the CLI, under the human's delegation for the run:
+
+<!-- cli: flag -->
+```bash
+.agents/quenching/bin/cq git preflight --probe-claims --json
+```
+
+The call is covered by the existing `Bash` grant; no new grant. Write its
+six checks (`store`, `types`, `push`, `ghAuth`, `ci`, `claims`) in the round block as `preflight:`. `store`,
+`push` or `ghAuth` in `fail` → fixing it is this round's first spec, like a red gate. `claims` in
+`fail` (or `skipped`, the probe not run) → the remote refuses the reservation refs, or nothing proved it accepts them: the round runs unreserved (execute reports its
+exit 2 and builds), and the report says another machine could pick the same spec. `mergesAllowed:
 false` (CI unavailable) → steps 4–5 plan no merges and no chain that depends on a merge, and the
 report says why. Hooks are never disabled and `--no-verify` is never passed. Read the
 round record first: an `open` round whose start ref is still reachable from `main` resumes at its
@@ -128,14 +139,17 @@ a fix spec, or an authorized cut from `origin/<base>` — and recorded.
 
 ### 2. Queue
 List the loose specs — open, in no epic — plus the open members of epics of earlier rounds
-(`Autopilot <date> — rodada <n>`) and of the "decide with the human" epics, with `.agents/quenching/bin/cq specs list --lean --json`, and the store's
-errors with `.agents/quenching/bin/cq specs validate`. Before any of them enters or is developed, one `quenching-spec-scout` per batch proves
+(`Autopilot <date> — rodada <n>`) and of the "decide with the human" epics, with `specs_list()`, and the store's
+errors with `specs_validate`. Before any of them enters or is developed, one `quenching-spec-scout` per batch proves
 it is still relevant against the current code and the `shared.guidance.autopilot` of step 1, and classifies it
 `relevant`, `superseded` (another spec or merge already absorbed the pain: cite it), `stale` (a cited `path:line` or command no longer exists) or `needs-human`:
 
 - `superseded` or `stale` → record the evidence in `## Outcome`
-  (`.agents/quenching/bin/cq specs section <id> Outcome --write`) and `.agents/quenching/bin/cq specs promote <id> --outcome abandoned`; a round epic left with no open member is closed;
-- it needs the human (the **never forced** list) → `.agents/quenching/bin/cq specs link add <human-composite> <id>`;
+  (`specs_section_write(spec=<id>, heading="Outcome", body=<body>)`) and `specs_promote(spec=<id>, outcome="abandoned")`; a round epic left with no open member is closed;
+- it needs the human (the **never forced** list) → `specs_link_add(epic=<human-composite>, spec=<id>)`;
+- its `claim` is `live` and not `mine` → another machine is building it: it stays out of this
+  round's queue, named in the report with the holder, and is never taken (`take` is the human's);
+  an expired or terminal lease does not keep it out;
 - otherwise it joins this round's queue.
 
 **Done when:** every loose spec and every open member of an earlier round is queued, abandoned with evidence, or in the human epic.
@@ -152,25 +166,26 @@ The map is ephemeral, under `<ephemeral area>/autopilot/<date>/`.
 ### 4. Composition
 **Mechanical capture, by default.** When the queue and the kept candidates already decide the
 members (title, `complexity`, dependencies), this session creates the composite and the members
-itself: search by title in `.agents/quenching/bin/cq specs list --json` first
-(a match is reused), then `.agents/quenching/bin/cq specs new "<title>" --complexity <level> </dev/null` per member and
-`.agents/quenching/bin/cq specs link add <composite> <spec> --group "<wave>" --after <labels>` (labels `S<n>` returned by
+itself: search by title in `specs_list` first
+(a match is reused), then `specs_create(name=<title>, complexity=<level>)` per member and
+`specs_link_add(epic=<composite>, spec=<spec>, after=<labels>, group=<wave>)` (labels `S<n>` returned by
 earlier `link add` calls), serializing any two members that touch the same files with `after:`.
 Exit 2 is read, never repeated blindly. The model restrictions on code and classification stay as
 they are.
 **Decomposition, by this session.** Members not yet decided, or waves that need reading file
 overlap, are decomposed here — never on a token estimate: propose the slices from the queue and the kept candidates,
-then create the composite and the members with the same `.agents/quenching/bin/cq specs new` and `.agents/quenching/bin/cq specs link add`.
+then create the composite and the members with the same `specs_create` and `specs_link_add`.
 Either way, write the composite's `## Design` — and write it as a READ, AN APPEND AND ONE WRITE,
-because `.agents/quenching/bin/cq specs section --write` REPLACES the section: `.agents/quenching/bin/cq specs section <composite> Design
---json`, the round's dated bullets appended, the body back on stdin. It carries the **autonomy
+because `specs_section_write` REPLACES the section: `specs_section(spec=<composite>,
+headings="Design")`, the round's dated bullets appended, the body back through
+`specs_section_write(spec=<composite>, heading="Design", body=<body>)`. It carries the **autonomy
 policy** (the step 1 `shared.guidance.autopilot` verbatim, when declared; forced execution, push, PR and merge of every member after a verifier PASS, authorized by
 this invocation, with its date) and **every decision this session took as the delegated owner**,
 each a dated bullet with the evidence it rests on — the step 1 dirty-checkout answer, an abandoned
 spec, a spec sent to the human epic, a proof not run — written BEFORE the launch that depends on
 it. A decision that lives only in a brief is lost at the next relaunch; the briefs of steps 5 and 6
 name the composite and the bullet instead of restating it. Check the result with
-`.agents/quenching/bin/cq specs status --epic <composite>` and `.agents/quenching/bin/cq specs validate`.
+`specs_epic_progress(epic=<composite>)` and `specs_validate`.
 **Done when:** the composite exists with its waves, its `## Design` carries the dated policy and
 this round's decisions, and `validate` raises no `sp-link-*` finding.
 
@@ -178,9 +193,9 @@ this round's decisions, and `validate` raises no `sp-link-*` finding.
 **Economy mode.** An epic with **at most 2 members, every one `low` or `medium`**, runs without
 `quenching-spec-orchestrator`: this session launches `quenching-spec-runner` →
 `quenching-spec-verifier` for each member and, after the PASS, publishes it itself
-(`/quenching-git pr-create autonomous`, then `.agents/quenching/bin/cq git pr merge` on green CI, or on the green local gate where `shared.ci.enforce` relaxes it), with the acceptance rules
+(`/quenching-git pr-create autonomous`, then `git_pr_merge` on green CI, or on the green local gate where `shared.ci.enforce` relaxes it), with the acceptance rules
 of the spec-orchestrator's protocol, cited and not restated — steps 3 (delegation briefs), 4
-(acceptance only on a spec-verifier PASS, the `execute-done:`/`conclude` two spawns, publish after the PASS,
+(acceptance only on a spec-verifier PASS, one `autonomous` runner spawn per member that develops, executes and concludes, the spec-verifier once before the publish, publish after the PASS,
 one re-spawn) and 5 (retry, idempotency) of `quenching/agents/spec-orchestrator.md`.
 Each prompt is ≤ 1,500 characters, and it OPENS with the fixed text every prompt of that type
 shares — the word `autonomous`, the base, the model passed explicitly and the sentence "No git
@@ -188,7 +203,7 @@ stash, checkout or reset; work only in your worktree." — and CLOSES with the v
 id, the worktree, the epic id and the decision it carries. Fixed prefix first is what lets two
 prompts of the same type share a cacheable prefix; the gain BETWEEN distinct agents is ASSUMED, not
 measured in this repository — the table of `context-discipline.md` §The prompt cache is a
-per-harness measurement measures generations inside one agent — and `.agents/quenching/bin/cq components session cache` is
+per-harness measurement measures generations inside one agent — and `components_session_cache` is
 the measurement that would confirm or refute it. Two members with a
 dependency run in series; without one, in parallel (never more than 3 workers). Every launch counts
 in `launches`, and the ceilings of the invariants above bind it. No new grant: this session already
@@ -215,12 +230,18 @@ the epic touched a grant, a hook or anything that executes. That review hunts th
 makes by mistake, never deliberate evasion of the audit (symlink, BOM, line separators, a diff
 driver in `.git/config`): the audit is no sandbox. Never a second review of the same range.
 
-Each finding the reviewer reproduced becomes a loose spec (`.agents/quenching/bin/cq specs new`, then its `## Problem` with
+Each finding the reviewer reproduced becomes a loose spec (`specs_create`, then its `## Problem` with
 the reproduction), queued for the next round; `NONE` creates none.
 **Done when:** the review returned and each reproduced finding is a spec.
 
 ### 7. Gate and audit
 On `main`: pull, run the gate, and the audit of step 1. Red → the first spec of the next round.
+Then **release this round's reservations**: `specs_claim_list`, and for every row
+with `mine: true` whose spec is a member of this round's epics, `specs_claim_release(claim_id=<id>)`
+— a worker that stopped without concluding leaves no lease to expire on its own. A lease of this
+machine on a spec outside the round belongs to another session and is left alone; a `not-holder`
+or exit 2 is printed in step 8, never retried with `take`.
+Also audit orphan processes: list `pytest`, xdist (`exec(eval(sys.stdin.readline()))`) and `functional-checks.sh` processes whose working directory sits in a slot with no live worker, end them by PID with their children, and print each in step 8 — a worker that returned must leave none running.
 Then decide whether to stop:
 
 - **deadline** — `--until` is reached, or no worker of a next round could finish before it;
@@ -241,5 +262,7 @@ Print: the launches used against `--max-launches` and the resumes it made; per e
 specs with their PRs; the human epic and its members; every decision
 this session took as the delegated owner; specs in flight at the deadline, as `continue` with their
 state; second stalls; and the tokens the run spent per model and agent type, read with
-`.agents/quenching/bin/cq components session cost` and never summed across tiers.
+`components_session_cost` and never summed across tiers; and the
+conductor's own `cq` share, `cqShell` against `cqMcp` and the `fellToShell` verbs, read from
+`components_session_digest()`.
 **Done when:** the report is printed.

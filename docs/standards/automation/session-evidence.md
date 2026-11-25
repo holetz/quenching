@@ -108,6 +108,25 @@ own session**, and is reported with its count and the quoted turn that evidences
 Anything the digest did not count is offered as an observation in plain words, never dressed
 as a figure.
 
+## `cq` calls: the shell against the MCP server
+
+<!-- rules -->
+
+`session digest` counts, per command and for the whole session, the `cq` calls that ran through a
+`Bash` (`cqShell`) and the calls made to a `quenching` MCP tool (`cqMcp`), read from the transcript by
+`session/cqcalls.py` and never recalled. A shell call is reduced to its verb path, the one the
+catalog coverage scan uses; a bare `cq specs` in prose is none.
+
+- **Connected** is the one fact the transcript proves: the session made at least one MCP call to the
+  server. `connected: false` says no MCP call was seen, never that the server was absent.
+- `fellToShell` lists the verbs that have a tool and ran as `cq` anyway, only when connected;
+  `cliByDesign` lists the rest (gate, CI, hooks, `checks/*.sh`, `scripts/` and the `EXCEPTIONS` of
+  `mcp/coverage.py`), which stay on the CLI by decision and are no regression.
+- `shellRatio` is `cqShell / (cqShell + cqMcp)`; the autopilot's final report prints it for the
+  conductor's own session.
+- A subagent's measure is the digest of its own transcript; the per-command counts carry the same
+  upper-bound honesty as every other count of an unclosed stage.
+
 ## Silence is a refusal, never a clean report
 
 A non-empty transcript that yields zero commands exits **2**, distinguishing `se-empty-transcript`

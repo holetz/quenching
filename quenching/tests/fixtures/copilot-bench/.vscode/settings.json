@@ -1,0 +1,12 @@
+{
+  // O arquivo do usuário tem comentário e vírgula final; a sonda lê os dois.
+  "chat.tools.terminal.autoApprove": {
+    "cq ": true,
+    "git ": true,
+  },
+  "search.exclude": {
+    "**/.agents/quenching/assets/**": true,
+  },
+  "chat.agent.maxRequests": 40,
+  "chat.agent.sandbox": true,
+}

@@ -19,6 +19,11 @@ class SpecRunnerWaitTests(unittest.TestCase):
         self.assertIn("completion notification of a background task", body)
         self.assertIn("Never match a process with `pgrep -f`", body)
 
+    def test_no_background_gate_left_running(self):
+        body = re.sub(r"\s+", " ", SPEC_RUNNER.read_text(encoding="utf-8"))
+        self.assertIn("Never leave a gate or suite running in the background", body)
+        self.assertIn("kill its process tree", body)
+
     def test_no_surface_body_waits_with_pgrep(self):
         offenders = [
             str(path.relative_to(ROOT))

@@ -331,6 +331,27 @@ def _spec_vs_head(spec: str, head: str, *, by_name: bool = True) -> dict | None:
     return None
 
 
+def _spec_body(spec: str) -> str:
+    """The default PR body of a spec: the non-empty `Problem`, `Proposal`, `Impact` and `Validation`
+    sections under their headings, then a `Tasks` count. Empty string when the spec has none."""
+    from quenching.specs.parse.sections import parse_sections
+    backend, err = open_backend(find_repo_root(os.getcwd()))
+    info, err2 = (None, err) if err else read_one(backend, spec, _Quiet())
+    if err2 or not info or not info.get("text"):
+        return ""
+    sections = parse_sections(info["text"])
+    parts = []
+    for heading in ("Problem", "Proposal", "Impact", "Validation"):
+        entry = sections.get(heading)
+        if entry and entry.get("filled"):
+            parts.append(f"## {heading}\n\n{entry['body'].strip()}")
+    tasks = info.get("tasks") or []
+    if tasks:
+        done = sum(1 for t in tasks if isinstance(t, dict) and t.get("checked"))
+        parts.append(f"## Tasks\n\n{done}/{len(tasks)} tasks checked.")
+    return "\n\n".join(parts)
+
+
 def _real_head(number: int, url: str) -> tuple[int, str] | str:
     """The PR's own `(number, head branch)` as the provider reports it, or gh's/az's message."""
     if _provider() == "azure-boards":
@@ -498,6 +519,14 @@ def _create(args) -> int:
             return refuse(bad, args.json)
     if args.body == "-":
         args.body = sys.stdin.read()
+    if not args.body.strip() and args.spec:
+        args.body = _spec_body(args.spec)
+    if not args.body.strip():
+        return refuse({"code": "git-pr-body-empty",
+                       "message": "the PR body is empty: pass --body, or --spec of a spec "
+                                  "that carries a Problem, Proposal, Impact or Validation "
+                                  "section; a PR is never opened without a description"},
+                      args.json)
     if provider == "azure-boards":
         at = next((flag for flag, value in (("--title", args.title), ("--description", args.body),
                                             ("--head", args.head), ("--base", args.base))

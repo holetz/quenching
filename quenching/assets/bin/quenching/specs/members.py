@@ -11,6 +11,7 @@ import hashlib
 import os
 import re
 
+from quenching.common.cache import cache_path
 from quenching.common.config import find_repo_root
 from quenching.specs.backends.base import BackendRefusal
 from quenching.specs.backends.git import NO_FETCH_ENV, GitBackend
@@ -51,9 +52,8 @@ _STORE_BACKENDS = ("git", "memory")
 
 def _foreign(root: str, url: str) -> GitBackend:
     if url not in _FOREIGN:
-        base = os.environ.get("XDG_CACHE_HOME") or os.path.join(os.path.expanduser("~"), ".cache")
         digest = hashlib.sha256(url.encode()).hexdigest()[:32]
-        mirror = os.path.join(base, "quenching", "mirrors", f"{digest}.git")
+        mirror = cache_path("mirrors", f"{digest}.git")
         _FOREIGN[url] = GitBackend(root, mirror_dir=mirror, remote_url=url)
     return _FOREIGN[url]
 

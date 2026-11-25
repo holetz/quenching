@@ -147,7 +147,7 @@ FLAG-pending units stay under a clearly marked residue section. **No frontmatter
 
 ### 8. Verify and report
 **Resolve EVERY link** in every rewritten harness file (the validator won't). Confirm no moved fact
-is still restated inline; run `.agents/quenching/bin/cq knowledge validate` over `/docs/` → 0 errors and the structural WARNs
+is still restated inline; run `knowledge_validate()` over `/docs/` → 0 errors and the structural WARNs
   clean; confirm each moved doc is indexed. Report counts: **moved** (by home) /
 **deduped** / **kept** / **flagged** / **unroutable** / **harness created** (subfolder pointers).
 **Done when:** links, conformance, index ownership, and all disposition counts are reported.

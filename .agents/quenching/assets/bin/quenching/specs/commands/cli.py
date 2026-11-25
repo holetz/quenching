@@ -22,6 +22,7 @@ from quenching.common.output import CQArgumentParser, OK, refuse
 from quenching.common.version import VERSION
 from quenching.specs.backends.base import BackendRefusal
 from quenching.specs.parse.fields import UnclosedFence
+from quenching.specs.commands.claim import add_parser as add_claim_parser
 from quenching.specs.commands.handoff import add_parser as add_handoff_parser
 from quenching.specs.commands.output import Emitter
 from quenching.specs.config import find_repo_root
@@ -219,6 +220,9 @@ def _add_next_and_epic(sub) -> None:
                          "ranking alone")
     sp.add_argument("--front", action="store_true",
                     help="rank every active spec: executing, closest to done, priority, age")
+    sp.add_argument("--include-claimed", action="store_true",
+                    help="with --front: also list specs another machine holds a live lease on "
+                         "(left out by default)")
     sp.add_argument("--epic", help="a spec ID: its member specs ready to run now — "
                                    "dependencies done, approved or ready, not blocked")
     sp.add_argument("--limit", type=int, help="with --epic: at most N ready specs")
@@ -406,6 +410,7 @@ def build_parser() -> tuple[argparse.ArgumentParser, argparse._SubParsersAction]
     _add_next_and_epic(sub)
     _add_inspection(sub)
     _add_migrate_export_serve(sub)
+    add_claim_parser(sub, add_json)
     for verb in ("status", "show", "section"):
         sub.choices[verb].add_argument(
             "--root", metavar="PATH", default=argparse.SUPPRESS,
@@ -478,6 +483,7 @@ DISPATCH: dict = _LazyDispatch({
     "serve": "quenching.specs.portal:cmd_serve",
     "mcp": "quenching.specs.mcp:cmd_mcp",
     "sync": "quenching.specs.commands.sync:cmd_sync",
+    "claim": "quenching.specs.commands.claim:cmd_claim",
 })
 
 

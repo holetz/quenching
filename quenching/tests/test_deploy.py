@@ -10,19 +10,23 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from unittest import mock
 
 try:
     import _paths  # noqa: F401
 except ModuleNotFoundError:
     sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
     import _paths  # noqa: F401
+from quenching.common.deploy import dumps_hash_manifest
 from quenching.deploy import translate
+from quenching.deploy import cli as deploy_cli
 from quenching.deploy.cli import main as deploy_main
 
 PLUGIN_ROOT = pathlib.Path(__file__).resolve().parent.parent
 REPO_ROOT = PLUGIN_ROOT.parent
 REAL = PLUGIN_ROOT / "assets" / "bin" / "cq"
 VERSION = (PLUGIN_ROOT / "VERSION").read_text().strip()
+REAL_PRECOMPILE = deploy_cli._precompile
 
 
 def launcher(path) -> list[str]:
@@ -41,6 +45,15 @@ class Deploy(unittest.TestCase):
         self.addCleanup(tmp.cleanup)
         self.target = pathlib.Path(tmp.name)
         self.git("init", "-q")
+        # The user's global OpenCode config decides whether the depth is written; keep it out.
+        self.xdg = pathlib.Path(tempfile.mkdtemp(dir=tmp.name, prefix="xdg-"))
+        env = mock.patch.dict(os.environ, {"XDG_CONFIG_HOME": str(self.xdg), "OPENCODE_CONFIG": ""})
+        env.start()
+        self.addCleanup(env.stop)
+        # A real `compileall` costs a subprocess per write; the tests that prove it stop this stub.
+        self.precompile = mock.patch("quenching.deploy.cli._precompile", return_value=None)
+        self.precompile.start()
+        self.addCleanup(self.precompile.stop)
 
     def git(self, *argv):
         return subprocess.run(["git", "-C", str(self.target), *argv], check=True,
@@ -140,8 +153,11 @@ class Deploy(unittest.TestCase):
     def test_generated_skill_grants_both_launchers_and_names_the_platform(self):
         self.assertEqual(0, self.run_deploy("--modules", "core", "--write")[0])
         skill = (self.target / ".agents/skills/quenching-components/SKILL.md").read_text()
-        self.assertIn("Bash(.agents/quenching/bin/cq:*)", skill)
-        self.assertIn("Bash(.agents/quenching/bin/cq.cmd:*)", skill)
+        # The registered server replaces the covered verbs; the residue keeps both launchers.
+        self.assertNotIn("Bash(.agents/quenching/bin/cq:*)", skill)
+        self.assertIn("Bash(.agents/quenching/bin/cq deploy:*)", skill)
+        self.assertIn("Bash(.agents/quenching/bin/cq.cmd deploy:*)", skill)
+        self.assertIn("mcp__quenching", skill)
         self.assertIn("on Windows it calls `cq.cmd`", skill)
         self.assertEqual(1, skill.count("**Launcher.**"))
         agent = (self.target / ".agents/quenching/agents/spec-runner.md").read_text()
@@ -253,6 +269,43 @@ class Deploy(unittest.TestCase):
             self.assertTrue((self.target / rel).exists(), rel)
         settings = json.loads((self.target / ".claude/settings.json").read_text())
         self.assertEqual({"permissions": {"allow": ["Read"]}}, settings)
+
+    def pycs(self) -> set[str]:
+        root = self.target / ".agents/quenching"
+        return {p.relative_to(root).as_posix() for p in root.rglob("*.pyc")}
+
+    def test_a_write_precompiles_the_payload_so_a_first_call_writes_no_bytecode(self):
+        self.precompile.stop()
+        code, payload = self.run_deploy("--modules", "core", "--write")
+        self.assertEqual(0, code)
+        self.assertEqual([], [w for w in payload["warnings"] if "bytecode" in w])
+        compiled = self.pycs()
+        self.assertTrue(any(p.startswith("assets/bin/quenching/common/__pycache__/") for p in compiled))
+        self.assertTrue(any(p.startswith("assets/hooks/") for p in compiled), compiled)
+        status = self.target_cq("components", "status", "--json")
+        self.assertEqual(0, status.returncode, status.stderr)
+        self.assertEqual(compiled, self.pycs())
+        manifest = (self.target / ".agents/.quenching-deploy.json").read_text(encoding="utf-8")
+        self.assertNotIn("__pycache__", manifest)
+        self.assertEqual((0, []), (lambda r: (r[0], r[1]["changes"]))(
+            self.run_deploy("--modules", "core", "--check")))
+
+    def test_a_precompile_that_cannot_run_is_a_warning_not_a_refusal(self):
+        self.precompile.stop()
+        with mock.patch.object(deploy_cli, "_precompile", side_effect=lambda target, _python:
+                               REAL_PRECOMPILE(target, [str(self.target / "no-such-python")])):
+            code, payload = self.run_deploy("--modules", "core", "--write")
+        self.assertEqual(0, code)
+        self.assertTrue(payload["written"])
+        self.assertTrue(any("bytecode was not precompiled" in w for w in payload["warnings"]),
+                        payload["warnings"])
+
+    def test_remove_takes_the_bytecode_of_every_removed_module_with_it(self):
+        self.precompile.stop()
+        self.assertEqual(0, self.run_deploy("--modules", "core", "--write")[0])
+        self.assertTrue(self.pycs())
+        self.assertEqual(0, self.run_deploy("--remove", "--write")[0])
+        self.assertFalse((self.target / ".agents/quenching").exists())
 
     def test_remove_refuses_a_target_that_was_never_deployed(self):
         code, payload = self.run_deploy("--remove", "--write")
@@ -430,7 +483,8 @@ class Deploy(unittest.TestCase):
         agent = self.target / ".opencode/agents/quenching-spec-verifier.md"
         text = agent.read_text(encoding="utf-8")
         self.assertIn("mode: subagent", text)
-        self.assertIn('".agents/quenching/bin/cq git audit *": allow', text)
+        self.assertIn("  quenching_git_audit: allow", text)
+        self.assertNotIn('".agents/quenching/bin/cq git audit *": allow', text)
         self.assertIn("Source model tier: `sonnet`.", text)
         self.assertIn("tools:\n  task: false", text)
 
@@ -460,8 +514,11 @@ class Deploy(unittest.TestCase):
     def configure(self, document: dict):
         self.write(".agents/quenching.json", json.dumps(document, indent=2) + "\n")
 
-    def mcp_config(self, command=None, mount="specs"):
-        option = {"command": command or ["uv", "run", "--no-project", "python"]}
+    PY = ["/opt/py/bin/python3"]
+    UV = ["uv", "run", "--no-project", "python"]
+
+    def mcp_config(self, command=None, mount=None):
+        option = {"command": command or self.PY}
         if mount is not None:
             option["mount"] = mount
         return {"shared": {"mcp": option}}
@@ -471,33 +528,108 @@ class Deploy(unittest.TestCase):
         code, payload = self.run_deploy("--modules", "specs", "--write")
         self.assertEqual(0, code, payload)
         claude = json.loads((self.target / ".mcp.json").read_text())
-        self.assertEqual({"command": "uv",
-                          "args": ["run", "--no-project", "python",
-                                   ".agents/quenching/assets/bin/cq", "specs", "mcp"]},
+        self.assertEqual({"command": "/opt/py/bin/python3",
+                          "args": [".agents/quenching/assets/bin/cq", "mcp"]},
                          claude["mcpServers"]["quenching"])
         self.assertFalse((self.target / ".codex/config.toml").exists())
         opencode = json.loads((self.target / "opencode.json").read_text())
-        self.assertEqual(["uv", "run", "--no-project", "python",
-                          ".agents/quenching/assets/bin/cq", "specs", "mcp"],
+        self.assertEqual(["/opt/py/bin/python3", ".agents/quenching/assets/bin/cq", "mcp"],
                          opencode["mcp"]["quenching"]["command"])
         self.assertTrue(opencode["mcp"]["quenching"]["enabled"])
         for rel in (".mcp.json", "opencode.json"):
             self.assertIn(rel, [c["path"] for c in payload["changes"]])
         manifest = json.loads((self.target / ".agents/.quenching-deploy.json").read_text())
-        self.assertEqual({"mount": "specs",
-                          "command": ["uv", "run", "--no-project", "python"]}, manifest["mcp"])
+        self.assertEqual({"mount": "all", "command": self.PY}, manifest["mcp"])
         self.assertEqual([], self.run_deploy("--check")[1]["changes"])
 
-    def test_without_the_option_the_mcp_is_registered_anyway(self):
+    def test_the_cli_fallback_keeps_both_doors(self):
+        self.configure({"shared": {"mcp": {"cliFallback": True}}})
+        code, payload = self.run_deploy("--modules", "core", "--write")
+        self.assertEqual(0, code, payload)
+        skill = (self.target / ".agents/skills/quenching-components/SKILL.md").read_text()
+        self.assertIn("Bash(.agents/quenching/bin/cq:*)", skill)
+        self.assertIn("Bash(.agents/quenching/bin/cq.cmd:*)", skill)
+        self.assertIn("mcp__quenching", skill)
+        opencode = (self.target / ".opencode/agents/quenching-spec-verifier.md").read_text()
+        self.assertIn('".agents/quenching/bin/cq git audit *": allow', opencode)
+        claude = (self.target / ".claude/agents/quenching-spec-verifier.md").read_text()
+        self.assertIn("Bash(.agents/quenching/bin/cq git audit:*)", claude)
+        manifest = json.loads((self.target / ".agents/.quenching-deploy.json").read_text())
+        self.assertTrue(manifest["mcp"]["cliFallback"])
+        self.assertEqual([], self.run_deploy("--check")[1]["changes"])
+
+    def test_the_narrow_default_reaches_every_harness_but_the_payload(self):
+        self.assertEqual(0, self.run_deploy("--modules", "core", "--write")[0])
+        claude = (self.target / ".claude/agents/quenching-spec-verifier.md").read_text()
+        tools = next(line for line in claude.splitlines() if line.startswith("tools:"))
+        self.assertNotIn("bin/cq", tools)
+        self.assertIn("mcp__quenching__specs_status", tools)
+        payload = (self.target / ".agents/quenching/agents/spec-verifier.md").read_text()
+        self.assertIn("Bash(.agents/quenching/bin/cq specs status:*)", payload)
+        manifest = json.loads((self.target / ".agents/.quenching-deploy.json").read_text())
+        self.assertNotIn("cliFallback", manifest["mcp"])
+        for rel in (".agents/skills", ".claude/agents", ".opencode/agents"):
+            for path in (self.target / rel).rglob("*.md"):
+                head = path.read_text(encoding="utf-8").split("\n---\n", 1)[0]
+                self.assertNotIn("claim take", head, path)
+        self.assertEqual([], self.run_deploy("--check")[1]["changes"])
+
+    def test_the_specs_mount_keeps_both_doors(self):
+        self.configure(self.mcp_config(mount="specs"))
+        self.assertEqual(0, self.run_deploy("--modules", "core", "--write")[0])
+        skill = (self.target / ".agents/skills/quenching-components/SKILL.md").read_text()
+        self.assertIn("Bash(.agents/quenching/bin/cq:*)", skill)
+
+    def test_the_specs_mount_stays_a_declared_option(self):
+        self.configure(self.mcp_config(mount="specs"))
+        code, payload = self.run_deploy("--modules", "specs", "--write")
+        self.assertEqual(0, code, payload)
+        server = json.loads((self.target / ".mcp.json").read_text())["mcpServers"]["quenching"]
+        self.assertEqual([".agents/quenching/assets/bin/cq", "specs", "mcp"], server["args"])
+        self.configure(self.mcp_config(mount="all"))
+        self.assertEqual(0, self.run_deploy("--modules", "specs", "--write")[0])
+        server = json.loads((self.target / ".mcp.json").read_text())["mcpServers"]["quenching"]
+        self.assertEqual([".agents/quenching/assets/bin/cq", "mcp"], server["args"])
+        self.assertEqual([], self.run_deploy("--check")[1]["changes"])
+
+    def test_a_uv_prefix_reaches_neither_the_mcp_nor_the_hooks(self):
+        self.configure(self.mcp_config(command=self.UV))
+        code, payload = self.run_deploy("--modules", "core", "--write")
+        self.assertEqual(0, code, payload)
+        server = json.loads((self.target / ".mcp.json").read_text())["mcpServers"]["quenching"]
+        self.assertNotIn(server["command"], ("uv", "uvx"))
+        self.assertNotIn("run", server["args"])
+        own = [c for c in self.hook_commands() if ".agents/quenching/assets/hooks/" in c]
+        self.assertEqual(1, len(own))
+        self.assertFalse(own[0].startswith("uv"), own[0])
+        self.assertIn(" -I -c ", own[0])
+        warning = [w for w in payload["warnings"] if "runs through uv" in w]
+        self.assertTrue(warning, payload["warnings"])
+        self.assertIn("the hooks and the MCP server run", warning[0])
+        manifest = json.loads((self.target / ".agents/.quenching-deploy.json").read_text())
+        self.assertEqual(own[0].split(" -I -c ")[0].split(" "), manifest["claudeSettings"]["command"])
+        self.assertEqual(manifest["claudeSettings"]["command"], manifest["mcp"]["command"])
+        self.assertEqual([server["command"], *server["args"][:-2]], manifest["mcp"]["command"])
+        self.assertEqual((0, []), (self.run_deploy("--check")[0], self.run_deploy("--check")[1]["changes"]))
+
+    def test_a_uv_prefix_warns_without_the_claude_harness(self):
+        self.configure(self.mcp_config(command=self.UV))
+        code, payload = self.run_deploy("--modules", "specs", "--harness", "opencode", "--write")
+        self.assertEqual(0, code, payload)
+        command = json.loads((self.target / "opencode.json").read_text())["mcp"]["quenching"]["command"]
+        self.assertNotIn(command[0], ("uv", "uvx"))
+        self.assertTrue(any("runs through uv" in w for w in payload["warnings"]), payload["warnings"])
+
+    def test_without_the_option_the_whole_server_is_registered_anyway(self):
         self.configure({"shared": {"profiles": {"installed": ["specs"]}}})
         code, payload = self.run_deploy("--modules", "specs", "--write")
         self.assertEqual(0, code, payload)
         server = json.loads((self.target / ".mcp.json").read_text())["mcpServers"]["quenching"]
-        self.assertEqual([".agents/quenching/assets/bin/cq", "specs", "mcp"], server["args"][-3:])
+        self.assertEqual([".agents/quenching/assets/bin/cq", "mcp"], server["args"][-2:])
         self.assertFalse((self.target / ".codex/config.toml").exists())
         self.assertTrue((self.target / "opencode.json").exists())
         manifest = json.loads((self.target / ".agents/.quenching-deploy.json").read_text())
-        self.assertEqual("specs", manifest["mcp"]["mount"])
+        self.assertEqual("all", manifest["mcp"]["mount"])
         self.assertEqual([".mcp.json", "opencode.json"], sorted(manifest["mcpFiles"]))
         self.assertEqual([], self.run_deploy("--check")[1]["changes"])
 
@@ -508,7 +640,7 @@ class Deploy(unittest.TestCase):
         code, payload = self.run_deploy("--modules", "specs", "--write")
         self.assertEqual(0, code, payload)
         server = json.loads((self.target / ".mcp.json").read_text())["mcpServers"]["quenching"]
-        self.assertEqual("uv", server["command"])
+        self.assertEqual("/opt/py/bin/python3", server["command"])
 
     def test_a_hand_written_mcp_file_keeps_its_own_entries(self):
         self.configure(self.mcp_config())
@@ -568,6 +700,88 @@ class Deploy(unittest.TestCase):
             self.assertFalse((self.target / rel).exists(), rel)
         self.assertTrue(any("MCP" in w for w in payload["warnings"]))
 
+    def test_opencode_gets_the_depth_and_the_sibling_allows(self):
+        code, payload = self.run_deploy("--modules", "specs", "--harness", "opencode", "--write")
+        self.assertEqual(0, code, payload)
+        opencode = json.loads((self.target / "opencode.json").read_text())
+        self.assertEqual(4, opencode["experimental"]["subagent_depth"])
+        primary = os.path.realpath(self.target).replace(os.sep, "/")
+        home = os.path.expanduser("~").replace(os.sep, "/")
+        wanted = [f"{os.path.dirname(primary)}/{os.path.basename(primary)}-slot-*", f"{primary}.*"]
+        wanted = ["~" + p[len(home):] if p.startswith(home + "/") else p for p in wanted]
+        self.assertEqual({p: "allow" for p in wanted}, opencode["permission"]["external_directory"])
+        manifest = json.loads((self.target / ".agents/.quenching-deploy.json").read_text())
+        self.assertEqual({"subagentDepth": 4, "externalDirectory": wanted},
+                         manifest["opencodeConfig"])
+        self.assertEqual([], self.run_deploy("--check")[1]["changes"])
+
+    def test_check_keeps_the_patterns_another_machine_recorded(self):
+        self.assertEqual(0, self.run_deploy("--modules", "specs", "--harness", "opencode",
+                                            "--write")[0])
+        other = ["~/elsewhere/repo-slot-*", "~/elsewhere/repo.*"]
+        manifest_path = self.target / ".agents/.quenching-deploy.json"
+        manifest = json.loads(manifest_path.read_text())
+        manifest["opencodeConfig"]["externalDirectory"] = other
+        manifest_path.write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
+        opencode = json.loads((self.target / "opencode.json").read_text())
+        opencode["permission"]["external_directory"] = {p: "allow" for p in other}
+        (self.target / "opencode.json").write_text(json.dumps(opencode, indent=2) + "\n",
+                                                   encoding="utf-8")
+        self.assertEqual([], self.run_deploy("--check")[1]["changes"])
+        self.assertEqual(0, self.run_deploy("--write")[0])
+        rewritten = json.loads((self.target / "opencode.json").read_text())
+        self.assertNotIn(other[0], rewritten["permission"]["external_directory"])
+
+    def test_a_slot_resolves_to_its_primary_checkout(self):
+        from quenching.deploy.cli import _primary_checkout
+        self.git("-c", "user.name=t", "-c", "user.email=t@example.com", "commit", "-q",
+                 "--allow-empty", "-m", "seed")
+        slot = self.target / "slot"
+        self.git("worktree", "add", "-q", "--detach", str(slot))
+        self.assertEqual(os.path.realpath(self.target), os.path.realpath(_primary_checkout(slot)))
+
+    def test_a_global_experimental_key_keeps_the_depth_out_with_a_warning(self):
+        (self.xdg / "opencode").mkdir()
+        (self.xdg / "opencode" / "opencode.jsonc").write_text(
+            '{\n  // mine\n  "experimental": {"todo": true},\n}\n', encoding="utf-8")
+        code, payload = self.run_deploy("--modules", "specs", "--harness", "opencode", "--write")
+        self.assertEqual(0, code, payload)
+        opencode = json.loads((self.target / "opencode.json").read_text())
+        self.assertNotIn("experimental", opencode)
+        self.assertIn("external_directory", opencode["permission"])
+        self.assertTrue(any("subagent_depth" in w and "todo" in w for w in payload["warnings"]))
+
+    def test_check_keeps_the_depth_a_global_key_kept_out_of_this_machine(self):
+        # The recorded depth names the machine that wrote the manifest; re-deriving it under this
+        # machine's global config would read a committed `opencode.json` as drift.
+        self.assertEqual(0, self.run_deploy("--modules", "specs", "--harness", "opencode",
+                                            "--write")[0])
+        (self.xdg / "opencode").mkdir()
+        (self.xdg / "opencode" / "opencode.jsonc").write_text(
+            '{"experimental": {"todo": true}}\n', encoding="utf-8")
+        code, payload = self.run_deploy("--check")
+        self.assertEqual([], payload["changes"], payload)
+
+    def test_dropping_the_opencode_harness_takes_the_extras_out(self):
+        self.write("opencode.json", '{"theme": "dark", "permission": {"edit": "ask"}}\n')
+        self.assertEqual(0, self.run_deploy("--modules", "specs", "--harness", "opencode",
+                                            "--write")[0])
+        self.assertEqual(0, self.run_deploy("--harness", "claude", "--write")[0])
+        self.assertEqual({"theme": "dark", "permission": {"edit": "ask"}, "$schema":
+                          "https://opencode.ai/config.json"},
+                         json.loads((self.target / "opencode.json").read_text()))
+
+    def test_claude_approves_the_registered_server_and_gives_it_back(self):
+        self.write(".claude/settings.json", '{"enabledMcpjsonServers": ["mine"]}\n')
+        self.assertEqual(0, self.run_deploy("--modules", "specs", "--harness", "claude",
+                                            "--write")[0])
+        doc = json.loads((self.target / ".claude/settings.json").read_text())
+        self.assertEqual(["mine", "quenching"], doc["enabledMcpjsonServers"])
+        self.assertEqual([], self.run_deploy("--check")[1]["changes"])
+        self.assertEqual(0, self.run_deploy("--remove", "--write")[0])
+        self.assertEqual({"enabledMcpjsonServers": ["mine"]},
+                         json.loads((self.target / ".claude/settings.json").read_text()))
+
     def test_the_harness_filter_selects_which_mcp_file_is_written(self):
         self.configure(self.mcp_config())
         self.assertEqual(0, self.run_deploy("--modules", "specs", "--harness", "claude",
@@ -584,7 +798,8 @@ class Deploy(unittest.TestCase):
         for option in ({"shared": {"mcp": {"command": []}}},
                        {"shared": {"mcp": {"command": "uv"}}},
                        {"shared": {"mcp": {"mount": "chat", "command": ["uv"]}}},
-                       {"shared": {"mcp": {"command": ["uv"], "extra": True}}}):
+                       {"shared": {"mcp": {"command": ["uv"], "extra": True}}},
+                       {"shared": {"mcp": {"cliFallback": "yes"}}}):
             self.configure(option)
             code, payload = self.run_deploy("--modules", "specs", "--write")
             self.assertEqual(2, code, option)
@@ -621,10 +836,12 @@ class Deploy(unittest.TestCase):
         self.assertIn("settings", [c["change"] for c in payload["changes"]])
         commands = self.hook_commands()
         self.assertEqual("guard.sh", commands[0])
-        self.assertEqual(2, len([c for c in commands if ".agents/quenching/assets/hooks/" in c]))
+        own = [c for c in commands if ".agents/quenching/assets/hooks/" in c]
+        self.assertEqual(1, len(own))  # one process runs every body of the matcher
+        self.assertTrue(own[0].endswith('" deny-claude-coauthor warn-git-add-all'), own[0])
         self.assertEqual({"commit": "", "pr": ""}, self.settings()["attribution"])
         self.assertEqual({"context7": True}, self.settings()["enabledPlugins"])
-        for name in ("deny-claude-coauthor", "warn-git-add-all"):
+        for name in ("dispatch", "deny-claude-coauthor", "warn-git-add-all"):
             self.assertTrue((self.target / f".agents/quenching/assets/hooks/{name}.py").is_file(), name)
         manifest = json.loads((self.target / ".agents/.quenching-deploy.json").read_text())
         self.assertEqual(["deny-claude-coauthor", "warn-git-add-all"], sorted(manifest["claudeSettings"]["hooks"]))
@@ -648,10 +865,11 @@ class Deploy(unittest.TestCase):
     def test_a_narrower_module_set_or_harness_removes_only_the_own_hooks(self):
         self.write(".claude/settings.json", json.dumps({"model": "x"}))
         self.run_deploy("--modules", "specs,git", "--write")
-        self.assertEqual(2, len(self.hook_commands()))
+        self.assertEqual(1, len(self.hook_commands()))
+        self.assertIn("warn-git-add-all", self.hook_commands()[0])
         self.run_deploy("--modules", "specs", "--write")
         self.assertEqual(1, len(self.hook_commands()))
-        self.assertIn("deny-claude-coauthor", self.hook_commands()[0])
+        self.assertTrue(self.hook_commands()[0].endswith('" deny-claude-coauthor'))
         self.assertFalse((self.target / ".agents/quenching/assets/hooks/warn-git-add-all.py").exists())
         code, _ = self.run_deploy("--modules", "specs", "--harness", "opencode", "--write")
         self.assertEqual(0, code)
@@ -706,6 +924,113 @@ class SourceDialect(unittest.TestCase):
         self.assertEqual(text, translate.transform_platform(text))
 
 
+class McpGrants(unittest.TestCase):
+    """Each `Bash(cq …)` grant also grants the `quenching` MCP tools under the same verb prefix."""
+
+    VERIFIER = ("---\ndescription: v\ntools: Read, Bash(cq specs status:*), "
+                "Bash(cq git audit:*)\n---\n\nbody\n")
+    RUNNER = "---\ndescription: r\ntools: Bash, Read\n---\n\nbody\n"
+
+    def test_a_claude_agent_lists_the_tools_its_cq_grants_cover(self):
+        text = translate.agent_document(self.VERIFIER, "spec-verifier")
+        tools = next(line for line in text.splitlines() if line.startswith("tools:"))
+        for name in ("mcp__quenching__specs_status", "mcp__quenching__specs_epic_progress",
+                     "mcp__quenching__git_audit"):
+            self.assertIn(name, tools)
+        self.assertNotIn("mcp__quenching__specs_record", tools)
+
+    def test_a_full_bash_agent_lists_every_tool_and_a_skill_names_the_server(self):
+        tools = next(line for line in translate.agent_document(self.RUNNER, "spec-runner")
+                     .splitlines() if line.startswith("tools:"))
+        self.assertIn("mcp__quenching__specs_section_write", tools)
+        self.assertIn("mcp__quenching__git_commit", tools)
+        skill = translate.skill_document(
+            "---\ndescription: s\nallowed-tools: Bash(cq:*), Read\n---\n\n# s\n", "s")
+        self.assertIn("allowed-tools: Bash(.agents/quenching/bin/cq:*), Read, mcp__quenching\n",
+                      skill)
+
+    def test_opencode_denies_the_server_then_allows_the_covered_tools(self):
+        text = translate.opencode_agent_document(self.VERIFIER, "spec-verifier")
+        deny = text.index('  "quenching_*": deny')
+        self.assertGreater(text.index("  quenching_specs_status: allow"), deny)
+        self.assertIn("  quenching_git_audit: allow", text)
+        self.assertNotIn("quenching_specs_record", text)
+        self.assertIn('  "quenching_*": allow',
+                      translate.opencode_agent_document(self.RUNNER, "spec-runner"))
+
+    def test_opencode_allows_the_non_cq_shell_grants_the_source_lists(self):
+        raw = ("---\ndescription: o\ntools: Bash(cq specs status:*), Bash(git worktree list:*), "
+               "Bash(gh pr view:*), Bash(bash scripts/verify_repo.sh:*)\n---\n\nbody\n")
+        text = translate.opencode_agent_document(raw, "o")
+        ask = text.index('    "*": ask')
+        for pattern in ("git worktree list *", "gh pr view *", "bash scripts/verify_repo.sh *"):
+            self.assertGreater(text.index(f'    "{pattern}": allow'), ask)
+        self.assertNotIn('"git *"', text)
+
+    def test_a_narrow_claude_agent_drops_the_shell_grant_its_tools_replace(self):
+        text = translate.agent_document(self.VERIFIER, "spec-verifier", narrow=True)
+        tools = next(line for line in text.splitlines() if line.startswith("tools:"))
+        self.assertNotIn("Bash(", tools)
+        for name in ("mcp__quenching__specs_status", "mcp__quenching__git_audit", "Read"):
+            self.assertIn(name, tools)
+        self.assertEqual(tools, next(line for line in translate.agent_document(
+            self.VERIFIER, "spec-verifier").splitlines() if line.startswith("tools:"))
+            .replace("Bash(.agents/quenching/bin/cq specs status:*), ", "")
+            .replace("Bash(.agents/quenching/bin/cq git audit:*), ", ""))
+
+    def test_a_narrow_skill_keeps_only_the_residue_on_both_launchers(self):
+        skill = translate.skill_document(
+            "---\ndescription: s\nallowed-tools: Bash(cq:*), Bash(cq.cmd:*), Bash(git log:*), "
+            "Read\n---\n\n# s\n", "s", narrow=True)
+        grants = next(line for line in skill.splitlines() if line.startswith("allowed-tools:"))
+        self.assertNotIn("Bash(.agents/quenching/bin/cq:*)", grants)
+        self.assertNotIn("Bash(.agents/quenching/bin/cq.cmd:*)", grants)
+        for launcher in ("cq", "cq.cmd"):
+            for verb in ("deploy", "specs serve", "specs sync", "portal"):
+                self.assertIn(f"Bash(.agents/quenching/bin/{launcher} {verb}:*)", grants)
+            self.assertNotIn(f"Bash(.agents/quenching/bin/{launcher} specs status:*)", grants)
+        self.assertNotIn("take", grants)
+        for name in ("Bash(git log:*)", "Read", "mcp__quenching"):
+            self.assertIn(name, grants)
+
+    def test_a_narrow_scoped_grant_keeps_its_uncovered_verbs(self):
+        skill = translate.skill_document(
+            "---\ndescription: s\nallowed-tools: Bash(cq git:*), Bash(cq specs bogus:*)\n---\n\n# s\n",
+            "s", narrow=True)
+        self.assertIn("Bash(.agents/quenching/bin/cq git identity:*)", skill)
+        self.assertNotIn("Bash(.agents/quenching/bin/cq git:*)", skill)
+        self.assertIn("Bash(.agents/quenching/bin/cq specs bogus:*)", skill)
+        self.assertIn("mcp__quenching__git_commit", skill)
+
+    def test_a_narrow_opencode_agent_allows_the_tools_and_not_the_shell(self):
+        text = translate.opencode_agent_document(self.VERIFIER, "spec-verifier", narrow=True)
+        self.assertIn("  bash: deny", text)
+        self.assertNotIn("bin/cq", text)
+        self.assertIn("  quenching_specs_status: allow", text)
+        self.assertIn("  quenching_git_audit: allow", text)
+        raw = ("---\ndescription: o\ntools: Bash(cq specs:*), Bash(gh pr view:*)\n---\n\nbody\n")
+        text = translate.opencode_agent_document(raw, "o", narrow=True)
+        self.assertIn('    ".agents/quenching/bin/cq specs serve *": allow', text)
+        self.assertIn('    "gh pr view *": allow', text)
+        self.assertNotIn('".agents/quenching/bin/cq specs *"', text)
+        self.assertIn("  quenching_specs_status: allow", text)
+
+    def test_a_narrow_translation_is_identical_the_second_time(self):
+        once = translate.agent_document(self.VERIFIER, "spec-verifier", narrow=True)
+        self.assertEqual(once, translate.agent_document(once, "spec-verifier", narrow=True))
+        raw = "---\ndescription: s\nallowed-tools: Bash(cq:*), Read\n---\n\n# s\n"
+        skill = translate.skill_document(raw, "s", narrow=True)
+        self.assertEqual(skill, translate.skill_document(skill, "s", narrow=True))
+
+    def test_a_second_translation_is_identical(self):
+        once = translate.agent_document(self.VERIFIER, "spec-verifier")
+        self.assertEqual(once, translate.agent_document(once, "spec-verifier"))
+        skill = translate.skill_document(
+            "---\ndescription: s\nallowed-tools: Bash(cq specs handoff:*)\n---\n\n# s\n", "s")
+        self.assertIn("mcp__quenching__specs_handoff_write", skill)
+        self.assertEqual(skill, translate.skill_document(skill, "s"))
+
+
 class TargetLauncher(unittest.TestCase):
     """The `bin/cq` of a vendored target is generated by the deploy: the one file whose whole job is
     to be *equivalent* to `assets/bin/cq`, and which nothing else would catch drifting.
@@ -754,6 +1079,43 @@ class TargetLauncher(unittest.TestCase):
         self.assertIn("%*", source)
         self.assertIn("exit /b %ERRORLEVEL%", source)
         self.assertNotIn("execv", source)
+
+    def test_the_windows_branch_runs_cq_in_the_same_process(self):
+        """The `nt` branch holds no second interpreter and, run as if on Windows, answers like the real `cq`."""
+        source = self.shim.read_text(encoding="utf-8")
+        nt_branch = source.split('if os.name == "nt":')[1].split("os.execv")[0]
+        self.assertNotIn("subprocess", source)
+        self.assertIn("sys.path.insert(0", nt_branch)
+        self.assertIn('["main"](sys.argv[1:])', nt_branch)
+        probe = self.payload / "bin/cq_nt_probe"
+        probe.write_text(source.replace('os.name == "nt"', "True", 1), encoding="utf-8")
+        try:
+            for argv in (["--version"], ["nosuch pillar", "a b"]):
+                with self.subTest(argv=argv):
+                    real = subprocess.run([sys.executable, str(self.payload / "assets/bin/cq"), *argv],
+                                          capture_output=True, text=True)
+                    nt = subprocess.run([sys.executable, str(probe), *argv], capture_output=True, text=True)
+                    self.assertEqual(real.returncode, nt.returncode)
+                    self.assertEqual(real.stdout, nt.stdout)
+                    self.assertEqual(real.stderr.replace("cq_nt_probe", "cq"), nt.stderr.replace("cq_nt_probe", "cq"))
+            self.assertNotEqual(0, nt.returncode)
+            self.assertIn("nosuch pillar", nt.stderr)
+        finally:
+            probe.unlink()
+
+    def test_the_windows_branch_forces_utf8_streams_before_main(self):
+        """`runpy.run_path` skips cq's `__main__` block, so the launcher itself must force UTF-8."""
+        probe = self.payload / "bin/cq_nt_utf8_probe"
+        probe.write_text(self.shim.read_text(encoding="utf-8").replace('os.name == "nt"', "True", 1),
+                         encoding="utf-8")
+        env = {**os.environ, "PYTHONIOENCODING": "cp1252"}
+        env.pop("PYTHONUTF8", None)
+        try:
+            run = subprocess.run([sys.executable, str(probe), "nosuchā"], capture_output=True, env=env)
+        finally:
+            probe.unlink()
+        self.assertNotEqual(0, run.returncode)
+        self.assertIn("nosuchā", run.stderr.decode("utf-8"))
 
     def test_it_exposes_fourteen_pillars(self):
         run = subprocess.run([sys.executable, str(REAL), "--help"], capture_output=True, text=True)
@@ -853,6 +1215,37 @@ class TargetLauncher(unittest.TestCase):
         self.assertEqual(0, self.cq("all", "design", "--help").returncode)
         rows = json.loads(self.cq("all", "modules", "--json").stdout)["modules"]
         self.assertTrue(all(row["enabled"] for row in rows), rows)
+
+
+class HashManifestMerge(unittest.TestCase):
+    """Two specs that regenerate neighbouring hash entries must merge without a conflict."""
+
+    @staticmethod
+    def manifest(hashes: dict[str, str], separated: bool) -> str:
+        document = {"generator": "cq deploy", "version": "1", "files": hashes}
+        return dumps_hash_manifest(document) if separated else json.dumps(document, indent=2) + "\n"
+
+    def merge(self, separated: bool) -> subprocess.CompletedProcess:
+        base = {"a/one": "1", "a/two": "2", "a/three": "3", "a/four": "4"}
+        ours, theirs = {**base, "a/two": "22"}, {**base, "a/three": "33"}
+        with tempfile.TemporaryDirectory() as tmp:
+            paths = []
+            for name, hashes in (("ours", ours), ("base", base), ("theirs", theirs)):
+                path = pathlib.Path(tmp) / name
+                path.write_text(self.manifest(hashes, separated), encoding="utf-8", newline="\n")
+                paths.append(str(path))
+            return subprocess.run(["git", "merge-file", "-p", *paths], capture_output=True, text=True)
+
+    def test_neighbouring_entries_merge_clean_with_the_separator_and_conflict_without(self):
+        self.assertEqual(1, self.merge(separated=False).returncode)
+        merged = self.merge(separated=True)
+        self.assertEqual(0, merged.returncode, merged.stdout)
+        self.assertEqual({"a/one": "1", "a/two": "22", "a/three": "33", "a/four": "4"},
+                         json.loads(merged.stdout)["files"])
+
+    def test_the_separator_changes_no_value_a_reader_sees(self):
+        hashes = {"a/one": "1", "a/two": "2"}
+        self.assertEqual(json.loads(self.manifest(hashes, False)), json.loads(self.manifest(hashes, True)))
 
 
 if __name__ == "__main__":

@@ -19,13 +19,14 @@ from quenching.config.host import DEFAULTS as WORK_HOST_DEFAULTS
 from quenching.config.schema import SLOTS, local_decision, registry_leaves
 from quenching.session.commands.context import BUDGETS
 from quenching.session.cachebar import DEFAULTS as CACHE_BAR
+from quenching.session.quotabar import DEFAULTS as QUOTA_BAR
 
 # Namespace keys whose defaults live in code as data: the key is shown leaf by leaf, because the
 # owning front completes a partial block leaf by leaf.
 DEFAULT_BLOCKS = {("shared", "autonomy"): AUTONOMY_DEFAULTS,
                   ("shared", "worktreeSlots"): SLOTS, ("shared", "workHost"): WORK_HOST_DEFAULTS,
                   ("shared", "contextBudgets"): BUDGETS, ("shared", "cache"): CACHE_BAR,
-                   ("shared", "ci"): CI_DEFAULTS}
+                  ("shared", "quota"): QUOTA_BAR, ("shared", "ci"): CI_DEFAULTS}
 
 
 def _read_repository(root: str) -> tuple[dict, dict]:

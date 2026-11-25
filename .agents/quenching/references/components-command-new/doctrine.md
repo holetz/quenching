@@ -11,7 +11,7 @@ be. A description written as a `/`-menu label routes nothing.
 
 **This file owns the judgement; the tool owns the thresholds.** Every number a rule below depends
 on — the two description caps, the body line limit, trigger position, the `Not for:` boundary —
-lives in `docs/standards/automation/skills.md`, and is checked by `.agents/quenching/bin/cq components lint` under a
+lives in `docs/standards/automation/skills.md`, and is checked by `components_lint()` under a
 stable `sk-*` code. This file names the code and never restates the number, so the rule and its
 checker cannot drift apart.
 
@@ -84,7 +84,7 @@ nobody routes nothing and pays always-on rent forever.
 
 A vertical holding three or more skills is the case for one router skill over per-flow references
 inside it, with no shortcuts. In a target, `/quenching-components align` asks the human per family and
-`cq components migrate --write --router` applies it; `command:new` adds a flow to an existing router
+`components_migrate(write=true, router=[…])` applies it; `command:new` adds a flow to an existing router
 and never edits a plugin agent or a `quenching-*` skill, per `/docs/standards/automation/skills.md`
 §A target extends a vertical with its own router.
 
@@ -148,7 +148,7 @@ level that still reaches it in time:
 
 A step is done when a stated condition is observable — a file exists, a diff is empty, a
 command exits 0, a table matches disk. "Handle the edge cases" is not a step;
-"`.agents/quenching/bin/cq components registry reindex` reports `changed: false`" is. Write the criterion as
+"`components_registry_reindex()` reports `changed: false`" is. Write the criterion as
 `**Done when:** …` — that literal marker is what `lint` counts (`sk-step-criterion`).
 
 <!-- rationale -->

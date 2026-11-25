@@ -214,6 +214,27 @@ def validate_spec(backend: SpecBackend, s: dict,
                                 remedy="keep `(operational)` as the whole `files:`, or "
                                        "declare only the paths the task writes"))
 
+    # `(dropped → <id>)` must name ANOTHER task of this document that is not itself dropped:
+    # the verifier excuses the abandoned task's missing sha only because the replacement
+    # carries one, so a dangling or circular target would excuse a task nobody delivered.
+    by_id = {t["id"]: t for t in tasks if t["id"]}
+    for t in tasks:
+        target = t.get("dropped")
+        if not target:
+            continue
+        ident = t["id"] or t["index"]
+        if target == t["id"] or target not in by_id:
+            why = "itself" if target == t["id"] else "no task of this document"
+        elif by_id[target].get("dropped"):
+            why = "a task that is itself dropped"
+        else:
+            continue
+        out.append(_finding("sp-dropped-target", "error",
+                            f"{where}: task {ident} is `(dropped → {target})` but {target} "
+                            f"is {why}", spec=spec_id, path=where, task=ident, target=target,
+                            remedy="point `(dropped → <id>)` at the live task that "
+                                   "delivered the work"))
+
     for t in tasks:
         # `files: []` is parsed as the single entry `[]`: the explicit empty declaration.
         if any(f.strip() != "[]" for f in t["files"]) or t["checked"]:

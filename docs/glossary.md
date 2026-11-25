@@ -110,6 +110,9 @@ Fifteen terms to read first; each has its full entry under *Terms*.
 - [**Canonical set**](standards/code/canonical-set-parsing.md) — an ordered contract declared in one
   place and read in many: `schema.json`'s `sections` array, its `phases[].entryGate`, the
   frontmatter record vocabulary.
+- **Claim** (`standards/workflows/spec-claims.md`) — a build's reservation of a spec (*reserva*),
+  held as a lease on the `origin`: only `/quenching-specs execute` acquires it, so creating or
+  developing a spec never locks it.
 - [**Commit record**](standards/workflows/plan-git-record.md) — the `subject: <line>` field on a
   completed task line, written mechanically by `cq specs task --check --subject`, that links the
   checkbox to the commit implementing it by naming that commit's **subject** and resolving with `git
@@ -214,6 +217,9 @@ Fifteen terms to read first; each has its full entry under *Terms*.
 - [**Leak gate**](standards/architecture/security-pillar.md) — `cq security leak`, the check that
   refuses content (generic patterns, home and scratchpad paths, a private denylist) before it
   reaches a commit, a push or the specs store.
+- **Lease** (`standards/workflows/spec-claims.md`) — the ref `refs/quenching/claims/<id>` a claim
+  lives in, changed only by compare-and-swap and valid for `shared.autonomy.claimMinutes` after its
+  last renewal, so a holder that dies frees the spec when it expires.
 - [**Measured surface**](standards/architecture/proof-front.md) — the declared set of source roots a
   verification gate actually measures, with an unmeasured shipped root reported as drift rather than
   hidden behind an honest percentage.

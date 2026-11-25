@@ -8,8 +8,10 @@ must never be confused for each other.
 
 from __future__ import annotations
 
+import atexit
 import json
 import pathlib
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -66,6 +68,13 @@ class Selection(unittest.TestCase):
         self.assertTrue(got.complete)
         self.assertIn("no rule covers", got.reasons[0])
 
+    def test_the_harness_config_files_the_deploy_writes_select_the_deploy_tests(self):
+        for path in ("opencode.json", ".mcp.json", ".claude/settings.json"):
+            with self.subTest(path=path):
+                got = self.selected(path)
+                self.assertFalse(got.complete)
+                self.assertIn("quenching/tests/test_deploy.py", got.tests)
+
     def test_a_generated_tree_alone_selects_nothing_and_is_not_a_failure(self):
         got = self.selected("site/index.html")
         self.assertEqual((), got.tests)
@@ -87,6 +96,22 @@ class Selection(unittest.TestCase):
         got = self.selected("quenching/references/git/merge.md")
         self.assertTrue(got.complete)
         self.assertIn("is global", got.reasons[0])
+
+    def test_an_agent_body_selects_the_tests_that_cite_it(self):
+        got = self.selected("quenching/agents/spec-runner.md")
+        self.assertFalse(got.complete)
+        # Read by name, not by import: only the citation scan reaches it.
+        self.assertIn("quenching/tests/test_specs_run_record.py", got.tests)
+        self.assertIn("quenching/tests/test_git.py", self.selected("quenching/agents/spec-verifier.md").tests)
+
+    def test_a_skill_reference_selects_the_tests_that_cite_it(self):
+        got = self.selected("quenching/skills/quenching-specs/references/conclude.md")
+        self.assertIn("quenching/tests/test_specs_conclude_autonomous.py", got.tests)
+
+    def test_an_unreadable_test_makes_the_citation_scan_fail_open(self):
+        with mock.patch.object(affected, "_tests_citing", side_effect=affected._TestUnreadable("t.py")):
+            got = self.selected("quenching/agents/spec-runner.md")
+        self.assertTrue(got.complete)
 
     def test_a_changed_test_selects_the_tests_that_import_it(self):
         got = self.selected("quenching/tests/test_specs_git_backend.py")
@@ -192,10 +217,25 @@ class GitSide(unittest.TestCase):
         self._tmp = tempfile.TemporaryDirectory()
         self.addCleanup(self._tmp.cleanup)
         self.root = pathlib.Path(self._tmp.name)
-        self.git("init", "-q", "-b", "main")
-        (self.root / "kept.txt").write_text("one\n", encoding="utf-8")
-        self.git("add", "kept.txt")
-        self.git("commit", "-q", "-m", "base")
+        shutil.copytree(self._template(), self.root, dirs_exist_ok=True)
+
+    _TEMPLATE: pathlib.Path | None = None
+
+    @classmethod
+    def _template(cls) -> pathlib.Path:
+        """One initialised repository per process, copied per test instead of re-initialised."""
+        if GitSide._TEMPLATE is None:
+            tmp = tempfile.mkdtemp(prefix="cq-affected-template-")
+            atexit.register(shutil.rmtree, tmp, ignore_errors=True)
+            root = pathlib.Path(tmp)
+            for argv in (("init", "-q", "-b", "main"), ("add", "kept.txt"),
+                         ("commit", "-q", "-m", "base")):
+                if argv[0] == "add":
+                    (root / "kept.txt").write_text("one\n", encoding="utf-8")
+                subprocess.run(["git", "-c", "user.name=t", "-c", "user.email=t@t", *argv],
+                               cwd=root, check=True, capture_output=True, text=True)
+            GitSide._TEMPLATE = root
+        return GitSide._TEMPLATE
 
     def git(self, *argv: str) -> str:
         return subprocess.run(["git", "-c", "user.name=t", "-c", "user.email=t@t", *argv],
@@ -217,6 +257,12 @@ class GitSide(unittest.TestCase):
         got = affected.select(self.root, base="no-such-ref")
         self.assertTrue(got.complete)
         self.assertIn("cannot resolve the merge base", got.reasons[0])
+        self.assertTrue(got.diff_unreadable)
+        self.assertTrue(got.as_json()["diffUnreadable"])
+
+    def test_a_readable_diff_is_never_marked_unreadable(self):
+        self.assertFalse(affected.select(self.root, files=["README.md"]).diff_unreadable)
+        self.assertFalse(affected.select(self.root, files=[]).as_json()["diffUnreadable"])
 
 
 if __name__ == "__main__":

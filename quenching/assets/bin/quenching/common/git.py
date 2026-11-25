@@ -38,6 +38,49 @@ def remembered_remote_url(repo: str, name: str) -> str | None:
     return _REMOTE_URLS.get((os.path.abspath(repo), name))
 
 
+_NO_REMOTE: dict[tuple[str, str], tuple[int, int]] = {}
+
+
+def _config_stamp(repo: str) -> tuple[int, int] | None:
+    """`(mtime_ns, size)` of the repository's own `.git/config`; None when it has none there
+    (a linked worktree, a bare repository), so nothing is remembered for it."""
+    try:
+        st = os.stat(os.path.join(repo, ".git", "config"))
+    except OSError:
+        return None
+    return st.st_mtime_ns, st.st_size
+
+
+def inside_git(path: str) -> bool:
+    """Whether `path` can be a repository at all: `.git` at or above it, or a bare layout."""
+    if os.environ.get("GIT_DIR"):
+        return True
+    walk = os.path.abspath(path)
+    while True:
+        if os.path.exists(os.path.join(walk, ".git")):
+            return True
+        up = os.path.dirname(walk)
+        if up == walk:
+            break
+        walk = up
+    return os.path.isdir(os.path.join(path, "objects")) and os.path.isfile(os.path.join(path, "HEAD"))
+
+
+def remote_known_absent(repo: str, name: str) -> bool:
+    """True when this process already found `name` missing in `repo` and its `.git/config` has
+    not changed since, or when `repo` is no repository at all: no git needs to be asked."""
+    if not inside_git(repo):
+        return True
+    stamp = _config_stamp(repo)
+    return stamp is not None and _NO_REMOTE.get((os.path.abspath(repo), name)) == stamp
+
+
+def remember_remote_absent(repo: str, name: str) -> None:
+    stamp = _config_stamp(repo)
+    if stamp is not None:
+        _NO_REMOTE[(os.path.abspath(repo), name)] = stamp
+
+
 _ORIGIN_PREFIX = "refs/remotes/origin/"
 _HEADS_PREFIX = "refs/heads/"
 

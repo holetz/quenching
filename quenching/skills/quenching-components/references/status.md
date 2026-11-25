@@ -18,10 +18,10 @@ commands, fronts and finding codes without choosing an axis or repairing a body.
 
 Set `TARGET_ROOT` to `$ARGUMENTS`, or to `.` when the argument is omitted, and run:
 
-```bash
-.agents/quenching/bin/cq --root "$TARGET_ROOT" components status --json
-.agents/quenching/bin/cq components migrate --target "$TARGET_ROOT" --json
-.agents/quenching/bin/cq components bridge --target "$TARGET_ROOT" --check --json
+```text
+components_status(root="$TARGET_ROOT")
+components_migrate(target="$TARGET_ROOT")
+components_bridge(target="$TARGET_ROOT", check=true)
 ```
 
 `migrate` without `--write` and `bridge --check` only plan: neither writes.
@@ -60,7 +60,7 @@ workflow or test suite. Confirm that the report matches the status payload and i
 ## Invariants
 
 - Read only: no command, description, registry or generated surface is edited.
-- Applicability, missing state, command count, front counts and findings come from `.agents/quenching/bin/cq components status`;
+- Applicability, missing state, command count, front counts and findings come from `components_status()`;
   migration and bridge state come from `migrate` and `bridge --check`, never from a guess.
 - Findings retain their emitted code and severity; status never softens a finding into a clean state.
 - The report names a closing command but never invokes a repair.

@@ -17,10 +17,12 @@ flow's text is read only when the flow runs.
 
 ## Resolving the tool
 
-Resolve `cq` (`.agents/quenching/bin/cq components read` is the section reader every `§X` citation resolves through)
+The flows cite each verb as the `quenching` MCP tool they call — `components_read(path=…,
+sections=[…])` is the section reader every `§X` citation resolves through —
 per [align/tool-resolution.md](.agents/quenching/references/align/tool-resolution.md)
-§Resolving the tool; branch on the **exit code** (0 ok · 1 findings · 2 refusal) and the `--json`,
-never on prose.
+§Resolving the tool; branch on the payload and the exit code it carries (0 ok · 1 findings ·
+2 refusal), never on prose. A `cq …` left in a flow is a verb with no tool or a line marked
+`cli: <reason>`; with no server, every call takes that section's fallback, and the report names it.
 
 ## Workflow
 
@@ -38,7 +40,7 @@ returns `STATE: blocked` with `NOTE: needs-human:` carrying it.
 **Done when:** exactly one flow is chosen, with its input.
 
 ### 2. Load the flow and follow it
-Run `.agents/quenching/bin/cq components read` on the chosen flow's reference from the table above, with its
+Run `components_read` on the chosen flow's reference from the table above, with its
 `.agents/skills/quenching-opensource/references/` path. Read the flow whole, once, and follow it from its own `## Workflow` with the input from step 1:
 its steps, `Done when:` lines and invariants bind this run exactly as they bound the standalone
 command. A `/quenching-opensource <flow>` the flow names as the next step is this router called with that flow, and a conductor reaches the same flow by calling this skill with the flow name and the input.

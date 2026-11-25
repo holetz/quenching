@@ -33,7 +33,7 @@ never builds anything; building is `/quenching-specs orchestrate` or `/quenching
 ### 1. Frame
 Resolve `cq` per [align/tool-resolution.md](.agents/quenching/references/align/tool-resolution.md)
 §Resolving the tool. Read the root harness (`AGENTS.md`; legacy `AGENTS.md`), the `/docs/` index if
-present, `.agents/quenching/bin/cq specs config` and `.agents/quenching/bin/cq specs list --lean --json` (open specs, to avoid duplicates), and
+present, `specs_config` and `specs_list()` (open specs, to avoid duplicates), and
 `git log --since=90.days --format=%s | wc -l`. Probe each installed front with its read-only verb
 (`cq <front> doctor --json` or `status --json`); a finding there is evidence, an exit 2 is
 "inconclusive", not a finding. State the focus (from `$ARGUMENTS`, else the whole repository) in
@@ -88,22 +88,22 @@ run with the map as its only output.
 Composition is a property of the document, not a type: do not look for an `epic` entry in the
 target's `workItemTypes` and do not create the spec with `--type epic`.
 
-1. **Composite.** Create it with `.agents/quenching/bin/cq specs new "<title>"`. Fill its `## Problem` (the goal),
+1. **Composite.** Create it with `specs_create(name=<title>)`. Fill its `## Problem` (the goal),
    `## Proposal`, `## Out of Scope`, `## Risks`, `## Validation` (done criteria per wave) and
    `## Design` (the recorded decisions, **including the autonomy policy chosen in step 5, dated, in the canonical text of that choice**) with
-   `.agents/quenching/bin/cq specs section <id> "<Heading>" --write`.
+   `specs_section_write(spec=<id>, heading="<Heading>", body=<body>)`, one call per heading.
 2. **Members.** For each approved candidate, in wave order:
    - Search the lean listing by title first, so a retry never duplicates.
-   - Create it with `.agents/quenching/bin/cq specs new` with the suggested `--type`, `--subject`, `--tags` and
+   - Create it with `.agents/quenching/bin/cq specs new "<title>"` with the suggested `--type`, `--subject`, `--tags` and <!-- cli: flag -->
      `--complexity`.
    - Write its `## Problem` from the candidate file.
-   - Run `.agents/quenching/bin/cq specs link add <composite> <spec> --group "<wave>" --after <labels>`.
+   - Run `specs_link_add(epic=<composite>, spec=<spec>, after=<labels>, group=<wave>)`.
 
-Write members one at a time. Every write is checked with `.agents/quenching/bin/cq specs status` and `validate`. The
+Write members one at a time. Every write is checked with `specs_status` and `validate`. The
 level is derived: one wave of members is a `feature`, two or more waves are an `epic` — there is
 nothing to declare.
-**Done when:** `.agents/quenching/bin/cq specs status --epic <id>` lists every approved item with its wave and
-dependencies, and `.agents/quenching/bin/cq specs validate` raises no `sp-link-*` finding.
+**Done when:** `specs_epic_progress(epic=<id>)` lists every approved item with its wave and
+dependencies, and `specs_validate` raises no `sp-link-*` finding.
 
 ### 7. Hand off
 Print the composite id, its derived level, its members per wave, and the next commands:

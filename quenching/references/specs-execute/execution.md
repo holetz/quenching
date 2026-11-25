@@ -16,7 +16,7 @@ reaches past the loop.
 
 ## Contents
 
-`.agents/quenching/bin/cq components read <this file>` returns the heading index; `--sections` addresses one.
+`components_read(path=<this file>)` returns the heading index; `sections=[…]` addresses one.
 
 ## The precondition: a clean tree
 
@@ -87,7 +87,7 @@ without moving anything.
 <!-- rules -->
 
 Declared per spec in the frontmatter (`verification`), written by `/quenching-specs develop`, read by
-`.agents/quenching/bin/cq specs status --spec <id> --json`. **Execute never decides when to test.**
+`specs_status(spec=<id>)`. **Execute never decides when to test.**
 
 | Policy | Run the `verify:` command |
 | --- | --- |
@@ -121,7 +121,7 @@ For each task the policy says to verify:
 3. **Fails** → classify it first. Reproduce the failure in the base worktree (`.quenching/red`): it
    reproduces there → it is **pre-existing**, not this task's, and
    `/docs/standards/workflows/task-execution.md` §Pre-existing errors applies — a declared
-   `[fix-preexistente]` task when the four criteria hold, else a spec captured with `cq specs new`; never
+   `[fix-preexistente]` task when the four criteria hold, else a spec captured with `specs_create`; never
    widen the `verify:` to hide it. It does not reproduce → it is this task's own: read the failure, change
    the code, and run it again.
 
@@ -132,11 +132,11 @@ Two rules bound the loop:
 - **Stop when you stop making progress, and say so in the file.** There is no attempt counter.
   When the orchestrator judges that further attempts are repeating rather than converging, it
   writes the task blocked, with the reason:
-  ```bash
-  .agents/quenching/bin/cq specs task --spec "<id>" --block <id> --reason "<why, one line>"
+  ```text
+  specs_task(spec=<id>, action="block", task=<id>, reason=<why, one line>)
   ```
   That writes a **visible marker into `## Tasks`** — `- [!] <id> <title> — blocked: <reason>` —
-  and `.agents/quenching/bin/cq specs next` then skips it and offers the following task, so one bad task never stalls
+  and `specs_next` then skips it and offers the following task, so one bad task never stalls
   the whole spec.
 
 **`--block` requires `--reason`** (the tool refuses without one).
@@ -151,7 +151,7 @@ result as one evidence line in the task's report: `RED: <test> fails without <fi
 **Remove the RED worktree before returning**, never with `--force` and only at the fixed path you created: make the tree match the base again (delete the copied test if it is new; when it overwrote a file that already exists in the base, rewrite that file with `git -C .quenching/red cat-file --filters HEAD:<file> > .quenching/red/<file>`, never checkout or restore; the filters restore checkout bytes, including EOL and configured smudge conversions), run `git worktree remove .quenching/red`, then `rmdir .quenching` if empty. A leftover worktree or empty `.quenching/` under the spec's worktree keeps `retire` from retiring it.
 
 A human resumes a blocked task by fixing the cause and un-blocking it —
-`.agents/quenching/bin/cq specs task --spec <id> --uncheck <id>` returns it to `- [ ]` — after changing something,
+`specs_task(spec=<id>, action="uncheck", task=<id>)` returns it to `- [ ]` — after changing something,
 never merely to try the same approach again.
 
 ## The diff self-review — four items, before every commit
@@ -179,22 +179,28 @@ then tick the spec task with its subject and commit**. Every task with a diff ge
 and stays resumable from it. The spec write is deliberately last: the specs store cannot
 travel inside the local commit, and a failed write must leave the commit available for a retry.
 
-Run it as **one chained call**, gate included:
+Run the shell half as **one chained call** in the worktree, gate included; commit only after it
+exits 0, and tick only after the commit:
 
 ```bash
-<the task's verify:> \
-  && git add <the task's files> \
-  && .agents/quenching/bin/cq git commit --subject "<subject>" --json \
-  && .agents/quenching/bin/cq specs task --check <task-id> --spec "<spec-id>" --subject "<subject reported by .agents/quenching/bin/cq git commit>" --commit "<sha reported by .agents/quenching/bin/cq git commit>"
+cd <worktree> \
+  && <the task's verify:> \
+  && git add <the task's files>
+```
+
+```text
+git_commit(subject="<subject>", root="<worktree>")
+specs_task(spec=<spec-id>, action="check", task=<task-id>, subject="<subject the commit reported>", commit="<sha the commit reported>")
 ```
 
 **The `&&` is the ordering:** verify before staging, staging before the commit, the
-commit before the spec tick, and a broken link short-circuits every link after it. When the
+commit before the spec tick, and a broken link short-circuits every link after it — the commit
+and the tick included: neither call runs unless the shell half exited 0. When the
 spec's declared policy says this task is not a gate, the chain simply starts at `git add`.
 
 Stage only the task's declared `files:`, never the whole tree and never an assumed spec file —
 `git add -A` also picks up whatever an editor or a tool wrote while the task ran, which is the same
-contamination §The precondition refuses at the start. `.agents/quenching/bin/cq git commit` commits the existing index and never stages; execute resolves the subject from the
+contamination §The precondition refuses at the start. `git_commit` commits the existing index and never stages; execute resolves the subject from the
 conventions it already loaded and passes the subject and sha the verb reports to the spec write.
 
 If verification, staging or the commit **fails** — a rejecting hook or nothing staged — no spec
@@ -239,11 +245,11 @@ once in the report, rather than inventing a placeholder.
 level down: it produces no diff of its own, so there is no commit to anchor to and no subject or
 commit sha to record. Its chain ends at the spec tick:
 
-```bash
-<the task's verify:> && .agents/quenching/bin/cq specs task --check <task-id> --spec "<spec-id>"
+```text
+<the task's verify:>, then, on exit 0: specs_task(spec=<spec-id>, action="check", task=<task-id>)
 ```
 
-— no `--subject`, no `git add`, no `git commit`. The box still ticks. Where the backend keeps the
+— no `subject`, no `git add`, no `git commit`. The box still ticks. Where the backend keeps the
 spec in the tree, that tick rides along in the next task's commit; on the specs branch or in a tracker it is
 never a local diff at all. Passing `--subject` here would write a
 `subject:` onto the task line that `git log --grep` can never resolve, which is exactly the

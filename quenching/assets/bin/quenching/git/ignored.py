@@ -21,6 +21,7 @@ DEFAULT_REGENERABLE = (
     ".mypy_cache", ".pyright", ".tox", ".nox", "htmlcov", ".coverage", ".coverage.*",
     "*.egg-info", ".eggs", "pip-wheel-metadata", ".cache", ".ipynb_checkpoints",
     ".hypothesis", "node_modules",
+    ".quenching/git-base-cache.json", ".quenching/git-ci-cache.json",
 )
 
 

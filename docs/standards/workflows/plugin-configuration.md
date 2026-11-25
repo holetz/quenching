@@ -4,10 +4,10 @@ title: Plugin configuration contract
 description: "`.agents/quenching.json` is the plugin's single configuration home, with `.claude/quenching.json` read as legacy; provider selection is derived from the repository remote, while placement, Azure mappings, lifecycle hooks, profiles, proposal catalogues and the `git` pillar's per-artifact writing directives remain explicit target settings"
 resource: .agents/quenching.json, quenching/assets/bin/quenching/common/config.py, quenching/assets/bin/quenching/specs/config.py, quenching/assets/bin/quenching/specs/store.py, quenching/assets/bin/quenching/ops/**, quenching/assets/bin/quenching/proof/**, quenching/assets/bin/quenching/git/base.py, quenching/assets/bin/quenching/git/conventions.py, quenching/assets/bin/quenching/git/ignored.py, quenching/assets/bin/quenching/config/**, quenching/assets/bin/quenching/common/identity.py
 tags: [workflows, specs, configuration, provider, plugin]
-timestamp: 2026-11-21
+timestamp: 2026-11-24
 audience: both
 authority: current
-source: specs 1065, 1075, 1405, 1907, 1908, 1909, 1910, 1911, 1912, 2092, 2118, 2164, 2175, 2190, 2199, 2022, 1020213, 2231 — lineage in decision 0004
+source: specs 1065, 1075, 1405, 1907, 1908, 1909, 1910, 1911, 1912, 2092, 2118, 2164, 2175, 2190, 2199, 2022, 1020213, 2231, 416, 430 — lineage in decision 0004
 maintainer: quenching
 ---
 
@@ -95,10 +95,10 @@ Where a local value lands depends on the key's **scope**, declared once in the k
   `localConfig.ignored`, and `show --effective` names it in `warnings`; an editor shows the key
   locked to the project layer.
 - `machine` — a property of the machine the checkout runs on: `shared.worktreeSlots` (all but
-  `setupIdempotent`), `shared.workHost`, `shared.contextBudgets`, `shared.cache.ttlMinutes`. The
+  `setupIdempotent`), `shared.workHost`, `shared.contextBudgets`, `shared.cache.ttlMinutes`, `shared.quota.intervalSeconds`. The
   local value wins over every file.
 - `either` — a preference the team may fix: `shared.autonomy`,
-  the rest of `shared.cache`, `shared.okfValidate`, `specs.chat`. The repository wins; the local value fills a leaf the
+  the rest of `shared.cache`, the rest of `shared.quota`, `shared.okfValidate`, `specs.chat`. The repository wins; the local value fills a leaf the
   repository leaves out, and beats the user layer.
 
 The local layer merges **leaf by leaf** at the registry's granularity — a local
@@ -205,7 +205,9 @@ ignored notebook — is `ignored.unrecognized` and blocks both.
 A built-in list of unambiguous Python caches applies before the key and cannot be removed by it:
 `.venv`, `venv`, `__pycache__`, `*.py[cod]`, `.pytest_cache`, `.ruff_cache`, `.mypy_cache`,
 `.pyright`, `.tox`, `.nox`, `htmlcov`, `.coverage`, `.coverage.*`, `*.egg-info`, `.eggs`,
-`pip-wheel-metadata`, `.cache`, `.ipynb_checkpoints`, `.hypothesis` and `node_modules`. `build/` and
+`pip-wheel-metadata`, `.cache`, `.ipynb_checkpoints`, `.hypothesis` and `node_modules`, plus the two
+root caches `cq` writes itself, `.quenching/git-base-cache.json` and `.quenching/git-ci-cache.json`, so a
+slot that only holds them is released clean. `build/` and
 `dist/` are deliberately absent because they can hold a file written by hand; a target that
 regenerates them declares them. The key adds to the defaults and never replaces them, so an absent
 key still lets the built-in caches go.
@@ -258,19 +260,34 @@ by [security-pillar.md](../architecture/security-pillar.md) §The identity allow
 
 ## The `shared.mcp` block
 
-`cq deploy` registers the quenching MCP server in the target's harnesses with no declaration;
-`shared.mcp` only overrides how. It is `{mount, command}`: `mount` is the mounted pillar (`specs`
-today, the default) and `command` is the non-empty list of strings that finds Python — for example
-`["uv", "run", "--no-project", "python"]`. Deploy appends the vendored entry point and the mount,
-so the generated argv is `<command...> .agents/quenching/assets/bin/cq <mount> mcp`. Without a
+`cq deploy` registers the whole quenching MCP server in the target's harnesses with no
+declaration; `shared.mcp` only overrides how. It is `{mount, command, cliFallback}`, every key
+optional: `mount` is `all` (the default, the whole server), `specs` (the specs-only mount), a named
+set of pillars (`core`: `specs`, `git` and `components`, the table `mcp/catalog.py` carries) or a
+comma list of pillar names (`specs,git`), and `command` is the non-empty list of strings that finds
+Python — for example `["python3"]` or `["py", "-3"]`. Deploy appends the vendored entry point and
+the mount, so the generated argv is `<command...> .agents/quenching/assets/bin/cq
+mcp`, `<command...> .agents/quenching/assets/bin/cq specs mcp` under `mount: "specs"`, and
+`<command...> .agents/quenching/assets/bin/cq mcp --only <pillars>` for a named set or a list, the
+name expanded into the pillars it publishes. A mount naming no pillar the router has is refused
+before anything is written (`ct-deploy-mcp`). Without a
 `command`, deploy takes the prefix the last deploy recorded, else the first of `python3`, `python`
 and `py -3` that runs a Python 3.11 or later on the deploying machine, else `python3`; no version is
-pinned, and the same prefix starts the Claude Code hooks.
+pinned, and the same prefix starts the Claude Code hooks. A `command` through `uv` or `uvx` is
+replaced by a direct interpreter for both, with a warning
+([hooks.md](../automation/hooks.md)).
+
+`cliFallback` (boolean, default `false`) keeps the CLI door open beside the server. With the whole
+server registered and no fallback, the generated grants drop every `Bash(cq …)` an MCP tool
+replaces and keep only the verbs with no tool; `true` restores both doors for a harness that runs
+without the server. A narrower mount narrows no door — it keeps both — and filters the names
+instead: the MCP tools a grant enumerates are only the ones the mount publishes
+([deploy-mode.md](../architecture/deploy-mode.md#mcp-registration)).
 
 The key is read through `repository_document`, not through the merged envelope: the user layer
 (`_apply_user_layer`) would otherwise make a generated file vary by machine, and a generated file
-belongs to the repository. A key of the wrong shape, an unknown leaf or a mount outside `specs`
-refuses with `ct-deploy-mcp` before anything is written. A declared key requires `--runtime vendor`,
+belongs to the repository. A key of the wrong shape, an unknown leaf, a mount outside `all` and
+`specs` or a `cliFallback` that is not a boolean refuses with `ct-deploy-mcp` before anything is written. A declared key requires `--runtime vendor`,
 because the `uvx` runtime does not carry the vendored entry point; without a declaration that
 runtime registers nothing and warns. `cq config seed` does not emit the key: absence is the
 default. See [deploy-mode.md](../architecture/deploy-mode.md#mcp-registration).
@@ -291,7 +308,7 @@ fronts, and `--write` confirms it. It records the deprecated root `backend` of t
 
 ## The autonomy block
 
-`shared.autonomy` holds five keys whose defaults live in code (`config/autonomy.py`) and reproduce the
+`shared.autonomy` holds six keys whose defaults live in code (`config/autonomy.py`) and reproduce the
 behavior before the block existed. A partial block completes leaf by leaf; `cq config show --effective`
 lists each leaf with its value and layer.
 
@@ -302,6 +319,7 @@ lists each leaf with its value and layer.
 | `maxWorkers` | integer 1-8 | `3` | the `orchestrator`'s parallelism |
 | `maxLaunches` | integer ≥ 1 | `40` | `/quenching-specs autopilot`, when `--max-launches` is absent |
 | `livenessMinutes` | integer ≥ 1 | `20` | `/quenching-specs autopilot`'s liveness stop |
+| `claimMinutes` | integer ≥ 1 | `45` | `cq specs claim`: how long a build's reservation lives after its last renewal (`spec-claims.md`) |
 
 A value of the wrong shape falls back to the leaf default and is named in the `warnings` of the
 effective view; it is never applied silently. An explicit flag wins over the key. No value grants a
@@ -319,9 +337,10 @@ explicit flag wins over the key.
 | `shared.okfValidate` | `{warnAsError: boolean, ignoreGlobs: list of strings}` | `false`, `[]` | `cq knowledge validate`; wins key by key over `.claude/hooks/hooks-config.local.json` and `hooks-config.json` |
 | `shared.contextBudgets` | `{main, worker, conductor}`, positive integers | `200000` / `200000` / `150000` | `cq components session context` per role: the worker number is a **size estimate**, measured and never a stop, the conductor's is a stop checked between waves, and the main number is an offer; `cq specs estimate --worker-budget` uses `worker` |
 | `shared.cache` | `{rebuildLimitUsd, warnMinutes, ttlMinutes: auto \| 5 \| 60, costStyle: dollars \| times}` | `0.5` / `15` / `auto` / `dollars` | the `quenching-cache` plugin's bar, through `cq config show --effective`; its long-chat line is `shared.contextBudgets.main` |
+| `shared.quota` | `{warnPercent, dangerPercent: integers 1–100, intervalSeconds: integer ≥ 60, showSonnet: boolean}` | `70` / `90` / `300` / `true` | the `quenching-quota` OpenCode plugin's 5-hour and weekly band, through `cq config show --effective`; one usage reading is reused for `intervalSeconds`, never under 60 s |
 | `shared.autonomy.maxLaunches` | integer ≥ 1 | `40` | `/quenching-specs autopilot` (see the autonomy block); the launch ceiling lives only there |
 | `shared.workHost` | `{target, dockerContext, runner, remoteRoot, syncFlags, syncExclude, pullBack, protectedPaths, minFreeGb}` | disabled | `cq config host --plan`; see [work-host.md](work-host.md) |
-| `shared.mcp` | `{mount: "specs", command: [strings]}` | absent; the MCP is registered with the default mount and a resolved Python prefix | `cq deploy`; read from the repository document only, never the merged envelope |
+| `shared.mcp` | `{mount: "all"\|"specs"\|"core"\|<pillars>, command: [strings], cliFallback: boolean}` | absent; the whole MCP server (`all`) is registered with a resolved direct Python prefix, and the grants keep only the `cq` verbs no MCP tool replaces (`cliFallback: false`) | `cq deploy`; read from the repository document only, never the merged envelope |
 | `specs.chat` | `{model: string, budgetUsd: number > 0, timeoutSeconds: number > 0}` | `sonnet`, `0.50`, `300` | the portal's `--chat`; `--chat-budget-usd` wins over `budgetUsd` |
 | `specs.estimate.writeOnly` | a list of repo-relative paths, exact or `fnmatch` globs | `[]` | `cq specs estimate`: a task file it matches is listed with `writeOnly: "declared by repo"`, keeps its size and adds no bytes; an Impact standard is always counted; `--task` ignores it |
 

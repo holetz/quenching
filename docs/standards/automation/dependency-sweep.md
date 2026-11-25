@@ -50,6 +50,14 @@ sub-agents. It follows the `Explore` of Claude Code's native planning mode:
 the same demand the evidence doctrine and [agents.md](agents.md) §The verifier shape already make
 of an inspecting sub-agent.
 
+## When the executor has no `Task` tool
+
+An executor whose profile declares `task: false` (the OpenCode spec-runner) cannot dispatch the
+sub-agent. The sweep is then neither skipped nor improvised: the executor runs it itself, inline,
+with the read-only tools it holds and the same profile above, and writes nothing but the table. The
+map's date line reads `(varredura inline: executor sem Task)`, so a later pass can tell an inline
+map from a sub-agent's. No agent grant widens to avoid this case.
+
 ## The deliverable
 
 A cross-file dependency map, not a reading trail: the sub-agent returns a table and touches nothing.

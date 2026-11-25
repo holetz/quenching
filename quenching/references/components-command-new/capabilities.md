@@ -9,7 +9,7 @@ bloat wearing a feature's name.
 
 ## Contents
 
-`.agents/quenching/bin/cq components read <this file>` returns the heading index; `--sections` addresses one.
+`components_read(path=<this file>)` returns the heading index; `sections=["§X"]` addresses one.
 
 ## The cost model — where each byte lands
 
@@ -104,7 +104,7 @@ a deletion, or that lands in production code **without a protected oracle** — 
 misclassification there becomes a wrong irreversible action, which is this plugin's
 `import-memory` rule generalized. A protected oracle is an executable `verify:` whose test
 files sit outside the task's `files:`, in a disposable worktree, with the projected context
-at or under 80k (`.agents/quenching/bin/cq specs estimate --spec <id> --task <tid>` reports `smallTierEligible`);
+at or under 80k (`specs_estimate(spec=<id>, task=<tid>)` reports `smallTierEligible`);
 there `haiku` may execute ONE task, and a failed `verify:` returns it to the session model.
 Judgment never descends.
 
@@ -169,7 +169,7 @@ only with evidence.
    to an *operation* ("every edit under `db/migrations/` is checked") rather than a workflow.
 3. **A gated wide event** — `Stop`/`UserPromptSubmit` hooks made cheap by construction:
    dirty-gated by a marker file so a turn that touched nothing relevant costs one stat (the
-   `.agents/quenching/bin/cq knowledge validate stopScan: "dirty"` precedent), or `once: true` for a per-session check.
+   `knowledge_validate` `stopScan: "dirty"` precedent), or `once: true` for a per-session check.
 4. **An unmatched session-wide hook** — the top of the ladder, and a finding
    (`sk-hook-unmatched`) unless its body states why nothing narrower catches its cases.
 
@@ -250,7 +250,7 @@ price of each control:
 
 A `` !`command` `` line in a command body runs **at render time**, before the model reads the
 body, and its output lands inline. Used well, it converts turns into text: a workflow whose
-step 1 is "run `git status`" or "run `.agents/quenching/bin/cq specs list --json`" can carry the answer into the
+step 1 is "run `git status`" or "run `specs_list()`" can carry the answer into the
 body instead of spending a tool round-trip on it — deterministic state, fetched once, at
 exactly the moment it is fresh.
 
