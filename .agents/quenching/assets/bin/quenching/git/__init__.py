@@ -80,7 +80,8 @@ def build_parser() -> argparse.ArgumentParser:
                                        "adopt", "add", "retire"),
                     help="acquire: lock a free slot (or a new one under shared.worktreeSlots.max), "
                          "switch it to --branch, link and run `worktreeSetup`; release: detach a "
-                         "clean slot at the remote base and unlock it; slots: list the slots and "
+                         "clean slot at the remote base and re-lock it as free; slots: list "
+                         "the slots and "
                          "who holds each; link: link each declared shared path; adopt: prepare a "
                          "linked worktree the quenching flow did not cut; add: fetch, cut, link "
                          "and run the declared `worktreeSetup` in a one-off worktree; retire: "

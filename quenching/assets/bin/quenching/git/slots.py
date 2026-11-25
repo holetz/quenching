@@ -2,12 +2,13 @@
 
 A slot is a registered worktree at `../<repo>-slot-<n>` that outlives its spec. Acquiring one
 switches it to the spec's branch and locks it; releasing it detaches it at the remote base and
-unlocks it, keeping `.venv` and every other regenerable cache. A fresh worktree costs a scan of
+re-locks it as free, keeping `.venv` and every other regenerable cache. A fresh worktree costs a scan of
 every file an on-access antivirus sees (tens of thousands with a venv); a branch switch rewrites
 only what differs.
 
 `git worktree lock` is the mutex: it fails on a tree already locked, so two sessions racing for
-the same free slot cannot both win. Only slots count toward `shared.worktreeSlots.max`; any other
+the same free slot cannot both win. Releasing a slot leaves it locked under the pool's own
+`quenching: available` reason, so a client's worktree cleanup never deletes the warm caches. Only slots count toward `shared.worktreeSlots.max`; any other
 worktree is listed and never counted, never taken.
 """
 from __future__ import annotations
@@ -547,7 +548,8 @@ def reclaim_evidence(cwd: str, slot: dict, remote: str, base: str, rules: list[s
 
 
 def release(args) -> int:
-    """Detach a clean slot at the remote base and unlock it; `branch -d` its branch when merged.
+    """Detach a clean slot at the remote base and re-lock it as free; `branch -d` its branch
+    when merged.
 
     A dirty tree, or ignored content no `shared.regenerablePaths` entry covers, keeps the slot
     held (exit 1): nothing of one spec may leak into the next, and nothing is committed or
@@ -599,7 +601,8 @@ def release(args) -> int:
         payload["message"] = f"git switch --detach failed in {path}: {err.strip()}"
         emit(args.json, payload, payload["message"])
         return FINDINGS
-    payload["freeLock"] = _unlock(cwd, path) and _lock(cwd, path, FREE_REASON)
+    _unlock(cwd, path)
+    payload["freeLock"] = _lock(cwd, path, FREE_REASON)
     payload.update(ok=True, released=True, base=start)
     tip = _commit(cwd, f"refs/heads/{branch}") if branch else None
     if tip and _run(cwd, "merge-base", "--is-ancestor", tip, base_sha)[0] == 0:

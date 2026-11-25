@@ -175,7 +175,7 @@
 
     ".agents/quenching/assets/bin/quenching/design/model.py": "c5eadfaabaad3e3959cd77e7d58fd19b007ecac8ff2ed026f73e774efe4bcb42",
 
-    ".agents/quenching/assets/bin/quenching/git/__init__.py": "f801735c6b4253bb279276c8737b032f20d2e2503ea271fcf69d3d35a2f428f0",
+    ".agents/quenching/assets/bin/quenching/git/__init__.py": "84239b047989efdfea34269e24246ced0ea74be91cacfb5154b60a0cf75020c8",
 
     ".agents/quenching/assets/bin/quenching/git/audit.py": "559437c4cdb137f479c23526026e3ffdd54778057cccf332ac19f75a5691bf2c",
 
@@ -205,7 +205,7 @@
 
     ".agents/quenching/assets/bin/quenching/git/refresh.py": "b90f4c71c87c129b4e4c8827795d23d3741c2ee75da6d44df7e88de028e68e79",
 
-    ".agents/quenching/assets/bin/quenching/git/slots.py": "80b328bbf2ca779831eedd9947df6985701b5425d0967dce01772f56ef840fed",
+    ".agents/quenching/assets/bin/quenching/git/slots.py": "081d031072c658e6845d0e99d7e3a12956c88cbbe3976f2490d1bff5451d8c0c",
 
     ".agents/quenching/assets/bin/quenching/git/slugs.py": "810953ab971b319caf6fa84617afff9a7cbaa0589585ac163314b6e0392c7127",
 

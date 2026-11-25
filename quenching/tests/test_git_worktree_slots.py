@@ -105,6 +105,16 @@ class AcquireAndRelease(SlotRepo):
         self.assertIn("cannot remove a locked working tree", done.stderr)
         self.assertTrue(os.path.isdir(first["path"]))
 
+    def test_release_locks_a_legacy_unlocked_slot_back_into_the_pool(self):
+        _code, got = self.run_verb("acquire", branch="plan/1-a")
+        _git(self.main, "worktree", "unlock", got["path"])
+        code, out = self.run_verb("release", path=got["path"])
+        self.assertEqual(code, 0, out)
+        self.assertTrue(out["freeLock"])
+        slot = slots.survey(self.main)["slots"][0]
+        self.assertEqual(slot["state"], "free")
+        self.assertEqual(slot["locked"], slots.FREE_REASON)
+
     def test_acquiring_a_free_slot_swaps_the_pool_lock_for_the_holder(self):
         _code, first = self.run_verb("acquire", branch="plan/1-a")
         self.assertEqual(self.run_verb("release", path=first["path"])[0], 0)
