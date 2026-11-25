@@ -9,6 +9,7 @@ import subprocess
 import sys
 from pathlib import Path
 
+from quenching.common import access
 from quenching.common.deploy import MANIFEST, dumps_hash_manifest, read_manifest
 from quenching.common import workspace as workspace_settings
 from quenching.common.config import repository_document
@@ -29,6 +30,9 @@ SETTINGS = ".claude/settings.json"
 # its own generator line and hashes. They carry no human work, so a difference is never `edited`.
 TOOL_REWRITTEN = {deploy_tree.CLAUDE_SKILLS + "/.generated-files.json"}
 HOOKS_PATH = deploy_tree.PAYLOAD + "/assets/githooks"
+# The client families a repository may ask the deploy to project. `github` is the `.github/agents`
+# tree; 463 and 464 extend the same value with their own artifacts, never a harness branch.
+PROJECTIONS = ("github",)
 
 
 def _mcp_refusal(message: str, **extra) -> dict:
@@ -36,6 +40,35 @@ def _mcp_refusal(message: str, **extra) -> dict:
             "remedy": "declare `shared.mcp` as {mount: \"all\"|\"specs\", command: [<python prefix>], "
                       "cliFallback: true|false} "
                       "to override the default, or remove the key"}
+
+
+def _projection_refusal(message: str, **extra) -> dict:
+    return {"code": "ct-deploy-projection", "message": message, **extra,
+            "remedy": f"declare `shared.projections` as a list chosen from "
+                      f"{', '.join(PROJECTIONS)}, or remove the key for no client projection"}
+
+
+def _projections_option(target: Path) -> tuple[list[str], dict | None]:
+    """`shared.projections` from the repository layer, validated before anything is written.
+
+    Read through `repository_document`, never the merged envelope: a projection is the
+    repository's, and the user layer would make the generated files vary by machine."""
+    document, _info, refusal = repository_document(str(target))
+    if refusal:
+        return [], refusal
+    shared = (document or {}).get("shared")
+    raw = shared.get("projections") if isinstance(shared, dict) else None
+    if raw is None:
+        return [], None
+    if not isinstance(raw, list) or not all(isinstance(item, str) and item for item in raw):
+        return [], _projection_refusal("`shared.projections` must be a list of client names",
+                                       projections=raw)
+    unknown = [item for item in raw if item not in PROJECTIONS]
+    if unknown:
+        return [], _projection_refusal(
+            f"`shared.projections` names a client this deploy does not project: "
+            f"{', '.join(unknown)}", clients=unknown)
+    return list(dict.fromkeys(raw)), None
 
 
 def _identity_hooks_warnings(target: Path) -> list[str]:
@@ -167,7 +200,8 @@ def _opencode_wanted(target: Path, current: str | None, env: dict,
     committed `opencode.json` is not drift."""
     if recorded is not None:
         return {"subagentDepth": recorded.get("subagentDepth"),
-                "externalDirectory": list(recorded.get("externalDirectory") or [])}, []
+                "externalDirectory": list(recorded.get("externalDirectory") or []),
+                "bash": list(recorded.get("bash") or [])}, []
     if patterns is None:
         primary = _primary_checkout(target)
         patterns = mcpfiles.external_patterns(primary, os.path.expanduser("~")) if primary else []
@@ -191,7 +225,8 @@ def _opencode_wanted(target: Path, current: str | None, env: dict,
         warnings.extend(f"{path} could not be read as JSONC; experimental.subagent_depth was "
                         "written without checking which global keys it hides"
                         for path in unreadable if depth is not None)
-    return {"subagentDepth": depth, "externalDirectory": patterns}, warnings
+    return {"subagentDepth": depth, "externalDirectory": patterns,
+            "bash": list(access.OPENCODE_BASH)}, warnings
 
 
 def _mcp_merge(target: Path, wanted: dict[str, list[str]], previous: dict | None,
@@ -228,7 +263,8 @@ def _mcp_merge(target: Path, wanted: dict[str, list[str]], previous: dict | None
             # theirs, and the removal must not take it out.
             written = mcpfiles.written_extras(base, extras)
             opencode = written if new is not None and (
-                written["subagentDepth"] is not None or written["externalDirectory"]) else None
+                written["subagentDepth"] is not None or written["externalDirectory"]
+                or written["bash"]) else None
         elif rel in wanted:
             new = mcpfiles.merged(rel, current, wanted[rel])
         elif current is not None and mcpfiles.NAME in current:
@@ -405,12 +441,16 @@ def plan(target: Path, built: dict, previous: dict | None,
             "suggestions": _workspace_suggestions(target, workspace)}
 
 
-def _settings_merge(target: Path, built: dict, previous: dict | None) -> dict | None:
-    """Merge quenching's own hooks into the user's `.claude/settings.json` without writing.
+def _settings_merge(target: Path, built: dict, previous: dict | None,
+                    keep: bool = False) -> dict | None:
+    """Merge quenching's own hooks and access rules into the user's `.claude/settings.json`
+    without writing.
 
     Returns None when there is nothing to do, else `{"text": <new text or None>, "delete": bool,
     "warnings": [...]}`; raises `SettingsRefusal` on a file that cannot be merged safely. With no
-    Claude harness the wanted set is empty, so only entries a past deploy wrote leave.
+    Claude harness the wanted set is empty, so only entries a past deploy wrote leave. `keep`
+    (`--check`) reuses the recorded permission rules: they name the deploying machine's checkout,
+    so another clone of a committed settings file is not drift.
     """
     wanted = built.get("settings")
     recorded = (previous or {}).get("claudeSettings")
@@ -423,13 +463,24 @@ def _settings_merge(target: Path, built: dict, previous: dict | None) -> dict | 
     current = path.read_text(encoding="utf-8") if path.is_file() else None
     keys = recorded.get("attribution") if recorded else []
     keys = keys if isinstance(keys, list) else []
+    rules = recorded.get("permissions") if recorded else []
+    rules = rules if isinstance(rules, list) else []
+    if keep and rules:
+        wanted_rules = list(rules)
+    else:
+        primary_root = _primary_checkout(target)
+        wanted_rules = (access.claude_rules(primary_root, os.path.expanduser("~"))
+                        if primary_root else [])
     merged = claude_settings.merge(current, wanted["hooks"] if wanted else [],
                                    wanted["attribution"] if wanted else None, keys,
                                    mcpjson=bool(wanted and wanted.get("mcpjson")),
-                                   mcpjson_recorded=bool(recorded and recorded.get("mcpjson")))
+                                   mcpjson_recorded=bool(recorded and recorded.get("mcpjson")),
+                                   permissions=wanted_rules if wanted is not None else None,
+                                   permissions_recorded=rules)
     if wanted is not None:
         built["manifest"]["claudeSettings"]["attribution"] = sorted(merged.attribution)
         built["manifest"]["claudeSettings"]["mcpjson"] = merged.mcpjson
+        built["manifest"]["claudeSettings"]["permissions"] = sorted(merged.permissions)
     delete = (wanted is None and current is not None and recorded is not None
               and json.loads(merged.text if merged.text is not None else current) == {})
     return {"text": merged.text, "delete": delete, "warnings": merged.warnings,
@@ -617,6 +668,9 @@ def main(argv: list[str]) -> int:
     declared, refusal = _mcp_option(target)
     if refusal:
         return refuse(refusal, args.json)
+    projections, projection_refusal = _projections_option(target)
+    if projection_refusal:
+        return refuse(projection_refusal, args.json)
     workspace_declared, workspace_error = workspace_settings.declared(str(target))
     if workspace_error:
         return refuse({
@@ -657,13 +711,14 @@ def main(argv: list[str]) -> int:
                     or deploy_tree.profiles_for(modules))
         built = deploy_tree.build_tree(deploy_tree.source_root(), target, modules, harnesses,
                                        runtime, profiles, mcp=mcp, python=python,
-                                       hooks_python=hooks_python, workspace=workspace_declared)
+                                       hooks_python=hooks_python, projections=projections,
+                                       workspace=workspace_declared)
     except (OSError, ValueError) as exc:
         return refuse({"code": "ct-deploy-source", "message": str(exc),
                        "remedy": "run deploy from a complete quenching checkout or wheel"},
                       args.json)
     try:
-        built["merged"] = _settings_merge(target, built, previous)
+        built["merged"] = _settings_merge(target, built, previous, keep=args.check)
     except claude_settings.SettingsRefusal as exc:
         return refuse({"code": "ct-deploy-settings", "path": SETTINGS,
                        "message": f"{target / SETTINGS} cannot be merged: {exc}; nothing was written",

@@ -15,7 +15,8 @@ from quenching.deploy import mcpfiles  # noqa: E402
 
 ARGV = ["python3", ".agents/quenching/assets/bin/cq", "mcp"]
 PATTERNS = ["~/p/repo-slot-*", "~/p/repo.*"]
-EXTRAS = {"subagentDepth": mcpfiles.SUBAGENT_DEPTH, "externalDirectory": PATTERNS}
+BASH = [".agents/quenching/bin/cq *", "python3 .agents/quenching/bin/cq *"]
+EXTRAS = {"subagentDepth": mcpfiles.SUBAGENT_DEPTH, "externalDirectory": PATTERNS, "bash": BASH}
 
 
 def merge(text, extras=EXTRAS):
@@ -28,6 +29,7 @@ class TheOpencodeExtras(unittest.TestCase):
         doc = merge(None)
         self.assertEqual(4, doc["experimental"]["subagent_depth"])
         self.assertEqual({p: "allow" for p in PATTERNS}, doc["permission"]["external_directory"])
+        self.assertEqual({p: "allow" for p in BASH}, doc["permission"]["bash"])
         self.assertIn("quenching", doc["mcp"])
 
     def test_a_higher_project_depth_and_the_other_keys_survive(self):
@@ -38,14 +40,22 @@ class TheOpencodeExtras(unittest.TestCase):
         self.assertEqual("ask", doc["permission"]["edit"])
         self.assertEqual("ask", doc["permission"]["external_directory"]["*"])
         self.assertEqual("allow", doc["permission"]["external_directory"][PATTERNS[0]])
+        self.assertEqual({p: "allow" for p in BASH}, doc["permission"]["bash"])
 
     def test_a_lower_project_depth_is_raised(self):
         doc = merge(json.dumps({"experimental": {"subagent_depth": 2}}))
         self.assertEqual(4, doc["experimental"]["subagent_depth"])
 
     def test_no_depth_leaves_experimental_alone(self):
-        doc = merge(None, {"subagentDepth": None, "externalDirectory": PATTERNS})
+        doc = merge(None, {"subagentDepth": None, "externalDirectory": PATTERNS, "bash": BASH})
         self.assertNotIn("experimental", doc)
+
+    def test_a_user_bash_entry_survives_and_a_deny_is_kept(self):
+        doc = merge(json.dumps({"permission": {"bash": {"git status": "allow",
+                                                        BASH[0]: "deny"}}}))
+        self.assertEqual("allow", doc["permission"]["bash"]["git status"])
+        self.assertEqual("deny", doc["permission"]["bash"][BASH[0]])
+        self.assertEqual("allow", doc["permission"]["bash"][BASH[1]])
 
     def test_a_permission_that_is_not_an_object_refuses_the_merge(self):
         self.assertIsNone(merge(json.dumps({"permission": "allow"})))
@@ -69,10 +79,16 @@ class TheOpencodeExtras(unittest.TestCase):
         doc = json.loads(mcpfiles.opencode_strip(written, EXTRAS))
         self.assertEqual({"$schema", "mcp"}, set(doc))
 
+    def test_removal_of_bash_takes_only_the_recorded_allow(self):
+        user = json.dumps({"permission": {"bash": {"git status": "allow"}}})
+        written = mcpfiles.merged(mcpfiles.OPENCODE, user, ARGV, EXTRAS)
+        doc = json.loads(mcpfiles.removed(mcpfiles.OPENCODE, written, EXTRAS))
+        self.assertEqual({"git status": "allow"}, doc["permission"]["bash"])
+
 
 class TheRecordIsOnlyWhatWasWritten(unittest.TestCase):
     def test_an_empty_file_records_the_depth_and_both_allows(self):
-        self.assertEqual({"subagentDepth": 4, "externalDirectory": PATTERNS},
+        self.assertEqual({"subagentDepth": 4, "externalDirectory": PATTERNS, "bash": BASH},
                          mcpfiles.written_extras(None, EXTRAS))
 
     def test_a_user_depth_equal_or_higher_is_not_recorded(self):
@@ -87,6 +103,10 @@ class TheRecordIsOnlyWhatWasWritten(unittest.TestCase):
     def test_an_allow_the_user_already_had_is_not_recorded(self):
         text = json.dumps({"permission": {"external_directory": {PATTERNS[0]: "allow"}}})
         self.assertEqual([PATTERNS[1]], mcpfiles.written_extras(text, EXTRAS)["externalDirectory"])
+
+    def test_a_bash_allow_the_user_already_had_is_not_recorded(self):
+        text = json.dumps({"permission": {"bash": {BASH[0]: "allow"}}})
+        self.assertEqual([BASH[1]], mcpfiles.written_extras(text, EXTRAS)["bash"])
 
     def test_removal_keeps_the_depth_and_the_allow_the_user_already_had(self):
         user = json.dumps({"experimental": {"subagent_depth": 4},
