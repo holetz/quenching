@@ -497,6 +497,16 @@ def external_directory(root: pathlib.Path) -> dict:
             "patterns": sorted(directories or {})}
 
 
+def access_facts(root: pathlib.Path) -> dict:
+    """The out-of-tree access report, from the same source `cq doctor --access` reads."""
+    try:
+        import_payload()
+        from quenching.common.access import report
+        return report(str(root))
+    except (ImportError, OSError, ValueError) as error:
+        return {"state": "unreadable", "reason": str(error)}
+
+
 def measure_clients(root: pathlib.Path) -> dict:
     github = root / ".github"
     agents = {"claude": agent_rows(root / ".claude" / "agents"),
@@ -521,6 +531,7 @@ def measure_clients(root: pathlib.Path) -> dict:
     installed = sorted(path.name for base in bases for path in base.iterdir() if path.is_dir())
     worktrees = worktree_facts(root)
     external = external_directory(root)
+    access = access_facts(root)
     section = {"state": "present",
                "agents": {name: {"count": len(rows), "rows": rows} for name, rows in agents.items()},
                "github": {"state": "present" if github.is_dir() else "absent",
@@ -531,6 +542,7 @@ def measure_clients(root: pathlib.Path) -> dict:
                "cost": costs,
                "worktrees": worktrees,
                "externalDirectory": external,
+               "access": access,
                "extensions": {"state": "present" if installed else "absent",
                               "count": len(installed),
                               "installed": installed[:40]},
@@ -570,8 +582,13 @@ def measure_clients(root: pathlib.Path) -> dict:
         "H12": {"verdict": UNMEASURED,
                 "observation": (f"{len(slots)} slot(s) e {len(worktrees.get('stores') or [])} "
                                 f"store(s) irmãos do checkout primário; "
-                                f"{len(patterns)} padrão(ões) em `external_directory`; o acesso "
-                                f"sem prompt é live")}}
+                                f"{len(patterns)} padrão(ões) em `external_directory`; "
+                                f"{len((access.get('claude') or {}).get('rules') or [])} regra(s) "
+                                f"em `.claude/settings.json`; "
+                                f"`.vscode/settings.json` {(access.get('vscode') or {}).get('state')}; "
+                                f"copilot CLI com "
+                                f"{len((access.get('copilotCli') or {}).get('directories') or [])} "
+                                f"diretório(s); o acesso sem prompt é live")}}
     return section
 
 
