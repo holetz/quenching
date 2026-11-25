@@ -3,7 +3,7 @@
 // abbreviated conversation; a reply without the required sections falls back to the facts.
 // Derived from cache-maxxing by 5m0k3 (MIT): last 120 messages, 2,000 chars each, 150,000 in all,
 // tool inputs cut at 300, tool output left out.
-import type { SessionMessage } from 'claude-code'
+import type { SessionMessage } from './message'
 
 import { handoffSaving, money, tokens } from './logic'
 

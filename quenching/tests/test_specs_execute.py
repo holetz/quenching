@@ -257,7 +257,7 @@ class TaskExecutionContractTests(unittest.TestCase):
             (ROOT / "quenching/agents/spec-verifier.md").read_text(encoding="utf-8").split())
 
         self.assertIn("## Epic authorization (checks 9 and 10)", verifier)
-        self.assertIn("`.agents/quenching/bin/cq specs show --spec <epic> --full`", verifier)
+        self.assertIn("`specs_show(spec=<epic>, full=true)`", verifier)
         self.assertIn("carries a date (`YYYY-MM-DD`), names this spec's id or the entry's exact path", verifier)
         self.assertIn("An entry no such bullet covers stays FAIL with `needs-human`", verifier)
         self.assertIn("never stops it refusing an unauthorized widening or lowering", verifier)

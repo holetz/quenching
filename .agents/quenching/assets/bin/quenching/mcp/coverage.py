@@ -157,3 +157,63 @@ def bodies(plugin_root: str) -> list[tuple[str, str]]:
                     with open(path, encoding="utf-8") as handle:
                         out.append((os.path.relpath(path, plugin_root), handle.read()))
     return out
+
+
+# Options a citation may carry that name no tool parameter: the id arrives as `spec`/`epic`, the
+# payload is always JSON.
+OPTION_FREE = {"json", "spec", "epic", "root"}
+# A CLI option whose tool parameter is spelled differently, or `None` when the tool serves it
+# without a parameter (the reason beside each).
+OPTION_PARAM = {
+    ("specs", "show", "task"): "tasks",
+    ("specs", "next", "front"): None,   # the default when neither `spec` nor `epic` is given
+    ("specs", "next", "table"): None,   # human rendering; the tool answers JSON
+    ("specs", "next", "columns"): None,
+    ("specs", "next", "order"): None,
+    ("specs", "section", "write"): None,  # the write form is the tool `specs_section_write`
+    ("specs", "section", "clear"): None,
+    ("specs", "list", "lean"): None,    # always on in the tool
+}
+TOOL_CALL = re.compile(r"\b([a-z]+_[a-z_]+)\(([^)\n]*)\)")
+OPTION = re.compile(r"(?<![\w-])--([a-z][a-z0-9-]*)")
+
+
+def _tool_params() -> dict[str, set[str]]:
+    from quenching.specs import mcp as specs_mcp
+    tools = {t["name"]: t["inputSchema"].get("properties", {}) for t in specs_mcp.list_tools()}
+    return {name: set(props) for name, props in tools.items()}
+
+
+def uncited_options(texts: Iterable[tuple[str, str]]) -> list[tuple[str, str, str]]:
+    """`(label, tool, option)` for every option a body cites that the tool's `inputSchema` lacks:
+    `cq specs show … --full` against `specs_show` without `full`, or `specs_show(…, full=true)`.
+    Only the hand-written READ tools of `specs` are checked: the catalog derives its schema from
+    the parser, and a write tool spells its flags as dedicated parameters (`--set`, `--write`)."""
+    from quenching.specs import mcp as specs_mcp
+    params = _tool_params()
+    by_path = {("specs", *path): name for name, path in specs_mcp.COVERS.items()
+               if name in specs_mcp.TOOLS}
+    out: list[tuple[str, str, str]] = []
+
+    def add(label, tool, option):
+        if (label, tool, option) not in out:
+            out.append((label, tool, option))
+
+    for label, text in texts:
+        for match in CITE.finditer(text):
+            path = verb_path(match.group(1).split())
+            tool = by_path.get(path) if path else None
+            if tool is None or tool not in params:
+                continue
+            tail = re.split(r"[`\n;]", text[match.start():], maxsplit=1)[0]
+            for opt in OPTION.findall(tail):
+                param = OPTION_PARAM.get((*path, opt), opt.replace("-", "_"))
+                if param is not None and opt not in OPTION_FREE and param not in params[tool]:
+                    add(label, tool, opt)
+        for match in TOOL_CALL.finditer(text):
+            tool = match.group(1)
+            if tool in params and tool in specs_mcp.TOOLS:
+                for param in re.findall(r"(\w+)\s*=", match.group(2)):
+                    if param not in params[tool]:
+                        add(label, tool, param)
+    return out

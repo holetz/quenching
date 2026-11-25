@@ -24,6 +24,22 @@ class Coverage(unittest.TestCase):
         self.assertEqual(missing, [], "add a catalog row (quenching/mcp/catalog.py) or an "
                                       "EXCEPTIONS entry with its reason (quenching/mcp/coverage.py)")
 
+    def test_every_option_and_parameter_the_bodies_cite_exists_on_the_tool(self):
+        bad = [f"{label}: {tool} {opt}"
+               for label, tool, opt in coverage.uncited_options(coverage.bodies(str(PLUGIN)))]
+        self.assertEqual(bad, [], "add the parameter to the tool's inputSchema "
+                                  "(quenching/specs/mcp.py) or an OPTION_PARAM entry with its reason")
+
+    def test_a_cited_option_or_parameter_the_tool_lacks_is_reported(self):
+        found = coverage.uncited_options([
+            ("a.md", "run `cq specs show --spec 3 --bogus`"),
+            ("b.md", "call `specs_show(spec=3, bogus=true)`")])
+        self.assertEqual(found, [("a.md", "specs_show", "bogus"), ("b.md", "specs_show", "bogus")])
+
+    def test_specs_show_full_is_cited_and_served(self):
+        self.assertEqual(coverage.uncited_options([
+            ("a.md", "`cq specs show --spec 3 --full --json`; `specs_show(spec=3, full=true)`")]), [])
+
     def test_an_uncatalogued_verb_is_reported_with_its_body(self):
         found = coverage.uncovered([("skills/x.md", "run `.agents/quenching/bin/cq specs scrub 3`")])
         self.assertEqual(found, [("skills/x.md", ("specs", "scrub"))])
