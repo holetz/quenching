@@ -12,9 +12,12 @@ local refs with `git rebase --update-refs`.
 ## Workflow
 
 ### 1. Confirm a clean tree, and snapshot the refs before rewriting
+```text
+git_base()
+```
+
 ```bash
 git status --porcelain
-.agents/quenching/bin/cq git base --json
 git for-each-ref --format='%(refname:short) %(objectname)' refs/heads
 ```
 Non-empty `git status --porcelain` → refuse and name the paths. **Done when:** the
