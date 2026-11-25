@@ -46,6 +46,12 @@ class ConcludeAutonomous(unittest.TestCase):
         self.assertIn("a conflict only in the deployed surface or inside a generated zone",
                       self.text)
 
+    def test_generated_files_the_base_manifest_does_not_own_are_deleted_then_rewritten(self):
+        self.assertIn("`ct-deploy-unowned`", self.text)
+        self.assertIn("Delete exactly the listed paths the branch added", self.text)
+        self.assertIn("`git diff --name-only --diff-filter=A origin/<base>...HEAD`", self.text)
+        self.assertIn("A listed path the branch did not add is authored text", self.text)
+
 
 class RunnerReportsThePrRecord(unittest.TestCase):
     @classmethod

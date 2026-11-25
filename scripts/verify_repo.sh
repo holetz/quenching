@@ -29,6 +29,20 @@ python3() { "$GATE_PYTHON" "$@"; }
 export GATE_PYTHON
 export -f python3  # the bash checks this gate starts (citation-check) call `python3` too
 
+# `cq git pr merge` accepts a relaxed-CI merge only on this record: HEAD, the exit this gate ends
+# with, its scope and whether the tree was clean. It is cleared now and written by the EXIT trap, so
+# a gate that never finishes leaves none, and a caller's claim of a green gate proves nothing.
+python3 -m scripts.toolchain.gate_record clear || true
+GATE_TMP=""
+finish_gate() {
+  local rc=$?
+  trap - EXIT
+  python3 -m scripts.toolchain.gate_record write --exit "$rc" --scope "${TEST_SCOPE:-unknown}" || true
+  if [ -n "$GATE_TMP" ]; then rm -rf "$GATE_TMP"; fi
+  exit "$rc"
+}
+trap finish_gate EXIT
+
 run_check() {
   local name="$1"
   shift
@@ -71,8 +85,6 @@ TMPROOT="$(python3 -m scripts.toolchain.tmproot)" || exit 1
 GATE_TMP="$(mktemp -d "$TMPROOT/quenching-gate-$$-XXXXXX")"
 export TMPDIR="$GATE_TMP" TEMP="$GATE_TMP" TMP="$GATE_TMP"
 export QUENCHING_TEST_TMPROOT="$GATE_TMP"
-cleanup_gate_tmp() { rm -rf "$GATE_TMP"; }
-trap cleanup_gate_tmp EXIT
 trap 'exit 130' INT
 trap 'exit 143' TERM
 
