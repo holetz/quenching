@@ -27,6 +27,8 @@ EXCEPTIONS: dict[tuple[str, ...], str] = {
     ("portal", "serve"): "long-running central portal",
     ("specs", "migrate"): "one-time store migration the operator runs; may create remote work items",
     ("specs", "export"): "writes a directory of files outside the store, for the operator",
+    ("specs", "delegate"): "creates a GitHub cloud-agent task: the human's delegation, and the "
+                           "briefing is a remote write no agent grant may reach",
     ("specs", "claim", "take"): "taking a live lease is the human's call only; no agent grant may reach it",
     ("git", "worktree", "adopt"): "the SessionStart hook runs it before the MCP server is connected, "
                                   "and the orchestrator's grant is the CLI; it prepares one checkout",
