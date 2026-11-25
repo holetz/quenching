@@ -272,8 +272,145 @@ def measure_mcp(root: pathlib.Path) -> dict:
 
 
 # --- 1.4 · hooks, permissions and skills ------------------------------------------------------
+def frontmatter_fields(text: str) -> dict[str, str]:
+    """The `key: value` fields of a `---` frontmatter, in the shapes this repo writes: a quoted
+    scalar, a folded block (`>-`), or a literal block (`|`). No YAML dependency."""
+    if not text.startswith("---"):
+        return {}
+    end = text.find("\n---", 3)
+    if end < 0:
+        return {}
+    fields: dict[str, str] = {}
+    key, raw = None, []
+
+    def settle() -> None:
+        if key is None:
+            return
+        value = "\n".join(raw).strip()
+        if value[:1] in (">", "|"):
+            folded = value[0] == ">"
+            body = value[1:].lstrip("-+").strip("\n").splitlines()
+            lines = [line.strip() for line in body if line.strip()]
+            fields[key] = (" " if folded else "\n").join(lines)
+        elif value.startswith('"'):
+            fields[key] = value[1:-1].replace('\\"', '"').replace("\\\\", "\\") \
+                if value.endswith('"') else value[1:]
+        else:
+            fields[key] = value
+
+    for line in text[3:end].splitlines():
+        if line[:1].isspace() and key is not None:
+            raw.append(line)
+            continue
+        settle()
+        if ":" in line:
+            key, _, rest = line.partition(":")
+            key, raw = key.strip(), [rest]
+        else:
+            key, raw = None, []
+    settle()
+    return fields
+
+
+def hook_entries(settings: dict) -> list[dict]:
+    """One row per command hook: the pair it is grouped under, its bodies, timeout and charset."""
+    entries = []
+    hooks = settings.get("hooks") if isinstance(settings.get("hooks"), dict) else {}
+    for event, groups in hooks.items():
+        for group in groups if isinstance(groups, list) else []:
+            inner = group.get("hooks") if isinstance(group, dict) else None
+            matcher = group.get("matcher", "") if isinstance(group, dict) else ""
+            for hook in inner if isinstance(inner, list) else []:
+                if not isinstance(hook, dict) or hook.get("type") != "command":
+                    continue
+                command = str(hook.get("command") or "")
+                marked = ".agents/quenching/assets/hooks/" in command
+                body, bodies = "", []
+                if marked and ' -I -c "' in command:
+                    body, _, rest = command.partition(' -I -c "')[2].partition('"')
+                    bodies = rest.split()
+                entries.append({"event": event, "matcher": matcher, "marked": marked,
+                                "bodies": bodies, "timeout": hook.get("timeout"),
+                                # The deploy's rule: the `-c` code carries no `$`, no backtick and
+                                # no double quote, so bash, PowerShell and cmd hand it over intact.
+                                "expansive": sorted({char for char in '$`"' if char in body})})
+    return entries
+
+
 def measure_skills(root: pathlib.Path) -> dict:
-    return not_measured("skills")
+    section: dict = {"hypotheses": {}}
+    source = root / ".agents" / "skills"
+    bridge = root / ".claude" / "skills"
+    names = sorted(path.name for path in source.iterdir()
+                   if (path / "SKILL.md").is_file()) if source.is_dir() else []
+    bridged = sorted(path.name for path in bridge.iterdir()
+                     if (path / "SKILL.md").is_file()) if bridge.is_dir() else []
+    descriptions = []
+    for name in names:
+        fields = frontmatter_fields((source / name / "SKILL.md").read_text(encoding="utf-8"))
+        descriptions.append({"skill": name, "chars": len(fields.get("description") or "")})
+    cut = THRESHOLDS[1]["value"]
+    changes: list = []
+    if source.is_dir() and bridge.is_dir():
+        try:
+            import_payload()
+            from quenching.components.commands.bridge import plan as bridge_plan
+            changes = bridge_plan(root)["changes"]
+        except (ImportError, OSError) as error:
+            changes = [{"path": str(error), "change": "unverifiable"}]
+    section |= {"state": "present" if source.is_dir() else "absent",
+                "source": {"count": len(names), "names": names},
+                "bridge": {"count": len(bridged), "names": bridged,
+                           "changes": changes},
+                "descriptions": {
+                    "count": len(descriptions) * (2 if bridged else 1),
+                    "perCopy": sum(item["chars"] for item in descriptions),
+                    "total": sum(item["chars"] for item in descriptions) *
+                             (2 if bridged else 1),
+                    "largest": max(descriptions, key=lambda item: item["chars"], default=None),
+                    "cut": cut,
+                    "overCut": [item for item in descriptions if item["chars"] > cut]},
+                "settings": {}}
+    settings_path = root / ".claude" / "settings.json"
+    settings: dict = {}
+    if settings_path.is_file():
+        try:
+            settings = json.loads(settings_path.read_text(encoding="utf-8"))
+        except ValueError as error:
+            settings = {"unreadable": str(error)}
+    entries = hook_entries(settings)
+    section["settings"] = {
+        "state": "absent" if not settings_path.is_file() else ("unreadable" if "unreadable"
+                                                               in settings else "present"),
+        "hooks": entries,
+        "enabledMcpjsonServers": settings.get("enabledMcpjsonServers") or [],
+        "disabledMcpjsonServers": settings.get("disabledMcpjsonServers") or [],
+        "attribution": settings.get("attribution") or {}}
+    if section["state"] == "present":
+        pairs = sorted({(entry["event"], entry["matcher"]) for entry in entries})
+        expansive = [entry for entry in entries if entry["expansive"]]
+        section["hypotheses"] = {
+            "H1": {"verdict": UNMEASURED,
+                   "observation": (f"{len(names)} skills em `.agents/skills` e {len(bridged)} em "
+                                   f"`.claude/skills`; a ponte tem {len(changes)} divergência(s)"
+                                   f"{'' if not changes else ': ' + ', '.join(change['path'] for change in changes[:5])}"
+                                   f"; a desduplicação pelo cliente é live")},
+            "H4": {"verdict": UNMEASURED,
+                   "observation": (f"{len(entries)} entrada(s) de hook em {len(pairs)} par(es) "
+                                   f"(event, matcher), "
+                                   f"{sum(len(entry['bodies']) for entry in entries)} corpo(s) "
+                                   f"declarado(s), timeout {max((entry['timeout'] or 0) for entry in entries) if entries else 0} s; "
+                                   f"{'sem caractere expansível' if not expansive else str(len(expansive)) + ' com caractere expansível'}"
+                                   f"; o disparo é live")},
+            "H10": {"verdict": CONFIRMED if not section["descriptions"]["overCut"] else REFUTED,
+                    "observation": (
+                        f"{section['descriptions']['count']} descrições, "
+                        f"{section['descriptions']['total']} caracteres somados "
+                        f"({section['descriptions']['perCopy']} por cópia), a maior com "
+                        f"{section['descriptions']['largest']['chars']} "
+                        f"(`{section['descriptions']['largest']['skill']}`), "
+                        f"{len(section['descriptions']['overCut'])} acima do corte de {cut}")}}
+    return section
 
 
 # --- 1.5 · agents, .github/, .vscode/ and the cost sources -------------------------------------
