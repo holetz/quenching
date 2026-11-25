@@ -4042,7 +4042,7 @@ class OrchestratorPublishGrants(unittest.TestCase):
         self.assertEqual([g for g in self.grants if g.startswith("cq git ")], [
             "cq git state:*", "cq git push:*", "cq git pr create:*", "cq git pr probe:*",
             "cq git pr record:*", "cq git pr merge:*", "cq git base:*", "cq git conventions:*",
-            "cq git worktree slots:*"])
+            "cq git worktree slots:*", "cq git worktree adopt:*"])
         for unused in ("stale", "prune", "audit", "commit", "worktree retire", "worktree add"):
             for grant in self.grants:
                 self.assertFalse(self._admits(grant, f"cq git {unused}"), (grant, unused))

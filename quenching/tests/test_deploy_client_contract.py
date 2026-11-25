@@ -28,6 +28,7 @@ from quenching.deploy.cli import main as deploy_main  # noqa: E402
 from quenching.deploy.settings import MARKER  # noqa: E402
 
 BODIES = ("deny-claude-coauthor", "warn-git-add-all")
+SESSION_BODIES = ("adopt-worktree",)
 # The characters bash, PowerShell and cmd each expand; the hook's `-c` code carries none of them.
 EXPANSIVE = re.compile(r'[$`"]')
 
@@ -78,13 +79,18 @@ class ClientContract(unittest.TestCase):
         pairs = [(event, group.get("matcher", "")) for event, groups in hooks.items()
                  for group in groups]
         self.assertEqual(len(pairs), len(set(pairs)), pairs)
-        commands = [hook["command"] for groups in hooks.values() for group in groups
-                    for hook in group["hooks"] if hook.get("type") == "command"]
-        ours = [command for command in commands if MARKER in command]
-        self.assertEqual(1, len(ours), ours)
-        code, _, bodies = ours[0].partition(' -I -c "')[2].partition('"')
-        self.assertIsNone(EXPANSIVE.search(code), code)
-        self.assertEqual(list(BODIES), bodies.split())
+        expected = {"PreToolUse": BODIES, "SessionStart": SESSION_BODIES}
+        self.assertEqual(sorted(expected), sorted(hooks))
+        for event, bodies in expected.items():
+            ours = [hook["command"] for group in hooks[event] for hook in group["hooks"]
+                    if hook.get("type") == "command" and MARKER in hook["command"]]
+            self.assertEqual(1, len(ours), ours)
+            code, _, tail = ours[0].partition(' -I -c "')[2].partition('"')
+            self.assertIsNone(EXPANSIVE.search(code), code)
+            self.assertEqual(list(bodies), tail.split(), event)
+        self.assertEqual("startup|resume|clear|compact",
+                         hooks["SessionStart"][0].get("matcher"))
+        self.assertEqual(300, hooks["SessionStart"][0]["hooks"][0]["timeout"])
 
     def test_the_claude_skills_copy_is_byte_identical_to_the_source(self):
         expected = bridge.expected_tree(self.target)
