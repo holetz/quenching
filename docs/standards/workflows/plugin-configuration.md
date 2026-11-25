@@ -223,7 +223,7 @@ Ownership follows the meaning of the key, not the module that happens to read it
 | Namespace | Owned declarations | Boundary |
 | --- | --- | --- |
 | root | `backend` | legacy/provider metadata only; provider selection comes from `origin` |
-| `shared` | `worktreeSetup`, `sharedPaths`, `regenerablePaths`, `hooks`, `profiles`, `gitConventions`, `gitIdentity`, `guidance`, `autonomy`, `workHost`, `okfValidate`, `contextBudgets`, `cache` | settings used by more than one local surface or by isolation |
+| `shared` | `worktreeSetup`, `sharedPaths`, `regenerablePaths`, `hooks`, `profiles`, `gitConventions`, `gitIdentity`, `guidance`, `autonomy`, `workHost`, `workspace`, `okfValidate`, `contextBudgets`, `cache` | settings used by more than one local surface or by isolation |
 | `specs` | Azure state and placement mappings, `subjects`, `tagCatalog`, `workItemTypes`, `chat`, `estimate`, `artifactLanguage`, `card`, `cardAt` | provider-owned plan lifecycle and proposal conventions |
 | `delivery` | `provider` | the delivery front's explicit provider declaration; it chooses no pipeline policy |
 | `ops` | `opsRoot`, `router`, `registry` | operations inventory, router and generated registry |
@@ -341,6 +341,7 @@ explicit flag wins over the key.
 | `shared.autonomy.maxLaunches` | integer ≥ 1 | `40` | `/quenching-specs autopilot` (see the autonomy block); the launch ceiling lives only there |
 | `shared.workHost` | `{target, dockerContext, runner, remoteRoot, syncFlags, syncExclude, pullBack, protectedPaths, minFreeGb}` | disabled | `cq config host --plan`; see [work-host.md](work-host.md) |
 | `shared.mcp` | `{mount: "all"\|"specs"\|"core"\|<pillars>, command: [strings], cliFallback: boolean}` | absent; the whole MCP server (`all`) is registered with a resolved direct Python prefix, and the grants keep only the `cq` verbs no MCP tool replaces (`cliFallback: false`) | `cq deploy`; read from the repository document only, never the merged envelope |
+| `shared.workspace.vscode` | boolean | `false` | `cq deploy` seeds `.vscode/settings.json` (`files.exclude` for the four generated trees, `chat.agent.maxRequests: 100`) when true, and `cq doctor` reports the file; read from the repository document only |
 | `specs.chat` | `{model: string, budgetUsd: number > 0, timeoutSeconds: number > 0}` | `sonnet`, `0.50`, `300` | the portal's `--chat`; `--chat-budget-usd` wins over `budgetUsd` |
 | `specs.estimate.writeOnly` | a list of repo-relative paths, exact or `fnmatch` globs | `[]` | `cq specs estimate`: a task file it matches is listed with `writeOnly: "declared by repo"`, keeps its size and adds no bytes; an Impact standard is always counted; `--task` ignores it |
 

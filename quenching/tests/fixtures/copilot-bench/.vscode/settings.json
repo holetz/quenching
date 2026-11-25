@@ -4,6 +4,9 @@
     "cq ": true,
     "git ": true,
   },
+  "files.exclude": {
+    "**/.agents/quenching/assets/**": true,
+  },
   "search.exclude": {
     "**/.agents/quenching/assets/**": true,
   },

@@ -12,6 +12,10 @@ cd "$ROOT"
 # A test that resolves a session must never measure the operator's session: the tree decides.
 unset OPENCODE_SESSION_ID CLAUDE_CODE_SESSION_ID
 
+# The Copilot client exports its own session selector through its home; a test that resolves a
+# session must never measure the operator's store either.
+unset COPILOT_HOME QUENCHING_COPILOT_HOME
+
 # Every `python3` below is the project's own environment when one exists: on Windows the PATH's
 # `python3` is the Microsoft Store alias, a different interpreter with none of the dev group.
 if [ -x "$ROOT/.venv/bin/python" ]; then
