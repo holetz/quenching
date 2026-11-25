@@ -177,6 +177,11 @@ merge also writes:
   directory, so a deploy run inside a slot writes the same patterns. They are written with `~/`
   when under the home directory. A target outside git gets neither.
 
+`--check` reuses the depth and the patterns the manifest records (`opencodeConfig`) instead of
+deriving them again: both name the deploying machine's global config and checkout, so a committed
+`opencode.json` read on another machine is not drift. `--write` derives them for the machine it
+runs on.
+
 Nothing else is granted. The permission uses the V1 object form, which OpenCode still reads and
 which the generated agents use.
 
