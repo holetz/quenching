@@ -19,7 +19,7 @@ canonical document on read, and refusal on unsupported selection — is owned by
 
 ## Contents
 
-`.agents/quenching/bin/cq components read <this file>` returns the heading index; `--sections` addresses one.
+`components_read(path=<this file>)` returns the heading index; `sections=[…]` addresses one.
 
 ## The scale
 
@@ -51,7 +51,7 @@ At the end of an unattended build, the close-out command carries the PR handoff 
 
 An answer with no destination is conversation, and conversation is what gets summarized away. As each answer arrives, record which canonical section it belongs to — that mapping IS the consolidated edit, and an answer that maps to nothing is either out of scope (route it, per the body's guardrails) or was not worth asking.
 
-**Every defining stage reads `complexity` from a payload it already fetches.** `.agents/quenching/bin/cq specs status --spec <slug> --json` returns `records`, and `priority.complexity` is inside it. The execution loop does not consult this field for section boundaries.
+**Every defining stage reads `complexity` from a payload it already fetches.** `specs_status(spec=<slug>)` returns `records`, and `priority.complexity` is inside it. The execution loop does not consult this field for section boundaries.
 
 ## The spec document
 
@@ -70,7 +70,7 @@ The store owns the locator and lifecycle transition. `promote` archives the docu
 `quenching` branch and closes the card; it moves nothing on the code branches. Because that ref is
 read by everyone the moment it is written, a `done` spec is archived only **after its work is
 merged** — `promote --outcome done` refuses while the work ref is not in `origin/<base>`, `--force`
-included, and `cq specs reconcile --write` is the post-merge close every route to a merge runs.
+included, and `specs_reconcile(write=true)` is the post-merge close every route to a merge runs.
 `## Outcome` is written before the PR; the archive follows the merge. What does not change is anything a command can
 observe through `.agents/quenching/bin/cq specs`.
 
@@ -116,7 +116,7 @@ else.**
 | `slug` | always | `create` | the identity key every command and cross-reference names |
 | `title` | always | `create` | one human-readable line |
 | `date` | always | `create` | `YYYY-MM-DD`, the capture date — stamped once and never rewritten (why it is not the basename's prefix: §Identity) |
-| `verification` | **optional** | `create` / `develop` | `per-task` · `per-section` · `end-of-plan` — when `verify:` runs. Absent means the default (`per-section`), applied on read; written after capture with `.agents/quenching/bin/cq specs verification`, **never** by editing the frontmatter |
+| `verification` | **optional** | `create` / `develop` | `per-task` · `per-section` · `end-of-plan` — when `verify:` runs. Absent means the default (`per-section`), applied on read; written after capture with `specs_verification`, **never** by editing the frontmatter |
 | `priority` | once ranked | `triage` | `{level, criticality, complexity, date}` — a human's ranking against every other spec. `complexity` alone is also written at capture, by `create` — the one field of this record a second command may write (`assets/specs/schema.json`'s `complexity.writtenBy: [triage, create, develop]`) |
 | `refined` | once interrogated | `develop` | `{mode, date}` — that a real interrogation happened, and which operation ran it |
 | `approved` | once approved | `develop`, or `execute` inline | `{date, by}` — **that this spec may be built, and on whose authority**: `by: human` is a person's word, `by: orchestrator-forced` a declared-autonomy run's, and `by: session` the simple path's own stamp (`by: low-gear`, its historical value, stays valid and is never rewritten); absent reads as `human` |
@@ -147,11 +147,11 @@ merely derived fact earns no such mirror.
 There is no attempt counter and no `.specs.json`.
 
 **Five more keys — `tags`, `assignee`, `start`, `target`, `end` — are STATE, never records.** Each is a
-first-level frontmatter key with its own deterministic verb (`.agents/quenching/bin/cq specs tags|assignee|start|target|end
-<id> [value]`), not a `{field: value}` record and not owned by one lifecycle command. `tags` is
-also written at capture — `.agents/quenching/bin/cq specs new --tags` folds a resolved `subjects.<KEY>`'s own fixed tags
+first-level frontmatter key with its own deterministic verb (`specs_tags(spec=<id>, value=…)`; `assignee`,
+`start`, `target` and `end` only through the CLI, `cq specs <key> <id> [value]`), not a `{field: value}` record and not owned by one lifecycle command. `tags` is
+also written at capture — `specs_create(tags=…)` folds a resolved `subjects.<KEY>`'s own fixed tags
 in automatically, so the whole list still lands in ONE write rather than the capture's own tags
-followed by a second, separate `.agents/quenching/bin/cq specs tags` call. On the git store all five live in the document's frontmatter; the card shows
+followed by a second, separate `specs_tags` call. On the git store all five live in the document's frontmatter; the card shows
 tags and assignee as labels and assignees at transitions. A deprecated tracker backend instead
 stores them natively and reassembles them on read (`docs/standards/architecture/spec-backend.md`
 §Legacy tracker backends).
@@ -188,7 +188,7 @@ the body prose is written in is owned by the bundle's `docs/standards/agents/com
 
 **Every section declares its moment, and that is load-bearing.** `## Proposal` / `## Out of Scope`
 / `## Design` / `## Impact` / `## Handoff` / `## Tasks` are the `build` set — exactly what
-`/quenching-specs execute` step 4 sends an executor (`.agents/quenching/bin/cq specs section <id> --moment build`).
+`/quenching-specs execute` step 4 sends an executor (`specs_section(spec=<id>, moment="build")`).
 `## Problem` / `## Alternatives Considered` / `## Open Decisions` / `## Risks` are
 `decision` — the human's, weighing whether to build at all. `## Validation` / `## Outcome` are
 `close` — `/quenching-specs conclude`'s. `## Discoveries` carries no moment: captured
@@ -233,7 +233,7 @@ Three rules decide whether a section counts as filled:
    explicit null is strictly more information than an absent heading. It costs one line.
 2. **A present-but-empty heading is malformed and refuses.** It is neither an answer nor a
    not-yet.
-3. **An absent heading before its gate is legal.** `.agents/quenching/bin/cq specs new` stamps `## Problem` and nothing
+3. **An absent heading before its gate is legal.** `specs_create` stamps `## Problem` and nothing
    else — a captured spec is four lines of body, not a thirteen-heading skeleton.
 
 The sets live in `assets/specs/schema.json` and are read by **both** `promote` and `validate` — one
@@ -279,10 +279,10 @@ declares post-merge field validation, an obligation known at definition time. Fi
 right moment dropped the spec to `executing` before a single box existed — measured on a spec whose
 `## Tasks` was still empty and which had not even reached the `ready` gate, reported as under
 construction and ranked against specs with code in flight. A ticked box is the honest signal
-because `.agents/quenching/bin/cq specs task` writes it only after a commit; nothing else on this list can be written by
+because `specs_task` writes it only after a commit; nothing else on this list can be written by
 accident.
 
-`.agents/quenching/bin/cq specs list` and `.agents/quenching/bin/cq specs next --front` both group by these stages, deriving them from disk
+`specs_list` and `specs_next()` both group by these stages, deriving them from disk
 on every call.
 
 ## `## Impact` — the one parsed declaration
@@ -318,8 +318,8 @@ assertion the spec's own author makes, never an economy the executor infers on i
 <!-- rules -->
 
 Checkboxes `- [ ] <id> <text>` grouped under `### N. <Section>` headings, carrying optional
-`files:` / `verify:` / `pattern:` / `subject:` / `commit:` / `[P]` metadata. `.agents/quenching/bin/cq specs task
---check <id>` flips a box mechanically — **never by string surgery**.
+`files:` / `verify:` / `pattern:` / `subject:` / `commit:` / `[P]` metadata. `specs_task(spec=<id>,
+action="check", task=<id>)` flips a box mechanically — **never by string surgery**.
 
 `subject:` and `commit:` are written by `task --check --subject <line> --commit <sha>` and record
 the subject and sha of the commit that implements that task. They live on the task line rather
@@ -343,7 +343,7 @@ Written by the orchestrator when it decides to stop retrying; `next` skips it. *
 attempt limit.**
 
 `[P]` marks a parallel-eligible group, honoured only when the group's `files:` sets are provably
-disjoint and no member waits `after:` a sibling of the same group (`.agents/quenching/bin/cq specs parallel`). Serial by default.
+disjoint and no member waits `after:` a sibling of the same group (`specs_parallel`). Serial by default.
 
 <!-- rationale -->
 
@@ -365,7 +365,7 @@ it.
 It does **not** receive the `decision`-moment sections (`## Problem` /
 `## Alternatives Considered` / `## Open Decisions` / `## Risks`), nor the rest of the `build` set
 verbatim. The orchestrator itself reads the `build` set at step 4
-(`.agents/quenching/bin/cq specs section <id> --moment build --scope current`) — the other five sections whole, and
+(`specs_section(spec=<id>, moment="build", scope="current")`) — the other five sections whole, and
 `## Handoff` already cut to the same global-plus-own-section slice the bullet above promises an
 executor, so **neither side depends on an agent remembering to narrow it**; a `## Design` decision
 that bears on the task reaches the executor distilled into the task line or `## Handoff`, never as
@@ -384,8 +384,8 @@ them — the run pauses, a task is written blocked, a discovery is recorded, the
 lands — and on nothing else. Each names an act the executor just performed, never an assessment it
 has to make, which is what lets the rule hold in an unattended run; staleness is this section's
 failure mode, and `validate` warns when a spec past the ready gate has an empty `## Handoff`. What a
-rewrite touches is scoped the same way what an executor reads is: `.agents/quenching/bin/cq specs section <id> Handoff
---write --scope global` for the evergreen block, `--scope current` for the block of the section
+rewrite touches is scoped the same way what an executor reads is: `specs_section_write(spec=<id>,
+heading="Handoff", scope="global", body=<body>)` for the evergreen block, `scope="current"` for the block of the section
 whose tasks are still open. A section's block is never targeted again once its last task commits —
 that IS the close, no separate flag marks it — so a run that has moved on to `### 4.` never pays to
 resend `### 1.` through `### 3.` again.

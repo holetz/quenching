@@ -23,20 +23,69 @@ merge anything into a target's `.claude/settings.json` to make a tool resolve.
 Branch on the **exit code** (0 ok · 1 findings · 2 refusal) and the `--json` payload, never on
 prose.
 
-**With the `quenching` MCP server connected, a body must call the tool, never the shell.** The
-map is mechanical: `cq <pillar> <verb…>` is the tool `<pillar>_<verb…>`, words joined by `_` and
-`-` read as `_` — `cq specs status` is `specs_status`, `cq git worktree acquire` is
-`git_worktree_acquire`, `cq components read` is `components_read`; each flag is the argument of the
-same name, without `--root` and `--json`, which the server owns. Claude Code names the tool
-`mcp__quenching__<tool>`, OpenCode `quenching_<tool>`; `cq deploy` grants each agent and skill
-exactly the tools its `Bash(cq …)` grants cover. One long-lived process keeps the store read, where
-each shell call starts a Python (0.58 s against 0.024 s measured on `specs status`).
+**With the `quenching` MCP server connected, a body must call the tool, never the shell.** One
+long-lived process keeps the store read, where each shell call starts a Python (0.58 s against
+0.024 s measured on `specs status`).
 
-**The CLI is the declared fallback, and only for two cases:** the verb has no tool (the server's
-`tools/list` does not name it), or the session has no `quenching` server. Either way the call runs
-`cq` as above and **the run's report says so** — `MCP: fallback cq <pillar> <verb> — <no tool | no
-server>` — so a fallback is never silent. The bodies keep writing `cq …`: the map above turns any
-citation into its tool.
+### Citing a verb in a body: the tool, with named arguments
+
+A body cites the verb **as the tool it calls**: the canonical tool name, unprefixed, with the
+arguments named as the tool's `inputSchema` names them —
+`specs_status(spec=<id>)`, `specs_section(spec=<id>, headings="Design,Tasks")`,
+`components_read(path="<ref>", sections=["§A", "§B"], rules_only=true)`,
+`specs_record(spec=<id>, name="run", fields={"state": "<STATE>", "date": "<today>"})`. Values are a
+`<placeholder>`, a quoted string, `true`, a list `[…]` or an object `{…}`. A mention that calls
+nothing names the tool bare: `` `specs_status` ``. The harness adds its prefix — Claude Code calls
+`mcp__quenching__<tool>`, OpenCode `quenching_<tool>` — and the body never writes it. `--root` and
+`--json` are the server's and are never written. `cq deploy` grants each agent and skill exactly
+the tools its `Bash(cq …)` grants cover.
+
+`cq components lint` holds the form: `sk-cq-cli-citation` names a `cq <pillar> <verb>` whose verb
+has a tool, in a body the check enforces; `sk-mcp-unknown-tool` names a `<pillar>_<verb>(` that is
+no tool of the catalog.
+
+### Where a body still writes the CLI
+
+1. **The verb has no tool**: the exceptions of `mcp/coverage.py` (`cq deploy`, `cq modules`,
+   `cq specs migrate`, `cq specs export`, `cq specs serve`, `cq codex implement`,
+   `cq specs claim take`, …) and any verb the server's `tools/list` does not name.
+2. **A line marked `cli: <reason>`** — `<!-- cli: <reason> -->` at the end of the line, or alone on
+   the line before a block (it then covers that whole paragraph or fenced block), and
+   `# cli: <reason>` at the end of a line inside a fenced block. The reasons are closed:
+   - **root** — the server acts on its own root, the session's directory. A verb that reads or
+     writes the working tree (`git commit`, `git state`, a test) called for a worktree that is not
+     that root runs `cd <worktree> && cq …`.
+   - **atomic** — a write of several spec sections in one call; `specs_section_write` writes one.
+   - **by** — `approved` stamped `by=session` or `by=orchestrator-forced`; `specs_record` writes
+     `approved` as `by=human`, after asking.
+   - **flag** — the call needs a flag the tool does not publish (`specs_create` has no `subject`,
+     `specs_next` no `table`, `specs_promote` no `force`).
+   - **fallback** — the block documents the CLI synopsis itself, beside the tool it falls back
+     from (a surface table such as `specs-develop/specs-surface.md`).
+
+### The fallback: a session with no server
+
+With no `quenching` server, or a verb the server does not list, the call runs `cq` as below and
+**the run's report says so** — `MCP: fallback cq <pillar> <verb> — <no tool | no server>` — so a
+fallback is never silent. The tool maps back mechanically: `<pillar>_<verb…>` is
+`cq <pillar> <verb…>` (each `_` a word break, `-` inside a word: `knowledge_site_source` is
+`cq knowledge site-source`, `cq <pillar> --help` settles a doubt), and each argument is the flag of
+the same name with `_` read as `-` (`rules_only=true` is `--rules-only`, a list repeats the flag).
+The hand-written specs tools name their arguments apart from the CLI:
+
+| Tool | CLI |
+| --- | --- |
+| `specs_status(spec=X)`, `specs_show(spec=X, tasks=[T])` | `cq specs status --spec X`, `cq specs show --spec X --task T` |
+| `specs_section(spec=X, headings=H, moment=M, scope=S)` | `cq specs section X "H"` / `--moment M --scope S` |
+| `specs_section_write(spec=X, heading=H, body=B)` | `cq specs section X "H" --write` with `B` on stdin |
+| `specs_record(spec=X, name=N, fields={"k": "v"})` | `cq specs record X N --set k=v` |
+| `specs_task(spec=X, action=A, task=T, reason=R, subject=S, commit=C)` | `cq specs task --spec X --check T --subject S --commit C` (`A` is the flag: `--check`, `--uncheck`, `--block` or `--descope`, the last two with `--reason R`) |
+| `specs_discover(spec=X, text=F)` | `cq specs discover X "F"` |
+| `specs_create(name=N, title=T, …)` | `cq specs new N --title T …` |
+| `specs_list(phase=P)`, `specs_next(spec=X)`, `specs_next()` | `cq specs list --phase P`, `cq specs next --spec X`, `cq specs next --front` |
+| `specs_promote(spec=X, to=P, outcome=O)` | `cq specs promote X --to P --outcome O` |
+| `specs_link_add(epic=E, spec=X, after=A)`, `specs_epic_progress(epic=E)` | `cq specs link add E X --after A`, `cq specs status --spec E` |
+| `specs_push()` | `cq specs push` |
 
 ### Deploy mode: the target-local payload
 

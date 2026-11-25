@@ -22,11 +22,11 @@ spec is **archived** and its worktree released (step 8).
 
 **A `done` spec is archived after its merge, never before.** The spec store is a git ref, not a
 folder inside the PR: an archive is visible to every reader the moment it is written, while the PR
-it describes can still stall, fail its checks or be closed. `cq specs promote --to archive
---outcome done` refuses while the work ref is not in `origin/<base>`, and `--force` does not reach
-that refusal. The post-merge close is one verb, `cq specs reconcile --write`, and every route to a
+it describes can still stall, fail its checks or be closed. `specs_promote(spec=<id>, to="archive",
+outcome="done")` refuses while the work ref is not in `origin/<base>`, and the CLI's `--force` does
+not reach that refusal. The post-merge close is one verb, `specs_reconcile(write=true)`, and every route to a
 merge ends in it: this command resumed after the merge, `/quenching-git merge`, the
-`spec-orchestrator` after `cq git pr merge`, and the reconciliation at the open of
+`spec-orchestrator` after `git_pr_merge`, and the reconciliation at the open of
 `/quenching-specs execute`, `orchestrate` and this command.
 
 **Done work ends on the work branch; abandoned close-out writes land in the checkout holding the
@@ -116,7 +116,7 @@ stops the run with `STATE: blocked` and `NOTE: needs-human: <the question>`.
 | Step 4 — the `## Outcome` draft | written unconfirmed; for `abandoned`, an exit 2 from `promote` → `needs-human` with the refusal quoted, never `--force` |
 | Step 5 — the distillation plan | as step 3: applied on the work branch for `done`, declined and named for `abandoned` |
 | Step 5 — the release obligations | `done`: applied on the work branch as narrated, the standard quoted in the report |
-| Step 6 — the flow sweep | `done` and `abandoned`: every evidenced candidate is captured unasked with `.agents/quenching/bin/cq specs new`, one spec per candidate, its `## Problem` carrying the inputs; none is developed, and the ids are named in the report |
+| Step 6 — the flow sweep | `done` and `abandoned`: every evidenced candidate is captured unasked with `specs_create`, one spec per candidate, its `## Problem` carrying the inputs; none is developed, and the ids are named in the report |
 | Step 7 — branch behind its base | the base merged in (`git merge --no-edit origin/<base>`, never a rebase), then the gate; a conflict only in the deployed surface or inside a generated zone is resolved by regenerating; any other conflict → `git merge --abort` and `needs-human` with the paths |
 | Step 7 — an inconclusive check | `needs-human`, the check named |
 | Step 7 — the abandoned branch-delete offer | keep, recorded in the report |
@@ -136,20 +136,20 @@ restated. One valid id resolves it silently, naming the marking as the source; m
 which, on a decision sheet. No valid marking → §The fallback there measures the diff and always
 asks whether to materialize a minimal spec — accepted, its new id is used from here on exactly
 like a marked one. **Declined, headless completion — closing with no spec file at all — is not
-built**: say so, record it with `.agents/quenching/bin/cq specs discover`, and fall back to `.agents/quenching/bin/cq specs list --json` and
+built**: say so, record it with `specs_discover`, and fall back to `specs_list` and
 ask. Establish the outcome — **ask if it was not stated**, on a
 decision sheet: *done* (it shipped) or *abandoned* (it will not be built). Under `autonomous`,
 every question of this run is answered by §Under `autonomous`; elsewhere a sub-agent does not ask:
 return `STATE: blocked` with `NOTE: needs-human:` carrying the decision sheet.
-```bash
-.agents/quenching/bin/cq specs status --spec "<id>" --json
+```text
+specs_status(spec=<id>)
 ```
-**First close what is already merged:** `.agents/quenching/bin/cq specs reconcile --write --json` archives every
+**First close what is already merged:** `specs_reconcile(write=true)` archives every
 spec of the front whose work is merged and whose `## Outcome` is written, this one included. A row
 for this spec with `action: archived` → report it closed and run only step 8's worktree release; a
 `needs-human` row is carried to the report. Then read task progress, the `## Outcome` state, and the
 records — `branch`, `reviewed`, `merge`, `pr`, `outcome` — from that payload. Then, for the `## Discoveries` lines themselves, the one body this
-step needs: `.agents/quenching/bin/cq specs section "<id>" Discoveries --json`. Then read git: the
+step needs: `specs_section(spec=<id>, headings="Discoveries")`. Then read git: the
 current branch, whether the work branch exists, and whether it is already merged. Announce the
 outcome and, per §Resuming, which stages this run will actually perform.
 
@@ -157,7 +157,7 @@ Open tasks under a `done` outcome are surfaced **now**, before anything is writt
 can choose between finishing them, forcing, or switching to `abandoned`.
 
 **Renew the build's reservation** — the review, the distillation and the gate can outlast it:
-`.agents/quenching/bin/cq specs claim renew "<id>" --json`. Exit 0, `reason: absent` or exit 2 → go on (report exit 2).
+`specs_claim_renew(claim_id=<id>)`. Exit 0, `reason: absent` or exit 2 → go on (report exit 2).
 `reason: not-holder` → another machine holds the lease: **stop** with `held-by: <holder>` and
 write nothing; taking it back is the human's call (`.agents/quenching/bin/cq specs claim take`), never this run's.
 **Done when:** one spec, one outcome, and the list of stages still to run are all settled.
@@ -181,7 +181,7 @@ survived its own rename in a concept written by another spec (11/11/2026). A gre
 folders the diff touched is not proof of the corpus.
 
 Present the findings. Fixes go in as ordinary commits on the branch, before the merge. Then stamp
-the record — `.agents/quenching/bin/cq specs record "<id>" reviewed --set date=<today>`, never by editing the
+the record — `specs_record(spec=<id>, name="reviewed", fields={"date": "<today>"})`, never by editing the
 frontmatter.
 
 **The test is `branch.work != branch.base`, never the record's presence** — in-place work stamps
@@ -219,7 +219,7 @@ no bundle.
 
 ### 4. Write `## Outcome`
 **First preserve observed build cost, with provenance.** This is independent of the derived
-`.agents/quenching/bin/cq specs estimate` reading heuristic. Inspect `records.buildCost` from step 1: a valid measured
+`specs_estimate` reading heuristic. Inspect `records.buildCost` from step 1: a valid measured
 record already covers the build and survives a resumed conclude; do not replace it with missing
 telemetry. New evidence may replace `unavailable`, with every field written together so an old
 reason or measurement cannot survive the re-stamp. An abandoned, unbuilt spec also reports
@@ -228,8 +228,8 @@ unavailable rather than inventing an execute cost.
 Use the existing meter **only** when the briefing identifies an explicit **build-only** Claude
 Code subagents directory and the agent ids belonging to this spec's execute runs:
 
-```bash
-.agents/quenching/bin/cq components session cost "<explicit-build-only-subagents-directory>" --json
+```text
+components_session_cost(transcript=<explicit-build-only-subagents-directory>)
 ```
 
 **Never infer** that scope from the latest session, the source spec's branch, transcript mtime,
@@ -250,18 +250,14 @@ attribution does not justify a measured whole-build claim.
 
 Write the conclude-owned record **before `## Outcome`**, through the generic record writer:
 
-```bash
-.agents/quenching/bin/cq specs record "<id>" buildCost --set status=measured --set date=<today> \
-  --set "source=<runtime; exact build scope; command/exit; request-exposure limitation>" \
-  --set 'measurements=<compact per-model JSON array from the observed payload>' --set 'reason='
+```text
+specs_record(spec=<id>, name="buildCost", fields={"status": "measured", "date": "<today>", "source": "<runtime; exact build scope; command/exit; request-exposure limitation>", "measurements": "<compact per-model JSON array from the observed payload>", "reason": ""})
 ```
 
 For unavailable evidence write no numeric stand-in; an empty scalar is absence, not zero:
 
-```bash
-.agents/quenching/bin/cq specs record "<id>" buildCost --set status=unavailable --set date=<today> \
-  --set "source=<runtime and any explicitly known scope>" --set 'measurements=' \
-  --set "reason=<why the build was not measured>"
+```text
+specs_record(spec=<id>, name="buildCost", fields={"status": "unavailable", "date": "<today>", "source": "<runtime and any explicitly known scope>", "measurements": "", "reason": "<why the build was not measured>"})
 ```
 
 Read the write's exit code; retry a transport failure with backoff, and read an exit-2 refusal
@@ -272,8 +268,8 @@ not an inference this conclude makes.
 `## Outcome` is the archive gate — the post-merge close cannot archive without it, so it is written
 now, while the run still knows what shipped. Draft it, confirm it (under `autonomous`, §Under
 `autonomous`), write it:
-```bash
-.agents/quenching/bin/cq specs section "<id>" Outcome --write     # body on stdin
+```text
+specs_section_write(spec=<id>, heading="Outcome", body=<body>)
 ```
 For `done`: what shipped, what was left out, what the next reader needs — **reviewed, distilled,
 ready for merge**; name neither a merge strategy nor a PR. **Do not archive it here** — the spec
@@ -281,8 +277,8 @@ stays in `plans/` until step 8 runs after the merge.
 
 For `abandoned`: the reason it will not be built is the whole content, and nothing will merge, so
 the archive happens now:
-```bash
-.agents/quenching/bin/cq specs promote "<id>" --to archive --outcome abandoned
+```text
+specs_promote(spec=<id>, to="archive", outcome="abandoned")
 ```
 A refusal (exit 2) lists exactly what is missing — surface it verbatim and let the human decide;
 **never pass `--force` on your own initiative.**
@@ -329,7 +325,7 @@ were applied, reported as already satisfied, or reported as none.
 
 ### 6. Sweep the flow itself, and capture what it owes
 The change is finished; the way it was made is evidence too. **Read the session first, once:**
-`.agents/quenching/bin/cq components session digest --json --cap 5` counts the corrections, the repeated
+`components_session_digest(cap=5)` counts the corrections, the repeated
 reads and shells and the anomalies from the transcript, so the judgment below does not rest on
 memory. A non-zero exit (no transcript on this host) is neither retried nor reported: go on and
 judge from the conversation, with no further read and no fallback. This step judges the run itself — the
@@ -349,7 +345,7 @@ hold:
    of the session digest (a human correction, a repeated read or shell, an anomaly) with its
    number and its quoted turn;
 3. no open spec already covers it — check the front first
-   (`.agents/quenching/bin/cq specs list --json`, matched on the title and on the defect it names)
+   (`specs_list`, matched on the title and on the defect it names)
    and add a `## Discoveries` line there instead of opening a duplicate.
 
 **What does not qualify matters as much**: a defect of the delivered product, a nit in one file, a
@@ -358,8 +354,10 @@ result only when neither the digest nor the run evidences a defect; a sweep that
 every time is inventing.
 
 **One spec per candidate, captured and not designed** — the design costs a session, and the session
-that takes it should be the one that argues with the defect:
+that takes it should be the one that argues with the defect — the CLI, because `specs_create`
+takes no section body:
 
+<!-- cli: atomic -->
 ```bash
 .agents/quenching/bin/cq specs new "<the defect, in one line>" --complexity medium <<'EOF'
 ## Problem
@@ -423,7 +421,7 @@ No reproduction → it is the branch's own and the paragraph above applies. Repr
 four criteria together: cause diagnosed and reproduced on the base, few files without a contract change,
 an existing verification proves it, no human decision) → the fix itself is the one commit allowed
 here, declared as a `[fix-preexistente]` task (`files:` and `verify:`) so the verifier reads it as scope,
-and the gate runs again. Otherwise capture it now with `.agents/quenching/bin/cq specs new` (`## Problem` plus
+and the gate runs again. Otherwise capture it now with `specs_create` (`## Problem` plus
 cause, reproduction, files), record `promoted: <id>` in `## Discoveries`, and stop `STATE: failed` (under
 `autonomous`, `needs-human:` naming that spec): the red stays a FAIL, the PR names it and the merge
 waits for the captured spec. Never skip, `xfail`, suppress a test or edit a `verify:`. The sweep of
@@ -468,8 +466,8 @@ sits between the zone's delimiters (`…-start` / `…-end`): a marker outside t
 in authored text. Resolve only the conflicting hunks, never the whole file, so what merged cleanly
 outside the zone survives: write the stages to scratch files (`git show :1:<path>`, `:2:`, `:3:`),
 run `git merge-file --theirs <ours> <base> <theirs>`, copy the result over `<path>`, then run the
-zone's owner verb (`cq proof readme --write` for `quenching-proof-readme`, `cq ops registry
---write` for the operations registry) **before** `cq deploy --target . --write`, which mirrors
+zone's owner verb in the worktree (`cd <worktree> && .agents/quenching/bin/cq proof readme --write` for `quenching-proof-readme`, <!-- cli: root -->
+`cd <worktree> && .agents/quenching/bin/cq ops registry --write` for the operations registry) <!-- cli: root --> **before** `cq deploy --target . --write`, which mirrors
 the README, and `git add` what they rewrote. Then the owner's `--check` and `cq deploy --target .
 --check` exit 0. Any marker outside a zone, or a zone with no owner verb → `git merge --abort`
 and `needs-human` naming the paths.
@@ -522,7 +520,7 @@ the branch-delete offer per
 
 **Release the reservation once the build is over** — after the handoff above (`done`: the PR
 opened or the handoff named) and after the `abandoned` archive of step 4:
-`.agents/quenching/bin/cq specs claim release "<id>" --json`. `released: false` with `reason: absent` is fine;
+`specs_claim_release(claim_id=<id>)`. `released: false` with `reason: absent` is fine;
 `not-holder` is reported and left to expire, never taken; exit 2 is reported. A red gate keeps
 the lease: the build is not over. The reconcile deletes whatever lease a terminal spec still holds.
 **Done when:** the gate ran green on the branch and the handoff was named, or the run recorded
@@ -534,8 +532,8 @@ This step runs only once the work is merged — a conclude resumed after the mer
 merged" row of §Resuming), or right after a `low` or `autonomous` hand-off whose merge already
 landed. Right after `pr-create` the PR is open, nothing here applies, and the run ends at step 9.
 
-```bash
-.agents/quenching/bin/cq specs reconcile --write --json
+```text
+specs_reconcile(write=true)
 ```
 
 `reconcile` is the whole archive rule and this step adds none of its own: it fetches, finds every
@@ -544,7 +542,7 @@ gate `promote` applies. A row with `action: needs-human` (`## Outcome` missing, 
 is reported with its `why` and never forced.
 
 **Then bring the local base up to the remote** — the merge moved only `origin/<base>`:
-`.agents/quenching/bin/cq git refresh --json`. It is fast-forward only: it never discards a commit or an uncommitted
+`git_refresh`. It is fast-forward only: it never discards a commit or an uncommitted
 change and never switches a branch, and a `diverged` or `merge-refused` result is reported and left as it is, never forced.
 
 **Then give the worktree back.** A spec built in a **slot** (`../<repo>-slot-<n>`) needs nothing
@@ -558,6 +556,7 @@ with no question and no extra flag. The recorded fact is the `branch` record (`w
 the worktree path from `git worktree list`; skip silently when the work was done in the base
 checkout or in a plain branch. Run it from the base's checkout, never from the worktree it removes:
 
+<!-- cli: root -->
 ```bash
 cd <the base's checkout> && .agents/quenching/bin/cq git worktree retire --path <the spec's worktree> \
   --branch <branch.work> --base <branch.base> --json
@@ -576,9 +575,8 @@ and its slot was released, its legacy worktree retired, or the refusal reported.
 
 **When this run's input carried `autonomous`, skip the read below and the mold with it** — a conductor presents the report, not this run; return the content in the fixed shape the caller specified. Otherwise:
 
-```bash
-.agents/quenching/bin/cq components read .agents/quenching/references/specs-develop/report-mold.md \
-  --sections "§The report mold" --rules-only
+```text
+components_read(path=".agents/quenching/references/specs-develop/report-mold.md", sections=["§The report mold"], rules_only=true)
 ```
 
 Emit §The report mold. The single-spec header line carries the locator, its phase (`plans` until the
@@ -600,7 +598,7 @@ body blocks:
    `/quenching-specs develop`'s discoveries stage to close, and they are easiest to lose at exactly
    this moment.
 
-Print §The session-size line before the block — `.agents/quenching/bin/cq components session context --json`, read once; exit 1 turns the `→` line into a recommendation to run that handoff **in a new session**, exit 0 and 2 leave it an offer.
+Print §The session-size line before the block — `components_session_context`, read once; exit 1 turns the `→` line into a recommendation to run that handoff **in a new session**, exit 0 and 2 leave it an offer.
 
 Close on §The next-step block, its recommended line naming step 7's handoff — `/quenching-git pr-create`
 or `/quenching-git merge`, whichever was recommended, or `/quenching-specs develop <id>` when
@@ -638,7 +636,7 @@ acceptance line and the next-step block are all reported.
   the review already owns them; a candidate that is really the change's own defect belongs to
   `## Discoveries`, not to a new spec.
 - Never overwrite the `writeOnce` `outcome` record to make reality fit — report the disagreement
-  instead, and never edit the frontmatter to get past `.agents/quenching/bin/cq specs record`'s refusal.
+  instead, and never edit the frontmatter to get past `specs_record`'s refusal.
 - Never re-run a stage whose signal is already set without saying so and being asked to.
 - Never re-write a rule a task already wrote into `/docs/standards/` during execution — concluding
   syncs nothing.

@@ -41,7 +41,7 @@ one, where every later turn re-sends it.
 
 <!-- rationale -->
 
-The mirror image of the line above. `.agents/quenching/bin/cq specs validate` already warns when a declared standard has
+The mirror image of the line above. `specs_validate` already warns when a declared standard has
 no task (`sp-impact-uncovered`); the inverse — a binding standard nobody declared — is not
 derivable, because deciding a standard governs a task is reading, not parsing. Every approximation
 of it has to re-read the folder to have something to warn about, which is the cost

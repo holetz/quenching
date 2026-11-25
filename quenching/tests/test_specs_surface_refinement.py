@@ -58,7 +58,7 @@ class QuestionsTests(unittest.TestCase):
     def test_it_names_the_stop_condition(self):
         self.assertIn(
             "**Stop when** every declared surface path is named by a task carrying "
-            "`files:` and `verify:`, `.agents/quenching/bin/cq specs parallel --spec <id>` "
+            "`files:` and `verify:`, `specs_parallel(spec=<id>)` "
             "exits 0, and nothing outside the spec was written.",
             text(QUESTIONS),
         )
@@ -70,7 +70,7 @@ class QuestionsTests(unittest.TestCase):
         self.assertIn("it carries a counted figure", text(QUESTIONS))
 
     def test_the_figure_comes_from_measured_context(self):
-        self.assertIn("read from `cq components session context`", text(QUESTIONS))
+        self.assertIn("read from `components_session_context`", text(QUESTIONS))
 
 
 class ImpactTests(unittest.TestCase):

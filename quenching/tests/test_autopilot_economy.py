@@ -18,7 +18,7 @@ class MechanicalCaptureTests(unittest.TestCase):
         body = text()
         self.assertIn("**Mechanical capture, by default.**", body)
         self.assertNotIn("spec-architect", body)
-        self.assertIn("`.agents/quenching/bin/cq specs new", body)
+        self.assertIn("`specs_create(name=<title>", body)
 
     def test_real_decomposition_stays_in_this_session(self):
         body = text()

@@ -13,13 +13,13 @@ in a spec are machine contracts — the `## Tasks` checkboxes and the one parsed
 
 ## Contents
 
-`.agents/quenching/bin/cq components read <this file>` returns the heading index; `--sections` addresses one.
+`components_read(path=<this file>)` returns the heading index; `sections=[…]` addresses one.
 
 ## Writing a section through stdin
 
 <!-- rules -->
 
-`.agents/quenching/bin/cq specs section <slug> "<Heading>[,<Heading>…]" --write` (bodies on stdin) creates each heading in
+`.agents/quenching/bin/cq specs section <slug> "<Heading>[,<Heading>…]" --write` (bodies on stdin) creates each heading in <!-- cli: atomic -->
 canonical position on first write, so creating and revising are the same call. An emptied section
 becomes an explicit `- none — <reason>`, never a deleted heading (§The explicit-none rule).
 
@@ -31,8 +31,10 @@ through and puts the template's guidance back under that heading; without `--wri
 
 **The bodies go on stdin as one heredoc, in the same call** — a scratch file, a `mkdir` and a `cat`
 are three turns buying what one already does, and a pass that filled six sections over six calls
-paid six round trips for one edit:
+paid six round trips for one edit. `specs_section_write(spec=<slug>, heading="<Heading>", body=<body>)`
+writes one heading per call; the N-heading write is the CLI's:
 
+<!-- cli: atomic -->
 ```bash
 .agents/quenching/bin/cq specs section "<slug>" "<Heading>,<Other Heading>" --write <<'BODY'
 ## <Heading>
@@ -67,9 +69,9 @@ gave is worse than leaving the heading absent, because it looks decided. And nev
 of them at creation: a spec that did would derive as `designed` and clear the whole ready gate
 without anyone having thought anything.
 
-`.agents/quenching/bin/cq specs new <id>` stamps the frontmatter and `## Problem` alone, from
+`specs_create(name=<id>)` stamps the frontmatter and `## Problem` alone, from
 `assets/specs/templates/spec.md`. Every other heading is created on first write by
-`.agents/quenching/bin/cq specs section <id> "<Heading>" --write`, in canonical position. Do not invent new top-level
+`specs_section_write(spec=<id>, heading="<Heading>", body=<body>)`, in canonical position. Do not invent new top-level
 headings — one outside the canonical thirteen is a stray and `validate` flags it — and never paste
 this doctrine into the spec.
 
@@ -134,7 +136,7 @@ Four sub-headings, and exactly one is machine-checked:
 - `quenching/skills/quenching-specs/SKILL.md` — route the revised authoring flow
 ```
 
-`.agents/quenching/bin/cq specs validate` parses **only the first sub-heading** (`parse_impact_standards`) and emits
+`specs_validate` parses **only the first sub-heading** (`parse_impact_standards`) and emits
 `sp-impact-uncovered` (warn) for any `docs/standards/**.md` path bulleted there that no `## Tasks`
 item names. Keep the heading text verbatim — it is the anchor.
 
@@ -142,7 +144,7 @@ A spec with no such sub-heading declares nothing and is never flagged — **the 
 writing the heading**. An unfilled `<placeholder>` declares nothing either.
 
 This sub-heading is also the **declared/emergent line**: a `docs/standards/` doc named here *and*
-by a task is written during execution; anything the work merely reveals is one `.agents/quenching/bin/cq specs discover`
+by a task is written during execution; anything the work merely reveals is one `specs_discover`
 line and is written at conclude
 ([execution-delegation.md](.agents/quenching/references/specs-execute/execution-delegation.md) §Declared
 versus emergent `knowledge/`).
@@ -170,8 +172,8 @@ closed section's block and never the whole `## Handoff`.
 It is warned on (not gated) once the ready gate is met, and it is rewritten on **four events** —
 the run pauses · a task is written blocked · a discovery is recorded · the run's last commit lands
 — rather than when someone judges it stale. What changed is what a rewrite touches, not when one
-happens: `.agents/quenching/bin/cq specs section <id> Handoff --write --scope global` for the evergreen block,
-`--scope current` for the block of whichever section still has open work — never both, and never a
+happens: `specs_section_write(spec=<id>, heading="Handoff", scope="global", body=<body>)` for the evergreen block,
+`scope="current"` for the block of whichever section still has open work — never both, and never a
 closed section's.
 
 A section's block **closes** the moment its last task commits, but closing is not a fifth event:
@@ -185,7 +187,7 @@ tasks all land between two rewrite events never gets a block of its own at all, 
 Each of those four is a moment the executor *just finished doing something*, never one where it
 appraises something: that is the property that makes the rule survivable unattended, and it is what
 any future edit has to preserve. What a resumed run can derive on its own — which tasks are done,
-which commit carried each — lives in `git log` and in the `subjects` `.agents/quenching/bin/cq specs status` returns;
+which commit carried each — lives in `git log` and in the `subjects` `specs_status` returns;
 this section carries only what nothing derives.
 
 <!-- rationale -->
@@ -204,8 +206,8 @@ less often already fixed *when* the resend happened; this fixes *how much* each 
 ## `## Tasks`
 
 The implementation checklist `.agents/quenching/bin/cq specs` parses: checkboxes `- [ ] <id> <text>` grouped under
-`### N. <Section>` headings. `.agents/quenching/bin/cq specs task --spec <id> --check <id>` flips a box mechanically —
-never hand-edit the checkbox character. After `approved`, `.agents/quenching/bin/cq specs section <id> Tasks --write` is append-only: it refuses (`sp-tasks-frozen`) when an existing id disappears or its text, `verify:`, `files:` or `cwd:` changes; scope leaves only through `task --descope --reason`.
+`### N. <Section>` headings. `specs_task(spec=<id>, action="check", task=<id>)` flips a box mechanically —
+never hand-edit the checkbox character. After `approved`, `specs_section_write(spec=<id>, heading="Tasks", body=<body>)` is append-only: it refuses (`sp-tasks-frozen`) when an existing id disappears or its text, `verify:`, `files:` or `cwd:` changes; scope leaves only through `specs_task(action="descope", reason=…)`.
 
 Shape it so `/quenching-specs execute` can walk it top to bottom:
 
@@ -286,8 +288,8 @@ while the task is being written. Declare the test beside the implementation it p
 only proof is the `verify:`, whose absence is the `sp-operational-no-verify` warning. It is how a
 redeploy, a `systemctl is-active` or the repository gate is declared without inventing a path, and
 the verifier accepts such a task without a commit sha because it has no path to hang one on. The
-readers that hand a task on carry `operational: true` beside `files: []` (`.agents/quenching/bin/cq specs next`,
-`.agents/quenching/bin/cq specs show --task`), and that flag — never the empty list — is what excuses the sha: a task with
+readers that hand a task on carry `operational: true` beside `files: []` (`specs_next`,
+`specs_show(tasks=[…])`), and that flag — never the empty list — is what excuses the sha: a task with
 no `files:` line parses to the same `[]`, and only the flag tells the two apart.
 
 **Declare the source, not the mirror.** A task lists in `files:` what it edits. What the deploy
@@ -317,7 +319,7 @@ matching.
 Set it **here, at definition time** — execution never infers it. It is honoured only when the
 marked tasks' `files:` sets are provably disjoint, none waits `after:` another task of the same
 group and none writes into `knowledge/`, which
-`.agents/quenching/bin/cq specs parallel` checks mechanically. Serial is the default and needs no marker: without proven
+`specs_parallel` checks mechanically. Serial is the default and needs no marker: without proven
 disjunction, parallel execution trades wall-clock for merge conflicts and loses on both.
 
 **A blocked task is a visible marker, not a hidden counter** —
@@ -344,7 +346,7 @@ checks run; `verify:` answers *what* runs. Declaring it during definition is wha
 ## `## Discoveries` and `## Outcome`
 
 **`## Discoveries`** has no gate — it is appended to during execution, one line per finding, by
-`.agents/quenching/bin/cq specs discover`. Captured **indiscriminately**: whether a discovery is worth acting on is a
+`specs_discover`. Captured **indiscriminately**: whether a discovery is worth acting on is a
 later judgment, and asking the executor to make it mid-task is how a finding gets dropped for being
 inconvenient. Each line is resolved **in place** by `/quenching-specs develop`'s discoveries stage, so
 provenance is never lost:

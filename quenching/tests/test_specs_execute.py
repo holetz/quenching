@@ -124,8 +124,8 @@ class TaskExecutionContractTests(unittest.TestCase):
         self.assertLess(command.index("git add <the task's declared files>"),
                         command.index('cq git commit --subject "<subject>"'))
         self.assertLess(command.index('cq git commit --subject "<subject>"'),
-                        command.index("cq specs task --check <task-id>"))
-        self.assertIn('--commit "<sha reported by .agents/quenching/bin/cq git commit>"', command)
+                        command.index('specs_task(spec=<spec-id>, action="check", task=<task-id>'))
+        self.assertIn('commit="<sha the commit reported>"', command)
         self.assertIn("spec tick **fails**", reference)
         self.assertIn("preserve the commit", reference)
         self.assertNotIn("<the spec file>", reference)
@@ -291,10 +291,12 @@ class TaskExecutionContractTests(unittest.TestCase):
             with self.subTest(carrier=carrier):
                 text = (ROOT / "quenching" / carrier).read_text(encoding="utf-8")
                 flat = " ".join(re.sub(r"[`*_]", "", text).split())
-                self.assertIn("cq specs status --spec <id> --json", flat)
+                self.assertTrue("cq specs status --spec <id> --json" in flat
+                                or "specsstatus(spec=<id>)" in flat, carrier)
                 self.assertIn("records.priority.complexity", flat)
                 self.assertIn("records.approved", flat)
-                self.assertIn("cq specs show --spec <id> --json", flat)
+                self.assertTrue("cq specs show --spec <id> --json" in flat
+                                or "specsshow(spec=<id>)" in flat, carrier)
                 self.assertNotRegex(flat, r"Read complexity and approved from each spec's show")
                 self.assertNotIn("Split the set from the show payloads", flat)
                 self.assertNotIn("show --full", flat)

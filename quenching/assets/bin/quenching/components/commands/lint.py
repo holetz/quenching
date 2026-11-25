@@ -17,6 +17,7 @@ from quenching.common.io import read_text
 from quenching.common.frontmatter import parse_frontmatter
 from quenching.components.cq_calls import check_cq_calls, extract_calls
 from quenching.components.hooks import hook_ladder_findings
+from quenching.components import mcp_citations
 from quenching.components.surface import (COMMANDS_DIR, REFERENCES_DIR, SKILL_FILE,
                                           SURFACE_MISSING,
                                           _quoted_phrases, agent_definitions,
@@ -1096,6 +1097,7 @@ def cmd_lint(args, root: str) -> int:
                                      known_refs))
         where = {"command": cmd["command"], "path": rel(cmd["path"], base)}
         findings.extend(_cq_call_findings(cmd["body"], where))
+        findings.extend(mcp_citations.findings(cmd["body"], where))
         flows = surface_flows.get(cmd["command"].lstrip("/")) or {}
         if flows:
             findings.extend(router_grant_findings(cmd, flows, where))
@@ -1126,6 +1128,10 @@ def cmd_lint(args, root: str) -> int:
             findings.extend(lint_dangling(ref["body"], invocations,
                                           {"command": SURFACE_MISSING,
                                            "path": rel(ref["path"], base)}))
+
+    for ref in references:
+        findings.extend(mcp_citations.findings(
+            ref["body"], {"command": SURFACE_MISSING, "path": rel(ref["path"], base)}))
 
     header = f"components lint — {base} ({plural(len(commands), 'command')}"
     header += f", {plural(len(references), 'reference')})" if references else ")"
