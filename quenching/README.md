@@ -614,8 +614,9 @@ The full contract, including the surface translation, is [deploy-mode.md](../doc
 
 **The GitHub Copilot harness reads the `claude` files.** The VS Code Agents window and the Copilot
 CLI read the target's `.claude/settings.json` hooks and its `.mcp.json` as their own, so a Copilot
-session gets the same guards and the `quenching` MCP server with no file of its own. For subagents,
-declare `shared.projections: ["github"]`: the deploy writes `.github/agents/quenching-<name>.agent.md`
+session gets the same guards and the `quenching` MCP server with no settings or MCP file of its own.
+For subagents, declare `shared.projections: ["github"]`: the deploy writes
+`.github/agents/quenching-<name>.agent.md`
 from the same five agent sources, with the Copilot tool aliases, the model band and
 `include-custom-instructions: true`, so the repository's `AGENTS.md` reaches the subagent. Without
 the key nothing in `.github/` changes. The hook
