@@ -462,6 +462,12 @@ the deployed surface (`.agents/quenching/**`, `.claude/skills/**`, `.agents/.que
 is mechanical: take the base's side (`git checkout-index --stage=3 -f -- <path>`, `git add <path>`), then
 **regenerate before concluding the merge** — `cq deploy --target . --write` — `git add` what it
 rewrote, and conclude the merge. A manifest taken from the base alone loses the branch's entries.
+The base's manifest does not own the generated files the branch created (a new
+`.github/agents/*.agent.md`, say), so the `--write` may refuse with `ct-deploy-unowned` and its
+`conflicts` list. Delete exactly the listed paths the branch added
+(`git diff --name-only --diff-filter=A origin/<base>...HEAD`) — the `--write` recreates them and the
+regenerated manifest owns them — then run the `--write` again. A listed path the branch did not add
+is authored text: `git merge --abort` and `needs-human` with the paths.
 Then `cq deploy --target . --check` exits 0.
 
 A conflict only inside a generated zone is mechanical too. The zones are those of
