@@ -45,12 +45,11 @@ background run or hook. Wait for one OK.
 
 ### 4. Mint through the deterministic tool
 
-Invoke one command, repeating `--media` and `--field`:
+Invoke one call, with every medium in `media` and every field in `field`:
 
-```bash
-.agents/quenching/bin/cq --root . design genre new <slug> \
-  --name "<name>" --register "<register>" \
-  --media <medium> --field "<name>:<required|optional>:<description>" --json
+```text
+design_genre_new(slug=<slug>, name="<name>", register="<register>",
+                 media=["<medium>", …], field=["<name>:<required|optional>:<description>", …])
 ```
 
 Fill the generated genre's Composition and Guardrails sections with the accepted content without

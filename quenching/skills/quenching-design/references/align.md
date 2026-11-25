@@ -30,10 +30,7 @@ Run:
 ```text
 design_status()
 knowledge_validate()
-```
-
-```bash
-.agents/quenching/bin/cq --root . design align --check --json
+design_align(check=true)
 ```
 
 Inventory `/docs/` headings that can project the product record, `/.design/tokens.json`, the
