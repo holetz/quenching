@@ -3,7 +3,6 @@
 The MCP tool always injects the date; the CLI fallback must reach the same record."""
 import datetime
 import io
-import json
 import unittest
 from contextlib import redirect_stdout
 from types import SimpleNamespace
