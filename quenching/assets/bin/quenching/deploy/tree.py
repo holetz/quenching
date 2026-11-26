@@ -16,6 +16,7 @@ from quenching.common.deploy import dumps_hash_manifest, read_manifest
 from quenching.common.workspace import TASKS_PATH, snippet as workspace_snippet, tasks_snippet
 from quenching.common.version import VERSION
 from quenching.components.commands import bridge
+from quenching.deploy import bootstrap as deploy_bootstrap
 from quenching.deploy import mcpfiles
 from quenching.deploy import settings as claude_settings
 from quenching.deploy import translate
@@ -488,6 +489,8 @@ def build_tree(source: Path, target: Path, modules: list[str], harnesses: list[s
     _add_tree(tree, source, "assets/translation")
     # The identity hooks: inert until a clone points `core.hooksPath` at them.
     _add_tree(tree, source, "assets/githooks")
+    # The bootstrap template travels with the payload so a vendored deploy renders it too.
+    _add_tree(tree, source, "assets/bootstrap")
     for module in selected:
         for rel in ASSETS_BY_MODULE.get(module["name"], ()):
             _add_tree(tree, source, rel, translate.reference_document)
@@ -667,6 +670,9 @@ def build_tree(source: Path, target: Path, modules: list[str], harnesses: list[s
         # created only when absent, never listed in the manifest, never drift-checked.
         seeds[".vscode/settings.json"] = workspace_snippet()
         seeds[TASKS_PATH] = tasks_snippet()
+    # Written by the deploy, run by nobody but the user: outside `files` (see `deploy.bootstrap`).
+    bootstrap_files = deploy_bootstrap.files(source, VERSION, harnesses,
+                                             workspace or "github" in (projections or []))
     hosted = self_hosted(target)
     document = {
         "generator": "cq deploy",
@@ -680,6 +686,7 @@ def build_tree(source: Path, target: Path, modules: list[str], harnesses: list[s
         "files": {rel: SOURCE_DERIVED if hosted else hashlib.sha256(data).hexdigest()
                   for rel, (data, _mode_) in sorted(tree.items())},
     }
+    document["bootstrap"] = sorted(bootstrap_files)
     if folders:
         # The tracked mirrors of modules outside the selection, kept in step with the source.
         document["mirrors"] = sorted(folders)
@@ -702,4 +709,4 @@ def build_tree(source: Path, target: Path, modules: list[str], harnesses: list[s
                                       "command": prefix, "mcpjson": bool(mcp),
                                       "permissions": []}
     return {"tree": tree, "seeds": seeds, "manifest": document, "settings": settings,
-            "mirrored": sorted(set(mirrored))}
+            "mirrored": sorted(set(mirrored)), "bootstrap": bootstrap_files}
