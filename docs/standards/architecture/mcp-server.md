@@ -39,9 +39,26 @@ Each call isolates stdin and captures stdout/stderr, restores cwd and stdin in `
 ## Closed catalog, parser-derived arguments
 
 `quenching/mcp/catalog.py` owns the explicit `CATALOG`: each row names a pillar, fixed verb path
-and class. Names are `<pillar>_<verb>[_<subverb>]`, replacing hyphens with underscores:
-`components_read`, `knowledge_site_source`, `git_pr_create`, `components_session_context`.
-Specs keep their existing names, including `specs_section_write` and `specs_record`.
+and class. Its keys are logical names `<pillar>_<verb>[_<subverb>]`, replacing hyphens with
+underscores: `components_read`, `knowledge_site_source`, `git_pr_create`,
+`components_session_context`. Specs keep their logical names, including `specs_section_write` and
+`specs_record`.
+
+**One published tool per pillar and class.** The server does not publish the logical names:
+`quenching/mcp/grouped.py` wraps the surface and publishes one tool per `(pillar, class)` pair —
+`git_read`, `git_write`, `git_external`, `specs_read`, … — with a required `verb` argument, the
+logical name minus its pillar (`git_pr_create` is `git_external(verb="pr_create")`). A client that
+cannot list a hundred tools (Copilot) lists two dozen: measured on 2026-11-26, the whole server went
+from 115 tools and 74,986 bytes of `tools/list` to 23 tools and 23,120 bytes, and the `core` mount
+to 8 tools and 11,276 bytes. The published schema carries `verb` (an enum of the group's verbs plus
+`help`), `of` and `root`, and admits the verb's own arguments flat beside `verb`; each verb keeps
+its own `inputSchema` and validation in the inner tables. `verb="help"` answers the group's verbs
+and their schemas (`of=<verb>` narrows it to one), a bad argument is refused with that verb's
+`inputSchema`, and an unknown verb with `mcp-unknown-verb` and the group's verbs. The description
+names every verb with its summary cut to 60 characters (`SUMMARY_CHARS`). A group's annotations
+aggregate its verbs: `readOnlyHint` and `idempotentHint` only when every verb has them,
+`destructiveHint` and `openWorldHint` when any verb has them. `catalog.tool_names(prefix)` answers
+the published names a `cq <prefix…>` grant reaches, `catalog.verb_names(prefix)` the logical ones.
 `tools/list` is the authoritative available inventory; an absent pillar contributes no tools.
 
 The schema comes from each pillar's `build_parser()`: flags become booleans, choices become enums,
@@ -61,15 +78,16 @@ The verb path is what the pillar's parser consumes, so a citation that ends on a
 group names no verb and is prose. The gate's `MCP catalog coverage` check fails on any other
 citation. A parameter that would move a row out of its class is hidden from the tool rather than
 reclassifying it: `specs_artifact_read` takes no `out`, and `specs_handoff_write` takes no `push`,
-which stays with `specs_push`.
+which stays with `specs_push` — an `external` verb, published under `specs_external`.
 
-**Citation form.** A body cites a covered verb as the tool it calls, by its unprefixed name with
-the `inputSchema`'s argument names — `specs_status(spec=<id>)` — never as `cq <pillar> <verb>`
+**Citation form.** A body cites a covered verb as the call it makes: the unprefixed published tool,
+`verb` first, then the verb's `inputSchema` argument names — `specs_read(verb="status", spec=<id>)`
+— never as `cq <pillar> <verb>` nor by the logical name alone
 ([tool-resolution.md](/quenching/references/align/tool-resolution.md) §Citing a verb in a body). The
 CLI stays where no tool covers the verb and on a line marked `cli: <reason>`, from a closed set:
 `flag` (a flag the tool does not publish) and `fallback` (a CLI synopsis beside its tool). A call
-on another tree passes `root`, a multi-section write passes `sections` to `specs_section_write` or
-`specs_create` (one atomic write, refused whole like the CLI's stream), and an `approved` stamp
+on another tree passes `root`, a multi-section write passes `sections` to
+`specs_write(verb="section_write")` or `specs_write(verb="create")` (one atomic write, refused whole like the CLI's stream), and an `approved` stamp
 other than `by=human` passes `by`. `cq components lint` holds the form with `sk-cq-cli-citation` and `sk-mcp-unknown-tool` over
 the bodies `components/mcp_citations.py`'s `ENFORCED` names: every `quenching-*` skill and every
 shared reference, and the flow agents under `quenching/agents/`; an agent's `tools:` grants no raw `git`
@@ -87,11 +105,12 @@ on a spec that met the ready gate; missing capability, decline or cancel refuses
 `by` `session` or `orchestrator-forced` claims no human, so it writes without asking, still only on
 a ready spec — the values the CLI writes for the simple track and declared autonomy. What
 the flow concludes after that approval is not a second decision — the `reviewed`, `merge` and
-`outcome` records and `specs_promote` run without asking, exactly as their CLI verbs do, so an
-autonomous run archives a spec without stopping to ask again. `git_pr_merge(spec=<id>)` stamps the
+`outcome` records and `specs_write(verb="promote")` run without asking, exactly as their CLI verbs
+do, so an autonomous run archives a spec without stopping to ask again.
+`git_external(verb="pr_merge", spec=<id>)` stamps the
 `merge` record once the PR merged, as the CLI's `--spec` does.
 
-`specs_push` is the one write tool with no confirmation gate: it publishes every pending local write
+`specs_external(verb="push")` is the one spec-store write with no confirmation gate: it publishes every pending local write
 of the clone with one push of the store branch, exactly like `cq specs push`, and calling the tool is
 the publish. It takes no arguments and a repository without a git store gets a `sp-push-no-store`
 tool error. `cq mcp` and `cq specs serve` start with `GIT_TERMINAL_PROMPT=0` so git can never block
