@@ -2,12 +2,12 @@
 type: standard
 title: Plugin configuration contract
 description: "`.agents/quenching.json` is the plugin's single configuration home, with `.claude/quenching.json` read as legacy; provider selection is derived from the repository remote, while placement, Azure mappings, lifecycle hooks, profiles, proposal catalogues and the `git` pillar's per-artifact writing directives remain explicit target settings"
-resource: .agents/quenching.json, quenching/assets/bin/quenching/common/config.py, quenching/assets/bin/quenching/specs/config.py, quenching/assets/bin/quenching/specs/store.py, quenching/assets/bin/quenching/ops/**, quenching/assets/bin/quenching/proof/**, quenching/assets/bin/quenching/git/base.py, quenching/assets/bin/quenching/git/conventions.py, quenching/assets/bin/quenching/git/ignored.py, quenching/assets/bin/quenching/config/**, quenching/assets/bin/quenching/common/identity.py
+resource: .agents/quenching.json, quenching/assets/bin/quenching/common/config.py, quenching/assets/bin/quenching/specs/config.py, quenching/assets/bin/quenching/specs/store.py, quenching/assets/bin/quenching/ops/**, quenching/assets/bin/quenching/proof/**, quenching/assets/bin/quenching/git/base.py, quenching/assets/bin/quenching/common/git.py, quenching/assets/bin/quenching/git/conventions.py, quenching/assets/bin/quenching/git/ignored.py, quenching/assets/bin/quenching/config/**, quenching/assets/bin/quenching/common/identity.py
 tags: [workflows, specs, configuration, provider, plugin]
-timestamp: 2026-11-25
+timestamp: 2026-11-26
 audience: both
 authority: current
-source: specs 1065, 1075, 1405, 1907, 1908, 1909, 1910, 1911, 1912, 2092, 2118, 2164, 2175, 2190, 2199, 2022, 1020213, 2231, 416, 430; the `adopt` reader by spec 458 (2026-11-25) — lineage in decision 0004
+source: specs 1065, 1075, 1405, 1907, 1908, 1909, 1910, 1911, 1912, 2092, 2118, 2164, 2175, 2190, 2199, 2022, 1020213, 2231, 416, 430, 627; the `adopt` reader by spec 458 (2026-11-25) — lineage in decision 0004
 maintainer: quenching
 ---
 
@@ -325,13 +325,17 @@ no second register.
 
 ## Settings read outside the file
 
-Three things configure the plugin without being keys of the configuration file, and none is a
+Four things configure the plugin without being keys of the configuration file, and none is a
 second home for those keys:
 
 - `.claude/hooks/hooks-config.json` and `hooks-config.local.json` carry the checker's `okfValidate`
   block; `shared.okfValidate` wins key by key (`knowledge/config.py`).
 - `~/.config/quenching/projects.json` is the portal's registry of projects (`portal/registry.py`).
 - Constants in code: the `git` and `gh` timeouts and the probe's app-server deadline are not keys.
+- `$QUENCHING_GIT_TIMEOUT_S` (seconds, a positive number) overrides, per process, the 60 s default of the
+  `git` commands `cq` runs through `common/git.py` and of every `cq git preflight` probe; absent or
+  invalid, the default stands. A timed-out command answers 124 and names the limit and the variable
+  (`common/git.py`).
 
 `cq doctor --setup` previews a minimal configuration file from the detected provider and
 fronts, and `--write` confirms it. It records the deprecated root `backend` of the detected tracker;
@@ -377,7 +381,8 @@ explicit flag wins over the key.
 | `specs.chat` | `{model: string, budgetUsd: number > 0, timeoutSeconds: number > 0}` | `sonnet`, `0.50`, `300` | the portal's `--chat`; `--chat-budget-usd` wins over `budgetUsd` |
 | `specs.estimate.writeOnly` | a list of repo-relative paths, exact or `fnmatch` globs | `[]` | `cq specs estimate`: a task file it matches is listed with `writeOnly: "declared by repo"`, keeps its size and adds no bytes; an Impact standard is always counted; `--task` ignores it |
 
-The internal timeouts of `git` and `gh` stay in code.
+The internal timeouts of `git` and `gh` stay in code; only the `git` one yields to
+`$QUENCHING_GIT_TIMEOUT_S` (§Settings read outside the file).
 
 ## Provider-derived selection
 
