@@ -36,13 +36,33 @@ def epic_meta(row_id, fm: dict) -> dict:
     return {"epic": epic, "workItemType": None if wit in (None, "") else str(wit)}
 
 
+DEFAULT_PAGE = 50
+
+
+def _window(items: list, args) -> tuple[list, dict]:
+    """The `--limit`/`--offset` slice and the paging keys the MCP's `specs_list` reports
+    (`returned`, `offset`, `nextOffset`); no flag given → every item and no keys."""
+    limit, offset = getattr(args, "limit", None), getattr(args, "offset", None)
+    if limit is None and offset is None:
+        return items, {}
+    offset = offset or 0
+    window = items[offset:offset + (limit if limit is not None else DEFAULT_PAGE)]
+    end = offset + len(window)
+    return window, {"returned": len(window), "offset": offset,
+                    "nextOffset": end if end < len(items) else None}
+
+
 def cmd_list(args, root: str, out: Emitter) -> int:
     backend, err = open_backend(root)
     if err:
         return out.emit_err(args.json, err)
     phase = getattr(args, "phase", None)
-    if getattr(args, "lean", False):
+    # `--json` is lean unless `--full` asks for the document-derived shape: the full front is
+    # megabytes, and the MCP's `specs_list` is already lean.
+    if getattr(args, "lean", False) or (args.json and not getattr(args, "full", False)):
         listed = backend.list_specs(phase, lean=True)
+        total = len(listed)
+        listed, page = _window(listed, args)
         snap = claims.snapshot(root) if listed else None
         rows = [{
             "id": s["id"], "title": s.get("title", ""), "phase": s["phase"],
@@ -53,8 +73,8 @@ def cmd_list(args, root: str, out: Emitter) -> int:
         } for s in listed]
         unavailable = ["date", "stage", "outcome", "verification",
                        "ready", "sections", "tasks", "unreadable"]
-        obj = {"ok": True, **front_fields(root), "lean": True, "count": len(rows),
-               "specs": rows, "unavailable": unavailable}
+        obj = {"ok": True, **front_fields(root), "lean": True, "count": total,
+               "specs": rows, "unavailable": unavailable, **page}
         if args.json:
             print(json.dumps(obj, indent=2, ensure_ascii=False))
             return 0
@@ -66,6 +86,8 @@ def cmd_list(args, root: str, out: Emitter) -> int:
         print(f"  unavailable: {', '.join(unavailable)}")
         return 0
     specs = backend.list_specs(phase)
+    total = len(specs)
+    specs, page = _window(specs, args)
     rows = []
     # ONE batched read for the whole front: `read_spec` per spec re-lists the store each time.
     batch = backend.read_specs([s["id"] for s in specs])
@@ -103,7 +125,7 @@ def cmd_list(args, root: str, out: Emitter) -> int:
             **epic_meta(s["id"], info["frontmatter"]),
         })
     if args.json:
-        print(json.dumps({"ok": True, **front_fields(root), "count": len(rows), "specs": rows},
+        print(json.dumps({"ok": True, **front_fields(root), "count": total, "specs": rows, **page},
                          indent=2, ensure_ascii=False))
         return 0
     if not rows:
