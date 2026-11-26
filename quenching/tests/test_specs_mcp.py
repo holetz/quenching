@@ -425,6 +425,18 @@ class Writes(unittest.TestCase):
         payload, failed, asked = self.call("specs_promote", {"spec": 1, "to": "archive"})
         self.assertEqual((failed, payload["code"], asked), (True, "sp-gate-unmet", []))
 
+    def test_promote_dry_run_reports_the_gate_and_writes_nothing(self):
+        self.assertIn("dry_run", mcp.WRITES["specs_promote"][1]["properties"])
+        self.assertEqual(mcp._w_promote({"spec": 1, "to": "archive", "dry_run": True})[-1],
+                         "--dry-run")
+        self.assertNotIn("--dry-run", mcp._w_promote({"spec": 1, "dry_run": False}))
+        payload, failed, asked = self.call("specs_promote",
+                                           {"spec": 1, "to": "archive", "dry_run": True})
+        self.assertEqual((failed, payload["code"], asked), (True, "sp-gate-unmet", []))
+        self.assertEqual(self.backend.read_spec(1)[0]["phase"], "plans")
+        payload, failed, _ = self.call("specs_promote", {"spec": 1, "dry_run": "yes"})
+        self.assertEqual((failed, payload["code"]), (True, "mcp-bad-arguments"))
+
     def test_promote_archives_without_a_question_even_when_the_client_could_be_asked(self):
         self.backend.create_spec("plans", DOC.format(title="Done", problem="x").replace("[ ]", "[x]")
                                  + "\n## Outcome\n\nShipped.\n")
