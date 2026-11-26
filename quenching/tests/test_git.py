@@ -807,6 +807,17 @@ class Audit(RepoCase):
         self.assertEqual([(e["severity"], e["kind"], e["detail"]) for e in got],
                          [("fail", "gate-shrunk", ["run two"])])
 
+    def test_lowered_reads_a_superset_rewrite_as_strengthened_and_a_dropped_token_as_shrunk(self):
+        self._commit_file("scripts/verify_repo.sh", "# gate\nunset A B\nrun one\n", "gate")
+        _run(self.repo, "merge", "-q", "--ff-only", "spec/1")
+        self._commit_file("scripts/verify_repo.sh", "# gate\nunset A B C\nrun one\n", "strengthen")
+        got = self._lowered()
+        self.assertEqual([(e["severity"], e["kind"], e["detail"]) for e in got],
+                         [("info", "strengthened", "unset A B C")])
+        self._commit_file("scripts/verify_repo.sh", "# gate\nunset A C\nrun one\n", "drop")
+        got = self._lowered()
+        self.assertEqual([(e["severity"], e["kind"]) for e in got], [("fail", "gate-shrunk")])
+
     def test_lowered_watches_a_toolchain_helper_the_gate_calls(self):
         self._commit_file("scripts/toolchain/helper.py", "one\ntwo\n", "helper")
         _run(self.repo, "merge", "-q", "--ff-only", "spec/1")
