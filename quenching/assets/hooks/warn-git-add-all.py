@@ -29,7 +29,9 @@ ASSIGNMENT = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*=")
 GLOBAL_VALUE_OPTIONS = ("-C", "-c", "--git-dir", "--work-tree", "--namespace", "--super-prefix",
                         "--config-env")
 # `git commit` short options that take a value: the rest of a cluster after one is that value.
-COMMIT_VALUE_SHORT = "mCcFtuS"
+COMMIT_VALUE_SHORT = "mCcFt"
+# `-u[<mode>]` and `-S[<keyid>]` take their value attached only: the rest of the cluster is that value.
+COMMIT_ATTACHED_SHORT = "uS"
 COMMIT_VALUE_LONG = ("--message", "--file", "--reuse-message", "--reedit-message", "--template")
 RULES = {
     "blanket": ("/quenching-git commit never stages with git add -A, --all or `.`",
@@ -104,6 +106,8 @@ def _commit_skips_hooks(args: list[str]) -> bool:
             for index, letter in enumerate(arg[1:], 1):
                 if letter == "n":
                     return True
+                if letter in COMMIT_ATTACHED_SHORT:
+                    break
                 if letter in COMMIT_VALUE_SHORT:
                     skip = index == len(arg) - 1
                     break
