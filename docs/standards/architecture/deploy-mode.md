@@ -100,7 +100,9 @@ purpose. A manifest entry without a hash cannot tell the two apart and is read a
 an entry recording `"source"`, where `--check` still reports a stale copy by its bytes. On the
 delete path — an owned file leaving the tree, and `--remove` — a `"source"` entry has no source
 left to compare with, so the commit is the record: a file git reports as differing from `HEAD`
-(modified, staged or untracked) is `edited`, and one equal to `HEAD` is a `delete`.
+(modified, staged or untracked) is `edited`, and one equal to `HEAD` is a `delete`. A git that
+cannot answer — absent, timed out, no repository, an unreadable `HEAD` — proves nothing, so the
+file is `edited` and kept: only a clean answer lets it go.
 
 A **tracked mirror of a module outside the selection** is kept in step with the source. A skill
 folder carrying its `SKILL.md`, or a package carrying a `.py`, that the target already holds for a

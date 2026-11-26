@@ -6,6 +6,7 @@ import io
 import json
 import os
 import pathlib
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -304,6 +305,27 @@ class Deploy(unittest.TestCase):
         self.assertEqual("edited", leaving.pop(".agents/skills/quenching-design/SKILL.md"))
         self.assertTrue(leaving)
         self.assertEqual({"delete"}, set(leaving.values()))
+
+    def assert_remove_keeps_every_owned_file(self):
+        code, payload = self.run_deploy("--remove")
+        self.assertEqual(1, code)
+        self.assertIn(".agents/skills/quenching-specs/SKILL.md", payload["kept"])
+        owned = {c["change"] for c in payload["changes"] if c["path"].startswith(".agents/skills/")}
+        self.assertEqual({"edited"}, owned)
+
+    def test_the_source_repository_keeps_the_file_when_git_is_absent(self):
+        # A git that cannot answer is no proof the file equals HEAD, so deleting it is not safe.
+        self.write("quenching/assets/modules.json", "{}\n")
+        self.assertEqual(0, self.run_deploy("--modules", "core", "--write")[0])
+        self.commit_all()
+        with mock.patch("quenching.deploy.cli.subprocess.run", side_effect=FileNotFoundError("git")):
+            self.assert_remove_keeps_every_owned_file()
+
+    def test_the_source_repository_keeps_the_file_outside_a_git_repository(self):
+        self.write("quenching/assets/modules.json", "{}\n")
+        self.assertEqual(0, self.run_deploy("--modules", "core", "--write")[0])
+        shutil.rmtree(self.target / ".git")
+        self.assert_remove_keeps_every_owned_file()
 
     def test_a_crlf_checkout_of_the_surface_is_clean_and_a_real_edit_is_still_edited(self):
         self.assertEqual(0, self.run_deploy("--modules", "core", "--write")[0])

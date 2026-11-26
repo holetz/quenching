@@ -312,14 +312,18 @@ def _edited(target: Path, rel: str, recorded: str | None, deleting: bool = False
 
 
 def _uncommitted(target: Path, rel: str) -> bool:
-    """Git reports the path as differing from `HEAD` (modified, staged or untracked)."""
+    """Git reports the path as differing from `HEAD` (modified, staged or untracked).
+
+    A git that cannot answer (absent, timed out, no repository, unreadable `HEAD`) proves nothing,
+    so the file is read as edited and kept: only a clean answer lets it be deleted.
+    """
     try:
         done = subprocess.run(["git", "-C", str(target), "status", "--porcelain", "--", rel],
                               capture_output=True, text=True, encoding="utf-8", errors="replace",
                               timeout=30)
     except (OSError, subprocess.SubprocessError):
-        return False
-    return done.returncode == 0 and bool(done.stdout.strip())
+        return True
+    return done.returncode != 0 or bool(done.stdout.strip())
 
 
 def _same(path: Path, data: bytes) -> bool:
