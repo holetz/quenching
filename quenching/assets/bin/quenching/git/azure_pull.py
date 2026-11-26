@@ -91,6 +91,27 @@ def _checks(number: int, org: str) -> tuple[str, list[str], str]:
     return ("green" if certified else "no-checks"), [], ""
 
 
+#: `_checks`' Azure states in the vocabulary `cq git pr checks` publishes for every provider.
+CHECKS_STATE = {"green": "green", "failed": "red", "skipped-required": "skipped",
+                "pending": "pending", "no-checks": "none", "checks-unreadable": "error"}
+
+
+def checks_azure(args, match: re.Match) -> int:
+    """Read-only `pr checks` for an Azure web URL: the build and blocking policies, by `az`."""
+    org = "https://" + (match["modern"] or match["legacy"])
+    state, names, message = _checks(int(match["number"]), org)
+    payload = {"ok": True, "url": args.url, "provider": "azure", "state": CHECKS_STATE[state],
+               "checks": names}
+    if state == "no-checks":
+        payload.update(reason="no-policy", message="no build policy evaluates this PR: the "
+                                                   "target branch has no build validation")
+    elif state == "checks-unreadable":
+        payload.update(reason="unreadable", message=message)
+    emit(args.json, payload, f"checks {payload['state']}: {' '.join(names)}"
+         + (f" — {payload['message']}" if payload.get("message") else ""))
+    return OK
+
+
 def merge_azure(args, match: re.Match) -> int:
     number = int(match["number"])
     org = "https://" + (match["modern"] or match["legacy"])

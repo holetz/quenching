@@ -8,8 +8,9 @@ explicitly — on GitHub the body goes on stdin; on Azure it opens the PR with n
 option at all, so no policy is bypassed and nothing completes on its own, and a body past
 Azure's 4000-character description limit goes in cut at a section boundary and whole as the PR's
 first comment thread (`az devops invoke`, argv built here too). `probe` reads the
-provider's route and `view` one PR's state, base and head; neither writes. `merge` dispatches
-Azure web URLs to `azure_pull` (build validation policies, pinned head, no-fast-forward,
+provider's route and `view` one PR's state, base and head; neither writes. `checks` reads a
+GitHub pull URL through `gh` and an Azure web URL through `az` policies, in one vocabulary.
+`merge` dispatches Azure web URLs to `azure_pull` (build validation policies, pinned head, no-fast-forward,
 no policy bypass). On GitHub it reads `gh pr checks`
 first and merges only with every check green — a `skipping` check the gate requires is not
 green — and the PR's `mergeStateStatus` clean, pinning the head it read with
@@ -130,13 +131,19 @@ def explain_none(err: str) -> tuple[str, str]:
 
 
 def _checks_read(args) -> int:
-    """Read-only: `state` green|red|pending|none for a PR's checks, their names, and why `none`."""
-    if not PR_URL.fullmatch(args.url or ""):
+    """Read-only: `state` green|red|skipped|pending|none|error for a PR's checks, their names,
+    and why `none`; a GitHub pull URL reads `gh`, an Azure web URL its policies through `az`."""
+    from quenching.git.azure_pull import AZURE_PR_URL, checks_azure
+
+    azure = AZURE_PR_URL.fullmatch(args.url or "")
+    if not azure and not PR_URL.fullmatch(args.url or ""):
         return refuse({"code": "git-pr-url-invalid",
                        "message": f"not a pull-request URL: {args.url}"}, args.json)
+    if azure:
+        return checks_azure(args, azure)
     state, checks, err = _checks(args.url)
     names = sorted(str(c.get("name")) for c in checks if isinstance(c, dict))
-    payload = {"ok": True, "url": args.url, "state": state, "checks": names}
+    payload = {"ok": True, "url": args.url, "provider": "github", "state": state, "checks": names}
     if state == "error":
         reason, message = explain_none(err)
         if reason == "no-workflow":
