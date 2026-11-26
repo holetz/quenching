@@ -31,7 +31,7 @@ An epic id or a list of spec ids, plus an optional `autonomous` flag from the co
 
 ## The protocol (this is the only copy; workers never read a scratchpad)
 
-1. **Plan.** Build a DAG from `specs_next(epic=<id>)` when a composite was given, otherwise from
+1. **Plan.** Build a DAG from `specs_next(epic=<id>, autonomous=true)` (`autonomous` only when declared; `specs_epic_progress` stays the source of `after:` and groups) when a composite was given, otherwise from
    each spec's declared dependencies plus the `[P]` groups of `specs_parallel(spec=<id>)`. Run in waves: no
    worker starts before every dependency is merged, through step 4's `merge` step. Print the
    waves once, then run them.

@@ -226,6 +226,21 @@ class Scenarios:
         add(b, 2)
         self.assertEqual([], ready_labels(b))
 
+    def test_autonomous_lists_captured_members_without_a_pending_dependency(self):
+        b = self.backend
+        b.create_spec("plans", epic_doc())
+        for n in (1, 2, 3):
+            b.create_spec("plans", doc(f"Captured {n}"))    # no `approved:`, nothing developed
+        add(b, 2)
+        add(b, 3)
+        add(b, 4, after="S1")
+        self.assertEqual([], ready_labels(b))
+        _, got = run(next_cmd.cmd_next, b, epic=EPIC_ID, spec=None, front=False, limit=None,
+                     autonomous=True)
+        self.assertEqual(["S1", "S2"], [r["label"] for r in got["ready"]])
+        self.assertTrue(all(r["needsDevelop"] for r in got["ready"]))
+        self.assertEqual(2, got["readyTotal"])
+
     def test_next_orders_by_priority_and_honours_limit(self):
         b = self.backend
         b.create_spec("plans", epic_doc())

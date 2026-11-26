@@ -376,7 +376,7 @@ CLI's; the server holds no store logic.
 | `specs_status` | `spec` | one spec's sections, stage, tasks and gates |
 | `specs_show` | `spec`, `tasks` (ids, at most 20) | the map, or only the named tasks |
 | `specs_section` | `spec`, `headings` or `moment`, `scope` | the named sections only |
-| `specs_next` | `spec` or `epic` (neither: the ranked front), `limit` | the next action, the epic's ready members, or the front, paged |
+| `specs_next` | `spec` or `epic` (neither: the ranked front), `limit`, `autonomous` (with `epic`) | the next action, the epic's ready members (with `autonomous`, also those to develop first), or the front, paged |
 | `specs_epic_progress` | `epic` | one epic's progress |
 
 Write tools run the same CLI verbs, in the same process, and add no store logic:

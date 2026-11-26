@@ -29,7 +29,7 @@
   "files": {
     ".agents/quenching/VERSION": "26fc6a53c41aacfac3889c7275bfdb81d2de7d35e9906fb926614b351c347fbd",
 
-    ".agents/quenching/agents/spec-orchestrator.md": "c704188d52a467e48624f700d7e9d07d71af60eea0308de4261afaf3ce6c5666",
+    ".agents/quenching/agents/spec-orchestrator.md": "e3388bfc3b38bc518743fd424abb7602a322d1416a499a3282acadcd1db19a2f",
 
     ".agents/quenching/agents/spec-reviewer.md": "1a6302d01c452501e59f9c8924f3ee7fcdc2ebb8d150e54b2b4a53441428e1b6",
 
@@ -377,7 +377,7 @@
 
     ".agents/quenching/assets/bin/quenching/specs/commands/claim.py": "c5137fc1f1f2a59094d4398f6efd12bdf718e8de5b6b2ebf092dceb5e8eb996d",
 
-    ".agents/quenching/assets/bin/quenching/specs/commands/cli.py": "d3d5b5a4739b860d4c97942245e2abcb434524e73c0ca614d8527ef0742803e2",
+    ".agents/quenching/assets/bin/quenching/specs/commands/cli.py": "48ae424a27d8f7ba7f5f38198d4b76c43a862892637b111b8a845a4e6979d5f3",
 
     ".agents/quenching/assets/bin/quenching/specs/commands/create.py": "0055f88ed8138abe9177da504812393006aed9d0348570e4f884fe5067c98161",
 
@@ -385,7 +385,7 @@
 
     ".agents/quenching/assets/bin/quenching/specs/commands/doctor.py": "8eadb59e7fe5342f18fc4f3c132eccb7645adb452f789b44d3378baae9cb5e5c",
 
-    ".agents/quenching/assets/bin/quenching/specs/commands/epic.py": "bf9ab363777da909081f2aeb5490ef75396193ba62cf901785f9b72ec8ecb3bd",
+    ".agents/quenching/assets/bin/quenching/specs/commands/epic.py": "925f0c091ba1d9a893215a82a78c53770d90559e35dcc1255487e903c510663a",
 
     ".agents/quenching/assets/bin/quenching/specs/commands/estimate.py": "9bd4a61484e22f5b380ca2ed976e5ec0dce1298262fe0f7d80cbe9b4b59a241a",
 
@@ -425,7 +425,7 @@
 
     ".agents/quenching/assets/bin/quenching/specs/config.py": "3b21d2a35ccbe3b3e41361c8f0e5e92ca462f977a7ca34fee81677a88a118763",
 
-    ".agents/quenching/assets/bin/quenching/specs/mcp.py": "073ffc1266a7887834869fd9d3393d206735d3996b13beb9621eee2960627360",
+    ".agents/quenching/assets/bin/quenching/specs/mcp.py": "c0b4a75d31955fa4d44f8f2d7846bc7d2df55c982c27a0c918f23cd204a573f4",
 
     ".agents/quenching/assets/bin/quenching/specs/members.py": "37199b9fcac8eb5a958e9e3e8441d1c8432542aa908d5fa6607690e7ed31ad83",
 
@@ -887,7 +887,7 @@
 
     ".agents/skills/quenching-toolchain/references/toolchain-align/bands.md": "d73941d0034ffd0cbc3b3c79bc992d432b1a802e3d86926730a5943309034b97",
 
-    ".claude/agents/quenching-spec-orchestrator.md": "c704188d52a467e48624f700d7e9d07d71af60eea0308de4261afaf3ce6c5666",
+    ".claude/agents/quenching-spec-orchestrator.md": "e3388bfc3b38bc518743fd424abb7602a322d1416a499a3282acadcd1db19a2f",
 
     ".claude/agents/quenching-spec-reviewer.md": "1a6302d01c452501e59f9c8924f3ee7fcdc2ebb8d150e54b2b4a53441428e1b6",
 
@@ -1107,7 +1107,7 @@
 
     ".claude/skills/skill-map/SKILL.md": "eb309cf9d098a5daccbabff27d97f3da24a967c888bbde88f0400cc6af09b5be",
 
-    ".github/agents/quenching-spec-orchestrator.agent.md": "d65f75064f5d8133b50d2c8de80e56affcfd69e9278effaebf001aaba1230bdb",
+    ".github/agents/quenching-spec-orchestrator.agent.md": "54261b3c21e668fe6765a522c2e5963a931ad1a83338c9ccc30551a10fa20c9e",
 
     ".github/agents/quenching-spec-reviewer.agent.md": "62bb5ec0ac88330e4d64e50558c31312a489f362e50e4147d6db9cefee302662",
 
@@ -1121,7 +1121,7 @@
 
     ".github/instructions/import-memory-models.instructions.md": "47cf9a95b9ca21b9124cdd90fd5c7d3c75a39296c14f998bc9bcec5d861cda8d",
 
-    ".opencode/agents/quenching-spec-orchestrator.md": "939a7bb3afd2a39a74f4fd107a4a0c619e06d266f683b42e03891de677b6ba13",
+    ".opencode/agents/quenching-spec-orchestrator.md": "6ac3510580fb1b6e914670dbe5e6b941642348d97c719a0919c032c5f5bf08f0",
 
     ".opencode/agents/quenching-spec-reviewer.md": "1ee7168eaa09561df1e163c088a7922eb557b49d1004417f66f3d05962dc270e",
 

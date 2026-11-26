@@ -160,7 +160,8 @@ def _next(args: dict) -> list[str]:
     if epic and spec:
         raise ToolArgs("give `epic` or `spec`, not both")
     if epic:
-        return ["next", "--epic", epic, "--limit", str(_page(args)[0])]
+        return ["next", "--epic", epic, "--limit", str(_page(args)[0]),
+                *(["--autonomous"] if args.get("autonomous") else [])]
     if spec:
         return ["next", "--spec", spec]
     return ["next", "--front"]
@@ -213,7 +214,10 @@ TOOLS: dict[str, tuple] = {
         "The next action of one spec (`spec`, composition-aware: a ready task, else the ready "
         "members), the member specs of a composite ready to run now (`epic`), or the ranked "
         "front of every active spec (neither), paged.",
-        _schema({"spec": SPEC, "epic": SPEC, **PAGE}), _next, None),
+        _schema({"spec": SPEC, "epic": SPEC, **PAGE,
+                 "autonomous": {"type": "boolean", "description":
+                                "with `epic`: also the members to develop first (needsDevelop)"}}),
+        _next, None),
     "specs_epic_progress": (
         "One spec's composition: progress per wave, its blocked members and critical path.",
         _schema({"epic": SPEC}, ["epic"]), _epic, None),
