@@ -394,7 +394,11 @@ def _w_promote(args: dict) -> list[str]:
     argv = ["promote", _id(args, "spec", True)]
     to, outcome = _choice(args, "to", ("plans", "archive")), _choice(args, "outcome",
                                                                        ("done", "abandoned"))
-    return argv + (["--to", to] if to else []) + (["--outcome", outcome] if outcome else [])
+    dry = args.get("dry_run", False)
+    if not isinstance(dry, bool):
+        raise ToolArgs("`dry_run` must be true or false")
+    return (argv + (["--to", to] if to else []) + (["--outcome", outcome] if outcome else [])
+            + (["--dry-run"] if dry else []))
 
 
 def _gate_record(args: dict) -> str | None:
@@ -485,9 +489,11 @@ WRITES: dict[str, tuple] = {
     "specs_promote": (
         "Move a spec between plans/ and archive/ (`to`, `outcome`). The approval already given "
         "covers the close-out, so the verb runs without asking; it is never forced and refuses "
-        "(exit 2) only while the `## Outcome` gate or an open task blocks a `done` archive.",
+        "(exit 2) only while the `## Outcome` gate or an open task blocks a `done` archive. "
+        "`dry_run` reports what the move would do, or which gate refuses it, and writes nothing.",
         _schema({"spec": SPEC, "to": {"type": "string", "enum": ["plans", "archive"]},
-                 "outcome": {"type": "string", "enum": ["done", "abandoned"]}}, ["spec"]),
+                 "outcome": {"type": "string", "enum": ["done", "abandoned"]},
+                 "dry_run": {"type": "boolean"}}, ["spec"]),
         _w_promote, None, None, None),
     "specs_push": (
         "Publish every pending local write of this clone in one push of the store branch, the "
