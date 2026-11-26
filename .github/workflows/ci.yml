@@ -35,17 +35,21 @@ jobs:
           enable-cache: true
       - name: Install locked dependencies
         run: uv sync --frozen --all-groups
-      # One suite execution per cell: the gate runs it once, randomized and parallel, under
-      # pytest-randomly/pytest-xdist/pytest-cov, and the floor reads that same artifact. The
-      # deterministic checks (doctors, generated trees, docs build) read the same checkout
-      # whatever the interpreter, so the newest Python only adds the compatibility run.
-      - name: Full repository gate on the floor Python (unit tests under pytest-randomly, floor, doctors, builds)
-        if: matrix.python-version == '3.11'
+      # One suite execution per cell, on every event. The newest Python carries the gate: the suite
+      # runs once, randomized and parallel, under pytest-randomly/pytest-xdist/pytest-cov, measured
+      # through `sys.monitoring` (the gate sets COVERAGE_CORE=sysmon on >= 3.12; 3.11's C tracer
+      # tripled the suite), and the floor reads that same artifact. The deterministic checks
+      # (doctors, generated trees, docs build) read the same checkout whatever the interpreter. The
+      # floor Python (requires-python) runs the whole suite unmeasured: the compatibility proof.
+      # The runner holds one gate, so its worker budget is every CPU, not the half the slots plugin
+      # leaves a lone gate for a concurrent peer.
+      - name: Full repository gate on the newest Python (unit tests under pytest-randomly, floor, doctors, builds)
+        if: matrix.python-version == '3.13'
         env:
           PYTEST_RANDOMLY_SEED: ${{ github.run_id }}
-        run: uv run bash scripts/verify_repo.sh
-      - name: Unit suite on the newest supported Python
-        if: matrix.python-version != '3.11'
+        run: QUENCHING_TEST_SLOTS="$(nproc)" uv run bash scripts/verify_repo.sh
+      - name: Unit suite on the floor Python
+        if: matrix.python-version == '3.11'
         run: uv run pytest quenching/tests -q -p randomly -n auto --randomly-seed=${{ github.run_id }}
 
   windows:
