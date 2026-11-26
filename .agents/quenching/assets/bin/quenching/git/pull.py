@@ -1,4 +1,4 @@
-"""`cq git pr create|probe|view|record|merge` — the pull-request writes, with a fixed argv.
+"""`cq git pr create|probe|view|checks|record|merge` — the pull-request writes, with a fixed argv.
 
 The `spec-orchestrator` (the only agent that publishes) holds no `gh pr create`/`gh pr merge` grant and no `az repos pr` grant: a
 pattern on the command text never fenced `-d`, `-s`, `-r`, an alias, or Azure's
@@ -106,6 +106,50 @@ def _checks(url: str) -> tuple[str, list[dict], str]:
                 return "skipped", [c for c in checks if c.get("name") in skipped], err.strip()
         return "green", checks, err.strip()
     return "pending", checks, err.strip()
+
+
+NONE_MESSAGES = {
+    "no-workflow": "no check is reported for this head: probably no workflow was queued yet "
+                   "(Actions has not run, or is still starting); re-read in a moment",
+    "permission": "gh could not read the checks: the token probably lacks permission to read "
+                  "them (checks:read / repo scope)",
+    "unreachable": "gh could not reach the API; the checks are unknown, not absent",
+}
+
+
+def explain_none(err: str) -> tuple[str, str]:
+    """`reason` and `message` for a PR with no readable check, from gh's stderr."""
+    lowered = err.lower()
+    if any(w in lowered for w in ("403", "permission", "not accessible", "auth", "forbidden")):
+        reason = "permission"
+    elif any(w in lowered for w in ("connect", "timeout", "timed out", "resolve", "network")):
+        reason = "unreachable"
+    else:
+        reason = "no-workflow"
+    return reason, NONE_MESSAGES[reason] + (f" — gh: {err.strip()}" if err.strip() else "")
+
+
+def _checks_read(args) -> int:
+    """Read-only: `state` green|red|pending|none for a PR's checks, their names, and why `none`."""
+    if not PR_URL.fullmatch(args.url or ""):
+        return refuse({"code": "git-pr-url-invalid",
+                       "message": f"not a pull-request URL: {args.url}"}, args.json)
+    state, checks, err = _checks(args.url)
+    names = sorted(str(c.get("name")) for c in checks if isinstance(c, dict))
+    payload = {"ok": True, "url": args.url, "state": state, "checks": names}
+    if state == "error":
+        reason, message = explain_none(err)
+        if reason == "no-workflow":
+            payload.update(reason="unreadable", message=err or "gh returned no readable checks")
+        elif reason == "permission":
+            payload.update(state="none", reason=reason, message=message)
+        else:
+            payload.update(reason=reason, message=message)
+    elif state == "none":
+        payload["reason"], payload["message"] = explain_none(err)
+    emit(args.json, payload, f"checks {payload['state']}: {' '.join(names)}"
+         + (f" — {payload['message']}" if payload.get("message") else ""))
+    return OK
 
 
 def _required_skipped(url: str, checks: list[dict]) -> set[str]:
@@ -256,6 +300,8 @@ def _merge(args) -> int:
             state, "checks-unreadable")
         if refusal[1]:
             payload["message"] = refusal[1]
+        elif state == "none":
+            payload["noneReason"], payload["message"] = explain_none(message)
         elif message:
             payload["message"] = message
         emit(args.json, payload, f"not merged: {payload['reason']} {' '.join(names)}".rstrip())
@@ -631,4 +677,6 @@ def cmd_pr(args) -> int:
         return _record(args)
     if args.action == "probe":
         return _probe(args)
+    if args.action == "checks":
+        return _checks_read(args)
     return _merge(args) if args.action == "merge" else _create(args)

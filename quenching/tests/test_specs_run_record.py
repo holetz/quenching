@@ -96,6 +96,13 @@ class RunRecord(unittest.TestCase):
         self.assertIn("git_pr_merge(url=<url>, spec=<id>, wait=90)`", orchestrator)
         self.assertFalse((path.parent / "git-steward.md").exists())
 
+    def test_orchestrator_reintegrates_the_base_before_verifying_a_sibling(self):
+        text = " ".join((pathlib.Path(__file__).resolve().parents[1] / "agents"
+                         / "spec-orchestrator.md").read_text().split())
+        rule = text.split("**Re-integrate before you verify:**", 1)[1].split("**Stamp the verdict.**", 1)[0]
+        self.assertIn("the word `conclude`", rule)
+        self.assertIn("spec-verifier runs only on the head that return pushed", rule)
+
 
 if __name__ == "__main__":
     unittest.main()
