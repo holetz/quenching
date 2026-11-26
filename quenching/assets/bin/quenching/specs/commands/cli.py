@@ -31,6 +31,19 @@ from quenching.specs.parse import PHASES
 from quenching.specs.schema import DEFAULT_VERIFICATION, OUTCOMES, VERIFICATION_POLICIES
 
 
+def _bounded(low: int, high: int):
+    """An argparse `type` for an integer in `[low, high]`, the MCP's page bounds."""
+    def parse(value: str) -> int:
+        try:
+            number = int(value)
+        except ValueError:
+            raise argparse.ArgumentTypeError(f"{value!r} is not an integer") from None
+        if not low <= number <= high:
+            raise argparse.ArgumentTypeError(f"must be an integer from {low} to {high}")
+        return number
+    return parse
+
+
 def add_json(sp):
     sp.add_argument("--json", action="store_true", help="machine-readable output")
     return sp
@@ -83,7 +96,15 @@ def _add_read(sub) -> None:
     sp.add_argument("--phase", choices=list(PHASES),
                     help="cut the listing to one phase (default: every phase)")
     sp.add_argument("--lean", action="store_true",
-                    help="use the provider's native index; omit document-derived fields")
+                    help="use the provider's native index; omit document-derived fields "
+                         "(`--json` is lean unless `--full`)")
+    sp.add_argument("--full", action="store_true",
+                    help="with --json, the complete document-derived shape (stage, tasks)")
+    sp.add_argument("--limit", type=_bounded(1, 200), metavar="N",
+                    help="page size, 1-200 (default 50 once --offset is given); "
+                         "absent, every row is listed")
+    sp.add_argument("--offset", type=_bounded(0, 10**9), metavar="N",
+                    help="rows to skip")
 
     sp = add_json(sub.add_parser("status", help="one spec's sections, stage, tasks, gates — "
                                                 "or its composition when it lists member specs"))

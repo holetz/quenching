@@ -428,7 +428,7 @@ class PendingWrites(GitStoreFixture):
         from quenching.specs.commands import read as read_mod
         _, backend = self._seeded(3)
         emitter = mock.Mock()
-        args = mock.Mock(json=True, lean=False, phase=None)
+        args = mock.Mock(json=True, lean=False, full=True, limit=None, offset=None, phase=None)
         with mock.patch.object(read_mod, "open_backend", return_value=(backend, None)), \
                 mock.patch.object(GitBackend, "read_spec", side_effect=AssertionError("per-spec read")), \
                 mock.patch.object(read_mod, "front_fields", return_value={}), \
