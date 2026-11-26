@@ -1153,6 +1153,11 @@ def _lowered(cwd: str, base: str, tip: str, env: dict[str, str], errors: list[di
         if gate:
             lost = [m for m in minus if m and not m.startswith("#") and m not in plus
                     and _swap(m, mapping) not in plus]
+            for m in list(lost):                  # a rewrite that keeps every token and adds more strengthens the line
+                wider = next((p for p in plus if set(m.split()) < set(p.split())), None)
+                if wider:
+                    lost.remove(m)
+                    found.append({"path": path, "severity": "info", "kind": "strengthened", "detail": wider})
             if lost:
                 found.append({"path": path, "severity": "fail", "kind": "gate-shrunk", "detail": lost})
         if CODE_EXT.search(path):
