@@ -24,6 +24,7 @@ import importlib.util
 import json
 import os
 import re
+import sys
 from importlib.machinery import SourceFileLoader
 from typing import NamedTuple
 
@@ -303,14 +304,23 @@ _described: dict[str, dict] = {}
 
 def described(rows: dict[str, Row]) -> list[dict]:
     """`tools/list`: each pillar's `build_parser()` runs once per pass, and a tool once described
-    is kept for the life of the process — the parsers it reads do not change while it runs."""
-    parsers: dict[str, argparse.ArgumentParser] = {}
+    is kept for the life of the process — the parsers it reads do not change while it runs.
+
+    A pillar whose parser does not build is left out of this pass and named on stderr, so one
+    broken pillar never empties the list; the next pass tries it again."""
+    parsers: dict[str, argparse.ArgumentParser | None] = {}
     for name, row in rows.items():
         if name not in _described:
             if row.pillar not in parsers:
-                parsers[row.pillar] = _pillar_parser(row.pillar)
-            _described[name] = describe(name, row, parsers[row.pillar])
-    return [_described[name] for name in rows]
+                try:
+                    parsers[row.pillar] = _pillar_parser(row.pillar)
+                except Exception as exc:  # an import or build failure skips this pillar
+                    parsers[row.pillar] = None
+                    print(f"quenching mcp: pillar {row.pillar} skipped — {type(exc).__name__}: {exc}",
+                          file=sys.stderr)
+            if parsers[row.pillar] is not None:
+                _described[name] = describe(name, row, parsers[row.pillar])
+    return [_described[name] for name in rows if name in _described]
 
 
 def mount_pillars(value: str) -> tuple[str, ...]:

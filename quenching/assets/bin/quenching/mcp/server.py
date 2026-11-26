@@ -132,7 +132,16 @@ class Composite:
         return self._owner(name) is not None
 
     def list_tools(self) -> list[dict]:
-        return [tool for part in self.parts for tool in part.list_tools()]
+        """The union of the parts' tools; a part that raises is left out and named on stderr, so
+        one broken part never empties the list."""
+        tools = []
+        for part in self.parts:
+            try:
+                tools.extend(part.list_tools())
+            except Exception as exc:  # the other parts still answer
+                print(f"quenching mcp: part {type(part).__name__} skipped — "
+                      f"{type(exc).__name__}: {exc}", file=sys.stderr)
+        return tools
 
     def call_tool(self, name, args, root, session):
         return self._owner(name).call_tool(name, args, root, session)

@@ -162,6 +162,15 @@ def _is_source(root: str) -> bool:
     return os.path.isfile(os.path.join(root, "VERSION")) and os.path.isfile(os.path.join(root, "assets", "modules.json"))
 
 
+def _carries_source(path: str) -> bool:
+    """A package directory with anything beside `__pycache__`; one left holding only bytecode is
+    a module a newer deploy removed, which Python would still import as an empty namespace."""
+    try:
+        return any(name != "__pycache__" for name in os.listdir(path))
+    except OSError:
+        return False
+
+
 def package_root(package: str) -> str | None:
     """The installed root (the source, or a target's `.agents/quenching/`) carrying `package`, or None.
 
@@ -170,7 +179,7 @@ def package_root(package: str) -> str | None:
     """
     owner = module_owners().get(package)
     for entry in sys.path:
-        if os.path.basename(os.path.normpath(entry)) != "bin" or not os.path.isdir(os.path.join(entry, "quenching", package)):
+        if os.path.basename(os.path.normpath(entry)) != "bin" or not _carries_source(os.path.join(entry, "quenching", package)):
             continue
         root = os.path.dirname(os.path.dirname(os.path.realpath(entry)))
         if owner is None or _is_source(root):
