@@ -296,9 +296,10 @@ def _edited(target: Path, rel: str, recorded: str | None) -> bool:
     """The owned file no longer holds the bytes the last deploy wrote: someone edited it.
 
     Without a recorded hash (a manifest older than the field) the edit is unknowable, so the
-    answer is no — the file is treated as the last deploy's, exactly as before.
+    answer is no — the file is treated as the last deploy's, exactly as before. So it is for the
+    source repository's own manifest, which records `SOURCE_DERIVED` instead of a hash.
     """
-    if recorded is None or rel in TOOL_REWRITTEN:
+    if recorded in (None, deploy_tree.SOURCE_DERIVED) or rel in TOOL_REWRITTEN:
         return False
     data = (target / rel).read_bytes()
     # The raw hash still matches a manifest a Windows deploy recorded before the tree was canonical.
