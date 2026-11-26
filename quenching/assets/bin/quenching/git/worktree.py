@@ -200,18 +200,30 @@ def _setup(path: str) -> dict | None:
 
     The declaration is read from the worktree just cut — the fetched base, not the caller's tree —
     and is its own consent (git/isolation.md): it is printed verbatim before it runs, its output
-    goes to stderr so `--json` stays parseable, and a failure is reported, never undone."""
+    goes to stderr so `--json` stays parseable, and a failure is reported, never undone.
+
+    The MCP server calls this verb in-process with `sys.stderr` held in memory, a stream with no
+    descriptor a child can inherit: there the output is captured and written to it afterwards,
+    so the setup runs the same from the CLI and from a tool call."""
     command = namespace(load_config(path), "shared").get("worktreeSetup")
     if not isinstance(command, str) or not command.strip():
         return None
     command = command.strip()
     print(f"setup: {command}", file=sys.stderr, flush=True)
     try:
-        code = subprocess.run(command, shell=True, cwd=path, stdin=subprocess.DEVNULL,
-                              stdout=sys.stderr, stderr=sys.stderr).returncode
+        sys.stderr.fileno()
+    except (AttributeError, OSError, ValueError):
+        sink = None
+    else:
+        sink = sys.stderr
+    try:
+        done = subprocess.run(command, shell=True, cwd=path, stdin=subprocess.DEVNULL,
+                              stdout=sink or subprocess.PIPE, stderr=sink or subprocess.STDOUT)
     except OSError as exc:
         return {"command": command, "exit": None, "ok": False, "message": str(exc)}
-    return {"command": command, "exit": code, "ok": code == 0}
+    if sink is None and done.stdout:
+        sys.stderr.write(done.stdout.decode("utf-8", "replace"))
+    return {"command": command, "exit": done.returncode, "ok": done.returncode == 0}
 
 
 SETUP_MARKER = "quenching-setup"
