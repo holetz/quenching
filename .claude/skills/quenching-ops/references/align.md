@@ -31,7 +31,7 @@ Resolve `cq` per
 Resolve the tool, then run the verifier before reading the operations tree:
 
 ```text
-ops_doctor(root="$TARGET_ROOT")
+ops_read(verb="doctor", root="$TARGET_ROOT")
 ```
 
 When it exits `0` with no findings, report "ops conformant, nothing to align" and stop. Do not
@@ -49,7 +49,7 @@ non-clean verifier result has authorized the inventory stage below.
 Only after exit `1`, read the verifier's JSON and run the single inventory pass:
 
 ```text
-ops_inventory(root="$TARGET_ROOT")
+ops_read(verb="inventory", root="$TARGET_ROOT")
 ```
 
 Read `ops-align/bands.md`, `ops-align/entrypoint-contract.md`, `ops-align/lifecycle.md`, and
@@ -91,14 +91,14 @@ If the plan is rejected, write nothing and stop.
 ### 5. Apply only the first two bands
 
 Under the authorization, apply the mechanical closures and the bounded structural repairs. Use
-`ops_registry(write=true)` only for a mechanical registry finding, and edit only the declared
+`ops_write(verb="registry", write=true)` only for a mechanical registry finding, and edit only the declared
 operations root or registry path for a structural finding. Never arm a write-capable entry point,
 archive an entry point, re-enable a disabled check, or select a router the target did not declare.
 
 After the edits, run the same probe again:
 
 ```text
-ops_doctor(root="$TARGET_ROOT")
+ops_read(verb="doctor", root="$TARGET_ROOT")
 ```
 
 If the probe still reports findings, distinguish remaining judgement residue from failed
@@ -124,5 +124,5 @@ human-owned action for every judgement finding.
 - One plan and one routine confirmation cover the pass; code-coupled and irreversible actions keep
   their own confirmation.
 - Mechanical and structural findings may be applied; judgement findings are report-only.
-- The closing verifier is the same `ops_doctor()` program as the probe.
+- The closing verifier is the same `ops_read(verb="doctor")` program as the probe.
 - The operations front's own report is the only run record; no sweep log is written.

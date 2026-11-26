@@ -249,6 +249,8 @@
 
     ".agents/quenching/assets/bin/quenching/mcp/coverage.py": "source",
 
+    ".agents/quenching/assets/bin/quenching/mcp/grouped.py": "source",
+
     ".agents/quenching/assets/bin/quenching/mcp/resources.py": "source",
 
     ".agents/quenching/assets/bin/quenching/mcp/server.py": "source",

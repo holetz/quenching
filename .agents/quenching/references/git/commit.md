@@ -7,7 +7,7 @@ rule governs whether the defaults below apply at all.
 
 ## Contents
 
-`components_read(path=<this file>)` returns the heading index; `sections=["§X"]` addresses one.
+`components_read(verb="read", path=<this file>)` returns the heading index; `sections=["§X"]` addresses one.
 
 ## Commit messages
 
@@ -47,7 +47,7 @@ branch when the archived records must continue resolving by subject.
 <!-- rules -->
 
 The task→commit link is the **subject line of the commit**, written onto the task line by
-`specs_task(action="check", subject=…)`:
+`specs_write(verb="task", action="check", subject=…)`:
 
 ```markdown
 - [x] 3.2 Validate the token

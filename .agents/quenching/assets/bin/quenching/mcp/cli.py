@@ -15,7 +15,7 @@ import json
 import os
 
 from quenching.common.output import CQArgumentParser
-from quenching.mcp import catalog, resources, server
+from quenching.mcp import catalog, grouped, resources, server
 
 
 def build_parser() -> CQArgumentParser:
@@ -44,9 +44,10 @@ def only_pillars(value: str | None) -> tuple[tuple[str, ...] | None, dict | None
     return names, None
 
 
-def surface(present=None, only=None) -> server.Composite:
-    return server.Composite("quenching", [resources.ReferencesSurface(),
-                                          catalog.surface(present, only)])
+def surface(present=None, only=None) -> grouped.GroupedSurface:
+    """The published server: one tool per pillar and class over the catalog and the specs tools."""
+    return grouped.GroupedSurface(server.Composite("quenching", [resources.ReferencesSurface(),
+                                                                 catalog.surface(present, only)]))
 
 
 def main(argv: list[str]) -> int:

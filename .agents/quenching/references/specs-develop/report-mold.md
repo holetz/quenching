@@ -42,7 +42,7 @@ Three bands, in this order, always: **header · body · next step**.
 | `—` | no value — a **not-yet**, never a defect |
 | `…` | elision (`… N more`) |
 
-`✓ ! ·` are the three `specs_status` already prints for section state, and mean the same here.
+`✓ ! ·` are the three `specs_read(verb="status")` already prints for section state, and mean the same here.
 
 <!-- rationale -->
 
@@ -67,7 +67,7 @@ One spec:
 executing · 5/9 tasks · quenching:specs/41.md
 ```
 
-**The third field is the locator the tool returned** — the `path` field `specs_create`, `status`,
+**The third field is the locator the tool returned** — the `path` field `specs_write(verb="create")`, `status`,
 `list`, `next --front` and `section --write` all carry — never a filename the body assembled. The git store returns
 `quenching:specs/<id>.md`; a deprecated `github` backend returns the issue URL and `azure-boards`
 the work-item URL. The card's URL is a separate field.
@@ -205,7 +205,7 @@ comes here.
 only**, as the last line of the body, right before §The next-step block. One read, once per report:
 
 ```text
-components_session_context()
+components_read(verb="session_context")
 ```
 
 ```
@@ -229,7 +229,7 @@ The exit code decides the tone, never the line's presence:
 <!-- rationale -->
 
 Four measured `/quenching-specs execute` sessions peaked between 250k and 370k, each stage paying
-for everything the earlier ones had loaded. `components_session_context` (epic 1627 S3) is the
+for everything the earlier ones had loaded. `components_read(verb="session_context")` (epic 1627 S3) is the
 measurement, and the main-session budget is
 `docs/standards/automation/context-discipline.md` §Measured context budgets. The peak excludes
 the request in flight, so the line slightly undercounts; it only sets a tone, so that is accepted.

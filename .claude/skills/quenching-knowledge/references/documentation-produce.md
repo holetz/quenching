@@ -34,7 +34,7 @@ and the cycle authorization wording is in
   leaves the current page.
 - **Glossary is default-on when it has content.** The canonical `/docs/glossary.md` is a
   mandatory derived surface unless the accepted map contains an explicit `do not publish` decision.
-  The write stage runs `knowledge_project(write=true)`; the final build runs its `check=true` mode and
+  The write stage runs `knowledge_write(verb="project", write=true)`; the final build runs its `check=true` mode and
   the rendered site checker, including a known `<abbr>` assertion.
 - **Delivery destination is explicit.** At cycle start, identify the selected host (GitHub Pages,
   Azure DevOps artifact, or local-only). Forward any local-preview request to `build` as its own

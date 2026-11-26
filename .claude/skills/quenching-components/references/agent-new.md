@@ -94,8 +94,8 @@ for a coined repo-specific term; the user decides both. **Done when:** each offe
 
 ### 8. Self-check
 ```text
-components_doctor()
-components_lint()
+components_read(verb="doctor")
+components_read(verb="lint")
 ```
 `lint` takes no argument here: `lint <file>` never reaches the agents. Keep every finding whose
 `path` is this file, from either payload, whatever its code (`sk-cq-flag` included). Then read the definition against the contract by eye: tools scoped, voice second-person, a

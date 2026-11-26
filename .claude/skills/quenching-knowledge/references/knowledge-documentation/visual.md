@@ -5,7 +5,7 @@ heroes, tables and callouts. Components are information-bearing, not decoration.
 
 ## Contents
 
-`components_read(path=".claude/skills/quenching-knowledge/references/knowledge-documentation/visual.md")`
+`components_read(verb="read", path=".claude/skills/quenching-knowledge/references/knowledge-documentation/visual.md")`
 returns the heading index; `--sections <name>` addresses one.
 
 <!-- rules -->

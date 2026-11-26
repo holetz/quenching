@@ -22,7 +22,7 @@ opposite of what the loading hierarchy is for.
 
 ## Contents
 
-`components_read(path=<this file>)` returns the heading index; `sections=["§X"]` addresses one.
+`components_read(verb="read", path=<this file>)` returns the heading index; `sections=["§X"]` addresses one.
 
 ## 1. Probe before the inventory
 
@@ -185,8 +185,8 @@ it deliberately did not close, each with the command that closes it.
 
 | Front | Align | Verifier |
 | --- | --- | --- |
-| `knowledge/` | `/quenching-knowledge align` | `knowledge_validate(bundle=<knowledge-dir>)` — exit 0 **and** no `dir-no-index` / `index-broken-link` / `index-orphan` (they are WARN; read the findings) |
-| `.agents/` + bridge | `/quenching-components align` | `components_lint()` + `components_doctor()`, `components_migrate()` reporting `conformant: true` (empty plan) and `components_bridge(check=true)` exit 0, plus `components_registry_reindex()` reporting `changed: false` for the zone |
+| `knowledge/` | `/quenching-knowledge align` | `knowledge_read(verb="validate", bundle=<knowledge-dir>)` — exit 0 **and** no `dir-no-index` / `index-broken-link` / `index-orphan` (they are WARN; read the findings) |
+| `.agents/` + bridge | `/quenching-components align` | `components_read(verb="lint")` + `components_read(verb="doctor")`, `components_write(verb="migrate")` reporting `conformant: true` (empty plan) and `components_write(verb="bridge", check=true)` exit 0, plus `components_write(verb="registry_reindex")` reporting `changed: false` for the zone |
 
 All three verifiers read the same contract — `--json` on every subcommand and exit **0** ok · **1**
 findings · **2** refusal — so an align branches on data it did not have to interpret. Warnings are

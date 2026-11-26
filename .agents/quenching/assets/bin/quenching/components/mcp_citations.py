@@ -6,7 +6,9 @@ bodies `ENFORCED` names:
 * `sk-cq-cli-citation` — a `cq <pillar> <verb>` whose verb has a tool (a catalog row or a
   hand-written specs tool), on a line no `cli: <reason>` marker covers. A verb with no tool — an
   `EXCEPTIONS` entry of `mcp/coverage.py`, or one no row publishes — is the CLI's by right.
-* `sk-mcp-unknown-tool` — a `<pillar>_<verb>(` citation that is no tool of the catalog.
+* `sk-mcp-unknown-tool` — a `<pillar>_<…>(` citation that is no call of the published catalog: the
+  tool is one `<pillar>_<class>` (`read`, `write`, `external`) and its first argument names the verb,
+  `git_read(verb="state", …)`. A bare per-verb name (`git_state(`) is refused with the form to cite.
 
 `ENFORCED` is a ratchet: every quenching skill, every shared reference and every flow agent under
 `agents/` is held to it, and the tuple stays as the one place a new body class would be added.
@@ -41,7 +43,7 @@ def enforced(path: str) -> bool:
 
 
 def tool_paths() -> dict[tuple[str, ...], str]:
-    """`(pillar, *verb) -> tool name` for every verb a tool covers."""
+    """`(pillar, *verb) -> logical tool name` for every verb a tool covers."""
     from quenching.specs import mcp as specs_mcp
     out = {(row.pillar, *row.path): name for name, row in catalog.CATALOG.items()}
     for name, path in specs_mcp.COVERS.items():
@@ -50,13 +52,42 @@ def tool_paths() -> dict[tuple[str, ...], str]:
 
 
 def tool_names() -> set[str]:
+    """The logical names `<pillar>_<verb>` the published tools serve."""
     from quenching.specs import mcp as specs_mcp
     return set(catalog.CATALOG) | set(specs_mcp.COVERS)
+
+
+def cited_form(name: str) -> str:
+    """How a body calls one logical tool: the published group with the verb named first."""
+    from quenching.mcp import grouped
+    pillar, verb = grouped.split(name)
+    return f'{grouped.group_of(name)}(verb="{verb}", …)'
 
 
 def _tool_call_re() -> re.Pattern:
     pillars = sorted({row.pillar for row in catalog.CATALOG.values()})
     return re.compile(r"(?<![\w.])((?:%s)_[a-z0-9_]+)\(" % "|".join(pillars))
+
+
+# The verb a grouped call names, as its first argument.
+VERB_ARG = re.compile(r'\s*verb\s*=\s*"([a-z0-9_]+)"')
+
+
+def call_finding(name: str, rest: str) -> str | None:
+    """Why one `<name>(<rest>` citation is not a call of the published catalog, or None when it is:
+    a `<pillar>_<class>` tool whose first argument names a verb that tool serves."""
+    from quenching.mcp import grouped
+    groups = {grouped.group_of(logical) for logical in tool_names()}
+    if name not in groups:
+        if name in tool_names():
+            return f"`{name}(` names a verb, not a published tool: cite `{cited_form(name)}`"
+        return f"`{name}(` is no tool of the catalog"
+    verb = VERB_ARG.match(rest)
+    if verb is None:
+        return f"`{name}(` names no `verb` as its first argument"
+    if verb.group(1) != grouped.HELP and grouped.logical(name, verb.group(1)) not in tool_names():
+        return f"`{name}(verb=\"{verb.group(1)}\"` is no verb of `{name}`"
+    return None
 
 
 def exempt_lines(lines: list[str]) -> set[int]:
@@ -94,7 +125,7 @@ def findings(body: str, where: dict) -> list[dict]:
     """The citation-form findings of one body; `where["path"]` decides whether it is enforced."""
     if not enforced(str(where.get("path", ""))):
         return []
-    tools, known, call_re = tool_paths(), tool_names(), _tool_call_re()
+    tools, call_re = tool_paths(), _tool_call_re()
     lines = body.splitlines()
     skip = exempt_lines(lines)
     out: list[dict] = []
@@ -113,14 +144,14 @@ def findings(body: str, where: dict) -> list[dict]:
                 cited = "cq " + " ".join(path)
                 out.append(finding(
                     "sk-cq-cli-citation", "error",
-                    f"`{cited}` at body line {number}: cite the tool, `{tools[path]}(…)` "
+                    f"`{cited}` at body line {number}: cite the tool, `{cited_form(tools[path])}` "
                     "(align/tool-resolution.md §Citing a verb in a body), or mark the line "
                     "`cli: <flag|fallback>`",
                     invocation=cited, line=number, **where))
         for match in call_re.finditer(line):
-            if match.group(1) not in known:
+            why = call_finding(match.group(1), line[match.end():])
+            if why is not None:
                 out.append(finding(
-                    "sk-mcp-unknown-tool", "error",
-                    f"`{match.group(1)}(` at body line {number} is no tool of the catalog",
+                    "sk-mcp-unknown-tool", "error", f"{why} (body line {number})",
                     invocation=match.group(1), line=number, **where))
     return out

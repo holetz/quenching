@@ -28,7 +28,7 @@ in one pass per page.
 - **Glossary links point at the glossary.** The canonical file is staged into `site-source/` and
   publishes as `glossary.md`; link it relatively (`../glossary.md`) from a section page. Terms stay
   canonical in the root file, and authors never hand-maintain abbreviation definitions. Run
-  `knowledge_project(write=true)`, then `knowledge_site_source(write=true)` to
+  `knowledge_write(verb="project", write=true)`, then `knowledge_write(verb="site_source", write=true)` to
   materialize the snippet and bounded input from their source hashes; rerunning either must be a
   byte-identical no-op.
 - **Derived knowledge is curated, not copied wholesale.** `standards/`, `concepts/` and `vision/`
@@ -82,7 +82,7 @@ bundle; an intentional exclusion is a plan decision, not a blank page.
 ### 5. Self-check the written set
 
 Check page paths, frontmatter, relative links (including the published glossary route), stable headings, component syntax and next-step
-links. Run `knowledge_project(bundle="...", check=true)` and compare every mandatory map row with a non-empty
+links. Run `knowledge_write(verb="project", bundle="...", check=true)` and compare every mandatory map row with a non-empty
 route. Report pages intentionally left for a later slice, but do not call the whole-bundle gate
 green when a mandatory surface is missing.
 **Done when:** the diff contains only assigned documentation pages and ledger changes, with no

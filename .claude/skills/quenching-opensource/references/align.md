@@ -7,7 +7,7 @@ allowed-tools: Bash(cq:*), Bash(cq.cmd:*), Read, Grep, Glob, Bash(python3:*), As
 **Input**: `$ARGUMENTS` (an optional target repository root; omit to use the current repository).
 
 This command owns the open source front's convergence pass. It writes only the artifacts the
-catalog gives to `opensource`, each through `opensource_apply` from a template whose upstream
+catalog gives to `opensource`, each through `opensource_write(verb="apply")` from a template whose upstream
 text is byte-identical to the published one, and leaves every choice — license, maintainers,
 contact, funding — with the target owner. The common front floor is in
 [front-align/mold.md](.agents/quenching/references/front-align/mold.md), the catalog
@@ -28,7 +28,7 @@ per [tool-resolution.md](.agents/quenching/references/align/tool-resolution.md)
 Run the route before reading or editing a target:
 
 ```text
-opensource_doctor(root="$TARGET_ROOT")
+opensource_read(verb="doctor", root="$TARGET_ROOT")
 ```
 
 The probe reports `applicability`, template integrity and the `os-*` findings. Invoked directly,
@@ -84,8 +84,8 @@ value in hand, or rejected without a target edit.
 For each authorized artifact, first dry-run, then write:
 
 ```text
-opensource_apply(artifact=<name>, var=["<key>=<value>", …], dry_run=true, root="$TARGET_ROOT")
-opensource_apply(artifact=<name>, var=["<key>=<value>", …], root="$TARGET_ROOT")
+opensource_write(verb="apply", artifact=<name>, var=["<key>=<value>", …], dry_run=true, root="$TARGET_ROOT")
+opensource_write(verb="apply", artifact=<name>, var=["<key>=<value>", …], root="$TARGET_ROOT")
 ```
 
 The license takes `--var spdx=<id>` as its selector. Never write, paste or adapt a template's text
@@ -95,7 +95,7 @@ placeholders. A refusal — `os-artifact-unknown`, `os-license-unvendored`, `os-
 existing file is never overwritten. Then re-run the closing verifier:
 
 ```text
-opensource_status(root="$TARGET_ROOT")
+opensource_read(verb="status", root="$TARGET_ROOT")
 ```
 
 If findings remain, distinguish unanswered judgement residue from a refused or failed apply. Do not
@@ -117,8 +117,8 @@ and every residual owner action.
 
 ## Invariants
 
-- The doctor is probed before any confirmation, and the closing verifier is `opensource_status()`.
-- Every write goes through `opensource_apply`; upstream text is never adapted and an existing file is never overwritten.
+- The doctor is probed before any confirmation, and the closing verifier is `opensource_read(verb="status")`.
+- Every write goes through `opensource_write(verb="apply")`; upstream text is never adapted and an existing file is never overwritten.
 - License, maintainers, code owners, conduct contact, citation and funding are the owner's answers, never defaults.
 - Community artifacts and placeholder prose are English by template declaration, never by detection; a residual target-language doubt is the owner's judgement, not a finding.
 - Another owner's control is reported with its owner's command, never closed here.

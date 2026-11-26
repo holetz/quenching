@@ -5,7 +5,7 @@ allowed-tools: Bash(cq git commit:*), Bash(cq git conventions:*), Bash(cq git sp
 # /quenching-git commit — commit what is staged, under the target's own convention
 
 This command is the single commit boundary for standalone commits. `/quenching-specs execute` does
-not delegate here per task: it commits each task through `git_commit(subject=…, root=<worktree>)`. This command
+not delegate here per task: it commits each task through `git_write(verb="commit", subject=…, root=<worktree>)`. This command
 resolves the subject, commits the existing index and reports the subject actually written. It never receives a request to stage an unrelated path.
 
 **Input**: `$ARGUMENTS` — an optional explicit commit subject. When omitted, resolve one from the
@@ -18,12 +18,12 @@ never a guess at which files belong together.
 
 ### 1. Read-if-present, and the staged diff
 ```text
-components_read(path=".agents/quenching/references/git/conventions.md", sections=["§The declared-directive layer", "§The read-if-present rule"])
-git_conventions()
-git_state()   # `staged` is the index, `branch` the current branch
+components_read(verb="read", path=".agents/quenching/references/git/conventions.md", sections=["§The declared-directive layer", "§The read-if-present rule"])
+git_read(verb="conventions")
+git_read(verb="state")   # `staged` is the index, `branch` the current branch
 ```
-In a worktree that is not the server's root, the state is that tree's: `git_state(root=<worktree>)`.
-One `git_conventions()` call answers both declared layers: `config.commitSubject` is the target's
+In a worktree that is not the server's root, the state is that tree's: `git_read(verb="state", root=<worktree>)`.
+One `git_read(verb="conventions")` call answers both declared layers: `config.commitSubject` is the target's
 directive for this artifact, `governs`/`declared` the docs layer. Nothing staged → refuse: name that
 the index is empty and say what to stage. **Done when:** which layer governs the subject
 (`gitConventions.commitSubject`, the target's docs, or the plugin default below) and the staged file
@@ -34,14 +34,14 @@ list are both known.
 step 1 wins where it is declared; else a target doc naming a subject format wins outright, and a doc
 covering only part of it governs that part. With neither declared:
 ```text
-components_read(path=".agents/quenching/references/git/commit.md", sections=["§Commit messages"])
+components_read(verb="read", path=".agents/quenching/references/git/commit.md", sections=["§Commit messages"])
 ```
 `$ARGUMENTS` given → use it verbatim, wrapped rather than truncated past 72 characters where the
 title allows; an explicit subject always wins. When it is omitted, resolve the current branch and
 its `quenching-specs:` mark:
 ```text
-git_specs(branch=<current-branch>)   # <current-branch>: `branch` from step 1's `git_state()`
-specs_next(spec=<spec-id>)
+git_write(verb="specs", branch=<current-branch>)   # <current-branch>: `branch` from step 1's `git_read(verb="state")`
+specs_read(verb="next", spec=<spec-id>)
 ```
 If that produces exactly one spec and one actionable task, derive the subject with the governing
 convention from the spec id, task id and task title. If the execution caller already supplies a
@@ -53,14 +53,14 @@ the refusal is reported.
 
 ### 3. Commit
 ```text
-git_commit(subject=<subject>)
+git_write(verb="commit", subject=<subject>)
 ```
 
 The tool commits the index of the server's root, the session's directory. Staged in a worktree that
 is not that root, the same commit names it:
 
 ```text
-git_commit(subject=<subject>, root=<worktree>)
+git_write(verb="commit", subject=<subject>, root=<worktree>)
 ```
 The verb reports the `sha`, the `subject` git recorded and `subjectMatches`; exit 1 is git refusing
 the commit (a hook, an identity) with HEAD unchanged, exit 2 a blank subject or an empty index.

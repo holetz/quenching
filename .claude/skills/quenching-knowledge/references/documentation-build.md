@@ -29,13 +29,13 @@ re-verification is **this** skill.
 - **The confirmed Publication map is the publication boundary.** Zensical builds every
   Markdown below `docs_dir` and has no `exclude_docs`, `draft_docs` or `not_in_nav`. So
   `docs_dir = "site-source"` and the command stages only the shared
-  publication allow-list with `knowledge_site_source(write=true)`; it never points
+  publication allow-list with `knowledge_write(verb="site_source", write=true)`; it never points
   at the complete bundle. Raw `catalog/` and `external/` homes are excluded from that tree even
   when they remain useful knowledge sources. A home marked `publish` or `publish derived` is
   exposed only when its content is in the allow-list or is curated into an allowlisted page;
   `do not publish` creates no nav entry, staged file or published link. A missing or stale derived route is reported to the planning or writing stage; this site-layer
   command never invents or rewrites Markdown.
-- **The nav is GENERATED, not maintained.** `knowledge_nav(write=true)` generates the allowlisted
+- **The nav is GENERATED, not maintained.** `knowledge_write(verb="nav", write=true)` generates the allowlisted
   list in reading order, idempotent to the byte, so `--check` is a diff. A **title a human wrote survives regeneration untouched**; a missing one is derived
   from the section's `index.md` H1.
 - **MERGE, never clobber.** A `zensical.toml` a human has customized is authoritative: add only the
@@ -51,8 +51,8 @@ re-verification is **this** skill.
   from a target contract or owned asset. Missing evidence is a finding, never a public placeholder.
 - **Glossary projection has one source.** When the accepted map exposes the glossary, derive the
   site-layer abbreviation snippet from root `glossary.md`, then stage both into `site-source/`.
-  The glossary publishes as `glossary.md` in that bounded tree. `knowledge_project(check=true)` and
-  `knowledge_site_source(check=true)` prove the projection and staging; the rendered checker proves
+  The glossary publishes as `glossary.md` in that bounded tree. `knowledge_write(verb="project", check=true)` and
+  `knowledge_write(verb="site_source", check=true)` prove the projection and staging; the rendered checker proves
   a known `<abbr>`. Never
   ask an author to edit the derived snippet or a duplicate term list. A non-empty canonical glossary is required by default;
   only an accepted `do not publish` map row can exclude it.
@@ -107,12 +107,12 @@ the plugin cannot enumerate.
 | `site-edit-uri-absent` | a mapped host needs an edit URL Zensical cannot derive | **FIX** — add its tested template, preserving a human value |
 | `site-config-legacy` | a root `mkdocs.yml` and no `zensical.toml` | **REPORT** — it still builds, but every MkDocs plugin in it is inert; converting is its **own confirmation** |
 | `site-docs-dir-mismatch` | `docs_dir` does not point at generated `site-source/` | **FIX, own confirmation** — pointing at the bundle would process excluded homes |
-| `site-source-missing` | generated bounded source tree is absent | **FIX** — run `knowledge_site_source(write=true)` |
-| `site-source-stale` | generated source manifest differs from the allowlisted bundle files | **FIX** — restage with `knowledge_site_source(write=true)` |
+| `site-source-missing` | generated bounded source tree is absent | **FIX** — run `knowledge_write(verb="site_source", write=true)` |
+| `site-source-stale` | generated source manifest differs from the allowlisted bundle files | **FIX** — restage with `knowledge_write(verb="site_source", write=true)` |
 | `site-publication-map-absent` | the accepted plan has no Publication map | **REPORT** → `/quenching-knowledge documentation-plan` |
 | `site-publication-route-missing` | a `publish`/`publish derived` row has no corresponding built page | **REPORT** → `/quenching-knowledge documentation-write` |
 | `site-publication-leak` | a `do not publish` home appears in nav, a route or an internal link | **FIX** only in config/nav; otherwise **REPORT** → page author |
-| `site-glossary-projection-stale` | route/snippet origin or source hash differs from the canonical glossary | **FIX** with `knowledge_project(write=true)`; never rewrite the source glossary |
+| `site-glossary-projection-stale` | route/snippet origin or source hash differs from the canonical glossary | **FIX** with `knowledge_write(verb="project", write=true)`; never rewrite the source glossary |
 | `site-glossary-snippet-missing` | the accepted glossary projection has no generated abbreviation snippet | **REPORT** → `/quenching-knowledge documentation-write` |
 | `site-glossary-term-unrendered` | a known canonical term is not present as rendered `<abbr>` | **REPORT** → `/quenching-knowledge documentation-write` |
 | `site-coverage-incomplete` | a publishable document has no built, non-empty page and no explicit `do not publish` row of its own | **REPORT** → `/quenching-knowledge documentation-write` |
@@ -199,7 +199,7 @@ Collect, without writing anything:
   inventory and focus are fixed.
 
 - the generated `site-source/` tree and its manifest; compare it with
-  `knowledge_site_source(check=true)` before any build. The source inventory still
+  `knowledge_write(verb="site_source", check=true)` before any build. The source inventory still
   lists `catalog/` and `external/`, but their raw files must not be copied into or counted as
   Zensical pages.
 
@@ -255,12 +255,12 @@ For an Azure remote, the equivalent opt-in copies `azure-pipelines-docs.yml` onl
 confirmation is granted and the target path is absent; report `documentation-site` as an artifact,
 not as deployed content.
 The CSS asset is the one file this skill writes inside the docs home; Markdown pages remain
-untouched. Finally run `knowledge_site_source(write=true)` so Zensical receives
+untouched. Finally run `knowledge_write(verb="site_source", write=true)` so Zensical receives
 only the bounded publication tree. **Done when:** only approved site-layer edits are applied,
 `docs_dir` is `site-source`, and the staged manifest is current.
 
 ### 7. Verify with a real build and rendered QA
-Before the build, require `knowledge_site_source(check=true)`; a missing or stale
+Before the build, require `knowledge_write(verb="site_source", check=true)`; a missing or stale
 manifest is `site-source-missing`/`site-source-stale` and must be fixed by staging. If the toolchain
 is present, run the selected runner (`uv run zensical`, `python -m zensical`, or
 the executable) with `build --clean --strict`. **Always, immediately after every build**, run
@@ -272,8 +272,8 @@ When the map makes the glossary mandatory, run the same checker with
 `--require-glossary --glossary-source docs/glossary.md
 --glossary-snippet site-source/assets/glossary-abbreviations.txt --glossary-route glossary.md
 --glossary-term <term explicitly evidenced by the accepted map>`; run
-`knowledge_project(check=true)`, `knowledge_nav(check=true)` and
-`knowledge_site_source(check=true)` beside it. For a local-only build
+`knowledge_write(verb="project", check=true)`, `knowledge_write(verb="nav", check=true)` and
+`knowledge_write(verb="site_source", check=true)` beside it. For a local-only build
 whose config has no `site_url`, add `--local` (a relative or empty sitemap passes; XML and
 page/asset integrity are still checked). Read the Zensical output: every
 warning is either a site-layer finding you fix now (a nav entry, a feature, an extension) or a

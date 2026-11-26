@@ -24,7 +24,7 @@ against glossary size, plus whether this pass created any docs) and **offer** it
 once per run.
 
 A stage the probe found empty is **skipped** this pass. Re-validation is implicit: stage 1 ends by
-running `knowledge_validate()`, and the align re-probes in its loop decision.
+running `knowledge_read(verb="validate")`, and the align re-probes in its loop decision.
 
 <!-- rationale -->
 The align knows before it starts whether stages 1–3 have work — a validator exit code, a directory

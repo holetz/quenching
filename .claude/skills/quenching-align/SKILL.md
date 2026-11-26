@@ -49,7 +49,7 @@ Every applicable front must expose the common front mold at
 `.agents/quenching/references/front-align/mold.md`. The conductor sequences and reports;
 it never reimplements a front's verifier or repair logic.
 
-Before probing, read `specs_config()`. An absent `shared.profiles.installed` means all eight
+Before probing, read `specs_read(verb="config")`. An absent `shared.profiles.installed` means all eight
 local fronts are eligible; a declared list limits the conductor to its named local fronts, in the
 dependency order above. Report other local fronts as skipped by profile. This scope affects only
 this conductor run: it does not remove commands or change a command's own invocation contract.
@@ -61,13 +61,13 @@ this conductor run: it does not remove commands or change a command's own invoca
 Probe every declared front in the table before inventory. If `$ARGUMENTS` names a front or a path
 inside one, probe only that front and mark the others skipped by scope.
 
-- **`knowledge`** — run `knowledge_validate()`; record the bundle, validator counts,
+- **`knowledge`** — run `knowledge_read(verb="validate")`; record the bundle, validator counts,
   project memory and harness files.
-- **`design`** — run `design_status()` when installed; when absent, run
+- **`design`** — run `design_read(verb="status")` when installed; when absent, run
   `design align --check --json` only when scope or root `PRODUCT.md`/`DESIGN.md` artifacts signal
   adoption.
-- **`components`** — run `components_doctor()`, `components_migrate()`
-  and `components_bridge(check=true)`; inspect command skills for legacy pairs.
+- **`components`** — run `components_read(verb="doctor")`, `components_write(verb="migrate")`
+  and `components_write(verb="bridge", check=true)`; inspect command skills for legacy pairs.
   `migrate` exit 1 puts its whole plan (operations, renames, conflicts) in the Authorization plan
   as one block; `bridge --check` exit 1 puts its changes there. Conformant is `migrate`
   `conformant: true` and `bridge --check` exit 0.
@@ -77,16 +77,16 @@ inside one, probe only that front and mark the others skipped by scope.
 - **`proof`** — read `.agents/quenching.json` (legacy: `.agents/quenching.json`)
   for `proof.proofRoot`; when absent, inspect only
   `tests/` and `test/` for a test module.
-- **`toolchain`** — run `toolchain_doctor()`; use its applicability signal and recognized
+- **`toolchain`** — run `toolchain_read(verb="doctor")`; use its applicability signal and recognized
   manifests, locks, language pins and tool configuration as the complete probe result.
-- **`delivery`** — run `delivery_doctor()`; use its applicability signal and workflow
+- **`delivery`** — run `delivery_read(verb="doctor")`; use its applicability signal and workflow
   inventory as the complete probe result.
-- **`opensource`** — run `opensource_doctor()`; its `applicability` (a root `LICENSE*` or
+- **`opensource`** — run `opensource_read(verb="doctor")`; its `applicability` (a root `LICENSE*` or
   `COPYING*`, or `opensource` in `shared.profiles.installed`) and findings are the complete probe
   result.
 
-- **configuration** (not a front) — run `config_check()`. Exit 2 `cq-config-absent` puts
-  "seed `.agents/quenching.json` with `config_init(write=true)`" in the plan; the Authorization OK
+- **configuration** (not a front) — run `config_read(verb="check")`. Exit 2 `cq-config-absent` puts
+  "seed `.agents/quenching.json` with `config_write(verb="init", write=true)`" in the plan; the Authorization OK
   covers it, and it runs before the first front so every front reads the seeded file. Exit 1 lists
   the seeded keys the file lacks: report them, never rewrite a file the human edited. Exit 0 is
   conformant.
@@ -170,7 +170,7 @@ promotion, publication and permission policy with the target owner.
 When the applicability probe reports `not-applicable`, report `opensource` not applicable. Otherwise
 run `/quenching-opensource align` (read its reference) after `delivery`, with the inherited
 authorization. It writes only the community, license and governance artifacts the catalog gives it,
-through `opensource_apply`; the license, maintainers, code owners, conduct contact, citation and
+through `opensource_write(verb="apply")`; the license, maintainers, code owners, conduct contact, citation and
 funding remain the owner's individual answers, never covered by the batch OK. Another owner's
 control stays with that owner's front.
 

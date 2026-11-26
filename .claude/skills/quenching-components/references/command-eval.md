@@ -16,7 +16,7 @@ put a decision sheet ([specs-develop/questions.md](.agents/quenching/references/
 ## Workflow
 
 ### 1. Select the skill and check its floor
-Resolve the skill folder. Run `components_lint(path=<skill-folder>)`: an **error** means the skill
+Resolve the skill folder. Run `components_read(verb="lint", path=<skill-folder>)`: an **error** means the skill
 does not load as intended — report it and stop. Record a **warn** and continue.
 **Done when:** one skill is named back to the user and `lint` has run.
 
@@ -64,7 +64,7 @@ evidence or an explicit `unknown`.
 Run the should-trigger and should-not-trigger prompts and count how often the description routes
 correctly. A trigger no should-trigger prompt reaches is **sediment**; a should-not-trigger prompt
 that fires is a boundary the description fails to state. Propose the edit, show the measured rates
-behind it, and apply on its own OK — then re-run `components_lint()` so the caps still hold.
+behind it, and apply on its own OK — then re-run `components_read(verb="lint")` so the caps still hold.
 **Done when:** the rates are reported and the edit is applied or declined.
 
 ### 8. Report
@@ -80,6 +80,6 @@ plainly when the delta is **zero**.
 - Never downgrade an arm's model to `haiku`; the delta is only comparable between equal arms.
 - Never rewrite a skill body here — report it with its `/quenching-components command-new` invocation. The description is
   the single exception, and only under step 7's own confirmation.
-- Never duplicate an unchanged `components_lint()` check; after editing a description, rerun it and
+- Never duplicate an unchanged `components_read(verb="lint")` check; after editing a description, rerun it and
   report the new findings by code.
 - Never hand this command file `context: fork` — steps 4 and 7 gate mid-flow.

@@ -15,7 +15,7 @@ resolved.
 ### 1. Resolve the provider, PR and repository
 ```text
 # Read `backend` from this result before choosing a host CLI.
-specs_config()
+specs_read(verb="config")
 ```
 
 ```bash

@@ -1,7 +1,7 @@
 ---
 name: quenching-spec-reviewer
 description: "Reviews an epic's accepted commits for correctness, and for security when they touch a grant, hook or executable, reporting only findings it reproduced. Use once per epic, launched by the autopilot conductor. Read-only; never edits or fixes."
-tools: Read, Grep, Glob, Bash(.agents/quenching/bin/cq git history:*), Bash(bash scripts/verify_repo.sh:*), mcp__quenching__git_history_diff, mcp__quenching__git_history_log, mcp__quenching__git_history_show
+tools: Read, Grep, Glob, Bash(.agents/quenching/bin/cq git history:*), Bash(bash scripts/verify_repo.sh:*), mcp__quenching__git_read
 model: opus
 effort: high
 ---
@@ -13,7 +13,7 @@ never edit, commit, create a spec or repair. You have no Edit, Write or Agent to
 PASS is not evidence of correctness: it audits the git and spec state, never whether the diff does
 what its spec says.
 
-**Without the `quenching` MCP tools in this session**, call the same verb through the `cq` command line your grant allows (the tool `<pillar>_<verb>` is the verb `<pillar> <verb>` with `--json`); a missing tool is never evidence, a verdict or a reason to stop.
+**Without the `quenching` MCP tools in this session**, call the same verb through the `cq` command line your grant allows (the tool `<pillar>_<class>(verb="<verb>", …)` is the verb `<pillar> <verb>` with `--json`, an `_` in the verb a space); a missing tool is never evidence, a verdict or a reason to stop.
 
 ## Input
 
@@ -26,7 +26,7 @@ You create no worktree: you run in the checkout you were launched in, the base c
 Your grants are the closed list in `tools:`, the history tools and one shell prefix for reproducing,
 nothing else:
 
-- history: `git_history_log(revs=[<range>])`, `git_history_show(revs=[<sha>])`, `git_history_diff(revs=[<sha>^, <sha>])` (add `path=[<p>]` to narrow; when the reviewed repository is not the session's the prompt names it, never a `cd <repo> &&` prefix): a fixed call with no output-to-file option;
+- history: `git_read(verb="history_log", revs=[<range>])`, `git_read(verb="history_show", revs=[<sha>])`, `git_read(verb="history_diff", revs=[<sha>^, <sha>])` (add `path=[<p>]` to narrow; when the reviewed repository is not the session's the prompt names it, never a `cd <repo> &&` prefix): a fixed call with no output-to-file option;
 - reproduction: the gate `bash scripts/verify_repo.sh`, the only thing you execute.
   The gate grant is kept, not widened. Each spec's conclude already ran the full gate once
   (`GATE_EXIT`) and the CI ran it before the merge: accept both and never rerun the gate per spec
@@ -37,7 +37,7 @@ gate executes the code under review. After you return, the caller audits the wor
 stash list; anything you left behind is reported against you.
 
 A commit that is not in the checkout's tree (an open PR, not yet merged) is still readable through
-`git_history_show`: its objects live in the shared repository. Reproduce it only when the checkout carries
+`git_read(verb="history_show")`: its objects live in the shared repository. Reproduce it only when the checkout carries
 it; otherwise read it, and report it only if the reading alone reproduces the fault (a line that
 contradicts a line, quoted with both `path:line`).
 

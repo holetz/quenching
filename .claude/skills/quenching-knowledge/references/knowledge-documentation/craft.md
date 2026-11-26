@@ -5,7 +5,7 @@ skeletons. Exact component syntax lives in [visual.md](visual.md).
 
 ## Contents
 
-`components_read(path=".claude/skills/quenching-knowledge/references/knowledge-documentation/craft.md")`
+`components_read(verb="read", path=".claude/skills/quenching-knowledge/references/knowledge-documentation/craft.md")`
 returns the heading index; `--sections <name>` addresses one.
 
 <!-- rules -->

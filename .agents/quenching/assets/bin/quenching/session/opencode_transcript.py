@@ -26,7 +26,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from quenching.session.commands.cache import _inside, _sessions, _tables, opencode_db
-from quenching.session.cqcalls import code_mode_tools
+from quenching.session.cqcalls import MCP_NAME, code_mode_tools
 
 OPENCODE_ID = "ses_"
 SESSION_ID = re.compile(r"[A-Za-z0-9_-]+")
@@ -89,6 +89,9 @@ def _tool_use(block: dict) -> tuple[dict, str | None]:
             kept["skill"] = entered
             if isinstance(inp.get("args"), str):
                 kept["args"] = inp["args"]
+    elif MCP_NAME.match(name) and isinstance(inp.get("verb"), str):
+        # A published `<pillar>_<class>` tool: only its `verb` leaves, so the tally names the verb.
+        kept["verb"] = inp["verb"]
     elif code_mode_tools(inp.get("code")):
         # Only the `quenching` tool names a Code Mode script calls leave the database, never its code.
         kept["code"] = " ".join(f"tools.quenching.{tool}(" for tool in code_mode_tools(inp["code"]))

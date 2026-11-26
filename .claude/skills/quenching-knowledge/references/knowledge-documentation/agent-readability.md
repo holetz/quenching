@@ -4,7 +4,7 @@ Rules for the second audience: agents that search, lift, reconstruct and cite a 
 
 ## Contents
 
-`components_read(path=".claude/skills/quenching-knowledge/references/knowledge-documentation/agent-readability.md")`
+`components_read(verb="read", path=".claude/skills/quenching-knowledge/references/knowledge-documentation/agent-readability.md")`
 returns the heading index; `--sections <name>` addresses one.
 
 <!-- rules -->
@@ -24,7 +24,7 @@ Pages carrying a reusable contract include a compact, high-signal block:
     - **Does:** audits a repo's knowledge surface, installs fixes with confirmation.
     - **Contract:** `repo path → scored report → item-by-item install`.
     - **Invariants:** never removes without OK; three dimensions are proposed-only.
-    - **Run:** `knowledge_validate()`
+    - **Run:** `knowledge_read(verb="validate")`
 ```
 
 Put facts, inputs, outputs and invariants in text. A diagram reinforces a fact; it never owns the
