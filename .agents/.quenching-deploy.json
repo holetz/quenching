@@ -33,7 +33,7 @@
 
     ".agents/quenching/agents/spec-reviewer.md": "1a6302d01c452501e59f9c8924f3ee7fcdc2ebb8d150e54b2b4a53441428e1b6",
 
-    ".agents/quenching/agents/spec-runner.md": "9cc5c50847c5ae38e3c998a9b28491e5d1b00147ce776947193c49d6a3f6067a",
+    ".agents/quenching/agents/spec-runner.md": "e0161114f83c47a409559f622b5c6630333ef447c90fae5292976ce81bc6523e",
 
     ".agents/quenching/agents/spec-scout.md": "fb14fd6eca42f5eee9d0883e4e876fd9d64d009fa4b60f187a02b2f25c75c628",
 
@@ -689,7 +689,7 @@
 
     ".agents/quenching/references/specs-execute/execution-tooling.md": "6328fb5653f9460032fc16d40c423932c20659f2168f1bca300336fb7ac1abd7",
 
-    ".agents/quenching/references/specs-execute/execution.md": "ce8a7c2f3c38aae600f71570ca081132beef53167af0dc4c4750138481deeafa",
+    ".agents/quenching/references/specs-execute/execution.md": "57734d8079c5f08bb12cfc96cb5ab238c8985dfa1d8c96e9aad991a0f85cea13",
 
     ".agents/skills/quenching-align/SKILL.md": "8c1a8dbacac035126c71e0717ca66787602573eb27deea7aae7c9279a438563e",
 
@@ -891,7 +891,7 @@
 
     ".claude/agents/quenching-spec-reviewer.md": "1a6302d01c452501e59f9c8924f3ee7fcdc2ebb8d150e54b2b4a53441428e1b6",
 
-    ".claude/agents/quenching-spec-runner.md": "724079b042377feb2b18e9fc94c4b0d7752ec39a32276063118609c906c3a189",
+    ".claude/agents/quenching-spec-runner.md": "db09cd4311c43ccaee1bb34c26ce583522b2366aa620670ab9346ae1a41a2ac6",
 
     ".claude/agents/quenching-spec-scout.md": "fb14fd6eca42f5eee9d0883e4e876fd9d64d009fa4b60f187a02b2f25c75c628",
 
@@ -1111,7 +1111,7 @@
 
     ".github/agents/quenching-spec-reviewer.agent.md": "62bb5ec0ac88330e4d64e50558c31312a489f362e50e4147d6db9cefee302662",
 
-    ".github/agents/quenching-spec-runner.agent.md": "4fbf413d4b52872e18dc544eb372895998db3229c32f743410c80c209dfc4d88",
+    ".github/agents/quenching-spec-runner.agent.md": "cbdcd55526459c3f67c5d96011fa4502beec568c203f3bbf4b95ae0f92e69d17",
 
     ".github/agents/quenching-spec-scout.agent.md": "bf93d72b7fe75f5feadb5fa5397254dabb318c5f3166d90d58a9acbabeff72aa",
 
@@ -1125,7 +1125,7 @@
 
     ".opencode/agents/quenching-spec-reviewer.md": "1ee7168eaa09561df1e163c088a7922eb557b49d1004417f66f3d05962dc270e",
 
-    ".opencode/agents/quenching-spec-runner.md": "1361ac267c652c3fd9780a697e072eb38c732833cfeb6253faa6b4d894d432fe",
+    ".opencode/agents/quenching-spec-runner.md": "dd98aaa87540d6f251ca9204fb49f3768dc7d425e00fb6cb15559b289a4f456d",
 
     ".opencode/agents/quenching-spec-scout.md": "43ea8cec684e208c694e837b21b7343a4ae96d824a1686699b539b4bbb5dda30",
 
