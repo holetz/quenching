@@ -310,8 +310,7 @@ class Deploy(unittest.TestCase):
         code, payload = self.run_deploy("--remove")
         self.assertEqual(1, code)
         self.assertIn(".agents/skills/quenching-specs/SKILL.md", payload["kept"])
-        owned = {c["change"] for c in payload["changes"] if c["path"] != ".agents/.quenching-deploy.json"
-                 and c["path"].startswith(".agents/skills/")}
+        owned = {c["change"] for c in payload["changes"] if c["path"].startswith(".agents/skills/")}
         self.assertEqual({"edited"}, owned)
 
     def test_the_source_repository_keeps_the_file_when_git_is_absent(self):
