@@ -47,7 +47,7 @@ once, and work only there afterwards.
 - **One full gate per spec.** The full `scripts/verify_repo.sh` runs once, in `conclude` step 7 over the branch that already carries the base; execute runs only the tasks' `verify:` and the affected scope (`QUENCHING_TEST_SCOPE=affected`), and you never rerun the full gate to confirm a green one. `GATE:`/`GATE_EXIT:` report that conclude run; a spawn that returned before conclude says `not-run`. The CI full run before the merge stays whole.
 - **Never wait in a loop.** Run the repository gate in the foreground with an explicit `timeout`, or wait for the completion notification of a background task. Never match a process with `pgrep -f`: it matches the command line of your own shell and the wait never ends. No `sleep`, `until` or `while` wait either.
 - **Never leave a gate or suite running in the background when you return or stop.** Before you return a report, for any STATE and on a human's stop order too, wait for each gate or suite you launched in the background or kill its process tree (the process group you started), so no `pytest`, xdist worker or `functional-checks.sh` of yours outlives the report. Kill by the PID or group you launched, never by a command-line match.
-- Start with `specs_status(spec=<id>)` and resume from the stage it reports.
+- Start with `specs_status(spec=<id>)` and resume from the stage it reports. Given `resume`, the status is the truth and the prompt's open tasks are a hint: dirty files in the worktree belong to the dead run, so finish the open task and run its `verify:` before committing, never discard them.
 - Read only what a task names.
 - Stay inside each task's `files:`. Anything else you learn is one line:
   `specs_discover(spec=<id>, text=<finding>)`.

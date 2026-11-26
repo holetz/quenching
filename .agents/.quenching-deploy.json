@@ -29,11 +29,11 @@
   "files": {
     ".agents/quenching/VERSION": "26fc6a53c41aacfac3889c7275bfdb81d2de7d35e9906fb926614b351c347fbd",
 
-    ".agents/quenching/agents/spec-orchestrator.md": "e3388bfc3b38bc518743fd424abb7602a322d1416a499a3282acadcd1db19a2f",
+    ".agents/quenching/agents/spec-orchestrator.md": "5f5e9c49617ae03c2350033b28f61790d445a02b4beb43303d7d796ce913f38f",
 
     ".agents/quenching/agents/spec-reviewer.md": "1a6302d01c452501e59f9c8924f3ee7fcdc2ebb8d150e54b2b4a53441428e1b6",
 
-    ".agents/quenching/agents/spec-runner.md": "e0161114f83c47a409559f622b5c6630333ef447c90fae5292976ce81bc6523e",
+    ".agents/quenching/agents/spec-runner.md": "b59160f82ac1dd2dcb83b38e06c2e152ffb2108fc945c3b267c1c5ddc7cf9e91",
 
     ".agents/quenching/agents/spec-scout.md": "fb14fd6eca42f5eee9d0883e4e876fd9d64d009fa4b60f187a02b2f25c75c628",
 
@@ -871,7 +871,7 @@
 
     ".agents/skills/quenching-specs/references/improve.md": "b4e65cd68186c0c43a847a71f326913208a5a7da843ba5cd45cd4294afc7b707",
 
-    ".agents/skills/quenching-specs/references/orchestrate.md": "461e324ed9f4967e333d082dfefda20d1d03c24f01fa0bc3de31a2b371ced0d4",
+    ".agents/skills/quenching-specs/references/orchestrate.md": "79891603939e6c0c7264a34875543fa6b60da3e8ac0982808dce7be1d0bab6c5",
 
     ".agents/skills/quenching-specs/references/specs-create/plan-mapping.md": "120aa843e0e4768268b2fd31100cb066fc0f6225ee633e8884f97dbec2ddff78",
 
@@ -887,11 +887,11 @@
 
     ".agents/skills/quenching-toolchain/references/toolchain-align/bands.md": "d73941d0034ffd0cbc3b3c79bc992d432b1a802e3d86926730a5943309034b97",
 
-    ".claude/agents/quenching-spec-orchestrator.md": "e3388bfc3b38bc518743fd424abb7602a322d1416a499a3282acadcd1db19a2f",
+    ".claude/agents/quenching-spec-orchestrator.md": "5f5e9c49617ae03c2350033b28f61790d445a02b4beb43303d7d796ce913f38f",
 
     ".claude/agents/quenching-spec-reviewer.md": "1a6302d01c452501e59f9c8924f3ee7fcdc2ebb8d150e54b2b4a53441428e1b6",
 
-    ".claude/agents/quenching-spec-runner.md": "db09cd4311c43ccaee1bb34c26ce583522b2366aa620670ab9346ae1a41a2ac6",
+    ".claude/agents/quenching-spec-runner.md": "579a115bf6eb9e1c74a3993ecc7cf22f64577caa324abc596bdc982ec96f33a4",
 
     ".claude/agents/quenching-spec-scout.md": "fb14fd6eca42f5eee9d0883e4e876fd9d64d009fa4b60f187a02b2f25c75c628",
 
@@ -901,7 +901,7 @@
 
     ".claude/rules/import-memory-models.md": "fd74dff6852c332775ad03af8606ff34cf7ff1810d53fa9afa66c6b7bce11d04",
 
-    ".claude/skills/.generated-files.json": "228fdf7023e90047e736d2b659ed2bd7dcc933fe2cf8ec29d90038c4b786fe16",
+    ".claude/skills/.generated-files.json": "40d1c9fc183e83a3168c45d339a01ac23b9ff2d4b9e0b0f4763a961705439e9d",
 
     ".claude/skills/commands-tighten/SKILL.md": "41574a4774e70deffd6c8c6766a1a24581d579d1f7247b68a93ba86b39b2019b",
 
@@ -1085,7 +1085,7 @@
 
     ".claude/skills/quenching-specs/references/improve.md": "b4e65cd68186c0c43a847a71f326913208a5a7da843ba5cd45cd4294afc7b707",
 
-    ".claude/skills/quenching-specs/references/orchestrate.md": "461e324ed9f4967e333d082dfefda20d1d03c24f01fa0bc3de31a2b371ced0d4",
+    ".claude/skills/quenching-specs/references/orchestrate.md": "79891603939e6c0c7264a34875543fa6b60da3e8ac0982808dce7be1d0bab6c5",
 
     ".claude/skills/quenching-specs/references/specs-create/plan-mapping.md": "120aa843e0e4768268b2fd31100cb066fc0f6225ee633e8884f97dbec2ddff78",
 
@@ -1107,11 +1107,11 @@
 
     ".claude/skills/skill-map/SKILL.md": "eb309cf9d098a5daccbabff27d97f3da24a967c888bbde88f0400cc6af09b5be",
 
-    ".github/agents/quenching-spec-orchestrator.agent.md": "54261b3c21e668fe6765a522c2e5963a931ad1a83338c9ccc30551a10fa20c9e",
+    ".github/agents/quenching-spec-orchestrator.agent.md": "1b09672ab2099ff60463c70124b87ffb3414b399fb5d64ff9cd911ee07bcafa7",
 
     ".github/agents/quenching-spec-reviewer.agent.md": "62bb5ec0ac88330e4d64e50558c31312a489f362e50e4147d6db9cefee302662",
 
-    ".github/agents/quenching-spec-runner.agent.md": "cbdcd55526459c3f67c5d96011fa4502beec568c203f3bbf4b95ae0f92e69d17",
+    ".github/agents/quenching-spec-runner.agent.md": "f71a6ce2c1f82fb7056a36ad9723fcdc7d0a2d55cc4d675dd7ee25c603e528cd",
 
     ".github/agents/quenching-spec-scout.agent.md": "bf93d72b7fe75f5feadb5fa5397254dabb318c5f3166d90d58a9acbabeff72aa",
 
@@ -1121,11 +1121,11 @@
 
     ".github/instructions/import-memory-models.instructions.md": "47cf9a95b9ca21b9124cdd90fd5c7d3c75a39296c14f998bc9bcec5d861cda8d",
 
-    ".opencode/agents/quenching-spec-orchestrator.md": "6ac3510580fb1b6e914670dbe5e6b941642348d97c719a0919c032c5f5bf08f0",
+    ".opencode/agents/quenching-spec-orchestrator.md": "c1f211c869aff10220c6f5cf7704d1e022e5fb59e820a179f7e0b91612353797",
 
     ".opencode/agents/quenching-spec-reviewer.md": "1ee7168eaa09561df1e163c088a7922eb557b49d1004417f66f3d05962dc270e",
 
-    ".opencode/agents/quenching-spec-runner.md": "dd98aaa87540d6f251ca9204fb49f3768dc7d425e00fb6cb15559b289a4f456d",
+    ".opencode/agents/quenching-spec-runner.md": "27124ba57f3761d0cfbee65b8afbbcc212eb6f0798fc415b7c57377cd7eb6f17",
 
     ".opencode/agents/quenching-spec-scout.md": "43ea8cec684e208c694e837b21b7343a4ae96d824a1686699b539b4bbb5dda30",
 

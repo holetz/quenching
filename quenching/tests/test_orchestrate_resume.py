@@ -31,7 +31,7 @@ class FlowTextTests(unittest.TestCase):
         self.assertIn("died without a report", body)
         self.assertIn("`resume`", body)
         self.assertIn('"state": "interrupted"', body)
-        self.assertIn("one resume per crash", body)
+        self.assertIn("One resume per crash", body)
 
     def test_runner_knows_resume(self):
         body = flat(RUNNER)
