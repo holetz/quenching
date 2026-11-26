@@ -222,6 +222,19 @@ class Deploy(unittest.TestCase):
                        "change": "edited"}, payload["changes"])
         self.assertIn("local edit", skill.read_text(encoding="utf-8"))
 
+    def test_deploy_plan_is_the_json_the_terminal_prints_and_writes_nothing(self):
+        self.assertEqual(0, self.run_deploy("--modules", "core", "--write")[0])
+        skill = self.target / ".claude/skills/quenching-specs/SKILL.md"
+        skill.write_text(skill.read_text(encoding="utf-8") + "\nlocal edit\n", encoding="utf-8")
+        before = skill.read_bytes()
+        _code, printed = self.run_deploy("--modules", "core", "--check")
+        refusal, plan = deploy_cli.deploy_plan(self.target, ["core"])
+        self.assertIsNone(refusal)
+        self.assertEqual(printed, plan)
+        self.assertEqual(before, skill.read_bytes())
+        refusal, plan = deploy_cli.deploy_plan(self.target / "missing")
+        self.assertEqual((None, "ct-deploy-target"), (plan, refusal["code"]))
+
     def test_a_write_refuses_to_discard_a_local_edit_until_forced(self):
         self.assertEqual(0, self.run_deploy("--modules", "core", "--write")[0])
         skill = self.target / ".claude/skills/quenching-specs/SKILL.md"

@@ -140,7 +140,7 @@ a fix spec, or an authorized cut from `origin/<base>` — and recorded.
 ### 2. Queue
 List the loose specs — open, in no epic — plus the open members of epics of earlier rounds
 (`Autopilot <date> — rodada <n>`) and of the "decide with the human" epics, with `specs_list()`, and the store's
-errors with `specs_validate`. Before any of them enters or is developed, one `quenching-spec-scout` per batch proves
+errors with `specs_validate(by_code=true)` — never unfiltered: the whole store's warnings run to ~118k chars. Before any of them enters or is developed, one `quenching-spec-scout` per batch proves
 it is still relevant against the current code and the `shared.guidance.autopilot` of step 1, and classifies it
 `relevant`, `superseded` (another spec or merge already absorbed the pain: cite it), `stale` (a cited `path:line` or command no longer exists) or `needs-human`:
 
@@ -185,7 +185,7 @@ each a dated bullet with the evidence it rests on — the step 1 dirty-checkout 
 spec, a spec sent to the human epic, a proof not run — written BEFORE the launch that depends on
 it. A decision that lives only in a brief is lost at the next relaunch; the briefs of steps 5 and 6
 name the composite and the bullet instead of restating it. Check the result with
-`specs_epic_progress(epic=<composite>)` and `specs_validate`.
+`specs_epic_progress(epic=<composite>)` and `specs_validate(by_code=true)`.
 **Done when:** the composite exists with its waves, its `## Design` carries the dated policy and
 this round's decisions, and `validate` raises no `sp-link-*` finding.
 

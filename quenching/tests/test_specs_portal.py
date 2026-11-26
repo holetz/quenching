@@ -1,6 +1,7 @@
 """The local spec portal, offline: handlers over the memory fake, and the security gates."""
 
 import json
+import os
 import pathlib
 import sys
 import tempfile
@@ -796,6 +797,50 @@ class Publish(unittest.TestCase):
         html = (assets / "index.html").read_text(encoding="utf-8")
         self.assertIn('id="push"', html)
         self.assertIn('id="push-count"', html)
+
+
+class Modules(PortalCase):
+    """The Módulos tab's routes: the registry, the versions and the deploy plan, read-only."""
+
+    def test_modules_lists_the_registry_with_the_versions_and_the_command(self):
+        status, body = self.get("/api/modules")
+        self.assertEqual(status, 200)
+        self.assertTrue(body["ok"])
+        self.assertFalse(body["deployed"])
+        self.assertIsNone(body["installedVersion"])
+        self.assertTrue(body["version"])
+        names = [row["name"] for row in body["modules"]]
+        self.assertIn("quenching-specs", names)
+        self.assertEqual(set(body["modules"][0]),
+                         {"name", "short", "installed", "core", "packages", "skills"})
+        self.assertTrue(body["command"].startswith("cq deploy --target "))
+        self.assertTrue(body["command"].endswith("--write"))
+
+    def test_modules_reads_the_installed_set_from_the_targets_manifest(self):
+        manifest = pathlib.Path(self.tmp, ".agents", ".quenching-deploy.json")
+        manifest.parent.mkdir(parents=True)
+        manifest.write_text(json.dumps({"version": "0.0.1", "modules": ["quenching-git"]}),
+                            encoding="utf-8")
+        body = self.get("/api/modules")[1]
+        self.assertEqual((body["installedVersion"], body["installed"]), ("0.0.1", ["quenching-git"]))
+        self.assertEqual([r["name"] for r in body["modules"] if r["installed"]], ["quenching-git"])
+        self.assertIn("--modules quenching-git", body["command"])
+
+    def test_the_plan_is_the_function_the_terminal_prints_and_writes_nothing(self):
+        from quenching.deploy.cli import deploy_plan
+        status, body = self.get("/api/deploy-plan")
+        self.assertEqual(status, 200)
+        want = deploy_plan(pathlib.Path(self.tmp))[1]
+        self.assertEqual(body, want)
+        self.assertTrue(body["changes"] and body["written"] is False)
+        self.assertEqual(os.listdir(self.tmp), [])
+
+    def test_they_need_the_token_and_no_write_route_exists(self):
+        for route in ("modules", "deploy-plan"):
+            with self.subTest(route=route):
+                self.assertEqual(self.portal.handle("GET", f"/api/{route}", HOST)[0], 401)
+                status, body = self.post(route, {"write": True})
+                self.assertEqual((status, body["code"]), (404, "sp-portal-not-found"))
 
 
 class Settings(PortalCase):

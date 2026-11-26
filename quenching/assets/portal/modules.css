@@ -1,0 +1,10 @@
+/* Aba Módulos (modules.js). Usa só os tokens de app.css. */
+.mod { display: grid; gap: var(--space-4); max-width: 960px; padding: var(--space-5); }
+.mod-intro, .mod-versions, .mod-meta { color: var(--muted); font-size: var(--step-0); margin: 0; }
+.mod-versions { color: var(--ink); font-weight: 600; }
+.mod-list, .mod-changes, .mod-notes { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--space-2); }
+.mod-row { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-2); padding: var(--space-4); }
+.mod-head { display: flex; flex-wrap: wrap; gap: var(--space-2); align-items: center; }
+.mod-name, .mod-change code { font-family: var(--font-mono); font-size: var(--step--1); word-break: break-all; }
+.mod-command { margin: 0; padding: var(--space-3) var(--space-4); background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-1); overflow-x: auto; font-family: var(--font-mono); font-size: var(--step--1); }
+.mod-notes { color: var(--muted); font-size: var(--step--1); }
