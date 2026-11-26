@@ -99,9 +99,11 @@ def _grant_names(tools: str) -> list[str]:
 
 def mcp_tools(names: list[str], mount: frozenset[str] | None = None) -> list[str] | None:
     """The `quenching` MCP tools a grant list covers: `None` for the whole server (`Bash`, or an
-    unscoped `Bash(cq:*)`), else every tool under each scoped `Bash(cq <verbs>:*)` prefix — never
-    wider than the shell grant it mirrors. `mount` keeps only the tools of the pillars the declared
-    mount publishes: a name the server does not publish is not a grant."""
+    unscoped `Bash(cq:*)`), else the published `<pillar>_<class>` tool of every verb under each
+    scoped `Bash(cq <verbs>:*)` prefix. The server publishes one tool per pillar and class, so the
+    grant reaches the other verbs of that class too — never another pillar or class. `mount` keeps
+    only the tools of the pillars the declared mount publishes: a name the server does not publish
+    is not a grant."""
     from quenching.mcp import catalog
     if "Bash" in names:
         return None
@@ -133,11 +135,13 @@ def _with_mcp(value: str, enumerate_all: bool, mount: frozenset[str] | None = No
     else:
         wanted = [f"{prefix}__{tool}" for tool in tools]
     # A grant re-read from an already translated copy (the payload's agents, never narrowed) may
-    # carry tools a named mount does not publish; they go, or a target-local deploy keeps them
-    # and its `--check` disagrees with the source forever.
-    hidden = ({f"{prefix}__{tool}" for tool in catalog.tool_names()
-               if catalog.pillar_of(tool) not in mount} if mount is not None else set())
-    if hidden & set(names):
+    # carry tools a named mount does not publish, or a per-verb name the server no longer
+    # publishes; they go, or a target-local deploy keeps them and its `--check` disagrees with the
+    # source forever.
+    published = {f"{prefix}__{tool}" for tool in catalog.tool_names()
+                 if mount is None or catalog.pillar_of(tool) in mount}
+    hidden = {name for name in names if name.startswith(f"{prefix}__") and name not in published}
+    if hidden:
         names = [name for name in names if name not in hidden]
         value = ", ".join(names)
     missing = [name for name in wanted if name not in names]
