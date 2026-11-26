@@ -315,7 +315,8 @@ def _uncommitted(target: Path, rel: str) -> bool:
     """Git reports the path as differing from `HEAD` (modified, staged or untracked)."""
     try:
         done = subprocess.run(["git", "-C", str(target), "status", "--porcelain", "--", rel],
-                              capture_output=True, text=True, timeout=30)
+                              capture_output=True, text=True, encoding="utf-8", errors="replace",
+                              timeout=30)
     except (OSError, subprocess.SubprocessError):
         return False
     return done.returncode == 0 and bool(done.stdout.strip())
