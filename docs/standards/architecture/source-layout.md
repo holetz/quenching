@@ -2,7 +2,7 @@
 type: standard
 title: Source layout — what lives under quenching/ and integrations/
 description: one editable source, quenching/, reaches a repository only through cq deploy, and the satellites that install into no repository sit beside it under integrations/<name>/; in the source, skills/<name>/SKILL.md is the only entry point and the skill name is the folder name, a reference lives inside the skill that cites it or in the common references/ when two skills cite it, and everything that is not an entry point lives under assets/ or references/ and is cited by absolute path in the target dialect
-resource: quenching/skills/**, quenching/references/**, quenching/agents/**, quenching/assets/**, quenching/tests/**, integrations/claude-hud/**, integrations/claude-vitrine/**, integrations/claude-cache/**, integrations/opencode-cache/**, integrations/opencode-vitrine/**
+resource: quenching/skills/**, quenching/references/**, quenching/agents/**, quenching/assets/**, quenching/tests/**, integrations/claude-hud/**, integrations/claude-vitrine/**, integrations/claude-cache/**, integrations/opencode-cache/**, integrations/opencode-quota/**, integrations/opencode-vitrine/**
 tags: [architecture, source, skills, layout, deploy]
 timestamp: 2026-11-20
 audience: both
