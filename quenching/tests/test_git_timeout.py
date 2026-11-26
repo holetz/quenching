@@ -66,5 +66,24 @@ class GitTimeoutMessage(unittest.TestCase):
         self.assertEqual(run.call_args.kwargs["timeout"], 9.0)
 
 
+
+class PreflightTimeout(unittest.TestCase):
+    def test_probe_timeout_carries_the_hint_and_stays_unreachable(self):
+        from quenching.git import preflight
+        expired = subprocess.TimeoutExpired(["git", "ls-remote"], 4)
+        with tempfile.TemporaryDirectory() as tmp, \
+                unittest.mock.patch.dict(os.environ, {ENV: "4"}), \
+                unittest.mock.patch("subprocess.run", side_effect=expired) as run:
+            code, out, err = preflight._tool(tmp, "git", "ls-remote", "origin")
+            gh_code, _gh_out, gh_err = preflight._tool(tmp, "/usr/bin/gh", "auth", "status")
+        self.assertEqual(run.call_args.kwargs["timeout"], 4.0)
+        self.assertEqual((code, out), (124, ""))
+        self.assertIn("git ls-remote timed out after 4s", err)
+        self.assertIn(ENV, err)
+        self.assertEqual(gh_code, 124)
+        self.assertIn("gh auth timed out after 4s", gh_err)
+        self.assertEqual(preflight._push_reason(code, err), "unreachable")
+
+
 if __name__ == "__main__":
     unittest.main()
