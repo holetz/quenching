@@ -122,6 +122,7 @@
     gantt: ["M2.5 3.5h6", "M5.5 8h6", "M8.5 12.5h5"],
     sessions: ["M2.5 3h11v10h-11z", "M5 6l2.5 2L5 10", "M8.5 10.5H11"],
     modules: ["M2.5 2.5h4.5v4.5h-4.5z", "M9 2.5h4.5v4.5H9z", "M2.5 9h4.5v4.5h-4.5z", "M9 9h4.5v4.5H9z"],
+    docs: ["M4 2.5h6l2.5 2.5v8.5H4z", "M10 2.5V5h2.5", "M6 8h4.5", "M6 10.5h4.5"],
     settings: ["M2.5 4.5h11", "M2.5 8h11", "M2.5 11.5h11", "M5.5 3v3", "M10.5 6.5v3", "M6.5 10v3"],
     chat: ["M2.5 3h11v8H7l-3 2.5V11H2.5z"],
     search: ["M7 12A5 5 0 1 0 7 2a5 5 0 0 0 0 10Zm7 2-3.5-3.5"],
@@ -1895,6 +1896,7 @@
     else if (route.view === "gantt") content = await viewGantt();
     else if (route.view === "epics") content = viewEpics();
     else if (route.view === "modules") content = await window.QuenchingModules.view({ h, api, emptyState });
+    else if (route.view === "docs") content = await window.QuenchingDocs.view({ h, api, emptyState });
     else if (route.view === "settings") content = await window.QuenchingSettings.view({ h, api, emptyState });
     else if (route.view === "sessions") content = state.sessionsOn ? viewSessions()
       : emptyState("Sessões desligadas", "Este servidor não foi iniciado com --sessions.", h("a", { class: "ghost", href: "#/board" }, "Voltar ao board"));
