@@ -252,12 +252,42 @@ def cmd_set(args) -> int:
     return OK
 
 
+def _layer_files(root: str, layers: list[dict]) -> dict[str, str | None]:
+    """The file each effective-row `source` names; `default` has none."""
+    repo = find_repo_root(root)
+    paths = {layer["name"]: layer["path"] for layer in layers}
+    return {"default": None, "user": paths.get("user"),
+            "repository": paths.get("repository") or posix_path(config_path(repo)),
+            "local": posix_path(local_config_path(repo)), "branch": paths.get("branch")}
+
+
 def cmd_schema(args) -> int:
     payload = {"ok": True, **key_schema()}
+    known = {cat["id"] for cat in payload["categories"]}
+    if args.category and args.category not in known:
+        return refuse({"code": "cq-config-category-unknown", "category": args.category,
+                       "message": f"{args.category} is not a configuration category",
+                       "remedy": "categories: " + ", ".join(sorted(known))}, args.json)
+    prefix = args.key
+
+    def kept(row: dict) -> bool:
+        return ((not args.category or row["category"] == args.category)
+                and (not prefix or row["key"].startswith(prefix)))
+
+    if args.category or prefix:
+        payload["keys"] = [row for row in payload["keys"] if kept(row)]
+        used = {row["category"] for row in payload["keys"]}
+        payload["categories"] = [cat for cat in payload["categories"] if cat["id"] in used]
     if args.values:
-        payload["values"] = {row["key"]: {"value": row["value"], "source": row["source"]}
-                             for row in effective(resolve_root(args.root))["values"]}
-        repo = find_repo_root(resolve_root(args.root))
+        root = resolve_root(args.root)
+        state = effective(root)
+        files = _layer_files(root, state["layers"])
+        wanted = {row["key"] for row in payload["keys"]}
+        filtered = bool(args.category or prefix)
+        payload["values"] = {row["key"]: {"value": row["value"], "source": row["source"],
+                                          "path": files.get(row["source"])}
+                             for row in state["values"] if not filtered or row["key"] in wanted}
+        repo = find_repo_root(root)
         payload["layerPaths"] = {"project": posix_path(config_path(repo)),
                                  "local": posix_path(local_config_path(repo))}
     lines = []
@@ -265,8 +295,14 @@ def cmd_schema(args) -> int:
         lines.append(cat["title"]["en"])
         for row in (k for k in payload["keys"] if k["category"] == cat["id"]):
             lock = "" if row["editable"] else "  (read-only)"
-            lines.append(f"  {row['key']:<44} {row['type']:<8} {row['scope']:<8}"
-                         f" default={json.dumps(row['default'], ensure_ascii=False)}{lock}")
+            line = (f"  {row['key']:<44} {row['type']:<8} {row['scope']:<8}"
+                    f" default={json.dumps(row['default'], ensure_ascii=False)}{lock}")
+            if args.values and row["key"] in payload["values"]:
+                got = payload["values"][row["key"]]
+                line += f"  value={json.dumps(got['value'], ensure_ascii=False)} ← {got['source']}"
+                if got["path"]:
+                    line += f" ({got['path']})"
+            lines.append(line)
     emit(args.json, payload, "\n".join(lines))
     return OK
 
@@ -294,6 +330,8 @@ def build_parser() -> argparse.ArgumentParser:
                                        "copy (English and pt-BR)")
     sc.add_argument("--values", action="store_true",
                     help="add each key's effective value and the layer that supplied it")
+    sc.add_argument("--category", help="only the keys of this category id (`worktrees`, `autonomy`, …)")
+    sc.add_argument("--key", help="only the keys starting with this dotted prefix")
     sc.add_argument("--json", action="store_true", help="machine-readable output")
     for verb, text in (("set", "write one key into one layer, validated; nothing else moves"),
                        ("unset", "remove one key from one layer, so the next layer down governs")):

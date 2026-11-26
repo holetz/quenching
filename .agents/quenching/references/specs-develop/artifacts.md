@@ -307,7 +307,11 @@ under `docs/` brings `zensical.toml` (the nav), because the nav test refuses a p
 list. A new `cq` verb cited in a skill, reference or agent body brings
 `quenching/assets/bin/quenching/mcp/catalog.py`, because the coverage test refuses a verb with no
 tool; the agent mirrors that catalog regenerates follow the paragraph above and are not listed.
-Name both in the same task as the document or the citation: `## Tasks` is append-only after
+**A new verb in a pillar's parser brings the coverage pair too, cited or not**: it grows the CLI
+residue, so `quenching/assets/bin/quenching/mcp/coverage.py` (a catalog row or an `EXCEPTIONS`
+entry with its reason) and `quenching/tests/test_quenching_mcp_coverage.py` (the residue
+expectations) belong to the task that creates the verb.
+Name them in the same task as the document or the citation: `## Tasks` is append-only after
 `approved`, so a path found at build time costs a corrective task.
 
 **Scope each `verify:` to what its own task could break** — not to what the repo can check. A gate

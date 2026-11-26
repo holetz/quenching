@@ -246,9 +246,31 @@ class SetAndUnset(unittest.TestCase):
     def test_schema_values_show_the_layer(self):
         self.cq("set", "shared.worktreeSlots.max", "6", "--layer", "local")
         _code, out = self.cq("schema", "--values")
-        self.assertEqual(out["values"]["shared.worktreeSlots.max"], {"value": 6,
-                                                                     "source": "local"})
+        got = out["values"]["shared.worktreeSlots.max"]
+        self.assertEqual((got["value"], got["source"]), (6, "local"))
         self.assertEqual(out["values"]["shared.autonomy.merge"]["source"], "repository")
+
+    def test_schema_filters_by_category_and_prefix(self):
+        _code, out = self.cq("schema", "--category", "autonomy", "--key", "shared.autonomy.max")
+        self.assertEqual([k["key"] for k in out["keys"]],
+                         ["shared.autonomy.maxWorkers", "shared.autonomy.maxLaunches"])
+        self.assertEqual([c["id"] for c in out["categories"]], ["autonomy"])
+        _code, out = self.cq("schema", "--key", "proof.")
+        self.assertTrue(out["keys"] and all(k["key"].startswith("proof.") for k in out["keys"]))
+
+    def test_an_unknown_category_is_refused(self):
+        code, out = self.cq("schema", "--category", "nope")
+        self.assertEqual((code, out["code"]), (2, "cq-config-category-unknown"))
+
+    def test_schema_values_carry_the_file_each_value_came_from(self):
+        self.cq("set", "shared.worktreeSlots.max", "6", "--layer", "local")
+        _code, out = self.cq("schema", "--values", "--key", "shared.")
+        self.assertTrue(out["values"]["shared.worktreeSlots.max"]["path"].endswith(
+            ".agents/quenching.local.json"))
+        self.assertTrue(out["values"]["shared.autonomy.merge"]["path"].endswith(
+            ".agents/quenching.json"))
+        self.assertIsNone(out["values"]["shared.worktreeSlots.min"]["path"])
+        self.assertNotIn("proof.proofRoot", out["values"])
 
 
 if __name__ == "__main__":
