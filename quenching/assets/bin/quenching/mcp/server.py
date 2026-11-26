@@ -33,9 +33,11 @@ class ToolArgs(ValueError):
     """A tool argument that fails validation — reported as a tool error, never a crash."""
 
 
-ROOT = {"type": "string",
-        "description": "act on this directory instead of the server's workspace (a worktree, "
-                       "another repository); relative resolves against the workspace"}
+INSTRUCTIONS = ("Every tool takes an optional `root`: act on that directory instead of the "
+                "server's workspace (a worktree, another repository); a relative path resolves "
+                "against the workspace.")
+
+ROOT = {"type": "string", "description": "Directory this call acts on"}
 
 
 def call_root(args: dict, root: str) -> str:
@@ -190,7 +192,8 @@ def handle(message, root: str, session: Session | None, surface):
             "protocolVersion": asked if asked in PROTOCOL_VERSIONS else PROTOCOL_VERSIONS[0],
             "capabilities": {"tools": {"listChanged": False},
                              "resources": {"subscribe": False, "listChanged": False}},
-            "serverInfo": {"name": surface.name, "version": VERSION}})
+            "serverInfo": {"name": surface.name, "version": VERSION},
+            "instructions": INSTRUCTIONS})
     if method == "ping":
         return _result(request_id, {})
     if method == "tools/list":
