@@ -261,35 +261,45 @@ def _layer_files(root: str, layers: list[dict]) -> dict[str, str | None]:
             "local": posix_path(local_config_path(repo)), "branch": paths.get("branch")}
 
 
-def cmd_schema(args) -> int:
+def schema_payload(root: str, category: str | None = None, prefix: str | None = None,
+                   values: bool = False) -> tuple[dict | None, dict | None]:
+    """`cq config schema`'s JSON, once: the terminal, the portal and the OpenCode page read it.
+
+    Returns `(payload, None)`, or `(None, refusal)` for an unknown category."""
     payload = {"ok": True, **key_schema()}
     known = {cat["id"] for cat in payload["categories"]}
-    if args.category and args.category not in known:
-        return refuse({"code": "cq-config-category-unknown", "category": args.category,
-                       "message": f"{args.category} is not a configuration category",
-                       "remedy": "categories: " + ", ".join(sorted(known))}, args.json)
-    prefix = args.key
+    if category and category not in known:
+        return None, {"code": "cq-config-category-unknown", "category": category,
+                      "message": f"{category} is not a configuration category",
+                      "remedy": "categories: " + ", ".join(sorted(known))}
 
     def kept(row: dict) -> bool:
-        return ((not args.category or row["category"] == args.category)
+        return ((not category or row["category"] == category)
                 and (not prefix or row["key"].startswith(prefix)))
 
-    if args.category or prefix:
+    if category or prefix:
         payload["keys"] = [row for row in payload["keys"] if kept(row)]
         used = {row["category"] for row in payload["keys"]}
         payload["categories"] = [cat for cat in payload["categories"] if cat["id"] in used]
-    if args.values:
-        root = resolve_root(args.root)
+    if values:
         state = effective(root)
         files = _layer_files(root, state["layers"])
         wanted = {row["key"] for row in payload["keys"]}
-        filtered = bool(args.category or prefix)
+        filtered = bool(category or prefix)
         payload["values"] = {row["key"]: {"value": row["value"], "source": row["source"],
                                           "path": files.get(row["source"])}
                              for row in state["values"] if not filtered or row["key"] in wanted}
         repo = find_repo_root(root)
         payload["layerPaths"] = {"project": posix_path(config_path(repo)),
                                  "local": posix_path(local_config_path(repo))}
+    return payload, None
+
+
+def cmd_schema(args) -> int:
+    root = resolve_root(args.root) if args.values else args.root
+    payload, refusal = schema_payload(root, args.category, args.key, args.values)
+    if refusal:
+        return refuse(refusal, args.json)
     lines = []
     for cat in payload["categories"]:
         lines.append(cat["title"]["en"])
