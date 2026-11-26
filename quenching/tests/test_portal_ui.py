@@ -59,19 +59,32 @@ class Assets(unittest.TestCase):
             with self.subTest(needle=needle):
                 self.assertNotIn(needle, js)
 
+    def test_the_modules_tab_is_read_only_routed_linked_and_runs_no_deploy(self):
+        js = (ROOT / "modules.js").read_text(encoding="utf-8")
+        self.assertIn('href="#/modules"', HTML)
+        self.assertLess(HTML.index("/modules.js"), HTML.index("/app.js"))
+        self.assertIn('route.view === "modules"', JS)
+        self.assertIn("window.QuenchingModules.view(", JS)
+        self.assertIn('api("modules")', js)
+        self.assertIn('api("deploy-plan")', js)
+        for needle in ("innerHTML", "insertAdjacentHTML", "document.write", "POST", "body:",
+                       "X-Quenching-Token", "sessionStorage", "--write\"", "fetch("):
+            with self.subTest(needle=needle):
+                self.assertNotIn(needle, js)
+
     def test_the_page_references_only_local_assets(self):
         refs = re.findall(r'(?:src|href)="([^"]+)"', HTML)
         self.assertTrue(refs)
         for ref in refs:
             with self.subTest(ref=ref):
-                self.assertTrue(ref.startswith("#") or ref in ("/app.css", "/app.js", "/settings.css", "/settings.js", "data:,"), ref)
+                self.assertTrue(ref.startswith("#") or ref in ("/app.css", "/app.js", "/settings.css", "/settings.js", "/modules.css", "/modules.js", "data:,"), ref)
 
     def test_the_page_has_no_external_url_and_no_inline_code(self):
         self.assertNotIn("http://", HTML)
         self.assertNotIn("https://", HTML)
         self.assertNotIn("<style", HTML)
-        self.assertEqual(len(re.findall(r"<script\b", HTML)), 2)
-        self.assertEqual(len(re.findall(r"<script src=", HTML)), 2)
+        self.assertEqual(len(re.findall(r"<script\b", HTML)), 3)
+        self.assertEqual(len(re.findall(r"<script src=", HTML)), 3)
         self.assertNotIn("<script>", HTML)
         self.assertNotIn('style="', HTML)
 
