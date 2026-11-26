@@ -1,5 +1,5 @@
 {
-  "generator": "cq components bridge",
+  "generator": "cq deploy (cq components bridge marker)",
   "source": ".agents/skills",
   "verifiedClaudeCode": "2.1.312",
   "files": {
