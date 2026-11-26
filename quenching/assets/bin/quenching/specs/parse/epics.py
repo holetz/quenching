@@ -347,9 +347,17 @@ def open_items(info: dict, members: dict[str, dict | None],
                pr_state: dict[str, str] | None = None,
                unreadable: set[str] | None = None) -> list[dict]:
     """Items that keep a composite from being archived as `done`. With `pr_state` (the
-    caller's PR lookup) a member whose PR is not merged, or could not be read, stays open."""
+    caller's PR lookup) a member whose PR is not merged, or could not be read, stays open.
+    A member archived with `outcome: abandoned` was given up explicitly, so its item does not
+    keep the composite open (it still never unblocks its dependents, which stay `waiting`)."""
     return [i for i in derive_epic(info, members, pr_state, unreadable)["items"]
-            if i["status"] != "done"]
+            if i["status"] != "done" and not _given_up(i)]
+
+
+def _given_up(item: dict) -> bool:
+    member = item.get("member")
+    return (item["status"] == "dropped" and member is not None
+            and str(member["frontmatter"].get("outcome", "")).strip() == "abandoned")
 
 
 def composition_findings(info: dict, members: dict[str, dict | None],
