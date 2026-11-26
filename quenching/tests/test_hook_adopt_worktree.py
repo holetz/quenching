@@ -95,4 +95,9 @@ class TheNoOps(unittest.TestCase):
         self.assertEqual({}, run("not json"))
 
     def test_the_real_primary_checkout_is_a_noop(self):
-        self.assertEqual({}, run({"cwd": str(REPO_ROOT)}))
+        # REPO_ROOT is a linked worktree when the suite runs from one; the primary checkout
+        # is the parent of the shared git dir, so the no-op is proven against that.
+        common = subprocess.run(["git", "rev-parse", "--path-format=absolute", "--git-common-dir"],
+                                capture_output=True, text=True, cwd=str(REPO_ROOT), check=True)
+        primary = pathlib.Path(common.stdout.strip()).parent
+        self.assertEqual({}, run({"cwd": str(primary)}))
