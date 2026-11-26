@@ -2,12 +2,12 @@
 type: standard
 title: Test run cost
 description: What a run may write, how many workers it may take and how much of the suite each tier runs — one temp root outside the repository, a git configuration of the run's own, a shared worker budget and three scopes, with a narrow local gate that never replaces CI
-resource: scripts/verify_repo.sh, scripts/toolchain/tmproot.py, scripts/toolchain/slots.py
+resource: scripts/verify_repo.sh, scripts/toolchain/tmproot.py, scripts/toolchain/slots.py, .github/workflows/ci.yml
 tags: [tests, performance, gate, temp, workers, ci]
-timestamp: 2026-11-06
+timestamp: 2026-11-26
 audience: both
 authority: current
-source: spec 2181 — the measured baseline, the temp-root matrix and the three tiers; spec 2183 — the three tiers as three different proofs
+source: spec 2181 — the measured baseline, the temp-root matrix and the three tiers; spec 2183 — the three tiers as three different proofs; spec 628 — the dedicated runner's budget and the measured cell
 maintainer: Israel Holetz
 ---
 
@@ -47,6 +47,20 @@ available cores through one shared budget held by a kernel lock, and a nested ru
 inside its parent's quota instead of queuing behind it. A run that takes every core turns two
 concurrent gates into two slow gates: the measured contention case here ran 399 s against 227 s once
 the workers were bounded.
+
+**A dedicated runner declares its whole machine.** A lone gate takes half the physical cores, so a
+peer that starts a second later finds its half free. A CI runner holds exactly one gate and no peer
+ever arrives, so the workflow sets the budget to the runner's logical CPUs (`QUENCHING_TEST_SLOTS`);
+left at the default, the gate ran on 2 workers on a 4-vCPU runner while the unbudgeted cell beside
+it ran on 4.
+
+## Coverage is measured where it is cheap
+
+The floor needs one measured run of the whole suite per commit, not one per interpreter. The
+measured run belongs to the newest interpreter of the matrix, where coverage traces through
+`sys.monitoring`; the floor interpreter (`requires-python`) runs the whole suite unmeasured, which
+is the compatibility proof. On 3.11 the C tracer made the suite cost 608 s against 170 s for the
+same suite unmeasured on 3.13 in the same run, and that cell was the whole wall time of CI.
 
 ## Three tiers, one gate
 
