@@ -132,6 +132,13 @@ class OpenCode(unittest.TestCase):
         self.assertEqual(cqcalls.mcp_tools(use_["name"], use_["input"]), ["specs_status"])
         self.assertNotIn("KEEP-OUT", json.dumps(use_))
 
+    def test_a_bridged_grouped_tool_keeps_only_its_verb(self):
+        from quenching.session.opencode_transcript import _tool_use
+        use_, _ = _tool_use({"type": "tool", "name": "quenching_specs_read",
+                             "state": {"input": {"verb": "status", "spec": 1, "body": "KEEP-OUT"}}})
+        self.assertEqual({"verb": "status"}, use_["input"])
+        self.assertEqual(cqcalls.mcp_tools(use_["name"], use_["input"]), ["specs_status"])
+
     def test_a_bridged_server_tool_keeps_its_name(self):
         from quenching.session.opencode_transcript import _tool_use
         use_, _ = _tool_use({"type": "tool", "name": "quenching_specs_status", "state": {"input": {}}})
