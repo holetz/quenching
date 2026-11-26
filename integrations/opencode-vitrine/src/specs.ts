@@ -128,7 +128,7 @@ export async function list(cwd: string): Promise<SpecRow[]> {
   const hit = snapshots.get(root)
   if (hit && Date.now() - hit.at < TTL) return hit.rows
   return listing(root, async () => {
-    const payload = await cqJson<{ specs?: unknown[] }>(cwd, ["specs", "list", "--phase", "plans"])
+    const payload = await cqJson<{ specs?: unknown[] }>(cwd, ["specs", "list", "--phase", "plans", "--full"])
     const rows = (payload?.specs ?? []).map(normalizeRow)
     // Uma falha do `cq` não pode apagar o que já se sabia: só publica lista vazia quando nunca houve.
     if (payload || !hit) snapshots.set(root, { at: Date.now(), rows })
