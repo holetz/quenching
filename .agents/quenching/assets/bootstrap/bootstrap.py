@@ -443,12 +443,19 @@ def main(argv: list[str]) -> int:
         for path in item["writes"] or ["(runs a command; no file of its own)"]:
             print(f"  {item['item']}: {path}")
     print(f"backups go to {backup}\n")
-    failed = False
+    # every path is backed up once, before any apply: a second item on the same file would
+    # otherwise copy the already-edited file over the original
+    backed_up = set()
     for item in todo:
         for path in item["writes"]:
+            if str(Path(path)) in backed_up:
+                continue
+            backed_up.add(str(Path(path)))
             saved = back_up(path, backup)
             if saved:
                 print(f"  backed up {path} -> {saved}")
+    failed = False
+    for item in todo:
         try:
             item["apply"]()
             print(f"  done   {item['item']}")
