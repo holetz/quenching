@@ -142,6 +142,22 @@ class Adoption(AdoptRepo):
         self.assertIsNone(second["setup"])
         self.assertEqual(["ran"], (worktree / "setup.log").read_text().split())
 
+    def test_the_setup_runs_when_stderr_has_no_descriptor(self):
+        """The MCP server runs the verb in-process with stderr in a `StringIO`; the setup must
+        still run, and its output still reach that stream."""
+        import contextlib
+        import io
+
+        from quenching.git import worktree as worktree_module
+
+        path = self.make({"worktreeSetup": "printf 'ran\\n' >> setup.log; echo out; echo err >&2"})
+        with contextlib.redirect_stderr(io.StringIO()) as err:
+            result = worktree_module._setup(str(path))
+        self.assertEqual((True, 0), (result["ok"], result["exit"]), result)
+        self.assertEqual(["ran"], (path / "setup.log").read_text().split())
+        self.assertIn("out", err.getvalue())
+        self.assertIn("err", err.getvalue())
+
     def test_no_setup_runs_nothing_and_leaves_the_marker_for_the_next_session(self):
         worktree = self.make({"worktreeSetup": "printf 'ran\\n' >> setup.log"})
 
