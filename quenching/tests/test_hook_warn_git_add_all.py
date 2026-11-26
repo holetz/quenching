@@ -42,7 +42,8 @@ class TheStagingWarning(unittest.TestCase):
                         'git commit -nm "x"', "git commit -anm x", "git commit -a -n",
                         "git --no-pager commit -n -m x", "git -ccore.hooksPath=/dev/null commit -m x",
                         "git --git-dir=.git -c core.hooksPath=/dev/null commit -m x",
-                        "git --config-env=core.hooksPath=HOOKS commit -m x"):
+                        "git --config-env=core.hooksPath=HOOKS commit -m x",
+                        "git commit -u -n -m x", "git commit -S -n -m x", "git commit -uno -n -m x"):
             with self.subTest(command=command):
                 out = run(command)
                 self.assertIn("skips the repository's git hooks", out["systemMessage"])
@@ -58,7 +59,8 @@ class TheStagingWarning(unittest.TestCase):
         for command in ("git push -n origin main", "git add -n .x", "git log --no-walk",
                         "git config core.hooksPath .agents/quenching/assets/githooks",
                         "echo no-verify", "git commit -mn", "git commit -m n", "git commit -m x -F note.txt",
-                        "git --no-pager log -n 3", "git --git-dir=.git commit -m x"):
+                        "git --no-pager log -n 3", "git --git-dir=.git commit -m x",
+                        "git commit -uno -m x", "git commit -Sn -m x"):
             with self.subTest(command=command):
                 self.assertNotIn("skips", run(command).get("systemMessage", ""))
 
