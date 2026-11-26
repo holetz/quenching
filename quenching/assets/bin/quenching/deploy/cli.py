@@ -5,6 +5,7 @@ import argparse
 import hashlib
 import json
 import os
+import shutil
 import subprocess
 import sys
 from pathlib import Path
@@ -594,6 +595,23 @@ def _unlink_owned(target: Path, rel: str) -> None:
         parent = parent.parent
 
 
+def _sweep_bytecode_only(target: Path) -> None:
+    """Remove each payload package left holding only `__pycache__`: the bytecode of a module a
+    newer payload dropped is owned by no manifest, and Python would still import the directory
+    as an empty namespace package."""
+    packages = target / ".agents/quenching/assets/bin/quenching"
+    if not packages.is_dir() or not _contained(target, packages):
+        return
+    for package in sorted(packages.iterdir()):
+        if package.is_symlink() or not package.is_dir():
+            continue
+        cache = package / "__pycache__"
+        if [entry.name for entry in package.iterdir()] != ["__pycache__"] or cache.is_symlink():
+            continue
+        if all(entry.is_file() and not entry.is_symlink() for entry in cache.iterdir()):
+            shutil.rmtree(package)
+
+
 def _write_mcp(target: Path, merge: dict | None) -> None:
     for item in (merge or {}).get("files", []):
         path = target / item["rel"]
@@ -610,6 +628,7 @@ def write(target: Path, built: dict, result: dict, prune_legacy: bool) -> None:
     owned = _owned(previous)
     for rel in sorted(owned - set(tree)):
         _unlink_owned(target, rel)
+    _sweep_bytecode_only(target)
     for rel, (data, mode) in sorted(tree.items()):
         if not _safe_relative(rel):
             raise ValueError(f"unsafe deploy path: {rel}")

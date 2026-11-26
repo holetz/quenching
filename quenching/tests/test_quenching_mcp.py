@@ -11,6 +11,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from unittest import mock
 
 try:
     import _paths  # noqa: F401  — must precede the `quenching` import
@@ -307,6 +308,55 @@ class Surface(unittest.TestCase):
         self.assertIn("proof_doctor", names)
         self.assertFalse(surface.has_tool("ops_doctor"))
 
+
+    def test_a_package_left_with_only_bytecode_is_not_present(self):
+        """A module a newer deploy removed can leave `__pycache__` behind; Python imports that
+        directory as an empty namespace, so it must not count as a deployed pillar."""
+        router = catalog.router()
+        with tempfile.TemporaryDirectory() as tmp:
+            bin_dir = pathlib.Path(tmp, "bin")
+            cache = bin_dir / "quenching" / "gonepkg" / "__pycache__"
+            cache.mkdir(parents=True)
+            (cache / "cli.cpython-312.pyc").write_bytes(b"")
+            live = bin_dir / "quenching" / "livepkg"
+            live.mkdir()
+            (live / "cli.py").write_text("", encoding="utf-8")
+            with mock.patch.object(sys, "path", [str(bin_dir), *sys.path]):
+                self.assertFalse(router.present("gonepkg"))
+                self.assertTrue(router.present("livepkg"))
+
+    def test_a_pillar_that_does_not_import_is_skipped_and_named(self):
+        """One broken pillar leaves the rest of `tools/list` whole and says which one failed."""
+        real = catalog._pillar_parser
+
+        def parser(pillar):
+            if pillar == "ops":
+                raise ModuleNotFoundError("No module named 'quenching.ops.cli'")
+            return real(pillar)
+
+        with mock.patch.dict(catalog._described, clear=True), \
+                mock.patch.object(catalog, "_pillar_parser", side_effect=parser), \
+                mock.patch.object(sys, "stderr", io.StringIO()) as err:
+            reply = server.handle(rpc(3, "tools/list"), "/x", None,
+                                  catalog.surface(present=lambda pillar: True))
+        names = {t["name"] for t in reply["result"]["tools"]}
+        self.assertIn("proof_doctor", names)
+        self.assertFalse({n for n in names if n.startswith("ops_")})
+        self.assertIn("pillar ops skipped — ModuleNotFoundError", err.getvalue())
+
+    def test_a_part_that_raises_leaves_the_other_parts_listed(self):
+        class Broken:
+            def list_tools(self):
+                raise ModuleNotFoundError("No module named 'quenching.gone'")
+
+        class Fine:
+            def list_tools(self):
+                return [{"name": "kept"}]
+
+        with mock.patch.object(sys, "stderr", io.StringIO()) as err:
+            tools = server.Composite("t", [Broken(), Fine()]).list_tools()
+        self.assertEqual(tools, [{"name": "kept"}])
+        self.assertIn("part Broken skipped — ModuleNotFoundError", err.getvalue())
 
 class Calls(unittest.TestCase):
     def setUp(self):
