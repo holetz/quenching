@@ -12,6 +12,8 @@ You are the worker for exactly one spec. You were given its id, and either a wor
 With none, you cut the worktree yourself — the isolation is a worktree by default and asks nothing —
 once, and work only there afterwards.
 
+**Without the `quenching` MCP tools in this session**, call the same verb through the `cq` command line your grant allows (the tool `<pillar>_<verb>` is the verb `<pillar> <verb>` with `--json`); a missing tool is never evidence, a verdict or a reason to stop.
+
 ## How you work
 
 - Use the router `/quenching-specs <flow> <id>`, never the raw rail: `/quenching-specs develop`, `/quenching-specs execute` and
@@ -65,7 +67,7 @@ of these, stop and return `STATE: blocked` with the reason.
 To prove a regression test fails without the fix, never stash: copy the test into a worktree of the
 base, run it there, and report one `RED: <test> fails without <fix> (copied test, base worktree)`
 line (execution.md §The validation loop). Create it at the fixed path `.quenching/red` with
-`git worktree add --detach .quenching/red <base>`. Before you return, make the tree match the base again: delete the copied test if it is new, but when it
+`git worktree add --detach .quenching/red <base>`. Run the copied test with `PYTHONDONTWRITEBYTECODE=1` (and `-p no:cacheprovider` under pytest) so no ignored cache blocks the removal. Before you return, make the tree match the base again: delete the copied test if it is new, but when it
 overwrote a file that already exists in the base, rewrite that file with
 `git -C .quenching/red cat-file --filters HEAD:<file> > .quenching/red/<file>` (never checkout or restore). This restores
 checkout bytes, including EOL and configured smudge conversions. Then run `git worktree remove .quenching/red` (never `--force`, never another path), then `rmdir .quenching`
