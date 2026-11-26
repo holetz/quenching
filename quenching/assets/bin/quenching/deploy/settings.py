@@ -35,6 +35,7 @@ class Merged:
     text: str | None
     attribution: list[str] = field(default_factory=list)   # keys the deploy owns, still ""
     mcpjson: bool = False  # the deploy wrote `quenching` into `enabledMcpjsonServers`
+    permissions: list[str] = field(default_factory=list)  # rules this deploy added to `allow`
     warnings: list[str] = field(default_factory=list)
 
 
@@ -43,16 +44,25 @@ def _word(part: str) -> str:
 
 
 def dispatch_command(names: list[str], prefix: list[str] | tuple[str, ...] = PYTHON) -> str:
-    """The one line bash, PowerShell and cmd all read the same way: the root from the
-    `CLAUDE_PROJECT_DIR` both harnesses export (else the working directory), `{}` when the
-    dispatcher is not installed, else the dispatcher run as `__main__` with the body names as its
-    arguments — every body of one matcher in one interpreter."""
+    """The one line bash, PowerShell and cmd all read the same way: the project root from
+    `CLAUDE_PROJECT_DIR`, then `COPILOT_PROJECT_DIR`, then the first ancestor of the working
+    directory carrying `.git`; `{}` when the dispatcher is not installed, else the dispatcher run
+    as `__main__` with the body names as its arguments — every body of one matcher in one
+    interpreter. The walk stops at the worktree root, so a `.agents` above the project never
+    answers for it, and an event keeps the same answer from any directory of the project."""
     for name in names:
         if not _SAFE.fullmatch(name) or name == DISPATCH:
             raise ValueError(f"hook name {name!r} must match [A-Za-z0-9_-]+ and not be {DISPATCH!r}")
     code = ("import os,runpy,sys;"
-            f"p=os.path.join(os.environ.get('CLAUDE_PROJECT_DIR') or os.getcwd(),'{MARKER}{DISPATCH}.py');"
-            "os.path.isfile(p) or (print('{}'),sys.exit(0));"
+            "r=os.path.abspath(os.environ.get('CLAUDE_PROJECT_DIR') or "
+            "os.environ.get('COPILOT_PROJECT_DIR') or os.getcwd());"
+            "c=[r];"
+            "[c.append(os.path.dirname(c[-1])) for _ in range(r.count(os.sep))];"
+            "g=next((i for i,x in enumerate(c) if os.path.exists(os.path.join(x,'.git'))),-1);"
+            "c=c[:g+1] if g>=0 else [r];"
+            f"m='{MARKER}{DISPATCH}.py';"
+            "p=next((os.path.join(x,m) for x in c if os.path.isfile(os.path.join(x,m))),'');"
+            "p or (print('{}'),sys.exit(0));"
             "runpy.run_path(p,run_name='__main__')")
     return " ".join(_word(part) for part in prefix) + f' -I -c "{code}" ' + " ".join(names)
 
@@ -200,9 +210,47 @@ def _merge_mcpjson(doc: dict, wanted: bool, recorded: bool, out: Merged) -> None
             doc.pop("enabledMcpjsonServers", None)
 
 
+def _merge_permissions(doc: dict, wanted: list[str] | None, recorded: list[str],
+                       out: Merged) -> None:
+    """Append the access rules to `permissions.allow`, and take out only the ones a past deploy
+    wrote: the list is the user's, the deny/ask entries are never touched, and a rule already
+    there is theirs unless an earlier deploy recorded it."""
+    current = doc.get("permissions")
+    if current is None:
+        current = {}
+    elif not isinstance(current, dict):
+        _refuse("`permissions` must be an object")
+    allow = current.get("allow")
+    if allow is None:
+        allow = []
+    elif not isinstance(allow, list):
+        _refuse("`permissions.allow` must be a list")
+    if not wanted:
+        rest = [rule for rule in allow if rule not in recorded]
+        if len(rest) != len(allow):
+            if rest:
+                current["allow"] = rest
+            else:
+                current.pop("allow", None)
+    else:
+        for rule in wanted:
+            if rule not in allow:
+                allow.append(rule)
+                out.permissions.append(rule)
+            elif rule in recorded:
+                out.permissions.append(rule)
+        if allow:
+            current["allow"] = allow
+    if current:
+        doc["permissions"] = current
+    else:
+        doc.pop("permissions", None)
+
+
 def merge(text: str | None, wanted: list[dict], attribution: dict | None = None,
           recorded: list[str] | None = None, mcpjson: bool = False,
-          mcpjson_recorded: bool = False) -> Merged:
+          mcpjson_recorded: bool = False, permissions: list[str] | None = None,
+          permissions_recorded: list[str] | None = None) -> Merged:
     """The settings text after the merge. `text` None means the file does not exist. `mcpjson`
     asks for the registered server's approval; `mcpjson_recorded` says a past deploy wrote it."""
     out = Merged(text=text)
@@ -219,6 +267,7 @@ def merge(text: str | None, wanted: list[dict], attribution: dict | None = None,
     _merge_hooks(doc, wanted)
     _merge_attribution(doc, attribution, list(recorded or []), out)
     _merge_mcpjson(doc, mcpjson, mcpjson_recorded, out)
+    _merge_permissions(doc, permissions, list(permissions_recorded or []), out)
     if doc == original:
         return out
     out.text = json.dumps(doc, indent=2, ensure_ascii=False) + "\n"

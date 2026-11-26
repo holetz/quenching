@@ -86,6 +86,10 @@ def _flag_refusal(args, out: Emitter) -> int | None:
         return _refuse(args, out, "sp-no-reason", "--descope requires --reason",
                        "error: --descope requires --reason (the reason is written into "
                        "## Outcome)")
+    replaced_by = getattr(args, "replaced_by", None)
+    if replaced_by is not None and not args.descope:
+        return _refuse(args, out, "sp-flag-mismatch", "--replaced-by goes with --descope",
+                       "error: --replaced-by goes with --descope")
     if args.uncheck and not args.reason:
         return _refuse(args, out, "sp-no-reason", "--uncheck requires --reason",
                        "error: --uncheck requires --reason (the reason is written into "
@@ -162,7 +166,9 @@ def _retick_line(m, args) -> str:
     if args.block:
         body = f"{body} — blocked: {args.reason.strip()}"
     elif args.descope:
-        body = f"{body} — descoped: {args.reason.strip()}"
+        replaced_by = getattr(args, "replaced_by", None)
+        marker = f" (dropped → {replaced_by.strip()})" if replaced_by else ""
+        body = f"{body}{marker} — descoped: {args.reason.strip()}"
     return body
 
 
@@ -216,6 +222,16 @@ def cmd_task(args, root: str, out: Emitter) -> int:
     if not t:
         return _refuse(args, out, "sp-unknown-task", f"no task '{ident}' in {info['id']}",
                        f"error: no task '{ident}' in {info['id']}", task=ident)
+
+    replaced_by = (getattr(args, "replaced_by", None) or "").strip()
+    if replaced_by:
+        target = _find_task(info["tasks"], replaced_by)
+        if not target or target is t:
+            return _refuse(args, out, "sp-unknown-task",
+                           f"--replaced-by names {'the task itself' if target else 'no task'} "
+                           f"'{replaced_by}' in {info['id']}",
+                           f"error: --replaced-by '{replaced_by}' is not another task of {info['id']}",
+                           task=replaced_by)
 
     lines = split_lines(info["text"], keepends=True)
     m = CHECKBOX_RE.match(lines[t["lineno"]].rstrip("\n"))

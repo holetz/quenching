@@ -195,6 +195,9 @@ def _add_record_promote_task(sub) -> None:
     sp.add_argument("--descope", help="close TASK as deliberately out of scope (requires --reason)")
     sp.add_argument("--reason", help="why the task is blocked, reopened or descoped — written "
                                       "into the spec")
+    sp.add_argument("--replaced-by", dest="replaced_by",
+                    help="with --descope: the task that delivers the work instead — writes "
+                         "`(dropped → <id>)` so the verifier owes the descoped task no sha")
     sp.add_argument("--subject", help="the subject of the commit that implements the task, "
                                       "recorded as a `subject:` metadata line "
                                       "(goes with --check)")
@@ -226,6 +229,9 @@ def _add_next_and_epic(sub) -> None:
     sp.add_argument("--epic", help="a spec ID: its member specs ready to run now — "
                                    "dependencies done, approved or ready, not blocked")
     sp.add_argument("--limit", type=int, help="with --epic: at most N ready specs")
+    sp.add_argument("--autonomous", action="store_true",
+                    help="with --epic: also list the members below approved whose dependencies "
+                         "are done, as needsDevelop")
 
     sp = sub.add_parser("epic", help="the historical alias of `link add`")
     esub = sp.add_subparsers(dest="epic_cmd")

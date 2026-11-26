@@ -2,7 +2,7 @@
 
 The key is a project key read raw from the repository file. A red, skipped-required or unreadable
 check refuses under every value; a relaxed value accepts a PR with no check (and, under `off`, one
-with checks pending) only with `--gate-exit 0`.
+with checks pending) only with the gate record of the PR head (exit 0, clean tree).
 """
 from __future__ import annotations
 
@@ -57,6 +57,14 @@ class Repo(unittest.TestCase):
         path = {"repo": self.repo / ".agents" / "quenching.json",
                 "local": self.repo / ".agents" / "quenching.local.json", "user": self.user}[layer]
         path.write_text(doc, encoding="utf-8")
+
+    def record(self, head, exit_code=0, **fields):
+        """What `scripts/verify_repo.sh` leaves behind for `head`."""
+        target = self.repo / ci.GATE_RECORD
+        target.parent.mkdir(parents=True, exist_ok=True)
+        body = {"schema": 1, "head": head, "exit": exit_code, "scope": "full", "dirty": False,
+                "date": "2026-11-24T00:00:00Z", **fields}
+        target.write_text(json.dumps(body), encoding="utf-8")
 
 
 class TheJudgement(unittest.TestCase):
@@ -124,9 +132,12 @@ class TheProjectLayerAlone(Repo):
 
 
 class TheGitHubMerge(Repo):
-    def merge(self, state, **flags):
+    def merge(self, state, gate_exit=None, declared=None, **flags):
+        if gate_exit is not None:
+            self.record("abc", gate_exit)
         checks = [{"name": "gate", "bucket": "pass"}] if state == "green" else []
-        args = SimpleNamespace(action="merge", url=GH_URL, wait=0, json=True, **flags)
+        args = SimpleNamespace(action="merge", url=GH_URL, wait=0, json=True, gate_exit=declared,
+                               **flags)
         with mock.patch.object(pull, "_checks", return_value=(state, checks, "")), \
                 mock.patch.object(pull, "_is_merged", return_value=False), \
                 mock.patch.object(pull, "_view", return_value=("abc", "CLEAN")), \
@@ -152,6 +163,24 @@ class TheGitHubMerge(Repo):
         self.assertEqual((0, True), (code, merged))
         self.assertEqual({"enforce": "when-present", "checks": "none", "gateExit": 0},
                          result["ciRelaxed"])
+
+    def test_a_declared_gate_exit_without_a_record_never_merges(self):
+        self.declare("when-present")
+        code, result, merged = self.merge("none", declared=0)
+        self.assertEqual((1, "gate-proof-required", False), (code, result["reason"], merged))
+        self.assertIn("verify_repo.sh", result["message"])
+
+    def test_a_record_that_does_not_prove_this_head_never_merges(self):
+        self.declare("when-present")
+        for label, head, record in (("another head", "def", {}), ("dirty tree", "abc", {"dirty": True}),
+                                    ("failing exit", "abc", {"exit_code": 1}),
+                                    ("other schema", "abc", {"schema": 2}),
+                                    ("string exit", "abc", {"exit_code": "0"})):
+            self.record(head, **record)
+            code, result, merged = self.merge("none")
+            self.assertEqual((1, "gate-proof-required", False), (code, result["reason"], merged), label)
+        (self.repo / ci.GATE_RECORD).write_text("{not json", encoding="utf-8")
+        self.assertEqual((1, False), self.merge("none")[::2])
 
     def test_when_present_still_waits_for_pending_checks(self):
         self.declare("when-present")
@@ -179,7 +208,9 @@ class TheGitHubMerge(Repo):
 
 
 class TheAzureMerge(Repo):
-    def merge(self, policies, **flags):
+    def merge(self, policies, gate_exit=None, **flags):
+        if gate_exit is not None:
+            self.record(HEAD, gate_exit)
         snapshots = iter([AZ_PR, AZ_PR, {**AZ_PR, "status": "completed"}])
         build = {"configuration": {"id": 1, "isEnabled": True, "isBlocking": True,
                                    "type": {"id": azure_pull.BUILD_POLICY, "displayName": "gate"}}}
@@ -205,6 +236,7 @@ class TheAzureMerge(Repo):
         code, result, completed = self.merge([], gate_exit=0, allow_no_checks=True)
         self.assertEqual((1, "no-checks", False), (code, result["reason"], completed))
         self.declare("when-present")
+        (self.repo / ci.GATE_RECORD).unlink()
         code, result, completed = self.merge([])
         self.assertEqual((1, "gate-proof-required", False), (code, result["reason"], completed))
         code, result, completed = self.merge([], gate_exit=0)

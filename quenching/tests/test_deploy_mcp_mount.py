@@ -21,6 +21,7 @@ except ModuleNotFoundError:
     sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
     import _paths  # noqa: F401
 
+from quenching.deploy import translate  # noqa: E402
 from quenching.mcp import catalog  # noqa: E402
 
 PY = ["/opt/py/bin/python3"]
@@ -108,6 +109,44 @@ class Mounts(unittest.TestCase):
         hidden = {tool for tool in catalog.tool_names()
                   if catalog.pillar_of(tool) not in CORE}
         self.assertEqual(set(), granted & hidden)
+
+
+class TheShellDoor(unittest.TestCase):
+    """A pillar the mount hides keeps the shell grant its verbs would otherwise lose, so the
+    narrowed deploy never closes both doors on the same verb."""
+
+    KNOWLEDGE = "---\ndescription: k\ntools: Bash(cq knowledge:*)\n---\n\nbody\n"
+    SPECS = "---\ndescription: s\ntools: Bash(cq specs status:*)\n---\n\nbody\n"
+
+    def tools(self, text: str) -> str:
+        return next(line for line in text.splitlines() if line.startswith("tools:"))
+
+    def test_a_pillar_outside_the_mount_keeps_its_shell_door(self):
+        text = translate.agent_document(self.KNOWLEDGE, "k", narrow=True,
+                                        mount=frozenset(CORE))
+        self.assertIn("Bash(.agents/quenching/bin/cq knowledge:*)", self.tools(text))
+        self.assertNotIn("mcp__quenching__knowledge", text)
+
+    def test_a_published_pillar_still_loses_the_shell_door(self):
+        text = translate.agent_document(self.SPECS, "s", narrow=True, mount=frozenset(CORE))
+        tools = self.tools(text)
+        self.assertNotIn("Bash(", tools)
+        self.assertIn("mcp__quenching__specs_status", tools)
+
+    def test_the_copilot_projection_follows_the_same_mount(self):
+        hidden = translate.copilot_tools("Bash(cq knowledge:*)", narrow=True,
+                                           mount=frozenset(CORE))
+        self.assertEqual(["execute"], hidden)
+        shown = translate.copilot_tools("Bash(cq knowledge:*)", narrow=True)
+        self.assertIn("execute", shown)
+        self.assertTrue(any(name.startswith("quenching/knowledge_") for name in shown), shown)
+
+    def test_the_whole_router_residue_is_also_filtered_by_the_mount(self):
+        from quenching.mcp import coverage
+        residue = coverage.cli_residue((), frozenset(CORE))
+        verbs = {" ".join(path) for path in residue}
+        self.assertIn("knowledge", verbs)
+        self.assertNotIn("specs status", verbs)
 
 
 from quenching.deploy.cli import main as deploy_main  # noqa: E402

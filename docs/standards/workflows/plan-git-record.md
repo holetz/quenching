@@ -4,10 +4,10 @@ title: Plan git record contract
 description: How a spec records the git facts that cannot be derived later — per-task commit subjects, branch, pull request and merge records, branch marks for conclude discovery, base inference, merge routes, and safe local and remote branch cleanup
 resource: quenching/references/git/**, quenching/references/specs-execute/execution.md, quenching/references/specs-conclude/auto-discover.md, quenching/assets/bin/quenching/specs/**, quenching/assets/bin/quenching/git/**, quenching/skills/quenching-specs/references/execute.md, quenching/skills/quenching-specs/references/conclude.md, quenching/skills/quenching-git/references/merge.md, quenching/skills/quenching-git/references/pr-create.md
 tags: [workflows, specs, git, commits, records]
-timestamp: 2026-11-21
+timestamp: 2026-11-25
 audience: both
 authority: background
-source: abandonar-slug-por-id-nativo, vincular-spec-a-branch-commits-e-pr, spec 2022, spec 2187, spec 2209, spec 2235, spec 2242, spec 2250; history in ADR 0003
+source: abandonar-slug-por-id-nativo, vincular-spec-a-branch-commits-e-pr, spec 2022, spec 2187, spec 2209, spec 2235, spec 2242, spec 2250; branch stamped by adoption too, spec 458 (2026-11-25); history in ADR 0003
 maintainer: quenching
 ---
 
@@ -132,8 +132,9 @@ pending commit and reaches the specs branch at the next sync point (`cq git push
 All three belong to the record vocabulary in [plan-lifecycle.md](plan-lifecycle.md) and pass the
 same admission test — a fact no derivation can reproduce:
 
-- **`branch: {base, work}`** — stamped by `/quenching-specs execute`'s inline worktree cut, write-once,
-  **once the work ref is resolved** — as a worktree, or as the explicit branch override. `work` is
+- **`branch: {base, work}`** — stamped by the isolation that opens the build — `/quenching-specs
+  execute`'s inline worktree cut, or the runner's adoption of a linked worktree the harness cut —
+  write-once, **once the work ref is resolved** — as a worktree, or as the explicit branch override. `work` is
   derivable while the branch is checked out; `base` is not — **after the merge, git cannot say what the branch was cut from**,
   which is the whole reason the record exists and why it is captured while still true. A later run
   reads the record; a current branch that disagrees with `work` is a finding to report, never a
@@ -428,8 +429,9 @@ date, `git show -s --format=%cI`, never creation or last use; `null` with a name
 unknown), the reasons, the exact action and a `recommended` flag. The legacy
 `staleBranches`/`keptBranches`/`remoteBranches`/`orphanWorktrees` lists keep their shape. A linked
 worktree is a candidate only when inspection succeeded, its HEAD is merged into the base, it holds no
-tracked or untracked content and no ignored content outside the regenerable class, is not locked, is
-not the main or current checkout or the base branch, and has no open PR with the PR lookup available.
+tracked or untracked content and no ignored content outside the regenerable class, is not locked by
+another holder (a slot's own free lock never blocks it), is not the main or current checkout or the
+base branch, and has no open PR with the PR lookup available.
 The ignored content is reported per worktree as `ignored: {regenerable, unrecognized}`: a path the
 built-in cache list or `shared.regenerablePaths` covers is regenerable and does not block, while any
 other ignored file is unrecognized, is named by path and blocks with `ignored-content-unrecognized`.
@@ -449,8 +451,11 @@ its cwd inside it. Any missing or contrary fact keeps it `preserved` with a name
 `unmerged-head`, `inspection-failed`, `dirty`, `ignored-content-unrecognized`,
 `process-lookup-unavailable`, `process-in-slot`). Its action is `cq git prune --slot <path> --id
 <id> --expect-tip <tip> --confirm-inactive`, which re-reads the report and gives the slot back
-through `cq git worktree release` — detached at the base, unlocked, its merged branch deleted with
-`-d` — and never removes the directory. The release moves every file under the slot's
+through `cq git worktree release` — detached at the base, re-locked as free under `quenching:
+available`, its merged branch deleted with `-d` — and never removes the directory. A free slot keeps
+that pool lock: `git worktree remove` without `-f -f` refuses a locked tree, so a client's own
+cleanup never deletes the warm `.venv`. The removal `cq git prune --worktree` performs unlocks a
+free slot first, on the fresh report, and puts the pool lock back if the removal fails. The release moves every file under the slot's
 `.quenching/handoff/` to the same place in the main checkout; a name already taken there gets a
 `-<slot>-<n>` suffix, so a handoff is never overwritten and never discarded.
 

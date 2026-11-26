@@ -78,7 +78,8 @@ class TheCoauthorHook(unittest.TestCase):
 
     def test_the_module_declares_the_hook_with_a_timeout(self):
         modules = {m["name"]: m for m in json.loads(MODULES.read_text())["modules"]}
-        hook, = modules["quenching-specs"]["owned"]["hooks"]
+        hooks = modules["quenching-specs"]["owned"]["hooks"]
+        hook = next(h for h in hooks if h["name"] == "deny-claude-coauthor")
         self.assertEqual({"name": "deny-claude-coauthor", "event": "PreToolUse",
                           "matcher": "Bash|PowerShell|bash|powershell", "timeout": 5}, hook)
         self.assertTrue((HANDLER.parent / (hook["name"] + ".py")).is_file())

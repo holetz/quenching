@@ -12,7 +12,7 @@ import os
 from pathlib import Path, PurePosixPath
 
 from quenching.common.deploy import dumps_hash_manifest, read_manifest
-from quenching.common.workspace import snippet as workspace_snippet
+from quenching.common.workspace import TASKS_PATH, snippet as workspace_snippet, tasks_snippet
 from quenching.common.version import VERSION
 from quenching.components.commands import bridge
 from quenching.deploy import mcpfiles
@@ -21,9 +21,17 @@ from quenching.deploy import translate
 
 PAYLOAD = ".agents/quenching"
 SKILLS = ".agents/skills"
+RULES = ".agents/rules"
+CLAUDE_RULES = ".claude/rules"
+GITHUB_INSTRUCTIONS = ".github/instructions"
 CLAUDE_SKILLS = ".claude/skills"
 CLAUDE_AGENTS = ".claude/agents"
 OPENCODE_AGENTS = ".opencode/agents"
+GITHUB_AGENTS = ".github/agents"
+# What the manifest records for a file in the plugin's own source repository instead of its sha256.
+# There every generated file is a function of a tracked source, so a per-file hash only makes two
+# PRs that change the same file conflict on its manifest line (spec 520).
+SOURCE_DERIVED = "source"
 MODULE_SHORT = {
     "quenching-specs": "specs",
     "quenching-git": "git",
@@ -71,6 +79,15 @@ class DeployError(ValueError):
 def source_root() -> Path:
     """The installed plugin root that carries `assets/`, `skills/` and `references/`."""
     return Path(__file__).resolve().parents[4]
+
+
+def self_hosted(target: Path) -> bool:
+    """The target is the plugin's source repository: it tracks the source the deploy builds from.
+
+    Decided by the target, never by which copy of `cq` runs, so the source launcher and the
+    vendored one write the same manifest.
+    """
+    return (target / "quenching" / "assets" / "modules.json").is_file()
 
 
 def _is_build(path: Path) -> bool:
@@ -315,6 +332,35 @@ def _bridge_tree(tree: dict, target: Path) -> None:
              dumps_hash_manifest(document).encode(), 0o644)
 
 
+def _rules_tree(tree: dict, target: Path, harnesses: list[str],
+                projections: list[str]) -> None:
+    """The target's `.agents/rules/*.md`, projected to the client directories it reads.
+
+    The source is the target's, like `.agents/skills/`: the deploy never owns it. A client
+    directory is written only when a declared client reads it — `.claude/rules/` for the
+    `claude` harness, `.github/instructions/` for the `github` projection — and the generated
+    copy is in the manifest, so `--check` owns the drift.
+    """
+    source = target / RULES
+    if not source.is_dir():
+        return
+    claude = "claude" in harnesses
+    github = "github" in (projections or [])
+    if not claude and not github:
+        return
+    for path in sorted(source.glob("*.md")):
+        if not path.is_file() or _is_build(path):
+            continue
+        name = path.stem
+        claude_document, copilot_document = translate.rule_documents(
+            _read(path).decode("utf-8"), name)
+        if claude:
+            _add(tree, f"{CLAUDE_RULES}/{name}.md", claude_document.encode("utf-8"))
+        if github:
+            _add(tree, f"{GITHUB_INSTRUCTIONS}/{name}.instructions.md",
+                 copilot_document.encode("utf-8"))
+
+
 def mcp_argv(mcp: dict) -> list[str]:
     """The Python prefix, the vendored entry point and the mount: the whole server for `all`, the
     mounted pillar's own `mcp` for `specs`, and `mcp --only <pillars>` for a named mount (`core`) or
@@ -337,7 +383,9 @@ def _declared_hooks(selected: list[dict]) -> list[dict]:
 def build_tree(source: Path, target: Path, modules: list[str], harnesses: list[str],
                runtime: str = "vendor", profiles: list[str] | None = None,
                mcp: dict | None = None, python: list[str] | None = None,
-               hooks_python: list[str] | None = None, workspace: bool = False) -> dict:
+               hooks_python: list[str] | None = None,
+               projections: list[str] | None = None,
+               workspace: bool = False) -> dict:
     manifest = load_modules(source)
     selected = _selected_modules(manifest, modules)
     if not selected:
@@ -396,35 +444,69 @@ def build_tree(source: Path, target: Path, modules: list[str], harnesses: list[s
         _add(tree, PAYLOAD + "/bin/cq", sh, 0o755)
         _add(tree, PAYLOAD + "/bin/cq.cmd", cmd, 0o644)
 
+    # A module outside the selection whose mirror the target already tracks: the files stay, so
+    # they are regenerated from the source like a selected module's, never left to age while
+    # `--check` reads green. A module the target never carried adds nothing.
+    # A folder the last deploy owned is a module the caller just deselected: that one leaves with
+    # the write, it is not a mirror.
+    outside = [module for module in manifest["modules"] if module not in selected]
+    previous = read_manifest(str(target)) or {}
+    left = set(previous.get("files") or {})
+    kept_before = set(previous.get("mirrors") or [])
+    mirrored: list[str] = []
+    folders: list[str] = []
+
+    def kept(rel: str, marker: str) -> bool:
+        present = ((target / rel / marker).is_file() if marker != "*.py"
+                   else any((target / rel).glob("*.py")))
+        return present and (rel in kept_before
+                            or not any(owned.startswith(rel + "/") for owned in left))
+
+    for package in _packages(outside):
+        folder = "assets/bin/quenching/" + package
+        if package not in packages and kept(PAYLOAD + "/" + folder, "*.py") and (source / folder).is_dir():
+            before = set(tree)
+            folders.append(PAYLOAD + "/" + folder)
+            _add_tree(tree, source, folder)
+            mirrored.extend(sorted(set(tree) - before))
+
     # A skill is its whole folder: the `SKILL.md` and the `references/` beside it.
     skill_names: list[str] = []
-    for module in selected:
-        for name in module["owned"]["skills"]:
-            if name in skill_names:
-                continue
+    skill_sources = [(name, True) for module in selected for name in module["owned"]["skills"]]
+    skill_sources += [(name, False) for module in outside
+                      for name in module.get("owned", {}).get("skills", [])
+                      if kept(SKILLS + "/" + name, "SKILL.md") and (source / "skills" / name).is_dir()]
+    for name, chosen in skill_sources:
+        if name in skill_names:
+            continue
+        if chosen:
             skill_names.append(name)
-            root = source / "skills" / name
-            # A vendored payload carries no skill source: the installed folder is already the
-            # generated form, so it is re-asserted byte for byte.
-            installed = not root.is_dir()
-            if installed:
-                root = target / SKILLS / name
-            if not root.is_dir():
+        root = source / "skills" / name
+        # A vendored payload carries no skill source: the installed folder is already the
+        # generated form, so it is re-asserted byte for byte.
+        installed = not root.is_dir()
+        if installed:
+            root = target / SKILLS / name
+        if not root.is_dir():
+            continue
+        for path in sorted(root.rglob("*")):
+            if not path.is_file() or _is_build(path):
                 continue
-            for path in sorted(root.rglob("*")):
-                if not path.is_file() or _is_build(path):
-                    continue
-                rel = path.relative_to(root).as_posix()
-                if installed:
-                    data = _read(path)
-                elif rel == "SKILL.md":
-                    data = translate.skill_document(path.read_text(encoding="utf-8"), name,
-                                                    narrow, mount).encode("utf-8")
-                elif path.suffix == ".md":
-                    data = translate.reference_document(path.read_text(encoding="utf-8")).encode("utf-8")
-                else:
-                    data = _read(path)
-                _add(tree, f"{SKILLS}/{name}/{rel}", data, _mode(path))
+            rel = path.relative_to(root).as_posix()
+            if installed:
+                data = _read(path)
+            elif rel == "SKILL.md":
+                data = translate.skill_document(path.read_text(encoding="utf-8"), name,
+                                                narrow, mount).encode("utf-8")
+            elif path.suffix == ".md":
+                data = translate.reference_document(path.read_text(encoding="utf-8")).encode("utf-8")
+            else:
+                data = _read(path)
+            _add(tree, f"{SKILLS}/{name}/{rel}", data, _mode(path))
+            if not chosen:
+                mirrored.append(f"{SKILLS}/{name}/{rel}")
+                if f"{SKILLS}/{name}" not in folders:
+                    folders.append(f"{SKILLS}/{name}")
 
     if "claude" in harnesses:
         _bridge_tree(tree, target)
@@ -441,6 +523,18 @@ def build_tree(source: Path, target: Path, modules: list[str], harnesses: list[s
                                                    narrow, mount).encode(),
                  0o644)
 
+    # Path-scoped rules: the target's source in the generic layer, one generated copy per client
+    # directory a declared client reads.
+    _rules_tree(tree, target, harnesses, projections or [])
+    if "github" in (projections or []):
+        # The GitHub Copilot harness reads the native format, not the Claude one; a repository
+        # declares the projection, so a target without Copilot pays no second register.
+        for name, path in _agents(source).items():
+            _add(tree, f"{GITHUB_AGENTS}/{translate.agent_name(name)}.agent.md",
+                 translate.copilot_agent_document(path.read_text(encoding="utf-8"), name,
+                                                  narrow, mount).encode(),
+                 0o644)
+
     seeds = {
         "AGENTS.md": _agents_md(target),
         ".agents/quenching.json": _seed_config(target, profiles or profiles_for(modules)),
@@ -449,6 +543,8 @@ def build_tree(source: Path, target: Path, modules: list[str], harnesses: list[s
         # A client projection, opted in by the repository's own `shared.workspace.vscode`:
         # created only when absent, never listed in the manifest, never drift-checked.
         seeds[".vscode/settings.json"] = workspace_snippet()
+        seeds[TASKS_PATH] = tasks_snippet()
+    hosted = self_hosted(target)
     document = {
         "generator": "cq deploy",
         "version": VERSION,
@@ -458,8 +554,12 @@ def build_tree(source: Path, target: Path, modules: list[str], harnesses: list[s
         "harnesses": harnesses,
         "runtime": runtime,
         "skills": sorted(skill_names),
-        "files": {rel: hashlib.sha256(data).hexdigest() for rel, (data, _mode_) in sorted(tree.items())},
+        "files": {rel: SOURCE_DERIVED if hosted else hashlib.sha256(data).hexdigest()
+                  for rel, (data, _mode_) in sorted(tree.items())},
     }
+    if folders:
+        # The tracked mirrors of modules outside the selection, kept in step with the source.
+        document["mirrors"] = sorted(folders)
     if mcp:
         # The harness files are the user's and merged by `cli`; the manifest names which ones.
         document["mcp"] = mcp
@@ -476,5 +576,7 @@ def build_tree(source: Path, target: Path, modules: list[str], harnesses: list[s
                     "mcpjson": bool(mcp)}
         document["claudeSettings"] = {"hooks": [hook["name"] for hook in hooks],
                                       "attribution": sorted(claude_settings.ATTRIBUTION),
-                                      "command": prefix, "mcpjson": bool(mcp)}
-    return {"tree": tree, "seeds": seeds, "manifest": document, "settings": settings}
+                                      "command": prefix, "mcpjson": bool(mcp),
+                                      "permissions": []}
+    return {"tree": tree, "seeds": seeds, "manifest": document, "settings": settings,
+            "mirrored": sorted(set(mirrored))}

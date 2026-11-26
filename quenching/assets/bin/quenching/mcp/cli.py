@@ -10,6 +10,7 @@ expands to in the registered `.mcp.json`.
 """
 from __future__ import annotations
 
+import importlib
 import json
 import os
 
@@ -54,4 +55,8 @@ def main(argv: list[str]) -> int:
     if refusal:
         print(json.dumps(refusal, ensure_ascii=False))
         return 2
+    # A long-lived process keeps merged PR lookups. Resolved at run time, as the specs CLI
+    # resolves its verbs, so the static import graph the affected-test selector reads does not
+    # tie every catalog consumer to the epic reader.
+    importlib.import_module("quenching.specs.commands.epic").remember_merged()
     return server.run_stdio(os.path.abspath(args.root or os.getcwd()), surface(only=only))

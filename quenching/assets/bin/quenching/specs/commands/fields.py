@@ -296,6 +296,8 @@ def cmd_record(args, root: str, out: Emitter) -> int:
             return 2
         if verdict and verdict[-1] not in RUN_VERDICTS:
             merged.pop("by", None)
+    if args.name == "approved" and "date" in fields:
+        merged.setdefault("date", datetime.date.today().isoformat())
     # The schema's field order, so a record reads the same however it was assembled and a
     # re-stamp never reshuffles what a human wrote.
     ordered = {k: merged[k] for k in fields if k in merged}

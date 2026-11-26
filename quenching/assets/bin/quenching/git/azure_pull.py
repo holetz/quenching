@@ -152,7 +152,7 @@ def merge_azure(args, match: re.Match) -> int:
     payload.update(checks=state, notGreen=names)
     from quenching.git.pull import ci_refusal
 
-    refusal = ci_refusal(args, payload, {"no-checks": "none"}.get(state, state))
+    refusal = ci_refusal(args, payload, {"no-checks": "none"}.get(state, state), head)
     if refusal is not None:
         return finish(refusal[0] or state, refusal[1] or message)
     now, message = _read(route + ["--http-method=GET"], dict)

@@ -38,6 +38,15 @@ class TheReader(unittest.TestCase):
         self.assertEqual(["**/.agents/quenching/assets/**"], vscode["searchExclude"])
         self.assertEqual(["chat.agent.sandbox"], vscode["sandbox"])
 
+    def test_the_access_report_is_measured_alongside_the_clients(self):
+        clients = copilot_bench.measure_clients(FIXTURE)
+        self.assertEqual("present", clients["access"]["family"]["state"])
+        self.assertIn("copilotCli", clients["access"])
+        with tempfile.TemporaryDirectory() as empty:
+            rows = copilot_bench.bench(pathlib.Path(empty), "target")["hypotheses"]
+        h12 = next(row for row in rows if row["id"] == "H12")
+        self.assertIn("regra(s)", h12["observation"])
+
     def test_the_agent_frontmatter_carries_the_fields_a_client_discovers(self):
         row = copilot_bench.measure_clients(FIXTURE)["agents"]["github"]["rows"][0]
         self.assertTrue(row["description"])
@@ -86,6 +95,26 @@ class TheReader(unittest.TestCase):
             self.assertRegex(limit["date"], r"^\d{4}-\d{2}-\d{2}$")
 
 
+class TheNativeProjection(unittest.TestCase):
+    """The bench measures `.github/agents` in the native format when the repository projects it."""
+
+    def test_this_repository_measures_five_native_agents(self):
+        clients = copilot_bench.measure_clients(REPO_ROOT)
+        rows = clients["agents"]["github"]["rows"]
+        self.assertEqual(5, len(rows), rows)
+        for row in rows:
+            self.assertTrue(row["description"], row)
+            self.assertTrue(copilot_bench.native_agent(row), row)
+            self.assertNotIn("haiku", row["model"].lower())
+
+    def test_h2_names_both_formats(self):
+        with tempfile.TemporaryDirectory() as empty:
+            rows = copilot_bench.bench(pathlib.Path(empty), "target")["hypotheses"]
+        h2 = next(row for row in rows if row["id"] == "H2")
+        self.assertIn(".github/agents", h2["capability"])
+        self.assertIn(".github/agents", h2["artifact"])
+
+
 class TheDisposableTarget(unittest.TestCase):
     """The probe against a target the deploy really installed: the user's surface, not the source."""
 
@@ -127,6 +156,40 @@ class TheDisposableTarget(unittest.TestCase):
         self.assertEqual("absent", clients["github"]["state"])
         self.assertEqual({name: False for name in copilot_bench.GITHUB_FORMATS},
                          clients["github"]["formats"])
+
+
+class TheWorktreeFamily(unittest.TestCase):
+    """H7's static half: the linked worktrees git registers and the family the client cuts."""
+
+    def setUp(self):
+        import subprocess
+        self.subprocess = subprocess
+        tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
+        self.base = pathlib.Path(tmp.name)
+        self.main = self.base / "repo"
+        self.main.mkdir()
+        self.git("init", "-q", "-b", "main")
+        self.git("commit", "-q", "--allow-empty", "-m", "init")
+        self.git("worktree", "add", "-q", "-b", "slot-x", str(self.base / "repo-slot-1"))
+        (self.base / "repo.worktrees").mkdir()
+        self.harness = self.base / "repo.worktrees" / "copilot-x"
+        self.git("worktree", "add", "-q", "-b", "copilot/x", str(self.harness))
+        self.agents = self.base / "agents-tree"
+        self.git("worktree", "add", "-q", "-b", "agents/y", str(self.agents))
+
+    def git(self, *args):
+        return self.subprocess.run(["git", "-C", str(self.main), "-c", "user.name=t",
+                                    "-c", "user.email=t@t", *args], check=True,
+                                   capture_output=True, text=True)
+
+    def test_linked_worktrees_are_listed_and_the_harness_family_is_flagged(self):
+        facts = copilot_bench.worktree_facts(self.main)
+        self.assertEqual("present", facts["state"])
+        self.assertEqual(3, len(facts["linked"]))
+        self.assertEqual(["repo-slot-1"], facts["slots"])
+        self.assertEqual([], facts["stores"])
+        self.assertEqual(sorted([str(self.harness), str(self.agents)]), facts["harness"])
 
 
 if __name__ == "__main__":

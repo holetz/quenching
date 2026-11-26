@@ -23,6 +23,7 @@ import tempfile
 from pathlib import Path
 from typing import Callable
 
+from quenching.common import access as client_access
 from quenching.common import workspace as workspace_settings
 from quenching.common.cache import cache_root
 from quenching.common.git import COMMAND_TIMEOUT_S, _git
@@ -423,6 +424,16 @@ def run_antivirus(as_json: bool, root: str) -> int:
     return OK
 
 
+def run_access(as_json: bool, root: str) -> int:
+    """`cq doctor --access`: what each client declares for the slots and the sibling stores.
+
+    Read-only and never a refusal: an absent file, a stale pattern or a missing key is a fact the
+    report names, not an error that stops the run."""
+    report = client_access.report(root)
+    emit(as_json, {"ok": True, **report}, client_access.human(report))
+    return OK
+
+
 def _workspace_line(report: dict) -> str:
     """One line for the standard report: what the file carries, or the gap that matters."""
     path = report["path"]
@@ -450,10 +461,29 @@ def _workspace_line(report: dict) -> str:
             "prints the block")
 
 
-def _workspace_human(root: str, report: dict) -> str:
+def _tasks_line(report: dict) -> str:
+    """One line for the standard report: what `.vscode/tasks.json` carries, or the gap."""
+    path = report["path"]
+    if report["state"] == "unreadable":
+        return f"tasks: {path} could not be read as JSONC — `cq doctor --workspace` prints the tasks"
+    if report["state"] == "absent":
+        if report["declared"]:
+            return (f"tasks: {path} is absent — `cq deploy --write` seeds it "
+                    "(shared.workspace.vscode)")
+        return (f"tasks: {path} is absent — `cq doctor --workspace` prints the tasks; "
+                "declare `shared.workspace.vscode` to let `cq deploy` seed it")
+    if report["complete"]:
+        return f"tasks: {path} — {len(report['labels'])} task(s) present"
+    return (f"tasks: {path} — missing: {', '.join(report['missing'])} — "
+            "`cq doctor --workspace` prints them")
+
+
+def _workspace_human(root: str, report: dict, tasks: dict) -> str:
     lines = [f"cq doctor --workspace — {os.path.abspath(root)}",
              f"  .vscode/settings.json: {report['state']}"
              + (f" — {report['reason']}" if report.get("reason") else ""),
+             f"  .vscode/tasks.json: {tasks['state']}"
+             + (f" — {tasks['reason']}" if tasks.get("reason") else ""),
              f"  shared.workspace.vscode: "
              f"{'declared' if report['declared'] else 'not declared'}"]
     if report["state"] == "present":
@@ -466,23 +496,30 @@ def _workspace_human(root: str, report: dict) -> str:
     lines += ["", "The block to write (this prints; nothing is applied):",
               workspace_settings.snippet().rstrip("\n"),
               "",
+              "The tasks to write (this prints; nothing is applied):",
+              workspace_settings.tasks_snippet().rstrip("\n"),
+              "",
               "The live half is not proved here: open the workspace in VS Code (Copilot) and",
               "search a term that only exists under .agents/quenching; a result outside the",
-              "block means the client ignored the key in this workspace."]
+              "block means the client ignored the key in this workspace. Run one task and check",
+              "that no model turn was spent."]
     return "\n".join(lines)
 
 
 def run_workspace(as_json: bool, root: str) -> int:
     """Report the recommended workspace settings and what the file carries; write nothing."""
     report = workspace_settings.report(root)
+    tasks = workspace_settings.tasks_report(root)
     emit(as_json, {"ok": True, "root": os.path.abspath(root), "workspace": report,
-                   "snippet": workspace_settings.snippet()},
-         _workspace_human(root, report))
+                   "tasks": tasks, "snippet": workspace_settings.snippet(),
+                   "tasksSnippet": workspace_settings.tasks_snippet()},
+         _workspace_human(root, report, tasks))
     return OK
 
 
 def run(as_json: bool, root: str, *, setup: bool = False, write: bool = False,
-        antivirus: bool = False, workspace: bool = False) -> int:
+        antivirus: bool = False, access: bool = False,
+        workspace: bool = False) -> int:
     """Render the top-level doctor and preserve the CQ refusal door for missing prerequisites."""
     resolved_root = os.path.abspath(root)
     if not os.path.isdir(resolved_root):
@@ -502,6 +539,14 @@ def run(as_json: bool, root: str, *, setup: bool = False, write: bool = False,
                 "remedy": "run `cq doctor --antivirus` and apply what it prints yourself",
             }, as_json)
         return run_antivirus(as_json, resolved_root)
+    if access:
+        if write:
+            return refuse({
+                "code": "cq-setup-write-without-setup",
+                "message": "`--write` is valid only with `--setup`; `--access` writes nothing",
+                "remedy": "run `cq doctor --access` and paste the block it prints yourself",
+            }, as_json)
+        return run_access(as_json, resolved_root)
     if workspace:
         if write:
             return refuse({
@@ -542,14 +587,20 @@ def run(as_json: bool, root: str, *, setup: bool = False, write: bool = False,
         report = {**report, "config": config}
         human += f"\n  {_config_line(config)}"
     workspace_report = workspace_settings.report(resolved_root)
+    tasks_report = workspace_settings.tasks_report(resolved_root)
     if (workspace_report["state"] != "absent" or workspace_report["declared"]
+            or tasks_report["state"] != "absent"
             or os.path.isdir(os.path.join(resolved_root, ".vscode"))):
-        report = {**report, "workspace": workspace_report}
+        report = {**report, "workspace": workspace_report, "tasks": tasks_report}
         human += f"\n  {_workspace_line(workspace_report)}"
+        human += f"\n  {_tasks_line(tasks_report)}"
     git_cache = untracked_cache_report(resolved_root)
     if git_cache is not None:
         report = {**report, "gitCache": git_cache}
         line = untracked_cache_line(git_cache)
         human += f"\n  {line}" if line else ""
+    client = client_access.report(resolved_root)
+    report = {**report, "access": client}
+    human += f"\n  {client_access.summary(client)}"
     emit(as_json, {"ok": True, **report}, human)
     return OK

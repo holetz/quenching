@@ -381,7 +381,7 @@ CLI's; the server holds no store logic.
 | `specs_status` | `spec` | one spec's sections, stage, tasks and gates |
 | `specs_show` | `spec`, `tasks` (ids, at most 20) | the map, or only the named tasks |
 | `specs_section` | `spec`, `headings` or `moment`, `scope` | the named sections only |
-| `specs_next` | `spec` or `epic` (neither: the ranked front), `limit` | the next action, the epic's ready members, or the front, paged |
+| `specs_next` | `spec` or `epic` (neither: the ranked front), `limit`, `autonomous` (with `epic`) | the next action, the epic's ready members (with `autonomous`, also those to develop first), or the front, paged |
 | `specs_epic_progress` | `epic` | one epic's progress |
 
 Write tools run the same CLI verbs, in the same process, and add no store logic:
@@ -573,22 +573,31 @@ keeps its modules, while `--modules core` narrows a wider install and deletes th
 
 Deploy writes `AGENTS.md` and `.agents/quenching.json` only when absent, plus the generated
 `.agents/skills/`, `.agents/quenching/` (with the target's own `.agents/quenching/bin/cq`), the
-`.claude/skills/` bridge and, per selected harness, the Claude and OpenCode subagents. It records
-what it owns in `.agents/.quenching-deploy.json`. `CLAUDE.md` is not created. Deploy installs the
-surface only: the target's `/quenching-knowledge align` installs `/docs/` and converges the fronts.
+`.claude/skills/` bridge, per selected harness the Claude and OpenCode subagents, and — when the
+repository declares `shared.projections: ["github"]` — the Copilot subagents under
+`.github/agents/`, all from the same `quenching/agents/*.md`. It records what it owns in
+`.agents/.quenching-deploy.json`. `CLAUDE.md` is not created. Deploy installs the surface only: the
+target's `/quenching-knowledge align` installs `/docs/` and converges the fronts.
 The full contract, including the surface translation, is [deploy-mode.md](../docs/standards/architecture/deploy-mode.md).
 
 **The GitHub Copilot harness reads the `claude` files.** The VS Code Agents window and the Copilot
 CLI read the target's `.claude/settings.json` hooks and its `.mcp.json` as their own, so a Copilot
-session gets the same guards and the `quenching` MCP server with no file of its own. The hook
+session gets the same guards and the `quenching` MCP server with no settings or MCP file of its own.
+For subagents, declare `shared.projections: ["github"]`: the deploy writes
+`.github/agents/quenching-<name>.agent.md`
+from the same five agent sources, with the Copilot tool aliases, the model band and
+`include-custom-instructions: true`, so the repository's `AGENTS.md` reaches the subagent. Without
+the key nothing in `.github/` changes. The hook
 command is one polyglot line that bash, PowerShell and cmd parse alike, started by the repository's
 `shared.mcp.command` prefix (else the Python the deploy finds on the machine, no version pinned; a
 `uv`/`uvx` prefix is replaced by a direct interpreter, for the hooks and the MCP server alike):
 override it with `shared.mcp.command` when a machine needs another
-([hooks.md](../docs/standards/automation/hooks.md)). Open a Copilot session with **Branch**
-isolation, not **New Worktree**: Copilot's worktree starts at the current HEAD, carries no ignored
-file and runs no `worktreeSetup`, and the agent would then cut a second one with
-`cq git worktree add` — the worktree is the quenching flow's to cut.
+([hooks.md](../docs/standards/automation/hooks.md)). Open a Copilot session with **New Worktree**
+(or **Branch**, when you prefer it): a `SessionStart` hook runs `cq git worktree adopt` in the
+checkout the client cut — it links the declared `sharedPaths` and the declared
+`shared.regenerablePaths` directories from the primary checkout, runs the declared
+`worktreeSetup` once, and tells the agent it is already isolated. The agent adopts that worktree
+and never cuts a second one.
 
 **Each harness gets what an orchestrated run needs.** Claude Code (and Copilot through the same
 file) gets `quenching` in `enabledMcpjsonServers`, so the registered server starts in a trusted
@@ -656,7 +665,7 @@ updates the published artifacts in lockstep. See
 contract.
 
 <!-- quenching-proof-readme-start -->
-<!-- quenching-proof-readme-sha256 f151f6773a3ebdb30da11aeed438d306cca9350783a0d55b7cf8444c609fc77f -->
+<!-- quenching-proof-readme-sha256 4daeccb0a03c8e4ecb7f0698634ce7484f08732006587c74e3190789c0b9a4d4 -->
 ## Declared proof layers
 
 ### tests
@@ -665,7 +674,6 @@ contract.
 - Reach: tree
 - Budget: not declared
 - Required: yes
-- Test modules: 201
 - Fixture modules: none
 
 ### Declared cost contract

@@ -2,12 +2,12 @@
 type: standard
 title: Scoped hooks
 description: Where a hook may be installed, what each scope and handler costs, and the policy defaults every hook obeys
-resource: .claude/settings.json, quenching/skills/**, quenching/assets/bin/quenching/components/**
+resource: .claude/settings.json, quenching/skills/**, quenching/assets/bin/quenching/components/**, quenching/tests/test_hook_prefix.py
 tags: [automation, hooks, performance, budget]
 timestamp: 2026-11-25
 audience: both
 authority: current
-source: 2026-07-27, 2026-08-03, enxugar-create-e-eliminar-o-rung-hooks, 2026-08-06; lineage in ADR 0004
+source: 2026-07-27, 2026-08-03, enxugar-create-e-eliminar-o-rung-hooks, 2026-08-06; the SessionStart adoption hook, spec 458 (2026-11-25); lineage in ADR 0004
 maintainer: quenching
 ---
 
@@ -67,6 +67,31 @@ deterministic 95% may share a matcher with a `prompt` rung for the judgment tail
   `test -f "<path>" || exit 0; python3 "<path>"`. A missing handler must be a **no-op**, never a
   finding about the handler.
 
+## A stable prompt prefix
+
+<!-- rules -->
+
+**A hook's answer is a pure function of the event.** The same input must produce the same bytes
+from any directory of the project, under any `PYTHONHASHSEED`, timezone or repetition. A hook
+fires inside the prompt prefix, and a prefix that changes between two identical calls throws away
+the provider's cache for every token after it; the saving is invisible until it is gone, so the
+invariant is a check, not a habit. Clock readings, absolute paths, pids, uuids, call ids and ANSI
+escapes therefore stay out of `systemMessage` and `additionalContext`: a body that needs one of
+them to describe a finding writes it into the artifact or the report, never into the answer.
+
+The root the deployed line resolves is part of the function, not of the caller's directory. It
+takes `CLAUDE_PROJECT_DIR`, then `COPILOT_PROJECT_DIR`, then walks up from the working directory to
+the first ancestor carrying `.git` — the worktree root — and searches that chain for the
+dispatcher; with no `.git` above the cwd the absence guard answers `{}`, never a `.agents` outside
+the project. The same event therefore answers the same bytes from the project root, from a
+subdirectory and from another worktree of the project.
+
+**The check is `quenching/tests/test_hook_prefix.py`** (`test_hook_prefix` to the gate). It starts
+the real installed line against a throwaway target, demands identical bytes from two directories
+under two hash seeds, two timezones and repetition, refuses the volatile shapes above, and fails
+before the root walk existed. `/quenching-components hook-new` mints under this rule; a new
+volatile shape is added to that check before any hook may emit it.
+
 ## What this repo's own surface does under it
 
 **The source declares its hooks in `modules.json`; deploy installs them.** A module lists its hooks
@@ -81,10 +106,13 @@ through PowerShell or cmd, where a bash line fails and a failed `preToolUse` com
 tool call**. The deployed command is therefore `<python prefix> -I -c "<code>" <name> <name>…`,
 where `<code>` holds no `$`, no backtick, no `%`, no `!` and no inner double quote, and each `<name>`
 matches `[A-Za-z0-9_-]+` (the deploy refuses any other), so bash, PowerShell and cmd all hand it to
-Python unchanged. The code takes the root from `CLAUDE_PROJECT_DIR` (both harnesses export it;
-Copilot also exports `COPILOT_PROJECT_DIR`), else the working directory, prints `{}` when the
+Python unchanged. The code resolves the project root in one order: `CLAUDE_PROJECT_DIR` (both
+harnesses export it), then `COPILOT_PROJECT_DIR` (Copilot's own), then a walk up from the working
+directory to the first ancestor carrying `.git` — the worktree root. It prints `{}` when the
 dispatcher is not installed — the absence guard, inside Python — and otherwise runs
-`assets/hooks/dispatch.py` as `__main__` with the body names as its arguments.
+`assets/hooks/dispatch.py` as `__main__` with the body names as its arguments. With no `.git` above
+the cwd the walk has nowhere to go, so the guard answers `{}` rather than a `.agents` outside the
+project.
 
 **One process per `(event, matcher)`, never one per hook.** Claude Code starts every matching hook
 entry in parallel, so N entries cost N interpreter starts on every shell call. The deploy writes
@@ -122,7 +150,9 @@ reads `.claude/settings.json`, so a second file would run every hook twice there
 
 **No `WorktreeCreate` hook is generated.** The worktree belongs to the quenching flow, which takes a
 slot with `cq git worktree acquire`. A harness hook that cut its own worktree would hand a session a
-tree with no slot lock, no `worktreeSetup` and no `branch:` record.
+tree with no slot lock, no `worktreeSetup` and no `branch:` record. **A `SessionStart` hook is not a
+`WorktreeCreate`**: it cuts nothing and takes no slot; it adopts a checkout that already exists
+(`adopt-worktree` below).
 
 **`deny-claude-coauthor`.** `quenching-specs` declares one rung-2 `PreToolUse` hook matched to
 the shell tools, running `assets/hooks/deny-claude-coauthor.py` (5-second timeout, absence-guarded). It denies a
@@ -152,6 +182,20 @@ command, so a quoted commit message or an `echo` that only mentions a flag stays
 set by `git config` beforehand, a variable or an alias goes unseen — so it is a reminder, not a
 boundary. A skill-scoped rung 1 does not exist for it: the skill bridge is a byte copy and carries
 no frontmatter hook.
+
+**`adopt-worktree`.** `quenching-specs` declares one **rung-4** `SessionStart` hook over the four
+sources (`startup|resume|clear|compact`), running `assets/hooks/adopt-worktree.py` with a 300-second
+timeout. Rung 4 because the condition is the session's own cwd — a linked worktree the harness cut —
+which no tool matcher expresses, and it must run before the first tool call; nothing narrower sees
+the event. The body runs `cq git worktree adopt` in the session's checkout: on the primary or a slot
+the verb refuses and the body prints `{}`, so a session that was never isolated costs one Python
+start and one `git rev-parse` (about 30 ms) and zero tokens. Inside a linked worktree it links the
+declared `sharedPaths`, symlinks the declared `shared.regenerablePaths` directories the primary
+holds, runs the declared `worktreeSetup` once per worktree (marker in the worktree's git dir) and
+returns the context that says the session is already isolated. **The side effects are the
+contract**: the VS Code agent host runs a `SessionStart` command for its effects and discards the
+answer, and the runner and the orchestrator detect the worktree from git, so adoption never depends
+on the message.
 
 **Before it, this repo wired no hook of its own.** It once wired the OKF checker itself, at rungs 2 and
 3, via a `hooks.json` shipped under this plugin's own `hooks/` — a `PostToolUse` hook matched to `Write|Edit` and a
