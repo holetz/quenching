@@ -7,6 +7,31 @@ from __future__ import annotations
 import os
 
 COMMAND_TIMEOUT_S = 60
+TIMEOUT_ENV = "QUENCHING_GIT_TIMEOUT_S"
+
+
+def git_timeout_s() -> float:
+    """Seconds one git command may run: `$QUENCHING_GIT_TIMEOUT_S` when it is a positive number,
+    else `COMMAND_TIMEOUT_S`. Read on every call, so a slow network is answered per process."""
+    raw = os.environ.get(TIMEOUT_ENV, "").strip()
+    try:
+        value = float(raw)
+    except ValueError:
+        return COMMAND_TIMEOUT_S
+    return value if value > 0 and value != float("inf") else COMMAND_TIMEOUT_S
+
+
+def timeout_message(argv: list[str] | tuple[str, ...], seconds: float) -> str:
+    """What a timed-out command says: the limit in force and how to raise it."""
+    verb, rest = "command", iter(argv)
+    for arg in rest:
+        if arg in ("-c", "-C"):
+            next(rest, None)
+        elif not arg.startswith("-"):
+            verb = arg
+            break
+    return (f"git {verb} timed out after {seconds:g}s; "
+            f"set {TIMEOUT_ENV}=<seconds> to raise the limit")
 
 
 def _git(cwd: str, *argv: str) -> str:
@@ -16,7 +41,7 @@ def _git(cwd: str, *argv: str) -> str:
     import subprocess
     try:
         out = subprocess.run(["git", *argv], capture_output=True, text=True, encoding="utf-8", errors="replace",
-                             timeout=COMMAND_TIMEOUT_S,
+                             timeout=git_timeout_s(),
                              cwd=cwd if os.path.isdir(cwd) else ".")
         return out.stdout if out.returncode == 0 else ""
     except (OSError, ValueError, subprocess.SubprocessError):
@@ -116,10 +141,13 @@ def _git_run(cwd: str, *argv: str, stdin: str | None = None,
     import subprocess
     if not os.path.isdir(cwd):
         return 127, "", f"not a directory: {cwd}"
+    seconds = git_timeout_s()
     try:
         out = subprocess.run(["git", *argv], capture_output=True, text=True, encoding="utf-8", errors="replace",
-                             timeout=COMMAND_TIMEOUT_S,
+                             timeout=seconds,
                              cwd=cwd, input=stdin, env=env)
         return out.returncode, out.stdout, out.stderr
+    except subprocess.TimeoutExpired:
+        return 124, "", timeout_message(argv, seconds)
     except (OSError, ValueError, subprocess.SubprocessError) as e:   # noqa: BLE001
         return 127, "", str(e)

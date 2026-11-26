@@ -39,7 +39,7 @@ import posixpath
 import re
 import shlex
 import subprocess
-from quenching.common.git import COMMAND_TIMEOUT_S, _git_run
+from quenching.common.git import git_timeout_s, _git_run
 from quenching.common.output import emit, refuse
 
 FILTER_KEY = re.compile(r"^filter\.(.+)\.(clean|smudge|process)$", re.S)
@@ -140,7 +140,7 @@ def _prefetch(cwd: str, env: dict[str, str] | None, cache: dict, specs: list[str
     try:
         proc = subprocess.run(["git", *SAFE, "cat-file", "--batch"], capture_output=True, cwd=cwd, env=env,
                               input="".join(f"{s}\n" for s in want).encode("utf-8"),
-                              timeout=COMMAND_TIMEOUT_S)
+                              timeout=git_timeout_s())
     except (OSError, ValueError, subprocess.SubprocessError):
         return
     if proc.returncode != 0:

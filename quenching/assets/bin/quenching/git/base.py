@@ -19,7 +19,7 @@ import os
 import subprocess
 import time
 
-from quenching.common.git import COMMAND_TIMEOUT_S, _git, origin_head_branch, short_branch
+from quenching.common.git import git_timeout_s, _git, origin_head_branch, short_branch
 from quenching.common.output import emit
 from quenching.common.config import find_repo_root, infer_base_branch, load_config
 from quenching.specs.backends.azure import _az_run
@@ -56,7 +56,7 @@ def _is_host_default(cwd: str, backend: str, base: str) -> bool | None:
     else:
         return None
     try:
-        out = subprocess.run(argv, capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=COMMAND_TIMEOUT_S, cwd=cwd)
+        out = subprocess.run(argv, capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=git_timeout_s(), cwd=cwd)
     except (OSError, ValueError, subprocess.SubprocessError):
         return None
     if out.returncode != 0:
