@@ -13,6 +13,48 @@ owner: [`ci-cd/versioning-release.md`](docs/standards/ci-cd/versioning-release.m
 short version for a consumer: the version is published once, deliberately, as a release — never at a
 spec's own conclude — and `cq --version` is what answers which one you are running.
 
+## 7.18.1
+
+**Um portal de gestão, só de leitura, ao lado do quadro de specs.** O portal ganha três abas:
+  - **Configuração:** as chaves do schema agrupadas por categoria, com busca, valor efetivo, camada
+    e arquivo de origem e a descrição em pt-BR (#577).
+  - **Módulos e atualização:** os módulos instalados e os disponíveis, a versão do alvo comparada à
+    da fonte e o plano do `cq deploy`, mostrado sem ser executado (#583).
+  - **Docs:** links para o manual, o padrão de configuração e o catálogo de comandos, que agora
+    também funcionam num alvo instalado (#591, #608).
+
+  `cq config schema` filtra por `--category` e `--key` e mostra a camada e o arquivo de cada valor
+  (#575). Um `--key` que não corresponde a nenhuma chave é recusado com remedy (#610).
+
+**Bootstraps para o que o deploy não configura.** O deploy gera `.quenching/bootstrap/bootstrap.sh` e
+  `bootstrap.cmd`, que o usuário roda à mão. Eles cuidam do lançador `cq` no PATH, da
+  configuração global do OpenCode, dos plugins do Claude Code e da vitrine, das extensões e
+  configurações de usuário do VS Code/Copilot e da aprovação do MCP. Com `--check` (o padrão), só
+  leem. Com `--write`, listam cada escrita fora do repositório e fazem backup de cada arquivo antes de
+  alterá-lo (#611, #618). O caminho no Windows ainda não foi exercitado numa máquina real.
+
+**Menos tokens por sessão.** O catálogo MCP montado em toda sessão passa de 73.111 para cerca de
+  50.000 caracteres. A explicação de `root` aparece uma vez só (#573), cada propriedade traz apenas a
+  primeira frase do help (#578) e os verbos `git_worktree_*` mostram só as flags do próprio subverbo
+  (#581). Também ficam enxutas por padrão, com o detalhe atrás de uma flag:
+  - `specs validate`, que resume os avisos do arquivo morto (#584);
+  - `git stale`, que deixa de devolver 152 mil caracteres (#604);
+  - `specs list --json`, que pagina e sai lean (#605). As vitrines pedem `--full` (#619).
+
+**Gestão de specs e correções.**
+  - Um épico com membro abandonado fecha sem `--force` (#603), e `specs_promote` aceita `dry_run`
+    (#607).
+  - `specs fetch` repete a atualização do ref remoto quando perde a corrida para outra sessão (#589).
+  - O check de deploy do próprio repositório deixa de divergir entre o lançador e a fonte (#576).
+  - O teste de startup do MCP mede a mediana (#580), e o README de prova regenera quando uma prova
+    muda (#579).
+  - O hook `warn-git-add-all` detecta mais formas de pular os hooks do git (#582, #602).
+  - A descrição da `skill-map` aponta para a rota que existe (#574), e as skills publicadas citam os
+    fluxos onde eles moram (#555, #558).
+  - A vitrine do OpenCode ganha LICENSE (#612). A skill `/release` e o `source-layout.md` cobrem
+    todos os plugins (#609).
+  - Uma avaliação do oh-my-opencode-slim fica em `docs/external/tools/` (#590).
+
 ## 7.18.0
 
 **O quenching passa a funcionar no VS Code com o GitHub Copilot.** Uma bancada de testes mede o
