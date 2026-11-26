@@ -42,6 +42,22 @@ def _runs(prefix: tuple[str, ...]) -> bool:
     return done.returncode == 0
 
 
+# One probe per prefix per deploy: `forget_probes` opens each evaluation, so a long-lived process
+# (the portal) sees a PATH fixed since its last plan.
+_PROBED: dict[tuple[str, ...], bool] = {}
+
+
+def forget_probes() -> None:
+    _PROBED.clear()
+
+
+def runs_here(prefix: list[str] | tuple[str, ...]) -> bool:
+    key = tuple(prefix)
+    if key not in _PROBED:
+        _PROBED[key] = _runs(key)
+    return _PROBED[key]
+
+
 def python_prefix(declared: list[str] | None, recorded: list[str] | None) -> list[str]:
     """The prefix that finds Python: the declared one, the one the last deploy recorded (so two
     machines never flap), the first that runs here, else `python3`."""
@@ -49,9 +65,35 @@ def python_prefix(declared: list[str] | None, recorded: list[str] | None) -> lis
         if chosen:
             return list(chosen)
     for candidate in CANDIDATES:
-        if _runs(candidate):
+        if runs_here(candidate):
             return list(candidate)
     return list(FALLBACK)
+
+
+def _store_alias(prefix: list[str] | tuple[str, ...]) -> bool:
+    found = shutil.which(prefix[0]) if prefix else None
+    return bool(found) and "windowsapps" in found.replace("\\", "/").lower().split("/")
+
+
+def unrunnable_warning(prefix: list[str] | tuple[str, ...]) -> str | None:
+    """A warning when `prefix`, kept from the declaration or the last deploy, does not run here.
+
+    The prefix stays as it is (two machines never flap); the warning names the first of
+    `CANDIDATES` that runs here and the two ways out. A `uv`/`uvx` prefix is `direct_prefix`'s."""
+    if not prefix or _through_uv(prefix) or runs_here(prefix):
+        return None
+    shown = " ".join(prefix)
+    why = (f"`{shown}` does not run on this machine"
+           + (" (it resolves to the Microsoft Store alias in WindowsApps)" if _store_alias(prefix) else ""))
+    working = next((c for c in CANDIDATES if tuple(c) != tuple(prefix) and runs_here(c)), None)
+    found = (f"; `{' '.join(working)}` does" if working
+             else f"; none of {', '.join('`' + ' '.join(c) + '`' for c in CANDIDATES)} runs either")
+    example = json.dumps(list(working)) if working else '["<path to python>"]'
+    return (f"{why}{found}, so the MCP server and the hooks it calls fail to start; the deploy "
+            f"keeps `{shown}` so machines do not flap: declare `shared.mcp.command` (e.g. "
+            f"{example}) in the repository config `.agents/quenching.json`, or put a real "
+            f"`{prefix[0]}` on the PATH (on Windows: turn off its App execution alias under "
+            f"Settings > Apps > Advanced app settings)")
 
 
 def _through_uv(prefix: list[str] | tuple[str, ...]) -> bool:
@@ -72,7 +114,7 @@ def direct_prefix(prefix: list[str], recorded: list[str] | None = None) -> tuple
     if recorded and not _through_uv(recorded):
         chosen = list(recorded)
     else:
-        chosen = next((list(c) for c in CANDIDATES if _runs(c)), list(FALLBACK))
+        chosen = next((list(c) for c in CANDIDATES if runs_here(c)), list(FALLBACK))
     return chosen, (f"`{' '.join(prefix)}` runs through uv, which resolves the project on every "
                     f"call and exits 2 on failure, blocking every shell call; the hooks and the MCP "
                     f"server run `{' '.join(chosen)}` directly")

@@ -79,17 +79,47 @@ def _link_path(repo: str, relative: str) -> str:
 
 
 def _make_link(store: str, link: str) -> None:
-    """Symlink `link` to `store`; on Windows, when the symlink is refused, a junction, which needs no privilege."""
+    """Point `link` at the directory `store`.
+
+    Outside Windows: a symlink, and its error propagates. On Windows a junction comes first,
+    since it needs no symlink privilege (WinError 1314): `_winapi.CreateJunction` with absolute
+    native paths, then `cmd /c mklink /J`, then `os.symlink` last. When all three fail, the
+    OSError raised names every cause, so the real one is never hidden behind the 1314."""
+    if os.name != "nt":
+        os.symlink(store, link, target_is_directory=True)
+        return
+    # `cmd` reads a `/` inside `C:/x` as a switch, and a junction needs an absolute target
+    target, native_link = os.path.abspath(native_path(store)), native_path(link)
+    causes = []
+    try:
+        import _winapi  # CPython stdlib, Windows only
+        create = getattr(_winapi, "CreateJunction", None)
+    except ImportError:
+        create = None
+    if create is None:
+        causes.append("CreateJunction: unavailable")
+    else:
+        try:
+            create(target, native_link)
+            return
+        except OSError as exc:
+            causes.append(f"CreateJunction: {exc}")
+    try:
+        result = subprocess.run(["cmd", "/c", "mklink", "/J", native_link, target],
+                                capture_output=True, text=True, encoding="utf-8", errors="replace")
+    except OSError as exc:
+        causes.append(f"mklink /J: {exc}")
+    else:
+        if result.returncode == 0:
+            return
+        output = (result.stderr or "").strip() or (result.stdout or "").strip()
+        causes.append(f"mklink /J exited {result.returncode}: {output or '(no output)'}")
     try:
         os.symlink(store, link, target_is_directory=True)
-    except OSError:
-        if os.name != "nt":
-            raise
-        # `cmd` reads a `/` inside `C:/x` as a switch, so the junction gets native paths
-        result = subprocess.run(["cmd", "/c", "mklink", "/J", native_path(link), native_path(store)],
-                                capture_output=True, text=True, encoding="utf-8", errors="replace")
-        if result.returncode != 0:
-            raise
+        return
+    except OSError as exc:
+        causes.append(f"symlink: {exc}")
+    raise OSError("no junction nor symlink could be created: " + "; ".join(causes))
 
 
 def _remove_link(link: str) -> None:
@@ -160,6 +190,9 @@ def _link(repo: str) -> tuple[list[dict] | None, dict | None]:
             return None, {"code": "git-worktree-path-not-empty", "path": relative,
                           "message": f"'{relative}' is a real path with content; merge it into "
                                      "the shared store by hand before linking it"}
+        except OSError as exc:
+            return None, {"code": "git-worktree-link-failed", "path": relative, "store": store,
+                          "message": f"could not link '{relative}' to '{store}': {exc}"}
         if migrated:
             item["migratedFrom"] = migrated
         warning = _ignore_warning(repo, relative)
