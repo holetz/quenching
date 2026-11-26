@@ -475,6 +475,12 @@ def plan(target: Path, built: dict, previous: dict | None,
         if (target / rel).is_file():
             changes.append(_change("edited" if _edited(target, rel, hashes.get(rel), deleting=True)
                                    else "delete", rel))
+    # The generated per-user bootstraps live in `.quenching/`, which git ignores: a clone that lacks
+    # them is not drift (the CI checkout never has them), a present copy that differs is stale.
+    for rel, (data, _mode_) in sorted((built.get("bootstrap") or {}).items()):
+        path = target / rel
+        if _contained(target, path) and path.is_file() and not _same(path, data):
+            changes.append(_change("update", rel))
     seed_changes, warnings = _seed_plan(target, seeds)
     changes.extend(seed_changes)
     merged = built.get("merged")
@@ -605,6 +611,16 @@ def write(target: Path, built: dict, result: dict, prune_legacy: bool) -> None:
     for rel in sorted(owned - set(tree)):
         _unlink_owned(target, rel)
     for rel, (data, mode) in sorted(tree.items()):
+        if not _safe_relative(rel):
+            raise ValueError(f"unsafe deploy path: {rel}")
+        path = target / rel
+        if not _contained(target, path):
+            raise ValueError(f"deploy path leaves the target through a symlink: {rel}")
+        path.parent.mkdir(parents=True, exist_ok=True)
+        if not path.is_file() or not _same(path, data):
+            path.write_bytes(data)
+        os.chmod(path, mode)
+    for rel, (data, mode) in sorted((built.get("bootstrap") or {}).items()):
         if not _safe_relative(rel):
             raise ValueError(f"unsafe deploy path: {rel}")
         path = target / rel
@@ -867,6 +883,10 @@ def main(argv: list[str]) -> int:
     if args.write:
         write(target, built, result, args.prune_legacy)
         written = True
+        result["suggestions"] = [*result.get("suggestions", []),
+                                 "per-user setup the deploy cannot do (not run by the deploy): "
+                                 "`.quenching/bootstrap/bootstrap.sh --check` "
+                                 "(`bootstrap.cmd` on Windows), then `--write`"]
         compile_warning = _precompile(target, hooks_python)
         if compile_warning:
             result["warnings"] = [*result["warnings"], compile_warning]
@@ -893,6 +913,10 @@ def remove_plan(target: Path, previous: dict) -> dict:
         if path.is_file() and _safe_relative(rel):
             changes.append(_change("edited" if _edited(target, rel, hashes[rel], deleting=True)
                                    else "delete", rel))
+    listed = previous.get("bootstrap")
+    for rel in sorted(listed if isinstance(listed, list) else []):
+        if isinstance(rel, str) and _safe_relative(rel) and (target / rel).is_file():
+            changes.append(_change("delete", rel))
     merged = _settings_merge(target, {"settings": None, "manifest": {}}, previous)
     if merged and merged["changed"]:
         changes.append(_change("settings", SETTINGS))

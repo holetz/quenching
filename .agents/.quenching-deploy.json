@@ -149,6 +149,8 @@
 
     ".agents/quenching/assets/bin/quenching/deploy/__init__.py": "source",
 
+    ".agents/quenching/assets/bin/quenching/deploy/bootstrap.py": "source",
+
     ".agents/quenching/assets/bin/quenching/deploy/cli.py": "source",
 
     ".agents/quenching/assets/bin/quenching/deploy/mcpfiles.py": "source",
@@ -484,6 +486,8 @@
     ".agents/quenching/assets/bin/quenching/toolchain/model.py": "source",
 
     ".agents/quenching/assets/bin/quenching/toolchain/probe.py": "source",
+
+    ".agents/quenching/assets/bootstrap/bootstrap.py": "source",
 
     ".agents/quenching/assets/githooks/pre-commit": "source",
 
@@ -957,6 +961,11 @@
 
     ".opencode/agents/quenching-spec-verifier.md": "source"
   },
+  "bootstrap": [
+    ".quenching/bootstrap/bootstrap.cmd",
+    ".quenching/bootstrap/bootstrap.py",
+    ".quenching/bootstrap/bootstrap.sh"
+  ],
   "mirrors": [
     ".agents/quenching/assets/bin/quenching/delivery",
     ".agents/quenching/assets/bin/quenching/design",
