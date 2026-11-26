@@ -216,8 +216,9 @@ A built-in list of unambiguous Python caches applies before the key and cannot b
 `.pyright`, `.tox`, `.nox`, `htmlcov`, `.coverage`, `.coverage.*`, `*.egg-info`, `.eggs`,
 `pip-wheel-metadata`, `.cache`, `.ipynb_checkpoints`, `.hypothesis` and `node_modules`, plus the two
 root caches `cq` writes itself, `.quenching/git-base-cache.json` and `.quenching/git-ci-cache.json`, and
-the gate record `scripts/verify_repo.sh` rewrites on every run, `.quenching/gate/record.json`, so a
-slot that only holds them is released clean. `build/` and
+the gate record `scripts/verify_repo.sh` rewrites on every run, `.quenching/gate/record.json`, and
+the per-user bootstrap `cq deploy --write` regenerates, `.quenching/bootstrap/`, so a slot that only
+holds them is released clean. `build/` and
 `dist/` are deliberately absent because they can hold a file written by hand; a target that
 regenerates them declares them. The key adds to the defaults and never replaces them, so an absent
 key still lets the built-in caches go.
