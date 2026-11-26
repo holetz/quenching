@@ -20,6 +20,7 @@ class RegenerableRulesTests(unittest.TestCase):
             ".hypothesis", "node_modules",
             ".quenching/git-base-cache.json", ".quenching/git-ci-cache.json",
             ".quenching/gate/record.json",
+            ".quenching/bootstrap",
         ))
         rules = ignored.declared_regenerable({})
         for entry in ("build/", "dist/", "nested/build/manual.txt", "nested/dist/manual.txt"):
@@ -33,6 +34,11 @@ class RegenerableRulesTests(unittest.TestCase):
             with self.subTest(entry=entry):
                 self.assertTrue(ignored.is_regenerable(entry, rules))
                 self.assertFalse(ignored.is_regenerable("pkg/" + entry, rules))
+        for entry in (".quenching/bootstrap/", ".quenching/bootstrap/bootstrap.py",
+                      ".quenching/bootstrap/bootstrap.sh", ".quenching/bootstrap/bootstrap.cmd"):
+            with self.subTest(entry=entry):
+                self.assertTrue(ignored.is_regenerable(entry, rules))
+        self.assertFalse(ignored.is_regenerable("pkg/.quenching/bootstrap/bootstrap.py", rules))
         self.assertFalse(ignored.is_regenerable(".quenching/notes.json", rules))
         self.assertFalse(ignored.is_regenerable(".quenching/gate/notes.json", rules))
 
