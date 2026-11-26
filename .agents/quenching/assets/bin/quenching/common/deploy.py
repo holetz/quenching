@@ -39,9 +39,14 @@ def generated_skills(root: str) -> set[str]:
 
 
 def generated_for_skills_dir(skills_dir: str) -> set[str]:
-    """The generated names when ``skills_dir`` is a target's ``.agents/skills``."""
+    """The generated names when ``skills_dir`` is a target's ``.agents/skills`` or ``.claude/skills``.
+
+    The deploy publishes a generated skill into one of the two directories; both are the
+    target's surface, and the deploy manifest is the one authority for the names it wrote."""
     path = os.path.abspath(skills_dir)
-    if os.path.basename(path) != "skills" or os.path.basename(os.path.dirname(path)) != ".agents":
+    if os.path.basename(path) != "skills":
+        return set()
+    if os.path.basename(os.path.dirname(path)) not in {".agents", ".claude"}:
         return set()
     return generated_skills(os.path.dirname(os.path.dirname(path)))
 

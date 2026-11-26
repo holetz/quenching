@@ -21,6 +21,12 @@ not, with each divergent path in `changes`; `cq components bridge --check` exits
 copy, a new source or an orphan. Exit 1 means the check ran and found a repairable
 difference, not that translation was unable to run.
 
+**The two checks answer for different owners.** `deploy --check` owns the generated surface, both
+copies of a generated skill included; `bridge --check` owns the target's own skills. A name
+`.agents/.quenching-deploy.json` declares under `skills` is never a bridge source, a bridge conflict
+or a bridge orphan, even when a stale `.generated-files.json` lists it — so a `claude`-only target,
+whose generated skills exist only under `.claude/skills`, is clean for both checks.
+
 A caller that wants to reconcile the generated copy runs the same command with `--write` and then
 checks again. `/quenching-components align` reports the same findings; it does not write the
 generated surface as a side effect of its taxonomy sweep. This repository checks its own

@@ -9,6 +9,10 @@ file and the Claude Code version the bridge was verified against; freshness is a
 against it.
 
 A `.claude/skills/<name>/` the manifest does not list is the human's, and is never overwritten.
+
+A skill `.agents/.quenching-deploy.json` declares under `skills` is the deploy's: `cq deploy` writes
+its `.claude` copy and hashes both in its own manifest, and this verb skips the name in its expected
+set, its conflicts and its orphans.
 """
 from __future__ import annotations
 
@@ -23,6 +27,7 @@ from quenching.common.output import FINDINGS, OK, emit, refuse
 SOURCE = Path(".agents") / "skills"
 DESTINATION = Path(".claude") / "skills"
 MANIFEST = DESTINATION / ".generated-files.json"
+DEPLOY_MANIFEST = Path(".agents") / ".quenching-deploy.json"
 SKILL_FILE = "SKILL.md"
 VERIFIED_CLAUDE_CODE = "2.1.312"
 
@@ -56,14 +61,35 @@ def _canonical(path: Path) -> bytes:
     return eol_canonical(path.read_bytes())
 
 
+def deploy_owned(repo: Path) -> set[str]:
+    """The skill names `cq deploy` generated in this target.
+
+    They are the deploy's: it writes their `.claude` copy and hashes both in its own manifest,
+    so the bridge neither expects them, writes them nor reports their copies as orphans. A
+    target deployed before this rule may still have them in `.agents/skills`.
+    """
+    path = repo / DEPLOY_MANIFEST
+    if not path.is_file():
+        return set()
+    try:
+        names = json.loads(path.read_text(encoding="utf-8")).get("skills", [])
+    except (ValueError, AttributeError):
+        return set()
+    return {name for name in names if isinstance(name, str)} if isinstance(names, list) else set()
+
+
 def expected_tree(repo: Path) -> dict[str, bytes]:
-    """`<name>/<file>` -> the bytes the bridge writes, for every skill of the source."""
+    """`<name>/<file>` -> the bytes the bridge writes, for every skill of the source.
+
+    A skill `.agents/.quenching-deploy.json` declares generated is the deploy's and is skipped.
+    """
     out: dict[str, bytes] = {}
     source = repo / SOURCE
     if not source.is_dir():
         return out
+    generated = deploy_owned(repo)
     for skill in sorted(source.iterdir()):
-        if not (skill / SKILL_FILE).is_file():
+        if skill.name in generated or not (skill / SKILL_FILE).is_file():
             continue
         for path in sorted(p for p in skill.rglob("*") if p.is_file()):
             rel = path.relative_to(source).as_posix()
@@ -96,7 +122,9 @@ def _mode(path: Path) -> int:
 
 def plan(repo: Path) -> dict:
     expected = expected_tree(repo)
-    recorded = read_manifest(repo)
+    generated = deploy_owned(repo)
+    recorded = {rel: digest for rel, digest in read_manifest(repo).items()
+                if rel.split("/", 1)[0] not in generated}
     owned = {rel.split("/", 1)[0] for rel in recorded}
     destination = repo / DESTINATION
     conflicts = sorted({rel.split("/", 1)[0] for rel in expected

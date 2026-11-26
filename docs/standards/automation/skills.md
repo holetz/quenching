@@ -143,7 +143,13 @@ The bridge is generated, and verified by code:
 - `cq components bridge --write` copies each `.agents/skills/<name>/` to `.claude/skills/<name>/`
   byte for byte, with one generated-from marker line after the `SKILL.md` frontmatter, and writes
   `.claude/skills/.generated-files.json` (one sha256 per file, `verifiedClaudeCode`). Claude Code
-  does not read `.agents/skills/`, so without the copy the skill does not exist for it.
+  does not read `.agents/skills/`, so without the copy the target's own skill does not exist for it.
+- **The bridge owns the target's skills, never the deploy's.** A name that
+  `.agents/.quenching-deploy.json` declares under `skills` is generated: `cq deploy` writes its
+  `.claude` copy and hashes both in its own manifest, and the bridge skips the name in its expected
+  set, its conflicts and its orphans. That is what lets a `claude`-only target — which publishes
+  the generated skills only under `.claude/skills` — pass `bridge --check` with nothing to compare.
+  The publication rule is [deploy-mode.md](../architecture/deploy-mode.md) §Publication once.
 - `cq components bridge --check` exits 1 on drift — an edited copy, a source with no copy, an orphan
   copy whose source is gone — and 0 when the copy matches. A `.claude/skills/<name>/` the manifest
   does not list is refused (exit 2, `ct-bridge-unowned`), never overwritten.
@@ -181,6 +187,12 @@ firing from a description match, or how a conductor ends up running and doing no
 also differ in what they cost: `disable-model-invocation: true` removes the description from
 always-on context entirely, while `user-invocable: false` saves nothing — the description still
 loads.
+
+**`argument-hint` is a string, and a bracketed hint is quoted.** `argument-hint: [flow] [input]`
+without quotes is a YAML flow sequence: this repository's parser keeps the literal, but a client that
+reads YAML receives a list where it expects the string it renders. Write
+`argument-hint: "[flow] [input]"`; `sk-frontmatter-strict` warns on an unquoted flow sequence in this
+field, so the defect is caught at the source rather than found as a missing hint in a client.
 
 ### What `disable-model-invocation` closes, and how we know
 

@@ -203,18 +203,30 @@ def _agents(source: Path) -> dict[str, Path]:
     return {path.stem: path for path in sorted((source / "agents").glob("*.md"))}
 
 
-def _agents_md(target: Path) -> str:
+def _agents_md(target: Path, dirs: tuple[str, ...]) -> str:
     docs = target / "docs" / "index.md"
     knowledge = ("- Durable knowledge: [`docs/index.md`](docs/index.md).\n" if docs.is_file()
                  else "- Durable knowledge: run `/quenching-knowledge align` to install the "
                       "`/docs/` bundle.\n")
-    return (
-        "# AGENTS.md\n\n"
+    if CLAUDE_SKILLS in dirs and SKILLS not in dirs:
+        skills = ("- Skills: `.claude/skills/` (published for the declared clients); author a "
+                  "target's own skill in `.agents/skills/`, which is copied here.\n")
+    elif CLAUDE_SKILLS in dirs:
+        skills = "- Skills: `.agents/skills/` (source) and `.claude/skills/` (generated copy).\n"
+    else:
+        skills = ("- Skills: `.agents/skills/` (source; a target's own skill is authored "
+                  "here).\n")
+    interface = (
         "This repository uses quenching. The editable automation surface is `.agents/`; the\n"
         "Claude Code bridge under `.claude/skills/` is generated from it.\n\n"
+        if CLAUDE_SKILLS in dirs else
+        "This repository uses quenching. The editable automation surface is `.agents/`.\n\n"
+    )
+    return (
+        "# AGENTS.md\n\n"
+        + interface +
         "- Configuration: [`.agents/quenching.json`](.agents/quenching.json).\n"
-        + knowledge +
-        "- Skills: `.agents/skills/` (source) and `.claude/skills/` (generated bridge).\n"
+        + knowledge + skills +
         "- Deployed runtime: `.agents/quenching/` (generated; do not edit).\n"
         "- Upgrade with `cq deploy --write` from a new quenching release; never edit a generated "
         "file.\n"
@@ -284,27 +296,57 @@ _VENDOR_CMD = (
 )
 
 
-def _bridge_tree(tree: dict, target: Path) -> None:
-    """Every skill gets the marked Claude copy: generated ones and the target's own."""
-    skill_files = {rel: (data, mode) for rel, (data, mode) in tree.items()
-                   if rel.startswith(SKILLS + "/")}
-    for rel, (data, mode) in sorted(skill_files.items()):
-        name = rel[len(SKILLS) + 1:].split("/", 1)[0]
-        if rel == f"{SKILLS}/{name}/SKILL.md":
-            data = bridge.with_marker(data.decode("utf-8"), name).encode("utf-8")
-        _add(tree, CLAUDE_SKILLS + rel[len(SKILLS):], data, mode)
+def skill_dirs(harnesses: list[str]) -> tuple[str, ...]:
+    """The directories this deploy publishes skills into: the minimal cover of what the
+    declared harnesses read.
 
-    # A target may already carry its own skills. They are not deploy-owned source, but the
-    # bridge is a byte copy of every skill; generating it here keeps the contract coherent.
+    Measured 2026-11-25: Claude Code 2.1.332 reads `.claude/skills` only, and OpenCode reads both,
+    the `.agents` copy winning a repeated name. So a target declaring `claude` publishes once in
+    `.claude/skills` — `opencode` reads it — and a deploy without `claude` (opencode alone, or no
+    harness) keeps the generic layer. The `codex` harness was removed (ADR 0020); a client that
+    reads only `.agents/skills` would force that copy if it ever returns as a harness.
+    """
+    return (CLAUDE_SKILLS,) if "claude" in harnesses else (SKILLS,)
+
+
+def _without_marker(text: str, name: str) -> str:
+    """The source form of a Claude copy.
+
+    A target's vendored payload carries no skill source, so the installed folder is the last-resort
+    source for a generated skill; the `.claude` copy's `SKILL.md` carries the bridge marker, and the
+    publication loop adds it back only when it writes `.claude`.
+    """
+    return text.replace(bridge.marker(name) + "\n", "", 1)
+
+
+def _bridge_tree(tree: dict, target: Path, dirs: tuple[str, ...],
+                 generated_names: set[str]) -> None:
+    """The target's own skills get the marked Claude copy, when `.claude/skills` is published.
+
+    The deploy's generated skills are written by `build_tree` itself; this manifest lists only
+    the target's own files, so `cq components bridge --check` never reads a generated skill as a
+    source it lost, and a claude-only target has nothing for the bridge to own.
+    """
+    if CLAUDE_SKILLS not in dirs:
+        return
+    source = target / ".agents" / "skills"
     # A file the previous deploy owned is leaving with this write, not the target's: bridging it
     # would re-own a skill whose source the same write deletes.
-    source = target / ".agents" / "skills"
-    generated = {rel[len(SKILLS) + 1:].split("/", 1)[0] for rel in skill_files}
     owned = (read_manifest(str(target)) or {}).get("files")
     leaving = set(owned) if isinstance(owned, dict) else set()
+    manifest: dict[str, str] = {}
     if source.is_dir():
         for folder in sorted(source.iterdir()):
-            if not folder.is_dir() or folder.name in generated:
+            if not folder.is_dir() or folder.name in generated_names:
+                continue
+            # A file the previous deploy owned is leaving with this write, not the target's: a
+            # folder whose `SKILL.md` is one of those is not a skill any more, and the stray
+            # files beside it stay in their `.agents` home.
+            if f"{SKILLS}/{folder.name}/{bridge.SKILL_FILE}" in leaving:
+                continue
+            # Only a folder carrying a `SKILL.md` is a skill, the same rule the bridge's own
+            # `expected_tree` reads.
+            if not (folder / bridge.SKILL_FILE).is_file():
                 continue
             for path in sorted(folder.rglob("*")):
                 if not path.is_file():
@@ -316,18 +358,13 @@ def _bridge_tree(tree: dict, target: Path) -> None:
                 if path.name == bridge.SKILL_FILE and path.parent == folder:
                     data = bridge.with_marker(data.decode("utf-8"), folder.name).encode("utf-8")
                 _add(tree, CLAUDE_SKILLS + "/" + relative, data, _mode(path))
-
-    manifest: dict[str, str] = {}
-    prefix = CLAUDE_SKILLS + "/"
-    for rel, (data, _mode_) in sorted(tree.items()):
-        if rel.startswith(prefix) and rel != CLAUDE_SKILLS + "/.generated-files.json":
-            manifest[rel[len(prefix):]] = hashlib.sha256(data).hexdigest()
+                manifest[relative] = hashlib.sha256(data).hexdigest()
     if manifest:
         document = {
             "generator": "cq deploy (cq components bridge marker)",
             "source": SKILLS,
             "verifiedClaudeCode": bridge.VERIFIED_CLAUDE_CODE,
-            "files": manifest,
+            "files": dict(sorted(manifest.items())),
         }
         _add(tree, CLAUDE_SKILLS + "/.generated-files.json",
              dumps_hash_manifest(document).encode(), 0o644)
@@ -473,6 +510,9 @@ def build_tree(source: Path, target: Path, modules: list[str], harnesses: list[s
         _add(tree, PAYLOAD + "/bin/cq", sh, 0o755)
         _add(tree, PAYLOAD + "/bin/cq.cmd", cmd, 0o644)
 
+    # A skill is its whole folder: the `SKILL.md` and the `references/` beside it. Each skill is
+    # rendered once and published into the directories the declared clients read.
+    dirs = skill_dirs(harnesses)
     # A module outside the selection whose mirror the target already tracks: the files stay, so
     # they are regenerated from the source like a selected module's, never left to age while
     # `--check` reads green. A module the target never carried adds nothing.
@@ -499,31 +539,52 @@ def build_tree(source: Path, target: Path, modules: list[str], harnesses: list[s
             _add_tree(tree, source, folder)
             mirrored.extend(sorted(set(tree) - before))
 
-    # A skill is its whole folder: the `SKILL.md` and the `references/` beside it.
     skill_names: list[str] = []
+    generated: dict[str, dict[str, tuple[bytes, int]]] = {}
+    mirrors: set[str] = set()
+    # A skill mirror is read from the directory this deploy publishes: `.claude/skills` for a
+    # target declaring `claude`, `.agents/skills` otherwise. There is no second generated copy:
+    # a target's own skill stays under `.agents/skills` and is bridged.
+    published = dirs[0]
     skill_sources = [(name, True) for module in selected for name in module["owned"]["skills"]]
     skill_sources += [(name, False) for module in outside
                       for name in module.get("owned", {}).get("skills", [])
-                      if kept(SKILLS + "/" + name, "SKILL.md") and (source / "skills" / name).is_dir()]
+                      # A mirror read where this deploy publishes it, or recorded at its old
+                      # `.agents/skills` home by a manifest written before this layout: the
+                      # source stays the truth and the copy moves to the new directory.
+                      if (kept(published + "/" + name, bridge.SKILL_FILE)
+                          or f"{SKILLS}/{name}" in kept_before)
+                      and (source / "skills" / name).is_dir()]
     for name, chosen in skill_sources:
         if name in skill_names:
             continue
         if chosen:
             skill_names.append(name)
+        else:
+            mirrors.add(name)
         root = source / "skills" / name
         # A vendored payload carries no skill source: the installed folder is already the
         # generated form, so it is re-asserted byte for byte.
         installed = not root.is_dir()
+        from_claude = False
         if installed:
             root = target / SKILLS / name
+        if installed and not root.is_dir():
+            # A target deployed for a claude-only client has the generated form only in
+            # `.claude/skills`; its own `cq deploy --check` must re-assert that copy.
+            root = target / CLAUDE_SKILLS / name
+            from_claude = root.is_dir()
         if not root.is_dir():
             continue
+        files = generated.setdefault(name, {})
         for path in sorted(root.rglob("*")):
             if not path.is_file() or _is_build(path):
                 continue
             rel = path.relative_to(root).as_posix()
             if installed:
                 data = _read(path)
+                if from_claude and rel == "SKILL.md":
+                    data = _without_marker(data.decode("utf-8"), name).encode("utf-8")
             elif rel == "SKILL.md":
                 data = translate.skill_document(path.read_text(encoding="utf-8"), name,
                                                 narrow, mount).encode("utf-8")
@@ -531,14 +592,22 @@ def build_tree(source: Path, target: Path, modules: list[str], harnesses: list[s
                 data = translate.reference_document(path.read_text(encoding="utf-8")).encode("utf-8")
             else:
                 data = _read(path)
-            _add(tree, f"{SKILLS}/{name}/{rel}", data, _mode(path))
-            if not chosen:
-                mirrored.append(f"{SKILLS}/{name}/{rel}")
-                if f"{SKILLS}/{name}" not in folders:
-                    folders.append(f"{SKILLS}/{name}")
+            files[rel] = (data, _mode(path))
 
+    for name, files in generated.items():
+        for rel, (data, mode) in files.items():
+            for out in dirs:
+                bridged = (bridge.with_marker(data.decode("utf-8"), name).encode("utf-8")
+                           if out == CLAUDE_SKILLS and rel == bridge.SKILL_FILE else data)
+                _add(tree, f"{out}/{name}/{rel}", bridged, mode)
+                if name in mirrors:
+                    mirrored.append(f"{out}/{name}/{rel}")
+                    if f"{out}/{name}" not in folders:
+                        folders.append(f"{out}/{name}")
+
+    if CLAUDE_SKILLS in dirs:
+        _bridge_tree(tree, target, dirs, set(generated))
     if "claude" in harnesses:
-        _bridge_tree(tree, target)
         for name, path in _agents(source).items():
             _add(tree, f"{CLAUDE_AGENTS}/{translate.agent_name(name)}.md",
                  translate.agent_document(path.read_text(encoding="utf-8"), name,
@@ -570,7 +639,7 @@ def build_tree(source: Path, target: Path, modules: list[str], harnesses: list[s
                                               runtime).encode("utf-8"), 0o644)
 
     seeds = {
-        "AGENTS.md": _agents_md(target),
+        "AGENTS.md": _agents_md(target, dirs),
         ".agents/quenching.json": _seed_config(target, profiles or profiles_for(modules)),
     }
     if "github" in (projections or []) and _standards_index(target):

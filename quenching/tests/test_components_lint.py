@@ -44,6 +44,7 @@ from types import SimpleNamespace
 import _paths  # noqa: F401  — must precede the `quenching` import; see its docstring
 from quenching.components.commands.lint import (
     UNSCOPED_TOOLS,
+    _frontmatter_strict_issues,
     _numbered_steps,
     _agent_grant_findings,
     _cq_call_findings,
@@ -154,6 +155,24 @@ class StrictFrontmatter(unittest.TestCase):
         self.assertEqual(len(found), 1)
         self.assertEqual(found[0]["kind"], "nested-flow-sequence")
         self.assertIn("quote", found[0]["remedy"])
+
+    def test_an_unquoted_flow_sequence_in_argument_hint_reports_the_quote_remedy(self):
+        found = strict_findings("description: trigger\nargument-hint: [version, optional]")
+        self.assertEqual(len(found), 1)
+        self.assertEqual(found[0]["kind"], "unquoted-flow-sequence")
+        self.assertEqual(found[0]["key"], "argument-hint")
+        self.assertIn("quote", found[0]["remedy"])
+
+    def test_a_quoted_argument_hint_is_not_reported(self):
+        self.assertEqual([], strict_findings('description: trigger\nargument-hint: "[version, optional]"'))
+
+    def test_the_repo_skill_argument_hints_are_quoted_strings(self):
+        root = pathlib.Path(__file__).resolve().parent.parent.parent / ".agents" / "skills"
+        for path in sorted(root.glob("*/SKILL.md")):
+            issues = [issue for issue in _frontmatter_strict_issues(
+                          path.read_text(encoding="utf-8"))
+                      if issue["kind"] == "unquoted-flow-sequence"]
+            self.assertEqual([], issues, path)
 
     def test_an_unquoted_plain_scalar_with_colon_space_reports_a_safe_form(self):
         found = strict_findings("description: Use when: this is explicit\nallowed-tools: Read")
