@@ -1036,6 +1036,16 @@ def _asserts(text: str) -> int:
     return n
 
 
+def _strengthens(old: str, new: str) -> bool:
+    """`new` is the gate line `old` with tokens appended at its end, none able to neutralize it."""
+    o, n = old.split(), new.split()
+    if new.startswith("#") or len(n) <= len(o) or n[:len(o)] != o:
+        return False
+    extra = n[len(o):]
+    return not any("||" in t or t in ("true", ":") for t in extra) \
+        and ["exit", "0"] not in [extra[k:k + 2] for k in range(len(extra))]
+
+
 def _lowered(cwd: str, base: str, tip: str, env: dict[str, str], errors: list[dict],
              cache: dict | None = None) -> list[dict]:
     """The ways the branch lowers the bar a gate measures, read from `base...tip`, never judged for
@@ -1153,11 +1163,13 @@ def _lowered(cwd: str, base: str, tip: str, env: dict[str, str], errors: list[di
         if gate:
             lost = [m for m in minus if m and not m.startswith("#") and m not in plus
                     and _swap(m, mapping) not in plus]
-            for m in list(lost):                  # a rewrite that keeps every token and adds more strengthens the line
-                wider = next((p for p in plus if set(m.split()) < set(p.split())), None)
-                if wider:
+            used: set[int] = set()
+            for m in list(lost):                  # each added line absolves at most one removed line
+                i = next((i for i, p in enumerate(plus) if i not in used and _strengthens(m, p)), None)
+                if i is not None:
+                    used.add(i)
                     lost.remove(m)
-                    found.append({"path": path, "severity": "info", "kind": "strengthened", "detail": wider})
+                    found.append({"path": path, "severity": "info", "kind": "strengthened", "detail": plus[i]})
             if lost:
                 found.append({"path": path, "severity": "fail", "kind": "gate-shrunk", "detail": lost})
         if CODE_EXT.search(path):
