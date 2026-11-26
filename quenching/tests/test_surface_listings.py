@@ -152,6 +152,21 @@ class ListingSurfaceTests(unittest.TestCase):
             self.assertIn('2>&1 | tee "$RUNNER_TEMP/unit.log" && ! grep -q \'^Ran 0 tests\' "$RUNNER_TEMP/unit.log"',
                           line)
 
+    def test_gate_measures_on_the_newest_python_and_the_floor_runs_the_whole_suite(self):
+        declared = (REPO_ROOT / ".github" / "workflows" / "ci.yml").read_text(encoding="utf-8")
+        job = re.search(r"(?ms)^  gate:\n(.*?)(?=^  \S)", declared).group(1)
+        self.assertIn("python-version: ['3.11', '3.13']", job)
+        self.assertNotIn("github.event_name", job)
+        steps = re.split(r"(?m)^      - ", job)
+        gate = [s for s in steps if "scripts/verify_repo.sh" in s]
+        self.assertEqual(len(gate), 1)
+        self.assertIn("if: matrix.python-version == '3.13'", gate[0])
+        self.assertIn('QUENCHING_TEST_SLOTS="$(nproc)"', gate[0])
+        floor = [s for s in steps if "pytest quenching/tests" in s]
+        self.assertEqual(len(floor), 1)
+        self.assertIn("if: matrix.python-version == '3.11'", floor[0])
+        self.assertNotIn("--cov", floor[0])
+
     def test_zensical_nav_matches_every_published_markdown_document(self):
         config = tomllib.loads(ZENSICAL.read_text(encoding="utf-8"))
         nav = _nav_paths(config["project"]["nav"])

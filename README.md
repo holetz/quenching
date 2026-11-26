@@ -27,7 +27,7 @@ but no new features. Type the command name to use one.
 Release history is maintained in the [`CHANGELOG`](CHANGELOG.md).
 
 The `CI` workflow (`.github/workflows/ci.yml`) runs on pushes to `main` and on pull requests. It installs the locked
-toolchain, runs the repository gate on Python 3.11 and 3.13, lints with ruff and reports the functional checks (exit 2 is inconclusive).
+toolchain, runs the repository gate (coverage floor included) on Python 3.13 and the whole suite on 3.11, lints with ruff and reports the functional checks (exit 2 is inconclusive).
 
 ## Local development
 
