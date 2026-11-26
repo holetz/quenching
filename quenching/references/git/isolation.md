@@ -126,8 +126,14 @@ git_worktree_acquire(branch="plan/<id>-<handle>", base=<base>, spec=<id>)
 
 A slot is a registered worktree at `../<repo>-slot-<n>` that outlives its spec. `acquire` locks one
 and switches it to the spec's branch; `specs_reconcile(write=true)` releases it
-after the merge — detached at the remote base, unlocked, `.venv` and every regenerable cache kept.
-`git_worktree_slots` lists who holds each.
+after the merge — detached at the remote base and re-locked as free under `quenching: available`,
+`.venv` and every regenerable cache kept. `git_worktree_slots` lists who holds each.
+
+- **A free slot keeps its pool lock.** `git worktree remove`, which a client's own worktree cleanup
+  runs without `-f -f`, refuses a locked tree, so the warm `.venv` survives a cleanup; `acquire`
+  turns the pool lock into the holder's and a lost race falls through to the next slot. A
+  machine-local `.code-workspace` projects the primary checkout and the active slots for the
+  editor.
 
 - `shared.worktreeSlots.max` (default 12) is a **ceiling**: at it, `acquire` refuses, or with
   `--wait` waits, and a timed-out wait is reported to the human. No worktree is cut past it.
@@ -185,8 +191,9 @@ never counts it, and `acquire` neither takes nor reuses it. Adoption is the whol
   it stands; only on the base does it cut. The orchestrator that stands in an adopted worktree
   holds one worker at a time and names that path in every prompt — one checkout cannot host two
   indexes, two HEADs or two branches.
-- **Adoption takes no lock.** The harness opens one session per worktree; the slot protection and
-  the visibility of these worktrees wait on 460.
+- **Adoption takes no lock.** The harness opens one session per worktree and owns its lifecycle;
+  the pool's own lock protects the slots, and the workspace projection lists an adopted worktree
+  with `--all`.
 
 ### A target may declare a setup command
 

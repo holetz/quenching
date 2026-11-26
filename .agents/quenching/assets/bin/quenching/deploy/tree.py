@@ -12,7 +12,7 @@ import os
 from pathlib import Path, PurePosixPath
 
 from quenching.common.deploy import dumps_hash_manifest, read_manifest
-from quenching.common.workspace import snippet as workspace_snippet
+from quenching.common.workspace import TASKS_PATH, snippet as workspace_snippet, tasks_snippet
 from quenching.common.version import VERSION
 from quenching.components.commands import bridge
 from quenching.deploy import mcpfiles
@@ -21,10 +21,17 @@ from quenching.deploy import translate
 
 PAYLOAD = ".agents/quenching"
 SKILLS = ".agents/skills"
+RULES = ".agents/rules"
+CLAUDE_RULES = ".claude/rules"
+GITHUB_INSTRUCTIONS = ".github/instructions"
 CLAUDE_SKILLS = ".claude/skills"
 CLAUDE_AGENTS = ".claude/agents"
 OPENCODE_AGENTS = ".opencode/agents"
 GITHUB_AGENTS = ".github/agents"
+# What the manifest records for a file in the plugin's own source repository instead of its sha256.
+# There every generated file is a function of a tracked source, so a per-file hash only makes two
+# PRs that change the same file conflict on its manifest line (spec 520).
+SOURCE_DERIVED = "source"
 MODULE_SHORT = {
     "quenching-specs": "specs",
     "quenching-git": "git",
@@ -72,6 +79,15 @@ class DeployError(ValueError):
 def source_root() -> Path:
     """The installed plugin root that carries `assets/`, `skills/` and `references/`."""
     return Path(__file__).resolve().parents[4]
+
+
+def self_hosted(target: Path) -> bool:
+    """The target is the plugin's source repository: it tracks the source the deploy builds from.
+
+    Decided by the target, never by which copy of `cq` runs, so the source launcher and the
+    vendored one write the same manifest.
+    """
+    return (target / "quenching" / "assets" / "modules.json").is_file()
 
 
 def _is_build(path: Path) -> bool:
@@ -353,6 +369,35 @@ def _bridge_tree(tree: dict, target: Path, dirs: tuple[str, ...],
              dumps_hash_manifest(document).encode(), 0o644)
 
 
+def _rules_tree(tree: dict, target: Path, harnesses: list[str],
+                projections: list[str]) -> None:
+    """The target's `.agents/rules/*.md`, projected to the client directories it reads.
+
+    The source is the target's, like `.agents/skills/`: the deploy never owns it. A client
+    directory is written only when a declared client reads it — `.claude/rules/` for the
+    `claude` harness, `.github/instructions/` for the `github` projection — and the generated
+    copy is in the manifest, so `--check` owns the drift.
+    """
+    source = target / RULES
+    if not source.is_dir():
+        return
+    claude = "claude" in harnesses
+    github = "github" in (projections or [])
+    if not claude and not github:
+        return
+    for path in sorted(source.glob("*.md")):
+        if not path.is_file() or _is_build(path):
+            continue
+        name = path.stem
+        claude_document, copilot_document = translate.rule_documents(
+            _read(path).decode("utf-8"), name)
+        if claude:
+            _add(tree, f"{CLAUDE_RULES}/{name}.md", claude_document.encode("utf-8"))
+        if github:
+            _add(tree, f"{GITHUB_INSTRUCTIONS}/{name}.instructions.md",
+                 copilot_document.encode("utf-8"))
+
+
 def mcp_argv(mcp: dict) -> list[str]:
     """The Python prefix, the vendored entry point and the mount: the whole server for `all`, the
     mounted pillar's own `mcp` for `specs`, and `mcp --only <pillars>` for a named mount (`core`) or
@@ -546,6 +591,10 @@ def build_tree(source: Path, target: Path, modules: list[str], harnesses: list[s
                  translate.opencode_agent_document(path.read_text(encoding="utf-8"), name,
                                                    narrow, mount).encode(),
                  0o644)
+
+    # Path-scoped rules: the target's source in the generic layer, one generated copy per client
+    # directory a declared client reads.
+    _rules_tree(tree, target, harnesses, projections or [])
     if "github" in (projections or []):
         # The GitHub Copilot harness reads the native format, not the Claude one; a repository
         # declares the projection, so a target without Copilot pays no second register.
@@ -563,6 +612,8 @@ def build_tree(source: Path, target: Path, modules: list[str], harnesses: list[s
         # A client projection, opted in by the repository's own `shared.workspace.vscode`:
         # created only when absent, never listed in the manifest, never drift-checked.
         seeds[".vscode/settings.json"] = workspace_snippet()
+        seeds[TASKS_PATH] = tasks_snippet()
+    hosted = self_hosted(target)
     document = {
         "generator": "cq deploy",
         "version": VERSION,
@@ -572,7 +623,8 @@ def build_tree(source: Path, target: Path, modules: list[str], harnesses: list[s
         "harnesses": harnesses,
         "runtime": runtime,
         "skills": sorted(skill_names),
-        "files": {rel: hashlib.sha256(data).hexdigest() for rel, (data, _mode_) in sorted(tree.items())},
+        "files": {rel: SOURCE_DERIVED if hosted else hashlib.sha256(data).hexdigest()
+                  for rel, (data, _mode_) in sorted(tree.items())},
     }
     if folders:
         # The tracked mirrors of modules outside the selection, kept in step with the source.

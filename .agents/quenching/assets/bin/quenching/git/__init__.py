@@ -76,14 +76,18 @@ def build_parser() -> argparse.ArgumentParser:
     sp = sub.add_parser("worktree", help="take or give back a reusable worktree slot, adopt a "
                                           "linked worktree, materialise declared shared paths, or "
                                           "cut and retire a worktree")
-    sp.add_argument("action", choices=("acquire", "release", "slots", "link", "adopt", "add", "retire"),
+    sp.add_argument("action", choices=("acquire", "release", "slots", "workspace", "link",
+                                       "adopt", "add", "retire"),
                     help="acquire: lock a free slot (or a new one under shared.worktreeSlots.max), "
                          "switch it to --branch, link and run `worktreeSetup`; release: detach a "
-                         "clean slot at the remote base and unlock it; slots: list the slots and "
+                         "clean slot at the remote base and re-lock it as free; slots: list "
+                         "the slots and "
                          "who holds each; link: link each declared shared path; adopt: prepare a "
                          "linked worktree the quenching flow did not cut; add: fetch, cut, link "
                          "and run the declared `worktreeSetup` in a one-off worktree; retire: "
-                         "remove a merged spec's worktree and `branch -d` its branch")
+                         "remove a merged spec's worktree and `branch -d` its branch; "
+                         "workspace: project the active slots into a machine-local "
+                         "`.code-workspace`")
     sp.add_argument("--path", metavar="PATH", help="adopt: the checkout to prepare (default: the "
                                                     "current directory); add: the new worktree's "
                                                     "directory; retire/release: the worktree to "
@@ -114,6 +118,13 @@ def build_parser() -> argparse.ArgumentParser:
     sp.add_argument("--discard-ignored", action="store_true",
                     help="retire: remove the worktree even though it holds ignored files "
                          "that are not symlinks")
+    sp.add_argument("--write", action="store_true",
+                    help="workspace: write the `.code-workspace` file (default: print it)")
+    sp.add_argument("--all", action="store_true",
+                    help="workspace: include the free slots and every other registered worktree")
+    sp.add_argument("--output", metavar="PATH",
+                    help="workspace: the file to write (default: "
+                         "<primary>/.vscode/quenching-slots.code-workspace)")
     sp.add_argument("--json", action="store_true", help="machine-readable output")
 
     sp = sub.add_parser("commit", help="commit the existing index with the given subject — "
@@ -196,6 +207,10 @@ def build_parser() -> argparse.ArgumentParser:
     pp = pr.add_parser("view", help="read-only: one PR's number, state, base and head as the "
                                     "configured provider reports them")
     pp.add_argument("--number", required=True, type=int, metavar="N", help="the PR's id")
+    pp.add_argument("--json", action="store_true", help="machine-readable output")
+    pp = pr.add_parser("checks", help="read-only: a PR's checks as green|red|pending|none, their "
+                                      "names and, for none, why")
+    pp.add_argument("--url", required=True, metavar="URL", help="the PR's URL")
     pp.add_argument("--json", action="store_true", help="machine-readable output")
     pp = pr.add_parser("record", help="stamp a spec's `pr` record with a PR opened elsewhere"
                                       "; checks --spec owns --head and the "

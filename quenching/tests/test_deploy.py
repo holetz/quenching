@@ -6,6 +6,7 @@ import io
 import json
 import os
 import pathlib
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -251,6 +252,80 @@ class Deploy(unittest.TestCase):
         self.assertEqual("0.0.1", payload["installedVersion"])
         self.assertTrue(any("0.0.1" in w for w in payload["warnings"]))
         self.assertEqual(0, self.run_deploy("--modules", "core", "--write")[0])
+
+    def test_the_source_repository_records_no_content_hash_so_its_manifest_never_conflicts(self):
+        # Two PRs that change the same generated file would each record a different sha256 on the
+        # same manifest line; in the source repository the line holds a constant instead.
+        self.write("quenching/assets/modules.json", "{}\n")
+        self.assertEqual(0, self.run_deploy("--harness", "opencode", "--modules", "core", "--write")[0])
+        owned = json.loads((self.target / ".agents/.quenching-deploy.json").read_text())["files"]
+        self.assertTrue(owned)
+        self.assertEqual({deploy_tree.SOURCE_DERIVED}, set(owned.values()))
+        skill = self.target / ".agents/skills/quenching-specs/SKILL.md"
+        skill.write_bytes(skill.read_bytes() + b"stale copy\n")
+        code, payload = self.run_deploy("--harness", "opencode", "--modules", "core", "--check")
+        self.assertEqual(1, code)
+        self.assertIn({"path": ".agents/skills/quenching-specs/SKILL.md", "change": "update"},
+                      payload["changes"])
+        self.assertEqual(0, self.run_deploy("--harness", "opencode", "--modules", "core", "--write")[0])
+        self.assertNotIn(b"stale copy", skill.read_bytes())
+
+    def commit_all(self):
+        self.git("add", "-A")
+        self.git("-c", "user.name=t", "-c", "user.email=t@example.com", "-c", "commit.gpgsign=false",
+                 "commit", "-q", "--no-verify", "-m", "deploy")
+
+    def test_the_source_repository_keeps_an_uncommitted_edit_on_remove(self):
+        # No hash is recorded there, so the commit is the record a file about to leave is read against.
+        self.write("quenching/assets/modules.json", "{}\n")
+        self.assertEqual(0, self.run_deploy("--harness", "opencode", "--modules", "core", "--write")[0])
+        self.commit_all()
+        edited = self.target / ".agents/skills/quenching-git/SKILL.md"
+        edited.write_text("mine now\n", encoding="utf-8")
+        code, payload = self.run_deploy("--harness", "opencode", "--remove")
+        self.assertEqual(1, code)
+        self.assertIn(".agents/skills/quenching-git/SKILL.md", payload["kept"])
+        self.assertIn({"path": ".agents/skills/quenching-specs/SKILL.md", "change": "delete"},
+                      payload["changes"])
+        self.assertEqual(0, self.run_deploy("--harness", "opencode", "--remove", "--write")[0])
+        self.assertEqual("mine now\n", edited.read_text(encoding="utf-8"))
+        self.assertFalse((self.target / ".agents/skills/quenching-specs/SKILL.md").exists())
+
+    def test_the_source_repository_keeps_an_uncommitted_edit_leaving_the_selection(self):
+        self.write("quenching/assets/modules.json", "{}\n")
+        self.assertEqual(0, self.run_deploy("--harness", "opencode", "--modules", "core,design", "--write")[0])
+        self.commit_all()
+        edited = self.target / ".agents/skills/quenching-design/SKILL.md"
+        self.assertTrue(edited.is_file())
+        edited.write_text("mine now\n", encoding="utf-8")
+        code, payload = self.run_deploy("--harness", "opencode", "--modules", "core", "--check")
+        self.assertEqual(1, code)
+        leaving = {c["path"]: c["change"] for c in payload["changes"]
+                   if c["path"].startswith(".agents/skills/quenching-design/")}
+        self.assertEqual("edited", leaving.pop(".agents/skills/quenching-design/SKILL.md"))
+        self.assertTrue(leaving)
+        self.assertEqual({"delete"}, set(leaving.values()))
+
+    def assert_remove_keeps_every_owned_file(self):
+        code, payload = self.run_deploy("--harness", "opencode", "--remove")
+        self.assertEqual(1, code)
+        self.assertIn(".agents/skills/quenching-specs/SKILL.md", payload["kept"])
+        owned = {c["change"] for c in payload["changes"] if c["path"].startswith(".agents/skills/")}
+        self.assertEqual({"edited"}, owned)
+
+    def test_the_source_repository_keeps_the_file_when_git_is_absent(self):
+        # A git that cannot answer is no proof the file equals HEAD, so deleting it is not safe.
+        self.write("quenching/assets/modules.json", "{}\n")
+        self.assertEqual(0, self.run_deploy("--harness", "opencode", "--modules", "core", "--write")[0])
+        self.commit_all()
+        with mock.patch("quenching.deploy.cli.subprocess.run", side_effect=FileNotFoundError("git")):
+            self.assert_remove_keeps_every_owned_file()
+
+    def test_the_source_repository_keeps_the_file_outside_a_git_repository(self):
+        self.write("quenching/assets/modules.json", "{}\n")
+        self.assertEqual(0, self.run_deploy("--harness", "opencode", "--modules", "core", "--write")[0])
+        shutil.rmtree(self.target / ".git")
+        self.assert_remove_keeps_every_owned_file()
 
     def test_a_crlf_checkout_of_the_surface_is_clean_and_a_real_edit_is_still_edited(self):
         self.assertEqual(0, self.run_deploy("--modules", "core", "--write")[0])
@@ -795,6 +870,20 @@ class Deploy(unittest.TestCase):
                           "bash": list(access.OPENCODE_BASH)}, manifest["opencodeConfig"])
         self.assertEqual([], self.run_deploy("--check")[1]["changes"])
 
+    def test_write_records_again_the_extras_a_merge_dropped_from_the_manifest(self):
+        self.assertEqual(0, self.run_deploy("--modules", "specs", "--harness", "opencode",
+                                            "--write")[0])
+        manifest_path = self.target / ".agents/.quenching-deploy.json"
+        manifest = json.loads(manifest_path.read_text())
+        block = manifest.pop("opencodeConfig")
+        manifest_path.write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
+        before = (self.target / "opencode.json").read_bytes()
+        code, payload = self.run_deploy("--write")
+        self.assertEqual(0, code, payload)
+        self.assertEqual(before, (self.target / "opencode.json").read_bytes())
+        self.assertEqual(block, json.loads(manifest_path.read_text())["opencodeConfig"])
+        self.assertEqual([], self.run_deploy("--check")[1]["changes"])
+
     def test_check_keeps_the_patterns_another_machine_recorded(self):
         self.assertEqual(0, self.run_deploy("--modules", "specs", "--harness", "opencode",
                                             "--write")[0])
@@ -810,7 +899,64 @@ class Deploy(unittest.TestCase):
         self.assertEqual([], self.run_deploy("--check")[1]["changes"])
         self.assertEqual(0, self.run_deploy("--write")[0])
         rewritten = json.loads((self.target / "opencode.json").read_text())
-        self.assertNotIn(other[0], rewritten["permission"]["external_directory"])
+        self.assertEqual({p: "allow" for p in other}, rewritten["permission"]["external_directory"])
+
+    def test_write_keeps_what_the_checkout_already_declares(self):
+        # A checkout carrying another machine's patterns and a depth this machine's global config
+        # would hide: a write must leave `opencode.json` and the manifest block as they are.
+        self.assertEqual(0, self.run_deploy("--modules", "specs", "--harness", "opencode",
+                                            "--write")[0])
+        other = ["~/elsewhere/repo-slot-*", "~/elsewhere/repo.*"]
+        manifest_path = self.target / ".agents/.quenching-deploy.json"
+        manifest = json.loads(manifest_path.read_text())
+        manifest["opencodeConfig"]["externalDirectory"] = other
+        manifest_path.write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
+        opencode = json.loads((self.target / "opencode.json").read_text())
+        opencode["permission"]["external_directory"] = {p: "allow" for p in other}
+        (self.target / "opencode.json").write_text(json.dumps(opencode, indent=2) + "\n",
+                                                   encoding="utf-8")
+        (self.xdg / "opencode").mkdir()
+        (self.xdg / "opencode" / "opencode.jsonc").write_text(
+            '{"experimental": {"todo": true}}\n', encoding="utf-8")
+        before = (self.target / "opencode.json").read_bytes()
+        block = json.loads(manifest_path.read_text())["opencodeConfig"]
+        self.assertEqual(0, self.run_deploy("--write")[0])
+        self.assertEqual(before, (self.target / "opencode.json").read_bytes())
+        self.assertEqual(block, json.loads(manifest_path.read_text())["opencodeConfig"])
+        self.assertEqual([], self.run_deploy("--check")[1]["changes"])
+
+    def test_write_derives_again_when_the_file_lost_a_recorded_value(self):
+        self.assertEqual(0, self.run_deploy("--modules", "specs", "--harness", "opencode",
+                                            "--write")[0])
+        manifest_path = self.target / ".agents/.quenching-deploy.json"
+        manifest = json.loads(manifest_path.read_text())
+        manifest["opencodeConfig"]["externalDirectory"] = ["~/elsewhere/repo.*"]
+        manifest_path.write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
+        self.assertEqual(0, self.run_deploy("--write")[0])
+        derived = json.loads((self.target / "opencode.json").read_text())
+        self.assertNotIn("~/elsewhere/repo.*", derived["permission"]["external_directory"])
+        self.assertEqual(4, derived["experimental"]["subagent_depth"])
+
+    def test_write_keeps_the_claude_permission_rules_the_checkout_declares(self):
+        self.assertEqual(0, self.run_deploy("--modules", "specs", "--harness", "claude",
+                                            "--write")[0])
+        manifest_path = self.target / ".agents/.quenching-deploy.json"
+        settings_path = self.target / ".claude/settings.json"
+        manifest = json.loads(manifest_path.read_text())
+        recorded = manifest["claudeSettings"]["permissions"]
+        self.assertTrue(recorded)
+        elsewhere = [rule.replace("quenching", "elsewhere") for rule in recorded]
+        manifest["claudeSettings"]["permissions"] = elsewhere
+        manifest_path.write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
+        settings = json.loads(settings_path.read_text())
+        settings["permissions"]["allow"] = [r for r in settings["permissions"]["allow"]
+                                            if r not in recorded] + elsewhere
+        settings_path.write_text(json.dumps(settings, indent=2) + "\n", encoding="utf-8")
+        before = settings_path.read_bytes()
+        self.assertEqual(0, self.run_deploy("--write")[0])
+        self.assertEqual(before, settings_path.read_bytes())
+        self.assertEqual(sorted(elsewhere),
+                         json.loads(manifest_path.read_text())["claudeSettings"]["permissions"])
 
     def test_a_slot_resolves_to_its_primary_checkout(self):
         from quenching.deploy.cli import _primary_checkout
@@ -1166,6 +1312,16 @@ class CopilotAgents(unittest.TestCase):
         self.assertNotIn("execute", tools)
         self.assertIn("quenching/specs_status", tools)
         self.assertIn("quenching/git_audit", tools)
+
+    def test_a_scoped_shell_grant_stays_in_the_text_execute_cannot_carry(self):
+        text = translate.copilot_agent_document(self.VERIFIER, "spec-verifier")
+        self.assertIn("execute", self.field(text, "tools"))
+        self.assertIn(translate.SHELL_NOTE + "`.agents/quenching/bin/cq specs status`, "
+                      "`.agents/quenching/bin/cq git audit`.", text)
+
+    def test_a_bare_bash_or_no_shell_writes_no_shell_note(self):
+        for raw in (self.RUNNER, "---\ndescription: x\ntools: Read\n---\n\nb\n"):
+            self.assertNotIn(translate.SHELL_NOTE, translate.copilot_agent_document(raw, "x"))
 
     def test_the_mount_keeps_a_tool_out_of_the_projection(self):
         self.assertEqual(["execute"],

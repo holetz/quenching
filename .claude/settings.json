@@ -13,7 +13,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 -I -c \"import os,runpy,sys;p=os.path.join(os.environ.get('CLAUDE_PROJECT_DIR') or os.getcwd(),'.agents/quenching/assets/hooks/dispatch.py');os.path.isfile(p) or (print('{}'),sys.exit(0));runpy.run_path(p,run_name='__main__')\" deny-claude-coauthor warn-git-add-all",
+            "command": "python3 -I -c \"import os,runpy,sys;r=os.path.abspath(os.environ.get('CLAUDE_PROJECT_DIR') or os.environ.get('COPILOT_PROJECT_DIR') or os.getcwd());c=[r];[c.append(os.path.dirname(c[-1])) for _ in range(r.count(os.sep))];g=next((i for i,x in enumerate(c) if os.path.exists(os.path.join(x,'.git'))),-1);c=c[:g+1] if g>=0 else [r];m='.agents/quenching/assets/hooks/dispatch.py';p=next((os.path.join(x,m) for x in c if os.path.isfile(os.path.join(x,m))),'');p or (print('{}'),sys.exit(0));runpy.run_path(p,run_name='__main__')\" deny-claude-coauthor warn-git-add-all",
             "timeout": 5
           }
         ]
@@ -25,7 +25,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 -I -c \"import os,runpy,sys;p=os.path.join(os.environ.get('CLAUDE_PROJECT_DIR') or os.getcwd(),'.agents/quenching/assets/hooks/dispatch.py');os.path.isfile(p) or (print('{}'),sys.exit(0));runpy.run_path(p,run_name='__main__')\" adopt-worktree",
+            "command": "python3 -I -c \"import os,runpy,sys;r=os.path.abspath(os.environ.get('CLAUDE_PROJECT_DIR') or os.environ.get('COPILOT_PROJECT_DIR') or os.getcwd());c=[r];[c.append(os.path.dirname(c[-1])) for _ in range(r.count(os.sep))];g=next((i for i,x in enumerate(c) if os.path.exists(os.path.join(x,'.git'))),-1);c=c[:g+1] if g>=0 else [r];m='.agents/quenching/assets/hooks/dispatch.py';p=next((os.path.join(x,m) for x in c if os.path.isfile(os.path.join(x,m))),'');p or (print('{}'),sys.exit(0));runpy.run_path(p,run_name='__main__')\" adopt-worktree",
             "timeout": 300
           }
         ]
@@ -46,13 +46,7 @@
       "Write(~/Projetos/quenching-slot-*/**)",
       "Read(~/Projetos/quenching.*/**)",
       "Edit(~/Projetos/quenching.*/**)",
-      "Write(~/Projetos/quenching.*/**)",
-      "Read(~/Projects/quenching-slot-*/**)",
-      "Edit(~/Projects/quenching-slot-*/**)",
-      "Write(~/Projects/quenching-slot-*/**)",
-      "Read(~/Projects/quenching.*/**)",
-      "Edit(~/Projects/quenching.*/**)",
-      "Write(~/Projects/quenching.*/**)"
+      "Write(~/Projetos/quenching.*/**)"
     ]
   }
 }

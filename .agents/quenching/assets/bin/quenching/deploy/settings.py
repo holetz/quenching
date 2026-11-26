@@ -44,16 +44,25 @@ def _word(part: str) -> str:
 
 
 def dispatch_command(names: list[str], prefix: list[str] | tuple[str, ...] = PYTHON) -> str:
-    """The one line bash, PowerShell and cmd all read the same way: the root from the
-    `CLAUDE_PROJECT_DIR` both harnesses export (else the working directory), `{}` when the
-    dispatcher is not installed, else the dispatcher run as `__main__` with the body names as its
-    arguments — every body of one matcher in one interpreter."""
+    """The one line bash, PowerShell and cmd all read the same way: the project root from
+    `CLAUDE_PROJECT_DIR`, then `COPILOT_PROJECT_DIR`, then the first ancestor of the working
+    directory carrying `.git`; `{}` when the dispatcher is not installed, else the dispatcher run
+    as `__main__` with the body names as its arguments — every body of one matcher in one
+    interpreter. The walk stops at the worktree root, so a `.agents` above the project never
+    answers for it, and an event keeps the same answer from any directory of the project."""
     for name in names:
         if not _SAFE.fullmatch(name) or name == DISPATCH:
             raise ValueError(f"hook name {name!r} must match [A-Za-z0-9_-]+ and not be {DISPATCH!r}")
     code = ("import os,runpy,sys;"
-            f"p=os.path.join(os.environ.get('CLAUDE_PROJECT_DIR') or os.getcwd(),'{MARKER}{DISPATCH}.py');"
-            "os.path.isfile(p) or (print('{}'),sys.exit(0));"
+            "r=os.path.abspath(os.environ.get('CLAUDE_PROJECT_DIR') or "
+            "os.environ.get('COPILOT_PROJECT_DIR') or os.getcwd());"
+            "c=[r];"
+            "[c.append(os.path.dirname(c[-1])) for _ in range(r.count(os.sep))];"
+            "g=next((i for i,x in enumerate(c) if os.path.exists(os.path.join(x,'.git'))),-1);"
+            "c=c[:g+1] if g>=0 else [r];"
+            f"m='{MARKER}{DISPATCH}.py';"
+            "p=next((os.path.join(x,m) for x in c if os.path.isfile(os.path.join(x,m))),'');"
+            "p or (print('{}'),sys.exit(0));"
             "runpy.run_path(p,run_name='__main__')")
     return " ".join(_word(part) for part in prefix) + f' -I -c "{code}" ' + " ".join(names)
 

@@ -4,10 +4,10 @@ title: Deploy mode — install the surface in a target repository
 description: "`cq deploy` materializes the selected quenching modules in a target's generic layer — AGENTS.md, .agents/skills and a vendored runtime — while Claude Code receives only a generated bridge under .claude; install is not alignment and never calls a model."
 resource: quenching/assets/bin/quenching/deploy/**, quenching/assets/bin/cq, quenching/assets/modules.json, quenching/pyproject.toml, quenching/assets/bin/quenching/components/commands/bridge.py, quenching/assets/bin/quenching/components/commands/migrate.py, integrations/opencode-vitrine/**
 tags: [architecture, deploy, installation, agents, skills, bridge]
-timestamp: 2026-11-24
+timestamp: 2026-11-25
 audience: both
 authority: current
-source: deploy-mode implementation (2026-10-28); spec 2126, spec 2160, spec 2168, spec 2174 (absorbs surface-translation.md), spec 314 (harness approvals), spec 416 (MCP replaces the covered cq grants); retired with surface-translation.md (spec 2174, 2026-11-03); lineage in ADR 0017 and ADR 0019
+source: deploy-mode implementation (2026-10-28); spec 2126, spec 2160, spec 2168, spec 2174 (absorbs surface-translation.md), spec 314 (harness approvals), spec 416 (MCP replaces the covered cq grants), spec 539; retired with surface-translation.md (spec 2174, 2026-11-03); lineage in ADR 0017 and ADR 0019
 maintainer: quenching
 ---
 
@@ -32,10 +32,14 @@ for deployment; this verb installs the tool surface. It never invokes a model, n
 | `AGENTS.md` | instructions | target; seeded only when absent |
 | `.agents/quenching.json` | configuration | target; seeded only when absent |
 | `.vscode/settings.json` | VS Code workspace settings: the generated trees out of search and the semantic index, and room for long agent runs | target; seeded only when absent and `shared.workspace.vscode` is true |
+| `.vscode/tasks.json` | VS Code tasks: the gate, the deploy check, the spec status and the slot report run in the terminal, with no model turn | target; seeded only when absent and `shared.workspace.vscode` is true |
 | `.agents/skills/quenching-<command>/SKILL.md` | one-segment skills, published when a declared harness reads the generic layer | generated |
 | `.agents/quenching/` | vendored payload: runtime, references, templates, commands, agent protocols | generated, read-only |
 | `.agents/.quenching-deploy.json` | manifest: version, modules, profiles, hashes, skills | generated; one blank line separates each entry of `files` |
 | `.claude/skills/<name>/` | the Claude projection: generated skills written directly when `claude` is declared, plus the target's own skills copied from `.agents/skills/` | generated |
+| `.agents/rules/<name>.md` | path-scoped rule source: `paths:` globs and a markdown body | target; the deploy projects it, never owns it |
+| `.claude/rules/<name>.md` | Claude rules, the source's `paths:` frontmatter | generated when the `claude` harness is selected |
+| `.github/instructions/<name>.instructions.md` | Copilot path-scoped instructions, the same globs as one quoted `applyTo:` | generated when the repository declares `shared.projections: ["github"]` |
 | `.claude/agents/quenching-<name>.md` | Claude subagents | generated when the `claude` harness is selected |
 | `.opencode/agents/quenching-<name>.md` | OpenCode subagents, `mode: subagent` | generated when the `opencode` harness is selected |
 | `.github/agents/quenching-<name>.agent.md` | Copilot subagents, the native custom-agent format | generated when the repository declares `shared.projections: ["github"]` |
@@ -60,6 +64,15 @@ of `files`: git treats changes in neighbouring lines as a conflict and changes w
 line between them as a clean merge, so only two branches that change the same file's hash still
 conflict (and its deployed copy conflicts with it). JSON admits the blank lines, so every reader
 parses the file unchanged.
+
+**The source repository's manifest records no content hash.** When the target tracks the plugin's
+own source (`quenching/assets/modules.json` is present), every entry of `files` records the
+constant `"source"` instead of a sha256. There every generated file is a function of a tracked
+source, and two branches that change the same file would otherwise conflict on its manifest line
+on every merge (spec 520 measured 54 such conflicts in 150 syncs). The decision is the target's,
+never the launcher's, so the source `cq` and the vendored one write the same manifest. The proof
+README's generated block carries no test count and no test path for the same reason: every branch
+adds tests.
 
 ## Selection and the manifest
 
@@ -87,7 +100,13 @@ source moved on); one whose bytes no longer match the record is `edited` (someon
 target). `--check` reports both (exit 1). `--write` applies updates but refuses an `edited` file
 (`ct-deploy-edited`, exit 2) and writes nothing, because regenerating it would discard work; the
 edit belongs in a target-owned skill or in the quenching source, and `--force` discards it on
-purpose. A manifest entry without a hash cannot tell the two apart and is read as `update`.
+purpose. A manifest entry without a hash cannot tell the two apart and is read as `update`; so is
+an entry recording `"source"`, where `--check` still reports a stale copy by its bytes. On the
+delete path — an owned file leaving the tree, and `--remove` — a `"source"` entry has no source
+left to compare with, so the commit is the record: a file git reports as differing from `HEAD`
+(modified, staged or untracked) is `edited`, and one equal to `HEAD` is a `delete`. A git that
+cannot answer — absent, timed out, no repository, an unreadable `HEAD` — proves nothing, so the
+file is `edited` and kept: only a clean answer lets it go.
 
 A **tracked mirror of a module outside the selection** is kept in step with the source. A skill
 folder carrying its `SKILL.md`, or a package carrying a `.py`, that the target already holds for a
@@ -108,7 +127,8 @@ carries `installedVersion` and a warning naming both, so release lag reads apart
 `cq deploy --target <repo> --remove` plans removing the whole surface (exit 1 while there is
 something to remove); `--remove --write` does it. Each owned file that still holds its recorded
 bytes is deleted, and directories it leaves empty go with it; an `edited` file is **kept** and
-reported, becoming the target's own file, unless `--force`. Only the hooks and keys a past deploy
+reported, becoming the target's own file, unless `--force` — in the source repository too, where
+an edit is read against `HEAD` (§Selection and the manifest). Only the hooks and keys a past deploy
 merged leave `.claude/settings.json`, which is deleted only when that leaves it empty. The manifest
 goes last. Seeds — `AGENTS.md`, `.agents/quenching.json` — the target's own skills and `/docs/`
 are never owned, so never removed. A target without a manifest refuses (`ct-deploy-remove`, exit 2):
@@ -205,7 +225,11 @@ merge also writes:
 `--check` reuses the depth, the patterns and the shell rules the manifest records
 (`opencodeConfig`) instead of deriving them again: the first two name the deploying machine's
 global config and checkout, so a committed `opencode.json` read on another machine is not drift.
-`--write` derives them for the machine it runs on.
+`--write` reuses them too when `opencode.json` already carries every recorded value (the depth,
+each pattern and each shell rule at `allow`), so a deploy never swaps a checkout's own for this
+machine's and leaves the file and the `opencodeConfig` block unchanged. It derives them for the
+machine it runs on only when the file lacks one of them — a first deploy, or an entry removed to
+adopt this machine's values.
 
 Nothing else is granted: an existing `deny` on a pattern or a shell rule is the user's refusal and
 is neither overwritten nor recorded. The permission uses the V1 object form, which OpenCode still
@@ -238,7 +262,9 @@ merged, never owned, so it is not in the manifest's `files`.
   only when the rule is absent, and records the ones it added in `claudeSettings.permissions`. A
   rule the user already wrote is theirs and is not recorded; `deny` and `ask` are never touched.
   `--check` reuses the recorded rules instead of deriving them again: they name the deploying
-  machine's checkout, so another clone is not drift. A target outside git gets no rule.
+  machine's checkout, so another clone is not drift. `--write` does the same when `permissions.allow`
+  already holds every recorded rule, so it never swaps a checkout's own rules for this machine's;
+  with one missing it derives them again. A target outside git gets no rule.
 - **`--check`.** The merge result differing from the file is `settings` drift (exit 1).
 - **Removal.** Selecting fewer modules drops the hooks of the module that left; a harness list
   without `claude` (`opencode`, `none`) wants nothing, so only deploy's own entries leave,
@@ -303,6 +329,27 @@ key is off by default: a target that does not use VS Code never receives the fil
   per-key state and the block. Both only report: neither writes, and a missing key is information,
   never a failed prerequisite.
 
+## The `.vscode/tasks.json` seed
+
+The zero-token half of the same opt-in: `shared.workspace.vscode` also seeds a tasks file, created
+only when absent, never listed in the manifest, never drift-checked and never removed.
+`common/workspace.py` is the one source of the document and of its report.
+
+- **The tasks.** `quenching: gate` (`bash scripts/verify_repo.sh`, the default test task),
+  `quenching: deploy check`, `quenching: specs status` (prompting for a `specId`),
+  `quenching: worktree slots`, `quenching: slots workspace` (writes the machine-local
+  `.code-workspace`) and `quenching: open slots` (depends on the previous task and opens that file
+  in a new window). Each runs in `${workspaceFolder}` with an empty `problemMatcher` and a
+  dedicated panel; the `cq` tasks use the target-local `.agents/quenching/bin/cq`, with `cq.cmd`
+  in the `windows` override. A task runs in the client's terminal and spends no model turn.
+- **Created only when absent.** Like the settings file: `--write` seeds it when the file does not
+  exist, `--check` reports the seed change until the first write, an edit survives every later
+  deploy, and `--remove` never deletes it.
+- **Reporting and suggestions.** `cq doctor` prints a `tasks:` line when the file exists, when the
+  key is declared or when the target carries a `.vscode/` directory; `cq doctor --workspace`
+  prints both blocks and their per-key state. A declared file missing a recommended task is a
+  suggestion naming the labels, never a drift failure and never a rewrite.
+
 ## What deploy does not do
 
 - It does not install `/docs/` or call an align; the target runs its own
@@ -322,10 +369,10 @@ The source, `quenching/`, is written in the target dialect: `/quenching-<vertica
 header, the grants (and the OpenCode permissions) and the `cq.cmd` launcher; a source that still
 carries a plugin-root marker or a plugin-surface id is refused. It writes a target repository's
 generic layer — `.agents/skills/` (read by OpenCode), the payload under
-`.agents/quenching/`, the Claude bridge under `.claude/skills/`, the subagents under
-`.claude/agents/` and `.opencode/agents/`, and — when the repository declares
-`shared.projections: ["github"]` — the Copilot projection under `.github/agents/` (§The target
-layout above). No Codex package, no `codex` harness ([ADR 0020](../../decisions/0020-remove-the-codex-executor-and-harness.md)) and no
+`.agents/quenching/`, the Claude bridge under `.claude/skills/`, the rules under `.claude/rules/`,
+the subagents under `.claude/agents/` and `.opencode/agents/`, and — when the repository declares
+`shared.projections: ["github"]` — the Copilot projections under `.github/agents/` and
+`.github/instructions/`, all from the same generic sources (§The target layout above). No Codex package, no `codex` harness ([ADR 0020](../../decisions/0020-remove-the-codex-executor-and-harness.md)) and no
 user-level OpenCode distribution exist since [ADR 0017](../../decisions/0017-install-only-by-deploy.md).
 A target's `.claude/commands/` is the legacy layout, which `cq components migrate` converts; the
 `cq components translate` that once copied it into `.agents/` is retired, and a copy it wrote beside
@@ -347,6 +394,7 @@ A target repository's single editable source is the generic layer. Each artifact
 | reference | `.agents/references/**` | cited by the skills beside them |
 | eval | `.agents/evals/<name>/` | beside the skill it scores |
 | instructions | `AGENTS.md` at the root; subfolder `AGENTS.md` loads with that folder | read natively by Claude Code 2.1.277+ and OpenCode |
+| rule | `.agents/rules/<name>.md`, one flat file per rule | projected to the directories the clients read; no client reads `.agents/` itself (§Path-scoped rules) |
 | configuration | `.agents/quenching.json`, `.claude/quenching.json` read as legacy ([plugin-configuration.md](../workflows/plugin-configuration.md)) | one editable file |
 
 There is no root `CLAUDE.md` in a conformant target: Claude Code reads `AGENTS.md` itself when
@@ -473,8 +521,35 @@ unmapped head refuses the deploy (`ct-deploy-source`). `model` is an ordered ban
 model ids derived from the source's `model`, with `effort` as `reasoning-effort`; the small tier is
 refused. `include-custom-instructions` carries the repository's `AGENTS.md` into the subagent, and
 `target: github-copilot` pins the schema. The key is read from the repository document only; an
-unknown value refuses with `ct-deploy-projection` before anything is written, and
-`.github/instructions/` is not written here — path-scoped instructions are another projection's.
+unknown value refuses with `ct-deploy-projection` before anything is written. The same `github`
+projection also writes `.github/instructions/` from the target's `.agents/rules/` (§Path-scoped
+rules).
+
+### Path-scoped rules
+
+A path-scoped rule is authored once, in the target's generic layer: `.agents/rules/<name>.md`, a
+flat file whose frontmatter carries `paths:` — a non-empty block list of globs — and an optional
+`description`, with a markdown body. No client reads `.agents/rules/` itself; the deploy writes one
+generated copy per client directory a declared client reads:
+
+| Client | Generated copy | Gate |
+| --- | --- | --- |
+| Claude Code | `.claude/rules/<name>.md`, the same `paths:` list | the `claude` harness is selected |
+| VS Code + GitHub Copilot | `.github/instructions/<name>.instructions.md`, the same globs in one quoted `applyTo:` | the repository declares `shared.projections: ["github"]` |
+
+The projection translates the frontmatter and nothing else: `paths:` stays a list in the Claude
+copy, and the Copilot copy joins the same globs with commas into the client's quoted scalar form.
+`description` crosses both. A source with no frontmatter, no `paths:`, an inline `paths:`, an empty
+or non-list item, an unknown key, or a file name that is not a flat slug refuses the deploy
+(`ct-deploy-source`) before anything is written: an always-on instruction belongs in `AGENTS.md`,
+which every client reads.
+
+The copies are generated with the deploy header and their hashes are in the manifest; the source
+never is. `--check` reports an edited copy as drift, `--write` refuses it (`ct-deploy-edited`), and
+removing a source — or the `github` projection — deletes the copy on the next `--write`. A copy the
+manifest does not own is `ct-deploy-unowned`, never overwritten; `cq components migrate` moves a
+target's tracked `.claude/rules/**` to `.agents/rules/**` first, skipping the copies the deploy
+already owns, and reports two editable copies as the usual conflict.
 
 ## Verify
 

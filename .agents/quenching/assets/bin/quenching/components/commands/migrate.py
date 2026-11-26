@@ -153,6 +153,12 @@ def build_plan(repo: Path) -> Plan:
             plan.move(rel, dst)
         elif rel.startswith(references):
             plan.move(rel, (AGENTS / "references" / rel[len(references):]).as_posix())
+    claude_rules = (CLAUDE / "rules").as_posix() + "/"
+    for rel in tracked:
+        if rel.startswith(claude_rules):
+            # A scoped rule is authored once, in the generic layer; `.claude/rules/` becomes the
+            # deploy's generated copy (skipped above when the manifest already owns it).
+            plan.move(rel, (AGENTS / "rules" / rel[len(claude_rules):]).as_posix())
     claude_skills = (CLAUDE / "skills").as_posix() + "/"
     bridged = _bridged(repo)
     owned = [rel[len(claude_skills):] for rel in tracked if rel.startswith(claude_skills)

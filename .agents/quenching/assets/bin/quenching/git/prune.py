@@ -120,7 +120,19 @@ def cmd_prune(args) -> int:
         return refuse({"code": "git-prune-no-lease",
                        "message": f"no tracking ref to lease for {args.remote}/{target}"},
                       args.json)
+    slot_pool = None
+    freed_lock = False
+    if kind == "worktree":
+        from quenching.git import slots as slot_pool
+        if slot_pool.free_slot(cwd, target) is not None:
+            if not slot_pool.unlock_free(cwd, target):
+                return refuse({"code": "git-prune-unlock-failed",
+                               "message": f"the free slot {target} could not be unlocked for "
+                                          "removal; nothing was removed"}, args.json)
+            freed_lock = True
     code, out, err = _git_run(cwd, *SAFE, *argv)
+    if code != 0 and freed_lock and slot_pool is not None:
+        slot_pool.relock_free(cwd, target)
     payload = {"ok": code == 0, "kind": kind, "target": target, "remote": args.remote}
     if code != 0 and kind == "remote-branch":
         gone, _o, _e = _git_run(cwd, *SAFE, "ls-remote", "--exit-code", "--heads",

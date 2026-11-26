@@ -239,7 +239,8 @@ def _mcp_merge(target: Path, wanted: dict[str, list[str]], previous: dict | None
     there (`opencodeConfig`) is taken out first, so a changed pattern never lingers.
     `keep_patterns` (`--check`) reuses the recorded `external_directory` patterns and depth: they
     name the deploying machine's checkout and global config, so another clone of a committed
-    `opencode.json` is not drift.
+    `opencode.json` is not drift. A write does the same when the file already carries every
+    recorded value, so it never swaps a checkout's own for this machine's.
     """
     files: list[dict] = []
     warnings: list[str] = []
@@ -254,8 +255,9 @@ def _mcp_merge(target: Path, wanted: dict[str, list[str]], previous: dict | None
         current = _canonical_text(path)
         if rel in wanted and rel == mcpfiles.OPENCODE:
             base = mcpfiles.opencode_strip(current, recorded) if recorded and current else current
+            reuse = keep_patterns or mcpfiles.carries(current, recorded)
             extras, why = _opencode_wanted(target, base, os.environ if env is None else env,
-                                           recorded=recorded if keep_patterns else None)
+                                           recorded=recorded if reuse else None)
             warnings.extend(why)
             new = (None if current is not None and base is None
                    else mcpfiles.merged(rel, base, wanted[rel], extras))
@@ -265,6 +267,16 @@ def _mcp_merge(target: Path, wanted: dict[str, list[str]], previous: dict | None
             opencode = written if new is not None and (
                 written["subagentDepth"] is not None or written["externalDirectory"]
                 or written["bash"]) else None
+            if (opencode is None and recorded is None and not keep_patterns and new is not None
+                    and current is not None and mcpfiles.NAME in current
+                    and (extras["subagentDepth"] is not None or extras["externalDirectory"]
+                         or extras["bash"])):
+                # A merge dropped the record of an `opencode.json` that already carries this
+                # machine's extras: write nothing there, but record them again, so another
+                # machine's `--check` reuses them instead of deriving its own.
+                opencode = {"subagentDepth": extras["subagentDepth"],
+                            "externalDirectory": list(extras["externalDirectory"]),
+                            "bash": list(extras["bash"])}
         elif rel in wanted:
             new = mcpfiles.merged(rel, current, wanted[rel])
         elif current is not None and mcpfiles.NAME in current:
@@ -280,18 +292,38 @@ def _mcp_merge(target: Path, wanted: dict[str, list[str]], previous: dict | None
     return {"files": files, "warnings": warnings, "opencode": opencode}
 
 
-def _edited(target: Path, rel: str, recorded: str | None) -> bool:
+def _edited(target: Path, rel: str, recorded: str | None, deleting: bool = False) -> bool:
     """The owned file no longer holds the bytes the last deploy wrote: someone edited it.
 
     Without a recorded hash (a manifest older than the field) the edit is unknowable, so the
-    answer is no — the file is treated as the last deploy's, exactly as before.
+    answer is no — the file is treated as the last deploy's, exactly as before. So it is for the
+    source repository's own manifest, which records `SOURCE_DERIVED` instead of a hash, on the
+    update path, where the source is the truth. A file about to be deleted has no source left, so
+    there the commit is the record: a change git reports against `HEAD` is an edit to keep.
     """
-    if recorded is None or rel in TOOL_REWRITTEN:
+    if recorded == deploy_tree.SOURCE_DERIVED and deleting and rel not in TOOL_REWRITTEN:
+        return _uncommitted(target, rel)
+    if recorded in (None, deploy_tree.SOURCE_DERIVED) or rel in TOOL_REWRITTEN:
         return False
     data = (target / rel).read_bytes()
     # The raw hash still matches a manifest a Windows deploy recorded before the tree was canonical.
     return recorded not in {hashlib.sha256(data).hexdigest(),
                             hashlib.sha256(deploy_tree.eol_canonical(data)).hexdigest()}
+
+
+def _uncommitted(target: Path, rel: str) -> bool:
+    """Git reports the path as differing from `HEAD` (modified, staged or untracked).
+
+    A git that cannot answer (absent, timed out, no repository, unreadable `HEAD`) proves nothing,
+    so the file is read as edited and kept: only a clean answer lets it be deleted.
+    """
+    try:
+        done = subprocess.run(["git", "-C", str(target), "status", "--porcelain", "--", rel],
+                              capture_output=True, text=True, encoding="utf-8", errors="replace",
+                              timeout=30)
+    except (OSError, subprocess.SubprocessError):
+        return True
+    return done.returncode != 0 or bool(done.stdout.strip())
 
 
 def _same(path: Path, data: bytes) -> bool:
@@ -355,28 +387,37 @@ def recorded(previous: dict | None, key: str, allowed: set[str] | None = None):
 
 
 def _workspace_suggestions(target: Path, declared: bool) -> list[str]:
-    """Advice for `.vscode/settings.json`, which the deploy seeds and never rewrites.
+    """Advice for the two `.vscode` seeds, which the deploy seeds and never rewrites.
 
     The seed change covers a declared key with no file; this covers a file someone edited and a
     VS Code workspace that never declared the key. Both are advice, never a drift failure.
     """
     report = workspace_settings.report(str(target), declared_value=declared)
+    tasks = workspace_settings.tasks_report(str(target))
     if report["state"] == "unreadable":
         return [f"`.vscode/settings.json` could not be read as JSONC ({report['reason']}); the "
                 "deploy left it untouched — `cq doctor --workspace` prints the recommended block"]
+    if tasks["state"] == "unreadable":
+        return [f"`.vscode/tasks.json` could not be read as JSONC ({tasks['reason']}); the "
+                "deploy left it untouched — `cq doctor --workspace` prints the recommended tasks"]
     if declared:
+        out = []
         if report["state"] == "present" and not report["complete"]:
             gaps = list(report["missingExclusions"]) + list(report["missing"])
             if (report["maxRequests"] or 0) < workspace_settings.MAX_REQUESTS:
                 gaps.append(f"chat.agent.maxRequests >= {workspace_settings.MAX_REQUESTS}")
-            return [f"`.vscode/settings.json` lacks the recommended setting(s) "
-                    f"({', '.join(dict.fromkeys(gaps))}); `cq doctor --workspace` prints them — "
-                    "the deploy never rewrites the file"]
-        return []
+            out.append(f"`.vscode/settings.json` lacks the recommended setting(s) "
+                       f"({', '.join(dict.fromkeys(gaps))}); `cq doctor --workspace` prints them "
+                       "— the deploy never rewrites the file")
+        if tasks["state"] == "present" and not tasks["complete"]:
+            out.append(f"`.vscode/tasks.json` lacks the recommended task(s) "
+                       f"({', '.join(tasks['missing'])}); `cq doctor --workspace` prints them — "
+                       "the deploy never rewrites the file")
+        return out
     if (target / ".vscode").is_dir():
         return ["this is a VS Code workspace and `shared.workspace.vscode` is not declared: "
-                "declare it to seed `.vscode/settings.json` (`cq doctor --workspace` prints the "
-                "block)"]
+                "declare it to seed `.vscode/settings.json` and `.vscode/tasks.json` "
+                "(`cq doctor --workspace` prints both)"]
     return []
 
 
@@ -420,8 +461,8 @@ def plan(target: Path, built: dict, previous: dict | None,
             changes.append(_change("mode", rel))
     for rel in sorted(owned - set(tree)):
         if (target / rel).is_file():
-            changes.append(_change("edited" if _edited(target, rel, hashes.get(rel)) else "delete",
-                                   rel))
+            changes.append(_change("edited" if _edited(target, rel, hashes.get(rel), deleting=True)
+                                   else "delete", rel))
     seed_changes, warnings = _seed_plan(target, seeds)
     changes.extend(seed_changes)
     merged = built.get("merged")
@@ -444,6 +485,17 @@ def plan(target: Path, built: dict, previous: dict | None,
         changes.append(_change("create", MANIFEST))
     return {"changes": changes, "conflicts": conflicts, "warnings": warnings,
             "suggestions": _workspace_suggestions(target, workspace)}
+
+
+def _held_allow(text: str | None) -> list:
+    """The `permissions.allow` entries of a settings text, empty when it holds none."""
+    try:
+        document = json.loads(text) if text else None
+    except ValueError:
+        return []
+    permissions = document.get("permissions") if isinstance(document, dict) else None
+    allow = permissions.get("allow") if isinstance(permissions, dict) else None
+    return allow if isinstance(allow, list) else []
 
 
 def _settings_merge(target: Path, built: dict, previous: dict | None,
@@ -470,7 +522,8 @@ def _settings_merge(target: Path, built: dict, previous: dict | None,
     keys = keys if isinstance(keys, list) else []
     rules = recorded.get("permissions") if recorded else []
     rules = rules if isinstance(rules, list) else []
-    if keep and rules:
+    held = _held_allow(current)
+    if rules and (keep or all(rule in held for rule in rules)):
         wanted_rules = list(rules)
     else:
         primary_root = _primary_checkout(target)
@@ -790,7 +843,8 @@ def remove_plan(target: Path, previous: dict) -> dict:
     for rel in sorted(hashes):
         path = target / rel
         if path.is_file() and _safe_relative(rel):
-            changes.append(_change("edited" if _edited(target, rel, hashes[rel]) else "delete", rel))
+            changes.append(_change("edited" if _edited(target, rel, hashes[rel], deleting=True)
+                                   else "delete", rel))
     merged = _settings_merge(target, {"settings": None, "manifest": {}}, previous)
     if merged and merged["changed"]:
         changes.append(_change("settings", SETTINGS))

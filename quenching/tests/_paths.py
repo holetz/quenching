@@ -28,6 +28,10 @@ needs a different value sets it on the repository it creates. Identity deliberat
 file: the suite sets `user.name`/`user.email` per repository, and a command-scope value would hide
 what `test_identity_allowlist` is exercising.
 
+**Session isolation.** `$COPILOT_HOME` and `$QUENCHING_COPILOT_HOME` are removed from the environment, as
+the gate does, so a suite run directly from inside the client never measures the operator's session:
+a test that needs a selector sets it itself.
+
 Not named `test*.py`, therefore never collected as a test.
 """
 
@@ -89,6 +93,11 @@ atexit.register(shutil.rmtree, _denylist_dir, True)
 _empty_denylist = pathlib.Path(_denylist_dir, "denylist.txt")
 _empty_denylist.write_text("", encoding="utf-8")
 os.environ["QUENCHING_DENYLIST_FILE"] = str(_empty_denylist)
+
+# The Copilot client exports its home to every child, so a suite started from inside it would read
+# the operator's real store; the gate unsets these too. A test that needs one declares it itself.
+for _selector in ("COPILOT_HOME", "QUENCHING_COPILOT_HOME"):
+    os.environ.pop(_selector, None)
 
 
 def repository_config(root):
