@@ -5,7 +5,7 @@ The runbook for validating the generated site. It builds into the gitignored `si
 
 ## Contents
 
-`components_read(path=".claude/skills/quenching-knowledge/references/knowledge-documentation/validation.md")`
+`components_read(verb="read", path=".claude/skills/quenching-knowledge/references/knowledge-documentation/validation.md")`
 returns the heading index; `--sections <name>` addresses one.
 
 <!-- rules -->
@@ -17,9 +17,9 @@ processes every Markdown below `docs_dir` and has no supported `exclude_docs`/`n
 hatch, so raw `catalog/` and `external/` homes must not be present in the tree it reads:
 
 ```text
-knowledge_project(check=true)
-knowledge_site_source(write=true)
-knowledge_site_source(check=true)
+knowledge_write(verb="project", check=true)
+knowledge_write(verb="site_source", write=true)
+knowledge_write(verb="site_source", check=true)
 ```
 
 Run the build using the project's existing dependency manager:
@@ -75,7 +75,7 @@ When the canonical glossary exists and the map does not explicitly say `do not p
 verify the deterministic source projection and then pass the same contract to the rendered check:
 
 ```text
-knowledge_project(check=true)
+knowledge_write(verb="project", check=true)
 ```
 
 ```bash

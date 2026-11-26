@@ -15,7 +15,7 @@ or judgement work.
 ## Structural findings
 
 The align may apply structural findings after the one plan authorization. It makes one bounded
-edit per affected declaration, then re-runs `proof_doctor()` before reporting the result.
+edit per affected declaration, then re-runs `proof_read(verb="doctor")` before reporting the result.
 
 | Code | Closure |
 | --- | --- |
@@ -44,9 +44,9 @@ The command named in the table is a hand-off, not an instruction for the align t
 | `pf-no-ci` | The CI providers searched and the missing invocation of the proof gate. | The target owner's reviewed CI workflow, then `/quenching-proof align`. |
 | `pf-untested-entrypoint` | The active operations entry point, its path, and the missing test or explicit not-applicable record. | The target owner's reviewed test or applicability declaration, then `/quenching-proof align`. |
 | `pf-cost-undeclared` | The cost contract as declared (whole or absent, the missing keys named), and the measured cost a run pays without it. | The target owner's `proof.cost` declaration in `.agents/quenching.json`, guided by `/docs/standards/ci-cd/test-cost.md`, then `/quenching-proof align`. |
-| `pf-temp-shared` | The declared `tempRoot: system` and where the target's runner writes its temporary files. | The target owner's runner change to a root outside the repository, removed when the run ends; then the declaration and `proof_readme(write=true)`. |
-| `pf-scope-wide` | The close scope and the CI scope as declared, and the consequence for a one-line change. | The target owner's narrower local tier, keeping the full run in CI; then the declaration and `proof_readme(write=true)`. |
-| `pf-task-wide` | The task scope and the close scope as declared, and the consequence for every task of the spec. | The target owner's narrower `scopes.task` — the file or directory the task touches — keeping the gate at the close; then the declaration and `proof_readme(write=true)`. |
+| `pf-temp-shared` | The declared `tempRoot: system` and where the target's runner writes its temporary files. | The target owner's runner change to a root outside the repository, removed when the run ends; then the declaration and `proof_write(verb="readme", write=true)`. |
+| `pf-scope-wide` | The close scope and the CI scope as declared, and the consequence for a one-line change. | The target owner's narrower local tier, keeping the full run in CI; then the declaration and `proof_write(verb="readme", write=true)`. |
+| `pf-task-wide` | The task scope and the close scope as declared, and the consequence for every task of the spec. | The target owner's narrower `scopes.task` — the file or directory the task touches — keeping the gate at the close; then the declaration and `proof_write(verb="readme", write=true)`. |
 
 ## The floor-deferral rule
 

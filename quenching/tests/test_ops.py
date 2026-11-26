@@ -137,8 +137,8 @@ class AlignCleanPath(unittest.TestCase):
             self.assertEqual(payload["findings"], [])
 
             body = ALIGN_BODY.read_text(encoding="utf-8")
-            probe = 'ops_doctor(root="$TARGET_ROOT")'
-            inventory = 'ops_inventory(root="$TARGET_ROOT")'
+            probe = 'ops_read(verb="doctor", root="$TARGET_ROOT")'
+            inventory = 'ops_read(verb="inventory", root="$TARGET_ROOT")'
             probe_at = body.index(probe)
             clean_stop_at = body.index("When it exits `0` with no findings", probe_at)
             clean_end_at = body.index("When it exits `2`", clean_stop_at)
@@ -294,7 +294,7 @@ class StatusReadOnly(unittest.TestCase):
             self.assertEqual(after, "")
 
             body = STATUS_BODY.read_text(encoding="utf-8")
-            self.assertIn('ops_status(root="$TARGET_ROOT")',
+            self.assertIn('ops_read(verb="status", root="$TARGET_ROOT")',
                           " ".join(body.split()))
             # Contract pin: the read-only promise is the whole contract of `ops status`.
             self.assertIn("It never repairs a finding, writes a registry, or turns an absent optional artifact into a healthy one.",

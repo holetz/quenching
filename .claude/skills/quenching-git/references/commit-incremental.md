@@ -20,7 +20,7 @@ language, while commit subjects and messages remain canonical English artifacts.
 Read the target's git conventions, then collect one initial snapshot:
 
 ```text
-git_conventions()
+git_read(verb="conventions")
 ```
 
 ```bash

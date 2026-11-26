@@ -41,7 +41,7 @@ provider did not return one.
 ## The Azure description limit
 
 Azure DevOps refuses a pull-request description longer than 4000 characters, whatever the
-markdown. `git_pr_create` sends a longer body cut at the last `\n## ` section boundary that
+markdown. `git_external(verb="pr_create")` sends a longer body cut at the last `\n## ` section boundary that
 fits beside the note "Corpo completo no primeiro comentário deste PR." (raw cut when none fits),
 then posts the whole body as the PR's first thread with `az devops invoke --area git --resource
 pullRequestThreads` (`status` closed), the argv built in the module. A failed thread is a
@@ -49,14 +49,14 @@ pullRequestThreads` (`status` closed), the argv built in the module. A failed th
 
 ## Selection and provider route
 
-Read `specs_config()` and the `origin` URL before
+Read `specs_read(verb="config")` and the `origin` URL before
 choosing a provider. A GitHub route requires a GitHub host and `gh repo view`; an Azure route
 requires a DevOps host and the `az` CLI's detected project/repository context. A host mismatch,
 unknown backend or unauthenticated CLI is a refusal with its cause.
 
 The selector is resolved in this order:
 
-1. `spec:<id>` reads `specs_status(spec=<id>)` and uses its recorded PR number/URL.
+1. `spec:<id>` reads `specs_read(verb="status", spec=<id>)` and uses its recorded PR number/URL.
 2. A provider URL or numeric PR id is sent to the configured provider.
 3. No argument reads the PR for the current branch; Azure lists active PRs by source branch.
 

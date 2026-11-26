@@ -55,7 +55,7 @@ class Startup(unittest.TestCase):
         replies = runs[-1][1]
         self.assertEqual("quenching", replies[1]["result"]["serverInfo"]["name"])
         tools = replies[2]["result"]["tools"]
-        self.assertGreater(len(tools), 70)
+        self.assertGreaterEqual(len(tools), 20)  # one tool per pillar and class (spec 625)
         median = statistics.median(times)
         self.assertLess(median, LIMIT, f"initialize + tools/list median {median:.2f} s over "
                                        f"{RUNS} runs ({', '.join(f'{t:.2f}' for t in times)})")

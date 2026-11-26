@@ -60,7 +60,7 @@ class Stdio(unittest.TestCase):
         self.assertEqual([r["id"] for r in replies], [1, 2, 3, None])
         self.assertEqual(replies[0]["result"]["protocolVersion"], "2025-06-18")
         self.assertEqual({t["name"] for t in replies[1]["result"]["tools"]},
-                         TOOL_NAMES | WRITE_NAMES)
+                         {"specs_read", "specs_write", "specs_external"})
         self.assertEqual(replies[2]["error"]["code"], -32601)
         self.assertEqual(replies[3]["error"]["code"], -32700)
 

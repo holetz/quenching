@@ -116,7 +116,7 @@ class Mounts(unittest.TestCase):
         source = (PLUGIN_ROOT / "agents" / "spec-runner.md").read_text(encoding="utf-8")
         mount = frozenset(catalog.mount_pillars("specs"))
         payload = translate.agent_document(source, "spec-runner")
-        self.assertIn("mcp__quenching__git_commit", payload)
+        self.assertIn("mcp__quenching__git_write", payload)
         self.assertEqual(translate.agent_document(source, "spec-runner", mount=mount),
                          translate.agent_document(payload, "spec-runner", mount=mount))
 
@@ -141,7 +141,7 @@ class TheShellDoor(unittest.TestCase):
         text = translate.agent_document(self.SPECS, "s", narrow=True, mount=frozenset(CORE))
         tools = self.tools(text)
         self.assertNotIn("Bash(", tools)
-        self.assertIn("mcp__quenching__specs_status", tools)
+        self.assertIn("mcp__quenching__specs_read", tools)
 
     def test_the_copilot_projection_follows_the_same_mount(self):
         hidden = translate.copilot_tools("Bash(cq knowledge:*)", narrow=True,

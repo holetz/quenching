@@ -29,25 +29,37 @@ long-lived process keeps the store read, where each shell call starts a Python (
 
 ### Citing a verb in a body: the tool, with named arguments
 
-A body cites the verb **as the tool it calls**: the canonical tool name, unprefixed, with the
-arguments named as the tool's `inputSchema` names them —
-`specs_status(spec=<id>)`, `specs_section(spec=<id>, headings="Design,Tasks")`,
-`components_read(path="<ref>", sections=["§A", "§B"], rules_only=true)`,
-`specs_record(spec=<id>, name="run", fields={"state": "<STATE>", "date": "<today>"})`. Values are a
-`<placeholder>`, a quoted string, `true`, a list `[…]` or an object `{…}`. A mention that calls
-nothing names the tool bare: `` `specs_status` ``. The harness adds its prefix — Claude Code calls
-`mcp__quenching__<tool>`, OpenCode `quenching_<tool>` — and the body never writes it. `--json` is
-the server's and is never written. A call that acts on a tree other than the server's workspace —
-a worktree, a target repository — names it as `root`, which every tool takes:
-`git_commit(subject="<subject>", root="<worktree>")`, `delivery_status(root="<target root>")`.
-Several spec sections go in ONE `specs_section_write(spec=<id>, sections=[{"heading": …, "body":
-…}, …])`, atomic as the CLI's stream, and an `approved` the human did not decide carries its
-`by`: `specs_record(spec=<id>, name="approved", by="session")`. `cq deploy` grants each agent and
-skill exactly the tools its `Bash(cq …)` grants cover.
+The server publishes **one tool per pillar and class** — `<pillar>_read`, `<pillar>_write`,
+`<pillar>_external` — and the verb is its first argument. A body cites the verb **as the call it
+makes**: the published tool, unprefixed, `verb` first, then the arguments named as that verb's
+schema names them — `specs_read(verb="status", spec=<id>)`,
+`specs_read(verb="section", spec=<id>, headings="Design,Tasks")`,
+`components_read(verb="read", path="<ref>", sections=["§A", "§B"], rules_only=true)`,
+`specs_write(verb="record", spec=<id>, name="run", fields={"state": "<STATE>", "date": "<today>"})`.
+The verb is the logical name minus its pillar (the logical `git_pr_merge` is `git_external(verb="pr_merge")`);
+the class is the verb's: `read` changes nothing, `write` changes the repository or the spec store,
+`external` reaches a remote. Values are a `<placeholder>`, a quoted string, `true`, a list `[…]` or
+an object `{…}`. A mention that calls nothing still names the call: `` `specs_read(verb="status")` ``.
+The harness adds its prefix — Claude Code calls `mcp__quenching__<tool>`, OpenCode
+`quenching_<tool>` — and the body never writes it. `--json` is the server's and is never written.
+A call that acts on a tree other than the server's workspace — a worktree, a target repository —
+names it as `root`, which every verb takes: `git_write(verb="commit", subject="<subject>",
+root="<worktree>")`, `delivery_read(verb="status", root="<target root>")`. Several spec sections go
+in ONE `specs_write(verb="section_write", spec=<id>, sections=[{"heading": …, "body": …}, …])`,
+atomic as the CLI's stream, and an `approved` the human did not decide carries its `by`:
+`specs_write(verb="record", spec=<id>, name="approved", by="session")`.
+
+`verb="help"` answers the verbs of one tool and their schemas (`of=<verb>` narrows it to one); a
+call with a bad argument is refused with the `inputSchema` of that verb, and an unknown verb with
+`mcp-unknown-verb` and the tool's verbs. `cq deploy` grants each agent and skill the published
+tools its `Bash(cq …)` grants reach: a grant of one verb opens its pillar-and-class tool, so the
+other verbs of that class come with it — never another pillar, never another class, and a read-only
+agent stays read-only.
 
 `cq components lint` holds the form: `sk-cq-cli-citation` names a `cq <pillar> <verb>` whose verb
-has a tool, in a body the check enforces; `sk-mcp-unknown-tool` names a `<pillar>_<verb>(` that is
-no tool of the catalog.
+has a tool, in a body the check enforces; `sk-mcp-unknown-tool` names a `<pillar>_<…>(` that is no
+published tool, a published tool whose first argument names no verb it serves, or a per-verb name
+(`` `git_state(` ``), with the grouped form to cite instead.
 
 ### Where a body still writes the CLI
 
@@ -57,8 +69,8 @@ no tool of the catalog.
 2. **A line marked `cli: <reason>`** — `<!-- cli: <reason> -->` at the end of the line, or alone on
    the line before a block (it then covers that whole paragraph or fenced block), and
    `# cli: <reason>` at the end of a line inside a fenced block. The reasons are closed:
-   - **flag** — the call needs a flag the tool does not publish (`specs_next` no `table`,
-     `specs_promote` no `force`).
+   - **flag** — the call needs a flag the tool does not publish (`specs_read(verb="next")` no `table`,
+     `specs_write(verb="promote")` no `force`).
    - **fallback** — the block documents the CLI synopsis itself, beside the tool it falls back
      from (a surface table such as `specs-develop/specs-surface.md`).
 
@@ -66,25 +78,26 @@ no tool of the catalog.
 
 With no `quenching` server, or a verb the server does not list, the call runs `cq` as below and
 **the run's report says so** — `MCP: fallback cq <pillar> <verb> — <no tool | no server>` — so a
-fallback is never silent. The tool maps back mechanically: `<pillar>_<verb…>` is
-`cq <pillar> <verb…>` (each `_` a word break, `-` inside a word: `knowledge_site_source` is
-`cq knowledge site-source`, `cq <pillar> --help` settles a doubt), and each argument is the flag of
-the same name with `_` read as `-` (`rules_only=true` is `--rules-only`, a list repeats the flag).
+fallback is never silent. The call maps back mechanically: `<pillar>_<class>(verb="<verb…>", …)` is
+`cq <pillar> <verb…>` (the class drops; each `_` of the verb a word break, `-` inside a word:
+`knowledge_read(verb="site_source")` is `cq knowledge site-source`, `cq <pillar> --help` settles a
+doubt), and each other argument is the flag of the same name with `_` read as `-`
+(`rules_only=true` is `--rules-only`, a list repeats the flag).
 The hand-written specs tools name their arguments apart from the CLI:
 
 | Tool | CLI |
 | --- | --- |
-| `specs_status(spec=X)`, `specs_show(spec=X, tasks=[T])` | `cq specs status --spec X`, `cq specs show --spec X --task T` |
-| `specs_section(spec=X, headings=H, moment=M, scope=S)` | `cq specs section X "H"` / `--moment M --scope S` |
-| `specs_section_write(spec=X, heading=H, body=B)` | `cq specs section X "H" --write` with `B` on stdin |
-| `specs_record(spec=X, name=N, fields={"k": "v"})` | `cq specs record X N --set k=v` |
-| `specs_task(spec=X, action=A, task=T, reason=R, subject=S, commit=C, replaced_by=P)` | `cq specs task --spec X --check T --subject S --commit C` (`A` is the flag: `--check`, `--uncheck`, `--block` or `--descope`, the last two with `--reason R`; `--descope` may add `--replaced-by P`) |
-| `specs_discover(spec=X, text=F)` | `cq specs discover X "F"` |
-| `specs_create(name=N, title=T, …)` | `cq specs new N --title T …` |
-| `specs_list(phase=P)`, `specs_next(spec=X)`, `specs_next()` | `cq specs list --phase P`, `cq specs next --spec X`, `cq specs next --front` |
-| `specs_promote(spec=X, to=P, outcome=O)` | `cq specs promote X --to P --outcome O` |
-| `specs_link_add(epic=E, spec=X, after=A)`, `specs_epic_progress(epic=E)` | `cq specs link add E X --after A`, `cq specs status --spec E` |
-| `specs_push()` | `cq specs push` |
+| `specs_read(verb="status", spec=X)`, `specs_read(verb="show", spec=X, tasks=[T])` | `cq specs status --spec X`, `cq specs show --spec X --task T` |
+| `specs_read(verb="section", spec=X, headings=H, moment=M, scope=S)` | `cq specs section X "H"` / `--moment M --scope S` |
+| `specs_write(verb="section_write", spec=X, heading=H, body=B)` | `cq specs section X "H" --write` with `B` on stdin |
+| `specs_write(verb="record", spec=X, name=N, fields={"k": "v"})` | `cq specs record X N --set k=v` |
+| `specs_write(verb="task", spec=X, action=A, task=T, reason=R, subject=S, commit=C, replaced_by=P)` | `cq specs task --spec X --check T --subject S --commit C` (`A` is the flag: `--check`, `--uncheck`, `--block` or `--descope`, the last two with `--reason R`; `--descope` may add `--replaced-by P`) |
+| `specs_write(verb="discover", spec=X, text=F)` | `cq specs discover X "F"` |
+| `specs_write(verb="create", name=N, title=T, …)` | `cq specs new N --title T …` |
+| `specs_read(verb="list", phase=P)`, `specs_read(verb="next", spec=X)`, `specs_read(verb="next")` | `cq specs list --phase P`, `cq specs next --spec X`, `cq specs next --front` |
+| `specs_write(verb="promote", spec=X, to=P, outcome=O)` | `cq specs promote X --to P --outcome O` |
+| `specs_write(verb="link_add", epic=E, spec=X, after=A)`, `specs_read(verb="epic_progress", epic=E)` | `cq specs link add E X --after A`, `cq specs status --spec E` |
+| `specs_external(verb="push")` | `cq specs push` |
 
 ### Deploy mode: the target-local payload
 

@@ -17,8 +17,8 @@ Resolve `cq` per
 §Resolving the tool, then run:
 
 ```text
-design_status()
-design_build(check=true)
+design_read(verb="status")
+design_write(verb="build", check=true)
 ```
 
 Read the source and named findings only as needed to explain them. Do not write, import, build,

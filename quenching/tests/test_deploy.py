@@ -674,7 +674,7 @@ class Deploy(unittest.TestCase):
         agent = self.target / ".opencode/agents/quenching-spec-verifier.md"
         text = agent.read_text(encoding="utf-8")
         self.assertIn("mode: subagent", text)
-        self.assertIn("  quenching_git_audit: allow", text)
+        self.assertIn("  quenching_git_read: allow", text)
         self.assertNotIn('".agents/quenching/bin/cq git audit *": allow', text)
         self.assertIn("Source model tier: `sonnet`.", text)
         self.assertIn("tools:\n  task: false", text)
@@ -754,7 +754,7 @@ class Deploy(unittest.TestCase):
         claude = (self.target / ".claude/agents/quenching-spec-verifier.md").read_text()
         tools = next(line for line in claude.splitlines() if line.startswith("tools:"))
         self.assertNotIn("bin/cq", tools)
-        self.assertIn("mcp__quenching__specs_status", tools)
+        self.assertIn("mcp__quenching__specs_read", tools)
         payload = (self.target / ".agents/quenching/agents/spec-verifier.md").read_text()
         self.assertIn("Bash(.agents/quenching/bin/cq specs status:*)", payload)
         manifest = json.loads((self.target / ".agents/.quenching-deploy.json").read_text())
@@ -1265,16 +1265,15 @@ class McpGrants(unittest.TestCase):
     def test_a_claude_agent_lists_the_tools_its_cq_grants_cover(self):
         text = translate.agent_document(self.VERIFIER, "spec-verifier")
         tools = next(line for line in text.splitlines() if line.startswith("tools:"))
-        for name in ("mcp__quenching__specs_status", "mcp__quenching__specs_epic_progress",
-                     "mcp__quenching__git_audit"):
+        for name in ("mcp__quenching__specs_read", "mcp__quenching__git_read"):
             self.assertIn(name, tools)
-        self.assertNotIn("mcp__quenching__specs_record", tools)
+        self.assertNotIn("mcp__quenching__specs_write", tools)
 
     def test_a_full_bash_agent_lists_every_tool_and_a_skill_names_the_server(self):
         tools = next(line for line in translate.agent_document(self.RUNNER, "spec-runner")
                      .splitlines() if line.startswith("tools:"))
-        self.assertIn("mcp__quenching__specs_section_write", tools)
-        self.assertIn("mcp__quenching__git_commit", tools)
+        self.assertIn("mcp__quenching__specs_write", tools)
+        self.assertIn("mcp__quenching__git_write", tools)
         skill = translate.skill_document(
             "---\ndescription: s\nallowed-tools: Bash(cq:*), Read\n---\n\n# s\n", "s")
         self.assertIn("allowed-tools: Bash(.agents/quenching/bin/cq:*), Read, mcp__quenching\n",
@@ -1283,9 +1282,9 @@ class McpGrants(unittest.TestCase):
     def test_opencode_denies_the_server_then_allows_the_covered_tools(self):
         text = translate.opencode_agent_document(self.VERIFIER, "spec-verifier")
         deny = text.index('  "quenching_*": deny')
-        self.assertGreater(text.index("  quenching_specs_status: allow"), deny)
-        self.assertIn("  quenching_git_audit: allow", text)
-        self.assertNotIn("quenching_specs_record", text)
+        self.assertGreater(text.index("  quenching_specs_read: allow"), deny)
+        self.assertIn("  quenching_git_read: allow", text)
+        self.assertNotIn("quenching_specs_write", text)
         self.assertIn('  "quenching_*": allow',
                       translate.opencode_agent_document(self.RUNNER, "spec-runner"))
 
@@ -1302,7 +1301,7 @@ class McpGrants(unittest.TestCase):
         text = translate.agent_document(self.VERIFIER, "spec-verifier", narrow=True)
         tools = next(line for line in text.splitlines() if line.startswith("tools:"))
         self.assertNotIn("Bash(", tools)
-        for name in ("mcp__quenching__specs_status", "mcp__quenching__git_audit", "Read"):
+        for name in ("mcp__quenching__specs_read", "mcp__quenching__git_read", "Read"):
             self.assertIn(name, tools)
         self.assertEqual(tools, next(line for line in translate.agent_document(
             self.VERIFIER, "spec-verifier").splitlines() if line.startswith("tools:"))
@@ -1331,20 +1330,20 @@ class McpGrants(unittest.TestCase):
         self.assertIn("Bash(.agents/quenching/bin/cq git identity:*)", skill)
         self.assertNotIn("Bash(.agents/quenching/bin/cq git:*)", skill)
         self.assertIn("Bash(.agents/quenching/bin/cq specs bogus:*)", skill)
-        self.assertIn("mcp__quenching__git_commit", skill)
+        self.assertIn("mcp__quenching__git_write", skill)
 
     def test_a_narrow_opencode_agent_allows_the_tools_and_not_the_shell(self):
         text = translate.opencode_agent_document(self.VERIFIER, "spec-verifier", narrow=True)
         self.assertIn("  bash: deny", text)
         self.assertNotIn("bin/cq", text)
-        self.assertIn("  quenching_specs_status: allow", text)
-        self.assertIn("  quenching_git_audit: allow", text)
+        self.assertIn("  quenching_specs_read: allow", text)
+        self.assertIn("  quenching_git_read: allow", text)
         raw = ("---\ndescription: o\ntools: Bash(cq specs:*), Bash(gh pr view:*)\n---\n\nbody\n")
         text = translate.opencode_agent_document(raw, "o", narrow=True)
         self.assertIn('    ".agents/quenching/bin/cq specs serve *": allow', text)
         self.assertIn('    "gh pr view *": allow', text)
         self.assertNotIn('".agents/quenching/bin/cq specs *"', text)
-        self.assertIn("  quenching_specs_status: allow", text)
+        self.assertIn("  quenching_specs_read: allow", text)
 
     def test_a_narrow_translation_is_identical_the_second_time(self):
         once = translate.agent_document(self.VERIFIER, "spec-verifier", narrow=True)
@@ -1358,7 +1357,7 @@ class McpGrants(unittest.TestCase):
         self.assertEqual(once, translate.agent_document(once, "spec-verifier"))
         skill = translate.skill_document(
             "---\ndescription: s\nallowed-tools: Bash(cq specs handoff:*)\n---\n\n# s\n", "s")
-        self.assertIn("mcp__quenching__specs_handoff_write", skill)
+        self.assertIn("mcp__quenching__specs_write", skill)
         self.assertEqual(skill, translate.skill_document(skill, "s"))
 
 
@@ -1380,7 +1379,7 @@ class CopilotAgents(unittest.TestCase):
         tools = self.field(text, "tools")
         for alias in ("read", "search"):
             self.assertIn(alias, tools)
-        for name in ("quenching/specs_status", "quenching/git_audit"):
+        for name in ("quenching/specs_read", "quenching/git_read"):
             self.assertIn(name, tools)
         for claude in ("Bash(", "Read", "Grep", "Glob", "Skill"):
             self.assertNotIn(claude, tools)
@@ -1397,8 +1396,8 @@ class CopilotAgents(unittest.TestCase):
     def test_a_full_bash_grant_names_the_tools_and_never_the_catch_all(self):
         tools = self.field(translate.copilot_agent_document(self.RUNNER, "spec-runner"), "tools")
         self.assertIn("execute", tools)
-        self.assertIn("quenching/specs_section_write", tools)
-        self.assertIn("quenching/git_commit", tools)
+        self.assertIn("quenching/specs_write", tools)
+        self.assertIn("quenching/git_write", tools)
         self.assertNotIn("*", tools)
         self.assertNotIn("Skill", tools)
 
@@ -1406,8 +1405,8 @@ class CopilotAgents(unittest.TestCase):
         text = translate.copilot_agent_document(self.VERIFIER, "spec-verifier", narrow=True)
         tools = self.field(text, "tools")
         self.assertNotIn("execute", tools)
-        self.assertIn("quenching/specs_status", tools)
-        self.assertIn("quenching/git_audit", tools)
+        self.assertIn("quenching/specs_read", tools)
+        self.assertIn("quenching/git_read", tools)
 
     def test_a_scoped_shell_grant_stays_in_the_text_execute_cannot_carry(self):
         text = translate.copilot_agent_document(self.VERIFIER, "spec-verifier")

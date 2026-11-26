@@ -62,18 +62,31 @@ class Catalog(unittest.TestCase):
 
 
 class ToolNames(unittest.TestCase):
-    def test_a_verb_prefix_names_every_tool_under_it(self):
-        self.assertEqual(catalog.tool_names(("specs", "status")),
+    def test_a_verb_prefix_names_every_logical_tool_under_it(self):
+        self.assertEqual(catalog.verb_names(("specs", "status")),
                          ["specs_epic_progress", "specs_status"])
-        self.assertEqual(catalog.tool_names(("git", "history")),
+        self.assertEqual(catalog.verb_names(("git", "history")),
                          ["git_history_diff", "git_history_log", "git_history_show"])
+        self.assertEqual(catalog.verb_names(("components", "read")), ["components_read"])
+
+    def test_a_grant_names_the_published_groups_of_its_verbs(self):
+        self.assertEqual(catalog.tool_names(("specs", "status")), ["specs_read"])
+        self.assertEqual(catalog.tool_names(("git", "pr")), ["git_external", "git_read"])
         self.assertEqual(catalog.tool_names(("components", "read")), ["components_read"])
 
     def test_no_prefix_is_the_whole_server_and_an_unknown_verb_is_nothing(self):
-        every = catalog.tool_names()
+        every = catalog.verb_names()
         self.assertTrue(set(catalog.CATALOG) <= set(every))
         self.assertIn("specs_section_write", every)
+        self.assertEqual(catalog.verb_names(("specs", "scrub")), [])
         self.assertEqual(catalog.tool_names(("specs", "scrub")), [])
+        self.assertIn("specs_write", catalog.tool_names())
+        self.assertLessEqual(len(catalog.tool_names()), 24)
+
+    def test_a_published_name_resolves_to_its_pillar(self):
+        self.assertEqual("git", catalog.pillar_of("git_external"))
+        self.assertEqual("specs", catalog.pillar_of("specs_read"))
+        self.assertIsNone(catalog.pillar_of("nope_read"))
 
     def test_the_verbs_references_cite_are_catalogued(self):
         for name, cls in (("specs_doctor", "read"), ("specs_schedule", "read"),
@@ -555,8 +568,8 @@ class EntryPoint(unittest.TestCase):
         surface = cli.surface()
         self.assertEqual(surface.name, "quenching")
         tools = {t["name"] for t in surface.list_tools()}
-        self.assertTrue(set(catalog.CATALOG) <= tools)
-        self.assertIn("specs_status", tools)
+        self.assertEqual(set(catalog.tool_names()), tools)
+        self.assertIn("specs_read", tools)
         uris = {r["uri"] for r in surface.list_resources("/x")}
         self.assertIn("quenching://references", uris)
 
@@ -571,7 +584,7 @@ class EntryPoint(unittest.TestCase):
         replies = [json.loads(line) for line in done.stdout.splitlines()]
         self.assertEqual([r["id"] for r in replies], [1, 2])
         self.assertEqual(replies[0]["result"]["serverInfo"]["name"], "quenching")
-        self.assertIn("git_base", {t["name"] for t in replies[1]["result"]["tools"]})
+        self.assertIn("git_read", {t["name"] for t in replies[1]["result"]["tools"]})
 
     def test_the_plugin_registers_the_quenching_server_and_specs_owns_the_package(self):
         servers = json.loads((PLUGIN / ".mcp.json").read_text(encoding="utf-8"))["mcpServers"]

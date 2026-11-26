@@ -6,7 +6,7 @@ The single source of the tree `/quenching-knowledge align` installs and `/quench
 
 ## Contents
 
-`components_read(path=<this file>)` returns the heading index; `sections=["§X"]` addresses one.
+`components_read(verb="read", path=<this file>)` returns the heading index; `sections=["§X"]` addresses one.
 
 ## The canonical tree (locked)
 

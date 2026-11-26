@@ -127,14 +127,22 @@ CATALOG: dict[str, Row] = {
 }
 
 
-def tool_names(prefix: tuple[str, ...] = ()) -> list[str]:
-    """The MCP tools a `cq <prefix…>` grant covers: every catalog row and hand-written specs tool
-    whose verb path starts with `prefix` (empty: all of them), sorted. The one map from a `cq`
-    citation to a tool name — the deploy's grants and the coverage scan read the same union."""
+def verb_names(prefix: tuple[str, ...] = ()) -> list[str]:
+    """The logical tools (`<pillar>_<verb>`) a `cq <prefix…>` citation covers: every catalog row and
+    hand-written specs tool whose verb path starts with `prefix` (empty: all of them), sorted. The
+    one map from a `cq` citation to a verb — the coverage scan, the citation lint and the session
+    metrics read it."""
     from quenching.specs import mcp as specs_mcp
     paths = {name: (row.pillar, *row.path) for name, row in CATALOG.items()}
     paths.update({name: ("specs", *path) for name, path in specs_mcp.COVERS.items()})
     return sorted(name for name, path in paths.items() if path[:len(prefix)] == tuple(prefix))
+
+
+def tool_names(prefix: tuple[str, ...] = ()) -> list[str]:
+    """The published tools (`<pillar>_<class>`) a `cq <prefix…>` grant covers: the groups of
+    `verb_names(prefix)`, sorted. What the deploy's grants name."""
+    from quenching.mcp import grouped
+    return sorted({grouped.group_of(name) for name in verb_names(prefix)})
 
 
 _router = None
@@ -342,12 +350,17 @@ def mount_refusal(value: object) -> list[str]:
 
 
 def pillar_of(name: str) -> str | None:
-    """The pillar a tool name belongs to: the catalog row's, or the specs adapter's."""
+    """The pillar a tool name belongs to: the catalog row's, the specs adapter's, or the head of a
+    published `<pillar>_<class>`."""
     row = CATALOG.get(name)
     if row is not None:
         return row.pillar
     from quenching.specs import mcp as specs_mcp
-    return "specs" if name in specs_mcp.COVERS else None
+    if name in specs_mcp.COVERS:
+        return "specs"
+    head, _, cls = name.rpartition("_")
+    pillars = {row.pillar for row in CATALOG.values()} | {"specs"}
+    return head if cls in CLASSES and head in pillars else None
 
 
 def available(present=None, only=None) -> dict[str, Row]:

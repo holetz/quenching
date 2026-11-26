@@ -13,7 +13,7 @@ local refs with `git rebase --update-refs`.
 
 ### 1. Confirm a clean tree, and snapshot the refs before rewriting
 ```text
-git_base()
+git_read(verb="base")
 ```
 
 ```bash

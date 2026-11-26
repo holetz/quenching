@@ -5,7 +5,7 @@ name**.
 
 ## Contents
 
-`components_read(path=".agents/quenching/references/knowledge-align/migration.md")` returns the heading index;
+`components_read(verb="read", path=".agents/quenching/references/knowledge-align/migration.md")` returns the heading index;
 `--sections` addresses one.
 
 ## 1. Map variant → canonical
@@ -119,8 +119,8 @@ Resolve it in this order:
    `.md` under `docs_dir` is a page, and a generated term list is not one.
 
 Then sweep the blast radius like any rename (§3), regenerate the allowlisted nav with
-`knowledge_nav(write=true)`, and stage `site-source/` with
-`knowledge_site_source(write=true)`. The root `zensical.toml` must point `docs_dir` at `site-source`, never at the
+`knowledge_write(verb="nav", write=true)`, and stage `site-source/` with
+`knowledge_write(verb="site_source", write=true)`. The root `zensical.toml` must point `docs_dir` at `site-source`, never at the
 complete bundle.
 
 <!-- rationale -->
@@ -156,13 +156,13 @@ in it.** A legacy mold reference `backlog/idea.md` maps to `backlog/task.md`. Th
 
 <!-- rationale -->
 §1e moves this folder into the `specs/` front, which carries no listing file at all
-(`specs_list()` derives what `plans/` holds from disk), so a zone written here would be a
+(`specs_read(verb="list")` derives what `plans/` holds from disk), so a zone written here would be a
 listing nobody produces and nobody reads.
 
 ### 1e. Backlog leaves the OKF bundle — the bundle's `backlog/` home → the `specs/` front
 
 OKF v0.13 moved parked work out of the `docs/` bundle, and it now lands in the `specs/` front as
-**specs**, not as OKF docs — `knowledge_validate()` no longer scans it, and a spec carries no OKF
+**specs**, not as OKF docs — `knowledge_read(verb="validate")` no longer scans it, and a spec carries no OKF
 `type:` at all.
 
 The move is two hops, and this sweep performs only the first:
@@ -216,14 +216,14 @@ section's own table is full of it.
 Two consequences follow, and both are load-bearing:
 
 - **A directory is not a bundle.** What identifies an OKF bundle is its **signature** — a root
-  `index.md` carrying `okf_version` — never the folder's name. `knowledge_validate()` reports
+  `index.md` carrying `okf_version` — never the folder's name. `knowledge_read(verb="validate")` reports
   `not-an-okf-bundle` for a directory without it and withholds every per-file OKF verdict, so a
   target's ordinary `docs/` answers with one finding instead of one per document.
 - **Migration is often in place.** When a target's variant folder and the canonical root are the
   same `docs/`, nothing moves at the top level; the sweep restructures inside it. Do not read a
   matching name as "already migrated" — read the signature.
 
-`knowledge_validate()` emits four independent findings for a target that has not run this sweep
+`knowledge_read(verb="validate")` emits four independent findings for a target that has not run this sweep
 since the rename, each looking at only its own site:
 
 | Finding | Fires when |

@@ -26,7 +26,7 @@ and branch on exit code and JSON: `0` is clean, `1` carries findings, and `2` is
 Set `TARGET_ROOT` to the supplied root, or `.` when it is omitted. Read the current state first:
 
 ```text
-proof_inventory(root="$TARGET_ROOT")
+proof_read(verb="inventory", root="$TARGET_ROOT")
 ```
 
 Refuse if the proof root is missing, the layer name already exists, the name is empty or unsafe as
@@ -71,7 +71,7 @@ Present one plan for the five coupled structural edits:
 4. add the recognizable path-to-marker block to `tests/conftest.py`, installing the collection
    hook template when no hook exists;
 5. create `tests/fixtures/<layer>.py` when the reach requires shared setup, then run
-   `proof_readme(write=true)` to regenerate the layer README.
+   `proof_write(verb="readme", write=true)` to regenerate the layer README.
 
 Ask once for authorization of this structural batch. Present the proposed existing-test moves as a
 second, separately confirmed item with the count and every path. A declined migration leaves every
@@ -94,7 +94,7 @@ tests, invent another layer, retire an existing layer, install CI, or run the ta
 Regenerate the README:
 
 ```text
-proof_readme(write=true, root="$TARGET_ROOT")
+proof_write(verb="readme", write=true, root="$TARGET_ROOT")
 ```
 
 The operation must either leave all five declarations complete or leave a state the doctor names
@@ -114,7 +114,7 @@ unconfirmed test move or target-suite execution occurred.
 Run the static verifier:
 
 ```text
-proof_doctor(root="$TARGET_ROOT")
+proof_read(verb="doctor", root="$TARGET_ROOT")
 ```
 
 Report the layer name, purpose, reach, budget, required state, marker, fixture module, test paths
@@ -137,5 +137,5 @@ and the report hands back every remaining decision without writing anything else
   confirmation.
 - Existing hook rules and authored README prose survive; generated zones are the only bytes the
   generator replaces.
-- The target suite is never run. `proof_doctor()` is the closing verifier, not a test runner.
+- The target suite is never run. `proof_read(verb="doctor")` is the closing verifier, not a test runner.
 - A new layer may be empty by design; the report states that fact instead of manufacturing proof.

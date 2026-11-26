@@ -1,6 +1,6 @@
 # Conformance — the exact checks
 
-The executable `knowledge_validate()` implements **exactly** these
+The executable `knowledge_read(verb="validate")` implements **exactly** these
 checks; the skills apply the same rules by hand when they cannot shell out, and their self-check
 steps **cite this file** rather than restating the rules. Severities: **ERROR** fails conformance
 (validator exit 1); **WARN** is a recommendation (exit 0 unless `warnAsError`).
@@ -174,7 +174,7 @@ A doc that is provably **lying about itself**. These join the structural set the
 
 <!-- rules -->
 
-- **`knowledge_validate(bundle=<bundle>, activity=true)`** prints, per doc and **per `resource:` entry**,
+- **`knowledge_read(verb="validate", bundle=<bundle>, activity=true)`** prints, per doc and **per `resource:` entry**,
   the stamped `generated.at` (or the legacy `timestamp`), the last commit touching that entry
   (`git log -1 --format=%cI` with explicit **`:(glob)`** pathspec magic, so a single `*` does not
   cross a `/` here either) and the interval between them, widest first. `--json` gives the same
@@ -198,7 +198,7 @@ that the plugin's self-installed enforcement hook — the one caller with a late
 <!-- rules -->
 
 ```text
-knowledge_validate(bundle="<repo>/docs")   # the findings; exit 0/1
+knowledge_read(verb="validate", bundle="<repo>/docs")   # the findings; exit 0/1
 ```
 
 Config block `okfValidate` in `hooks-config.json` (`warnAsError`, plus `ignoreGlobs` alongside it)
@@ -209,7 +209,7 @@ paths from the scan.
 
 <!-- rules -->
 
-A bundle is **aligned** when `knowledge_validate()` exits 0 **and** the structural-integrity and
+A bundle is **aligned** when `knowledge_read(verb="validate")` exits 0 **and** the structural-integrity and
 resource-integrity WARNs are all cleared — **zero** `dir-no-index`, `index-broken-link`,
 `index-orphan`, `glossary-broken-link`, `generated-listing-missing`, `generated-listing-drift`,
 `resource-unresolved`, `resource-self`. (These are WARN,

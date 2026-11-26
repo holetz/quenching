@@ -28,7 +28,7 @@ the homes and the insert procedure in
 - **Distinguish "would fix" from "would only report".** Split the output the way the sweeps split
   it: what `/quenching-knowledge align` fixes on one OK, what its later stages then drive, and what
   neither closes because it needs a human.
-- **Cheap by construction.** One `knowledge_validate()`, one glob, and reads of the files the report names.
+- **Cheap by construction.** One `knowledge_read(verb="validate")`, one glob, and reads of the files the report names.
 - **Never judge, never rank, never infer.** An empty home is not a defect, an unlinked glossary
   entry is a valid permanent state, and resource activity is a figure — never a verdict that a
   doc is wrong.
@@ -48,8 +48,8 @@ never on prose.
 **Done when:** the bundle root and the checker are resolved, or their absence recorded.
 
 ### 2. Collect (read-only)
-- `knowledge_status()` — the status payload, a superset of validate: `findings`, `findingCodes`, `ok`, `controls`, `density`. It is the only source of the controls report (§4 item 6) and of every conformance finding.
-- `knowledge_validate(activity=true)` — the resource-activity figure, per doc and
+- `knowledge_read(verb="status")` — the status payload, a superset of validate: `findings`, `findingCodes`, `ok`, `controls`, `density`. It is the only source of the controls report (§4 item 6) and of every conformance finding.
+- `knowledge_read(verb="validate", activity=true)` — the resource-activity figure, per doc and
   per `resource:` entry (CLI only; per [conformance.md](.agents/quenching/references/knowledge-align/conformance.md)
   §Resource activity it emits no finding and never runs in the hook path).
 - `Glob` `/docs/**/*.md` for the density counts (the payload's `density` is not used in its place), and read `/docs/index.md`, each home's `index.md`,

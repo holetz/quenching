@@ -5,7 +5,8 @@ call, and a call to a `quenching` MCP tool — `mcp__quenching__<tool>` in Claud
 `quenching_<tool>` in OpenCode, `tools.quenching.<tool>(` inside a Code Mode `execute` — is an MCP
 call. A shell call is reduced to the verb path the catalog coverage scan uses
 (`quenching.mcp.coverage.verb_path`), so `cq git worktree acquire` is one verb and a bare `cq specs`
-in prose is none.
+in prose is none. A published `<pillar>_<class>` tool is counted under the logical name its `verb`
+argument names (`git_read` with `verb="state"` is `git_state`), so the tally keeps one entry per verb.
 
 "Connected" is the one fact a transcript proves: the session made at least one MCP call to the
 server. `connected: false` therefore means no MCP call was seen, not that the server was absent, and
@@ -21,6 +22,18 @@ SHELL_CQ = re.compile(
     r"(?:^|[\s;&|(`'\"=/])cq(?:\.cmd)?(?:[ \t]+--root[ \t]+\S+)?((?:[ \t]+[a-z][a-z0-9-]*)+)")
 MCP_NAME = re.compile(r"^(?:mcp__quenching__|quenching_)(?P<tool>[A-Za-z0-9_]+)$")
 CODE_MODE = re.compile(r"tools\.quenching(?:\.([A-Za-z_]\w*)|\[\s*[\"']([\w-]+)[\"']\s*\])")
+# The `verb` of a Code Mode call, read from the object literal that opens its arguments.
+CODE_MODE_VERB = re.compile(r"\s*\(\s*\{[^{}]*?\bverb[\"']?\s*:\s*[\"'](\w+)[\"']")
+CLASSES = ("read", "write", "external")
+
+
+def logical(tool: str, verb: object) -> str:
+    """The logical name one call serves: `<pillar>_<verb>` for a published `<pillar>_<class>` tool
+    called with a `verb`, else the tool name itself (a per-verb name, or `verb="help"`)."""
+    pillar, _, cls = tool.rpartition("_")
+    if pillar and cls in CLASSES and isinstance(verb, str) and verb and verb != "help":
+        return f"{pillar}_{verb}"
+    return tool
 
 
 def shell_verbs(command: str | None) -> list[tuple[str, ...]]:
@@ -48,14 +61,19 @@ def code_mode_tools(code: str | None) -> list[str]:
     """The `quenching` tools a Code Mode script calls, in order."""
     if not isinstance(code, str):
         return []
-    return [(a or b).replace("-", "_") for a, b in CODE_MODE.findall(code)]
+    out = []
+    for match in CODE_MODE.finditer(code):
+        verb = CODE_MODE_VERB.match(code, match.end())
+        out.append(logical((match.group(1) or match.group(2)).replace("-", "_"),
+                           verb.group(1) if verb else None))
+    return out
 
 
 def mcp_tools(name: str | None, inp: dict | None) -> list[str]:
     """The `quenching` MCP tools one `tool_use` block calls."""
     found = MCP_NAME.match(name or "")
     if found:
-        return [found.group("tool")]
+        return [logical(found.group("tool"), (inp or {}).get("verb"))]
     return code_mode_tools((inp or {}).get("code"))
 
 

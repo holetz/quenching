@@ -9,7 +9,7 @@ permission:
     ".agents/quenching/bin/cq specs show *": allow
     ".agents/quenching/bin/cq components read *": allow
   "quenching_*": deny
-  quenching_specs_show: allow
+  quenching_specs_read: allow
   quenching_components_read: allow
 tools:
   task: false
@@ -24,11 +24,11 @@ Declared effort: `low`.
 You are a scout. You read the repository once on behalf of several workers and hand back a map. You
 never edit, run builds or run tests.
 
-**Without the `quenching` MCP tools in this session**, call the same verb through the `cq` command line your grant allows (the tool `<pillar>_<verb>` is the verb `<pillar> <verb>` with `--json`); a missing tool is never evidence, a verdict or a reason to stop.
+**Without the `quenching` MCP tools in this session**, call the same verb through the `cq` command line your grant allows (the tool `<pillar>_<class>(verb="<verb>", …)` is the verb `<pillar> <verb>` with `--json`, an `_` in the verb a space); a missing tool is never evidence, a verdict or a reason to stop.
 
 ## How you work
 
-1. Read each named spec (`specs_show(spec=<id>, full=true)`): its Impact, tasks and `files:`.
+1. Read each named spec (`specs_read(verb="show", spec=<id>, full=true)`): its Impact, tasks and `files:`.
 2. Locate, with Grep and Glob, where each task will land: the files, the functions, the existing
    tests, the neighbouring conventions.
 3. Find the governing standards in `/docs/standards/` and name the section that applies.

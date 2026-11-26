@@ -50,7 +50,7 @@ or a plan already developed in this session — including the contents of `<prop
 plan-source path. Use the complete plan available in the conversation as the source; it does not
 need an intermediate file. With no argument and no identifiable plan in the conversation, ask what
 to capture. Never search plan directories automatically for a candidate. This is the one decision
-the CLI cannot make: `specs_create` (step 5) resolves the backend and the workspace on its own.
+the CLI cannot make: `specs_write(verb="create")` (step 5) resolves the backend and the workspace on its own.
 **Done when:** the path is chosen.
 
 ### 2. Choose the title
@@ -75,7 +75,7 @@ Read the whole plan file, or the complete plan content from the current session,
 ### 4. Resolve a subject, a type, tags and `complexity` — decide, never ask
 
 ```text
-specs_config()
+specs_read(verb="config")
 ```
 
 Read `subjects`, `workItemTypes` and `tagCatalog`. **All three absent or empty → skip only the
@@ -93,7 +93,7 @@ chosen key to step 5's `--subject`. Keep the one-line reason it was chosen for s
 **A declared `tagCatalog`:** read each tag's description — prompt material — and resolve zero or
 more that fit the input. A tag outside the declared catalog is never chosen. Carry
 whatever was resolved to step 5's `--tags`; the subject's own fixed tags need not be repeated —
-`specs_create` folds them in on its own.
+`specs_write(verb="create")` folds them in on its own.
 
 **Compute `complexity`** from the classification (step 1), never by interrogating: both the
 **sentence path and the plan-source path yield `medium`**, and `low` only where the input explicitly
@@ -125,15 +125,15 @@ entry of `sections` in the same call. Where the plan was
 silent on a section you are writing others around, write `- none — <what the source did not
 record>`. Never fabricate.
 
-Everything step 4 resolved and everything above go in **one** `specs_create`, then the closing
+Everything step 4 resolved and everything above go in **one** `specs_write(verb="create")`, then the closing
 `validate`:
 
 ```text
-specs_create(name="<title>", subject=<key>, type=<key>,
+specs_write(verb="create", name="<title>", subject=<key>, type=<key>,
              tags="<subject's fixed tags>,<confirmed catalog tags>", complexity=<level>,
              sections=[{"heading": "Problem", "body": "<two sentences, or what the source supports>"},
                        {"heading": "<Heading>", "body": "<plan-source path only: every other section the plan actually supports>"}])
-specs_validate(spec=<id>)   # <id>: the `id` the create returned
+specs_read(verb="validate", spec=<id>)   # <id>: the `id` the create returned
 ```
 
 `subject`/`type`/`tags` only where step 4 resolved one; `tags`, when present, carries the **whole**
@@ -144,7 +144,7 @@ is wrong — recompute and retry the same call. `sp-stray-heading` (`source: str
 or `sp-write-duplicate-heading` means `sections` is malformed — fix it and retry the same call,
 never split it into smaller ones. `sp-no-subject`/`sp-subject-unknown`/`sp-type-unknown`
 means step 4's own resolution disagrees with the target's declared config RIGHT NOW (a race, or a
-stale read) — re-run `specs_config` and redo step 4 rather than retrying blind.
+stale read) — re-run `specs_read(verb="config")` and redo step 4 rather than retrying blind.
 `sp-az-workitemtype-only-answer` means the target still declares the retired
 `azurePlacement.workItemType` with no `workItemTypes` catalog resolving one — name the finding and
 its remedy verbatim, and stop; migrating the target's config is not this command's call to make.
@@ -153,18 +153,18 @@ Any other backend failure (`sp-backend-unavailable`, `sp-worktree-unusable`,
 invented beside it.
 **A failure after the issue was created** (a refusal carrying `issue`/`url`, or any `new` that
 died past its POST) is never retried blind: search the target by exact title first
-(`specs_list`, matched on the title), and finish or reuse the issue that exists instead
+(`specs_read(verb="list")`, matched on the title), and finish or reuse the issue that exists instead
 of running `new` again — a blind retry duplicates it.
 
-The closing `specs_validate(spec=<id>)` is the whole check — its own finding, if any, is named
+The closing `specs_read(verb="validate", spec=<id>)` is the whole check — its own finding, if any, is named
 verbatim in step 6, never swallowed.
-**Done when:** `specs_create` exited 0, `validate` ran in the same call, and the locator it
+**Done when:** `specs_write(verb="create")` exited 0, `validate` ran in the same call, and the locator it
 returned is in hand.
 
 ### 6. The one screen — capture, correction and direction
 
 ```text
-components_read(path=".agents/quenching/references/specs-develop/report-mold.md", sections=["§The report mold"], rules_only=true)
+components_read(verb="read", path=".agents/quenching/references/specs-develop/report-mold.md", sections=["§The report mold"], rules_only=true)
 ```
 
 Emit §The report mold's fixed header, then one body block showing what was written and what was
@@ -187,9 +187,9 @@ B. **Stop here** — nothing more is invoked; the report above is the whole of t
 
 **The correction is free text in the reply**, invited explicitly by the sheet ("…or correct any
 presumption in your reply before continuing"). A correction is
-applied with the deterministic verb that owns the field — `specs_tags(spec=<id>, value=<whole list>)`
-(fixed tags included, or they are lost), `specs_record(spec=<id>, name="priority",
-fields={"complexity": "<level>", "date": "<today>"})`, `specs_section_write(spec=<id>, heading="<Heading>", body=<body>)` — **and only
+applied with the deterministic verb that owns the field — `specs_write(verb="tags", spec=<id>, value=<whole list>)`
+(fixed tags included, or they are lost), `specs_write(verb="record", spec=<id>, name="priority",
+fields={"complexity": "<level>", "date": "<today>"})`, `specs_write(verb="section_write", spec=<id>, heading="<Heading>", body=<body>)` — **and only
 then** honour whichever of the two options the same reply also names. A reply that names
 no direction falls to B.
 

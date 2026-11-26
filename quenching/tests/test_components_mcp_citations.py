@@ -23,7 +23,7 @@ class CitationForm(unittest.TestCase):
                                        {"command": "-", "path": ENFORCED})
         self.assertEqual([f["code"] for f in found], ["sk-cq-cli-citation"])
         self.assertEqual(found[0]["severity"], "error")
-        self.assertIn("specs_status", found[0]["message"])
+        self.assertIn('specs_read(verb="status"', found[0]["message"])
         self.assertEqual(found[0]["line"], 1)
 
     def test_the_reference_fronts_are_enforced_too(self):
@@ -41,11 +41,21 @@ class CitationForm(unittest.TestCase):
                 self.assertEqual(codes("cq git state --json", path), ["sk-cq-cli-citation"])
 
     def test_the_tool_form_passes(self):
-        body = ("Call `specs_status(spec=<id>)`, then "
-                "`components_read(path=\"x.md\", sections=[\"§A\"], rules_only=true)` and "
-                "`specs_record(spec=<id>, name=\"run\", fields={\"state\": \"done\"})`; "
-                "`specs_status` alone is a mention.")
+        body = ("Call `specs_read(verb=\"status\", spec=<id>)`, then "
+                "`components_read(verb=\"read\", path=\"x.md\", sections=[\"§A\"], rules_only=true)`, "
+                "`specs_write(verb=\"record\", spec=<id>, name=\"run\", fields={\"state\": \"done\"})` "
+                "and `git_read(verb=\"help\")`; `specs_read` alone is a mention.")
         self.assertEqual(codes(body), [])
+
+    def test_a_per_verb_call_names_the_grouped_form(self):
+        found = mcp_citations.findings("call `git_state(root=w)`", {"command": "-", "path": ENFORCED})
+        self.assertEqual([f["code"] for f in found], ["sk-mcp-unknown-tool"])
+        self.assertIn('git_read(verb="state"', found[0]["message"])
+
+    def test_a_grouped_call_needs_a_verb_that_tool_serves(self):
+        self.assertEqual(codes("call `git_read(root=w)`"), ["sk-mcp-unknown-tool"])
+        self.assertEqual(codes('call `git_read(verb="commit")`'), ["sk-mcp-unknown-tool"])
+        self.assertEqual(codes('call `git_write(verb="commit", subject="s")`'), [])
 
     def test_a_verb_with_no_tool_stays_cli(self):
         for text in ("cq deploy --target . --write", "cq specs migrate --to git",
@@ -93,7 +103,7 @@ class CitationForm(unittest.TestCase):
             with self.subTest(path):
                 self.assertEqual(codes("cq git audit --worktree w", path), ["sk-cq-cli-citation"])
                 self.assertEqual(codes("call `git_nope(x)`", path), ["sk-mcp-unknown-tool"])
-                self.assertEqual(codes("call `git_audit(worktree=<wt>)`", path), [])
+                self.assertEqual(codes('call `git_read(verb="audit", worktree=<wt>)`', path), [])
 
 
 if __name__ == "__main__":

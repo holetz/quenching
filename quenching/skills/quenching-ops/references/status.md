@@ -32,7 +32,7 @@ The payload and target tree are defined by
 Set `TARGET_ROOT` to the supplied argument, or to `.` when the argument is omitted, and run:
 
 ```text
-ops_status(root="$TARGET_ROOT")
+ops_read(verb="status", root="$TARGET_ROOT")
 ```
 
 On exit `2`, report the refusal and every missing configuration key exactly as returned. Do not

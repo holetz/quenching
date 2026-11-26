@@ -33,12 +33,14 @@ class Coverage(unittest.TestCase):
     def test_a_cited_option_or_parameter_the_tool_lacks_is_reported(self):
         found = coverage.uncited_options([
             ("a.md", "run `cq specs show --spec 3 --bogus`"),
-            ("b.md", "call `specs_show(spec=3, bogus=true)`")])
-        self.assertEqual(found, [("a.md", "specs_show", "bogus"), ("b.md", "specs_show", "bogus")])
+            ("b.md", "call `specs_show(spec=3, bogus=true)`"),
+            ("c.md", 'call `specs_read(verb="show", spec=3, bogus=true)`')])
+        self.assertEqual(found, [("a.md", "specs_show", "bogus"), ("b.md", "specs_show", "bogus"),
+                                 ("c.md", "specs_show", "bogus")])
 
     def test_specs_show_full_is_cited_and_served(self):
         self.assertEqual(coverage.uncited_options([
-            ("a.md", "`cq specs show --spec 3 --full --json`; `specs_show(spec=3, full=true)`")]), [])
+            ("a.md", "`cq specs show --spec 3 --full --json`; `specs_read(verb=\"show\", spec=3, full=true)`")]), [])
 
     def test_an_uncatalogued_verb_is_reported_with_its_body(self):
         found = coverage.uncovered([("skills/x.md", "run `.agents/quenching/bin/cq specs scrub 3`")])

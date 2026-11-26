@@ -28,7 +28,7 @@ any remainder names the command to analyse. Pass **only** the transcript token b
 carry the rest to step 2; nothing given → pass nothing and let the tool resolve this session.
 
 ```text
-components_session_list(transcript=<transcript-or-nothing>)
+components_read(verb="session_list", transcript=<transcript-or-nothing>)
 ```
 Exit 2 is a refusal carrying its reason — an absent transcript, an empty one, or a non-empty
 one that yielded no command. Show the reason and stop; a session that proved nothing is never
@@ -44,7 +44,7 @@ to the session opener.
 
 ### 3. Get its evidence
 ```text
-components_session_digest(transcript=<transcript-or-nothing>, command=<chosen>)
+components_read(verb="session_digest", transcript=<transcript-or-nothing>, command=<chosen>)
 ```
 An unknown `--command` refuses with exit 2 and lists what the session did hold — reach step 2's
 question rather than repeating the call.

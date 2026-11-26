@@ -13,8 +13,8 @@ inventory, preserving authored text outside the generated block, and re-runs the
 
 | Code | Closure |
 | --- | --- |
-| `op-undocumented` | `ops_registry(write=true)` |
-| `op-registry-stale` | `ops_registry(write=true)` |
+| `op-undocumented` | `ops_write(verb="registry", write=true)` |
+| `op-registry-stale` | `ops_write(verb="registry", write=true)` |
 
 No per-entry-point confirmation belongs in this band: the source and the generated registry make
 the same answer.
@@ -22,7 +22,7 @@ the same answer.
 ## Structural findings
 
 The align may apply structural findings after the one plan authorization. It makes one bounded
-edit per affected entry point, then re-runs `ops_doctor()` before reporting the result.
+edit per affected entry point, then re-runs `ops_read(verb="doctor")` before reporting the result.
 
 | Code | Closure |
 | --- | --- |
@@ -36,7 +36,7 @@ choose a target-specific operational policy.
 ## Unconfigured operations roots
 
 Configuration is a prerequisite for the inventory, not a default the align may invent. When either
-`opsRoot` or `router` is absent from `.agents/quenching.json` (or the legacy `.agents/quenching.json`), `ops_doctor()` refuses with
+`opsRoot` or `router` is absent from `.agents/quenching.json` (or the legacy `.agents/quenching.json`), `ops_read(verb="doctor")` refuses with
 `op-config-missing`, names both required keys and exits `2`. The align reports that refusal and
 stops after the probe; it does not guess `scripts/`, select a router, or turn the refusal into an
 `op-no-router` finding.
@@ -57,7 +57,7 @@ The command is part of the report so the owner can act without guessing what the
 | `op-unarmed-write` | The entry point reaches a write-capable session or client without a preview and explicit arming decision. | The target owner's reviewed entry-point change, or `/quenching-ops entrypoint-new` when the entry point is being reminted. |
 | `op-disabled-check` | The commented verification call, its entry-point control-flow location, and the choice to re-enable or explicitly declare it off. | The target owner's reviewed verification change, or `/quenching-ops entrypoint-new` when the entry point is being reminted. |
 | `op-orphan` | The entry point's path, lifecycle declaration, and why it is not reachable from the canonical router. | The target owner's reviewed router, lifecycle, or archive change, or `/quenching-ops entrypoint-new` when the entry point is being reminted. |
-| `op-registry-malformed` | The registry path and the refusal message (duplicated generated zone or invalid UTF-8). `ops_registry(write=true)` refuses it, so no regeneration closes it. | The target owner's reviewed repair of the registry file, then `ops_registry(write=true)`. |
+| `op-registry-malformed` | The registry path and the refusal message (duplicated generated zone or invalid UTF-8). `ops_write(verb="registry", write=true)` refuses it, so no regeneration closes it. | The target owner's reviewed repair of the registry file, then `ops_write(verb="registry", write=true)`. |
 
 The command named in this table is a hand-off, not an instruction for the align to execute. A
 judgement finding remains open until its owner has made and verified the operational decision.

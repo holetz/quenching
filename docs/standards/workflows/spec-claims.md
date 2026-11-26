@@ -84,8 +84,12 @@ take only an expired lease, which `acquire` already does.
 
 The `tools:` of the `spec-orchestrator` (which calls `renew`) and of the `spec-runner` grant the
 four agent verbs one by one — `Bash(cq specs claim acquire:*)`, `renew`, `release` and `list` —
-never `Bash(cq specs claim:*)`, and the deploy maps them to `mcp__quenching__specs_claim_acquire`,
-`_renew`, `_release` and `_list`; no other agent gets them, and the commands that call them already
+never `Bash(cq specs claim:*)`, and the deploy maps them to the published tools of their class:
+`mcp__quenching__specs_external` (`verb` `claim_acquire`, `claim_renew`, `claim_release`) and
+`mcp__quenching__specs_read` (`claim_list`). The class tool also reaches the other verbs of
+`specs_external` — `push` among them — which the grouping accepts as the price of a short
+`tools/list` ([mcp-server.md](../architecture/mcp-server.md) §Closed catalog); no other agent gets
+them, and the commands that call them already
 hold `Bash(cq:*)`. `take` reaches no agent grant: it has no MCP tool (a declared coverage
 exception), so neither a scoped grant nor a whole-server one (`Bash`, OpenCode `quenching_*`)
 covers it, and an agent body that ran `cq specs claim take` in a shell would break its own rule.

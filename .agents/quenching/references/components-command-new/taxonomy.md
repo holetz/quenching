@@ -6,7 +6,7 @@ In a target repo this rule is stamped to `docs/standards/automation/skills.md` f
 **Owned elsewhere — cite, never restate.** The
 invocation/permission decision table, the scoped-`allowed-tools` rule, and the description
 caps all live in `docs/standards/automation/skills.md`; the registry zone's row format in
-`components_registry_reindex()`. Findings arrive as `sk-*` codes and are named by code, never by
+`components_write(verb="registry_reindex")`. Findings arrive as `sk-*` codes and are named by code, never by
 restated threshold.
 
 ## The single axis
@@ -85,7 +85,7 @@ top level is repo-wide by declaration.
   `name:` equals the folder name. The name is the whole identity, and nothing derives a second
   name that could disagree with it. Mold: `assets/templates/automation/command.md`.
 - **`.agents/` is the only editable source.** `.claude/skills/<name>/` is the copy
-  `components_bridge()` generates from it, marked as generated and pinned by a sha256
+  `components_write(verb="bridge")` generates from it, marked as generated and pinned by a sha256
   manifest; it is never edited, and `bridge --check` names its drift.
 - **A generic skill with no evident category is a flat** `<verb-object>`, never prefixed with a
   folder or category it does not serve.
@@ -93,7 +93,7 @@ top level is repo-wide by declaration.
 **A skill's folder holds only that skill**: `SKILL.md` and the files it alone reads. Shared
 procedure lives in `.agents/references/<name>/` and eval cases in `.agents/evals/<name>/`, cited
 by path. A legacy `.agents/skills/` surface is `/quenching-components align`'s to migrate
-(`components_migrate()`); the mint never writes into it.
+(`components_write(verb="migrate")`); the mint never writes into it.
 
 **A family is a router, not a set of skills.** Three or more skills of the target sharing the first
 kebab segment are one vertical: `.agents/skills/<family>/SKILL.md` with the flow table and
@@ -121,7 +121,7 @@ The registry at `docs/project/automation.md` (`type: project`,
 stamped from `assets/templates/automation/registry.md`) is the bundle's authoritative
 listing of the local automation surface.
 
-**`components_registry_reindex()` owns the zone's format.** The row shape, the column
+**`components_write(verb="registry_reindex")` owns the zone's format.** The row shape, the column
 order, the sort, and the placeholders are the tool's. To see the current shape, run the
 tool; to change it, change the tool.
 

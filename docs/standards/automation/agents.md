@@ -67,7 +67,11 @@ hand, and `cq deploy --check` owns the drift.
 The Copilot projection maps the grant the Claude one already carries, never the raw source:
 `Read` → `read`, `Grep`/`Glob` → `search`, `Edit`/`Write` → `edit`, `WebFetch`/`WebSearch` → `web`,
 `TodoWrite` → `todo`, `Agent`/`Task` → `agent`, every `Bash` grant → `execute`, and
-`mcp__quenching__<tool>` → `quenching/<tool>` (`quenching/*` for the whole server). `Skill` has no
+`mcp__quenching__<tool>` → `quenching/<tool>` (`quenching/*` for the whole server). `<tool>` is a
+published `<pillar>_<class>` name ([mcp-server.md](../architecture/mcp-server.md) §Closed catalog):
+a `Bash(cq <verbs>:*)` grant becomes the group tool of each verb under it, so it also reaches the
+other verbs of that pillar and class — never another pillar or class, and a read-only agent stays
+read-only. `Skill` has no
 Copilot alias and is dropped; a head with no mapping refuses the deploy (`ct-deploy-source`), so a
 capability never disappears in silence. The mount filters the names the same way: a pillar the
 server does not publish declares no tool, and a narrowed deploy keeps the shell grant of a verb

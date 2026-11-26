@@ -6,7 +6,7 @@ allowed-tools: Bash(cq:*), Bash(cq.cmd:*), Read, Agent, Task
 
 **Input**: `$ARGUMENTS` — a composite id (any spec whose `## Tasks` names members) or a list of spec
 ids, and optionally `--autonomous`. Empty or ambiguous → run
-`specs_list` and ask which on a decision sheet ([questions.md](.agents/quenching/references/specs-develop/questions.md) §The four shared mechanics §1).
+`specs_read(verb="list")` and ask which on a decision sheet ([questions.md](.agents/quenching/references/specs-develop/questions.md) §The four shared mechanics §1).
 
 This command is a launcher. The protocol (waves, routing, budgets, acceptance, audit) lives in the
 `spec-orchestrator` agent definition, `quenching/agents/spec-orchestrator.md`; do not restate it.
@@ -16,14 +16,14 @@ This command is a launcher. The protocol (waves, routing, budgets, acceptance, a
 ### 1. Resolve the set
 Resolve `cq` per [align/tool-resolution.md](.agents/quenching/references/align/tool-resolution.md)
 §Resolving the tool; branch on the exit code. Close what already merged first —
-`specs_reconcile(write=true)` archives every merged spec carrying `## Outcome`, and a
-`needs-human` row is relayed to the human. Confirm each id exists with `specs_show(spec=<id>)`.
+`specs_write(verb="reconcile", write=true)` archives every merged spec carrying `## Outcome`, and a
+`needs-human` row is relayed to the human. Confirm each id exists with `specs_read(verb="show", spec=<id>)`.
 **Done when:** the composite id or the list of spec ids is verified to exist.
 
 ### 2. Check who can run alone
-Read `config_show(effective=true)` once and take the `shared.autonomy.runAloneUpTo`,
+Read `config_read(verb="show", effective=true)` once and take the `shared.autonomy.runAloneUpTo`,
 `shared.autonomy.merge` and `shared.autonomy.maxWorkers` lines; exit 0 without a line means the
-default (`low`, `policy`, `3`). Read each spec's metadata with `specs_status(spec=<id>)`: `complexity` comes from
+default (`low`, `policy`, `3`). Read each spec's metadata with `specs_read(verb="status", spec=<id>)`: `complexity` comes from
 `records.priority.complexity` and `approved` from `records.approved`. Split the set from these
 `status` payloads: **runs alone** is a spec with `approved` recorded or
 a `complexity` at or below `runAloneUpTo` (`none` leaves only the approved ones); **needs a human**
@@ -51,5 +51,5 @@ carries its own protocol, and without `autonomous` it blocks a spec that still n
 
 ### 4. Relay
 Show its per-spec blocks and totals line unchanged. A spec in state `blocked`, `failed` or
-`continue` is named with its note and left for the human; never retry it here. A spawn that ended without a report is not one of them: the orchestrator resumes it once from `specs_status` with the word `resume` before reporting.
+`continue` is named with its note and left for the human; never retry it here. A spawn that ended without a report is not one of them: the orchestrator resumes it once from `specs_read(verb="status")` with the word `resume` before reporting.
 **Done when:** the report is shown and every non-`done` spec is named.

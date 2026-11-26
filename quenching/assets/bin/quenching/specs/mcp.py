@@ -502,6 +502,10 @@ WRITES: dict[str, tuple] = {
 }
 
 
+# The write tools that leave the machine: published in the `external` class, `openWorldHint` set.
+EXTERNAL = frozenset({"specs_push"})
+
+
 # The `cq specs` verb path each hand-written tool serves: what the catalog coverage scan
 # (`quenching.mcp.coverage`) counts as covered beside the catalog's own rows.
 COVERS: dict[str, tuple[str, ...]] = {
@@ -877,7 +881,7 @@ def list_tools() -> list[dict]:
             for name, spec in TOOLS.items()] + [
            {"name": name, "description": spec[0], "inputSchema": spec[1],
             "annotations": {"readOnlyHint": False, "destructiveHint": spec[4] is not None,
-                            "idempotentHint": False, "openWorldHint": False}}
+                            "idempotentHint": False, "openWorldHint": name in EXTERNAL}}
            for name, spec in WRITES.items()]
 
 
@@ -933,4 +937,5 @@ def cmd_mcp(args, root: str, out) -> int:
     # resolves its verbs, so the static import graph the affected-test selector reads does not
     # tie every catalog consumer to the epic reader.
     importlib.import_module("quenching.specs.commands.epic").remember_merged()
-    return server.run_stdio(root, SURFACE)
+    from quenching.mcp import grouped   # lazy: the grouped surface imports the catalog
+    return server.run_stdio(root, grouped.GroupedSurface(SURFACE))

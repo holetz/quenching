@@ -344,11 +344,14 @@ With `QUENCHING_SPECS_SYNC=1` and the `azure-boards` backend, every read is answ
 its own harness files, always (`shared.mcp` only overrides the mount — `specs` for the specs-only
 server — and the Python prefix, and the target's other entries are kept); a harness that reads
 neither manifest launches `cq mcp` itself.
-It exposes a closed catalog of available CLI verbs, including the specs tools below. Tool names
-follow `<pillar>_<verb>[_<subverb>]` (`components_read`, `git_pr_create`); `tools/list` reports
-which are available. Schemas come from each verb's parser. An absent pillar contributes no tool.
-The `read`, `write` and `external` classes describe effects through MCP annotations, without
-adding grants. The workspace is the launch cwd or launch-time `--root`; one call names another tree
+It exposes a closed catalog of available CLI verbs, including the specs verbs below, published as
+**one tool per pillar and class** — `git_read`, `git_write`, `git_external`, `specs_read`, … — with
+a required `verb` argument: the verb `git pr create` is `git_external(verb="pr_create", …)`, so a
+client that cannot list a hundred tools lists two dozen (23 for the whole server, 8 for `specs`,
+`git` and `components`). `verb="help"` answers a tool's verbs and their schemas; `tools/list`
+reports which tools are available. Each verb's schema comes from its parser. An absent pillar
+contributes no tool. The `read`, `write` and `external` classes describe effects through MCP
+annotations, without adding grants. The workspace is the launch cwd or launch-time `--root`; one call names another tree
 with `root`, which every tool takes.
 
 Run a released version without installing the plugin manually:
@@ -371,30 +374,32 @@ remain available. The architectural contract is
 ### The specs MCP server — reads, writes and gated moves, stdio
 
 `cq specs mcp` remains the specs-only stdio MCP server (JSON-RPC 2.0, stdlib only).
-Its tools also appear in the full `quenching` server above. Every tool
+Its verbs also appear in the full `quenching` server above, and both publish them grouped:
+`specs_read`, `specs_write` and `specs_external` (`push`, the claims), each taking `verb` — the
+first column below. Every verb
 dispatches in-process through the same core as `cq specs`, so the backend, refusals and exit codes are the
 CLI's; the server holds no store logic.
 
-| Tool | Arguments | Answers |
+| Verb (`specs_read`) | Arguments | Answers |
 |---|---|---|
-| `specs_list` | `limit` (default 50, max 200), `offset` | the lean listing, paged (`count`, `returned`, `nextOffset`) |
-| `specs_status` | `spec` | one spec's sections, stage, tasks and gates |
-| `specs_show` | `spec`, `tasks` (ids, at most 20) | the map, or only the named tasks |
-| `specs_section` | `spec`, `headings` or `moment`, `scope` | the named sections only |
-| `specs_next` | `spec` or `epic` (neither: the ranked front), `limit`, `autonomous` (with `epic`) | the next action, the epic's ready members (with `autonomous`, also those to develop first), or the front, paged |
-| `specs_epic_progress` | `epic` | one epic's progress |
+| `list` | `limit` (default 50, max 200), `offset` | the lean listing, paged (`count`, `returned`, `nextOffset`) |
+| `status` | `spec` | one spec's sections, stage, tasks and gates |
+| `show` | `spec`, `tasks` (ids, at most 20) | the map, or only the named tasks |
+| `section` | `spec`, `headings` or `moment`, `scope` | the named sections only |
+| `next` | `spec` or `epic` (neither: the ranked front), `limit`, `autonomous` (with `epic`) | the next action, the epic's ready members (with `autonomous`, also those to develop first), or the front, paged |
+| `epic_progress` | `epic` | one epic's progress |
 
-Write tools run the same CLI verbs, in the same process, and add no store logic:
+Write verbs (`specs_write`) run the same CLI verbs, in the same process, and add no store logic:
 
-| Tool | Arguments | Does |
+| Verb (`specs_write`) | Arguments | Does |
 |---|---|---|
-| `specs_create` | `name`, `title`, `type`, `tags`, `complexity`, `verification` | captures a spec into `plans/` |
-| `specs_section_write` | `spec`, `heading`, `body`, `scope` | replaces ONE section (body up to 200,000 characters) |
-| `specs_record` | `spec`, `name`, `fields` | merges fields into a record; only `approved` is gated |
-| `specs_task` | `spec`, `action` (check, uncheck, block, descope), `task`, `reason`, `subject`, `commit` | moves one checkbox |
-| `specs_epic_add` | `epic`, `spec`, `after`, `group`, `label`, `move` | lists a spec as an epic item |
-| `specs_discover` | `spec`, `text` | appends one line to `## Discoveries` |
-| `specs_promote` | `spec`, `to`, `outcome`, `dry_run` | moves between `plans/` and `archive/`, stamping the outcome; `dry_run` reports the move or the gate that refuses it and writes nothing; never forced |
+| `create` | `name`, `title`, `type`, `tags`, `complexity`, `verification` | captures a spec into `plans/` |
+| `section_write` | `spec`, `heading`, `body`, `scope` | replaces ONE section (body up to 200,000 characters) |
+| `record` | `spec`, `name`, `fields` | merges fields into a record; only `approved` is gated |
+| `task` | `spec`, `action` (check, uncheck, block, descope), `task`, `reason`, `subject`, `commit` | moves one checkbox |
+| `epic_add` | `epic`, `spec`, `after`, `group`, `label`, `move` | lists a spec as an epic item |
+| `discover` | `spec`, `text` | appends one line to `## Discoveries` |
+| `promote` | `spec`, `to`, `outcome`, `dry_run` | moves between `plans/` and `archive/`, stamping the outcome; `dry_run` reports the move or the gate that refuses it and writes nothing; never forced |
 
 One human decision, asked once: `approved` is the only gated write. The server asks the human
 through the client (MCP `elicitation/create`) and runs the verb only on an accept — no argument
@@ -404,9 +409,9 @@ changes. `approved` takes no fields: the server writes `date` and `by=human` aft
 only on a spec that met the ready gate (`mcp-not-ready` otherwise, before the question).
 
 What the flow concludes after that approval writes without asking: the `reviewed`, `merge` and
-`outcome` records and `specs_promote` run as the CLI verbs do. The archive is refused (exit 2) only
+`outcome` records and the `promote` verb run as the CLI verbs do. The archive is refused (exit 2) only
 by its own gate — an empty `## Outcome`, an open task under `done`, or `done` work not yet merged
-into `origin/<base>` — never by a confirmation; `outcome` is not a `specs_record` at all, because `specs_promote` is its one writer.
+into `origin/<base>` — never by a confirmation; `outcome` is not a `record` at all, because `promote` is its one writer.
 
 Size policy: no tool returns a whole spec; reads go by section and by task, listings are paged, and any
 answer above 60,000 characters is cut with `truncated: true` and a `hint` naming the narrower call.

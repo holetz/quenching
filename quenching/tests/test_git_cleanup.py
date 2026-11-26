@@ -288,7 +288,7 @@ class CommandBody(unittest.TestCase):
     def test_cleanup_offers_archived_slots_as_their_own_decision(self):
         text = " ".join(CLEANUP_COMMAND.read_text(encoding="utf-8").split())
         for needle in ("D4 — archived slots", "kind: slot", "archived-holder",
-                       "git_prune(slot=", ".quenching/handoff/", "process-in-slot"):
+                       "git_external(verb=\"prune\", slot=", ".quenching/handoff/", "process-in-slot"):
             self.assertIn(needle, text)
 
 

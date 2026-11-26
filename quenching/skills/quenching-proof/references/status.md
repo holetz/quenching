@@ -18,7 +18,7 @@ definitions and invocation evidence, and findings grouped by the disposition ban
 absent floor or artifact as absent, never as healthy, and states plainly that the target suite was
 not run.
 
-The payload is produced by `proof_status()`; the finding and disposition rules live in
+The payload is produced by `proof_read(verb="status")`; the finding and disposition rules live in
 [proof-align/bands.md](.agents/skills/quenching-proof/references/proof-align/bands.md),
 [proof-align/gate-contract.md](.agents/skills/quenching-proof/references/proof-align/gate-contract.md),
 and [proof-align/layer-contract.md](.agents/skills/quenching-proof/references/proof-align/layer-contract.md).
@@ -33,7 +33,7 @@ on exit code and JSON: `0` is a clean report, `1` carries findings, and `2` is a
 Set `TARGET_ROOT` to the supplied argument, or to `.` when the argument is omitted, and run:
 
 ```text
-proof_status(root="$TARGET_ROOT")
+proof_read(verb="status", root="$TARGET_ROOT")
 ```
 
 On exit `2`, report the refusal and every missing or invalid declaration exactly as returned. Do

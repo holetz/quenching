@@ -1,6 +1,6 @@
 """The named mounts (`MOUNTS`) and `cq mcp --only`: what the server publishes, per pillar, and the
-refusal. The counts are the ones the 452 measured on 2026-11-25 (H3): 116 published in `all`, 75 in
-`core`, and the specs adapter riding inside the `specs` pillar."""
+refusal. Spec 625 grouped the published tools by pillar and class: `all` publishes one tool per
+(pillar, class) pair, `core` at most eight, and the specs adapter rides inside the `specs` pillar."""
 
 import collections
 import pathlib
@@ -20,7 +20,7 @@ from quenching.mcp import catalog, cli as mcp_cli  # noqa: E402
 
 
 def published(only=None) -> tuple[int, collections.Counter]:
-    tools = catalog.surface(only=only).list_tools()
+    tools = mcp_cli.surface(only=only).list_tools()
     return len(tools), collections.Counter(catalog.pillar_of(tool["name"]) for tool in tools)
 
 
@@ -39,15 +39,15 @@ class TheNamedMounts(unittest.TestCase):
     def test_the_specs_mount_publishes_the_adapter_too(self):
         total, counts = published(("specs",))
         self.assertEqual({"specs"}, set(counts))
-        names = {tool["name"] for tool in catalog.surface(only=("specs",)).list_tools()}
-        self.assertIn("specs_status", names)
+        names = {tool["name"] for tool in mcp_cli.surface(only=("specs",)).list_tools()}
+        self.assertEqual({"specs_read", "specs_write", "specs_external"}, names)
         self.assertEqual(len(catalog.tool_names(("specs",))), total)
 
     def test_a_pillar_outside_the_mount_publishes_nothing(self):
         total, counts = published(("knowledge",))
         self.assertEqual({"knowledge"}, set(counts))
-        self.assertNotIn("specs_status",
-                         {tool["name"] for tool in catalog.surface(only=("knowledge",)).list_tools()})
+        self.assertNotIn("specs_read",
+                         {tool["name"] for tool in mcp_cli.surface(only=("knowledge",)).list_tools()})
 
     def test_every_published_tool_belongs_to_a_pillar_of_the_mount(self):
         for pillar in catalog.MOUNTS["core"]:

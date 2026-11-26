@@ -187,7 +187,10 @@ that names no verb is kept whole, so the narrowing never widens and never guesse
 it; `cliFallback: true`, a narrower mount (`specs`, `core`, a list) and a runtime that registers no
 server keep both doors. A narrower mount narrows no door but does filter the names: the MCP tools a
 grant enumerates are only the ones the mount publishes (`mcp_tools(names, mount)`), so a skill's
-`allowed-tools` and an agent's `tools:` never name a tool the server does not serve. The narrowed
+`allowed-tools` and an agent's `tools:` never name a tool the server does not serve. The names are
+the published `<pillar>_<class>` tools (`catalog.tool_names`), so a grant of one verb reaches its
+whole pillar-and-class group, and a re-read copy that still carries a per-verb name the server no
+longer publishes loses it at the next deploy. The narrowed
 residue is computed against the mount too (`coverage.cli_residue(prefix, mount)`): a verb whose MCP
 tool the mount hides keeps its shell grant, so a pillar outside the mount never loses both doors.
 

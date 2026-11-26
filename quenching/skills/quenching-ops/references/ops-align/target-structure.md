@@ -7,7 +7,7 @@ target tree, the active entry points, or the canonical router.
 
 ## Contents
 
-`components_read(path=<this file>)` returns the heading index; `sections=["§X"]` addresses one.
+`components_read(verb="read", path=<this file>)` returns the heading index; `sections=["§X"]` addresses one.
 
 ## 1. One declared operations root
 

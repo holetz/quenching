@@ -28,15 +28,15 @@ Resolve `cq` per
 Run:
 
 ```text
-design_status()
-knowledge_validate()
-design_align(check=true)
+design_read(verb="status")
+knowledge_read(verb="validate")
+design_write(verb="align", check=true)
 ```
 
 Inventory `/docs/` headings that can project the product record, `/.design/tokens.json`, the
 three root projections, `.impeccable/design.json`, genres, medium primitives and brand assets.
 Classify an existing root `DESIGN.md` as **generated** only when its frontmatter carries the literal
-generated notice emitted by `design_build()`; otherwise it is an Impeccable proposal awaiting the human's
+generated notice emitted by `design_write(verb="build")`; otherwise it is an Impeccable proposal awaiting the human's
 import/build choice. Do the equivalent provenance check for `PRODUCT.md`, but fold its confirmed
 facts into the correct OKF homes by judgment — there is no mechanical product importer.
 
@@ -76,7 +76,7 @@ Create or merge the confirmed product facts under the applicable `/docs/vision/`
 source is an external `DESIGN.md`, preserve it until the pack's `tokens.json` exists, then run:
 
 ```text
-design_import()
+design_write(verb="import")
 ```
 
 Otherwise let the DTCG source win. Keep `.impeccable/config.json` untouched: it belongs to
@@ -90,7 +90,7 @@ source has been folded without overwriting the losing source prematurely.
 Run:
 
 ```text
-design_build()
+design_write(verb="build")
 ```
 
 This emits root `PRODUCT.md`, `DESIGN.md`, `MEDIUM.md`, `.impeccable/design.json` schema 2 and

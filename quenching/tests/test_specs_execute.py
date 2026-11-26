@@ -39,7 +39,7 @@ class TaskExecutionContractTests(unittest.TestCase):
         command = COMMAND.read_text(encoding="utf-8")
         commit = (ROOT / "quenching/skills/quenching-git/references/commit.md").read_text(encoding="utf-8")
 
-        self.assertIn('git_commit(subject="<subject>", root="<worktree>")', command)
+        self.assertIn('git_write(verb="commit", subject="<subject>", root="<worktree>")', command)
         self.assertNotIn('Skill("quenching-specs:git:commit"', command)
         self.assertIn("single commit boundary", commit)
         self.assertNotIn("git commit -m", command)
@@ -122,9 +122,9 @@ class TaskExecutionContractTests(unittest.TestCase):
         reference = REFERENCE.read_text(encoding="utf-8")
 
         self.assertLess(command.index("git add <the task's declared files>"),
-                        command.index('git_commit(subject="<subject>", root="<worktree>")'))
-        self.assertLess(command.index('git_commit(subject="<subject>", root="<worktree>")'),
-                        command.index('specs_task(spec=<spec-id>, action="check", task=<task-id>'))
+                        command.index('git_write(verb="commit", subject="<subject>", root="<worktree>")'))
+        self.assertLess(command.index('git_write(verb="commit", subject="<subject>", root="<worktree>")'),
+                        command.index('specs_write(verb="task", spec=<spec-id>, action="check", task=<task-id>'))
         self.assertIn('commit="<sha the commit reported>"', command)
         self.assertIn("spec tick **fails**", reference)
         self.assertIn("preserve the commit", reference)
@@ -257,7 +257,7 @@ class TaskExecutionContractTests(unittest.TestCase):
             (ROOT / "quenching/agents/spec-verifier.md").read_text(encoding="utf-8").split())
 
         self.assertIn("## Epic authorization (checks 9 and 10)", verifier)
-        self.assertIn("`specs_show(spec=<epic>, full=true)`", verifier)
+        self.assertIn("`specs_read(verb=\"show\", spec=<epic>, full=true)`", verifier)
         self.assertIn("carries a date (`YYYY-MM-DD`), names this spec's id or the entry's exact path", verifier)
         self.assertIn("An entry no such bullet covers stays FAIL with `needs-human`", verifier)
         self.assertIn("never stops it refusing an unauthorized widening or lowering", verifier)
@@ -280,11 +280,11 @@ class TaskExecutionContractTests(unittest.TestCase):
                 text = (ROOT / "quenching" / carrier).read_text(encoding="utf-8")
                 flat = " ".join(re.sub(r"[`*_]", "", text).split())
                 self.assertTrue("cq specs status --spec <id> --json" in flat
-                                or "specsstatus(spec=<id>)" in flat, carrier)
+                                or 'specsread(verb="status", spec=<id>)' in flat, carrier)
                 self.assertIn("records.priority.complexity", flat)
                 self.assertIn("records.approved", flat)
                 self.assertTrue("cq specs show --spec <id> --json" in flat
-                                or "specsshow(spec=<id>)" in flat, carrier)
+                                or 'specsread(verb="show", spec=<id>)' in flat, carrier)
                 self.assertNotRegex(flat, r"Read complexity and approved from each spec's show")
                 self.assertNotIn("Split the set from the show payloads", flat)
                 self.assertNotIn("show --full", flat)
