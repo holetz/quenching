@@ -11,8 +11,9 @@ from a fresh report for the selected remote.
 
 ### 1. Ask the tool for the current report
 ```text
-git_stale(remote=<remote>)
+git_stale(remote=<remote>, full=true)
 ```
+`full=true` is required: without it the report omits `worktrees`, `heldSlots`, `manifest` and `groups`, and carries only their `counts`.
 The report contains local `staleBranches` (removable), `keptBranches` (staying, with reasons), fetched `remoteBranches` from `<remote>`, registered
 `orphanWorktrees`, assessed `worktrees`, the `manifest` and its `groups`, and unregistered `unregisteredWorktrees` siblings with their path, branch and
 size. Each assessed worktree and its `manifest` entry carries
