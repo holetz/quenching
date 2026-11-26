@@ -18,7 +18,7 @@ class MechanicalCaptureTests(unittest.TestCase):
         body = text()
         self.assertIn("**Mechanical capture, by default.**", body)
         self.assertNotIn("spec-architect", body)
-        self.assertIn("`specs_create(name=<title>", body)
+        self.assertIn("`specs_write(verb=\"create\", name=<title>", body)
 
     def test_real_decomposition_stays_in_this_session(self):
         body = text()
@@ -62,7 +62,7 @@ class ValidateFilteredTests(unittest.TestCase):
     def test_every_validate_call_groups_by_code(self):
         """An unfiltered sweep returns the archive's warnings (~118k chars) into the conductor."""
         body = text()
-        calls = re.findall(r"`specs_validate[^`]*`", body)
+        calls = re.findall(r"`specs_read\(verb=\"validate\"[^`]*`", body)
         self.assertTrue(calls)
         for call in calls:
             self.assertIn("by_code=true", call)

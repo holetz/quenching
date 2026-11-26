@@ -207,7 +207,7 @@ class Preflight(unittest.TestCase):
 class AutopilotContract(unittest.TestCase):
     def test_step_one_calls_preflight_and_gates_merges(self):
         body = AUTOPILOT.read_text(encoding="utf-8")
-        self.assertIn("`git_preflight`", body)
+        self.assertIn("`git_read(verb=\"preflight\")`", body)
         self.assertIn("mergesAllowed", body)
         self.assertIn("no merges", body)
         self.assertIn("Bash(cq:*)", body)

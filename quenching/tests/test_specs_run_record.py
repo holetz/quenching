@@ -93,7 +93,7 @@ class RunRecord(unittest.TestCase):
         self.assertIn("`by` set to `verifier`", text)
         orchestrator = (path.parent / "spec-orchestrator.md").read_text()
         self.assertIn("\"verifier\": \"<pass|fail>\", \"by\": \"verifier\"", orchestrator)
-        self.assertIn("git_pr_merge(url=<url>, spec=<id>, wait=90)`", orchestrator)
+        self.assertIn("git_external(verb=\"pr_merge\", url=<url>, spec=<id>, wait=90)`", orchestrator)
         self.assertFalse((path.parent / "git-steward.md").exists())
 
     def test_orchestrator_reintegrates_the_base_before_verifying_a_sibling(self):

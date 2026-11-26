@@ -50,8 +50,8 @@ class LaunchTests(unittest.TestCase):
         self.assertEqual(replies[1]["result"]["serverInfo"]["name"], "quenching")
         names = {item["name"] for item in replies[2]["result"]["tools"]}
         self.assertIn("components_read", names)
-        self.assertIn("specs_status", names)
-        self.assertIn("git_commit", names)
+        self.assertIn("specs_read", names)
+        self.assertIn("git_write", names)
         self.assertIn("Commit", replies[3]["result"]["contents"][0]["text"])
 
     def test_cli_preserves_usage_exit(self):

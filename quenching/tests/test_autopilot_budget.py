@@ -21,7 +21,7 @@ class OrchestratorBudgetTests(unittest.TestCase):
 
     def test_stops_between_waves_and_returns_budget_continue(self):
         body = text(ORCHESTRATOR)
-        self.assertIn("components_session_context(self_marker=\"orchestrator-", body)
+        self.assertIn("components_read(verb=\"session_context\", self_marker=\"orchestrator-", body)
         self.assertIn("a stop is never mid-wave", body)
         self.assertIn("NOTE: budget: <peak>/<budget> before wave <N>", body)
         self.assertIn("exit 2 (not measured) never stops the run", body)
@@ -38,7 +38,7 @@ class AutopilotTreeCeilingTests(unittest.TestCase):
         body = text(AUTOPILOT)
         self.assertIn("`input + cacheRead + cacheWrite + output`", body)
         self.assertIn("never summing tiers", body)
-        self.assertIn("`components_session_cost`", body)
+        self.assertIn("`components_read(verb=\"session_cost\")`", body)
 
     def test_budget_continue_is_relaunched_with_progress(self):
         body = text(AUTOPILOT)

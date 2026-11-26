@@ -26,7 +26,7 @@ class InstallProfileContract(unittest.TestCase):
 
     def test_root_align_consumes_profile_as_conductor_scope(self):
         align = ALIGN.read_text(encoding="utf-8").lower()
-        for phrase in ("specs_config()", "shared.profiles.installed", "skipped by profile",
+        for phrase in ("specs_read(verb=\"config\")", "shared.profiles.installed", "skipped by profile",
                        "does not remove commands"):
             self.assertIn(phrase, align)
 
