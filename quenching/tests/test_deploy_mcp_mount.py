@@ -110,6 +110,16 @@ class Mounts(unittest.TestCase):
                   if catalog.pillar_of(tool) not in CORE}
         self.assertEqual(set(), granted & hidden)
 
+    def test_the_payload_agent_re_read_under_the_mount_publishes_the_same_agent(self):
+        # The payload keeps its agents unmounted; a target-local deploy re-translates them under
+        # the declared mount and must land on the bytes the source deploy wrote.
+        source = (PLUGIN_ROOT / "agents" / "spec-runner.md").read_text(encoding="utf-8")
+        mount = frozenset(catalog.mount_pillars("specs"))
+        payload = translate.agent_document(source, "spec-runner")
+        self.assertIn("mcp__quenching__git_commit", payload)
+        self.assertEqual(translate.agent_document(source, "spec-runner", mount=mount),
+                         translate.agent_document(payload, "spec-runner", mount=mount))
+
 
 class TheShellDoor(unittest.TestCase):
     """A pillar the mount hides keeps the shell grant its verbs would otherwise lose, so the

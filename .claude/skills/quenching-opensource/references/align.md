@@ -12,9 +12,9 @@ text is byte-identical to the published one, and leaves every choice — license
 contact, funding — with the target owner. The common front floor is in
 [front-align/mold.md](.agents/quenching/references/front-align/mold.md), the catalog
 contract is in
-[opensource-controls/catalog.md](.agents/skills/quenching-opensource/references/opensource-controls/catalog.md),
+[opensource-controls/catalog.md](.claude/skills/quenching-opensource/references/opensource-controls/catalog.md),
 and the finding bands and closure boundary are in
-[opensource-align/bands.md](.agents/skills/quenching-opensource/references/opensource-align/bands.md).
+[opensource-align/bands.md](.claude/skills/quenching-opensource/references/opensource-align/bands.md).
 
 Set `TARGET_ROOT` to the supplied argument, or to `.` when the argument is omitted. Resolve `cq`
 per [tool-resolution.md](.agents/quenching/references/align/tool-resolution.md)

@@ -40,26 +40,26 @@ returns `STATE: blocked` with `NOTE: needs-human:` carrying it.
 
 | Flow | Reference | Picked when |
 | --- | --- | --- |
-| `add` | [references/add.md](.agents/skills/quenching-knowledge/references/add.md) | a new concept doc (standard, table, announcement) for the bundle |
-| `learn` | [references/learn.md](.agents/skills/quenching-knowledge/references/learn.md) | one piece of generic knowledge to record in `concepts/` |
-| `define` | [references/define.md](.agents/skills/quenching-knowledge/references/define.md) | one glossary term to add or refine |
-| `glossary-backfill` | [references/glossary-backfill.md](.agents/skills/quenching-knowledge/references/glossary-backfill.md) | a sweep of the whole bundle for missing glossary terms |
-| `import` | [references/import.md](.agents/skills/quenching-knowledge/references/import.md) | an external source (files, folders, URLs) to ingest as many docs |
-| `import-memory` | [references/import-memory.md](.agents/skills/quenching-knowledge/references/import-memory.md) | the host memory to drain into the bundle and clear |
-| `align` | [references/align.md](.agents/skills/quenching-knowledge/references/align.md) | forcing `/docs/` into the canonical bundle |
-| `status` | [references/status.md](.agents/skills/quenching-knowledge/references/status.md) | a read-only report of where the bundle stands |
-| `documentation-plan` | [references/documentation-plan.md](.agents/skills/quenching-knowledge/references/documentation-plan.md) | a sourced documentation plan with reader journeys |
-| `documentation-write` | [references/documentation-write.md](.agents/skills/quenching-knowledge/references/documentation-write.md) | pages to write from a documentation plan |
-| `documentation-review` | [references/documentation-review.md](.agents/skills/quenching-knowledge/references/documentation-review.md) | a score of documentation pages against the quality gate |
-| `documentation-build` | [references/documentation-build.md](.agents/skills/quenching-knowledge/references/documentation-build.md) | the Zensical site layer, navigation or strict build |
-| `documentation-produce` | [references/documentation-produce.md](.agents/skills/quenching-knowledge/references/documentation-produce.md) | the whole documentation pipeline in one run |
+| `add` | [references/add.md](.claude/skills/quenching-knowledge/references/add.md) | a new concept doc (standard, table, announcement) for the bundle |
+| `learn` | [references/learn.md](.claude/skills/quenching-knowledge/references/learn.md) | one piece of generic knowledge to record in `concepts/` |
+| `define` | [references/define.md](.claude/skills/quenching-knowledge/references/define.md) | one glossary term to add or refine |
+| `glossary-backfill` | [references/glossary-backfill.md](.claude/skills/quenching-knowledge/references/glossary-backfill.md) | a sweep of the whole bundle for missing glossary terms |
+| `import` | [references/import.md](.claude/skills/quenching-knowledge/references/import.md) | an external source (files, folders, URLs) to ingest as many docs |
+| `import-memory` | [references/import-memory.md](.claude/skills/quenching-knowledge/references/import-memory.md) | the host memory to drain into the bundle and clear |
+| `align` | [references/align.md](.claude/skills/quenching-knowledge/references/align.md) | forcing `/docs/` into the canonical bundle |
+| `status` | [references/status.md](.claude/skills/quenching-knowledge/references/status.md) | a read-only report of where the bundle stands |
+| `documentation-plan` | [references/documentation-plan.md](.claude/skills/quenching-knowledge/references/documentation-plan.md) | a sourced documentation plan with reader journeys |
+| `documentation-write` | [references/documentation-write.md](.claude/skills/quenching-knowledge/references/documentation-write.md) | pages to write from a documentation plan |
+| `documentation-review` | [references/documentation-review.md](.claude/skills/quenching-knowledge/references/documentation-review.md) | a score of documentation pages against the quality gate |
+| `documentation-build` | [references/documentation-build.md](.claude/skills/quenching-knowledge/references/documentation-build.md) | the Zensical site layer, navigation or strict build |
+| `documentation-produce` | [references/documentation-produce.md](.claude/skills/quenching-knowledge/references/documentation-produce.md) | the whole documentation pipeline in one run |
 
 
 **Done when:** exactly one flow is chosen, with its input.
 
 ### 2. Load the flow and follow it
 Run `components_read` on the chosen flow's reference from the table above, with its
-`.agents/skills/quenching-knowledge/references/` path. Read the flow whole, once, and follow it from its own `## Workflow` with the input from step 1:
+`.claude/skills/quenching-knowledge/references/` path. Read the flow whole, once, and follow it from its own `## Workflow` with the input from step 1:
 its steps, `Done when:` lines and invariants bind this run exactly as they bound the standalone
 command. A `/quenching-knowledge <flow>` the flow names as the next step is this router called with that flow, and a conductor reaches the same flow by calling this skill with the flow name and the input.
 **Done when:** the flow ran to its own `Done when:`, or stopped on its own stop condition.

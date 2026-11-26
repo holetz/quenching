@@ -555,6 +555,18 @@ def build_tree(source: Path, target: Path, modules: list[str], harnesses: list[s
                       if (kept(published + "/" + name, bridge.SKILL_FILE)
                           or f"{SKILLS}/{name}" in kept_before)
                       and (source / "skills" / name).is_dir()]
+    # The source cites a skill's files at their generic home, `.agents/skills/<name>/`; a skill
+    # published elsewhere must cite where it now lives, or every flow a router reads by path is
+    # missing. Only the generated skills move: a target's own skill stays under `.agents/skills`.
+    moved = sorted({name for name, _ in skill_sources}, key=len, reverse=True)
+
+    def relocated(text: str) -> str:
+        if published == SKILLS:
+            return text
+        for skill in moved:
+            text = text.replace(f"{SKILLS}/{skill}/", f"{published}/{skill}/")
+        return text
+
     for name, chosen in skill_sources:
         if name in skill_names:
             continue
@@ -586,10 +598,11 @@ def build_tree(source: Path, target: Path, modules: list[str], harnesses: list[s
                 if from_claude and rel == "SKILL.md":
                     data = _without_marker(data.decode("utf-8"), name).encode("utf-8")
             elif rel == "SKILL.md":
-                data = translate.skill_document(path.read_text(encoding="utf-8"), name,
-                                                narrow, mount).encode("utf-8")
+                data = relocated(translate.skill_document(path.read_text(encoding="utf-8"), name,
+                                                          narrow, mount)).encode("utf-8")
             elif path.suffix == ".md":
-                data = translate.reference_document(path.read_text(encoding="utf-8")).encode("utf-8")
+                data = relocated(translate.reference_document(
+                    path.read_text(encoding="utf-8"))).encode("utf-8")
             else:
                 data = _read(path)
             files[rel] = (data, _mode(path))

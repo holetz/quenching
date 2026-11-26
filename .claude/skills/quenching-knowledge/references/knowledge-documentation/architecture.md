@@ -5,7 +5,7 @@ seven intermediate contracts that make a documentation run reproducible.
 
 ## Contents
 
-`components_read(path=".agents/skills/quenching-knowledge/references/knowledge-documentation/architecture.md")`
+`components_read(path=".claude/skills/quenching-knowledge/references/knowledge-documentation/architecture.md")`
 returns the heading index; `--sections <name>` addresses one.
 
 <!-- rules -->

@@ -38,15 +38,15 @@ returns `STATE: blocked` with `NOTE: needs-human:` carrying it.
 
 | Flow | Reference | Picked when |
 | --- | --- | --- |
-| `align` | [references/align.md](.agents/skills/quenching-proof/references/align.md) | converging the proof surface from its test gate |
-| `status` | [references/status.md](.agents/skills/quenching-proof/references/status.md) | a read-only report of the proof front |
-| `layer-new` | [references/layer-new.md](.agents/skills/quenching-proof/references/layer-new.md) | minting ONE named proof test layer |
+| `align` | [references/align.md](.claude/skills/quenching-proof/references/align.md) | converging the proof surface from its test gate |
+| `status` | [references/status.md](.claude/skills/quenching-proof/references/status.md) | a read-only report of the proof front |
+| `layer-new` | [references/layer-new.md](.claude/skills/quenching-proof/references/layer-new.md) | minting ONE named proof test layer |
 
 **Done when:** exactly one flow is chosen, with its input.
 
 ### 2. Load the flow and follow it
 Run `components_read` on the chosen flow's reference from the table above, with its
-`.agents/skills/quenching-proof/references/` path. Read the flow whole, once, and follow it from its own `## Workflow` with the input from step 1:
+`.claude/skills/quenching-proof/references/` path. Read the flow whole, once, and follow it from its own `## Workflow` with the input from step 1:
 its steps, `Done when:` lines and invariants bind this run exactly as they bound the standalone
 command. A `/quenching-proof <flow>` the flow names as the next step is this router called with that flow, and a conductor reaches the same flow by calling this skill with the flow name and the input.
 **Done when:** the flow ran to its own `Done when:`, or stopped on its own stop condition.

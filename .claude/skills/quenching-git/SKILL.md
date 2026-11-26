@@ -38,17 +38,17 @@ returns `STATE: blocked` with `NOTE: needs-human:` carrying it.
 
 | Flow | Reference | Picked when |
 | --- | --- | --- |
-| `branch` | [references/branch.md](.agents/skills/quenching-git/references/branch.md) | isolation for a piece of work: a worktree or branch |
-| `commit` | [references/commit.md](.agents/skills/quenching-git/references/commit.md) | committing what is already staged |
-| `merge` | [references/merge.md](.agents/skills/quenching-git/references/merge.md) | merging a branch into its base |
-| `sync` | [references/sync.md](.agents/skills/quenching-git/references/sync.md) | rebasing the work branch onto the latest base |
-| `pr-create` | [references/pr-create.md](.agents/skills/quenching-git/references/pr-create.md) | pushing the branch and opening a PR |
-| `pr-review` | [references/pr-review.md](.agents/skills/quenching-git/references/pr-review.md) | addressing a PR's unresolved review threads |
-| `commit-incremental` | [references/commit-incremental.md](.agents/skills/quenching-git/references/commit-incremental.md) | turning pending worktree changes into small cohesive commits |
-| `push` | [references/push.md](.agents/skills/quenching-git/references/push.md) | the request names `push`: publishing a branch without a PR |
-| `revert` | [references/revert.md](.agents/skills/quenching-git/references/revert.md) | the request names `revert`: undoing one known commit into a new commit |
-| `cleanup` | [references/cleanup.md](.agents/skills/quenching-git/references/cleanup.md) | the request names `cleanup`: pruning merged or gone branches and orphan worktrees |
-| `pr-status` | [references/pr-status.md](.agents/skills/quenching-git/references/pr-status.md) | a read-only read of a PR's checks, reviews and mergeability |
+| `branch` | [references/branch.md](.claude/skills/quenching-git/references/branch.md) | isolation for a piece of work: a worktree or branch |
+| `commit` | [references/commit.md](.claude/skills/quenching-git/references/commit.md) | committing what is already staged |
+| `merge` | [references/merge.md](.claude/skills/quenching-git/references/merge.md) | merging a branch into its base |
+| `sync` | [references/sync.md](.claude/skills/quenching-git/references/sync.md) | rebasing the work branch onto the latest base |
+| `pr-create` | [references/pr-create.md](.claude/skills/quenching-git/references/pr-create.md) | pushing the branch and opening a PR |
+| `pr-review` | [references/pr-review.md](.claude/skills/quenching-git/references/pr-review.md) | addressing a PR's unresolved review threads |
+| `commit-incremental` | [references/commit-incremental.md](.claude/skills/quenching-git/references/commit-incremental.md) | turning pending worktree changes into small cohesive commits |
+| `push` | [references/push.md](.claude/skills/quenching-git/references/push.md) | the request names `push`: publishing a branch without a PR |
+| `revert` | [references/revert.md](.claude/skills/quenching-git/references/revert.md) | the request names `revert`: undoing one known commit into a new commit |
+| `cleanup` | [references/cleanup.md](.claude/skills/quenching-git/references/cleanup.md) | the request names `cleanup`: pruning merged or gone branches and orphan worktrees |
+| `pr-status` | [references/pr-status.md](.claude/skills/quenching-git/references/pr-status.md) | a read-only read of a PR's checks, reviews and mergeability |
 
 **`push`, `revert` and `cleanup` run only on an explicit mention.** The human's request must name the flow; a request picked by stage or by description never chooses one of them, because each publishes, rewrites the record or deletes refs.
 
@@ -56,7 +56,7 @@ returns `STATE: blocked` with `NOTE: needs-human:` carrying it.
 
 ### 2. Load the flow and follow it
 Run `components_read` on the chosen flow's reference from the table above, with its
-`.agents/skills/quenching-git/references/` path. Read the flow whole, once, and follow it from its own `## Workflow` with the input from step 1:
+`.claude/skills/quenching-git/references/` path. Read the flow whole, once, and follow it from its own `## Workflow` with the input from step 1:
 its steps, `Done when:` lines and invariants bind this run exactly as they bound the standalone
 command. A `/quenching-git <flow>` the flow names as the next step is this router called with that flow, and a conductor reaches the same flow by calling this skill with the flow name and the input.
 **Done when:** the flow ran to its own `Done when:`, or stopped on its own stop condition.

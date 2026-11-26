@@ -44,7 +44,7 @@ hand or their absence is stated.
 
 Write the draft to `.quenching/handoff/<name>` with the Write tool, `<name>` any file name: that
 path is the sanctioned ephemeral location. Follow
-`.agents/skills/quenching-handoff/references/template.md` section by section, for the fixed focus:
+`.claude/skills/quenching-handoff/references/template.md` section by section, for the fixed focus:
 `## Last Request` copies the facts' `lastUserMessage` verbatim, and a closing `## Facts` lists the
 branch, the spec, the files and the commits exactly as step 2 returned them. Reference existing
 PRDs, plans, ADRs, issues, commits, diffs, or other artifacts by path or URL instead of duplicating

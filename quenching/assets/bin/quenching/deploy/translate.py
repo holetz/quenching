@@ -132,6 +132,14 @@ def _with_mcp(value: str, enumerate_all: bool, mount: frozenset[str] | None = No
                   else [prefix])
     else:
         wanted = [f"{prefix}__{tool}" for tool in tools]
+    # A grant re-read from an already translated copy (the payload's agents, never narrowed) may
+    # carry tools a named mount does not publish; they go, or a target-local deploy keeps them
+    # and its `--check` disagrees with the source forever.
+    hidden = ({f"{prefix}__{tool}" for tool in catalog.tool_names()
+               if catalog.pillar_of(tool) not in mount} if mount is not None else set())
+    if hidden & set(names):
+        names = [name for name in names if name not in hidden]
+        value = ", ".join(names)
     missing = [name for name in wanted if name not in names]
     return ", ".join([value, *missing]) if missing else value
 

@@ -9,7 +9,7 @@ target-repository pipeline).
 
 This conductor coordinates the four sibling stages through the `Skill` tool and owns no writes.
 The shared contracts are in
-[knowledge-documentation/quality.md](.agents/skills/quenching-knowledge/references/knowledge-documentation/quality.md)
+[knowledge-documentation/quality.md](.claude/skills/quenching-knowledge/references/knowledge-documentation/quality.md)
 and the cycle authorization wording is in
 [align/convergence.md](.agents/quenching/references/align/convergence.md) §The cycle-authorization contract.
 
