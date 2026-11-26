@@ -7,7 +7,7 @@ tags: [architecture, deploy, installation, agents, skills, bridge]
 timestamp: 2026-11-25
 audience: both
 authority: current
-source: deploy-mode implementation (2026-10-28); spec 2126, spec 2160, spec 2168, spec 2174 (absorbs surface-translation.md), spec 314 (harness approvals), spec 416 (MCP replaces the covered cq grants); retired with surface-translation.md (spec 2174, 2026-11-03); lineage in ADR 0017 and ADR 0019
+source: deploy-mode implementation (2026-10-28); spec 2126, spec 2160, spec 2168, spec 2174 (absorbs surface-translation.md), spec 314 (harness approvals), spec 416 (MCP replaces the covered cq grants), spec 539; retired with surface-translation.md (spec 2174, 2026-11-03); lineage in ADR 0017 and ADR 0019
 maintainer: quenching
 ---
 
@@ -97,7 +97,10 @@ target). `--check` reports both (exit 1). `--write` applies updates but refuses 
 (`ct-deploy-edited`, exit 2) and writes nothing, because regenerating it would discard work; the
 edit belongs in a target-owned skill or in the quenching source, and `--force` discards it on
 purpose. A manifest entry without a hash cannot tell the two apart and is read as `update`; so is
-an entry recording `"source"`, where `--check` still reports a stale copy by its bytes.
+an entry recording `"source"`, where `--check` still reports a stale copy by its bytes. On the
+delete path — an owned file leaving the tree, and `--remove` — a `"source"` entry has no source
+left to compare with, so the commit is the record: a file git reports as differing from `HEAD`
+(modified, staged or untracked) is `edited`, and one equal to `HEAD` is a `delete`.
 
 A **tracked mirror of a module outside the selection** is kept in step with the source. A skill
 folder carrying its `SKILL.md`, or a package carrying a `.py`, that the target already holds for a
@@ -118,7 +121,8 @@ carries `installedVersion` and a warning naming both, so release lag reads apart
 `cq deploy --target <repo> --remove` plans removing the whole surface (exit 1 while there is
 something to remove); `--remove --write` does it. Each owned file that still holds its recorded
 bytes is deleted, and directories it leaves empty go with it; an `edited` file is **kept** and
-reported, becoming the target's own file, unless `--force`. Only the hooks and keys a past deploy
+reported, becoming the target's own file, unless `--force` — in the source repository too, where
+an edit is read against `HEAD` (§Selection and the manifest). Only the hooks and keys a past deploy
 merged leave `.claude/settings.json`, which is deleted only when that leaves it empty. The manifest
 goes last. Seeds — `AGENTS.md`, `.agents/quenching.json` — the target's own skills and `/docs/`
 are never owned, so never removed. A target without a manifest refuses (`ct-deploy-remove`, exit 2):
