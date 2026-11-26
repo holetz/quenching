@@ -75,11 +75,12 @@ class TheHookStandard(unittest.TestCase):
 
 
 class TheSetupStandard(unittest.TestCase):
-    def test_adopt_is_the_third_preparation_entry_point(self):
+    def test_adopt_and_the_copilot_setup_are_the_preparation_entry_points(self):
         body = text("docs/standards/workflows/worktree-setup.md")
         self.assertIn("cq git worktree adopt", body)
         self.assertIn("once per worktree the harness cut", body)
-        self.assertIn("no second entry point outside that set", body)
+        self.assertIn("copilot-setup-steps.yml", body)
+        self.assertIn("No other entry point exists", body)
 
     def test_the_adopted_tree_shares_the_declared_regenerable_directories(self):
         body = text("docs/standards/workflows/worktree-setup.md")

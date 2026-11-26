@@ -71,6 +71,18 @@ def _projections_option(target: Path) -> tuple[list[str], dict | None]:
     return list(dict.fromkeys(raw)), None
 
 
+def _worktree_setup(target: Path) -> str | None:
+    """`shared.worktreeSetup` from the repository layer: the command the setup workflow runs
+    verbatim. Read through `repository_document`, never the merged envelope, for the same reason
+    the projections are: a generated file belongs to the repository, not to the machine."""
+    document, _info, refusal = repository_document(str(target))
+    if refusal:
+        return None
+    shared = (document or {}).get("shared")
+    value = shared.get("worktreeSetup") if isinstance(shared, dict) else None
+    return value.strip() if isinstance(value, str) and value.strip() else None
+
+
 def _identity_hooks_warnings(target: Path) -> list[str]:
     """A declared email allowlist with the shipped hooks inactive in this clone. Deploy writes no
     git configuration: activating the hooks stays a per-machine choice."""
@@ -770,7 +782,8 @@ def main(argv: list[str]) -> int:
         built = deploy_tree.build_tree(deploy_tree.source_root(), target, modules, harnesses,
                                        runtime, profiles, mcp=mcp, python=python,
                                        hooks_python=hooks_python, projections=projections,
-                                       workspace=workspace_declared)
+                                       workspace=workspace_declared,
+                                       worktree_setup=_worktree_setup(target))
     except (OSError, ValueError) as exc:
         return refuse({"code": "ct-deploy-source", "message": str(exc),
                        "remedy": "run deploy from a complete quenching checkout or wheel"},

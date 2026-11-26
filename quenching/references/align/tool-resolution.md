@@ -52,7 +52,7 @@ no tool of the catalog.
 ### Where a body still writes the CLI
 
 1. **The verb has no tool**: the exceptions of `mcp/coverage.py` (`cq deploy`, `cq modules`,
-   `cq specs migrate`, `cq specs export`, `cq specs serve`,
+   `cq specs migrate`, `cq specs export`, `cq specs serve`, `cq specs delegate`,
    `cq specs claim take`, …) and any verb the server's `tools/list` does not name.
 2. **A line marked `cli: <reason>`** — `<!-- cli: <reason> -->` at the end of the line, or alone on
    the line before a block (it then covers that whole paragraph or fenced block), and

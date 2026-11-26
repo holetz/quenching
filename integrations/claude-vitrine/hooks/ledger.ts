@@ -15,7 +15,7 @@ const WRITE = new Set([
   'reconcile', 'discover', 'new', 'link', 'epic', 'scrub', 'push', 'artifact', 'handoff', 'sync', 'migrate', 'release',
 ])
 
-const writes = (verb: string, rest: string) => WRITE.has(verb) || (verb === 'section' && /(?:^|\s)--write\b/.test(rest))
+const writes = (verb: string, rest: string) => WRITE.has(verb) || (verb === 'section' && /(?:^|\s)--write\b/.test(rest)) || (verb === 'delegate' && /(?:^|\s)--send\b/.test(rest))
 
 /** MCP tools of the `quenching` server that only read; any other `specs_*` tool writes. */
 const READ_TOOLS = new Set(['list', 'status', 'show', 'section', 'next', 'epic_progress'])

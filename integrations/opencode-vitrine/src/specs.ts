@@ -484,7 +484,8 @@ const WRITE = new Set([
 ])
 
 const writes = (verb: string, rest: string) =>
-  WRITE.has(verb) || (verb === "section" && /(?:^|\s)--write\b/.test(rest))
+  WRITE.has(verb) || (verb === "section" && /(?:^|\s)--write\b/.test(rest)) ||
+  (verb === "delegate" && /(?:^|\s)--send\b/.test(rest))
 
 /** As specs que um comando `cq` nomeia, cada uma com o peso do verbo que a nomeou. */
 export function parse(command: string): { hits: { id: number; kind: Kind }[]; commit: boolean } {

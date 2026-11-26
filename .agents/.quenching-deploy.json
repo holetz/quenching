@@ -381,6 +381,8 @@
 
     ".agents/quenching/assets/bin/quenching/specs/commands/create.py": "source",
 
+    ".agents/quenching/assets/bin/quenching/specs/commands/delegate.py": "source",
+
     ".agents/quenching/assets/bin/quenching/specs/commands/deps.py": "source",
 
     ".agents/quenching/assets/bin/quenching/specs/commands/doctor.py": "source",
@@ -1120,6 +1122,8 @@
     ".github/instructions/command-fork.instructions.md": "source",
 
     ".github/instructions/import-memory-models.instructions.md": "source",
+
+    ".github/workflows/copilot-setup-steps.yml": "source",
 
     ".opencode/agents/quenching-spec-orchestrator.md": "source",
 

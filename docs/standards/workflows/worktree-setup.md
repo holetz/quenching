@@ -69,8 +69,11 @@ isolation. `/quenching-specs execute` reports the output and the exit code, and 
 happened. A command whose first token does not resolve is reported as not run, for that reason,
 rather than executed and blamed on the shell.
 
-Only a verb that prepares a checkout runs it; there is no second entry point outside that set
-(`acquire`, `add`, `adopt`). A command that cuts no tree never runs it.
+Only a verb that prepares a checkout runs it (`acquire`, `add`, `adopt`), plus the generated
+Copilot setup workflow: `.github/workflows/copilot-setup-steps.yml` runs the same command verbatim
+before a cloud session starts, so the delegated build begins in the same prepared tree
+([spec-delegation.md](spec-delegation.md)). No other entry point exists; a command that cuts no
+tree never runs it.
 
 ## The setup must be idempotent
 

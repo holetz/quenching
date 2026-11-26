@@ -406,7 +406,7 @@ def measure_skills(root: pathlib.Path) -> dict:
 
 
 # --- 1.5 · agents, .github/, .vscode/ and the cost sources -------------------------------------
-GITHUB_FORMATS = ("instructions", "agents", "copilot-setup-steps.yml")
+GITHUB_FORMATS = ("instructions", "agents", "workflows/copilot-setup-steps.yml")
 VSCODE_KEYS = ("files.exclude", "search.exclude", "chat.agent.maxRequests",
                "chat.tools.terminal.autoApprove")
 # Every directory the editor ships under: stable, Insiders, and their remote servers. The client is
