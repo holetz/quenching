@@ -445,6 +445,19 @@ class Deploy(unittest.TestCase):
         self.assertEqual(0, self.run_deploy("--remove", "--write")[0])
         self.assertFalse((self.target / ".agents/quenching").exists())
 
+    def test_a_package_left_with_only_bytecode_is_swept_and_a_user_file_survives(self):
+        """A module a newer payload dropped can leave `__pycache__` with no owner; Python would
+        import that directory as an empty namespace and the MCP catalog would try it."""
+        self.assertEqual(0, self.run_deploy("--modules", "core", "--write")[0])
+        packages = self.target / ".agents/quenching/assets/bin/quenching"
+        (packages / "codex/__pycache__").mkdir(parents=True)
+        (packages / "codex/__pycache__/cli.cpython-312.pyc").write_bytes(b"")
+        (packages / "mine/__pycache__").mkdir(parents=True)
+        (packages / "mine/notes.txt").write_text("keep me", encoding="utf-8")
+        self.assertEqual(0, self.run_deploy("--modules", "core", "--write")[0])
+        self.assertFalse((packages / "codex").exists())
+        self.assertTrue((packages / "mine/notes.txt").is_file())
+
     def test_remove_refuses_a_target_that_was_never_deployed(self):
         code, payload = self.run_deploy("--remove", "--write")
         self.assertEqual((2, "ct-deploy-remove"), (code, payload["code"]))
