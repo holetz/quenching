@@ -861,6 +861,23 @@ class Docs(PortalCase):
         self.assertEqual(body["site"], "http://127.0.0.1:8000/")
         self.assertEqual(body["commands"], [])
 
+    def test_an_installed_target_resolves_the_deployed_standard_and_falls_back_to_the_published_manual(self):
+        installed = ".agents/quenching/references/specs-align/plugin-configuration.md"
+        self.put(installed, "# configuration\n")
+        links = {row["id"]: row for row in self.get("/api/docs")[1]["links"]}
+        self.assertEqual((links["configuration"]["exists"], links["configuration"]["path"]), (True, installed))
+        self.assertNotIn("url", links["configuration"])
+        self.assertFalse(links["manual"]["exists"])
+        self.assertTrue(links["manual"]["url"].startswith("https://"))
+        self.assertFalse(links["index"]["exists"])
+        self.assertNotIn("url", links["index"])
+
+    def test_a_target_with_none_of_the_files_links_the_published_standard(self):
+        link = {row["id"]: row for row in self.get("/api/docs")[1]["links"]}["configuration"]
+        self.assertEqual(link["path"], "docs/standards/workflows/plugin-configuration.md")
+        self.assertFalse(link["exists"])
+        self.assertTrue(link["url"].startswith("https://"))
+
     def test_no_site_url_is_none_and_a_non_http_one_is_ignored(self):
         self.assertIsNone(self.get("/api/docs")[1]["site"])
         self.put("zensical.toml", 'site_url = "javascript:alert(1)"\n')

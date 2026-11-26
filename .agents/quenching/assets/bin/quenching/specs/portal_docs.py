@@ -10,10 +10,17 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
+_REPOSITORY = "https://github.com/holetz/quenching/blob/main/"
+# (id, label, candidate paths in the target — the source repository's first, the deployed copy next,
+# published url when no candidate exists). The deploy ships neither the manual nor `docs/`, so a
+# target resolves the installed copy or falls back to the published page.
 LINKS = (
-    ("manual", "Manual do produto", "quenching/README.md"),
-    ("index", "Índice da documentação", "docs/index.md"),
-    ("configuration", "Padrão de configuração", "docs/standards/workflows/plugin-configuration.md"),
+    ("manual", "Manual do produto", ("quenching/README.md",), _REPOSITORY + "quenching/README.md"),
+    ("index", "Índice da documentação", ("docs/index.md",), None),
+    ("configuration", "Padrão de configuração",
+     ("docs/standards/workflows/plugin-configuration.md",
+      ".agents/quenching/references/specs-align/plugin-configuration.md"),
+     _REPOSITORY + "docs/standards/workflows/plugin-configuration.md"),
 )
 SKILL_DIRS = (".claude/skills", ".agents/skills")
 _SITE_URL = re.compile(r'^\s*site_url\s*=\s*"(https?://[^"\s]+)"', re.MULTILINE)
@@ -52,10 +59,18 @@ def _site(base: Path) -> str | None:
     return match.group(1) if match else None
 
 
+def _link(base: Path, ident: str, label: str, candidates: tuple[str, ...], url: str | None) -> dict:
+    """One link: the first candidate on disk; else the first one, absent, with the published `url`."""
+    found = next((rel for rel in candidates if (base / rel).is_file()), None)
+    row = {"id": ident, "label": label, "path": found or candidates[0], "exists": found is not None}
+    if found is None and url:
+        row["url"] = url
+    return row
+
+
 def docs_payload(root: str) -> tuple[int, dict]:
     """`(status, body)` for `GET /api/docs`."""
     base = Path(root)
-    links = [{"id": ident, "label": label, "path": path, "exists": (base / path).is_file()}
-             for ident, label, path in LINKS]
+    links = [_link(base, *row) for row in LINKS]
     return 200, {"ok": True, "target": root, "links": links, "site": _site(base),
                  "commands": _catalog(base)}
