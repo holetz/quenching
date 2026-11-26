@@ -51,5 +51,5 @@ carries its own protocol, and without `autonomous` it blocks a spec that still n
 
 ### 4. Relay
 Show its per-spec blocks and totals line unchanged. A spec in state `blocked`, `failed` or
-`continue` is named with its note and left for the human; never retry it here.
+`continue` is named with its note and left for the human; never retry it here. A spawn that ended without a report is not one of them: the orchestrator resumes it once from `specs_status` with the word `resume` before reporting.
 **Done when:** the report is shown and every non-`done` spec is named.

@@ -29,6 +29,10 @@ CLAUDE_SKILLS = ".claude/skills"
 CLAUDE_AGENTS = ".claude/agents"
 OPENCODE_AGENTS = ".opencode/agents"
 GITHUB_AGENTS = ".github/agents"
+# What the manifest records for a file in the plugin's own source repository instead of its sha256.
+# There every generated file is a function of a tracked source, so a per-file hash only makes two
+# PRs that change the same file conflict on its manifest line (spec 520).
+SOURCE_DERIVED = "source"
 MODULE_SHORT = {
     "quenching-specs": "specs",
     "quenching-git": "git",
@@ -76,6 +80,15 @@ class DeployError(ValueError):
 def source_root() -> Path:
     """The installed plugin root that carries `assets/`, `skills/` and `references/`."""
     return Path(__file__).resolve().parents[4]
+
+
+def self_hosted(target: Path) -> bool:
+    """The target is the plugin's source repository: it tracks the source the deploy builds from.
+
+    Decided by the target, never by which copy of `cq` runs, so the source launcher and the
+    vendored one write the same manifest.
+    """
+    return (target / "quenching" / "assets" / "modules.json").is_file()
 
 
 def _is_build(path: Path) -> bool:
@@ -569,6 +582,7 @@ def build_tree(source: Path, target: Path, modules: list[str], harnesses: list[s
         # created only when absent, never listed in the manifest, never drift-checked.
         seeds[".vscode/settings.json"] = workspace_snippet()
         seeds[TASKS_PATH] = tasks_snippet()
+    hosted = self_hosted(target)
     document = {
         "generator": "cq deploy",
         "version": VERSION,
@@ -578,7 +592,8 @@ def build_tree(source: Path, target: Path, modules: list[str], harnesses: list[s
         "harnesses": harnesses,
         "runtime": runtime,
         "skills": sorted(skill_names),
-        "files": {rel: hashlib.sha256(data).hexdigest() for rel, (data, _mode_) in sorted(tree.items())},
+        "files": {rel: SOURCE_DERIVED if hosted else hashlib.sha256(data).hexdigest()
+                  for rel, (data, _mode_) in sorted(tree.items())},
     }
     if folders:
         # The tracked mirrors of modules outside the selection, kept in step with the source.

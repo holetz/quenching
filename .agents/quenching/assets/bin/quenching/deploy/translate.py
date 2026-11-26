@@ -493,7 +493,23 @@ def copilot_agent_document(raw: str, name: str, narrow: bool = False,
     if fields.get("effort"):
         out.append(("reasoning-effort", scalar_value(fields["effort"])))
     out.extend([("include-custom-instructions", "true"), ("target", "github-copilot")])
-    return _frontmatter(out) + HEADER + "\n\n" + transform_platform(_body(body))
+    note = _shell_note(fields.get("tools", ""), narrow, mount) if "execute" in tools else ""
+    return _frontmatter(out) + HEADER + "\n\n" + note + transform_platform(_body(body))
+
+
+SHELL_NOTE = "**Shell on this client.** `execute` is not scoped here: run only commands under "
+
+
+def _shell_note(value: str, narrow: bool, mount: frozenset[str] | None) -> str:
+    """The `Bash(<prefix>:*)` grant `execute` cannot carry, kept as one line of text; empty for a
+    bare `Bash`, which the client's `execute` already matches."""
+    names = _grant_names(transform_tools(value, enumerate_mcp=True, narrow=narrow, mount=mount))
+    if "Bash" in names:
+        return ""
+    prefixes = [match.group(1).strip() for name in names if (match := SHELL_GRANT.match(name))]
+    if not prefixes:
+        return ""
+    return SHELL_NOTE + ", ".join(f"`{prefix}`" for prefix in dict.fromkeys(prefixes)) + ".\n\n"
 
 
 def agent_document(raw: str, name: str, narrow: bool = False,

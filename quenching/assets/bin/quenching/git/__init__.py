@@ -208,6 +208,10 @@ def build_parser() -> argparse.ArgumentParser:
                                     "configured provider reports them")
     pp.add_argument("--number", required=True, type=int, metavar="N", help="the PR's id")
     pp.add_argument("--json", action="store_true", help="machine-readable output")
+    pp = pr.add_parser("checks", help="read-only: a PR's checks as green|red|pending|none, their "
+                                      "names and, for none, why")
+    pp.add_argument("--url", required=True, metavar="URL", help="the PR's URL")
+    pp.add_argument("--json", action="store_true", help="machine-readable output")
     pp = pr.add_parser("record", help="stamp a spec's `pr` record with a PR opened elsewhere"
                                       "; checks --spec owns --head and the "
                                       "PR really publishes it")

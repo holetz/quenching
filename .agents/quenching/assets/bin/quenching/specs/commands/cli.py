@@ -230,6 +230,9 @@ def _add_next_and_epic(sub) -> None:
     sp.add_argument("--epic", help="a spec ID: its member specs ready to run now — "
                                    "dependencies done, approved or ready, not blocked")
     sp.add_argument("--limit", type=int, help="with --epic: at most N ready specs")
+    sp.add_argument("--autonomous", action="store_true",
+                    help="with --epic: also list the members below approved whose dependencies "
+                         "are done, as needsDevelop")
 
     sp = sub.add_parser("epic", help="the historical alias of `link add`")
     esub = sp.add_subparsers(dest="epic_cmd")
