@@ -818,6 +818,26 @@ class Audit(RepoCase):
         got = self._lowered()
         self.assertEqual([(e["severity"], e["kind"]) for e in got], [("fail", "gate-shrunk")])
 
+    def test_lowered_fails_a_gate_line_commented_or_neutralized_as_shrunk(self):
+        self._commit_file("scripts/verify_repo.sh", "# gate\nunset A B\nrun one\n", "gate")
+        _run(self.repo, "merge", "-q", "--ff-only", "spec/1")
+        for text, lost in (("# gate\n# unset A B\nrun one\n", "unset A B"),
+                           ("# gate\nunset A B\ntrue || run one\n", "run one"),
+                           ("# gate\nunset A B\nrun one || true\n", "run one")):
+            with self.subTest(text=text):
+                self._commit_file("scripts/verify_repo.sh", text, "neutralize")
+                got = self._lowered()
+                self.assertEqual([(e["severity"], e["kind"], e["detail"]) for e in got],
+                                 [("fail", "gate-shrunk", [lost])])
+
+    def test_lowered_lets_one_added_line_absolve_one_removed_line(self):
+        self._commit_file("scripts/verify_repo.sh", "# gate\nrun x\nrun x\n", "gate")
+        _run(self.repo, "merge", "-q", "--ff-only", "spec/1")
+        self._commit_file("scripts/verify_repo.sh", "# gate\nrun x y\n", "merge")
+        got = self._lowered()
+        self.assertEqual([(e["severity"], e["kind"], e["detail"]) for e in got],
+                         [("info", "strengthened", "run x y"), ("fail", "gate-shrunk", ["run x"])])
+
     def test_lowered_watches_a_toolchain_helper_the_gate_calls(self):
         self._commit_file("scripts/toolchain/helper.py", "one\ntwo\n", "helper")
         _run(self.repo, "merge", "-q", "--ff-only", "spec/1")
