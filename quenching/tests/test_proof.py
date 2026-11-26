@@ -291,6 +291,18 @@ class GeneratedProofReadme(unittest.TestCase):
             self.assertIn("\n<!-- quenching-proof-readme-end -->\n", first)
             self.assertEqual(first, render_readme_document(first, inventory))
 
+    def test_a_new_test_module_leaves_the_block_unchanged(self):
+        # Every PR adds tests; a count or a path in the block makes two open PRs conflict on it.
+        with tempfile.TemporaryDirectory() as directory:
+            inventory = self._inventory(Path(directory))
+            document = render_readme_document("", inventory)
+            grown = replace(inventory, test_modules=(
+                *inventory.test_modules, TestModule("unit/test_more.py", "unit", "unit", test_count=3)))
+            self.assertEqual(document, render_readme_document(document, grown))
+            self.assertNotIn("Test modules", document)
+            declared = replace(inventory, layers=(Layer("unit", "unit", "process", 2, True),))
+            self.assertNotEqual(document, render_readme_document(document, declared))
+
 
 class ProofLayerBodyContracts(unittest.TestCase):
     def test_mint_templates_cover_targets_with_and_without_a_collection_hook(self):

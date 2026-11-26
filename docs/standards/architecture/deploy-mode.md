@@ -4,7 +4,7 @@ title: Deploy mode — install the surface in a target repository
 description: "`cq deploy` materializes the selected quenching modules in a target's generic layer — AGENTS.md, .agents/skills and a vendored runtime — while Claude Code receives only a generated bridge under .claude; install is not alignment and never calls a model."
 resource: quenching/assets/bin/quenching/deploy/**, quenching/assets/bin/cq, quenching/assets/modules.json, quenching/pyproject.toml, quenching/assets/bin/quenching/components/commands/bridge.py, quenching/assets/bin/quenching/components/commands/migrate.py, integrations/opencode-vitrine/**
 tags: [architecture, deploy, installation, agents, skills, bridge]
-timestamp: 2026-11-24
+timestamp: 2026-11-25
 audience: both
 authority: current
 source: deploy-mode implementation (2026-10-28); spec 2126, spec 2160, spec 2168, spec 2174 (absorbs surface-translation.md), spec 314 (harness approvals), spec 416 (MCP replaces the covered cq grants); retired with surface-translation.md (spec 2174, 2026-11-03); lineage in ADR 0017 and ADR 0019
@@ -61,6 +61,15 @@ line between them as a clean merge, so only two branches that change the same fi
 conflict (and its deployed copy conflicts with it). JSON admits the blank lines, so every reader
 parses the file unchanged.
 
+**The source repository's manifest records no content hash.** When the target tracks the plugin's
+own source (`quenching/assets/modules.json` is present), every entry of `files` records the
+constant `"source"` instead of a sha256. There every generated file is a function of a tracked
+source, and two branches that change the same file would otherwise conflict on its manifest line
+on every merge (spec 520 measured 54 such conflicts in 150 syncs). The decision is the target's,
+never the launcher's, so the source `cq` and the vendored one write the same manifest. The proof
+README's generated block carries no test count and no test path for the same reason: every branch
+adds tests.
+
 ## Selection and the manifest
 
 `--modules` selects principal modules, not fronts. `core` means `specs,git,knowledge,components`
@@ -87,7 +96,8 @@ source moved on); one whose bytes no longer match the record is `edited` (someon
 target). `--check` reports both (exit 1). `--write` applies updates but refuses an `edited` file
 (`ct-deploy-edited`, exit 2) and writes nothing, because regenerating it would discard work; the
 edit belongs in a target-owned skill or in the quenching source, and `--force` discards it on
-purpose. A manifest entry without a hash cannot tell the two apart and is read as `update`.
+purpose. A manifest entry without a hash cannot tell the two apart and is read as `update`; so is
+an entry recording `"source"`, where `--check` still reports a stale copy by its bytes.
 
 A **tracked mirror of a module outside the selection** is kept in step with the source. A skill
 folder carrying its `SKILL.md`, or a package carrying a `.py`, that the target already holds for a

@@ -252,6 +252,23 @@ class Deploy(unittest.TestCase):
         self.assertTrue(any("0.0.1" in w for w in payload["warnings"]))
         self.assertEqual(0, self.run_deploy("--modules", "core", "--write")[0])
 
+    def test_the_source_repository_records_no_content_hash_so_its_manifest_never_conflicts(self):
+        # Two PRs that change the same generated file would each record a different sha256 on the
+        # same manifest line; in the source repository the line holds a constant instead.
+        self.write("quenching/assets/modules.json", "{}\n")
+        self.assertEqual(0, self.run_deploy("--modules", "core", "--write")[0])
+        owned = json.loads((self.target / ".agents/.quenching-deploy.json").read_text())["files"]
+        self.assertTrue(owned)
+        self.assertEqual({deploy_tree.SOURCE_DERIVED}, set(owned.values()))
+        skill = self.target / ".agents/skills/quenching-specs/SKILL.md"
+        skill.write_bytes(skill.read_bytes() + b"stale copy\n")
+        code, payload = self.run_deploy("--modules", "core", "--check")
+        self.assertEqual(1, code)
+        self.assertIn({"path": ".agents/skills/quenching-specs/SKILL.md", "change": "update"},
+                      payload["changes"])
+        self.assertEqual(0, self.run_deploy("--modules", "core", "--write")[0])
+        self.assertNotIn(b"stale copy", skill.read_bytes())
+
     def test_a_crlf_checkout_of_the_surface_is_clean_and_a_real_edit_is_still_edited(self):
         self.assertEqual(0, self.run_deploy("--modules", "core", "--write")[0])
         owned = json.loads((self.target / ".agents/.quenching-deploy.json").read_text())["files"]
