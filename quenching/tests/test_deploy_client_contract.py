@@ -114,6 +114,13 @@ class ClientContract(unittest.TestCase):
             self.assertEqual(data, bridge._canonical(path), rel)
         self.assertTrue((self.target / bridge.MANIFEST).is_file())
 
+    def test_a_bridge_write_after_the_deploy_leaves_the_marker_byte_identical(self):
+        """Two writers of one file must write the same bytes, or each flips the other's."""
+        marker = self.target / bridge.MANIFEST
+        before = marker.read_bytes()
+        bridge.write(self.target, bridge.plan(self.target))
+        self.assertEqual(before.decode("utf-8"), marker.read_text(encoding="utf-8"))
+
     def test_the_deploy_refuses_a_copilot_harness(self):
         code, payload = self.deploy("--harness", "copilot")
         self.assertEqual(2, code)

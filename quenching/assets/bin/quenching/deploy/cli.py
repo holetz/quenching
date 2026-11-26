@@ -28,7 +28,7 @@ MCP_MOUNTS = {"all", "specs"}  # `all` is `cq mcp`; `specs` is `cq specs mcp`; a
 MCP_DEFAULT_MOUNT = "all"
 SETTINGS = ".claude/settings.json"
 # Owned files another cq tool rewrites on purpose: `cq components bridge` restamps its marker with
-# its own generator line and hashes. They carry no human work, so a difference is never `edited`.
+# the same generator line and its hashes. They carry no human work, so a difference is never `edited`.
 TOOL_REWRITTEN = {deploy_tree.CLAUDE_SKILLS + "/.generated-files.json"}
 HOOKS_PATH = deploy_tree.PAYLOAD + "/assets/githooks"
 # The client families a repository may ask the deploy to project. `github` is the `.github/agents`

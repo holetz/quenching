@@ -151,6 +151,10 @@ def plan(repo: Path) -> dict:
     return {"expected": expected, "changes": changes, "conflicts": conflicts}
 
 
+#: The `generator` of `.claude/skills/.generated-files.json`; `cq deploy` writes the same line.
+GENERATOR = "cq components bridge"
+
+
 def write(repo: Path, result: dict) -> None:
     destination = repo / DESTINATION
     for change in result["changes"]:
@@ -166,7 +170,7 @@ def write(repo: Path, result: dict) -> None:
         path.write_bytes(result["expected"][change["path"]])
         os.chmod(path, 0o755 if _mode(repo / SOURCE / change["path"]) else 0o644)
     manifest = {
-        "generator": "cq components bridge",
+        "generator": GENERATOR,
         "source": SOURCE.as_posix(),
         "verifiedClaudeCode": VERIFIED_CLAUDE_CODE,
         "files": {rel: sha256(data) for rel, data in sorted(result["expected"].items())},
