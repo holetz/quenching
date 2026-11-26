@@ -798,6 +798,39 @@ class Publish(unittest.TestCase):
         self.assertIn('id="push-count"', html)
 
 
+class Settings(PortalCase):
+    """The configuration tab's route: the same carrier as `cq config schema --values`, read-only."""
+
+    def test_the_route_serves_the_schema_with_each_value_layer_and_file(self):
+        status, body = self.get("/api/settings")
+        self.assertEqual(status, 200)
+        self.assertTrue(body["ok"])
+        self.assertTrue(body["categories"] and body["keys"])
+        key = body["keys"][0]["key"]
+        self.assertEqual(set(body["values"][key]), {"value", "source", "path"})
+        self.assertEqual(set(body["layerPaths"]), {"project", "local"})
+        self.assertIn("pt-BR", body["keys"][0]["copy"])
+
+    def test_it_is_the_function_the_terminal_prints(self):
+        from quenching.config import schema_payload
+        want, _ = schema_payload(self.tmp, None, None, values=True)
+        self.assertEqual(self.get("/api/settings")[1], want)
+
+    def test_the_filters_narrow_and_an_unknown_category_is_refused(self):
+        status, body = self.get("/api/settings?category=autonomy&key=shared.autonomy")
+        self.assertEqual(status, 200)
+        self.assertTrue(body["keys"])
+        self.assertTrue(all(k["key"].startswith("shared.autonomy") for k in body["keys"]))
+        self.assertEqual([c["id"] for c in body["categories"]], ["autonomy"])
+        status, body = self.get("/api/settings?category=zz")
+        self.assertEqual((status, body["code"]), (404, "cq-config-category-unknown"))
+
+    def test_it_needs_the_token_and_no_write_route_exists(self):
+        self.assertEqual(self.portal.handle("GET", "/api/settings", HOST)[0], 401)
+        status, body = self.post("settings", {"key": "shared.worktreeSlots.max", "value": 3})
+        self.assertEqual((status, body["code"]), (404, "sp-portal-not-found"))
+
+
 class ReadOnly(PortalCase):
     read_only = True
 

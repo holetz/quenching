@@ -93,7 +93,7 @@ sees a 404 there and shows no project menu.
 
 ## Routes
 
-GET: `/api/config`, `/api/specs`, `/api/specs/<id>`, `/api/search`, `/api/epics`, `/api/human`, `/api/schedule`; static assets
+GET: `/api/config`, `/api/specs`, `/api/specs/<id>`, `/api/search`, `/api/epics`, `/api/human`, `/api/schedule`, `/api/settings`; static assets
 under `/`. With `--sessions` only, also `GET /api/sessions`; without the flag it is a 404
 (`sp-portal-not-found`) like any unknown route, and `/api/config` reports `sessions: false`. POST: `/api/capture`, `/api/section`, `/api/approve`, `/api/reorder`,
 `/api/discovery`, `/api/push`, each delegating to the CLI's own verb so CAS and refusals are the
@@ -120,6 +120,7 @@ The read payloads the page consumes are fixed field by field:
 - `GET /api/config` answers `{writable, readOnlyReason, ttlSeconds, stages[], headings[],
   sessions, chat, chatBudgetUsd}`.
 
+- `GET /api/settings[?category=<id>&key=<prefix>]` answers the payload of `cq config schema --values` (`categories[]`, `keys[]` with their pt-BR copy, `values{key: {value, source, path}}`, `layerPaths`), built by the same `config.schema_payload`; an unknown category is a 404 `cq-config-category-unknown`. It is read-only: the Configuração tab (`settings.js`, its own script and `settings.css`, called by `app.js` for the `#/settings` route) has no POST route behind it, and writing configuration stays in `cq config set`.
 - `GET /api/schedule` answers `{ok, fetchedAt, cycle, nodes, criticalPath}` as `cq specs schedule`
   derives it over the snapshot, each node carrying the portal's `stage`; the Gantt page (`#/gantt`)
   only draws it, as SVG built with `createElementNS`, and recomputes no date. It is read-only:

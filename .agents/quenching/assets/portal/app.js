@@ -121,6 +121,7 @@
     epics: ["M8 2l6 3-6 3-6-3 6-3Z", "M2 8l6 3 6-3", "M2 11l6 3 6-3"],
     gantt: ["M2.5 3.5h6", "M5.5 8h6", "M8.5 12.5h5"],
     sessions: ["M2.5 3h11v10h-11z", "M5 6l2.5 2L5 10", "M8.5 10.5H11"],
+    settings: ["M2.5 4.5h11", "M2.5 8h11", "M2.5 11.5h11", "M5.5 3v3", "M10.5 6.5v3", "M6.5 10v3"],
     chat: ["M2.5 3h11v8H7l-3 2.5V11H2.5z"],
     search: ["M7 12A5 5 0 1 0 7 2a5 5 0 0 0 0 10Zm7 2-3.5-3.5"],
     theme: ["M8 14A6 6 0 1 0 8 2a6 6 0 0 0 0 12Zm0-12v12", "M8 5h3.6", "M8 8h4.9", "M8 11h3.6"],
@@ -1892,6 +1893,7 @@
     else if (route.view === "human") content = viewHuman();
     else if (route.view === "gantt") content = await viewGantt();
     else if (route.view === "epics") content = viewEpics();
+    else if (route.view === "settings") content = await window.QuenchingSettings.view({ h, api, emptyState });
     else if (route.view === "sessions") content = state.sessionsOn ? viewSessions()
       : emptyState("Sessões desligadas", "Este servidor não foi iniciado com --sessions.", h("a", { class: "ghost", href: "#/board" }, "Voltar ao board"));
     else if (route.view === "chat") content = state.chatOn ? viewChat()

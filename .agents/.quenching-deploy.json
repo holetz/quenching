@@ -459,6 +459,8 @@
 
     ".agents/quenching/assets/bin/quenching/specs/portal.py": "source",
 
+    ".agents/quenching/assets/bin/quenching/specs/portal_settings.py": "source",
+
     ".agents/quenching/assets/bin/quenching/specs/release.py": "source",
 
     ".agents/quenching/assets/bin/quenching/specs/schema.py": "source",
@@ -558,6 +560,10 @@
     ".agents/quenching/assets/portal/app.js": "source",
 
     ".agents/quenching/assets/portal/index.html": "source",
+
+    ".agents/quenching/assets/portal/settings.css": "source",
+
+    ".agents/quenching/assets/portal/settings.js": "source",
 
     ".agents/quenching/assets/specs/schema.json": "source",
 

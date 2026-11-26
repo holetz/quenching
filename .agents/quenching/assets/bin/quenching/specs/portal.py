@@ -68,6 +68,7 @@ from quenching.specs.parse.epics import (derive_epic, parse_items, presentation_
 from quenching.specs.parse.fields import set_frontmatter_record
 from quenching.specs.parse.records import spec_records
 from quenching.specs.parse.sections import ready_report, section_state
+from quenching.specs.portal_settings import settings_payload
 from quenching.specs.parse.tasks import task_progress
 from quenching.specs.schema import canonical_headings
 
@@ -290,6 +291,8 @@ class Portal:
                                "sessions": self.sessions is not None,
                                "chat": self.chat is not None,
                                "chatBudgetUsd": self.chat["budget"] if self.chat else None})
+        if route == "settings":
+            return _json(*settings_payload(self.root, query))
         if route == "sessions" and self.sessions is not None:
             return _validated(headers, self._sessions(), volatile="generatedAt")
         if route.startswith("chat/") and self.chat is not None:

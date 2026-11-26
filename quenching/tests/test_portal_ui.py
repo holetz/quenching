@@ -47,18 +47,31 @@ READS = {"specs", "epics", "human", "sessions", "schedule", "config", "projects"
 
 
 class Assets(unittest.TestCase):
-    def test_the_page_references_only_the_two_local_assets(self):
+    def test_the_settings_tab_is_read_only_routed_linked_and_builds_no_html(self):
+        js = (ROOT / "settings.js").read_text(encoding="utf-8")
+        self.assertIn('href="#/settings"', HTML)
+        self.assertLess(HTML.index("/settings.js"), HTML.index("/app.js"))
+        self.assertIn('route.view === "settings"', JS)
+        self.assertIn("window.QuenchingSettings.view(", JS)
+        self.assertIn('api("settings")', js)
+        for needle in ("innerHTML", "insertAdjacentHTML", "document.write", "POST", "body:",
+                       "X-Quenching-Token", "sessionStorage"):
+            with self.subTest(needle=needle):
+                self.assertNotIn(needle, js)
+
+    def test_the_page_references_only_local_assets(self):
         refs = re.findall(r'(?:src|href)="([^"]+)"', HTML)
         self.assertTrue(refs)
         for ref in refs:
             with self.subTest(ref=ref):
-                self.assertTrue(ref.startswith("#") or ref in ("/app.css", "/app.js", "data:,"), ref)
+                self.assertTrue(ref.startswith("#") or ref in ("/app.css", "/app.js", "/settings.css", "/settings.js", "data:,"), ref)
 
     def test_the_page_has_no_external_url_and_no_inline_code(self):
         self.assertNotIn("http://", HTML)
         self.assertNotIn("https://", HTML)
         self.assertNotIn("<style", HTML)
-        self.assertEqual(len(re.findall(r"<script\b", HTML)), 1)
+        self.assertEqual(len(re.findall(r"<script\b", HTML)), 2)
+        self.assertEqual(len(re.findall(r"<script src=", HTML)), 2)
         self.assertNotIn("<script>", HTML)
         self.assertNotIn('style="', HTML)
 
