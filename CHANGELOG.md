@@ -13,6 +13,31 @@ owner: [`ci-cd/versioning-release.md`](docs/standards/ci-cd/versioning-release.m
 short version for a consumer: the version is published once, deliberately, as a release — never at a
 spec's own conclude — and `cq --version` is what answers which one you are running.
 
+## 7.18.3
+
+**O MCP publica uma tool por pilar e classe.** O servidor `quenching` deixa de listar uma tool por
+  verbo e passa a publicar `<pilar>_read`, `<pilar>_write` e `<pilar>_external`, com o argumento
+  obrigatório `verb` (#632). O `tools/list` completo cai de 115 tools e 75 KB para 23 tools e 23 KB,
+  e o mount `specs,git,components` fica com 8 tools e 11 KB, o que cabe em clientes que não listam
+  centenas de tools, como o Copilot.
+  - `verb="help"` (com `of=<verb>`) devolve os schemas dos verbos. Um argumento errado devolve o
+    schema do verbo, e um verbo desconhecido devolve `mcp-unknown-verb` com a lista.
+  - **Troca de nomes, sem aliases:** `git_state` vira `git_read(verb="state")` e `specs_push` vira
+    `specs_external(verb="push")`. Um alvo que roda `cq deploy --write` recebe as skills, as
+    references, os agentes e os grants já na forma nova. Quem chama as tools pelo nome antigo fora
+    dessa superfície precisa trocar a chamada.
+  - Os grants passam a valer por pilar e classe: um grant de um verbo abre a tool do grupo e os
+    outros verbos da mesma classe. Nunca abre outro pilar nem outra classe, e um agente read-only
+    continua read-only.
+
+**Timeout configurável dos comandos git.** `QUENCHING_GIT_TIMEOUT_S` (em segundos, positivo)
+  substitui o limite fixo de 60 s dos comandos git do `cq` e das sondas do `cq git preflight`. Um
+  comando que estoura o limite sai com 124 e uma mensagem que nomeia o limite e a variável (#633).
+
+**CI mais rápido.** O gate com coverage e piso passa a rodar na célula 3.13, com todos os workers do
+  runner, e a célula 3.11 roda a suíte inteira sem coverage. A parede do CI cai da mediana de 415 s
+  para cerca de 191 s, sem tirar garantias do gate (#634).
+
 ## 7.18.2
 
 **Slots de worktree no Windows sem privilégio de symlink.** O link de diretório dos `sharedPaths`
