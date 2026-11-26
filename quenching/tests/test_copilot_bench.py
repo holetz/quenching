@@ -76,7 +76,8 @@ class TheReader(unittest.TestCase):
     def test_the_insiders_directories_are_read_like_the_stable_ones(self):
         with tempfile.TemporaryDirectory() as tmp:
             home = pathlib.Path(tmp)
-            (home / ".vscode-insiders" / "extensions" / "ms.example-1.0").mkdir(parents=True)
+            (home / ".vscode-insiders" / "extensions" / "ms.example-1.0.0").mkdir(parents=True)
+            (home / ".vscode-insiders" / "extensions" / "ms.example-2.0.0").mkdir(parents=True)
             (home / ".config" / "Code - Insiders" / "logs" / "20260101T000000").mkdir(parents=True)
             (home / ".copilot" / "session-state").mkdir(parents=True)
             with mock.patch.object(copilot_bench, "home", return_value=home):
@@ -86,7 +87,17 @@ class TheReader(unittest.TestCase):
         self.assertEqual("present", states["vscode-insiders-logs"])
         self.assertEqual("absent", states["vscode-logs"])
         self.assertEqual(1, clients["extensions"]["count"])
-        self.assertIn("ms.example-1.0", clients["extensions"]["installed"])
+        self.assertEqual(2, clients["extensions"]["directories"])
+        self.assertEqual(["ms.example"], clients["extensions"]["installed"])
+
+    def test_two_installed_versions_are_one_extension_id(self):
+        self.assertEqual(
+            "anthropic.claude-code",
+            copilot_bench.extension_id("anthropic.claude-code-2.1.332-linux-x64"))
+        self.assertEqual(
+            "ms-python.vscode-python-envs",
+            copilot_bench.extension_id("ms-python.vscode-python-envs-1.45.2026112501-linux-x64"))
+        self.assertEqual("loose-name", copilot_bench.extension_id("loose-name"))
 
     def test_the_threshold_table_carries_value_source_and_date(self):
         for limit in copilot_bench.THRESHOLDS:
