@@ -1,6 +1,6 @@
 {
   "generator": "cq deploy",
-  "version": "7.17.0",
+  "version": "7.18.0",
   "source": "quenching",
   "modules": [
     "quenching-specs",

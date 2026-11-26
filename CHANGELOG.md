@@ -13,6 +13,60 @@ owner: [`ci-cd/versioning-release.md`](docs/standards/ci-cd/versioning-release.m
 short version for a consumer: the version is published once, deliberately, as a release — never at a
 spec's own conclude — and `cq --version` is what answers which one you are running.
 
+## 7.18.0
+
+**O quenching passa a funcionar no VS Code com o GitHub Copilot.** Uma bancada de testes mede o
+  quenching no cliente (#468). A montagem do MCP fica enxuta para caber no orçamento de ferramentas
+  dos clientes (#469). Os subagentes podem ser usados em qualquer harness (#487), e a projeção do
+  Copilot recebe as ferramentas declaradas no frontmatter, com a regra "sem MCP, use o `cq` pela
+  linha de comando" em todo agente publicado (#525). As regras por caminho chegam a todos os
+  clientes (#503). O workspace ganha configurações que reduzem o ruído de busca e as interrupções
+  (#470), e os slots ficam visíveis e protegidos no VS Code (#523). O acesso aos slots e ao store
+  irmão deixa de pedir confirmação em qualquer cliente (#474, #530). Há também medição de custo das
+  sessões do Copilot (#475), specs delegáveis ao agente de nuvem do Copilot com `cq specs delegate`
+  (#526) e a avaliação de uma extensão do VS Code (#536).
+
+**Cada skill é publicada uma vez só.** Com `--harness claude`, as skills geradas pelo deploy ficam
+  apenas em `.claude/skills` (o OpenCode também lê dali), e as cópias de `.agents/skills`
+  desaparecem. Com `--harness opencode` sozinho ou `none`, continuam em `.agents/skills`. O harness
+  `codex` e o executor Codex foram removidos (#295, #505).
+
+**O autopilot e o orchestrate perdem menos ciclos.** Um worker que morre por erro do provedor, ou
+  é cancelado sem relatório, passa a ser retomado pelo status, sem virar parada humana (#540). O
+  `specs next --epic --autonomous` lista como `needs-develop` os membros capturados (#535).
+  `cq git pr checks` diz se os checks estão verdes, vermelhos, pendentes ou ausentes, e por quê, e
+  o orchestrator re-integra a base nas irmãs antes de verificar (#544). O harness adota o worktree
+  que já criou em vez de cortar outro (#485), e o prefixo do prompt fica estável sob os hooks
+  (#481). O ruler do verifier separa reforço de rebaixamento do gate: acrescentar um token a uma
+  linha não reprova, mas comentar ou neutralizar a linha continua reprovando (#538, #553). O
+  develop pede antes do execute a autorização de épico para hook, settings, workflow, grant e gate
+  (#538). A guarda de co-autoria cobre trailers de outros agentes (#480).
+
+**O merge e o conclude ficam mais rígidos.** Com `shared.ci.enforce` relaxado, o merge lê o
+  registro que o gate gravou para o head do PR em vez de aceitar um exit declarado (#493, #529,
+  #531), e este repositório declara `when-present` (#548). O conclude commita docs e correções sem
+  tarefa, e o check 4 do verifier não reprova mais esses commits (#496). Conflitos no manifesto do
+  deploy e no README de prova têm receita (#500, #537). Uma task descopada pelo store não reprova
+  mais o check 2 (#502). O `verify:` de uma task não pode ser canalizado por `tail` ou `head` (#498).
+
+**O deploy fica mais seguro.** O deploy não apaga arquivo possuído que foi editado (#542). Também
+  não apaga arquivo sem commit quando a remoção falha (#552). O `--write` preserva os padrões do
+  `opencode.json` do checkout (#511), e o merge do manifesto preserva o `opencodeConfig` (#516). O
+  `--check` acusa espelho rastreado fora da seleção (#497).
+
+**O servidor MCP fica mais estrito e mais rápido.** Ele recusa argumento não declarado (#486), as
+  tools `specs_*` aceitam o id como texto ou número (#519) e o processo vive entre chamadas (#512).
+  O `cq specs record approved` pela CLI grava a data como o MCP (#533), e o `cq git pr create
+  --spec` grava o registro `pr` (#508).
+
+**Também:** o develop declara em `files:` os arquivos derivados (#495). A Validation não carrega
+  figura medida que nenhum verify recalcula (#506). O detector de mojibake aceita `?` em code span
+  de crase dupla (#507). O worktree de RED é removido sem `--force` (#534). A suíte isola o
+  `COPILOT_HOME` (#510), um timeout instável dos evals foi corrigido (#509) e o escopo `affected`
+  seleciona o teste de encoding (#547). A trajetória autônoma ganhou medição (#514), os testes do
+  quenching-cache rodam no Windows (#304), e o setup-uv, o ruff e o zensical foram atualizados
+  (#221, #222, #223).
+
 ## 7.17.0
 
 **Duas máquinas podem rodar o autopilot no mesmo repositório sem pegar a mesma spec.** O execute
