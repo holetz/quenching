@@ -5,8 +5,10 @@ specs and version-control workflow in one canonical, verifiable shape. It is not
 boundary: a command declared read-only does not contain an assistant that has a shell.
 
 quenching reaches a repository only through `cq deploy`, which installs the surface into that
-repository for Claude Code and OpenCode
-([ADR 0017](docs/decisions/0017-install-only-by-deploy.md)). The single editable source lives in
+repository for Claude Code, OpenCode and VS Code with GitHub Copilot
+([ADR 0017](docs/decisions/0017-install-only-by-deploy.md)). VS Code with GitHub Copilot reads the
+same generic layer and the generated Claude bridge; the client guide is
+[docs/how-to/work-in-vs-code.md](docs/how-to/work-in-vs-code.md). The single editable source lives in
 [`quenching/`](quenching/) ([source-layout](docs/standards/architecture/source-layout.md); the
 deploy contract is [deploy-mode](docs/standards/architecture/deploy-mode.md)). Four satellites that
 install into no repository sit beside it: the Claude Code band [`integrations/claude-hud/`](integrations/claude-hud/), the

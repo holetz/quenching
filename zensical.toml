@@ -25,6 +25,7 @@
       "how-to/drive-a-spec.md",
       "how-to/publish-the-docs-site.md",
       "how-to/set-up-a-machine-for-the-test-suite.md",
+      "how-to/work-in-vs-code.md",
     ] },
     { "Concepts" = [
       "documentation/index.md",
@@ -191,6 +192,7 @@
       "decisions/0018-retire-omnigent-and-source-manifest.md",
       "decisions/0019-router-skills-and-target-dialect-source.md",
       "decisions/0020-remove-the-codex-executor-and-harness.md",
+      "decisions/0021-no-vscode-extension.md",
     ] },
     "glossary.md",
   ]
