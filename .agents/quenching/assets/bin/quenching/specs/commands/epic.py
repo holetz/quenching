@@ -399,11 +399,15 @@ def cmd_next_epic(args, root: str, out: Emitter) -> int:
     if code is not None:
         return code
     order = {i["label"]: n for n, i in enumerate(d["items"])}
-    ready = sorted(d["ready"], key=lambda i: (
+    # Under declared autonomy a member the worker will develop first is eligible too.
+    develop = [i for i in d["items"] if i["status"] == "not-ready"] \
+        if getattr(args, "autonomous", False) else []
+    ready = sorted(d["ready"] + develop, key=lambda i: (
         i["status"] != "in-progress", _priority_rank(i["member"]["frontmatter"].get("priority"))[0],
         i["group"], order[i["label"]]))
     shown = ready[:limit] if limit else ready
     rows = [{**_row(i), "executing": i["status"] == "in-progress",
+             "needsDevelop": i["status"] == "not-ready",
              "priority": i["member"]["frontmatter"].get("priority") or None} for i in shown]
     left = [i for i in d["items"] if i["status"] != "done"]
     obj = {"ok": True, "spec": info["id"], "level": presentation_level(info),
