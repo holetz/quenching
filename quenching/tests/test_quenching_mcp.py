@@ -251,6 +251,20 @@ class Surface(unittest.TestCase):
         for tool in tools:
             self.assertEqual(tool["inputSchema"]["properties"]["root"], server.ROOT, tool["name"])
 
+    def test_property_descriptions_keep_the_first_clause_and_stay_under_a_ceiling(self):
+        self.assertEqual(catalog.first_sentence("a b. c d"), "a b.")
+        self.assertEqual(catalog.first_sentence("keep e.g. this; drop that"), "keep e.g. this")
+        self.assertEqual(catalog.first_sentence("no stop"), "no stop")
+        tools = catalog.surface(present=lambda name: True).list_tools()
+        texts = [p["description"] for t in tools
+                 for k, p in t["inputSchema"]["properties"].items()
+                 if k != "root" and "description" in p]
+        self.assertTrue(texts)
+        self.assertTrue(all("refused before any write" not in x for x in texts))
+        self.assertLessEqual(max(map(len, texts)), 200)
+        # measured 15057 chars after the cut (18276 before): a new long help must be shortened
+        self.assertLessEqual(sum(map(len, texts)), 15500)
+
     def test_tools_list_carries_the_catalog_and_the_specs_tools(self):
         tools = server.handle(rpc(2, "tools/list"), "/x", None,
                               catalog.surface())["result"]["tools"]

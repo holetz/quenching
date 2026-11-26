@@ -23,6 +23,7 @@ import importlib
 import importlib.util
 import json
 import os
+import re
 from importlib.machinery import SourceFileLoader
 from typing import NamedTuple
 
@@ -208,6 +209,17 @@ def _many(action: argparse.Action) -> bool:
     return isinstance(action, argparse._AppendAction) or action.nargs in ("+", "*")
 
 
+_SENTENCE_END = re.compile(r"(?<!\be\.g)(?<!\bi\.e)(?<!\betc)(?<!\bvs)[.!?](?=\s)|;\s")
+
+
+def first_sentence(text: str) -> str:
+    """The schema's description of one property: its first sentence or first `;` clause. The whole `--help` stays on
+    the CLI; the MCP schema is read to choose a tool, not to learn its edge cases."""
+    flat = " ".join(text.split())
+    end = _SENTENCE_END.search(flat)
+    return flat[:end.start() + (end.group()[0] != ";")].rstrip() if end else flat
+
+
 def _property(action: argparse.Action) -> dict:
     if isinstance(action, (argparse._StoreTrueAction, argparse._StoreFalseAction)):
         prop = {"type": "boolean"}
@@ -219,8 +231,9 @@ def _property(action: argparse.Action) -> dict:
             item = {"type": ["string", "integer"]}
         prop = {"type": "array", "items": item} if _many(action) else item
     if action.help and action.help is not argparse.SUPPRESS:
-        prop["description"] = action.help % {"default": action.default} \
-            if "%(default)" in action.help else action.help
+        prop["description"] = first_sentence(
+            action.help % {"default": action.default}
+            if "%(default)" in action.help else action.help)
     return prop
 
 
