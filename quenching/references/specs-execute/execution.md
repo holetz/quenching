@@ -184,7 +184,7 @@ then tick the spec task with its subject and commit**. Every task with a diff ge
 and stays resumable from it. The spec write is deliberately last: the specs store cannot
 travel inside the local commit, and a failed write must leave the commit available for a retry.
 
-**A diff that creates, moves, renames or deletes a test module (`quenching/tests/test_*.py`) runs
+**A diff that creates, moves, renames or deletes a test module under `quenching/tests/` runs
 the proof README check first, `cq proof readme --check`, <!-- cli: no MCP tool for the proof README -->
 and a stale answer runs `cq proof readme --write` <!-- cli: no MCP tool for the proof README -->
 and stages `quenching/README.md` in this same task's commit, never in a later corrective task or the

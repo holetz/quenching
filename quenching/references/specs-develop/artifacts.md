@@ -311,7 +311,7 @@ tool; the agent mirrors that catalog regenerates follow the paragraph above and 
 residue, so `quenching/assets/bin/quenching/mcp/coverage.py` (a catalog row or an `EXCEPTIONS`
 entry with its reason) and `quenching/tests/test_quenching_mcp_coverage.py` (the residue
 expectations) belong to the task that creates the verb.
-**A task that creates, moves, renames or deletes a test module (`quenching/tests/test_*.py`) brings
+**A task that creates, moves, renames or deletes a test module under `quenching/tests/` brings
 `quenching/README.md`**: the generated proof README counts the modules, so it goes stale
 (`pf-readme-stale`) at the gate. The task declares the README in `files:` and regenerates it in its
 own body with `cq proof readme --write`, <!-- cli: no MCP tool for the proof README -->
