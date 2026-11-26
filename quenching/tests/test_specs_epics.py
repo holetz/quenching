@@ -352,6 +352,30 @@ class Scenarios:
         self.assertEqual((2, "sp-open-tasks"), (code, got.get("code")))
         self.assertEqual(4, got["open"])
 
+    def _promote_dry_with_members(self, abandoned_outcome):
+        b = self.backend
+        b.create_spec("plans", epic_doc())
+        for n in range(1, 3):
+            b.create_spec("plans", doc(f"Member {n}", "approved: 2026-10-07\n"))
+        self.assertEqual(0, add(b, 2)[0])
+        self.assertEqual(0, add(b, 3)[0])
+        archive(b, 2)
+        archive(b, 3, outcome=abandoned_outcome)
+        epic_body = ("## Proposal\n\nx\n\n## Out of Scope\n\n- none — x\n"
+                     "## Validation\n\nx\n\n## Design\n\nx\n\n## Outcome\n\nx\n")
+        info, _ = b.read_spec(EPIC_ID)
+        b.write_spec(info, info["text"] + epic_body)
+        kw = dict(spec=EPIC_ID, to=None, outcome="done", force=False, dry_run=True)
+        return run(promote_cmd.cmd_promote, b, **kw)
+
+    def test_an_epic_closes_as_done_past_a_member_archived_as_abandoned(self):
+        code, got = self._promote_dry_with_members("abandoned")
+        self.assertEqual((0, True), (code, got.get("ok")), got)
+
+    def test_a_member_archived_without_done_or_abandoned_still_keeps_the_epic_open(self):
+        code, got = self._promote_dry_with_members("superseded")
+        self.assertEqual((2, "sp-open-tasks"), (code, got.get("code")), got)
+
     def test_an_epic_is_not_archived_as_done_while_a_member_pr_is_not_merged(self):
         b = self.diamond()
         for n in (3, 4, 5):
