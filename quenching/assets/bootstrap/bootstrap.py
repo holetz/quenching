@@ -136,7 +136,9 @@ def path_entries(value: str) -> list[str]:
 
 def with_path_entry(value: str, entry: str) -> str:
     """`value` with `entry` appended unless it is already a (case-folded, slash-folded) member."""
-    fold = lambda part: part.replace("/", "\\").rstrip("\\").lower()
+    def fold(part: str) -> str:
+        return part.replace("/", "\\").rstrip("\\").lower()
+
     if any(fold(part) == fold(entry) for part in path_entries(value)):
         return value
     return os.pathsep.join([*path_entries(value), entry])
