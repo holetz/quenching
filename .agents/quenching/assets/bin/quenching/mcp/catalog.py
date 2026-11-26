@@ -182,7 +182,32 @@ def resolve(row: Row, parser: argparse.ArgumentParser | None = None) -> Verb:
         if slot is None:
             raise LookupError(f"{row.pillar} has no verb {' '.join(row.path)!r}")
         fixed[slot.dest] = word
+    for dest, word in fixed.items():
+        own = _own_help(next(a for a in parser._actions if a.dest == dest), word)
+        help_text = own or help_text
     return Verb(parser, fixed, help_text or parser.description or "", row.hidden)
+
+
+# A sub-verb of a shared parser documents itself in the help text: the positional's help names each
+# choice as `verb: what it does;` and an option's help is clauses opening with the verbs they serve
+# (`acquire:`, `add/retire:`, `acquire --wait:`); an option with no clause serves every verb.
+_CLAUSE = re.compile(r"(?:^|; )([a-z]+(?:/[a-z]+)*)(?: --[a-z-]+)?: ")
+
+
+def _clauses(text: str) -> list[tuple[list[str], str]]:
+    parts = _CLAUSE.split(" ".join((text or "").split()))
+    return [(parts[i].split("/"), parts[i + 1].strip()) for i in range(1, len(parts) - 1, 2)]
+
+
+def _own_help(action: argparse.Action, word: str) -> str:
+    """The clause of a positional's help that describes `word`, else empty."""
+    return next((body for verbs, body in _clauses(action.help) if word in verbs), "")
+
+
+def _serves(action: argparse.Action, fixed: dict[str, str]) -> bool:
+    """False when the option's help scopes it to verbs that do not include the one in `fixed`."""
+    clauses = _clauses(action.help) if action.option_strings else []
+    return not clauses or not fixed or any(w in v for v, _ in clauses for w in fixed.values())
 
 
 def _declares(parser: argparse.ArgumentParser, flag: str) -> bool:
@@ -194,7 +219,7 @@ def _arguments(verb: Verb) -> list[argparse.Action]:
             if not isinstance(a, (argparse._HelpAction, argparse._VersionAction,
                                   argparse._SubParsersAction))
             and a.dest not in SERVER_OWNED and a.dest not in verb.fixed
-            and a.dest not in verb.hidden]
+            and a.dest not in verb.hidden and _serves(a, verb.fixed)]
 
 
 def _scalar(action: argparse.Action) -> dict:
@@ -220,7 +245,7 @@ def first_sentence(text: str) -> str:
     return flat[:end.start() + (end.group()[0] != ";")].rstrip() if end else flat
 
 
-def _property(action: argparse.Action) -> dict:
+def _property(action: argparse.Action, fixed: dict[str, str] | None = None) -> dict:
     if isinstance(action, (argparse._StoreTrueAction, argparse._StoreFalseAction)):
         prop = {"type": "boolean"}
     else:
@@ -231,9 +256,11 @@ def _property(action: argparse.Action) -> dict:
             item = {"type": ["string", "integer"]}
         prop = {"type": "array", "items": item} if _many(action) else item
     if action.help and action.help is not argparse.SUPPRESS:
-        prop["description"] = first_sentence(
-            action.help % {"default": action.default}
-            if "%(default)" in action.help else action.help)
+        text = (action.help % {"default": action.default}
+                if "%(default)" in action.help else action.help)
+        clauses = _clauses(text) if action.option_strings and fixed else []
+        own = next((body for verbs, body in clauses if any(w in verbs for w in fixed.values())), "")
+        prop["description"] = first_sentence(own or text)
     return prop
 
 
@@ -248,7 +275,7 @@ def schema(verb: Verb) -> dict:
     into the verb's `--root` and the dispatch's cwd."""
     actions = _arguments(verb)
     out = {"type": "object",
-           "properties": {**{a.dest: _property(a) for a in actions}, "root": server.ROOT},
+           "properties": {**{a.dest: _property(a, verb.fixed) for a in actions}, "root": server.ROOT},
            "additionalProperties": False}
     required = [a.dest for a in actions if _required(a)]
     if required:
