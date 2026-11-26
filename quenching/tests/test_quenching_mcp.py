@@ -237,6 +237,20 @@ class Surface(unittest.TestCase):
                               None, catalog.surface())
         self.assertEqual(reply["result"]["serverInfo"]["name"], "quenching")
 
+    def test_root_is_explained_once_in_the_initialize_instructions(self):
+        surface = catalog.surface()
+        reply = server.handle(rpc(1, "initialize", {"protocolVersion": "2025-06-18"}), "/x",
+                              None, surface)
+        self.assertEqual(reply["result"]["instructions"], server.INSTRUCTIONS)
+        tools = server.handle(rpc(2, "tools/list"), "/x", None, surface)["result"]["tools"]
+        text = json.dumps(tools)
+        self.assertEqual(text.count(server.INSTRUCTIONS), 0)
+        self.assertLessEqual(len(server.ROOT["description"]), 30)
+        # the long explanation lives once, in `instructions`, never per tool
+        self.assertNotIn("another repository", text)
+        for tool in tools:
+            self.assertEqual(tool["inputSchema"]["properties"]["root"], server.ROOT, tool["name"])
+
     def test_tools_list_carries_the_catalog_and_the_specs_tools(self):
         tools = server.handle(rpc(2, "tools/list"), "/x", None,
                               catalog.surface())["result"]["tools"]
