@@ -60,6 +60,23 @@ class McpTools(unittest.TestCase):
         self.assertEqual(cqcalls.mcp_tools("mcp__opencode__execute", {"code": code}),
                          ["specs_status", "git_state"])
 
+    def test_a_grouped_tool_counts_under_the_verb_it_names(self):
+        self.assertEqual(cqcalls.mcp_tools("mcp__quenching__specs_read", {"verb": "status"}),
+                         ["specs_status"])
+        self.assertEqual(cqcalls.mcp_tools("quenching_git_write", {"verb": "commit"}),
+                         ["git_commit"])
+        self.assertEqual(cqcalls.mcp_tools("mcp__quenching__components_read", {"verb": "read"}),
+                         ["components_read"])
+        code = ("await tools.quenching.specs_read({ verb: 'status', spec: 1 });"
+                " await tools.quenching['git_read']({\"verb\": \"state\"})")
+        self.assertEqual(cqcalls.mcp_tools("mcp__opencode__execute", {"code": code}),
+                         ["specs_status", "git_state"])
+
+    def test_help_or_no_verb_keeps_the_published_name(self):
+        self.assertEqual(cqcalls.mcp_tools("mcp__quenching__git_read", {"verb": "help"}),
+                         ["git_read"])
+        self.assertEqual(cqcalls.mcp_tools("mcp__quenching__git_read", {}), ["git_read"])
+
     def test_other_servers_count_nothing(self):
         self.assertEqual(cqcalls.mcp_tools("mcp__opencode__read", {}), [])
         self.assertEqual(cqcalls.mcp_tools("Bash", {"command": "cq specs status"}), [])
