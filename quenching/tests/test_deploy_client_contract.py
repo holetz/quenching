@@ -164,7 +164,9 @@ class TheClientProjection(unittest.TestCase):
         agents = sorted((target / ".github/agents").glob("quenching-*.agent.md"))
         self.assertEqual(5, len(agents), agents)
         self.assertFalse((target / ".github/instructions").exists())
-        self.assertFalse((target / ".github/copilot-setup-steps.yml").exists())
+        setup = target / ".github/workflows/copilot-setup-steps.yml"
+        self.assertTrue(setup.is_file(), setup)
+        self.assertIn("  copilot-setup-steps:\n", setup.read_text(encoding="utf-8"))
         for path in agents:
             fields = self.frontmatter(path)
             self.assertTrue(fields["description"])

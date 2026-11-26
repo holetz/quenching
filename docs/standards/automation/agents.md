@@ -83,7 +83,11 @@ The model band projects too. The source's `model`/`effort` are a band, not a cli
 `include-custom-instructions: true` carries the repository's `AGENTS.md` into the Copilot
 subagent's context, and `target: github-copilot` interprets the file with the Copilot schema. No
 `.github/copilot-instructions.md` is generated: the root `AGENTS.md` is already the shared
-instruction format.
+instruction format, and the Copilot code review reads it. The review's own reach is a **seed**:
+with the same `github` projection and a standards index, `cq deploy` writes `REVIEW.md` once
+(never in the manifest) pointing `/docs/standards/index.md` and `/docs/glossary.md`; the
+repository owns and edits it ([deploy-mode.md](../architecture/deploy-mode.md)
+§Copilot setup steps and the review seed).
 
 **The projection is opt-in by the repository.** `shared.projections: ["github"]` writes
 `.github/agents/`; without the key a target gets no `.github/` file, so a repository without Copilot

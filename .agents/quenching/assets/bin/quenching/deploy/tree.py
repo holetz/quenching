@@ -9,6 +9,7 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+import re
 from pathlib import Path, PurePosixPath
 
 from quenching.common.deploy import dumps_hash_manifest, read_manifest
@@ -417,12 +418,40 @@ def _declared_hooks(selected: list[dict]) -> list[dict]:
     return [hook for module in selected for hook in module.get("owned", {}).get("hooks", [])]
 
 
+def _python_file(target: Path) -> str | None:
+    """The target's own Python declaration, as an `actions/setup-python` version file: a
+    `.python-version` pin first, then a `pyproject.toml` that really declares `requires-python`
+    (setup-python reads the file and fails when the key is absent), else None for the floor."""
+    if (target / ".python-version").is_file():
+        return ".python-version"
+    pyproject = target / "pyproject.toml"
+    try:
+        text = pyproject.read_text(encoding="utf-8")
+    except OSError:
+        return None
+    return "pyproject.toml" if re.search(r"(?m)^\s*requires-python\s*=", text) else None
+
+
+def _standards_index(target: Path) -> bool:
+    """Whether the target carries the OKF bundle and the standards index the review seed points
+    at: `docs/index.md` with `okf_version` in its frontmatter, and `docs/standards/index.md`."""
+    if not (target / "docs/standards/index.md").is_file():
+        return False
+    try:
+        text = (target / "docs/index.md").read_text(encoding="utf-8")
+    except OSError:
+        return False
+    parts = text.split("---", 2)
+    return len(parts) >= 3 and re.search(r"(?m)^okf_version\s*:", parts[1]) is not None
+
+
 def build_tree(source: Path, target: Path, modules: list[str], harnesses: list[str],
                runtime: str = "vendor", profiles: list[str] | None = None,
                mcp: dict | None = None, python: list[str] | None = None,
                hooks_python: list[str] | None = None,
                projections: list[str] | None = None,
-               workspace: bool = False) -> dict:
+               workspace: bool = False,
+               worktree_setup: str | None = None) -> dict:
     manifest = load_modules(source)
     selected = _selected_modules(manifest, modules)
     if not selected:
@@ -603,11 +632,20 @@ def build_tree(source: Path, target: Path, modules: list[str], harnesses: list[s
                  translate.copilot_agent_document(path.read_text(encoding="utf-8"), name,
                                                   narrow, mount).encode(),
                  0o644)
+        # The cloud agent's environment: the client's setup workflow, generated from what the
+        # target already declares, never from a client branch in the deploy.
+        _add(tree, translate.COPILOT_SETUP,
+             translate.copilot_setup_document(_python_file(target), worktree_setup,
+                                              runtime).encode("utf-8"), 0o644)
 
     seeds = {
         "AGENTS.md": _agents_md(target, dirs),
         ".agents/quenching.json": _seed_config(target, profiles or profiles_for(modules)),
     }
+    if "github" in (projections or []) and _standards_index(target):
+        # The code review's own instruction file: a seed, like AGENTS.md, because the review
+        # policy is the repository's; the deploy writes the pointer once and never owns it.
+        seeds["REVIEW.md"] = translate.REVIEW_SEED
     if workspace:
         # A client projection, opted in by the repository's own `shared.workspace.vscode`:
         # created only when absent, never listed in the manifest, never drift-checked.

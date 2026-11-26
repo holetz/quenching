@@ -26,6 +26,7 @@ import atexit
 import json
 import os
 import pathlib
+import re
 import shutil
 import subprocess
 import time
@@ -416,13 +417,16 @@ def measure_skills(root: pathlib.Path) -> dict:
 
 
 # --- 1.5 · agents, .github/, .vscode/ and the cost sources -------------------------------------
-GITHUB_FORMATS = ("instructions", "agents", "copilot-setup-steps.yml")
+GITHUB_FORMATS = ("instructions", "agents", "workflows/copilot-setup-steps.yml")
 VSCODE_KEYS = ("files.exclude", "search.exclude", "chat.agent.maxRequests",
                "chat.tools.terminal.autoApprove")
 # Every directory the editor ships under: stable, Insiders, and their remote servers. The client is
 # a capability, never a name — a machine with Insiders alone still has to be measured.
 EXTENSION_DIRS = (".vscode/extensions", ".vscode-insiders/extensions",
                   ".vscode-server/extensions", ".vscode-server-insiders/extensions")
+# A version directory is `<publisher>.<name>-<version>[-<platform>]`, and two installed versions of
+# one extension are two directories with one id. The version starts at the first `-N.N.N`.
+EXTENSION_VERSION = re.compile(r"^(.+?)-\d+\.\d+\.\d+")
 LOG_DIRS = (("vscode-logs", ".config/Code/logs"),
             ("vscode-insiders-logs", ".config/Code - Insiders/logs"),
             ("vscode-server-logs", ".vscode-server/data/logs"),
@@ -432,6 +436,12 @@ LOG_DIRS = (("vscode-logs", ".config/Code/logs"),
 def home() -> pathlib.Path:
     """Read at call time, so a test can point it at a machine of its own."""
     return pathlib.Path.home()
+
+
+def extension_id(directory: str) -> str:
+    """The id a version directory belongs to; a name with no version is its own id."""
+    match = EXTENSION_VERSION.match(directory)
+    return match.group(1) if match else directory
 
 
 def cost_sources(home_dir: pathlib.Path) -> list[dict]:
@@ -579,7 +589,8 @@ def measure_clients(root: pathlib.Path) -> dict:
             costs.append({"name": source["name"], "state": "present" if found else "absent",
                           **({"env": found} if found else {})})
     bases = [base for base in (home_dir / path for path in EXTENSION_DIRS) if base.is_dir()]
-    installed = sorted(path.name for base in bases for path in base.iterdir() if path.is_dir())
+    directories = sorted(path.name for base in bases for path in base.iterdir() if path.is_dir())
+    installed = sorted({extension_id(name) for name in directories})
     worktrees = worktree_facts(root)
     external = external_directory(root)
     access = access_facts(root)
@@ -596,6 +607,7 @@ def measure_clients(root: pathlib.Path) -> dict:
                "access": access,
                "extensions": {"state": "present" if installed else "absent",
                               "count": len(installed),
+                              "directories": len(directories),
                               "installed": installed[:40]},
                "hypotheses": {}}
     claude = agents["claude"]
@@ -623,8 +635,9 @@ def measure_clients(root: pathlib.Path) -> dict:
                "observation": "; ".join(f"{item['name']} {item['state']}" for item in costs)
                               + "; qual delas entrega o custo é live"},
         "H9": {"verdict": UNMEASURED,
-               "observation": (f"{section['extensions']['count']} extensões instaladas nos "
-                               f"diretórios do VS Code; nenhuma é recomendada por esta sonda"
+               "observation": (f"{section['extensions']['count']} id(s) de extensão em "
+                               f"{section['extensions']['directories']} diretório(s) de versão "
+                               f"nos diretórios do VS Code; nenhum é recomendado por esta sonda"
                                if installed else
                                "nenhum diretório de extensões do VS Code nesta máquina; o "
                                "inventário é live")},

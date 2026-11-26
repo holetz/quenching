@@ -63,6 +63,13 @@ class EveryEntryIsComplete(unittest.TestCase):
         used = {e["category"] for e in REGISTRY.values()}
         self.assertEqual(used, {cid for cid, _en, _pt in CATEGORIES})
 
+    def test_the_projections_copy_names_the_setup_workflow_and_the_review_seed(self):
+        entry = REGISTRY["shared.projections"]
+        for lang in ("en", "pt-BR"):
+            summary = entry["copy"][lang]["summary"]
+            self.assertIn(".github/workflows/copilot-setup-steps.yml", summary)
+            self.assertIn("REVIEW.md", summary)
+
 
 class TheRegistryCoversTheReaders(unittest.TestCase):
     def test_the_seed_and_the_default_blocks(self):
