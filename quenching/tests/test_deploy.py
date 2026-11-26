@@ -615,6 +615,17 @@ class Deploy(unittest.TestCase):
         self.assertFalse((self.target / ".agents/skills/quenching-ops").exists())
         self.assertFalse((self.target / ".claude/skills/quenching-ops").exists())
 
+    def test_the_vendored_launcher_checks_a_tracked_mirror_like_the_source(self):
+        """The payload carries no skill source: its own check re-asserts the installed mirror."""
+        self.assertEqual(0, self.run_deploy("--modules", "core", "--harness", "claude",
+                                            "--write")[0])
+        self.write(".claude/skills/quenching-design/SKILL.md", "stale skill\n")
+        self.assertEqual(0, self.run_deploy("--write")[0])
+        self.assertEqual((0, []), (lambda c, p: (c, p["changes"]))(*self.run_deploy("--check")))
+        run = self.target_cq("deploy", "--target", ".", "--check", "--json")
+        self.assertEqual(0, run.returncode, run.stdout)
+        self.assertEqual([], json.loads(run.stdout)["changes"])
+
     def test_modules_all_expands_in_registry_order_under_any_hash_seed(self):
         # Hash randomization is fixed at interpreter start, so each seed needs its own child.
         probe = ("import json; from quenching.deploy import tree; "

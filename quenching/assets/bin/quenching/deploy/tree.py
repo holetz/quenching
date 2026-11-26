@@ -554,7 +554,10 @@ def build_tree(source: Path, target: Path, modules: list[str], harnesses: list[s
                       # source stays the truth and the copy moves to the new directory.
                       if (kept(published + "/" + name, bridge.SKILL_FILE)
                           or f"{SKILLS}/{name}" in kept_before)
-                      and (source / "skills" / name).is_dir()]
+                      # A vendored payload carries no skill source, so the installed mirror
+                      # `kept` just found is its only truth, re-asserted byte for byte below.
+                      and ((source / "skills" / name).is_dir()
+                           or not (source / "skills").is_dir())]
     # The source cites a skill's files at their generic home, `.agents/skills/<name>/`; a skill
     # published elsewhere must cite where it now lives, or every flow a router reads by path is
     # missing. Only the generated skills move: a target's own skill stays under `.agents/skills`.
