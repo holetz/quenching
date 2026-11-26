@@ -362,7 +362,9 @@ def _bridge_tree(tree: dict, target: Path, dirs: tuple[str, ...],
                 manifest[relative] = hashlib.sha256(data).hexdigest()
     if manifest:
         document = {
-            "generator": "cq deploy (cq components bridge marker)",
+            # The bridge's own line: either writer leaves the bytes the other wrote, so a
+            # `bridge --write` after a deploy (or the reverse) is not a diff.
+            "generator": bridge.GENERATOR,
             "source": SKILLS,
             "verifiedClaudeCode": bridge.VERIFIED_CLAUDE_CODE,
             "files": dict(sorted(manifest.items())),
