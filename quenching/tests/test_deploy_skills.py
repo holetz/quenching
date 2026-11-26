@@ -78,6 +78,34 @@ class Publication(unittest.TestCase):
     def test_opencode_alone_publishes_once_in_the_generic_layer_it_prefers(self):
         self.assert_published_once({AGENTS_SKILLS}, "opencode")
 
+    def cited_paths(self, tree: dict, directory: str) -> set[str]:
+        import re
+        cite = re.compile(r"(\.(?:agents|claude)/skills/quenching-[a-z-]+/[A-Za-z0-9/._-]+\.md)")
+        found: set[str] = set()
+        for rel, entry in tree.items():
+            if rel.startswith(directory + "/") and rel.endswith(".md"):
+                data = entry[0] if isinstance(entry, tuple) else entry
+                text = data.decode("utf-8") if isinstance(data, bytes) else str(data)
+                body = "\n".join(line for line in text.splitlines()
+                                 if "by cq components bridge" not in line)
+                found.update(cite.findall(body))
+        return found
+
+    def test_a_published_skill_cites_its_files_where_they_are_published(self):
+        # A router reads each flow by path; a citation left at `.agents/skills` after the skill
+        # moved to `.claude/skills` is a file no reader finds.
+        tree = self.build("claude", "opencode")["tree"]
+        cited = self.cited_paths(tree, CLAUDE_SKILLS)
+        self.assertTrue(cited)
+        self.assertEqual(set(), {path for path in cited if path.startswith(AGENTS_SKILLS + "/")})
+        self.assertEqual(set(), {path for path in cited if path not in tree})
+
+    def test_the_generic_layer_keeps_its_own_citations(self):
+        tree = self.build("opencode")["tree"]
+        cited = self.cited_paths(tree, AGENTS_SKILLS)
+        self.assertTrue(cited)
+        self.assertEqual(set(), {path for path in cited if not path.startswith(AGENTS_SKILLS + "/")})
+
     def test_no_harness_keeps_the_generic_layer(self):
         self.assert_published_once({AGENTS_SKILLS})
 

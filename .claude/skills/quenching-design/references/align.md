@@ -13,7 +13,7 @@ source only through the explicit import choice below.
 The common front contract is in
 [front-align/mold.md](.agents/quenching/references/front-align/mold.md); this command
 keeps the design delta in
-[design-align/bands.md](.agents/skills/quenching-design/references/design-align/bands.md). The mold
+[design-align/bands.md](.claude/skills/quenching-design/references/design-align/bands.md). The mold
 does not choose a DTCG source winner or turn visual policy into an automatic repair.
 
 Resolve `cq` per

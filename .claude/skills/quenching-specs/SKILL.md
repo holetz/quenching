@@ -43,23 +43,23 @@ returns `STATE: blocked` with `NOTE: needs-human:` carrying it.
 
 | Flow | Reference | Picked when |
 | --- | --- | --- |
-| `create` | [references/create.md](.agents/skills/quenching-specs/references/create.md) | a problem, plan or idea to capture; no spec id |
-| `develop` | [references/develop.md](.agents/skills/quenching-specs/references/develop.md) | stage `captured`, `proposed` or `designed`, a refine request, or a surface refinement ask |
-| `execute` | [references/execute.md](.agents/skills/quenching-specs/references/execute.md) | stage `ready` or `approved`, or a build with tasks still open |
-| `conclude` | [references/conclude.md](.agents/skills/quenching-specs/references/conclude.md) | every task checked, or an explicit close or abandon |
-| `triage` | [references/triage.md](.agents/skills/quenching-specs/references/triage.md) | a ranking of the open front |
-| `status` | [references/status.md](.agents/skills/quenching-specs/references/status.md) | a read of the front or of one spec's state |
-| `orchestrate` | [references/orchestrate.md](.agents/skills/quenching-specs/references/orchestrate.md) | an epic or a list of specs to run through the orchestrator |
-| `improve` | [references/improve.md](.agents/skills/quenching-specs/references/improve.md) | a map of what to improve, turned into an epic |
-| `board` | [references/board.md](.agents/skills/quenching-specs/references/board.md) | the local spec portal (board, ranking and detail in the browser) |
-| `autopilot` | [references/autopilot.md](.agents/skills/quenching-specs/references/autopilot.md) | the request names `autopilot` |
+| `create` | [references/create.md](.claude/skills/quenching-specs/references/create.md) | a problem, plan or idea to capture; no spec id |
+| `develop` | [references/develop.md](.claude/skills/quenching-specs/references/develop.md) | stage `captured`, `proposed` or `designed`, a refine request, or a surface refinement ask |
+| `execute` | [references/execute.md](.claude/skills/quenching-specs/references/execute.md) | stage `ready` or `approved`, or a build with tasks still open |
+| `conclude` | [references/conclude.md](.claude/skills/quenching-specs/references/conclude.md) | every task checked, or an explicit close or abandon |
+| `triage` | [references/triage.md](.claude/skills/quenching-specs/references/triage.md) | a ranking of the open front |
+| `status` | [references/status.md](.claude/skills/quenching-specs/references/status.md) | a read of the front or of one spec's state |
+| `orchestrate` | [references/orchestrate.md](.claude/skills/quenching-specs/references/orchestrate.md) | an epic or a list of specs to run through the orchestrator |
+| `improve` | [references/improve.md](.claude/skills/quenching-specs/references/improve.md) | a map of what to improve, turned into an epic |
+| `board` | [references/board.md](.claude/skills/quenching-specs/references/board.md) | the local spec portal (board, ranking and detail in the browser) |
+| `autopilot` | [references/autopilot.md](.claude/skills/quenching-specs/references/autopilot.md) | the request names `autopilot` |
 
 **`autopilot` runs only on an explicit mention.** The human's request must name `autopilot`; a request picked by stage or by description never chooses it, because its invocation is the human's delegation for a whole run.
 **Done when:** exactly one flow is chosen, with its input.
 
 ### 2. Load the flow and follow it
 Run `components_read` on the chosen flow's reference from the table above, with its
-`.agents/skills/quenching-specs/references/` path. Read the flow whole, once, and follow it from its own `## Workflow` with the input from step 1:
+`.claude/skills/quenching-specs/references/` path. Read the flow whole, once, and follow it from its own `## Workflow` with the input from step 1:
 its steps, `Done when:` lines and invariants bind this run exactly as they bound the standalone
 command. A `/quenching-specs <flow>` the flow names as the next step is this router called with that flow, and a conductor reaches the same flow by calling this skill with the flow and the id.
 **Done when:** the flow ran to its own `Done when:`, or stopped on its own stop condition.

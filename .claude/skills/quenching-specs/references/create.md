@@ -65,7 +65,7 @@ number when a card is configured, else the branch's counter, assigned when the s
 ### 3. Plan-source path only — read it, and read the bundle
 
 Read the whole plan file, or the complete plan content from the current session, then read
-[specs-create/plan-mapping.md](.agents/skills/quenching-specs/references/specs-create/plan-mapping.md)
+[specs-create/plan-mapping.md](.claude/skills/quenching-specs/references/specs-create/plan-mapping.md)
 §The mapping and classify the plan's parts against it. When the plan is inside
 `<proposed_plan>`, use that block as the plan source and ignore the wrapper itself.
 

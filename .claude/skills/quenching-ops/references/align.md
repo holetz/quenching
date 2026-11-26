@@ -9,9 +9,9 @@ allowed-tools: Bash(cq:*), Bash(cq.cmd:*), Read, Grep, Glob, Bash(python3:*), As
 This command owns the operations front's convergence pass. It reads the target's declared
 operations root and canonical router, applies only deterministic mechanical and bounded structural
 repairs, and leaves production-risk decisions with the target owner. The disposition rules live in
-[ops-align/bands.md](.agents/skills/quenching-ops/references/ops-align/bands.md); the target tree and
-router contract live in [ops-align/target-structure.md](.agents/skills/quenching-ops/references/ops-align/target-structure.md)
-and [ops-align/entrypoint-contract.md](.agents/skills/quenching-ops/references/ops-align/entrypoint-contract.md).
+[ops-align/bands.md](.claude/skills/quenching-ops/references/ops-align/bands.md); the target tree and
+router contract live in [ops-align/target-structure.md](.claude/skills/quenching-ops/references/ops-align/target-structure.md)
+and [ops-align/entrypoint-contract.md](.claude/skills/quenching-ops/references/ops-align/entrypoint-contract.md).
 The common front contract lives in
 [front-align/mold.md](.agents/quenching/references/front-align/mold.md); these references
 keep the router, registry and entry-point-specific evidence separate from the shared mold.

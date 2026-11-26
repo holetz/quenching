@@ -67,7 +67,7 @@ re-verification is **this** skill.
   offer `azure-pipelines-docs.yml` as a separate confirmation, and preserve any existing pipeline.
   The payload only publishes the strict `site/` directory as `documentation-site`.
 - **Capability register is the allow-list.** Read the accepted plan's capability register and the
-  [Zensical capability catalog](.agents/skills/quenching-knowledge/references/knowledge-documentation/zensical-capabilities.md)
+  [Zensical capability catalog](.claude/skills/quenching-knowledge/references/knowledge-documentation/zensical-capabilities.md)
   §Capability catalog §Agent contract before changing `zensical.toml` or requirements. For each
   `enabled` row, prove its prerequisite and merge only its missing keys/dependency; `disabled` rows
   produce no configuration or install action.
@@ -281,7 +281,7 @@ page-level one you **report**. Where `site/` is tracked, run it against the thro
 (Doctrine) and delete it afterwards. Inspect the rendered HTML for the title,
 `class="mermaid"`, `class="q-badge"`, the connected CSS and the `prefers-reduced-motion` guard. If
 no browser is available, use the static checks in
-[knowledge-documentation/validation.md](.agents/skills/quenching-knowledge/references/knowledge-documentation/validation.md)
+[knowledge-documentation/validation.md](.claude/skills/quenching-knowledge/references/knowledge-documentation/validation.md)
 §Static rendered checks §Required rendered effects and state
 that pixel-level dark/light/mobile QA was not run. If the toolchain is absent, report `unverified`
 and print the two commands. **Done when:**

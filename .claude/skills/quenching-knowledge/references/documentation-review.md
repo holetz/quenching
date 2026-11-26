@@ -8,9 +8,9 @@ allowed-tools: Bash(cq:*), Bash(cq.cmd:*), Read, Grep, Glob, Task
 `./.quenching/documentation/plan.md`).
 
 This is a read-only critic. It applies the rubric, forbiddens and ledger in
-[knowledge-documentation/quality.md](.agents/skills/quenching-knowledge/references/knowledge-documentation/quality.md),
+[knowledge-documentation/quality.md](.claude/skills/quenching-knowledge/references/knowledge-documentation/quality.md),
 scores dimension #8 against
-[knowledge-documentation/agent-readability.md](.agents/skills/quenching-knowledge/references/knowledge-documentation/agent-readability.md),
+[knowledge-documentation/agent-readability.md](.claude/skills/quenching-knowledge/references/knowledge-documentation/agent-readability.md),
 and returns a verdict for each page. No `Write`, `Edit`, shell or other mutating tool is granted.
 
 ## Doctrine
