@@ -185,6 +185,7 @@ OPTION_PARAM = {
     ("specs", "section", "write"): None,  # the write form is the tool `specs_section_write`
     ("specs", "section", "clear"): None,
     ("specs", "list", "lean"): None,    # always on in the tool
+    ("specs", "list", "full"): None,    # the tool is lean by design; the full shape is the CLI's
 }
 TOOL_CALL = re.compile(r"\b([a-z]+_[a-z_]+)\(([^)\n]*)\)")
 OPTION = re.compile(r"(?<![\w-])--([a-z][a-z0-9-]*)")

@@ -394,7 +394,7 @@ Write tools run the same CLI verbs, in the same process, and add no store logic:
 | `specs_task` | `spec`, `action` (check, uncheck, block, descope), `task`, `reason`, `subject`, `commit` | moves one checkbox |
 | `specs_epic_add` | `epic`, `spec`, `after`, `group`, `label`, `move` | lists a spec as an epic item |
 | `specs_discover` | `spec`, `text` | appends one line to `## Discoveries` |
-| `specs_promote` | `spec`, `to`, `outcome` | moves between `plans/` and `archive/`, stamping the outcome; never forced |
+| `specs_promote` | `spec`, `to`, `outcome`, `dry_run` | moves between `plans/` and `archive/`, stamping the outcome; `dry_run` reports the move or the gate that refuses it and writes nothing; never forced |
 
 One human decision, asked once: `approved` is the only gated write. The server asks the human
 through the client (MCP `elicitation/create`) and runs the verb only on an accept — no argument

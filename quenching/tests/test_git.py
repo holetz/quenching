@@ -500,6 +500,21 @@ class Stale(RepoCase):
         self.assertIn("remote-feature", {b["branch"] for b in payload["staleBranches"]})
         self.assertEqual(payload["orphanWorktrees"], [])
 
+    def test_cq_git_stale_json_is_lean_by_default_and_full_on_request(self):
+        _merged_branch(self.repo, "feature-lean")
+        lean = _cq_json(self.repo, "stale")
+        for key in ("worktrees", "heldSlots", "manifest", "groups"):
+            self.assertNotIn(key, lean)
+        self.assertIs(lean["full"], False)
+        self.assertEqual(set(lean["counts"]), {"worktrees", "heldSlots", "manifest", "groups"})
+        self.assertIn("feature-lean", {b["branch"] for b in lean["staleBranches"]})
+        full = _cq_json(self.repo, "stale", "--full")
+        self.assertIs(full["full"], True)
+        for key in ("worktrees", "heldSlots", "manifest", "groups"):
+            self.assertIn(key, full)
+        self.assertEqual(lean["counts"]["manifest"], len(full["manifest"]))
+        self.assertGreaterEqual(len(full["manifest"]), 1)
+
     def test_cq_git_stale_reads_the_selected_remote(self):
         self._origin_with_merged_branch("upstream")
         payload = _cq_json(self.repo, "stale", "--remote", "upstream")
