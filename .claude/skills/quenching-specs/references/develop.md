@@ -352,6 +352,11 @@ text="<finding>")`, one call per line — and never mid-stage, which
 mechanics forbids. The call creates `## Discoveries` when the heading is absent, and a filled
 `## Discoveries` moves no derived stage.
 
+**Ask the epic's authorization before the execute, never at the verify.** When a task's `files:` touches the
+surface of the verifier's checks 9 and 10 (a hook, settings, a workflow, a grant, the gate) and the spec belongs to an
+epic, the human answers once whether the epic's `## Design` authorizes it (a sub-agent returns `needs-human:`), and the
+dated bullet naming the spec id or the path is written to that `## Design` before `execute`.
+
 Then the frontmatter records this command owns — read
 [questions.md](.agents/quenching/references/specs-develop/questions.md) §Recording the
 pass for which stage earns which, and

@@ -807,6 +807,37 @@ class Audit(RepoCase):
         self.assertEqual([(e["severity"], e["kind"], e["detail"]) for e in got],
                          [("fail", "gate-shrunk", ["run two"])])
 
+    def test_lowered_reads_a_superset_rewrite_as_strengthened_and_a_dropped_token_as_shrunk(self):
+        self._commit_file("scripts/verify_repo.sh", "# gate\nunset A B\nrun one\n", "gate")
+        _run(self.repo, "merge", "-q", "--ff-only", "spec/1")
+        self._commit_file("scripts/verify_repo.sh", "# gate\nunset A B C\nrun one\n", "strengthen")
+        got = self._lowered()
+        self.assertEqual([(e["severity"], e["kind"], e["detail"]) for e in got],
+                         [("info", "strengthened", "unset A B C")])
+        self._commit_file("scripts/verify_repo.sh", "# gate\nunset A C\nrun one\n", "drop")
+        got = self._lowered()
+        self.assertEqual([(e["severity"], e["kind"]) for e in got], [("fail", "gate-shrunk")])
+
+    def test_lowered_fails_a_gate_line_commented_or_neutralized_as_shrunk(self):
+        self._commit_file("scripts/verify_repo.sh", "# gate\nunset A B\nrun one\n", "gate")
+        _run(self.repo, "merge", "-q", "--ff-only", "spec/1")
+        for text, lost in (("# gate\n# unset A B\nrun one\n", "unset A B"),
+                           ("# gate\nunset A B\ntrue || run one\n", "run one"),
+                           ("# gate\nunset A B\nrun one || true\n", "run one")):
+            with self.subTest(text=text):
+                self._commit_file("scripts/verify_repo.sh", text, "neutralize")
+                got = self._lowered()
+                self.assertEqual([(e["severity"], e["kind"], e["detail"]) for e in got],
+                                 [("fail", "gate-shrunk", [lost])])
+
+    def test_lowered_lets_one_added_line_absolve_one_removed_line(self):
+        self._commit_file("scripts/verify_repo.sh", "# gate\nrun x\nrun x\n", "gate")
+        _run(self.repo, "merge", "-q", "--ff-only", "spec/1")
+        self._commit_file("scripts/verify_repo.sh", "# gate\nrun x y\n", "merge")
+        got = self._lowered()
+        self.assertEqual([(e["severity"], e["kind"], e["detail"]) for e in got],
+                         [("info", "strengthened", "run x y"), ("fail", "gate-shrunk", ["run x"])])
+
     def test_lowered_watches_a_toolchain_helper_the_gate_calls(self):
         self._commit_file("scripts/toolchain/helper.py", "one\ntwo\n", "helper")
         _run(self.repo, "merge", "-q", "--ff-only", "spec/1")
@@ -3407,6 +3438,63 @@ if sys.argv[1:4] == ["repos", "pr", "list"]:
     print("[]")
 sys.exit(0)
 """
+
+
+class PrChecksVerb(RepoCase):
+    """`cq git pr checks` — the read-only state of a PR's checks, and why none."""
+
+    URL = "https://github.com/o/r/pull/42"
+
+    def setUp(self):
+        super().setUp()
+        bindir = pathlib.Path(self.tmp, "bin")
+        fake_tool(bindir, "gh", FAKE_GH)
+        self.log = pathlib.Path(self.tmp, "gh.log")
+        self.env = {**os.environ, "PATH": f"{bindir}{os.pathsep}{os.environ['PATH']}",
+                    "FAKE_GH_LOG": str(self.log)}
+
+    def _read(self, checks: str, rc: str = "0", err: str = "") -> dict:
+        env = {**self.env, "FAKE_GH_CHECKS": checks, "FAKE_GH_CHECKS_RC": rc,
+               "FAKE_GH_CHECKS_ERR": err}
+        proc = _cq(self.repo, "pr", "checks", "--url", self.URL, env=env)
+        self.assertEqual(proc.returncode, 0, proc.stdout)
+        return json.loads(proc.stdout)
+
+    def test_the_four_states_carry_the_check_names(self):
+        for checks, rc, state in (('[{"name":"gate","bucket":"pass"}]', "0", "green"),
+                                  ('[{"name":"gate","bucket":"fail"}]', "1", "red"),
+                                  ('[{"name":"gate","bucket":"pending"}]', "8", "pending")):
+            payload = self._read(checks, rc)
+            self.assertEqual((payload["state"], payload["checks"]), (state, ["gate"]))
+        payload = self._read("", "1", "no checks reported on the 'x' branch")
+        self.assertEqual((payload["state"], payload["reason"]), ("none", "no-workflow"))
+        self.assertIn("workflow", payload["message"])
+
+    def test_none_says_when_the_token_cannot_read_checks_or_the_api_is_unreachable(self):
+        denied = self._read("", "1", "HTTP 403: Resource not accessible by personal access token")
+        self.assertEqual((denied["state"], denied["reason"]), ("none", "permission"))
+        down = self._read("", "1", "error connecting to api.github.com")
+        self.assertEqual((down["state"], down["reason"]), ("error", "unreachable"))
+
+    def test_it_only_reads_and_a_bad_url_is_refused(self):
+        self._read('[{"name":"gate","bucket":"pass"}]')
+        self.assertTrue(all(c["argv"][:2] == ["pr", "checks"] for c in
+                            (json.loads(line) for line in self.log.read_text().splitlines())))
+        proc = _cq(self.repo, "pr", "checks", "--url", f"{self.URL} --x", env=self.env)
+        self.assertEqual(proc.returncode, 2, proc.stdout)
+
+    def test_pr_merge_carries_the_same_explanation_when_there_is_no_check(self):
+        env = {**self.env, "FAKE_GH_CHECKS": "", "FAKE_GH_CHECKS_RC": "1",
+               "FAKE_GH_CHECKS_ERR": "no checks reported on the 'x' branch"}
+        proc = _cq(self.repo, "pr", "merge", "--url", self.URL, env=env)
+        payload = json.loads(proc.stdout)
+        self.assertEqual((proc.returncode, payload["reason"]), (1, "no-checks"))
+        self.assertEqual(payload["noneReason"], "no-workflow")
+        self.assertIn("workflow", payload["message"])
+
+    def test_the_mcp_catalog_lists_it_as_a_read(self):
+        from quenching.mcp import catalog
+        self.assertEqual(catalog.CATALOG["git_pr_checks"].cls, "read")
 
 
 class PullRequestVerbs(RepoCase):

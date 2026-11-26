@@ -22,6 +22,7 @@ DEFAULT_REGENERABLE = (
     "*.egg-info", ".eggs", "pip-wheel-metadata", ".cache", ".ipynb_checkpoints",
     ".hypothesis", "node_modules",
     ".quenching/git-base-cache.json", ".quenching/git-ci-cache.json",
+    ".quenching/gate/record.json",
 )
 
 

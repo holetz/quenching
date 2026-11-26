@@ -62,7 +62,10 @@ class AzureMergeTests(unittest.TestCase):
                 return patch_code, "{}", "policy refused"
             return 0, "not json" if unreadable else json.dumps(next(snapshots)), ""
 
+        # `shared.ci.enforce` is read from the cwd's config; pin the default (`required`) so this
+        # checkout's own declaration never changes what these fences assert.
         with mock.patch.object(azure_pull, "_az", side_effect=az), \
+                mock.patch("quenching.config.ci.read", return_value=("required", [])), \
                 mock.patch.object(pull, "_gh") as gh, \
                 contextlib.redirect_stdout(io.StringIO()) as out:
             code = pull.cmd_pr(SimpleNamespace(action="merge", url=url, wait=wait, json=True,

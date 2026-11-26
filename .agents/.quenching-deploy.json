@@ -27,1109 +27,1109 @@
     "quenching-specs"
   ],
   "files": {
-    ".agents/quenching/VERSION": "26fc6a53c41aacfac3889c7275bfdb81d2de7d35e9906fb926614b351c347fbd",
+    ".agents/quenching/VERSION": "source",
 
-    ".agents/quenching/agents/spec-orchestrator.md": "c704188d52a467e48624f700d7e9d07d71af60eea0308de4261afaf3ce6c5666",
+    ".agents/quenching/agents/spec-orchestrator.md": "source",
 
-    ".agents/quenching/agents/spec-reviewer.md": "1a6302d01c452501e59f9c8924f3ee7fcdc2ebb8d150e54b2b4a53441428e1b6",
+    ".agents/quenching/agents/spec-reviewer.md": "source",
 
-    ".agents/quenching/agents/spec-runner.md": "9cc5c50847c5ae38e3c998a9b28491e5d1b00147ce776947193c49d6a3f6067a",
+    ".agents/quenching/agents/spec-runner.md": "source",
 
-    ".agents/quenching/agents/spec-scout.md": "fb14fd6eca42f5eee9d0883e4e876fd9d64d009fa4b60f187a02b2f25c75c628",
+    ".agents/quenching/agents/spec-scout.md": "source",
 
-    ".agents/quenching/agents/spec-verifier.md": "bc2597c3e1a12bccdb5759de4242e78f58ad71eafda76b5e52935d8ba8f2e999",
+    ".agents/quenching/agents/spec-verifier.md": "source",
 
-    ".agents/quenching/assets/bin/cq": "885d05b78621413dd9ce513b26b68df580d6f394635566b1c6962f570116997f",
+    ".agents/quenching/assets/bin/cq": "source",
 
-    ".agents/quenching/assets/bin/quenching/common/access.py": "941b6792caf6a6ae132637aa57cc320b038f4f060edeab57d5d41f53a693f2f4",
+    ".agents/quenching/assets/bin/quenching/common/access.py": "source",
 
-    ".agents/quenching/assets/bin/quenching/common/cache.py": "018cfd85e6009e6bad8c1aaf2e8dadf1832ac2a1b05cea25a03ec035f5d8ff05",
+    ".agents/quenching/assets/bin/quenching/common/cache.py": "source",
 
-    ".agents/quenching/assets/bin/quenching/common/config.py": "a07cdc44ec25cabc1cc605bd66c2d7e1e8176a7fda7c991930e33a486dec5fb2",
+    ".agents/quenching/assets/bin/quenching/common/config.py": "source",
 
-    ".agents/quenching/assets/bin/quenching/common/dates.py": "696c110d9b6fc175730be9e9efc6886e9e2a73c8e571981e7dee664deda003e5",
+    ".agents/quenching/assets/bin/quenching/common/dates.py": "source",
 
-    ".agents/quenching/assets/bin/quenching/common/deploy.py": "0afbd9b2f40979800c1f61783e88ec7a76d3a30419cad86242aa9f8d220c0d2e",
+    ".agents/quenching/assets/bin/quenching/common/deploy.py": "source",
 
-    ".agents/quenching/assets/bin/quenching/common/doctor.py": "a62283312886a22beb8e8568ebb0f11bf8acfd45fdb2ed239a2bc6eedb8b830d",
+    ".agents/quenching/assets/bin/quenching/common/doctor.py": "source",
 
-    ".agents/quenching/assets/bin/quenching/common/front.py": "464e0ddf1118b20bc19e981e86016f56b49099afb8441d4a941191b955f53baf",
+    ".agents/quenching/assets/bin/quenching/common/front.py": "source",
 
-    ".agents/quenching/assets/bin/quenching/common/frontmatter.py": "7e0f5395221b6602d2b30cc742059e48373938dc0aa6c55c636056719cd34b11",
+    ".agents/quenching/assets/bin/quenching/common/frontmatter.py": "source",
 
-    ".agents/quenching/assets/bin/quenching/common/git.py": "4a9d6b33b99b56cae21998ca6d4e4d3d075515a43bbc07b0e1c3789f568f0948",
+    ".agents/quenching/assets/bin/quenching/common/git.py": "source",
 
-    ".agents/quenching/assets/bin/quenching/common/gitcache.py": "496404bddbbcaeee44bd46f8170e976806bb68ec2acd37acffbc9c9888a9243e",
+    ".agents/quenching/assets/bin/quenching/common/gitcache.py": "source",
 
-    ".agents/quenching/assets/bin/quenching/common/identity.py": "8f97bcb7abd3297f74bab69f5ba7e39e9d417a0bba9fa25813134dfb855f8529",
+    ".agents/quenching/assets/bin/quenching/common/identity.py": "source",
 
-    ".agents/quenching/assets/bin/quenching/common/io.py": "695c85f220ba24608ff8ebc34840793a9a98a4772abc0e86432cbc116c96698a",
+    ".agents/quenching/assets/bin/quenching/common/io.py": "source",
 
-    ".agents/quenching/assets/bin/quenching/common/jsonc.py": "d5b40060b6a359fa59aa4a4774769a7dfdb3913b2a7c62143302b2a4ca13f5cc",
+    ".agents/quenching/assets/bin/quenching/common/jsonc.py": "source",
 
-    ".agents/quenching/assets/bin/quenching/common/leak.py": "216837ff15d3dc0a38464032913c746a0ad66c367f641f680a4da20e3aa2e3bb",
+    ".agents/quenching/assets/bin/quenching/common/leak.py": "source",
 
-    ".agents/quenching/assets/bin/quenching/common/lent.py": "ab3f6382193f14b6d22c490f31d75b14185f12ad8ba5b350ec0950b149443ec6",
+    ".agents/quenching/assets/bin/quenching/common/lent.py": "source",
 
-    ".agents/quenching/assets/bin/quenching/common/modules.py": "a1328fffdeb5385a67b80a7eb7c48bb741dc48162daed6a76e648b19765bc7e9",
+    ".agents/quenching/assets/bin/quenching/common/modules.py": "source",
 
-    ".agents/quenching/assets/bin/quenching/common/output.py": "0abfe596c2c7294536053e458222ab16c566cab2bc2eac396b2157371326fb16",
+    ".agents/quenching/assets/bin/quenching/common/output.py": "source",
 
-    ".agents/quenching/assets/bin/quenching/common/paths.py": "d9e4155d8fbfd5c7aa8b7d3d75d58da5c0837d6551d6596452bbe78490012d09",
+    ".agents/quenching/assets/bin/quenching/common/paths.py": "source",
 
-    ".agents/quenching/assets/bin/quenching/common/remote.py": "87bf5efd0384cfa8a1fec9c6f90bf7ae4591cc2e8267bde3eca9df4d81a450ec",
+    ".agents/quenching/assets/bin/quenching/common/remote.py": "source",
 
-    ".agents/quenching/assets/bin/quenching/common/text.py": "9413f35123d304aa08c1647ce811fdb111ff44612054469591b696394f39fc4c",
+    ".agents/quenching/assets/bin/quenching/common/text.py": "source",
 
-    ".agents/quenching/assets/bin/quenching/common/tools.py": "341dc7a06d659f8264a4df7cc0cc0fa776c03ee5c2f95b0e56b0a21fb8aa9568",
+    ".agents/quenching/assets/bin/quenching/common/tools.py": "source",
 
-    ".agents/quenching/assets/bin/quenching/common/version.py": "7ba60d5cf6a0c8a9ea5fd390e598ac4564375cddf42e7ba328c961b0f1292185",
+    ".agents/quenching/assets/bin/quenching/common/version.py": "source",
 
-    ".agents/quenching/assets/bin/quenching/common/workspace.py": "7c901265515bd3d4ccde016584283c26e8e02b4dc44009f5610c158f2896e6b1",
+    ".agents/quenching/assets/bin/quenching/common/workspace.py": "source",
 
-    ".agents/quenching/assets/bin/quenching/components/commands/bridge.py": "e4e4abfb68e2452df9ac8d3abaed40bb6e89f96a95cb3964de97cb3a8a7d65d9",
+    ".agents/quenching/assets/bin/quenching/components/commands/bridge.py": "source",
 
-    ".agents/quenching/assets/bin/quenching/components/commands/cli.py": "59d00afb136ea822cb45acb89e6f8d156f8b67604a559a7007eeb9f9333c49ff",
+    ".agents/quenching/assets/bin/quenching/components/commands/cli.py": "source",
 
-    ".agents/quenching/assets/bin/quenching/components/commands/cost.py": "c99123f22c3ec2a83adab78a8d2fb3b7c6532d0c4c281c989e02375a38d28236",
+    ".agents/quenching/assets/bin/quenching/components/commands/cost.py": "source",
 
-    ".agents/quenching/assets/bin/quenching/components/commands/doctor.py": "06a5e47a0eeafe645272664c39b9212ca32fcba79ffe0ba16eee3f6981634f7a",
+    ".agents/quenching/assets/bin/quenching/components/commands/doctor.py": "source",
 
-    ".agents/quenching/assets/bin/quenching/components/commands/lint.py": "33f598b558713b74d8b4b319899313c2f6f32c2bb66ff38880cbd4d8b3a15407",
+    ".agents/quenching/assets/bin/quenching/components/commands/lint.py": "source",
 
-    ".agents/quenching/assets/bin/quenching/components/commands/migrate.py": "7b667819a2a8708226924202b0648837448f97a75911060982a083462aef19ad",
+    ".agents/quenching/assets/bin/quenching/components/commands/migrate.py": "source",
 
-    ".agents/quenching/assets/bin/quenching/components/commands/read.py": "c2c0dad7650907a39783e94dd9e6bd3663547ccbe74627349f7ed6f380d06a71",
+    ".agents/quenching/assets/bin/quenching/components/commands/read.py": "source",
 
-    ".agents/quenching/assets/bin/quenching/components/commands/registry.py": "954486747de7b5278a985b6d86b106a67b7a1776b39f91ce74b7bfb7ef89ee4d",
+    ".agents/quenching/assets/bin/quenching/components/commands/registry.py": "source",
 
-    ".agents/quenching/assets/bin/quenching/components/cq_calls.py": "dccd89f5a26153416460fbbfa4d7d902403d1428ae52a71716ec02ad5f654d73",
+    ".agents/quenching/assets/bin/quenching/components/cq_calls.py": "source",
 
-    ".agents/quenching/assets/bin/quenching/components/families.py": "e0cf57027d2389b46d0265a3c44c467808b6b5595caf7135af74ad3cea248f21",
+    ".agents/quenching/assets/bin/quenching/components/families.py": "source",
 
-    ".agents/quenching/assets/bin/quenching/components/hooks.py": "2881cec7dde92566348e13ac9362ec711706fdbb3e49a1adce73b11cebb894af",
+    ".agents/quenching/assets/bin/quenching/components/hooks.py": "source",
 
-    ".agents/quenching/assets/bin/quenching/components/mcp_citations.py": "6ab447808a1e443760aa51cbeded9ea9c25f7aaf6598f507745a1c53c53aacf6",
+    ".agents/quenching/assets/bin/quenching/components/mcp_citations.py": "source",
 
-    ".agents/quenching/assets/bin/quenching/components/sections.py": "8343fba43a2922960e0fc41c12590c3b075dff0f13a557c6b07d607aac18ae1d",
+    ".agents/quenching/assets/bin/quenching/components/sections.py": "source",
 
-    ".agents/quenching/assets/bin/quenching/components/surface.py": "213c6e2317e2d8d5c329f489cd1d457843bb5c9cd5d875f042ec47b6118d4cf3",
+    ".agents/quenching/assets/bin/quenching/components/surface.py": "source",
 
-    ".agents/quenching/assets/bin/quenching/config/__init__.py": "07638831d3ca774d973dca539a063ebeade8349568bd1b2d4f471ed301ff0b92",
+    ".agents/quenching/assets/bin/quenching/config/__init__.py": "source",
 
-    ".agents/quenching/assets/bin/quenching/config/autonomy.py": "e8f1eda3561d3581efb8976216722d44d8979d1adbdc11798080aabd5f6d0257",
+    ".agents/quenching/assets/bin/quenching/config/autonomy.py": "source",
 
-    ".agents/quenching/assets/bin/quenching/config/ci.py": "81fb993df5870a1e15510e6047cf6a0d7bf0c487e23cedfd4498e2be0501a57f",
+    ".agents/quenching/assets/bin/quenching/config/ci.py": "source",
 
-    ".agents/quenching/assets/bin/quenching/config/effective.py": "9c00e95606190d0d9ffc5e706e8e013400fa700b7e3422d58b15a1d5d46ef1ca",
+    ".agents/quenching/assets/bin/quenching/config/effective.py": "source",
 
-    ".agents/quenching/assets/bin/quenching/config/host.py": "8142472848a298f09484f327a3c7a2d8bbd2c162ff2636eb823498fdfd8eb504",
+    ".agents/quenching/assets/bin/quenching/config/host.py": "source",
 
-    ".agents/quenching/assets/bin/quenching/config/schema.py": "4b91b84297d75006028513a03cf64c1da3fc48f22c57d10723242aed1b464d02",
+    ".agents/quenching/assets/bin/quenching/config/schema.py": "source",
 
-    ".agents/quenching/assets/bin/quenching/config/seed.py": "e2d11c5b986e74e4b0de39108c6ec10f28b4a946d3cfb78010037cb1066506fe",
+    ".agents/quenching/assets/bin/quenching/config/seed.py": "source",
 
-    ".agents/quenching/assets/bin/quenching/controls/__init__.py": "d7b6251673390a48038fec32359cd43e991f4e64f383fb41873728ce9851877e",
+    ".agents/quenching/assets/bin/quenching/controls/__init__.py": "source",
 
-    ".agents/quenching/assets/bin/quenching/controls/evaluate.py": "05cdedea2db16edf16b741e5415097b534b15470ac0e77d0e8c67d7a2ba2a386",
+    ".agents/quenching/assets/bin/quenching/controls/evaluate.py": "source",
 
-    ".agents/quenching/assets/bin/quenching/delivery/checks.py": "80646c5ce3fa67cebcbacfad486feda3cba6d04674b859f7ad74031d2638ad16",
+    ".agents/quenching/assets/bin/quenching/delivery/checks.py": "source",
 
-    ".agents/quenching/assets/bin/quenching/delivery/cli.py": "deef498bb8ebbf2b70ae8880f4509a0c076bf59f632cbe596fa954172e300d29",
+    ".agents/quenching/assets/bin/quenching/delivery/cli.py": "source",
 
-    ".agents/quenching/assets/bin/quenching/delivery/config.py": "c1ccef17888077e69fe5faab4207f2300195ccb33004c41f5858d82552f0b0d2",
+    ".agents/quenching/assets/bin/quenching/delivery/config.py": "source",
 
-    ".agents/quenching/assets/bin/quenching/delivery/doctor.py": "94e085a396df45f4c37f23701d492847d825b11d7e80a4bb2f1a75f17526e3c4",
+    ".agents/quenching/assets/bin/quenching/delivery/doctor.py": "source",
 
-    ".agents/quenching/assets/bin/quenching/delivery/inventory.py": "8fcb3b35cd9c96e2e377fe1fa6167599437c384099de43be7a157a0ed3aebc1b",
+    ".agents/quenching/assets/bin/quenching/delivery/inventory.py": "source",
 
-    ".agents/quenching/assets/bin/quenching/delivery/model.py": "53ab186511c90bde4539d2babbe9442b9c1928253dd0336eb17cb5ca77f258cc",
+    ".agents/quenching/assets/bin/quenching/delivery/model.py": "source",
 
-    ".agents/quenching/assets/bin/quenching/delivery/probe.py": "ba556969ef473dfd54bba7582b633ef12c9349b00dea158cc2bfcb65856f889f",
+    ".agents/quenching/assets/bin/quenching/delivery/probe.py": "source",
 
-    ".agents/quenching/assets/bin/quenching/deploy/__init__.py": "d9efa3062ac0c40e82c0bfc4041b7485a60420e2576afef7e94a72277a8cc0ff",
+    ".agents/quenching/assets/bin/quenching/deploy/__init__.py": "source",
 
-    ".agents/quenching/assets/bin/quenching/deploy/cli.py": "e37687478ac3a1a6ba3f9b466d42f2664d5d1408dc4d39daead33450df11b41a",
+    ".agents/quenching/assets/bin/quenching/deploy/cli.py": "source",
 
-    ".agents/quenching/assets/bin/quenching/deploy/mcpfiles.py": "73f6915f5ad2cd4094870c00f3b075db1f0ec7d5e8b422e2cf138959362ddbb5",
+    ".agents/quenching/assets/bin/quenching/deploy/mcpfiles.py": "source",
 
-    ".agents/quenching/assets/bin/quenching/deploy/settings.py": "31aa50c067d47fc8721519963218b48245d8d3f2f0faa3442b8433428d483fb2",
+    ".agents/quenching/assets/bin/quenching/deploy/settings.py": "source",
 
-    ".agents/quenching/assets/bin/quenching/deploy/translate.py": "69913b2f7ee565b3b0646b9da44cb1343e883278bb292fd182852edbecfab062",
+    ".agents/quenching/assets/bin/quenching/deploy/translate.py": "source",
 
-    ".agents/quenching/assets/bin/quenching/deploy/tree.py": "69e6c612674c61febab365a5e9fc0f4772a68b8ddb1bdb40b174942005fbbb17",
+    ".agents/quenching/assets/bin/quenching/deploy/tree.py": "source",
 
-    ".agents/quenching/assets/bin/quenching/design/align.py": "6d29622f4b63ce0710271398eb72f4f44d22eae297f99aa782007bcac0e6f632",
+    ".agents/quenching/assets/bin/quenching/design/align.py": "source",
 
-    ".agents/quenching/assets/bin/quenching/design/build.py": "59a68bcebd16ed9d7aae86ef2466748486f533526dbcde7dbacd4bbac0908aba",
+    ".agents/quenching/assets/bin/quenching/design/build.py": "source",
 
-    ".agents/quenching/assets/bin/quenching/design/cli.py": "971bfc4ebbe6c251c225888e16493da17a8c099e3a78ba297c503e81e7f61ebc",
+    ".agents/quenching/assets/bin/quenching/design/cli.py": "source",
 
-    ".agents/quenching/assets/bin/quenching/design/doctor.py": "e72bc88f11a7fb987703da6c94b40503aa25647c5b6b24ac4f32489fae6fbcbc",
+    ".agents/quenching/assets/bin/quenching/design/doctor.py": "source",
 
-    ".agents/quenching/assets/bin/quenching/design/genre.py": "6c9a9f78d2e747fa9ce6e913a28eb6bc22cf483df4eac95abfa78499ba086ad9",
+    ".agents/quenching/assets/bin/quenching/design/genre.py": "source",
 
-    ".agents/quenching/assets/bin/quenching/design/importer.py": "28d478aa976d42fe18ab615778e07600984a47bad9339467fb981ab82ef6048b",
+    ".agents/quenching/assets/bin/quenching/design/importer.py": "source",
 
-    ".agents/quenching/assets/bin/quenching/design/markdown.py": "fe65c5fee7173906019bc1b06a7d15aa4fcabdb78c1f69622e16daecb112640a",
+    ".agents/quenching/assets/bin/quenching/design/markdown.py": "source",
 
-    ".agents/quenching/assets/bin/quenching/design/model.py": "c5eadfaabaad3e3959cd77e7d58fd19b007ecac8ff2ed026f73e774efe4bcb42",
+    ".agents/quenching/assets/bin/quenching/design/model.py": "source",
 
-    ".agents/quenching/assets/bin/quenching/git/__init__.py": "84239b047989efdfea34269e24246ced0ea74be91cacfb5154b60a0cf75020c8",
+    ".agents/quenching/assets/bin/quenching/git/__init__.py": "source",
 
-    ".agents/quenching/assets/bin/quenching/git/audit.py": "559437c4cdb137f479c23526026e3ffdd54778057cccf332ac19f75a5691bf2c",
+    ".agents/quenching/assets/bin/quenching/git/audit.py": "source",
 
-    ".agents/quenching/assets/bin/quenching/git/azure_pull.py": "f9b9015cb515eea597a0db6aa1422d067540d4e5aed4cd52f9c7f4a498590038",
+    ".agents/quenching/assets/bin/quenching/git/azure_pull.py": "source",
 
-    ".agents/quenching/assets/bin/quenching/git/base.py": "ba1e16c83ba49dab81abcd03201e2ffff1f102df39cbdcef3cd418edc1d47942",
+    ".agents/quenching/assets/bin/quenching/git/base.py": "source",
 
-    ".agents/quenching/assets/bin/quenching/git/commit.py": "c1a15c67c2599c7537e1e36cc3a4741624ca38a0f8162d512e398ac4910d0b7b",
+    ".agents/quenching/assets/bin/quenching/git/commit.py": "source",
 
-    ".agents/quenching/assets/bin/quenching/git/conventions.py": "09a4487bf3de0ea57f72f0dbba1750e3dfb7e04d75f5dc82a411cf35b7b26de3",
+    ".agents/quenching/assets/bin/quenching/git/conventions.py": "source",
 
-    ".agents/quenching/assets/bin/quenching/git/history.py": "76b49ea7b578f379ae884ff02b895eff05015c1d7a4d2723b756a12b96fdc426",
+    ".agents/quenching/assets/bin/quenching/git/history.py": "source",
 
-    ".agents/quenching/assets/bin/quenching/git/identity.py": "dc32fbecb49039f81191d527cc0823e26ceab62cb14c4af596146e68798f4c81",
+    ".agents/quenching/assets/bin/quenching/git/identity.py": "source",
 
-    ".agents/quenching/assets/bin/quenching/git/ignored.py": "e1f1712acacd68bd097dbdbe644a9c1696bfc025a09bbde386b98920de398dda",
+    ".agents/quenching/assets/bin/quenching/git/ignored.py": "source",
 
-    ".agents/quenching/assets/bin/quenching/git/pr.py": "747e5dbffa41d6226a9a056693d0796a6a385969852424d3732ca4d7a904b5fd",
+    ".agents/quenching/assets/bin/quenching/git/pr.py": "source",
 
-    ".agents/quenching/assets/bin/quenching/git/preflight.py": "a349bf6086336b559341c84c3b92d97ff9139799b284685677315be70598cd91",
+    ".agents/quenching/assets/bin/quenching/git/preflight.py": "source",
 
-    ".agents/quenching/assets/bin/quenching/git/prune.py": "ef3d8d85ec81a0030f7916194a54f8afb258d7a9079fe30d7e70e116e89207cc",
+    ".agents/quenching/assets/bin/quenching/git/prune.py": "source",
 
-    ".agents/quenching/assets/bin/quenching/git/pull.py": "b85c2bede56c23d18d914608d19e02f4a8d09275a463aea143134cd6bd68828c",
+    ".agents/quenching/assets/bin/quenching/git/pull.py": "source",
 
-    ".agents/quenching/assets/bin/quenching/git/push.py": "3a7e189f8027c17ac3a2226c1bf412d6158728e4337ae713fa5b7e7ff7be4c9f",
+    ".agents/quenching/assets/bin/quenching/git/push.py": "source",
 
-    ".agents/quenching/assets/bin/quenching/git/refresh.py": "b90f4c71c87c129b4e4c8827795d23d3741c2ee75da6d44df7e88de028e68e79",
+    ".agents/quenching/assets/bin/quenching/git/refresh.py": "source",
 
-    ".agents/quenching/assets/bin/quenching/git/slots.py": "081d031072c658e6845d0e99d7e3a12956c88cbbe3976f2490d1bff5451d8c0c",
+    ".agents/quenching/assets/bin/quenching/git/slots.py": "source",
 
-    ".agents/quenching/assets/bin/quenching/git/slugs.py": "810953ab971b319caf6fa84617afff9a7cbaa0589585ac163314b6e0392c7127",
+    ".agents/quenching/assets/bin/quenching/git/slugs.py": "source",
 
-    ".agents/quenching/assets/bin/quenching/git/stale.py": "9ae77cfb86b2070b0a17d56b0598366d1d2163f6d4d84f4facc5f48f27ec1d78",
+    ".agents/quenching/assets/bin/quenching/git/stale.py": "source",
 
-    ".agents/quenching/assets/bin/quenching/git/state.py": "986789548179bef9d5102f87f76f6402baf4f94e52e38172b4ef68e8344b7175",
+    ".agents/quenching/assets/bin/quenching/git/state.py": "source",
 
-    ".agents/quenching/assets/bin/quenching/git/worktree.py": "a685e67c1e756e8b298e6417c7f252d5f7b1cd0140882712c946f05460af1d61",
+    ".agents/quenching/assets/bin/quenching/git/worktree.py": "source",
 
-    ".agents/quenching/assets/bin/quenching/knowledge/checks.py": "703d285f6ed49faa860a32c90dfafbd6f41f0c829cb5e8d7347fdeb6f13be2bd",
+    ".agents/quenching/assets/bin/quenching/knowledge/checks.py": "source",
 
-    ".agents/quenching/assets/bin/quenching/knowledge/cli.py": "191c4ec8cf639f359dff741bf3169204f34f09f1477758901c80baf0bdbac5b3",
+    ".agents/quenching/assets/bin/quenching/knowledge/cli.py": "source",
 
-    ".agents/quenching/assets/bin/quenching/knowledge/config.py": "acf4c8be0d468050a2de89d9d2004f9e70c14880f0a3f036fba2a968c00ec3e6",
+    ".agents/quenching/assets/bin/quenching/knowledge/config.py": "source",
 
-    ".agents/quenching/assets/bin/quenching/knowledge/corpus.py": "5f323d954b19773eac0c4bc7fca7d6e36d270cfe3beb72e2e3743fe870dd3ae6",
+    ".agents/quenching/assets/bin/quenching/knowledge/corpus.py": "source",
 
-    ".agents/quenching/assets/bin/quenching/knowledge/nav.py": "d9f48a660cfe18702d4903011f8dd77fa89f34732fdce5b2ad18b12fe75d6deb",
+    ".agents/quenching/assets/bin/quenching/knowledge/nav.py": "source",
 
-    ".agents/quenching/assets/bin/quenching/knowledge/projection.py": "75f34f7573f4e2daed3c1c00864ba3a945a45ca796061995ccdaef3c1b370cbf",
+    ".agents/quenching/assets/bin/quenching/knowledge/projection.py": "source",
 
-    ".agents/quenching/assets/bin/quenching/knowledge/render.py": "7ce6ee78ee85dd2ea60fbef2dacefb27a8b167947661c76ea1fa315aa5bfbe36",
+    ".agents/quenching/assets/bin/quenching/knowledge/render.py": "source",
 
-    ".agents/quenching/assets/bin/quenching/knowledge/resource.py": "a5d8f9d53d176a14e5c0c8bc42ed68bce541a0fac4bf382856d0d31c6afae26c",
+    ".agents/quenching/assets/bin/quenching/knowledge/resource.py": "source",
 
-    ".agents/quenching/assets/bin/quenching/knowledge/schema.py": "177657a8086f945cd9ebb28700df863f80bf66789e52f791dd1e2f0dabd71e3a",
+    ".agents/quenching/assets/bin/quenching/knowledge/schema.py": "source",
 
-    ".agents/quenching/assets/bin/quenching/knowledge/site_source.py": "251291ed85a5e46a2060d805625c62bf5f3f6a533288a9ad56f7e37d9e06d2a4",
+    ".agents/quenching/assets/bin/quenching/knowledge/site_source.py": "source",
 
-    ".agents/quenching/assets/bin/quenching/knowledge/stale.py": "38b15048a5e98cf70af1a63e3b5bc361fb2ac183b42e341699029ccf57ba1958",
+    ".agents/quenching/assets/bin/quenching/knowledge/stale.py": "source",
 
-    ".agents/quenching/assets/bin/quenching/knowledge/structure.py": "6cc74eb56262c0132118d07424680cd32dd7f014e7b85879fe01bc2b278ae059",
+    ".agents/quenching/assets/bin/quenching/knowledge/structure.py": "source",
 
-    ".agents/quenching/assets/bin/quenching/knowledge/validate.py": "6e673e47c5dbf5ed925da8cfef8703e71acc62ca9817266512b50e1aa661aa3e",
+    ".agents/quenching/assets/bin/quenching/knowledge/validate.py": "source",
 
-    ".agents/quenching/assets/bin/quenching/mcp/catalog.py": "02a4f32bffa7b2d2525a0efc1d7d1ed4e3a31c23b051a10d146f1ad4a84229a7",
+    ".agents/quenching/assets/bin/quenching/mcp/catalog.py": "source",
 
-    ".agents/quenching/assets/bin/quenching/mcp/cli.py": "f816e0eda4c88d2b07f461d75f3a2d9bc4ab91a6ada69e16588e3a75df3c616a",
+    ".agents/quenching/assets/bin/quenching/mcp/cli.py": "source",
 
-    ".agents/quenching/assets/bin/quenching/mcp/coverage.py": "08295643b5b72e404acd9190fd1636765373517512178534c1a8f18a287d6f58",
+    ".agents/quenching/assets/bin/quenching/mcp/coverage.py": "source",
 
-    ".agents/quenching/assets/bin/quenching/mcp/resources.py": "61dc6effc7117547fbde0ccc1d8e7796448c59499f976e9968bf0df466bf51d1",
+    ".agents/quenching/assets/bin/quenching/mcp/resources.py": "source",
 
-    ".agents/quenching/assets/bin/quenching/mcp/server.py": "c057a917f346f1541e6e3380ee002173ae39392eeb099864e0e94b10af608cc8",
+    ".agents/quenching/assets/bin/quenching/mcp/server.py": "source",
 
-    ".agents/quenching/assets/bin/quenching/opensource/__init__.py": "306ff4685817302924fc661ec47ce59ca789bbf3a14df2fcb9b355a9dbcc94bb",
+    ".agents/quenching/assets/bin/quenching/opensource/__init__.py": "source",
 
-    ".agents/quenching/assets/bin/quenching/opensource/aggregate.py": "189b2bb08d2e3f791270b1e5ad912dfc6e0b5eba3168db9c697f9a925a46c1fe",
+    ".agents/quenching/assets/bin/quenching/opensource/aggregate.py": "source",
 
-    ".agents/quenching/assets/bin/quenching/opensource/apply.py": "2adb45998f67e77662ed90d8c58f82a46650972e15918322098bb0cc553a9bd8",
+    ".agents/quenching/assets/bin/quenching/opensource/apply.py": "source",
 
-    ".agents/quenching/assets/bin/quenching/opensource/cli.py": "8d0164dc0f1afe67bd9cfb2387aa72baf8b6917532e81bb65889384707ff3758",
+    ".agents/quenching/assets/bin/quenching/opensource/cli.py": "source",
 
-    ".agents/quenching/assets/bin/quenching/opensource/readiness.py": "224a2587653fe87377e8071930b580732b907ba87e60b39bf180400e3e327807",
+    ".agents/quenching/assets/bin/quenching/opensource/readiness.py": "source",
 
-    ".agents/quenching/assets/bin/quenching/ops/checks.py": "c73e12b773c591fbe8359f290a275c2abe5787ca01bf8919932d51c85771e8b6",
+    ".agents/quenching/assets/bin/quenching/ops/checks.py": "source",
 
-    ".agents/quenching/assets/bin/quenching/ops/cli.py": "be7632c73cb3439876493a9db061a401d71280f1181583de63e75fc9e456b98b",
+    ".agents/quenching/assets/bin/quenching/ops/cli.py": "source",
 
-    ".agents/quenching/assets/bin/quenching/ops/config.py": "3c0a9d0da12cf135cae7b77c93c156e741a28e3a141d2fc2de8ce64a4e4d109d",
+    ".agents/quenching/assets/bin/quenching/ops/config.py": "source",
 
-    ".agents/quenching/assets/bin/quenching/ops/doctor.py": "da9ee385ff6e4bd5c96c5c855021604708442953d514bc2e7305992b0993058f",
+    ".agents/quenching/assets/bin/quenching/ops/doctor.py": "source",
 
-    ".agents/quenching/assets/bin/quenching/ops/inventory.py": "fee260b25659cd6ce5f9ab25ee87db8b2d2f41cc620d5bbc4c23ce3e24b15132",
+    ".agents/quenching/assets/bin/quenching/ops/inventory.py": "source",
 
-    ".agents/quenching/assets/bin/quenching/ops/model.py": "b4dbb844767a3169f61c27079ed99f2019d1991277a6f2cb8cabbbb723582f94",
+    ".agents/quenching/assets/bin/quenching/ops/model.py": "source",
 
-    ".agents/quenching/assets/bin/quenching/ops/registry.py": "e7cf0275569cdaec43be892a282cbff44b24345811307a226d4355cb0f0f5ce0",
+    ".agents/quenching/assets/bin/quenching/ops/registry.py": "source",
 
-    ".agents/quenching/assets/bin/quenching/portal/__init__.py": "62de63bf04a15c8bb39c5f04035f9e5c8deb58b38813b17c0839b51b46624da5",
+    ".agents/quenching/assets/bin/quenching/portal/__init__.py": "source",
 
-    ".agents/quenching/assets/bin/quenching/portal/registry.py": "62ebb6c9ede9c7fa21b05e0f0c459a61fc4cf4ab3dc9f9cba5c0e6431092d4b3",
+    ".agents/quenching/assets/bin/quenching/portal/registry.py": "source",
 
-    ".agents/quenching/assets/bin/quenching/portal/serve.py": "e6017afc65bc0294fddcdfac6620277e50927d1e8e5be84bba145e9dd4523224",
+    ".agents/quenching/assets/bin/quenching/portal/serve.py": "source",
 
-    ".agents/quenching/assets/bin/quenching/proof/checks.py": "498b5197674253c351a674c72bfd5f8e6587a85df74d73beed2bafdb79d2c61b",
+    ".agents/quenching/assets/bin/quenching/proof/checks.py": "source",
 
-    ".agents/quenching/assets/bin/quenching/proof/ci.py": "f8231a649010bc2a0a69c734d9185011b7dc8002152bd7d94426bbfb5dcbbaa5",
+    ".agents/quenching/assets/bin/quenching/proof/ci.py": "source",
 
-    ".agents/quenching/assets/bin/quenching/proof/cli.py": "24a675dacd51bde2473567643ef42b415987c3dcd9999649774c73e811fdd140",
+    ".agents/quenching/assets/bin/quenching/proof/cli.py": "source",
 
-    ".agents/quenching/assets/bin/quenching/proof/config.py": "ab4f495492235be04b14c8a497a5e5c68945c78b96499820b35351084e131549",
+    ".agents/quenching/assets/bin/quenching/proof/config.py": "source",
 
-    ".agents/quenching/assets/bin/quenching/proof/doctor.py": "a2a70b68d90f97f350ebeb7fc66d483dee28acb577a8c1438d5732b43c60b496",
+    ".agents/quenching/assets/bin/quenching/proof/doctor.py": "source",
 
-    ".agents/quenching/assets/bin/quenching/proof/inventory.py": "4f9b21702f8dfea14f6b9835d791ed4e9e073705201b85ef098e9bd3c1e08f23",
+    ".agents/quenching/assets/bin/quenching/proof/inventory.py": "source",
 
-    ".agents/quenching/assets/bin/quenching/proof/model.py": "f147bc496258ff9f7ab5d2534bc512ab68495041f1ea34180d418cebbfdd2729",
+    ".agents/quenching/assets/bin/quenching/proof/model.py": "source",
 
-    ".agents/quenching/assets/bin/quenching/proof/ratchet.py": "c83e072c8355cc9d036364158c4901d50051fc166da8edd8e25659b5fa63af69",
+    ".agents/quenching/assets/bin/quenching/proof/ratchet.py": "source",
 
-    ".agents/quenching/assets/bin/quenching/proof/readme.py": "071295c2ee9bda6676cfd2f1d82493b147447fa878144eb8761c470baecd987a",
+    ".agents/quenching/assets/bin/quenching/proof/readme.py": "source",
 
-    ".agents/quenching/assets/bin/quenching/security/__init__.py": "9e9cbdf05378b49f742ad64b3cd55dc46ad17788d8a09a5e6d0161337b2b3378",
+    ".agents/quenching/assets/bin/quenching/security/__init__.py": "source",
 
-    ".agents/quenching/assets/bin/quenching/security/model.py": "5c2e839a1b80384c97d115a24cab934530c3e08d5ca01a7d86a305a84eb6ea6e",
+    ".agents/quenching/assets/bin/quenching/security/model.py": "source",
 
-    ".agents/quenching/assets/bin/quenching/security/probe.py": "939abd3bcbe35e33b3c44d44fcddf3c5fbf3d549e868fad240737084c12e5938",
+    ".agents/quenching/assets/bin/quenching/security/probe.py": "source",
 
-    ".agents/quenching/assets/bin/quenching/session/cachebar.py": "fc2585e0a91ae2527e9a8313fd3553983706dd19441247751df92ddf8c972721",
+    ".agents/quenching/assets/bin/quenching/session/cachebar.py": "source",
 
-    ".agents/quenching/assets/bin/quenching/session/commands/cache.py": "dac271d4a975cc23aebac06af99381d362b3c1b107ef492ae195c359a31a2116",
+    ".agents/quenching/assets/bin/quenching/session/commands/cache.py": "source",
 
-    ".agents/quenching/assets/bin/quenching/session/commands/cli.py": "916bf9f07c301ed3aa8707e3d8b6d32214472fdd50e0f46f9957bc79a5d901fc",
+    ".agents/quenching/assets/bin/quenching/session/commands/cli.py": "source",
 
-    ".agents/quenching/assets/bin/quenching/session/commands/context.py": "199377bebf3df2af3411f510395103ae4580200d99f20d985ca790bc8789722f",
+    ".agents/quenching/assets/bin/quenching/session/commands/context.py": "source",
 
-    ".agents/quenching/assets/bin/quenching/session/commands/cost.py": "0dac6beb2348e23c0bb4ef3dcac7f457c68dd90f0a02bfce45b6bf0f7f4ab510",
+    ".agents/quenching/assets/bin/quenching/session/commands/cost.py": "source",
 
-    ".agents/quenching/assets/bin/quenching/session/commands/digest.py": "9f73a1cf6b8c21a5dcfd993d8b5b18ebc067db1a87de4e3062be2f1b622e70d1",
+    ".agents/quenching/assets/bin/quenching/session/commands/digest.py": "source",
 
-    ".agents/quenching/assets/bin/quenching/session/commands/inflow.py": "030e8ecd091ba38cc08c3af95b0fe6b7a319d2bbad3b513e061f3c2477e3185b",
+    ".agents/quenching/assets/bin/quenching/session/commands/inflow.py": "source",
 
-    ".agents/quenching/assets/bin/quenching/session/commands/live.py": "fa3b045f405b1d68c2bcc9397c4b4f4d4242fa9ef10a8d89f8221bb62d074e53",
+    ".agents/quenching/assets/bin/quenching/session/commands/live.py": "source",
 
-    ".agents/quenching/assets/bin/quenching/session/commands/read.py": "898bd5e9a96cd8d24f95c78b0f2e66afdd906641cc6d65fd61d21ad6383b2721",
+    ".agents/quenching/assets/bin/quenching/session/commands/read.py": "source",
 
-    ".agents/quenching/assets/bin/quenching/session/copilot.py": "07da8a59510605b7ae9a314fab363cee78255c3ecf695ccf664c285063ed334c",
+    ".agents/quenching/assets/bin/quenching/session/copilot.py": "source",
 
-    ".agents/quenching/assets/bin/quenching/session/cqcalls.py": "7a0d693aad6806cc370beb4d3e6300d43347e8e1d50f4fec0f34f94d654851e4",
+    ".agents/quenching/assets/bin/quenching/session/cqcalls.py": "source",
 
-    ".agents/quenching/assets/bin/quenching/session/evidence.py": "e4f6ee72add4139994aa63feec7855b090d52d176b05fb14ebd4813dc5893db3",
+    ".agents/quenching/assets/bin/quenching/session/evidence.py": "source",
 
-    ".agents/quenching/assets/bin/quenching/session/live.py": "f3f0d9648bc380e19311db70c3cb890ec4236c44c47ddb8cc27559aff97b2bcd",
+    ".agents/quenching/assets/bin/quenching/session/live.py": "source",
 
-    ".agents/quenching/assets/bin/quenching/session/model.py": "10b970cf07691f1b691d109e1d6b71ed3fc923170665011d8278934e026f7118",
+    ".agents/quenching/assets/bin/quenching/session/model.py": "source",
 
-    ".agents/quenching/assets/bin/quenching/session/opencode_cost.py": "f2fdfcbe47bcdee3be4be5ff3a0363883fdd53b821ae46da3a0179454cf7678a",
+    ".agents/quenching/assets/bin/quenching/session/opencode_cost.py": "source",
 
-    ".agents/quenching/assets/bin/quenching/session/opencode_transcript.py": "71ebbe7becaad816fbd32d20d2b8c5367f37363ccc175001d3afc1309de3bdf8",
+    ".agents/quenching/assets/bin/quenching/session/opencode_transcript.py": "source",
 
-    ".agents/quenching/assets/bin/quenching/session/parse.py": "47634bdc347f065432770fd09f2a1838ac3f0f84dda48014f78d0ee9c6bebe25",
+    ".agents/quenching/assets/bin/quenching/session/parse.py": "source",
 
-    ".agents/quenching/assets/bin/quenching/session/portal.py": "29c8dbf037ff83d43fee008c57d2095e59bd08e8d19593db1e7cda61662a736d",
+    ".agents/quenching/assets/bin/quenching/session/portal.py": "source",
 
-    ".agents/quenching/assets/bin/quenching/session/pricing.json": "b322ee29cd47316811427ba357c1fac172684c6da81473e7857bc0ae542a07c7",
+    ".agents/quenching/assets/bin/quenching/session/pricing.json": "source",
 
-    ".agents/quenching/assets/bin/quenching/session/pricing.py": "1c2a0cd159122e7ca1b40e3a7e230c916ac39be3d17d31d4f9680f9d0495cce0",
+    ".agents/quenching/assets/bin/quenching/session/pricing.py": "source",
 
-    ".agents/quenching/assets/bin/quenching/session/quotabar.py": "dd681ae232dadf29eaea06d8681d690a8dbbcb9fa1ae075637e2dd53e18d5908",
+    ".agents/quenching/assets/bin/quenching/session/quotabar.py": "source",
 
-    ".agents/quenching/assets/bin/quenching/session/transcript.py": "b1598ebd20bff52d90f858b0d9f247c448154e9257b49541bdd96f3eef5636f2",
+    ".agents/quenching/assets/bin/quenching/session/transcript.py": "source",
 
-    ".agents/quenching/assets/bin/quenching/session/worktrees.py": "dec21a2db63fd2ccffe82e61f354cd7ef54e4951e2a7ac6afbe7a9ef2bd09311",
+    ".agents/quenching/assets/bin/quenching/session/worktrees.py": "source",
 
-    ".agents/quenching/assets/bin/quenching/specs/backends/__init__.py": "7ab56491220f44e0d5260f0dacffb0b05bf166f52eb0f8c1bb146da124ce6238",
+    ".agents/quenching/assets/bin/quenching/specs/backends/__init__.py": "source",
 
-    ".agents/quenching/assets/bin/quenching/specs/backends/azure.py": "18714610ffc6b3a84e73da85c4d7224be1903d893bac2db08ff8b22fa17eb540",
+    ".agents/quenching/assets/bin/quenching/specs/backends/azure.py": "source",
 
-    ".agents/quenching/assets/bin/quenching/specs/backends/base.py": "bfc6e26b4f2b1904d04ca91123d675be33da33f7313895ef3fb1e203cd4dd023",
+    ".agents/quenching/assets/bin/quenching/specs/backends/base.py": "source",
 
-    ".agents/quenching/assets/bin/quenching/specs/backends/git.py": "ae198bf8c053b86b3661645db5f0529eaa2004843330534f3675183cc8649869",
+    ".agents/quenching/assets/bin/quenching/specs/backends/git.py": "source",
 
-    ".agents/quenching/assets/bin/quenching/specs/backends/github.py": "c2d00ca687562abb7b04bffd971ae6bf7c9fea2477a555f4ba3c43ee0fd27d1a",
+    ".agents/quenching/assets/bin/quenching/specs/backends/github.py": "source",
 
-    ".agents/quenching/assets/bin/quenching/specs/backends/hybrid.py": "d8dc25aa28f0a2f62ea0f056e391ff3a3e2457150d89a21eeaac04f84812da44",
+    ".agents/quenching/assets/bin/quenching/specs/backends/hybrid.py": "source",
 
-    ".agents/quenching/assets/bin/quenching/specs/backends/lean_cache.py": "40ed781f66d1a32053d6064c483a274c0d91a7cd9d51af5b08c3fc494dc1afa4",
+    ".agents/quenching/assets/bin/quenching/specs/backends/lean_cache.py": "source",
 
-    ".agents/quenching/assets/bin/quenching/specs/backends/memory.py": "72f5a90f9f63c16367bcf3ead1d7d2b8c51016ea505aac7ee05800be572a956e",
+    ".agents/quenching/assets/bin/quenching/specs/backends/memory.py": "source",
 
-    ".agents/quenching/assets/bin/quenching/specs/cards.py": "c6968bd8c790b35ebaaff1282777c614e6de9f916392571850d22eb6e1008a92",
+    ".agents/quenching/assets/bin/quenching/specs/cards.py": "source",
 
-    ".agents/quenching/assets/bin/quenching/specs/chat.py": "987e59657e252c05e8bbdc79537f6e016c43649f0e9386103579abb0d0c0ed22",
+    ".agents/quenching/assets/bin/quenching/specs/chat.py": "source",
 
-    ".agents/quenching/assets/bin/quenching/specs/claims.py": "9658385b3f8adced79bc43947ba3d60edb1649901fe36568813e05fbc4db502f",
+    ".agents/quenching/assets/bin/quenching/specs/claims.py": "source",
 
-    ".agents/quenching/assets/bin/quenching/specs/commands/artifacts.py": "7b920d2218de27a351413c743b58d3cfe6279936e617e124b3538a3d92e81d4c",
+    ".agents/quenching/assets/bin/quenching/specs/commands/artifacts.py": "source",
 
-    ".agents/quenching/assets/bin/quenching/specs/commands/claim.py": "c5137fc1f1f2a59094d4398f6efd12bdf718e8de5b6b2ebf092dceb5e8eb996d",
+    ".agents/quenching/assets/bin/quenching/specs/commands/claim.py": "source",
 
-    ".agents/quenching/assets/bin/quenching/specs/commands/cli.py": "d3d5b5a4739b860d4c97942245e2abcb434524e73c0ca614d8527ef0742803e2",
+    ".agents/quenching/assets/bin/quenching/specs/commands/cli.py": "source",
 
-    ".agents/quenching/assets/bin/quenching/specs/commands/create.py": "0055f88ed8138abe9177da504812393006aed9d0348570e4f884fe5067c98161",
+    ".agents/quenching/assets/bin/quenching/specs/commands/create.py": "source",
 
-    ".agents/quenching/assets/bin/quenching/specs/commands/deps.py": "555c25746e91e1173c65dd859d391c595ff738aab24b8ed40b3fa9e7472c9c99",
+    ".agents/quenching/assets/bin/quenching/specs/commands/deps.py": "source",
 
-    ".agents/quenching/assets/bin/quenching/specs/commands/doctor.py": "8eadb59e7fe5342f18fc4f3c132eccb7645adb452f789b44d3378baae9cb5e5c",
+    ".agents/quenching/assets/bin/quenching/specs/commands/doctor.py": "source",
 
-    ".agents/quenching/assets/bin/quenching/specs/commands/epic.py": "bf9ab363777da909081f2aeb5490ef75396193ba62cf901785f9b72ec8ecb3bd",
+    ".agents/quenching/assets/bin/quenching/specs/commands/epic.py": "source",
 
-    ".agents/quenching/assets/bin/quenching/specs/commands/estimate.py": "9bd4a61484e22f5b380ca2ed976e5ec0dce1298262fe0f7d80cbe9b4b59a241a",
+    ".agents/quenching/assets/bin/quenching/specs/commands/estimate.py": "source",
 
-    ".agents/quenching/assets/bin/quenching/specs/commands/fields.py": "ce80a4ae8328209244b6dcb90050519262271c48670e6d729e3f808053d0800c",
+    ".agents/quenching/assets/bin/quenching/specs/commands/fields.py": "source",
 
-    ".agents/quenching/assets/bin/quenching/specs/commands/find.py": "3b930b6ab48d50d5e0fe6eaa61df112bb66929d7596821859e008d571acd6d56",
+    ".agents/quenching/assets/bin/quenching/specs/commands/find.py": "source",
 
-    ".agents/quenching/assets/bin/quenching/specs/commands/granular.py": "24a5059f68eb6cd7adb0c869b7743ce3bf515c50cfda918f065fcebf840e2b55",
+    ".agents/quenching/assets/bin/quenching/specs/commands/granular.py": "source",
 
-    ".agents/quenching/assets/bin/quenching/specs/commands/handoff.py": "bc96414f767ace422fa7007a69c05403e6cb4263935b47436dc6d39ad7c5dde4",
+    ".agents/quenching/assets/bin/quenching/specs/commands/handoff.py": "source",
 
-    ".agents/quenching/assets/bin/quenching/specs/commands/migrate.py": "5943bce7d0a23a5fb6fa990681b98990f7b67b94fe78f2072e5ecae60b271afd",
+    ".agents/quenching/assets/bin/quenching/specs/commands/migrate.py": "source",
 
-    ".agents/quenching/assets/bin/quenching/specs/commands/next.py": "3d4f9e00c3c00bc156ab36b176109cd58e64fcb62a6e19a40528e9be2f2cfe6e",
+    ".agents/quenching/assets/bin/quenching/specs/commands/next.py": "source",
 
-    ".agents/quenching/assets/bin/quenching/specs/commands/output.py": "989f1e3773a0f61b7e8f0096fe3dfe9e116d76bf8704d0969d74796d264da662",
+    ".agents/quenching/assets/bin/quenching/specs/commands/output.py": "source",
 
-    ".agents/quenching/assets/bin/quenching/specs/commands/parallel.py": "b536837a705614469dc4d6a224783f87f932e7f2bb71d56c038c1c45a3c9f524",
+    ".agents/quenching/assets/bin/quenching/specs/commands/parallel.py": "source",
 
-    ".agents/quenching/assets/bin/quenching/specs/commands/promote.py": "1d7f0cace67e785c7a9ac724269aea8d9806e27bdc88370b961103d148b81401",
+    ".agents/quenching/assets/bin/quenching/specs/commands/promote.py": "source",
 
-    ".agents/quenching/assets/bin/quenching/specs/commands/push.py": "b12ca94c992aab163f939ee9d8e555090bee99c30519800ad0fa66bec7cecef3",
+    ".agents/quenching/assets/bin/quenching/specs/commands/push.py": "source",
 
-    ".agents/quenching/assets/bin/quenching/specs/commands/read.py": "32d3f60e46e5ce843c31e3fb20d8e9f1ca4dd80b8f09cdc914214a86a6780b95",
+    ".agents/quenching/assets/bin/quenching/specs/commands/read.py": "source",
 
-    ".agents/quenching/assets/bin/quenching/specs/commands/reconcile.py": "2daebb9b659271e7e83d9e4069d05bba02b51aae9b8584f5b632ccd3cabce6ec",
+    ".agents/quenching/assets/bin/quenching/specs/commands/reconcile.py": "source",
 
-    ".agents/quenching/assets/bin/quenching/specs/commands/release.py": "ed6e7f13030611ed85d40529710ae008e549ed062263bf70b3270db975ca9aa6",
+    ".agents/quenching/assets/bin/quenching/specs/commands/release.py": "source",
 
-    ".agents/quenching/assets/bin/quenching/specs/commands/scrub.py": "629bbcb3dbaa8c1ddae24087d9ed746525b5be02072d3702f96de9dd2593d269",
+    ".agents/quenching/assets/bin/quenching/specs/commands/scrub.py": "source",
 
-    ".agents/quenching/assets/bin/quenching/specs/commands/sync.py": "2d5b63bf4616434439c7e83af8178546a0cce470a03ae54cf22e5ee573d1c7f9",
+    ".agents/quenching/assets/bin/quenching/specs/commands/sync.py": "source",
 
-    ".agents/quenching/assets/bin/quenching/specs/commands/task.py": "5052d582b65ea6838b50db9320605c3d26caa44e673dd496fed9067c7c99d692",
+    ".agents/quenching/assets/bin/quenching/specs/commands/task.py": "source",
 
-    ".agents/quenching/assets/bin/quenching/specs/commands/validate.py": "995173f28e013e2bc66f10538cac7e4dd85b64164513423e0231c9463598b655",
+    ".agents/quenching/assets/bin/quenching/specs/commands/validate.py": "source",
 
-    ".agents/quenching/assets/bin/quenching/specs/config.py": "3b21d2a35ccbe3b3e41361c8f0e5e92ca462f977a7ca34fee81677a88a118763",
+    ".agents/quenching/assets/bin/quenching/specs/config.py": "source",
 
-    ".agents/quenching/assets/bin/quenching/specs/mcp.py": "073ffc1266a7887834869fd9d3393d206735d3996b13beb9621eee2960627360",
+    ".agents/quenching/assets/bin/quenching/specs/mcp.py": "source",
 
-    ".agents/quenching/assets/bin/quenching/specs/members.py": "37199b9fcac8eb5a958e9e3e8441d1c8432542aa908d5fa6607690e7ed31ad83",
+    ".agents/quenching/assets/bin/quenching/specs/members.py": "source",
 
-    ".agents/quenching/assets/bin/quenching/specs/parse/__init__.py": "26c420fca154b9dedd3ff506a754d8aa4e8fd23013c8ba0c59bd90a5a8f26356",
+    ".agents/quenching/assets/bin/quenching/specs/parse/__init__.py": "source",
 
-    ".agents/quenching/assets/bin/quenching/specs/parse/deps.py": "ddb0a4b93431d9b3f57c0dd44ff5c47ae5d5143ff18c9dc95deb1357f55da215",
+    ".agents/quenching/assets/bin/quenching/specs/parse/deps.py": "source",
 
-    ".agents/quenching/assets/bin/quenching/specs/parse/derive.py": "d51e1ef9d902aeaf2b4ca988f029f1a5e2f7c8f3a5bd838390e3049f7a6a498d",
+    ".agents/quenching/assets/bin/quenching/specs/parse/derive.py": "source",
 
-    ".agents/quenching/assets/bin/quenching/specs/parse/edit.py": "9c3d92d46b878b14ab13c6d2f8cd0c87237f3b72d062b9c20d6679c9f29d9b0c",
+    ".agents/quenching/assets/bin/quenching/specs/parse/edit.py": "source",
 
-    ".agents/quenching/assets/bin/quenching/specs/parse/epics.py": "aa0f093d89ca0c658c236657bbdaf8886c87ec859f3915fb85e66694d09cc1e4",
+    ".agents/quenching/assets/bin/quenching/specs/parse/epics.py": "source",
 
-    ".agents/quenching/assets/bin/quenching/specs/parse/fields.py": "76daf0506802f483dfa95b34932be2597da41b50f7ce450bd5eb11344eb090e3",
+    ".agents/quenching/assets/bin/quenching/specs/parse/fields.py": "source",
 
-    ".agents/quenching/assets/bin/quenching/specs/parse/handoff.py": "b36657f84c2c21591b8c15c7c9fabc3cbd8c1dd98a2a31eac9c05c879dcbaf77",
+    ".agents/quenching/assets/bin/quenching/specs/parse/handoff.py": "source",
 
-    ".agents/quenching/assets/bin/quenching/specs/parse/records.py": "f594c25c8c5f94aa891991433e6e49310ffa7f7995a197110ec880b929162656",
+    ".agents/quenching/assets/bin/quenching/specs/parse/records.py": "source",
 
-    ".agents/quenching/assets/bin/quenching/specs/parse/refs.py": "afdac27028ed4ca801c3305d6deade27ebc751b28ed598cd18579e70108b9311",
+    ".agents/quenching/assets/bin/quenching/specs/parse/refs.py": "source",
 
-    ".agents/quenching/assets/bin/quenching/specs/parse/sections.py": "534e8f27aadc92685fca3ca37db3e7a5d090a8bda7a0f14a286d908c6213e942",
+    ".agents/quenching/assets/bin/quenching/specs/parse/sections.py": "source",
 
-    ".agents/quenching/assets/bin/quenching/specs/parse/spec.py": "6ea2338fd36c12e451a58b4eb1c9f93dad78a6e000e40700519e6454cd9ae240",
+    ".agents/quenching/assets/bin/quenching/specs/parse/spec.py": "source",
 
-    ".agents/quenching/assets/bin/quenching/specs/parse/tasks.py": "e16f318df238edbd1b54cafd88ff2845f350ab41d3b9157b15309682ed2d7b7f",
+    ".agents/quenching/assets/bin/quenching/specs/parse/tasks.py": "source",
 
-    ".agents/quenching/assets/bin/quenching/specs/parse/text.py": "c8b9e7b269a73925d161fa73174a66091a3a3e1b722868978b2e9602b2c290f7",
+    ".agents/quenching/assets/bin/quenching/specs/parse/text.py": "source",
 
-    ".agents/quenching/assets/bin/quenching/specs/portal.py": "5a9bc10cf2c3fd151969a2f985872e81ce26c0dddbdc23615a781b8df869ad59",
+    ".agents/quenching/assets/bin/quenching/specs/portal.py": "source",
 
-    ".agents/quenching/assets/bin/quenching/specs/release.py": "0d58748ccf84799d1832d95970f256363989cf2628442faf07e7a9579582c3e7",
+    ".agents/quenching/assets/bin/quenching/specs/release.py": "source",
 
-    ".agents/quenching/assets/bin/quenching/specs/schema.py": "55817e59a81196852a2a6324643e376b8c1151b999b402ed07a47369fae319c8",
+    ".agents/quenching/assets/bin/quenching/specs/schema.py": "source",
 
-    ".agents/quenching/assets/bin/quenching/specs/store.py": "597cc53d1d219cdfb77216c92dadab2088aef5516bbda7e0bf05e1d1e795fe09",
+    ".agents/quenching/assets/bin/quenching/specs/store.py": "source",
 
-    ".agents/quenching/assets/bin/quenching/specs/sync.py": "061231d82295efbd037672ece3db75109b05e057cb9ae2a9a6ae2536936d53ae",
+    ".agents/quenching/assets/bin/quenching/specs/sync.py": "source",
 
-    ".agents/quenching/assets/bin/quenching/toolchain/checks.py": "97e91cc3fc2465c103ce3349dc75214b457bfdab2d65ca8b99e4169f674d0b88",
+    ".agents/quenching/assets/bin/quenching/toolchain/checks.py": "source",
 
-    ".agents/quenching/assets/bin/quenching/toolchain/cli.py": "b67cd3dabdc0b31fa4b6de625140bcfcef6a4babc091a36e8bc21c35cb990458",
+    ".agents/quenching/assets/bin/quenching/toolchain/cli.py": "source",
 
-    ".agents/quenching/assets/bin/quenching/toolchain/doctor.py": "672068d87361d3cbf67474579cedefc44b9f06e80ff5548095d3861a4393abdb",
+    ".agents/quenching/assets/bin/quenching/toolchain/doctor.py": "source",
 
-    ".agents/quenching/assets/bin/quenching/toolchain/inventory.py": "b97c5b4694355e20cf2016f285198bf2c3d6f20d610df9aa61a5cf1af686914e",
+    ".agents/quenching/assets/bin/quenching/toolchain/inventory.py": "source",
 
-    ".agents/quenching/assets/bin/quenching/toolchain/model.py": "2e24e70ac5019d17a05ee9fb73dd2a6bbe936642fadff7af2be0b6c9f1d92487",
+    ".agents/quenching/assets/bin/quenching/toolchain/model.py": "source",
 
-    ".agents/quenching/assets/bin/quenching/toolchain/probe.py": "db0ff63d12f4bbeab546c5dcdd1c2eeb57c16c0b19558797061a6b1fd77cb28f",
+    ".agents/quenching/assets/bin/quenching/toolchain/probe.py": "source",
 
-    ".agents/quenching/assets/githooks/pre-commit": "8de39f2c74a9db39cf3b9368580fba6e108e595f86615d27e37465d773635675",
+    ".agents/quenching/assets/githooks/pre-commit": "source",
 
-    ".agents/quenching/assets/githooks/pre-push": "d9421efdd85092a3bafb3fd9eaae00228563cdf8aee1af976d96871f888ae471",
+    ".agents/quenching/assets/githooks/pre-push": "source",
 
-    ".agents/quenching/assets/hooks/adopt-worktree.py": "c9041ba6728379a0961ba1a5c1924ce51b376351238dde74654e78b875e1013b",
+    ".agents/quenching/assets/hooks/adopt-worktree.py": "source",
 
-    ".agents/quenching/assets/hooks/deny-claude-coauthor.py": "0755db09e71e36adab51a13b919a4972ffe3725c1e3af8ad7837c06af06dc5c9",
+    ".agents/quenching/assets/hooks/deny-claude-coauthor.py": "source",
 
-    ".agents/quenching/assets/hooks/dispatch.py": "7f4fed0684fbd5a2c87416403d187ff82ef20c739fe44d21e8f3a2bba651684d",
+    ".agents/quenching/assets/hooks/dispatch.py": "source",
 
-    ".agents/quenching/assets/hooks/warn-git-add-all.py": "a5d630084f4d268c6a6cf40f0af108a33ea391535974090da2925dce38fdbcd6",
+    ".agents/quenching/assets/hooks/warn-git-add-all.py": "source",
 
-    ".agents/quenching/assets/knowledge/assets/glossary-abbreviations.txt": "e89e6f7abfa763d191a3ee9fb105220d4aa31372a71590e88b2ba4a385ce4e0f",
+    ".agents/quenching/assets/knowledge/assets/glossary-abbreviations.txt": "source",
 
-    ".agents/quenching/assets/knowledge/catalog/index.md": "95f32f32f7a483fe4906387eee101f522407a2149ade8745d916769b99a8762b",
+    ".agents/quenching/assets/knowledge/catalog/index.md": "source",
 
-    ".agents/quenching/assets/knowledge/concepts/index.md": "7fc29f4c469a4f6c4862454d5be657d3cdb9478a4c72ab5238474797463786e9",
+    ".agents/quenching/assets/knowledge/concepts/index.md": "source",
 
-    ".agents/quenching/assets/knowledge/decisions/index.md": "0374cec939f010d370777a146f5a215214fc53310ed90c376622bbc53982046c",
+    ".agents/quenching/assets/knowledge/decisions/index.md": "source",
 
-    ".agents/quenching/assets/knowledge/documentation/index.md": "7fb74a53a40b89ee8d6f4f641a4b5ea947f58e78c2958913e6ac1a8bfdf4a8ad",
+    ".agents/quenching/assets/knowledge/documentation/index.md": "source",
 
-    ".agents/quenching/assets/knowledge/external/index.md": "38a677877b715a6e3e019edd86945b40565b10d4c3ab3ef830a01c614edb77f9",
+    ".agents/quenching/assets/knowledge/external/index.md": "source",
 
-    ".agents/quenching/assets/knowledge/external/libraries/index.md": "339ea912decdd0d493a1220e1035833c33e8f32900ba02f1ee777aef478773c7",
+    ".agents/quenching/assets/knowledge/external/libraries/index.md": "source",
 
-    ".agents/quenching/assets/knowledge/external/regulations/index.md": "e4b2f943212149fa62081626ec4007512023c541261aa08583abd7ab91f45b1a",
+    ".agents/quenching/assets/knowledge/external/regulations/index.md": "source",
 
-    ".agents/quenching/assets/knowledge/external/tools/index.md": "cff2d4e045b1f45cebea16023e703b8a0cb968b63f105817e201334830c6b6c0",
+    ".agents/quenching/assets/knowledge/external/tools/index.md": "source",
 
-    ".agents/quenching/assets/knowledge/glossary.md": "32e90592a140c3200fd05386de1a46d2879e01397243506ebda783b89dad07fc",
+    ".agents/quenching/assets/knowledge/glossary.md": "source",
 
-    ".agents/quenching/assets/knowledge/how-to/index.md": "1a7055a00452012d2a45c7592f2df7434996632dd5da24c5c10a7b145f159b5f",
+    ".agents/quenching/assets/knowledge/how-to/index.md": "source",
 
-    ".agents/quenching/assets/knowledge/index.md": "9d8a7ec7a8bcbdbbbcafa58e39efff52114ecba18ddd1738d79f7b3beb68a529",
+    ".agents/quenching/assets/knowledge/index.md": "source",
 
-    ".agents/quenching/assets/knowledge/project/index.md": "e76822e188dd9a37f8486a564b6e8cadf2f7cc0ac6dab03114fc477bd34a1244",
+    ".agents/quenching/assets/knowledge/project/index.md": "source",
 
-    ".agents/quenching/assets/knowledge/standards/AGENTS.md": "c4d0043594a73ff1f402f48d826f7d6a16946a9c1761b0597bfe36e1d6893869",
+    ".agents/quenching/assets/knowledge/standards/AGENTS.md": "source",
 
-    ".agents/quenching/assets/knowledge/standards/agents/communication.md": "992ffd8b7021c9004d439c8f1682269c5166b7c763e1b06040edbfd4c425b354",
+    ".agents/quenching/assets/knowledge/standards/agents/communication.md": "source",
 
-    ".agents/quenching/assets/knowledge/standards/agents/ephemeral-writes.md": "c1a5cbaddb12d718362b48d0ff3191fdaed4a04e862d987e96f66e4263ea2219",
+    ".agents/quenching/assets/knowledge/standards/agents/ephemeral-writes.md": "source",
 
-    ".agents/quenching/assets/knowledge/standards/agents/index.md": "14a1c5d1a1b1fe32b774a24e77adc3c040a93173404d3d244ff181da06c88aca",
+    ".agents/quenching/assets/knowledge/standards/agents/index.md": "source",
 
-    ".agents/quenching/assets/knowledge/standards/architecture/index.md": "c26f0de0d818efb7ac8be32d173776b4a6c6e4be24ef1b77af1798b2a664cfc8",
+    ".agents/quenching/assets/knowledge/standards/architecture/index.md": "source",
 
-    ".agents/quenching/assets/knowledge/standards/ci-cd/index.md": "0910a74cce57d300db7702045b365dc7aa26d1ebaf1c4c29397daa71afabeed3",
+    ".agents/quenching/assets/knowledge/standards/ci-cd/index.md": "source",
 
-    ".agents/quenching/assets/knowledge/standards/ci-cd/test-cost.md": "b729b3382f64baaa7ec2f05fdcb5e53b421eec1480b466cd41e57b521f59d97c",
+    ".agents/quenching/assets/knowledge/standards/ci-cd/test-cost.md": "source",
 
-    ".agents/quenching/assets/knowledge/standards/code/index.md": "86774c3417e52dcc5027467748f675457825a0d708b90b4cddc9a72ca9d22c8c",
+    ".agents/quenching/assets/knowledge/standards/code/index.md": "source",
 
-    ".agents/quenching/assets/knowledge/standards/data-modeling/index.md": "dc50213826205c49b253610d903b7f104f949b0d3265452561e50dedaf8cf490",
+    ".agents/quenching/assets/knowledge/standards/data-modeling/index.md": "source",
 
-    ".agents/quenching/assets/knowledge/standards/index.md": "18502a3d913d94fceb4d2c26adad5766b20717703b96873b5d037a36f0149ee7",
+    ".agents/quenching/assets/knowledge/standards/index.md": "source",
 
-    ".agents/quenching/assets/knowledge/standards/mlops/index.md": "edb21a438a60ad4a0fc8f12b293bdce9c7516ea236f19c5cf13d64d1960e73dc",
+    ".agents/quenching/assets/knowledge/standards/mlops/index.md": "source",
 
-    ".agents/quenching/assets/knowledge/standards/naming/index.md": "dc22ccec5c945118c9729e0231ca224ae8fc408abe830ab453176a4d57ee2c6d",
+    ".agents/quenching/assets/knowledge/standards/naming/index.md": "source",
 
-    ".agents/quenching/assets/knowledge/standards/platform/index.md": "4d258acb1cfba066fb5504a8744021879883ead10341ba1c7ebac120f024800b",
+    ".agents/quenching/assets/knowledge/standards/platform/index.md": "source",
 
-    ".agents/quenching/assets/knowledge/standards/quality/index.md": "bdfd99450596d0d5b444e90feffd5d028f4d317ae53efa945e9483b81d309038",
+    ".agents/quenching/assets/knowledge/standards/quality/index.md": "source",
 
-    ".agents/quenching/assets/knowledge/standards/workflows/index.md": "86ef1a14157a7890a1f1d56cc5e8fed49482a0438f23223d39bbd8a292e6a565",
+    ".agents/quenching/assets/knowledge/standards/workflows/index.md": "source",
 
-    ".agents/quenching/assets/knowledge/tutorials/index.md": "c68a0c4bd0a84c22aef35042b7c79fa00964d419c4a41110d01c5e9b1b97e6f3",
+    ".agents/quenching/assets/knowledge/tutorials/index.md": "source",
 
-    ".agents/quenching/assets/knowledge/vision/index.md": "dc13b667167f73aba65a968c877e20441134a8c17b04d7975d15bebdc3535803",
+    ".agents/quenching/assets/knowledge/vision/index.md": "source",
 
-    ".agents/quenching/assets/modules.json": "e1888ebbbf17c8cfbf7bc47969d160e7da83fcfb14542af81d197a075c0398f8",
+    ".agents/quenching/assets/modules.json": "source",
 
-    ".agents/quenching/assets/portal/app.css": "b607835f404328c511bb005687ae545f6e642cfcef843f9366ca846d7be64c9e",
+    ".agents/quenching/assets/portal/app.css": "source",
 
-    ".agents/quenching/assets/portal/app.js": "2677f930a3f9744928a71e3eb7dd23d882398598125aa630893362982552eb94",
+    ".agents/quenching/assets/portal/app.js": "source",
 
-    ".agents/quenching/assets/portal/index.html": "0275e4b8a7429b8853db95b06e6fbcf4240a34abfdb6b09f8ecfa2c1996b54d6",
+    ".agents/quenching/assets/portal/index.html": "source",
 
-    ".agents/quenching/assets/specs/schema.json": "42b05bf24bb02e0ae7850178cdd8106ae9327a0b89a19ec4f63dffe93e1b6661",
+    ".agents/quenching/assets/specs/schema.json": "source",
 
-    ".agents/quenching/assets/specs/templates/spec.md": "bc5658ceb59ff058baf662ad09b2e17c6cc71061bcd64e31ee7a844d080b75d4",
+    ".agents/quenching/assets/specs/templates/spec.md": "source",
 
-    ".agents/quenching/assets/templates/README.md": "71bacac49aa75bf7dbb64031099f335b52c87360f5663b219804f2085bb7a1ec",
+    ".agents/quenching/assets/templates/README.md": "source",
 
-    ".agents/quenching/assets/templates/automation/agent.md": "79dc60e28ea408ad671a5506ee4ee1c7f46cdce88666be6520315f2a2188c134",
+    ".agents/quenching/assets/templates/automation/agent.md": "source",
 
-    ".agents/quenching/assets/templates/automation/agents-standard.md": "9e483004edd3f5ec14028d5865d8b013bcfe11244d6346e6dfbfbc12826f01e7",
+    ".agents/quenching/assets/templates/automation/agents-standard.md": "source",
 
-    ".agents/quenching/assets/templates/automation/command.md": "187198877926c54aa3b00fc7e1c0b87c05187d863f4f97e0c8bcc945140a3f51",
+    ".agents/quenching/assets/templates/automation/command.md": "source",
 
-    ".agents/quenching/assets/templates/automation/hook.md": "37636ada924ff0ae8fd4bb5ee9e20827422e9aaaacbcfbfa2facf18f98a91161",
+    ".agents/quenching/assets/templates/automation/hook.md": "source",
 
-    ".agents/quenching/assets/templates/automation/hooks-standard.md": "5391a3470c238bb5741aa666efa7696c752abee7f3ff155c9daa67d241571355",
+    ".agents/quenching/assets/templates/automation/hooks-standard.md": "source",
 
-    ".agents/quenching/assets/templates/automation/registry.md": "99b95602f70c7b29f7feb51b37c293bf20e67112a3a62ea6b587e78d50f9cab8",
+    ".agents/quenching/assets/templates/automation/registry.md": "source",
 
-    ".agents/quenching/assets/templates/automation/skills-standard.md": "77b116bad0af5e409992a3150ca80eab613708c4af61dab9c5b6ed66878d9b92",
+    ".agents/quenching/assets/templates/automation/skills-standard.md": "source",
 
-    ".agents/quenching/assets/templates/catalog/schema.md": "c977f6410032851d05d3e114c3e97f7f8d0b285a24b5ff115436249a2ed37d18",
+    ".agents/quenching/assets/templates/catalog/schema.md": "source",
 
-    ".agents/quenching/assets/templates/catalog/system.md": "e51ad1d006e1a115d95456e8804f38c759703de66bd11127a4b1b169e7489eeb",
+    ".agents/quenching/assets/templates/catalog/system.md": "source",
 
-    ".agents/quenching/assets/templates/catalog/table.md": "04edbdbefea038d0f80768d8fffc49c33a04e4f8d5fd3a7808137f2aad27b444",
+    ".agents/quenching/assets/templates/catalog/table.md": "source",
 
-    ".agents/quenching/assets/templates/concept-front.md": "7e35fa74ff401b8662501e6b95dd885153018101f50734b657a6eee866451ff7",
+    ".agents/quenching/assets/templates/concept-front.md": "source",
 
-    ".agents/quenching/assets/templates/harness/agents-root.md": "0318f4cb1adf76629f9f68363993889108e98a651589fc4db112aa634001b75c",
+    ".agents/quenching/assets/templates/harness/agents-root.md": "source",
 
-    ".agents/quenching/assets/templates/harness/agents-subfolder.md": "10a76c55a1378c81bedba0f35d1c061dc6796f3ccb778f1f82081c48007e2e93",
+    ".agents/quenching/assets/templates/harness/agents-subfolder.md": "source",
 
-    ".agents/quenching/assets/templates/index.md.tmpl": "e7c03c3e2b5bd0359ece2631b73f734808a7eb6d02fcdae66d6d057f46033cc1",
+    ".agents/quenching/assets/templates/index.md.tmpl": "source",
 
-    ".agents/quenching/assets/templates/ops/entrypoint.py.tmpl": "1b9c0de1754f3bf92f80084b43c39fe10968ebb6d1a7e31e1356b7909019d640",
+    ".agents/quenching/assets/templates/ops/entrypoint.py.tmpl": "source",
 
-    ".agents/quenching/assets/templates/ops/router-snippets.md": "4a7c8b187442cad08130682cea0edc48a345434029f4bb471f922902fafede7b",
+    ".agents/quenching/assets/templates/ops/router-snippets.md": "source",
 
-    ".agents/quenching/assets/templates/proof/collection-hook.py.tmpl": "f2f9eb2c0aaba116d3be9d3dde4e8b2b99ff8b9e9c9f7e48958660dd31e75487",
+    ".agents/quenching/assets/templates/proof/collection-hook.py.tmpl": "source",
 
-    ".agents/quenching/assets/templates/proof/layer-fixtures.py.tmpl": "97c4613858f5c9b714f1fb2cc961e8d49850dacfdeb32976f12bd0be2a43dce1",
+    ".agents/quenching/assets/templates/proof/layer-fixtures.py.tmpl": "source",
 
-    ".agents/quenching/assets/templates/sidecar.md": "9a01ed125abcf3b8babe26fa261cbd929ce01cf3ef7fd839bc5d78ea2fc60bac",
+    ".agents/quenching/assets/templates/sidecar.md": "source",
 
-    ".agents/quenching/assets/templates/standard-front.md": "55b6afa7c7c03a5ca53a72633e62f65d375703c30420a114cad47789a1bb9720",
+    ".agents/quenching/assets/templates/standard-front.md": "source",
 
-    ".agents/quenching/assets/templates/vision/area.md": "7aa3075ee3a38f38e95fb5f29eff05d6d9ab056b30750fae60ffccb956d3ac3d",
+    ".agents/quenching/assets/templates/vision/area.md": "source",
 
-    ".agents/quenching/assets/zensical/README.md": "d68f1ccfd09296d8d6916dfcf3ec0b791c0d2cf0f9ff01dd810b662e04cbf1a3",
+    ".agents/quenching/assets/zensical/README.md": "source",
 
-    ".agents/quenching/assets/zensical/azure-pipelines-docs.yml": "097e22e56e2e149fdf1f69d49bb6b00db4aabcac05b016bd11298f477f0f7fc3",
+    ".agents/quenching/assets/zensical/azure-pipelines-docs.yml": "source",
 
-    ".agents/quenching/assets/zensical/ci-github-pages.yml": "92794a01f3be320b56465eb262c61384e931074cdc474bb8e8a43e7951f72de6",
+    ".agents/quenching/assets/zensical/ci-github-pages.yml": "source",
 
-    ".agents/quenching/assets/zensical/fixtures/azure-remotes.json": "657becf5f825dc92a9723d400eeea3f53510de22a213ead81df34efaf03fc81b",
+    ".agents/quenching/assets/zensical/fixtures/azure-remotes.json": "source",
 
-    ".agents/quenching/assets/zensical/quenching.css": "cc8da53decc6ea6ce3badeeed6fac5ccebc395c59c389d1622c27622652120e3",
+    ".agents/quenching/assets/zensical/quenching.css": "source",
 
-    ".agents/quenching/assets/zensical/requirements.txt": "31b520c5ceab64317138a62f278d901ec7a7ed868a470a7bf1f12cd196018cfb",
+    ".agents/quenching/assets/zensical/requirements.txt": "source",
 
-    ".agents/quenching/assets/zensical/zensical.toml.tmpl": "deb86ab4c6d3eedfb12dd87f5baef0468460c940134972e4f5bf3d90d7be135d",
+    ".agents/quenching/assets/zensical/zensical.toml.tmpl": "source",
 
-    ".agents/quenching/bin/cq": "9aee09bc098f879a8cc100d06c1858454fa212596967f05694ae29920addd06f",
+    ".agents/quenching/bin/cq": "source",
 
-    ".agents/quenching/bin/cq.cmd": "9636ea6bdfd9421b15b723b6849c320476beebd7efdfdabbcf7a6c761928d3ad",
+    ".agents/quenching/bin/cq.cmd": "source",
 
-    ".agents/quenching/references/align/convergence.md": "3a9841809d0fcc3b9208337022e914ede84b2d5d870d51823e03d2b163f8e733",
+    ".agents/quenching/references/align/convergence.md": "source",
 
-    ".agents/quenching/references/align/evidence-doctrine.md": "87195c2b2b4f77ef12ab601dfafd1cc6043f4ee482a83171bcd4d81ffcd742c7",
+    ".agents/quenching/references/align/evidence-doctrine.md": "source",
 
-    ".agents/quenching/references/align/sweep-doctrine.md": "de597693548977678ab591b12ffa87ae00ceffcaecbd545d04fea7b577ba1652",
+    ".agents/quenching/references/align/sweep-doctrine.md": "source",
 
-    ".agents/quenching/references/align/tool-resolution.md": "52ef3597a3790eea182bb5074ff22f36d7c41c268a999ac5c1d23781470e4ed9",
+    ".agents/quenching/references/align/tool-resolution.md": "source",
 
-    ".agents/quenching/references/components-command-new/capabilities.md": "096a15aaa72e092b827e212cad15847820379c8f938419178622649e54e14e42",
+    ".agents/quenching/references/components-command-new/capabilities.md": "source",
 
-    ".agents/quenching/references/components-command-new/doctrine.md": "9752c841b33c06a33c996fba1e242ad799494fb2ad15061bea05fc7dae6b978e",
+    ".agents/quenching/references/components-command-new/doctrine.md": "source",
 
-    ".agents/quenching/references/components-command-new/taxonomy.md": "13a48e2fbcbf4eb23cccd38bd3b302cbaafbc40c609a129f78d3e271738ce413",
+    ".agents/quenching/references/components-command-new/taxonomy.md": "source",
 
-    ".agents/quenching/references/front-align/mold.md": "b8a0d3de15e1a7a1b5dea88bc42f03691ad3f444cd4b2b76d3539620711a993b",
+    ".agents/quenching/references/front-align/mold.md": "source",
 
-    ".agents/quenching/references/git/commit.md": "f5cf8f775cbcf23c1fd08494e055a5421677a5862eee2701236fb5c0b18543de",
+    ".agents/quenching/references/git/commit.md": "source",
 
-    ".agents/quenching/references/git/conventions.md": "0f00da694e9d3fdc7110a3865a985529bd29add453dc056876dac05d0d6f3bcc",
+    ".agents/quenching/references/git/conventions.md": "source",
 
-    ".agents/quenching/references/git/isolation.md": "503a6427ffe717c252fef47a827d28f84b6957e84b7824c83a051647f9c83092",
+    ".agents/quenching/references/git/isolation.md": "source",
 
-    ".agents/quenching/references/git/merge.md": "6ac6b1345129b15b8b8e8bd76f6fbdc2efd26ba327dbfe3077365c871c8b5e83",
+    ".agents/quenching/references/git/merge.md": "source",
 
-    ".agents/quenching/references/git/pr.md": "4aa72e0669bae285fda7a76107589935823b68ec8a5bf555221e9db0062ef286",
+    ".agents/quenching/references/git/pr.md": "source",
 
-    ".agents/quenching/references/knowledge-add/homes.md": "3d9938857fed1e26a8b92c342ff129f82fde30362fd03259b7bce05465f23e18",
+    ".agents/quenching/references/knowledge-add/homes.md": "source",
 
-    ".agents/quenching/references/knowledge-align/conformance.md": "30f8100f2a01a71daede53115208a1f27868457b3adf26d2b4630b169b87d77e",
+    ".agents/quenching/references/knowledge-align/conformance.md": "source",
 
-    ".agents/quenching/references/knowledge-align/cycle.md": "9f250370faa5f375fc0f3a06f7866efc1d020f064fa7a1d679e4dde7c5d916a8",
+    ".agents/quenching/references/knowledge-align/cycle.md": "source",
 
-    ".agents/quenching/references/knowledge-align/migration.md": "1f102b61bc0240f6fef99c160721a4a9eab3b55b04edcbd389e0e85d11808197",
+    ".agents/quenching/references/knowledge-align/migration.md": "source",
 
-    ".agents/quenching/references/knowledge-align/okf-spec.md": "0638d188c92abaf17b1677aca773d2746c9bcb1c84f372be0aa54ac77ad7e63d",
+    ".agents/quenching/references/knowledge-align/okf-spec.md": "source",
 
-    ".agents/quenching/references/knowledge-align/taxonomy.md": "e41a388ed727ce829604b0a0c6d40938bb7b7b44f360de1da8ddb5cb17f0e1e0",
+    ".agents/quenching/references/knowledge-align/taxonomy.md": "source",
 
-    ".agents/quenching/references/knowledge-import/sources.md": "b3648df86b186e0a481cd45cdf06d6ec0dff63f2b1a03831ed0bc0875a96c441",
+    ".agents/quenching/references/knowledge-import/sources.md": "source",
 
-    ".agents/quenching/references/specs-align/conformance.md": "d74789417677580fe04ba6cfba05ce647e7b9f7d644ed85ea7ffa3d7ddff564d",
+    ".agents/quenching/references/specs-align/conformance.md": "source",
 
-    ".agents/quenching/references/specs-align/plugin-configuration.md": "8641ba274c6359c1ff020a04aa48d101f47e269d622b0b2c12b5168d82fc1b32",
+    ".agents/quenching/references/specs-align/plugin-configuration.md": "source",
 
-    ".agents/quenching/references/specs-conclude/abandoned.md": "7067f28b0035550d958bdced006af5f55b6794293594ac1f7b6adec82da31cd4",
+    ".agents/quenching/references/specs-conclude/abandoned.md": "source",
 
-    ".agents/quenching/references/specs-conclude/auto-discover.md": "cb60affefc5957a9c8e8c8efd697c0af9b605b93d046c3a180b9502722f63ab8",
+    ".agents/quenching/references/specs-conclude/auto-discover.md": "source",
 
-    ".agents/quenching/references/specs-conclude/distill.md": "d10f84afd69aba16515d51b80d777db8791469f08c91880c7b8954f2e0cac762",
+    ".agents/quenching/references/specs-conclude/distill.md": "source",
 
-    ".agents/quenching/references/specs-develop/artifacts.md": "fc4f851f7afd060eb90cab94297eb90417b23a452eed21edcabc4bd232ec24dc",
+    ".agents/quenching/references/specs-develop/artifacts.md": "source",
 
-    ".agents/quenching/references/specs-develop/questions.md": "6a126277fa1111c1b2be91af6510aab2afd1763cd28a72ebcffe4e450e63a552",
+    ".agents/quenching/references/specs-develop/questions.md": "source",
 
-    ".agents/quenching/references/specs-develop/report-mold.md": "f50c1c0bb700738a0c0e9e3b43a08f87ca5c31d5d20e190fa83d20e9b43720ef",
+    ".agents/quenching/references/specs-develop/report-mold.md": "source",
 
-    ".agents/quenching/references/specs-develop/spec-driven.md": "744e535ccc4240ac9eea91234ff278f8db4af96182909f643da6afdaa76440e7",
+    ".agents/quenching/references/specs-develop/spec-driven.md": "source",
 
-    ".agents/quenching/references/specs-develop/specs-surface.md": "f49d3df9782524d7197ee7218dff3c37fc4f7a9e615fcd54401450d22c92319d",
+    ".agents/quenching/references/specs-develop/specs-surface.md": "source",
 
-    ".agents/quenching/references/specs-execute/execution-cadence.md": "39559b693d2c1b45d34552d99f0e5c0e22e601e394c4b4387265928b89938d77",
+    ".agents/quenching/references/specs-execute/execution-cadence.md": "source",
 
-    ".agents/quenching/references/specs-execute/execution-delegation.md": "bfa3540fdb7e3a09369ff457b102140fbbe96573d525a64379f943bb178c3585",
+    ".agents/quenching/references/specs-execute/execution-delegation.md": "source",
 
-    ".agents/quenching/references/specs-execute/execution-tooling.md": "6328fb5653f9460032fc16d40c423932c20659f2168f1bca300336fb7ac1abd7",
+    ".agents/quenching/references/specs-execute/execution-tooling.md": "source",
 
-    ".agents/quenching/references/specs-execute/execution.md": "ce8a7c2f3c38aae600f71570ca081132beef53167af0dc4c4750138481deeafa",
+    ".agents/quenching/references/specs-execute/execution.md": "source",
 
-    ".agents/skills/quenching-align/SKILL.md": "8c1a8dbacac035126c71e0717ca66787602573eb27deea7aae7c9279a438563e",
+    ".agents/skills/quenching-align/SKILL.md": "source",
 
-    ".agents/skills/quenching-components/SKILL.md": "1d843e245bad85d81b98836eb9eb10f84e2cdb984b16bfc5689c0cf8612da486",
+    ".agents/skills/quenching-components/SKILL.md": "source",
 
-    ".agents/skills/quenching-components/references/agent-new.md": "226f13b3a1724b2b107b9ecacdac7a772c7290156742aae958810e02ca8dd0ae",
+    ".agents/skills/quenching-components/references/agent-new.md": "source",
 
-    ".agents/skills/quenching-components/references/align.md": "da81eb366431ac70c0881973464b5d6fbfe4a4eadc93d40c450da4748e28b384",
+    ".agents/skills/quenching-components/references/align.md": "source",
 
-    ".agents/skills/quenching-components/references/command-eval.md": "a8ae9929d9de6d716a5360b7ba3217bb92818cd89db5e089afaa104f213463cc",
+    ".agents/skills/quenching-components/references/command-eval.md": "source",
 
-    ".agents/skills/quenching-components/references/command-new.md": "2405e0274dced9f495ee475a8036f6e5b12bba5ae9a38117bf0f01318570764b",
+    ".agents/skills/quenching-components/references/command-new.md": "source",
 
-    ".agents/skills/quenching-components/references/command-retro.md": "af97840deda78b25bbabcaa0f98e24fea399a6b98f9d7b68107812546564204d",
+    ".agents/skills/quenching-components/references/command-retro.md": "source",
 
-    ".agents/skills/quenching-components/references/components-command-eval/evaluation.md": "9cfa77bab44867d0717a85112022eb568e3ff0d1062db767832ddb1860955696",
+    ".agents/skills/quenching-components/references/components-command-eval/evaluation.md": "source",
 
-    ".agents/skills/quenching-components/references/components-harness-align/harness-routing.md": "3d80f310c5604376d449c2786d6c58a6c7051429d56c2f31ac8e0c47d22dccc4",
+    ".agents/skills/quenching-components/references/components-harness-align/harness-routing.md": "source",
 
-    ".agents/skills/quenching-components/references/harness-align.md": "ac51f785a9c55693e761861cc25bc4b1dd48b2c20675c7a056398b3eb398560b",
+    ".agents/skills/quenching-components/references/harness-align.md": "source",
 
-    ".agents/skills/quenching-components/references/hook-new.md": "6513d79bd584f04813899949b10b639a19a48ef94e583862360aa5124d67e25c",
+    ".agents/skills/quenching-components/references/hook-new.md": "source",
 
-    ".agents/skills/quenching-components/references/status.md": "652966b0901a1a260abe2b86d48804f007d5f4c7a755de5467a2a240e7bf3564",
+    ".agents/skills/quenching-components/references/status.md": "source",
 
-    ".agents/skills/quenching-delivery/SKILL.md": "a717fa35d4e43bc45aa97fcb9d4bb8a02219b72bd82bc5e97033466c34d5b170",
+    ".agents/skills/quenching-delivery/SKILL.md": "source",
 
-    ".agents/skills/quenching-delivery/references/align.md": "5c4f66c3539e97acd58a5a1c90fc123df5b503638857d218f8adc14276aa8328",
+    ".agents/skills/quenching-delivery/references/align.md": "source",
 
-    ".agents/skills/quenching-delivery/references/delivery-align/bands.md": "a0f4d0badf86fdf4edf324efad4442f43900afdee0543a45208e7f0da24d5ac9",
+    ".agents/skills/quenching-delivery/references/delivery-align/bands.md": "source",
 
-    ".agents/skills/quenching-delivery/references/status.md": "4fa35c249331a1b85090b1d029b1f1afdaaf1b608cb3d5ce223ece536f7fa3a3",
+    ".agents/skills/quenching-delivery/references/status.md": "source",
 
-    ".agents/skills/quenching-design/SKILL.md": "8201f585ebf8e96aff8545c135c7a66f22aba0eeea57bf08c2d9d389a5975aa8",
+    ".agents/skills/quenching-design/SKILL.md": "source",
 
-    ".agents/skills/quenching-design/references/align.md": "4e48749ec5a616db61f79b3c1d08a62dc6629ab42872e0642e30d931182b3a94",
+    ".agents/skills/quenching-design/references/align.md": "source",
 
-    ".agents/skills/quenching-design/references/design-align/bands.md": "9084153221d8163bebcdebc6e314d2df01a3f36395ca427db239615f54f67ba4",
+    ".agents/skills/quenching-design/references/design-align/bands.md": "source",
 
-    ".agents/skills/quenching-design/references/genre-new.md": "3e1ae29d4abee191304851a623c360e0cf235265366d5356877798ebca7a226f",
+    ".agents/skills/quenching-design/references/genre-new.md": "source",
 
-    ".agents/skills/quenching-design/references/status.md": "c8c1e0715704adf30004d76157907dcf8f735613b6168d00db7c7e77bfc7266d",
+    ".agents/skills/quenching-design/references/status.md": "source",
 
-    ".agents/skills/quenching-git/SKILL.md": "676d27a625932aaa8d663858b8981254c1242e19d7a385cb65c739ba175463d2",
+    ".agents/skills/quenching-git/SKILL.md": "source",
 
-    ".agents/skills/quenching-git/references/branch.md": "acbd338d1cac4a05bac00e1e7d47f5c99c01aa6931bb06e37dec07f37b96c5b1",
+    ".agents/skills/quenching-git/references/branch.md": "source",
 
-    ".agents/skills/quenching-git/references/cleanup.md": "abb784c9adf09d101bae88d1e1db62b4d57c28196b88ca665324eb587d8e0147",
+    ".agents/skills/quenching-git/references/cleanup.md": "source",
 
-    ".agents/skills/quenching-git/references/commit-incremental.md": "4ca79a81e11e3ef3a0fa5dde1bf190d5ff1c5a6cfb70de6d79e2bb4619871c56",
+    ".agents/skills/quenching-git/references/commit-incremental.md": "source",
 
-    ".agents/skills/quenching-git/references/commit.md": "6095d459e7c00a226c82639b570154f622e15c40dab08036999d82687c3ca95f",
+    ".agents/skills/quenching-git/references/commit.md": "source",
 
-    ".agents/skills/quenching-git/references/merge.md": "474830576e5eecee9fee4936f6927f3a6ebb0ab0825e7fb69fbb3655d4d4ce62",
+    ".agents/skills/quenching-git/references/merge.md": "source",
 
-    ".agents/skills/quenching-git/references/pr-create.md": "08a2ca4b324cf75314fdd83a5b9cae4286a4d32964302cfd2258fe768bbd22cd",
+    ".agents/skills/quenching-git/references/pr-create.md": "source",
 
-    ".agents/skills/quenching-git/references/pr-review.md": "ad2346afd5e5126a2b0c8bc50afed70564bf731a5f7d1ec99a56752fb18b6d0a",
+    ".agents/skills/quenching-git/references/pr-review.md": "source",
 
-    ".agents/skills/quenching-git/references/pr-status.md": "61a80bbd179e2f01a0a4f46fe461293395fdcdc8dd8acc994f63c8cd57443cb5",
+    ".agents/skills/quenching-git/references/pr-status.md": "source",
 
-    ".agents/skills/quenching-git/references/push.md": "84159bbc93b677fddbf28ee56206d2d7e7f215b031f60863d7c00669799e8e06",
+    ".agents/skills/quenching-git/references/push.md": "source",
 
-    ".agents/skills/quenching-git/references/revert.md": "f4d97bbf5e0b52cfafc040123c64c4f7151e8858f1830d3b4408818c0e9a28a5",
+    ".agents/skills/quenching-git/references/revert.md": "source",
 
-    ".agents/skills/quenching-git/references/sync.md": "fb92ec347dfafb5279913ef056465ebacc7ef5edaf8765cc044703bbc2471029",
+    ".agents/skills/quenching-git/references/sync.md": "source",
 
-    ".agents/skills/quenching-handoff/SKILL.md": "322b54b0c2fd75601be5044d7b5179c26bd113e41494be93cb2f758c00280908",
+    ".agents/skills/quenching-handoff/SKILL.md": "source",
 
-    ".agents/skills/quenching-handoff/references/template.md": "78fe82fece53e07ebf2a0152f0b1c1a2cf64f31350220d69ffdcbce550668eee",
+    ".agents/skills/quenching-handoff/references/template.md": "source",
 
-    ".agents/skills/quenching-knowledge/SKILL.md": "88ee8ae8a1481552dbde1c680b6cdf1c732916454edeca21a84d375c58c0d3bd",
+    ".agents/skills/quenching-knowledge/SKILL.md": "source",
 
-    ".agents/skills/quenching-knowledge/references/add.md": "4d6671e228db3890f6868c3f826b9e5a2f1627e250e38992dbea25f89107a1e0",
+    ".agents/skills/quenching-knowledge/references/add.md": "source",
 
-    ".agents/skills/quenching-knowledge/references/align.md": "f6764cfcbdcd0970eefc863d0cb05dccbdcc06951bdf9233288466dd938543cc",
+    ".agents/skills/quenching-knowledge/references/align.md": "source",
 
-    ".agents/skills/quenching-knowledge/references/define.md": "0e66162cdf5bd332114b0f078d340423d7a027f1049f9483d93b7138ab799de9",
+    ".agents/skills/quenching-knowledge/references/define.md": "source",
 
-    ".agents/skills/quenching-knowledge/references/documentation-build.md": "30939d6f1671eb264ec60991fdd7b85bccb01ffc8da503987f67e4783d406059",
+    ".agents/skills/quenching-knowledge/references/documentation-build.md": "source",
 
-    ".agents/skills/quenching-knowledge/references/documentation-plan.md": "174232bf38699d46e8436b030a68ed7df05779b9cd68ccafc59e3f4ae21d526b",
+    ".agents/skills/quenching-knowledge/references/documentation-plan.md": "source",
 
-    ".agents/skills/quenching-knowledge/references/documentation-produce.md": "fcd3a53cc7ba0a81bd5d4ab92c5426940a3dfe8a98d6de280791e71d22b6cc81",
+    ".agents/skills/quenching-knowledge/references/documentation-produce.md": "source",
 
-    ".agents/skills/quenching-knowledge/references/documentation-review.md": "f985432c976fbf31e3553eb527486edfb7c0d9e1ef0afc203dc09ca8c42d5c0e",
+    ".agents/skills/quenching-knowledge/references/documentation-review.md": "source",
 
-    ".agents/skills/quenching-knowledge/references/documentation-write.md": "aee829adc0ee872cd6b4ad070ee57daec73dae5f3b632ed5c38be06ad4ee1761",
+    ".agents/skills/quenching-knowledge/references/documentation-write.md": "source",
 
-    ".agents/skills/quenching-knowledge/references/glossary-backfill.md": "d42b80d7c5481d29996fb090825fcbad8fc51fb4d796c5244ca930b4e958a6b9",
+    ".agents/skills/quenching-knowledge/references/glossary-backfill.md": "source",
 
-    ".agents/skills/quenching-knowledge/references/import-memory.md": "843685dea106fed14f5fc2f3115a5b29ca25e114efdf420447316ef91339fd68",
+    ".agents/skills/quenching-knowledge/references/import-memory.md": "source",
 
-    ".agents/skills/quenching-knowledge/references/import.md": "53ecaf68e43bd2a0448173060c9b2dc6ec6c0513d103d4c96f249aac2f6e09a2",
+    ".agents/skills/quenching-knowledge/references/import.md": "source",
 
-    ".agents/skills/quenching-knowledge/references/knowledge-documentation/agent-readability.md": "727fb1d8963870957f34ba6306451bc275277a8bc5d4fc3779925f4328fb0702",
+    ".agents/skills/quenching-knowledge/references/knowledge-documentation/agent-readability.md": "source",
 
-    ".agents/skills/quenching-knowledge/references/knowledge-documentation/architecture.md": "b0577842a9404d3d8827aefe940f1d464f5c7c61dd14922c4a355a81619d6fc2",
+    ".agents/skills/quenching-knowledge/references/knowledge-documentation/architecture.md": "source",
 
-    ".agents/skills/quenching-knowledge/references/knowledge-documentation/craft.md": "64a6e173edf6a925cf79988e4c8502e4a2f9757d1371699058f15a13be657965",
+    ".agents/skills/quenching-knowledge/references/knowledge-documentation/craft.md": "source",
 
-    ".agents/skills/quenching-knowledge/references/knowledge-documentation/quality.md": "d1452b33ed73b6dd4256345f3bee7c4d6ca4519591708eac15d7b89b4d4ff519",
+    ".agents/skills/quenching-knowledge/references/knowledge-documentation/quality.md": "source",
 
-    ".agents/skills/quenching-knowledge/references/knowledge-documentation/validation.md": "9cd4a416de26d55ada32d52745a2cbcdd82b5908b2bf51464933d8325229bf8d",
+    ".agents/skills/quenching-knowledge/references/knowledge-documentation/validation.md": "source",
 
-    ".agents/skills/quenching-knowledge/references/knowledge-documentation/visual.md": "fba99a0ead5e6e258a8831ac7f3da224d9c6edcd2c28d24c3e14b66d8aa92850",
+    ".agents/skills/quenching-knowledge/references/knowledge-documentation/visual.md": "source",
 
-    ".agents/skills/quenching-knowledge/references/knowledge-documentation/zensical-capabilities.md": "53a4c8d37b0fc9b2c257b73eeb5ed2fbb7a130aabd048c19c239d2b4b1361eef",
+    ".agents/skills/quenching-knowledge/references/knowledge-documentation/zensical-capabilities.md": "source",
 
-    ".agents/skills/quenching-knowledge/references/knowledge-import-memory/memory-routing.md": "9b21f7eb82e6f1bdb3d4390fb1390c145863b8c928355ad6b44f6d5b16d6ca4a",
+    ".agents/skills/quenching-knowledge/references/knowledge-import-memory/memory-routing.md": "source",
 
-    ".agents/skills/quenching-knowledge/references/learn.md": "93e8ef730061015da4d39bbbade8af2e0c51edae2aed4b3055e449307bc6a182",
+    ".agents/skills/quenching-knowledge/references/learn.md": "source",
 
-    ".agents/skills/quenching-knowledge/references/status.md": "7e567304b62c50454a656be7b0c19a81393a4b95f0c7a509e678853a6cafcfee",
+    ".agents/skills/quenching-knowledge/references/status.md": "source",
 
-    ".agents/skills/quenching-opensource/SKILL.md": "e0091368bff6e400e7a2704d4bd55ca8a5033b1d46650890403967668c2b9ce8",
+    ".agents/skills/quenching-opensource/SKILL.md": "source",
 
-    ".agents/skills/quenching-opensource/references/align.md": "643b12c353aa5c3394310cc586e0fd78e5d893deba7f71081b10e990780efeaf",
+    ".agents/skills/quenching-opensource/references/align.md": "source",
 
-    ".agents/skills/quenching-opensource/references/opensource-align/bands.md": "e3663838f7f2cf1104117bb94218f9465fd83ae5ef7d8bf9d03fd7dee285d322",
+    ".agents/skills/quenching-opensource/references/opensource-align/bands.md": "source",
 
-    ".agents/skills/quenching-opensource/references/opensource-controls/catalog.md": "cf0cbedcc678bd8fd98456a9802d42995e557e09e30281187c544444f1873f86",
+    ".agents/skills/quenching-opensource/references/opensource-controls/catalog.md": "source",
 
-    ".agents/skills/quenching-opensource/references/opensource-readiness/report.md": "6562ec47024be167854b09407310bdedee5f9746e07b5bfecce08578a18498bb",
+    ".agents/skills/quenching-opensource/references/opensource-readiness/report.md": "source",
 
-    ".agents/skills/quenching-opensource/references/readiness.md": "2560abda4586baa28e6b9679596588533e6b66dd808a39c2d3e0356bae4f5200",
+    ".agents/skills/quenching-opensource/references/readiness.md": "source",
 
-    ".agents/skills/quenching-opensource/references/status.md": "71242d975cc9370625b0a47ea580b531d3e54a03be857424bcee019d09caa190",
+    ".agents/skills/quenching-opensource/references/status.md": "source",
 
-    ".agents/skills/quenching-ops/SKILL.md": "cbc9bd09c83b36f65cfcf1958c1fdccb7bc2837120a7e9924431c512268c63bf",
+    ".agents/skills/quenching-ops/SKILL.md": "source",
 
-    ".agents/skills/quenching-ops/references/align.md": "64718c6c8993738d6152d86282c9a09bdd8ed956a37b7f00563e9bd02ccbe52b",
+    ".agents/skills/quenching-ops/references/align.md": "source",
 
-    ".agents/skills/quenching-ops/references/entrypoint-new.md": "8620f01de10b73dad539a39124d21eb3ba533abe65157f3d96a746aefc05ccab",
+    ".agents/skills/quenching-ops/references/entrypoint-new.md": "source",
 
-    ".agents/skills/quenching-ops/references/ops-align/bands.md": "af06d98a2d75cd34f33a8e58c106a7eb9afb389d0236a9fe3b2fb19c6a206611",
+    ".agents/skills/quenching-ops/references/ops-align/bands.md": "source",
 
-    ".agents/skills/quenching-ops/references/ops-align/entrypoint-contract.md": "0b146c44550adafc64e8ca0ff8a76403afe908ba4c79e70cb5ffb9148aa8e3cc",
+    ".agents/skills/quenching-ops/references/ops-align/entrypoint-contract.md": "source",
 
-    ".agents/skills/quenching-ops/references/ops-align/lifecycle.md": "3e8fece305726dfc23a137294de88d01cd47ac8f96dfb68278297203f1721e61",
+    ".agents/skills/quenching-ops/references/ops-align/lifecycle.md": "source",
 
-    ".agents/skills/quenching-ops/references/ops-align/target-structure.md": "f7d7ed4ade771e7449b442af3ed0fefe39340073c0452a933c854806d396f2b7",
+    ".agents/skills/quenching-ops/references/ops-align/target-structure.md": "source",
 
-    ".agents/skills/quenching-ops/references/status.md": "11e888e6a2bc2aaae0e0595971d4d472e3706a291b047dfe705d3286c71fbb97",
+    ".agents/skills/quenching-ops/references/status.md": "source",
 
-    ".agents/skills/quenching-proof/SKILL.md": "cf4697ed639aeffa0f93d180cf05ec182a0be8f0bd4f8151a753a3f40f98310a",
+    ".agents/skills/quenching-proof/SKILL.md": "source",
 
-    ".agents/skills/quenching-proof/references/align.md": "5872fd1f83b8742e9d0257845cfe5005dc54a272220863fdd9a85d79b69ebd88",
+    ".agents/skills/quenching-proof/references/align.md": "source",
 
-    ".agents/skills/quenching-proof/references/layer-new.md": "2d64ae7bee2b374ac0d905e0378b4deff4f32d6f837867279e1d4b0c6221dd8f",
+    ".agents/skills/quenching-proof/references/layer-new.md": "source",
 
-    ".agents/skills/quenching-proof/references/proof-align/bands.md": "5283eb6c69e40435eddeff60f7aae61fd51b31f0e7c165a4d71213bdf42ed62d",
+    ".agents/skills/quenching-proof/references/proof-align/bands.md": "source",
 
-    ".agents/skills/quenching-proof/references/proof-align/gate-contract.md": "fc2ac3d69b7db1175181806793fc28835ed5d3c78d043a770f3ce632b1ae662f",
+    ".agents/skills/quenching-proof/references/proof-align/gate-contract.md": "source",
 
-    ".agents/skills/quenching-proof/references/proof-align/layer-contract.md": "2b7368122c0e6711ba456e28108f6951697970bbd1b4b9460551975d0a36333c",
+    ".agents/skills/quenching-proof/references/proof-align/layer-contract.md": "source",
 
-    ".agents/skills/quenching-proof/references/proof-align/target-structure.md": "0b73a9ae41a096f3476d7e8f52f6c483da42500015872a804fa11e025bb82302",
+    ".agents/skills/quenching-proof/references/proof-align/target-structure.md": "source",
 
-    ".agents/skills/quenching-proof/references/status.md": "d46b39462cd5b96cf90ba5269a28aec64934e03268b588c161f07eba5ede2f78",
+    ".agents/skills/quenching-proof/references/status.md": "source",
 
-    ".agents/skills/quenching-security/SKILL.md": "9ffd71960a45150e86b650718b6fdb1a62c44b261530688e6b3216d388f2af0f",
+    ".agents/skills/quenching-security/SKILL.md": "source",
 
-    ".agents/skills/quenching-security/references/status.md": "3274375e0d36cebe8b2174a5e79d0f15987499f0a25776b8c88f8975cc37e3e6",
+    ".agents/skills/quenching-security/references/status.md": "source",
 
-    ".agents/skills/quenching-specs/SKILL.md": "83d2847aff12b92262663aae77be0bf5c5701aabd6f70e9c31b60a48f37063e8",
+    ".agents/skills/quenching-specs/SKILL.md": "source",
 
-    ".agents/skills/quenching-specs/references/autopilot.md": "9790edbc7f421ff6a2e4552f903244791b0cfe94d0198bd9e1db24823706aead",
+    ".agents/skills/quenching-specs/references/autopilot.md": "source",
 
-    ".agents/skills/quenching-specs/references/board.md": "f23f25a70443e60cb15174e2763370280b57c7396d5a4cf424b5319a867017dc",
+    ".agents/skills/quenching-specs/references/board.md": "source",
 
-    ".agents/skills/quenching-specs/references/conclude.md": "27362a664ea080a3331b4b3f6efec6f1ae77ab71edbab1dd94ca9db0b178e802",
+    ".agents/skills/quenching-specs/references/conclude.md": "source",
 
-    ".agents/skills/quenching-specs/references/create.md": "06a34793ccf9491e678a6e236c645628cb274b3424e669cf9512951f5dac250b",
+    ".agents/skills/quenching-specs/references/create.md": "source",
 
-    ".agents/skills/quenching-specs/references/develop.md": "5e783f14c72c1165bcfa7b2daf41ae0622aae690fdde3b97a00df03424138d6e",
+    ".agents/skills/quenching-specs/references/develop.md": "source",
 
-    ".agents/skills/quenching-specs/references/execute.md": "e68292e1d47b16ead3b978ba9cab521e08f3dce0843060d9d2c8199e18c4b78b",
+    ".agents/skills/quenching-specs/references/execute.md": "source",
 
-    ".agents/skills/quenching-specs/references/improve.md": "b4e65cd68186c0c43a847a71f326913208a5a7da843ba5cd45cd4294afc7b707",
+    ".agents/skills/quenching-specs/references/improve.md": "source",
 
-    ".agents/skills/quenching-specs/references/orchestrate.md": "461e324ed9f4967e333d082dfefda20d1d03c24f01fa0bc3de31a2b371ced0d4",
+    ".agents/skills/quenching-specs/references/orchestrate.md": "source",
 
-    ".agents/skills/quenching-specs/references/specs-create/plan-mapping.md": "120aa843e0e4768268b2fd31100cb066fc0f6225ee633e8884f97dbec2ddff78",
+    ".agents/skills/quenching-specs/references/specs-create/plan-mapping.md": "source",
 
-    ".agents/skills/quenching-specs/references/status.md": "a542d62515828b2374dd57c5d95c3c9fbe04e4d7f42716ee8f76867e31486199",
+    ".agents/skills/quenching-specs/references/status.md": "source",
 
-    ".agents/skills/quenching-specs/references/triage.md": "efbcb6f6a37b9f8c363cc8526b29826c2e97ebd99269f1f8d8f9ffe08d52fa4f",
+    ".agents/skills/quenching-specs/references/triage.md": "source",
 
-    ".agents/skills/quenching-toolchain/SKILL.md": "9a03429f8d050171a6bf6b73fba3799e05733bc27762cf928e292739a20f7e51",
+    ".agents/skills/quenching-toolchain/SKILL.md": "source",
 
-    ".agents/skills/quenching-toolchain/references/align.md": "fe3549f39102739e8121a0bb3b28448427675a39b582163ab7a6412aea7275d1",
+    ".agents/skills/quenching-toolchain/references/align.md": "source",
 
-    ".agents/skills/quenching-toolchain/references/status.md": "3e9c8833a94136a8fb3b08991bdcaeccb8260eb346bb7c1bb42c2c0295581c1d",
+    ".agents/skills/quenching-toolchain/references/status.md": "source",
 
-    ".agents/skills/quenching-toolchain/references/toolchain-align/bands.md": "d73941d0034ffd0cbc3b3c79bc992d432b1a802e3d86926730a5943309034b97",
+    ".agents/skills/quenching-toolchain/references/toolchain-align/bands.md": "source",
 
-    ".claude/agents/quenching-spec-orchestrator.md": "c704188d52a467e48624f700d7e9d07d71af60eea0308de4261afaf3ce6c5666",
+    ".claude/agents/quenching-spec-orchestrator.md": "source",
 
-    ".claude/agents/quenching-spec-reviewer.md": "1a6302d01c452501e59f9c8924f3ee7fcdc2ebb8d150e54b2b4a53441428e1b6",
+    ".claude/agents/quenching-spec-reviewer.md": "source",
 
-    ".claude/agents/quenching-spec-runner.md": "724079b042377feb2b18e9fc94c4b0d7752ec39a32276063118609c906c3a189",
+    ".claude/agents/quenching-spec-runner.md": "source",
 
-    ".claude/agents/quenching-spec-scout.md": "fb14fd6eca42f5eee9d0883e4e876fd9d64d009fa4b60f187a02b2f25c75c628",
+    ".claude/agents/quenching-spec-scout.md": "source",
 
-    ".claude/agents/quenching-spec-verifier.md": "bc2597c3e1a12bccdb5759de4242e78f58ad71eafda76b5e52935d8ba8f2e999",
+    ".claude/agents/quenching-spec-verifier.md": "source",
 
-    ".claude/rules/command-fork.md": "51277745e7dd071f8d34adc6ef87d173c52e3e00b4def442a7f869c54a04d782",
+    ".claude/rules/command-fork.md": "source",
 
-    ".claude/rules/import-memory-models.md": "fd74dff6852c332775ad03af8606ff34cf7ff1810d53fa9afa66c6b7bce11d04",
+    ".claude/rules/import-memory-models.md": "source",
 
-    ".claude/skills/.generated-files.json": "228fdf7023e90047e736d2b659ed2bd7dcc933fe2cf8ec29d90038c4b786fe16",
+    ".claude/skills/.generated-files.json": "source",
 
-    ".claude/skills/commands-tighten/SKILL.md": "41574a4774e70deffd6c8c6766a1a24581d579d1f7247b68a93ba86b39b2019b",
+    ".claude/skills/commands-tighten/SKILL.md": "source",
 
-    ".claude/skills/quenching-align/SKILL.md": "3463b2247544d5cef6f532979d1fa9237996ffd34bc67661a3b34f939ee8e394",
+    ".claude/skills/quenching-align/SKILL.md": "source",
 
-    ".claude/skills/quenching-components/SKILL.md": "352639dcb7c9f79947112f2d1821032bc9b6781d38bd80afb8d8cc4e993c8863",
+    ".claude/skills/quenching-components/SKILL.md": "source",
 
-    ".claude/skills/quenching-components/references/agent-new.md": "226f13b3a1724b2b107b9ecacdac7a772c7290156742aae958810e02ca8dd0ae",
+    ".claude/skills/quenching-components/references/agent-new.md": "source",
 
-    ".claude/skills/quenching-components/references/align.md": "da81eb366431ac70c0881973464b5d6fbfe4a4eadc93d40c450da4748e28b384",
+    ".claude/skills/quenching-components/references/align.md": "source",
 
-    ".claude/skills/quenching-components/references/command-eval.md": "a8ae9929d9de6d716a5360b7ba3217bb92818cd89db5e089afaa104f213463cc",
+    ".claude/skills/quenching-components/references/command-eval.md": "source",
 
-    ".claude/skills/quenching-components/references/command-new.md": "2405e0274dced9f495ee475a8036f6e5b12bba5ae9a38117bf0f01318570764b",
+    ".claude/skills/quenching-components/references/command-new.md": "source",
 
-    ".claude/skills/quenching-components/references/command-retro.md": "af97840deda78b25bbabcaa0f98e24fea399a6b98f9d7b68107812546564204d",
+    ".claude/skills/quenching-components/references/command-retro.md": "source",
 
-    ".claude/skills/quenching-components/references/components-command-eval/evaluation.md": "9cfa77bab44867d0717a85112022eb568e3ff0d1062db767832ddb1860955696",
+    ".claude/skills/quenching-components/references/components-command-eval/evaluation.md": "source",
 
-    ".claude/skills/quenching-components/references/components-harness-align/harness-routing.md": "3d80f310c5604376d449c2786d6c58a6c7051429d56c2f31ac8e0c47d22dccc4",
+    ".claude/skills/quenching-components/references/components-harness-align/harness-routing.md": "source",
 
-    ".claude/skills/quenching-components/references/harness-align.md": "ac51f785a9c55693e761861cc25bc4b1dd48b2c20675c7a056398b3eb398560b",
+    ".claude/skills/quenching-components/references/harness-align.md": "source",
 
-    ".claude/skills/quenching-components/references/hook-new.md": "6513d79bd584f04813899949b10b639a19a48ef94e583862360aa5124d67e25c",
+    ".claude/skills/quenching-components/references/hook-new.md": "source",
 
-    ".claude/skills/quenching-components/references/status.md": "652966b0901a1a260abe2b86d48804f007d5f4c7a755de5467a2a240e7bf3564",
+    ".claude/skills/quenching-components/references/status.md": "source",
 
-    ".claude/skills/quenching-delivery/SKILL.md": "610fb4d6550c51d8fc75d20fdcd5a6f4a98b0d523fccd9f8d9dc4e3bbc8a7373",
+    ".claude/skills/quenching-delivery/SKILL.md": "source",
 
-    ".claude/skills/quenching-delivery/references/align.md": "5c4f66c3539e97acd58a5a1c90fc123df5b503638857d218f8adc14276aa8328",
+    ".claude/skills/quenching-delivery/references/align.md": "source",
 
-    ".claude/skills/quenching-delivery/references/delivery-align/bands.md": "a0f4d0badf86fdf4edf324efad4442f43900afdee0543a45208e7f0da24d5ac9",
+    ".claude/skills/quenching-delivery/references/delivery-align/bands.md": "source",
 
-    ".claude/skills/quenching-delivery/references/status.md": "4fa35c249331a1b85090b1d029b1f1afdaaf1b608cb3d5ce223ece536f7fa3a3",
+    ".claude/skills/quenching-delivery/references/status.md": "source",
 
-    ".claude/skills/quenching-design/SKILL.md": "1e68e0d8ccf54f75763bfb19cd1e6f4da8fd4887309edc75a174aba131828029",
+    ".claude/skills/quenching-design/SKILL.md": "source",
 
-    ".claude/skills/quenching-design/references/align.md": "4e48749ec5a616db61f79b3c1d08a62dc6629ab42872e0642e30d931182b3a94",
+    ".claude/skills/quenching-design/references/align.md": "source",
 
-    ".claude/skills/quenching-design/references/design-align/bands.md": "9084153221d8163bebcdebc6e314d2df01a3f36395ca427db239615f54f67ba4",
+    ".claude/skills/quenching-design/references/design-align/bands.md": "source",
 
-    ".claude/skills/quenching-design/references/genre-new.md": "3e1ae29d4abee191304851a623c360e0cf235265366d5356877798ebca7a226f",
+    ".claude/skills/quenching-design/references/genre-new.md": "source",
 
-    ".claude/skills/quenching-design/references/status.md": "c8c1e0715704adf30004d76157907dcf8f735613b6168d00db7c7e77bfc7266d",
+    ".claude/skills/quenching-design/references/status.md": "source",
 
-    ".claude/skills/quenching-git/SKILL.md": "76e544552c661d5e80520ba999c7f78283116e73ca6a249cebcf0b58d6bcdff8",
+    ".claude/skills/quenching-git/SKILL.md": "source",
 
-    ".claude/skills/quenching-git/references/branch.md": "acbd338d1cac4a05bac00e1e7d47f5c99c01aa6931bb06e37dec07f37b96c5b1",
+    ".claude/skills/quenching-git/references/branch.md": "source",
 
-    ".claude/skills/quenching-git/references/cleanup.md": "abb784c9adf09d101bae88d1e1db62b4d57c28196b88ca665324eb587d8e0147",
+    ".claude/skills/quenching-git/references/cleanup.md": "source",
 
-    ".claude/skills/quenching-git/references/commit-incremental.md": "4ca79a81e11e3ef3a0fa5dde1bf190d5ff1c5a6cfb70de6d79e2bb4619871c56",
+    ".claude/skills/quenching-git/references/commit-incremental.md": "source",
 
-    ".claude/skills/quenching-git/references/commit.md": "6095d459e7c00a226c82639b570154f622e15c40dab08036999d82687c3ca95f",
+    ".claude/skills/quenching-git/references/commit.md": "source",
 
-    ".claude/skills/quenching-git/references/merge.md": "474830576e5eecee9fee4936f6927f3a6ebb0ab0825e7fb69fbb3655d4d4ce62",
+    ".claude/skills/quenching-git/references/merge.md": "source",
 
-    ".claude/skills/quenching-git/references/pr-create.md": "08a2ca4b324cf75314fdd83a5b9cae4286a4d32964302cfd2258fe768bbd22cd",
+    ".claude/skills/quenching-git/references/pr-create.md": "source",
 
-    ".claude/skills/quenching-git/references/pr-review.md": "ad2346afd5e5126a2b0c8bc50afed70564bf731a5f7d1ec99a56752fb18b6d0a",
+    ".claude/skills/quenching-git/references/pr-review.md": "source",
 
-    ".claude/skills/quenching-git/references/pr-status.md": "61a80bbd179e2f01a0a4f46fe461293395fdcdc8dd8acc994f63c8cd57443cb5",
+    ".claude/skills/quenching-git/references/pr-status.md": "source",
 
-    ".claude/skills/quenching-git/references/push.md": "84159bbc93b677fddbf28ee56206d2d7e7f215b031f60863d7c00669799e8e06",
+    ".claude/skills/quenching-git/references/push.md": "source",
 
-    ".claude/skills/quenching-git/references/revert.md": "f4d97bbf5e0b52cfafc040123c64c4f7151e8858f1830d3b4408818c0e9a28a5",
+    ".claude/skills/quenching-git/references/revert.md": "source",
 
-    ".claude/skills/quenching-git/references/sync.md": "fb92ec347dfafb5279913ef056465ebacc7ef5edaf8765cc044703bbc2471029",
+    ".claude/skills/quenching-git/references/sync.md": "source",
 
-    ".claude/skills/quenching-handoff/SKILL.md": "15f344aace6816346be5c51d3681ecdd07aa8d2e201ac77f3e38fe920b60ee46",
+    ".claude/skills/quenching-handoff/SKILL.md": "source",
 
-    ".claude/skills/quenching-handoff/references/template.md": "78fe82fece53e07ebf2a0152f0b1c1a2cf64f31350220d69ffdcbce550668eee",
+    ".claude/skills/quenching-handoff/references/template.md": "source",
 
-    ".claude/skills/quenching-knowledge/SKILL.md": "538be81f05852978d6f680b46e3fa23a9230983d26a50618ed1daee0ee41b7f8",
+    ".claude/skills/quenching-knowledge/SKILL.md": "source",
 
-    ".claude/skills/quenching-knowledge/references/add.md": "4d6671e228db3890f6868c3f826b9e5a2f1627e250e38992dbea25f89107a1e0",
+    ".claude/skills/quenching-knowledge/references/add.md": "source",
 
-    ".claude/skills/quenching-knowledge/references/align.md": "f6764cfcbdcd0970eefc863d0cb05dccbdcc06951bdf9233288466dd938543cc",
+    ".claude/skills/quenching-knowledge/references/align.md": "source",
 
-    ".claude/skills/quenching-knowledge/references/define.md": "0e66162cdf5bd332114b0f078d340423d7a027f1049f9483d93b7138ab799de9",
+    ".claude/skills/quenching-knowledge/references/define.md": "source",
 
-    ".claude/skills/quenching-knowledge/references/documentation-build.md": "30939d6f1671eb264ec60991fdd7b85bccb01ffc8da503987f67e4783d406059",
+    ".claude/skills/quenching-knowledge/references/documentation-build.md": "source",
 
-    ".claude/skills/quenching-knowledge/references/documentation-plan.md": "174232bf38699d46e8436b030a68ed7df05779b9cd68ccafc59e3f4ae21d526b",
+    ".claude/skills/quenching-knowledge/references/documentation-plan.md": "source",
 
-    ".claude/skills/quenching-knowledge/references/documentation-produce.md": "fcd3a53cc7ba0a81bd5d4ab92c5426940a3dfe8a98d6de280791e71d22b6cc81",
+    ".claude/skills/quenching-knowledge/references/documentation-produce.md": "source",
 
-    ".claude/skills/quenching-knowledge/references/documentation-review.md": "f985432c976fbf31e3553eb527486edfb7c0d9e1ef0afc203dc09ca8c42d5c0e",
+    ".claude/skills/quenching-knowledge/references/documentation-review.md": "source",
 
-    ".claude/skills/quenching-knowledge/references/documentation-write.md": "aee829adc0ee872cd6b4ad070ee57daec73dae5f3b632ed5c38be06ad4ee1761",
+    ".claude/skills/quenching-knowledge/references/documentation-write.md": "source",
 
-    ".claude/skills/quenching-knowledge/references/glossary-backfill.md": "d42b80d7c5481d29996fb090825fcbad8fc51fb4d796c5244ca930b4e958a6b9",
+    ".claude/skills/quenching-knowledge/references/glossary-backfill.md": "source",
 
-    ".claude/skills/quenching-knowledge/references/import-memory.md": "843685dea106fed14f5fc2f3115a5b29ca25e114efdf420447316ef91339fd68",
+    ".claude/skills/quenching-knowledge/references/import-memory.md": "source",
 
-    ".claude/skills/quenching-knowledge/references/import.md": "53ecaf68e43bd2a0448173060c9b2dc6ec6c0513d103d4c96f249aac2f6e09a2",
+    ".claude/skills/quenching-knowledge/references/import.md": "source",
 
-    ".claude/skills/quenching-knowledge/references/knowledge-documentation/agent-readability.md": "727fb1d8963870957f34ba6306451bc275277a8bc5d4fc3779925f4328fb0702",
+    ".claude/skills/quenching-knowledge/references/knowledge-documentation/agent-readability.md": "source",
 
-    ".claude/skills/quenching-knowledge/references/knowledge-documentation/architecture.md": "b0577842a9404d3d8827aefe940f1d464f5c7c61dd14922c4a355a81619d6fc2",
+    ".claude/skills/quenching-knowledge/references/knowledge-documentation/architecture.md": "source",
 
-    ".claude/skills/quenching-knowledge/references/knowledge-documentation/craft.md": "64a6e173edf6a925cf79988e4c8502e4a2f9757d1371699058f15a13be657965",
+    ".claude/skills/quenching-knowledge/references/knowledge-documentation/craft.md": "source",
 
-    ".claude/skills/quenching-knowledge/references/knowledge-documentation/quality.md": "d1452b33ed73b6dd4256345f3bee7c4d6ca4519591708eac15d7b89b4d4ff519",
+    ".claude/skills/quenching-knowledge/references/knowledge-documentation/quality.md": "source",
 
-    ".claude/skills/quenching-knowledge/references/knowledge-documentation/validation.md": "9cd4a416de26d55ada32d52745a2cbcdd82b5908b2bf51464933d8325229bf8d",
+    ".claude/skills/quenching-knowledge/references/knowledge-documentation/validation.md": "source",
 
-    ".claude/skills/quenching-knowledge/references/knowledge-documentation/visual.md": "fba99a0ead5e6e258a8831ac7f3da224d9c6edcd2c28d24c3e14b66d8aa92850",
+    ".claude/skills/quenching-knowledge/references/knowledge-documentation/visual.md": "source",
 
-    ".claude/skills/quenching-knowledge/references/knowledge-documentation/zensical-capabilities.md": "53a4c8d37b0fc9b2c257b73eeb5ed2fbb7a130aabd048c19c239d2b4b1361eef",
+    ".claude/skills/quenching-knowledge/references/knowledge-documentation/zensical-capabilities.md": "source",
 
-    ".claude/skills/quenching-knowledge/references/knowledge-import-memory/memory-routing.md": "9b21f7eb82e6f1bdb3d4390fb1390c145863b8c928355ad6b44f6d5b16d6ca4a",
+    ".claude/skills/quenching-knowledge/references/knowledge-import-memory/memory-routing.md": "source",
 
-    ".claude/skills/quenching-knowledge/references/learn.md": "93e8ef730061015da4d39bbbade8af2e0c51edae2aed4b3055e449307bc6a182",
+    ".claude/skills/quenching-knowledge/references/learn.md": "source",
 
-    ".claude/skills/quenching-knowledge/references/status.md": "7e567304b62c50454a656be7b0c19a81393a4b95f0c7a509e678853a6cafcfee",
+    ".claude/skills/quenching-knowledge/references/status.md": "source",
 
-    ".claude/skills/quenching-opensource/SKILL.md": "78ab7eb8540408a249ea836655d6de61bc76490fca51f75093a5225125ddbd92",
+    ".claude/skills/quenching-opensource/SKILL.md": "source",
 
-    ".claude/skills/quenching-opensource/references/align.md": "643b12c353aa5c3394310cc586e0fd78e5d893deba7f71081b10e990780efeaf",
+    ".claude/skills/quenching-opensource/references/align.md": "source",
 
-    ".claude/skills/quenching-opensource/references/opensource-align/bands.md": "e3663838f7f2cf1104117bb94218f9465fd83ae5ef7d8bf9d03fd7dee285d322",
+    ".claude/skills/quenching-opensource/references/opensource-align/bands.md": "source",
 
-    ".claude/skills/quenching-opensource/references/opensource-controls/catalog.md": "cf0cbedcc678bd8fd98456a9802d42995e557e09e30281187c544444f1873f86",
+    ".claude/skills/quenching-opensource/references/opensource-controls/catalog.md": "source",
 
-    ".claude/skills/quenching-opensource/references/opensource-readiness/report.md": "6562ec47024be167854b09407310bdedee5f9746e07b5bfecce08578a18498bb",
+    ".claude/skills/quenching-opensource/references/opensource-readiness/report.md": "source",
 
-    ".claude/skills/quenching-opensource/references/readiness.md": "2560abda4586baa28e6b9679596588533e6b66dd808a39c2d3e0356bae4f5200",
+    ".claude/skills/quenching-opensource/references/readiness.md": "source",
 
-    ".claude/skills/quenching-opensource/references/status.md": "71242d975cc9370625b0a47ea580b531d3e54a03be857424bcee019d09caa190",
+    ".claude/skills/quenching-opensource/references/status.md": "source",
 
-    ".claude/skills/quenching-ops/SKILL.md": "d26c3ca932122ffcfef254b9096d63d4e80e4d02d3b4f5e287a9b43842686b9b",
+    ".claude/skills/quenching-ops/SKILL.md": "source",
 
-    ".claude/skills/quenching-ops/references/align.md": "64718c6c8993738d6152d86282c9a09bdd8ed956a37b7f00563e9bd02ccbe52b",
+    ".claude/skills/quenching-ops/references/align.md": "source",
 
-    ".claude/skills/quenching-ops/references/entrypoint-new.md": "8620f01de10b73dad539a39124d21eb3ba533abe65157f3d96a746aefc05ccab",
+    ".claude/skills/quenching-ops/references/entrypoint-new.md": "source",
 
-    ".claude/skills/quenching-ops/references/ops-align/bands.md": "af06d98a2d75cd34f33a8e58c106a7eb9afb389d0236a9fe3b2fb19c6a206611",
+    ".claude/skills/quenching-ops/references/ops-align/bands.md": "source",
 
-    ".claude/skills/quenching-ops/references/ops-align/entrypoint-contract.md": "0b146c44550adafc64e8ca0ff8a76403afe908ba4c79e70cb5ffb9148aa8e3cc",
+    ".claude/skills/quenching-ops/references/ops-align/entrypoint-contract.md": "source",
 
-    ".claude/skills/quenching-ops/references/ops-align/lifecycle.md": "3e8fece305726dfc23a137294de88d01cd47ac8f96dfb68278297203f1721e61",
+    ".claude/skills/quenching-ops/references/ops-align/lifecycle.md": "source",
 
-    ".claude/skills/quenching-ops/references/ops-align/target-structure.md": "f7d7ed4ade771e7449b442af3ed0fefe39340073c0452a933c854806d396f2b7",
+    ".claude/skills/quenching-ops/references/ops-align/target-structure.md": "source",
 
-    ".claude/skills/quenching-ops/references/status.md": "11e888e6a2bc2aaae0e0595971d4d472e3706a291b047dfe705d3286c71fbb97",
+    ".claude/skills/quenching-ops/references/status.md": "source",
 
-    ".claude/skills/quenching-proof/SKILL.md": "f042d45d7bf8fa7e895a369eb152647237ffbaa3068e313db55e6a2087a30953",
+    ".claude/skills/quenching-proof/SKILL.md": "source",
 
-    ".claude/skills/quenching-proof/references/align.md": "5872fd1f83b8742e9d0257845cfe5005dc54a272220863fdd9a85d79b69ebd88",
+    ".claude/skills/quenching-proof/references/align.md": "source",
 
-    ".claude/skills/quenching-proof/references/layer-new.md": "2d64ae7bee2b374ac0d905e0378b4deff4f32d6f837867279e1d4b0c6221dd8f",
+    ".claude/skills/quenching-proof/references/layer-new.md": "source",
 
-    ".claude/skills/quenching-proof/references/proof-align/bands.md": "5283eb6c69e40435eddeff60f7aae61fd51b31f0e7c165a4d71213bdf42ed62d",
+    ".claude/skills/quenching-proof/references/proof-align/bands.md": "source",
 
-    ".claude/skills/quenching-proof/references/proof-align/gate-contract.md": "fc2ac3d69b7db1175181806793fc28835ed5d3c78d043a770f3ce632b1ae662f",
+    ".claude/skills/quenching-proof/references/proof-align/gate-contract.md": "source",
 
-    ".claude/skills/quenching-proof/references/proof-align/layer-contract.md": "2b7368122c0e6711ba456e28108f6951697970bbd1b4b9460551975d0a36333c",
+    ".claude/skills/quenching-proof/references/proof-align/layer-contract.md": "source",
 
-    ".claude/skills/quenching-proof/references/proof-align/target-structure.md": "0b73a9ae41a096f3476d7e8f52f6c483da42500015872a804fa11e025bb82302",
+    ".claude/skills/quenching-proof/references/proof-align/target-structure.md": "source",
 
-    ".claude/skills/quenching-proof/references/status.md": "d46b39462cd5b96cf90ba5269a28aec64934e03268b588c161f07eba5ede2f78",
+    ".claude/skills/quenching-proof/references/status.md": "source",
 
-    ".claude/skills/quenching-security/SKILL.md": "1611d042c97ccb134233398c669afe086636b74e4c70f727d55bdfc16e9c5c38",
+    ".claude/skills/quenching-security/SKILL.md": "source",
 
-    ".claude/skills/quenching-security/references/status.md": "3274375e0d36cebe8b2174a5e79d0f15987499f0a25776b8c88f8975cc37e3e6",
+    ".claude/skills/quenching-security/references/status.md": "source",
 
-    ".claude/skills/quenching-specs/SKILL.md": "4c4a8c5418b676c1d4c7c3c02b202da716841fe708c70c9497584db236033aee",
+    ".claude/skills/quenching-specs/SKILL.md": "source",
 
-    ".claude/skills/quenching-specs/references/autopilot.md": "9790edbc7f421ff6a2e4552f903244791b0cfe94d0198bd9e1db24823706aead",
+    ".claude/skills/quenching-specs/references/autopilot.md": "source",
 
-    ".claude/skills/quenching-specs/references/board.md": "f23f25a70443e60cb15174e2763370280b57c7396d5a4cf424b5319a867017dc",
+    ".claude/skills/quenching-specs/references/board.md": "source",
 
-    ".claude/skills/quenching-specs/references/conclude.md": "27362a664ea080a3331b4b3f6efec6f1ae77ab71edbab1dd94ca9db0b178e802",
+    ".claude/skills/quenching-specs/references/conclude.md": "source",
 
-    ".claude/skills/quenching-specs/references/create.md": "06a34793ccf9491e678a6e236c645628cb274b3424e669cf9512951f5dac250b",
+    ".claude/skills/quenching-specs/references/create.md": "source",
 
-    ".claude/skills/quenching-specs/references/develop.md": "5e783f14c72c1165bcfa7b2daf41ae0622aae690fdde3b97a00df03424138d6e",
+    ".claude/skills/quenching-specs/references/develop.md": "source",
 
-    ".claude/skills/quenching-specs/references/execute.md": "e68292e1d47b16ead3b978ba9cab521e08f3dce0843060d9d2c8199e18c4b78b",
+    ".claude/skills/quenching-specs/references/execute.md": "source",
 
-    ".claude/skills/quenching-specs/references/improve.md": "b4e65cd68186c0c43a847a71f326913208a5a7da843ba5cd45cd4294afc7b707",
+    ".claude/skills/quenching-specs/references/improve.md": "source",
 
-    ".claude/skills/quenching-specs/references/orchestrate.md": "461e324ed9f4967e333d082dfefda20d1d03c24f01fa0bc3de31a2b371ced0d4",
+    ".claude/skills/quenching-specs/references/orchestrate.md": "source",
 
-    ".claude/skills/quenching-specs/references/specs-create/plan-mapping.md": "120aa843e0e4768268b2fd31100cb066fc0f6225ee633e8884f97dbec2ddff78",
+    ".claude/skills/quenching-specs/references/specs-create/plan-mapping.md": "source",
 
-    ".claude/skills/quenching-specs/references/status.md": "a542d62515828b2374dd57c5d95c3c9fbe04e4d7f42716ee8f76867e31486199",
+    ".claude/skills/quenching-specs/references/status.md": "source",
 
-    ".claude/skills/quenching-specs/references/triage.md": "efbcb6f6a37b9f8c363cc8526b29826c2e97ebd99269f1f8d8f9ffe08d52fa4f",
+    ".claude/skills/quenching-specs/references/triage.md": "source",
 
-    ".claude/skills/quenching-toolchain/SKILL.md": "73c3312bb814154b1f25a32aee146ffa2a85adbcbd6f529de0cd946106f6b8c6",
+    ".claude/skills/quenching-toolchain/SKILL.md": "source",
 
-    ".claude/skills/quenching-toolchain/references/align.md": "fe3549f39102739e8121a0bb3b28448427675a39b582163ab7a6412aea7275d1",
+    ".claude/skills/quenching-toolchain/references/align.md": "source",
 
-    ".claude/skills/quenching-toolchain/references/status.md": "3e9c8833a94136a8fb3b08991bdcaeccb8260eb346bb7c1bb42c2c0295581c1d",
+    ".claude/skills/quenching-toolchain/references/status.md": "source",
 
-    ".claude/skills/quenching-toolchain/references/toolchain-align/bands.md": "d73941d0034ffd0cbc3b3c79bc992d432b1a802e3d86926730a5943309034b97",
+    ".claude/skills/quenching-toolchain/references/toolchain-align/bands.md": "source",
 
-    ".claude/skills/references-tighten/SKILL.md": "02e15aa8d31c490909873e404ecdbaa5a64765a7976d684ce141a9e71ba98d1a",
+    ".claude/skills/references-tighten/SKILL.md": "source",
 
-    ".claude/skills/release/SKILL.md": "a2b07e450140391fbb6b469e2c96dc8c026282b3500aa7d4519496b57489ea0b",
+    ".claude/skills/release/SKILL.md": "source",
 
-    ".claude/skills/skill-map/SKILL.md": "eb309cf9d098a5daccbabff27d97f3da24a967c888bbde88f0400cc6af09b5be",
+    ".claude/skills/skill-map/SKILL.md": "source",
 
-    ".github/agents/quenching-spec-orchestrator.agent.md": "d65f75064f5d8133b50d2c8de80e56affcfd69e9278effaebf001aaba1230bdb",
+    ".github/agents/quenching-spec-orchestrator.agent.md": "source",
 
-    ".github/agents/quenching-spec-reviewer.agent.md": "62bb5ec0ac88330e4d64e50558c31312a489f362e50e4147d6db9cefee302662",
+    ".github/agents/quenching-spec-reviewer.agent.md": "source",
 
-    ".github/agents/quenching-spec-runner.agent.md": "4fbf413d4b52872e18dc544eb372895998db3229c32f743410c80c209dfc4d88",
+    ".github/agents/quenching-spec-runner.agent.md": "source",
 
-    ".github/agents/quenching-spec-scout.agent.md": "bf93d72b7fe75f5feadb5fa5397254dabb318c5f3166d90d58a9acbabeff72aa",
+    ".github/agents/quenching-spec-scout.agent.md": "source",
 
-    ".github/agents/quenching-spec-verifier.agent.md": "15b04b1d2edbba70af7eead5f4d96e8f1762d800d536e166ac05e226bb05ea60",
+    ".github/agents/quenching-spec-verifier.agent.md": "source",
 
-    ".github/instructions/command-fork.instructions.md": "8297a240756681cf23873b51395935e1eb175a1e3020af5bbb58bc2b93e826a9",
+    ".github/instructions/command-fork.instructions.md": "source",
 
-    ".github/instructions/import-memory-models.instructions.md": "47cf9a95b9ca21b9124cdd90fd5c7d3c75a39296c14f998bc9bcec5d861cda8d",
+    ".github/instructions/import-memory-models.instructions.md": "source",
 
-    ".opencode/agents/quenching-spec-orchestrator.md": "939a7bb3afd2a39a74f4fd107a4a0c619e06d266f683b42e03891de677b6ba13",
+    ".opencode/agents/quenching-spec-orchestrator.md": "source",
 
-    ".opencode/agents/quenching-spec-reviewer.md": "1ee7168eaa09561df1e163c088a7922eb557b49d1004417f66f3d05962dc270e",
+    ".opencode/agents/quenching-spec-reviewer.md": "source",
 
-    ".opencode/agents/quenching-spec-runner.md": "1361ac267c652c3fd9780a697e072eb38c732833cfeb6253faa6b4d894d432fe",
+    ".opencode/agents/quenching-spec-runner.md": "source",
 
-    ".opencode/agents/quenching-spec-scout.md": "43ea8cec684e208c694e837b21b7343a4ae96d824a1686699b539b4bbb5dda30",
+    ".opencode/agents/quenching-spec-scout.md": "source",
 
-    ".opencode/agents/quenching-spec-verifier.md": "5c2ac72f24fb04f283c8647690c1798a1cc274fed6d406517d7076533e5819f7"
+    ".opencode/agents/quenching-spec-verifier.md": "source"
   },
   "mirrors": [
     ".agents/quenching/assets/bin/quenching/delivery",

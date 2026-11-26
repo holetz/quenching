@@ -140,8 +140,24 @@ class Selection(unittest.TestCase):
         self.assertEqual((), got.tests)
         self.assertFalse(got.complete)
 
+    def test_a_bin_change_selects_the_tests_that_sweep_the_bin_tree(self):
+        got = self.selected("quenching/assets/bin/quenching/deploy/cli.py")
+        self.assertFalse(got.complete)
+        for name in ("test_subprocess_text_encoding", "test_output", "test_suite"):
+            self.assertIn(f"{TESTS}/{name}.py", got.tests)
+
+    def test_a_change_outside_the_bin_tree_does_not_trigger_the_sweep(self):
+        got = self.selected(".github/workflows/ci.yml")
+        self.assertNotIn(f"{TESTS}/test_subprocess_text_encoding.py", got.tests)
+
+    def test_a_sweep_naming_a_test_that_disappeared_fails_open(self):
+        broken = (affected.Rule(("quenching/assets/bin/",), ("test_that_was_removed",)),)
+        with mock.patch.object(affected, "SWEEPS", broken):
+            got = self.selected("quenching/assets/bin/quenching/git/audit.py")
+        self.assertTrue(got.complete)
+
     def test_every_rule_names_a_test_that_exists(self):
-        for rule in affected.RULES:
+        for rule in (*affected.RULES, *affected.SWEEPS):
             tests, problem = affected._resolve_tests(REPO_ROOT, rule.tests)
             with self.subTest(prefix=rule.prefixes[0]):
                 self.assertIsNone(problem)
@@ -178,7 +194,7 @@ class IndirectImports(unittest.TestCase):
 
     def select(self, root: pathlib.Path, path: str) -> affected.Selection:
         rules = (affected.Rule((self.PKG + "/",), ("test_base",)),)
-        with mock.patch.object(affected, "RULES", rules):
+        with mock.patch.object(affected, "RULES", rules), mock.patch.object(affected, "SWEEPS", ()):
             return affected.select(root, files=[path])
 
     def test_relative_imports_and_submodule_imports_form_a_chain(self):

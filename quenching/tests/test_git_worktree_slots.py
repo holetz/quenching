@@ -143,6 +143,17 @@ class AcquireAndRelease(SlotRepo):
         self.assertEqual(code, 1)
         self.assertIn(os.path.join(".tmp", "notes.txt"), out["ignored"])
 
+    def test_the_gate_record_does_not_keep_the_slot_held(self):
+        _code, got = self.run_verb("acquire", branch="plan/1-a")
+        with open(os.path.join(self.main, ".git", "info", "exclude"), "a") as fh:
+            fh.write(".quenching/\n")
+        os.makedirs(os.path.join(got["path"], ".quenching", "gate"))
+        with open(os.path.join(got["path"], ".quenching", "gate", "record.json"), "w") as fh:
+            fh.write("{}")
+        code, out = self.run_verb("release", path=got["path"])
+        self.assertEqual(code, 0, out)
+        self.assertTrue(out["released"])
+
     def test_an_unmerged_branch_survives_its_release(self):
         _code, got = self.run_verb("acquire", branch="plan/1-a")
         _git(got["path"], "commit", "-q", "--allow-empty", "-m", "work")
