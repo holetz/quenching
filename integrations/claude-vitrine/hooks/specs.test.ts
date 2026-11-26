@@ -66,7 +66,7 @@ test('priority is the criticality band, else the 1 to 4 level, else nothing', ()
 
 test('the list reads plans once, keeps rows when a later read fails, and normalises a row', async () => {
   const row = { id: 5, title: 'Five', stage: 'ready', phase: 'plans', date: '2026-11-01', tasks: { checked: 1, blocked: 0, total: 3 } }
-  const { specs, seen } = fake({ 'specs list --phase plans --json': ok({ specs: [row] }) })
+  const { specs, seen } = fake({ 'specs list --phase plans --full --json': ok({ specs: [row] }) })
 
   const first = await specs.list('/w')
   await specs.list('/w')

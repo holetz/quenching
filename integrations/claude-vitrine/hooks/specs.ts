@@ -261,7 +261,7 @@ export function createSpecs(cq: Cq): Specs {
     }
 
     return listing(cwd, async () => {
-      const payload = await cq.json<{ specs?: unknown[] }>(cwd, ['specs', 'list', '--phase', 'plans'])
+      const payload = await cq.json<{ specs?: unknown[] }>(cwd, ['specs', 'list', '--phase', 'plans', '--full'])
       const rows = (payload?.specs ?? []).map(normalizeRow)
 
       // A cq failure must not erase what was known: an empty list is published only when there never was one.
