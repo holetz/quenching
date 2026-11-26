@@ -16,9 +16,9 @@ Resolve `cq` per
 [tool-resolution.md](.agents/quenching/references/align/tool-resolution.md)
 §Resolving the tool, then run:
 
-```bash
-.agents/quenching/bin/cq --root . design status --json
-.agents/quenching/bin/cq --root . design build --check --json
+```text
+design_status()
+design_build(check=true)
 ```
 
 Read the source and named findings only as needed to explain them. Do not write, import, build,

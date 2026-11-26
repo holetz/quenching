@@ -42,7 +42,8 @@ lockstep` check is what refuses a stale install.
 - Never downgrade classification or executor sub-agents to `haiku` in
   `/quenching-knowledge import-memory`.
 
-Both rules are also scoped in `.claude/rules/` so they load when those files are touched.
+Both rules are sourced in `.agents/rules/` and projected by the deploy to `.claude/rules/` and
+`.github/instructions/`, so each client loads them when those files are touched.
 
 ## Navigation
 

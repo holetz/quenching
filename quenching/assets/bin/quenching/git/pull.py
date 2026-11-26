@@ -1,4 +1,4 @@
-"""`cq git pr create|probe|view|record|merge` — the pull-request writes, with a fixed argv.
+"""`cq git pr create|probe|view|checks|record|merge` — the pull-request writes, with a fixed argv.
 
 The `spec-orchestrator` (the only agent that publishes) holds no `gh pr create`/`gh pr merge` grant and no `az repos pr` grant: a
 pattern on the command text never fenced `-d`, `-s`, `-r`, an alias, or Azure's
@@ -108,6 +108,50 @@ def _checks(url: str) -> tuple[str, list[dict], str]:
     return "pending", checks, err.strip()
 
 
+NONE_MESSAGES = {
+    "no-workflow": "no check is reported for this head: probably no workflow was queued yet "
+                   "(Actions has not run, or is still starting); re-read in a moment",
+    "permission": "gh could not read the checks: the token probably lacks permission to read "
+                  "them (checks:read / repo scope)",
+    "unreachable": "gh could not reach the API; the checks are unknown, not absent",
+}
+
+
+def explain_none(err: str) -> tuple[str, str]:
+    """`reason` and `message` for a PR with no readable check, from gh's stderr."""
+    lowered = err.lower()
+    if any(w in lowered for w in ("403", "permission", "not accessible", "auth", "forbidden")):
+        reason = "permission"
+    elif any(w in lowered for w in ("connect", "timeout", "timed out", "resolve", "network")):
+        reason = "unreachable"
+    else:
+        reason = "no-workflow"
+    return reason, NONE_MESSAGES[reason] + (f" — gh: {err.strip()}" if err.strip() else "")
+
+
+def _checks_read(args) -> int:
+    """Read-only: `state` green|red|pending|none for a PR's checks, their names, and why `none`."""
+    if not PR_URL.fullmatch(args.url or ""):
+        return refuse({"code": "git-pr-url-invalid",
+                       "message": f"not a pull-request URL: {args.url}"}, args.json)
+    state, checks, err = _checks(args.url)
+    names = sorted(str(c.get("name")) for c in checks if isinstance(c, dict))
+    payload = {"ok": True, "url": args.url, "state": state, "checks": names}
+    if state == "error":
+        reason, message = explain_none(err)
+        if reason == "no-workflow":
+            payload.update(reason="unreadable", message=err or "gh returned no readable checks")
+        elif reason == "permission":
+            payload.update(state="none", reason=reason, message=message)
+        else:
+            payload.update(reason=reason, message=message)
+    elif state == "none":
+        payload["reason"], payload["message"] = explain_none(err)
+    emit(args.json, payload, f"checks {payload['state']}: {' '.join(names)}"
+         + (f" — {payload['message']}" if payload.get("message") else ""))
+    return OK
+
+
 def _required_skipped(url: str, checks: list[dict]) -> set[str]:
     """Names of the `skipping` checks the gate requires; when gh cannot list the required
     checks, every skipping check counts as required."""
@@ -188,16 +232,18 @@ def _merged(args, payload: dict, human: str) -> int:
     return OK
 
 
-def ci_refusal(args, payload: dict, state: str) -> tuple[str | None, str | None] | None:
+def ci_refusal(args, payload: dict, state: str, head: str | None = None
+               ) -> tuple[str | None, str | None] | None:
     """Judge the checks against `shared.ci.enforce` (project layer, default `required`).
 
     `state` is `green`, `none` or `pending`; anything else (red, skipped, unreadable) is refused
     under every value. `None` accepts — and a relaxed accept records `ciRelaxed` in `payload`;
-    otherwise `(reason, message)`, with `reason` None when the caller keeps its own."""
+    otherwise `(reason, message)`, with `reason` None when the caller keeps its own. The gate's
+    proof is the record `verify_repo.sh` wrote for `head`, never a flag the caller declares."""
     from quenching.config import ci
 
     mode, warnings = ci.read(os.getcwd())
-    gate_exit = getattr(args, "gate_exit", None)
+    gate_exit = ci.proven_exit(os.getcwd(), head)
     accepted, reason = ci.judge(mode, state, gate_exit)
     if warnings:
         payload["ciWarnings"] = warnings
@@ -247,13 +293,15 @@ def _merge(args) -> int:
                    and (c.get("bucket") not in GREEN or state == "skipped"))
     payload = {"ok": False, "url": args.url, "number": int(match.group(1)), "checks": state,
                "notGreen": names}
-    refusal = ci_refusal(args, payload, state)
+    refusal = ci_refusal(args, payload, state, head)
     if refusal is not None:
         payload["reason"] = refusal[0] or {"red": "failed", "pending": "pending",
                                            "none": "no-checks", "skipped": "skipped-required"}.get(
             state, "checks-unreadable")
         if refusal[1]:
             payload["message"] = refusal[1]
+        elif state == "none":
+            payload["noneReason"], payload["message"] = explain_none(message)
         elif message:
             payload["message"] = message
         emit(args.json, payload, f"not merged: {payload['reason']} {' '.join(names)}".rstrip())
@@ -552,6 +600,11 @@ def _create(args) -> int:
                                      f"{stamp['message']}")
             return FINDINGS
     payload["specs"] = specs = sync_store(find_repo_root(os.getcwd()))
+    if args.spec and not specs["ok"]:   # the record lives only in this clone until the sync lands
+        payload.update(ok=False, reason="store-not-synced", message=specs.get("message", ""))
+        emit(args.json, payload, f"PR #{number}: {url} opened and `pr` record stamped; "
+                                 f"spec store not synced: {specs.get('message', '')}")
+        return FINDINGS
     notes = "".join(f"\nfinding: {f['message']}" for f in payload.get("findings", []))
     emit(args.json, payload, f"PR #{number}: {url}" + _specs_note(specs) + notes)
     return OK
@@ -624,4 +677,6 @@ def cmd_pr(args) -> int:
         return _record(args)
     if args.action == "probe":
         return _probe(args)
+    if args.action == "checks":
+        return _checks_read(args)
     return _merge(args) if args.action == "merge" else _create(args)

@@ -262,5 +262,129 @@ class TheMcpjsonApproval(unittest.TestCase):
             settings.merge('{"enabledMcpjsonServers": "quenching"}', [], None, [], mcpjson=True)
 
 
+class ThePermissionsMerge(unittest.TestCase):
+    RULE = "Bash(.agents/quenching/bin/cq:*)"
+    OTHER = "Read(~/src/proj-slot-*/**)"
+
+    def test_a_missing_file_gets_allow_with_only_the_wanted_rules(self):
+        merged = settings.merge(None, [], settings.ATTRIBUTION, [],
+                                permissions=[self.RULE, self.OTHER])
+        rules = load(merged)["permissions"]["allow"]
+        self.assertEqual([self.RULE, self.OTHER], rules)
+        self.assertEqual([self.RULE, self.OTHER], merged.permissions)
+
+    def test_a_user_rule_and_the_deny_list_survive(self):
+        text = json.dumps({"permissions": {"allow": ["Bash(git status)"],
+                                           "deny": ["Read(~/.ssh/**)"]}})
+        merged = settings.merge(text, [], settings.ATTRIBUTION, [], permissions=[self.RULE])
+        doc = load(merged)
+        self.assertEqual(["Bash(git status)", self.RULE], doc["permissions"]["allow"])
+        self.assertEqual(["Read(~/.ssh/**)"], doc["permissions"]["deny"])
+        self.assertEqual([self.RULE], merged.permissions)
+
+    def test_a_rule_the_user_already_wrote_is_not_claimed(self):
+        text = json.dumps({"permissions": {"allow": [self.RULE]}})
+        merged = settings.merge(text, [], None, [], permissions=[self.RULE])
+        self.assertEqual(text, merged.text)
+        self.assertEqual([], merged.permissions)
+
+    def test_it_is_idempotent_and_reuses_the_recorded_rules(self):
+        first = settings.merge(None, [], settings.ATTRIBUTION, [], permissions=[self.RULE])
+        second = settings.merge(first.text, [], settings.ATTRIBUTION, first.attribution,
+                                permissions=[self.RULE], permissions_recorded=first.permissions)
+        self.assertEqual(first.text, second.text)
+        self.assertEqual([self.RULE], second.permissions)
+
+    def test_removal_takes_out_only_the_recorded_rule(self):
+        text = json.dumps({"permissions": {"allow": ["Bash(git status)", self.RULE],
+                                           "deny": ["Read(~/.ssh/**)"]}})
+        out = settings.merge(text, [], None, [], permissions=None,
+                             permissions_recorded=[self.RULE])
+        doc = load(out)
+        self.assertEqual(["Bash(git status)"], doc["permissions"]["allow"])
+        self.assertEqual(["Read(~/.ssh/**)"], doc["permissions"]["deny"])
+        alone = settings.merge(json.dumps({"permissions": {"allow": [self.RULE]}}), [], None, [],
+                               permissions_recorded=[self.RULE])
+        self.assertEqual({}, load(alone))
+
+    def test_a_permissions_shape_that_is_not_an_object_refuses(self):
+        with self.assertRaises(settings.SettingsRefusal):
+            settings.merge('{"permissions": "allow"}', [], None, [], permissions=[self.RULE])
+
+    def test_an_allow_that_is_not_a_list_refuses(self):
+        with self.assertRaises(settings.SettingsRefusal):
+            settings.merge('{"permissions": {"allow": "all"}}', [], None, [],
+                           permissions=[self.RULE])
+
+
+class TheSettingsPlanCarriesTheAccessRules(unittest.TestCase):
+    """`cli._settings_merge`: the deploy derives the rules, records what it wrote and reuses it."""
+
+    def setUp(self):
+        sys.path.insert(0, str(PLUGIN_ROOT / "assets" / "bin"))
+        from quenching.deploy import cli
+        self.cli = cli
+        self.tmp = tempfile.mkdtemp()
+        self.addCleanup(shutil.rmtree, self.tmp, True)
+        subprocess.run(["git", "init", "-q", self.tmp], check=True, capture_output=True)
+
+    def built(self):
+        return {"settings": {"hooks": [], "attribution": None, "mcpjson": False},
+                "manifest": {"claudeSettings": {}}}
+
+    def test_the_rules_land_in_the_file_and_the_manifest(self):
+        merged = self.cli._settings_merge(pathlib.Path(self.tmp), self.built(), None)
+        doc = json.loads(merged["text"])
+        rules = doc["permissions"]["allow"]
+        self.assertTrue(any(rule.startswith("Bash(.agents/quenching/bin/cq") for rule in rules))
+        self.assertTrue(any(rule.startswith("Read(") for rule in rules))
+
+    def test_check_reuses_the_recorded_rules_instead_of_deriving_them(self):
+        first = self.cli._settings_merge(pathlib.Path(self.tmp), self.built(), None)
+        recorded = {"claudeSettings": {"permissions": ["Bash(mine:*)"]}}
+        (pathlib.Path(self.tmp) / ".claude").mkdir(parents=True, exist_ok=True)
+        (pathlib.Path(self.tmp) / ".claude" / "settings.json").write_text(
+            json.dumps({"permissions": {"allow": ["Bash(mine:*)"]}}), encoding="utf-8")
+        kept = self.cli._settings_merge(pathlib.Path(self.tmp), self.built(), recorded, keep=True)
+        self.assertFalse(kept["changed"])
+        # A write over a file that carries every recorded rule keeps them too.
+        written = self.cli._settings_merge(pathlib.Path(self.tmp), self.built(), recorded)
+        self.assertFalse(written["changed"])
+        # With a recorded rule the file lacks, a write derives the rules for this machine.
+        lacking = {"claudeSettings": {"permissions": ["Bash(mine:*)", "Bash(gone:*)"]}}
+        derived = self.cli._settings_merge(pathlib.Path(self.tmp), self.built(), lacking)
+        self.assertTrue(derived["changed"])
+        self.assertTrue(first["changed"])
+
+    def test_write_never_adds_this_machines_path_rules_to_a_file_holding_the_recorded_ones(self):
+        # The shape this repository commits: the manifest records only the `cq` rules, and the
+        # path rules in the file belong to another machine's home.
+        from quenching.common import access
+        target = pathlib.Path(self.tmp)
+        recorded = list(access.CLAUDE_BASH)
+        foreign = ["Read(~/elsewhere/repo-slot-*/**)", "Write(~/elsewhere/repo.*/**)"]
+        (target / ".claude").mkdir(parents=True, exist_ok=True)
+        (target / ".claude" / "settings.json").write_text(
+            json.dumps({"permissions": {"allow": recorded + foreign}}), encoding="utf-8")
+        derived = [rule for rule in access.claude_rules(self.tmp, os.path.expanduser("~"))
+                   if rule not in recorded]
+        self.assertTrue(derived)
+        merged = self.cli._settings_merge(
+            target, self.built(), {"claudeSettings": {"permissions": recorded}})
+        self.assertFalse(merged["changed"])
+        text = merged["text"] or (target / ".claude" / "settings.json").read_text()
+        self.assertFalse([rule for rule in derived if rule in text])
+
+    def test_removal_takes_only_the_recorded_rules(self):
+        target = pathlib.Path(self.tmp)
+        (target / ".claude").mkdir(parents=True, exist_ok=True)
+        (target / ".claude" / "settings.json").write_text(json.dumps(
+            {"permissions": {"allow": ["Bash(mine:*)", "Bash(ours:*)"]}}), encoding="utf-8")
+        previous = {"claudeSettings": {"permissions": ["Bash(ours:*)"]}}
+        merged = self.cli._settings_merge(target, {"settings": None, "manifest": {}}, previous)
+        self.assertEqual(["Bash(mine:*)"],
+                         json.loads(merged["text"])["permissions"]["allow"])
+
+
 if __name__ == "__main__":
     unittest.main()

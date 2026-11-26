@@ -24,8 +24,8 @@ per [tool-resolution.md](.agents/quenching/references/align/tool-resolution.md)
 
 Run the route before reading or editing a target:
 
-```bash
-.agents/quenching/bin/cq --root "$TARGET_ROOT" toolchain doctor --json
+```text
+toolchain_doctor(root="$TARGET_ROOT")
 ```
 
 The probe establishes applicability from recognized toolchain artifacts. `not-applicable` is an
@@ -86,8 +86,8 @@ already made them deterministic.
 
 Re-run the same closing verifier:
 
-```bash
-.agents/quenching/bin/cq --root "$TARGET_ROOT" toolchain doctor --json
+```text
+toolchain_doctor(root="$TARGET_ROOT")
 ```
 
 If findings remain, distinguish unresolved judgement residue from a failed mechanical or structural
@@ -113,5 +113,5 @@ and every residual owner action.
 - `not-applicable` and refusal are explicit states, never guessed healthy configuration.
 - The doctor payload is the authoritative finding and inventory source for this pass.
 - Mechanical and bounded structural findings may be applied; build policy and judgement remain report-only.
-- The closing verifier is the same `.agents/quenching/bin/cq toolchain doctor --json` program as the probe.
+- The closing verifier is the same `toolchain_doctor()` program as the probe.
 - The command never rewrites `.agents/quenching.json` into a toolchain artifact or creates a second configuration home.

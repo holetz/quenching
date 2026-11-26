@@ -35,6 +35,7 @@ class Merged:
     text: str | None
     attribution: list[str] = field(default_factory=list)   # keys the deploy owns, still ""
     mcpjson: bool = False  # the deploy wrote `quenching` into `enabledMcpjsonServers`
+    permissions: list[str] = field(default_factory=list)  # rules this deploy added to `allow`
     warnings: list[str] = field(default_factory=list)
 
 
@@ -209,9 +210,47 @@ def _merge_mcpjson(doc: dict, wanted: bool, recorded: bool, out: Merged) -> None
             doc.pop("enabledMcpjsonServers", None)
 
 
+def _merge_permissions(doc: dict, wanted: list[str] | None, recorded: list[str],
+                       out: Merged) -> None:
+    """Append the access rules to `permissions.allow`, and take out only the ones a past deploy
+    wrote: the list is the user's, the deny/ask entries are never touched, and a rule already
+    there is theirs unless an earlier deploy recorded it."""
+    current = doc.get("permissions")
+    if current is None:
+        current = {}
+    elif not isinstance(current, dict):
+        _refuse("`permissions` must be an object")
+    allow = current.get("allow")
+    if allow is None:
+        allow = []
+    elif not isinstance(allow, list):
+        _refuse("`permissions.allow` must be a list")
+    if not wanted:
+        rest = [rule for rule in allow if rule not in recorded]
+        if len(rest) != len(allow):
+            if rest:
+                current["allow"] = rest
+            else:
+                current.pop("allow", None)
+    else:
+        for rule in wanted:
+            if rule not in allow:
+                allow.append(rule)
+                out.permissions.append(rule)
+            elif rule in recorded:
+                out.permissions.append(rule)
+        if allow:
+            current["allow"] = allow
+    if current:
+        doc["permissions"] = current
+    else:
+        doc.pop("permissions", None)
+
+
 def merge(text: str | None, wanted: list[dict], attribution: dict | None = None,
           recorded: list[str] | None = None, mcpjson: bool = False,
-          mcpjson_recorded: bool = False) -> Merged:
+          mcpjson_recorded: bool = False, permissions: list[str] | None = None,
+          permissions_recorded: list[str] | None = None) -> Merged:
     """The settings text after the merge. `text` None means the file does not exist. `mcpjson`
     asks for the registered server's approval; `mcpjson_recorded` says a past deploy wrote it."""
     out = Merged(text=text)
@@ -228,6 +267,7 @@ def merge(text: str | None, wanted: list[dict], attribution: dict | None = None,
     _merge_hooks(doc, wanted)
     _merge_attribution(doc, attribution, list(recorded or []), out)
     _merge_mcpjson(doc, mcpjson, mcpjson_recorded, out)
+    _merge_permissions(doc, permissions, list(permissions_recorded or []), out)
     if doc == original:
         return out
     out.text = json.dumps(doc, indent=2, ensure_ascii=False) + "\n"

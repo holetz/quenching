@@ -10,6 +10,7 @@ import json
 import pathlib
 import sys
 import tempfile
+import threading
 import unittest
 from unittest import mock
 
@@ -224,6 +225,21 @@ class Scenarios:
         b.create_spec("plans", doc("Captured only"))        # no `approved:`, no ready sections
         add(b, 2)
         self.assertEqual([], ready_labels(b))
+
+    def test_autonomous_lists_captured_members_without_a_pending_dependency(self):
+        b = self.backend
+        b.create_spec("plans", epic_doc())
+        for n in (1, 2, 3):
+            b.create_spec("plans", doc(f"Captured {n}"))    # no `approved:`, nothing developed
+        add(b, 2)
+        add(b, 3)
+        add(b, 4, after="S1")
+        self.assertEqual([], ready_labels(b))
+        _, got = run(next_cmd.cmd_next, b, epic=EPIC_ID, spec=None, front=False, limit=None,
+                     autonomous=True)
+        self.assertEqual(["S1", "S2"], [r["label"] for r in got["ready"]])
+        self.assertTrue(all(r["needsDevelop"] for r in got["ready"]))
+        self.assertEqual(2, got["readyTotal"])
 
     def test_next_orders_by_priority_and_honours_limit(self):
         b = self.backend
@@ -620,6 +636,73 @@ class PrStatesTarget(unittest.TestCase):
 
     def test_an_azure_head_other_than_the_members_branch_is_left_out(self):
         self.assertEqual({}, self.azure("completed", head="refs/heads/plan/9-y")[0])
+
+
+class PrStatesConcurrency(unittest.TestCase):
+    """The lookups of one composite are in flight together, and the answer keeps member order."""
+
+    def members(self, n):
+        return {str(i): {"phase": "archive", "frontmatter": {"pr": {"number": i}}}
+                for i in range(n, 0, -1)}
+
+    def test_the_lookups_overlap_instead_of_running_one_after_another(self):
+        gate = threading.Barrier(3, timeout=5)
+
+        def view(member, *_):
+            gate.wait()   # a serial loop never gets three callers here at once
+            return ("MERGED", None)
+
+        with mock.patch.object(epic_cmd, "_provider", return_value="github"), \
+                mock.patch.object(epic_cmd, "_pr_view", side_effect=view):
+            got = epic_cmd.pr_states(self.members(3), "/r")
+        self.assertEqual(["3", "2", "1"], list(got))
+
+    def test_a_failed_lookup_leaves_only_that_member_out(self):
+        def view(member, *_):
+            return None if member["frontmatter"]["pr"]["number"] == 2 else ("OPEN", None)
+
+        with mock.patch.object(epic_cmd, "_provider", return_value="github"), \
+                mock.patch.object(epic_cmd, "_pr_view", side_effect=view):
+            got = epic_cmd.pr_states(self.members(3), "/r")
+        self.assertEqual({"3": "OPEN", "1": "OPEN"}, got)
+
+
+class PrStatesMergedMemo(unittest.TestCase):
+    """A long-lived process reads a MERGED PR once; nothing else is remembered, and off by default."""
+
+    def calls(self, memo, states):
+        seen = []
+
+        def view(member, *_):
+            n = member["frontmatter"]["pr"]["number"]
+            seen.append(n)
+            return (states[n], "plan/x")
+
+        members = {str(n): {"phase": "archive",
+                            "frontmatter": {"pr": {"number": n},
+                                            "branch": {"work": "plan/x"}}} for n in states}
+        with mock.patch.object(epic_cmd, "_MERGED", memo), \
+                mock.patch.object(epic_cmd, "_provider", return_value="github"), \
+                mock.patch.object(epic_cmd, "_pr_view", side_effect=view):
+            first = epic_cmd.pr_states(members, "/r")
+            second = epic_cmd.pr_states(members, "/r")
+        return first, second, seen
+
+    def test_a_merged_pr_is_looked_up_once_and_an_open_one_every_time(self):
+        first, second, seen = self.calls({}, {1: "MERGED", 2: "OPEN"})
+        self.assertEqual({"1": "MERGED", "2": "OPEN"}, first)
+        self.assertEqual(first, second)
+        self.assertEqual([1, 2], sorted(seen[:2]))
+        self.assertEqual([2], seen[2:])
+
+    def test_without_the_server_every_call_looks_up_again(self):
+        _, _, seen = self.calls(None, {1: "MERGED"})
+        self.assertEqual([1, 1], seen)
+
+    def test_remember_merged_turns_the_memo_on(self):
+        with mock.patch.object(epic_cmd, "_MERGED", None):
+            epic_cmd.remember_merged()
+            self.assertEqual({}, epic_cmd._MERGED)
 
 
 if __name__ == "__main__":

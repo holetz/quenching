@@ -86,17 +86,22 @@ class Coverage(unittest.TestCase):
             self.assertEqual(coverage.verb_path(list(path)), path)
 
     def test_a_verb_a_tool_covers_leaves_no_shell_residue(self):
-        for prefix in (("specs", "status"), ("git", "worktree"), ("components", "read"),
-                       ("security", "leak"), ("specs", "claim")):
+        for prefix in (("specs", "status"), ("components", "read"), ("security", "leak"),
+                       ("specs", "claim"), ("git", "worktree", "slots"),
+                       ("git", "worktree", "acquire")):
             with self.subTest(prefix):
                 self.assertEqual(coverage.cli_residue(prefix), [])
+        self.assertEqual(coverage.cli_residue(("git", "worktree")),
+                         [("git", "worktree", "workspace"), ("git", "worktree", "adopt")])
 
     def test_the_residue_keeps_the_exceptions_and_the_verbs_with_no_tool(self):
         specs = coverage.cli_residue(("specs",))
         for path in (("specs", "serve"), ("specs", "migrate"), ("specs", "sync")):
             self.assertIn(path, specs)
         self.assertNotIn(("specs", "status"), specs)
-        self.assertEqual(coverage.cli_residue(("git",)), [("git", "identity")])
+        self.assertEqual(coverage.cli_residue(("git",)),
+                         [("git", "worktree", "workspace"), ("git", "worktree", "adopt"),
+                          ("git", "identity")])
         self.assertEqual(coverage.cli_residue(("deploy",)), [("deploy",)])
 
     def test_a_pillar_with_no_tool_below_collapses_to_one_path(self):

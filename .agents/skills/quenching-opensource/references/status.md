@@ -19,8 +19,8 @@ Resolve `cq` per
 [tool-resolution.md](.agents/quenching/references/align/tool-resolution.md)
 §Resolving the tool. Set `TARGET_ROOT` to the supplied argument, or to `.` when omitted, and run:
 
-```bash
-.agents/quenching/bin/cq --root "$TARGET_ROOT" opensource status --json
+```text
+opensource_status(root="$TARGET_ROOT")
 ```
 
 Branch on the JSON and exit code: `0` is a clean report, `1` carries findings, and `2` is a
@@ -32,7 +32,7 @@ write-capable command.
 
 ### 1. Read the status payload
 
-Re-read the status payload using the `.agents/quenching/bin/cq opensource status --json` invocation above. Branch on its
+Re-read the status payload using the invocation above. Branch on its
 exit code and preserve its baseline, owner blocks, findings and advisories.
 
 **Done when:** the payload is captured, or the refusal is preserved with its reason.

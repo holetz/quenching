@@ -7,7 +7,7 @@ tags: [automation, hooks, performance, budget]
 timestamp: 2026-11-25
 audience: both
 authority: current
-source: 2026-07-27, 2026-08-03, enxugar-create-e-eliminar-o-rung-hooks, 2026-08-06; lineage in ADR 0004
+source: 2026-07-27, 2026-08-03, enxugar-create-e-eliminar-o-rung-hooks, 2026-08-06; the SessionStart adoption hook, spec 458 (2026-11-25); lineage in ADR 0004
 maintainer: quenching
 ---
 
@@ -150,7 +150,9 @@ reads `.claude/settings.json`, so a second file would run every hook twice there
 
 **No `WorktreeCreate` hook is generated.** The worktree belongs to the quenching flow, which takes a
 slot with `cq git worktree acquire`. A harness hook that cut its own worktree would hand a session a
-tree with no slot lock, no `worktreeSetup` and no `branch:` record.
+tree with no slot lock, no `worktreeSetup` and no `branch:` record. **A `SessionStart` hook is not a
+`WorktreeCreate`**: it cuts nothing and takes no slot; it adopts a checkout that already exists
+(`adopt-worktree` below).
 
 **`deny-claude-coauthor`.** `quenching-specs` declares one rung-2 `PreToolUse` hook matched to
 the shell tools, running `assets/hooks/deny-claude-coauthor.py` (5-second timeout, absence-guarded). It denies a
@@ -173,6 +175,20 @@ command, so a quoted commit message or an `echo` that only mentions a flag stays
 set by `git config` beforehand, a variable or an alias goes unseen — so it is a reminder, not a
 boundary. A skill-scoped rung 1 does not exist for it: the skill bridge is a byte copy and carries
 no frontmatter hook.
+
+**`adopt-worktree`.** `quenching-specs` declares one **rung-4** `SessionStart` hook over the four
+sources (`startup|resume|clear|compact`), running `assets/hooks/adopt-worktree.py` with a 300-second
+timeout. Rung 4 because the condition is the session's own cwd — a linked worktree the harness cut —
+which no tool matcher expresses, and it must run before the first tool call; nothing narrower sees
+the event. The body runs `cq git worktree adopt` in the session's checkout: on the primary or a slot
+the verb refuses and the body prints `{}`, so a session that was never isolated costs one Python
+start and one `git rev-parse` (about 30 ms) and zero tokens. Inside a linked worktree it links the
+declared `sharedPaths`, symlinks the declared `shared.regenerablePaths` directories the primary
+holds, runs the declared `worktreeSetup` once per worktree (marker in the worktree's git dir) and
+returns the context that says the session is already isolated. **The side effects are the
+contract**: the VS Code agent host runs a `SessionStart` command for its effects and discards the
+answer, and the runner and the orchestrator detect the worktree from git, so adoption never depends
+on the message.
 
 **Before it, this repo wired no hook of its own.** It once wired the OKF checker itself, at rungs 2 and
 3, via a `hooks.json` shipped under this plugin's own `hooks/` — a `PostToolUse` hook matched to `Write|Edit` and a

@@ -5,7 +5,8 @@ with no check at all may merge, one with checks still needs them green) or `off`
 check, or with checks still pending, may merge). A **red**, skipped-required or unreadable check
 is refused under every value: the key only decides what to do when there is no check, or when a
 check is still pending. Whatever relaxes the exigence puts the local gate in its place: the merge
-then needs `--gate-exit 0`, the exit code of the repository gate the caller just ran.
+then needs the gate record (`.quenching/gate/record.json`) that `scripts/verify_repo.sh` wrote for
+the PR's head, with exit 0, scope `full` and a clean tree. A caller's own claim of a green gate proves nothing.
 
 The key lives in the project layer only. It is read raw from the repository document, never from
 the merged envelope, so a user or a local layer cannot widen what merges without proof. A value
@@ -13,8 +14,39 @@ the registry does not know falls back to `required` and is named in the warnings
 """
 from __future__ import annotations
 
+import json
+import os
+
 ENFORCE = ("required", "when-present", "off")
 DEFAULTS = {"enforce": "required"}
+GATE_RECORD = os.path.join(".quenching", "gate", "record.json")
+GATE_RECORD_SCHEMA = 1
+
+
+def proven_exit(root: str, head: str | None) -> int | None:
+    """The exit of the gate that ran on `head`, or `None` when no record proves it.
+
+    The record is written only by `scripts/verify_repo.sh`: it must be readable, of the known
+    schema, name exactly `head`, come from a clean tree, carry an integer exit and record the
+    `full` scope. An `affected` run skips the coverage floor, the site and the integrations, so it
+    never stands in for CI; `unknown`, absent or any other scope proves nothing either."""
+    from quenching.common.config import find_repo_root
+
+    if not head:
+        return None
+    try:
+        with open(os.path.join(find_repo_root(root), GATE_RECORD), encoding="utf-8") as handle:
+            record = json.load(handle)
+    except (OSError, ValueError):
+        return None
+    if not isinstance(record, dict) or record.get("schema") != GATE_RECORD_SCHEMA:
+        return None
+    exit_code = record.get("exit")
+    if (record.get("head") != head or record.get("dirty") is not False
+            or record.get("scope") != "full"
+            or not isinstance(exit_code, int) or isinstance(exit_code, bool)):
+        return None
+    return exit_code
 
 
 def read(root: str) -> tuple[str, list[str]]:
@@ -59,4 +91,6 @@ def judge(enforce: str, state: str, gate_exit: int | None) -> tuple[bool, str | 
 
 def proof_message(enforce: str, state: str) -> str:
     return (f"CI is not required for this PR (shared.ci.enforce={enforce}, checks {state}); "
-            "the local gate stands in for it, so pass --gate-exit 0 after a green repository gate")
+            f"the full local gate stands in for it: run scripts/verify_repo.sh on this PR's head "
+            f"with QUENCHING_TEST_SCOPE=full (an affected run proves nothing); the "
+            f"merge reads its record ({GATE_RECORD}), never a declared --gate-exit")

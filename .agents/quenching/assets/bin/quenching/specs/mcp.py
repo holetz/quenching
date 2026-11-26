@@ -28,12 +28,14 @@ same one `cq mcp` mounts with these tables inside its wider catalog.
 """
 from __future__ import annotations
 
+import importlib
 import json
 import os
 import re
 from datetime import date
 from urllib.parse import parse_qs, urlsplit
 
+from quenching.common.version import VERSION
 from quenching.mcp import server
 from quenching.mcp.server import (BAD_PARAMS, MAX_CHARS, NOT_FOUND,  # noqa: F401 — re-exported
                                   PROTOCOL_VERSIONS, ResourceError, Session, ToolArgs)
@@ -158,7 +160,8 @@ def _next(args: dict) -> list[str]:
     if epic and spec:
         raise ToolArgs("give `epic` or `spec`, not both")
     if epic:
-        return ["next", "--epic", epic, "--limit", str(_page(args)[0])]
+        return ["next", "--epic", epic, "--limit", str(_page(args)[0]),
+                *(["--autonomous"] if args.get("autonomous") else [])]
     if spec:
         return ["next", "--spec", spec]
     return ["next", "--front"]
@@ -211,7 +214,10 @@ TOOLS: dict[str, tuple] = {
         "The next action of one spec (`spec`, composition-aware: a ready task, else the ready "
         "members), the member specs of a composite ready to run now (`epic`), or the ranked "
         "front of every active spec (neither), paged.",
-        _schema({"spec": SPEC, "epic": SPEC, **PAGE}), _next, None),
+        _schema({"spec": SPEC, "epic": SPEC, **PAGE,
+                 "autonomous": {"type": "boolean", "description":
+                                "with `epic`: also the members to develop first (needsDevelop)"}}),
+        _next, None),
     "specs_epic_progress": (
         "One spec's composition: progress per wave, its blocked members and critical path.",
         _schema({"epic": SPEC}, ["epic"]), _epic, None),
@@ -342,12 +348,12 @@ def _w_task(args: dict) -> list[str]:
     reason = args.get("reason")
     if action in ("block", "descope") and not reason:
         raise ToolArgs(f"`reason` is required to {action}")
-    for key in ("reason", "subject", "commit"):
+    for key in ("reason", "subject", "commit", "replaced_by"):
         value = args.get(key)
         if value is not None:
             if not isinstance(value, str) or not value.strip() or "\n" in value:
                 raise ToolArgs(f"`{key}` must be a one-line string")
-            argv += [f"--{key}", value.strip()]
+            argv += [f"--{key.replace('_', '-')}", value.strip()]
     return argv
 
 
@@ -450,10 +456,12 @@ WRITES: dict[str, tuple] = {
         _w_record, None, _gate_record, _preflight_record),
     "specs_task": (
         "Check, uncheck, block or descope ONE task (`action`, `task`); block and descope need a "
-        "`reason`; check takes optional `subject` and `commit`.",
+        "`reason`; check takes optional `subject` and `commit`; descope takes optional `replaced_by`, the task that "
+        "delivers the work instead.",
         _schema({"spec": SPEC, "action": {"type": "string", "enum": list(TASK_ACTIONS)},
                  "task": {"type": "string"}, "reason": {"type": "string"},
-                 "subject": {"type": "string"}, "commit": {"type": "string"}},
+                 "subject": {"type": "string"}, "commit": {"type": "string"},
+                 "replaced_by": {"type": "string"}},
                 ["spec", "action", "task"]), _w_task, None, None, None),
     "specs_epic_add": (
         "Historical alias of `specs_link_add`: list a spec as a member of another.",
@@ -789,9 +797,23 @@ def _refusal(code: str, message: str) -> tuple[dict, bool]:
     return {"ok": False, "code": code, "message": message}, True
 
 
+def _reject_unknown(schema: dict, args: dict) -> None:
+    """Refuse an argument the tool's `inputSchema` does not declare, never ignore it: a dropped
+    argument answers a different question than the one asked, and `ok: true` hides it."""
+    if not isinstance(args, dict):
+        raise ToolArgs("`arguments` must be an object")
+    unknown = sorted(set(args) - set(schema["properties"]))
+    if unknown:
+        raise ToolArgs(
+            f"unknown argument(s): {', '.join(unknown)}; this server (quenching "
+            f"{VERSION}) accepts: {', '.join(sorted(schema['properties']))}. If the repository's "
+            "source declares it, the loaded server is older: reload the MCP server")
+
+
 def call_write(name: str, args: dict, root: str, session: Session) -> tuple[dict, bool]:
-    _, _, build, stdin, gate, pre = WRITES[name]
+    _, schema, build, stdin, gate, pre = WRITES[name]
     try:
+        _reject_unknown(schema, args)
         root = server.call_root(args, root)
         argv = build(args)
         body = stdin(args) if stdin else None
@@ -821,8 +843,9 @@ def call_tool(name: str, args: dict, root: str,
     """`(payload, is_error)` for one tool call. Raises KeyError for an unknown tool."""
     if name in WRITES:
         return call_write(name, args, root, session or Session())
-    _, _, build, page_key = TOOLS[name]
+    _, schema, build, page_key = TOOLS[name]
     try:
+        _reject_unknown(schema, args)
         root = server.call_root(args, root)
         argv = build(args)
     except ToolArgs as exc:
@@ -900,4 +923,8 @@ def cmd_mcp(args, root: str, out) -> int:
     # Same reason as `cmd_serve`: `specs_push` runs the git store's push in this process, and
     # `_git` inherits the environment rather than taking one.
     os.environ.setdefault("GIT_TERMINAL_PROMPT", "0")
+    # A long-lived process keeps merged PR lookups. Resolved at run time, as the specs CLI
+    # resolves its verbs, so the static import graph the affected-test selector reads does not
+    # tie every catalog consumer to the epic reader.
+    importlib.import_module("quenching.specs.commands.epic").remember_merged()
     return server.run_stdio(root, SURFACE)

@@ -116,7 +116,10 @@ command that edits the surface — `/quenching-components command-new`, or `/que
 For each task the policy says to verify:
 
 1. Run the task's `verify:` command, from its declared `cwd:` — or, absent one, from the session's
-   or worktree's root, exactly as before this key existed.
+   or worktree's root, exactly as before this key existed. **Run it without a pipe, and read the
+   command's own exit**: a pipe returns the last stage's exit (`… | tail` exits 0 over a red suite).
+   When a pipe is unavoidable, run under `set -o pipefail` and read the exit before shortening
+   anything; `tail` and `head` belong to reading the output, never to the run that decides the tick.
 2. **Passes** → the task is done; go to the diff self-review.
 3. **Fails** → classify it first. Reproduce the failure in the base worktree (`.quenching/red`): it
    reproduces there → it is **pre-existing**, not this task's, and
@@ -147,6 +150,8 @@ test in and run it there: the base does not contain the fix, so the test fails w
 apply (a reverse patch of the production diff cannot apply to a tree that lacks it). The stash,
 checkout or reset this replaces would erase other agents' work in the shared checkout. Record the
 result as one evidence line in the task's report: `RED: <test> fails without <fix> (copied test, base worktree)`.
+
+**Run the copied test with `PYTHONDONTWRITEBYTECODE=1`** (and `-p no:cacheprovider` under pytest), so no ignored `__pycache__` or `.pytest_cache` is written and the removal below needs no `--force`.
 
 **Remove the RED worktree before returning**, never with `--force` and only at the fixed path you created: make the tree match the base again (delete the copied test if it is new; when it overwrote a file that already exists in the base, rewrite that file with `git -C .quenching/red cat-file --filters HEAD:<file> > .quenching/red/<file>`, never checkout or restore; the filters restore checkout bytes, including EOL and configured smudge conversions), run `git worktree remove .quenching/red`, then `rmdir .quenching` if empty. A leftover worktree or empty `.quenching/` under the spec's worktree keeps `retire` from retiring it.
 

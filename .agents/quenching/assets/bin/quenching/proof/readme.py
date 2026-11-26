@@ -17,10 +17,13 @@ _README_ZONE = re.compile(rf"{re.escape(README_START)}.*?{re.escape(README_END)}
 
 
 def _layers_payload(inventory: ProofInventory) -> list[dict[str, Any]]:
-    """Serialize the declarations and derived counts that make the README true."""
+    """Serialize the declarations that make the README true.
+
+    No test count and no test path: every PR that adds a test would change them, so two open PRs
+    would conflict on the block, or merge clean with a count that is wrong for both (spec 520).
+    """
     result = []
     for layer in inventory.layers:
-        tests = [item for item in inventory.test_modules if item.layer == layer.name]
         fixtures = [item for item in inventory.fixtures if item.library]
         result.append({
             "name": layer.name,
@@ -28,8 +31,6 @@ def _layers_payload(inventory: ProofInventory) -> list[dict[str, Any]]:
             "budget": layer.budget,
             "required": layer.required,
             "marker": layer.name,
-            "tests": len(tests),
-            "testPaths": [item.path for item in tests],
             "fixtures": sorted({item.path for item in fixtures}),
         })
     return result
@@ -88,7 +89,6 @@ def render_readme_block(inventory: ProofInventory) -> str:
             f"- Reach: {layer['reach']}",
             f"- Budget: {layer['budget'] if layer['budget'] is not None else 'not declared'}",
             f"- Required: {'yes' if layer['required'] else 'no'}",
-            f"- Test modules: {layer['tests']}",
             f"- Fixture modules: {', '.join(f'`{path}`' for path in layer['fixtures']) or 'none'}",
         ])
     lines.extend(["", "### Declared cost contract", *_cost_lines(inventory)])
@@ -124,5 +124,5 @@ def write_readme(inventory: ProofInventory) -> bool:
     updated = render_readme_document(document, inventory)
     if updated == document:
         return False
-    path.write_text(updated, encoding="utf-8")
+    path.write_text(updated, encoding="utf-8", newline="\n")  # LF on Windows too
     return True

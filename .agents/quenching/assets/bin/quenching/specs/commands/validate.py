@@ -25,6 +25,8 @@ from quenching.specs.schema import (MERGE_ANCHORLESS_STRATEGIES, MERGE_NO_PR_STR
                                     MERGE_STRATEGIES, RECORD_NONE_RE, VERIFICATION_POLICIES,
                                     canonical_headings, load_schema)
 
+DESCOPED_RE = re.compile(r"—\s*descoped\s*:", re.IGNORECASE)
+
 
 # A task whose title or `verify:` runs a generator writes files; with `files:` empty the
 # verifier fails the scope of what it wrote. Heuristic by design: a warning, never an error.
@@ -178,6 +180,8 @@ def validate_spec(backend: SpecBackend, s: dict,
     # executor as a path that exists nowhere, which is the exact silence `_split_files`
     # exists to stop. Refuse it at the points that hand paths out and report it here.
     for t in tasks:
+        if t["checked"] and DESCOPED_RE.search(t["text"]):
+            continue   # closed as out of scope: its `files:` never reaches an executor
         for entry in t["files"]:
             note = _files_bad_annotation(entry)
             if note:

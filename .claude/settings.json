@@ -18,9 +18,35 @@
           }
         ]
       }
+    ],
+    "SessionStart": [
+      {
+        "matcher": "startup|resume|clear|compact",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 -I -c \"import os,runpy,sys;r=os.path.abspath(os.environ.get('CLAUDE_PROJECT_DIR') or os.environ.get('COPILOT_PROJECT_DIR') or os.getcwd());c=[r];[c.append(os.path.dirname(c[-1])) for _ in range(r.count(os.sep))];g=next((i for i,x in enumerate(c) if os.path.exists(os.path.join(x,'.git'))),-1);c=c[:g+1] if g>=0 else [r];m='.agents/quenching/assets/hooks/dispatch.py';p=next((os.path.join(x,m) for x in c if os.path.isfile(os.path.join(x,m))),'');p or (print('{}'),sys.exit(0));runpy.run_path(p,run_name='__main__')\" adopt-worktree",
+            "timeout": 300
+          }
+        ]
+      }
     ]
   },
   "enabledMcpjsonServers": [
     "quenching"
-  ]
+  ],
+  "permissions": {
+    "allow": [
+      "Bash(.agents/quenching/bin/cq:*)",
+      "Bash(./.agents/quenching/bin/cq:*)",
+      "Bash(python3 .agents/quenching/bin/cq:*)",
+      "Bash(python .agents/quenching/bin/cq:*)",
+      "Read(~/Projetos/quenching-slot-*/**)",
+      "Edit(~/Projetos/quenching-slot-*/**)",
+      "Write(~/Projetos/quenching-slot-*/**)",
+      "Read(~/Projetos/quenching.*/**)",
+      "Edit(~/Projetos/quenching.*/**)",
+      "Write(~/Projetos/quenching.*/**)"
+    ]
+  }
 }

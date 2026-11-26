@@ -17,8 +17,12 @@ The delegation economics and the definition contract live in
 **Why `.claude/agents/` and not `.agents/`.** Skills, references and instructions live in the
 generic `.agents/` layer, but a subagent has no generic home any harness reads: verified on Claude
 Code 2.1.312, a definition in `.agents/agents/` does not appear as a subagent type, and OpenCode
-reads `.opencode/agent`, not `.agents/agents/`. So the definition is Claude's own interface and is
-written where Claude reads it, with no bridge copy.
+reads `.opencode/agent`, not `.agents/agents/`. So a target's own definition is Claude's own
+interface and is written where Claude reads it, with no bridge copy. The plugin's five agents are
+the exception: one source in `quenching/agents/*.md` is projected by `cq deploy` into
+`.claude/agents`, `.opencode/agents` and — when the repository declares
+`shared.projections: ["github"]` — `.github/agents`; this skill mints no copy in the other
+formats.
 
 ## Doctrine
 

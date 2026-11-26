@@ -19,6 +19,10 @@ from quenching.common.io import read_text
 from quenching.common.jsonc import jsonc_loads
 
 PATH = ".vscode/settings.json"
+TASKS_PATH = ".vscode/tasks.json"
+# The target-local launcher the deploy installs, and its Windows twin.
+CQ = ".agents/quenching/bin/cq"
+CQ_WINDOWS = ".agents\\quenching\\bin\\cq.cmd"
 # Root-relative on purpose: a settings glob without `**/` matches at the workspace root only, so a
 # nested `site` fixture the `.gitignore` reopens is not hidden.
 EXCLUDED = (".agents/quenching", ".claude/skills", "site", "site-source")
@@ -30,6 +34,81 @@ _HEADER = (
     "// text search and the semantic index, and give a long agent run room before it asks to\n"
     "// continue. `cq doctor --workspace` checks this file.\n"
 )
+
+
+TASK_LABELS = ("quenching: gate", "quenching: deploy check", "quenching: specs status",
+               "quenching: worktree slots", "quenching: slots workspace", "quenching: open slots")
+_TASKS_HEADER = (
+    "// The quenching VS Code tasks: the gate, the deploy check, the spec status and the slot\n"
+    "// report run in the terminal, with no model turn. `cq doctor --workspace` checks this file;\n"
+    "// the deploy seeds it only when absent.\n"
+)
+_PRESENTATION = {"reveal": "always", "panel": "dedicated"}
+
+
+def _cq_task(label: str, command: str) -> dict:
+    """One task that runs the target's own launcher, with the Windows twin beside it."""
+    return {"label": label, "type": "shell", "command": f"{CQ} {command}",
+            "options": {"cwd": "${workspaceFolder}"}, "problemMatcher": [],
+            "presentation": dict(_PRESENTATION),
+            "windows": {"command": f"{CQ_WINDOWS} {command}"}}
+
+
+def tasks_document() -> dict:
+    """The `.vscode/tasks.json` seed: zero-token runs of the flow's own probes."""
+    return {
+        "version": "2.0.0",
+        "tasks": [
+            {"label": TASK_LABELS[0], "type": "shell", "command": "bash scripts/verify_repo.sh",
+             "options": {"cwd": "${workspaceFolder}"},
+             "group": {"kind": "test", "isDefault": True},
+             "problemMatcher": [], "presentation": dict(_PRESENTATION)},
+            _cq_task(TASK_LABELS[1], "deploy --target . --check"),
+            _cq_task(TASK_LABELS[2], "specs status ${input:specId}"),
+            _cq_task(TASK_LABELS[3], "git worktree slots"),
+            _cq_task(TASK_LABELS[4], "git worktree workspace --write"),
+            {"label": TASK_LABELS[5], "type": "shell",
+             "command": 'code -n "${workspaceFolder}/.vscode/quenching-slots.code-workspace"',
+             "options": {"cwd": "${workspaceFolder}"},
+             "dependsOn": [TASK_LABELS[4]], "dependsOrder": "sequence",
+             "problemMatcher": [], "presentation": dict(_PRESENTATION)},
+        ],
+        "inputs": [{"id": "specId", "type": "promptString", "description": "Spec id"}],
+    }
+
+
+def tasks_snippet() -> str:
+    """The JSONC document the deploy seeds and the doctor prints, header included."""
+    return _TASKS_HEADER + json.dumps(tasks_document(), indent=2, ensure_ascii=False) + "\n"
+
+
+def tasks_report(root: str) -> dict:
+    """What `.vscode/tasks.json` carries: its state, its labels and the seed's gaps.
+
+    Read-only and tolerant, like `report`: an absent, partial or unreadable file is a fact the
+    doctor reports, never an error that stops a run.
+    """
+    out = {"path": TASKS_PATH, "declared": declared(root)[0], "state": "absent",
+           "labels": [], "missing": list(TASK_LABELS), "complete": False}
+    path = os.path.join(str(root), TASKS_PATH)
+    if not os.path.isfile(path):
+        return out
+    text = read_text(path)
+    if text is None:
+        return {**out, "state": "unreadable", "reason": "the file is not readable UTF-8 text"}
+    try:
+        document = jsonc_loads(text)
+    except ValueError as error:
+        return {**out, "state": "unreadable", "reason": str(error)}
+    if not isinstance(document, dict):
+        return {**out, "state": "unreadable", "reason": "the root must be an object"}
+    tasks = document.get("tasks")
+    labels = ([task["label"] for task in tasks
+               if isinstance(task, dict) and isinstance(task.get("label"), str)]
+              if isinstance(tasks, list) else [])
+    missing = [label for label in TASK_LABELS if label not in labels]
+    return {"path": TASKS_PATH, "declared": out["declared"], "state": "present",
+            "labels": labels, "missing": missing, "complete": not missing}
 
 
 def recommended() -> dict:

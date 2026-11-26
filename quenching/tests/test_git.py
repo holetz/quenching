@@ -807,6 +807,17 @@ class Audit(RepoCase):
         self.assertEqual([(e["severity"], e["kind"], e["detail"]) for e in got],
                          [("fail", "gate-shrunk", ["run two"])])
 
+    def test_lowered_reads_a_superset_rewrite_as_strengthened_and_a_dropped_token_as_shrunk(self):
+        self._commit_file("scripts/verify_repo.sh", "# gate\nunset A B\nrun one\n", "gate")
+        _run(self.repo, "merge", "-q", "--ff-only", "spec/1")
+        self._commit_file("scripts/verify_repo.sh", "# gate\nunset A B C\nrun one\n", "strengthen")
+        got = self._lowered()
+        self.assertEqual([(e["severity"], e["kind"], e["detail"]) for e in got],
+                         [("info", "strengthened", "unset A B C")])
+        self._commit_file("scripts/verify_repo.sh", "# gate\nunset A C\nrun one\n", "drop")
+        got = self._lowered()
+        self.assertEqual([(e["severity"], e["kind"]) for e in got], [("fail", "gate-shrunk")])
+
     def test_lowered_watches_a_toolchain_helper_the_gate_calls(self):
         self._commit_file("scripts/toolchain/helper.py", "one\ntwo\n", "helper")
         _run(self.repo, "merge", "-q", "--ff-only", "spec/1")
@@ -1582,6 +1593,52 @@ class AuditGenerated(RepoCase):
                                           "integrations/other/commands/" + "z.md": "z\n"}), [])
 
 
+class AuditConcluded(RepoCase):
+    """`concluded`: the changed paths only the conclude's own `<branch>: conclude …` commits touched."""
+
+    def setUp(self):
+        super().setUp()
+        self.wt = os.path.join(self.tmp, "wt")
+        _run(self.repo, "worktree", "add", "-q", "-b", "spec/1", self.wt)
+        _run(self.wt, "config", "user.email", "test@example.com")
+        _run(self.wt, "config", "user.name", "Test")
+
+    def _commit(self, rel: str, text: str, msg: str):
+        path = pathlib.Path(self.wt, rel)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(text, encoding="utf-8")
+        _run(self.wt, "add", rel)
+        _run(self.wt, "commit", "-q", "-m", msg)
+
+    def _concluded(self) -> list[str]:
+        payload = _cq_json(self.repo, "audit", "--worktree", self.wt, "--base", "main",
+                           "--branch", "spec/1")
+        self.assertTrue(payload["complete"], payload["errors"])
+        return payload["concluded"]
+
+    def test_a_path_only_the_conclude_touched_is_concluded(self):
+        self._commit("task.txt", "t\n", "spec/1: 1.1 the task")
+        self._commit("docs" + "/emergent.md", "d\n", "spec/1: conclude docs: the revealed rule")
+        self.assertEqual(self._concluded(), ["docs" + "/emergent.md"])
+
+    def test_a_path_a_task_also_touched_is_not_concluded(self):
+        self._commit("task.txt", "t\n", "spec/1: 1.1 the task")
+        self._commit("task.txt", "fixed\n", "spec/1: conclude review: fix the task")
+        self.assertEqual(self._concluded(), [])
+
+    def test_another_branchs_conclude_subject_is_not_concluded(self):
+        self._commit("x.txt", "x\n", "spec/2: conclude docs: not this branch")
+        self.assertEqual(self._concluded(), [])
+
+    def test_a_merge_commit_is_not_read_as_a_conclude_commit(self):
+        self._commit("task.txt", "t\n", "spec/1: 1.1 the task")
+        pathlib.Path(self.repo, "base.txt").write_text("b\n", encoding="utf-8")
+        _run(self.repo, "add", "base.txt")
+        _run(self.repo, "commit", "-q", "-m", "base moved")
+        _run(self.wt, "merge", "-q", "--no-edit", "-m", "spec/1: conclude merge main", "main")
+        self.assertEqual(self._concluded(), [])
+
+
 class AuditRelocation(RepoCase):
     """`grants` and `lowered` accept a relocation only on proof: a byte-for-byte copy of its source, or
     the namespace rewrite the BASE manifest assigns. A grant added, a source-less surface and a head the
@@ -1750,6 +1807,14 @@ class VerifierScopeCheck(unittest.TestCase):
         self.assertIn("only when `changed` holds a path under `quenching/`", check)
         self.assertIn("`files` of the branch's `.agents/.quenching-deploy.json`", check)
         self.assertIn("any other path stays listed", check)
+
+    def test_check_4_subtracts_the_conclude_commits_and_lists_them_apart(self):
+        text = (PLUGIN_ROOT / "agents" / "spec-verifier.md").read_text(encoding="utf-8")
+        check = " ".join(text.split("4. Scope:", 1)[1].split("5. Hygiene:", 1)[0].split())
+        self.assertIn("remove the payload's `concluded`", check)
+        self.assertIn("`conclude: <paths>`", check)
+        self.assertLess(check.index("remove the payload's `concluded`"),
+                        check.index("Compare the remaining paths"))
 
 
 class OrchestratorGrants(unittest.TestCase):
@@ -3355,6 +3420,63 @@ sys.exit(0)
 """
 
 
+class PrChecksVerb(RepoCase):
+    """`cq git pr checks` — the read-only state of a PR's checks, and why none."""
+
+    URL = "https://github.com/o/r/pull/42"
+
+    def setUp(self):
+        super().setUp()
+        bindir = pathlib.Path(self.tmp, "bin")
+        fake_tool(bindir, "gh", FAKE_GH)
+        self.log = pathlib.Path(self.tmp, "gh.log")
+        self.env = {**os.environ, "PATH": f"{bindir}{os.pathsep}{os.environ['PATH']}",
+                    "FAKE_GH_LOG": str(self.log)}
+
+    def _read(self, checks: str, rc: str = "0", err: str = "") -> dict:
+        env = {**self.env, "FAKE_GH_CHECKS": checks, "FAKE_GH_CHECKS_RC": rc,
+               "FAKE_GH_CHECKS_ERR": err}
+        proc = _cq(self.repo, "pr", "checks", "--url", self.URL, env=env)
+        self.assertEqual(proc.returncode, 0, proc.stdout)
+        return json.loads(proc.stdout)
+
+    def test_the_four_states_carry_the_check_names(self):
+        for checks, rc, state in (('[{"name":"gate","bucket":"pass"}]', "0", "green"),
+                                  ('[{"name":"gate","bucket":"fail"}]', "1", "red"),
+                                  ('[{"name":"gate","bucket":"pending"}]', "8", "pending")):
+            payload = self._read(checks, rc)
+            self.assertEqual((payload["state"], payload["checks"]), (state, ["gate"]))
+        payload = self._read("", "1", "no checks reported on the 'x' branch")
+        self.assertEqual((payload["state"], payload["reason"]), ("none", "no-workflow"))
+        self.assertIn("workflow", payload["message"])
+
+    def test_none_says_when_the_token_cannot_read_checks_or_the_api_is_unreachable(self):
+        denied = self._read("", "1", "HTTP 403: Resource not accessible by personal access token")
+        self.assertEqual((denied["state"], denied["reason"]), ("none", "permission"))
+        down = self._read("", "1", "error connecting to api.github.com")
+        self.assertEqual((down["state"], down["reason"]), ("error", "unreachable"))
+
+    def test_it_only_reads_and_a_bad_url_is_refused(self):
+        self._read('[{"name":"gate","bucket":"pass"}]')
+        self.assertTrue(all(c["argv"][:2] == ["pr", "checks"] for c in
+                            (json.loads(line) for line in self.log.read_text().splitlines())))
+        proc = _cq(self.repo, "pr", "checks", "--url", f"{self.URL} --x", env=self.env)
+        self.assertEqual(proc.returncode, 2, proc.stdout)
+
+    def test_pr_merge_carries_the_same_explanation_when_there_is_no_check(self):
+        env = {**self.env, "FAKE_GH_CHECKS": "", "FAKE_GH_CHECKS_RC": "1",
+               "FAKE_GH_CHECKS_ERR": "no checks reported on the 'x' branch"}
+        proc = _cq(self.repo, "pr", "merge", "--url", self.URL, env=env)
+        payload = json.loads(proc.stdout)
+        self.assertEqual((proc.returncode, payload["reason"]), (1, "no-checks"))
+        self.assertEqual(payload["noneReason"], "no-workflow")
+        self.assertIn("workflow", payload["message"])
+
+    def test_the_mcp_catalog_lists_it_as_a_read(self):
+        from quenching.mcp import catalog
+        self.assertEqual(catalog.CATALOG["git_pr_checks"].cls, "read")
+
+
 class PullRequestVerbs(RepoCase):
     """`cq git pr create|merge` — the orchestrator's PR writes, through a fake `gh` on PATH."""
 
@@ -3556,6 +3678,44 @@ class PullRequestVerbs(RepoCase):
         self.assertEqual(read.returncode, 0, read.stdout + read.stderr)
         value = json.loads(read.stdout)["value"]
         self.assertEqual((str(value["number"]), value["url"]), ("42", self.URL))
+
+    def test_create_with_spec_from_a_linked_worktree_writes_the_pr_record(self):
+        # The orchestrator opens the PR from a linked worktree with an explicit --head: the
+        # record must land in the same store the main checkout reads, never get lost silently.
+        spec, specs = self._store_spec()
+        head = f"plan/{spec}-x"
+        tree = os.path.join(self.tmp, "wt")
+        _run(self.repo, "worktree", "add", "-q", "-b", head, tree)
+        os.makedirs(os.path.join(tree, ".claude"), exist_ok=True)   # the fixture's config is untracked
+        shutil.copy(os.path.join(self.repo, ".claude", "quenching.json"),
+                    os.path.join(tree, ".claude", "quenching.json"))
+        proc = _cq(tree, "pr", "create", "--base", "main", "--head", head,
+                   "--title", "t", "--body", "Closes #1", "--spec", spec, "--json", env=self.env)
+        self.assertEqual(proc.returncode, 0, proc.stdout + proc.stderr)
+        self.assertTrue(json.loads(proc.stdout)["pr"]["ok"], proc.stdout)
+        for cwd in (self.repo, tree):
+            read = subprocess.run([*specs, "record", spec, "pr", "--json"], cwd=cwd,
+                                  capture_output=True, text=True, env=self.env,
+                                  stdin=subprocess.DEVNULL, timeout=60)
+            self.assertEqual(read.returncode, 0, (cwd, read.stdout + read.stderr))
+            self.assertEqual(str(json.loads(read.stdout)["value"]["number"]), "42")
+
+    def test_create_with_spec_reports_an_unsynced_record_as_store_not_synced(self):
+        from quenching.git import pull
+        args = SimpleNamespace(base="main", head="plan/1-x", title="t", body="Closes #1",
+                               spec="1", json=True, **NO_AZURE_FLAGS)
+        for sync, code, reason in (({"ok": False, "message": "push rejected"}, 1, "store-not-synced"),
+                                   ({"ok": True, "skipped": "nothing pending"}, 0, None)):
+            with mock.patch.object(pull, "_gh", return_value=(0, self.URL + "\n", "")), \
+                    mock.patch.object(pull, "_stamp", return_value={"ok": True, "value": {}}), \
+                    mock.patch.object(pull, "sync_store", return_value=sync), \
+                    mock.patch.object(pull, "_spec_vs_head", return_value=None), \
+                    mock.patch.object(pull, "_branch_ok", return_value=True), \
+                    contextlib.redirect_stdout(io.StringIO()) as out:
+                got = pull.cmd_pr(SimpleNamespace(action="create", **vars(args)))
+            payload = json.loads(out.getvalue())
+            self.assertEqual((got, payload.get("reason")), (code, reason))
+            self.assertEqual((payload["number"], payload["url"]), (42, self.URL))
 
     def _read_pr(self, specs, spec):
         return subprocess.run([*specs, "record", spec, "pr", "--json"], cwd=self.repo,
@@ -3950,7 +4110,7 @@ class OrchestratorPublishGrants(unittest.TestCase):
         self.assertEqual([g for g in self.grants if g.startswith("cq git ")], [
             "cq git state:*", "cq git push:*", "cq git pr create:*", "cq git pr probe:*",
             "cq git pr record:*", "cq git pr merge:*", "cq git base:*", "cq git conventions:*",
-            "cq git worktree slots:*"])
+            "cq git worktree slots:*", "cq git worktree adopt:*"])
         for unused in ("stale", "prune", "audit", "commit", "worktree retire", "worktree add"):
             for grant in self.grants:
                 self.assertFalse(self._admits(grant, f"cq git {unused}"), (grant, unused))

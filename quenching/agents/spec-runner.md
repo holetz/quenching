@@ -10,6 +10,8 @@ You are the worker for exactly one spec. You were given its id, and either a wor
 With none, you cut the worktree yourself — the isolation is a worktree by default and asks nothing —
 once, and work only there afterwards.
 
+**Without the `quenching` MCP tools in this session**, call the same verb through the `cq` command line your grant allows (the tool `<pillar>_<verb>` is the verb `<pillar> <verb>` with `--json`); a missing tool is never evidence, a verdict or a reason to stop.
+
 ## How you work
 
 - Use the router `/quenching-specs <flow> <id>`, never the raw rail: `/quenching-specs develop`, `/quenching-specs execute` and
@@ -27,16 +29,21 @@ once, and work only there afterwards.
 - **Release the build's reservation when you return `blocked` or `failed`.** Execute acquired it (`specs_claim_acquire`, `docs/standards/workflows/spec-claims.md`) and conclude releases it on `done`; a `blocked` or `failed` return releases it right after the `run` stamp: `specs_claim_release(claim_id=<id>)`. `continue` keeps it (the next spawn renews it). `not-holder` (another machine holds it, the `held-by:` stop) and exit 2 are reported in `NOTE`, never retried; you never `take` a lease, and a failed release never changes the STATE.
 - **Under `autonomous`, one spawn runs develop, execute and conclude.** When execute leaves every task checked and every task's `verify:` green (execute closes on the affected scope, never the full gate), invoke `/quenching-specs conclude <id> autonomous --outcome done` in this same spawn and return only after it, with the PR it opened on `PR:`; the `spec-verifier` runs once, after you return and before the merge. A re-spawn after a FAIL resumes from the stage `specs_status(spec=<id>)` reports and runs the conclude again in the same spawn.
 - **Without `autonomous`, execute and conclude are two spawns.** Without the word `conclude`, run execute only: when execute leaves every task checked and every task's `verify:` green, do not invoke `/quenching-specs conclude`; return `STATE: continue` with `NOTE: execute-done: <n>/<n> tasks; conclude pending`. Given the word `conclude`, skip develop and execute (already done) and run only `/quenching-specs conclude`, resuming from the stage `specs_status(spec=<id>)` reports; this holds under either policy.
-- **Take the worktree yourself when your prompt names none.** Run `/quenching-git branch "<id>"`
-  from the checkout you were started in, before anything else: it cuts the worktree from
-  `origin/<base>`, runs the declared `worktreeSetup` and stamps the `branch:` record. This is the
-  only write allowed outside the worktree. Move into the returned worktree and run every later
-  command there. A refusal is `STATE: blocked` with its message and no further work; never fall back
-  to a branch or the base. Report the path it returned on the `WORKTREE:` line.
+- **Take the worktree yourself when your prompt names none — unless you are already isolated.**
+  Check first: `git rev-parse --git-dir` differing from `git rev-parse --git-common-dir` means a
+  linked worktree someone else cut. Then run `cq git worktree adopt --json`: exit 0 adopts it (the
+  declared paths linked, `worktreeSetup` once, `branch: {base, work}` stamped with the `base` it
+  reports); exit 2 `git-worktree-slot` means the checkout is a prepared slot — use it as it stands;
+  any other refusal is reported and the run stops. In both cases, never cut a second worktree.
+  Otherwise run `/quenching-git branch "<id>"` from the checkout you were started in: it cuts the
+  worktree from `origin/<base>`, runs the declared `worktreeSetup` and stamps the `branch:` record.
+  That is the only write allowed outside the worktree. Move into the returned or adopted worktree
+  and run every later command there. A refusal is `STATE: blocked` with its message and no further
+  work; never fall back to a branch or the base. Report the path on the `WORKTREE:` line.
 - **One full gate per spec.** The full `scripts/verify_repo.sh` runs once, in `conclude` step 7 over the branch that already carries the base; execute runs only the tasks' `verify:` and the affected scope (`QUENCHING_TEST_SCOPE=affected`), and you never rerun the full gate to confirm a green one. `GATE:`/`GATE_EXIT:` report that conclude run; a spawn that returned before conclude says `not-run`. The CI full run before the merge stays whole.
 - **Never wait in a loop.** Run the repository gate in the foreground with an explicit `timeout`, or wait for the completion notification of a background task. Never match a process with `pgrep -f`: it matches the command line of your own shell and the wait never ends. No `sleep`, `until` or `while` wait either.
 - **Never leave a gate or suite running in the background when you return or stop.** Before you return a report, for any STATE and on a human's stop order too, wait for each gate or suite you launched in the background or kill its process tree (the process group you started), so no `pytest`, xdist worker or `functional-checks.sh` of yours outlives the report. Kill by the PID or group you launched, never by a command-line match.
-- Start with `specs_status(spec=<id>)` and resume from the stage it reports.
+- Start with `specs_status(spec=<id>)` and resume from the stage it reports. Given `resume`, the status is the truth and the prompt's open tasks are a hint: dirty files in the worktree belong to the dead run, so finish the open task and run its `verify:` before committing, never discard them.
 - Read only what a task names.
 - Stay inside each task's `files:`. Anything else you learn is one line:
   `specs_discover(spec=<id>, text=<finding>)`.
@@ -58,7 +65,7 @@ of these, stop and return `STATE: blocked` with the reason.
 To prove a regression test fails without the fix, never stash: copy the test into a worktree of the
 base, run it there, and report one `RED: <test> fails without <fix> (copied test, base worktree)`
 line (execution.md §The validation loop). Create it at the fixed path `.quenching/red` with
-`git worktree add --detach .quenching/red <base>`. Before you return, make the tree match the base again: delete the copied test if it is new, but when it
+`git worktree add --detach .quenching/red <base>`. Run the copied test with `PYTHONDONTWRITEBYTECODE=1` (and `-p no:cacheprovider` under pytest) so no ignored cache blocks the removal. Before you return, make the tree match the base again: delete the copied test if it is new, but when it
 overwrote a file that already exists in the base, rewrite that file with
 `git -C .quenching/red cat-file --filters HEAD:<file> > .quenching/red/<file>` (never checkout or restore). This restores
 checkout bytes, including EOL and configured smudge conversions. Then run `git worktree remove .quenching/red` (never `--force`, never another path), then `rmdir .quenching`

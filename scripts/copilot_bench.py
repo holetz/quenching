@@ -64,10 +64,11 @@ HYPOTHESES = (
      "artifact": ".agents/skills + .claude/skills",
      "protocol": "o seletor `/` do chat lista cada `quenching-*` uma vez ou duas"},
     {"id": "H2", "member": "456", "method": "static+live",
-     "capability": "O harness descobre `.claude/agents/*.md` no formato Claude",
-     "artifact": ".claude/agents",
+     "capability": "O harness descobre `.claude/agents` no formato Claude e `.github/agents` no "
+                   "formato nativo, quando a projeção é declarada",
+     "artifact": ".claude/agents + .github/agents",
      "protocol": "o painel de agentes/modos customizados do VS Code lista os cinco "
-                 "`quenching-spec-*`"},
+                 "`quenching-spec-*` em cada formato"},
     {"id": "H3", "member": "454", "method": "static+live",
      "capability": "As ferramentas do servidor, somadas às nativas, passam do teto de 128",
      "artifact": ".mcp.json + tools/list",
@@ -89,10 +90,11 @@ HYPOTHESES = (
      "artifact": ".vscode/settings.json (JSONC)",
      "protocol": "um comando de terminal aprovado sem prompt sob a chave, e a busca e o índice "
                  "sem os diretórios excluídos"},
-    {"id": "H7", "member": "458", "method": "live",
+    {"id": "H7", "member": "458", "method": "static+live",
      "capability": "`New Worktree` produz um worktree que o fluxo adota sem cortar outro",
-     "artifact": "git worktree list",
-     "protocol": "New Worktree no VS Code e o `branch:` que `cq specs status` grava ali"},
+     "artifact": "git worktree list + `cq git worktree adopt`",
+     "protocol": "`cq git worktree adopt` no worktree do cliente e o `branch:` que "
+                 "`cq specs status` grava ali"},
     {"id": "H8", "member": "461", "method": "static+live",
      "capability": "O custo de uma sessão sai do session-state do CLI, do OpenTelemetry ou do "
                    "Agent Debug Logs",
@@ -438,6 +440,12 @@ def markdown_files(folder: pathlib.Path) -> list[str]:
                   if path.is_file())
 
 
+def native_agent(row: dict) -> bool:
+    """A `.github/agents` row in the Copilot format: no Claude tool name in its `tools`."""
+    return bool(row.get("tools")) and not any(name in row["tools"]
+                                              for name in ("Bash(", "Read", "Grep", "Glob"))
+
+
 def agent_rows(folder: pathlib.Path) -> list[dict]:
     rows = []
     for path in sorted(folder.glob("*.md")) if folder.is_dir() else []:
@@ -468,9 +476,25 @@ def read_vscode(root: pathlib.Path) -> dict:
             if isinstance(document.get("search.exclude"), dict) else []}
 
 
+def _git_worktrees(root: pathlib.Path) -> list[dict]:
+    """Every linked worktree git registers, the primary checkout first, as `{path, branch}`."""
+    done = subprocess.run(["git", "-C", str(root), "worktree", "list", "--porcelain"],
+                          capture_output=True, text=True, timeout=20)
+    found, cur = [], {}
+    for line in (done.stdout.splitlines() if done.returncode == 0 else []) + [""]:
+        if line.startswith("worktree "):
+            cur = {"path": line[len("worktree "):], "branch": None}
+        elif line.startswith("branch ") and cur:
+            cur["branch"] = line[len("branch "):].removeprefix("refs/heads/")
+        elif not line and cur:
+            found.append(cur)
+            cur = {}
+    return found
+
+
 def worktree_facts(root: pathlib.Path) -> dict:
-    """The primary checkout, its slots and its sibling stores — asked of git, so a target that is
-    itself a slot still reports the family it belongs to."""
+    """The primary checkout, its slots, its sibling stores and the worktrees a harness cut — asked
+    of git, so a target that is itself a slot still reports the family it belongs to."""
     try:
         done = subprocess.run(["git", "-C", str(root), "rev-parse", "--path-format=absolute",
                                "--git-common-dir"], capture_output=True, text=True, timeout=20)
@@ -480,9 +504,21 @@ def worktree_facts(root: pathlib.Path) -> dict:
         return {"state": "absent", "reason": "not a git checkout"}
     primary = pathlib.Path(done.stdout.strip()).parent
     parent, name = primary.parent, primary.name
+    family = parent / f"{name}.worktrees"
+    trees = _git_worktrees(primary)
+    linked = [tree for tree in trees[1:]]
+    harness = []
+    for tree in linked:
+        branch = tree.get("branch") or ""
+        path = pathlib.Path(tree["path"])
+        if family in path.parents or branch.startswith(("copilot/", "agents/")):
+            harness.append(tree["path"])
     return {"state": "present", "primary": str(primary),
             "slots": sorted(path.name for path in parent.glob(f"{name}-slot-*") if path.is_dir()),
-            "stores": sorted(path.name for path in parent.glob(f"{name}.*") if path.is_dir())}
+            "stores": sorted(path.name for path in parent.glob(f"{name}.*")
+                             if path.is_dir() and path.name != f"{name}.worktrees"),
+            "linked": linked,
+            "harness": sorted(harness)}
 
 
 def external_directory(root: pathlib.Path) -> dict:
@@ -499,6 +535,16 @@ def external_directory(root: pathlib.Path) -> dict:
     directories = permission.get("external_directory") if isinstance(permission, dict) else None
     return {"state": "present", "path": "opencode.json",
             "patterns": sorted(directories or {})}
+
+
+def access_facts(root: pathlib.Path) -> dict:
+    """The out-of-tree access report, from the same source `cq doctor --access` reads."""
+    try:
+        import_payload()
+        from quenching.common.access import report
+        return report(str(root))
+    except (ImportError, OSError, ValueError) as error:
+        return {"state": "unreadable", "reason": str(error)}
 
 
 def measure_clients(root: pathlib.Path) -> dict:
@@ -525,6 +571,7 @@ def measure_clients(root: pathlib.Path) -> dict:
     installed = sorted(path.name for base in bases for path in base.iterdir() if path.is_dir())
     worktrees = worktree_facts(root)
     external = external_directory(root)
+    access = access_facts(root)
     section = {"state": "present",
                "agents": {name: {"count": len(rows), "rows": rows} for name, rows in agents.items()},
                "github": {"state": "present" if github.is_dir() else "absent",
@@ -535,6 +582,7 @@ def measure_clients(root: pathlib.Path) -> dict:
                "cost": costs,
                "worktrees": worktrees,
                "externalDirectory": external,
+               "access": access,
                "extensions": {"state": "present" if installed else "absent",
                               "count": len(installed),
                               "installed": installed[:40]},
@@ -543,20 +591,23 @@ def measure_clients(root: pathlib.Path) -> dict:
     missing = [name for name in GITHUB_FORMATS if not formats[name]]
     vscode = section["vscode"]
     slots = worktrees.get("slots") or []
+    harness = worktrees.get("harness") or []
     patterns = external.get("patterns") or []
     section["hypotheses"] = {
         "H2": {"verdict": UNMEASURED,
-               "observation": (f"{len(claude)} agentes em `.claude/agents` e "
-                               f"{len(agents['opencode'])} em `.opencode/agents`, "
-                               f"{len(agents['github'])} em `.github/agents`; a descoberta pelo "
-                               f"cliente é live")},
+               "observation": (f"{len(claude)} agentes em `.claude/agents`, "
+                               f"{len(agents['opencode'])} em `.opencode/agents` e "
+                               f"{len(agents['github'])} em `.github/agents` "
+                               f"({sum(1 for row in agents['github'] if native_agent(row))} no "
+                               f"formato nativo); a descoberta pelo cliente é live")},
         "H6": {"verdict": UNMEASURED,
                "observation": (f"`.vscode/settings.json` {vscode['state']}"
                                f"{'' if vscode['state'] != 'present' else ': ' + ', '.join(key + (' presente' if present else ' ausente') for key, present in vscode['keys'].items())}"
                                f"; se cada chave vale no workspace é live")},
         "H7": {"verdict": UNMEASURED,
-               "observation": (f"{len(slots)} slot(s) irmãos do checkout primário; o `New "
-                               f"Worktree` do cliente e o `branch:` que ele grava são live")},
+               "observation": (f"{len(worktrees.get('linked') or [])} worktree(s) ligados, "
+                               f"{len(harness)} da família de worktrees do cliente; a adoção e o "
+                               f"`branch:` são live")},
         "H8": {"verdict": UNMEASURED,
                "observation": "; ".join(f"{item['name']} {item['state']}" for item in costs)
                               + "; qual delas entrega o custo é live"},
@@ -574,8 +625,13 @@ def measure_clients(root: pathlib.Path) -> dict:
         "H12": {"verdict": UNMEASURED,
                 "observation": (f"{len(slots)} slot(s) e {len(worktrees.get('stores') or [])} "
                                 f"store(s) irmãos do checkout primário; "
-                                f"{len(patterns)} padrão(ões) em `external_directory`; o acesso "
-                                f"sem prompt é live")}}
+                                f"{len(patterns)} padrão(ões) em `external_directory`; "
+                                f"{len((access.get('claude') or {}).get('rules') or [])} regra(s) "
+                                f"em `.claude/settings.json`; "
+                                f"`.vscode/settings.json` {(access.get('vscode') or {}).get('state')}; "
+                                f"copilot CLI com "
+                                f"{len((access.get('copilotCli') or {}).get('directories') or [])} "
+                                f"diretório(s); o acesso sem prompt é live")}}
     return section
 
 

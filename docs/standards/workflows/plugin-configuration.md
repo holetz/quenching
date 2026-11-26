@@ -4,10 +4,10 @@ title: Plugin configuration contract
 description: "`.agents/quenching.json` is the plugin's single configuration home, with `.claude/quenching.json` read as legacy; provider selection is derived from the repository remote, while placement, Azure mappings, lifecycle hooks, profiles, proposal catalogues and the `git` pillar's per-artifact writing directives remain explicit target settings"
 resource: .agents/quenching.json, quenching/assets/bin/quenching/common/config.py, quenching/assets/bin/quenching/specs/config.py, quenching/assets/bin/quenching/specs/store.py, quenching/assets/bin/quenching/ops/**, quenching/assets/bin/quenching/proof/**, quenching/assets/bin/quenching/git/base.py, quenching/assets/bin/quenching/git/conventions.py, quenching/assets/bin/quenching/git/ignored.py, quenching/assets/bin/quenching/config/**, quenching/assets/bin/quenching/common/identity.py
 tags: [workflows, specs, configuration, provider, plugin]
-timestamp: 2026-11-24
+timestamp: 2026-11-25
 audience: both
 authority: current
-source: specs 1065, 1075, 1405, 1907, 1908, 1909, 1910, 1911, 1912, 2092, 2118, 2164, 2175, 2190, 2199, 2022, 1020213, 2231, 416, 430 — lineage in decision 0004
+source: specs 1065, 1075, 1405, 1907, 1908, 1909, 1910, 1911, 1912, 2092, 2118, 2164, 2175, 2190, 2199, 2022, 1020213, 2231, 416, 430; the `adopt` reader by spec 458 (2026-11-25) — lineage in decision 0004
 maintainer: quenching
 ---
 
@@ -121,7 +121,10 @@ what the OpenCode settings page reads.
 `{min, max, waitMinutes, pollSeconds}`, positive integers, and `setupIdempotent: boolean` —
 defaults `4`, `12`, `30`, `30`, `false`, completed leaf by leaf; `max` never drops below `min`.
 `max` is the ceiling `cq git worktree acquire` never cuts past, `min` the floor of free slots
-`cq git stale` keeps out of cleanup, and the wait pair paces `acquire --wait`. `setupIdempotent`
+`cq git stale` keeps out of cleanup, and the wait pair paces `acquire --wait`. A free slot keeps the
+pool lock `quenching: available`: `git worktree remove`, which a client's own cleanup runs without
+`-f -f`, refuses a locked tree, so the warm caches survive; `stale` treats that lock as free, and
+`prune` unlocks the slot only for the removal it reports and re-locks it on failure. `setupIdempotent`
 is the target's word that its `worktreeSetup` survives a second run in a reused slot, which
 silences `cq specs doctor`'s `sp-config-setup-idempotence`. See
 [isolation.md](../../../quenching/references/git/isolation.md) §Worktrees are slots.
@@ -197,16 +200,19 @@ The root-level envelope is deliberately small:
 }
 ```
 
-`shared.regenerablePaths` is read by two verbs: `cq git worktree retire` discards the ignored paths
-it covers without `--discard-ignored`, and `cq git stale` classifies them as `ignored.regenerable`
-and keeps the worktree eligible for pruning. Any other ignored file — a `.env`, a `.tmp`, an
-ignored notebook — is `ignored.unrecognized` and blocks both.
+`shared.regenerablePaths` is read by three verbs: `cq git worktree retire` discards the ignored paths
+it covers without `--discard-ignored`, `cq git stale` classifies them as `ignored.regenerable` and
+keeps the worktree eligible for pruning, and `cq git worktree adopt` symlinks each declared
+directory the primary checkout holds into the linked worktree it adopts. Any other ignored file — a
+`.env`, a `.tmp`, an ignored notebook — is `ignored.unrecognized` and blocks the two verbs that
+classify it.
 
 A built-in list of unambiguous Python caches applies before the key and cannot be removed by it:
 `.venv`, `venv`, `__pycache__`, `*.py[cod]`, `.pytest_cache`, `.ruff_cache`, `.mypy_cache`,
 `.pyright`, `.tox`, `.nox`, `htmlcov`, `.coverage`, `.coverage.*`, `*.egg-info`, `.eggs`,
 `pip-wheel-metadata`, `.cache`, `.ipynb_checkpoints`, `.hypothesis` and `node_modules`, plus the two
-root caches `cq` writes itself, `.quenching/git-base-cache.json` and `.quenching/git-ci-cache.json`, so a
+root caches `cq` writes itself, `.quenching/git-base-cache.json` and `.quenching/git-ci-cache.json`, and
+the gate record `scripts/verify_repo.sh` rewrites on every run, `.quenching/gate/record.json`, so a
 slot that only holds them is released clean. `build/` and
 `dist/` are deliberately absent because they can hold a file written by hand; a target that
 regenerates them declares them. The key adds to the defaults and never replaces them, so an absent
@@ -223,7 +229,7 @@ Ownership follows the meaning of the key, not the module that happens to read it
 | Namespace | Owned declarations | Boundary |
 | --- | --- | --- |
 | root | `backend` | legacy/provider metadata only; provider selection comes from `origin` |
-| `shared` | `worktreeSetup`, `sharedPaths`, `regenerablePaths`, `hooks`, `profiles`, `gitConventions`, `gitIdentity`, `guidance`, `autonomy`, `workHost`, `workspace`, `okfValidate`, `contextBudgets`, `cache` | settings used by more than one local surface or by isolation |
+| `shared` | `worktreeSetup`, `sharedPaths`, `regenerablePaths`, `hooks`, `profiles`, `gitConventions`, `gitIdentity`, `guidance`, `autonomy`, `workHost`, `workspace`, `okfValidate`, `contextBudgets`, `cache`, `projections` | settings used by more than one local surface or by isolation |
 | `specs` | Azure state and placement mappings, `subjects`, `tagCatalog`, `workItemTypes`, `chat`, `estimate`, `artifactLanguage`, `card`, `cardAt` | provider-owned plan lifecycle and proposal conventions |
 | `delivery` | `provider` | the delivery front's explicit provider declaration; it chooses no pipeline policy |
 | `ops` | `opsRoot`, `router`, `registry` | operations inventory, router and generated registry |
@@ -292,6 +298,22 @@ because the `uvx` runtime does not carry the vendored entry point; without a dec
 runtime registers nothing and warns. `cq config seed` does not emit the key: absence is the
 default. See [deploy-mode.md](../architecture/deploy-mode.md#mcp-registration).
 
+## The `shared.projections` block
+
+`shared.projections` is the list of client file families `cq deploy` writes from the same source;
+an absent key writes no client projection. `github` is the family that writes two artifacts:
+`.github/agents/quenching-<name>.agent.md` from `quenching/agents/*.md` in the Copilot custom-agent
+format — the tool aliases, the model band and `include-custom-instructions`
+([deploy-mode.md](../architecture/deploy-mode.md#copilot-agents)) — and
+`.github/instructions/<name>.instructions.md`, the `applyTo:` projection of the target's
+`.agents/rules/<name>.md` ([deploy-mode.md](../architecture/deploy-mode.md#path-scoped-rules)).
+The key is read through `repository_document`, not the merged envelope, for the same reason
+`shared.mcp` is: a generated file belongs to the repository and must not vary by machine. A value
+that is not a list of known client names refuses with `ct-deploy-projection` before anything is
+written, and every generated file is in the manifest, so removing the value removes the files on
+the next `--write`. It is `project` scope: the team decides. A target without Copilot carries no
+second register.
+
 ## Settings read outside the file
 
 Three things configure the plugin without being keys of the configuration file, and none is a
@@ -341,7 +363,8 @@ explicit flag wins over the key.
 | `shared.autonomy.maxLaunches` | integer ≥ 1 | `40` | `/quenching-specs autopilot` (see the autonomy block); the launch ceiling lives only there |
 | `shared.workHost` | `{target, dockerContext, runner, remoteRoot, syncFlags, syncExclude, pullBack, protectedPaths, minFreeGb}` | disabled | `cq config host --plan`; see [work-host.md](work-host.md) |
 | `shared.mcp` | `{mount: "all"\|"specs"\|"core"\|<pillars>, command: [strings], cliFallback: boolean}` | absent; the whole MCP server (`all`) is registered with a resolved direct Python prefix, and the grants keep only the `cq` verbs no MCP tool replaces (`cliFallback: false`) | `cq deploy`; read from the repository document only, never the merged envelope |
-| `shared.workspace.vscode` | boolean | `false` | `cq deploy` seeds `.vscode/settings.json` (`files.exclude` for the four generated trees, `chat.agent.maxRequests: 100`) when true, and `cq doctor` reports the file; read from the repository document only |
+| `shared.projections` | a list of client families; `github` today | `[]` — no client projection is written | `cq deploy`; read from the repository document only, `github` writes `.github/agents/` from the same agent source |
+| `shared.workspace.vscode` | boolean | `false` | `cq deploy` seeds `.vscode/settings.json` (`files.exclude` for the four generated trees, `chat.agent.maxRequests: 100`) and `.vscode/tasks.json` (the zero-token tasks of `common/workspace.py`) when true, and `cq doctor` reports both; read from the repository document only |
 | `specs.chat` | `{model: string, budgetUsd: number > 0, timeoutSeconds: number > 0}` | `sonnet`, `0.50`, `300` | the portal's `--chat`; `--chat-budget-usd` wins over `budgetUsd` |
 | `specs.estimate.writeOnly` | a list of repo-relative paths, exact or `fnmatch` globs | `[]` | `cq specs estimate`: a task file it matches is listed with `writeOnly: "declared by repo"`, keeps its size and adds no bytes; an Impact standard is always counted; `--task` ignores it |
 
