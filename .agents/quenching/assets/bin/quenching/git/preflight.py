@@ -26,6 +26,7 @@ import time
 from concurrent.futures import ThreadPoolExecutor
 
 from quenching.common.config import find_repo_root
+from quenching.common.git import git_timeout_s, timeout_message
 from quenching.common.output import FINDINGS, OK, emit, refuse
 from quenching.common.tools import spawn_argv
 from quenching.git.base import resolve_base
@@ -33,16 +34,17 @@ from quenching.git.push import remote_probe
 from quenching.specs.backends.git import STORE_BRANCH
 from quenching.specs.config import load_config
 
-TIMEOUT_S = 60
 BAD = {"fail", "unavailable"}
 
 
 def _tool(cwd: str, *argv: str) -> tuple[int, str, str]:
+    seconds = git_timeout_s()
     try:
         done = subprocess.run(spawn_argv(list(argv)), cwd=cwd, capture_output=True, text=True, encoding="utf-8", errors="replace",
-                              timeout=TIMEOUT_S, env={**os.environ, "LC_ALL": "C", "GIT_TERMINAL_PROMPT": "0"})
+                              timeout=seconds, env={**os.environ, "LC_ALL": "C", "GIT_TERMINAL_PROMPT": "0"})
     except subprocess.TimeoutExpired:
-        return 124, "", "timed out"
+        tool = os.path.splitext(os.path.basename(argv[0]))[0]
+        return 124, "", timeout_message(argv[1:], seconds).replace("git", tool, 1)
     except OSError as e:
         return 127, "", str(e)
     return done.returncode, done.stdout, done.stderr
