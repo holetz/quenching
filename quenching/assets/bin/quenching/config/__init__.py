@@ -6,6 +6,7 @@ its effective value and the layer that supplied it (`default`, `user`, `reposito
 from __future__ import annotations
 
 import argparse
+import difflib
 import json
 import os
 import shlex
@@ -276,6 +277,14 @@ def schema_payload(root: str, category: str | None = None, prefix: str | None = 
     def kept(row: dict) -> bool:
         return ((not category or row["category"] == category)
                 and (not prefix or row["key"].startswith(prefix)))
+
+    if prefix and not any(kept(row) for row in payload["keys"]):
+        every = [row["key"] for row in payload["keys"]]
+        near = difflib.get_close_matches(prefix, every, n=5, cutoff=0.4)
+        return None, {"code": "cq-config-key-unknown", "key": prefix,
+                      "message": f"no configuration key starts with {prefix}",
+                      "remedy": "closest keys: " + ", ".join(near) if near
+                      else "top-level namespaces: " + ", ".join(sorted({k.split(".")[0] for k in every}))}
 
     if category or prefix:
         payload["keys"] = [row for row in payload["keys"] if kept(row)]

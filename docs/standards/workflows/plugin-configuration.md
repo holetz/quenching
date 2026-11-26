@@ -116,7 +116,9 @@ the blocks it leaves empty. A structured catalog (`specs.subjects`, `shared.hook
 the file. `cq config schema --values` adds each key's effective value, the source layer and the
 `path` of the file that supplied it (`null` for a default), which is what the OpenCode settings
 page reads. `--category <id>` and `--key <prefix>` narrow the listing, and the values with it, to
-one category or one dotted prefix; an unknown category is refused (`cq-config-category-unknown`).
+one category or one dotted prefix; an unknown category is refused (`cq-config-category-unknown`),
+and so is a `--key` prefix that matches no key (`cq-config-key-unknown`, exit 2, its `remedy` naming the
+closest keys).
 
 ## The `shared.worktreeSlots` block
 
