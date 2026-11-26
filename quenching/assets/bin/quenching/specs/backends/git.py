@@ -295,8 +295,13 @@ class GitBackend(SpecBackend):
         remote has no store branch yet. `resolve=False` skips reading the tip back, for a
         caller that resolves it together with the pending ref."""
         source = self._fetch_source()
-        code, _, err = self._git("fetch", "--quiet", "--no-tags", "--no-write-fetch-head",
-                                 source, f"+refs/heads/{self.branch}:{self.tracking_ref}")
+        argv = ("fetch", "--quiet", "--no-tags", "--no-write-fetch-head",
+                source, f"+refs/heads/{self.branch}:{self.tracking_ref}")
+        code, _, err = self._git(*argv)
+        if code != 0 and "cannot lock ref" in err:
+            # Another clone sharing this `.git` won the compare-and-swap on the tracking ref;
+            # one more fetch rereads the ref. A second failure of any kind surfaces below.
+            code, _, err = self._git(*argv)
         self._fetched_at = time.monotonic()
         if code != 0:
             if "couldn't find remote ref" in err:
