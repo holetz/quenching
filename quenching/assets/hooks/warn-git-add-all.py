@@ -23,9 +23,14 @@ import shlex
 import sys
 
 BLANKET = re.compile(r"git[^|;&\n]* add +(-A|--all|\.)([^A-Za-z0-9_./-]|$)")
-BYPASS = re.compile(r"git[^\n]*(--no-verify|\s-n\b|core\.hookspath=)", re.I)
+BYPASS = re.compile(r"git[^\n]*(--no-verify|\s-[A-Za-z]*n|core\.hookspath=)", re.I)
 ASSIGNMENT = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*=")
-GLOBAL_OPTIONS = ("-C", "-c")
+# git's global options that take their value as the next word; every other `-x`/`--x` is a flag.
+GLOBAL_VALUE_OPTIONS = ("-C", "-c", "--git-dir", "--work-tree", "--namespace", "--super-prefix",
+                        "--config-env")
+# `git commit` short options that take a value: the rest of a cluster after one is that value.
+COMMIT_VALUE_SHORT = "mCcFtuS"
+COMMIT_VALUE_LONG = ("--message", "--file", "--reuse-message", "--reedit-message", "--template")
 RULES = {
     "blanket": ("/quenching-git commit never stages with git add -A, --all or `.`",
                 "Invariant of /quenching-git commit: do not run git add -A, git add --all or "
@@ -51,15 +56,28 @@ def _streams(command: str) -> list[list[str]]:
 
 
 def _git_words(words: list[str]) -> tuple[list[str], list[str]] | None:
-    """The global options and the subcommand words of one `git` invocation, else None."""
+    """The config settings (`-c`, `--config-env`) and the subcommand words of one `git`
+    invocation, else None. Any global option before the subcommand is skipped."""
     while words and ASSIGNMENT.match(words[0]):
         words = words[1:]
     if not words or words[0] != "git":
         return None
-    rest, options = words[1:], []
-    while rest and rest[0] in GLOBAL_OPTIONS:
-        options, rest = options + rest[:2], rest[2:]
-    return options, rest
+    rest, configs = words[1:], []
+    while rest and rest[0].startswith("-"):
+        option = rest[0]
+        if option in GLOBAL_VALUE_OPTIONS:
+            if option in ("-c", "--config-env") and len(rest) > 1:
+                configs.append(rest[1])
+            rest = rest[2:]
+        elif option.startswith("-c") and not option.startswith("--"):
+            configs.append(option[2:])
+            rest = rest[1:]
+        elif option.startswith("--config-env="):
+            configs.append(option.split("=", 1)[1])
+            rest = rest[1:]
+        else:
+            rest = rest[1:]
+    return configs, rest
 
 
 def _blanket(words: list[str]) -> bool:
@@ -70,16 +88,38 @@ def _blanket(words: list[str]) -> bool:
     return bool(rest) and rest[0] == "add" and any(arg in ("-A", "--all", ".") for arg in rest[1:])
 
 
+def _commit_skips_hooks(args: list[str]) -> bool:
+    """`-n` alone or inside a short cluster (`-nm`, `-anm`), never inside an option's value."""
+    skip = False
+    for arg in args:
+        if skip:
+            skip = False
+        elif arg == "--":
+            return False
+        elif arg == "--no-verify":
+            return True
+        elif arg.startswith("--"):
+            skip = arg in COMMIT_VALUE_LONG
+        elif arg.startswith("-") and len(arg) > 1:
+            for index, letter in enumerate(arg[1:], 1):
+                if letter == "n":
+                    return True
+                if letter in COMMIT_VALUE_SHORT:
+                    skip = index == len(arg) - 1
+                    break
+    return False
+
+
 def _bypass(words: list[str]) -> bool:
     parsed = _git_words(words)
     if not parsed:
         return False
-    options, rest = parsed
-    if any(value.lower().startswith("core.hookspath=") for value in options[1::2]):
+    configs, rest = parsed
+    if any(value.lower().startswith("core.hookspath=") for value in configs):
         return True
     if "--no-verify" in rest[1:]:
         return True
-    return bool(rest) and rest[0] == "commit" and "-n" in rest[1:]
+    return bool(rest) and rest[0] == "commit" and _commit_skips_hooks(rest[1:])
 
 
 def _hits(raw: str) -> set[str]:

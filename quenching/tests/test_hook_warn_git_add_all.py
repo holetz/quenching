@@ -20,7 +20,8 @@ def run(command):
 class TheStagingWarning(unittest.TestCase):
     def test_it_warns_on_blanket_staging(self):
         for command in ("git add -A", "git add --all", "git add .", "cd x && git add . && git status",
-                        "git -C repo add -A", "GIT_DIR=x git add --all", "true;git add .",
+                        "git -C repo add -A", "git --git-dir=.git add -A", "git --no-pager -C r add --all",
+                        "git --git-dir .git --work-tree . add .", "GIT_DIR=x git add --all", "true;git add .",
                         "make && git -c core.x=1 add . | cat", "ls\ngit add .",
                         "git commit -m 'a\nb' && git add -A"):
             with self.subTest(command=command):
@@ -37,7 +38,11 @@ class TheStagingWarning(unittest.TestCase):
     def test_it_warns_when_a_command_skips_the_git_hooks(self):
         for command in ("git commit --no-verify -m wip", "git push --no-verify origin main",
                         "git commit -n -m wip", "git commit -n",
-                        "git -c core.hooksPath=/dev/null commit -m wip"):
+                        "git -c core.hooksPath=/dev/null commit -m wip",
+                        'git commit -nm "x"', "git commit -anm x", "git commit -a -n",
+                        "git --no-pager commit -n -m x", "git -ccore.hooksPath=/dev/null commit -m x",
+                        "git --git-dir=.git -c core.hooksPath=/dev/null commit -m x",
+                        "git --config-env=core.hooksPath=HOOKS commit -m x"):
             with self.subTest(command=command):
                 out = run(command)
                 self.assertIn("skips the repository's git hooks", out["systemMessage"])
@@ -52,7 +57,8 @@ class TheStagingWarning(unittest.TestCase):
     def test_lookalikes_of_the_bypass_stay_silent(self):
         for command in ("git push -n origin main", "git add -n .x", "git log --no-walk",
                         "git config core.hooksPath .agents/quenching/assets/githooks",
-                        "echo no-verify"):
+                        "echo no-verify", "git commit -mn", "git commit -m n", "git commit -m x -F note.txt",
+                        "git --no-pager log -n 3", "git --git-dir=.git commit -m x"):
             with self.subTest(command=command):
                 self.assertNotIn("skips", run(command).get("systemMessage", ""))
 
