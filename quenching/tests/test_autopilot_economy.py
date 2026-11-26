@@ -58,5 +58,15 @@ class EconomyModeTests(unittest.TestCase):
                       "`SendMessage`", body)
 
 
+class ValidateFilteredTests(unittest.TestCase):
+    def test_every_validate_call_groups_by_code(self):
+        """An unfiltered sweep returns the archive's warnings (~118k chars) into the conductor."""
+        body = text()
+        calls = re.findall(r"`specs_validate[^`]*`", body)
+        self.assertTrue(calls)
+        for call in calls:
+            self.assertIn("by_code=true", call)
+
+
 if __name__ == "__main__":
     unittest.main()
