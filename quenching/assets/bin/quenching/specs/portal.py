@@ -68,6 +68,7 @@ from quenching.specs.parse.epics import (derive_epic, parse_items, presentation_
 from quenching.specs.parse.fields import set_frontmatter_record
 from quenching.specs.parse.records import spec_records
 from quenching.specs.parse.sections import ready_report, section_state
+from quenching.specs.portal_docs import docs_payload
 from quenching.specs.portal_modules import modules_payload, plan_payload
 from quenching.specs.portal_settings import settings_payload
 from quenching.specs.parse.tasks import task_progress
@@ -298,6 +299,8 @@ class Portal:
             return _json(*modules_payload(self.root))
         if route == "deploy-plan":
             return _json(*plan_payload(self.root))
+        if route == "docs":
+            return _json(*docs_payload(self.root))
         if route == "sessions" and self.sessions is not None:
             return _validated(headers, self._sessions(), volatile="generatedAt")
         if route.startswith("chat/") and self.chat is not None:
