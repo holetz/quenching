@@ -843,6 +843,48 @@ class Modules(PortalCase):
                 self.assertEqual((status, body["code"]), (404, "sp-portal-not-found"))
 
 
+class Docs(PortalCase):
+    """The Docs tab's route: links and the skill catalog read from the target's disk, read-only."""
+
+    def put(self, rel, text):
+        path = pathlib.Path(self.tmp, rel)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(text, encoding="utf-8")
+
+    def test_the_links_say_which_paths_exist_and_the_site_comes_from_zensical(self):
+        self.put("quenching/README.md", "# manual\n")
+        self.put("zensical.toml", '[project]\n  site_url = "http://127.0.0.1:8000/"\n')
+        status, body = self.get("/api/docs")
+        self.assertEqual(status, 200)
+        exists = {row["id"]: row["exists"] for row in body["links"]}
+        self.assertEqual(exists, {"manual": True, "index": False, "configuration": False})
+        self.assertEqual(body["site"], "http://127.0.0.1:8000/")
+        self.assertEqual(body["commands"], [])
+
+    def test_no_site_url_is_none_and_a_non_http_one_is_ignored(self):
+        self.assertIsNone(self.get("/api/docs")[1]["site"])
+        self.put("zensical.toml", 'site_url = "javascript:alert(1)"\n')
+        self.assertIsNone(self.get("/api/docs")[1]["site"])
+
+    def test_the_catalog_comes_from_the_installed_skill_descriptions(self):
+        self.put(".claude/skills/quenching-git/SKILL.md",
+                 '---\nname: quenching-git\ndescription: "Run one git flow: branch, commit. branch: x."\n---\nbody\n')
+        self.put(".agents/skills/quenching-git/SKILL.md",
+                 '---\nname: quenching-git\ndescription: "duplicate"\n---\n')
+        self.put(".agents/skills/release/SKILL.md", "---\nname: release\ndescription: Publish it\n---\n")
+        self.put(".agents/skills/broken/SKILL.md", "no frontmatter\n")
+        commands = self.get("/api/docs")[1]["commands"]
+        self.assertEqual([c["name"] for c in commands], ["quenching-git", "release"])
+        self.assertEqual(commands[0]["flows"], ["branch", "commit"])
+        self.assertEqual(commands[1]["flows"], [])
+        self.assertEqual(commands[1]["description"], "Publish it")
+
+    def test_it_needs_the_token_and_no_write_route_exists(self):
+        self.assertEqual(self.portal.handle("GET", "/api/docs", HOST)[0], 401)
+        status, body = self.post("docs", {"write": True})
+        self.assertEqual((status, body["code"]), (404, "sp-portal-not-found"))
+
+
 class Settings(PortalCase):
     """The configuration tab's route: the same carrier as `cq config schema --values`, read-only."""
 
