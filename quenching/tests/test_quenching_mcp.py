@@ -251,6 +251,26 @@ class Surface(unittest.TestCase):
         for tool in tools:
             self.assertEqual(tool["inputSchema"]["properties"]["root"], server.ROOT, tool["name"])
 
+    def test_worktree_verbs_publish_only_their_own_flags_and_description(self):
+        tools = {t["name"]: t for t in catalog.surface(present=lambda name: True).list_tools()
+                 if t["name"].startswith("git_worktree_")}
+        flags = {name.removeprefix("git_worktree_"): set(t["inputSchema"]["properties"]) - {"root"}
+                 for name, t in tools.items()}
+        self.assertEqual(flags["acquire"], {"branch", "base", "wait", "timeout_minutes",
+                                            "session", "no_setup"})
+        self.assertEqual(flags["add"], {"path", "branch", "base", "remote", "spec", "no_setup"})
+        self.assertEqual(flags["retire"], {"path", "branch", "base", "remote", "discard_ignored"})
+        self.assertEqual(flags["release"], {"path", "branch", "base"})
+        self.assertEqual(flags["slots"], set())
+        self.assertEqual(flags["link"], set())
+        described = [t["description"] for t in tools.values()]
+        self.assertEqual(len(set(described)), len(described))
+        for name, t in tools.items():
+            self.assertNotIn("; ", t["description"].split(" — ", 1)[1].split(" [class")[0]
+                             if name.endswith(("slots", "link")) else "", name)
+            for prop in t["inputSchema"]["properties"].values():
+                self.assertNotRegex(prop.get("description", ""), r"^[a-z]+(/[a-z]+)*(?: --\w+)?: ")
+
     def test_property_descriptions_keep_the_first_clause_and_stay_under_a_ceiling(self):
         self.assertEqual(catalog.first_sentence("a b. c d"), "a b.")
         self.assertEqual(catalog.first_sentence("keep e.g. this; drop that"), "keep e.g. this")
