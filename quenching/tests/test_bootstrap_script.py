@@ -148,6 +148,27 @@ class TheBootstrapScript(unittest.TestCase):
         self.assertEqual([str(package)], json.loads(config.read_text(encoding="utf-8"))["plugins"])
         self.assertEqual(0, machine.run("--check").returncode)
 
+    def test_two_items_on_one_file_back_up_the_original_once(self):
+        machine = self.machine(["opencode"])
+        package = machine.repo / "integrations" / "opencode-vitrine"
+        (package / "dist").mkdir(parents=True)
+        (package / "package.json").write_text("{}", encoding="utf-8")
+        config = machine.home / ".config" / "opencode" / "opencode.json"
+        config.parent.mkdir(parents=True)
+        original = json.dumps({"experimental": {"todo": True}})
+        config.write_text(original, encoding="utf-8")
+        done = machine.run("--write")
+        self.assertEqual(0, done.returncode, done.stdout + done.stderr)
+        self.assertIn("todo   opencode-depth", done.stdout)
+        self.assertIn("todo   opencode-plugin", done.stdout)
+        saved = list((machine.repo / ".quenching" / "bootstrap" / "backups").rglob("*opencode.json"))
+        self.assertEqual(1, len(saved))
+        self.assertEqual(original, saved[0].read_text(encoding="utf-8"))
+        self.assertEqual(1, done.stdout.count(f"backed up {config}"))
+        document = json.loads(config.read_text(encoding="utf-8"))
+        self.assertEqual(4, document["experimental"]["subagent_depth"])
+        self.assertEqual([str(package)], document["plugins"])
+
     def test_claude_plugins_run_only_what_is_missing(self):
         machine = self.machine(["claude"])
         machine.fake("claude")
