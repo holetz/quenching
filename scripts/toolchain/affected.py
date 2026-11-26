@@ -142,6 +142,13 @@ RULES: tuple[Rule, ...] = (
           "test_suite")),
 )
 
+# Tests that scan a whole tree instead of importing the module a change touches, so neither a rule
+# nor the import graph finds them; any change under the prefix adds them on top of its own rule.
+SWEEPS: tuple[Rule, ...] = (
+    Rule(("quenching/assets/bin/",),
+         ("test_subprocess_text_encoding", "test_output", "test_suite")),
+)
+
 
 @dataclasses.dataclass(frozen=True)
 class Selection:
@@ -426,6 +433,13 @@ def select(root: pathlib.Path, base: str | None = None,
             return Selection(base, changed, (), (f"fail-open: {problem}",), True)
         selected.update(tests)
         reasons.append(f"{path} -> {rule.prefixes[0]}")
+        for sweep in SWEEPS:
+            if any(_covers(path, prefix) for prefix in sweep.prefixes):
+                tests, problem = _resolve_tests(root, sweep.tests)
+                if problem:
+                    return Selection(base, changed, (), (f"fail-open: {problem}",), True)
+                selected.update(tests)
+                reasons.append(f"{path} -> sweep {sweep.prefixes[0]}")
         module = _module_of(path)
         if module:
             modules.add(module)
