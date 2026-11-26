@@ -292,19 +292,33 @@ def _mcp_merge(target: Path, wanted: dict[str, list[str]], previous: dict | None
     return {"files": files, "warnings": warnings, "opencode": opencode}
 
 
-def _edited(target: Path, rel: str, recorded: str | None) -> bool:
+def _edited(target: Path, rel: str, recorded: str | None, deleting: bool = False) -> bool:
     """The owned file no longer holds the bytes the last deploy wrote: someone edited it.
 
     Without a recorded hash (a manifest older than the field) the edit is unknowable, so the
     answer is no — the file is treated as the last deploy's, exactly as before. So it is for the
-    source repository's own manifest, which records `SOURCE_DERIVED` instead of a hash.
+    source repository's own manifest, which records `SOURCE_DERIVED` instead of a hash, on the
+    update path, where the source is the truth. A file about to be deleted has no source left, so
+    there the commit is the record: a change git reports against `HEAD` is an edit to keep.
     """
+    if recorded == deploy_tree.SOURCE_DERIVED and deleting and rel not in TOOL_REWRITTEN:
+        return _uncommitted(target, rel)
     if recorded in (None, deploy_tree.SOURCE_DERIVED) or rel in TOOL_REWRITTEN:
         return False
     data = (target / rel).read_bytes()
     # The raw hash still matches a manifest a Windows deploy recorded before the tree was canonical.
     return recorded not in {hashlib.sha256(data).hexdigest(),
                             hashlib.sha256(deploy_tree.eol_canonical(data)).hexdigest()}
+
+
+def _uncommitted(target: Path, rel: str) -> bool:
+    """Git reports the path as differing from `HEAD` (modified, staged or untracked)."""
+    try:
+        done = subprocess.run(["git", "-C", str(target), "status", "--porcelain", "--", rel],
+                              capture_output=True, text=True, timeout=30)
+    except (OSError, subprocess.SubprocessError):
+        return False
+    return done.returncode == 0 and bool(done.stdout.strip())
 
 
 def _same(path: Path, data: bytes) -> bool:
@@ -442,8 +456,8 @@ def plan(target: Path, built: dict, previous: dict | None,
             changes.append(_change("mode", rel))
     for rel in sorted(owned - set(tree)):
         if (target / rel).is_file():
-            changes.append(_change("edited" if _edited(target, rel, hashes.get(rel)) else "delete",
-                                   rel))
+            changes.append(_change("edited" if _edited(target, rel, hashes.get(rel), deleting=True)
+                                   else "delete", rel))
     seed_changes, warnings = _seed_plan(target, seeds)
     changes.extend(seed_changes)
     merged = built.get("merged")
@@ -824,7 +838,8 @@ def remove_plan(target: Path, previous: dict) -> dict:
     for rel in sorted(hashes):
         path = target / rel
         if path.is_file() and _safe_relative(rel):
-            changes.append(_change("edited" if _edited(target, rel, hashes[rel]) else "delete", rel))
+            changes.append(_change("edited" if _edited(target, rel, hashes[rel], deleting=True)
+                                   else "delete", rel))
     merged = _settings_merge(target, {"settings": None, "manifest": {}}, previous)
     if merged and merged["changed"]:
         changes.append(_change("settings", SETTINGS))

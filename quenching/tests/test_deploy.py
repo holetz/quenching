@@ -269,6 +269,42 @@ class Deploy(unittest.TestCase):
         self.assertEqual(0, self.run_deploy("--modules", "core", "--write")[0])
         self.assertNotIn(b"stale copy", skill.read_bytes())
 
+    def commit_all(self):
+        self.git("add", "-A")
+        self.git("-c", "user.name=t", "-c", "user.email=t@example.com", "-c", "commit.gpgsign=false",
+                 "commit", "-q", "--no-verify", "-m", "deploy")
+
+    def test_the_source_repository_keeps_an_uncommitted_edit_on_remove(self):
+        # No hash is recorded there, so the commit is the record a file about to leave is read against.
+        self.write("quenching/assets/modules.json", "{}\n")
+        self.assertEqual(0, self.run_deploy("--modules", "core", "--write")[0])
+        self.commit_all()
+        edited = self.target / ".agents/skills/quenching-git/SKILL.md"
+        edited.write_text("mine now\n", encoding="utf-8")
+        code, payload = self.run_deploy("--remove")
+        self.assertEqual(1, code)
+        self.assertIn(".agents/skills/quenching-git/SKILL.md", payload["kept"])
+        self.assertIn({"path": ".agents/skills/quenching-specs/SKILL.md", "change": "delete"},
+                      payload["changes"])
+        self.assertEqual(0, self.run_deploy("--remove", "--write")[0])
+        self.assertEqual("mine now\n", edited.read_text(encoding="utf-8"))
+        self.assertFalse((self.target / ".agents/skills/quenching-specs/SKILL.md").exists())
+
+    def test_the_source_repository_keeps_an_uncommitted_edit_leaving_the_selection(self):
+        self.write("quenching/assets/modules.json", "{}\n")
+        self.assertEqual(0, self.run_deploy("--modules", "core,design", "--write")[0])
+        self.commit_all()
+        edited = self.target / ".agents/skills/quenching-design/SKILL.md"
+        self.assertTrue(edited.is_file())
+        edited.write_text("mine now\n", encoding="utf-8")
+        code, payload = self.run_deploy("--modules", "core", "--check")
+        self.assertEqual(1, code)
+        leaving = {c["path"]: c["change"] for c in payload["changes"]
+                   if c["path"].startswith(".agents/skills/quenching-design/")}
+        self.assertEqual("edited", leaving.pop(".agents/skills/quenching-design/SKILL.md"))
+        self.assertTrue(leaving)
+        self.assertEqual({"delete"}, set(leaving.values()))
+
     def test_a_crlf_checkout_of_the_surface_is_clean_and_a_real_edit_is_still_edited(self):
         self.assertEqual(0, self.run_deploy("--modules", "core", "--write")[0])
         owned = json.loads((self.target / ".agents/.quenching-deploy.json").read_text())["files"]
