@@ -23,6 +23,8 @@ DEFAULT_REGENERABLE = (
     ".hypothesis", "node_modules",
     ".quenching/git-base-cache.json", ".quenching/git-ci-cache.json",
     ".quenching/gate/record.json",
+    # `cq deploy --write` regenerates the per-user bootstrap here on every run (deploy/bootstrap.py).
+    ".quenching/bootstrap",
 )
 
 
