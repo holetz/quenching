@@ -312,9 +312,10 @@ residue, so `quenching/assets/bin/quenching/mcp/coverage.py` (a catalog row or a
 entry with its reason) and `quenching/tests/test_quenching_mcp_coverage.py` (the residue
 expectations) belong to the task that creates the verb.
 **A task that creates, moves, renames or deletes a test module (`quenching/tests/test_*.py`) brings
-`quenching/README.md`**: the generated proof README counts the modules, so `cq proof readme --check`
-goes stale (`pf-readme-stale`) at the gate. The task declares the README in `files:` and runs
-`cq proof readme --write` in its own body, never leaving it to a corrective task or the conclude.
+`quenching/README.md`**: the generated proof README counts the modules, so it goes stale
+(`pf-readme-stale`) at the gate. The task declares the README in `files:` and regenerates it in its
+own body with `cq proof readme --write`, <!-- cli: no MCP tool for the proof README -->
+never leaving it to a corrective task or the conclude.
 Name them in the same task as the document or the citation: `## Tasks` is append-only after
 `approved`, so a path found at build time costs a corrective task.
 

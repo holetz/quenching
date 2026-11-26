@@ -185,9 +185,10 @@ and stays resumable from it. The spec write is deliberately last: the specs stor
 travel inside the local commit, and a failed write must leave the commit available for a retry.
 
 **A diff that creates, moves, renames or deletes a test module (`quenching/tests/test_*.py`) runs
-`cq proof readme --check` first.** Stale → `cq proof readme --write` and stage `quenching/README.md`
-in this same task's commit, never in a later corrective task or the conclude; the README was
-not in the task's `files:`, so record it with one `specs_discover` line.
+the proof README check first, `cq proof readme --check`, <!-- cli: no MCP tool for the proof README -->
+and a stale answer runs `cq proof readme --write` <!-- cli: no MCP tool for the proof README -->
+and stages `quenching/README.md` in this same task's commit, never in a later corrective task or the
+conclude; the README was not in the task's `files:`, so record it with one `specs_discover` line.**
 
 Run the shell half as **one chained call** in the worktree, gate included; commit only after it
 exits 0, and tick only after the commit:
