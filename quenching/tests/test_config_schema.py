@@ -262,6 +262,15 @@ class SetAndUnset(unittest.TestCase):
         code, out = self.cq("schema", "--category", "nope")
         self.assertEqual((code, out["code"]), (2, "cq-config-category-unknown"))
 
+    def test_a_key_prefix_matching_nothing_is_refused_with_the_closest_keys(self):
+        code, out = self.cq("schema", "--key", "shared.autonomy.maxWorker")
+        self.assertEqual(code, 0)
+        code, out = self.cq("schema", "--key", "shared.autonomy.maxWorkerz")
+        self.assertEqual((code, out["code"]), (2, "cq-config-key-unknown"))
+        self.assertIn("shared.autonomy.maxWorkers", out["remedy"])
+        code, out = self.cq("schema", "--key", "zzzzzz")
+        self.assertEqual((code, out["code"]), (2, "cq-config-key-unknown"))
+
     def test_schema_values_carry_the_file_each_value_came_from(self):
         self.cq("set", "shared.worktreeSlots.max", "6", "--layer", "local")
         _code, out = self.cq("schema", "--values", "--key", "shared.")
