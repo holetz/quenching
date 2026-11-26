@@ -113,8 +113,10 @@ validated against the registry's type, range and choices (`cq-config-value-inval
 is refused (`cq-config-key-unknown`), and a `project` key is refused in the local layer
 (`cq-config-scope-project`). Every other key keeps its value and its place; `unset` also removes
 the blocks it leaves empty. A structured catalog (`specs.subjects`, `shared.hooks`, …) is edited in
-the file. `cq config schema --values` adds each key's effective value and source layer, which is
-what the OpenCode settings page reads.
+the file. `cq config schema --values` adds each key's effective value, the source layer and the
+`path` of the file that supplied it (`null` for a default), which is what the OpenCode settings
+page reads. `--category <id>` and `--key <prefix>` narrow the listing, and the values with it, to
+one category or one dotted prefix; an unknown category is refused (`cq-config-category-unknown`).
 
 ## The `shared.worktreeSlots` block
 
