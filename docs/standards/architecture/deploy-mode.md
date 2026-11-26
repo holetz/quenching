@@ -352,8 +352,37 @@ only when absent, never listed in the manifest, never drift-checked and never re
   prints both blocks and their per-key state. A declared file missing a recommended task is a
   suggestion naming the labels, never a drift failure and never a rewrite.
 
+## The per-user bootstrap
+
+<!-- rules -->
+What lives outside the repository (the user's `cq` launcher, the global OpenCode config, the Claude
+Code plugins, the VS Code user settings) cannot be written by a deploy that stays inside the
+target. The deploy therefore GENERATES `.quenching/bootstrap/bootstrap.py` and its two thin
+launchers, `bootstrap.sh` (POSIX) and `bootstrap.cmd` (Windows), on every `--write`, and never runs
+them. The user runs the script by hand:
+
+- `--check` (the default) only reads: it prints each item as `ok`, `todo`, `manual` or `n/a` and
+  exits 0 when nothing is pending, 1 when something is, 2 on an error.
+- `--write` is explicit. It first prints every write outside the repository, backs up each existing
+  file it will change into `.quenching/bootstrap/backups/<date-time>/`, then applies. A second run
+  with everything done writes nothing.
+- The items follow the declared harnesses: the `cq` launcher always; the global `subagent_depth`
+  and the vitrine plugin for `opencode`; the marketplace and the `quenching-hud` and
+  `quenching-cache` plugins for `claude`; the user's `chat.agent.maxRequests` and the Copilot
+  extensions when the repository declares `shared.workspace.vscode` or the `github` projection.
+- A JSON file carrying comments is never rewritten: the item is `manual` and prints the exact
+  snippet. Nothing edits a shell profile.
+
+Nothing calls the script: no hook, no CI step, no grant and no `allowed-tools` entry. The three
+files are not in the manifest's `files`, because `.quenching/` is not versioned and a clone would
+read their absence as drift; the manifest's `bootstrap` list names them, `--check` reports only a
+present copy that differs (`update`), and `--remove` deletes them and keeps the backups. The
+Claude Code approval of the `quenching` MCP server needs no item: the settings merge already writes it.
+
 ## What deploy does not do
 
+- It does not run the per-user bootstrap or edit anything outside the target, the bootstrap
+  included: it only writes the script.
 - It does not install `/docs/` or call an align; the target runs its own
   `quenching-knowledge` skill (flow `align`) after the surface exists. `AGENTS.md` names that next step when the bundle is absent.
 - It does not touch `.claude/settings.local.json` or the user's `~/.claude`, and edits
