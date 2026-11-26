@@ -355,7 +355,7 @@ fi
 
 # Did the session act at all? Zero tool_use events of ANY name means the capture carries no
 # evidence — the process died, the stream was unreadable, or nothing ran. Every assertion here
-# must be gated on this, because the NEGATIVE halves ("read nothing under the .claude/skills bridge") pass
+# must be gated on this, because the NEGATIVE halves ("read nothing under the unpublished .agents/skills") pass
 # vacuously over an empty stream: an unreadable capture would report a clean surface.
 # No evidence is reported as INCONCLUSIVE. It is never a pass and never a failure.
 # The startup inventory is independent of the calls we grade: a correct call must not hide a
@@ -431,7 +431,8 @@ newbox () {
     cat "$1.deploy.log" >&2
     exit 2
   fi
-  LOADED=("$1/.agents/quenching" "$1/.agents/skills")
+  # `--harness claude` publishes the generated skills once, in `.claude/skills` (7.18.0).
+  LOADED=("$1/.agents/quenching" "$1/.claude/skills")
 }
 
 echo "functional-checks — $SOURCE deployed into throwaway targets"
@@ -458,11 +459,11 @@ copy it from the body you were given." \
 if evidence "$WORK/1.jsonl"; then
   if anchored "$(reference_reads "$WORK/1.jsonl")"; then r=yes; else r=no; fi
   check "$r" "read a file under the deployed references"
-  if grep -q '/\.claude/skills/' <<<"$(reference_reads "$WORK/1.jsonl")"; then r=no; else r=yes; fi
-  check "$r" "read nothing under the .claude/skills bridge"
+  if grep -q '/\.agents/skills/' <<<"$(reference_reads "$WORK/1.jsonl")"; then r=no; else r=yes; fi
+  check "$r" "read nothing under the unpublished .agents/skills"
 else
   inconc "read a file under the deployed references" "missing tool activity or verifiable skill inventory"
-  inconc "read nothing under the .claude/skills bridge" "missing tool activity or verifiable skill inventory"
+  inconc "read nothing under the unpublished .agents/skills" "missing tool activity or verifiable skill inventory"
 fi
 fi
 
@@ -487,11 +488,11 @@ copy it from the body you were given." \
   if evidence "$WORK/front-$id.jsonl"; then
     if anchored "$(reference_reads "$WORK/front-$id.jsonl")"; then r=yes; else r=no; fi
     check "$r" "$command loaded from the deployed payload"
-    if grep -q '/\.claude/skills/' <<<"$(reference_reads "$WORK/front-$id.jsonl")"; then r=no; else r=yes; fi
-    check "$r" "$command read nothing under the .claude/skills bridge"
+    if grep -q '/\.agents/skills/' <<<"$(reference_reads "$WORK/front-$id.jsonl")"; then r=no; else r=yes; fi
+    check "$r" "$command read nothing under the unpublished .agents/skills"
   else
     inconc "$command loaded from the deployed payload" "missing tool activity or verifiable skill inventory"
-    inconc "$command read nothing under the .claude/skills bridge" "missing tool activity or verifiable skill inventory"
+    inconc "$command read nothing under the unpublished .agents/skills" "missing tool activity or verifiable skill inventory"
   fi
 }
 front_probe ops "/quenching-ops status"
