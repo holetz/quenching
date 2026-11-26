@@ -469,8 +469,24 @@ def stale_report(cwd: str, remote: str = "origin") -> dict:
     return report
 
 
+# What only the full report carries: the assessed worktrees, the held-slot evidence, the complete
+# manifest and its groups. They run to tens of thousands of characters, and the result a reader
+# acts on (the stale and kept lists) sits in none of them.
+FULL_ONLY = ("worktrees", "heldSlots", "manifest", "groups")
+
+
+def _lean(report: dict) -> dict:
+    """The default JSON: the result plus `counts` of what `--full` would add."""
+    lean = {k: v for k, v in report.items() if k not in FULL_ONLY}
+    lean["counts"] = {k: len(report[k]) for k in FULL_ONLY}
+    lean["full"] = False
+    return lean
+
+
 def cmd_stale(args) -> int:
     report = stale_report(os.getcwd(), getattr(args, "remote", None) or "origin")
+    if getattr(args, "full", False):
+        report["full"] = True
     base, branches = report["base"], report["staleBranches"]
     remote_branches, worktrees = report["remoteBranches"], report["orphanWorktrees"]
     unregistered_worktrees = report[UNREGISTERED_WORKTREES_KEY]
@@ -510,5 +526,6 @@ def cmd_stale(args) -> int:
         size = f"{w['size']} bytes" if w["size"] is not None else "size unavailable"
         lines.append(f"  {w['path']} ({branch}, {size})")
 
-    emit(args.json, report, "\n".join(lines))
+    emit(args.json, report if getattr(args, "full", False) else _lean(report),
+         "\n".join(lines))
     return 0
