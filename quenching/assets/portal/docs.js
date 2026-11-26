@@ -6,11 +6,17 @@
 (function () {
   "use strict";
 
+  function publishedUrl(link) {
+    return !link.exists && typeof link.url === "string" && /^https:\/\//i.test(link.url) ? link.url : "";
+  }
+
   function linkRow(h, link) {
+    const url = publishedUrl(link);
     return h("li", { class: "doc-row" },
       h("span", { class: "doc-label" }, link.label),
       h("code", { class: "doc-path" }, link.path),
-      h("span", { class: link.exists ? "chip doc-on" : "chip" }, link.exists ? "presente" : "ausente"));
+      h("span", { class: link.exists ? "chip doc-on" : "chip" }, link.exists ? "presente" : "ausente"),
+      url ? h("a", { href: url, target: "_blank", rel: "noopener noreferrer" }, "versão publicada") : null);
   }
 
   function commandRow(h, cmd) {
