@@ -6,7 +6,7 @@ description: >-
   offline in any browser. Triggers: "criar um mapa visual da skill", "gerar um
   .html do que foi construído", "infográfico/fluxo em HTML", "mapa interativo da
   arquitetura", "kit map", "visualize this skill/system as HTML". Not for:
-  generating a documentation site → /quenching-align:knowledge:documentation:produce.
+  generating a documentation site → /quenching-knowledge documentation-produce.
 allowed-tools: Read, Grep, Glob, Edit, Write, Bash(grep:*)
 ---
 <!-- generated from .agents/skills/skill-map/SKILL.md by cq components bridge; edit the source -->
