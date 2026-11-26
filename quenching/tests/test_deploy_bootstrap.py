@@ -60,7 +60,7 @@ class Generated(unittest.TestCase):
         self.assertNotIn(bootstrap.PLACEHOLDER, config)
         if os.name != "nt":
             self.assertTrue(os.access(self.target / bootstrap.SH, os.X_OK))
-        self.assertIn("\r\n", (self.target / bootstrap.CMD).read_text(encoding="utf-8", newline=""))
+        self.assertIn(b"\r\n", (self.target / bootstrap.CMD).read_bytes())
         self.assertTrue(any("bootstrap.sh --check" in line for line in payload["suggestions"]))
 
     def test_the_manifest_lists_them_outside_files(self):
