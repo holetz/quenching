@@ -779,9 +779,10 @@ def _evaluate(args, target: Path, previous: dict | None) -> tuple[dict | None, d
             "`shared.mcp` needs `--runtime vendor`: the generated command points at "
             "`.agents/quenching/assets/bin/cq`, which a uvx runtime does not carry"), None
     recorded_mcp = (previous or {}).get("mcp")
-    python = mcpfiles.python_prefix(
-        declared.get("command") if declared else None,
-        recorded_mcp.get("command") if isinstance(recorded_mcp, dict) else None)
+    mcpfiles.forget_probes()
+    declared_command = declared.get("command") if declared else None
+    recorded_command = recorded_mcp.get("command") if isinstance(recorded_mcp, dict) else None
+    python = mcpfiles.python_prefix(declared_command, recorded_command)
     recorded_settings = (previous or {}).get("claudeSettings")
     recorded_hooks = recorded_settings.get("command") if isinstance(recorded_settings, dict) else None
     # The hooks and the MCP server share one direct interpreter: `uv run` never starts either.
@@ -798,6 +799,13 @@ def _evaluate(args, target: Path, previous: dict | None) -> tuple[dict | None, d
         "use `--runtime vendor` to register it"])
     if hooks_warning and harnesses and (mcp or "claude" in harnesses):
         mcp_warnings.append(hooks_warning)
+    # A kept prefix wins over the probe, so one that does not run here only warns; a probed one
+    # already runs, or nothing does and the fallback has no better advice.
+    if (declared_command or recorded_command or recorded_hooks) and harnesses \
+            and (mcp or "claude" in harnesses):
+        unrunnable = mcpfiles.unrunnable_warning(hooks_python)
+        if unrunnable:
+            mcp_warnings.append(unrunnable)
     try:
         manifest = deploy_tree.load_modules(deploy_tree.source_root())
         modules = deploy_tree.normalize_modules(

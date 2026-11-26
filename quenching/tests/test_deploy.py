@@ -22,6 +22,7 @@ from quenching.common import access
 from quenching.common.deploy import dumps_hash_manifest
 from quenching.deploy import translate
 from quenching.deploy import cli as deploy_cli
+from quenching.deploy import mcpfiles
 from quenching.deploy import tree as deploy_tree
 from quenching.deploy.cli import main as deploy_main
 
@@ -809,6 +810,64 @@ class Deploy(unittest.TestCase):
         command = json.loads((self.target / "opencode.json").read_text())["mcp"]["quenching"]["command"]
         self.assertNotIn(command[0], ("uv", "uvx"))
         self.assertTrue(any("runs through uv" in w for w in payload["warnings"]), payload["warnings"])
+
+    def runs_only(self, *working):
+        """`_runs` true only for `working`: the machine the deploy probes."""
+        return mock.patch("quenching.deploy.mcpfiles._runs",
+                          side_effect=lambda prefix: tuple(prefix) in working)
+
+    def unrunnable(self, payload):
+        return [w for w in payload["warnings"] if "does not run on this machine" in w]
+
+    def test_a_recorded_prefix_that_does_not_run_here_warns_with_the_one_that_does(self):
+        with self.runs_only(("python3",)):
+            self.assertEqual(0, self.run_deploy("--modules", "specs", "--write")[0])
+        before = (self.target / ".mcp.json").read_text()
+        with self.runs_only(("py", "-3")) as probe:
+            code, payload = self.run_deploy("--modules", "specs", "--check")
+        self.assertEqual((0, []), (code, payload["changes"]))
+        self.assertEqual(before, (self.target / ".mcp.json").read_text())
+        self.assertEqual("python3", json.loads(before)["mcpServers"]["quenching"]["command"])
+        warning = self.unrunnable(payload)
+        self.assertEqual(1, len(warning), payload["warnings"])
+        self.assertIn("`python3` does not run", warning[0])
+        self.assertIn("`py -3` does", warning[0])
+        self.assertIn("shared.mcp.command", warning[0])
+        self.assertIn("App execution alias", warning[0])
+        probed = [tuple(call.args[0]) for call in probe.call_args_list]
+        self.assertEqual(len(probed), len(set(probed)), probed)
+
+    def test_a_recorded_prefix_that_runs_here_does_not_warn(self):
+        with self.runs_only(("python3",)):
+            self.assertEqual(0, self.run_deploy("--modules", "specs", "--write")[0])
+            code, payload = self.run_deploy("--modules", "specs", "--check")
+        self.assertEqual((0, []), (code, payload["changes"]))
+        self.assertEqual([], self.unrunnable(payload))
+
+    def test_when_nothing_runs_the_warning_suggests_no_candidate(self):
+        self.configure(self.mcp_config())
+        with self.runs_only():
+            code, payload = self.run_deploy("--modules", "specs", "--write")
+        self.assertEqual(0, code, payload)
+        warning = self.unrunnable(payload)
+        self.assertEqual(1, len(warning), payload["warnings"])
+        self.assertIn("`/opt/py/bin/python3` does not run", warning[0])
+        self.assertIn("none of `python3`, `python`, `py -3` runs either", warning[0])
+        self.assertNotIn("` does,", warning[0])
+
+    def test_the_store_alias_is_found_but_does_not_run(self):
+        alias = r"C:\Users\u\AppData\Local\Microsoft\WindowsApps\python3.exe"
+        failed = subprocess.CompletedProcess([], 9009, b"", b"Python was not found")
+        ok = subprocess.CompletedProcess([], 0, b"", b"")
+        with mock.patch("quenching.deploy.mcpfiles.shutil.which",
+                        side_effect=lambda name: alias if name == "python3" else rf"C:\py\{name}.exe"), \
+                mock.patch("quenching.deploy.mcpfiles.subprocess.run",
+                           side_effect=lambda argv, **_: failed if argv[0] == "python3" else ok):
+            mcpfiles.forget_probes()
+            warning = mcpfiles.unrunnable_warning(["python3"])
+        mcpfiles.forget_probes()
+        self.assertIn("Microsoft Store alias", warning)
+        self.assertIn("`python` does", warning)
 
     def test_without_the_option_the_whole_server_is_registered_anyway(self):
         self.configure({"shared": {"profiles": {"installed": ["specs"]}}})

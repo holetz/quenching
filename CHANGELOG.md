@@ -13,6 +13,27 @@ owner: [`ci-cd/versioning-release.md`](docs/standards/ci-cd/versioning-release.m
 short version for a consumer: the version is published once, deliberately, as a release — never at a
 spec's own conclude — and `cq --version` is what answers which one you are running.
 
+## 7.18.2
+
+**Slots de worktree no Windows sem privilégio de symlink.** O link de diretório dos `sharedPaths`
+  passa a ser uma junção, criada por `_winapi.CreateJunction` sem o `cmd`, com `mklink /J` e o
+  symlink como recursos seguintes; quando tudo falha, o erro cita cada causa em vez de só o
+  WinError 1314 (#626). As falhas deixam de se disfarçar:
+  - um link que falha vira `git-worktree-link-failed`, sem traceback e sem deixar o slot preso;
+  - um `git worktree add` que falha vira `git-worktree-add-failed` com o stderr do git, e não mais
+    `git-worktree-slots-full`; o timeout do lock de criação vira `git-worktree-slots-lock-timeout`.
+
+**O deploy avisa quando o Python do MCP não roda na máquina.** Quando o prefixo declarado ou gravado
+  (ex.: `python3` caindo no alias da Microsoft Store) não roda aqui, o deploy e o `--check` avisam,
+  sugerem o candidato que roda e como declarar `shared.mcp.command`, sem trocar o prefixo (#626).
+
+**Correções.**
+  - `cq git pr checks` aceita a URL de PR do Azure que o `pr create` grava (#620).
+  - `cq mcp` não zera o `tools/list` por um pacote de módulo removido que só deixou cache (#621).
+  - O `worktreeSetup` roda quando o `acquire` vem pelo MCP (#622).
+  - `.quenching/bootstrap` não prende mais o slot no `release` (#623).
+  - `cq deploy` e `cq components bridge` gravam o mesmo generator no `.generated-files.json` (#624).
+
 ## 7.18.1
 
 **Um portal de gestão, só de leitura, ao lado do quadro de specs.** O portal ganha três abas:

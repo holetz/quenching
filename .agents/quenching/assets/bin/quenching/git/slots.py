@@ -267,31 +267,44 @@ def _merged_holder(cwd: str, slot: dict, base_sha: str | None) -> bool:
 
 
 def _take(cwd: str, view: dict, cap: int, reason: str, base_sha: str,
-          freed: list) -> tuple[dict | None, bool]:
+          freed: list) -> tuple[dict | None, bool, dict | None]:
     """Lock one slot for the caller: a free clean one, else a new one under the cap, else a held
     one whose branch is merged, whose tree is clean, which holds no ignored content `release`
     would refuse on, and where no process runs (released first; without `/proc` the process check
     is skipped). A reused slot's `.quenching/handoff/` is moved to the primary checkout
-    (`slot["handoff"]`). `(slot, created)`."""
+    (`slot["handoff"]`). `(slot, created, failure)`: `failure` is the refusal of a cut that
+    failed for a reason other than the cap (`git worktree add` itself, or the creation lock), kept
+    only when no merged holder could be reused either."""
     for slot in view["slots"]:
         if slot["state"] == "free" and _claim(cwd, slot["path"], slot["locked"], reason):
             if _dirty(slot["path"]) is False:
                 slot["handoff"] = _move_handoffs(slot["path"], view["primary"])
-                return slot, False
+                return slot, False, None
             _unlock(cwd, slot["path"])
-    with _creation_lock(cwd):
-        # Counted again under the lock: two takers that both saw room must not both cut.
-        current = survey(cwd)["slots"]
-        if len(current) < cap:
-            used = {s["n"] for s in current}
-            n = next(i for i in range(1, cap + 2) if i not in used
-                     and not os.path.lexists(os.path.join(view["parent"],
-                                                          f"{view['name']}-slot-{i}")))
-            path = os.path.join(view["parent"], f"{view['name']}-slot-{n}")
-            code, _out, _err = _git_run(cwd, *SAFE, "worktree", "add", "--detach", "--lock",
-                                        "--reason", reason, "--", path, base_sha)
-            if code == 0:
-                return {"path": path, "n": n, "branch": None}, True
+    failure = None
+    try:
+        with _creation_lock(cwd):
+            # Counted again under the lock: two takers that both saw room must not both cut.
+            current = survey(cwd)["slots"]
+            if len(current) < cap:
+                used = {s["n"] for s in current}
+                n = next(i for i in range(1, cap + 2) if i not in used
+                         and not os.path.lexists(os.path.join(view["parent"],
+                                                              f"{view['name']}-slot-{i}")))
+                path = os.path.join(view["parent"], f"{view['name']}-slot-{n}")
+                code, _out, err = _git_run(cwd, *SAFE, "worktree", "add", "--detach", "--lock",
+                                           "--reason", reason, "--", path, base_sha)
+                if code == 0:
+                    return {"path": path, "n": n, "branch": None}, True, None
+                # Room was there and git refused the cut (a long path, an antivirus holding a
+                # file): the pool is not full, so the caller must not hear `slots-full`.
+                failure = {"code": "git-worktree-add-failed", "path": path, "max": cap,
+                           "message": f"git worktree add failed for slot {path}: "
+                                      f"{err.strip()}"}
+    except TimeoutError as exc:
+        failure = {"code": "git-worktree-slots-lock-timeout", "max": cap,
+                   "message": f"{exc} — another taker held it past the timeout; retry, or remove "
+                              "the lock file if no `cq git worktree acquire` is running"}
     for slot in view["slots"]:
         if slot["state"] == "held" and slot["holder"] and _merged_holder(cwd, slot, base_sha) \
                 and _dirty(slot["path"]) is False \
@@ -306,8 +319,8 @@ def _take(cwd: str, view: dict, cap: int, reason: str, base_sha: str,
                 # The previous spec's handoff goes to the primary checkout, never left for the
                 # next spec and never discarded.
                 slot["handoff"] = _move_handoffs(slot["path"], view["primary"])
-                return slot, False
-    return None, False
+                return slot, False, None
+    return None, False, failure
 
 
 def _holders(view: dict) -> list[dict]:
@@ -358,7 +371,10 @@ def acquire(args) -> int:
     freed: list = []
     announced = False
     while True:
-        slot, created = _take(cwd, view, cap["max"], reason, base_sha, freed)
+        slot, created, failure = _take(cwd, view, cap["max"], reason, base_sha, freed)
+        if failure and slot is None:
+            # A failed cut is deterministic, not a full pool: waiting would only burn the timeout.
+            return refuse(failure, args.json)
         if slot or not wait or time.monotonic() >= deadline:
             break
         if not announced:
