@@ -9,7 +9,8 @@ code: a mod loads only files inside its own folder.
 `/quenching-vitrine` opens the pane. Nothing opens it by itself.
 
 - **Specs the session touched**: cited in the conversation, named by a `cq specs ...` Bash call or a
-  `mcp__quenching__specs_*` tool call, or the spec of the branch or commit the session is on. The list is rebuilt
+  `mcp__quenching__specs_*` tool call (`specs_read` weighs as a read, `specs_write` and `specs_external` as a
+  command), or the spec of the branch or commit the session is on. The list is rebuilt
   from the conversation each time the pane opens, so a reloaded mod keeps it.
 - **A spec's document in tabs**, with stage, priority, complexity, age, task progress, runner state, block reason
   and assignee in the header. A task, or the whole spec, goes to the composer.

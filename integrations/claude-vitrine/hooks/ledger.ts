@@ -76,6 +76,18 @@ export function mentions(text: string, known: Set<number>, loose = true): number
   return [...found]
 }
 
+/** The weight of a `specs` tool: the published class (`specs_read`, `specs_write`, `specs_external`) decides it;
+ * a per-verb name from an older transcript is weighed by its verb. */
+function specsKind(name: string): Kind {
+  if (name === 'read') {
+    return 'read'
+  }
+  if (name === 'write' || name === 'external') {
+    return 'command'
+  }
+  return READ_TOOLS.has(name) ? 'read' : 'command'
+}
+
 /** The spec a `mcp__quenching__specs_*` call names, with the weight of the tool, or nothing for any other tool. */
 export function mcpHit(tool: string, input: Record<string, unknown>): { id: number; kind: Kind } | undefined {
   const name = /^mcp__quenching__specs_([a-z_]+)$/.exec(tool)?.[1]
@@ -85,7 +97,7 @@ export function mcpHit(tool: string, input: Record<string, unknown>): { id: numb
   }
   const id = Number(input.spec ?? input.epic)
 
-  return Number.isInteger(id) && id > 0 ? { id, kind: READ_TOOLS.has(name) ? 'read' : 'command' } : undefined
+  return Number.isInteger(id) && id > 0 ? { id, kind: specsKind(name) } : undefined
 }
 
 /** What a tool call tells the ledger: the specs a Bash `cq` command or a quenching MCP tool names. */
