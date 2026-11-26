@@ -298,6 +298,42 @@ class Reading(GitStoreFixture):
         with mock.patch.object(git_mod, "FETCH_TTL_S", 0):
             self.assertEqual([1], [r["id"] for r in GitBackend(a_path).list_specs()])
 
+    def _fetch_with_failures(self, errors):
+        """`_fetch` on a clone whose fetch spawns fail with `errors` in order, then pass."""
+        backend = GitBackend(self.clone("a"))
+        real, queue, calls = backend._git, list(errors), []
+
+        def flaky(*argv, **kw):
+            if argv and argv[0] == "fetch":
+                calls.append(argv)
+                if queue:
+                    return 1, b"", queue.pop(0)
+            return real(*argv, **kw)
+
+        with mock.patch.object(backend, "_git", side_effect=flaky):
+            try:
+                return backend._fetch(), calls, None
+            except BackendRefusal as exc:
+                return None, calls, exc
+
+    def test_a_fetch_that_loses_the_ref_race_is_repeated_once(self):
+        lock = ("error: cannot lock ref 'refs/remotes/origin/quenching': "
+                "is at 99d57d9 but expected 1a3a9cc")
+        tip, calls, refusal = self._fetch_with_failures([lock])
+        self.assertIsNone(refusal)
+        self.assertEqual(2, len(calls))
+
+    def test_a_second_lost_race_still_refuses(self):
+        lock = "error: cannot lock ref 'refs/remotes/origin/quenching': is at 9 but expected 1"
+        _, calls, refusal = self._fetch_with_failures([lock, lock])
+        self.assertEqual(2, len(calls))
+        self.assertEqual("sp-git-fetch-failed", refusal.err["code"])
+
+    def test_a_real_fetch_error_is_not_repeated(self):
+        _, calls, refusal = self._fetch_with_failures(["fatal: unable to access remote"])
+        self.assertEqual(1, len(calls))
+        self.assertEqual("sp-git-fetch-failed", refusal.err["code"])
+
     def test_no_fetch_reads_the_local_ref_even_when_the_cache_expired(self):
         a_path = self.clone("a")
         GitBackend(a_path).list_specs()
