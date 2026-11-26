@@ -711,18 +711,8 @@ def _parser() -> argparse.ArgumentParser:
     return p
 
 
-def main(argv: list[str]) -> int:
-    args = _parser().parse_args(argv)
-    target = Path(os.path.abspath(args.target))
-    if not target.is_dir():
-        return refuse({"code": "ct-deploy-target", "target": str(target),
-                       "message": "the target is not a directory"}, args.json)
-    refusal = _legacy_refusal(target)
-    if refusal:
-        return refuse(refusal, args.json)
-    previous = read_manifest(str(target))
-    if args.remove:
-        return _remove_main(target, previous, args)
+def _evaluate(args, target: Path, previous: dict | None) -> tuple[dict | None, dict | None]:
+    """What `cq deploy` would do for `args`, without writing: `(refusal, None)` or `(None, state)`."""
     # A manifest an earlier version wrote may still list the removed `codex` harness; only an
     # explicit `--harness codex` is refused.
     harnesses = (_split(args.harness)
@@ -732,27 +722,27 @@ def main(argv: list[str]) -> int:
         harnesses = [h for h in harnesses if h != "none"]
     for harness in harnesses:
         if harness not in {"claude", "opencode"}:
-            return refuse({"code": "ct-deploy-harness", "harness": harness,
-                           "message": f"unknown harness: {harness}"}, args.json)
+            return {"code": "ct-deploy-harness", "harness": harness,
+                           "message": f"unknown harness: {harness}"}, None
     runtime = args.runtime or recorded(previous, "runtime", {"vendor", "uvx"}) or "vendor"
     declared, refusal = _mcp_option(target)
     if refusal:
-        return refuse(refusal, args.json)
+        return refusal, None
     projections, projection_refusal = _projections_option(target)
     if projection_refusal:
-        return refuse(projection_refusal, args.json)
+        return projection_refusal, None
     workspace_declared, workspace_error = workspace_settings.declared(str(target))
     if workspace_error:
-        return refuse({
+        return {
             "code": "ct-deploy-workspace",
             "message": workspace_error,
             "remedy": "declare `shared.workspace.vscode` as true or false, or remove the "
                       "`shared.workspace` object",
-        }, args.json)
+        }, None
     if declared and runtime != "vendor":
-        return refuse(_mcp_refusal(
+        return _mcp_refusal(
             "`shared.mcp` needs `--runtime vendor`: the generated command points at "
-            "`.agents/quenching/assets/bin/cq`, which a uvx runtime does not carry"), args.json)
+            "`.agents/quenching/assets/bin/cq`, which a uvx runtime does not carry"), None
     recorded_mcp = (previous or {}).get("mcp")
     python = mcpfiles.python_prefix(
         declared.get("command") if declared else None,
@@ -785,16 +775,14 @@ def main(argv: list[str]) -> int:
                                        workspace=workspace_declared,
                                        worktree_setup=_worktree_setup(target))
     except (OSError, ValueError) as exc:
-        return refuse({"code": "ct-deploy-source", "message": str(exc),
-                       "remedy": "run deploy from a complete quenching checkout or wheel"},
-                      args.json)
+        return {"code": "ct-deploy-source", "message": str(exc),
+                "remedy": "run deploy from a complete quenching checkout or wheel"}, None
     try:
         built["merged"] = _settings_merge(target, built, previous, keep=args.check)
     except claude_settings.SettingsRefusal as exc:
-        return refuse({"code": "ct-deploy-settings", "path": SETTINGS,
-                       "message": f"{target / SETTINGS} cannot be merged: {exc}; nothing was written",
-                       "remedy": "fix the file by hand, or remove it, then rerun `cq deploy`"},
-                      args.json)
+        return {"code": "ct-deploy-settings", "path": SETTINGS,
+                "message": f"{target / SETTINGS} cannot be merged: {exc}; nothing was written",
+                "remedy": "fix the file by hand, or remove it, then rerun `cq deploy`"}, None
     wanted = {rel: deploy_tree.mcp_argv(mcp) for rel in built["manifest"].get("mcpFiles", [])} \
         if mcp else {}
     built["mcpMerge"] = _mcp_merge(target, wanted, previous, keep_patterns=args.check)
@@ -808,6 +796,60 @@ def main(argv: list[str]) -> int:
     if isinstance(installed, str) and installed != built["manifest"]["version"]:
         result["warnings"] = [f"the target carries quenching {installed}; this source is "
                               f"{built['manifest']['version']}", *result["warnings"]]
+    return None, {"built": built, "result": result, "installed": installed, "modules": modules,
+                  "profiles": profiles, "harnesses": harnesses, "runtime": runtime,
+                  "hooks_python": hooks_python}
+
+
+def _payload(target: Path, state: dict, written: bool) -> dict:
+    result, built = state["result"], state["built"]
+    return {"ok": not result["conflicts"], "target": str(target),
+            "version": built["manifest"]["version"],
+            "installedVersion": state["installed"] if isinstance(state["installed"], str) else None,
+            "modules": state["modules"],
+            "profiles": state["profiles"], "harnesses": state["harnesses"],
+            "runtime": state["runtime"],
+            "changes": result["changes"], "conflicts": result["conflicts"],
+            "warnings": result.get("warnings", []),
+            "suggestions": result.get("suggestions", []), "written": written}
+
+
+def deploy_plan(target: Path, modules: list[str] | None = None) -> tuple[dict | None, dict | None]:
+    """`cq deploy --json` for `target`, read-only: `(None, payload)` or `(refusal, None)`.
+
+    The portal's Módulos tab reads this; it never writes, so the same carrier the terminal
+    prints is the one shown."""
+    target = Path(os.path.abspath(target))
+    if not target.is_dir():
+        return {"code": "ct-deploy-target", "target": str(target),
+                "message": "the target is not a directory"}, None
+    args = _parser().parse_args(["--target", str(target), "--check", "--json",
+                                 *(["--modules", ",".join(modules)] if modules else [])])
+    refusal = _legacy_refusal(target)
+    if refusal:
+        return refusal, None
+    refusal, state = _evaluate(args, target, read_manifest(str(target)))
+    if refusal:
+        return refusal, None
+    return None, _payload(target, state, False)
+
+
+def main(argv: list[str]) -> int:
+    args = _parser().parse_args(argv)
+    target = Path(os.path.abspath(args.target))
+    if not target.is_dir():
+        return refuse({"code": "ct-deploy-target", "target": str(target),
+                       "message": "the target is not a directory"}, args.json)
+    refusal = _legacy_refusal(target)
+    if refusal:
+        return refuse(refusal, args.json)
+    previous = read_manifest(str(target))
+    if args.remove:
+        return _remove_main(target, previous, args)
+    refusal, state = _evaluate(args, target, previous)
+    if refusal:
+        return refuse(refusal, args.json)
+    built, result, hooks_python = state["built"], state["result"], state["hooks_python"]
     edited = [change["path"] for change in result["changes"] if change["change"] == "edited"]
     if args.write and edited and not args.force and not result["conflicts"]:
         return refuse({"code": "ct-deploy-edited", "paths": edited,
@@ -828,14 +870,7 @@ def main(argv: list[str]) -> int:
         compile_warning = _precompile(target, hooks_python)
         if compile_warning:
             result["warnings"] = [*result["warnings"], compile_warning]
-    payload = {"ok": not result["conflicts"], "target": str(target),
-               "version": built["manifest"]["version"],
-               "installedVersion": installed if isinstance(installed, str) else None,
-               "modules": modules,
-               "profiles": profiles, "harnesses": harnesses, "runtime": runtime,
-               "changes": result["changes"], "conflicts": result["conflicts"],
-               "warnings": result.get("warnings", []),
-               "suggestions": result.get("suggestions", []), "written": written}
+    payload = _payload(target, state, written)
     emit(args.json, payload, _human(target, built, result, written))
     if result["conflicts"]:
         return REFUSAL
