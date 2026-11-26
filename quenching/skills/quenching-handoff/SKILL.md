@@ -8,7 +8,7 @@ allowed-tools: Bash(cq specs handoff:*), Bash(cq specs artifact:*), Read, Write
 **Input**: `$ARGUMENTS` (the focus of the next session).
 
 The handoff is a file the next session READS BEFORE IT ACTS, and it belongs to a spec whenever one
-exists: `specs_handoff_write` stores it on the `quenching` branch under
+exists: `specs_write(verb="handoff_write")` stores it on the `quenching` branch under
 `specs/artifacts/<id>/` (or `specs/artifacts/_handoffs/` when no spec owns the branch), sends it,
 and prints the block the next session starts from. This skill is the warm door: it spends the main
 model. When the prompt cache has expired (the `quenching-cache` bar is 🔴 or 🟠),
@@ -25,7 +25,7 @@ current conversation as the focus. **Done when:** the focus is fixed in one sent
 ### 2. Read the facts, never recall them
 
 ```text
-specs_handoff_facts()
+specs_read(verb="handoff_facts")
 ```
 
 It reads this session's transcript and returns the branch, the spec that owns it (`spec`, or
@@ -53,7 +53,7 @@ context to resume the work, and points to existing artifacts rather than copying
 .agents/quenching/bin/cq specs handoff write --from .quenching/handoff/<name> --focus "<focus>" --push --json
 ```
 
-`specs_handoff_write` publishes no `push`, and the push is what makes the handoff reach the next
+`specs_write(verb="handoff_write")` publishes no `push`, and the push is what makes the handoff reach the next
 session, so this one call stays on the CLI.
 
 Add `--spec <id>` when step 2's id came from the conversation. The verb names the handoff

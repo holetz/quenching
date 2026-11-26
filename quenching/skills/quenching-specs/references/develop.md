@@ -18,7 +18,7 @@ says whether refining runs.
 **Every `§X` below is an address, and it is loaded as one — never by opening the file.**
 
 ```text
-components_read(path="<the cited file>", sections=["§The pass", "§The four shared mechanics"])
+components_read(verb="read", path="<the cited file>", sections=["§The pass", "§The four shared mechanics"])
 ```
 
 One call, N sections, no frontmatter; a unique prefix resolves. `rules_only=true` narrows further to
@@ -45,7 +45,7 @@ the same way.
 
 ## Resolving the tool
 
-Resolve `cq` (`components_read` is the section reader every `§X` citation above resolves through)
+Resolve `cq` (`components_read(verb="read")` is the section reader every `§X` citation above resolves through)
 per
 [align/tool-resolution.md](.agents/quenching/references/align/tool-resolution.md)
 §Resolving the tool, §Write the resolved path literally on every invocation; branch on the **exit
@@ -54,7 +54,7 @@ code** (0 ok · 1 findings · 2 refusal) and the `--json`, never on prose.
 ## Doctrine
 
 - **The stage says where composing starts; the calculated pass says who answers and whether refining
-  runs.** `specs_status(spec=<id>)` returns the stage. Never infer the stage by reading
+  runs.** `specs_read(verb="status", spec=<id>)` returns the stage. Never infer the stage by reading
   the headings, never ask the human which mode they want, and **never ask them to choose a depth**
   — the session calculates it. It enumerates the decisions the execution needs and classifies each
   as resolved by evidence, dependent on the human, or very costly to undo. None depends on the
@@ -81,7 +81,7 @@ code** (0 ok · 1 findings · 2 refusal) and the `--json`, never on prose.
 [align/evidence-doctrine.md](.agents/quenching/references/align/evidence-doctrine.md)
 §1. Extract the aggregate; never paste the raw dump
 §2. Section-address any markdown — a target's `/docs/` included
-— `components_read(path=<path>, sections=["§X"])`, not the whole file, when only a rule or two
+— `components_read(verb="read", path=<path>, sections=["§X"])`, not the whole file, when only a rule or two
   governs the question at hand; it resolves `/docs/` the same way it resolves this plugin's own
   references. No OKF bundle in the repo (`/docs/index.md` with `okf_version`) → skip silently.
 - **`complexity` is re-evaluated at the close, never mid-pass.** The close's own recommendation IS
@@ -95,12 +95,12 @@ code** (0 ok · 1 findings · 2 refusal) and the `--json`, never on prose.
 
 | Where | The bounded read(s) |
 | --- | --- |
-| steps 1+2 | `specs_status(spec=<id>)`, which also carries the `path` step 1 announces, the recorded depth, and the `sections`/`ready` map compose drives off. Only an ID that must be *chosen* splits this: `specs_list` runs first, because the question depends on its output |
-| step 3b | every stage's own section and the union of the spec sections the pass reads or writes — `components_read` and `specs_section` together, never one call per source or per stage |
-| step 7 | the entire application — the section write, every `specs_discover` line, every `specs_record`, `specs_verification`, `specs_validate` (plus `specs_parallel` where `## Tasks` moved), and the closing `specs_status` that verifies where the pass landed |
+| steps 1+2 | `specs_read(verb="status", spec=<id>)`, which also carries the `path` step 1 announces, the recorded depth, and the `sections`/`ready` map compose drives off. Only an ID that must be *chosen* splits this: `specs_read(verb="list")` runs first, because the question depends on its output |
+| step 3b | every stage's own section and the union of the spec sections the pass reads or writes — `components_read(verb="read")` and `specs_read(verb="section")` together, never one call per source or per stage |
+| step 7 | the entire application — the section write, every `specs_write(verb="discover")` line, every `specs_write(verb="record")`, `specs_write(verb="verification")`, `specs_read(verb="validate")` (plus `specs_read(verb="parallel")` where `## Tasks` moved), and the closing `specs_read(verb="status")` that verifies where the pass landed |
 
 On the git store every write of step 7 lands in the clone's local pending commit: the remote and
-the card see the pass at the next sync point (`git_push`, `git_pr_create`, `specs_push`), and `specs_status` lists the spec as pending until then.
+the card see the pass at the next sync point (`git_external(verb="push")`, `git_external(verb="pr_create")`, `specs_external(verb="push")`), and `specs_read(verb="status")` lists the spec as pending until then.
 
 A call splits only where the next command's **input** depends on the previous one's output. The
 `approved` stamp is the one such split: it waits for step 7's verification to prove `ready` rather
@@ -123,20 +123,20 @@ change it, and alone otherwise.
 ## Workflow
 
 ### 1. Resolve the spec, and announce where it lives
-Take the id from the input, infer it from the conversation, or run `specs_list` and ask
+Take the id from the input, infer it from the conversation, or run `specs_read(verb="list")` and ask
 on a decision sheet (most recently modified as option A, recommended). Announce it and how to
 override. Two matches for one id is exit 2 — report both paths and stop, never guess which was
 meant. An archived spec has nothing to develop: say so and stop.
 
 **Announce the spec's URL in the backend along with it** — the `path` field of the
-`specs_status(spec=<id>)` payload step 2 takes in this same call (the card's URL when
+`specs_read(verb="status", spec=<id>)` payload step 2 takes in this same call (the card's URL when
 one exists, else the spec's file location on the `quenching` branch), stated before anything is
 read and repeated in the report (step 8).
 **Done when:** one spec is resolved and its URL or location has been announced.
 
 ### 2. Read the spec's STATE — not its body
 ```text
-specs_status(spec=<id>)   # stage, section states, ready map, records, tasks, gate, path
+specs_read(verb="status", spec=<id>)   # stage, section states, ready map, records, tasks, gate, path
 ```
 **This is the same call as step 1** — §The batching contract's first row. The id either came in
 the input or was inferred, and the payload answers both steps at once.
@@ -182,9 +182,9 @@ Now that the pass is known, and in **one call** — §The batching contract's se
 commands together, every stage at once:
 
 ```text
-components_read(path=".agents/quenching/references/specs-develop/questions.md", sections=["§Compose", "§Approval"])   # + "§Refine" where refine runs,
+components_read(verb="read", path=".agents/quenching/references/specs-develop/questions.md", sections=["§Compose", "§Approval"])   # + "§Refine" where refine runs,
                                                     # + "§Who answers", + "§Gathering the evidence"
-specs_section(spec=<id>, headings=<every heading this pass reads or writes>)   # the union, once
+specs_read(verb="section", spec=<id>, headings=<every heading this pass reads or writes>)   # the union, once
 ```
 
 | Stage | Spec sections it reads or writes |
@@ -255,7 +255,7 @@ it never grounds a binding rule alone —
 This is a subject the pass plans, not an execution question like `[P]`/`files:`/`pattern:`.
 Ask the human only what the surface plan cannot answer from evidence, under the pass's track.
 **Done when:** every declared surface path is named by a task carrying `files:` and `verify:`,
-`specs_parallel(spec=<id>)` exits 0 in step 7, and nothing outside the
+`specs_read(verb="parallel", spec=<id>)` exits 0 in step 7, and nothing outside the
 spec was written.
 
 ### 4. Compose
@@ -309,7 +309,7 @@ pass did not reach this stage at all.
 Load the authoring doctrine now — the union of `artifacts.md` sections this pass needs, in one call:
 
 ```text
-components_read(path=".agents/quenching/references/specs-develop/artifacts.md", sections=["§Writing a section through stdin", "§The explicit-none rule", "§The nine definition sections", "§`## Impact`", "§`## Tasks`", "§Execution metadata"])
+components_read(verb="read", path=".agents/quenching/references/specs-develop/artifacts.md", sections=["§Writing a section through stdin", "§The explicit-none rule", "§The nine definition sections", "§`## Impact`", "§`## Tasks`", "§Execution metadata"])
 ```
 
 **The consolidation stays; the confirmation goes.** Show every accumulated answer as a single plan —
@@ -328,7 +328,7 @@ this edit will park** — a line, not an offer (§Invariants).
 **Every write of this step is ONE call** — §The batching contract's third row: the section write,
 the `## Discoveries` lines, the records, `verification`, `validate`, and the closing `status`.
 
-Write the narrated sections with ONE `specs_section_write(spec=<id>, sections=[…])` — it creates
+Write the narrated sections with ONE `specs_write(verb="section_write", spec=<id>, sections=[…])` — it creates
 each heading in canonical position on first write, so creating and revising
 are the same call. An emptied section becomes an explicit `- none — <reason>`, never a deleted
 heading. The surface group and the `## Impact` sub-heading that declares it land in this same
@@ -337,7 +337,7 @@ single write as the rest; there is no surface-specific write, call or record.
 **Every body goes in that one call:**
 
 ```text
-specs_section_write(spec=<id>, sections=[
+specs_write(verb="section_write", spec=<id>, sections=[
   {"heading": "<Heading>", "body": "<the drafted section, verbatim>"},
   {"heading": "<Other Heading>", "body": "<the other drafted section, verbatim>"}])
 ```
@@ -346,7 +346,7 @@ A repeat or a heading outside the canonical thirteen refuses (exit 2) **without 
 them**. `heading` and `body` instead of `sections` is the singular form. The N splices land as ONE
 write.
 
-Every follow-up the plan parked is written in this same edit — `specs_discover(spec=<id>,
+Every follow-up the plan parked is written in this same edit — `specs_write(verb="discover", spec=<id>,
 text="<finding>")`, one call per line — and never mid-stage, which
 [questions.md](.agents/quenching/references/specs-develop/questions.md) §The four shared
 mechanics forbids. The call creates `## Discoveries` when the heading is absent, and a filled
@@ -361,22 +361,22 @@ Then the frontmatter records this command owns — read
 [questions.md](.agents/quenching/references/specs-develop/questions.md) §Recording the
 pass for which stage earns which, and
 [spec-driven.md](.agents/quenching/references/specs-develop/spec-driven.md) §Frontmatter
-for the write-once semantics, in one call. Each is stamped through `specs_record`:
+for the write-once semantics, in one call. Each is stamped through `specs_write(verb="record")`:
 
 | Record | When | Call |
 | --- | --- | --- |
-| `refined: {mode, date}` | compose or refine ran; `mode` is the deepest reached | `specs_record(spec=<id>, name="refined", fields={"mode": "<compose\|refine>", "date": "<today>"})` |
-| `verification` | compose settled the policy | `specs_verification(spec=<id>, policy=<per-task\|per-section\|end-of-plan>)` |
-| `tags` | the pass changed the spec's scope, or the capture presumed wrong | `specs_tags(spec=<id>, value=<whole list>)` |
-| `complexity` (in `priority`) | the pass outgrew its size and the human approved the new level, or the close's recommendation was taken (step 8) | `specs_record(spec=<id>, name="priority", fields={"complexity": "<level>", "date": "<today>"})` |
+| `refined: {mode, date}` | compose or refine ran; `mode` is the deepest reached | `specs_write(verb="record", spec=<id>, name="refined", fields={"mode": "<compose\|refine>", "date": "<today>"})` |
+| `verification` | compose settled the policy | `specs_write(verb="verification", spec=<id>, policy=<per-task\|per-section\|end-of-plan>)` |
+| `tags` | the pass changed the spec's scope, or the capture presumed wrong | `specs_write(verb="tags", spec=<id>, value=<whole list>)` |
+| `complexity` (in `priority`) | the pass outgrew its size and the human approved the new level, or the close's recommendation was taken (step 8) | `specs_write(verb="record", spec=<id>, name="priority", fields={"complexity": "<level>", "date": "<today>"})` |
 
 `approved` is **not** stamped here — it waits for the verification below to prove `ready`, and is
 stamped in step 8.
 
-`specs_tags` **replaces** the whole list, never appends — reissue the subject's own fixed tags
+`specs_write(verb="tags")` **replaces** the whole list, never appends — reissue the subject's own fixed tags
 together with whatever this pass adds, or the fixed ones are lost.
 
-The title is the sole short description every ranked listing prints (`specs_next()`); keep it descriptive when the spec's scope changes.
+The title is the sole short description every ranked listing prints (`specs_read(verb="next")`); keep it descriptive when the spec's scope changes.
 
 `verification` is a plain frontmatter key with a verb of its own. Omit the value to read what is in
 force; absent means the default, and the default is never stamped to make it explicit.
@@ -384,8 +384,8 @@ force; absent means the default, and the default is never stamped to make it exp
 `complexity` is a field of `priority`, and the record merges — `level` and `criticality` survive
 a re-stamp that touches only the size.
 
-Then, in the same call, **verify where the pass landed**: `specs_validate(spec=<id>)` and
-`specs_status(spec=<id>)`. **When this pass touched `## Tasks`, run `specs_parallel(spec=<id>)`
+Then, in the same call, **verify where the pass landed**: `specs_read(verb="validate", spec=<id>)` and
+`specs_read(verb="status", spec=<id>)`. **When this pass touched `## Tasks`, run `specs_read(verb="parallel", spec=<id>)`
 here too** — exit 1 names the `[P]` group whose `files:` sets are not disjoint, and
 definition time is the only moment that is cheap to fix. Report what each says; a `[P]` nobody
 proved is a promise execution will refuse.
@@ -397,14 +397,14 @@ The re-derived stage came back in step 7's call. Compare it with
 where the pass expected to land: a divergence is named and the pass re-enters at step 3 with a pass
 derived from the real stage. **The re-entry is narrated, never offered.**
 
-**No size check runs before approval.** Do not run `specs_estimate`, and
+**No size check runs before approval.** Do not run `specs_read(verb="estimate")`, and
 never ask, block or recommend decomposition over a token budget: a declared-reading estimate is not
 a build's context, and a worker over its size estimate finishes the spec anyway.
 
 Close according to the track — §Approval owns the screen:
 
 - **Simple track** — no screen. With `ready` now **proved** by step 7's payload and `approved`
-  unset, stamp it here: `specs_record(spec=<id>, name="approved", by="session")`, which writes the date. **`by:`
+  unset, stamp it here: `specs_write(verb="record", spec=<id>, name="approved", by="session")`, which writes the date. **`by:`
   is never omitted** — a record with no `by:` reads as `human`, so leaving it off silently claims a
   human this pass never had. When the invocation says `autonomous`, stamp
   `by="orchestrator-forced"` instead. That is the only path that writes this value, and only
@@ -428,7 +428,7 @@ Then report:
 **When this run's input carried `autonomous`, skip the read below and the mold with it** — a conductor presents the report, not this run; return the content in the fixed shape the caller specified. Otherwise:
 
 ```text
-components_read(path=".agents/quenching/references/specs-develop/report-mold.md", sections=["§The report mold"], rules_only=true)
+components_read(verb="read", path=".agents/quenching/references/specs-develop/report-mold.md", sections=["§The report mold"], rules_only=true)
 ```
 
 Emit §The report mold. The single-spec header line carries the stage **after** the pass; two body
@@ -444,7 +444,7 @@ blocks:
    whether each was taken; the stage before and after, and whether it landed where the pass expected.
 2. **Parked into `## Discoveries`** — optional, and every line **quoted**.
 
-Print §The session-size line before the block — `components_session_context`, read once; exit 1 turns the `→` line into a recommendation to run the next stage **in a new session**, exit 0 and 2 leave it an offer.
+Print §The session-size line before the block — `components_read(verb="session_context")`, read once; exit 1 turns the `→` line into a recommendation to run the next stage **in a new session**, exit 0 and 2 leave it an offer.
 
 Close on §The next-step block — `/quenching-git branch <id>` once `approved` is stamped, naming it
 the natural moment to isolate before `/quenching-specs execute <id>` writes any code;
@@ -473,10 +473,10 @@ block, and is never asked as a question mid-pass.
   never docs versus code.
 - **Park an out-of-scope follow-up; never mint a spec for it.** A finding this pass raised that does
   not belong to the spec being developed becomes ONE line of `## Discoveries` on that same spec —
-  `specs_discover(spec=<id>, text=<finding>)` — landed inside the step 7 edit, never as a loose call
+  `specs_write(verb="discover", spec=<id>, text=<finding>)` — landed inside the step 7 edit, never as a loose call
   mid-stage. Turning a follow-up into its own spec stays `/quenching-specs conclude`'s. This route
   is not an offer: nothing is created, so there is nothing to ask for.
-- **Inside a develop pass, `specs_create` runs only as the discoveries stage's `promoted:`
+- **Inside a develop pass, `specs_write(verb="create")` runs only as the discoveries stage's `promoted:`
   resolution.** Nothing else here mints a spec.
 - **Changing the spec's intent is refine's, and only with a human.** Compose may not overturn what a
   human settled; refine may, and a change to `## Proposal` is always put to the human rather than
@@ -506,7 +506,7 @@ block, and is never asked as a question mid-pass.
 - **Never hand this command file `context: fork`** — the complex track asks the human its own
   questions, and step 3c's read-only sub-agent is a step inside that, never a delegation of it.
 - **Never open a cited reference as a file.** `§X` is an address, loaded through
-  `components_read(path=…, sections=[…])`; and never hoist into the preamble what only one branch reads.
+  `components_read(verb="read", path=…, sections=[…])`; and never hoist into the preamble what only one branch reads.
 - Never derive the pass from what it intends to write — only from disk, once, and the disk confirms
   at the close where it landed. A divergence re-enters; it is never absorbed in silence.
 - Never run a stage the pass did not name. The whole pass is announced before the first question.

@@ -26,7 +26,7 @@ every `delivery_*` call as `root`. Resolve `cq` per
 Run the verifier before interpreting the workflow tree:
 
 ```text
-delivery_doctor(root="$TARGET_ROOT")
+delivery_read(verb="doctor", root="$TARGET_ROOT")
 ```
 
 On exit `0`, report the applicability state and "delivery conformant, nothing to align"; do not
@@ -62,7 +62,7 @@ branch, publish scope, permission set or deployment command. Never run a release
 After authorized edits, run the same probe again:
 
 ```text
-delivery_doctor(root="$TARGET_ROOT")
+delivery_read(verb="doctor", root="$TARGET_ROOT")
 ```
 
 If structural residue remains, report it rather than widening the plan. Judgement findings remain
@@ -84,7 +84,7 @@ residual owner action.
 ## Invariants
 
 - Applicability is probed before inventory, classification and confirmation.
-- `delivery_status()` remains read-only; align never invents a workflow tree.
+- `delivery_read(verb="status")` remains read-only; align never invents a workflow tree.
 - Mechanical and bounded structural findings may be repaired only under one authorization.
 - Provider, environment, promotion, publication, permission and deployment choices remain human-owned.
-- The closing verifier is the same `delivery_doctor()` program as the probe.
+- The closing verifier is the same `delivery_read(verb="doctor")` program as the probe.

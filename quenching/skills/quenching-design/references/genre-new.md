@@ -7,7 +7,7 @@ allowed-tools: Bash(cq:*), Bash(cq.cmd:*), Read, Grep, Glob, Bash(python3:*), As
 **Input**: `$ARGUMENTS` (one genre name or a short description of it).
 
 This command mints one stable editorial contract. It does not produce an instance of the document;
-`design_render` does that after fields have data.
+`design_write(verb="render")` does that after fields have data.
 
 ## Workflow
 
@@ -48,7 +48,7 @@ background run or hook. Wait for one OK.
 Invoke one call, with every medium in `media` and every field in `field`:
 
 ```text
-design_genre_new(slug=<slug>, name="<name>", register="<register>",
+design_write(verb="genre_new", slug=<slug>, name="<name>", register="<register>",
                  media=["<medium>", …], field=["<name>:<required|optional>:<description>", …])
 ```
 

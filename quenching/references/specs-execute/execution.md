@@ -16,7 +16,7 @@ reaches past the loop.
 
 ## Contents
 
-`components_read(path=<this file>)` returns the heading index; `sections=[…]` addresses one.
+`components_read(verb="read", path=<this file>)` returns the heading index; `sections=[…]` addresses one.
 
 ## The precondition: a clean tree
 
@@ -87,7 +87,7 @@ without moving anything.
 <!-- rules -->
 
 Declared per spec in the frontmatter (`verification`), written by `/quenching-specs develop`, read by
-`specs_status(spec=<id>)`. **Execute never decides when to test.**
+`specs_read(verb="status", spec=<id>)`. **Execute never decides when to test.**
 
 | Policy | Run the `verify:` command |
 | --- | --- |
@@ -124,7 +124,7 @@ For each task the policy says to verify:
 3. **Fails** → classify it first. Reproduce the failure in the base worktree (`.quenching/red`): it
    reproduces there → it is **pre-existing**, not this task's, and
    `/docs/standards/workflows/task-execution.md` §Pre-existing errors applies — a declared
-   `[fix-preexistente]` task when the four criteria hold, else a spec captured with `specs_create`; never
+   `[fix-preexistente]` task when the four criteria hold, else a spec captured with `specs_write(verb="create")`; never
    widen the `verify:` to hide it. It does not reproduce → it is this task's own: read the failure, change
    the code, and run it again.
 
@@ -136,10 +136,10 @@ Two rules bound the loop:
   When the orchestrator judges that further attempts are repeating rather than converging, it
   writes the task blocked, with the reason:
   ```text
-  specs_task(spec=<id>, action="block", task=<id>, reason=<why, one line>)
+  specs_write(verb="task", spec=<id>, action="block", task=<id>, reason=<why, one line>)
   ```
   That writes a **visible marker into `## Tasks`** — `- [!] <id> <title> — blocked: <reason>` —
-  and `specs_next` then skips it and offers the following task, so one bad task never stalls
+  and `specs_read(verb="next")` then skips it and offers the following task, so one bad task never stalls
   the whole spec.
 
 **`--block` requires `--reason`** (the tool refuses without one).
@@ -156,7 +156,7 @@ result as one evidence line in the task's report: `RED: <test> fails without <fi
 **Remove the RED worktree before returning**, never with `--force` and only at the fixed path you created: make the tree match the base again (delete the copied test if it is new; when it overwrote a file that already exists in the base, rewrite that file with `git -C .quenching/red cat-file --filters HEAD:<file> > .quenching/red/<file>`, never checkout or restore; the filters restore checkout bytes, including EOL and configured smudge conversions), run `git worktree remove .quenching/red`, then `rmdir .quenching` if empty. A leftover worktree or empty `.quenching/` under the spec's worktree keeps `retire` from retiring it.
 
 A human resumes a blocked task by fixing the cause and un-blocking it —
-`specs_task(spec=<id>, action="uncheck", task=<id>)` returns it to `- [ ]` — after changing something,
+`specs_write(verb="task", spec=<id>, action="uncheck", task=<id>)` returns it to `- [ ]` — after changing something,
 never merely to try the same approach again.
 
 ## The diff self-review — four items, before every commit
@@ -188,7 +188,7 @@ travel inside the local commit, and a failed write must leave the commit availab
 the proof README check first, `cq proof readme --check`, <!-- cli: no MCP tool for the proof README -->
 and a stale answer runs `cq proof readme --write` <!-- cli: no MCP tool for the proof README -->
 and stages `quenching/README.md` in this same task's commit, never in a later corrective task or the
-conclude; the README was not in the task's `files:`, so record it with one `specs_discover` line.**
+conclude; the README was not in the task's `files:`, so record it with one `specs_write(verb="discover")` line.**
 
 Run the shell half as **one chained call** in the worktree, gate included; commit only after it
 exits 0, and tick only after the commit:
@@ -200,8 +200,8 @@ cd <worktree> \
 ```
 
 ```text
-git_commit(subject="<subject>", root="<worktree>")
-specs_task(spec=<spec-id>, action="check", task=<task-id>, subject="<subject the commit reported>", commit="<sha the commit reported>")
+git_write(verb="commit", subject="<subject>", root="<worktree>")
+specs_write(verb="task", spec=<spec-id>, action="check", task=<task-id>, subject="<subject the commit reported>", commit="<sha the commit reported>")
 ```
 
 **The `&&` is the ordering:** verify before staging, staging before the commit, the
@@ -211,7 +211,7 @@ spec's declared policy says this task is not a gate, the chain simply starts at 
 
 Stage only the task's declared `files:`, never the whole tree and never an assumed spec file —
 `git add -A` also picks up whatever an editor or a tool wrote while the task ran, which is the same
-contamination §The precondition refuses at the start. `git_commit` commits the existing index and never stages; execute resolves the subject from the
+contamination §The precondition refuses at the start. `git_write(verb="commit")` commits the existing index and never stages; execute resolves the subject from the
 conventions it already loaded and passes the subject and sha the verb reports to the spec write.
 
 If verification, staging or the commit **fails** — a rejecting hook or nothing staged — no spec
@@ -257,7 +257,7 @@ level down: it produces no diff of its own, so there is no commit to anchor to a
 commit sha to record. Its chain ends at the spec tick:
 
 ```text
-<the task's verify:>, then, on exit 0: specs_task(spec=<spec-id>, action="check", task=<task-id>)
+<the task's verify:>, then, on exit 0: specs_write(verb="task", spec=<spec-id>, action="check", task=<task-id>)
 ```
 
 — no `subject`, no `git add`, no `git commit`. The box still ticks. Where the backend keeps the

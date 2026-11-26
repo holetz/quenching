@@ -20,7 +20,7 @@ task with a reason: the task anchor is no longer true, and the explanation belon
 Read the current branch, HEAD, working-tree status and resolved base:
 
 ```text
-git_base()
+git_read(verb="base")
 ```
 
 ```bash
@@ -36,7 +36,7 @@ HEAD, base and clean-index precondition are known, or the refusal is reported.
 ### 2. Resolve one target and its task anchor
 
 For `commit:<ref>`, resolve exactly one commit with `git rev-parse --verify <ref>^{commit}`. For
-`spec:<id> task:<id>`, read `specs_status(spec=<id>)`, select that task's recorded
+`spec:<id> task:<id>`, read `specs_read(verb="status", spec=<id>)`, select that task's recorded
 subject, and run `git log --grep=<subject> --fixed-strings` until exactly one commit matches. Zero
 or multiple matches refuse; a task SHA that no longer exists is not replaced by a guessed subject.
 **Done when:** one target SHA, its source selector and — when applicable — its task anchor are
@@ -68,7 +68,7 @@ and `git show --stat --summary HEAD`. If the input resolved through `spec:<id> t
 that new revert commit is verified, run:
 
 ```text
-specs_task(spec=<id>, action="uncheck", task=<task>, reason="reverted by <new-revert-sha>")
+specs_write(verb="task", spec=<id>, action="uncheck", task=<task>, reason="reverted by <new-revert-sha>")
 ```
 
 That one specs write removes the task's stale `subject:`/`commit:` anchor and records the reason
@@ -90,6 +90,6 @@ commit or the unchanged conflict state is fully reported.
 - Create a new revert commit; never erase, amend, reset, rebase, force-push or alter the original.
 - Require a clean tree, attached current branch, unique target and explicit mainline for merges.
 - Never resolve a conflict, alter an unrelated spec, or change remote state in this command. For a
-  confirmed `spec:<id> task:<id>` selector, reopening that exact task with `specs_task(action="uncheck",
+  confirmed `spec:<id> task:<id>` selector, reopening that exact task with `specs_write(verb="task", action="uncheck",
   reason=…)` is the required post-revert bookkeeping, and happens only after the revert commit.
 - Preserve Git's own failure and conflict output; never infer a successful revert from a changed file.

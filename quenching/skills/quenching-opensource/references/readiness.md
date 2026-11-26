@@ -21,7 +21,7 @@ Resolve `cq` per
 §Resolving the tool. Set `TARGET_ROOT` to the supplied root, or to `.` when omitted, and run:
 
 ```text
-opensource_readiness(root="$TARGET_ROOT", evidence="<path>", denylist="<path>")   # evidence, denylist: optional
+opensource_read(verb="readiness", root="$TARGET_ROOT", evidence="<path>", denylist="<path>")   # evidence, denylist: optional
 ```
 
 Branch on the exit code: `0` is a complete measured assessment with no finding, `1` carries

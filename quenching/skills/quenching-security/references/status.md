@@ -12,7 +12,7 @@ without owning a security tree, selecting a target policy or repairing a finding
 §Resolving the tool. Set `TARGET_ROOT` to `$ARGUMENTS`, or `.` when omitted, and run:
 
 ```text
-security_audit(root="$TARGET_ROOT")
+security_read(verb="audit", root="$TARGET_ROOT")
 ```
 
 Branch on the JSON and exit code: `0` is a measured report, `1` carries reported observations, and
@@ -24,7 +24,7 @@ complete read model and do not invoke a write-capable command.
 
 ### 1. Read the status payload
 
-Re-read the payload using the `security_audit` call above. Branch on its exit code and
+Re-read the payload using the `security_read(verb="audit")` call above. Branch on its exit code and
 preserve its measured, refused or not-measured state.
 
 **Done when:** the payload is captured, or the refusal is preserved with its reason.

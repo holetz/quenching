@@ -14,18 +14,18 @@ The four strategies, the squash caveat and the post-merge worktree removal are i
 
 ### 1. Load the rules and resolve branch, base and checkout
 ```text
-components_read(path=".agents/quenching/references/git/merge.md", sections=["§Merge strategies", "§The squash caveat", "§The worktree is removed after a successful merge"])
-components_read(path=".agents/quenching/references/git/conventions.md", sections=["§The declared-directive layer"])
-git_conventions()   # `config.mergeSubject`, or absent
-git_base()
+components_read(verb="read", path=".agents/quenching/references/git/merge.md", sections=["§Merge strategies", "§The squash caveat", "§The worktree is removed after a successful merge"])
+components_read(verb="read", path=".agents/quenching/references/git/conventions.md", sections=["§The declared-directive layer"])
+git_read(verb="conventions")   # `config.mergeSubject`, or absent
+git_read(verb="base")
 ```
 
 ```bash
 git worktree list --porcelain
 ```
-An ID in `$ARGUMENTS` → `specs_status(spec=<id>)`, its `branch.work` is the branch
-to merge and `branch.base` the target (falling back to `git_base()`'s answer where absent). A bare
-branch name → merge it into `git_base()`'s answer. No checkout in the worktree list holds the base
+An ID in `$ARGUMENTS` → `specs_read(verb="status", spec=<id>)`, its `branch.work` is the branch
+to merge and `branch.base` the target (falling back to `git_read(verb="base")`'s answer where absent). A bare
+branch name → merge it into `git_read(verb="base")`'s answer. No checkout in the worktree list holds the base
 → **stop without merging**, naming the base and the fix (provide a checkout or add a worktree of it
 outside this command). Never check out the base here.
 **Done when:** the branch, the base, and the checkout that holds it are all resolved, or the run has
@@ -59,21 +59,21 @@ merge command exits 0, or the run has stopped on its failure.
 
 ### 4. Stamp, with an ID
 ```text
-specs_record(spec=<id>, name="merge", fields={"strategy": "<strategy>", "subject": "<the merge commit's subject, or 'none — <why>' under fast-forward/rebase>"})
+specs_write(verb="record", spec=<id>, name="merge", fields={"strategy": "<strategy>", "subject": "<the merge commit's subject, or 'none — <why>' under fast-forward/rebase>"})
 ```
 Write-once — a record already present is read, never overwritten. No ID → nothing to stamp.
 A local merge is not a sync point of the git spec store, so the stamp stays in the clone's pending
 commit; send it, with every other pending write, in the same call:
 ```text
-specs_push()
+specs_external(verb="push")
 ```
 Then close the spec, now that its work is merged — the archive waits for the merge, and this is
 the merge:
 ```text
-specs_reconcile(write=true)
+specs_write(verb="reconcile", write=true)
 ```
 A `needs-human` row (`## Outcome` not written, a task still open) is reported and never forced.
-Then bring the local base up to the remote with `git_refresh()`: fast-forward only, it keeps uncommitted
+Then bring the local base up to the remote with `git_write(verb="refresh")`: fast-forward only, it keeps uncommitted
 changes and switches no branch, and a `diverged` or `merge-refused` result is reported, never forced.
 **Done when:** the record is stamped and pushed and the spec archived or its `needs-human` row
 reported (with an ID), or explicitly skipped (without one).
@@ -84,9 +84,9 @@ own checkout) and step 3 exited 0. A **slot** (`../<repo>-slot-<n>`) is never re
 `reconcile` already released it (its row's `slot`), and a slot it could not release stays held
 with the reason reported. A slot still locked to the merged branch with **no** `reconcile` row
 (the spec was archived by an earlier write, so `reconcile` had nothing to do) is released here —
-never `git_worktree_retire`, which removes worktrees and refuses a locked slot:
+never `git_write(verb="worktree_retire")`, which removes worktrees and refuses a locked slot:
 ```text
-git_worktree_release(path=<the slot path>)
+git_write(verb="worktree_release", path=<the slot path>)
 ```
 Any other worktree:
 ```bash

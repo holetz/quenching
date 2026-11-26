@@ -8,7 +8,7 @@ rule and the two prohibitions bind here too.
 
 ## Contents
 
-`components_read(path=<this file>)` returns the heading index; `sections=["§X"]` addresses one.
+`components_read(verb="read", path=<this file>)` returns the heading index; `sections=["§X"]` addresses one.
 
 ## Isolation happens on the way into a build
 
@@ -51,7 +51,7 @@ not a cut, because two checkouts building one spec fork it.
 trade is deliberate: the isolation costs a worktree, and the stage where it reliably pays is the one
 about to write code.
 
-**Asking "am I isolated?" writes nothing and is answered elsewhere.** `specs_next()`
+**Asking "am I isolated?" writes nothing and is answered elsewhere.** `specs_read(verb="next")`
 reads the live ref and reports it, and demotes a spec whose branch is checked out somewhere else.
 `/quenching-specs status` reads the frontmatter records and deliberately never asks git.
 
@@ -62,7 +62,7 @@ archived, and would have to duplicate every refusal `conclude` already owns.
 <!-- rationale -->
 
 **On `plan/<id>-<handle>` as the default name.** A branch named to it is greppable against
-`specs_list()`,
+`specs_read(verb="list")`,
 and `git branch --list 'plan/*'` is the list of work cut by the default. A human who already checked
 out `fix/isolate-flow` or `123-my-branch` before running `execute` gets that branch recorded, not a
 second one cut beside it.
@@ -106,7 +106,7 @@ plan/<id>-<handle>
 The **default** when the isolation cuts the worktree. The **ID leads and
 is the whole identity** — `plan/974` resolves the spec on its own; the `<handle>`, kebab-case from
 the title, rides along so `git branch` reads as names rather than as numbers and is never parsed
-back. `specs_next()` ranks on whether `plan/<id>-<handle>` is **alive**, so a branch named
+back. `specs_read(verb="next")` ranks on whether `plan/<id>-<handle>` is **alive**, so a branch named
 to the default is what tells that ranking this spec is already under way without a stamped `branch`
 record.
 
@@ -117,7 +117,7 @@ rename, no refusal, and no requirement that it match `plan/<id>-<handle>`.
 A worktree goes beside the repo, never inside it, and it is a **slot**:
 
 ```text
-git_worktree_acquire(branch="plan/<id>-<handle>", base=<base>, spec=<id>)
+git_write(verb="worktree_acquire", branch="plan/<id>-<handle>", base=<base>, spec=<id>)
 ```
 
 ### Worktrees are slots
@@ -125,9 +125,9 @@ git_worktree_acquire(branch="plan/<id>-<handle>", base=<base>, spec=<id>)
 <!-- rules -->
 
 A slot is a registered worktree at `../<repo>-slot-<n>` that outlives its spec. `acquire` locks one
-and switches it to the spec's branch; `specs_reconcile(write=true)` releases it
+and switches it to the spec's branch; `specs_write(verb="reconcile", write=true)` releases it
 after the merge — detached at the remote base and re-locked as free under `quenching: available`,
-`.venv` and every regenerable cache kept. `git_worktree_slots` lists who holds each.
+`.venv` and every regenerable cache kept. `git_read(verb="worktree_slots")` lists who holds each.
 
 - **A free slot keeps its pool lock.** `git worktree remove`, which a client's own worktree cleanup
   runs without `-f -f`, refuses a locked tree, so the warm `.venv` survives a cleanup; `acquire`
@@ -175,7 +175,7 @@ own words. It runs `git checkout -b` in the checkout the session already has, st
 
 The client may open the session already inside a worktree it cut — VS Code's **New Worktree** and
 the Copilot CLI put it under `<repo>.worktrees/<branch with slashes as dashes>`, on a `copilot/*`
-or `agents/*` branch. It is **not a slot**: `git_worktree_slots()` lists it among the others,
+or `agents/*` branch. It is **not a slot**: `git_read(verb="worktree_slots")` lists it among the others,
 never counts it, and `acquire` neither takes nor reuses it. Adoption is the whole handling:
 
 - **A `SessionStart` hook runs `cq git worktree adopt` in the session's checkout.** The verb links
@@ -213,7 +213,7 @@ The same file may declare repo-relative paths that must survive across checkouts
 ```
 
 The isolation displays the declared list **verbatim** before it links anything. After
-`git worktree add`, `git_worktree_link` materialises each path as a link to its sibling store
+`git worktree add`, `git_write(verb="worktree_link")` materialises each path as a link to its sibling store
 before the setup command runs. A setup script must not re-create, replace or remove a path declared
 in `sharedPaths`; the link command owns that path for every checkout.
 
@@ -228,8 +228,8 @@ See
 [plugin-configuration.md](.agents/quenching/references/specs-align/plugin-configuration.md)
 §The envelope and recognised namespaces.
 
-Read by `specs_config()` (exit 0 whether or not anything is declared) and run **once** by
-`git_worktree_add`, immediately after the worktree is cut and linked, with **cwd inside the
+Read by `specs_read(verb="config")` (exit 0 whether or not anything is declared) and run **once** by
+`git_write(verb="worktree_add")`, immediately after the worktree is cut and linked, with **cwd inside the
 new worktree** — the tree lacking the dependencies is the tree that must install them. The verb
 reads the declaration from the worktree it just cut, the fetched base, never from the caller's
 tree, so an uncommitted edit cannot choose what runs; `--no-setup` skips it. A raw
@@ -237,7 +237,7 @@ tree, so an uncommitted edit cannot choose what runs; `--no-setup` skips it. A r
 `.agents/quenching/bin/cq specs` reads the value and never executes it.
 
 No file, no key, or a command that does not resolve all mean **no setup**, and none of them is a
-finding — most repos declare nothing, and declaring nothing must cost nothing. `specs_doctor()`
+finding — most repos declare nothing, and declaring nothing must cost nothing. `specs_read(verb="doctor")`
 reports only the two ways it can be *wrong*, both `warn`: `sp-config-unknown-key` and
 `sp-config-unparseable`. They exist for the one real failure mode of a machine-read config —
 `worktree_setup` written where `worktreeSetup` was expected, and silence afterwards.
@@ -254,7 +254,7 @@ worktree**.
 <!-- rules -->
 
 ```text
-specs_record(spec=<id>, name="branch", fields={"base": "main", "work": "plan/<id>-<handle>"})
+specs_write(verb="record", spec=<id>, name="branch", fields={"base": "main", "work": "plan/<id>-<handle>"})
 ```
 
 `base` is whatever was checked out when the branch was cut. It is **not** assumed to be `main`.
@@ -270,7 +270,7 @@ decided yet, versus a human declined isolation.
 
 **`work == base` means no isolation was taken, and every consumer must read it that way.** It is
 not a work ref that happens to be alive: the base is always alive, so anything ranking, diffing or
-merging on the mere PRESENCE of the record gets the in-place case backwards. `specs_next()` guards
+merging on the mere PRESENCE of the record gets the in-place case backwards. `specs_read(verb="next")` guards
 it explicitly, and `/quenching-specs conclude` branches on `work != base` rather than on the record
 existing — there is no branch diff to review and nothing to merge when the work never left the base.
 
@@ -288,7 +288,7 @@ write-once and that is the only moment disagreeing with it is cheap. Never deriv
 `git merge-base` or `--fork-point`: both answer a **commit**, not a branch name, and a commit
 ancestral to three branches identifies none of them.
 
-The record is `writeOnce: true`, and `specs_record` enforces it: a second stamp refuses (exit 2)
+The record is `writeOnce: true`, and `specs_write(verb="record")` enforces it: a second stamp refuses (exit 2)
 naming the value already held. A later run **reads** it rather than rewriting it, and a current
 branch that disagrees with `work` is a finding to report, never a value to correct. Never edit the
 frontmatter to get past that refusal — the refusal is the rule, working.
@@ -323,7 +323,7 @@ current with HEAD without a separate cleanup pass. The read-merge-write, run by
 `/quenching-specs execute` after every task's commit:
 
 ```text
-git_specs(branch=<work>, add=<id>)
+git_write(verb="specs", branch=<work>, add=<id>)
 ```
 
 **Never marked on the base.** The mark exists only when this command controls the branch it is

@@ -76,7 +76,7 @@ explicitly left for a glossary command.
 ### 8. Self-check against the conformance core
 Verify every file you touched against
 [knowledge-align/conformance.md](.agents/quenching/references/knowledge-align/conformance.md) —
-the same checks `knowledge_validate()` machine-verifies. **Done when:** validation and the touched
+the same checks `knowledge_read(verb="validate")` machine-verifies. **Done when:** validation and the touched
 file list are reported.
 
 ## Invariants to never violate

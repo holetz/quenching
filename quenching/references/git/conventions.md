@@ -8,7 +8,7 @@ any of them.
 
 ## Contents
 
-`components_read(path=<this file>)` returns the heading index; `sections=["§X"]` addresses one.
+`components_read(verb="read", path=<this file>)` returns the heading index; `sections=["§X"]` addresses one.
 
 ## The declared-directive layer
 
@@ -47,7 +47,7 @@ Both declared layers arrive in **one** read, and it is the same call §The read-
 already runs:
 
 ```text
-git_conventions()
+git_read(verb="conventions")
 ```
 
 `config` carries the declared directives, `configUnknown` the sub-keys nothing reads; `governs`

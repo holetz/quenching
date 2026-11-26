@@ -5,7 +5,7 @@ source provenance, and a bounded review → write loop.
 
 ## Contents
 
-`components_read(path=".agents/skills/quenching-knowledge/references/knowledge-documentation/quality.md")`
+`components_read(verb="read", path=".agents/skills/quenching-knowledge/references/knowledge-documentation/quality.md")`
 returns the heading index; `--sections <name>` addresses one.
 
 <!-- rules -->

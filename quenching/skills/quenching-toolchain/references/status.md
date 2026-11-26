@@ -18,7 +18,7 @@ Resolve `cq` per
 §Resolving the tool. Set `TARGET_ROOT` to the supplied argument, or to `.` when omitted, and run:
 
 ```text
-toolchain_status(root="$TARGET_ROOT")
+toolchain_read(verb="status", root="$TARGET_ROOT")
 ```
 
 Branch on the JSON and exit code: `0` is a clean report, `1` carries findings, and `2` is a

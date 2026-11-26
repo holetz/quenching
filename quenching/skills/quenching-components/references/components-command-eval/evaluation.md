@@ -12,7 +12,7 @@ have installed.
 
 ## Contents
 
-`components_read(path=".agents/skills/quenching-components/references/components-command-eval/evaluation.md")` returns the heading index;
+`components_read(verb="read", path=".agents/skills/quenching-components/references/components-command-eval/evaluation.md")` returns the heading index;
 `--sections` addresses one.
 
 ## Where the artifacts live
@@ -236,6 +236,6 @@ record whether it routes to this skill:
 
 **A trigger is only removed on a measured miss**, never because a
 description needs to be shorter — that is how a skill quietly stops firing for the user who
-worded it differently. And after any edit, re-run `components_lint()`: the caps
+worded it differently. And after any edit, re-run `components_read(verb="lint")`: the caps
 (`sk-metadata-cap`, `sk-description-portable`) and the trigger position
 (`sk-trigger-position`) still hold.

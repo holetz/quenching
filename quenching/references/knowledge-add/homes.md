@@ -7,7 +7,7 @@ The full home boundaries and tree live in
 
 ## Contents
 
-`components_read(path=".agents/quenching/references/knowledge-add/homes.md")` returns the heading
+`components_read(verb="read", path=".agents/quenching/references/knowledge-add/homes.md")` returns the heading
 index; `--sections <name>` addresses one.
 
 ## Classification — one question decides the home

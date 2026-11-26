@@ -11,7 +11,7 @@ where composing starts, a concrete signal says whether refining runs without bei
 
 ## Contents
 
-`components_read(path=<this file>)` returns the heading index; `sections=[…]` addresses one.
+`components_read(verb="read", path=<this file>)` returns the heading index; `sections=[…]` addresses one.
 
 ## The pass — what runs, and in what order
 
@@ -24,7 +24,7 @@ A pass runs up to four stages, always in this order:
 | 2 | [refine](#refine) | a concrete signal fired, or a human asked for it | is this the right thing to build at all? |
 | 3 | [approval](#approval--the-close-and-its-recommendation) | always | does this spec get a go, and what should happen to it next? |
 
-**The stage says where composing starts, never which operation runs.** `specs_status(spec=<id>)`
+**The stage says where composing starts, never which operation runs.** `specs_read(verb="status", spec=<id>)`
 reports it, and the `sections` and `ready` fields of that same payload say exactly which
 headings compose still owes:
 
@@ -155,7 +155,7 @@ not. Invoking the command is the authorization, and the human's window on the ed
 URL in the backend.
 
 **The edit lands per pass, not per stage** — compose and refine write together, in one call, and the
-tool is built for exactly that: `specs_section_write(spec=<id>, sections=[…])` splices N headings and
+tool is built for exactly that: `specs_write(verb="section_write", spec=<id>, sections=[…])` splices N headings and
 **lands them as ONE write**, so a repeated or non-canonical heading refuses (exit 2) without writing
 any of them. A pass is therefore all-or-nothing: an abandoned one leaves the spec exactly as it was.
 
@@ -203,7 +203,7 @@ stage.** What the session calculates is two things — **who answers** a stage t
 **whether refine runs**.
 
 **The calculation.** Before it asks anything, the session reads the state
-(`specs_status(spec=<id>)`), enumerates the decisions the execution will need, and
+(`specs_read(verb="status", spec=<id>)`), enumerates the decisions the execution will need, and
 classifies each as **resolved by evidence** (the spec, the codebase, the `/docs/standards/` its
 `## Impact` declares and `/docs/glossary.md` answer it), **dependent on the human** (appetite, a
 policy, a choice of direction no evidence settles) or **very costly to undo** (irreversible, or of
@@ -267,7 +267,7 @@ are worth tabling at all; once a shape is on the page, the remaining headings do
 another and travel together on one decision sheet.
 
 **Drive the gap off the tool, never off a reading of the file.** The `sections` and `ready`
-(`{ok, missing, malformed}`) fields of the step's own `specs_status(spec=<id>)` payload
+(`{ok, missing, malformed}`) fields of the step's own `specs_read(verb="status", spec=<id>)` payload
 already name every heading that is absent or malformed, and the section read returns
 `(## X is absent)` for the rest — so the map of what compose owes costs no call of its own.
 
@@ -338,14 +338,14 @@ frontmatter, so `execute` never has to guess mid-build) and the parsed `### Stan
 write into docs/standards/` sub-heading under `## Impact`.
 
 **Evidence answers** all seven symptoms and all three execution decisions — `[P]`, `files:`
-and `pattern:` are provable against the tree, and `specs_parallel` proves the first
+and `pattern:` are provable against the tree, and `specs_read(verb="parallel")` proves the first
 mechanically. **Only a human answers** the `verification` policy; on the simple track and on declared autonomy the pass **declares
 nothing** and lets the default stand, because stamping the default records a decision nobody made.
 
 **Stop when** the ready set is closed — every gate section answered with content or a reasoned
 `- none`, every task with a judgeable completion, no `## Impact` path uncovered — and the human
 would recognise the spec as describing their idea. A `[P]` compose set is **proved** when the edit
-lands, by `specs_parallel`, never argued about here: the tool checks disjunction mechanically and
+lands, by `specs_read(verb="parallel")`, never argued about here: the tool checks disjunction mechanically and
 names the group it refuses.
 
 <!-- rationale -->
@@ -504,7 +504,7 @@ rationale; it never grounds a binding rule alone
 this one.
 
 **Stop when** every declared surface path is named by a task carrying `files:` and `verify:`,
-`specs_parallel(spec=<id>)` exits 0, and nothing outside the spec was
+`specs_read(verb="parallel", spec=<id>)` exits 0, and nothing outside the spec was
 written.
 
 ## Discoveries
@@ -513,8 +513,8 @@ written.
 track — parks a finding that the workflow, a skill, a reference, the structure or an automation
 around the spec is the constraint as ONE `## Discoveries` line carrying `path:line` and the
 consequence. A cost finding is one kind of it, and it carries a counted figure — tokens, round
-trips or whole-file reads — read from `components_session_context` or
-`components_session_cost`, never from the pass's recollection. Parking is not an offer and
+trips or whole-file reads — read from `components_read(verb="session_context")` or
+`components_read(verb="session_cost")`, never from the pass's recollection. Parking is not an offer and
 mints nothing.
 
 **Runs when** `## Discoveries` holds a line with no resolution on it — stage 0 of the pass, before
@@ -540,7 +540,7 @@ Three resolutions and nothing else:
 
 | Resolution | When | What it costs |
 | --- | --- | --- |
-| `promoted: <id>` | it is work someone will do, and the front does not already hold it | one `specs_list` to check, then one `specs_create` — offer it, and write the ID back |
+| `promoted: <id>` | it is work someone will do, and the front does not already hold it | one `specs_read(verb="list")` to check, then one `specs_write(verb="create")` — offer it, and write the ID back |
 | `folded: <section>` | it changes THIS spec | the answer lands in that section in the same edit |
 | `dismissed: <reason>` | it is real but not worth acting on, or another spec already covers it | one line, and the reason is the whole value |
 
@@ -571,7 +571,7 @@ the same: what the spec now commits to, in the proposal's one line, the task cou
 `verification` policy in force, the declared `docs/standards/` paths, and the biggest accepted
 risk.
 
-**No token-budget check precedes approval.** The approval runs no `specs_estimate`, shows no
+**No token-budget check precedes approval.** The approval runs no `specs_read(verb="estimate")`, shows no
 estimate and never asks, blocks or recommends decomposition over a budget. Splitting a spec is a
 scope judgment §Refine's signals make, never a byte count.
 
@@ -582,7 +582,7 @@ text:
 
 | Recommendation | When | What choosing it does |
 | --- | --- | --- |
-| **Approve** | no signal fired | `specs_record(spec=<id>, name="approved")`, which writes the date and `by=human`, never by editing the provider document directly |
+| **Approve** | no signal fired | `specs_write(verb="record", spec=<id>, name="approved")`, which writes the date and `by=human`, never by editing the provider document directly |
 | **Refine** | a scope or critique signal fired, and refine has not run this pass | the choice IS the OK to refine with the lens the signal names, restamping `complexity` if the depth grew, and the pass re-enters at refine |
 | **Refine with the premortem** | the spec is irreversible | same mechanics, premortem lens |
 | **Stop here** | — | nothing stamped, and the report says what is open |
@@ -592,7 +592,7 @@ names what the argument settled. Recommending the raise a human has already take
 decide the same thing twice.
 
 **On the simple track, the pass approves, and the record says so.**
-`specs_record(spec=<id>, name="approved", by="session")`, which writes the date with it. There is no screen, because
+`specs_write(verb="record", spec=<id>, name="approved", by="session")`, which writes the date with it. There is no screen, because
 the simple track is the one with nothing left for a human to decide. The review window is **the
 spec's URL in the backend**, announced before the pass read anything and repeated in its report. The
 stamp is not an inference from the sections and never claims to be one. When the conductor declared
@@ -614,7 +614,7 @@ question later.
 Every stage that reads the codebase or `docs/` to answer its own questions — compose's
 "read it, do not theorize" included, not only what follows below — does so under
 [align/evidence-doctrine.md](.agents/quenching/references/align/evidence-doctrine.md):
-the aggregate a `grep`/`gh`/`cq` call produces, never the raw dump; `components_read(path=<path>,
+the aggregate a `grep`/`gh`/`cq` call produces, never the raw dump; `components_read(verb="read", path=<path>,
 sections=["§X"])` for `docs/standards/` and `knowledge/glossary.md`, the same way this
 plugin's own references already address a section instead of a whole file.
 

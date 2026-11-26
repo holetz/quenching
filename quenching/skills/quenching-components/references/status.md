@@ -19,9 +19,9 @@ commands, fronts and finding codes without choosing an axis or repairing a body.
 Set `TARGET_ROOT` to `$ARGUMENTS`, or to `.` when the argument is omitted, and run:
 
 ```text
-components_status(root="$TARGET_ROOT")
-components_migrate(target="$TARGET_ROOT")
-components_bridge(target="$TARGET_ROOT", check=true)
+components_read(verb="status", root="$TARGET_ROOT")
+components_write(verb="migrate", target="$TARGET_ROOT")
+components_write(verb="bridge", target="$TARGET_ROOT", check=true)
 ```
 
 `migrate` without `--write` and `bridge --check` only plan: neither writes.
@@ -60,7 +60,7 @@ workflow or test suite. Confirm that the report matches the status payload and i
 ## Invariants
 
 - Read only: no command, description, registry or generated surface is edited.
-- Applicability, missing state, command count, front counts and findings come from `components_status()`;
+- Applicability, missing state, command count, front counts and findings come from `components_read(verb="status")`;
   migration and bridge state come from `migrate` and `bridge --check`, never from a guess.
 - Findings retain their emitted code and severity; status never softens a finding into a clean state.
 - The report names a closing command but never invokes a repair.
