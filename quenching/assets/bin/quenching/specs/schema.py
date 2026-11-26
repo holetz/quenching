@@ -83,7 +83,7 @@ DEFAULT_SCHEMA: dict = {
                           "status": {"levels": ["measured", "unavailable"]},
                           "writtenBy": "conclude", "writeOnce": False},
             "run": {"fields": ["state", "verifier", "by", "date"],
-                    "state": {"levels": ["done", "continue", "blocked", "failed"]},
+                    "state": {"levels": ["done", "continue", "blocked", "failed", "interrupted"]},
                     "verifier": {"levels": ["pass", "fail", "not-run"]},
                     "by": {"levels": ["verifier"]},
                     "writtenBy": "spec-runner", "writeOnce": False},
