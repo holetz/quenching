@@ -66,6 +66,9 @@ def build_parser() -> argparse.ArgumentParser:
                                        "registers with no directory on disk — a report only")
     sp.add_argument("--remote", default="origin", metavar="REMOTE",
                     help="remote whose fetched branches are reported (default: origin)")
+    sp.add_argument("--full", action="store_true",
+                    help="also print the assessed worktrees, held slots, manifest and groups "
+                         "(the default JSON carries the result and their counts)")
     sp.add_argument("--json", action="store_true", help="machine-readable output")
 
     sp = sub.add_parser("conventions", help="read-if-present: whether the target declares "

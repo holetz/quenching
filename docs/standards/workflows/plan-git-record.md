@@ -422,7 +422,7 @@ only an added reason: a gone branch with commits outside the base stays in `kept
 `["gone", "unmerged-commits"]`, because `prune` deletes with `branch -d`, which refuses it (spec
 2242).
 
-`cq git stale` also assesses registered linked worktrees and prints a complete `manifest`: every
+`cq git stale --json` is lean by default: the result lists plus `counts` of the rest, with `full: false`. `--full` (`full=true` on the MCP tool) adds the assessed `worktrees`, `heldSlots`, `groups` and the complete `manifest`, which `cleanup` requires. With `--full`, `cq git stale` also assesses registered linked worktrees and prints a complete `manifest`: every
 local branch, remote branch and worktree, candidate or preserved, with a stable `id` (derived from
 the kind and the exact ref or canonical path), the observed `tip`, its `tipDate` (the tip's committer
 date, `git show -s --format=%cI`, never creation or last use; `null` with a named source when
