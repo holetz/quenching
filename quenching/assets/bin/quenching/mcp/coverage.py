@@ -182,7 +182,7 @@ OPTION_PARAM = {
     ("specs", "next", "table"): None,   # human rendering; the tool answers JSON
     ("specs", "next", "columns"): None,
     ("specs", "next", "order"): None,
-    ("specs", "section", "write"): None,  # the write form is the tool `specs_section_write`
+    ("specs", "section", "write"): None,  # the write form is the verb `specs_write(verb="section_write")`
     ("specs", "section", "clear"): None,
     ("specs", "list", "lean"): None,    # always on in the tool
     ("specs", "list", "full"): None,    # the tool is lean by design; the full shape is the CLI's
@@ -199,9 +199,11 @@ def _tool_params() -> dict[str, set[str]]:
 
 def uncited_options(texts: Iterable[tuple[str, str]]) -> list[tuple[str, str, str]]:
     """`(label, tool, option)` for every option a body cites that the tool's `inputSchema` lacks:
-    `cq specs show … --full` against `specs_show` without `full`, or `specs_show(…, full=true)`.
+    `cq specs show … --full` against `specs_show` without `full`, or
+    `specs_read(verb="show", …, full=true)` (a grouped call is checked against its verb's schema).
     Only the hand-written READ tools of `specs` are checked: the catalog derives its schema from
     the parser, and a write tool spells its flags as dedicated parameters (`--set`, `--write`)."""
+    from quenching.mcp import grouped
     from quenching.specs import mcp as specs_mcp
     params = _tool_params()
     by_path = {("specs", *path): name for name, path in specs_mcp.COVERS.items()
@@ -224,9 +226,14 @@ def uncited_options(texts: Iterable[tuple[str, str]]) -> list[tuple[str, str, st
                 if param is not None and opt not in OPTION_FREE and param not in params[tool]:
                     add(label, tool, opt)
         for match in TOOL_CALL.finditer(text):
-            tool = match.group(1)
+            tool, args = match.group(1), match.group(2)
+            verb = re.match(r'\s*verb\s*=\s*"(\w+)"', args)
+            if verb is not None:
+                # A published `<pillar>_<class>(verb="…", …)`: check the verb's own schema.
+                tool = grouped.logical(tool, verb.group(1)) or tool
+                args = args[verb.end():]
             if tool in params and tool in specs_mcp.TOOLS:
-                for param in re.findall(r"(\w+)\s*=", match.group(2)):
+                for param in re.findall(r"(\w+)\s*=", args):
                     if param not in params[tool]:
                         add(label, tool, param)
     return out
