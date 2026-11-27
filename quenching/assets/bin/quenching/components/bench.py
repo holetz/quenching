@@ -58,7 +58,7 @@ HARNESS_RULES: dict[str, dict[str, tuple[str, ...]]] = {
 #: margin so a rounding never trips the gate; a target passes its own through `--budget`.
 DEFAULT_BUDGET: dict[str, dict[str, int]] = {
     "prefix": {"claude": 7_000, "opencode": 7_000, "copilot": 7_000},
-    "flow": {"create": 15_000, "develop": 41_000, "execute": 15_000, "conclude": 15_000},
+    "flow": {"create": 15_000, "develop": 15_000, "execute": 15_000, "conclude": 15_000},
 }
 
 

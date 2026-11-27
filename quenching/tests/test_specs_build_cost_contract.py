@@ -10,7 +10,7 @@ PLUGIN = Path(__file__).resolve().parents[1]
 
 
 def prose(path):
-    raw = flow_text(PLUGIN / path) if path.endswith("conclude.md") else (PLUGIN / path).read_text(encoding="utf-8")
+    raw = flow_text(PLUGIN / path) if path.endswith(("conclude.md", "develop.md")) else (PLUGIN / path).read_text(encoding="utf-8")
     return re.sub(r"\s+", " ", raw.replace("**", "").replace("`", ""))
 
 

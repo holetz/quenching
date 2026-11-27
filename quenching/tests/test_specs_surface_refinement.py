@@ -13,6 +13,8 @@ import re
 import unittest
 
 
+from _flow import flow_text
+
 ROOT = Path(__file__).resolve().parents[2]
 
 QUESTIONS = "quenching/references/specs-develop/questions.md"
@@ -26,14 +28,22 @@ AGENTS = "docs/standards/automation/agents.md"
 GROUP = "### 1. Process surface"
 
 
+def read(rel):
+    if rel == DEVELOP:
+        base = (ROOT / rel).parent / "specs-develop"
+        subs = "\n".join(p.read_text(encoding="utf-8") for p in sorted(base.glob("step-[0-9][a-z]-*.md")))
+        return flow_text(ROOT / rel) + "\n" + subs
+    return (ROOT / rel).read_text(encoding="utf-8")
+
+
 def text(rel):
     """The file, markup collapsed: a phrase wrapped across a line still matches."""
-    return re.sub(r"\s+", " ", (ROOT / rel).read_text(encoding="utf-8"))
+    return re.sub(r"\s+", " ", read(rel))
 
 
 def heading(rel, name):
     """True when the file carries `name` as a heading of its own line."""
-    body = (ROOT / rel).read_text(encoding="utf-8")
+    body = read(rel)
     return re.search(rf"^{re.escape(name)}$", body, re.MULTILINE) is not None
 
 

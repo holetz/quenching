@@ -955,6 +955,28 @@
 
     ".claude/skills/quenching-specs/references/specs-create/step-6-screen.md": "source",
 
+    ".claude/skills/quenching-specs/references/specs-develop/step-1-resolve.md": "source",
+
+    ".claude/skills/quenching-specs/references/specs-develop/step-2-read-state.md": "source",
+
+    ".claude/skills/quenching-specs/references/specs-develop/step-3-derive.md": "source",
+
+    ".claude/skills/quenching-specs/references/specs-develop/step-3b-load.md": "source",
+
+    ".claude/skills/quenching-specs/references/specs-develop/step-3c-sweep.md": "source",
+
+    ".claude/skills/quenching-specs/references/specs-develop/step-3d-surface.md": "source",
+
+    ".claude/skills/quenching-specs/references/specs-develop/step-4-compose.md": "source",
+
+    ".claude/skills/quenching-specs/references/specs-develop/step-5-refine.md": "source",
+
+    ".claude/skills/quenching-specs/references/specs-develop/step-6-consolidate.md": "source",
+
+    ".claude/skills/quenching-specs/references/specs-develop/step-7-apply.md": "source",
+
+    ".claude/skills/quenching-specs/references/specs-develop/step-8-close.md": "source",
+
     ".claude/skills/quenching-specs/references/specs-execute/step-1-select-the-spec.md": "source",
 
     ".claude/skills/quenching-specs/references/specs-execute/step-2-tree-isolation-state.md": "source",

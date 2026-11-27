@@ -11,7 +11,7 @@ import unittest
 
 ROOT = Path(__file__).resolve().parents[2]
 ARTIFACTS = ROOT / "quenching/references/specs-develop/artifacts.md"
-DEVELOP = ROOT / "quenching/skills/quenching-specs/references/develop.md"
+DEVELOP = ROOT / "quenching/skills/quenching-specs/references/specs-develop/step-4-compose.md"
 AGENTS = ROOT / "docs/standards/automation/agents.md"
 CONTEXT_DISCIPLINE = ROOT / "docs/standards/automation/context-discipline.md"
 

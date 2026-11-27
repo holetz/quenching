@@ -138,6 +138,16 @@ class Superficie(unittest.TestCase):
         self.assertEqual(budget["prefix"], bench.DEFAULT_BUDGET["prefix"])
 
 
+class EstagiosDoDevelop(unittest.TestCase):
+    def test_every_develop_stage_of_this_repository_fits_15k_tokens(self):
+        payload, findings = bench.measure(REPO, ("claude",))
+        self.assertEqual(bench.DEFAULT_BUDGET["flow"]["develop"], 15_000)
+        row = payload["flows"]["develop"]
+        self.assertTrue(row["stages"])
+        self.assertLessEqual(row["tokens"], 15_000)
+        self.assertEqual([f for f in findings if f["code"] == "ct-bench-flow-over"], [])
+
+
 class Ciclo(unittest.TestCase):
     def test_ciclo_closes_on_a_throwaway_fixture_and_removes_it(self):
         payload, findings = bench_cycle.measure(REPO)
