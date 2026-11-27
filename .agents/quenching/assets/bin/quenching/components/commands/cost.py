@@ -28,6 +28,11 @@ from quenching.components.surface import (body_after_frontmatter, load_surface, 
 REFERENCE_RE = re.compile(
     r"(\.agents/(?:quenching/references|skills/[a-z0-9-]+/references)/[A-Za-z0-9_./-]+\.md)"
 )
+#: A flow's per-step file (`specs-<flow>/step-<n>-<name>.md`). The flow's index links each one, but a
+#: stage loads only its own, so the body is not charged for them; `bench` measures them per stage.
+STAGE_FILE_RE = re.compile(
+    r"\.(?:agents|claude)/skills/[a-z0-9-]+/references/specs-[a-z]+/step-[A-Za-z0-9_.-]+\.md"
+)
 FENCE_RE = re.compile(r"^ {0,3}(`{3,}|~{3,})", re.MULTILINE)
 def _bytes(text: str) -> int:
     return len(text.encode("utf-8"))
@@ -115,7 +120,8 @@ def _reference_citations(command: dict) -> list[dict]:
     body = command["body"]
     return [{"relpath": match.group(1),
              "sections": _citation_sections(body, match.start(), match.end())}
-            for match in REFERENCE_RE.finditer(body)]
+            for match in REFERENCE_RE.finditer(body)
+            if not STAGE_FILE_RE.fullmatch(match.group(1))]
 
 
 def _reference_index(root: str) -> dict[str, dict]:

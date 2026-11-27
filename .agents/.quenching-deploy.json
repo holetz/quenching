@@ -925,6 +925,18 @@
 
     ".claude/skills/quenching-specs/references/specs-create/plan-mapping.md": "source",
 
+    ".claude/skills/quenching-specs/references/specs-create/step-1-classify.md": "source",
+
+    ".claude/skills/quenching-specs/references/specs-create/step-2-title.md": "source",
+
+    ".claude/skills/quenching-specs/references/specs-create/step-3-plan-source.md": "source",
+
+    ".claude/skills/quenching-specs/references/specs-create/step-4-metadata.md": "source",
+
+    ".claude/skills/quenching-specs/references/specs-create/step-5-capture.md": "source",
+
+    ".claude/skills/quenching-specs/references/specs-create/step-6-screen.md": "source",
+
     ".claude/skills/quenching-specs/references/status.md": "source",
 
     ".claude/skills/quenching-specs/references/triage.md": "source",

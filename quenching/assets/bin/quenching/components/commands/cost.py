@@ -31,7 +31,7 @@ REFERENCE_RE = re.compile(
 #: A flow's per-step file (`specs-<flow>/step-<n>-<name>.md`). The flow's index links each one, but a
 #: stage loads only its own, so the body is not charged for them; `bench` measures them per stage.
 STAGE_FILE_RE = re.compile(
-    r"\.agents/skills/[a-z0-9-]+/references/specs-[a-z]+/step-[A-Za-z0-9_.-]+\.md"
+    r"\.(?:agents|claude)/skills/[a-z0-9-]+/references/specs-[a-z]+/step-[A-Za-z0-9_.-]+\.md"
 )
 FENCE_RE = re.compile(r"^ {0,3}(`{3,}|~{3,})", re.MULTILINE)
 def _bytes(text: str) -> int:
