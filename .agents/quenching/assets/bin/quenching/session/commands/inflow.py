@@ -26,6 +26,26 @@ def _tail(path: str) -> str:
     return "/".join(path.split("/")[-2:])
 
 
+def family(command: str) -> str:
+    """The command a shell call ran, by its first real word: `cd x && git log | head` is `git`.
+
+    Leading `cd`, env assignments and `sudo` are skipped, a path is cut to its basename and a
+    `cq`-named launcher is `cq`, so `python3 .../bin/cq specs` stays apart from `python3 -m pytest`."""
+    for part in re.split(r"&&|\|\||;|\|", command or ""):
+        words = part.split()
+        while words and (re.fullmatch(r"\w+=\S*", words[0]) or words[0] in ("sudo", "time", "env")):
+            words.pop(0)
+        if not words or words[0] in ("cd", "export", "set", "source", "."):
+            continue
+        first = words[0].replace("\\", "/").rsplit("/", 1)[-1]
+        if first.startswith("python") and len(words) > 1:
+            if words[1].replace("\\", "/").rsplit("/", 1)[-1] in ("cq", "cq.cmd"):
+                return "cq"
+            return first
+        return first.removesuffix(".cmd").removesuffix(".exe") or "shell"
+    return "shell"
+
+
 def origin(name: str, args: object) -> tuple:
     """(kind, key) of a tool call: where its result came from."""
     args = args if isinstance(args, dict) else {}
@@ -38,7 +58,7 @@ def origin(name: str, args: object) -> tuple:
         if match:
             part = "sections" if "--sections" in str(args.get("command")) else "whole"
             return f"cq-read-{part}", _tail(match[1])
-        return "shell", "shell"
+        return "shell", f"shell:{family(str(args.get('command') or ''))}"
     path = args.get("path") or args.get("filePath") or args.get("file_path")
     if tool in READ_TOOLS and isinstance(path, str):
         norm = _tail(path)
@@ -60,18 +80,19 @@ class Tally:
     def __init__(self):
         self.rows: dict = {}
 
-    def add(self, harness: str, calls: list, steps: int) -> None:
+    def add(self, harness: str, calls: list, steps: int, agent: str = "main") -> None:
         """`calls` are (origin, chars, step the result landed at); `steps` is the session's request count."""
         for (kind, key), chars, at in calls:
             tokens = chars // 4
-            row = self.rows.setdefault((harness, kind, key), {
-                "harness": harness, "kind": kind, "origin": key, "calls": 0, "tokens": 0, "reread": 0})
+            row = self.rows.setdefault((harness, kind, key, agent), {
+                "harness": harness, "agent": agent, "kind": kind, "origin": key,
+                "calls": 0, "tokens": 0, "reread": 0})
             row["calls"] += 1
             row["tokens"] += tokens
             row["reread"] += tokens * max(0, steps - at)
 
     def top(self, limit: int) -> list:
-        return sorted(self.rows.values(), key=lambda r: (-r["reread"], r["harness"], r["origin"]))[:limit]
+        return sorted(self.rows.values(), key=lambda r: (-r["reread"], r["harness"], r["origin"], r["agent"]))[:limit]
 
 
 def claude_file(path: Path, anomalies: list) -> tuple:
