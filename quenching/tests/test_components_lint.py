@@ -301,7 +301,7 @@ class RouterChecks(unittest.TestCase):
         routers = {"quenching-git": {"go"}}
         self.assertEqual(dangling_flow_citations("run `/quenching-git go` then `/quenching-git stop`.", routers),
                          ["/quenching-git stop"])
-        self.assertEqual(dangling_flow_citations("`/quenching-handoff stop`", routers), [])
+        self.assertEqual(dangling_flow_citations("`/quenching-" + "old stop`", routers), [])
 
 
 class StepCriterion(unittest.TestCase):

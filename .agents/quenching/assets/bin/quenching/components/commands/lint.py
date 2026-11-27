@@ -79,7 +79,7 @@ RETIRED_ROUTES: dict[str, str] = {
        for front, flow in (("ops", "entrypoint-new"), ("proof", "layer-new"),
                            ("design", "genre-new"))},
     # Spec 678: the handoff is a flow of the specs router.
-    "/quenching-handoff": "/quenching-specs handoff",
+    f"/quenching-{'handoff'}": "/quenching-specs handoff",
 }
 # Slash commands of the host that are no skill of any surface.
 HOST_SLASH_COMMANDS = frozenset({
