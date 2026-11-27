@@ -38,8 +38,8 @@ The command named in the table is a hand-off, not an instruction for the align t
 
 | Code | Evidence to report | Closing command to name |
 | --- | --- | --- |
-| `pf-unlayered` | Test modules outside every declared layer, with their paths and counts. | The target owner's layer declaration, then `.agents/quenching/references/proof-align/layer-new.md` for each new layer. |
-| `pf-empty-layer` | The declared layer, its reach, budget, and absence of collected tests. | The target owner's layer or test change, or `.agents/quenching/references/proof-align/layer-new.md` when the layer is being reminted. |
+| `pf-unlayered` | Test modules outside every declared layer, with their paths and counts. | The target owner's layer declaration, then `/quenching-components layer-new` for each new layer. |
+| `pf-empty-layer` | The declared layer, its reach, budget, and absence of collected tests. | The target owner's layer or test change, or `/quenching-components layer-new` when the layer is being reminted. |
 | `pf-unmeasured-surface` | Each product surface outside measured roots or exclusions, with the consequence for the coverage number. | The target owner's reviewed measurement or exclusion change, then `/quenching-align proof`. |
 | `pf-no-ci` | The CI providers searched and the missing invocation of the proof gate. | The target owner's reviewed CI workflow, then `/quenching-align proof`. |
 | `pf-untested-entrypoint` | The active operations entry point, its path, and the missing test or explicit not-applicable record. | The target owner's reviewed test or applicability declaration, then `/quenching-align proof`. |
@@ -69,7 +69,7 @@ not to a promise that every CI edit is harmless.
 
 A target that declares no layers at all is not offered inferred layers or placeholder directories.
 The align reports its unlayered modules and any layer findings as judgement residue, names
-`.agents/quenching/references/proof-align/layer-new.md` as the command that can establish a layer deliberately, and lets the
+`/quenching-components layer-new` as the command that can establish a layer deliberately, and lets the
 rest of the report reduce to the gate findings. This follows the sweep's evidence-gating rule:
 absence of a declaration is not evidence for a taxonomy.
 
