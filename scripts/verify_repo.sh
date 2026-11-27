@@ -262,6 +262,8 @@ run_check "components doctor" \
   python3 quenching/assets/bin/cq --root quenching components doctor --json
 run_check "components lint" \
   python3 quenching/assets/bin/cq --root quenching components lint --json
+run_check "bench (fixed cost and flow ceilings)" \
+  python3 quenching/assets/bin/cq components bench --layers superficie --json
 run_check "harness (AGENTS.md)" \
   python3 scripts/check_claude_harness.py
 run_check "docs bundle" \

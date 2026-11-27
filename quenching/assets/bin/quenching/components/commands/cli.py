@@ -25,6 +25,8 @@ import sys
 
 from quenching.common.output import CQArgumentParser, emit, finding_code, refuse
 from quenching.common.version import VERSION
+from quenching.components.commands.bench import add_arguments as add_bench_arguments
+from quenching.components.commands.bench import cmd_bench
 from quenching.components.commands.cost import cmd_cost
 from quenching.components.commands.doctor import _doctor_findings, cmd_doctor
 from quenching.components.commands.lint import cmd_lint
@@ -91,6 +93,10 @@ def build_parser() -> argparse.ArgumentParser:
     sp = sub.add_parser("bridge",
                         help="generate the Claude Code copy of .agents/skills in .claude/skills")
     add_bridge_arguments(sp)
+
+    sp = sub.add_parser("bench",
+                        help="measure the fixed cost and the specs cycle of an installed quenching")
+    add_bench_arguments(sp)
 
     sp = sub.add_parser("migrate",
                         help="plan or apply the move of a target onto the generic .agents/ layer")
@@ -166,6 +172,7 @@ DISPATCH: dict = {
     "registry": cmd_registry,
     "read": cmd_read,
     "bridge": cmd_bridge,
+    "bench": cmd_bench,
     "migrate": cmd_migrate,
     "session": cmd_session,
 }
@@ -193,7 +200,7 @@ def main(argv: list[str]) -> int:
         return 0
     if not args.cmd:
         return refuse({"code": finding_code("ct", "no-command"), "message":
-                      "choose `cost`, `lint`, `doctor`, `status`, `registry`, `read`, `bridge`, `migrate`, or `session`"},
+                      "choose `cost`, `lint`, `doctor`, `status`, `registry`, `read`, `bridge`, `bench`, `migrate`, or `session`"},
                       False)
     if not hasattr(args, "json"):
         args.json = False
