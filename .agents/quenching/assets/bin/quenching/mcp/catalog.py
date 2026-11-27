@@ -66,6 +66,8 @@ CATALOG: dict[str, Row] = {
     **_rows("components", "read", "read", "lint", "doctor", "session list", "session digest",
             "session cost", "session cache", "session context", "session live"),
     **_rows("components", "write", "registry reindex"),
+    # Reads the target and builds its `ciclo` fixture in the temp area: nothing lands in the target.
+    **_rows("components", "read", "bench"),
     **_rows("knowledge", "read", "validate", "status"),
     **_rows("knowledge", "write", "site-source", "project", "nav", "listing"),
     **_rows("git", "read", "base", "state", "conventions", "history log", "history show",

@@ -74,6 +74,11 @@ policy**: this is human judgment the command conducts, per
 [versioning-release.md](/docs/standards/ci-cd/versioning-release.md)'s own boundary. If
 `$ARGUMENTS` already named an exact version, skip the proposal and confirm that one instead.
 
+**Run the bench before the plan.** `python3 quenching/assets/bin/cq components bench --layers superficie,ciclo`
+runs from the primary checkout: exit 1 (a prefix or flow budget passed, a citation that does not
+resolve, a verb of the cycle that failed) or 2 stops the release and reports the findings — the plan
+is never presented over a red bench. Its fixed cost and the cycle times go in the plan.
+
 Present ONE plan and wait for it: the proposed version, "bump the version artifacts and tag
 `<version>` on the primary branch", and "push the primary branch and the tag `<version>` to origin" —
 the push is part of this same plan, not a second confirmation, because an unpushed release reaches
