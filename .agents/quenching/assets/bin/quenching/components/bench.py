@@ -19,6 +19,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from quenching.common.output import finding
+from quenching.components.commands import bridge
 from quenching.components.commands.cost import STAGE_FILE_RE, measure_command
 from quenching.components.surface import discover_references, surface_references
 
@@ -71,6 +72,7 @@ class Entry:
     name: str
     folder: str
     chars: int  # name + description, what the listing carries
+    path: Path | None = None
 
 
 def _frontmatter(text: str) -> dict[str, str]:
@@ -101,8 +103,24 @@ def _entries(root: Path, folder: str, pattern: str) -> list[Entry]:
         data = _frontmatter(path.read_text(encoding="utf-8", errors="replace"))
         stem = path.parent.name if path.name == "SKILL.md" else re.sub(r"(\.agent)?\.md$", "", path.name)
         name = data.get("name") or stem
-        out.append(Entry(name, folder, len(name) + len(data.get("description", ""))))
+        out.append(Entry(name, folder, len(name) + len(data.get("description", "")), path))
     return out
+
+
+def _projections_only(entries: list[Entry], name: str) -> bool:
+    """Whether every copy of a repeated skill is the same `SKILL.md` once the bridge marker is gone.
+
+    ADR 0022: the `.claude/skills` copy is the bridge projection of the `.agents/skills` source, and
+    no client lists the pair twice, so it is not a duplicate. A copy that differs beyond the marker
+    line is an independent one.
+    """
+    texts = set()
+    for entry in entries:
+        if entry.name != name or entry.path is None:
+            continue
+        text = entry.path.read_text(encoding="utf-8", errors="replace")
+        texts.add(text.replace(bridge.marker(entry.path.parent.name) + "\n", "", 1))
+    return len(texts) == 1
 
 
 def _visible(entries: list[Entry]) -> tuple[list[Entry], dict[str, list[str]]]:
@@ -165,6 +183,7 @@ def measure_harness(root: Path, harness: str) -> dict:
     skills = [e for folder in rules["skills"] for e in _entries(root, folder, "*/SKILL.md")]
     agents = [e for folder in rules["agents"] for e in _entries(root, folder, "*.md")]
     skills_seen, skill_dupes = _visible(skills)
+    skill_dupes = {n: f for n, f in skill_dupes.items() if not _projections_only(skills, n)}
     agents_seen, _ = _visible(agents)
     registered, only = _mcp_only(root, rules["mcp"])
     mcp = mcp_catalog_chars(only) if registered else 0
@@ -277,7 +296,8 @@ def measure(root: Path, harnesses: tuple[str, ...], budget: dict | None = None) 
                 "ct-bench-skill-duplicate", "warning",
                 f"{harness}: skill {name!r} is visible in {', '.join(folders)}",
                 harness=harness, skill=name, folders=folders,
-                remedy="project each skill once per harness"))
+                remedy="make the copy the bridge projection of its .agents/skills source "
+                       "(cq components bridge --write), or remove the independent copy"))
     flows, flow_findings = measure_flows(root)
     findings.extend(flow_findings)
     for flow, row in flows.items():
