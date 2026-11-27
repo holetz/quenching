@@ -50,13 +50,13 @@ flowchart TD
 | --- | --- | --- | --- |
 | knowledge front | `/quenching-knowledge-*` | the `/docs/` OKF bundle | [The OKF bundle](okf-bundle.md) |
 | specs axis | `/quenching-specs-*` | specs on the `quenching` branch; no local tree | [The spec lifecycle](spec-lifecycle.md) |
-| design front | `/quenching-design` | the `/.design/` DTCG source and projections | [command catalog](../project/commands.md#the-design-front) |
+| design front | `/quenching-align design` | the `/.design/` DTCG source and projections | [command catalog](../project/commands.md#the-design-front) |
 | components front | `/quenching-components-*` | the `.claude/` automation surface | [command catalog](../project/commands.md#the-components-front) |
-| ops front | `/quenching-ops` | the target repository's operations surface | [command catalog](../project/commands.md#the-ops-front) |
-| proof front | `/quenching-proof` | the target repository's verification surface | [command catalog](../project/commands.md#the-proof-front) |
-| toolchain front | `/quenching-toolchain` | the target repository's manifests, locks, pins and tool configuration | [toolchain align](../../quenching/references/toolchain-align/align.md) |
-| delivery front | `/quenching-delivery` | the target repository's workflow and release reachability | [delivery align](../../quenching/references/delivery-align/align.md) |
-| security pillar | `/quenching-security` | nothing — read-only security questions | [security status](../../quenching/references/security-align/status.md) |
+| ops front | `/quenching-align ops` | the target repository's operations surface | [command catalog](../project/commands.md#the-ops-front) |
+| proof front | `/quenching-align proof` | the target repository's verification surface | [command catalog](../project/commands.md#the-proof-front) |
+| toolchain front | `/quenching-align toolchain` | the target repository's manifests, locks, pins and tool configuration | [toolchain align](../../quenching/references/toolchain-align/align.md) |
+| delivery front | `/quenching-align delivery` | the target repository's workflow and release reachability | [delivery align](../../quenching/references/delivery-align/align.md) |
+| security pillar | `/quenching-align status security` | nothing — read-only security questions | [security status](../../quenching/references/security-align/status.md) |
 | git pillar | `/quenching-git-*` | nothing — answers, never converges | [command catalog](../project/commands.md#the-git-pillar) |
 
 ## Probe-first: the interface
