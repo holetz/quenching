@@ -177,6 +177,7 @@ def regression(source: Path, previous: dict | None) -> dict | None:
 
     def git(*args: str) -> subprocess.CompletedProcess:
         return subprocess.run(["git", "-C", str(source), *args], capture_output=True, text=True,
+                              encoding="utf-8",
                               timeout=60, check=False)
     try:
         if git("cat-file", "-e", f"{recorded_commit}^{{commit}}").returncode != 0:
@@ -224,6 +225,7 @@ def _primary_checkout(target: Path) -> str | None:
     try:
         done = subprocess.run(["git", "-C", str(target), "rev-parse", "--path-format=absolute",
                                "--git-common-dir"], capture_output=True, text=True,
+                              encoding="utf-8",
                               encoding="utf-8", errors="replace", timeout=15)
     except (OSError, subprocess.SubprocessError):
         return None

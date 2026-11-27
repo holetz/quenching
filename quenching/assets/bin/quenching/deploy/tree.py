@@ -99,7 +99,8 @@ def source_commit(source: Path) -> str | None:
         return None
     try:
         done = subprocess.run(["git", "-C", str(source), "rev-parse", "HEAD"],
-                              capture_output=True, text=True, timeout=30, check=False)
+                              capture_output=True, text=True, encoding="utf-8",
+                              timeout=30, check=False)
     except (OSError, subprocess.SubprocessError):
         return None
     sha = done.stdout.strip()
