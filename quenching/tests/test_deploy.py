@@ -621,9 +621,9 @@ class Deploy(unittest.TestCase):
         """A module the selection left out but whose mirror the target tracks cannot age quietly."""
         self.assertEqual(0, self.run_deploy("--modules", "core", "--harness", "claude",
                                             "--write")[0])
-        # The generated surface publishes once, in the directory the declared client reads: a
-        # mirror of a module outside the selection lives in `.claude/skills`, never in a second
-        # `.agents/skills` copy the deploy no longer writes.
+        # A mirror of a module outside the selection is generated like any skill: its source in
+        # `.agents/skills` and, with `claude`, its projection in `.claude/skills`; the
+        # projection is checked here.
         stale = {".claude/skills/quenching-design/SKILL.md": "stale skill\n",
                  ".agents/quenching/assets/bin/quenching/design/align.py": "# stale\n"}
         for rel, text in stale.items():
