@@ -1,4 +1,23 @@
 ### 7. Apply, verify, and record what the pass earned
+- **Apply the explicit-none rule on every write.** A section with nothing in it is
+  `- none — <reason>`, a present-but-empty heading is malformed, and an absent heading before its
+  own gate is legal —
+  [spec-driven.md](.agents/quenching/references/specs-develop/spec-driven.md)
+  §The gates.
+
+**The batching contract for this step:**
+
+| Where | The bounded read(s) |
+| --- | --- |
+| step 7 | the entire application — the section write, every `specs_write(verb="discover")` line, every `specs_write(verb="record")`, `specs_write(verb="verification")`, `specs_read(verb="validate")` (plus `specs_read(verb="parallel")` where `## Tasks` moved), and the closing `specs_read(verb="status")` that verifies where the pass landed |
+
+On the git store every write of step 7 lands in the clone's local pending commit: the remote and
+the card see the pass at the next sync point (`git_external(verb="push")`, `git_external(verb="pr_create")`, `specs_external(verb="push")`), and `specs_read(verb="status")` lists the spec as pending until then.
+
+A call splits only where the next command's **input** depends on the previous one's output. The
+`approved` stamp is the one such split: it waits for step 7's verification to prove `ready` rather
+than asserting it off the drafts.
+
 **Every write of this step is ONE call** — §The batching contract's third row: the section write,
 the `## Discoveries` lines, the records, `verification`, `validate`, and the closing `status`.
 

@@ -30,13 +30,12 @@ contract and the invariants every stage obeys. A step runs only after its file i
 `components_read(verb="read", path=".agents/skills/quenching-specs/references/specs-develop/<file>")` —
 and that file loads the `§` sections its own step uses, never the whole pass up front.
 
-## Resolving the tool
+## Where the rest lives
 
-Resolve `cq` (`components_read(verb="read")` is the section reader every `§X` citation above resolves through)
-per
-[align/tool-resolution.md](.agents/quenching/references/align/tool-resolution.md)
-§Resolving the tool, §Write the resolved path literally on every invocation; branch on the **exit
-code** (0 ok · 1 findings · 2 refusal) and the `--json`, never on prose.
+Each step's file carries what only that step uses, so a stage run loads no more than its own: step 1
+resolves `cq`, and its read batch (§The batching contract) opens the pass; step 3 carries the
+rule that no turn only announces a call; step 3b reads `/docs/` by section; step 4 carries the rule
+on recommendations inside a question; step 7 carries the explicit-none rule and the apply batch.
 
 ## Doctrine
 
@@ -52,60 +51,17 @@ code** (0 ok · 1 findings · 2 refusal) and the `--json`, never on prose.
   was.
 - **Nothing shortens a stage that runs.** The same axes, lenses and gate symptoms are worked on
   every track, and what changes is who answers them.
-  Everything about *how* a stage runs is owned by
-  [questions.md](.agents/quenching/references/specs-develop/questions.md) §The four
-  shared mechanics §Who answers.
+  Everything about *how* a stage runs is owned by `questions.md` §The four shared mechanics
+  §Who answers, which the steps that need it load.
 - **A pass lands ONE edit.** Compose and refine accumulate and write together, so the spec never
   holds a half-composed state and never holds a draft refine already superseded. An abandoned pass
   leaves the spec exactly as it was.
-- **Apply the explicit-none rule on every write.** A section with nothing in it is
-  `- none — <reason>`, a present-but-empty heading is malformed, and an absent heading before its
-  own gate is legal —
-  [spec-driven.md](.agents/quenching/references/specs-develop/spec-driven.md)
-  §The gates.
-- **Read `/docs/` before writing — in step 3b, by section.** The relevant
-  `/docs/standards/` and `/docs/glossary.md` are binding on wording. Read it per
-[align/evidence-doctrine.md](.agents/quenching/references/align/evidence-doctrine.md)
-§1. Extract the aggregate; never paste the raw dump
-§2. Section-address any markdown — a target's `/docs/` included
-— `components_read(verb="read", path=<path>, sections=["§X"])`, not the whole file, when only a rule or two
-  governs the question at hand; it resolves `/docs/` the same way it resolves this plugin's own
-  references. No OKF bundle in the repo (`/docs/index.md` with `okf_version`) → skip silently.
 - **`complexity` is re-evaluated at the close, never mid-pass.** The close's own recommendation IS
   that re-evaluation where it names a raise; where the pass merely outgrew its size, the evidence
   that moved it is named and the depth proposed. A pass that changed no size proposes nothing.
 - **Every pass reviews `tags` in silence** — `/quenching-specs create` presumes them. The review is
   narrated in step 6's consolidated plan and applied in step 7's single edit, with no screen of its
   own.
-
-## The batching contract
-
-| Where | The bounded read(s) |
-| --- | --- |
-| steps 1+2 | `specs_read(verb="status", spec=<id>)`, which also carries the `path` step 1 announces, the recorded depth, and the `sections`/`ready` map compose drives off. Only an ID that must be *chosen* splits this: `specs_read(verb="list")` runs first, because the question depends on its output |
-| step 3b | every stage's own section and the union of the spec sections the pass reads or writes — `components_read(verb="read")` and `specs_read(verb="section")` together, never one call per source or per stage |
-| step 7 | the entire application — the section write, every `specs_write(verb="discover")` line, every `specs_write(verb="record")`, `specs_write(verb="verification")`, `specs_read(verb="validate")` (plus `specs_read(verb="parallel")` where `## Tasks` moved), and the closing `specs_read(verb="status")` that verifies where the pass landed |
-
-On the git store every write of step 7 lands in the clone's local pending commit: the remote and
-the card see the pass at the next sync point (`git_external(verb="push")`, `git_external(verb="pr_create")`, `specs_external(verb="push")`), and `specs_read(verb="status")` lists the spec as pending until then.
-
-A call splits only where the next command's **input** depends on the previous one's output. The
-`approved` stamp is the one such split: it waits for step 7's verification to prove `ready` rather
-than asserting it off the drafts.
-
-**No turn exists only to announce what the next tool call will do.** "Now I'll load the stage",
-"next I'll write the sections" — a turn whose entire content is the call that follows it. Narration
-that carries content stays: the pass and its stop conditions (step 3), the consolidated plan
-(step 6), the report (step 8).
-
-**A recommendation rides inside the question, never in a turn before it.** Where a choice is
-genuinely the human's, the recommendation and the reasoning behind it go on the **decision sheet**
-([questions.md](.agents/quenching/references/specs-develop/questions.md) §The four shared mechanics §1) — option A, recommended, the reasoning in its own text — so the human answers in one word and no turn was spent setting the question up.
-A sub-agent does not ask: return `STATE: blocked` with `NOTE: needs-human:` carrying the decision sheet.
-**This contract stops at the edge of how questions are grouped.**
-[questions.md](.agents/quenching/references/specs-develop/questions.md) §The four shared
-mechanics §1 is the only authority there: a question travels with the ones whose answers cannot
-change it, and alone otherwise.
 
 ## Workflow
 

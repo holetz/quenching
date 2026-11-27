@@ -1,4 +1,13 @@
 ### 4. Compose
+**A recommendation rides inside the question, never in a turn before it.** Where a choice is
+genuinely the human's, the recommendation and the reasoning behind it go on the **decision sheet**
+([questions.md](.agents/quenching/references/specs-develop/questions.md) §The four shared mechanics §1) — option A, recommended, the reasoning in its own text — so the human answers in one word and no turn was spent setting the question up.
+A sub-agent does not ask: return `STATE: blocked` with `NOTE: needs-human:` carrying the decision sheet.
+**This contract stops at the edge of how questions are grouped.**
+[questions.md](.agents/quenching/references/specs-develop/questions.md) §The four shared
+mechanics §1 is the only authority there: a question travels with the ones whose answers cannot
+change it, and alone otherwise.
+
 Skip where the spec is already `ready`. Otherwise follow §Compose, under the four shared mechanics:
 sequential to shape, grouped to close, every question carrying **an inline recommendation**, every
 answer naming the section it lands in, and the stage's declared stop condition.

@@ -1,4 +1,19 @@
 ### 3b. Load what THIS pass needs — and nothing more
+- **Read `/docs/` before writing — here, by section.** The relevant
+  `/docs/standards/` and `/docs/glossary.md` are binding on wording. Read it per
+[align/evidence-doctrine.md](.agents/quenching/references/align/evidence-doctrine.md)
+§1. Extract the aggregate; never paste the raw dump
+§2. Section-address any markdown — a target's `/docs/` included
+— `components_read(verb="read", path=<path>, sections=["§X"])`, not the whole file, when only a rule or two
+  governs the question at hand; it resolves `/docs/` the same way it resolves this plugin's own
+  references. No OKF bundle in the repo (`/docs/index.md` with `okf_version`) → skip silently.
+
+**The batching contract for this step:**
+
+| Where | The bounded read(s) |
+| --- | --- |
+| step 3b | every stage's own section and the union of the spec sections the pass reads or writes — `components_read(verb="read")` and `specs_read(verb="section")` together, never one call per source or per stage |
+
 Now that the pass is known, and in **one call** — §The batching contract's second row, both
 commands together, every stage at once:
 

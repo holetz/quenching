@@ -1,4 +1,9 @@
 ### 3. Derive the pass, and name it
+**No turn exists only to announce what the next tool call will do.** "Now I'll load the stage",
+"next I'll write the sections" — a turn whose entire content is the call that follows it. Narration
+that carries content stays: the pass and its stop conditions (step 3), the consolidated plan
+(step 6), the report (step 8).
+
 Load what this step runs on, and nothing else — what runs and in what order, the mechanics every
 stage shares, and the spec-driven facts:
 
