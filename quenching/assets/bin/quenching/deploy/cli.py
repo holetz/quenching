@@ -34,6 +34,7 @@ HOOKS_PATH = deploy_tree.PAYLOAD + "/assets/githooks"
 # The client families a repository may ask the deploy to project. `github` is the `.github/agents`
 # tree; 463 and 464 extend the same value with their own artifacts, never a harness branch.
 PROJECTIONS = ("github",)
+HARNESSES = ("claude", "codex", "opencode")  # the default: every harness
 
 
 def _mcp_refusal(message: str, **extra) -> dict:
@@ -167,7 +168,7 @@ def _recorded_hashes(previous: dict | None) -> dict[str, str]:
     manifest that still lists them (written before the merge) no longer owns them."""
     files = (previous or {}).get("files")
     return {rel: digest for rel, digest in files.items()
-            if isinstance(digest, str) and rel not in (*mcpfiles.FILES, *mcpfiles.LEGACY)} \
+            if isinstance(digest, str) and rel not in mcpfiles.FILES} \
         if isinstance(files, dict) else {}
 
 
@@ -175,9 +176,9 @@ def _mcp_recorded(previous: dict | None) -> list[str]:
     """The harness files whose quenching entry the last deploy wrote."""
     listed = (previous or {}).get("mcpFiles")
     if isinstance(listed, list):
-        return [rel for rel in listed if rel in (*mcpfiles.FILES, *mcpfiles.LEGACY)]
+        return [rel for rel in listed if rel in mcpfiles.FILES]
     files = (previous or {}).get("files")
-    return [rel for rel in (*mcpfiles.FILES, *mcpfiles.LEGACY)
+    return [rel for rel in mcpfiles.FILES
             if isinstance(files, dict) and rel in files]
 
 
@@ -728,7 +729,8 @@ def _parser() -> argparse.ArgumentParser:
     p.add_argument("--profiles", action="append", default=None,
                    help="shared.profiles.installed, comma separated (default: derived)")
     p.add_argument("--harness", action="append", default=None,
-                   help="claude, opencode, none (default: claude,opencode)")
+                   help="claude, codex, opencode, none (default: every harness, "
+                        "claude,codex,opencode)")
     p.add_argument("--runtime", choices=("vendor", "uvx"), default=None,
                    help="vendored runtime (offline) or a pinned uvx shim; defaults to the "
                         "manifest's recorded runtime, then vendor")
@@ -748,15 +750,13 @@ def _parser() -> argparse.ArgumentParser:
 
 def _evaluate(args, target: Path, previous: dict | None) -> tuple[dict | None, dict | None]:
     """What `cq deploy` would do for `args`, without writing: `(refusal, None)` or `(None, state)`."""
-    # A manifest an earlier version wrote may still list the removed `codex` harness; only an
-    # explicit `--harness codex` is refused.
-    harnesses = (_split(args.harness)
-                 or [h for h in recorded(previous, "harnesses") or [] if h != "codex"]
-                 or ["claude", "opencode"])
+    # An explicit flag, then what the manifest recorded, then every harness.
+    harnesses = (_split(args.harness) or recorded(previous, "harnesses")
+                 or list(HARNESSES))
     if "none" in harnesses:
         harnesses = [h for h in harnesses if h != "none"]
     for harness in harnesses:
-        if harness not in {"claude", "opencode"}:
+        if harness not in HARNESSES:
             return {"code": "ct-deploy-harness", "harness": harness,
                            "message": f"unknown harness: {harness}"}, None
     runtime = args.runtime or recorded(previous, "runtime", {"vendor", "uvx"}) or "vendor"
