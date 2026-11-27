@@ -6,7 +6,7 @@ import unittest
 REPO = pathlib.Path(__file__).resolve().parents[2]
 ROUTER = REPO / "quenching/skills/quenching-git/SKILL.md"
 FLOWS = ('branch', 'commit', 'merge', 'sync', 'pr-create', 'pr-review', 'pr-status',
-         'cleanup', 'commit-incremental', 'push', 'revert')
+         'cleanup', 'commit-incremental', 'push', 'revert', 'conflict-resolve')
 EXPLICIT_MENTION = ('push', 'revert', 'cleanup')
 
 

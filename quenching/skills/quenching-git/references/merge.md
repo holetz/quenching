@@ -54,7 +54,8 @@ The subject the strategy writes follows §The declared-directive layer's table:
 git -C <the checkout from step 1> <the chosen strategy's command>
 ```
 Never `git checkout <base>` — from inside a worktree it fails outright
-(`fatal: '<base>' is already used by worktree at …`, exit 128). A failure is reported verbatim; nothing downstream runs. **Done when:** the
+(`fatal: '<base>' is already used by worktree at …`, exit 128). A failure is reported verbatim; nothing downstream runs. A merge **stopped on a conflict** names
+`/quenching-git conflict-resolve` as the flow that resolves it, and this flow resolves nothing. **Done when:** the
 merge command exits 0, or the run has stopped on its failure.
 
 ### 4. Stamp, with an ID
