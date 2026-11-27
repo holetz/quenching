@@ -38,8 +38,8 @@ git merge-base HEAD <the other side>
 git log --oneline <merge-base>..HEAD -- <file>
 git log --oneline <merge-base>..<the other side> -- <file>
 ```
-Per conflicted file, read the commits that touched it on each side, then the spec that owns them:
-`cq specs find --commit <sha> --json` (or `--branch`, `--pr`) and its `## Proposal`/`## Design`.
+Per conflicted file, read the commits that touched it on each side, then the spec that owns them: the id in the commit subject (`plan/<id>-…`) or the branch name,
+read with `specs_read(verb="show", spec=<id>)` for its `## Proposal` and `## Design`.
 The intention is what the commit subjects, the PR and the spec say, never what the diff alone
 suggests. A side with no recoverable intention is stated as such. **Done when:** each conflicted
 file has the intention of both sides in one line, or the absence of one is stated.
