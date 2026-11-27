@@ -345,6 +345,11 @@ def _add_inspection(sub) -> None:
     sp.add_argument("--by-code", action="store_true", dest="by_code",
                     help="one line per (code, severity) with the count and the specs, "
                          "instead of one line per finding")
+    sp.add_argument("--full", action="store_true", dest="full",
+                    help="every finding of the whole store (default without --spec: "
+                         "the summary by code)")
+    sp.add_argument("--with-specs", action="store_true", dest="with_specs",
+                    help="the summary lists the affected specs per code in the JSON")
 
     add_json(sub.add_parser("config", help="the workspace's declared parameters, as data"))
 
