@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import sqlite3
 from datetime import datetime, timezone
 from pathlib import Path
@@ -29,7 +30,16 @@ COLD_SHARE = 0.5
 # A boundary needs this many requests in its bucket: one idle turn is not a cache lifetime.
 BOUNDARY_MIN = 10
 GAPS = ((2, "<2m"), (5, "2-5m"), (10, "5-10m"), (30, "10-30m"), (60, "30-60m"), (None, ">60m"))
+MIRROR_FLOOR = 1000
+MIRROR_SHARE = 0.8
+MIRROR_WINDOW = 60
 SKILL_KEY = "core/skill-guidance"
+# A spec runner is briefed with `Spec: <id>` and works on `plan/<id>-<handle>`.
+SPEC_SCAN = 60
+SPEC_RE = re.compile(r"(?:\bSpec:\s*#?|\bplan/)(\d+)\b")
+# Equivalent cost in input tokens: what a request weighs at the published 5-minute multipliers.
+EQ_READ = 0.1
+EQ_WRITE = 1.25
 # Claude Code records its own local notices as assistant turns; no model answered them.
 SYNTHETIC = "<synthetic>"
 
@@ -48,6 +58,7 @@ class Req(NamedTuple):
     write1h: int
     output: int
     host: str = ""
+    spec: str = ""
 
 
 def _host(path: Path) -> str:
@@ -68,6 +79,37 @@ def _host(path: Path) -> str:
     return ""
 
 
+def _claude_spec(path: Path) -> str:
+    """The spec a Claude Code transcript worked on: the branch it ran on, else its first prompt.
+
+    A subagent transcript inherits its parent session's spec. Only the id is taken, never content."""
+    try:
+        with path.open(encoding="utf-8", errors="replace") as fh:
+            for n, line in enumerate(fh):
+                if n >= SPEC_SCAN:
+                    break
+                try:
+                    rec = json.loads(line)
+                except ValueError:
+                    continue
+                if not isinstance(rec, dict):
+                    continue
+                found = SPEC_RE.search(str(rec.get("gitBranch") or ""))
+                if found is None and rec.get("type") == "user":
+                    msg = rec.get("message")
+                    content = msg.get("content") if isinstance(msg, dict) else None
+                    if isinstance(content, list):
+                        content = " ".join(str(b.get("text") or "") for b in content if isinstance(b, dict))
+                    found = SPEC_RE.search(content) if isinstance(content, str) else None
+                if found:
+                    return found[1]
+    except OSError:
+        pass
+    if path.parent.name == "subagents":
+        return _claude_spec(path.parent.parent.with_suffix(".jsonl"))
+    return ""
+
+
 def bare(agent: str) -> str:
     return agent.rsplit(":", 1)[-1].removeprefix("quenching-")
 
@@ -79,6 +121,7 @@ def bucket(minutes: float) -> str:
 def _claude_file(path: Path, role: str, agent: str, anomalies: list) -> list:
     out = []
     host = _host(path)
+    spec = _claude_spec(path)
     for model, usage, when, _ in _requests(path, anomalies).values():
         if model == SYNTHETIC:
             continue
@@ -87,7 +130,7 @@ def _claude_file(path: Path, role: str, agent: str, anomalies: list) -> list:
         out.append(Req("claude", str(path), role, agent, model, when, _n(usage, "input_tokens"),
                        _n(usage, "cache_read_input_tokens"), _n(usage, "cache_creation_input_tokens"),
                        _n(created, "ephemeral_5m_input_tokens"), _n(created, "ephemeral_1h_input_tokens"),
-                       _n(usage, "output_tokens"), host))
+                       _n(usage, "output_tokens"), host, spec))
     return out
 
 
@@ -186,6 +229,7 @@ def opencode_requests(path: Path, directory: Path | None, anomalies: list) -> tu
                               "message": "no OpenCode session tables this reader knows"})
             return [], []
         reqs = []
+        specs = _opencode_specs(db, tables, sessions)
         for table in kept:
             for sid, created, model, inp, read, write, output, reasoning in db.execute(QUERIES[table]):
                 if sid not in sessions or not _inside(sid, sessions, directory):
@@ -195,10 +239,30 @@ def opencode_requests(path: Path, directory: Path | None, anomalies: list) -> tu
                 reqs.append(Req("opencode", sid, "subagent" if parent else "main",
                                 bare(agent or "unknown") if parent else "main", model or "unknown", when,
                                 inp or 0, read or 0, write or 0, 0, 0, (output or 0) + (reasoning or 0),
-                                "opencode"))
+                                "opencode", specs.get(sid, "")))
         return reqs, _listings(db, tables, sessions, directory)
     finally:
         db.close()
+
+
+def _opencode_specs(db: sqlite3.Connection, tables: set, sessions: dict) -> dict:
+    """session id -> spec id, from the first user prompt; a subagent inherits its root's."""
+    own: dict = {}
+    if "session_message" in tables:
+        query = ("SELECT session_id, json_extract(data, '$.text') FROM session_message "
+                 "WHERE type = 'user' ORDER BY session_id, seq")
+        for sid, text in db.execute(query):
+            if sid not in own:
+                found = SPEC_RE.search(text) if isinstance(text, str) else None
+                own[sid] = found[1] if found else ""
+    out: dict = {}
+    for sid in sessions:
+        seen, cur = set(), sid
+        while cur in sessions and cur not in seen and not own.get(cur):
+            seen.add(cur)
+            cur = sessions[cur][0]
+        out[sid] = own.get(cur, "")
+    return out
 
 
 def _listings(db: sqlite3.Connection, tables: set, sessions: dict, directory: Path | None) -> list:
@@ -249,6 +313,35 @@ def copilot_requests(home: Path, directory: Path | None, anomalies: list) -> tup
     return reqs, anomalies
 
 
+def _fingerprint(r: Req) -> tuple:
+    return (r.input, r.read, r.write, r.output)
+
+
+def dedupe(reqs: list) -> tuple:
+    """Drop the Claude Code session that mirrors an OpenCode one, and say how much was dropped.
+
+    OpenCode running through the Claude harness writes each request into both stores with the same
+    token counts a few seconds apart. A Claude session is a mirror when at least `MIRROR_SHARE` of
+    its requests (those with `MIRROR_FLOOR` tokens of context or more) match an OpenCode request by
+    token tuple within `MIRROR_WINDOW` seconds. The OpenCode session stays: it names the agent."""
+    index: dict = {}
+    for r in reqs:
+        if r.harness == "opencode" and r.at is not None:
+            index.setdefault(_fingerprint(r), []).append(r.at)
+    claude: dict = {}
+    for r in reqs:
+        if r.harness == "claude" and _context(r) >= MIRROR_FLOOR:
+            claude.setdefault(r.session, []).append(r)
+    mirrors = set()
+    for session, own in claude.items():
+        hits = sum(1 for r in own if r.at is not None and any(
+            abs((at - r.at).total_seconds()) <= MIRROR_WINDOW for at in index.get(_fingerprint(r), ())))
+        if own and hits / len(own) >= MIRROR_SHARE:
+            mirrors.add(session)
+    kept = [r for r in reqs if not (r.harness == "claude" and r.session in mirrors)]
+    return kept, {"sessions": len(mirrors), "requests": len(reqs) - len(kept)}
+
+
 def _median(values: list) -> int | None:
     import statistics        # the config registry reaches this module; keep it off the import path
     return int(statistics.median(values)) if values else None
@@ -258,11 +351,69 @@ def _context(r: Req) -> int:
     return r.input + r.read + r.write
 
 
+def equivalent(input: int, read: int, write: int) -> int:
+    """Input-token equivalent of a request: `input + 0.1 x read + 1.25 x write`."""
+    return round(input + EQ_READ * read + EQ_WRITE * write)
+
+
+def by_spec(reqs: list) -> list:
+    """What each spec's sessions weighed, in the same equivalent tokens; sessions with no spec are left out."""
+    grouped: dict = {}
+    for r in reqs:
+        if not r.spec:
+            continue
+        row = grouped.setdefault(r.spec, {"spec": r.spec, "sessions": set(), "requests": 0, "input": 0,
+                                          "cacheRead": 0, "cacheWrite": 0, "output": 0})
+        row["sessions"].add((r.harness, r.session))
+        row["requests"] += 1
+        row["input"] += r.input
+        row["cacheRead"] += r.read
+        row["cacheWrite"] += r.write
+        row["output"] += r.output
+    out = []
+    for spec in sorted(grouped, key=int):
+        row = grouped[spec]
+        row["sessions"] = len(row["sessions"])
+        row["equivalent"] = equivalent(row["input"], row["cacheRead"], row["cacheWrite"])
+        out.append(row)
+    return out
+
+
 def request_usd(r: Req) -> float | None:
     """One request at list price; a cache write the record did not split prices at 5 minutes."""
     return pricing.usd(r.model, input=r.input, cache_read=r.read, write5m=r.write5m, write1h=r.write1h,
                        write_other=max(0, r.write - r.write5m - r.write1h), output=r.output,
                        prompt_tokens=_context(r))
+
+
+def prefix(own: list) -> int:
+    """The real prefix of a session: its first cache write, or the first request's input when none wrote."""
+    for r in own:
+        if r.write > 0:
+            return r.write
+    return own[0].input
+
+
+def write_split(own: list) -> tuple:
+    """(new, rewritten after expiry, rewritten under a changed prefix) cache-write tokens of a session.
+
+    What the previous request left cached (`read + write`) and this one did not read back is lost; a
+    write of that size is a rewrite, charged to expiry when the gap reached the 5-minute lifetime and
+    to a changed prefix otherwise. Anything beyond is new content, and the first write is all new."""
+    new = expired = changed = 0
+    for n, cur in enumerate(own):
+        if n == 0 or own[n - 1].at is None or cur.at is None:
+            new += cur.write
+            continue
+        prev = own[n - 1]
+        lost = max(0, prev.read + prev.write - cur.read)
+        rewrite = min(cur.write, lost)
+        new += cur.write - rewrite
+        if (cur.at - prev.at).total_seconds() >= 300:
+            expired += rewrite
+        else:
+            changed += rewrite
+    return new, expired, changed
 
 
 def summarize(reqs: list, priced: bool = False) -> tuple:
@@ -279,10 +430,16 @@ def summarize(reqs: list, priced: bool = False) -> tuple:
             "harness": harness, "host": head.host, "model": model, "role": head.role, "agent": head.agent,
             "sessions": 0, "requests": 0, "input": 0, "cacheRead": 0, "cacheWrite": 0, "write5m": 0,
             "write1h": 0, "output": 0, "readAfterGap5m": 0, "missedAfterGap5to60": 0,
-            "_first": [], "_peak": [], "_usd": 0.0, "_unpriced": False})
+            "writeNew": 0, "writeRewriteExpired": 0, "writeRewritePrefix": 0,
+            "_first": [], "_peak": [], "_prefix": [], "_usd": 0.0, "_unpriced": False})
         row["sessions"] += 1
         row["_first"].append(_context(head))
         row["_peak"].append(max(_context(r) for r in own))
+        row["_prefix"].append(prefix(own))
+        new, expired, changed = write_split(own)
+        row["writeNew"] += new
+        row["writeRewriteExpired"] += expired
+        row["writeRewritePrefix"] += changed
         for key, value in (("requests", len(own)), ("input", sum(r.input for r in own)),
                            ("cacheRead", sum(r.read for r in own)), ("cacheWrite", sum(r.write for r in own)),
                            ("write5m", sum(r.write5m for r in own)), ("write1h", sum(r.write1h for r in own)),
@@ -312,6 +469,7 @@ def summarize(reqs: list, priced: bool = False) -> tuple:
     for key in sorted(rows):
         row = rows[key]
         context = row["input"] + row["cacheRead"] + row["cacheWrite"]
+        row["equivalent"] = equivalent(row["input"], row["cacheRead"], row["cacheWrite"])
         row["hitRate"] = round(row["cacheRead"] / context, 4) if context else None
         mult = pricing.table()["cacheWrite"]
         # Cache-write cost in input-token equivalents: as recorded, and had every write used one TTL.
@@ -321,6 +479,7 @@ def summarize(reqs: list, priced: bool = False) -> tuple:
                       "writeAll1h": round(row["cacheWrite"] * mult["1h"])}
         row["firstRequestMedian"] = _median(row.pop("_first"))
         row["peakMedian"] = _median(row.pop("_peak"))
+        row["prefixMedian"] = _median(row.pop("_prefix"))
         spent, unpriced = row.pop("_usd"), row.pop("_unpriced")
         if priced:
             row["usd"] = None if unpriced else round(spent, 4)
@@ -374,11 +533,11 @@ def cmd_inflow(args, directory: Path | None, since: datetime | None) -> int:
         files, _, why = claude_files(directory)
         if why:
             unavailable["claude"] = why
-        for _, _, path in files:
+        for _, agent, path in files:
             if since is not None and datetime.fromtimestamp(path.stat().st_mtime, timezone.utc) < since:
                 continue
             calls, steps = inflow.claude_file(path, anomalies)
-            tally.add("claude", calls, steps)
+            tally.add("claude", calls, steps, agent)
     if args.harness in ("all", "opencode"):
         path = opencode_db(args.opencode_db)
         if not path.is_file():
@@ -390,8 +549,9 @@ def cmd_inflow(args, directory: Path | None, since: datetime | None) -> int:
                     sessions = _sessions(db, _tables(db))
                     keep = lambda sid: sid in sessions and _inside(sid, sessions, directory)  # noqa: E731
                     since_ms = int(since.timestamp() * 1000) if since else None
-                    for calls, steps in inflow.opencode_calls(db, keep, since_ms, anomalies).values():
-                        tally.add("opencode", calls, steps)
+                    for sid, (calls, steps) in inflow.opencode_calls(db, keep, since_ms, anomalies).items():
+                        parent, agent, _ = sessions[sid]
+                        tally.add("opencode", calls, steps, bare(agent or "unknown") if parent else "main")
                 finally:
                     db.close()
             except sqlite3.Error as exc:
@@ -405,9 +565,10 @@ def cmd_inflow(args, directory: Path | None, since: datetime | None) -> int:
     if args.json:
         print(json.dumps(out, indent=2, ensure_ascii=False))
         return FINDINGS if anomalies else OK
-    print(f"{'harness':<10}{'kind':<20}{'calls':>7}{'tokens':>10}{'reread':>13}  origin")
+    print(f"{'harness':<10}{'agent':<16}{'kind':<20}{'calls':>7}{'tokens':>10}{'reread':>13}  origin")
     for r in top:
-        print(f"{r['harness']:<10}{r['kind']:<20}{r['calls']:>7}{r['tokens']:>10}{r['reread']:>13}  {r['origin']}")
+        print(f"{r['harness']:<10}{r['agent'][:15]:<16}{r['kind']:<20}{r['calls']:>7}{r['tokens']:>10}"
+              f"{r['reread']:>13}  {r['origin']}")
     for name, why in unavailable.items():
         print(f"  ! {name} unavailable: {why}")
     return FINDINGS if anomalies else OK
@@ -457,6 +618,7 @@ def cmd_cache(args) -> int:
             unavailable["copilot"] = error.message
         except (OSError, sqlite3.Error) as exc:
             unavailable["copilot"] = f"{home}: {exc}"
+    reqs, dedup = dedupe(reqs)
     if since is not None:
         reqs = [r for r in reqs if r.at is not None and r.at >= since]
     session = getattr(args, "session", None)
@@ -468,24 +630,26 @@ def cmd_cache(args) -> int:
     priced = bool(getattr(args, "usd", False))
     rows, gaps, boundaries = summarize(reqs, priced)
     out = {"ok": True, "scope": str(directory) if directory else "all", "sources": sources,
-           "unavailable": unavailable, "rows": rows, "gaps": gaps, "boundaries": boundaries,
-           "skillListing": listing_summary(listings), "anomalies": anomalies}
+           "unavailable": unavailable, "dedup": dedup, "rows": rows, "gaps": gaps, "boundaries": boundaries,
+           "skillListing": listing_summary(listings), "bySpec": by_spec(reqs), "anomalies": anomalies}
     if priced:
         out["pricing"] = {"sourceDate": pricing.table()["sourceDate"], "basis": "list price estimate"}
     if args.json:
         print(json.dumps(out, indent=2, ensure_ascii=False))
         return FINDINGS if anomalies else OK
     print(f"{'harness':<10}{'host':<15}{'role':<10}{'agent':<18}{'model':<26}{'sess':>6}{'req':>8}{'hit':>7}"
-          f"{'first':>8}{'peak':>9}")
+          f"{'first':>8}{'peak':>9}{'prefix':>9}")
     for r in rows:
         print(f"{r['harness']:<10}{r['host'][:14]:<15}{r['role']:<10}{r['agent'][:17]:<18}{r['model'][-25:]:<26}{r['sessions']:>6}"
-              f"{r['requests']:>8}{(r['hitRate'] or 0):>7.1%}{r['firstRequestMedian']:>8}{r['peakMedian']:>9}")
+              f"{r['requests']:>8}{(r['hitRate'] or 0):>7.1%}{r['firstRequestMedian']:>8}{r['peakMedian']:>9}{r['prefixMedian']:>9}")
     print("\ncold requests by the gap before them (a model never sums into another):")
     for g in gaps:
         print(f"  {g['harness']:<10}{g['role']:<10}{g['model'][-25:]:<26}{g['gap']:<8}"
               f"{g['cold']:>6}/{g['requests']:<7}{g['coldRate']:>7.1%}")
     for b in boundaries:
         print(f"  boundary {b['harness']} {b['role']} {b['model'][-25:]}: cold from {b['coldFromGap'] or 'no gap measured'}")
+    for sp in out["bySpec"]:
+        print(f"  spec {sp['spec']:<8}{sp['sessions']:>4} sessions {sp['requests']:>7} req {sp['equivalent']:>12} equivalent tokens")
     for s in out["skillListing"]:
         print(f"  skills {s['role']} {s['agent']}: {s['entriesMedian']} entries, ~{s['tokensEstimate']} tokens always on")
     for name, why in unavailable.items():
