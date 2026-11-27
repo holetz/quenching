@@ -75,9 +75,9 @@ RETIRED_ROUTES: dict[str, str] = {
                      "security", "components")},
     "/quenching-components harness-align": "/quenching-align components",
     # Spec 677: the minting of a front's piece is a flow of the components router.
-    "/quenching-ops entrypoint-new": "/quenching-components entrypoint-new",
-    "/quenching-proof layer-new": "/quenching-components layer-new",
-    "/quenching-design genre-new": "/quenching-components genre-new",
+    **{f"/quenching-{front} {flow}": f"/quenching-components {flow}"
+       for front, flow in (("ops", "entrypoint-new"), ("proof", "layer-new"),
+                           ("design", "genre-new"))},
 }
 # Slash commands of the host that are no skill of any surface.
 HOST_SLASH_COMMANDS = frozenset({
