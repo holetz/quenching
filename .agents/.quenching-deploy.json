@@ -87,6 +87,12 @@
 
     ".agents/quenching/assets/bin/quenching/common/workspace.py": "source",
 
+    ".agents/quenching/assets/bin/quenching/components/bench.py": "source",
+
+    ".agents/quenching/assets/bin/quenching/components/bench_cycle.py": "source",
+
+    ".agents/quenching/assets/bin/quenching/components/commands/bench.py": "source",
+
     ".agents/quenching/assets/bin/quenching/components/commands/bridge.py": "source",
 
     ".agents/quenching/assets/bin/quenching/components/commands/cli.py": "source",
