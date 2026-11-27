@@ -258,6 +258,32 @@ class EquivalentCostTests(Fixture):
         self.assertEqual(by["641"]["sessions"], 2, "the root and its subagent")
 
 
+class WriteSplitTests(Fixture):
+    """A cache write is new content or a rewrite, and the prefix is the session's first write."""
+
+    def test_new_content_and_the_two_causes_of_a_rewrite(self):
+        project = self.projects / "-p"
+        project.mkdir(parents=True)
+        (project / "s1.jsonl").write_text("\n".join(json.dumps(r) for r in [
+            assistant("m1", "2026-10-01T10:00:00Z", write=10000),
+            assistant("m2", "2026-10-01T10:01:00Z", read=10000, write=500),
+            assistant("m3", "2026-10-01T10:12:00Z", write=10700),
+            assistant("m4", "2026-10-01T10:13:00Z", read=6000, write=5000)]) + "\n")
+        row = json.loads(run("--harness", "claude", "--all", "--json")[1])["rows"][0]
+        self.assertEqual((row["writeNew"], row["writeRewriteExpired"], row["writeRewritePrefix"]),
+                         (10000 + 500 + 200 + 300, 10500, 4700))
+        self.assertEqual(row["writeNew"] + row["writeRewriteExpired"] + row["writeRewritePrefix"],
+                         row["cacheWrite"], "the split loses no token")
+        self.assertEqual(row["prefixMedian"], 10000)
+
+    def test_a_session_that_never_wrote_has_its_first_input_as_prefix(self):
+        self.opencode()
+        data = json.loads(run("--harness", "opencode", "--opencode-db", str(self.db), "--directory", REPO,
+                              "--json")[1])
+        kid = next(r for r in data["rows"] if r["role"] == "subagent")
+        self.assertEqual((kid["prefixMedian"], kid["writeNew"]), (9000, 0))
+
+
 class SourcesTests(Fixture):
     def test_a_missing_store_does_not_hide_the_other(self):
         self.claude()

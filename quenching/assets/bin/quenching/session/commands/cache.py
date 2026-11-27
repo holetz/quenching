@@ -386,6 +386,36 @@ def request_usd(r: Req) -> float | None:
                        prompt_tokens=_context(r))
 
 
+def prefix(own: list) -> int:
+    """The real prefix of a session: its first cache write, or the first request's input when none wrote."""
+    for r in own:
+        if r.write > 0:
+            return r.write
+    return own[0].input
+
+
+def write_split(own: list) -> tuple:
+    """(new, rewritten after expiry, rewritten under a changed prefix) cache-write tokens of a session.
+
+    What the previous request left cached (`read + write`) and this one did not read back is lost; a
+    write of that size is a rewrite, charged to expiry when the gap reached the 5-minute lifetime and
+    to a changed prefix otherwise. Anything beyond is new content, and the first write is all new."""
+    new = expired = changed = 0
+    for n, cur in enumerate(own):
+        if n == 0 or own[n - 1].at is None or cur.at is None:
+            new += cur.write
+            continue
+        prev = own[n - 1]
+        lost = max(0, prev.read + prev.write - cur.read)
+        rewrite = min(cur.write, lost)
+        new += cur.write - rewrite
+        if (cur.at - prev.at).total_seconds() >= 300:
+            expired += rewrite
+        else:
+            changed += rewrite
+    return new, expired, changed
+
+
 def summarize(reqs: list, priced: bool = False) -> tuple:
     """Rows per harness/model/role/agent, gap histogram per harness/model/role, cold boundaries."""
     by_session: dict = {}
@@ -400,10 +430,16 @@ def summarize(reqs: list, priced: bool = False) -> tuple:
             "harness": harness, "host": head.host, "model": model, "role": head.role, "agent": head.agent,
             "sessions": 0, "requests": 0, "input": 0, "cacheRead": 0, "cacheWrite": 0, "write5m": 0,
             "write1h": 0, "output": 0, "readAfterGap5m": 0, "missedAfterGap5to60": 0,
-            "_first": [], "_peak": [], "_usd": 0.0, "_unpriced": False})
+            "writeNew": 0, "writeRewriteExpired": 0, "writeRewritePrefix": 0,
+            "_first": [], "_peak": [], "_prefix": [], "_usd": 0.0, "_unpriced": False})
         row["sessions"] += 1
         row["_first"].append(_context(head))
         row["_peak"].append(max(_context(r) for r in own))
+        row["_prefix"].append(prefix(own))
+        new, expired, changed = write_split(own)
+        row["writeNew"] += new
+        row["writeRewriteExpired"] += expired
+        row["writeRewritePrefix"] += changed
         for key, value in (("requests", len(own)), ("input", sum(r.input for r in own)),
                            ("cacheRead", sum(r.read for r in own)), ("cacheWrite", sum(r.write for r in own)),
                            ("write5m", sum(r.write5m for r in own)), ("write1h", sum(r.write1h for r in own)),
@@ -443,6 +479,7 @@ def summarize(reqs: list, priced: bool = False) -> tuple:
                       "writeAll1h": round(row["cacheWrite"] * mult["1h"])}
         row["firstRequestMedian"] = _median(row.pop("_first"))
         row["peakMedian"] = _median(row.pop("_peak"))
+        row["prefixMedian"] = _median(row.pop("_prefix"))
         spent, unpriced = row.pop("_usd"), row.pop("_unpriced")
         if priced:
             row["usd"] = None if unpriced else round(spent, 4)
@@ -599,10 +636,10 @@ def cmd_cache(args) -> int:
         print(json.dumps(out, indent=2, ensure_ascii=False))
         return FINDINGS if anomalies else OK
     print(f"{'harness':<10}{'host':<15}{'role':<10}{'agent':<18}{'model':<26}{'sess':>6}{'req':>8}{'hit':>7}"
-          f"{'first':>8}{'peak':>9}")
+          f"{'first':>8}{'peak':>9}{'prefix':>9}")
     for r in rows:
         print(f"{r['harness']:<10}{r['host'][:14]:<15}{r['role']:<10}{r['agent'][:17]:<18}{r['model'][-25:]:<26}{r['sessions']:>6}"
-              f"{r['requests']:>8}{(r['hitRate'] or 0):>7.1%}{r['firstRequestMedian']:>8}{r['peakMedian']:>9}")
+              f"{r['requests']:>8}{(r['hitRate'] or 0):>7.1%}{r['firstRequestMedian']:>8}{r['peakMedian']:>9}{r['prefixMedian']:>9}")
     print("\ncold requests by the gap before them (a model never sums into another):")
     for g in gaps:
         print(f"  {g['harness']:<10}{g['role']:<10}{g['model'][-25:]:<26}{g['gap']:<8}"
