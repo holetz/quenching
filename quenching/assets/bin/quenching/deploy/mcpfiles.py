@@ -376,8 +376,13 @@ def _block_ends(lines: list[str]) -> tuple[int, int] | None:
             break
     if start is None:
         return None
-    while end < len(lines) and not _TABLE.match(lines[end]):
-        end += 1
+    # The table ends at its last line of content: a comment or a blank line after it belongs to
+    # whatever follows, so the merge and the removal leave it where it is.
+    index = end
+    while index < len(lines) and not _TABLE.match(lines[index]):
+        if lines[index].strip() and not lines[index].lstrip().startswith("#"):
+            end = index + 1
+        index += 1
     return start, end
 
 
