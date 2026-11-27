@@ -8,6 +8,8 @@ from pathlib import Path
 import re
 import unittest
 
+from _flow import flow_text
+
 
 ROOT = Path(__file__).resolve().parents[2]
 SPECS = ROOT / "quenching/skills/quenching-specs/references"
@@ -45,7 +47,8 @@ class StageEndContractTests(unittest.TestCase):
     def test_each_stage_end_prints_the_line(self):
         for name in ("develop.md", "execute.md", "conclude.md"):
             with self.subTest(command=name):
-                self.assertIn("Print §The session-size line before the block", text(SPECS / name))
+                body = flow_text(SPECS / name) if name == "conclude.md" else text(SPECS / name)
+                self.assertIn("Print §The session-size line before the block", body)
 
     def test_execute_offer_recommends_a_new_session_over_budget(self):
         body = text(SPECS / "execute.md")

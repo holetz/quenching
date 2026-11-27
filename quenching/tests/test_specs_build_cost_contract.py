@@ -3,12 +3,15 @@ from pathlib import Path
 import re
 import unittest
 
+from _flow import flow_text
+
 
 PLUGIN = Path(__file__).resolve().parents[1]
 
 
 def prose(path):
-    return re.sub(r"\s+", " ", (PLUGIN / path).read_text(encoding="utf-8").replace("**", "").replace("`", ""))
+    raw = flow_text(PLUGIN / path) if path.endswith("conclude.md") else (PLUGIN / path).read_text(encoding="utf-8")
+    return re.sub(r"\s+", " ", raw.replace("**", "").replace("`", ""))
 
 
 class BuildSizeApproval(unittest.TestCase):

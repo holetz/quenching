@@ -26,6 +26,7 @@ from unittest import mock
 
 import _paths  # noqa: F401  — must precede the `quenching` import; see its docstring
 from _tools import fake_tool
+from _flow import flow_text
 from quenching.git.base import (_init_default_branch, _is_host_default, _origin_head_branch,
                                 resolve_base)
 from quenching.git.conventions import STANDARDS_DIR, _declared_docs
@@ -1568,7 +1569,7 @@ class Audit(RepoCase):
 
     def test_bodies_name_origin_base(self):
         for rel in ("agents/spec-verifier.md", "agents/spec-orchestrator.md", "skills/quenching-specs/references/conclude.md"):
-            text = (PLUGIN_ROOT / rel).read_text(encoding="utf-8")
+            text = flow_text(PLUGIN_ROOT / rel) if rel.endswith("conclude.md") else (PLUGIN_ROOT / rel).read_text(encoding="utf-8")
             self.assertIn("origin/<base>", text, rel)
         verifier = (PLUGIN_ROOT / "agents" / "spec-verifier.md").read_text(encoding="utf-8")
         self.assertIn("base=\"origin/<base>\"", verifier)
