@@ -151,9 +151,9 @@ class TheDisposableTarget(unittest.TestCase):
         self.assertEqual("present", skills["state"])
         # A disposable target authors no skill of its own: every skill it carries is generated,
         # written in `.agents/skills` and projected into `.claude/skills` (ADR 0022).
-        self.assertEqual(6, skills["source"]["count"])
+        self.assertEqual(5, skills["source"]["count"])
         self.assertEqual(skills["source"]["names"], skills["bridge"]["names"])
-        self.assertEqual(6, skills["bridge"]["count"])
+        self.assertEqual(5, skills["bridge"]["count"])
         self.assertEqual(skills["bridge"]["names"], skills["generated"]["names"])
         self.assertEqual([], skills["bridge"]["changes"])
 

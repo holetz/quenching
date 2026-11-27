@@ -1,4 +1,4 @@
-"""`/quenching-handoff` closes a session with a handoff the next one can actually find.
+"""`/quenching-specs handoff` closes a session with a handoff the next one can actually find.
 
 Three claims about the body, each silent when it goes false: it reads the facts and stores the
 handoff through `cq specs handoff` instead of a temp file, the grant admits exactly the verbs it
@@ -13,8 +13,8 @@ import unittest
 import _paths  # noqa: F401  — must precede the `quenching` import; see its docstring
 
 REPO = pathlib.Path(__file__).resolve().parents[2]
-BODY = REPO / "quenching/skills/quenching-handoff/SKILL.md"
-TEMPLATE = REPO / "quenching/skills/quenching-handoff/references/template.md"
+BODY = REPO / "quenching/skills/quenching-specs/references/handoff.md"
+TEMPLATE = REPO / "quenching/skills/quenching-specs/references/handoff/template.md"
 LOCATOR = re.compile(r"quenching:specs/artifacts/(?P<owner>[^/\s]+)/(?P<name>[\w.-]+\.md)")
 READ = re.compile(r"cq specs artifact read (?:--spec (?P<spec>\d+) )?--name (?P<name>[\w.-]+)")
 
@@ -59,7 +59,7 @@ class TheBodySendsTheHandoffThroughTheVerb(unittest.TestCase):
         self.assertIn("specs/artifacts/_handoffs/", self.text)   # the no-spec destination
 
     def test_it_follows_the_shared_template(self):
-        self.assertIn(".agents/skills/quenching-handoff/references/template.md", self.text)
+        self.assertIn(".agents/skills/quenching-specs/references/handoff/template.md", self.text)
         self.assertTrue(TEMPLATE.is_file())
 
     def test_it_never_invents_a_spec(self):

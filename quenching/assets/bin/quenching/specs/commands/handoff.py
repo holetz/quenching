@@ -1,6 +1,6 @@
 """`cq specs handoff`: the one handoff, with two doors.
 
-A session's handoff is written by whoever can afford it: `/quenching-handoff` when the chat's
+A session's handoff is written by whoever can afford it: `/quenching-specs handoff` when the chat's
 prompt cache is warm (the main model writes the judgement), and the `quenching-cache` plugin's
 `/quenching-cache handoff` when it has expired (Haiku writes it, and the expired chat is never
 resent). Both doors go through this verb, so both handoffs read the same and land in the same place.
@@ -14,7 +14,7 @@ when asked, and prints the direction block the next session starts from. A repos
 git specs store keeps it under `.quenching/handoff/` and says so: the fallback is stated, never
 silent, and any other refusal stays the failure it is.
 
-The section list the two doors write is `quenching/skills/quenching-handoff/references/template.md`.
+The section list the two doors write is `quenching/skills/quenching-specs/references/handoff/template.md`.
 """
 from __future__ import annotations
 

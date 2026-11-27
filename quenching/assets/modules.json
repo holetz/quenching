@@ -56,7 +56,6 @@
         "agents": true,
         "skills": [
           "quenching-specs",
-          "quenching-handoff",
           "quenching-align"
         ]
       },
