@@ -2,7 +2,7 @@
 type: standard
 title: Align surface — one align per front, probe first
 description: The aligned-front column — one align per local front carrying its content stages, the `security` and `git` pillars declared outside the conductor, the probe-before-inventory rule that makes a no-op align cost a couple of tool calls, the rule that no sweep records itself, and the conductor categories sharing the cycle-authorization contract — `/align` conducts the eight local fronts (`knowledge`, `design`, `components`, `ops`, `proof`, `toolchain`, `delivery`, `opensource`); none reimplements what it conducts
-resource: quenching/skills/quenching-align/SKILL.md, quenching/skills/quenching-knowledge/references/align.md, quenching/skills/quenching-design/references/align.md, quenching/skills/quenching-components/references/align.md, quenching/skills/quenching-ops/references/align.md, quenching/skills/quenching-proof/references/align.md, quenching/skills/quenching-toolchain/references/align.md, quenching/skills/quenching-delivery/references/align.md, quenching/skills/quenching-opensource/references/align.md, quenching/skills/quenching-security/references/status.md, quenching/assets/bin/quenching/design/**, quenching/assets/bin/quenching/git/**, quenching/assets/bin/quenching/toolchain/**, quenching/assets/bin/quenching/delivery/**, quenching/assets/bin/quenching/security/**, quenching/references/align/**, quenching/skills/quenching-proof/references/proof-align/**
+resource: quenching/skills/quenching-align/SKILL.md, quenching/references/knowledge-align/align.md, quenching/references/design-align/align.md, quenching/references/components-align/align.md, quenching/references/ops-align/align.md, quenching/references/proof-align/align.md, quenching/references/toolchain-align/align.md, quenching/references/delivery-align/align.md, quenching/references/opensource-align/align.md, quenching/references/security-align/status.md, quenching/assets/bin/quenching/design/**, quenching/assets/bin/quenching/git/**, quenching/assets/bin/quenching/toolchain/**, quenching/assets/bin/quenching/delivery/**, quenching/assets/bin/quenching/security/**, quenching/references/align/**, quenching/references/proof-align/**
 tags: [architecture, aligns, commands, probe, convergence]
 timestamp: 2026-08-31
 audience: both
@@ -88,15 +88,15 @@ conductor boundary; it does not transfer ownership between toolchain, delivery o
 
 | Front | Command |
 | --- | --- |
-| `/docs/` | `/quenching-knowledge align` |
+| `/docs/` | `/quenching-align knowledge` |
 | `/.specs/` | **none** — see §The specs front lost its align with its backend, below |
-| `/.design/` | `/quenching-design align` |
-| `.claude/` | `/quenching-components align` |
-| `ops` | `/quenching-ops align` |
-| `proof` | `/quenching-proof align` |
-| `toolchain` | `/quenching-toolchain align` |
-| `delivery` | `/quenching-delivery align` |
-| `opensource` | `/quenching-opensource align` |
+| `/.design/` | `/quenching-align design` |
+| `.claude/` | `/quenching-align components` |
+| `ops` | `/quenching-align ops` |
+| `proof` | `/quenching-align proof` |
+| `toolchain` | `/quenching-align toolchain` |
+| `delivery` | `/quenching-align delivery` |
+| `opensource` | `/quenching-align opensource` |
 | `security` | **none** — read-only pillar; see §The security subject is pillar-shaped, above |
 | `git` | **none** — see §The git pillar has no align, below |
 | all eight aligned fronts | `/align` — conducts them in dependency order, on one nested OK |
@@ -153,7 +153,7 @@ human's own word, per that command's own doctrine — never something an align s
 because deleting a branch is exactly the kind of irreversible action the align surface otherwise
 conducts only through a stage's own gate.
 
-The two real loops survive where the looping is real: `/quenching-knowledge align` keeps its
+The two real loops survive where the looping is real: `/quenching-align knowledge` keeps its
 internal fixpoint (memory → harness → glossary feed each other), and `/align` keeps the
 cross-front pass, because the eight aligned fronts feed each other (the design front's standards,
 the components front's registry, the ops front's inventory and registry, the proof front's gate,
@@ -167,11 +167,11 @@ themselves are this file's own, below.
 ### The proof front has its own align
 
 The proof front now has a local tree to converge: the target's declared test root, gate, measured
-surfaces, fixtures, layers, and CI evidence. `/quenching-proof align` probes `cq proof doctor`
+surfaces, fixtures, layers, and CI evidence. `/quenching-align proof` probes `cq proof doctor`
 before reading that tree, applies only bounded structural repairs, and reports layer taxonomy,
 measurement scope, CI installation, and operations-entry-point coverage to the target owner. Its
 floor-deferral rule keeps a new coverage promise from being written while the measured surface is
-still changing; `/quenching-proof status` remains the read-only view.
+still changing; `/quenching-align status proof` remains the read-only view.
 
 ## The conductor categories
 
@@ -210,7 +210,7 @@ case is what permits an align to carry its front's content stages at all, instea
 living in a separate command nobody invokes.
 
 **A stage the probe cannot price is offered, never run to find out.** The standing example is the
-whole-bundle glossary sweep in `/quenching-knowledge align`: no cheap signal exists, so it is gated on a free
+whole-bundle glossary sweep in `/quenching-align knowledge`: no cheap signal exists, so it is gated on a free
 proxy (doc count against glossary size) and offered with its cost stated, never entered
 automatically.
 

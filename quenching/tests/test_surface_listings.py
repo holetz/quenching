@@ -35,6 +35,11 @@ def _commands_on_disk() -> set[str]:
     for skill in discover_skills(str(SKILLS)):
         found.add(skill["command"])
         found.update(f"{skill['command']} {flow}" for flow in router_flows(skill))
+    # Since spec 676 a front is an argument of the align conductor, not a router of its own.
+    for front in ("knowledge", "components", "design", "ops", "proof", "toolchain",
+                  "delivery", "opensource", "security"):
+        if front != "security":  # the security front has no align, only status
+            found.add(f"/quenching-align {front}")
     return found
 
 
@@ -92,16 +97,18 @@ class ManifestSurfaceTests(unittest.TestCase):
     def test_manifest_projection_covers_each_namespace_derived_from_the_surface(self):
         commands = _commands_on_disk()
         expected = {
-            "knowledge": 14,
+            "knowledge": 13,
             "specs": 11,
-            "design": 4,
-            "components": 9,
-            "ops": 4,
-            "proof": 4,
-            "toolchain": 3,
-            "delivery": 3,
-            "security": 2,
+            "components": 6,
             "git": 12,
+            # The fronts are arguments of `/quenching-align` since spec 676: no skill of their own.
+            "design": 0,
+            "ops": 0,
+            "proof": 0,
+            "toolchain": 0,
+            "delivery": 0,
+            "security": 0,
+            "opensource": 0,
         }
         actual = {
             namespace: sum(command == f"/quenching-{namespace}" or command.startswith(f"/quenching-{namespace}-")

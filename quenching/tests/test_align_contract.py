@@ -19,7 +19,7 @@ FIXTURE_REFERENCES = "/".join(("quenching", "references"))
 
 class KnowledgeAlignmentContract(unittest.TestCase):
     def test_align_preflights_evidence_and_classifies_residuals(self):
-        align = (ROOT / "skills" / "quenching-knowledge" / "references" / "align.md").read_text(encoding="utf-8")
+        align = (ROOT / "references" / "knowledge-align" / "align.md").read_text(encoding="utf-8")
 
         for marker in (
             "preflight",
@@ -37,7 +37,7 @@ class KnowledgeAlignmentContract(unittest.TestCase):
         self.assertLess(preflight, inventory)
 
     def test_align_convergence_order_is_explicit(self):
-        align = (ROOT / "skills" / "quenching-knowledge" / "references" / "align.md").read_text(encoding="utf-8")
+        align = (ROOT / "references" / "knowledge-align" / "align.md").read_text(encoding="utf-8")
         verify = align.split("### 8. Verify, then decide: loop or stop", 1)[1].split(
             "### 9. Report", 1
         )[0]
@@ -54,7 +54,7 @@ class KnowledgeAlignmentContract(unittest.TestCase):
         self.assertIn("--glossary-term", verify)
 
     def test_align_asks_per_family_and_applies_the_router(self):
-        align = (ROOT / "skills" / "quenching-components" / "references" / "align.md").read_text(encoding="utf-8")
+        align = (ROOT / "references" / "components-align" / "align.md").read_text(encoding="utf-8")
         doctrine = (
             ROOT / "references" / "components-command-new" / "doctrine.md"
         ).read_text(encoding="utf-8")
@@ -113,12 +113,12 @@ class KnowledgeAlignmentContract(unittest.TestCase):
         self.assertEqual([front for front, _, _ in parsed], declared_order)
         for index, (front, route, dependency) in enumerate(parsed):
             with self.subTest(front=front):
-                self.assertEqual(route, f"/quenching-{front} align")
+                self.assertEqual(route, f".agents/quenching/references/{front}-align/align.md")
                 self.assertEqual(dependency, "applicability" if index == 0 else parsed[index - 1][0])
 
-        self.assertIn(".agents/skills/quenching-<front>/references/align.md", align)
+        self.assertIn(".agents/quenching/references/<front>-align/align.md", align)
         for front, _, _ in parsed:
-            self.assertTrue((ROOT / "skills" / f"quenching-{front}" / "references" / "align.md").is_file(), front)
+            self.assertTrue((ROOT / "references" / f"{front}-align" / "align.md").is_file(), front)
         workflow = align.split("## Workflow", 1)[1].split("## Invariants", 1)[0]
         stage_positions = [workflow.index(f"### Front: `{front}`") for front, _, _ in parsed]
         self.assertEqual(stage_positions, sorted(stage_positions))
@@ -198,9 +198,9 @@ class KnowledgeAlignmentContract(unittest.TestCase):
 
     def test_citation_check_rejects_unknown_section_addresses(self):
         result = self._citation_check({
-            "quenching/skills/quenching-knowledge/references/align.md": (
-                "/quenching-knowledge align\n"
-                "`quenching/skills/quenching-knowledge/references/align.md`\n"
+            "quenching/skills/quenching-knowledge/references/status.md": (
+                "/quenching-knowledge status\n"
+                "`quenching/skills/quenching-knowledge/references/status.md`\n"
                 "[reference.md](../../../references/reference.md) §Inexistente\n"
             ),
             f"{FIXTURE_REFERENCES}/reference.md": "# Reference\n\n## Existing\n",
@@ -213,8 +213,8 @@ class KnowledgeAlignmentContract(unittest.TestCase):
     def test_citation_check_rejects_missing_plugin_root_paths(self):
         missing_path = ".agents/quenching/references/" + "missing.md"
         result = self._citation_check({
-            "quenching/skills/quenching-knowledge/references/align.md": (
-                "/quenching-knowledge align\n"
+            "quenching/skills/quenching-knowledge/references/status.md": (
+                "/quenching-knowledge status\n"
                 f"`{missing_path}`\n"
                 "[reference.md](../../../references/reference.md) §Existing\n"
             ),
@@ -230,11 +230,11 @@ class KnowledgeAlignmentContract(unittest.TestCase):
         # resolving nothing used to skip the marker in silence, so a dead section passed green.
         # The bundle path is assembled so this file does not itself cite a standard that is absent.
         standard = "docs/standards/naming/" + "surface.md"
-        citing = "quenching/skills/quenching-knowledge/references/align.md"
+        citing = "quenching/skills/quenching-knowledge/references/status.md"
         files = {
             citing: (
-                "/quenching-knowledge align\n"
-                "`quenching/skills/quenching-knowledge/references/align.md`\n"
+                "/quenching-knowledge status\n"
+                "`quenching/skills/quenching-knowledge/references/status.md`\n"
                 "(`naming/surface.md` §Three forms) ends here.\n"
             ),
             standard: "# Surface\n\n## Two forms, and the condition\n",

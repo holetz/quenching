@@ -17,7 +17,7 @@ home boundaries and the `documentation` type live in
 [knowledge-align/taxonomy.md](.agents/quenching/references/knowledge-align/taxonomy.md) and
 [knowledge-add/homes.md](.agents/quenching/references/knowledge-add/homes.md).
 
-`/quenching-knowledge align` step 7 offers the **first** install; every later install, update and
+`/quenching-align knowledge` step 7 offers the **first** install; every later install, update and
 re-verification is **this** skill.
 
 ## Doctrine
@@ -76,7 +76,7 @@ re-verification is **this** skill.
   conversion as its **own** confirmation item, and never stamp a second config beside a live one.
 - **Report page-level drift; never fix it here.** A section with no `index.md`, a page with no
   frontmatter, an absolute `/docs/<other-home>/…` link that cannot resolve in a site rooted at
-  another home — each is **reported** with the command that closes it (`/quenching-knowledge align`,
+  another home — each is **reported** with the command that closes it (`/quenching-align knowledge`,
   `/quenching-knowledge add`), never repaired by this skill.
 - **The build is verification, not a deliverable.** `zensical build --strict` reads the generated
   bounded `site-source/` input and writes to the gitignored `site_dir`
@@ -123,7 +123,7 @@ the plugin cannot enumerate.
 | `site-nav-stale` | the `nav` names an entry that does not exist, or omits a page the home has | **FIX** — regenerate the list, keep every human title |
 | `site-feature-absent` | `navigation.indexes` missing while sections use `index.md` as landing page | **FIX** — add to `theme.features` |
 | `site-extension-absent` | a page uses a component syntax whose Markdown extension or Mermaid fence is absent | **FIX** — add the extension in the site layer |
-| `site-extra-css-absent` | pages use `.q-badge`/`.q-hero`/card styling but `extra_css` or the CSS asset is absent | **FIX** — stamp the CSS and connect `extra_css` |
+| `site-extra-css-absent` | pages use `.q-badge`, `.q-hero` or card styling but `extra_css` or the CSS asset is absent | **FIX** — stamp the CSS and connect `extra_css` |
 | `site-requirements-absent` | no supported pin exists in `pyproject.toml`/`uv.lock` or `requirements.txt` | **FIX** — write or merge exactly one source |
 | `site-dependency-source-duplicate` | `zensical` is independently pinned in `pyproject.toml` and `requirements.txt` | **REPORT** the conflict; preserve the target's chosen source and remove only with its confirmation |
 | `site-uv-lock-stale` | `uv.lock` does not resolve the current `pyproject.toml` | **FIX** — run `uv lock`, never hand-edit the lock |
@@ -132,9 +132,9 @@ the plugin cannot enumerate.
 | `site-artifacts-tracked` | `site/` not gitignored (or already tracked) | **FIX** the gitignore; a tracked build is **REPORTED** for the human to remove |
 | `site-scratch-tracked` | `.quenching/` not gitignored — the family's plan-of-record would land in the human's next commit | **FIX** the gitignore; an already-tracked plan is **REPORTED** for the human to remove |
 | `site-source-tracked` | generated bounded `site-source/` is not gitignored (or is already tracked) | **FIX** the gitignore; an already-tracked generated source is **REPORTED** for the human to remove |
-| `site-section-no-index` | a section folder with no `index.md` (breaks `navigation.indexes` *and* the OKF listing rule) | **REPORT** → `/quenching-knowledge align` |
+| `site-section-no-index` | a section folder with no `index.md` (breaks `navigation.indexes` *and* the OKF listing rule) | **REPORT** → `/quenching-align knowledge` |
 | `site-link-escapes` | a page links an exposed home by an internal bundle path instead of its mapped route | **REPORT** → `/quenching-knowledge documentation-write` |
-| `site-page-unstamped` | a page in a reader-facing quadrant with no `type` matching its home | **REPORT** → `/quenching-knowledge align` |
+| `site-page-unstamped` | a page in a reader-facing quadrant with no `type` matching its home | **REPORT** → `/quenching-align knowledge` |
 | `site-ci-absent` | no `.github/workflows/docs.yml` | **REPORT**; install only on request (own confirmation — platform-specific) |
 | `site-azure-payload-available` | Azure DevOps remote has no documented opt-in pipeline payload | **OFFER** `azure-pipelines-docs.yml` under its own confirmation; never overwrite an existing pipeline |
 | `site-capability-prerequisite-missing` | an enabled capability lacks its declared prerequisite or fixture | **REPORT** and leave it disabled; do not guess support |
@@ -164,9 +164,9 @@ Never choose a runner from `PATH` alone when a project-managed runner is availab
 
 ### 1. Preflight — the bundle and the home
 Confirm `/docs/index.md` carries `okf_version`. **No bundle → stop** and offer
-`/quenching-knowledge align` first; there is nothing to render. Bundle
+`/quenching-align knowledge` first; there is nothing to render. Bundle
 but **no reader-facing quadrant** (`tutorials/`, `how-to/`, `documentation/`, `project/`) → stop and
-offer `/quenching-knowledge align`; never scaffold a home here.
+offer `/quenching-align knowledge`; never scaffold a home here.
 **Done when:** the bundle and documentation home are confirmed, or the handoff is reported.
 
 ### 2. Inventory the site layer (read-only)
@@ -326,4 +326,4 @@ and its result. **Done when:** every fixed/reported finding, build status, and r
   generator-neutral.
 - Never run `zensical serve` and never commit the built `site/`.
 - Never report a site as building when no build ran — an unverified run says `unverified`.
-- Never scaffold the bundle, a home, or a missing `index.md` here → `/quenching-knowledge align`.
+- Never scaffold the bundle, a home, or a missing `index.md` here → `/quenching-align knowledge`.

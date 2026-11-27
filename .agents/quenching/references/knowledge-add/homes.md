@@ -105,7 +105,7 @@ contract is [sources.md](.agents/quenching/references/knowledge-import/sources.m
   listing) and link it from the parent — a folder of concepts without one is a `dir-no-index`
   gap, and an unlisted doc is an `index-orphan`.
 - **Never** add frontmatter to an `index.md` (the root's `okf_version` is the only exception,
-  and `/quenching-knowledge align` owns it).
+  and `/quenching-align knowledge` owns it).
 - **`standards/index.md`** has a DERIVED zone: rebuild only what is between
   `<!-- BEGIN GENERATED -->` / `<!-- END GENERATED -->` by scanning `standards/**/*.md`
   (`title`/`description`/`generated.at` or legacy `timestamp`/`type`), grouped by subject

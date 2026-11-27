@@ -75,7 +75,7 @@ editing the doc updates neither.
 | Consumer | How it is maintained | What a stale copy looks like |
 | --- | --- | --- |
 | the home's `index.md` (e.g. `standards/automation/index.md`) | by hand, usually a shortened form | a row that summarises a rule the doc no longer states |
-| the GENERATED zone of `standards/index.md` | verbatim, rebuilt only by `/quenching-knowledge align` | the previous `description`, word for word, until a sweep runs |
+| the GENERATED zone of `standards/index.md` | verbatim, rebuilt only by `/quenching-align knowledge` | the previous `description`, word for word, until a sweep runs |
 
 Neither is caught by `cq knowledge validate` — an out-of-date listing is a well-formed listing.
 Measured on `revisar-fluxo-do-develop-custo-e-gates` (2026-08-16), whose task 1.1 rewrote

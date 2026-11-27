@@ -179,7 +179,8 @@
           "specs-conclude",
           "specs-develop",
           "specs-execute",
-          "front-align"
+          "front-align",
+          "components-align"
         ],
         "router": true
       }
@@ -191,9 +192,7 @@
           "design"
         ],
         "agents": false,
-        "skills": [
-          "quenching-design"
-        ]
+        "skills": []
       },
       "generatedSupport": {
         "packages": [
@@ -210,7 +209,8 @@
           "specs-conclude",
           "specs-develop",
           "specs-execute",
-          "front-align"
+          "front-align",
+          "design-align"
         ],
         "router": true
       }
@@ -222,9 +222,7 @@
           "ops"
         ],
         "agents": false,
-        "skills": [
-          "quenching-ops"
-        ]
+        "skills": []
       },
       "generatedSupport": {
         "packages": [
@@ -241,7 +239,8 @@
           "specs-conclude",
           "specs-develop",
           "specs-execute",
-          "front-align"
+          "front-align",
+          "ops-align"
         ],
         "router": true
       }
@@ -253,9 +252,7 @@
           "proof"
         ],
         "agents": false,
-        "skills": [
-          "quenching-proof"
-        ]
+        "skills": []
       },
       "generatedSupport": {
         "packages": [
@@ -274,7 +271,8 @@
           "specs-conclude",
           "specs-develop",
           "specs-execute",
-          "front-align"
+          "front-align",
+          "proof-align"
         ],
         "router": true
       }
@@ -286,9 +284,7 @@
           "toolchain"
         ],
         "agents": false,
-        "skills": [
-          "quenching-toolchain"
-        ]
+        "skills": []
       },
       "generatedSupport": {
         "packages": [
@@ -306,7 +302,8 @@
           "specs-conclude",
           "specs-develop",
           "specs-execute",
-          "front-align"
+          "front-align",
+          "toolchain-align"
         ],
         "router": true
       }
@@ -318,9 +315,7 @@
           "delivery"
         ],
         "agents": false,
-        "skills": [
-          "quenching-delivery"
-        ]
+        "skills": []
       },
       "generatedSupport": {
         "packages": [
@@ -338,7 +333,8 @@
           "specs-conclude",
           "specs-develop",
           "specs-execute",
-          "front-align"
+          "front-align",
+          "delivery-align"
         ],
         "router": true
       }
@@ -350,9 +346,7 @@
           "opensource"
         ],
         "agents": false,
-        "skills": [
-          "quenching-opensource"
-        ]
+        "skills": []
       },
       "generatedSupport": {
         "packages": [
@@ -370,7 +364,8 @@
           "specs-conclude",
           "specs-develop",
           "specs-execute",
-          "front-align"
+          "front-align",
+          "opensource-align"
         ],
         "router": true
       }
@@ -382,9 +377,7 @@
           "security"
         ],
         "agents": false,
-        "skills": [
-          "quenching-security"
-        ]
+        "skills": []
       },
       "generatedSupport": {
         "packages": [
@@ -401,7 +394,8 @@
           "specs-align",
           "specs-conclude",
           "specs-develop",
-          "specs-execute"
+          "specs-execute",
+          "security-align"
         ],
         "router": true
       }

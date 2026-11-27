@@ -65,7 +65,16 @@ ROUTE_CITATION_RE = re.compile(
     r"(?:`|→ )/([a-z][a-z0-9]*(?:-[a-z0-9]+)*)(?: ([a-z][a-z0-9-]*))?(?=[`\s,;)]|$)")
 # Old route → the route that replaced it. Data, never inferred: the specs that retire a router add
 # their line here, so the message names the fix and the usage of the old name counts for the new.
-RETIRED_ROUTES: dict[str, str] = {}
+RETIRED_ROUTES: dict[str, str] = {
+    # Spec 676: a front is an argument of the align, not a skill of its own.
+    **{f"/quenching-{front} align": f"/quenching-align {front}"
+       for front in ("design", "ops", "proof", "toolchain", "delivery", "opensource",
+                     "knowledge", "components")},
+    **{f"/quenching-{front} status": f"/quenching-align status {front}"
+       for front in ("design", "ops", "proof", "toolchain", "delivery", "opensource",
+                     "security", "components")},
+    "/quenching-components harness-align": "/quenching-align components",
+}
 # Slash commands of the host that are no skill of any surface.
 HOST_SLASH_COMMANDS = frozenset({
     "clear", "compact", "help", "model", "init", "config", "review", "memory", "agents", "mcp",

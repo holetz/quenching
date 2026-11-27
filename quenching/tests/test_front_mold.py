@@ -91,13 +91,13 @@ class FrontMoldContract(unittest.TestCase):
         order = CONDUCTOR.read_text(encoding="utf-8")
         execution = order.split("## Execution order", 1)[1].split("## Workflow", 1)[0]
         expected = {
-            "knowledge": "/quenching-knowledge align",
-            "design": "/quenching-design align",
-            "components": "/quenching-components align",
-            "ops": "/quenching-ops align",
-            "proof": "/quenching-proof align",
-            "toolchain": "/quenching-toolchain align",
-            "delivery": "/quenching-delivery align",
+            "knowledge": ".agents/quenching/references/knowledge-align/align.md",
+            "design": ".agents/quenching/references/design-align/align.md",
+            "components": ".agents/quenching/references/components-align/align.md",
+            "ops": ".agents/quenching/references/ops-align/align.md",
+            "proof": ".agents/quenching/references/proof-align/align.md",
+            "toolchain": ".agents/quenching/references/toolchain-align/align.md",
+            "delivery": ".agents/quenching/references/delivery-align/align.md",
         }
         for front, route in expected.items():
             with self.subTest(front=front):

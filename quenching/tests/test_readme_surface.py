@@ -33,7 +33,7 @@ INVOCABLE = re.compile(r"`(/[a-z][a-z:-]*)`")
 
 
 def _commands_on_disk() -> set[str]:
-    """`skills/quenching-design/SKILL.md` is `/quenching-design` — the folder IS the
+    """`skills/quenching-align/SKILL.md` is `/quenching-align` — the folder IS the
     identity. A router's flows live in its `references/` and are rows of the router, not skills."""
     return {"/" + path.parent.name for path in SKILLS.glob("*/SKILL.md")}
 
@@ -59,12 +59,6 @@ class ReadmeManualMatchesTheSurface(unittest.TestCase):
                          "the manual's displayed count differs from the command surface")
         self.assertEqual(on_disk - listed, set(), "commands on disk the README manual never lists")
         self.assertEqual(listed - on_disk, set(), "commands the README manual names that do not exist")
-
-        span = _manual_span(manual)
-        for front, flows in (("ops", {"align", "status", "entrypoint-new"}),
-                             ("proof", {"align", "status", "layer-new"})):
-            cited = set(re.findall(rf"`/quenching-{front} ([a-z-]+)`", span))
-            self.assertEqual(cited, flows, f"the manual's rows for the {front} router")
 
     def test_the_check_can_fail(self):
         """A green that could not go red is not evidence — so prove this one discriminates.

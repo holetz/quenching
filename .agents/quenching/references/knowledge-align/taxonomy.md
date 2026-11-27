@@ -1,6 +1,6 @@
 # Canonical taxonomy — the tree, homes, `type` vocabulary, boundaries
 
-The single source of the tree `/quenching-knowledge align` installs and `/quenching-knowledge add` files into. Every repo
+The single source of the tree `/quenching-align knowledge` installs and `/quenching-knowledge add` files into. Every repo
 **converges to this same tree of identical names**; a variant name is a non-convergence smell
 (→ [migration.md](.agents/quenching/references/knowledge-align/migration.md)).
 
@@ -105,7 +105,7 @@ computation is generic knowledge with an executable contract, not a home of its 
   `standards/` and leaves. Ships **one fixed file** — the bundle-root `glossary.md`, the repo's
   A–Z term lookup (a flat, alphabetically sorted bullet list in the same syntax every `index.md`
   uses — the one deliberate exception to "one concept per file", and the one place an
-  unlinked entry is a valid permanent state). `/quenching-knowledge align` installs the seed.
+  unlinked entry is a valid permanent state). `/quenching-align knowledge` installs the seed.
 - **`external/`** — external facts we consume (`type: external`, usually
   `authority: background`); a regulation's PDF lives here via a **sidecar**, while *our*
   implementation of it lives in `standards/`.

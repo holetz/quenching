@@ -7,9 +7,9 @@ allowed-tools: Bash(cq:*), Bash(cq.cmd:*), Read, Grep, Glob, Write, Edit, AskUse
 **Input**: `$ARGUMENTS` (the piece of information to file — a standard, catalog table, announcement, external asset, …).
 
 Files one new piece of knowledge into the canonical OKF bundle so it lands in the right home
-with a complete stamp. Assumes the bundle already exists (run `/quenching-knowledge align` first if not).
+with a complete stamp. Assumes the bundle already exists (run `/quenching-align knowledge` first if not).
 The routing table and procedure are in [knowledge-add/homes.md](.agents/quenching/references/knowledge-add/homes.md). The home boundaries, `type`
-vocabulary, and conformance rules are shared with `/quenching-knowledge align`
+vocabulary, and conformance rules are shared with `/quenching-align knowledge`
 (`.agents/quenching/references/knowledge-align/taxonomy.md`,
 `.agents/quenching/references/knowledge-align/conformance.md`).
 

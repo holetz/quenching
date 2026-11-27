@@ -86,13 +86,13 @@ The status commands are intended as read-only views, and their declared tool gra
 
 ```text
 /quenching-knowledge status
-/quenching-design status
+/quenching-align status design
 /quenching-specs status
-/quenching-ops status
-/quenching-proof status
-/quenching-toolchain status
-/quenching-delivery status
-/quenching-security status
+/quenching-align status ops
+/quenching-align status proof
+/quenching-align status toolchain
+/quenching-align status delivery
+/quenching-align status security
 ```
 
 These reports cover the seven aligned fronts, provider-owned specs and the read-only security

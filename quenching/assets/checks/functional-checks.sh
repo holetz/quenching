@@ -490,8 +490,8 @@ copy it from the body you were given." \
     inconc "$command loaded from the deployed payload" "missing tool activity or verifiable skill inventory"
   fi
 }
-front_probe ops "/quenching-ops status"
-front_probe proof "/quenching-proof status"
+front_probe ops "/quenching-align status ops"
+front_probe proof "/quenching-align status proof"
 fi
 
 # --------------------------------------------------------------------------- #

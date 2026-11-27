@@ -215,6 +215,21 @@ def _packages(selected: list[dict]) -> list[str]:
     return packages
 
 
+def _reference_folders(source: Path, manifest: dict, selected: list[dict]) -> list[str]:
+    """The `references/` entries this deploy publishes: a file at the top, and a folder that no module
+    lists or that a selected module lists in `generatedSupport.references`. A front's text
+    (`<front>-align/`) is listed by its own module only, so a front not installed carries none."""
+    root = source / "references"
+    if not root.is_dir():
+        return []
+    listed = {ref for module in manifest["modules"]
+              for ref in module.get("generatedSupport", {}).get("references", [])}
+    wanted = {ref for module in selected
+              for ref in module.get("generatedSupport", {}).get("references", [])}
+    return ["references/" + path.name for path in sorted(root.iterdir())
+            if not path.is_dir() or path.name not in listed or path.name in wanted]
+
+
 def _agents(source: Path) -> dict[str, Path]:
     return {path.stem: path for path in sorted((source / "agents").glob("*.md"))}
 
@@ -222,7 +237,7 @@ def _agents(source: Path) -> dict[str, Path]:
 def _agents_md(target: Path, dirs: tuple[str, ...]) -> str:
     docs = target / "docs" / "index.md"
     knowledge = ("- Durable knowledge: [`docs/index.md`](docs/index.md).\n" if docs.is_file()
-                 else "- Durable knowledge: run `/quenching-knowledge align` to install the "
+                 else "- Durable knowledge: run `/quenching-align knowledge` to install the "
                       "`/docs/` bundle.\n")
     if CLAUDE_SKILLS in dirs:
         skills = "- Skills: `.agents/skills/` (source) and `.claude/skills/` (generated copy).\n"
@@ -250,7 +265,7 @@ def _seed_config(target: Path, profiles: list[str]) -> str:
     from quenching.config.seed import seed_document
     document = seed_document(str(target))
     # Deploy installs the surface; it does not choose a specs backend. The target's own
-    # `/quenching-knowledge align` (or `cq doctor --setup`) records that decision.
+    # `/quenching-align knowledge` (or `cq doctor --setup`) records that decision.
     document.pop("backend", None)
     shared = document.setdefault("shared", {})
     shared["profiles"] = {"installed": profiles}
@@ -506,7 +521,10 @@ def build_tree(source: Path, target: Path, modules: list[str], harnesses: list[s
         _add(tree, PAYLOAD + "/bin/cq.cmd", _VENDOR_CMD.encode(), 0o644)
     _add_tree(tree, source, "assets/modules.json")
     _add_tree(tree, source, "VERSION")
-    whole("references", translate.reference_document)
+    for rel in _reference_folders(source, manifest, selected):
+        _add_tree(tree, source, rel, translate.reference_document)
+    if (source / "references").is_dir():
+        sweep.append(PAYLOAD + "/references")
     whole("assets/templates", translate.reference_document)
     whole("assets/translation")
     # The identity hooks: inert until a clone points `core.hooksPath` at them.

@@ -193,7 +193,7 @@ class StrictFrontmatter(unittest.TestCase):
         errors = [f for f in payload["findings"] if f["severity"] == "error"]
         self.assertEqual(errors, [])  # first: a red gate names the finding, not just the status
         self.assertEqual(status, 0)
-        self.assertEqual(payload["commandCount"], 13)
+        self.assertEqual(payload["commandCount"], 6)
 
 
 class ReferenceRoot(unittest.TestCase):
@@ -246,12 +246,12 @@ class RouterChecks(unittest.TestCase):
     """The router is a table of flows: its grant is their union and a cited flow must be in it."""
 
     def _router(self, tmp: str, router_tools: str, flow_tools: str) -> dict:
-        skill = pathlib.Path(tmp) / "skills" / "quenching-ops"
+        skill = pathlib.Path(tmp) / "skills" / "quenching-git"
         (skill / "references").mkdir(parents=True, exist_ok=True)
         (skill / "references" / "go.md").write_text(f"---\nallowed-tools: {flow_tools}\n---\n\n# go\n",
                                                     encoding="utf-8")
-        body = "| Flow | Reference |\n| --- | --- |\n| `go` | [references/go.md](.agents/skills/quenching-ops/references/go.md) |\n"
-        return {"command": "/quenching-ops", "path": str(skill / "SKILL.md"), "body": body,
+        body = "| Flow | Reference |\n| --- | --- |\n| `go` | [references/go.md](.agents/skills/quenching-git/references/go.md) |\n"
+        return {"command": "/quenching-git", "path": str(skill / "SKILL.md"), "body": body,
                 "frontmatter": {"allowed-tools": router_tools}}
 
     def test_the_flows_are_read_from_the_table(self):
@@ -262,7 +262,7 @@ class RouterChecks(unittest.TestCase):
     def test_a_tool_a_flow_declares_and_the_router_lacks_is_an_error(self):
         with tempfile.TemporaryDirectory() as tmp:
             cmd = self._router(tmp, "Read", "Read, Write")
-            found = router_grant_findings(cmd, router_flows(cmd), {"command": "/quenching-ops", "path": "x"})
+            found = router_grant_findings(cmd, router_flows(cmd), {"command": "/quenching-git", "path": "x"})
             self.assertEqual([(f["code"], f["severity"]) for f in found], [("sk-router-grant", "error")])
             self.assertEqual(found[0]["missing"], ["Write"])
 
@@ -278,7 +278,7 @@ class RouterChecks(unittest.TestCase):
     def test_a_flow_the_description_does_not_name_is_an_error(self):
         with tempfile.TemporaryDirectory() as tmp:
             cmd = self._router(tmp, "Read", "Read")
-            where = {"command": "/quenching-ops", "path": "x"}
+            where = {"command": "/quenching-git", "path": "x"}
             cmd["frontmatter"]["description"] = "Run one flow: status. Not for: x."
             found = router_description_findings(cmd, router_flows(cmd), where)
             self.assertEqual([(f["code"], f["severity"]) for f in found], [("sk-router-description", "error")])
@@ -298,10 +298,10 @@ class RouterChecks(unittest.TestCase):
         self.assertIn("sk-description-budget", [f["code"] for f in lint_command(plain, BASE)])
 
     def test_a_cited_flow_the_table_does_not_list_is_dangling(self):
-        routers = {"quenching-ops": {"go"}}
-        self.assertEqual(dangling_flow_citations("run `/quenching-ops go` then `/quenching-ops stop`.", routers),
-                         ["/quenching-ops stop"])
-        self.assertEqual(dangling_flow_citations("`/quenching-proof stop`", routers), [])
+        routers = {"quenching-git": {"go"}}
+        self.assertEqual(dangling_flow_citations("run `/quenching-git go` then `/quenching-git stop`.", routers),
+                         ["/quenching-git stop"])
+        self.assertEqual(dangling_flow_citations("`/quenching-handoff stop`", routers), [])
 
 
 class StepCriterion(unittest.TestCase):
@@ -904,6 +904,18 @@ class UnresolvedRoutes(unittest.TestCase):
         self.assertEqual(route_hint(f"/{Q}-specs-create", "quenching", routers),
                          "/quenching-specs create")
 
+    def test_a_retired_front_route_names_the_align_that_replaced_it(self):
+        # Spec 676: a front is an argument of `/quenching-align`, not a skill of its own.
+        for old, new in {
+            f"/{Q}-ops align": "/quenching-align ops",
+            f"/{Q}-design status": "/quenching-align status design",
+            f"/{Q}-security status": "/quenching-align status security",
+            "/quenching-knowledge align": "/quenching-align knowledge",
+            "/quenching-components status": "/quenching-align status components",
+        }.items():
+            with self.subTest(old=old):
+                self.assertEqual(route_hint(old, "quenching", {}), new)
+
     def test_the_source_reports_an_error_and_a_router_over_budget_is_an_error(self):
         long = "x" * 300
         with tempfile.TemporaryDirectory() as tmp:
@@ -922,10 +934,10 @@ class UnresolvedRoutes(unittest.TestCase):
 
 
 def ops_router(tmp: str, description: str) -> dict:
-    skill = pathlib.Path(tmp) / "skills" / "quenching-ops"
+    skill = pathlib.Path(tmp) / "skills" / "quenching-git"
     skill.mkdir(parents=True, exist_ok=True)
     body = "| Flow | Reference |\n| --- | --- |\n| `go` | [references/go.md](references/go.md) |\n"
-    cmd = {"command": "/quenching-ops", "path": str(skill / "SKILL.md"), "body": body,
+    cmd = {"command": "/quenching-git", "path": str(skill / "SKILL.md"), "body": body,
            "frontmatter": {"description": description}}
     cmd["anomalies"], cmd["hooks"], cmd["hooksParsed"], cmd["bodyLines"] = [], {}, True, 3
     return cmd

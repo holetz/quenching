@@ -31,7 +31,7 @@ formats.
   Absent + OKF bundle present → the plan offers creating it from
   `automation/agents-standard.md`, born `authority: background`; never created without the OK.
 - **No bundle, no tail — but the mint proceeds.** `/docs/index.md` without `okf_version` (or
-  absent) means: write the definition only, skip the OKF tail silently, suggest `/quenching-knowledge align`
+  absent) means: write the definition only, skip the OKF tail silently, suggest `/quenching-align knowledge`
   **once**.
 - **One plan, one OK, nothing before.** The delegation buy, the name, the profile, every
   file, and the tail appear in ONE plan; a declined plan writes nothing.
@@ -50,7 +50,7 @@ Resolve `cq` per
 Read `/docs/standards/automation/agents.md` and confirm the bundle (`/docs/index.md` carries
 `okf_version`). Rule present → it governs. Rule absent, bundle present → add "create the rule
 from `automation/agents-standard.md`" to the plan. No bundle → note the tail as skipped and
-plan the `/quenching-knowledge align` suggestion. **Done when:** the governing rule (or its planned
+plan the `/quenching-align knowledge` suggestion. **Done when:** the governing rule (or its planned
 creation, or the no-bundle note) is fixed.
 
 ### 2. Apply the delegation test

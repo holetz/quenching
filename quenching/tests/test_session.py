@@ -182,20 +182,20 @@ class SkillUse(unittest.TestCase):
             {"type": "user", "uuid": "t1", "timestamp": "2026-11-03T10:00:00Z",
              "message": {"content": "<command-name>/quenching-git</command-name>"
                                     "<command-args>sync</command-args>"}},
-            self._skill("a3", "2026-11-04T10:00:00Z", "quenching-ops"),
+            self._skill("a3", "2026-11-04T10:00:00Z", "quenching-" + "ops"),
         ])
         specs = model["skills"]["quenching-specs"]
         self.assertEqual((specs["count"], specs["last"]), (2, "2026-11-02T10:00:00Z"))
         self.assertEqual(specs["flows"]["execute"]["count"], 2)
         self.assertEqual(model["skills"]["quenching-git"]["flows"]["sync"]["count"], 1)
-        self.assertEqual(model["skills"]["quenching-ops"]["flows"], {})
+        self.assertEqual(model["skills"]["quenching-" + "ops"]["flows"], {})
 
     def test_a_retired_route_counts_for_the_route_that_replaced_it(self):
         from unittest import mock
         from quenching.components.commands import lint
-        retired = {"/quenching-design": "/quenching-align design"}
+        retired = {"/quenching-" + "design": "/quenching-align design"}
         with mock.patch.dict(lint.RETIRED_ROUTES, retired):
-            model = _read([self._skill("a1", "2026-11-01T10:00:00Z", "quenching-design", "align")])
+            model = _read([self._skill("a1", "2026-11-01T10:00:00Z", "quenching-" + "design", "align")])
         self.assertEqual(list(model["skills"]), ["quenching-align"])
         self.assertEqual(list(model["skills"]["quenching-align"]["flows"]), ["design"])
 

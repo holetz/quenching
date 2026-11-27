@@ -5,7 +5,7 @@ import unittest
 
 REPO = pathlib.Path(__file__).resolve().parents[2]
 ROUTER = REPO / "quenching/skills/quenching-knowledge/SKILL.md"
-FLOWS = ('add', 'learn', 'define', 'glossary-backfill', 'import', 'import-memory', 'align', 'status', 'documentation-plan', 'documentation-write', 'documentation-review', 'documentation-build', 'documentation-produce')
+FLOWS = ('add', 'learn', 'define', 'glossary-backfill', 'import', 'import-memory', 'status', 'documentation-plan', 'documentation-write', 'documentation-review', 'documentation-build', 'documentation-produce')
 EXPLICIT_MENTION = ()
 
 

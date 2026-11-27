@@ -42,8 +42,8 @@ from quenching.ops.registry import (
 
 HERE = pathlib.Path(__file__).resolve().parent
 GOLDEN = HERE / "fixtures" / "golden" / "ops-registry-absent.json"
-ALIGN_BODY = HERE.parent / "skills" / "quenching-ops" / "references" / "align.md"
-STATUS_BODY = HERE.parent / "skills" / "quenching-ops" / "references" / "status.md"
+ALIGN_BODY = HERE.parent / "references" / "ops-align" / "align.md"
+STATUS_BODY = HERE.parent / "references" / "ops-align" / "status.md"
 
 
 class FrontKernel(unittest.TestCase):
@@ -163,7 +163,7 @@ class AlignCleanPath(unittest.TestCase):
             self.assertEqual(clean_branch.count("ops inventory"), 1)
 
     def test_read_path_containing_inventory_is_not_an_inventory_call(self):
-        body_path = "/work/quenching-inventory/quenching/skills/quenching-ops/references/align.md"
+        body_path = "/work/quenching-inventory/quenching/references/ops-align/align.md"
         probe = 'cq --root "$TARGET_ROOT" ops doctor --json'
         clean = [("Read", body_path), ("Bash", probe)]
         self.assertNotIn("inventory", bash_commands(clean))

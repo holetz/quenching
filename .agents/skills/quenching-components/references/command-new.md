@@ -30,7 +30,7 @@ Molds live at
   never created without the OK.
 - **No bundle, no tail — but the mint proceeds.** `/docs/index.md` without `okf_version`
   (or absent) means: write the command file only, skip registry/glossary, report that the bundle
-  tail did not apply, and suggest `/quenching-knowledge align` **once**.
+  tail did not apply, and suggest `/quenching-align knowledge` **once**.
 - **One plan, one OK, nothing before.** Classification, names, every file to be written,
   and the OKF tail appear in ONE plan; no file is created or modified before the single
   confirmation. A declined plan writes nothing.
@@ -53,7 +53,7 @@ Resolve `.agents/quenching/bin/cq components` per
 Read `/docs/standards/automation/skills.md` and confirm the bundle
 (`/docs/index.md` carries `okf_version`). Rule present → it governs. Rule absent, bundle
 present → add "create the rule from `automation/skills-standard.md`" to the plan. No
-bundle → note the tail as skipped and plan the `/quenching-knowledge align` suggestion.
+bundle → note the tail as skipped and plan the `/quenching-align knowledge` suggestion.
 **Done when:** the governing rule (or its planned creation, or the no-bundle note) is fixed.
 
 ### 2. Classify — category first, then the axis
@@ -88,14 +88,14 @@ convention reads **nest** → `<categoria>-<subfolder>-<verb>`. The file is
 match), and the invocation is `/<name>`. There is no second name to derive. `Glob`
 `.agents/skills/*/SKILL.md` for collisions — an existing path is a MERGE target (edit), never
 silently overwritten. A target still on the legacy `.claude/commands/` layout is
-`/quenching-components align`'s to migrate first; never mint into it. Shared procedure lives in
+`/quenching-align components`'s to migrate first; never mint into it. Shared procedure lives in
 `.agents/references/<name>/` or beside `SKILL.md` in the skill's folder, cited by path.
 
 **A name inside a family adds a flow, not a skill.** When the first kebab segment of the name is a
 router of the target (`.agents/skills/<family>/SKILL.md`), the mint writes
 `.agents/skills/<family>/references/<flow>.md` and adds one line to the router's flow table (and the
 flow's scoped grant to the router's union); it never writes a loose `<family>-<flow>` skill and never
-a shortcut. With no router yet, the mint writes the loose skill and `/quenching-components align`
+a shortcut. With no router yet, the mint writes the loose skill and `/quenching-align components`
 asks the human about the family once three exist.
 
 **Rename sweep (an edit whose derived path differs from the old path).** The path is the name:

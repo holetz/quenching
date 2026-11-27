@@ -57,7 +57,7 @@ silently swallowed.
 <!-- rationale -->
 
 `/quenching-components command-new` applies this doctrine to every command it mints or edits;
-`/quenching-components align` cites it when judging conformance gaps. Adapted from mattpocock/skills'
+`/quenching-align components` cites it when judging conformance gaps. Adapted from mattpocock/skills'
 `writing-great-skills`, folded into this plugin's own constraints (the description caps, the
 bundled-reference pattern, the plan → OK gate).
 
@@ -83,7 +83,7 @@ The routing story lives in the description, not in a shared router doc; but a bo
 nobody routes nothing and pays always-on rent forever.
 
 A vertical holding three or more skills is the case for one router skill over per-flow references
-inside it, with no shortcuts. In a target, `/quenching-components align` asks the human per family and
+inside it, with no shortcuts. In a target, `/quenching-align components` asks the human per family and
 `components_write(verb="migrate", write=true, router=[…])` applies it; `command:new` adds a flow to an existing router
 and never edits a plugin agent or a `quenching-*` skill, per `/docs/standards/automation/skills.md`
 §A target extends a vertical with its own router.

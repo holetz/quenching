@@ -7,13 +7,13 @@ allowed-tools: Bash(cq:*), Bash(cq.cmd:*), Read, Grep, Glob, Bash(python3:*), Ba
 **Input**: `$ARGUMENTS` (an optional subset or scope; omit to drain all project memory).
 
 Promotes the durable facts in **project memory** (`~/.claude/projects/<cwd>/memory/`) into the
-canonical OKF `/docs/` bundle, then clears them from memory. Assumes the bundle already exists (run `/quenching-knowledge align` first if not). The memory-type → home routing
+canonical OKF `/docs/` bundle, then clears them from memory. Assumes the bundle already exists (run `/quenching-align knowledge` first if not). The memory-type → home routing
 and the deletion contract are in [knowledge-import-memory/memory-routing.md](.agents/skills/quenching-knowledge/references/knowledge-import-memory/memory-routing.md)
 §Routing table — memory `type` → likely home (content overrides) §Deletion contract;
 the home boundaries, `type` vocabulary, and molds are shared with
 `/quenching-knowledge add` ([knowledge-add/homes.md](.agents/quenching/references/knowledge-add/homes.md)
 §Classification — one question decides the home §Boundary tie-breakers §The frontmatter stamp) and
-`/quenching-knowledge align` ([knowledge-align/taxonomy.md](.agents/quenching/references/knowledge-align/taxonomy.md)
+`/quenching-align knowledge` ([knowledge-align/taxonomy.md](.agents/quenching/references/knowledge-align/taxonomy.md)
 §The canonical tree §The `type` vocabulary §Boundary rules,
 [knowledge-align/conformance.md](.agents/quenching/references/knowledge-align/conformance.md)
 §Concept docs (`check_concept`) §Resource integrity (per-doc — every mode)). Molds live at
@@ -24,7 +24,7 @@ the home boundaries, `type` vocabulary, and molds are shared with
 - **Plan first, execute on one confirmation.** Cover **every** memory, classify each, and present
   ONE table — every memory → its target home + doc path + whether it will be deleted. Execute the
   whole batch on a single OK. **Exception — cycle-authorized runs:**
-  invoked as a stage of `/quenching-knowledge align`'s cycle (or of `/align`) under the cycle-authorization contract
+  invoked as a stage of `/quenching-align knowledge`'s cycle (or of `/quenching-align`) under the cycle-authorization contract
   ([align/convergence.md](.agents/quenching/references/align/convergence.md)
   §The cycle-authorization contract), the plan is
   presented as narration, not a gate — the write-then-verify-then-delete contract is unchanged.
@@ -34,7 +34,7 @@ the home boundaries, `type` vocabulary, and molds are shared with
   `vision`, `documentation`, or `external` doc is **re-routed to the nearest of the three** per the routing
   table ([knowledge-import-memory/memory-routing.md](.agents/skills/quenching-knowledge/references/knowledge-import-memory/memory-routing.md)
   §Routing table — memory `type` → likely home (content overrides)); a memory that fits none of
-  them **stays** in memory and is flagged (like a `user`/unroutable fact). Never create a
+  them **stays** in memory and is flagged (like a `user` or unroutable fact). Never create a
   `vision/`, a reader-facing quadrant, `external/`, or `catalog/` doc from a
   memory.
 - **Bounded reconnaissance — read indexes, not the whole tree.** The skill inspects only the two
@@ -199,7 +199,7 @@ failed row is named.
 
 ### 6. Report
 Summarize: docs created (by home), memories deleted, and memories **kept** (with the reason —
-`user`/unroutable/failed insert) so the user can decide on those. Leave `MEMORY.md` in place even
+`user` or unroutable/failed insert) so the user can decide on those. Leave `MEMORY.md` in place even
 if it ends empty.
 **Done when:** created docs, deleted memories, and kept memories with reasons are reported.
 

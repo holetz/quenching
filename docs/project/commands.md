@@ -50,7 +50,7 @@ Acts on the `/docs/` OKF bundle.
 | Command | Does |
 | --- | --- |
 | `/quenching-knowledge` | The single entry point of the knowledge flows: picks one of the thirteen flows (add, align, define, learn, import, import-memory, glossary-backfill, status, documentation build, plan, produce, review, write) by the flow you name and loads that flow's reference; each typed shortcut stays. |
-| `/quenching-knowledge align` | Forces `/docs/` into the canonical OKF bundle and pulls in out-of-band content — probe first, ONE confirmed plan, looped to a fixpoint. |
+| `/quenching-align knowledge` | Forces `/docs/` into the canonical OKF bundle and pulls in out-of-band content — probe first, ONE confirmed plan, looped to a fixpoint. |
 | `/quenching-knowledge status` | The front's only **read-only** view: where the bundle stands, what drifted. Writes nothing. |
 | `/quenching-knowledge add` | Inserts ONE concept doc — right home, right type, honest stamp. |
 | `/quenching-knowledge learn` | Captures ONE piece of generic understanding into `concepts/`. |
@@ -90,10 +90,9 @@ adapter artifacts.
 
 | Command | Does |
 | --- | --- |
-| `/quenching-design` | The single entry point of the design flows: picks `align`, `status`, `genre-new` by the flow you name or by the words of the request. |
-| `/quenching-design align` | Installs or converges the brand pack, arbitrates external DESIGN.md proposals, and rebuilds every projection. |
-| `/quenching-design status` | Reports source validity, generated identity, sidecar/assets, genres, adapters, and optional Impeccable detector state without writing. |
-| `/quenching-design genre-new` | Mints ONE editorial genre contract with fields, register, and HTML/Typst/PDF destinations. |
+| `/quenching-align design` | Installs or converges the brand pack, arbitrates external DESIGN.md proposals, and rebuilds every projection. |
+| `/quenching-align status design` | Reports source validity, generated identity, sidecar/assets, genres, adapters, and optional Impeccable detector state without writing. |
+| `the `genre-new` reference of the design front` | Mints ONE editorial genre contract with fields, register, and HTML/Typst/PDF destinations. |
 
 `cq design build` is deterministic and byte-checked; `cq design import` is the explicit route for
 folding an Impeccable proposal back into the source. The portable DESIGN.md boundary is lossy by
@@ -106,14 +105,14 @@ Acts on the target repository's `.claude/` automation surface.
 | Command | Does |
 | --- | --- |
 | `/quenching-components` | The single entry point of the components flows: picks `command-new`, `agent-new`, `hook-new`, `align`, `status` or `harness-align` by the flow you name and loads that flow's reference; each typed shortcut stays. |
-| `/quenching-components align` | Converges `.claude/` onto one file per entry point, audits every body against the writing doctrine, rewrites every description. |
-| `/quenching-components status` | Reports command count, fronts and finding codes for the target automation surface without writing. |
+| `/quenching-align components` | Converges `.claude/` onto one file per entry point, audits every body against the writing doctrine, rewrites every description. |
+| `/quenching-align status components` | Reports command count, fronts and finding codes for the target automation surface without writing. |
 | `/quenching-components command-new` | Mints or edits ONE command — the structural half, including its `description`. |
 | `/quenching-components command-eval` | Measures whether a command actually teaches anything: with/without runs, graded on evidence. |
 | `/quenching-components command-retro` | Mines ONE session for what it evidences about ONE command that ran in it — cost, redundancy, bugs. |
 | `/quenching-components agent-new` | Mints or edits ONE subagent definition, scoping tools to the narrowest set and pricing its always-on cost. |
 | `/quenching-components hook-new` | Wires ONE scoped hook — narrowest scope, cheapest handler. Warns by default; blocks only on the human's word. |
-| `/quenching-components harness-align` | Refactors `AGENTS.md` into a thin pointer over the bundle, so doctrine lives once; legacy `CLAUDE.md` is removed. |
+| the `harness-align` step of `/quenching-align components` | Refactors `AGENTS.md` into a thin pointer over the bundle, so doctrine lives once; legacy `CLAUDE.md` is removed. |
 
 ## The ops front
 
@@ -121,10 +120,9 @@ Acts on the target repository's declared operations root and canonical router.
 
 | Command | Does |
 | --- | --- |
-| `/quenching-ops` | The single entry point of the ops flows: picks `align`, `status`, `entrypoint-new` by the flow you name or by the words of the request. |
-| `/quenching-ops align` | Probes the operations surface, applies mechanical and structural drift under one plan, and reports judgement findings without driving them. |
-| `/quenching-ops status` | Reports root, router, packages, lifecycle, findings by band, and registry freshness without writing. |
-| `/quenching-ops entrypoint-new` | Mints ONE Python entry point from the contract, registers it in the declared router, and regenerates the operations registry. |
+| `/quenching-align ops` | Probes the operations surface, applies mechanical and structural drift under one plan, and reports judgement findings without driving them. |
+| `/quenching-align status ops` | Reports root, router, packages, lifecycle, findings by band, and registry freshness without writing. |
+| `the `entrypoint-new` reference of the ops front` | Mints ONE Python entry point from the contract, registers it in the declared router, and regenerates the operations registry. |
 
 ## The proof front
 
@@ -132,10 +130,9 @@ Acts on the target repository's declared verification surface.
 
 | Command | Does |
 | --- | --- |
-| `/quenching-proof` | The single entry point of the proof flows: picks `align`, `status`, `layer-new` by the flow you name or by the words of the request. |
-| `/quenching-proof align` | Probes the proof gate, applies bounded repairs under one plan, defers an unsafe floor write, and reports judgement findings without driving them. |
-| `/quenching-proof status` | Reports layers, fixtures, measured roots, floors, CI evidence, and findings by band without writing; it states that the suite was not run. |
-| `/quenching-proof layer-new` | Mints one named layer with its marker, reach, budget, fixture home and collection rule, then proposes test moves for a separate confirmation. |
+| `/quenching-align proof` | Probes the proof gate, applies bounded repairs under one plan, defers an unsafe floor write, and reports judgement findings without driving them. |
+| `/quenching-align status proof` | Reports layers, fixtures, measured roots, floors, CI evidence, and findings by band without writing; it states that the suite was not run. |
+| `the `layer-new` reference of the proof front` | Mints one named layer with its marker, reach, budget, fixture home and collection rule, then proposes test moves for a separate confirmation. |
 
 ## The toolchain front
 
@@ -143,9 +140,8 @@ Acts on the target repository's manifests, locks, language pins and tool configu
 
 | Command | Does |
 | --- | --- |
-| `/quenching-toolchain` | The single entry point of the toolchain flows: picks `align`, `status` by the flow you name or by the words of the request. |
-| `/quenching-toolchain align` | Probes applicability, inventories the target's toolchain artifacts, applies only mechanical and bounded structural repairs, and reports target-owned build policy. |
-| `/quenching-toolchain status` | Reports applicability, manifests, locks, language pins, tool configuration and `tc-*` findings without writing. |
+| `/quenching-align toolchain` | Probes applicability, inventories the target's toolchain artifacts, applies only mechanical and bounded structural repairs, and reports target-owned build policy. |
+| `/quenching-align status toolchain` | Reports applicability, manifests, locks, language pins, tool configuration and `tc-*` findings without writing. |
 
 ## The delivery front
 
@@ -153,9 +149,8 @@ Acts on the target repository's provider-equivalent workflows and release shape.
 
 | Command | Does |
 | --- | --- |
-| `/quenching-delivery` | The single entry point of the delivery flows: picks `align`, `status` by the flow you name or by the words of the request. |
-| `/quenching-delivery align` | Probes provider-equivalent workflows, applies bounded pipeline-shape repairs under one plan, and reports provider and release policy without choosing it. |
-| `/quenching-delivery status` | Reports applicability, workflow inventory, reachability, provenance and `delivery-*` findings without writing or running a pipeline. |
+| `/quenching-align delivery` | Probes provider-equivalent workflows, applies bounded pipeline-shape repairs under one plan, and reports provider and release policy without choosing it. |
+| `/quenching-align status delivery` | Reports applicability, workflow inventory, reachability, provenance and `delivery-*` findings without writing or running a pipeline. |
 
 ## The opensource front
 
@@ -164,10 +159,9 @@ owner's open source catalog answers.
 
 | Command | Does |
 | --- | --- |
-| `/quenching-opensource` | The single entry point of the opensource flows: picks `align`, `status`, `readiness` by the flow you name or by the words of the request. |
-| `/quenching-opensource align` | Plans the license, community and governance artifacts on one OK and writes each from a pinned template through `cq opensource apply`, never choosing the owner's answers. |
-| `/quenching-opensource status` | Reports every owner's catalog answers, the baseline level reached and `os-*` findings without writing. |
-| `/quenching-opensource readiness` | Assesses tree and history before publication and reports blockers, warnings and unmeasured coverage, read-only; never approves publication. |
+| `/quenching-align opensource` | Plans the license, community and governance artifacts on one OK and writes each from a pinned template through `cq opensource apply`, never choosing the owner's answers. |
+| `/quenching-align status opensource` | Reports every owner's catalog answers, the baseline level reached and `os-*` findings without writing. |
+| the readiness part of `/quenching-align status opensource` | Assesses tree and history before publication and reports blockers, warnings and unmeasured coverage, read-only; never approves publication. |
 
 ## The security pillar
 
@@ -175,8 +169,7 @@ Answers read-only repository security questions; it converges no tree and carrie
 
 | Command | Does |
 | --- | --- |
-| `/quenching-security` | The single entry point of the security flows: picks `status` by the flow you name or by the words of the request. |
-| `/quenching-security status` | Reports workflow permissions, secret and ignore coverage, advisory dependency configuration and access ownership without writing repository values. |
+| `/quenching-align status security` | Reports workflow permissions, secret and ignore coverage, advisory dependency configuration and access ownership without writing repository values. |
 
 ## The git pillar
 

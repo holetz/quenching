@@ -46,6 +46,15 @@ class InstallProfileContract(unittest.TestCase):
         on_disk = sorted(p.name for p in (REPO_ROOT / "quenching" / "skills").iterdir())
         self.assertEqual(on_disk, installed)
 
+    def test_module_without_skill_is_valid_and_answers_to_its_name(self):
+        from quenching.common import modules
+        manifest = modules.load_manifest(REPO_ROOT)
+        design = next(m for m in manifest["modules"] if m["name"] == "quenching-design")
+        design["owned"]["skills"] = []
+        self.assertEqual("quenching-design", modules.namespace_map(REPO_ROOT, manifest)["design"])
+        del design["owned"]["skills"]
+        self.assertEqual("quenching-design", modules.namespace_map(REPO_ROOT, manifest)["design"])
+
     def test_config_reference_uses_the_same_scope_and_default(self):
         reference = CONFIG_REFERENCE.read_text(encoding="utf-8").lower()
         self.assertIn("shared.profiles", reference)

@@ -1,7 +1,7 @@
 ---
 name: quenching-components
-description: "Run one components flow: command-new, agent-new, hook-new, align, status, command-eval, command-retro, harness-align. \"criar um comando\", \"align the skills\". Not for: knowledge docs → /quenching-knowledge."
-argument-hint: "[command-new|agent-new|hook-new|align|status|harness-align|command-eval|command-retro] [input]"
+description: "Run one components flow: command-new, agent-new, hook-new, command-eval, command-retro. \"criar um comando\", \"create a command\". Not for: knowledge docs → /quenching-knowledge."
+argument-hint: "[command-new|agent-new|hook-new|command-eval|command-retro] [input]"
 allowed-tools: Bash(.agents/quenching/bin/cq:*), Bash(.agents/quenching/bin/cq.cmd:*), Bash(python3:*), Bash(py:*), Bash(git grep:*), Bash(grep:*), Bash(find:*), Bash(git check-ignore:*), Bash(mkdir:*), Bash(mv:*), Bash(rm:*), Read, Grep, Glob, Write, Edit, Task, AskUserQuestion, mcp__quenching
 ---
 <!-- generated from .agents/skills/quenching-components/SKILL.md by cq components bridge; edit the source -->
@@ -33,7 +33,7 @@ per [align/tool-resolution.md](.agents/quenching/references/align/tool-resolutio
 
 The phrases that route to each flow, the map the description no longer carries:
 
-command-new: "criar um comando", "create a command"; agent-new: "criar um subagente", "create a subagent"; hook-new: "ligar um hook", "wire a hook"; align: "alinhar as skills", "align the skills"; status: "como está a superfície de skills", "components status"; command-eval: "medir se o comando ensina", "eval this command"; command-retro: "retrospectiva desta sessão", "retro this session"; harness-align: "enxugar o AGENTS.md", "slim down AGENTS.md".
+command-new: "criar um comando", "create a command"; agent-new: "criar um subagente", "create a subagent"; hook-new: "ligar um hook", "wire a hook"; command-eval: "medir se o comando ensina", "eval this command"; command-retro: "retrospectiva desta sessão", "retro this session".
 
 ## Workflow
 
@@ -47,11 +47,8 @@ returns `STATE: blocked` with `NOTE: needs-human:` carrying it.
 | `command-new` | [references/command-new.md](.agents/skills/quenching-components/references/command-new.md) | minting or editing ONE skill or command |
 | `agent-new` | [references/agent-new.md](.agents/skills/quenching-components/references/agent-new.md) | minting or editing ONE subagent definition |
 | `hook-new` | [references/hook-new.md](.agents/skills/quenching-components/references/hook-new.md) | wiring ONE scoped hook |
-| `align` | [references/align.md](.agents/skills/quenching-components/references/align.md) | converging the whole `.agents/skills` surface and its descriptions |
-| `status` | [references/status.md](.agents/skills/quenching-components/references/status.md) | a read-only report of the automation surface |
 | `command-eval` | [references/command-eval.md](.agents/skills/quenching-components/references/command-eval.md) | measuring whether a command teaches anything with with/without runs |
 | `command-retro` | [references/command-retro.md](.agents/skills/quenching-components/references/command-retro.md) | mining ONE session for what it shows about the command that ran in it |
-| `harness-align` | [references/harness-align.md](.agents/skills/quenching-components/references/harness-align.md) | refactoring AGENTS.md into pointers over the `/docs/` bundle |
 
 **Done when:** exactly one flow is chosen, with its input.
 

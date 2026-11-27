@@ -7,7 +7,7 @@ allowed-tools: Bash(cq:*), Bash(cq.cmd:*), Read, Grep, Glob, Bash(python3:*), Ba
 **Input**: `$ARGUMENTS` (optionally a home or path to focus; omit to read the whole bundle).
 
 The **read-only** view of the `docs` front, and the honest preview of what
-`/quenching-knowledge align` would do: the plan you would be authorizing, before you authorize it.
+`/quenching-align knowledge` would do: the plan you would be authorizing, before you authorize it.
 
 The conformance codes and their severities live in
 [knowledge-align/conformance.md](.agents/quenching/references/knowledge-align/conformance.md);
@@ -26,7 +26,7 @@ the homes and the insert procedure in
 - **Density is reported, never coded as a finding.** Empty homes, thin homes, and a one-entry
   glossary appear as a **table of figures with no code** (§5).
 - **Distinguish "would fix" from "would only report".** Split the output the way the sweeps split
-  it: what `/quenching-knowledge align` fixes on one OK, what its later stages then drive, and what
+  it: what `/quenching-align knowledge` fixes on one OK, what its later stages then drive, and what
   neither closes because it needs a human.
 - **Cheap by construction.** One `knowledge_read(verb="validate")`, one glob, and reads of the files the report names.
 - **Never judge, never rank, never infer.** An empty home is not a defect, an unlinked glossary
@@ -43,7 +43,7 @@ config. Resolve `.agents/quenching/bin/cq knowledge` per
 never on prose.
 
 **No bundle at all** is a complete, valid answer: report that `/docs/` is absent and that
-`/quenching-knowledge align` would install it, then stop. A `/docs/` that exists without an `okf_version` root
+`/quenching-align knowledge` would install it, then stop. A `/docs/` that exists without an `okf_version` root
 `index.md` is an un-installed tree, not a broken bundle — say which.
 **Done when:** the bundle root and the checker are resolved, or their absence recorded.
 
@@ -84,15 +84,15 @@ One report, in this order:
 1. **Header** — the resolved bundle root, whether it is an installed OKF bundle (`okf_version` on
    the root `index.md`), and the checker's version and exit code verbatim.
 2. **Density** — the table §5 defines, *before* the findings.
-3. **Would be fixed by `/quenching-knowledge align`** — the codes
+3. **Would be fixed by `/quenching-align knowledge`** — the codes
    [cycle.md](.agents/quenching/references/knowledge-align/cycle.md)'s table marks auto-closed by
    stage 1 (`dir-no-index`, `index-broken-link`, `index-orphan`, un-stamped or mis-stamped
    frontmatter, variant folder names, prefix-clusters, non-English slugs), with counts. Name which
    would be **code-coupled** and so confirm on its own. This list is what a single OK would
    authorize.
-4. **Would then be pulled in by `/quenching-knowledge align`'s later stages** — the content they carry: undrained `~/.claude` memory files (count), durable knowledge still inlined in the harness,
+4. **Would then be pulled in by `/quenching-align knowledge`'s later stages** — the content they carry: undrained `~/.claude` memory files (count), durable knowledge still inlined in the harness,
    and terms in the bundle absent from the glossary. These are the rows the table marks auto-closed
-   by `/quenching-knowledge import-memory`, `/quenching-components harness-align` and
+   by `/quenching-knowledge import-memory`, `/quenching-align components` and
    `/quenching-knowledge glossary-backfill`.
 5. **Closed by neither** — every row the table marks **No**, each with the command that closes it:
    `resource-unresolved` and `resource-self` (→ `/quenching-knowledge add` to restamp),

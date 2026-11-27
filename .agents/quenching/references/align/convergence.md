@@ -25,8 +25,8 @@ saying the same thing, not by pointing at each other.
 An align asks for ONE human confirmation, at run start, that authorizes the entire run — up to
 the pass cap or convergence. Every command
 an align invokes as a stage carries **one** exception sentence pointing here and never restates
-it: the `knowledge/` stages (`/quenching-knowledge import-memory`, `/quenching-components harness-align`, `/quenching-knowledge glossary-backfill`), the
-`specs/` stages (`/quenching-specs conclude`, `/quenching-specs triage`), the five front aligns when `/align`
+it: the `knowledge/` stages (`/quenching-knowledge import-memory`, `/quenching-align components`, `/quenching-knowledge glossary-backfill`), the
+`specs/` stages (`/quenching-specs conclude`, `/quenching-specs triage`), the five front aligns when `/quenching-align`
 invokes them, and — under the low mode only —
 `/quenching-git pr-create`, the one stage this contract's grantor is a conductor rather than an
 align.
@@ -78,7 +78,7 @@ the three happened
 (`/docs/standards/automation/plan-gates.md` §When authority replaces the person states
 the three conditions that make the substitution legitimate).
 
-**Nesting is one level of authorization, not two gates.** When `/align` invokes a front align, the
+**Nesting is one level of authorization, not two gates.** When `/quenching-align` invokes a front align, the
 front align does **not** ask for its own OK — it inherits the authorization and passes it down
 verbatim to its own stages. The human confirms once for the whole repo; only code-coupled and
 irreversible items still interrupt.
@@ -143,8 +143,8 @@ for `proof/`.
   clear it. Report the residue as deferred opportunities, each with the command that owns it.
 
 **Guards against spinning:**
-- **Pass cap** — default **5** per align (a front align nested inside `/align` keeps its own cap;
-  `/align`'s own cross-front cap is **3**). If reached before convergence, stop and report what remains; do not raise
+- **Pass cap** — default **5** per align (a front align nested inside `/quenching-align` keeps its own cap;
+  `/quenching-align`'s own cross-front cap is **3**). If reached before convergence, stop and report what remains; do not raise
   the cap silently.
 - **No-progress guard** — never run a pass identical to one that just changed nothing. An empty
   pass with residual findings is a **stop** condition, not a reason to iterate.
@@ -173,7 +173,7 @@ has **no fresh human input**: `/quenching-knowledge add`, `/quenching-knowledge 
 never close a finding.
 
 They enter a run only **indirectly**, as the tools a sweep stage delegates to
-(`/quenching-components harness-align` MOVEs a durable fact via `/quenching-knowledge add`). When the assessment finds a gap
+(`/quenching-align components` MOVEs a durable fact via `/quenching-knowledge add`). When the assessment finds a gap
 only a per-item command could fill, the align **names the gap and the command that would close
 it** in its report — the user then invokes that command with the missing input, and the next run
 picks the work up. This is the plugin's **anti-fabrication boundary**: an align closes only what a

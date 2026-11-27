@@ -33,7 +33,7 @@ DEFAULT_COST = {
     },
 }
 PLUGIN_ROOT = HERE.parent
-LAYER_COMMAND = PLUGIN_ROOT / "skills" / "quenching-proof" / "references" / "layer-new.md"
+LAYER_COMMAND = PLUGIN_ROOT / "references" / "proof-align" / "layer-new.md"
 HOOK_TEMPLATE = PLUGIN_ROOT / "assets" / "templates" / "proof" / "collection-hook.py.tmpl"
 FIXTURE_TEMPLATE = PLUGIN_ROOT / "assets" / "templates" / "proof" / "layer-fixtures.py.tmpl"
 

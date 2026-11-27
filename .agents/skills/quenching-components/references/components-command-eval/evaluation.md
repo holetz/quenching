@@ -26,7 +26,7 @@ have installed.
     benchmark.json                  # the run's aggregate and its delta
 ```
 
-In a target repo `<name>` **mirrors the skill name**: `/release-notes` is measured by
+In a target repo `<name>` **mirrors the skill name**: the `release-notes` command is measured by
 `.agents/evals/release-notes/evals.json`, beside the `.agents/` source and never under the
 generated `.claude/skills/` bridge. In this plugin the tree lives at
 `.agents/quenching/assets/evals/<path>/`, `<path>` mirroring the command path

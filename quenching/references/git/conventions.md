@@ -127,7 +127,7 @@ ones in this pillar.
 <!-- rationale -->
 
 Writing `docs/standards/git/**` into a repository that
-never asked for it is `/quenching-specs-*` reaching into `/quenching-knowledge align`'s territory, and it converts a default
+never asked for it is `/quenching-specs-*` reaching into `/quenching-align knowledge`'s territory, and it converts a default
 this file *offers* into a rule the repo now *declares* — which then wins over this file forever,
 without anyone having agreed to it.
 

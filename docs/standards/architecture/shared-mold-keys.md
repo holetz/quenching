@@ -16,7 +16,7 @@ maintainer: quenching
 <!-- rules -->
 
 `knowledge-add/homes.md` §The frontmatter stamp is a **mold**: a block of keys that four commands —
-`/quenching-knowledge add`, `/quenching-knowledge learn`, `/quenching-components harness-align`,
+`/quenching-knowledge add`, `/quenching-knowledge learn`, `/quenching-align components`,
 `/quenching-knowledge import-memory` — cite by absolute path and fill
 in when they mint a doc. That is what makes it worth owning once.
 

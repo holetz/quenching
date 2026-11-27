@@ -194,6 +194,7 @@
       "decisions/0020-remove-the-codex-executor-and-harness.md",
       "decisions/0021-no-vscode-extension.md",
       "decisions/0022-codex-harness-returns-agents-skills-source.md",
+      "decisions/0023-fronts-are-align-arguments.md",
     ] },
     "glossary.md",
   ]
