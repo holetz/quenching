@@ -40,6 +40,30 @@ maintainer: quenching
 - Every `/quenching-<front> align|status` citation became `/quenching-align <front>` or
   `/quenching-align status <front>`.
 
+## Grant
+
+The `allowed-tools` of `quenching-align` is the union of the grants the retired routes already held
+for their align and status flows, and nothing else:
+
+| Tool | Held before by |
+| --- | --- |
+| `Bash` (unrestricted) | the knowledge `align` and `harness-align` flows |
+| `Read`, `Grep`, `Glob` | every router and flow |
+| `Write`, `Edit` | the ops, proof, toolchain, delivery, opensource, knowledge and components aligns |
+| `Task` | the knowledge `align`, the components `align` and `harness-align` flows |
+| `Skill` | the previous `quenching-align` and the knowledge `align` flow |
+| `AskUserQuestion` | the design, ops, proof, toolchain, delivery, opensource, knowledge and components aligns |
+
+The security audit that ends `status` needs no tool of its own: `security_read` runs under the
+`Bash(cq:*)` the security router held, which the unrestricted `Bash` includes.
+
+## Verification ruler
+
+No probe or selector rule was dropped. The functional probes for the ops and proof fronts now call
+`/quenching-align status ops` and `/quenching-align status proof`, and each
+`scripts/toolchain/affected.py` rule that watched a retired `quenching/skills/quenching-<front>/`
+folder watches `quenching/references/<front>-align/` and selects the same tests.
+
 ## Supersession
 
 Supersedes in part [ADR 0019](0019-router-skills-and-target-dialect-source.md): the rule that every
