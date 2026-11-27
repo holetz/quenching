@@ -112,7 +112,7 @@ class Cycle:
 
     def git(self, *args: str, cwd: Path | None = None) -> str:
         result = subprocess.run(["git", *args], cwd=cwd or self.repo, env=self.env,
-                                capture_output=True, text=True, check=False)
+                                capture_output=True, text=True, encoding="utf-8", check=False)
         if result.returncode:
             raise RuntimeError(f"git {' '.join(args)}: {result.stderr.strip()[:300]}")
         return result.stdout
@@ -121,7 +121,7 @@ class Cycle:
             essential: bool = False) -> dict:
         start = time.perf_counter()
         result = subprocess.run([*self.cq, *args], cwd=cwd or self.repo, env=self.env, input=stdin,
-                                capture_output=True, text=True, check=False, timeout=TIMEOUT_S)
+                                capture_output=True, text=True, encoding="utf-8", check=False, timeout=TIMEOUT_S)
         seconds = time.perf_counter() - start
         try:
             data = json.loads(result.stdout) if result.stdout.strip().startswith("{") else {}
@@ -233,7 +233,7 @@ def archived(c: Cycle) -> bool:
     if c.spec is None:
         return False
     out = subprocess.run([*c.cq, "specs", "status", c.spec, "--json"], cwd=c.repo, env=c.env,
-                         capture_output=True, text=True, check=False)
+                         capture_output=True, text=True, encoding="utf-8", check=False)
     try:
         data = json.loads(out.stdout)
     except ValueError:
