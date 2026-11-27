@@ -434,9 +434,20 @@ def _emit_by_code(args, root: str, specs: list, findings: list, errors: list) ->
     ordered = sorted(groups.items(), key=lambda kv: (kv[0][1] != "error", -len(kv[1]), kv[0][0]))
     rows = [{"code": code, "severity": sev, "count": len(ids),
              "specs": sorted(set(ids), key=str)} for (code, sev), ids in ordered]
+    # The implicit summary (no --spec, no --full, no --by-code) keeps the spec lists out of the
+    # JSON unless asked for with --with-specs: on a store of hundreds of specs they are the bulk.
+    implicit = not getattr(args, "by_code", False)
+    json_rows = rows
+    if implicit and not getattr(args, "with_specs", False):
+        json_rows = [{k: v for k, v in r.items() if k != "specs"} for r in rows]
     if args.json:
-        print(json.dumps({"ok": not errors, **front_fields(root), "specs": len(specs),
-                          "byCode": rows}, indent=2, ensure_ascii=False))
+        payload = {"ok": not errors, **front_fields(root), "specs": len(specs),
+                   "byCode": json_rows}
+        if implicit:
+            payload["summary"] = True
+            payload["hint"] = ("summary by code; --with-specs lists the affected specs, "
+                               "--spec <id> or --full gives the findings")
+        print(json.dumps(payload, indent=2, ensure_ascii=False))
         return exit_for(findings)
     print(f"specs validate — {root} ({len(errors)} error(s), "
           f"{len(findings) - len(errors)} warning(s)) by code")
@@ -489,7 +500,10 @@ def cmd_validate(args, root: str, out: Emitter) -> int:
     findings.extend(dependency_sweep(backend, read))
 
     errors = [f for f in findings if f["severity"] == "error"]
-    if getattr(args, "by_code", False):
+    # A sweep of the whole store defaults to the summary: `full` is absent (True) only for callers
+    # that build their own namespace; the CLI and the MCP tool always carry it.
+    summary = (not args.spec and not getattr(args, "full", True))
+    if getattr(args, "by_code", False) or summary:
         return _emit_by_code(args, root, specs, findings, errors)
     if args.json:
         print(json.dumps({"ok": not errors, **front_fields(root), "specs": len(specs),
