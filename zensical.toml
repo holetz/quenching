@@ -193,6 +193,7 @@
       "decisions/0019-router-skills-and-target-dialect-source.md",
       "decisions/0020-remove-the-codex-executor-and-harness.md",
       "decisions/0021-no-vscode-extension.md",
+      "decisions/0022-codex-harness-returns-agents-skills-source.md",
     ] },
     "glossary.md",
   ]
