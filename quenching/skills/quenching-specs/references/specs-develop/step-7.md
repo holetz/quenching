@@ -18,7 +18,7 @@ A call splits only where the next command's **input** depends on the previous on
 `approved` stamp is the one such split: it waits for step 7's verification to prove `ready` rather
 than asserting it off the drafts.
 
-**Every write of this step is ONE call** — §The batching contract's third row: the section write,
+**Every write of this step is ONE call** — the batching note above: the section write,
 the `## Discoveries` lines, the records, `verification`, `validate`, and the closing `status`.
 
 Write the narrated sections with ONE `specs_write(verb="section_write", spec=<id>, sections=[…])` — it creates

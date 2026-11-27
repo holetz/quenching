@@ -14,5 +14,5 @@ declares it belong to this same plan — narrate group by group, never as a seco
 
 Anything that turned out to belong outside the spec is narrated here too: a durable rule or a term
 as a **routed offer**, not an edit, and an **out-of-scope follow-up as the one `## Discoveries` line
-this edit will park** — a line, not an offer (§Invariants).
+this edit will park** — a line, not an offer (the index's Invariants).
 **Done when:** the plan has been narrated in full, as one plan for the whole pass.

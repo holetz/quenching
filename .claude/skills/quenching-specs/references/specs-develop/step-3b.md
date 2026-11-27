@@ -14,7 +14,7 @@
 | --- | --- |
 | step 3b | every stage's own section and the union of the spec sections the pass reads or writes — `components_read(verb="read")` and `specs_read(verb="section")` together, never one call per source or per stage |
 
-Now that the pass is known, and in **one call** — §The batching contract's second row, both
+Now that the pass is known, and in **one call** — the batching note above, both
 commands together, every stage at once:
 
 ```text

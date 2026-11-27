@@ -16,7 +16,7 @@ Close according to the track — §Approval owns the screen:
   `by="orchestrator-forced"` instead. That is the only path that writes this value, and only
   after step 7 proved `ready`.
 - **Complex track** — ONE closing decision sheet that **recommends** rather than defaulting to
-  approve. Judge what the pass produced against §Refine's three signals and lead with the move they
+  approve. Judge what the pass produced against the three signals of [questions.md](.agents/quenching/references/specs-develop/questions.md) §Refine and lead with the move they
   argue for, as option A (recommended), carrying the signal in its own text: approve, refine (with
   the lens the signal names), or stop. Choosing refine IS the OK to restamp `complexity` if the depth
   grew; apply both and re-enter at step 3. A pass where refine already ran recommends approving and

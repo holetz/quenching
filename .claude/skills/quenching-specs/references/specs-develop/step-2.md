@@ -2,7 +2,7 @@
 ```text
 specs_read(verb="status", spec=<id>)   # stage, section states, ready map, records, tasks, gate, path
 ```
-**This is the same call as step 1** — §The batching contract's first row. The id either came in
+**This is the same call as step 1** — the batching note of step 1. The id either came in
 the input or was inferred, and the payload answers both steps at once.
 
 **The payload also carries the depth on record and the gap.** `records.priority.complexity` is the depth

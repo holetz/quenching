@@ -33,7 +33,7 @@ and that file loads the `§` sections its own step uses, never the whole pass up
 ## Where the rest lives
 
 Each step's file carries what only that step uses, so a stage run loads no more than its own: step 1
-resolves `cq`, and its read batch (§The batching contract) opens the pass; step 3 carries the
+resolves `cq`, and its read batch opens the pass; step 3 carries the
 rule that no turn only announces a call; step 3b reads `/docs/` by section; step 4 carries the rule
 on recommendations inside a question; step 7 carries the explicit-none rule and the apply batch.
 
@@ -82,7 +82,7 @@ text and its `Done when:`. The files sit in `specs-develop/` beside this body.
 | 7. Apply, verify, and record what the pass earned | `step-7.md` |
 | 8. Close on a recommendation, and report | `step-8.md` |
 
-Steps 1 and 2 are one call (§The batching contract), so load `step-1.md` and `step-2.md` together.
+Steps 1 and 2 are one call, so load `step-1.md` and `step-2.md` together.
 
 ## Invariants to never violate
 
