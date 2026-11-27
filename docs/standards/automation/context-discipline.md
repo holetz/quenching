@@ -592,6 +592,40 @@ Three gaps stay open, stated rather than estimated:
 
 DeepSeek through the gateway stays in tokens, with no price.
 
+## Quando delegar
+
+<!-- rules -->
+
+Um subagente novo paga o prefixo inteiro em escrita de cache (1,25 vez a entrada), e uma espera de
+5 minutos ou mais vence o cache dele. A decisão de delegar compara dois números medidos, nunca
+lembrados:
+
+- **A régua.** Delega-se quando o trabalho despejaria no contexto principal mais tokens do que custa o
+  prefixo do subagente: o `prefixMedian` da linha dele em `cq components session cache`. Abaixo
+  disso o trabalho fica no contexto que já está quente.
+- **Uma delegação por spec e por papel**, nunca por tarefa (§What a delegated executor costs): o
+  prefixo é pago uma vez por spawn, e um subagente de poucas requisições (o `spec-verifier`)
+  tem acerto baixo por construção, não por defeito.
+- **Comando longo em background, com notificação.** O que espera além do `boundaries` medido do
+  harness e do modelo roda como comando em background e retorna por notificação; nunca um laço de
+  `sleep`, nunca uma espera bloqueante que deixe o cache vencer.
+- **Prefixo fixo primeiro.** O prompt de cada tipo abre pelo texto que todos compartilham e fecha
+  pelas variáveis, para que dois spawns do mesmo tipo dividam o prefixo.
+
+<!-- rationale -->
+
+Medido em 2026-11-26 (`cq components session cache --all --json`, linhas `spec-*` dos stores desta
+máquina, Claude Code e OpenCode; amostra de uma máquina, relida no alvo antes de citar como número):
+
+| Agente | Reescrita por prefixo alterado | Reescrita por expiração | Leitura |
+| --- | --- | --- | --- |
+| `spec-verifier` | 0 em todas as linhas | 0 (34 mil numa linha) | o custo é uma escrita nova do prefixo por spawn, sobre 4 a 5 requisições; não há prefixo alterado a fixar |
+| `spec-orchestrator` (OpenCode, Opus) | 39 mil | 1,8 milhão contra 3,1 milhões novos | perde por esperas de 5 min ou mais |
+| `spec-runner` (OpenCode, Opus) | 2,4 milhões | 2,4 milhões, contra 28,8 milhões novos | única linha com reescrita por prefixo relevante; a causa não é observável, pois os stores guardam tamanhos e não conteúdo |
+
+A hipótese "o prefixo do verificador muda entre turnos" é, portanto, refutada para ele; a reescrita
+por prefixo do `spec-runner` fica como descoberta da spec 642.
+
 ## What a delegated executor costs
 
 <!-- rules -->
