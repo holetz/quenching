@@ -213,7 +213,7 @@ tool the mount hides keeps its shell grant, so a pillar outside the mount never 
 **The files stay the user's: merged, never owned.** Like `.claude/settings.json`, they are not in the
 manifest's `files`; the manifest records `mcp` and `mcpFiles`, and only the `quenching` entry is the
 deploy's. JSON keeps every other key and entry (`$schema` is added to `opencode.json` only when
-absent); TOML swaps only the `[mcp_servers.quenching]` table. A file that is not a JSON object (a
+absent); TOML swaps only the `[mcp_servers.quenching]` table, up to its last line of content (a comment or blank line after it stays). A file that is not a JSON object (a
 JSONC `opencode.json`, say) is left untouched and reported as a warning. `--check` reports a merge
 that would change a file as `mcp` drift; selecting fewer harnesses, or `--remove`, takes the entry
 out of the files it left and deletes a file only when nothing else remains in it.
