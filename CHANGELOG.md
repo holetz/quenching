@@ -13,6 +13,41 @@ owner: [`ci-cd/versioning-release.md`](docs/standards/ci-cd/versioning-release.m
 short version for a consumer: the version is published once, deliberately, as a release — never at a
 spec's own conclude — and `cq --version` is what answers which one you are running.
 
+## 7.19.0
+
+**O deploy atende todos os harnesses por padrão, com o `codex` de volta.** Sem `--harness` e sem
+  manifesto para reaproveitar, o `cq deploy` declara `claude,codex,opencode` (#658, ADR 0022).
+  - O harness `codex` recebe as skills em `.agents/skills` e a tabela `[mcp_servers.quenching]` em
+    `.codex/config.toml`, mesclada ao arquivo do usuário. Não recebe subagentes nem hooks, e o
+    executor Codex continua removido (ADR 0020).
+  - `.agents/skills` volta a ser a fonte de toda skill gerada, qualquer que seja o harness. Com
+    `claude`, o deploy projeta a skill em `.claude/skills` pela regra do bridge (mesmos bytes mais
+    o marcador), e as duas cópias citam `.agents/skills/<name>/`.
+  - **Atualização:** um alvo 7.18.x só com `claude` ganha a fonte `.agents/skills` das skills
+    geradas no próximo `cq deploy --write`; o `--check` mostra antes essas criações como `create`.
+
+**Os fluxos de specs carregam um arquivo por passo.** `create`, `develop`, `execute` e `conclude`
+  viram um índice enxuto mais um arquivo por passo, lido só quando o passo roda. Cada estágio cabe
+  em 15 mil tokens (antes, de 13,7 mil a 27 mil), sem mudar passos, `Done when:` nem invariantes
+  (#652, #653, #654, #655).
+
+**Uma bancada mede o custo do quenching instalado.** `cq components bench` mede o custo fixo por
+  harness (instruções, skills, agentes, catálogo MCP), o teto de instrução por fluxo e por estágio,
+  as citações que não resolvem e o ciclo create → develop → execute → conclude numa fixture
+  descartável. Também trava os orçamentos, e o `/release` passa a rodá-la antes do plano (#645).
+
+**O medidor de sessão dá o custo equivalente.** `cq components session cache` deixa de contar duas
+  vezes a sessão do OpenCode que roda pelo harness do Claude Code. Agora dá o custo equivalente por
+  spec e por origem, separa a saída de shell por comando e mede o prefixo de cada harness e agente
+  (#644). A régua de quando delegar a um subagente fica em `context-discipline.md` (#646).
+
+**Prefixo menor.** O `cq components bridge` projeta as skills do próprio alvo só para o harness que
+  não lê a fonte, e as descrições das skills `quenching-*` cabem em 250 caracteres (#647).
+
+**`specs_read(verb="validate")` sem spec devolve um resumo.** O retorno resume por código e
+  severidade, com as specs afetadas sob demanda (`--with-specs`, `--full`), e a exceção carrega o
+  resumo em vez do relatório do store inteiro (#643).
+
 ## 7.18.3
 
 **O MCP publica uma tool por pilar e classe.** O servidor `quenching` deixa de listar uma tool por
