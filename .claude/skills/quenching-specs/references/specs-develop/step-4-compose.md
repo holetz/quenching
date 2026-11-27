@@ -1,4 +1,10 @@
 ### 4. Compose
+Load the mechanics every stage shares, once, before the first question:
+
+```text
+components_read(verb="read", path=".agents/quenching/references/specs-develop/questions.md", sections=["§The four shared mechanics"])
+```
+
 **A recommendation rides inside the question, never in a turn before it.** Where a choice is
 genuinely the human's, the recommendation and the reasoning behind it go on the **decision sheet**
 ([questions.md](.agents/quenching/references/specs-develop/questions.md) §The four shared mechanics §1) — option A, recommended, the reasoning in its own text — so the human answers in one word and no turn was spent setting the question up.

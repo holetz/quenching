@@ -13,6 +13,8 @@ import re
 import unittest
 
 
+from _flow import flow_text
+
 ROOT = Path(__file__).resolve().parents[2]
 
 QUESTIONS = "quenching/references/specs-develop/questions.md"
@@ -28,9 +30,9 @@ GROUP = "### 1. Process surface"
 
 def read(rel):
     if rel == DEVELOP:
-        base = ROOT / "quenching/skills/quenching-specs/references"
-        steps = sorted((base / "specs-develop").glob("step-*.md"))
-        return "\n".join([(ROOT / rel).read_text(encoding="utf-8")] + [s.read_text(encoding="utf-8") for s in steps])
+        base = (ROOT / rel).parent / "specs-develop"
+        subs = "\n".join(p.read_text(encoding="utf-8") for p in sorted(base.glob("step-[0-9][a-z]-*.md")))
+        return flow_text(ROOT / rel) + "\n" + subs
     return (ROOT / rel).read_text(encoding="utf-8")
 
 

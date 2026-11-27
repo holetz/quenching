@@ -4,7 +4,9 @@ from __future__ import annotations
 import pathlib
 import unittest
 
-CONCLUDE = (pathlib.Path(__file__).resolve().parent.parent / "skills" / "quenching-specs" / "references" / "conclude.md").read_text()
+from _flow import flow_text
+
+CONCLUDE = flow_text(pathlib.Path(__file__).resolve().parent.parent / "skills" / "quenching-specs" / "references" / "conclude.md")
 
 
 def step(number: int) -> str:
@@ -35,13 +37,12 @@ class ConcludeRetiresTheWorktree(unittest.TestCase):
 
     def test_it_adds_no_removal_logic_and_asks_nothing_under_autonomous(self):
         self.assertIn("this step adds none of its own", step(8))
-        autonomous = CONCLUDE[CONCLUDE.index("## Under `autonomous`"):CONCLUDE.index("## Workflow")]
-        self.assertIn("the post-merge close", autonomous)
+        autonomous = step(8)[step(8).index("**Under `autonomous`.**"):]
+        self.assertIn("the post-merge close", step(8))  # no question exists: reconcile and the release run as written
         self.assertIn("never forced", autonomous)
 
     def test_the_resumed_already_merged_row_points_at_the_step(self):
-        row = next(line for line in CONCLUDE.splitlines() if line.startswith("| already merged"))
-        self.assertIn("run only step 8, the post-merge close", row)
+        self.assertIn("the hand-off is done, run only step 8", step(1))
 
     def test_the_abandoned_path_still_removes_no_worktree(self):
         self.assertIn("do not remove any worktree", step(7))

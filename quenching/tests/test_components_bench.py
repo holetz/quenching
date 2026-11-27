@@ -53,12 +53,50 @@ class Superficie(unittest.TestCase):
         self.assertEqual(row["citedBytes"], len("Binding rule.".encode()))
         self.assertEqual(row["tokens"], bench.tokens(row["routerBytes"] + row["flowBytes"] + row["citedBytes"]))
 
+    def test_superficie_split_flow_ceiling_is_its_most_expensive_stage(self):
+        root = target()
+        refs = ".agents/skills/quenching-specs/references"
+        write(root / f"{refs}/create.md",
+              f"# create\n\n### 1. One\n\nLoad [s]({refs}/specs-create/step-1-one.md)\n\n"
+              f"### 2. Two\n\nLoad [s]({refs}/specs-create/step-2-two.md)\n")
+        write(root / f"{refs}/specs-create/step-1-one.md", "small\n")
+        write(root / f"{refs}/specs-create/step-2-two.md",
+              "See [r](.agents/quenching/references/x/rules.md) §Rule\n" + "y" * 4000)
+        payload, findings = bench.measure(root, ("claude",))
+        row = payload["flows"]["create"]
+        self.assertEqual(findings, [])
+        self.assertEqual(set(row["stages"]), {"step-1-one", "step-2-two"})
+        self.assertEqual(row["tokens"], max(row["stages"].values()))
+        self.assertGreater(row["stages"]["step-2-two"], row["stages"]["step-1-one"])
+        # the index is not charged for the step files it links
+        self.assertLess(row["flowBytes"] + row["citedBytes"], 1000)
+
+    def test_superficie_missing_stage_file_is_a_finding(self):
+        root = target()
+        refs = ".agents/skills/quenching-specs/references"
+        write(root / f"{refs}/create.md", f"# create\n\nLoad [s]({refs}/specs-create/step-1-gone.md)\n")
+        _, findings = bench.measure(root, ("claude",))
+        self.assertIn("ct-cost-no-reference", {f["code"] for f in findings})
+
     def test_superficie_budget_over_is_a_finding(self):
         budget = {"prefix": {"claude": 1}, "flow": {"develop": 1}}
         _, findings = bench.measure(target(), ("claude",), bench.load_budget_dict(budget))
         codes = {f["code"] for f in findings}
         self.assertIn("ct-bench-prefix-over", codes)
         self.assertIn("ct-bench-flow-over", codes)
+
+    def test_superficie_sub_step_is_measured_with_its_step(self):
+        root = target()
+        link = ".agents/skills/quenching-specs/references/specs-execute/"
+        write(root / ".agents/skills/quenching-specs/references/execute.md",
+              f"# execute\n\n[one]({link}step-1-one.md)\n")
+        write(root / ".agents/skills/quenching-specs/references/specs-execute/step-1-one.md",
+              f"one body\n\n[a]({link}step-1a-sub.md)\n")
+        write(root / ".agents/skills/quenching-specs/references/specs-execute/step-1a-sub.md", "sub\n")
+        payload, _ = bench.measure(root, ("claude",))
+        stages = payload["flows"]["execute"]["stages"]
+        self.assertEqual(set(stages), {"step-1-one", "step-1a-sub"})
+        self.assertGreaterEqual(stages["step-1a-sub"], stages["step-1-one"])
 
     def test_superficie_within_budget_is_clean(self):
         _, findings = bench.measure(target(), bench.HARNESSES)
@@ -83,6 +121,13 @@ class Superficie(unittest.TestCase):
         self.assertGreater(payload["harnesses"]["claude"]["tokens"]["mcp"], 0)
         self.assertEqual(payload["harnesses"]["opencode"]["tokens"]["mcp"], 0)
 
+    def test_conclude_is_split_per_step_and_every_stage_fits_the_ceiling(self):
+        payload, _ = bench.measure(REPO, ("claude",))
+        row = payload["flows"]["conclude"]
+        self.assertEqual(len(row["stages"]), 9)
+        self.assertEqual(bench.DEFAULT_BUDGET["flow"]["conclude"], 15_000)
+        self.assertLessEqual(row["tokens"], 15_000)
+
     def test_superficie_budget_file_overrides_key_by_key(self):
         root = pathlib.Path(tempfile.mkdtemp())
         path = root / "b.json"
@@ -93,43 +138,14 @@ class Superficie(unittest.TestCase):
         self.assertEqual(budget["prefix"], bench.DEFAULT_BUDGET["prefix"])
 
 
-class Estagios(unittest.TestCase):
-    def split_target(self) -> pathlib.Path:
-        root = target()
-        write(root / ".agents/skills/quenching-specs/references/specs-develop/step-1.md",
-              "### 1. One\n\nSee [r](.agents/quenching/references/x/rules.md) §Rule\n")
-        write(root / ".agents/skills/quenching-specs/references/specs-develop/step-2.md", "### 2. Two\n\n" + "w" * 4000 + "\n")
-        return root
-
-    def test_a_stage_is_router_plus_index_plus_step_plus_its_citations(self):
-        payload, findings = bench.measure(self.split_target(), ("claude",))
-        row = payload["stages"]["develop"]["step-1"]
-        self.assertEqual(row["citedBytes"], len("Binding rule.".encode()))
-        self.assertEqual(row["tokens"], bench.tokens(row["routerBytes"] + row["bodyBytes"] + row["citedBytes"]))
-        self.assertEqual(set(payload["stages"]["develop"]), {"step-1", "step-2"})
-        self.assertEqual(findings, [])
-
-    def test_a_flow_without_step_files_has_no_stage(self):
-        payload, _ = bench.measure(self.split_target(), ("claude",))
-        self.assertNotIn("create", payload["stages"])
-
-    def test_a_stage_over_the_budget_is_a_finding(self):
-        budget = bench.load_budget_dict({"stage": {"develop": 500}})
-        _, findings = bench.measure(self.split_target(), ("claude",), budget)
-        over = [f for f in findings if f["code"] == "ct-bench-stage-over"]
-        self.assertEqual([f["stage"] for f in over], ["step-2"])
-
+class EstagiosDoDevelop(unittest.TestCase):
     def test_every_develop_stage_of_this_repository_fits_15k_tokens(self):
         payload, findings = bench.measure(REPO, ("claude",))
-        self.assertEqual(bench.DEFAULT_BUDGET["stage"]["develop"], 15_000)
-        self.assertTrue(payload["stages"]["develop"])
-        self.assertEqual([f for f in findings if f["code"] == "ct-bench-stage-over"], [])
-
-    def test_the_develop_index_lists_every_step_file(self):
-        base = REPO / "quenching/skills/quenching-specs/references"
-        index = (base / "develop.md").read_text(encoding="utf-8")
-        for step in sorted((base / "specs-develop").glob("step-*.md")):
-            self.assertIn(f"`{step.name}`", index)
+        self.assertEqual(bench.DEFAULT_BUDGET["flow"]["develop"], 15_000)
+        row = payload["flows"]["develop"]
+        self.assertTrue(row["stages"])
+        self.assertLessEqual(row["tokens"], 15_000)
+        self.assertEqual([f for f in findings if f["code"] == "ct-bench-flow-over"], [])
 
 
 class Ciclo(unittest.TestCase):

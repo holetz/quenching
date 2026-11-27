@@ -761,7 +761,8 @@ class Deploy(unittest.TestCase):
         self.assertNotIn("cliFallback", manifest["mcp"])
         for rel in (".agents/skills", ".claude/skills", ".claude/agents", ".opencode/agents"):
             for path in (self.target / rel).rglob("*.md"):
-                head = path.read_text(encoding="utf-8").split("\n---\n", 1)[0]
+                body = path.read_text(encoding="utf-8")
+                head = body.split("\n---\n", 1)[0] if body.startswith("---") else ""  # a step file has no frontmatter
                 self.assertNotIn("claim take", head, path)
         self.assertEqual([], self.run_deploy("--check")[1]["changes"])
 

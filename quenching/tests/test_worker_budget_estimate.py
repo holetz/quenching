@@ -9,6 +9,8 @@ from pathlib import Path
 import re
 import unittest
 
+from _flow import flow_text
+
 
 ROOT = Path(__file__).resolve().parents[2]
 RUNNER = ROOT / "quenching/agents/spec-runner.md"
@@ -19,7 +21,7 @@ STANDARD = ROOT / "docs/standards/automation/context-discipline.md"
 
 
 def flat(path):
-    return re.sub(r"\s+", " ", path.read_text(encoding="utf-8"))
+    return re.sub(r"\s+", " ", flow_text(path))
 
 
 class TheWorkerEstimateTests(unittest.TestCase):

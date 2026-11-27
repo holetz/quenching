@@ -3,15 +3,14 @@ from pathlib import Path
 import re
 import unittest
 
+from _flow import flow_text
+
 
 PLUGIN = Path(__file__).resolve().parents[1]
 
 
 def prose(path):
-    raw = (PLUGIN / path).read_text(encoding="utf-8")
-    if path == "skills/quenching-specs/references/develop.md":
-        steps = sorted((PLUGIN / "skills/quenching-specs/references/specs-develop").glob("step-*.md"))
-        raw = "\n".join([raw] + [s.read_text(encoding="utf-8") for s in steps])
+    raw = flow_text(PLUGIN / path) if path.endswith(("conclude.md", "develop.md")) else (PLUGIN / path).read_text(encoding="utf-8")
     return re.sub(r"\s+", " ", raw.replace("**", "").replace("`", ""))
 
 

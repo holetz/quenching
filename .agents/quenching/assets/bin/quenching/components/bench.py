@@ -19,7 +19,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from quenching.common.output import finding
-from quenching.components.commands.cost import measure_command
+from quenching.components.commands.cost import STAGE_FILE_RE, measure_command
 from quenching.components.surface import surface_references
 
 HARNESSES = ("claude", "opencode", "copilot")
@@ -58,10 +58,7 @@ HARNESS_RULES: dict[str, dict[str, tuple[str, ...]]] = {
 #: margin so a rounding never trips the gate; a target passes its own through `--budget`.
 DEFAULT_BUDGET: dict[str, dict[str, int]] = {
     "prefix": {"claude": 7_000, "opencode": 7_000, "copilot": 7_000},
-    "flow": {"create": 22_000, "develop": 41_000, "execute": 35_000, "conclude": 30_000},
-    # What ONE stage run loads: router + the flow's index + the stage's step file + the sections it
-    # cites. A flow has stages only where its steps are files under `references/specs-<flow>/`.
-    "stage": {"develop": 15_000},
+    "flow": {"create": 15_000, "develop": 15_000, "execute": 15_000, "conclude": 15_000},
 }
 
 
@@ -208,40 +205,47 @@ def measure_flows(root: Path) -> tuple[dict[str, dict], list[dict]]:
                       "citedBytes": row["totalBytes"] - row["bodyBytes"],
                       "tokens": tokens(router_bytes + row["totalBytes"])}
         findings.extend(row_findings)
+        stage_files = list(dict.fromkeys(STAGE_FILE_RE.findall(command["body"])))
+        if stage_files:
+            _measure_stages(root, flow, rows[flow], row, stage_files, references, surface_root, findings)
     return rows, findings
 
 
-def measure_stages(root: Path) -> tuple[dict[str, dict[str, dict]], list[dict]]:
-    """Per flow that splits its steps into `references/specs-<flow>/step-*.md`: what one stage loads.
-
-    A stage is router + the flow's index body + the step file + the `§` sections the two cite, the
-    same measure `cq components cost` makes of a command body.
-    """
-    router = _router_dir(root)
-    if router is None:
-        return {}, []
-    surface_root = str(root / ".agents")
-    references = {item["relpath"].replace(os.sep, "/"): item for item in surface_references(surface_root)}
-    router_bytes = len((router / "SKILL.md").read_bytes())
-    stages: dict[str, dict[str, dict]] = {}
-    findings: list[dict] = []
-    for flow in FLOWS:
-        index = router / "references" / f"{flow}.md"
-        steps = sorted((router / "references" / f"specs-{flow}").glob("step-*.md"))
-        if not index.is_file() or not steps:
+def _measure_stages(root: Path, flow: str, out: dict, index: dict, stage_files: list[str],
+                    references: dict, surface_root: str, findings: list[dict]) -> None:
+    """A split flow's ceiling is its most expensive stage: the router, the flow's index, one step
+    file and the sections that step cites."""
+    stages: dict[str, int] = {}
+    # A step file may link sub-steps (`step-<n><letter>-…`); each is its own stage, run together with its step.
+    for relpath in list(stage_files):
+        path = root / relpath
+        if path.is_file():
+            for linked in STAGE_FILE_RE.findall(path.read_text(encoding="utf-8")):
+                if linked not in stage_files:
+                    stage_files.append(linked)
+    for relpath in stage_files:
+        path = root / relpath
+        name = path.stem
+        if not path.is_file():
+            findings.append(finding(
+                "ct-cost-no-reference", "error",
+                f"/{SPECS_SKILL} {flow} cites missing stage file {relpath}",
+                command=f"/{SPECS_SKILL} {flow}", path=relpath,
+                remedy="repair the link or add the step file before measuring cost"))
             continue
-        index_text = index.read_text(encoding="utf-8")
-        rows = {}
-        for step in steps:
-            body = index_text + "\n" + step.read_text(encoding="utf-8")
-            command = {"command": f"/{SPECS_SKILL} {flow} {step.stem}", "path": str(index), "body": body}
-            row, row_findings = measure_command(command, references, surface_root)
-            findings.extend(row_findings)
-            rows[step.stem] = {"routerBytes": router_bytes, "bodyBytes": row["bodyBytes"],
-                               "citedBytes": row["totalBytes"] - row["bodyBytes"],
-                               "tokens": tokens(router_bytes + row["totalBytes"])}
-        stages[flow] = rows
-    return stages, findings
+        body = path.read_text(encoding="utf-8")
+        sub = re.match(r"step-(\d+)[a-z]+-", name)
+        if sub:
+            parent = next((r for r in stage_files if Path(r).name.startswith(f"step-{sub.group(1)}-")), None)
+            if parent and (root / parent).is_file():
+                body = (root / parent).read_text(encoding="utf-8") + "\n" + body
+        command = {"command": f"/{SPECS_SKILL} {flow} {name}", "path": str(path), "body": body}
+        row, row_findings = measure_command(command, references, surface_root)
+        findings.extend(row_findings)
+        stages[name] = tokens(out["routerBytes"] + index["totalBytes"] + row["totalBytes"])
+    if stages:
+        out["stages"] = stages
+        out["tokens"] = max(stages.values())
 
 
 def measure(root: Path, harnesses: tuple[str, ...], budget: dict | None = None) -> tuple[dict, list[dict]]:
@@ -275,20 +279,7 @@ def measure(root: Path, harnesses: tuple[str, ...], budget: dict | None = None) 
                 f"flow {flow}: instruction ceiling is {row['tokens']} tokens, budget {limit}",
                 flow=flow, tokens=row["tokens"], budget=limit,
                 remedy="load fewer sections or cut the flow, or raise the budget with the reason"))
-    stages, stage_findings = measure_stages(root)
-    seen = {(f.get("code"), f.get("message")) for f in findings}
-    findings.extend(f for f in stage_findings if (f.get("code"), f.get("message")) not in seen)
-    for flow, rows in stages.items():
-        limit = (budget.get("stage") or {}).get(flow)
-        for name, row in rows.items():
-            row["budget"] = limit
-            if limit is not None and row["tokens"] > limit:
-                findings.append(finding(
-                    "ct-bench-stage-over", "error",
-                    f"flow {flow} {name}: one stage loads {row['tokens']} tokens, budget {limit}",
-                    flow=flow, stage=name, tokens=row["tokens"], budget=limit,
-                    remedy="move the step's citations into the step that uses them, or raise the budget with the reason"))
-    return {"harnesses": per_harness, "flows": flows, "stages": stages, "unit": "tokens = chars / 4"}, findings
+    return {"harnesses": per_harness, "flows": flows, "unit": "tokens = chars / 4"}, findings
 
 
 def load_budget_dict(declared: dict) -> dict:

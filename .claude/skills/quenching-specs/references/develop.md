@@ -65,24 +65,25 @@ on recommendations inside a question; step 7 carries the explicit-none rule and 
 
 ## Workflow
 
-Run the steps in order; load a step's file when it begins and not before. The file holds the step's
-text and its `Done when:`. The files sit in `specs-develop/` beside this body.
+Run the steps in order. Each step lives in a file of its own, loaded when the step begins and not
+before; the file holds the step's text and its `**Done when:**`. Steps 1 and 2 are one call, so load
+both together; the sub-steps `3b`, `3c` and `3d` are linked from step 3 and run with it.
 
-| Step | File |
-| --- | --- |
-| 1. Resolve the spec, and announce where it lives | `step-1.md` |
-| 2. Read the spec's STATE — not its body | `step-2.md` |
-| 3. Derive the pass, and name it | `step-3.md` |
-| 3b. Load what THIS pass needs — and nothing more | `step-3b.md` |
-| 3c. Run the dependency sweep — once, at the pass's open | `step-3c.md` |
-| 3d. Enumerate the surface refinement | `step-3d.md` |
-| 4. Compose | `step-4.md` |
-| 5. Refine — where it runs | `step-5.md` |
-| 6. Consolidate the edit, and narrate it | `step-6.md` |
-| 7. Apply, verify, and record what the pass earned | `step-7.md` |
-| 8. Close on a recommendation, and report | `step-8.md` |
+Run it from [step 1](.claude/skills/quenching-specs/references/specs-develop/step-1-resolve.md), read whole.
 
-Steps 1 and 2 are one call, so load `step-1.md` and `step-2.md` together.
+Run it from [step 2](.claude/skills/quenching-specs/references/specs-develop/step-2-read-state.md), read whole.
+
+Run it from [step 3](.claude/skills/quenching-specs/references/specs-develop/step-3-derive.md), read whole.
+
+Run it from [step 4](.claude/skills/quenching-specs/references/specs-develop/step-4-compose.md), read whole.
+
+Run it from [step 5](.claude/skills/quenching-specs/references/specs-develop/step-5-refine.md), read whole.
+
+Run it from [step 6](.claude/skills/quenching-specs/references/specs-develop/step-6-consolidate.md), read whole.
+
+Run it from [step 7](.claude/skills/quenching-specs/references/specs-develop/step-7-apply.md), read whole.
+
+Run it from [step 8](.claude/skills/quenching-specs/references/specs-develop/step-8-close.md), read whole.
 
 ## Invariants to never violate
 

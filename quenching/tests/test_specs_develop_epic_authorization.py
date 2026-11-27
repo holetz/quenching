@@ -10,7 +10,7 @@ DEVELOP = "quenching/skills/quenching-specs/references/develop.md"
 
 
 def text(rel):
-    step = ROOT / "quenching/skills/quenching-specs/references/specs-develop/step-7.md"
+    step = ROOT / "quenching/skills/quenching-specs/references/specs-develop/step-7-apply.md"
     return re.sub(r"\s+", " ", (step if rel == DEVELOP else ROOT / rel).read_text(encoding="utf-8"))
 
 

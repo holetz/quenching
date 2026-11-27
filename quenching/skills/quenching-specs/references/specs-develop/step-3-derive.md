@@ -4,12 +4,12 @@
 that carries content stays: the pass and its stop conditions (step 3), the consolidated plan
 (step 6), the report (step 8).
 
-Load what this step runs on, and nothing else — what runs and in what order, the mechanics every
-stage shares, and the spec-driven facts:
+Load what this step runs on, and nothing else — what runs and in what order, and the derived
+stages (the mechanics every stage shares load in step 4, the gates in step 7):
 
 ```text
-components_read(verb="read", path=".agents/quenching/references/specs-develop/questions.md", sections=["§The pass", "§The four shared mechanics"])
-components_read(verb="read", path=".agents/quenching/references/specs-develop/spec-driven.md", sections=["§Derived stages", "§The gates"])
+components_read(verb="read", path=".agents/quenching/references/specs-develop/questions.md", sections=["§The pass"])
+components_read(verb="read", path=".agents/quenching/references/specs-develop/spec-driven.md", sections=["§Derived stages"])
 ```
 
 Look the derived stage up, and calculate the decisions still open, in
@@ -37,3 +37,11 @@ the track the calculation chose (simple, complex or declared autonomy), whether 
 asked anything and in which rounds, and **each stage's stop condition**. The track is announced
 here and nowhere else.
 **Done when:** the pass's stages are named in order, with the track and each stop condition.
+
+The sub-steps run after this one, each from its own file:
+
+Run it from [step 3b](.agents/skills/quenching-specs/references/specs-develop/step-3b-load.md), read whole.
+
+Run it from [step 3c](.agents/skills/quenching-specs/references/specs-develop/step-3c-sweep.md), read whole.
+
+Run it from [step 3d](.agents/skills/quenching-specs/references/specs-develop/step-3d-surface.md), read whole.

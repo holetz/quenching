@@ -923,29 +923,83 @@
 
     ".claude/skills/quenching-specs/references/orchestrate.md": "source",
 
+    ".claude/skills/quenching-specs/references/specs-conclude/step-1-resolve.md": "source",
+
+    ".claude/skills/quenching-specs/references/specs-conclude/step-2-review.md": "source",
+
+    ".claude/skills/quenching-specs/references/specs-conclude/step-3-docs.md": "source",
+
+    ".claude/skills/quenching-specs/references/specs-conclude/step-4-outcome.md": "source",
+
+    ".claude/skills/quenching-specs/references/specs-conclude/step-5-distil.md": "source",
+
+    ".claude/skills/quenching-specs/references/specs-conclude/step-6-sweep.md": "source",
+
+    ".claude/skills/quenching-specs/references/specs-conclude/step-7-gate.md": "source",
+
+    ".claude/skills/quenching-specs/references/specs-conclude/step-8-archive.md": "source",
+
+    ".claude/skills/quenching-specs/references/specs-conclude/step-9-report.md": "source",
+
     ".claude/skills/quenching-specs/references/specs-create/plan-mapping.md": "source",
 
-    ".claude/skills/quenching-specs/references/specs-develop/step-1.md": "source",
+    ".claude/skills/quenching-specs/references/specs-create/step-1-classify.md": "source",
 
-    ".claude/skills/quenching-specs/references/specs-develop/step-2.md": "source",
+    ".claude/skills/quenching-specs/references/specs-create/step-2-title.md": "source",
 
-    ".claude/skills/quenching-specs/references/specs-develop/step-3.md": "source",
+    ".claude/skills/quenching-specs/references/specs-create/step-3-plan-source.md": "source",
 
-    ".claude/skills/quenching-specs/references/specs-develop/step-3b.md": "source",
+    ".claude/skills/quenching-specs/references/specs-create/step-4-metadata.md": "source",
 
-    ".claude/skills/quenching-specs/references/specs-develop/step-3c.md": "source",
+    ".claude/skills/quenching-specs/references/specs-create/step-5-capture.md": "source",
 
-    ".claude/skills/quenching-specs/references/specs-develop/step-3d.md": "source",
+    ".claude/skills/quenching-specs/references/specs-create/step-6-screen.md": "source",
 
-    ".claude/skills/quenching-specs/references/specs-develop/step-4.md": "source",
+    ".claude/skills/quenching-specs/references/specs-develop/step-1-resolve.md": "source",
 
-    ".claude/skills/quenching-specs/references/specs-develop/step-5.md": "source",
+    ".claude/skills/quenching-specs/references/specs-develop/step-2-read-state.md": "source",
 
-    ".claude/skills/quenching-specs/references/specs-develop/step-6.md": "source",
+    ".claude/skills/quenching-specs/references/specs-develop/step-3-derive.md": "source",
 
-    ".claude/skills/quenching-specs/references/specs-develop/step-7.md": "source",
+    ".claude/skills/quenching-specs/references/specs-develop/step-3b-load.md": "source",
 
-    ".claude/skills/quenching-specs/references/specs-develop/step-8.md": "source",
+    ".claude/skills/quenching-specs/references/specs-develop/step-3c-sweep.md": "source",
+
+    ".claude/skills/quenching-specs/references/specs-develop/step-3d-surface.md": "source",
+
+    ".claude/skills/quenching-specs/references/specs-develop/step-4-compose.md": "source",
+
+    ".claude/skills/quenching-specs/references/specs-develop/step-5-refine.md": "source",
+
+    ".claude/skills/quenching-specs/references/specs-develop/step-6-consolidate.md": "source",
+
+    ".claude/skills/quenching-specs/references/specs-develop/step-7-apply.md": "source",
+
+    ".claude/skills/quenching-specs/references/specs-develop/step-8-close.md": "source",
+
+    ".claude/skills/quenching-specs/references/specs-execute/step-1-select-the-spec.md": "source",
+
+    ".claude/skills/quenching-specs/references/specs-execute/step-2-tree-isolation-state.md": "source",
+
+    ".claude/skills/quenching-specs/references/specs-execute/step-3-settle-the-approval.md": "source",
+
+    ".claude/skills/quenching-specs/references/specs-execute/step-4-read-what-tasks-satisfy.md": "source",
+
+    ".claude/skills/quenching-specs/references/specs-execute/step-5-implement-tasks.md": "source",
+
+    ".claude/skills/quenching-specs/references/specs-execute/step-5b-delegate-an-executor.md": "source",
+
+    ".claude/skills/quenching-specs/references/specs-execute/step-5c-docs-this-task-names.md": "source",
+
+    ".claude/skills/quenching-specs/references/specs-execute/step-5de-verify-commit.md": "source",
+
+    ".claude/skills/quenching-specs/references/specs-execute/step-5g-after-task-hook.md": "source",
+
+    ".claude/skills/quenching-specs/references/specs-execute/step-5i-preexisting-red.md": "source",
+
+    ".claude/skills/quenching-specs/references/specs-execute/step-6-refresh-handoff.md": "source",
+
+    ".claude/skills/quenching-specs/references/specs-execute/step-7-report-and-hand-off.md": "source",
 
     ".claude/skills/quenching-specs/references/status.md": "source",
 
