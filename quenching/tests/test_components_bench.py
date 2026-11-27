@@ -113,6 +113,24 @@ class Superficie(unittest.TestCase):
         dupes = [f for f in findings if f["code"] == "ct-bench-skill-duplicate"]
         self.assertTrue(dupes and all(f["severity"] == "warning" for f in dupes))
 
+    def test_superficie_bridge_projection_of_the_source_is_not_a_duplicate(self):
+        # ADR 0022: `.claude/skills` carries the marked projection of the `.agents/skills` source.
+        from quenching.components.commands.bridge import with_marker
+        root = target()
+        source = (root / ".claude/skills/alfa/SKILL.md").read_text(encoding="utf-8")
+        write(root / ".agents/skills/alfa/SKILL.md", source)
+        write(root / ".claude/skills/alfa/SKILL.md", with_marker(source, "alfa"))
+        payload, findings = bench.measure(root, bench.HARNESSES)
+        for harness in bench.HARNESSES:
+            self.assertEqual(payload["harnesses"][harness]["duplicateSkills"], {}, harness)
+        self.assertNotIn("ct-bench-skill-duplicate", {f["code"] for f in findings})
+        # An independent copy beside the pair is still a duplicate.
+        write(root / ".github/skills/alfa/SKILL.md", source.replace("body", "outro corpo"))
+        payload, findings = bench.measure(root, ("copilot",))
+        self.assertEqual(payload["harnesses"]["copilot"]["duplicateSkills"]["alfa"],
+                         [".claude/skills", ".agents/skills", ".github/skills"])
+        self.assertIn("ct-bench-skill-duplicate", {f["code"] for f in findings})
+
     def test_superficie_mcp_catalog_counts_only_where_the_harness_registers_it(self):
         root = target()
         write(root / ".mcp.json", json.dumps({"mcpServers": {"quenching": {
