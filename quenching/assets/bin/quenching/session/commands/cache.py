@@ -29,6 +29,9 @@ COLD_SHARE = 0.5
 # A boundary needs this many requests in its bucket: one idle turn is not a cache lifetime.
 BOUNDARY_MIN = 10
 GAPS = ((2, "<2m"), (5, "2-5m"), (10, "5-10m"), (30, "10-30m"), (60, "30-60m"), (None, ">60m"))
+MIRROR_FLOOR = 1000
+MIRROR_SHARE = 0.8
+MIRROR_WINDOW = 60
 SKILL_KEY = "core/skill-guidance"
 # Claude Code records its own local notices as assistant turns; no model answered them.
 SYNTHETIC = "<synthetic>"
@@ -48,6 +51,7 @@ class Req(NamedTuple):
     write1h: int
     output: int
     host: str = ""
+    spec: str = ""
 
 
 def _host(path: Path) -> str:
@@ -247,6 +251,35 @@ def copilot_requests(home: Path, directory: Path | None, anomalies: list) -> tup
                             agent, request.model, request.at, request.fresh, request.cache_read,
                             request.cache_write, 0, 0, request.output, host))
     return reqs, anomalies
+
+
+def _fingerprint(r: Req) -> tuple:
+    return (r.input, r.read, r.write, r.output)
+
+
+def dedupe(reqs: list) -> tuple:
+    """Drop the Claude Code session that mirrors an OpenCode one, and say how much was dropped.
+
+    OpenCode running through the Claude harness writes each request into both stores with the same
+    token counts a few seconds apart. A Claude session is a mirror when at least `MIRROR_SHARE` of
+    its requests (those with `MIRROR_FLOOR` tokens of context or more) match an OpenCode request by
+    token tuple within `MIRROR_WINDOW` seconds. The OpenCode session stays: it names the agent."""
+    index: dict = {}
+    for r in reqs:
+        if r.harness == "opencode" and r.at is not None:
+            index.setdefault(_fingerprint(r), []).append(r.at)
+    claude: dict = {}
+    for r in reqs:
+        if r.harness == "claude" and _context(r) >= MIRROR_FLOOR:
+            claude.setdefault(r.session, []).append(r)
+    mirrors = set()
+    for session, own in claude.items():
+        hits = sum(1 for r in own if r.at is not None and any(
+            abs((at - r.at).total_seconds()) <= MIRROR_WINDOW for at in index.get(_fingerprint(r), ())))
+        if own and hits / len(own) >= MIRROR_SHARE:
+            mirrors.add(session)
+    kept = [r for r in reqs if not (r.harness == "claude" and r.session in mirrors)]
+    return kept, {"sessions": len(mirrors), "requests": len(reqs) - len(kept)}
 
 
 def _median(values: list) -> int | None:
@@ -457,6 +490,7 @@ def cmd_cache(args) -> int:
             unavailable["copilot"] = error.message
         except (OSError, sqlite3.Error) as exc:
             unavailable["copilot"] = f"{home}: {exc}"
+    reqs, dedup = dedupe(reqs)
     if since is not None:
         reqs = [r for r in reqs if r.at is not None and r.at >= since]
     session = getattr(args, "session", None)
@@ -468,7 +502,7 @@ def cmd_cache(args) -> int:
     priced = bool(getattr(args, "usd", False))
     rows, gaps, boundaries = summarize(reqs, priced)
     out = {"ok": True, "scope": str(directory) if directory else "all", "sources": sources,
-           "unavailable": unavailable, "rows": rows, "gaps": gaps, "boundaries": boundaries,
+           "unavailable": unavailable, "dedup": dedup, "rows": rows, "gaps": gaps, "boundaries": boundaries,
            "skillListing": listing_summary(listings), "anomalies": anomalies}
     if priced:
         out["pricing"] = {"sourceDate": pricing.table()["sourceDate"], "basis": "list price estimate"}

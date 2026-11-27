@@ -8,6 +8,7 @@ import pathlib
 import sqlite3
 import tempfile
 import unittest
+from datetime import datetime, timezone
 from unittest import mock
 
 import _paths  # noqa: F401  — must precede the `quenching` import; see its docstring
@@ -162,6 +163,50 @@ class OpenCodeTests(Fixture):
         data = json.loads(out)
         self.assertEqual(code, 1)
         self.assertIn("no OpenCode session tables", data["anomalies"][0]["message"])
+
+
+class MirrorTests(Fixture):
+    """OpenCode running through the Claude harness writes each request into both stores."""
+
+    def setUp(self):
+        super().setUp()
+        steps = [(0, 6000, 0, 0), (1, 100, 6000, 0), (2, 7000, 0, 2000), (3, 50, 9000, 0)]
+        db = sqlite3.connect(self.db)
+        db.executescript("""
+            CREATE TABLE session (id TEXT, parent_id TEXT, agent TEXT, directory TEXT);
+            CREATE TABLE session_v2 (id TEXT, parent_id TEXT, agent TEXT, directory TEXT);
+            CREATE TABLE session_message (id TEXT, session_id TEXT, type TEXT, seq INT, data TEXT);""")
+        db.execute("INSERT INTO session_v2 VALUES ('ses_a', NULL, 'build', ?)", (REPO,))
+        records = []
+        for n, (minute, inp, read, write) in enumerate(steps):
+            db.execute("INSERT INTO session_message VALUES (?, 'ses_a', 'assistant', ?, ?)", (
+                f"m{n}", n, json.dumps({"time": {"created": START + minute * MINUTE}, "model": {"id": "opus"},
+                                         "tokens": {"input": inp, "output": 5, "reasoning": 0,
+                                                    "cache": {"read": read, "write": write}}})))
+            # the Claude copy lands two seconds later, with the same token counts
+            at = datetime.fromtimestamp((START + minute * MINUTE) / 1000 + 2, timezone.utc)
+            records.append(assistant(f"c{n}", at.isoformat().replace("+00:00", "Z"), inp=inp, read=read,
+                                     write=write, out=5, ttl1h=0))
+        db.commit()
+        db.close()
+        project = self.projects / "-p"
+        project.mkdir(parents=True)
+        (project / "mirror.jsonl").write_text("\n".join(json.dumps(r) for r in records) + "\n")
+        # a Claude session no OpenCode session produced
+        at = datetime.fromtimestamp(START / 1000 + 5000, timezone.utc).isoformat().replace("+00:00", "Z")
+        (project / "native.jsonl").write_text(json.dumps(assistant("n0", at, inp=8000, out=3)) + "\n")
+        self.argv = ("--opencode-db", str(self.db), "--all", "--json")
+
+    def test_the_claude_mirror_of_an_opencode_session_is_counted_once(self):
+        data = json.loads(run(*self.argv)[1])
+        counts = {r["harness"]: r["requests"] for r in data["rows"]}
+        self.assertEqual(counts, {"claude": 1, "opencode": 4}, "only the native Claude session stays")
+        self.assertEqual(data["dedup"], {"sessions": 1, "requests": 4})
+
+    def test_a_claude_session_with_no_counterpart_is_kept(self):
+        data = json.loads(run("--harness", "claude", *self.argv[:2], *self.argv[2:])[1])
+        self.assertEqual(sum(r["requests"] for r in data["rows"]), 5)
+        self.assertEqual(data["dedup"], {"sessions": 0, "requests": 0})
 
 
 class SourcesTests(Fixture):
