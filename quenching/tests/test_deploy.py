@@ -926,6 +926,23 @@ class Deploy(unittest.TestCase):
         self.assertNotIn('args = ["a"]', codex)
         self.assertEqual([], self.run_deploy("--check")[1]["changes"])
 
+    def test_the_text_after_the_codex_table_survives_merge_and_remove(self):
+        self.configure(self.mcp_config())
+        self.write(".codex/config.toml", 'model = "o3"\n\n[mcp_servers.quenching]\ncommand = "uv"\n'
+                   'args = ["a"]\n# >>> other-mcp\n# [mcp_servers.other]\n# <<< other-mcp\n\n'
+                   '[profiles.fast]\nmodel = "y"\n')
+        code, payload = self.run_deploy("--modules", "specs", "--write")
+        self.assertEqual(0, code, payload)
+        codex = (self.target / ".codex/config.toml").read_text()
+        self.assertIn("# >>> other-mcp\n# [mcp_servers.other]\n# <<< other-mcp\n", codex)
+        self.assertIn('[profiles.fast]\nmodel = "y"', codex)
+        self.assertNotIn('args = ["a"]', codex)
+        self.assertEqual([], self.run_deploy("--check")[1]["changes"])
+        self.assertEqual(0, self.run_deploy("--remove", "--write")[0])
+        left = (self.target / ".codex/config.toml").read_text()
+        self.assertIn("# >>> other-mcp", left)
+        self.assertNotIn("[mcp_servers.quenching]", left)
+
     def test_a_recorded_codex_harness_is_kept(self):
         self.assertEqual(0, self.run_deploy("--modules", "specs", "--harness", "claude,codex",
                                             "--write")[0])
