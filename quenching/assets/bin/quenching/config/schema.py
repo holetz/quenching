@@ -35,6 +35,7 @@ CATEGORIES = (
     ("proof", "Proof and tests", "Prova e testes"),
     ("ops", "Operations", "Operações"),
     ("knowledge", "Knowledge", "Conhecimento"),
+    ("components", "Skills and components", "Skills e componentes"),
     ("cache", "Prompt cache", "Cache de prompt"),
     ("quota", "Subscription quota", "Cota da assinatura"),
 )
@@ -165,6 +166,14 @@ _k("shared.ci.enforce", "enum", CI["enforce"], "git", "project",
    ("Exigir CI verde", "required: todo check verde; when-present: PR sem check pode mergear; "
     "off: também com checks pendentes. Check vermelho nunca mergeia, e um valor relaxado exige "
     "o registro do gate da cabeça do PR, verde (gravado pelo verify_repo.sh)."), choices=list(CI_ENFORCE))
+# — Skills and components —
+_k("shared.components.usageWindowDays", "integer", 60, "components", "either",
+   "cq components status",
+   ("Skill usage window (days)", "A skill no session invoked in this many days and no body cites "
+    "is listed as unused: a candidate to retire, for a human to decide."),
+   ("Janela de uso das skills (dias)", "Uma skill que nenhuma sessão invocou neste número de dias e "
+    "que nenhum corpo cita aparece como sem uso: candidata a aposentar, para uma pessoa decidir."),
+   minimum=1)
 # — Prompt cache (the quenching-cache bar) —
 _k("shared.cache.rebuildLimitUsd", "number", CACHE_BAR["rebuildLimitUsd"], "cache", "either",
    "quenching-cache plugin",

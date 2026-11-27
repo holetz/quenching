@@ -9,6 +9,7 @@ would move the plugin's anti-fabrication boundary, not the tool's coverage.
 """
 from __future__ import annotations
 
+import json
 import os
 import re
 
@@ -57,6 +58,21 @@ EFFORT_VALUES = ("low", "medium", "high", "xhigh", "max")
 CITATION_RE = re.compile(r"(?<![\w:/-])/([a-z0-9-]+(?::[a-z0-9-]+)+)")
 HYPHEN_CITATION_RE = re.compile(r"(?<![\w:/.-])/([a-z0-9]+(?:-[a-z0-9]+)+)(?![\w:-])")
 CITATION_SAMPLE = 3      # examples carried in the message; the count carries the rest
+
+# A route cited the way a command is cited: right after a backtick or an arrow, optionally with a
+# flow word. A `/token` in running prose (a path, a URL) is never read as a route.
+ROUTE_CITATION_RE = re.compile(
+    r"(?:`|→ )/([a-z][a-z0-9]*(?:-[a-z0-9]+)*)(?: ([a-z][a-z0-9-]*))?(?=[`\s,;)]|$)")
+# Old route → the route that replaced it. Data, never inferred: the specs that retire a router add
+# their line here, so the message names the fix and the usage of the old name counts for the new.
+RETIRED_ROUTES: dict[str, str] = {}
+# Slash commands of the host that are no skill of any surface.
+HOST_SLASH_COMMANDS = frozenset({
+    "clear", "compact", "help", "model", "init", "config", "review", "memory", "agents", "mcp",
+    "permissions", "resume", "cost", "status", "doctor", "login", "logout", "exit", "quit", "bug",
+    "hooks", "ide", "vim", "add-dir", "context", "usage", "rewind", "export", "todos", "plugin",
+    "skills", "effort", "fast", "plan", "rename", "statusline", "output-style", "pr-comments",
+    "security-review", "terminal-setup", "loop", "batch", "simplify", "schedule"})
 
 HEADING_RE = re.compile(r"^#{1,6}\s")
 STEP_HEADING_RE = re.compile(r"^#{2,6}\s+\d+[.)]\s")
@@ -571,11 +587,14 @@ def description_is_resident(fm: dict) -> bool:
 
 
 def lint_command(cmd: dict, base: str, named_by: set[str] | None = None,
-                 known_refs: set[str] | None = None) -> list[dict]:
+                 known_refs: set[str] | None = None, plugin_source: bool = False) -> list[dict]:
     """`named_by` is the set of commands whose bodies reach THIS one by name. It is a
     property of the whole surface, so only a caller holding one can supply it — and a
     surface with no plugin manifest has no registry form to be reached by, which is why
-    `None` (the check does not apply) is a legitimate state rather than a skipped one."""
+    `None` (the check does not apply) is a legitimate state rather than a skipped one.
+
+    `plugin_source` says the surface is the plugin's own source, where a router over the description
+    budget is an error: the router listing is paid by every session of every target."""
     fm, body = cmd["frontmatter"], cmd["body"]
     where = {"command": cmd["command"], "path": rel(cmd["path"], base)}
     if not fm:
@@ -648,7 +667,8 @@ def lint_command(cmd: dict, base: str, named_by: set[str] | None = None,
     # A router's description names its flows and nothing more; the map of triggers per flow lives
     # in the body, so the 250 budget binds a router too (`sk-router-description` binds its flows).
     if len(description) > CAP_DESCRIPTION_BUDGET:
-        out.append(finding("sk-description-budget", "warn",
+        out.append(finding("sk-description-budget",
+                           "error" if plugin_source and router_flows(cmd) else "warn",
                            f"description is {len(description)} characters, over the "
                            f"{CAP_DESCRIPTION_BUDGET} budget — put the key use case first and "
                            "trim the rest",
@@ -996,28 +1016,102 @@ def dangling_hyphen_citations(body: str, invocations: set[str], prefix: str,
     return seen
 
 
+def route_hint(cite: str, vendor: str | None, routers: dict[str, set[str]]) -> str | None:
+    """The route that replaces a dead `cite`: the declared alias, or the hyphenated spelling of a
+    flow of a router (`/quenching-<router>-<flow>` → `/quenching-<router> <flow>`), else None."""
+    if cite in RETIRED_ROUTES:
+        return RETIRED_ROUTES[cite]
+    if vendor and cite.startswith("/" + vendor + "-"):
+        tail = cite[len(vendor) + 2:]
+        for name in sorted(routers, key=len, reverse=True):
+            head = name[len(vendor) + 1:] + "-"
+            if name.startswith(vendor + "-") and tail.startswith(head) and tail[len(head):] in routers[name]:
+                return f"/{name} {tail[len(head):]}"
+    return None
+
+
+def sibling_plugins(surface: str) -> set[str]:
+    """The names of the plugins and modules that ship with this surface (`quenching-cache`,
+    `quenching-specs`, …), read from the `modules.json` of the source or of its installed copy:
+    a router a target gets from the plugin is no skill of its own `.agents/`, and citing it is no
+    dead route."""
+    for rel_path in (("assets", "modules.json"), ("quenching", "assets", "modules.json")):
+        path = os.path.join(surface, *rel_path)
+        if os.path.isfile(path):
+            try:
+                with open(path, encoding="utf-8") as fh:
+                    data = json.load(fh)
+                return {p["name"] for key in ("plugins", "modules") for p in data.get(key, [])}
+            except (OSError, ValueError, KeyError, TypeError):
+                return set()
+    return set()
+
+
+def unresolved_route_citations(body: str, invocations: set[str], routers: dict[str, set[str]],
+                               vendor: str | None, source: bool, project: str | None,
+                               siblings: frozenset[str] | set[str] = frozenset()) -> list[str]:
+    """The `` `/route` `` citations that resolve to no skill of this surface: a router removed
+    (`/<vendor>-<x>` with no such router), and — on a target — a `/<skill>` that is gone or a flow
+    the cited router does not list. A route another namespace owns is not this surface's to judge,
+    and a name that is a path (`/docs`, `/tmp`) or a host command is no route."""
+    seen: list[str] = []
+    for m in ROUTE_CITATION_RE.finditer(body):
+        name, flow = m.groups()
+        cite = "/" + name
+        if cite in seen or name in HOST_SLASH_COMMANDS \
+                or any(name == p or name.startswith(p + "-") for p in siblings):
+            continue
+        if cite in invocations:
+            if flow and not source and name in routers and not name.startswith("quenching-") \
+                    and flow not in routers[name] and f"{cite} {flow}" not in seen:
+                seen.append(f"{cite} {flow}")
+            continue
+        if any(i.startswith(cite + "-") for i in invocations):
+            continue
+        if vendor and name.startswith(vendor + "-"):
+            fronts = [r[len(vendor) + 1:] for r in routers if r.startswith(vendor + "-")]
+            if not any(name[len(vendor) + 1:].startswith(f + "-") for f in fronts):
+                seen.append(cite)
+        elif not source and not name.startswith("quenching-"):
+            if project and os.path.exists(os.path.join(project, name)) or os.path.exists("/" + name):
+                continue
+            seen.append(cite)
+    return seen
+
+
 def lint_dangling(body: str, invocations: set[str], where: dict, prefix: str | None = None,
                   fronts: set[str] | None = None,
-                  routers: dict[str, set[str]] | None = None) -> list[dict]:
+                  routers: dict[str, set[str]] | None = None,
+                  vendor: str | None = None, project: str | None = None,
+                  siblings: frozenset[str] | set[str] = frozenset()) -> list[dict]:
     """One finding per file, like `lint_citations`: the citations that resolve to nothing.
 
-    `fronts` are the routers' short names: `/quenching-<router>-<x>` is a retired shortcut, and a
-    router cited with a flow its table does not list names a flow that is gone."""
-    dangling = (dangling_hyphen_citations(body, invocations, prefix, fronts or set()) if prefix
-                else dangling_citations(body, invocations))
-    if prefix and routers:
+    `fronts` are the routers' short names: `/<vendor>-<router>-<x>` is a retired shortcut, a router
+    cited with a flow its table does not list names a flow that is gone, and `/<vendor>-<x>` with no
+    such router names a router that was removed. `prefix` marks the plugin's own source (an error
+    there, a warn on a target); `vendor` is the namespace whose routers are judged, the source's
+    own or the one a target has installed."""
+    routers = routers or {}
+    dangling = [] if prefix else dangling_citations(body, invocations)
+    if vendor:
+        dangling += dangling_hyphen_citations(body, invocations, vendor, fronts or set())
         dangling += dangling_flow_citations(body, routers)
+    for cite in unresolved_route_citations(body, invocations, routers, vendor, bool(prefix), project, siblings):
+        if cite not in dangling:
+            dangling.append(cite)
     if not dangling:
         return []
-    shown = ", ".join(f"`{c}`" for c in dangling[:CITATION_SAMPLE])
+    hints = {c: route_hint(c, vendor, routers) for c in dangling}
+    shown = ", ".join(f"`{c}`" + (f" (use `{hints[c]}`)" if hints[c] else "")
+                      for c in dangling[:CITATION_SAMPLE])
     more = (f" (+{len(dangling) - CITATION_SAMPLE} more)"
             if len(dangling) > CITATION_SAMPLE else "")
-    return [finding("sk-dangling-citation", "warn",
-                    f"{plural(len(dangling), 'citation')} of a command this surface no longer "
-                    f"has — {shown}{more}. The front exists but the command does not: it was "
+    return [finding("sk-dangling-citation", "error" if prefix else "warn",
+                    f"{plural(len(dangling), 'citation')} of a route this surface no longer "
+                    f"has — {shown}{more}. The route, flow or skill does not resolve: it was "
                     "removed or renamed while this file still cites it",
                     citations=dangling,
-                    remedy="cite the command that replaced it, or drop the citation",
+                    remedy="cite the route that replaced it, or drop the citation",
                     **where)]
 
 
@@ -1105,7 +1199,7 @@ def cmd_lint(args, root: str) -> int:
     for cmd in commands:
         findings.extend(lint_command(cmd, base,
                                      named_by.get(cmd["command"]) if prefix else None,
-                                     known_refs))
+                                     known_refs, plugin_source=bool(prefix)))
         where = {"command": cmd["command"], "path": rel(cmd["path"], base)}
         findings.extend(_cq_call_findings(cmd["body"], where))
         findings.extend(mcp_citations.findings(cmd["body"], where))
@@ -1117,28 +1211,28 @@ def cmd_lint(args, root: str) -> int:
         findings.extend(lint_agents(base, base))
 
     invocations = {c["command"] for c in surface_commands}
-    if prefix:
-        fronts = {name[len(prefix) + 1:] for name in routers if name.startswith(prefix + "-")}
-        spellings = {"/" + ":".join(c["relpath"][:-3].split("/")) for c in surface_commands
-                     if "relpath" in c and not c["relpath"].endswith(SKILL_FILE)}
-        for cmd in commands:
-            where = {"command": cmd["command"], "path": rel(cmd["path"], base)}
+    vendor = prefix or ("quenching" if any(i.startswith("/quenching-") for i in invocations)
+                        else None)
+    fronts = ({name[len(vendor) + 1:] for name in routers if name.startswith(vendor + "-")}
+              if vendor else set())
+    project = (os.path.dirname(os.path.abspath(surface))
+               if os.path.basename(os.path.abspath(surface)) in (".agents", ".claude")
+               else os.path.abspath(surface))
+    siblings = sibling_plugins(surface)
+    spellings = ({"/" + ":".join(c["relpath"][:-3].split("/")) for c in surface_commands
+                  if "relpath" in c and not c["relpath"].endswith(SKILL_FILE)} if prefix else set())
+    for cmd in commands:
+        where = {"command": cmd["command"], "path": rel(cmd["path"], base)}
+        if prefix:
             findings.extend(lint_citations(prefix, cmd["body"], spellings, where))
-            findings.extend(lint_dangling(cmd["body"], invocations, where, prefix, fronts, routers))
-        for ref in references:
-            where = {"command": SURFACE_MISSING, "path": rel(ref["path"], base)}
+        findings.extend(lint_dangling(cmd["body"], invocations, where, prefix, fronts, routers,
+                                      vendor, project, siblings))
+    for ref in references:
+        where = {"command": SURFACE_MISSING, "path": rel(ref["path"], base)}
+        if prefix:
             findings.extend(lint_citations(prefix, ref["body"], spellings, where))
-            findings.extend(lint_dangling(ref["body"], invocations, where, prefix, fronts, routers))
-
-    else:
-        for cmd in commands:
-            findings.extend(lint_dangling(cmd["body"], invocations,
-                                          {"command": cmd["command"],
-                                           "path": rel(cmd["path"], base)}))
-        for ref in references:
-            findings.extend(lint_dangling(ref["body"], invocations,
-                                          {"command": SURFACE_MISSING,
-                                           "path": rel(ref["path"], base)}))
+        findings.extend(lint_dangling(ref["body"], invocations, where, prefix, fronts, routers,
+                                      vendor, project, siblings))
 
     for ref in references:
         findings.extend(mcp_citations.findings(

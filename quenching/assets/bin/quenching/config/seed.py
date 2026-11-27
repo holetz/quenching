@@ -27,6 +27,7 @@ def seed_document(root: str) -> dict:
         "backend": "git",
         "shared": {
             "autonomy": AUTONOMY,
+            "components": {"usageWindowDays": 60},
             "contextBudgets": BUDGETS,
             "okfValidate": OKF_VALIDATE,
             "profiles": {"installed": profile},

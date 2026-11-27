@@ -39,9 +39,11 @@ import os
 import pathlib
 import tempfile
 import unittest
+from unittest import mock
 from types import SimpleNamespace
 
 import _paths  # noqa: F401  — must precede the `quenching` import; see its docstring
+from quenching.components.commands import lint as lint_module
 from quenching.components.commands.lint import (
     UNSCOPED_TOOLS,
     _frontmatter_strict_issues,
@@ -52,6 +54,8 @@ from quenching.components.commands.lint import (
     cmd_lint,
     dangling_citations,
     dangling_flow_citations,
+    route_hint,
+    unresolved_route_citations,
     router_flows,
     router_description_findings,
     router_grant_findings,
@@ -832,6 +836,99 @@ class DanglingCitation(unittest.TestCase):
     def test_the_predicate_reports_each_miss_once(self):
         self.assertEqual(dangling_citations("/a:x /a:x /a:y /b:z", {"/a:x"}), ["/a:y"])
 
+
+
+Q = "quenching"   # spelled apart so the proof doctor reads no made-up skill as a citation
+
+
+class UnresolvedRoutes(unittest.TestCase):
+    """A route cited in a body that resolves to no skill of the surface: a router removed, the
+    hyphenated flow form, a skill the target no longer has."""
+
+    def _surface(self, root: str, skills: dict[str, str]) -> None:
+        for name, body in skills.items():
+            path = pathlib.Path(root, ".agents", "skills", name, "SKILL.md")
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text(f"---\nname: {name}\ndescription: d\n---\n{body}\n", encoding="utf-8")
+
+    def _found(self, surface: str) -> list[dict]:
+        out = io.StringIO()
+        with contextlib.redirect_stdout(out):
+            cmd_lint(SimpleNamespace(path=None, json=True), surface)
+        return [f for f in json.loads(out.getvalue())["findings"]
+                if f["code"] == "sk-dangling-citation"]
+
+    ROUTER = ("| Flow | Reference |\n| --- | --- |\n"
+              "| `create` | [references/create.md](references/create.md) |\n")
+
+    def test_the_three_forms_on_a_target_with_the_right_route_in_the_message(self):
+        body = (f"Not for: x → `/{Q}-specs-create`, `/{Q}-foo align` and "
+                "`/minha-skill-apagada`.")
+        with tempfile.TemporaryDirectory() as root:
+            self._surface(root, {"quenching-specs": self.ROUTER, "minha": body})
+            found = self._found(os.path.join(root, ".agents"))
+            self.assertEqual(len(found), 1)
+            self.assertEqual(found[0]["severity"], "warn")
+            self.assertEqual(found[0]["citations"],
+                             [f"/{Q}-specs-create", f"/{Q}-foo", "/minha-skill-apagada"])
+            self.assertIn("use `/quenching-specs create`", found[0]["message"])
+
+    def test_a_declared_retirement_names_the_new_route(self):
+        with tempfile.TemporaryDirectory() as root, \
+                mock.patch.dict(lint_module.RETIRED_ROUTES, {f"/{Q}-old": f"/{Q}-new go"}):
+            self._surface(root, {"quenching-specs": self.ROUTER, "minha": f"See `/{Q}-old`."})
+            self.assertIn(f"use `/{Q}-new go`", self._found(os.path.join(root, ".agents"))[0]["message"])
+
+    def test_paths_urls_host_commands_and_live_skills_are_silent(self):
+        body = ("`/docs` `/tmp/x` `https://a.b/c` `/clear` `/minha` `/minha extra` "
+                "`/quenching-specs create` and `/quenching-specs` in `/quenching-specs-`.")
+        with tempfile.TemporaryDirectory() as root:
+            pathlib.Path(root, "docs").mkdir()
+            self._surface(root, {"quenching-specs": self.ROUTER, "minha": body})
+            self.assertEqual(self._found(os.path.join(root, ".agents")), [])
+
+    def test_a_target_router_cited_with_a_flow_it_does_not_list_is_reported(self):
+        router = self.ROUTER.replace("`create`", "`make`").replace("create.md", "make.md")
+        with tempfile.TemporaryDirectory() as root:
+            self._surface(root, {"meu": router, "outro": "Run `/meu make` then `/meu drop`."})
+            self.assertEqual(self._found(os.path.join(root, ".agents"))[0]["citations"], ["/meu drop"])
+
+    def test_the_predicates_stay_off_text_that_is_not_a_citation(self):
+        routers = {"quenching-specs": {"create"}}
+        inv = {"/quenching-specs"}
+        self.assertEqual(unresolved_route_citations(
+            f"see /{Q}-foo in prose", inv, routers, "quenching", True, None), [])
+        self.assertEqual(unresolved_route_citations(
+            f"`/{Q}-foo` and `/alheia`", inv, routers, "quenching", True, None),
+            [f"/{Q}-foo"])
+        self.assertEqual(route_hint(f"/{Q}-specs-create", "quenching", routers),
+                         "/quenching-specs create")
+
+    def test_the_source_reports_an_error_and_a_router_over_budget_is_an_error(self):
+        long = "x" * 300
+        with tempfile.TemporaryDirectory() as tmp:
+            router = ops_router(tmp, long)
+            self.assertEqual(
+                [f["severity"] for f in lint_command(router, BASE, plugin_source=True)
+                 if f["code"] == "sk-description-budget"], ["error"])
+            self.assertEqual(
+                [f["severity"] for f in lint_command(router, BASE)
+                 if f["code"] == "sk-description-budget"], ["warn"])
+        plain = command("No table.\n")
+        plain["frontmatter"]["description"] = long
+        self.assertEqual(
+            [f["severity"] for f in lint_command(plain, BASE, plugin_source=True)
+             if f["code"] == "sk-description-budget"], ["warn"])
+
+
+def ops_router(tmp: str, description: str) -> dict:
+    skill = pathlib.Path(tmp) / "skills" / "quenching-ops"
+    skill.mkdir(parents=True, exist_ok=True)
+    body = "| Flow | Reference |\n| --- | --- |\n| `go` | [references/go.md](references/go.md) |\n"
+    cmd = {"command": "/quenching-ops", "path": str(skill / "SKILL.md"), "body": body,
+           "frontmatter": {"description": description}}
+    cmd["anomalies"], cmd["hooks"], cmd["hooksParsed"], cmd["bodyLines"] = [], {}, True, 3
+    return cmd
 
 
 class GenericSurface(unittest.TestCase):

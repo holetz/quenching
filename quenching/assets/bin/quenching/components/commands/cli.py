@@ -20,10 +20,15 @@ whether the verb survives is task 6.3's to decide, and re-adding it is one subpa
 from __future__ import annotations
 
 import argparse
+import datetime
 import os
+import re
+import sqlite3
 import sys
+from pathlib import Path
 
-from quenching.common.output import CQArgumentParser, emit, finding_code, refuse
+from quenching.common.config import setting
+from quenching.common.output import CQArgumentParser, emit, finding, finding_code, refuse
 from quenching.common.version import VERSION
 from quenching.components.commands.bench import add_arguments as add_bench_arguments
 from quenching.components.commands.bench import cmd_bench
@@ -38,7 +43,8 @@ from quenching.components.commands.migrate import add_arguments as add_migrate_a
 from quenching.components.commands.migrate import cmd_migrate
 from quenching.components.families import compute_families
 from quenching.components.sections import RULES_MARKER
-from quenching.components.surface import find_surface_root, load_surface
+from quenching.components.surface import (SKILL_FILE, find_surface_root, load_surface,
+                                          surface_references)
 from quenching.session.commands.cli import add_subcommands as add_session_subcommands
 
 
@@ -125,6 +131,103 @@ def cmd_session(args, root: str) -> int:
     return args.func(args)
 
 
+USAGE_WINDOW_DAYS = 60
+
+
+def merge_skill_use(into: dict, skills: dict) -> None:
+    """Add one session's `skills` tally (`session.cqcalls.record_skill_use`) to the total."""
+    for name, entry in skills.items():
+        total = into.setdefault(name, {"count": 0, "last": None, "flows": {}})
+        scopes = [(total, entry)] + [(total["flows"].setdefault(f, {"count": 0, "last": None}), e)
+                                     for f, e in entry["flows"].items()]
+        for dest, src in scopes:
+            dest["count"] += src["count"]
+            if src["last"] and (dest["last"] is None or src["last"] > dest["last"]):
+                dest["last"] = src["last"]
+
+
+def collect_skill_use(root: str) -> tuple[dict, dict]:
+    """`(skills, sessions)`: the skill and flow invocations of every Claude Code transcript of this
+    project and every OpenCode session that ran in it, and how many sessions of each were read.
+    A store that is absent contributes nothing and is not an error: no evidence is not a verdict."""
+    from quenching.session.commands.cache import _inside, _sessions, _tables, opencode_db
+    from quenching.session.opencode_transcript import _lines, _parts
+    from quenching.session.parse import read_lines, read_session
+    from quenching.session.transcript import resolve_project_dir
+
+    cwd = Path(root).resolve()
+    skills: dict = {}
+    sessions = {"claude": 0, "opencode": 0}
+    project, _ = resolve_project_dir(cwd)
+    for path in sorted(project.glob("*.jsonl")) if project else []:
+        try:
+            merge_skill_use(skills, read_session(path)["skills"])
+            sessions["claude"] += 1
+        except OSError:
+            continue
+    path = opencode_db(None)
+    if path.is_file():
+        try:
+            db = sqlite3.connect(f"file:{path}?mode=ro", uri=True)
+            try:
+                tables = _tables(db)
+                known = _sessions(db, tables) if {"session_v2", "session_message"} <= tables else {}
+                for sid, (_, _, directory) in known.items():
+                    if _inside(sid, known, cwd):
+                        model = read_lines(_lines(db, sid, directory, _parts(db, sid)), f"{path}#{sid}")
+                        merge_skill_use(skills, model["skills"])
+                        sessions["opencode"] += 1
+            finally:
+                db.close()
+        except sqlite3.Error:
+            pass
+    return skills, sessions
+
+
+def unused_skills(surface: dict, skills: dict, days: int, now: datetime.datetime) -> list[dict]:
+    """`sk-unused` (info): a skill of the surface no session invoked in the last `days` days AND no
+    other body cites by name. Usage is a signal, never a verdict: a skill the agent reads by path
+    is cited, so it stays; the report lists, and never deletes."""
+    cutoff = (now - datetime.timedelta(days=days)).strftime("%Y-%m-%dT%H:%M:%S")
+    bodies = [(c["command"], c["body"]) for c in surface["commands"]]
+    try:
+        bodies += [(ref["relpath"], ref["body"]) for ref in surface_references(surface["root"])]
+    except OSError:
+        pass
+    out = []
+    for cmd in surface["commands"]:
+        name = cmd["command"].lstrip("/")
+        if os.path.basename(cmd["relpath"]) != SKILL_FILE:
+            continue
+        last = (skills.get(name) or {}).get("last")
+        if last and last[:19] >= cutoff:
+            continue
+        cite = re.compile(r"(?<![\w:/.-])/" + re.escape(name) + r"(?![\w:-])")
+        citers = sorted({who for who, body in bodies if who != cmd["command"] and cite.search(body)})
+        if citers:
+            continue
+        out.append(finding("sk-unused", "info",
+                           f"`/{name}` was not invoked in the last {days} days and no other skill "
+                           "or reference cites it — a candidate to retire, for a human to decide",
+                           command=cmd["command"], path=cmd["relpath"], lastUsed=last,
+                           windowDays=days))
+    return out
+
+
+def usage_report(root: str, surface: dict, now: datetime.datetime | None = None) -> dict:
+    """The `usage` block of `status`: per skill and flow, the count and the last date seen, and
+    the `sk-unused` candidates — only when at least one session was read."""
+    days, _ = setting(root, "shared", "components.usageWindowDays", USAGE_WINDOW_DAYS,
+                      lambda v: isinstance(v, int) and not isinstance(v, bool) and v >= 1)
+    skills, sessions = collect_skill_use(root)
+    evaluated = sum(sessions.values()) > 0
+    now = now or datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None)
+    order = lambda d: dict(sorted(d.items(), key=lambda kv: (-kv[1]["count"], kv[0])))  # noqa: E731
+    return {"windowDays": days, "sessions": sessions,
+            "skills": {n: dict(e, flows=order(e["flows"])) for n, e in order(skills).items()},
+            "unused": unused_skills(surface, skills, days, now) if evaluated else []}
+
+
 def cmd_status(args, root: str) -> int:
     """Report the command surface without writing or duplicating the doctor output."""
     surface = load_surface(root)
@@ -150,14 +253,21 @@ def cmd_status(args, root: str) -> int:
             "findings": codes,
             "families": compute_families(surface["commands"]),
             "errors": sum(item.get("severity") == "error" for item in findings),
-            "warnings": sum(item.get("severity") != "error" for item in findings),
+            "warnings": sum(item.get("severity") not in ("error", "info") for item in findings),
             "ok": not findings,
         }
+        payload["usage"] = usage_report(root, surface)
+        for item in payload["usage"]["unused"]:
+            payload["findings"]["sk-unused"] = payload["findings"].get("sk-unused", 0) + 1
     human = (f"components status — {root}\n"
              f"  commands: {payload['commands']}\n"
              + (f"  generated: {payload['generated']}\n" if payload.get("generated") else "")
              + f"  state: {payload['state']}\n"
              f"  findings: {', '.join(f'{key}={value}' for key, value in payload['findings'].items()) or '(none)'}"
+             + "".join(f"\n  unused ({payload['usage']['windowDays']}d): {item['command']}"
+                       for item in payload.get("usage", {}).get("unused", []))
+             + "".join(f"\n  used: {name}={entry['count']} (last {(entry['last'] or '-')[:10]})"
+                       for name, entry in list(payload.get("usage", {}).get("skills", {}).items())[:10])
              + "".join(f"\n  router candidate ({entry['kind']}): {name} ({entry['skills']} skills)"
                        for name, entry in payload.get("families", {}).items() if entry["candidate"]))
     emit(args.json, payload, human)

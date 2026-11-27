@@ -127,6 +127,24 @@ catalog coverage scan uses; a bare `cq specs` in prose is none.
 - A subagent's measure is the digest of its own transcript; the per-command counts carry the same
   upper-bound honesty as every other count of an unclosed stage.
 
+## Skill use: which skill and flow a session invoked
+
+<!-- rules -->
+
+`session list` carries a `skills` tally, read from the transcript by `session/cqcalls.py`
+(`record_skill_use`) and never recalled: every typed `/skill` and every `Skill` tool call (Claude
+Code) or `skill` tool call (OpenCode) counts one use of the skill, and of its flow when the arguments
+open with a word a flow is written as (`quenching-specs` with `execute 12` is one use of the skill and
+one of `execute`). Each entry keeps its count and the last time it was seen.
+
+- A route a spec retired counts for the route that replaced it (`RETIRED_ROUTES`), so the history
+  survives a rename.
+- The count is a lower bound: an agent that reads a skill by path invokes nothing by name. That is why
+  `cq components status` reads it only as a signal — `sk-unused` also requires that no body cites the
+  skill — and never as a verdict.
+- `cq components status` totals the tally over the project's Claude Code transcripts and the OpenCode
+  sessions that ran in it, and names how many sessions of each it read.
+
 ## Silence is a refusal, never a clean report
 
 A non-empty transcript that yields zero commands exits **2**, distinguishing `se-empty-transcript`
