@@ -209,6 +209,55 @@ class MirrorTests(Fixture):
         self.assertEqual(data["dedup"], {"sessions": 0, "requests": 0})
 
 
+class EquivalentCostTests(Fixture):
+    """`input + 0.1 x read + 1.25 x write`, per origin row and per spec."""
+
+    def setUp(self):
+        super().setUp()
+        project = self.projects / "-p"
+        sub = project / "s1" / "subagents"
+        sub.mkdir(parents=True)
+        prompt = {"type": "user", "timestamp": "2026-10-01T09:59:00Z",
+                  "message": {"content": [{"type": "text", "text": "Spec: 637. Worktree: none."}]}}
+        (project / "s1.jsonl").write_text("\n".join(json.dumps(r) for r in [
+            prompt,
+            assistant("m1", "2026-10-01T10:00:00Z", inp=100, read=1000, write=2000),
+            assistant("m2", "2026-10-01T10:01:00Z", inp=50, read=3000, write=0)]) + "\n")
+        (sub / "agent-a.jsonl").write_text(json.dumps(
+            assistant("s1", "2026-10-01T10:00:30Z", model="sonnet", inp=10, write=400)) + "\n")
+        (sub / "agent-a.meta.json").write_text('{"agentType":"quenching-specs:verifier"}')
+        branch = assistant("b1", "2026-10-01T11:00:00Z", inp=20, read=100, write=0)
+        branch["gitBranch"] = "plan/640-referencias"
+        (project / "s2.jsonl").write_text(json.dumps(branch) + "\n")
+        (project / "s3.jsonl").write_text(json.dumps(assistant("n1", "2026-10-01T12:00:00Z", inp=1)) + "\n")
+        self.data = json.loads(run("--harness", "claude", "--all", "--json")[1])
+
+    def test_each_row_carries_its_equivalent_tokens(self):
+        rows = {(r["role"], r["agent"]): r for r in self.data["rows"]}
+        self.assertEqual(rows[("subagent", "verifier")]["equivalent"], 10 + 500)
+        main = rows[("main", "main")]
+        self.assertEqual(main["equivalent"], round(171 + 0.1 * 4100 + 1.25 * 2000))
+
+    def test_a_spec_collects_its_sessions_and_its_subagents(self):
+        by = {s["spec"]: s for s in self.data["bySpec"]}
+        self.assertEqual(set(by), {"637", "640"}, "a session naming no spec belongs to none")
+        self.assertEqual((by["637"]["sessions"], by["637"]["requests"]), (2, 3))
+        self.assertEqual(by["637"]["equivalent"], round(160 + 0.1 * 4000 + 1.25 * 2400))
+        self.assertEqual(by["640"]["equivalent"], round(20 + 0.1 * 100))
+
+    def test_opencode_takes_the_spec_from_the_first_prompt_and_children_inherit_it(self):
+        self.opencode()
+        db = sqlite3.connect(self.db)
+        db.execute("UPDATE session_message SET data = ? WHERE id = 'u'", (
+            json.dumps({"text": "Spec: 641. Worktree: none."}),))
+        db.commit()
+        db.close()
+        data = json.loads(run("--harness", "opencode", "--opencode-db", str(self.db), "--all", "--json")[1])
+        by = {s["spec"]: s for s in data["bySpec"]}
+        self.assertEqual(set(by), {"641"})
+        self.assertEqual(by["641"]["sessions"], 2, "the root and its subagent")
+
+
 class SourcesTests(Fixture):
     def test_a_missing_store_does_not_hide_the_other(self):
         self.claude()

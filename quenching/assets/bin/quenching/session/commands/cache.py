@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import sqlite3
 from datetime import datetime, timezone
 from pathlib import Path
@@ -33,6 +34,12 @@ MIRROR_FLOOR = 1000
 MIRROR_SHARE = 0.8
 MIRROR_WINDOW = 60
 SKILL_KEY = "core/skill-guidance"
+# A spec runner is briefed with `Spec: <id>` and works on `plan/<id>-<handle>`.
+SPEC_SCAN = 60
+SPEC_RE = re.compile(r"(?:\bSpec:\s*#?|\bplan/)(\d+)\b")
+# Equivalent cost in input tokens: what a request weighs at the published 5-minute multipliers.
+EQ_READ = 0.1
+EQ_WRITE = 1.25
 # Claude Code records its own local notices as assistant turns; no model answered them.
 SYNTHETIC = "<synthetic>"
 
@@ -72,6 +79,37 @@ def _host(path: Path) -> str:
     return ""
 
 
+def _claude_spec(path: Path) -> str:
+    """The spec a Claude Code transcript worked on: the branch it ran on, else its first prompt.
+
+    A subagent transcript inherits its parent session's spec. Only the id is taken, never content."""
+    try:
+        with path.open(encoding="utf-8", errors="replace") as fh:
+            for n, line in enumerate(fh):
+                if n >= SPEC_SCAN:
+                    break
+                try:
+                    rec = json.loads(line)
+                except ValueError:
+                    continue
+                if not isinstance(rec, dict):
+                    continue
+                found = SPEC_RE.search(str(rec.get("gitBranch") or ""))
+                if found is None and rec.get("type") == "user":
+                    msg = rec.get("message")
+                    content = msg.get("content") if isinstance(msg, dict) else None
+                    if isinstance(content, list):
+                        content = " ".join(str(b.get("text") or "") for b in content if isinstance(b, dict))
+                    found = SPEC_RE.search(content) if isinstance(content, str) else None
+                if found:
+                    return found[1]
+    except OSError:
+        pass
+    if path.parent.name == "subagents":
+        return _claude_spec(path.parent.parent.with_suffix(".jsonl"))
+    return ""
+
+
 def bare(agent: str) -> str:
     return agent.rsplit(":", 1)[-1].removeprefix("quenching-")
 
@@ -83,6 +121,7 @@ def bucket(minutes: float) -> str:
 def _claude_file(path: Path, role: str, agent: str, anomalies: list) -> list:
     out = []
     host = _host(path)
+    spec = _claude_spec(path)
     for model, usage, when, _ in _requests(path, anomalies).values():
         if model == SYNTHETIC:
             continue
@@ -91,7 +130,7 @@ def _claude_file(path: Path, role: str, agent: str, anomalies: list) -> list:
         out.append(Req("claude", str(path), role, agent, model, when, _n(usage, "input_tokens"),
                        _n(usage, "cache_read_input_tokens"), _n(usage, "cache_creation_input_tokens"),
                        _n(created, "ephemeral_5m_input_tokens"), _n(created, "ephemeral_1h_input_tokens"),
-                       _n(usage, "output_tokens"), host))
+                       _n(usage, "output_tokens"), host, spec))
     return out
 
 
@@ -190,6 +229,7 @@ def opencode_requests(path: Path, directory: Path | None, anomalies: list) -> tu
                               "message": "no OpenCode session tables this reader knows"})
             return [], []
         reqs = []
+        specs = _opencode_specs(db, tables, sessions)
         for table in kept:
             for sid, created, model, inp, read, write, output, reasoning in db.execute(QUERIES[table]):
                 if sid not in sessions or not _inside(sid, sessions, directory):
@@ -199,10 +239,30 @@ def opencode_requests(path: Path, directory: Path | None, anomalies: list) -> tu
                 reqs.append(Req("opencode", sid, "subagent" if parent else "main",
                                 bare(agent or "unknown") if parent else "main", model or "unknown", when,
                                 inp or 0, read or 0, write or 0, 0, 0, (output or 0) + (reasoning or 0),
-                                "opencode"))
+                                "opencode", specs.get(sid, "")))
         return reqs, _listings(db, tables, sessions, directory)
     finally:
         db.close()
+
+
+def _opencode_specs(db: sqlite3.Connection, tables: set, sessions: dict) -> dict:
+    """session id -> spec id, from the first user prompt; a subagent inherits its root's."""
+    own: dict = {}
+    if "session_message" in tables:
+        query = ("SELECT session_id, json_extract(data, '$.text') FROM session_message "
+                 "WHERE type = 'user' ORDER BY session_id, seq")
+        for sid, text in db.execute(query):
+            if sid not in own:
+                found = SPEC_RE.search(text) if isinstance(text, str) else None
+                own[sid] = found[1] if found else ""
+    out: dict = {}
+    for sid in sessions:
+        seen, cur = set(), sid
+        while cur in sessions and cur not in seen and not own.get(cur):
+            seen.add(cur)
+            cur = sessions[cur][0]
+        out[sid] = own.get(cur, "")
+    return out
 
 
 def _listings(db: sqlite3.Connection, tables: set, sessions: dict, directory: Path | None) -> list:
@@ -291,6 +351,34 @@ def _context(r: Req) -> int:
     return r.input + r.read + r.write
 
 
+def equivalent(input: int, read: int, write: int) -> int:
+    """Input-token equivalent of a request: `input + 0.1 x read + 1.25 x write`."""
+    return round(input + EQ_READ * read + EQ_WRITE * write)
+
+
+def by_spec(reqs: list) -> list:
+    """What each spec's sessions weighed, in the same equivalent tokens; sessions with no spec are left out."""
+    grouped: dict = {}
+    for r in reqs:
+        if not r.spec:
+            continue
+        row = grouped.setdefault(r.spec, {"spec": r.spec, "sessions": set(), "requests": 0, "input": 0,
+                                          "cacheRead": 0, "cacheWrite": 0, "output": 0})
+        row["sessions"].add((r.harness, r.session))
+        row["requests"] += 1
+        row["input"] += r.input
+        row["cacheRead"] += r.read
+        row["cacheWrite"] += r.write
+        row["output"] += r.output
+    out = []
+    for spec in sorted(grouped, key=int):
+        row = grouped[spec]
+        row["sessions"] = len(row["sessions"])
+        row["equivalent"] = equivalent(row["input"], row["cacheRead"], row["cacheWrite"])
+        out.append(row)
+    return out
+
+
 def request_usd(r: Req) -> float | None:
     """One request at list price; a cache write the record did not split prices at 5 minutes."""
     return pricing.usd(r.model, input=r.input, cache_read=r.read, write5m=r.write5m, write1h=r.write1h,
@@ -345,6 +433,7 @@ def summarize(reqs: list, priced: bool = False) -> tuple:
     for key in sorted(rows):
         row = rows[key]
         context = row["input"] + row["cacheRead"] + row["cacheWrite"]
+        row["equivalent"] = equivalent(row["input"], row["cacheRead"], row["cacheWrite"])
         row["hitRate"] = round(row["cacheRead"] / context, 4) if context else None
         mult = pricing.table()["cacheWrite"]
         # Cache-write cost in input-token equivalents: as recorded, and had every write used one TTL.
@@ -503,7 +592,7 @@ def cmd_cache(args) -> int:
     rows, gaps, boundaries = summarize(reqs, priced)
     out = {"ok": True, "scope": str(directory) if directory else "all", "sources": sources,
            "unavailable": unavailable, "dedup": dedup, "rows": rows, "gaps": gaps, "boundaries": boundaries,
-           "skillListing": listing_summary(listings), "anomalies": anomalies}
+           "skillListing": listing_summary(listings), "bySpec": by_spec(reqs), "anomalies": anomalies}
     if priced:
         out["pricing"] = {"sourceDate": pricing.table()["sourceDate"], "basis": "list price estimate"}
     if args.json:
@@ -520,6 +609,8 @@ def cmd_cache(args) -> int:
               f"{g['cold']:>6}/{g['requests']:<7}{g['coldRate']:>7.1%}")
     for b in boundaries:
         print(f"  boundary {b['harness']} {b['role']} {b['model'][-25:]}: cold from {b['coldFromGap'] or 'no gap measured'}")
+    for sp in out["bySpec"]:
+        print(f"  spec {sp['spec']:<8}{sp['sessions']:>4} sessions {sp['requests']:>7} req {sp['equivalent']:>12} equivalent tokens")
     for s in out["skillListing"]:
         print(f"  skills {s['role']} {s['agent']}: {s['entriesMedian']} entries, ~{s['tokensEstimate']} tokens always on")
     for name, why in unavailable.items():
