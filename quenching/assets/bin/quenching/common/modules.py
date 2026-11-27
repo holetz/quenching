@@ -68,7 +68,10 @@ def load_manifest(root: Path) -> dict:
             if package in planned_owners:
                 raise ValueError(f"duplicate package owner: {package}")
             planned_owners.add(package)
-        for skill in module["owned"]["skills"]:
+        skills = module["owned"].get("skills", [])
+        if not isinstance(skills, list):
+            raise ValueError(f"{name}: owned.skills must be a list")
+        for skill in skills:
             if not safe_path(root / data["source"] / "skills", skill + "/SKILL.md").is_file():
                 raise ValueError(f"missing skill source: {skill}")
         support = module["generatedSupport"]
@@ -142,14 +145,18 @@ def skill_heads(name: str) -> list[str]:
 
 
 def namespace_map(root: Path, manifest: dict) -> dict[str, str]:
-    """Map each `quenching:<head>` id head (a skill, its front or an agent) to its module."""
+    """Map each `quenching:<head>` id head (a skill, its front or an agent) to its module.
+
+    A module's own name is a head too, so a front with no skill (`skills: []`, the front is an
+    argument of `/quenching-align`) still answers to `quenching:<front>`."""
     source = root / manifest["source"]
     mapping = {}
     for module in manifest["modules"]:
         owned = module.get("owned")
         if not owned:
             continue
-        heads = [head for skill in owned["skills"] for head in skill_heads(skill)]
+        heads = [module["name"].removeprefix("quenching-")]
+        heads += [head for skill in owned.get("skills", []) for head in skill_heads(skill)]
         if owned["agents"]:
             heads += sorted(p.stem for p in (source / "agents").glob("*.md"))
         for head in heads:
