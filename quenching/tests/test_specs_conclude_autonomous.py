@@ -8,7 +8,9 @@ Outside `autonomous` nothing changes — the handoff is named and never invoked.
 import pathlib
 import unittest
 
-import _paths  # noqa: F401  — must precede the `quenching` import
+import _paths  # noqa: F401
+from _flow import flow_text
+# must precede the `quenching` import
 
 PLUGIN_ROOT = pathlib.Path(__file__).resolve().parent.parent
 CONCLUDE = PLUGIN_ROOT / "skills" / "quenching-specs" / "references" / "conclude.md"
@@ -18,7 +20,7 @@ RUNNER = PLUGIN_ROOT / "agents" / "spec-runner.md"
 class ConcludeAutonomous(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.text = " ".join(CONCLUDE.read_text(encoding="utf-8").split())
+        cls.text = " ".join(flow_text(CONCLUDE).split())
 
     def test_it_invokes_pr_create_with_the_autonomous_word(self):
         self.assertIn('Skill("quenching-git", "pr-create <id> autonomous")',

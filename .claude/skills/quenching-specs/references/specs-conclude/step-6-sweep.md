@@ -71,8 +71,7 @@ the `## Problem` names the source path in that checkout and the deploy step, nev
 copy in this repository. A defect of this repository's own skill, standard, harness or script is
 fixed here, and the spec says so.
 
-Present the candidates as ONE plan and take one confirmation (under `autonomous`, §Under
-`autonomous` answers it): each candidate with its evidence, and for each the choice between
+Present the candidates as ONE plan and take one confirmation (under `autonomous`, the `autonomous` answer of this step answers it): each candidate with its evidence, and for each the choice between
 capturing it now — the default — and declining it. A declined candidate is named in the report with
 its reason, never silently dropped, and a resumed run re-reads the front instead of opening a second
 spec for the same defect.

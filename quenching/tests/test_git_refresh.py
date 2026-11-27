@@ -11,7 +11,9 @@ import subprocess
 import unittest
 from types import SimpleNamespace
 
-import _paths  # noqa: F401  — must precede the `quenching` import
+import _paths  # noqa: F401
+from _flow import flow_text
+# must precede the `quenching` import
 from quenching.git.refresh import cmd_refresh
 from test_git import RepoCase, _run
 
@@ -127,7 +129,7 @@ class TheCloseNamesTheVerb(unittest.TestCase):
     def test_conclude_and_merge_bodies_call_it(self):
         for rel in ("quenching/skills/quenching-specs/references/conclude.md",
                     "quenching/skills/quenching-git/references/merge.md"):
-            text = " ".join((ROOT / rel).read_text(encoding="utf-8").split())
+            text = " ".join((flow_text(ROOT / rel) if rel.endswith("conclude.md") else (ROOT / rel).read_text(encoding="utf-8")).split())
             self.assertTrue(any(form in text for form in ("cq git refresh", "`git_write(verb=\"refresh\")`", "git_write(verb=\"refresh\", ")), rel)
 
 

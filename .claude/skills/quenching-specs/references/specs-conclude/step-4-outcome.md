@@ -6,8 +6,8 @@ this branch* — see
 [specs-conclude/abandoned.md](.agents/quenching/references/specs-conclude/abandoned.md)
 §Locating the checkout and writing into it. *A `done` spec is archived after its merge, never
 before*: the spec store is a git ref, so an archive is visible to every reader the moment it is
-written while the PR can still stall or be closed; `specs_write(verb="promote", spec=<id>,
-to="archive", outcome="done")` refuses while the work ref is not in `origin/<base>`, and `--force`
+written while the PR can still stall or be closed; the `promote` verb with `to="archive"` and
+`outcome="done"` refuses while the work ref is not in `origin/<base>`, and `--force`
 does not reach that refusal.
 
 **Resuming.** Signal: the `## Outcome` section is filled → skip the draft; go to distil. `outcome`
@@ -64,8 +64,7 @@ status, provenance, per-model values or unavailable reason; calibration is futur
 not an inference this conclude makes.
 
 `## Outcome` is the archive gate — the post-merge close cannot archive without it, so it is written
-now, while the run still knows what shipped. Draft it, confirm it (under `autonomous`, §Under
-`autonomous`), write it:
+now, while the run still knows what shipped. Draft it, confirm it (under `autonomous`, the `autonomous` answer of this step), write it:
 ```text
 specs_write(verb="section_write", spec=<id>, heading="Outcome", body=<body>)
 ```

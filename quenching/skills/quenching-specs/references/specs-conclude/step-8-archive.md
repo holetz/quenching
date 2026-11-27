@@ -1,7 +1,7 @@
 # /quenching-specs conclude — step 8: After the merge: archive and release the worktree
 
 **Resuming.** Already merged → run only this step. Archived → report it closed; nothing is left.
-**Under `autonomous`.** No question exists: `reconcile --write` and the worktree's release run as
+**Under `autonomous`.** Nothing is asked in the post-merge close: `reconcile --write` and the worktree's release run as
 written; a `needs-human` row or a refusal is reported and never forced.
 
 This step runs only once the work is merged — a conclude resumed after the merge (the "already

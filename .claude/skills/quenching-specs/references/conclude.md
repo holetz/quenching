@@ -120,7 +120,7 @@ acceptance line and the next-step block are all reported.
 ## Invariants to never violate
 
 - Never infer the outcome. `done` and `abandoned` are the human's word, always — under `autonomous`,
-  the explicit `--outcome` the caller passed, and nothing else (§Under `autonomous`).
+  the explicit `--outcome` the caller passed, and nothing else (the `autonomous` answers in each step).
 - Never treat staleness as evidence of abandonment.
 - Never pass `--force` unprompted — a refusal is information, not an obstacle.
 - Never hand off an abandoned spec's branch toward a merge — offer to keep or delete it instead.
