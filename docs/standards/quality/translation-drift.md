@@ -4,10 +4,10 @@ title: Translation drift is a finding
 description: Translation divergence is a named, repairable finding with exit 1; refusal remains exit 2 and neither result is a silent success
 resource: quenching/assets/bin/quenching/deploy/cli.py, quenching/assets/bin/quenching/components/commands/bridge.py, quenching/skills/quenching-components/references/align.md
 tags: [quality, translation, drift, ci, findings]
-timestamp: 2026-11-03
+timestamp: 2026-11-27
 audience: both
 authority: background
-source: alinhar-plugin-a-agents-md spec, tasks 3.1–3.4 (2026-08-18); spec 2160 (install only by deploy)
+source: alinhar-plugin-a-agents-md spec, tasks 3.1–3.4 (2026-08-18); spec 2160 (install only by deploy); spec 656
 maintainer: quenching
 ---
 
@@ -24,8 +24,8 @@ difference, not that translation was unable to run.
 **The two checks answer for different owners.** `deploy --check` owns the generated surface, both
 copies of a generated skill included; `bridge --check` owns the target's own skills. A name
 `.agents/.quenching-deploy.json` declares under `skills` is never a bridge source, a bridge conflict
-or a bridge orphan, even when a stale `.generated-files.json` lists it — so a `claude`-only target,
-whose generated skills exist only under `.claude/skills`, is clean for both checks.
+or a bridge orphan, even when a stale `.generated-files.json` lists it — so a target whose generated
+skills sit in `.agents/skills` beside its own is clean for both checks.
 
 A caller that wants to reconcile the generated copy runs the same command with `--write` and then
 checks again. `/quenching-components align` reports the same findings; it does not write the

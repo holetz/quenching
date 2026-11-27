@@ -4,10 +4,10 @@ title: Surface verification
 description: How a change to the command surface is proven — a fresh process because the registry is built at session start over a throwaway box the checkout was deployed into, assertions on captured tool_use rather than prose, the five preconditions a functional check must satisfy to measure what it claims, why the harness belongs to the components front rather than the spec cycle and how to scope its cost, and how an ordering property is verified by running a real cycle
 resource: quenching/tests/test_readme_surface.py, quenching/assets/checks/functional-checks.sh, quenching/skills/quenching-components/references/command-new.md, quenching/skills/quenching-specs/references/conclude.md, quenching/skills/**
 tags: [quality, verification, automation, commands, functional-tests, cost]
-timestamp: 2026-11-03
+timestamp: 2026-11-27
 audience: both
 authority: current
-source: collapse-skills-into-commands, move-conclude-merge-last, 2026-07-28, verify-allowed-tools-enforcement, 2026-07-29, stale-installed-copy, spec 1677 user-plugin isolation, spec 2160 (install only by deploy); lineage in ADR 0004 and ADR 0017
+source: collapse-skills-into-commands, move-conclude-merge-last, 2026-07-28, verify-allowed-tools-enforcement, 2026-07-29, stale-installed-copy, spec 1677 user-plugin isolation, spec 2160 (install only by deploy); lineage in ADR 0004 and ADR 0017; spec 656
 maintainer: quenching
 ---
 
@@ -99,7 +99,8 @@ claimed:
    ([ADR 0017](../../decisions/0017-install-only-by-deploy.md)), so each box receives this
    checkout's source with `cq deploy --modules all --harness claude` (`--modules core` for check
    5) and the session is `claude -p --setting-sources project` with **no** `--plugin-dir`: the
-   box's `.claude/skills/` bridge and `.agents/quenching/` payload are the whole surface. An empty
+   box's `.agents/skills/` source, its `.claude/skills/` projection and the `.agents/quenching/`
+   payload are the whole surface. An empty
    project settings file alone does not exclude plugins enabled in the user's settings. Measured
    2026-10-15 with startup-only probes: without the source filter, three additional installed
    plugins loaded; with it, the registry contained only the loaded tree and CLI builtins.

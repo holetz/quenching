@@ -4,10 +4,10 @@ title: Deploy mode — install the surface in a target repository
 description: "`cq deploy` materializes the selected quenching modules in a target's generic layer — AGENTS.md, .agents/skills and a vendored runtime — while Claude Code receives only a generated bridge under .claude; install is not alignment and never calls a model."
 resource: quenching/assets/bin/quenching/deploy/**, quenching/assets/bin/cq, quenching/assets/modules.json, quenching/pyproject.toml, quenching/assets/bin/quenching/components/commands/bridge.py, quenching/assets/bin/quenching/components/commands/migrate.py, integrations/opencode-vitrine/**
 tags: [architecture, deploy, installation, agents, skills, bridge]
-timestamp: 2026-11-25
+timestamp: 2026-11-27
 audience: both
 authority: current
-source: deploy-mode implementation (2026-10-28); spec 2126, spec 2160, spec 2168, spec 2174 (absorbs surface-translation.md), spec 314 (harness approvals), spec 416 (MCP replaces the covered cq grants), spec 539; retired with surface-translation.md (spec 2174, 2026-11-03); lineage in ADR 0017 and ADR 0019
+source: deploy-mode implementation (2026-10-28); spec 2126, spec 2160, spec 2168, spec 2174 (absorbs surface-translation.md), spec 314 (harness approvals), spec 416 (MCP replaces the covered cq grants), spec 539, spec 656; lineage in ADR 0017, ADR 0019 and ADR 0022
 maintainer: quenching
 ---
 
@@ -33,7 +33,7 @@ for deployment; this verb installs the tool surface. It never invokes a model, n
 | `.agents/quenching.json` | configuration | target; seeded only when absent |
 | `.vscode/settings.json` | VS Code workspace settings: the generated trees out of search and the semantic index, and room for long agent runs | target; seeded only when absent and `shared.workspace.vscode` is true |
 | `.vscode/tasks.json` | VS Code tasks: the gate, the deploy check, the spec status and the slot report run in the terminal, with no model turn | target; seeded only when absent and `shared.workspace.vscode` is true |
-| `.agents/skills/quenching-<command>/SKILL.md` | one-segment skills, published when a declared harness reads the generic layer | generated |
+| `.agents/skills/quenching-<command>/SKILL.md` | one-segment skills: the source of every generated skill, whatever the harnesses | generated |
 | `.agents/quenching/` | vendored payload: runtime, references, templates, commands, agent protocols | generated, read-only |
 | `.agents/.quenching-deploy.json` | manifest: version, modules, profiles, hashes, skills | generated; one blank line separates each entry of `files` |
 | `.claude/skills/<name>/` | the Claude projection: generated skills written directly when `claude` is declared, plus the target's own skills copied from `.agents/skills/` | generated |
@@ -46,6 +46,7 @@ for deployment; this verb installs the tool surface. It never invokes a model, n
 | `.github/workflows/copilot-setup-steps.yml` | Copilot cloud-agent setup: the target's Python, `uv` on the `uvx` runtime and `shared.worktreeSetup` verbatim | generated when the repository declares `shared.projections: ["github"]` |
 | `REVIEW.md` | Copilot code review's instruction: points at `/docs/standards/index.md` and `/docs/glossary.md` | target; seeded only when absent, with the `github` projection and an OKF standards index |
 | `.mcp.json` | Claude Code project MCP registration | target; the `quenching` entry merged when the `claude` harness is selected |
+| `.codex/config.toml` | Codex MCP registration, the `[mcp_servers.quenching]` table | target; the table merged when the `codex` harness is selected, every other table left as it is |
 | `opencode.json` | OpenCode MCP registration, subagent depth, sibling directories and shell grants | target; the `quenching` entry, `experimental.subagent_depth`, the `external_directory` allows and the `permission.bash` allows merged when the `opencode` harness is selected |
 | `CLAUDE.md` | legacy pointer to `AGENTS.md` | never created; removed only by `--prune-legacy` |
 | `.claude/commands/`, `.claude/references/` | legacy layout | refused; run `cq components migrate` first |
@@ -55,9 +56,10 @@ in the working directory or above it (§Surface translation below). Claude
 does **not** read `.agents/skills/`; the generated `.claude/skills/` projection is the only reason
 it is present. A repository therefore never authors `.claude` for quenching.
 
-**A generated skill is published once per client set, not once per directory.** A client is the set
-of directories it reads, and the deploy writes a skill into a directory only when a declared harness
-depends on it (§Publication once).
+**`.agents/skills` is the source of every skill, and each harness gets a projection only when it
+does not read the source.** The deploy writes each generated skill in `.agents/skills`, as a
+target's own skill is authored there, and projects it into `.claude/skills` when `claude` is
+declared (§Source and projection).
 
 **The hash manifests merge textually.** `.agents/.quenching-deploy.json` and `.claude/skills/.generated-files.json`
 are tracked and regenerated by every change to the source, so two parallel branches rewrite them
@@ -83,6 +85,9 @@ adds tests.
 alias `align` is `knowledge,components`); `specs` is always included because it
 owns the one `cq`. `--profiles` overrides the `shared.profiles.installed` seed; otherwise the
 fronts of the selected modules are derived. `specs` is kept in that list as the provider axis.
+
+`--harness` takes `claude`, `codex` and `opencode` (or `none`); omitted, with no manifest to reuse,
+it declares every harness — `claude,codex,opencode`.
 
 A target that already carries a manifest reuses its recorded `modules`, `harnesses`, `runtime` and
 `profiles` for every flag the caller omits, so `cq deploy --write` upgrades what is installed
@@ -152,7 +157,8 @@ grant is `Bash(.agents/quenching/bin/cq:*)`.
 
 Deploy always registers the whole quenching MCP server, with no declaration. It writes the
 `quenching` entry into one file per selected harness — `.mcp.json` for `claude` (which the GitHub
-Copilot harness reads too), `opencode.json` for `opencode` — with
+Copilot harness reads too), `.codex/config.toml` for `codex` (a `[mcp_servers.quenching]` table with
+`command` and `args`), `opencode.json` for `opencode` — with
 the same argv: `<command...> .agents/quenching/assets/bin/cq mcp`, every catalogued tool of the
 pillars present. `shared.mcp` (`{mount: "all"|"specs"|"core"|<pillars>, command: [...]}`, see
 [plugin-configuration.md](../workflows/plugin-configuration.md#the-sharedmcp-block)) only overrides
@@ -402,12 +408,12 @@ The source, `quenching/`, is written in the target dialect: `/quenching-<vertica
 ([source-layout.md](source-layout.md)). **`cq deploy`** rewrites only the frontmatter, the generated
 header, the grants (and the OpenCode permissions) and the `cq.cmd` launcher; a source that still
 carries a plugin-root marker or a plugin-surface id is refused. It writes a target repository's
-generic layer — `.agents/skills/` (read by OpenCode), the payload under
+generic layer — `.agents/skills/` (read by OpenCode and Codex), the payload under
 `.agents/quenching/`, the Claude bridge under `.claude/skills/`, the rules under `.claude/rules/`,
 the subagents under `.claude/agents/` and `.opencode/agents/`, and — when the repository declares
 `shared.projections: ["github"]` — the Copilot projections under `.github/agents/` and
 `.github/instructions/`, the setup workflow under `.github/workflows/` and the `REVIEW.md` seed,
-all from the target's own declarations and generic sources (§The target layout above). No Codex package, no `codex` harness ([ADR 0020](../../decisions/0020-remove-the-codex-executor-and-harness.md)) and no
+all from the target's own declarations and generic sources (§The target layout above). No Codex package ([ADR 0020](../../decisions/0020-remove-the-codex-executor-and-harness.md); the `codex` harness returned with [ADR 0022](../../decisions/0022-codex-harness-returns-agents-skills-source.md)) and no
 user-level OpenCode distribution exist since [ADR 0017](../../decisions/0017-install-only-by-deploy.md).
 A target's `.claude/commands/` is the legacy layout, which `cq components migrate` converts; the
 `cq components translate` that once copied it into `.agents/` is retired, and a copy it wrote beside
@@ -464,26 +470,29 @@ Re-probed on 2026-11-25 for the same layout:
 A newer host version may change any row; the bridge manifest records the version it was verified
 against (`verifiedClaudeCode`), and a row is re-probed before the layout is relaxed.
 
-#### Publication once
+#### Source and projection
 
-`cq deploy` renders each generated skill once and publishes it into the minimal cover of the
-directories the declared harnesses read:
+`cq deploy` renders each generated skill once, writes it in `.agents/skills` and projects it into
+the directory of each declared harness that does not read the generic layer:
 
 | Harnesses (`--harness`) | Directories that receive the generated skills |
 | --- | --- |
-| `claude` (alone or with `opencode`) | `.claude/skills` |
-| `opencode`, or no harness | `.agents/skills` |
+| any set with `claude` | `.agents/skills` (source) and `.claude/skills` (projection) |
+| `codex`, `opencode`, both, or no harness | `.agents/skills` |
 
-The rule follows from the read sets: `claude` reads only `.claude/skills`; `opencode` reads both and
-never forces a second copy; a deploy with no harness keeps the generic layer. The `codex` harness
-was removed ([ADR 0020](../../decisions/0020-remove-the-codex-executor-and-harness.md)); a client
-that reads only `.agents/skills` would force that copy if it ever returns as a harness, and until
-then no declared harness is in that position.
+**The projection is the bridge's rule.** The `.claude` copy of a generated skill is its
+`.agents/skills` copy byte for byte, with the marker line after the `SKILL.md` frontmatter. Both
+copies cite the skill's files at `.agents/skills/<name>/`, which always exists, so no citation is
+rewritten per directory. The rule follows from the read sets (§Verified facts): Claude Code reads
+only `.claude/skills`, Codex only `.agents/skills`, OpenCode reads both and keeps the `.agents`
+copy of a repeated name, and VS Code + Copilot Chat deduplicates by name — the second copy costs no
+client a duplicate skill ([ADR 0022](../../decisions/0022-codex-harness-returns-agents-skills-source.md)).
 
-**Changing the harness set is an ordinary three-way update.** Passing a target deployed with both
-copies to a set that needs one reports the copies that leave as `delete` in `--check`; `--write`
-deletes the ones that still hold their recorded bytes and refuses (`ct-deploy-edited`) a copy
-someone edited. Nothing is deleted without `--write`.
+**Changing the harness set is an ordinary three-way update.** Dropping `claude` reports the
+projection as `delete` in `--check`; `--write` deletes the copies that still hold their recorded
+bytes and refuses (`ct-deploy-edited`) a copy someone edited. A target a 7.18.x deploy wrote for
+`claude` alone has the generated skills only in `.claude/skills`; the next `--write` creates their
+`.agents/skills` source. Nothing is written without `--write`.
 
 #### The bridge
 
@@ -498,11 +507,11 @@ overwrite it. No symbolic link is used ([windows-support.md](../platform/windows
 
 **The bridge owns the target's skills; the deploy owns the generated ones.** The names in
 `.agents/.quenching-deploy.json` under `skills` are the deploy's: it writes their `.claude` copy
-(marker included) and hashes both copies in its own manifest. The bridge skips those names in its
-`expected` set, its conflicts and its orphans, even when `.agents/skills` still carries a copy from
-an older deploy; a stale `.generated-files.json` entry for one is ignored, never reported. This is
-what lets a `claude`-only target, which has no generated source in `.agents/skills`, pass
-`bridge --check`: the bridge has nothing to compare there because the deploy wrote the file.
+(marker included) and hashes both copies in its own manifest; a skill of a module outside the
+selection that the deploy keeps as a mirror (`mirrors` in the manifest) is the deploy's too. The
+bridge skips those names in its `expected` set, its conflicts and its orphans, although their
+source sits in `.agents/skills` beside the target's own; a stale `.generated-files.json` entry for
+one is ignored, never reported.
 
 #### Migration and conformance
 

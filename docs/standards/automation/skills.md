@@ -4,10 +4,10 @@ title: Command authoring and alignment
 description: How the plugin's commands are classified, authored, named, and swept into conformance — one file per entry point, including the admission criterion that decides whether a command's description stays resident in context or goes typed-only, and where a target repository's skill is born and how its Claude bridge is generated and verified
 resource: quenching/skills/**, quenching/references/**, quenching/assets/bin/quenching/components/commands/bridge.py, quenching/assets/bin/quenching/components/commands/migrate.py
 tags: [automation, commands, taxonomy, authoring]
-timestamp: 2026-11-03
+timestamp: 2026-11-27
 audience: both
 authority: current
-source: collapse-skills-into-commands, 2026-07-26, correct-command-citation-form, 2026-07-31, route-commands-without-always-on-descriptions, 2026-08-02, spec 2118 (target skills in .agents/skills with a generated Claude bridge, 2026-10-28); spec 2160 (install only by deploy); lineage in ADR 0004
+source: collapse-skills-into-commands, 2026-07-26, correct-command-citation-form, 2026-07-31, route-commands-without-always-on-descriptions, 2026-08-02, spec 2118 (target skills in .agents/skills with a generated Claude bridge, 2026-10-28); spec 2160 (install only by deploy); spec 656 (`.agents/skills` always the source); lineage in ADR 0004
 maintainer: quenching
 ---
 
@@ -148,11 +148,12 @@ The bridge is generated, and verified by code:
   gets no copy: the bridge projects only for the harness that does not read the source, and an
   existing copy leaves as an orphan on the next `--write`.
 - **The bridge owns the target's skills, never the deploy's.** A name that
-  `.agents/.quenching-deploy.json` declares under `skills` is generated: `cq deploy` writes its
-  `.claude` copy and hashes both in its own manifest, and the bridge skips the name in its expected
-  set, its conflicts and its orphans. That is what lets a `claude`-only target — which publishes
-  the generated skills only under `.claude/skills` — pass `bridge --check` with nothing to compare.
-  The publication rule is [deploy-mode.md](../architecture/deploy-mode.md) §Publication once.
+  `.agents/.quenching-deploy.json` declares under `skills` (or keeps as a skill mirror) is
+  generated: `cq deploy` writes its `.agents/skills` source and its `.claude` projection and hashes
+  both in its own manifest, and the bridge skips the name in its expected set, its conflicts and
+  its orphans. The deploy's projection follows the bridge's rule — the same bytes plus the marker —
+  so a generated skill and a target's own one reach `.claude/skills` the same way
+  ([deploy-mode.md](../architecture/deploy-mode.md) §Source and projection).
 - `cq components bridge --check` exits 1 on drift — an edited copy, a source with no copy, an orphan
   copy whose source is gone — and 0 when the copy matches. A `.claude/skills/<name>/` the manifest
   does not list is refused (exit 2, `ct-bridge-unowned`), never overwritten.

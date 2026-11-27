@@ -4,10 +4,10 @@ title: Subagent authoring
 description: When work becomes a subagent, the definition contract for .claude/agents/, and how the surface is inventoried
 resource: quenching/skills/quenching-components/references/agent-new.md, quenching/skills/quenching-components/references/align.md, quenching/assets/bin/quenching/components/**
 tags: [automation, agents, delegation]
-timestamp: 2026-11-03
+timestamp: 2026-11-27
 audience: both
 authority: current
-source: skill-front capability research (2026-07-27) — hookify/plugin-dev/agent-sdk-dev + official docs; instrument-and-extend-skill-front plan section 6; spec 2163 (2026-11-03)
+source: skill-front capability research (2026-07-27) — hookify/plugin-dev/agent-sdk-dev + official docs; instrument-and-extend-skill-front plan section 6; spec 2163 (2026-11-03); spec 656
 maintainer: quenching
 ---
 
@@ -62,7 +62,8 @@ A plugin agent is ONE declaration in `quenching/agents/*.md` and three generated
 `.opencode/agents/quenching-<name>.md` (`mode: subagent`, with `--harness opencode`) and, when the
 target declares `shared.projections: ["github"]`, `.github/agents/quenching-<name>.agent.md` (the
 Copilot custom-agent format). `cq deploy` writes all three from the same bytes; none is edited by
-hand, and `cq deploy --check` owns the drift.
+hand, and `cq deploy --check` owns the drift. The `codex` harness gets no agent file: it receives
+the skills in `.agents/skills` and the MCP registration only.
 
 The Copilot projection maps the grant the Claude one already carries, never the raw source:
 `Read` → `read`, `Grep`/`Glob` → `search`, `Edit`/`Write` → `edit`, `WebFetch`/`WebSearch` → `web`,
