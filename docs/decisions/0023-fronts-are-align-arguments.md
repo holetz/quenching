@@ -61,7 +61,7 @@ The security audit that ends `status` needs no tool of its own: `security_read` 
 
 No probe or selector rule was dropped. The functional probes for the ops and proof fronts now call
 `/quenching-align status ops` and `/quenching-align status proof`, and each
-`scripts/toolchain/affected.py` rule that watched a retired `quenching/skills/quenching-<front>/`
+`scripts/toolchain/affected.py` rule that watched the skill folder of a retired front router
 folder watches `quenching/references/<front>-align/` and selects the same tests.
 
 ## Supersession
