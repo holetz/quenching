@@ -928,7 +928,6 @@ class Deploy(unittest.TestCase):
 
     def test_the_text_after_the_codex_table_survives_merge_and_remove(self):
         self.configure(self.mcp_config())
-        trailer = '# >>> other-mcp\n# [mcp_servers.other]\n# <<< other-mcp\n\n[profiles.fast]\nmodel = "y"\n'
         self.write(".codex/config.toml", 'model = "o3"\n\n[mcp_servers.quenching]\ncommand = "uv"\n'
                    'args = ["a"]\n# >>> other-mcp\n# [mcp_servers.other]\n# <<< other-mcp\n\n'
                    '[profiles.fast]\nmodel = "y"\n')
