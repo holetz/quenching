@@ -22,7 +22,6 @@
     "quenching-align",
     "quenching-components",
     "quenching-git",
-    "quenching-handoff",
     "quenching-knowledge",
     "quenching-specs"
   ],
@@ -767,6 +766,8 @@
 
     ".agents/skills/quenching-git/references/commit.md": "source",
 
+    ".agents/skills/quenching-git/references/conflict-resolve.md": "source",
+
     ".agents/skills/quenching-git/references/merge.md": "source",
 
     ".agents/skills/quenching-git/references/pr-create.md": "source",
@@ -780,10 +781,6 @@
     ".agents/skills/quenching-git/references/revert.md": "source",
 
     ".agents/skills/quenching-git/references/sync.md": "source",
-
-    ".agents/skills/quenching-handoff/SKILL.md": "source",
-
-    ".agents/skills/quenching-handoff/references/template.md": "source",
 
     ".agents/skills/quenching-knowledge/SKILL.md": "source",
 
@@ -840,6 +837,10 @@
     ".agents/skills/quenching-specs/references/develop.md": "source",
 
     ".agents/skills/quenching-specs/references/execute.md": "source",
+
+    ".agents/skills/quenching-specs/references/handoff.md": "source",
+
+    ".agents/skills/quenching-specs/references/handoff/template.md": "source",
 
     ".agents/skills/quenching-specs/references/improve.md": "source",
 
@@ -979,6 +980,8 @@
 
     ".claude/skills/quenching-git/references/commit.md": "source",
 
+    ".claude/skills/quenching-git/references/conflict-resolve.md": "source",
+
     ".claude/skills/quenching-git/references/merge.md": "source",
 
     ".claude/skills/quenching-git/references/pr-create.md": "source",
@@ -992,10 +995,6 @@
     ".claude/skills/quenching-git/references/revert.md": "source",
 
     ".claude/skills/quenching-git/references/sync.md": "source",
-
-    ".claude/skills/quenching-handoff/SKILL.md": "source",
-
-    ".claude/skills/quenching-handoff/references/template.md": "source",
 
     ".claude/skills/quenching-knowledge/SKILL.md": "source",
 
@@ -1052,6 +1051,10 @@
     ".claude/skills/quenching-specs/references/develop.md": "source",
 
     ".claude/skills/quenching-specs/references/execute.md": "source",
+
+    ".claude/skills/quenching-specs/references/handoff.md": "source",
+
+    ".claude/skills/quenching-specs/references/handoff/template.md": "source",
 
     ".claude/skills/quenching-specs/references/improve.md": "source",
 

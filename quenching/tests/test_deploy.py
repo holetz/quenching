@@ -93,7 +93,7 @@ class Deploy(unittest.TestCase):
         status = self.target_cq("components", "status", "--json")
         self.assertEqual(0, status.returncode, status.stderr)
         document = json.loads(status.stdout)
-        self.assertEqual((0, 6), (document["commands"], document["generated"]))
+        self.assertEqual((0, 5), (document["commands"], document["generated"]))
         template = (self.target / ".agents/quenching/assets/templates/harness/agents-root.md").read_text()
         self.assertIn("quenching-knowledge-add", template)
         self.assertNotIn("quenching-align:knowledge:add", template)
@@ -568,7 +568,7 @@ class Deploy(unittest.TestCase):
                    "---\ndescription: Mine.\n---\n\nread notes\n")
         self.assertEqual(0, self.run_deploy("--modules", "core", "--write")[0])
         status = json.loads(self.target_cq("components", "status", "--json").stdout)
-        self.assertEqual((1, 6), (status["commands"], status["generated"]))
+        self.assertEqual((1, 5), (status["commands"], status["generated"]))
         lint = self.target_cq("components", "lint", "--json")
         self.assertEqual(0, lint.returncode, lint.stderr)
 

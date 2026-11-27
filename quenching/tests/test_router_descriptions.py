@@ -19,7 +19,7 @@ from quenching.components.commands.lint import router_flows
 SKILLS = pathlib.Path(__file__).resolve().parents[1] / "skills"
 CAP = 250
 ROUTERS = ("specs", "git", "knowledge", "components")
-ALSO = ("align", "handoff")
+ALSO = ("align",)
 PT_WORDS = {"de", "do", "da", "um", "uma", "para", "como", "os", "as", "o", "que", "essa", "esse",
             "este", "esta", "no", "na", "estão", "e"}
 ACCENTED = re.compile(r"[áàâãéêíóôõúç]")

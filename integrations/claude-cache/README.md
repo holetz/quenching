@@ -19,7 +19,7 @@ and why is in [NOTICE.md](NOTICE.md), and both copyrights are in [LICENSE](LICEN
 | `/quenching-cache handoff [focus]` | Haiku writes quenching's handoff from this chat, read locally; `cq specs handoff write` stores it beside the branch's spec and a fresh chat opens with the line that reads it. The expired chat is never resent to the main model. |
 | `/quenching-cache stats` | Requests, cache hit rate, cache writes and list-price dollars, this chat and this project, from `cq components session cache --usd`. |
 
-While the cache is warm, `/quenching-handoff` writes the same handoff with the main model.
+While the cache is warm, `/quenching-specs handoff` writes the same handoff with the main model.
 
 ## The lights
 

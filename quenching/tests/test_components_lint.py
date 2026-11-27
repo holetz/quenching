@@ -193,7 +193,7 @@ class StrictFrontmatter(unittest.TestCase):
         errors = [f for f in payload["findings"] if f["severity"] == "error"]
         self.assertEqual(errors, [])  # first: a red gate names the finding, not just the status
         self.assertEqual(status, 0)
-        self.assertEqual(payload["commandCount"], 6)
+        self.assertEqual(payload["commandCount"], 5)
 
 
 class ReferenceRoot(unittest.TestCase):
@@ -301,7 +301,7 @@ class RouterChecks(unittest.TestCase):
         routers = {"quenching-git": {"go"}}
         self.assertEqual(dangling_flow_citations("run `/quenching-git go` then `/quenching-git stop`.", routers),
                          ["/quenching-git stop"])
-        self.assertEqual(dangling_flow_citations("`/quenching-handoff stop`", routers), [])
+        self.assertEqual(dangling_flow_citations("`/quenching-" + "old stop`", routers), [])
 
 
 class StepCriterion(unittest.TestCase):

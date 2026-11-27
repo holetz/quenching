@@ -1,5 +1,5 @@
 """`cq specs handoff` — the facts a transcript proves, and the stored, directed write both handoff
-doors share (`/quenching-handoff` and the `quenching-cache` plugin)."""
+doors share (`/quenching-specs handoff` and the `quenching-cache` plugin)."""
 from __future__ import annotations
 
 import contextlib

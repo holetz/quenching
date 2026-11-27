@@ -26,7 +26,7 @@ flow has no skill of its own and no shortcut. That holds for the core fronts (`s
 `knowledge`, `components`). The non-core fronts (`design`, `ops`, `proof`, `toolchain`, `delivery`,
 `security`, `opensource`) have no skill: each is an argument of `/quenching-align`, cited
 `/quenching-align <front>` or `/quenching-align status <front>` (spec 676), never as one hyphenated
-token. A skill with no flows (`quenching-align`, `quenching-handoff`) is cited by its folder name.
+token. A skill with no flows (`quenching-align`) is cited by its folder name.
 
 ### Two citation forms, and the condition on each
 
@@ -35,7 +35,7 @@ The axis is **where the skill comes from**, never who is reading:
 | Form | Example | Correct when |
 | --- | --- | --- |
 | Router and flow | `/quenching-specs develop`, `/quenching-align design` | the skill is a router of this plugin, core or not: the router id, a space, the flow named in its table |
-| Skill name | `/quenching-handoff`, `/quenching-align` | the skill has no flows: its own folder name |
+| Skill name | `/quenching-align` | the skill has no flows: its own folder name |
 | Target skill | `/commands-tighten` | the skill lives in the target repo's own `.agents/skills/commands-tighten/` (§A target's skill name is one segment) |
 
 The `Skill` tool takes the router name and the flow as its argument:
@@ -72,7 +72,7 @@ exactly one module:
 
 | Module | Skills it registers | Agents |
 | --- | --- | --- |
-| `quenching-specs` | `/quenching-specs`, `/quenching-handoff`, `/quenching-align` | `quenching-spec-orchestrator`, `-reviewer`, `-runner`, `-scout`, `-verifier` |
+| `quenching-specs` | `/quenching-specs`, `/quenching-align` | `quenching-spec-orchestrator`, `-reviewer`, `-runner`, `-scout`, `-verifier` |
 | `quenching-git` | `/quenching-git` | — |
 | `quenching-knowledge` | `/quenching-knowledge` | — |
 | `quenching-components` | `/quenching-components` | — |

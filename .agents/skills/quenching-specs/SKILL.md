@@ -1,7 +1,7 @@
 ---
 name: quenching-specs
-description: "Run one specs flow: create, develop, execute, conclude, triage, status, orchestrate, improve, board, autopilot. \"construir essa spec\", \"build it\". Not for: git → /quenching-git branch."
-argument-hint: "[create|develop|execute|conclude|triage|status|orchestrate|improve|board|autopilot] [id or description] [flags]"
+description: "Run one specs flow: create, develop, execute, conclude, triage, status, orchestrate, improve, board, handoff, autopilot. \"construir essa spec\", \"build it\". Not for: git → /quenching-git branch."
+argument-hint: "[create|develop|execute|conclude|triage|status|orchestrate|improve|board|handoff|autopilot] [id or description] [flags]"
 allowed-tools: Bash, Read, Grep, Glob, Agent, Task, TaskStop, SendMessage, Write, Edit, AskUserQuestion, Skill, mcp__quenching
 ---
 
@@ -35,7 +35,7 @@ per [align/tool-resolution.md](.agents/quenching/references/align/tool-resolutio
 
 The phrases that route to each flow, the map the description no longer carries:
 
-create: "registrar um problema", "capture this idea"; develop: "refinar essa spec", "refine the spec"; execute: "construir essa spec", "build it"; conclude: "fechar e mergear a spec", "conclude the spec"; triage: "priorizar o backlog", "rank the backlog"; status: "como está a spec", "spec status"; orchestrate: "rodar o épico", "run this epic"; improve (only when named): "melhorar o fluxo de specs", "improve the specs flow"; board (only when named): "mostrar o quadro", "show the board"; autopilot (only when named): "rodar o autopilot até as 7h", "run the autopilot until 7am".
+create: "registrar um problema", "capture this idea"; develop: "refinar essa spec", "refine the spec"; execute: "construir essa spec", "build it"; conclude: "fechar e mergear a spec", "conclude the spec"; triage: "priorizar o backlog", "rank the backlog"; status: "como está a spec", "spec status"; orchestrate: "rodar o épico", "run this epic"; improve (only when named): "melhorar o fluxo de specs", "improve the specs flow"; board (only when named): "mostrar o quadro", "show the board"; handoff: "gerar um handoff", "preparar a próxima sessão", "generate a handoff"; autopilot (only when named): "rodar o autopilot até as 7h", "run the autopilot until 7am".
 
 ## Workflow
 
@@ -57,6 +57,7 @@ returns `STATE: blocked` with `NOTE: needs-human:` carrying it.
 | `orchestrate` | [references/orchestrate.md](.agents/skills/quenching-specs/references/orchestrate.md) | an epic or a list of specs to run through the orchestrator |
 | `improve` | [references/improve.md](.agents/skills/quenching-specs/references/improve.md) | a map of what to improve, turned into an epic |
 | `board` | [references/board.md](.agents/skills/quenching-specs/references/board.md) | the local spec portal (board, ranking and detail in the browser) |
+| `handoff` | [references/handoff.md](.agents/skills/quenching-specs/references/handoff.md) | compacting the conversation into a handoff stored beside its spec |
 | `autopilot` | [references/autopilot.md](.agents/skills/quenching-specs/references/autopilot.md) | the request names `autopilot` |
 
 **`autopilot` runs only on an explicit mention.** The human's request must name `autopilot`; a request picked by stage or by description never chooses it, because its invocation is the human's delegation for a whole run.

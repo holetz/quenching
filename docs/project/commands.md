@@ -71,7 +71,7 @@ commands share is explained in [The spec lifecycle](../documentation/spec-lifecy
 
 | Command | Does |
 | --- | --- |
-| `/quenching-specs` | The single entry point of the specs flows: picks `create`, `develop`, `execute`, `conclude`, `triage`, `status` or `orchestrate` by the flow you name or the spec's stage, and loads that flow's reference. The seven typed commands stay as thin shortcuts. |
+| `/quenching-specs` | The single entry point of the specs flows: picks `create`, `develop`, `execute`, `conclude`, `triage`, `status`, `orchestrate` or `handoff` by the flow you name or the spec's stage, and loads that flow's reference. The seven typed commands stay as thin shortcuts. |
 | `/quenching-specs status` | The front's only **read-only** view: specs by derived stage, the records as history, verifier and provider findings. |
 | `/quenching-specs create` | ONE spec, ONE call, ONE closing screen — a sentence becomes `## Problem` and `summary:`; a plan file becomes every section it actually supports. |
 | `/quenching-specs develop` | Compose + refine in one pass: takes the spec to a closed ready set, argues with it, ends at the approval close. Records `refined:`; never edits code. |
@@ -79,6 +79,7 @@ commands share is explained in [The spec lifecycle](../documentation/spec-lifecy
 | `/quenching-specs conclude` | Closes a spec out, **merging last**: branch review, emergent `/docs/`, archive (`outcome:`), distillation, `merge:` stamp — then the merge, and nothing after it. |
 | `/quenching-specs improve` | Typed only. Maps relevant improvement opportunities with evidence, settles the owner's decisions, and turns the approved plan into an epic of member specs. |
 | `/quenching-specs orchestrate` | Launches the `orchestrator` agent over an epic or a list of specs: waves, at most 3 workers, accepted only on a verifier PASS. |
+| `/quenching-specs handoff` | Compacts the current conversation into a handoff stored beside its spec on the `quenching` branch, and closes with the next session's opening prompt. |
 | `/quenching-specs autopilot` | Typed only. Unattended improvement — triage, map, epic, orchestrate `autonomous`, correctness review, gate. Runs ONE round by default; `--until-dry` or `--until` repeat rounds (each resumable from a round record, the next in a fresh context), and `--max-launches` (provisional 40) caps the launches of the whole tree. Never forces a widening decision. |
 | `/quenching-specs triage` | Ranks the whole front in ONE confirmed table, writing `priority:` per spec and nothing else — merging, never clobbering a human's ranking. |
 | `/quenching-specs board` | Human-only launcher for the local spec portal (`cq specs serve`): board, ranking, detail, search, capture and approve in the browser, over the same backend; its contract is [specs-portal.md](../standards/architecture/specs-portal.md). |
@@ -179,7 +180,7 @@ align. The specs front hands off to it rather than executing git itself.
 
 | Command | Does |
 | --- | --- |
-| `/quenching-git` | The single entry point of the git flows: picks `branch`, `commit`, `merge`, `sync`, `pr-create`, `pr-review` or `pr-status` by the flow you name and loads that flow's reference; each typed shortcut stays. |
+| `/quenching-git` | The single entry point of the git flows: picks `branch`, `commit`, `merge`, `sync`, `conflict-resolve`, `pr-create`, `pr-review` or `pr-status` by the flow you name and loads that flow's reference; each typed shortcut stays. |
 | `/quenching-git branch` | Takes isolation for a build: a worktree by default and unasked, a plain branch only when the human asks, stating the cost and stamping the `branch:` record. |
 | `/quenching-git commit` | Commits what is already staged, under the target's own convention when one is declared. Never `git add -A`. |
 | `/quenching-git commit-incremental` | Turns the current worktree's pending changes into cohesive commits with explicit paths and safe stop conditions. |
@@ -187,6 +188,7 @@ align. The specs front hands off to it rather than executing git itself.
 | `/quenching-git revert` | Creates a compensating commit for one known target after showing its effect and requiring an explicit mainline for merges, without rewriting history. |
 | `/quenching-git pr-create` | Pushes and opens a pull request, reporting plainly whether a `Closes #<n>` keyword will actually close its issue. |
 | `/quenching-git pr-status` | Reports one read-only snapshot of a pull request's provider state, checks, reviews, threads and mergeability, preserving unknown causes. |
+| `/quenching-git conflict-resolve` | Finishes a merge or rebase already stopped on a conflict: reads each side's intention in the sources, resolves hunk by hunk keeping both, runs the target's gate, and ends the operation — stopping uncommitted when the gate fails because of the resolution. |
 | `/quenching-git merge` | Merges a branch home on one of four strategies — offered, never chosen for the human. |
 | `/quenching-git sync` | Rebases a work branch onto the latest base, with `--update-refs` so a stacked branch is not orphaned. |
 | `/quenching-git cleanup` | Prunes branches merged or gone and worktrees git registers with no directory on disk — nothing the human did not pick. |
@@ -197,7 +199,6 @@ align. The specs front hands off to it rather than executing git itself.
 | Command | Does |
 | --- | --- |
 | `/quenching-align` | The one align spanning the eight local fronts on ONE confirmation — conducting each front's own align, never reimplementing any. |
-| `/quenching-handoff` | Compacts the current conversation into a handoff stored on the `quenching` branch, and closes with the next session's opening prompt. |
 
 **Next:** this repository's own local automation surface (four development commands) is the
 [automation registry](automation.md); every term used above resolves in the

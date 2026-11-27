@@ -83,12 +83,12 @@ confirms on its own, always — and inside a conducted run, so does every **irre
 That contract lives once, in
 [`align/convergence.md`](references/align/convergence.md).
 
-## The 6 skills
+## The 5 skills
 
 **One folder per skill** — each `skills/<name>/SKILL.md` carries both the description that routes to
 it and the body that runs. A router (`quenching-specs`, `quenching-git`, `quenching-knowledge` and `quenching-components`) keeps its flows in its own `references/`, so its rows below are flows, not
 extra skills. A front (`design`, `ops`, `proof`, `toolchain`, `delivery`, `opensource`, `security`) is no skill: it is an argument of `/quenching-align`, and its text lives in `references/<front>-align/`, published by the front's own module. The tables below are the manual, and the count is a property of their rows rather than a
-second structural inventory: the `6` in this heading is the manual's canonical displayed total, while
+second structural inventory: the `5` in this heading is the manual's canonical displayed total, while
 [`tests/test_readme_surface.py`](tests/test_readme_surface.py) reads it and fails the suite whenever
 these tables and `skills/**` disagree
 ([`quality/surface-verification.md`](../docs/standards/quality/surface-verification.md)
@@ -204,7 +204,7 @@ motion, shadows, breakpoints, and snippets remain in the source and sidecar.
 
 | Command | Does |
 | --- | --- |
-| `/quenching-git` | The single entry point of the git flows: picks `branch`, `commit`, `merge`, `sync`, `pr-create`, `pr-review` or `pr-status` by the flow you name and loads that flow's reference; no alias entry stands for a flow. |
+| `/quenching-git` | The single entry point of the git flows: picks `branch`, `commit`, `merge`, `sync`, `conflict-resolve`, `pr-create`, `pr-review` or `pr-status` by the flow you name and loads that flow's reference; no alias entry stands for a flow. |
 | `/quenching-git branch` | Takes isolation for a build: a worktree by default and unasked, a plain branch only when the human asks, stating the cost and stamping the `branch:` record. |
 | `/quenching-git commit` | Commits what is already staged, under the target's own convention when one is declared. Never `git add -A`. |
 | `/quenching-git commit-incremental` | Turns the current worktree's pending changes into cohesive commits with explicit paths and safe stop conditions. |
@@ -212,6 +212,7 @@ motion, shadows, breakpoints, and snippets remain in the source and sidecar.
 | `/quenching-git revert` | Creates a compensating commit for one known target after showing its effect and requiring an explicit mainline for merges, without rewriting history. |
 | `/quenching-git pr-create` | Pushes and opens a pull request, with `Closes #<n>` when an issue is named, reporting plainly whether that keyword will actually close it. The word `autonomous` (accepted by `pr:create`, `conclude`, `spec-runner` and `spec-orchestrator`) is the conductor's pre-answer to its confirmation: the PR is published without asking, by the `spec-orchestrator`, after the `spec-verifier` PASS. |
 | `/quenching-git pr-status` | Reports one read-only snapshot of a pull request's provider state, checks, reviews, threads and mergeability, preserving unknown causes. |
+| `/quenching-git conflict-resolve` | Finishes a merge or rebase already stopped on a conflict: reads each side's intention in the sources, resolves hunk by hunk keeping both, runs the target's gate, and ends the operation — stopping uncommitted when the gate fails because of the resolution. |
 | `/quenching-git merge` | Merges a branch home on one of four strategies, offered and never chosen for the human. |
 | `/quenching-git sync` | Rebases a work branch onto the latest base, with `--update-refs` so a stacked branch is not orphaned. |
 | `/quenching-git cleanup` | Prunes branches merged or gone and worktrees git still registers with no directory on disk — nothing pruned the human did not pick from that report. |
@@ -250,7 +251,6 @@ all run it.
 | Command | Does |
 | --- | --- |
 | `/quenching-align` | The one door of every front: `align [front]` converges the eight aligned fronts on ONE confirmation, or only the named one, in dependency order; `status [front]` reads a front or all of them and ends on the security audit. It never reimplements a front's verifier. |
-| `/quenching-handoff` | Compacts the current conversation into a handoff stored beside its spec on the `quenching` branch, pushes it, and closes with the locator, the read command and the prompt the next session starts from — referencing existing plans, issues, commits and diffs rather than duplicating them. |
 
 The `specs` front has ten commands and a flow worth reading as a whole, so it gets its own section
 below.
@@ -319,7 +319,7 @@ With `QUENCHING_SPECS_SYNC=1` and the `azure-boards` backend, every read is answ
 
 | Command | Role |
 | --- | --- |
-| `/quenching-specs` | The single entry point of the specs flows: picks `create`, `develop`, `execute`, `conclude`, `triage`, `status` or `orchestrate` by the flow you name or the spec's stage, and loads that flow's reference. No alias entry stands for a flow. |
+| `/quenching-specs` | The single entry point of the specs flows: picks `create`, `develop`, `execute`, `conclude`, `triage`, `status`, `orchestrate` or `handoff` by the flow you name or the spec's stage, and loads that flow's reference. No alias entry stands for a flow. |
 | `/quenching-specs status` | The front's only **read-only** view: specs by derived stage with task progress, the frontmatter records as the history they narrate, the verifier results, and provider configuration findings. |
 | `/quenching-specs create` | ONE spec in `plans/`, ONE call, ONE closing screen — effort proportional to input, never an interrogation. A sentence becomes `## Problem` and `summary:`; a Claude Code plan file becomes every section it actually supports, mapped and never invented. Subject, type, tags and `complexity` are resolved and written with the capture, then shown — corrected or not — on the one screen at the end, which also offers to hand straight into `/quenching-specs develop` — whether that pass asks anything is the `complexity` the same screen shows. |
 | `/quenching-specs develop` | Two operations in ONE pass, both derived and neither offered as a choice: **compose** takes the spec from wherever its derived stage leaves it to a closed ten-section ready set, and **refine** argues with the composed spec and may overturn anything in it, the proposal included. Discovery resolution opens the pass, the approval close ends it — recommending approve, refine, or refine with the premortem against the spec's own signals. Questions grouped by dependency, each with an inline recommendation; one edit per pass, records `refined:`. Never edits code. |
@@ -327,6 +327,7 @@ With `QUENCHING_SPECS_SYNC=1` and the `azure-boards` backend, every read is answ
 | `/quenching-specs conclude` | Closes a spec out, resumable, **merging last**: whole-branch review (`reviewed:`), the emergent `/docs/`, the archive with `outcome: done` (refuses on open boxes unless forced) or `abandoned` (always allowed), ONE distillation pass, the flow sweep that captures each defect of the project's own automation as its own spec — never developed in this run —, the release obligations your standards attach to the merge itself (a version bump, a changelog entry — never a spec task) and the `merge: {strategy, subject, pr}` stamp — all on the work branch — and only then the merge, by the **route** you chose alongside the strategy: local, or a pull request where `gh` resolves the repo (pushed, opened and merged in one consented block, with `pr:` recorded). Called with no `--spec`, reads the branch's own marking first — one valid slug resolves silently, several ask, none falls to a diff-measured offer to materialize a minimal spec — before falling back to a plain list-and-ask. Nothing is committed to the base after it. |
 | `/quenching-specs improve` | **Typed only.** Maps a repository's genuinely relevant improvement opportunities with read-only scouts (evidence, consequence, no duplicate of an open spec, at most 15), settles the owner's decisions in rounds (the epic's autonomy policy among them, written into its `## Design`), and turns the approved part of the plan into an epic with member specs. Never builds. |
 | `/quenching-specs orchestrate` | Launches the `spec-orchestrator` agent over an epic id or a list of spec ids: dependency waves, at most 3 workers, a result accepted only on a `spec-verifier` PASS. A pre-check separates the specs that run alone from those that need a human (develop now, launch the independent subset, or `--autonomous`, which stamps `by=orchestrator-forced`); without `--autonomous` a `medium`+ spec with no `approved` comes back `blocked` as `needs-approval`. A thin launcher; the protocol lives in `agents/spec-orchestrator.md`. A spec is accepted as done only when archived with an Outcome, and a worker `blocked` with a `needs-human:` note is never re-spawned: its question goes to the human. |
+| `/quenching-specs handoff` | Compacts the current conversation into a handoff stored beside its spec on the `quenching` branch, pushes it, and closes with the locator, the read command and the prompt the next session starts from — referencing existing plans, issues, commits and diffs rather than duplicating them. |
 | `/quenching-specs autopilot` | **Typed only.** The invocation is the human's delegation for an unattended run: rounds of health, queue (each loose spec proves relevance or is abandoned with evidence), the `/quenching-specs improve` map decided by the conductor as delegated owner, an epic with the dated autonomy policy in its `## Design`, the `spec-orchestrator` with `autonomous`, a read-only correctness review per epic, whose reproduced findings become next-round specs, then the gate. Never forces a decision that widens a grant or an executing surface — those go to a human epic. Runs ONE round by default; `--until-dry` or `--until` repeat rounds (a resumable round record, the next round in a fresh context) until the deadline or a whole round produces no spec with evidence and consequence, and `--max-launches` (provisional 40) caps the launches of the whole tree. |
 | `/quenching-specs triage` | Ranks the whole front in ONE confirmed table, writing `priority: {level, criticality, complexity, date}` per spec and nothing else — merging, never clobbering a human's ranking. |
 | `/quenching-specs board` | Human-only. Starts `cq specs serve` in the background and prints the URL: a local browser portal (board by derived stage, drag-to-rank list, spec detail, search, capture, approve as `by: human`) over the same backend as the CLI. Loopback only, per-run token, `Host`/`Origin` checks, `--read-only` disables writes on the server; `cq-specs-read serve` is always read-only. |

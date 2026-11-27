@@ -117,7 +117,7 @@ RULES: tuple[Rule, ...] = (
     Rule(("quenching/references/toolchain-align/",), ("test_toolchain*",)),
     Rule(("quenching/references/knowledge-align/",), ("test_knowledge*", "test_front_mold", "test_align_contract")),
     Rule(("quenching/references/components-align/",), ("test_components*", "test_align_contract")),
-    Rule(("quenching/skills/quenching-handoff/",), ("test_handoff_command",)),
+    Rule(("quenching/skills/quenching-specs/references/handoff",), ("test_handoff_command",)),
     Rule(("quenching/skills/quenching-align/",), ("test_align_contract",)),
     Rule(("quenching/agents/",),
          ("test_components*", "test_opensource_controls", "test_public_readiness")),

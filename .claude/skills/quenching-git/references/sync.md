@@ -40,9 +40,9 @@ No persistent fetch configuration is changed. A missing `origin` emits `NO-REMOT
 ```bash
 git rebase <base or origin/base> --update-refs <branch from $ARGUMENTS, or the current branch>
 ```
-**Stops on conflict** → report the conflicting files and git's own message, and say plainly that
-`git rebase --continue` (after resolving) or `git rebase --abort` are the human's own next move.
-Never resolve a conflict on the human's behalf, and never `--skip` a commit silently — a skipped
+**Stops on conflict** → report the conflicting files and git's own message, and name
+`/quenching-git conflict-resolve` as the flow that resolves it (`git rebase --abort` stays the
+human's own move). This flow never resolves a conflict itself, and never `--skip` a commit silently — a skipped
 commit is a silent loss the next read of `git log` would not reveal. **Done when:** the rebase
 completes clean, or it is stopped on a conflict with the resolution path stated.
 
@@ -62,6 +62,6 @@ required lease publication are stated alongside the rebase's own outcome.
 - Never rebase over a dirty tree.
 - Do not persist fetch configuration as a side effect; remote pruning is outside this command's
   scope.
-- Never resolve a conflict or `--skip` a commit on the human's behalf — report and hand back the
-  two git commands that end the rebase.
+- Never resolve a conflict or `--skip` a commit here — report and name `/quenching-git
+  conflict-resolve`; `git rebase --abort` is the human's own move.
 - Never rebase onto a base this checkout has not just tried to freshen from its remote.
