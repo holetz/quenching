@@ -23,9 +23,9 @@ How the `quenching` plugin names its commands.
 and the body that runs; the folder name is the skill name, never derived from a path. A front with
 more than one flow is **one router skill** whose flows live in its own `references/<flow>.md`, so a
 flow has no skill of its own and no shortcut. That holds for the core fronts (`specs`, `git`,
-`knowledge`, `components`) and for the non-core ones (`design`, `ops`, `proof`, `toolchain`,
-`delivery`, `security`, `opensource`): a non-core front flow is cited `/quenching-<front> <flow>`,
-for example `/quenching-design align` or `/quenching-proof layer-new`, and never as one hyphenated
+`knowledge`, `components`). The non-core fronts (`design`, `ops`, `proof`, `toolchain`, `delivery`,
+`security`, `opensource`) have no skill: each is an argument of `/quenching-align`, cited
+`/quenching-align <front>` or `/quenching-align status <front>` (spec 676), never as one hyphenated
 token. A skill with no flows (`quenching-align`, `quenching-handoff`) is cited by its folder name.
 
 ### Two citation forms, and the condition on each
@@ -34,7 +34,7 @@ The axis is **where the skill comes from**, never who is reading:
 
 | Form | Example | Correct when |
 | --- | --- | --- |
-| Router and flow | `/quenching-specs develop`, `/quenching-design align` | the skill is a router of this plugin, core or not: the router id, a space, the flow named in its table |
+| Router and flow | `/quenching-specs develop`, `/quenching-align design` | the skill is a router of this plugin, core or not: the router id, a space, the flow named in its table |
 | Skill name | `/quenching-handoff`, `/quenching-align` | the skill has no flows: its own folder name |
 | Target skill | `/commands-tighten` | the skill lives in the target repo's own `.agents/skills/commands-tighten/` (§A target's skill name is one segment) |
 
@@ -76,13 +76,13 @@ exactly one module:
 | `quenching-git` | `/quenching-git` | — |
 | `quenching-knowledge` | `/quenching-knowledge` | — |
 | `quenching-components` | `/quenching-components` | — |
-| `quenching-design` | `/quenching-design` | — |
-| `quenching-ops` | `/quenching-ops` | — |
-| `quenching-proof` | `/quenching-proof` | — |
-| `quenching-toolchain` | `/quenching-toolchain` | — |
-| `quenching-delivery` | `/quenching-delivery` | — |
-| `quenching-security` | `/quenching-security` | — |
-| `quenching-opensource` | `/quenching-opensource` | — |
+| `quenching-design` | — (front: `/quenching-align design`) | — |
+| `quenching-ops` | — (front: `/quenching-align ops`) | — |
+| `quenching-proof` | — (front: `/quenching-align proof`) | — |
+| `quenching-toolchain` | — (front: `/quenching-align toolchain`) | — |
+| `quenching-delivery` | — (front: `/quenching-align delivery`) | — |
+| `quenching-security` | — (front: `/quenching-align security`) | — |
+| `quenching-opensource` | — (front: `/quenching-align opensource`) | — |
 
 `quenching-specs` also owns the root `align`, because it is the mandatory module and `align` only
 conducts the modules that are installed.
@@ -164,20 +164,20 @@ holds **four sibling contexts, each named for the artifact it mints, none a sub-
 
 | Context | Mints | Front-level verb | Artifact-level verbs |
 | --- | --- | --- | --- |
-| *(front root)* | — | `/quenching-components align` | — |
+| *(front root)* | — | `/quenching-align components` | — |
 | `command/` | a command | — | `/quenching-components command-new`, `/quenching-components command-eval`, `/quenching-components command-retro` |
 | `agent/` | a subagent | — | `/quenching-components agent-new` |
 | `hook/` | a hook | — | `/quenching-components hook-new` |
-| `harness/` | — | — | `/quenching-components harness-align` |
+| `harness/` | — | — | `/quenching-align components` |
 
 **The rule: a front-level verb sits at the front's own root; an artifact-level verb sits under its
-context.** `/quenching-components align` is the front's own sweep — it has no artifact of its own
-to sit under, so it stays at the root, exactly as `/quenching-knowledge align` does for its
+context.** `/quenching-align components` is the front's own sweep — it has no artifact of its own
+to sit under, so it stays at the root, exactly as `/quenching-align knowledge` does for its
 front. `command:new`, `command:eval` and `command:retro` are three verbs that all act
 on the same artifact (a command), so they share the `command/` context rather than each claiming a
 piece of the front root the way the old front's `new`/`eval` verbs used to.
 
-`/quenching-components harness-align` is the one entry that **changed front**, not merely name:
+`/quenching-align components` is the one entry that **changed front**, not merely name:
 `AGENTS.md` is the file Claude Code and the other harnesses read as instruction; `CLAUDE.md` is legacy, which makes the harness an
 artifact of `components` — the front that owns everything Claude Code loads as automation — never
 a `knowledge` document, even though refactoring them moves durable knowledge *into* the bundle as a

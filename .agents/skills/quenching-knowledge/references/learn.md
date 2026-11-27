@@ -7,9 +7,9 @@ allowed-tools: Bash(cq:*), Bash(cq.cmd:*), Read, Grep, Glob, Write, Edit, AskUse
 **Input**: `$ARGUMENTS` (the generic understanding to capture — a concept, mental model, explanation, or learning).
 
 Files one piece of understanding the human gives you into the canonical OKF bundle's
-[`concepts/`](.agents/quenching/assets/knowledge/concepts/index.md) home. Assumes the bundle already exists (run `/quenching-knowledge align` first if not). The home boundaries are shared with `/quenching-knowledge add`
+[`concepts/`](.agents/quenching/assets/knowledge/concepts/index.md) home. Assumes the bundle already exists (run `/quenching-align knowledge` first if not). The home boundaries are shared with `/quenching-knowledge add`
 ([knowledge-add/homes.md](.agents/quenching/references/knowledge-add/homes.md)); the `type` vocabulary
-and conformance rules with `/quenching-knowledge align`
+and conformance rules with `/quenching-align knowledge`
 ([knowledge-align/taxonomy.md](.agents/quenching/references/knowledge-align/taxonomy.md),
 [knowledge-align/conformance.md](.agents/quenching/references/knowledge-align/conformance.md)).
 

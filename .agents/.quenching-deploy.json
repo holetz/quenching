@@ -663,6 +663,14 @@
 
     ".agents/quenching/references/align/tool-resolution.md": "source",
 
+    ".agents/quenching/references/components-align/align.md": "source",
+
+    ".agents/quenching/references/components-align/harness-align.md": "source",
+
+    ".agents/quenching/references/components-align/harness-routing.md": "source",
+
+    ".agents/quenching/references/components-align/status.md": "source",
+
     ".agents/quenching/references/components-command-new/capabilities.md": "source",
 
     ".agents/quenching/references/components-command-new/doctrine.md": "source",
@@ -682,6 +690,8 @@
     ".agents/quenching/references/git/pr.md": "source",
 
     ".agents/quenching/references/knowledge-add/homes.md": "source",
+
+    ".agents/quenching/references/knowledge-align/align.md": "source",
 
     ".agents/quenching/references/knowledge-align/conformance.md": "source",
 
@@ -729,8 +739,6 @@
 
     ".agents/skills/quenching-components/references/agent-new.md": "source",
 
-    ".agents/skills/quenching-components/references/align.md": "source",
-
     ".agents/skills/quenching-components/references/command-eval.md": "source",
 
     ".agents/skills/quenching-components/references/command-new.md": "source",
@@ -739,31 +747,7 @@
 
     ".agents/skills/quenching-components/references/components-command-eval/evaluation.md": "source",
 
-    ".agents/skills/quenching-components/references/components-harness-align/harness-routing.md": "source",
-
-    ".agents/skills/quenching-components/references/harness-align.md": "source",
-
     ".agents/skills/quenching-components/references/hook-new.md": "source",
-
-    ".agents/skills/quenching-components/references/status.md": "source",
-
-    ".agents/skills/quenching-delivery/SKILL.md": "source",
-
-    ".agents/skills/quenching-delivery/references/align.md": "source",
-
-    ".agents/skills/quenching-delivery/references/delivery-align/bands.md": "source",
-
-    ".agents/skills/quenching-delivery/references/status.md": "source",
-
-    ".agents/skills/quenching-design/SKILL.md": "source",
-
-    ".agents/skills/quenching-design/references/align.md": "source",
-
-    ".agents/skills/quenching-design/references/design-align/bands.md": "source",
-
-    ".agents/skills/quenching-design/references/genre-new.md": "source",
-
-    ".agents/skills/quenching-design/references/status.md": "source",
 
     ".agents/skills/quenching-git/SKILL.md": "source",
 
@@ -796,8 +780,6 @@
     ".agents/skills/quenching-knowledge/SKILL.md": "source",
 
     ".agents/skills/quenching-knowledge/references/add.md": "source",
-
-    ".agents/skills/quenching-knowledge/references/align.md": "source",
 
     ".agents/skills/quenching-knowledge/references/define.md": "source",
 
@@ -836,56 +818,6 @@
     ".agents/skills/quenching-knowledge/references/learn.md": "source",
 
     ".agents/skills/quenching-knowledge/references/status.md": "source",
-
-    ".agents/skills/quenching-opensource/SKILL.md": "source",
-
-    ".agents/skills/quenching-opensource/references/align.md": "source",
-
-    ".agents/skills/quenching-opensource/references/opensource-align/bands.md": "source",
-
-    ".agents/skills/quenching-opensource/references/opensource-controls/catalog.md": "source",
-
-    ".agents/skills/quenching-opensource/references/opensource-readiness/report.md": "source",
-
-    ".agents/skills/quenching-opensource/references/readiness.md": "source",
-
-    ".agents/skills/quenching-opensource/references/status.md": "source",
-
-    ".agents/skills/quenching-ops/SKILL.md": "source",
-
-    ".agents/skills/quenching-ops/references/align.md": "source",
-
-    ".agents/skills/quenching-ops/references/entrypoint-new.md": "source",
-
-    ".agents/skills/quenching-ops/references/ops-align/bands.md": "source",
-
-    ".agents/skills/quenching-ops/references/ops-align/entrypoint-contract.md": "source",
-
-    ".agents/skills/quenching-ops/references/ops-align/lifecycle.md": "source",
-
-    ".agents/skills/quenching-ops/references/ops-align/target-structure.md": "source",
-
-    ".agents/skills/quenching-ops/references/status.md": "source",
-
-    ".agents/skills/quenching-proof/SKILL.md": "source",
-
-    ".agents/skills/quenching-proof/references/align.md": "source",
-
-    ".agents/skills/quenching-proof/references/layer-new.md": "source",
-
-    ".agents/skills/quenching-proof/references/proof-align/bands.md": "source",
-
-    ".agents/skills/quenching-proof/references/proof-align/gate-contract.md": "source",
-
-    ".agents/skills/quenching-proof/references/proof-align/layer-contract.md": "source",
-
-    ".agents/skills/quenching-proof/references/proof-align/target-structure.md": "source",
-
-    ".agents/skills/quenching-proof/references/status.md": "source",
-
-    ".agents/skills/quenching-security/SKILL.md": "source",
-
-    ".agents/skills/quenching-security/references/status.md": "source",
 
     ".agents/skills/quenching-specs/SKILL.md": "source",
 
@@ -987,14 +919,6 @@
 
     ".agents/skills/quenching-specs/references/triage.md": "source",
 
-    ".agents/skills/quenching-toolchain/SKILL.md": "source",
-
-    ".agents/skills/quenching-toolchain/references/align.md": "source",
-
-    ".agents/skills/quenching-toolchain/references/status.md": "source",
-
-    ".agents/skills/quenching-toolchain/references/toolchain-align/bands.md": "source",
-
     ".claude/agents/quenching-spec-orchestrator.md": "source",
 
     ".claude/agents/quenching-spec-reviewer.md": "source",
@@ -1019,8 +943,6 @@
 
     ".claude/skills/quenching-components/references/agent-new.md": "source",
 
-    ".claude/skills/quenching-components/references/align.md": "source",
-
     ".claude/skills/quenching-components/references/command-eval.md": "source",
 
     ".claude/skills/quenching-components/references/command-new.md": "source",
@@ -1029,31 +951,7 @@
 
     ".claude/skills/quenching-components/references/components-command-eval/evaluation.md": "source",
 
-    ".claude/skills/quenching-components/references/components-harness-align/harness-routing.md": "source",
-
-    ".claude/skills/quenching-components/references/harness-align.md": "source",
-
     ".claude/skills/quenching-components/references/hook-new.md": "source",
-
-    ".claude/skills/quenching-components/references/status.md": "source",
-
-    ".claude/skills/quenching-delivery/SKILL.md": "source",
-
-    ".claude/skills/quenching-delivery/references/align.md": "source",
-
-    ".claude/skills/quenching-delivery/references/delivery-align/bands.md": "source",
-
-    ".claude/skills/quenching-delivery/references/status.md": "source",
-
-    ".claude/skills/quenching-design/SKILL.md": "source",
-
-    ".claude/skills/quenching-design/references/align.md": "source",
-
-    ".claude/skills/quenching-design/references/design-align/bands.md": "source",
-
-    ".claude/skills/quenching-design/references/genre-new.md": "source",
-
-    ".claude/skills/quenching-design/references/status.md": "source",
 
     ".claude/skills/quenching-git/SKILL.md": "source",
 
@@ -1086,8 +984,6 @@
     ".claude/skills/quenching-knowledge/SKILL.md": "source",
 
     ".claude/skills/quenching-knowledge/references/add.md": "source",
-
-    ".claude/skills/quenching-knowledge/references/align.md": "source",
 
     ".claude/skills/quenching-knowledge/references/define.md": "source",
 
@@ -1126,56 +1022,6 @@
     ".claude/skills/quenching-knowledge/references/learn.md": "source",
 
     ".claude/skills/quenching-knowledge/references/status.md": "source",
-
-    ".claude/skills/quenching-opensource/SKILL.md": "source",
-
-    ".claude/skills/quenching-opensource/references/align.md": "source",
-
-    ".claude/skills/quenching-opensource/references/opensource-align/bands.md": "source",
-
-    ".claude/skills/quenching-opensource/references/opensource-controls/catalog.md": "source",
-
-    ".claude/skills/quenching-opensource/references/opensource-readiness/report.md": "source",
-
-    ".claude/skills/quenching-opensource/references/readiness.md": "source",
-
-    ".claude/skills/quenching-opensource/references/status.md": "source",
-
-    ".claude/skills/quenching-ops/SKILL.md": "source",
-
-    ".claude/skills/quenching-ops/references/align.md": "source",
-
-    ".claude/skills/quenching-ops/references/entrypoint-new.md": "source",
-
-    ".claude/skills/quenching-ops/references/ops-align/bands.md": "source",
-
-    ".claude/skills/quenching-ops/references/ops-align/entrypoint-contract.md": "source",
-
-    ".claude/skills/quenching-ops/references/ops-align/lifecycle.md": "source",
-
-    ".claude/skills/quenching-ops/references/ops-align/target-structure.md": "source",
-
-    ".claude/skills/quenching-ops/references/status.md": "source",
-
-    ".claude/skills/quenching-proof/SKILL.md": "source",
-
-    ".claude/skills/quenching-proof/references/align.md": "source",
-
-    ".claude/skills/quenching-proof/references/layer-new.md": "source",
-
-    ".claude/skills/quenching-proof/references/proof-align/bands.md": "source",
-
-    ".claude/skills/quenching-proof/references/proof-align/gate-contract.md": "source",
-
-    ".claude/skills/quenching-proof/references/proof-align/layer-contract.md": "source",
-
-    ".claude/skills/quenching-proof/references/proof-align/target-structure.md": "source",
-
-    ".claude/skills/quenching-proof/references/status.md": "source",
-
-    ".claude/skills/quenching-security/SKILL.md": "source",
-
-    ".claude/skills/quenching-security/references/status.md": "source",
 
     ".claude/skills/quenching-specs/SKILL.md": "source",
 
@@ -1277,14 +1123,6 @@
 
     ".claude/skills/quenching-specs/references/triage.md": "source",
 
-    ".claude/skills/quenching-toolchain/SKILL.md": "source",
-
-    ".claude/skills/quenching-toolchain/references/align.md": "source",
-
-    ".claude/skills/quenching-toolchain/references/status.md": "source",
-
-    ".claude/skills/quenching-toolchain/references/toolchain-align/bands.md": "source",
-
     ".claude/skills/references-tighten/SKILL.md": "source",
 
     ".claude/skills/release/SKILL.md": "source",
@@ -1329,21 +1167,7 @@
     ".agents/quenching/assets/bin/quenching/ops",
     ".agents/quenching/assets/bin/quenching/proof",
     ".agents/quenching/assets/bin/quenching/security",
-    ".agents/quenching/assets/bin/quenching/toolchain",
-    ".agents/skills/quenching-delivery",
-    ".agents/skills/quenching-design",
-    ".agents/skills/quenching-opensource",
-    ".agents/skills/quenching-ops",
-    ".agents/skills/quenching-proof",
-    ".agents/skills/quenching-security",
-    ".agents/skills/quenching-toolchain",
-    ".claude/skills/quenching-delivery",
-    ".claude/skills/quenching-design",
-    ".claude/skills/quenching-opensource",
-    ".claude/skills/quenching-ops",
-    ".claude/skills/quenching-proof",
-    ".claude/skills/quenching-security",
-    ".claude/skills/quenching-toolchain"
+    ".agents/quenching/assets/bin/quenching/toolchain"
   ],
   "mcp": {
     "mount": "core",

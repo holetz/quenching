@@ -17,7 +17,7 @@ maintainer: quenching
 
 The contract for how a command enters and stays in this plugin's automation surface, distilled
 from the skill-authoring + skill-alignment change that first paired a skill with its wrapper.
-`/quenching-components command-new` mints or edits one command; `/quenching-components align`
+`/quenching-components command-new` mints or edits one command; `/quenching-align components`
 sweeps the whole surface into conformance. The naming these produce is governed by
 [command-surface.md](../naming/command-surface.md); the layout rule for what may sit under
 `skills/` by [../architecture/source-layout.md](../architecture/source-layout.md); the
@@ -103,7 +103,7 @@ interrogation do not.
 - **OKF tail** on every mint: regenerate the derived registry's GENERATED zone, offer a glossary
   entry for any coined term, append a log entry, and self-check.
 
-## Alignment (`/quenching-components align`)
+## Alignment (`/quenching-align components`)
 
 - **Read-only inventory** of the existing command surface before any plan — plus a `Glob` for any
   surviving `skills/<name>/SKILL.md`, which the verifier cannot see because it reads `skills/**`
@@ -158,7 +158,7 @@ The bridge is generated, and verified by code:
   copy whose source is gone — and 0 when the copy matches. A `.claude/skills/<name>/` the manifest
   does not list is refused (exit 2, `ct-bridge-unowned`), never overwritten.
 - `cq components migrate --target <repo>` plans the move from the legacy `.claude/commands/` layout;
-  `/quenching-align`, `/quenching-components align` and `/quenching-components status`
+  `/quenching-align`, `/quenching-align components` and `/quenching-align status components`
   run it with `bridge --check`, and apply a non-empty plan on one confirmation. It trusts no
   manifest: an `.agents/skills/<path>/` or `.agents/references/<rel>` beside a `.claude/` source is
   retired as the old translation only when its content is what `translate` generates from some
@@ -234,7 +234,7 @@ Two consequences that are not obvious from the test itself:
 
 - **"A human might type this" is not a reason to pick typed-only.** Every command can be typed. The
   question is whether anything *else* reaches it, and for a conductor stage the answer is yes even
-  though a human can also type it — which is exactly how `/quenching-components harness-align`, `/quenching-knowledge import-memory` and
+  though a human can also type it — which is exactly how `/quenching-align components`, `/quenching-knowledge import-memory` and
   `/quenching-knowledge glossary-backfill` would be misclassified by intuition.
 - **The name-reachable half is not a judgment call.** `cq components lint` derives it from the command
   bodies and reports `sk-inert-stage` at error for a typed-only command another body reaches by

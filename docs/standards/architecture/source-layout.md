@@ -238,7 +238,7 @@ becomes target content when copied: a `bash` block pasted by a human into a raw 
 copy a target's own `/docs/` makes governing, dangles an `.agents/quenching/references/` citation
 the moment it is read outside the payload. Three trees answer this test today —
 `assets/templates/**` (the harness and front-matter molds), `assets/knowledge/**` (the OKF
-skeleton, copied by `/quenching-knowledge align`) and `assets/specs/templates/**`; a fourth surface
+skeleton, copied by `/quenching-align knowledge`) and `assets/specs/templates/**`; a fourth surface
 added later inherits the rule without amending this list.
 
 So **a template states its caveat self-contained**, citing only what the same align installs
@@ -266,7 +266,7 @@ review caught it.
 The opposite direction — a skill or a reference, which stays in the payload forever, citing a path
 in the target's own bundle — has its own rule. `/docs/standards/<subject>/<file>.md` is a **fixed
 string** ([bundle-root.md](bundle-root.md)), so it reads as a well-formed link in every repo whether
-or not the named file exists there. A target only carries that file if `/quenching-knowledge align`
+or not the named file exists there. A target only carries that file if `/quenching-align knowledge`
 installs it — that is, only if it exists under `quenching/assets/knowledge/**`.
 
 **A skill body or a reference under `skills/**` or `references/**` links a `/docs/` path only when

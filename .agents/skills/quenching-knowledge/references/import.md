@@ -14,7 +14,7 @@ is the **single owner** of the per-doc procedure (classify → stamp → index �
 self-check); this skill **cites** it and adds only the ingestion-safety deltas below. Source
 scoping, the bounded-crawl rules, unit extraction, dedup, and attribution are in
 [knowledge-import/sources.md](.agents/quenching/references/knowledge-import/sources.md). Requires an existing OKF bundle — run
-`/quenching-knowledge align` first if `/docs/` is not one.
+`/quenching-align knowledge` first if `/docs/` is not one.
 
 ## Doctrine (own deltas; the per-doc procedure is homes.md)
 
@@ -38,7 +38,7 @@ scoping, the bounded-crawl rules, unit extraction, dedup, and attribution are in
   ephemeral chatter — they are not durable knowledge. A secret is **referenced, never copied**.
 - **Additive only.** Enrich never deletes a source or a bundle doc; it mints and merges.
 
-## Workflow (force-with-1-confirmation, like `/quenching-knowledge align`)
+## Workflow (force-with-1-confirmation, like `/quenching-align knowledge`)
 
 ### 1. Scope the source (read-only)
 Identify the inputs: local files/folders (`Read`/`Glob`/`Grep`) or URLs (`WebFetch`). For a
@@ -82,7 +82,7 @@ residue.
 
 A single OK executes the whole batch. A
 minted/edited doc whose change reaches the target's **product code** is its **own**
-confirmation item (mirrors `/quenching-knowledge align`) — never folded into the batch OK.
+confirmation item (mirrors `/quenching-align knowledge`) — never folded into the batch OK.
 **Done when:** the complete mint/enrich table and every separate code-coupled item are presented.
 
 ### 4. Execute on OK — mint each doc via the insert procedure

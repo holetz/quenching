@@ -15,7 +15,7 @@ backfill instead of one term, see `/quenching-knowledge glossary-backfill`.
 ### 1. Locate the glossary
 Find `/docs/glossary.md` — the bundle root is the fixed `/docs/` convention. If the
 `concepts/` home or the glossary seed is **missing**, stop and offer
-`/quenching-knowledge align` to install the skeleton, then stop; do not resume in the same run. Read the
+`/quenching-align knowledge` to install the skeleton, then stop; do not resume in the same run. Read the
 current list so you can place the entry and detect an existing one. **Done when:** the glossary path
 and baseline are resolved, or the missing-bundle handoff is reported.
 

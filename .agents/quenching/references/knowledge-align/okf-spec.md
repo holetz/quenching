@@ -180,7 +180,7 @@ OKF-valid — additive keys, descriptive types, reserved-file structures):
    self-describing.)*
 7. **Harness files** `AGENTS.md` (a legacy root `AGENTS.md` is its fallback) are navigation
    pointers, **not** OKF concepts —
-   exempt from the `type` requirement. The validator skips them entirely; the `/quenching-components harness-align`
+   exempt from the `type` requirement. The validator skips them entirely; the `/quenching-align components`
    skill keeps them thin and honest.
 8. **Every knowledge-holding folder has an `index.md`, and listings do not lie.** The validator
    flags (WARN) a folder of concept docs with no `index.md`, a listing link to a nonexistent

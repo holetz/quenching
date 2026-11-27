@@ -19,7 +19,7 @@ A hook charges **other people's operations**: it fires on events the command tha
 it does not own, so a session-wide hook taxes every iteration in the repo — including every
 one it never helps. This repo therefore installs every hook at the **narrowest scope that
 still catches what it exists to catch**, minted by `/quenching-components hook-new` under one plan → one
-OK, inventoried (report-only) by `/quenching-components align`.
+OK, inventoried (report-only) by `/quenching-align components`.
 
 ## The scope ladder — narrowest first
 
@@ -227,7 +227,7 @@ still resolving its bundle root from a retired `docsDir` config key. The dead co
 `bundle root is not a directory` on every sweep, against a bundle the current checker passed
 clean: a frozen duplicate does not merely go redundant, because the contract it was frozen against
 can move underneath it, and it then reports **failures of its own staleness as findings about your
-repo**. `/quenching-knowledge align` removes that class of debris on sight.
+repo**. `/quenching-align knowledge` removes that class of debris on sight.
 
 The full pricing doctrine lives once, in
 `quenching/references/components-command-new/capabilities.md` §Hooks;

@@ -2,7 +2,7 @@
 allowed-tools: Bash(cq:*), Bash(cq.cmd:*), Bash(python3:*), Bash(py:*), Bash(git grep:*), Bash(grep:*), Bash(mkdir:*), Bash(mv:*), Bash(rm:*), Read, Grep, Glob, Write, Edit, Task, AskUserQuestion
 ---
 
-# /quenching-components align — force the automation surface onto the taxonomy
+# /quenching-align components — force the automation surface onto the taxonomy
 
 **Input**: `$ARGUMENTS` (an optional scope; omit to sweep the whole automation surface).
 

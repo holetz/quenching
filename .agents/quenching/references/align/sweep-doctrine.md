@@ -2,8 +2,8 @@
 
 <!-- rules -->
 
-The plugin has **two** aligns: `/quenching-knowledge align` (`knowledge/`) and
-`/quenching-components align` (`.agents/` and the Claude bridge) — plus `/align`, which conducts both. The specs front is
+The plugin has **two** aligns: `/quenching-align knowledge` (`knowledge/`) and
+`/quenching-align components` (`.agents/` and the Claude bridge) — plus `/quenching-align`, which conducts both. The specs front is
 provider-owned and has no align.
 Everything about **how** the operation behaves is identical across them and lives here; only a
 front's own deltas (what it inventories, which findings it produces, what its verifier is) stay in
@@ -185,8 +185,8 @@ it deliberately did not close, each with the command that closes it.
 
 | Front | Align | Verifier |
 | --- | --- | --- |
-| `knowledge/` | `/quenching-knowledge align` | `knowledge_read(verb="validate", bundle=<knowledge-dir>)` — exit 0 **and** no `dir-no-index` / `index-broken-link` / `index-orphan` (they are WARN; read the findings) |
-| `.agents/` + bridge | `/quenching-components align` | `components_read(verb="lint")` + `components_read(verb="doctor")`, `components_write(verb="migrate")` reporting `conformant: true` (empty plan) and `components_write(verb="bridge", check=true)` exit 0, plus `components_write(verb="registry_reindex")` reporting `changed: false` for the zone |
+| `knowledge/` | `/quenching-align knowledge` | `knowledge_read(verb="validate", bundle=<knowledge-dir>)` — exit 0 **and** no `dir-no-index` / `index-broken-link` / `index-orphan` (they are WARN; read the findings) |
+| `.agents/` + bridge | `/quenching-align components` | `components_read(verb="lint")` + `components_read(verb="doctor")`, `components_write(verb="migrate")` reporting `conformant: true` (empty plan) and `components_write(verb="bridge", check=true)` exit 0, plus `components_write(verb="registry_reindex")` reporting `changed: false` for the zone |
 
 All three verifiers read the same contract — `--json` on every subcommand and exit **0** ok · **1**
 findings · **2** refusal — so an align branches on data it did not have to interpret. Warnings are

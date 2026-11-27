@@ -13,6 +13,8 @@ maintainer: quenching
 
 # 0019 — Router skills and a source in the target dialect
 
+> **Superseded in part** by [ADR 0023](0023-fronts-are-align-arguments.md): the fronts are arguments of `/quenching-align`, and their seven routers are retired.
+
 [ADR 0017](0017-install-only-by-deploy.md) made `cq deploy` the only way the product reaches a
 repository, and [ADR 0018](0018-retire-omnigent-and-source-manifest.md) removed the plugin-model
 remnants. The source itself still had the plugin's shape: one `commands/<front>/<verb>.md` file per

@@ -2,7 +2,7 @@
 type: standard
 title: Subagent authoring
 description: When work becomes a subagent, the definition contract for .claude/agents/, and how the surface is inventoried
-resource: quenching/skills/quenching-components/references/agent-new.md, quenching/skills/quenching-components/references/align.md, quenching/assets/bin/quenching/components/**
+resource: quenching/skills/quenching-components/references/agent-new.md, quenching/references/components-align/align.md, quenching/assets/bin/quenching/components/**
 tags: [automation, agents, delegation]
 timestamp: 2026-11-27
 audience: both
@@ -18,7 +18,7 @@ maintainer: quenching
 A **subagent** is a delegation: work runs in a fresh context and only its result returns.
 A target's own definition lives in one file at `.claude/agents/<name>.md`, minted by
 `/quenching-components agent-new` under one plan → one OK, inventoried (report-only) by
-`/quenching-components align`. The plugin's five agents are one source in `quenching/agents/*.md`
+`/quenching-align components`. The plugin's five agents are one source in `quenching/agents/*.md`
 with three generated projections; a target's own agent is never projected (§The client
 projections).
 

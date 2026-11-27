@@ -13,7 +13,7 @@ writes a `concepts/` concept doc and never asks the human what a term means — 
 `/quenching-knowledge learn`'s job. The glossary format and the shared **Enriching the glossary**
 procedure live with `/quenching-knowledge add`
 ([knowledge-add/homes.md](.agents/quenching/references/knowledge-add/homes.md)); the
-`type` vocabulary and conformance rules with `/quenching-knowledge align`
+`type` vocabulary and conformance rules with `/quenching-align knowledge`
 ([knowledge-align/taxonomy.md](.agents/quenching/references/knowledge-align/taxonomy.md),
 [knowledge-align/conformance.md](.agents/quenching/references/knowledge-align/conformance.md)). The fan-out convention
 (bounded recon, sliced `Task` agents, compact partials, one merged plan) follows
@@ -24,7 +24,7 @@ procedure live with `/quenching-knowledge add`
 ### 1. Locate the glossary and read the baseline
 Find `/docs/glossary.md` — the bundle root is the fixed `/docs/` convention. If the
 `concepts/` home or the glossary seed is missing, stop and offer
-`/quenching-knowledge align` to install the skeleton, then stop; do not resume in the same run. Read the current entries once — this
+`/quenching-align knowledge` to install the skeleton, then stop; do not resume in the same run. Read the current entries once — this
 is the dedupe baseline every slice's candidates get checked against.
 **Done when:** the glossary path and baseline are resolved, or the missing-bundle handoff is reported.
 

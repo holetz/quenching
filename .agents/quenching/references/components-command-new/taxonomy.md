@@ -92,13 +92,13 @@ top level is repo-wide by declaration.
 
 **A skill's folder holds only that skill**: `SKILL.md` and the files it alone reads. Shared
 procedure lives in `.agents/references/<name>/` and eval cases in `.agents/evals/<name>/`, cited
-by path. A legacy `.agents/skills/` surface is `/quenching-components align`'s to migrate
+by path. A legacy `.agents/skills/` surface is `/quenching-align components`'s to migrate
 (`components_write(verb="migrate")`); the mint never writes into it.
 
 **A family is a router, not a set of skills.** Three or more skills of the target sharing the first
 kebab segment are one vertical: `.agents/skills/<family>/SKILL.md` with the flow table and
 `references/<flow>.md` inside the skill. The mint adds a flow to an existing router; the grouping of
-loose skills is `/quenching-components align`'s, with the human's answer per family.
+loose skills is `/quenching-align components`'s, with the human's answer per family.
 
 **Accepted variation (documented, never generated):** directory-scoped surfaces
 (`<folder>/.agents/skills/`) also bind a command to a folder — the sweep classifies them in
@@ -138,7 +138,7 @@ This file owns, because no tool decides it:
   installed plugins (`/quenching-specs-*`, marketplace plugins) stay out of it and may be pointed
   at from the curated prose.
 - **Who may run the regeneration.** `/quenching-components command-new` (in its OKF tail) and
-  `/quenching-components align` (in its verify step). Neither writes between the markers by
+  `/quenching-align components` (in its verify step). Neither writes between the markers by
   hand, and neither composes the table itself. Both end their run on a second
   `registry reindex` reporting `changed: false`.
 
