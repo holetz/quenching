@@ -1,6 +1,6 @@
 # /quenching-specs execute — 3. Settle the approval, off the state step 2 already read
 
-Loaded only when this step runs; the flow index is [execute.md](.claude/skills/quenching-specs/references/execute.md).
+Loaded only when this step runs; the flow index is [execute.md](.agents/skills/quenching-specs/references/execute.md).
 
 **Load the stage ladder first** — what the derived stage names and means:
 

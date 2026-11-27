@@ -4,7 +4,7 @@ Rules for the second audience: agents that search, lift, reconstruct and cite a 
 
 ## Contents
 
-`components_read(verb="read", path=".claude/skills/quenching-knowledge/references/knowledge-documentation/agent-readability.md")`
+`components_read(verb="read", path=".agents/skills/quenching-knowledge/references/knowledge-documentation/agent-readability.md")`
 returns the heading index; `--sections <name>` addresses one.
 
 <!-- rules -->

@@ -1,6 +1,6 @@
 # /quenching-specs execute — step 5 d–e
 
-Loaded only when this sub-step runs, together with the step 5 loop in [step-5-implement-tasks.md](.claude/skills/quenching-specs/references/specs-execute/step-5-implement-tasks.md); the flow index is [execute.md](.claude/skills/quenching-specs/references/execute.md).
+Loaded only when this sub-step runs, together with the step 5 loop in [step-5-implement-tasks.md](.agents/skills/quenching-specs/references/specs-execute/step-5-implement-tasks.md); the flow index is [execute.md](.agents/skills/quenching-specs/references/execute.md).
 
 d. **On the first pass through 5d–5e, load the rules the chain runs under — once, never per
    task.** The verification policy, the validation loop, the self-review, and the commit's hard rules;

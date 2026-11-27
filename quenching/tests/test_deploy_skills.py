@@ -1,11 +1,11 @@
-"""A client that reads several directories still gets each generated skill once.
+"""`.agents/skills` is the source of every generated skill, and `claude` adds its projection.
 
-Measured 2026-11-25: Claude Code 2.1.332 reads `.claude/skills` only, OpenCode reads both and
-prefers `.agents/skills`, and VS Code + Copilot Chat discovers every `SKILL.md` under
-`.agents/skills`, `.github/skills` and `.claude/skills` before deduplicating by name. The deploy
-publishes into the minimal cover of what the declared harnesses read: `claude` forces
-`.claude/skills` (OpenCode reads it too), and a deploy without `claude` keeps `.agents/skills`.
-The `codex` harness was removed (ADR 0020); its client read set is no longer a deploy option.
+Measured 2026-11-25: Claude Code 2.1.332 reads `.claude/skills` only, Codex 0.165.0 reads
+`.agents/skills` only, OpenCode reads both and prefers `.agents/skills`, and VS Code + Copilot Chat
+discovers every `SKILL.md` under `.agents/skills`, `.github/skills` and `.claude/skills` before
+deduplicating by name. So the deploy writes each generated skill in `.agents/skills` whatever the
+harnesses, and with `claude` projects it into `.claude/skills`: the same bytes plus the bridge
+marker, the rule the bridge applies to a target's own skills (ADR 0022).
 """
 from __future__ import annotations
 
@@ -61,7 +61,7 @@ class Publication(unittest.TestCase):
         return deploy_tree.build_tree(self.source, self.target, ["quenching-specs"],
                                       list(harnesses))
 
-    def assert_published_once(self, expected: set[str], *harnesses: str) -> None:
+    def assert_published(self, expected: set[str], *harnesses: str) -> None:
         built = self.build(*harnesses)
         tree, names = built["tree"], built["manifest"]["skills"]
         self.assertTrue(names)
@@ -69,14 +69,23 @@ class Publication(unittest.TestCase):
             self.assertEqual(expected, skill_md_dirs(tree, name), (harnesses, name))
         self.assertEqual(len(names) * len(expected), skill_md_count(tree), harnesses)
 
-    def test_claude_alone_publishes_only_the_claude_copy(self):
-        self.assert_published_once({CLAUDE_SKILLS}, "claude")
+    def test_claude_alone_writes_the_source_and_its_projection(self):
+        self.assert_published(BOTH, "claude")
 
-    def test_a_client_that_reads_both_does_not_force_a_second_copy(self):
-        self.assert_published_once({CLAUDE_SKILLS}, "claude", "opencode")
+    def test_claude_and_opencode_write_the_source_and_its_projection(self):
+        self.assert_published(BOTH, "claude", "opencode")
 
-    def test_opencode_alone_publishes_once_in_the_generic_layer_it_prefers(self):
-        self.assert_published_once({AGENTS_SKILLS}, "opencode")
+    def test_every_harness_writes_the_source_and_its_projection(self):
+        self.assert_published(BOTH, "claude", "codex", "opencode")
+
+    def test_opencode_alone_writes_only_the_source(self):
+        self.assert_published({AGENTS_SKILLS}, "opencode")
+
+    def test_codex_alone_writes_only_the_source(self):
+        self.assert_published({AGENTS_SKILLS}, "codex")
+
+    def test_no_harness_keeps_the_source(self):
+        self.assert_published({AGENTS_SKILLS})
 
     def cited_paths(self, tree: dict, directory: str) -> set[str]:
         import re
@@ -91,44 +100,51 @@ class Publication(unittest.TestCase):
                 found.update(cite.findall(body))
         return found
 
-    def test_a_published_skill_cites_its_files_where_they_are_published(self):
-        # A router reads each flow by path; a citation left at `.agents/skills` after the skill
-        # moved to `.claude/skills` is a file no reader finds.
+    def test_both_copies_cite_the_source(self):
+        # A router reads each flow by path; `.agents/skills` always exists, so both copies cite it.
         tree = self.build("claude", "opencode")["tree"]
-        cited = self.cited_paths(tree, CLAUDE_SKILLS)
-        self.assertTrue(cited)
-        self.assertEqual(set(), {path for path in cited if path.startswith(AGENTS_SKILLS + "/")})
-        self.assertEqual(set(), {path for path in cited if path not in tree})
+        for directory in (AGENTS_SKILLS, CLAUDE_SKILLS):
+            cited = self.cited_paths(tree, directory)
+            self.assertTrue(cited, directory)
+            self.assertEqual(set(), {path for path in cited
+                                     if not path.startswith(AGENTS_SKILLS + "/")}, directory)
+            self.assertEqual(set(), {path for path in cited if path not in tree}, directory)
 
-    def test_the_generic_layer_keeps_its_own_citations(self):
-        tree = self.build("opencode")["tree"]
-        cited = self.cited_paths(tree, AGENTS_SKILLS)
-        self.assertTrue(cited)
-        self.assertEqual(set(), {path for path in cited if not path.startswith(AGENTS_SKILLS + "/")})
-
-    def test_no_harness_keeps_the_generic_layer(self):
-        self.assert_published_once({AGENTS_SKILLS})
-
-    def test_only_the_claude_copy_carries_the_bridge_marker(self):
+    def test_the_projection_is_the_source_plus_the_marker(self):
         tree = self.build("claude")["tree"]
         name = "quenching-specs"
-        claude = tree[f"{CLAUDE_SKILLS}/{name}/SKILL.md"][0].decode()
-        self.assertIn(bridge.marker(name), claude)
-        with self.assertRaises(KeyError):
-            tree[f"{AGENTS_SKILLS}/{name}/SKILL.md"]
+        prefix = f"{AGENTS_SKILLS}/{name}/"
+        sources = {rel[len(prefix):]: entry[0] for rel, entry in tree.items()
+                   if rel.startswith(prefix)}
+        self.assertIn("SKILL.md", sources)
+        for rel, data in sources.items():
+            projected = tree[f"{CLAUDE_SKILLS}/{name}/{rel}"][0]
+            expected = (bridge.with_marker(data.decode(), name).encode()
+                        if rel == "SKILL.md" else data)
+            self.assertEqual(expected, projected, rel)
+        self.assertNotIn(bridge.marker(name), sources["SKILL.md"].decode())
 
-    def test_the_seed_names_the_published_directory(self):
+    def test_the_seed_names_the_source_and_the_copy(self):
         built = self.build("claude")
-        self.assertIn("`.claude/skills/` (published", built["seeds"]["AGENTS.md"])
-        self.assertNotIn("`.agents/skills/` (source)", built["seeds"]["AGENTS.md"])
+        self.assertIn("`.agents/skills/` (source) and `.claude/skills/` (generated copy)",
+                      built["seeds"]["AGENTS.md"])
 
     def test_a_generic_target_seed_names_no_bridge_it_does_not_have(self):
-        for harnesses in (("opencode",), ()):
+        for harnesses in (("opencode",), ("codex",), ()):
             seed = self.build(*harnesses)["seeds"]["AGENTS.md"]
             self.assertIn("`.agents/skills/` (source", seed)
             self.assertNotIn(".claude/skills", seed)
 
-    def test_a_claude_only_target_without_own_skills_has_no_bridge_manifest(self):
+    def test_a_mirrored_skill_is_the_deploys_not_the_bridges(self):
+        # Its source now sits in `.agents/skills` too; the bridge must not claim it.
+        (self.target / ".agents").mkdir()
+        (self.target / ".agents/.quenching-deploy.json").write_text(json.dumps({
+            "skills": ["quenching-specs"],
+            "mirrors": [".agents/skills/quenching-ops", ".claude/skills/quenching-ops",
+                        ".agents/quenching/assets/bin/quenching/ops"]}))
+        self.assertEqual({"quenching-specs", "quenching-ops"}, bridge.deploy_owned(self.target))
+
+    def test_a_claude_target_without_own_skills_has_no_bridge_manifest(self):
         tree = self.build("claude")["tree"]
         self.assertNotIn(f"{CLAUDE_SKILLS}/.generated-files.json", tree)
 
@@ -156,20 +172,41 @@ class Upgrade(unittest.TestCase):
             code = deploy_main(["--target", str(self.target), *argv, "--json"])
         return code, json.loads(out.getvalue() or "{}")
 
-    def test_switching_to_claude_only_deletes_the_generic_copy(self):
-        self.assertEqual(0, self.deploy("--modules", "specs", "--harness", "opencode",
+    def test_dropping_claude_deletes_only_the_projection(self):
+        self.assertEqual(0, self.deploy("--modules", "specs", "--harness", "claude",
                                         "--write")[0])
         self.assertTrue((self.target / AGENTS_SKILLS / "quenching-specs/SKILL.md").is_file())
-        self.assertFalse((self.target / CLAUDE_SKILLS / "quenching-specs").exists())
-        code, payload = self.deploy("--harness", "claude", "--check")
-        self.assertEqual(1, code)
-        self.assertIn({"path": f"{AGENTS_SKILLS}/quenching-specs/SKILL.md",
-                       "change": "delete"}, payload["changes"])
-        self.assertEqual(0, self.deploy("--harness", "claude", "--write")[0])
-        self.assertFalse((self.target / AGENTS_SKILLS / "quenching-specs").exists())
         self.assertTrue((self.target / CLAUDE_SKILLS / "quenching-specs/SKILL.md").is_file())
+        code, payload = self.deploy("--harness", "opencode", "--check")
+        self.assertEqual(1, code)
+        self.assertIn({"path": f"{CLAUDE_SKILLS}/quenching-specs/SKILL.md",
+                       "change": "delete"}, payload["changes"])
+        self.assertNotIn(f"{AGENTS_SKILLS}/quenching-specs/SKILL.md",
+                         {change["path"] for change in payload["changes"]})
+        self.assertEqual(0, self.deploy("--harness", "opencode", "--write")[0])
+        self.assertFalse((self.target / CLAUDE_SKILLS / "quenching-specs").exists())
+        self.assertTrue((self.target / AGENTS_SKILLS / "quenching-specs/SKILL.md").is_file())
         code, payload = self.deploy("--check")
         self.assertEqual((0, []), (code, payload["changes"]))
+
+    def test_a_claude_only_target_of_7_18_gains_the_source(self):
+        # 7.18.x published a claude-only target's skills only under `.claude/skills`.
+        self.assertEqual(0, self.deploy("--modules", "specs", "--harness", "claude",
+                                        "--write")[0])
+        manifest_path = self.target / ".agents/.quenching-deploy.json"
+        manifest = json.loads(manifest_path.read_text())
+        import shutil
+        shutil.rmtree(self.target / AGENTS_SKILLS / "quenching-specs")
+        manifest["files"] = {rel: digest for rel, digest in manifest["files"].items()
+                             if not rel.startswith(AGENTS_SKILLS + "/")}
+        manifest_path.write_text(json.dumps(manifest))
+        code, payload = self.deploy("--check")
+        self.assertEqual(1, code)
+        self.assertIn({"path": f"{AGENTS_SKILLS}/quenching-specs/SKILL.md", "change": "create"},
+                      payload["changes"])
+        self.assertEqual(0, self.deploy("--write")[0])
+        self.assertTrue((self.target / AGENTS_SKILLS / "quenching-specs/SKILL.md").is_file())
+        self.assertEqual((0, []), (lambda r: (r[0], r[1]["changes"]))(self.deploy("--check")))
 
 
 if __name__ == "__main__":

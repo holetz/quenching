@@ -1,6 +1,6 @@
 # /quenching-specs execute — 1. Select the spec
 
-Loaded only when this step runs; the flow index is [execute.md](.claude/skills/quenching-specs/references/execute.md).
+Loaded only when this step runs; the flow index is [execute.md](.agents/skills/quenching-specs/references/execute.md).
 
 An ID was given → use it. Otherwise infer from the conversation, auto-select when exactly one spec
 is under way, or run `specs_read(verb="list")` and pick on a decision sheet ([questions.md](.agents/quenching/references/specs-develop/questions.md) §The four shared mechanics §1). Announce

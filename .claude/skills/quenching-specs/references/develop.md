@@ -27,7 +27,7 @@ so, where it does not.
 
 **Every step is a file of its own.** This body is the index: it carries the doctrine, the batching
 contract and the invariants every stage obeys. A step runs only after its file is loaded —
-`components_read(verb="read", path=".claude/skills/quenching-specs/references/specs-develop/<file>")` —
+`components_read(verb="read", path=".agents/skills/quenching-specs/references/specs-develop/<file>")` —
 and that file loads the `§` sections its own step uses, never the whole pass up front.
 
 ## Where the rest lives
@@ -69,21 +69,21 @@ Run the steps in order. Each step lives in a file of its own, loaded when the st
 before; the file holds the step's text and its `**Done when:**`. Steps 1 and 2 are one call, so load
 both together; the sub-steps `3b`, `3c` and `3d` are linked from step 3 and run with it.
 
-Run it from [step 1](.claude/skills/quenching-specs/references/specs-develop/step-1-resolve.md), read whole.
+Run it from [step 1](.agents/skills/quenching-specs/references/specs-develop/step-1-resolve.md), read whole.
 
-Run it from [step 2](.claude/skills/quenching-specs/references/specs-develop/step-2-read-state.md), read whole.
+Run it from [step 2](.agents/skills/quenching-specs/references/specs-develop/step-2-read-state.md), read whole.
 
-Run it from [step 3](.claude/skills/quenching-specs/references/specs-develop/step-3-derive.md), read whole.
+Run it from [step 3](.agents/skills/quenching-specs/references/specs-develop/step-3-derive.md), read whole.
 
-Run it from [step 4](.claude/skills/quenching-specs/references/specs-develop/step-4-compose.md), read whole.
+Run it from [step 4](.agents/skills/quenching-specs/references/specs-develop/step-4-compose.md), read whole.
 
-Run it from [step 5](.claude/skills/quenching-specs/references/specs-develop/step-5-refine.md), read whole.
+Run it from [step 5](.agents/skills/quenching-specs/references/specs-develop/step-5-refine.md), read whole.
 
-Run it from [step 6](.claude/skills/quenching-specs/references/specs-develop/step-6-consolidate.md), read whole.
+Run it from [step 6](.agents/skills/quenching-specs/references/specs-develop/step-6-consolidate.md), read whole.
 
-Run it from [step 7](.claude/skills/quenching-specs/references/specs-develop/step-7-apply.md), read whole.
+Run it from [step 7](.agents/skills/quenching-specs/references/specs-develop/step-7-apply.md), read whole.
 
-Run it from [step 8](.claude/skills/quenching-specs/references/specs-develop/step-8-close.md), read whole.
+Run it from [step 8](.agents/skills/quenching-specs/references/specs-develop/step-8-close.md), read whole.
 
 ## Invariants to never violate
 

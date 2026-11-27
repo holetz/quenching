@@ -40,8 +40,8 @@ here and nowhere else.
 
 The sub-steps run after this one, each from its own file:
 
-Run it from [step 3b](.claude/skills/quenching-specs/references/specs-develop/step-3b-load.md), read whole.
+Run it from [step 3b](.agents/skills/quenching-specs/references/specs-develop/step-3b-load.md), read whole.
 
-Run it from [step 3c](.claude/skills/quenching-specs/references/specs-develop/step-3c-sweep.md), read whole.
+Run it from [step 3c](.agents/skills/quenching-specs/references/specs-develop/step-3c-sweep.md), read whole.
 
-Run it from [step 3d](.claude/skills/quenching-specs/references/specs-develop/step-3d-surface.md), read whole.
+Run it from [step 3d](.agents/skills/quenching-specs/references/specs-develop/step-3d-surface.md), read whole.

@@ -1,6 +1,6 @@
 # /quenching-specs execute — step 5 c
 
-Loaded only when this sub-step runs, together with the step 5 loop in [step-5-implement-tasks.md](.claude/skills/quenching-specs/references/specs-execute/step-5-implement-tasks.md); the flow index is [execute.md](.claude/skills/quenching-specs/references/execute.md).
+Loaded only when this sub-step runs, together with the step 5 loop in [step-5-implement-tasks.md](.agents/skills/quenching-specs/references/specs-execute/step-5-implement-tasks.md); the flow index is [execute.md](.agents/skills/quenching-specs/references/execute.md).
 
 c. **Write only the `/docs/` this task names.** When this task writes `/docs/`, load the rule that
    draws the line between declared and emergent, and the boundary it crosses:

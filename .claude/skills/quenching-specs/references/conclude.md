@@ -56,48 +56,48 @@ run, and nothing outside it is granted. A case a step sends to `needs-human` sto
 
 ### 1. Resolve the spec, the outcome, and what already happened
 
-Run it from [step 1](.claude/skills/quenching-specs/references/specs-conclude/step-1-resolve.md), read whole.
+Run it from [step 1](.agents/skills/quenching-specs/references/specs-conclude/step-1-resolve.md), read whole.
 
 **Done when:** one spec, one outcome, and the list of stages still to run are all settled.
 
 ### 2. Review the whole branch diff
 
-Run it from [step 2](.claude/skills/quenching-specs/references/specs-conclude/step-2-review.md), read whole.
+Run it from [step 2](.agents/skills/quenching-specs/references/specs-conclude/step-2-review.md), read whole.
 
 **Done when:** the diff was read and `reviewed` is stamped, or the run recorded why there was
 nothing to review.
 
 ### 3. Write the `/docs/` the work revealed
 
-Run it from [step 3](.claude/skills/quenching-specs/references/specs-conclude/step-3-docs.md), read whole.
+Run it from [step 3](.agents/skills/quenching-specs/references/specs-conclude/step-3-docs.md), read whole.
 
 **Done when:** the emergent docs are written and committed, or the offer was declined, or there is
 no bundle.
 
 ### 4. Write `## Outcome`
 
-Run it from [step 4](.claude/skills/quenching-specs/references/specs-conclude/step-4-outcome.md), read whole.
+Run it from [step 4](.agents/skills/quenching-specs/references/specs-conclude/step-4-outcome.md), read whole.
 
 **Done when:** `## Outcome` is written — and, for `abandoned`, the spec is in `archive/` with its
 `outcome:` stamped — or the run stopped at a refusal the human declined to override.
 
 ### 5. Distil, and settle the release obligations
 
-Run it from [step 5](.claude/skills/quenching-specs/references/specs-conclude/step-5-distil.md), read whole.
+Run it from [step 5](.agents/skills/quenching-specs/references/specs-conclude/step-5-distil.md), read whole.
 
 **Done when:** the distillation offer was made and applied or declined, and the release obligations
 were applied, reported as already satisfied, or reported as none.
 
 ### 6. Sweep the flow itself, and capture what it owes
 
-Run it from [step 6](.claude/skills/quenching-specs/references/specs-conclude/step-6-sweep.md), read whole.
+Run it from [step 6](.agents/skills/quenching-specs/references/specs-conclude/step-6-sweep.md), read whole.
 
 **Done when:** every evidenced candidate is captured as its own spec or declined in the report, and
 none was developed in this run.
 
 ### 7. Prove the gate green, then hand off
 
-Run it from [step 7](.claude/skills/quenching-specs/references/specs-conclude/step-7-gate.md), read whole.
+Run it from [step 7](.agents/skills/quenching-specs/references/specs-conclude/step-7-gate.md), read whole.
 
 **Done when:** the gate ran green on the branch and the handoff was named, or the run recorded
 why nothing could be handed off — a red gate, or (abandoned) the branch's own fate decided instead;
@@ -105,14 +105,14 @@ and the reservation of a finished build was released.
 
 ### 8. After the merge: archive and release the worktree
 
-Run it from [step 8](.claude/skills/quenching-specs/references/specs-conclude/step-8-archive.md), read whole.
+Run it from [step 8](.agents/skills/quenching-specs/references/specs-conclude/step-8-archive.md), read whole.
 
 **Done when:** the spec is in `archive/` with `outcome: done`, or its `needs-human` row is reported;
 and its slot was released, its legacy worktree retired, or the refusal reported.
 
 ### 9. Report
 
-Run it from [step 9](.claude/skills/quenching-specs/references/specs-conclude/step-9-report.md), read whole.
+Run it from [step 9](.agents/skills/quenching-specs/references/specs-conclude/step-9-report.md), read whole.
 
 **Done when:** path, outcome, records, both `/docs/` passes, what the sweep captured, the target
 acceptance line and the next-step block are all reported.

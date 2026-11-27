@@ -9,7 +9,7 @@ allowed-tools: Bash(cq:*), Bash(cq.cmd:*), Read, Grep, Glob, Bash(python3:*)
 This command is the read-only view of the toolchain front. The common front contract is in
 [front-align/mold.md](.agents/quenching/references/front-align/mold.md), and the
 finding-to-owner map is in
-[toolchain-align/bands.md](.claude/skills/quenching-toolchain/references/toolchain-align/bands.md).
+[toolchain-align/bands.md](.agents/skills/quenching-toolchain/references/toolchain-align/bands.md).
 It reports capability and evidence without repairing a manifest, lock, pin, tool configuration or
 target policy.
 

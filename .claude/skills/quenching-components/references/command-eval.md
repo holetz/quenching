@@ -27,7 +27,7 @@ distinct branch the workflow can take; a branch with no case is untested surface
 **Done when:** every branch and every promise is listed.
 
 ### 3. Derive the cases
-Per [components-command-eval/evaluation.md](.claude/skills/quenching-components/references/components-command-eval/evaluation.md) §Writing cases: one case per branch, each
+Per [components-command-eval/evaluation.md](.agents/skills/quenching-components/references/components-command-eval/evaluation.md) §Writing cases: one case per branch, each
 a realistic user prompt plus assertions about the **observable outcome**. Include at
 least one case the skill should **decline** (its `Not for:` boundary), and the should-trigger /
 should-not-trigger prompts step 7 needs.
@@ -43,7 +43,7 @@ that spawns subagents per run, and the human is authorizing that spend.
 Write `evals.json` beside the skill it measures — `.agents/evals/<name>/` in a target repo
 (the skill name, never the generated `.claude/skills/` bridge), `.agents/quenching/assets/evals/<path>/`
 in this plugin, `<path>` mirroring the command path
-([components-command-eval/evaluation.md](.claude/skills/quenching-components/references/components-command-eval/evaluation.md)
+([components-command-eval/evaluation.md](.agents/skills/quenching-components/references/components-command-eval/evaluation.md)
 §Where the artifacts live). Then, per case, dispatch **two** `Task` subagents — one told the
 skill is available, one given the same prompt with no reference to it. Pin both to the session
 model; **never `haiku`**. Record each arm's

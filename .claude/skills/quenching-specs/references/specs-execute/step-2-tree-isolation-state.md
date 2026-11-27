@@ -1,6 +1,6 @@
 # /quenching-specs execute — 2. Take the tree, the isolation and the state in one read
 
-Loaded only when this step runs; the flow index is [execute.md](.claude/skills/quenching-specs/references/execute.md).
+Loaded only when this step runs; the flow index is [execute.md](.agents/skills/quenching-specs/references/execute.md).
 
 **The precondition comes first.** Load the rule that binds this step:
 

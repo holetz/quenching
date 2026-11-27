@@ -44,20 +44,20 @@ returns `STATE: blocked` with `NOTE: needs-human:` carrying it.
 
 | Flow | Reference | Picked when |
 | --- | --- | --- |
-| `command-new` | [references/command-new.md](.claude/skills/quenching-components/references/command-new.md) | minting or editing ONE skill or command |
-| `agent-new` | [references/agent-new.md](.claude/skills/quenching-components/references/agent-new.md) | minting or editing ONE subagent definition |
-| `hook-new` | [references/hook-new.md](.claude/skills/quenching-components/references/hook-new.md) | wiring ONE scoped hook |
-| `align` | [references/align.md](.claude/skills/quenching-components/references/align.md) | converging the whole `.agents/skills` surface and its descriptions |
-| `status` | [references/status.md](.claude/skills/quenching-components/references/status.md) | a read-only report of the automation surface |
-| `command-eval` | [references/command-eval.md](.claude/skills/quenching-components/references/command-eval.md) | measuring whether a command teaches anything with with/without runs |
-| `command-retro` | [references/command-retro.md](.claude/skills/quenching-components/references/command-retro.md) | mining ONE session for what it shows about the command that ran in it |
-| `harness-align` | [references/harness-align.md](.claude/skills/quenching-components/references/harness-align.md) | refactoring AGENTS.md into pointers over the `/docs/` bundle |
+| `command-new` | [references/command-new.md](.agents/skills/quenching-components/references/command-new.md) | minting or editing ONE skill or command |
+| `agent-new` | [references/agent-new.md](.agents/skills/quenching-components/references/agent-new.md) | minting or editing ONE subagent definition |
+| `hook-new` | [references/hook-new.md](.agents/skills/quenching-components/references/hook-new.md) | wiring ONE scoped hook |
+| `align` | [references/align.md](.agents/skills/quenching-components/references/align.md) | converging the whole `.agents/skills` surface and its descriptions |
+| `status` | [references/status.md](.agents/skills/quenching-components/references/status.md) | a read-only report of the automation surface |
+| `command-eval` | [references/command-eval.md](.agents/skills/quenching-components/references/command-eval.md) | measuring whether a command teaches anything with with/without runs |
+| `command-retro` | [references/command-retro.md](.agents/skills/quenching-components/references/command-retro.md) | mining ONE session for what it shows about the command that ran in it |
+| `harness-align` | [references/harness-align.md](.agents/skills/quenching-components/references/harness-align.md) | refactoring AGENTS.md into pointers over the `/docs/` bundle |
 
 **Done when:** exactly one flow is chosen, with its input.
 
 ### 2. Load the flow and follow it
 Run `components_read(verb="read")` on the chosen flow's reference from the table above, with its
-`.claude/skills/quenching-components/references/` path. Read the flow whole, once, and follow it from its own `## Workflow` with the input from step 1:
+`.agents/skills/quenching-components/references/` path. Read the flow whole, once, and follow it from its own `## Workflow` with the input from step 1:
 its steps, `Done when:` lines and invariants bind this run exactly as they bound the standalone
 command. A `/quenching-components <flow>` the flow names as the next step is this router called with that flow, and a conductor reaches the same flow by calling this skill with the flow name and the input.
 **Done when:** the flow ran to its own `Done when:`, or stopped on its own stop condition.

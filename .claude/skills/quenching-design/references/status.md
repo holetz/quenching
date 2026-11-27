@@ -9,7 +9,7 @@ allowed-tools: Bash(cq:*), Bash(cq.cmd:*), Read, Grep, Glob, Bash(python3:*)
 The common front contract is in
 [front-align/mold.md](.agents/quenching/references/front-align/mold.md), and the
 design-specific disposition map is in
-[design-align/bands.md](.claude/skills/quenching-design/references/design-align/bands.md). This
+[design-align/bands.md](.agents/skills/quenching-design/references/design-align/bands.md). This
 read-only view preserves design's source arbitration, projection and optional-detector deltas.
 
 Resolve `cq` per

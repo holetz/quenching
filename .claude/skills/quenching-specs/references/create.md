@@ -35,25 +35,25 @@ file already answered most of them. The develop pass re-evaluates the level when
 
 ### 1. Classify the input
 
-Run it from [step 1](.claude/skills/quenching-specs/references/specs-create/step-1-classify.md), read whole.
+Run it from [step 1](.agents/skills/quenching-specs/references/specs-create/step-1-classify.md), read whole.
 
 **Done when:** the path is chosen.
 
 ### 2. Choose the title
 
-Run it from [step 2](.claude/skills/quenching-specs/references/specs-create/step-2-title.md), read whole.
+Run it from [step 2](.agents/skills/quenching-specs/references/specs-create/step-2-title.md), read whole.
 
 **Done when:** a descriptive title is in hand.
 
 ### 3. Plan-source path only — read it, and read the bundle
 
-Run it from [step 3](.claude/skills/quenching-specs/references/specs-create/step-3-plan-source.md), read whole.
+Run it from [step 3](.agents/skills/quenching-specs/references/specs-create/step-3-plan-source.md), read whole.
 
 **Done when:** the plan's parts are classified, or the sentence path skipped this.
 
 ### 4. Resolve a subject, a type, tags and `complexity` — decide, never ask
 
-Run it from [step 4](.claude/skills/quenching-specs/references/specs-create/step-4-metadata.md), read whole.
+Run it from [step 4](.agents/skills/quenching-specs/references/specs-create/step-4-metadata.md), read whole.
 
 **Done when:** a subject, a type, zero or more tags and a `complexity` level are each resolved (to
 a value, or explicitly to none) and reasoned; metadata may be absent, but `complexity` is always
@@ -61,14 +61,14 @@ resolved.
 
 ### 5. Capture in ONE call
 
-Run it from [step 5](.claude/skills/quenching-specs/references/specs-create/step-5-capture.md), read whole.
+Run it from [step 5](.agents/skills/quenching-specs/references/specs-create/step-5-capture.md), read whole.
 
 **Done when:** `specs_write(verb="create")` exited 0, `validate` ran in the same call, and the locator it
 returned is in hand.
 
 ### 6. The one screen — capture, correction and direction
 
-Run it from [step 6](.claude/skills/quenching-specs/references/specs-create/step-6-screen.md), read whole.
+Run it from [step 6](.agents/skills/quenching-specs/references/specs-create/step-6-screen.md), read whole.
 
 **Done when:** the screen has been shown and the human's answer — a correction, a direction, or
 both — has been fully honoured.

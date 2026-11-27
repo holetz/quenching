@@ -67,18 +67,26 @@ def _canonical(path: Path) -> bytes:
 def deploy_owned(repo: Path) -> set[str]:
     """The skill names `cq deploy` generated in this target.
 
-    They are the deploy's: it writes their `.claude` copy and hashes both in its own manifest,
-    so the bridge neither expects them, writes them nor reports their copies as orphans. A
-    target deployed before this rule may still have them in `.agents/skills`.
+    They are the deploy's: it writes both their `.agents/skills` source and their `.claude`
+    projection and hashes both in its own manifest, so the bridge neither expects them, writes
+    them nor reports their copies as orphans. A skill of a module outside the selection that the
+    deploy keeps as a mirror (`mirrors`, one folder per copy) is the deploy's too.
     """
     path = repo / DEPLOY_MANIFEST
     if not path.is_file():
         return set()
     try:
-        names = json.loads(path.read_text(encoding="utf-8")).get("skills", [])
+        document = json.loads(path.read_text(encoding="utf-8"))
+        names, mirrors = document.get("skills", []), document.get("mirrors", [])
     except (ValueError, AttributeError):
         return set()
-    return {name for name in names if isinstance(name, str)} if isinstance(names, list) else set()
+    owned = {name for name in names if isinstance(name, str)} if isinstance(names, list) else set()
+    for folder in mirrors if isinstance(mirrors, list) else []:
+        if isinstance(folder, str):
+            home, _, name = folder.rpartition("/")
+            if home in (".agents/skills", ".claude/skills") and name:
+                owned.add(name)
+    return owned
 
 
 def claude_declared(repo: Path) -> bool:

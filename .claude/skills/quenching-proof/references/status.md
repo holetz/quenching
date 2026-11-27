@@ -9,7 +9,7 @@ allowed-tools: Bash(cq:*), Bash(cq.cmd:*), Read, Grep, Glob, Bash(python3:*)
 The common front contract is in
 [front-align/mold.md](.agents/quenching/references/front-align/mold.md), and the proof
 disposition map is in
-[proof-align/bands.md](.claude/skills/quenching-proof/references/proof-align/bands.md). This
+[proof-align/bands.md](.agents/skills/quenching-proof/references/proof-align/bands.md). This
 read-only view preserves proof's layer, fixture, measurement, floor, CI and order deltas.
 
 This command is the read-only view of the proof front. It reports the declared proof root, layers
@@ -19,9 +19,9 @@ absent floor or artifact as absent, never as healthy, and states plainly that th
 not run.
 
 The payload is produced by `proof_read(verb="status")`; the finding and disposition rules live in
-[proof-align/bands.md](.claude/skills/quenching-proof/references/proof-align/bands.md),
-[proof-align/gate-contract.md](.claude/skills/quenching-proof/references/proof-align/gate-contract.md),
-and [proof-align/layer-contract.md](.claude/skills/quenching-proof/references/proof-align/layer-contract.md).
+[proof-align/bands.md](.agents/skills/quenching-proof/references/proof-align/bands.md),
+[proof-align/gate-contract.md](.agents/skills/quenching-proof/references/proof-align/gate-contract.md),
+and [proof-align/layer-contract.md](.agents/skills/quenching-proof/references/proof-align/layer-contract.md).
 Resolve `cq` per
 [tool-resolution.md](.agents/quenching/references/align/tool-resolution.md) and branch
 on exit code and JSON: `0` is a clean report, `1` carries findings, and `2` is a refusal.
