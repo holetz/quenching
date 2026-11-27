@@ -45,7 +45,7 @@ for this repository's own deployed surface. The source is
 `integrations/claude-hud/`, `integrations/claude-vitrine/`, `integrations/opencode-vitrine/` and `integrations/opencode-quota/` are the hand-written
 trees under a harness: edit an OpenCode plugin's `src/` and rebuild `dist/`, never a generated copy; the Claude
 mods have no build. In `integrations/claude-cache/`, edit `session/pricing.json` or the
-`quenching-handoff` template and regenerate the two copies, never the copies themselves; the OpenCode band's
+`quenching-specs` handoff template and regenerate the two copies, never the copies themselves; the OpenCode band's
 `src/core/` is regenerated from `claude-cache/hooks/` the same way. The Claude
 module plugins, the specs reader, the Codex plugin and the OpenCode user-level distribution were
 retired on 2026-11-03 with their generators.

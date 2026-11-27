@@ -83,12 +83,12 @@ confirms on its own, always — and inside a conducted run, so does every **irre
 That contract lives once, in
 [`align/convergence.md`](references/align/convergence.md).
 
-## The 6 skills
+## The 5 skills
 
 **One folder per skill** — each `skills/<name>/SKILL.md` carries both the description that routes to
 it and the body that runs. A router (`quenching-specs`, `quenching-git`, `quenching-knowledge` and `quenching-components`) keeps its flows in its own `references/`, so its rows below are flows, not
 extra skills. A front (`design`, `ops`, `proof`, `toolchain`, `delivery`, `opensource`, `security`) is no skill: it is an argument of `/quenching-align`, and its text lives in `references/<front>-align/`, published by the front's own module. The tables below are the manual, and the count is a property of their rows rather than a
-second structural inventory: the `6` in this heading is the manual's canonical displayed total, while
+second structural inventory: the `5` in this heading is the manual's canonical displayed total, while
 [`tests/test_readme_surface.py`](tests/test_readme_surface.py) reads it and fails the suite whenever
 these tables and `skills/**` disagree
 ([`quality/surface-verification.md`](../docs/standards/quality/surface-verification.md)
@@ -204,7 +204,7 @@ motion, shadows, breakpoints, and snippets remain in the source and sidecar.
 
 | Command | Does |
 | --- | --- |
-| `/quenching-git` | The single entry point of the git flows: picks `branch`, `commit`, `merge`, `sync`, `pr-create`, `pr-review` or `pr-status` by the flow you name and loads that flow's reference; no alias entry stands for a flow. |
+| `/quenching-git` | The single entry point of the git flows: picks `branch`, `commit`, `merge`, `sync`, `conflict-resolve`, `pr-create`, `pr-review` or `pr-status` by the flow you name and loads that flow's reference; no alias entry stands for a flow. |
 | `/quenching-git branch` | Takes isolation for a build: a worktree by default and unasked, a plain branch only when the human asks, stating the cost and stamping the `branch:` record. |
 | `/quenching-git commit` | Commits what is already staged, under the target's own convention when one is declared. Never `git add -A`. |
 | `/quenching-git commit-incremental` | Turns the current worktree's pending changes into cohesive commits with explicit paths and safe stop conditions. |
@@ -250,7 +250,6 @@ all run it.
 | Command | Does |
 | --- | --- |
 | `/quenching-align` | The one door of every front: `align [front]` converges the eight aligned fronts on ONE confirmation, or only the named one, in dependency order; `status [front]` reads a front or all of them and ends on the security audit. It never reimplements a front's verifier. |
-| `/quenching-handoff` | Compacts the current conversation into a handoff stored beside its spec on the `quenching` branch, pushes it, and closes with the locator, the read command and the prompt the next session starts from — referencing existing plans, issues, commits and diffs rather than duplicating them. |
 
 The `specs` front has ten commands and a flow worth reading as a whole, so it gets its own section
 below.
@@ -319,7 +318,7 @@ With `QUENCHING_SPECS_SYNC=1` and the `azure-boards` backend, every read is answ
 
 | Command | Role |
 | --- | --- |
-| `/quenching-specs` | The single entry point of the specs flows: picks `create`, `develop`, `execute`, `conclude`, `triage`, `status` or `orchestrate` by the flow you name or the spec's stage, and loads that flow's reference. No alias entry stands for a flow. |
+| `/quenching-specs` | The single entry point of the specs flows: picks `create`, `develop`, `execute`, `conclude`, `triage`, `status`, `orchestrate` or `handoff` by the flow you name or the spec's stage, and loads that flow's reference. No alias entry stands for a flow. |
 | `/quenching-specs status` | The front's only **read-only** view: specs by derived stage with task progress, the frontmatter records as the history they narrate, the verifier results, and provider configuration findings. |
 | `/quenching-specs create` | ONE spec in `plans/`, ONE call, ONE closing screen — effort proportional to input, never an interrogation. A sentence becomes `## Problem` and `summary:`; a Claude Code plan file becomes every section it actually supports, mapped and never invented. Subject, type, tags and `complexity` are resolved and written with the capture, then shown — corrected or not — on the one screen at the end, which also offers to hand straight into `/quenching-specs develop` — whether that pass asks anything is the `complexity` the same screen shows. |
 | `/quenching-specs develop` | Two operations in ONE pass, both derived and neither offered as a choice: **compose** takes the spec from wherever its derived stage leaves it to a closed ten-section ready set, and **refine** argues with the composed spec and may overturn anything in it, the proposal included. Discovery resolution opens the pass, the approval close ends it — recommending approve, refine, or refine with the premortem against the spec's own signals. Questions grouped by dependency, each with an inline recommendation; one edit per pass, records `refined:`. Never edits code. |

@@ -25,7 +25,7 @@ remain unchanged.
 A module is the unit `cq deploy --modules` installs, and each is named for one vertical or one
 front with the `quenching-` prefix ([source-layout.md](source-layout.md),
 [command-surface.md](../naming/command-surface.md)). `quenching-specs` is mandatory: it owns the one
-`cq` and carries three skills, `quenching-specs`, `quenching-handoff` and `quenching-align` (the
+`cq` and carries two skills, `quenching-specs` and `quenching-align` (the
 root conductor). `core` is `specs,git,knowledge,components`, the default selection. The historical
 module `align` (and `quenching-align`) is an alias for `knowledge,components`, kept so a manifest
 recorded before the split still resolves.

@@ -253,7 +253,7 @@ each flow's body lives once in `skills/quenching-specs/references/<flow>.md`, lo
 `skills/quenching-<vertical>/SKILL.md` routes and `skills/quenching-<vertical>/references/<flow>.md`
 holds each body (`knowledge`, `components` and `git` follow it). A flow's body is cited
 `/quenching-<vertical> <flow>`; a skill with no flows is cited by its own name
-(`/quenching-handoff`, `/quenching-align`).
+(`/quenching-align`).
 
 **There are no shortcuts.** The router's description is what takes a request to the flow, so no
 typed-only `/quenching-<vertical>-<flow>` skill sits beside it. A flow that a conductor or a human

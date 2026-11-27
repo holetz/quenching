@@ -1,7 +1,7 @@
 ---
 name: quenching-git
-description: "Run one git flow: branch, commit, merge, sync, pr-create, pr-review, pr-status, commit-incremental, push, revert, cleanup. \"abrir um PR\", \"commit this\". Not for: specs → /quenching-specs."
-argument-hint: "[branch|commit|commit-incremental|merge|sync|push|revert|cleanup|pr-create|pr-review|pr-status] [input]"
+description: "Run one git flow: branch, commit, merge, sync, conflict-resolve, pr-create, pr-review, pr-status, commit-incremental, push, revert, cleanup. \"abrir um PR\", \"commit this\". Not for: specs → /quenching-specs."
+argument-hint: "[branch|commit|commit-incremental|merge|sync|conflict-resolve|push|revert|cleanup|pr-create|pr-review|pr-status] [input]"
 allowed-tools: Bash(.agents/quenching/bin/cq:*), Bash(.agents/quenching/bin/cq.cmd:*), Bash(git status:*), Bash(git diff:*), Bash(git ls-files:*), Bash(git add:*), Bash(git commit:*), Bash(git log:*), Bash(git worktree:*), Bash(git merge:*), Bash(git rebase:*), Bash(git branch:*), Bash(git remote:*), Bash(git rev-parse:*), Bash(git rev-list:*), Bash(git reflog:*), Bash(git ls-remote:*), Bash(git push:*), Bash(git merge-base:*), Bash(git show:*), Bash(git revert:*), Bash(git fetch:*), Bash(git for-each-ref:*), Bash(gh repo view:*), Bash(gh pr view:*), Bash(gh api graphql:*), Bash(az repos pr:*), Bash(az devops invoke:*), Bash(az rest:*), Bash(python3:*), Read, Edit, AskUserQuestion, Skill, mcp__quenching
 ---
 
@@ -32,7 +32,7 @@ per [align/tool-resolution.md](.agents/quenching/references/align/tool-resolutio
 
 The phrases that route to each flow, the map the description no longer carries:
 
-branch: "criar um worktree", "cut a worktree"; commit: "commitar o que está staged", "commit this"; merge: "mergear essa branch", "merge the branch"; sync: "atualizar essa branch com a main", "sync with main"; pr-create: "abrir um PR", "open a PR"; pr-review: "resolver os comentários do PR", "address the review threads"; pr-status: "como está o PR", "check the PR checks"; commit-incremental (only when named): "commits coesos do que mudou", "split into commits"; push (only when named): "enviar essa branch", "push the branch"; revert (only when named): "reverter o commit", "revert that commit"; cleanup (only when named): "limpar as branches mescladas", "clean up merged branches".
+branch: "criar um worktree", "cut a worktree"; commit: "commitar o que está staged", "commit this"; merge: "mergear essa branch", "merge the branch"; sync: "atualizar essa branch com a main", "sync with main"; conflict-resolve: "resolver o conflito do merge", "resolve the merge conflict"; pr-create: "abrir um PR", "open a PR"; pr-review: "resolver os comentários do PR", "address the review threads"; pr-status: "como está o PR", "check the PR checks"; commit-incremental (only when named): "commits coesos do que mudou", "split into commits"; push (only when named): "enviar essa branch", "push the branch"; revert (only when named): "reverter o commit", "revert that commit"; cleanup (only when named): "limpar as branches mescladas", "clean up merged branches".
 
 ## Workflow
 
@@ -47,6 +47,7 @@ returns `STATE: blocked` with `NOTE: needs-human:` carrying it.
 | `commit` | [references/commit.md](.agents/skills/quenching-git/references/commit.md) | committing what is already staged |
 | `merge` | [references/merge.md](.agents/skills/quenching-git/references/merge.md) | merging a branch into its base |
 | `sync` | [references/sync.md](.agents/skills/quenching-git/references/sync.md) | rebasing the work branch onto the latest base |
+| `conflict-resolve` | [references/conflict-resolve.md](.agents/skills/quenching-git/references/conflict-resolve.md) | a merge or rebase already stopped on a conflict |
 | `pr-create` | [references/pr-create.md](.agents/skills/quenching-git/references/pr-create.md) | pushing the branch and opening a PR |
 | `pr-review` | [references/pr-review.md](.agents/skills/quenching-git/references/pr-review.md) | addressing a PR's unresolved review threads |
 | `commit-incremental` | [references/commit-incremental.md](.agents/skills/quenching-git/references/commit-incremental.md) | turning pending worktree changes into small cohesive commits |
