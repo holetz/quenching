@@ -569,15 +569,15 @@ keeps its modules, while `--modules core` narrows a wider install and deletes th
 | Option | Values |
 | --- | --- |
 | `--modules` | `core` (default: `quenching-specs` plus `quenching-align` — specs, git, knowledge, components), `all`, or a comma list of modules; `specs` is always included because it owns the one `cq` |
-| `--harness` | `claude`, `opencode` (default: both) or `none`; `claude` also serves the GitHub Copilot harness (below) |
+| `--harness` | `claude`, `codex`, `opencode` (default: all three) or `none`; `claude` also serves the GitHub Copilot harness (below); `codex` gets the skills in `.agents/skills` and the MCP server in `.codex/config.toml` |
 | `--runtime` | `vendor` (default, offline) copies the runtime; `uvx` writes a shim pinned to the release tag |
 | `--profiles` | overrides the derived `shared.profiles.installed` |
 | `--check` | exit 1 on drift instead of writing |
 | `--prune-legacy` | removes a pointer-only `CLAUDE.md` |
 
 Deploy writes `AGENTS.md` and `.agents/quenching.json` only when absent, plus the generated
-`.agents/skills/`, `.agents/quenching/` (with the target's own `.agents/quenching/bin/cq`), the
-`.claude/skills/` bridge, per selected harness the Claude and OpenCode subagents, and — when the
+`.agents/skills/` (the source of every skill), `.agents/quenching/` (with the target's own
+`.agents/quenching/bin/cq`), with `claude` the `.claude/skills/` projection, per selected harness the Claude and OpenCode subagents, and — when the
 repository declares `shared.projections: ["github"]` — the Copilot subagents under
 `.github/agents/`, all from the same `quenching/agents/*.md`. It records what it owns in
 `.agents/.quenching-deploy.json`. `CLAUDE.md` is not created. Deploy installs the surface only: the

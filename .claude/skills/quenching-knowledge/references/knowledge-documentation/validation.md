@@ -5,7 +5,7 @@ The runbook for validating the generated site. It builds into the gitignored `si
 
 ## Contents
 
-`components_read(verb="read", path=".claude/skills/quenching-knowledge/references/knowledge-documentation/validation.md")`
+`components_read(verb="read", path=".agents/skills/quenching-knowledge/references/knowledge-documentation/validation.md")`
 returns the heading index; `--sections <name>` addresses one.
 
 <!-- rules -->

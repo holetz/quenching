@@ -723,6 +723,278 @@
 
     ".agents/quenching/references/specs-execute/execution.md": "source",
 
+    ".agents/skills/quenching-align/SKILL.md": "source",
+
+    ".agents/skills/quenching-components/SKILL.md": "source",
+
+    ".agents/skills/quenching-components/references/agent-new.md": "source",
+
+    ".agents/skills/quenching-components/references/align.md": "source",
+
+    ".agents/skills/quenching-components/references/command-eval.md": "source",
+
+    ".agents/skills/quenching-components/references/command-new.md": "source",
+
+    ".agents/skills/quenching-components/references/command-retro.md": "source",
+
+    ".agents/skills/quenching-components/references/components-command-eval/evaluation.md": "source",
+
+    ".agents/skills/quenching-components/references/components-harness-align/harness-routing.md": "source",
+
+    ".agents/skills/quenching-components/references/harness-align.md": "source",
+
+    ".agents/skills/quenching-components/references/hook-new.md": "source",
+
+    ".agents/skills/quenching-components/references/status.md": "source",
+
+    ".agents/skills/quenching-delivery/SKILL.md": "source",
+
+    ".agents/skills/quenching-delivery/references/align.md": "source",
+
+    ".agents/skills/quenching-delivery/references/delivery-align/bands.md": "source",
+
+    ".agents/skills/quenching-delivery/references/status.md": "source",
+
+    ".agents/skills/quenching-design/SKILL.md": "source",
+
+    ".agents/skills/quenching-design/references/align.md": "source",
+
+    ".agents/skills/quenching-design/references/design-align/bands.md": "source",
+
+    ".agents/skills/quenching-design/references/genre-new.md": "source",
+
+    ".agents/skills/quenching-design/references/status.md": "source",
+
+    ".agents/skills/quenching-git/SKILL.md": "source",
+
+    ".agents/skills/quenching-git/references/branch.md": "source",
+
+    ".agents/skills/quenching-git/references/cleanup.md": "source",
+
+    ".agents/skills/quenching-git/references/commit-incremental.md": "source",
+
+    ".agents/skills/quenching-git/references/commit.md": "source",
+
+    ".agents/skills/quenching-git/references/merge.md": "source",
+
+    ".agents/skills/quenching-git/references/pr-create.md": "source",
+
+    ".agents/skills/quenching-git/references/pr-review.md": "source",
+
+    ".agents/skills/quenching-git/references/pr-status.md": "source",
+
+    ".agents/skills/quenching-git/references/push.md": "source",
+
+    ".agents/skills/quenching-git/references/revert.md": "source",
+
+    ".agents/skills/quenching-git/references/sync.md": "source",
+
+    ".agents/skills/quenching-handoff/SKILL.md": "source",
+
+    ".agents/skills/quenching-handoff/references/template.md": "source",
+
+    ".agents/skills/quenching-knowledge/SKILL.md": "source",
+
+    ".agents/skills/quenching-knowledge/references/add.md": "source",
+
+    ".agents/skills/quenching-knowledge/references/align.md": "source",
+
+    ".agents/skills/quenching-knowledge/references/define.md": "source",
+
+    ".agents/skills/quenching-knowledge/references/documentation-build.md": "source",
+
+    ".agents/skills/quenching-knowledge/references/documentation-plan.md": "source",
+
+    ".agents/skills/quenching-knowledge/references/documentation-produce.md": "source",
+
+    ".agents/skills/quenching-knowledge/references/documentation-review.md": "source",
+
+    ".agents/skills/quenching-knowledge/references/documentation-write.md": "source",
+
+    ".agents/skills/quenching-knowledge/references/glossary-backfill.md": "source",
+
+    ".agents/skills/quenching-knowledge/references/import-memory.md": "source",
+
+    ".agents/skills/quenching-knowledge/references/import.md": "source",
+
+    ".agents/skills/quenching-knowledge/references/knowledge-documentation/agent-readability.md": "source",
+
+    ".agents/skills/quenching-knowledge/references/knowledge-documentation/architecture.md": "source",
+
+    ".agents/skills/quenching-knowledge/references/knowledge-documentation/craft.md": "source",
+
+    ".agents/skills/quenching-knowledge/references/knowledge-documentation/quality.md": "source",
+
+    ".agents/skills/quenching-knowledge/references/knowledge-documentation/validation.md": "source",
+
+    ".agents/skills/quenching-knowledge/references/knowledge-documentation/visual.md": "source",
+
+    ".agents/skills/quenching-knowledge/references/knowledge-documentation/zensical-capabilities.md": "source",
+
+    ".agents/skills/quenching-knowledge/references/knowledge-import-memory/memory-routing.md": "source",
+
+    ".agents/skills/quenching-knowledge/references/learn.md": "source",
+
+    ".agents/skills/quenching-knowledge/references/status.md": "source",
+
+    ".agents/skills/quenching-opensource/SKILL.md": "source",
+
+    ".agents/skills/quenching-opensource/references/align.md": "source",
+
+    ".agents/skills/quenching-opensource/references/opensource-align/bands.md": "source",
+
+    ".agents/skills/quenching-opensource/references/opensource-controls/catalog.md": "source",
+
+    ".agents/skills/quenching-opensource/references/opensource-readiness/report.md": "source",
+
+    ".agents/skills/quenching-opensource/references/readiness.md": "source",
+
+    ".agents/skills/quenching-opensource/references/status.md": "source",
+
+    ".agents/skills/quenching-ops/SKILL.md": "source",
+
+    ".agents/skills/quenching-ops/references/align.md": "source",
+
+    ".agents/skills/quenching-ops/references/entrypoint-new.md": "source",
+
+    ".agents/skills/quenching-ops/references/ops-align/bands.md": "source",
+
+    ".agents/skills/quenching-ops/references/ops-align/entrypoint-contract.md": "source",
+
+    ".agents/skills/quenching-ops/references/ops-align/lifecycle.md": "source",
+
+    ".agents/skills/quenching-ops/references/ops-align/target-structure.md": "source",
+
+    ".agents/skills/quenching-ops/references/status.md": "source",
+
+    ".agents/skills/quenching-proof/SKILL.md": "source",
+
+    ".agents/skills/quenching-proof/references/align.md": "source",
+
+    ".agents/skills/quenching-proof/references/layer-new.md": "source",
+
+    ".agents/skills/quenching-proof/references/proof-align/bands.md": "source",
+
+    ".agents/skills/quenching-proof/references/proof-align/gate-contract.md": "source",
+
+    ".agents/skills/quenching-proof/references/proof-align/layer-contract.md": "source",
+
+    ".agents/skills/quenching-proof/references/proof-align/target-structure.md": "source",
+
+    ".agents/skills/quenching-proof/references/status.md": "source",
+
+    ".agents/skills/quenching-security/SKILL.md": "source",
+
+    ".agents/skills/quenching-security/references/status.md": "source",
+
+    ".agents/skills/quenching-specs/SKILL.md": "source",
+
+    ".agents/skills/quenching-specs/references/autopilot.md": "source",
+
+    ".agents/skills/quenching-specs/references/board.md": "source",
+
+    ".agents/skills/quenching-specs/references/conclude.md": "source",
+
+    ".agents/skills/quenching-specs/references/create.md": "source",
+
+    ".agents/skills/quenching-specs/references/develop.md": "source",
+
+    ".agents/skills/quenching-specs/references/execute.md": "source",
+
+    ".agents/skills/quenching-specs/references/improve.md": "source",
+
+    ".agents/skills/quenching-specs/references/orchestrate.md": "source",
+
+    ".agents/skills/quenching-specs/references/specs-conclude/step-1-resolve.md": "source",
+
+    ".agents/skills/quenching-specs/references/specs-conclude/step-2-review.md": "source",
+
+    ".agents/skills/quenching-specs/references/specs-conclude/step-3-docs.md": "source",
+
+    ".agents/skills/quenching-specs/references/specs-conclude/step-4-outcome.md": "source",
+
+    ".agents/skills/quenching-specs/references/specs-conclude/step-5-distil.md": "source",
+
+    ".agents/skills/quenching-specs/references/specs-conclude/step-6-sweep.md": "source",
+
+    ".agents/skills/quenching-specs/references/specs-conclude/step-7-gate.md": "source",
+
+    ".agents/skills/quenching-specs/references/specs-conclude/step-8-archive.md": "source",
+
+    ".agents/skills/quenching-specs/references/specs-conclude/step-9-report.md": "source",
+
+    ".agents/skills/quenching-specs/references/specs-create/plan-mapping.md": "source",
+
+    ".agents/skills/quenching-specs/references/specs-create/step-1-classify.md": "source",
+
+    ".agents/skills/quenching-specs/references/specs-create/step-2-title.md": "source",
+
+    ".agents/skills/quenching-specs/references/specs-create/step-3-plan-source.md": "source",
+
+    ".agents/skills/quenching-specs/references/specs-create/step-4-metadata.md": "source",
+
+    ".agents/skills/quenching-specs/references/specs-create/step-5-capture.md": "source",
+
+    ".agents/skills/quenching-specs/references/specs-create/step-6-screen.md": "source",
+
+    ".agents/skills/quenching-specs/references/specs-develop/step-1-resolve.md": "source",
+
+    ".agents/skills/quenching-specs/references/specs-develop/step-2-read-state.md": "source",
+
+    ".agents/skills/quenching-specs/references/specs-develop/step-3-derive.md": "source",
+
+    ".agents/skills/quenching-specs/references/specs-develop/step-3b-load.md": "source",
+
+    ".agents/skills/quenching-specs/references/specs-develop/step-3c-sweep.md": "source",
+
+    ".agents/skills/quenching-specs/references/specs-develop/step-3d-surface.md": "source",
+
+    ".agents/skills/quenching-specs/references/specs-develop/step-4-compose.md": "source",
+
+    ".agents/skills/quenching-specs/references/specs-develop/step-5-refine.md": "source",
+
+    ".agents/skills/quenching-specs/references/specs-develop/step-6-consolidate.md": "source",
+
+    ".agents/skills/quenching-specs/references/specs-develop/step-7-apply.md": "source",
+
+    ".agents/skills/quenching-specs/references/specs-develop/step-8-close.md": "source",
+
+    ".agents/skills/quenching-specs/references/specs-execute/step-1-select-the-spec.md": "source",
+
+    ".agents/skills/quenching-specs/references/specs-execute/step-2-tree-isolation-state.md": "source",
+
+    ".agents/skills/quenching-specs/references/specs-execute/step-3-settle-the-approval.md": "source",
+
+    ".agents/skills/quenching-specs/references/specs-execute/step-4-read-what-tasks-satisfy.md": "source",
+
+    ".agents/skills/quenching-specs/references/specs-execute/step-5-implement-tasks.md": "source",
+
+    ".agents/skills/quenching-specs/references/specs-execute/step-5b-delegate-an-executor.md": "source",
+
+    ".agents/skills/quenching-specs/references/specs-execute/step-5c-docs-this-task-names.md": "source",
+
+    ".agents/skills/quenching-specs/references/specs-execute/step-5de-verify-commit.md": "source",
+
+    ".agents/skills/quenching-specs/references/specs-execute/step-5g-after-task-hook.md": "source",
+
+    ".agents/skills/quenching-specs/references/specs-execute/step-5i-preexisting-red.md": "source",
+
+    ".agents/skills/quenching-specs/references/specs-execute/step-6-refresh-handoff.md": "source",
+
+    ".agents/skills/quenching-specs/references/specs-execute/step-7-report-and-hand-off.md": "source",
+
+    ".agents/skills/quenching-specs/references/status.md": "source",
+
+    ".agents/skills/quenching-specs/references/triage.md": "source",
+
+    ".agents/skills/quenching-toolchain/SKILL.md": "source",
+
+    ".agents/skills/quenching-toolchain/references/align.md": "source",
+
+    ".agents/skills/quenching-toolchain/references/status.md": "source",
+
+    ".agents/skills/quenching-toolchain/references/toolchain-align/bands.md": "source",
+
     ".claude/agents/quenching-spec-orchestrator.md": "source",
 
     ".claude/agents/quenching-spec-reviewer.md": "source",
@@ -1058,6 +1330,13 @@
     ".agents/quenching/assets/bin/quenching/proof",
     ".agents/quenching/assets/bin/quenching/security",
     ".agents/quenching/assets/bin/quenching/toolchain",
+    ".agents/skills/quenching-delivery",
+    ".agents/skills/quenching-design",
+    ".agents/skills/quenching-opensource",
+    ".agents/skills/quenching-ops",
+    ".agents/skills/quenching-proof",
+    ".agents/skills/quenching-security",
+    ".agents/skills/quenching-toolchain",
     ".claude/skills/quenching-delivery",
     ".claude/skills/quenching-design",
     ".claude/skills/quenching-opensource",

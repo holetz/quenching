@@ -44,15 +44,15 @@ returns `STATE: blocked` with `NOTE: needs-human:` carrying it.
 
 | Flow | Reference | Picked when |
 | --- | --- | --- |
-| `align` | [references/align.md](.claude/skills/quenching-ops/references/align.md) | converging the operations surface from its declared root and router |
-| `status` | [references/status.md](.claude/skills/quenching-ops/references/status.md) | a read-only report of the operations front |
-| `entrypoint-new` | [references/entrypoint-new.md](.claude/skills/quenching-ops/references/entrypoint-new.md) | minting ONE Python ops entry point in the router |
+| `align` | [references/align.md](.agents/skills/quenching-ops/references/align.md) | converging the operations surface from its declared root and router |
+| `status` | [references/status.md](.agents/skills/quenching-ops/references/status.md) | a read-only report of the operations front |
+| `entrypoint-new` | [references/entrypoint-new.md](.agents/skills/quenching-ops/references/entrypoint-new.md) | minting ONE Python ops entry point in the router |
 
 **Done when:** exactly one flow is chosen, with its input.
 
 ### 2. Load the flow and follow it
 Run `components_read(verb="read")` on the chosen flow's reference from the table above, with its
-`.claude/skills/quenching-ops/references/` path. Read the flow whole, once, and follow it from its own `## Workflow` with the input from step 1:
+`.agents/skills/quenching-ops/references/` path. Read the flow whole, once, and follow it from its own `## Workflow` with the input from step 1:
 its steps, `Done when:` lines and invariants bind this run exactly as they bound the standalone
 command. A `/quenching-ops <flow>` the flow names as the next step is this router called with that flow, and a conductor reaches the same flow by calling this skill with the flow name and the input.
 **Done when:** the flow ran to its own `Done when:`, or stopped on its own stop condition.

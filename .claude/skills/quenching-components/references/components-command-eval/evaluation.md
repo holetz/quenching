@@ -12,7 +12,7 @@ have installed.
 
 ## Contents
 
-`components_read(verb="read", path=".claude/skills/quenching-components/references/components-command-eval/evaluation.md")` returns the heading index;
+`components_read(verb="read", path=".agents/skills/quenching-components/references/components-command-eval/evaluation.md")` returns the heading index;
 `--sections` addresses one.
 
 ## Where the artifacts live

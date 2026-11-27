@@ -1,6 +1,6 @@
 # /quenching-specs execute — 7. Report, and hand off
 
-Loaded only when this step runs; the flow index is [execute.md](.claude/skills/quenching-specs/references/execute.md).
+Loaded only when this step runs; the flow index is [execute.md](.agents/skills/quenching-specs/references/execute.md).
 
 **When this run's input carried `autonomous`, skip the read below and the mold with it** — a conductor presents the report, not this run; return the content in the fixed shape the caller specified. Otherwise:
 

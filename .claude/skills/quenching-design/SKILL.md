@@ -44,15 +44,15 @@ returns `STATE: blocked` with `NOTE: needs-human:` carrying it.
 
 | Flow | Reference | Picked when |
 | --- | --- | --- |
-| `align` | [references/align.md](.claude/skills/quenching-design/references/align.md) | converging `/.design/` from one DTCG source through the generated files and adapters |
-| `status` | [references/status.md](.claude/skills/quenching-design/references/status.md) | a read-only report of the design front |
-| `genre-new` | [references/genre-new.md](.claude/skills/quenching-design/references/genre-new.md) | minting ONE editorial genre under `/.design/genres/` |
+| `align` | [references/align.md](.agents/skills/quenching-design/references/align.md) | converging `/.design/` from one DTCG source through the generated files and adapters |
+| `status` | [references/status.md](.agents/skills/quenching-design/references/status.md) | a read-only report of the design front |
+| `genre-new` | [references/genre-new.md](.agents/skills/quenching-design/references/genre-new.md) | minting ONE editorial genre under `/.design/genres/` |
 
 **Done when:** exactly one flow is chosen, with its input.
 
 ### 2. Load the flow and follow it
 Run `components_read(verb="read")` on the chosen flow's reference from the table above, with its
-`.claude/skills/quenching-design/references/` path. Read the flow whole, once, and follow it from its own `## Workflow` with the input from step 1:
+`.agents/skills/quenching-design/references/` path. Read the flow whole, once, and follow it from its own `## Workflow` with the input from step 1:
 its steps, `Done when:` lines and invariants bind this run exactly as they bound the standalone
 command. A `/quenching-design <flow>` the flow names as the next step is this router called with that flow, and a conductor reaches the same flow by calling this skill with the flow name and the input.
 **Done when:** the flow ran to its own `Done when:`, or stopped on its own stop condition.

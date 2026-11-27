@@ -91,8 +91,9 @@ Fifteen terms to read first; each has its full entry under *Terms*.
   — for **any** branch that is not the repo's base (the one it cut and the one a human already had
   open alike), and for work done in place, where `work` equals `base`.
 - **Bridge** — the generated `.claude/skills/` copy of a target's own `.agents/skills/`; Claude
-  Code does not discover the generic directory itself. A skill `cq deploy` generates is published
-  per its own harness cover, and the bridge neither expects nor orphans it.
+  Code does not discover the generic directory itself. A skill `cq deploy` generates gets the same
+  projection from the deploy, which owns both of its copies, and the bridge neither expects nor
+  orphans it.
 - [**Bundle density**](standards/quality/bundle-verification.md) — the figures
   `/quenching-knowledge status` prints alongside conformance (concept docs per home, empty homes
   shown as `0`, glossary size, which `standards/` subjects hold anything), carrying **no finding

@@ -337,9 +337,10 @@ def measure_skills(root: pathlib.Path) -> dict:
                    if (path / "SKILL.md").is_file()) if source.is_dir() else []
     bridged = sorted(path.name for path in bridge.iterdir()
                      if (path / "SKILL.md").is_file()) if bridge.is_dir() else []
-    # A generated skill has no `.agents/skills` copy any more: the projection the declared clients
-    # read is its only home, so the published set is the union of both directories, one entry per
-    # name — the client deduplicates by name.
+    # `.agents/skills` is the source of every skill and `.claude/skills` its projection; the
+    # published set is the union of both directories, one entry per name — the client
+    # deduplicates by name. A target a 7.18.x claude-only deploy wrote has the generated skills
+    # only in the projection.
     try:
         import_payload()
         from quenching.common.deploy import generated_skills

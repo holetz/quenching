@@ -9,9 +9,9 @@ allowed-tools: Bash(cq:*), Bash(cq.cmd:*), Read, Grep, Glob, Bash(python3:*)
 This command is the read-only view of the open source front. The common front contract is in
 [front-align/mold.md](.agents/quenching/references/front-align/mold.md), the catalog
 contract is in
-[opensource-controls/catalog.md](.claude/skills/quenching-opensource/references/opensource-controls/catalog.md),
+[opensource-controls/catalog.md](.agents/skills/quenching-opensource/references/opensource-controls/catalog.md),
 and the finding-to-owner map is in
-[opensource-align/bands.md](.claude/skills/quenching-opensource/references/opensource-align/bands.md).
+[opensource-align/bands.md](.agents/skills/quenching-opensource/references/opensource-align/bands.md).
 It aggregates what each owning front already answers; it never probes another owner's control and
 never writes an artifact.
 

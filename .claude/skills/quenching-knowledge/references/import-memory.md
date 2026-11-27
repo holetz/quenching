@@ -8,7 +8,7 @@ allowed-tools: Bash(cq:*), Bash(cq.cmd:*), Read, Grep, Glob, Bash(python3:*), Ba
 
 Promotes the durable facts in **project memory** (`~/.claude/projects/<cwd>/memory/`) into the
 canonical OKF `/docs/` bundle, then clears them from memory. Assumes the bundle already exists (run `/quenching-knowledge align` first if not). The memory-type → home routing
-and the deletion contract are in [knowledge-import-memory/memory-routing.md](.claude/skills/quenching-knowledge/references/knowledge-import-memory/memory-routing.md)
+and the deletion contract are in [knowledge-import-memory/memory-routing.md](.agents/skills/quenching-knowledge/references/knowledge-import-memory/memory-routing.md)
 §Routing table — memory `type` → likely home (content overrides) §Deletion contract;
 the home boundaries, `type` vocabulary, and molds are shared with
 `/quenching-knowledge add` ([knowledge-add/homes.md](.agents/quenching/references/knowledge-add/homes.md)
@@ -32,7 +32,7 @@ the home boundaries, `type` vocabulary, and molds are shared with
   and `concepts/` — plus the provider-owned `plans` phase for a **unit of work**
   outside the OKF bundle. A memory whose natural fit is a
   `vision`, `documentation`, or `external` doc is **re-routed to the nearest of the three** per the routing
-  table ([knowledge-import-memory/memory-routing.md](.claude/skills/quenching-knowledge/references/knowledge-import-memory/memory-routing.md)
+  table ([knowledge-import-memory/memory-routing.md](.agents/skills/quenching-knowledge/references/knowledge-import-memory/memory-routing.md)
   §Routing table — memory `type` → likely home (content overrides)); a memory that fits none of
   them **stays** in memory and is flagged (like a `user`/unroutable fact). Never create a
   `vision/`, a reader-facing quadrant, `external/`, or `catalog/` doc from a
@@ -50,7 +50,7 @@ the home boundaries, `type` vocabulary, and molds are shared with
   **MAY** split it into disjoint slices (~10–15 memories per agent, or by filename type-prefix
   `feedback_*` / `project_*` / `reference_*`) and dispatch a sub-agent per slice (via `Task`) to
   read the full bodies and classify against
-  [knowledge-import-memory/memory-routing.md](.claude/skills/quenching-knowledge/references/knowledge-import-memory/memory-routing.md)
+  [knowledge-import-memory/memory-routing.md](.agents/skills/quenching-knowledge/references/knowledge-import-memory/memory-routing.md)
   §Routing table — memory `type` → likely home, each returning a partial table. The
   orchestrator stays metadata-first — it only reads `MEMORY.md` + frontmatter to draw the slice
   boundaries and merge partials; the sub-agents are the only readers of full bodies. Dispatch
@@ -67,7 +67,7 @@ the home boundaries, `type` vocabulary, and molds are shared with
   docs — flag it and ask; migrate only a durable, team-relevant fact. Any memory with no
   documentary home **stays** in memory and is reported.
 - **Content decides the home; `metadata.type` is a hint.** Route by what the fact IS
-  ([knowledge-import-memory/memory-routing.md](.claude/skills/quenching-knowledge/references/knowledge-import-memory/memory-routing.md)
+  ([knowledge-import-memory/memory-routing.md](.agents/skills/quenching-knowledge/references/knowledge-import-memory/memory-routing.md)
   §Routing table — memory `type` → likely home (content overrides)), reusing `/quenching-knowledge add`'s home
   boundaries. Split a memory that carries several facts into one concept per file.
 - **Salvage, don't transcribe.** A memory is terse; the doc is structured. Keep the
@@ -158,7 +158,7 @@ overflow the session):
 - `Glob` — `/docs/standards/*/index.md` and `/docs/concepts/*/index.md` for the existing subject
   folders, so a new concept path does not collide. One level only, and never a recursive file dump.
 
-Then apply [knowledge-import-memory/memory-routing.md](.claude/skills/quenching-knowledge/references/knowledge-import-memory/memory-routing.md)
+Then apply [knowledge-import-memory/memory-routing.md](.agents/skills/quenching-knowledge/references/knowledge-import-memory/memory-routing.md)
 §Routing table — memory `type` → likely home (content overrides): map by content to its
 destination, `type`, and mold, within the three destinations (Doctrine). Split multi-fact
 memories. Mark `user` memories and any

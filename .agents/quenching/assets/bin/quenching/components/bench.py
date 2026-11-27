@@ -20,7 +20,7 @@ from pathlib import Path
 
 from quenching.common.output import finding
 from quenching.components.commands.cost import STAGE_FILE_RE, measure_command
-from quenching.components.surface import surface_references
+from quenching.components.surface import discover_references, surface_references
 
 HARNESSES = ("claude", "opencode", "copilot")
 FLOWS = ("create", "develop", "execute", "conclude")
@@ -192,6 +192,10 @@ def measure_flows(root: Path) -> tuple[dict[str, dict], list[dict]]:
         return {}, []
     surface_root = str(root / ".agents")
     references = {item["relpath"].replace(os.sep, "/"): item for item in surface_references(surface_root)}
+    # A generated router is the deploy's, so the target's surface leaves it out; its flows cite
+    # their own references at the source, `.agents/skills/<name>/references/`.
+    for item in discover_references(str(router / "references")):
+        references.setdefault(f".agents/skills/{SPECS_SKILL}/references/{item['relpath']}".replace(os.sep, "/"), item)
     router_bytes = len((router / "SKILL.md").read_bytes())
     rows, findings = {}, []
     for flow in FLOWS:
@@ -223,6 +227,12 @@ def _measure_stages(root: Path, flow: str, out: dict, index: dict, stage_files: 
             for linked in STAGE_FILE_RE.findall(path.read_text(encoding="utf-8")):
                 if linked not in stage_files:
                     stage_files.append(linked)
+    # A step links back to the flow index and to its parent step, both already in the stage's
+    # count: the index through `index`, the parent through the body it is joined to. Counted
+    # again through the link, they would double.
+    counted = {f".agents/skills/{SPECS_SKILL}/references/{flow}.md", *stage_files}
+    references = {relpath: (dict(item, body="") if relpath in counted else item)
+                  for relpath, item in references.items()}
     for relpath in stage_files:
         path = root / relpath
         name = path.stem

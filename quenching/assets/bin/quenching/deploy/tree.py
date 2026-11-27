@@ -209,10 +209,7 @@ def _agents_md(target: Path, dirs: tuple[str, ...]) -> str:
     knowledge = ("- Durable knowledge: [`docs/index.md`](docs/index.md).\n" if docs.is_file()
                  else "- Durable knowledge: run `/quenching-knowledge align` to install the "
                       "`/docs/` bundle.\n")
-    if CLAUDE_SKILLS in dirs and SKILLS not in dirs:
-        skills = ("- Skills: `.claude/skills/` (published for the declared clients); author a "
-                  "target's own skill in `.agents/skills/`, which is copied here.\n")
-    elif CLAUDE_SKILLS in dirs:
+    if CLAUDE_SKILLS in dirs:
         skills = "- Skills: `.agents/skills/` (source) and `.claude/skills/` (generated copy).\n"
     else:
         skills = ("- Skills: `.agents/skills/` (source; a target's own skill is authored "
@@ -298,16 +295,16 @@ _VENDOR_CMD = (
 
 
 def skill_dirs(harnesses: list[str]) -> tuple[str, ...]:
-    """The directories this deploy publishes skills into: the minimal cover of what the
-    declared harnesses read.
+    """The directories this deploy publishes skills into: `.agents/skills`, always, and the
+    `.claude/skills` projection when `claude` is declared.
 
-    Measured 2026-11-25: Claude Code 2.1.332 reads `.claude/skills` only, and OpenCode reads both,
-    the `.agents` copy winning a repeated name. So a target declaring `claude` publishes once in
-    `.claude/skills` — `opencode` reads it — and a deploy without `claude` (opencode alone, or no
-    harness) keeps the generic layer. The `codex` harness was removed (ADR 0020); a client that
-    reads only `.agents/skills` would force that copy if it ever returns as a harness.
+    `.agents/skills` is the source whatever the harnesses, for the generated skills as for the
+    target's own. Measured 2026-11-25: Claude Code 2.1.332 reads `.claude/skills` only, Codex
+    0.165.0 reads `.agents/skills` only, OpenCode reads both (the `.agents` copy winning a repeated
+    name) and VS Code + Copilot Chat deduplicates by name, so the second copy costs no client a
+    duplicate skill.
     """
-    return (CLAUDE_SKILLS,) if "claude" in harnesses else (SKILLS,)
+    return (SKILLS, CLAUDE_SKILLS) if "claude" in harnesses else (SKILLS,)
 
 
 def _without_marker(text: str, name: str) -> str:
@@ -326,7 +323,7 @@ def _bridge_tree(tree: dict, target: Path, dirs: tuple[str, ...],
 
     The deploy's generated skills are written by `build_tree` itself; this manifest lists only
     the target's own files, so `cq components bridge --check` never reads a generated skill as a
-    source it lost, and a claude-only target has nothing for the bridge to own.
+    source it lost, and a target with no skill of its own has nothing for the bridge to own.
     """
     if CLAUDE_SKILLS not in dirs:
         return
@@ -516,7 +513,7 @@ def build_tree(source: Path, target: Path, modules: list[str], harnesses: list[s
         _add(tree, PAYLOAD + "/bin/cq.cmd", cmd, 0o644)
 
     # A skill is its whole folder: the `SKILL.md` and the `references/` beside it. Each skill is
-    # rendered once and published into the directories the declared clients read.
+    # rendered once, written in `.agents/skills` and projected into `.claude/skills` with `claude`.
     dirs = skill_dirs(harnesses)
     # A module outside the selection whose mirror the target already tracks: the files stay, so
     # they are regenerated from the source like a selected module's, never left to age while
@@ -547,32 +544,25 @@ def build_tree(source: Path, target: Path, modules: list[str], harnesses: list[s
     skill_names: list[str] = []
     generated: dict[str, dict[str, tuple[bytes, int]]] = {}
     mirrors: set[str] = set()
-    # A skill mirror is read from the directory this deploy publishes: `.claude/skills` for a
-    # target declaring `claude`, `.agents/skills` otherwise. There is no second generated copy:
-    # a target's own skill stays under `.agents/skills` and is bridged.
-    published = dirs[0]
+    # A skill mirror is read from either copy, or from a home a manifest recorded: a target
+    # deployed for a claude-only client before `.agents/skills` became the source carries it only
+    # under `.claude/skills`. The source stays the truth and the copy is re-asserted in both.
     skill_sources = [(name, True) for module in selected for name in module["owned"]["skills"]]
     skill_sources += [(name, False) for module in outside
                       for name in module.get("owned", {}).get("skills", [])
-                      # A mirror read where this deploy publishes it, or recorded at its old
-                      # `.agents/skills` home by a manifest written before this layout: the
-                      # source stays the truth and the copy moves to the new directory.
-                      if (kept(published + "/" + name, bridge.SKILL_FILE)
-                          or f"{SKILLS}/{name}" in kept_before)
+                      if any(kept(home + "/" + name, bridge.SKILL_FILE)
+                             or f"{home}/{name}" in kept_before for home in (SKILLS, CLAUDE_SKILLS))
                       # A vendored payload carries no skill source, so the installed mirror
                       # `kept` just found is its only truth, re-asserted byte for byte below.
                       and ((source / "skills" / name).is_dir()
                            or not (source / "skills").is_dir())]
-    # The source cites a skill's files at their generic home, `.agents/skills/<name>/`; a skill
-    # published elsewhere must cite where it now lives, or every flow a router reads by path is
-    # missing. Only the generated skills move: a target's own skill stays under `.agents/skills`.
-    moved = sorted({name for name, _ in skill_sources}, key=len, reverse=True)
+    # A `.claude` copy an earlier deploy wrote cites its files under `.claude/skills/<name>/`;
+    # read back as the source, it cites them at the source again.
+    names = sorted({name for name, _ in skill_sources}, key=len, reverse=True)
 
-    def relocated(text: str) -> str:
-        if published == SKILLS:
-            return text
-        for skill in moved:
-            text = text.replace(f"{SKILLS}/{skill}/", f"{published}/{skill}/")
+    def at_source(text: str) -> str:
+        for skill in names:
+            text = text.replace(f"{CLAUDE_SKILLS}/{skill}/", f"{SKILLS}/{skill}/")
         return text
 
     for name, chosen in skill_sources:
@@ -590,8 +580,8 @@ def build_tree(source: Path, target: Path, modules: list[str], harnesses: list[s
         if installed:
             root = target / SKILLS / name
         if installed and not root.is_dir():
-            # A target deployed for a claude-only client has the generated form only in
-            # `.claude/skills`; its own `cq deploy --check` must re-assert that copy.
+            # A target a claude-only deploy wrote before `.agents/skills` became the source has the
+            # generated form only in `.claude/skills`.
             root = target / CLAUDE_SKILLS / name
             from_claude = root.is_dir()
         if not root.is_dir():
@@ -605,12 +595,14 @@ def build_tree(source: Path, target: Path, modules: list[str], harnesses: list[s
                 data = _read(path)
                 if from_claude and rel == "SKILL.md":
                     data = _without_marker(data.decode("utf-8"), name).encode("utf-8")
+                if from_claude and path.suffix == ".md":
+                    data = at_source(data.decode("utf-8")).encode("utf-8")
             elif rel == "SKILL.md":
-                data = relocated(translate.skill_document(path.read_text(encoding="utf-8"), name,
-                                                          narrow, mount)).encode("utf-8")
+                data = translate.skill_document(path.read_text(encoding="utf-8"), name,
+                                                narrow, mount).encode("utf-8")
             elif path.suffix == ".md":
-                data = relocated(translate.reference_document(
-                    path.read_text(encoding="utf-8"))).encode("utf-8")
+                data = translate.reference_document(
+                    path.read_text(encoding="utf-8")).encode("utf-8")
             else:
                 data = _read(path)
             files[rel] = (data, _mode(path))

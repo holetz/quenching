@@ -146,12 +146,13 @@ class TheDisposableTarget(unittest.TestCase):
         self.assertEqual(dict(sorted(counts.items(), key=lambda kv: (-kv[1], kv[0]))),
                          target["byPillar"])
 
-    def test_the_generated_set_is_published_once_and_the_bridge_is_byte_identical(self):
+    def test_the_generated_set_is_in_the_source_and_its_projection(self):
         skills = self.payload["measurements"]["skills"]
         self.assertEqual("present", skills["state"])
         # A disposable target authors no skill of its own: every skill it carries is generated,
-        # and the deploy publishes it once, into the projection the declared clients read.
-        self.assertEqual(0, skills["source"]["count"])
+        # written in `.agents/skills` and projected into `.claude/skills` (ADR 0022).
+        self.assertEqual(13, skills["source"]["count"])
+        self.assertEqual(skills["source"]["names"], skills["bridge"]["names"])
         self.assertEqual(13, skills["bridge"]["count"])
         self.assertEqual(skills["bridge"]["names"], skills["generated"]["names"])
         self.assertEqual([], skills["bridge"]["changes"])

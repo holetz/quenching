@@ -10,7 +10,7 @@ runtime evidence, release reachability and findings. It never edits a workflow, 
 provider or invokes a deployment.
 
 The delivery finding map is in
-[delivery-align/bands.md](.claude/skills/quenching-delivery/references/delivery-align/bands.md); the common
+[delivery-align/bands.md](.agents/skills/quenching-delivery/references/delivery-align/bands.md); the common
 front floor is in [front-align/mold.md](.agents/quenching/references/front-align/mold.md).
 Resolve `cq` per
 [tool-resolution.md](.agents/quenching/references/align/tool-resolution.md)

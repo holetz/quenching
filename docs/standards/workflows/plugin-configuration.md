@@ -4,10 +4,10 @@ title: Plugin configuration contract
 description: "`.agents/quenching.json` is the plugin's single configuration home, with `.claude/quenching.json` read as legacy; provider selection is derived from the repository remote, while placement, Azure mappings, lifecycle hooks, profiles, proposal catalogues and the `git` pillar's per-artifact writing directives remain explicit target settings"
 resource: .agents/quenching.json, quenching/assets/bin/quenching/common/config.py, quenching/assets/bin/quenching/specs/config.py, quenching/assets/bin/quenching/specs/store.py, quenching/assets/bin/quenching/ops/**, quenching/assets/bin/quenching/proof/**, quenching/assets/bin/quenching/git/base.py, quenching/assets/bin/quenching/common/git.py, quenching/assets/bin/quenching/git/conventions.py, quenching/assets/bin/quenching/git/ignored.py, quenching/assets/bin/quenching/config/**, quenching/assets/bin/quenching/common/identity.py
 tags: [workflows, specs, configuration, provider, plugin]
-timestamp: 2026-11-26
+timestamp: 2026-11-27
 audience: both
 authority: current
-source: specs 1065, 1075, 1405, 1907, 1908, 1909, 1910, 1911, 1912, 2092, 2118, 2164, 2175, 2190, 2199, 2022, 1020213, 2231, 416, 430, 627; the `adopt` reader by spec 458 (2026-11-25) — lineage in decision 0004
+source: specs 1065, 1075, 1405, 1907, 1908, 1909, 1910, 1911, 1912, 2092, 2118, 2164, 2175, 2190, 2199, 2022, 1020213, 2231, 416, 430, 627; the `adopt` reader by spec 458 (2026-11-25) — lineage in decision 0004; spec 656
 maintainer: quenching
 ---
 
@@ -272,7 +272,8 @@ by [security-pillar.md](../architecture/security-pillar.md) §The identity allow
 ## The `shared.mcp` block
 
 `cq deploy` registers the whole quenching MCP server in the target's harnesses with no
-declaration; `shared.mcp` only overrides how. It is `{mount, command, cliFallback}`, every key
+declaration — `.mcp.json` for `claude`, `.codex/config.toml` for `codex`, `opencode.json` for
+`opencode`; `shared.mcp` only overrides how. It is `{mount, command, cliFallback}`, every key
 optional: `mount` is `all` (the default, the whole server), `specs` (the specs-only mount), a named
 set of pillars (`core`: `specs`, `git` and `components`, the table `mcp/catalog.py` carries) or a
 comma list of pillar names (`specs,git`), and `command` is the non-empty list of strings that finds

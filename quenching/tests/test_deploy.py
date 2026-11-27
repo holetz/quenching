@@ -621,9 +621,9 @@ class Deploy(unittest.TestCase):
         """A module the selection left out but whose mirror the target tracks cannot age quietly."""
         self.assertEqual(0, self.run_deploy("--modules", "core", "--harness", "claude",
                                             "--write")[0])
-        # The generated surface publishes once, in the directory the declared client reads: a
-        # mirror of a module outside the selection lives in `.claude/skills`, never in a second
-        # `.agents/skills` copy the deploy no longer writes.
+        # A mirror of a module outside the selection is generated like any skill: its source in
+        # `.agents/skills` and, with `claude`, its projection in `.claude/skills`; the
+        # projection is checked here.
         stale = {".claude/skills/quenching-design/SKILL.md": "stale skill\n",
                  ".agents/quenching/assets/bin/quenching/design/align.py": "# stale\n"}
         for rel, text in stale.items():
@@ -722,7 +722,9 @@ class Deploy(unittest.TestCase):
         self.assertEqual({"command": "/opt/py/bin/python3",
                           "args": [".agents/quenching/assets/bin/cq", "mcp"]},
                          claude["mcpServers"]["quenching"])
-        self.assertFalse((self.target / ".codex/config.toml").exists())
+        codex = (self.target / ".codex/config.toml").read_text()
+        self.assertIn('[mcp_servers.quenching]\ncommand = "/opt/py/bin/python3"\n'
+                      'args = [".agents/quenching/assets/bin/cq", "mcp"]', codex)
         opencode = json.loads((self.target / "opencode.json").read_text())
         self.assertEqual(["/opt/py/bin/python3", ".agents/quenching/assets/bin/cq", "mcp"],
                          opencode["mcp"]["quenching"]["command"])
@@ -876,11 +878,13 @@ class Deploy(unittest.TestCase):
         self.assertEqual(0, code, payload)
         server = json.loads((self.target / ".mcp.json").read_text())["mcpServers"]["quenching"]
         self.assertEqual([".agents/quenching/assets/bin/cq", "mcp"], server["args"][-2:])
-        self.assertFalse((self.target / ".codex/config.toml").exists())
+        self.assertIn("[mcp_servers.quenching]", (self.target / ".codex/config.toml").read_text())
         self.assertTrue((self.target / "opencode.json").exists())
         manifest = json.loads((self.target / ".agents/.quenching-deploy.json").read_text())
         self.assertEqual("all", manifest["mcp"]["mount"])
-        self.assertEqual([".mcp.json", "opencode.json"], sorted(manifest["mcpFiles"]))
+        self.assertEqual(["claude", "codex", "opencode"], manifest["harnesses"])
+        self.assertEqual([".codex/config.toml", ".mcp.json", "opencode.json"],
+                         sorted(manifest["mcpFiles"]))
         self.assertEqual([], self.run_deploy("--check")[1]["changes"])
 
     def test_turning_the_option_off_keeps_the_recorded_prefix(self):
@@ -907,24 +911,37 @@ class Deploy(unittest.TestCase):
         self.assertIn("quenching", opencode["mcp"])
         self.assertEqual([], self.run_deploy("--check")[1]["changes"])
 
-    def test_an_entry_a_codex_deploy_wrote_is_taken_out_and_the_users_stays(self):
+    def test_the_codex_entry_is_rewritten_and_the_users_stays(self):
         self.configure(self.mcp_config())
-        self.assertEqual(0, self.run_deploy("--modules", "specs", "--write")[0])
         self.write(".codex/config.toml", 'model = "o3"\n\n[mcp_servers.mine]\ncommand = "x"\n\n'
-                   '[mcp_servers.quenching]\ncommand = "uv"\nargs = ["a"]\n')
-        path = self.target / ".agents/.quenching-deploy.json"
-        manifest = json.loads(path.read_text())
-        manifest["harnesses"] = ["claude", "codex", "opencode"]
-        manifest["mcpFiles"] = [".codex/config.toml", ".mcp.json", "opencode.json"]
-        path.write_text(json.dumps(manifest))
+                   '[mcp_servers.quenching]\ncommand = "uv"\nargs = ["a"]\n\n[profiles.fast]\nmodel = "y"\n')
         code, payload = self.run_deploy("--modules", "specs", "--write")
         self.assertEqual(0, code, payload)
         codex = (self.target / ".codex/config.toml").read_text()
         self.assertIn('model = "o3"', codex)
         self.assertIn('[mcp_servers.mine]\ncommand = "x"', codex)
-        self.assertNotIn("[mcp_servers.quenching]", codex)
-        self.assertEqual(["claude", "opencode"],
-                         json.loads(path.read_text())["harnesses"])
+        self.assertIn('[profiles.fast]\nmodel = "y"', codex)
+        self.assertEqual(1, codex.count("[mcp_servers.quenching]"))
+        self.assertIn('command = "/opt/py/bin/python3"', codex)
+        self.assertNotIn('args = ["a"]', codex)
+        self.assertEqual([], self.run_deploy("--check")[1]["changes"])
+
+    def test_a_recorded_codex_harness_is_kept(self):
+        self.assertEqual(0, self.run_deploy("--modules", "specs", "--harness", "claude,codex",
+                                            "--write")[0])
+        path = self.target / ".agents/.quenching-deploy.json"
+        self.assertEqual(["claude", "codex"], json.loads(path.read_text())["harnesses"])
+        self.assertEqual(0, self.run_deploy("--write")[0])
+        self.assertEqual(["claude", "codex"], json.loads(path.read_text())["harnesses"])
+        self.assertIn("[mcp_servers.quenching]", (self.target / ".codex/config.toml").read_text())
+        self.assertFalse((self.target / "opencode.json").exists())
+
+    def test_dropping_codex_takes_out_only_the_quenching_entry(self):
+        self.write(".codex/config.toml", 'model = "o3"\n')
+        self.assertEqual(0, self.run_deploy("--modules", "specs", "--write")[0])
+        self.assertIn("[mcp_servers.quenching]", (self.target / ".codex/config.toml").read_text())
+        self.assertEqual(0, self.run_deploy("--harness", "claude,opencode", "--write")[0])
+        self.assertEqual('model = "o3"\n', (self.target / ".codex/config.toml").read_text())
 
     def test_remove_takes_out_only_the_quenching_entry(self):
         self.write(".mcp.json", '{"mcpServers": {"mine": {"command": "x"}}}\n')
@@ -1213,8 +1230,15 @@ class Deploy(unittest.TestCase):
         self.run_deploy("--modules", "core", "--harness", "opencode", "--write")
         self.assertFalse((self.target / ".claude/settings.json").exists())
 
-    def test_the_removed_codex_harness_is_refused(self):
+    def test_the_codex_harness_is_accepted(self):
         code, payload = self.run_deploy("--modules", "core", "--harness", "codex", "--write")
+        self.assertEqual(0, code, payload)
+        self.assertEqual(["codex"], payload["harnesses"])
+        self.assertTrue((self.target / ".agents/skills/quenching-specs/SKILL.md").is_file())
+        self.assertFalse((self.target / ".claude/skills/quenching-specs").exists())
+
+    def test_an_unknown_harness_is_refused(self):
+        code, payload = self.run_deploy("--modules", "core", "--harness", "cursor", "--write")
         self.assertEqual(2, code)
         self.assertEqual("ct-deploy-harness", payload["code"])
         self.assertFalse((self.target / ".agents/.quenching-deploy.json").exists())

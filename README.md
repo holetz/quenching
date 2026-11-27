@@ -93,10 +93,10 @@ uvx --from "git+https://github.com/holetz/quenching@<tag>#subdirectory=quenching
 keeps its modules, while `--modules core` narrows a wider install and deletes the rest.
 
 `--modules` takes `core` (the default: specs, git, knowledge and components), `all` or a comma
-list; `--harness` takes `claude`, `opencode` or `none`; `--runtime vendor` (default,
+list; `--harness` takes `claude`, `codex`, `opencode` or `none` (default: all three); `--runtime vendor` (default,
 offline) vendors the runtime while `--runtime uvx` writes a pinned shim; `--check` reports drift.
-Deploy writes `AGENTS.md` (only when absent), `.agents/skills/`, `.agents/quenching/` and the
-generated `.claude/skills/` bridge. It does not create `CLAUDE.md` and does not run alignment; the
+Deploy writes `AGENTS.md` (only when absent), `.agents/skills/` (the source of every skill),
+`.agents/quenching/` and, with `claude`, the generated `.claude/skills/` projection. It does not create `CLAUDE.md` and does not run alignment; the
 target's own `/quenching-knowledge align` installs `/docs/` and converges the fronts.
 
 In the target, every command is `/quenching-<front>-<verb>` (`/quenching-specs create`,

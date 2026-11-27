@@ -1,6 +1,6 @@
 # /quenching-specs execute — 4. Read what the tasks must satisfy
 
-Loaded only when this step runs; the flow index is [execute.md](.claude/skills/quenching-specs/references/execute.md).
+Loaded only when this step runs; the flow index is [execute.md](.agents/skills/quenching-specs/references/execute.md).
 
 Ask for the `build` moment — the six sections an executor needs — never by naming them:
 

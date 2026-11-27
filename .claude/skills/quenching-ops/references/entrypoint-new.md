@@ -8,10 +8,10 @@ allowed-tools: Bash(cq:*), Bash(cq.cmd:*), Read, Grep, Glob, Bash(python3:*), As
 
 This command creates one Python entry point in the target repository's declared operations root.
 The seven-rule contract lives in
-[ops-align/entrypoint-contract.md](.claude/skills/quenching-ops/references/ops-align/entrypoint-contract.md);
+[ops-align/entrypoint-contract.md](.agents/skills/quenching-ops/references/ops-align/entrypoint-contract.md);
 the target tree, lifecycle and router boundary live in
-[ops-align/target-structure.md](.claude/skills/quenching-ops/references/ops-align/target-structure.md)
-and [ops-align/lifecycle.md](.claude/skills/quenching-ops/references/ops-align/lifecycle.md).
+[ops-align/target-structure.md](.agents/skills/quenching-ops/references/ops-align/target-structure.md)
+and [ops-align/lifecycle.md](.agents/skills/quenching-ops/references/ops-align/lifecycle.md).
 The mold is `.agents/quenching/assets/templates/ops/entrypoint.py.tmpl`; router registrations
 come from `.agents/quenching/assets/templates/ops/router-snippets.md`.
 

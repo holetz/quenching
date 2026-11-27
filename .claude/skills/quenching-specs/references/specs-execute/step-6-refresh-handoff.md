@@ -1,6 +1,6 @@
 # /quenching-specs execute — 6. Refresh `## Handoff` on four events, never on judgment
 
-Loaded only when this step runs; the flow index is [execute.md](.claude/skills/quenching-specs/references/execute.md).
+Loaded only when this step runs; the flow index is [execute.md](.agents/skills/quenching-specs/references/execute.md).
 
 Rewrite the **relevant block** of `## Handoff` to the state of play a fresh executor would need
 **and cannot derive** — on exactly four events:

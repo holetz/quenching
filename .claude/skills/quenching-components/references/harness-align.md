@@ -12,7 +12,7 @@ durable knowledge is **moved** into its `/docs/` home and cited. Assumes the bun
 `/quenching-knowledge align` first if not). It also **creates** a thin subfolder `AGENTS.md` where discovery
 finds a folder with a local operational surface but no harness — evidence-gated, never one per
 directory (routing §6). The unit → verdict → home routing and the pointer-honesty gate are
-in [components-harness-align/harness-routing.md](.claude/skills/quenching-components/references/components-harness-align/harness-routing.md); the home boundaries, `type`
+in [components-harness-align/harness-routing.md](.agents/skills/quenching-components/references/components-harness-align/harness-routing.md); the home boundaries, `type`
   vocabulary, molds, and index procedure are shared with `/quenching-knowledge add`
 ([knowledge-add/homes.md](.agents/quenching/references/knowledge-add/homes.md)) and
 `/quenching-knowledge align` ([knowledge-align/taxonomy.md](.agents/quenching/references/knowledge-align/taxonomy.md),
@@ -72,7 +72,7 @@ dirs (`.build/`, `dist/`, `build/`, `target/`, `node_modules/`, `**/__pycache__/
 `assets/`, `.venv/`, any nested `site-packages`/vendored dependency tree) and anything gitignored
 as a build artifact — check each hit with `git check-ignore`.
 Each survivor is a **proposed** subfolder `AGENTS.md`, carried into the plan (step 5) as its own
-gated item — never auto-created. See [components-harness-align/harness-routing.md](.claude/skills/quenching-components/references/components-harness-align/harness-routing.md) §6.
+gated item — never auto-created. See [components-harness-align/harness-routing.md](.agents/skills/quenching-components/references/components-harness-align/harness-routing.md) §6.
 
 On a large repo, delegate this repo-wide `find`/`grep` sweep to **one read-only `Task`
 sub-agent** (`model: haiku`, `effort: low`) that only **collects** — harness paths, candidate
@@ -87,7 +87,7 @@ build command paired with an architecture note becomes two).
 **Done when:** every harness file is segmented into anchored units.
 
 ### 3. Classify every unit
-Apply the [components-harness-align/harness-routing.md](.claude/skills/quenching-components/references/components-harness-align/harness-routing.md) table →
+Apply the [components-harness-align/harness-routing.md](.agents/skills/quenching-components/references/components-harness-align/harness-routing.md) table →
 **KEEP / MOVE / DEDUPE / FLAG / UNROUTABLE**. A **MOVE** derives its home + `type` + mold via
 [knowledge-add/homes.md](.agents/quenching/references/knowledge-add/homes.md); a **DEDUPE**
 cites the existing doc (`Grep /docs/` to confirm coverage); a **FLAG** quotes both sides of the

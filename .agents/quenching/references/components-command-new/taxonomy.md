@@ -106,10 +106,10 @@ place. The mint always writes into the repo-root `.agents/`, keeping the surface
 one place.
 
 <!-- rationale -->
-the host merged custom commands into skills, and OpenCode reads `.claude/skills/` and
-`.agents/skills/` alike. A flat `.agents/skills/<name>/` source copied verbatim into
-`.claude/skills/<name>/` is the one shape all three harnesses discover, with no link, so it holds
-on Windows without administrator rights.
+the host merged custom commands into skills, OpenCode reads `.claude/skills/` and
+`.agents/skills/` alike, and Codex reads only `.agents/skills/`. A flat `.agents/skills/<name>/`
+source copied verbatim into `.claude/skills/<name>/` is the one pair every harness discovers, with
+no link, so it holds on Windows without administrator rights.
 
 Discovery story: `/` + tab walks the command tree in folder order, so the paths make the
 automation surface navigable the same way the repo is.

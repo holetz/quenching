@@ -13,6 +13,9 @@ maintainer: quenching
 
 # 0020 - The Codex executor and the codex harness are removed
 
+> The part about the `codex` **harness** is superseded by
+> [ADR 0022](0022-codex-harness-returns-agents-skills-source.md); the executor stays removed.
+
 [ADR 0014](0014-tier-pequeno-em-tarefa-testavel.md) admitted `gpt-6-luna` as a small-tier executor
 beside `haiku`, and the Codex pillar (`cq codex probe | eligible | implement`) let Codex write one
 eligible task per `execute` step. This records why both left. It supersedes the part of 0014 that
