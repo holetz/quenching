@@ -179,7 +179,8 @@
           "specs-conclude",
           "specs-develop",
           "specs-execute",
-          "front-align"
+          "front-align",
+          "components-align"
         ],
         "router": true
       }
@@ -210,7 +211,8 @@
           "specs-conclude",
           "specs-develop",
           "specs-execute",
-          "front-align"
+          "front-align",
+          "design-align"
         ],
         "router": true
       }
@@ -241,7 +243,8 @@
           "specs-conclude",
           "specs-develop",
           "specs-execute",
-          "front-align"
+          "front-align",
+          "ops-align"
         ],
         "router": true
       }
@@ -274,7 +277,8 @@
           "specs-conclude",
           "specs-develop",
           "specs-execute",
-          "front-align"
+          "front-align",
+          "proof-align"
         ],
         "router": true
       }
@@ -306,7 +310,8 @@
           "specs-conclude",
           "specs-develop",
           "specs-execute",
-          "front-align"
+          "front-align",
+          "toolchain-align"
         ],
         "router": true
       }
@@ -338,7 +343,8 @@
           "specs-conclude",
           "specs-develop",
           "specs-execute",
-          "front-align"
+          "front-align",
+          "delivery-align"
         ],
         "router": true
       }
@@ -370,7 +376,8 @@
           "specs-conclude",
           "specs-develop",
           "specs-execute",
-          "front-align"
+          "front-align",
+          "opensource-align"
         ],
         "router": true
       }
@@ -401,7 +408,8 @@
           "specs-align",
           "specs-conclude",
           "specs-develop",
-          "specs-execute"
+          "specs-execute",
+          "security-align"
         ],
         "router": true
       }
