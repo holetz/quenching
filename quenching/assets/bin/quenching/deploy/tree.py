@@ -10,6 +10,7 @@ import hashlib
 import json
 import os
 import re
+import subprocess
 from pathlib import Path, PurePosixPath
 
 from quenching.common.deploy import dumps_hash_manifest, read_manifest
@@ -90,6 +91,20 @@ def self_hosted(target: Path) -> bool:
     vendored one write the same manifest.
     """
     return (target / "quenching" / "assets" / "modules.json").is_file()
+
+
+def source_commit(source: Path) -> str | None:
+    """The commit the source checkout stands on, or `None` for a wheel or a tree git does not own."""
+    if not (source / ".git").exists():
+        return None
+    try:
+        done = subprocess.run(["git", "-C", str(source), "rev-parse", "HEAD"],
+                              capture_output=True, text=True, encoding="utf-8",
+                              timeout=30, check=False)
+    except (OSError, subprocess.SubprocessError):
+        return None
+    sha = done.stdout.strip()
+    return sha if done.returncode == 0 and len(sha) == 40 else None
 
 
 def _is_build(path: Path) -> bool:
@@ -692,6 +707,11 @@ def build_tree(source: Path, target: Path, modules: list[str], harnesses: list[s
                   for rel, (data, _mode_) in sorted(tree.items())},
     }
     document["bootstrap"] = sorted(bootstrap_files)
+    commit = None if hosted else source_commit(source)
+    if commit:
+        # What `cq deploy --write` compares with the next source: a source that no longer holds this
+        # commit would take back what the target already carries (`cli.regression`).
+        document["sourceCommit"] = commit
     if folders:
         # The tracked mirrors of modules outside the selection, kept in step with the source.
         document["mirrors"] = sorted(folders)
