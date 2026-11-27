@@ -1,0 +1,36 @@
+# oh-my-opencode-slim como referência para o quenching
+
+Fontes (recuperadas em 2026-11-26; extratos de busca, o fetch direto do repositório foi negado):
+
+| Fonte | Publicação |
+| --- | --- |
+| github.com/alvinunreal/oh-my-opencode-slim (README) | master, v3.0.7 |
+| docs/council.md, docs/configuration.md, GLOSSARY.md, src/agents/codemap.md (mesmo repositório) | master |
+| deepwiki.com/alvinunreal/oh-my-opencode-slim (Pantheon: agent system) | 2026-10-24 |
+| hysenlabs.com/projects/alvinunreal-oh-my-opencode-slim | 2026-09-21 |
+| greptile.com/grepository/.../docs/agent-system | sem data |
+
+Fonte web sustenta alternativa e racional; nenhum achado abaixo vira regra vinculante sem spec e decisão do humano.
+
+## O que o projeto é
+
+Plugin do OpenCode, hub-and-spoke: um orchestrator delega a especialistas (explorer, oracle, designer, fixer, observer opcional, council com councillors), cada um com modelo, prompt e permissão próprios, configurados em `~/.config/opencode/oh-my-opencode-slim.json`. Roda tarefas em background, expõe LSP, busca por AST, MCPs (Exa, Context7, grep.app) e skills (deepwork, codemap, verification-planning, reflect).
+
+## Achados
+
+| # | Mecanismo do slim | Quenching hoje | Veredito | Destino |
+| --- | --- | --- | --- | --- |
+| 1 | `council-inject`: o procedimento do council entra uma vez por sessão, na primeira palavra-chave; sessão que não pede paga zero token | Referências lidas por seção via `components_read`; 823 e 932 já cortam metadado e custo de evidência | Coberto | nenhum |
+| 2 | Presets nomeados com `extends` de um pai e troca em runtime (`/preset`); modelos por agente | Tier de modelo e esforço fixos no frontmatter de cada agente (1661, 1743 tratam a política) | Aplicável | spec capturada: presets de modelo por perfil (econômico, padrão, qualidade), decisão do humano sobre superfície de configuração |
+| 3 | O orchestrator manda ao sintetizador só os ids de sessão dos councillors; o harness anexa as respostas armazenadas, então o orchestrator nunca redigita o texto | O orchestrator do quenching recebe e repassa resumos dos workers (1741 limita brief e espera) | Aplicável | spec capturada: repassar resultado de worker por referência (id/artefato), não por texto copiado |
+| 4 | `codemap.md` por diretório (responsabilidade, design, fluxo) como mapa de orientação para o agente antes de explorar | `/docs/index.md` e glossário orientam; não há mapa por área de código | Avaliar | spec capturada: medir se um mapa por diretório reduz a leitura exploratória do spec-runner |
+| 5 | `agents.orchestrator.subagents` compilado em permissões `subagent allow/deny` na configuração nativa do OpenCode | O grant de spawn é fixo por agente (`task: false` no perfil sem Task) | Aplicável, mas alarga grant/permissão | spec capturada como decisão do humano (épico 560); não autorizada no épico 559 |
+| 6 | Fixer, observer e sintetizador são não-geradores por desenho; profundidade de subagente limitada | spec-runner e perfil `task: false` já fecham o aninhamento | Coberto | nenhum |
+| 7 | Seats do council veem só o prompt recebido; fronteira read-only imposta por permissão, nunca por texto do prompt | spec-scout/spec-reviewer read-only por frontmatter; contexto limpo do revisor (1482) | Coberto | nenhum |
+| 8 | Observer multimodal, painéis tmux, tarefas em background nativas, ferramentas LSP/AST | Dependem do runtime do OpenCode | Não aplicável | nenhum |
+| 9 | Agentes customizados declarados na configuração (`agents.<nome>` com model, prompt, description, permission) | `components agent-new` gera o subagente | Coberto | nenhum |
+
+## Cautelas
+
+- O repositório não foi lido; mecanismos vêm de resumos (DeepWiki, Greptile, Hysen Labs) e podem divergir do código. Cada spec capturada deve reconferir a fonte primária antes de construir.
+- Achados 2 e 5 tocam configuração e permissão, superfície que o épico 559 reserva ao humano (épico 560).

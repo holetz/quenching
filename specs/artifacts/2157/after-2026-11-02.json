@@ -1,0 +1,182 @@
+{
+  "ok": true,
+  "scope": "all",
+  "sources": {
+    "claude": "~/.claude/projects",
+    "opencode": "~/.local/share/opencode/opencode.db"
+  },
+  "unavailable": {},
+  "rows": [
+    {
+      "harness": "claude",
+      "model": "claude-opus-5-5",
+      "role": "subagent",
+      "agent": "orchestrator",
+      "sessions": 1,
+      "requests": 3,
+      "input": 8,
+      "cacheRead": 249795,
+      "cacheWrite": 2582,
+      "write5m": 2582,
+      "write1h": 0,
+      "output": 1439,
+      "hitRate": 0.9897,
+      "firstRequestMedian": 83225,
+      "peakMedian": 85230
+    },
+    {
+      "harness": "claude",
+      "model": "claude-sonnet-5-5",
+      "role": "subagent",
+      "agent": "git-steward",
+      "sessions": 1,
+      "requests": 2,
+      "input": 4,
+      "cacheRead": 37852,
+      "cacheWrite": 627,
+      "write5m": 627,
+      "write1h": 0,
+      "output": 250,
+      "hitRate": 0.9836,
+      "firstRequestMedian": 19090,
+      "peakMedian": 19393
+    },
+    {
+      "harness": "claude",
+      "model": "claude-sonnet-5-5",
+      "role": "subagent",
+      "agent": "spec-runner",
+      "sessions": 1,
+      "requests": 18,
+      "input": 42,
+      "cacheRead": 870481,
+      "cacheWrite": 77272,
+      "write5m": 77272,
+      "write1h": 0,
+      "output": 8603,
+      "hitRate": 0.9184,
+      "firstRequestMedian": 20651,
+      "peakMedian": 84134
+    }
+  ],
+  "gaps": [
+    {
+      "harness": "claude",
+      "model": "claude-opus-5-5",
+      "role": "subagent",
+      "gap": "<2m",
+      "requests": 2,
+      "cold": 0,
+      "coldTokens": 0,
+      "coldRate": 0.0
+    },
+    {
+      "harness": "claude",
+      "model": "claude-sonnet-5-5",
+      "role": "subagent",
+      "gap": "<2m",
+      "requests": 18,
+      "cold": 0,
+      "coldTokens": 0,
+      "coldRate": 0.0
+    }
+  ],
+  "boundaries": [
+    {
+      "harness": "claude",
+      "model": "claude-opus-5-5",
+      "role": "subagent",
+      "coldFromGap": null
+    },
+    {
+      "harness": "claude",
+      "model": "claude-sonnet-5-5",
+      "role": "subagent",
+      "coldFromGap": null
+    }
+  ],
+  "skillListing": [
+    {
+      "harness": "opencode",
+      "role": "main",
+      "agent": "main",
+      "sessions": 73,
+      "entriesMedian": 102,
+      "charsMedian": 45192,
+      "tokensEstimate": 11298
+    },
+    {
+      "harness": "opencode",
+      "role": "subagent",
+      "agent": "explore",
+      "sessions": 7,
+      "entriesMedian": 111,
+      "charsMedian": 50202,
+      "tokensEstimate": 12550
+    },
+    {
+      "harness": "opencode",
+      "role": "subagent",
+      "agent": "general",
+      "sessions": 39,
+      "entriesMedian": 99,
+      "charsMedian": 43799,
+      "tokensEstimate": 10949
+    },
+    {
+      "harness": "opencode",
+      "role": "subagent",
+      "agent": "git-steward",
+      "sessions": 20,
+      "entriesMedian": 102,
+      "charsMedian": 45178,
+      "tokensEstimate": 11294
+    },
+    {
+      "harness": "opencode",
+      "role": "subagent",
+      "agent": "orchestrator",
+      "sessions": 15,
+      "entriesMedian": 102,
+      "charsMedian": 45192,
+      "tokensEstimate": 11298
+    },
+    {
+      "harness": "opencode",
+      "role": "subagent",
+      "agent": "scout",
+      "sessions": 2,
+      "entriesMedian": 84,
+      "charsMedian": 36480,
+      "tokensEstimate": 9120
+    },
+    {
+      "harness": "opencode",
+      "role": "subagent",
+      "agent": "spec-architect",
+      "sessions": 2,
+      "entriesMedian": 106,
+      "charsMedian": 47643,
+      "tokensEstimate": 11910
+    },
+    {
+      "harness": "opencode",
+      "role": "subagent",
+      "agent": "spec-runner",
+      "sessions": 80,
+      "entriesMedian": 102,
+      "charsMedian": 45558,
+      "tokensEstimate": 11389
+    },
+    {
+      "harness": "opencode",
+      "role": "subagent",
+      "agent": "verifier",
+      "sessions": 38,
+      "entriesMedian": 102,
+      "charsMedian": 45192,
+      "tokensEstimate": 11298
+    }
+  ],
+  "anomalies": []
+}
