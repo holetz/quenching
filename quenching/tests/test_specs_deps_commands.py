@@ -120,7 +120,7 @@ class DependencyCommands(unittest.TestCase):
                                                      "date: 2026-10-24\n" + fm))
 
     def dependency_findings(self, *flags):
-        _, payload = self.call("validate", *flags)
+        _, payload = self.call("validate", "--full", *flags)
         self.writer.assert_not_called()
         return [f for f in payload["findings"] if f["code"].startswith("sp-dep-")]
 
