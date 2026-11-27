@@ -2,7 +2,7 @@
 allowed-tools: Bash(cq:*), Bash(cq.cmd:*), Read, Grep, Glob, Bash(python3:*), AskUserQuestion
 ---
 
-# /quenching-design genre-new — one genre, N destinations
+# .agents/quenching/references/design-align/genre-new.md — one genre, N destinations
 
 **Input**: `$ARGUMENTS` (one genre name or a short description of it).
 
@@ -16,7 +16,7 @@ This command mints one stable editorial contract. It does not produce an instanc
 Resolve `cq` per
 [tool-resolution.md](.agents/quenching/references/align/tool-resolution.md)
 §Resolving the tool and run `design status --json`. An absent or invalid front routes to
-`/quenching-design align` and stops. Read existing genres and medium templates for name/path
+`/quenching-align design` and stops. Read existing genres and medium templates for name/path
 collisions.
 
 **Done when:** the front is healthy and the proposed genre has no collision.

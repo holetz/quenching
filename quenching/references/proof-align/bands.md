@@ -38,12 +38,12 @@ The command named in the table is a hand-off, not an instruction for the align t
 
 | Code | Evidence to report | Closing command to name |
 | --- | --- | --- |
-| `pf-unlayered` | Test modules outside every declared layer, with their paths and counts. | The target owner's layer declaration, then `/quenching-proof layer-new` for each new layer. |
-| `pf-empty-layer` | The declared layer, its reach, budget, and absence of collected tests. | The target owner's layer or test change, or `/quenching-proof layer-new` when the layer is being reminted. |
-| `pf-unmeasured-surface` | Each product surface outside measured roots or exclusions, with the consequence for the coverage number. | The target owner's reviewed measurement or exclusion change, then `/quenching-proof align`. |
-| `pf-no-ci` | The CI providers searched and the missing invocation of the proof gate. | The target owner's reviewed CI workflow, then `/quenching-proof align`. |
-| `pf-untested-entrypoint` | The active operations entry point, its path, and the missing test or explicit not-applicable record. | The target owner's reviewed test or applicability declaration, then `/quenching-proof align`. |
-| `pf-cost-undeclared` | The cost contract as declared (whole or absent, the missing keys named), and the measured cost a run pays without it. | The target owner's `proof.cost` declaration in `.agents/quenching.json`, guided by `/docs/standards/ci-cd/test-cost.md`, then `/quenching-proof align`. |
+| `pf-unlayered` | Test modules outside every declared layer, with their paths and counts. | The target owner's layer declaration, then `.agents/quenching/references/proof-align/layer-new.md` for each new layer. |
+| `pf-empty-layer` | The declared layer, its reach, budget, and absence of collected tests. | The target owner's layer or test change, or `.agents/quenching/references/proof-align/layer-new.md` when the layer is being reminted. |
+| `pf-unmeasured-surface` | Each product surface outside measured roots or exclusions, with the consequence for the coverage number. | The target owner's reviewed measurement or exclusion change, then `/quenching-align proof`. |
+| `pf-no-ci` | The CI providers searched and the missing invocation of the proof gate. | The target owner's reviewed CI workflow, then `/quenching-align proof`. |
+| `pf-untested-entrypoint` | The active operations entry point, its path, and the missing test or explicit not-applicable record. | The target owner's reviewed test or applicability declaration, then `/quenching-align proof`. |
+| `pf-cost-undeclared` | The cost contract as declared (whole or absent, the missing keys named), and the measured cost a run pays without it. | The target owner's `proof.cost` declaration in `.agents/quenching.json`, guided by `/docs/standards/ci-cd/test-cost.md`, then `/quenching-align proof`. |
 | `pf-temp-shared` | The declared `tempRoot: system` and where the target's runner writes its temporary files. | The target owner's runner change to a root outside the repository, removed when the run ends; then the declaration and `proof_write(verb="readme", write=true)`. |
 | `pf-scope-wide` | The close scope and the CI scope as declared, and the consequence for a one-line change. | The target owner's narrower local tier, keeping the full run in CI; then the declaration and `proof_write(verb="readme", write=true)`. |
 | `pf-task-wide` | The task scope and the close scope as declared, and the consequence for every task of the spec. | The target owner's narrower `scopes.task` — the file or directory the task touches — keeping the gate at the close; then the declaration and `proof_write(verb="readme", write=true)`. |
@@ -54,7 +54,7 @@ The bands answer **who decides**; they do not answer **in what order**. The alig
 floor in the same run that changes the measured surface. `pf-no-floor` is structural and normally
 closes by writing the achieved value, but where `pf-unmeasured-surface` is also open the floor is
 deferred. The report names the unmeasured surface, says that no floor was written, and names the
-next `/quenching-proof align` run after the human closes the surface.
+next `/quenching-align proof` run after the human closes the surface.
 
 A floor is a promise about a measurement. Changing what is measured in the same run makes that
 promise about something else, so the two findings cannot be silently closed under one OK.
@@ -69,7 +69,7 @@ not to a promise that every CI edit is harmless.
 
 A target that declares no layers at all is not offered inferred layers or placeholder directories.
 The align reports its unlayered modules and any layer findings as judgement residue, names
-`/quenching-proof layer-new` as the command that can establish a layer deliberately, and lets the
+`.agents/quenching/references/proof-align/layer-new.md` as the command that can establish a layer deliberately, and lets the
 rest of the report reduce to the gate findings. This follows the sweep's evidence-gating rule:
 absence of a declaration is not evidence for a taxonomy.
 

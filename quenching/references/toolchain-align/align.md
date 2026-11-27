@@ -2,7 +2,7 @@
 allowed-tools: Bash(cq:*), Bash(cq.cmd:*), Read, Grep, Glob, Bash(python3:*), AskUserQuestion, Write, Edit
 ---
 
-# /quenching-toolchain align — converge the toolchain front
+# /quenching-align toolchain — converge the toolchain front
 
 **Input**: `$ARGUMENTS` (an optional target repository root; omit to use the current repository).
 
@@ -11,7 +11,7 @@ and tool configuration, applies only deterministic or contract-bounded repairs, 
 policy with the target owner. The common front floor is in
 [front-align/mold.md](.agents/quenching/references/front-align/mold.md), and the
 toolchain finding bands and closure boundary are in
-[toolchain-align/bands.md](.agents/skills/quenching-toolchain/references/toolchain-align/bands.md).
+[toolchain-align/bands.md](.agents/quenching/references/toolchain-align/bands.md).
 
 Set `TARGET_ROOT` to the supplied argument, or to `.` when the argument is omitted. Resolve `cq`
 per [tool-resolution.md](.agents/quenching/references/align/tool-resolution.md)

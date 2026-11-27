@@ -5,7 +5,7 @@ import unittest
 
 REPO = pathlib.Path(__file__).resolve().parents[2]
 ROUTER = REPO / "quenching/skills/quenching-components/SKILL.md"
-FLOWS = ('command-new', 'agent-new', 'hook-new', 'align', 'status', 'harness-align', 'command-eval', 'command-retro')
+FLOWS = ('command-new', 'agent-new', 'hook-new', 'command-eval', 'command-retro')
 EXPLICIT_MENTION = ()
 
 

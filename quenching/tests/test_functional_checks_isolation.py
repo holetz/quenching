@@ -61,7 +61,7 @@ if mode != "missing":
                       "slash_commands": skills}))
 print(json.dumps({"type": "queue-operation", "message": "a string, not an object"}))
 prompt = args[args.index("--setting-sources") + 2] if isolated else args[-1]
-if prompt.startswith("/quenching-align"):
+if prompt.startswith("/quenching-align") and not prompt.startswith("/quenching-align status"):
     tool, data = "Skill", {"skill": "quenching-knowledge", "args": "align — inherited authorization"}
 elif prompt.startswith("/quenching-"):
     tool, data = "Read", {"file_path": str(cwd / ".agents/quenching/references/selftest.md")}

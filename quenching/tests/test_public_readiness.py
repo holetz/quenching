@@ -489,10 +489,10 @@ class CleanCloneTest(ReadinessCase):
 
     def test_the_module_carries_the_command_and_the_reference_it_cites(self):
         target = self.export()
-        command = (target / ".agents/skills/quenching-opensource/references/readiness.md").read_text(encoding="utf-8")
+        command = (target / ".agents/quenching/references/opensource-align/readiness.md").read_text(encoding="utf-8")
         self.assertIn('opensource_read(verb="readiness", root="$TARGET_ROOT"', command)
-        self.assertIn(".agents/skills/quenching-opensource/references/opensource-readiness/report.md", command)
-        self.assertTrue((target / ".agents/skills/quenching-opensource/references/opensource-readiness/report.md").is_file())
+        self.assertIn(".agents/quenching/references/opensource-align/opensource-readiness/report.md", command)
+        self.assertTrue((target / ".agents/quenching/references/opensource-align/opensource-readiness/report.md").is_file())
 
     def test_the_module_route_measures_a_clean_fixture_end_to_end(self):
         target = self.export()

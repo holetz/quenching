@@ -92,16 +92,18 @@ class ManifestSurfaceTests(unittest.TestCase):
     def test_manifest_projection_covers_each_namespace_derived_from_the_surface(self):
         commands = _commands_on_disk()
         expected = {
-            "knowledge": 14,
+            "knowledge": 13,
             "specs": 11,
-            "design": 4,
-            "components": 9,
-            "ops": 4,
-            "proof": 4,
-            "toolchain": 3,
-            "delivery": 3,
-            "security": 2,
+            "components": 6,
             "git": 12,
+            # The fronts are arguments of `/quenching-align` since spec 676: no skill of their own.
+            "design": 0,
+            "ops": 0,
+            "proof": 0,
+            "toolchain": 0,
+            "delivery": 0,
+            "security": 0,
+            "opensource": 0,
         }
         actual = {
             namespace: sum(command == f"/quenching-{namespace}" or command.startswith(f"/quenching-{namespace}-")

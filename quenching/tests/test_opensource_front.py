@@ -75,9 +75,9 @@ class AggregateTest(unittest.TestCase):
                 self.assertFalse(contract["contentVerified"])
                 self.assertEqual([
                     {"artifact": "readme", "owner": "knowledge",
-                     "command": "/quenching-knowledge align"},
+                     "command": "/quenching-align knowledge"},
                     {"artifact": "security", "owner": "security",
-                     "command": "/quenching-security status"},
+                     "command": "/quenching-align status security"},
                 ], contract["handoffs"])
                 self.assertTrue(all(row["language"] == "en" for row in payload["artifacts"]))
                 self.assertNotIn("os-artifact-not-english",
@@ -251,7 +251,7 @@ class ShowcaseTest(unittest.TestCase):
         self.assertEqual(["app/static/"], skew["paths"])
         self.assertEqual(["app/static/** linguist-vendored"], skew["gitattributes"])
         media = rows["os-readme-media-missing"]
-        self.assertEqual(("README.md", "knowledge", "/quenching-knowledge align"),
+        self.assertEqual(("README.md", "knowledge", "/quenching-align knowledge"),
                          (media["path"], media["owner"], media["command"]))
         self.assertEqual({"info"}, {skew["severity"], media["severity"]})
         self.assertNotIn("os-language-skew", {row["code"] for row in payload["findings"]})

@@ -2,20 +2,20 @@
 allowed-tools: Bash(cq:*), Bash(cq.cmd:*), Read, Grep, Glob, Bash(find:*), Bash(git grep:*), Bash(git check-ignore:*), Bash(grep:*), Bash(python3:*), Bash(py:*), Write, Edit, Task, AskUserQuestion
 ---
 
-# /quenching-components harness-align — make AGENTS.md a thin, honest pointer into the bundle
+# /quenching-align components — make AGENTS.md a thin, honest pointer into the bundle
 
 **Input**: `$ARGUMENTS` (an optional specific harness file; omit to sweep every AGENTS.md/CLAUDE.md).
 
 Refactors a repo's **harness files** (the root `AGENTS.md`, every subfolder `AGENTS.md`) into thin
 navigation pointers over the OKF `/docs/` bundle: operational rules stay;
 durable knowledge is **moved** into its `/docs/` home and cited. Assumes the bundle already exists (run
-`/quenching-knowledge align` first if not). It also **creates** a thin subfolder `AGENTS.md` where discovery
+`/quenching-align knowledge` first if not). It also **creates** a thin subfolder `AGENTS.md` where discovery
 finds a folder with a local operational surface but no harness — evidence-gated, never one per
 directory (routing §6). The unit → verdict → home routing and the pointer-honesty gate are
-in [components-harness-align/harness-routing.md](.agents/skills/quenching-components/references/components-harness-align/harness-routing.md); the home boundaries, `type`
+in [components-harness-align/harness-routing.md](.agents/quenching/references/components-align/harness-routing.md); the home boundaries, `type`
   vocabulary, molds, and index procedure are shared with `/quenching-knowledge add`
 ([knowledge-add/homes.md](.agents/quenching/references/knowledge-add/homes.md)) and
-`/quenching-knowledge align` ([knowledge-align/taxonomy.md](.agents/quenching/references/knowledge-align/taxonomy.md),
+`/quenching-align knowledge` ([knowledge-align/taxonomy.md](.agents/quenching/references/knowledge-align/taxonomy.md),
 [knowledge-align/conformance.md](.agents/quenching/references/knowledge-align/conformance.md),
 [knowledge-align/migration.md](.agents/quenching/references/knowledge-align/migration.md)). Harness
 molds live at `.agents/quenching/assets/templates/harness/`.
@@ -35,7 +35,7 @@ molds live at `.agents/quenching/assets/templates/harness/`.
 - **Plan first, execute on one confirmation.** Read every harness file, classify every unit, and
   present **ONE** table — file → unit → verdict → destination. A single OK executes the batch; an
   edit whose blast radius reaches **product code** is its own confirmation item. **Exception —
-  cycle-authorized runs:** invoked as a stage of `/quenching-knowledge align`'s cycle (or of `/align`) under the cycle-authorization contract
+  cycle-authorized runs:** invoked as a stage of `/quenching-align knowledge`'s cycle (or of `/quenching-align`) under the cycle-authorization contract
   ([align/convergence.md](.agents/quenching/references/align/convergence.md)), the plan is
   presented as narration, not a gate; a product-code edit still confirms on its own, always. The
   cycle may hand this skill a **pre-collected steps 1–4 table** (gathered read-only while
@@ -57,7 +57,7 @@ Resolve `cq` per
 ### 1. Inventory the harness surface (read-only)
 `Glob` `**/AGENTS.md`, `**/CLAUDE.md` (legacy), and `CLAUDE.local.md`; add a `grep --no-ignore` sweep to
 catch gitignored ones. Confirm `/docs/index.md` carries `okf_version` — if there is no OKF bundle,
-**stop** and offer `/quenching-knowledge align` first. List every harness file found, and
+**stop** and offer `/quenching-align knowledge` first. List every harness file found, and
 the **root harness state** — conformant (`AGENTS.md` only), legacy (`CLAUDE.md` content or pointer), or doubled
 (routing §7).
 
@@ -69,10 +69,10 @@ carry commands the agent would need on **every** task under them that **don't de
 root** — a `*.sh` / `Makefile` / `justfile` / `package.json`-script, a distinct toolchain, or a
 `README` whose fenced blocks are run-commands. **Exclude** generated-output, asset, and vendored
 dirs (`.build/`, `dist/`, `build/`, `target/`, `node_modules/`, `**/__pycache__/`, `fonts/`,
-`assets/`, `.venv/`, any nested `site-packages`/vendored dependency tree) and anything gitignored
+`assets/`, `.venv/`, any nested `site-packages` or vendored dependency tree) and anything gitignored
 as a build artifact — check each hit with `git check-ignore`.
 Each survivor is a **proposed** subfolder `AGENTS.md`, carried into the plan (step 5) as its own
-gated item — never auto-created. See [components-harness-align/harness-routing.md](.agents/skills/quenching-components/references/components-harness-align/harness-routing.md) §6.
+gated item — never auto-created. See [components-harness-align/harness-routing.md](.agents/quenching/references/components-align/harness-routing.md) §6.
 
 On a large repo, delegate this repo-wide `find`/`grep` sweep to **one read-only `Task`
 sub-agent** (`model: haiku`, `effort: low`) that only **collects** — harness paths, candidate
@@ -87,7 +87,7 @@ build command paired with an architecture note becomes two).
 **Done when:** every harness file is segmented into anchored units.
 
 ### 3. Classify every unit
-Apply the [components-harness-align/harness-routing.md](.agents/skills/quenching-components/references/components-harness-align/harness-routing.md) table →
+Apply the [components-harness-align/harness-routing.md](.agents/quenching/references/components-align/harness-routing.md) table →
 **KEEP / MOVE / DEDUPE / FLAG / UNROUTABLE**. A **MOVE** derives its home + `type` + mold via
 [knowledge-add/homes.md](.agents/quenching/references/knowledge-add/homes.md); a **DEDUPE**
 cites the existing doc (`Grep /docs/` to confirm coverage); a **FLAG** quotes both sides of the
@@ -106,7 +106,7 @@ Agent etiquette even when a rule it cites moved into `/docs/`; only the citation
 **Done when:** every unit has one routing verdict and any contradiction is quoted.
 
 ### 4. Sweep the blast radius
-Per `/quenching-knowledge align`'s migration doctrine
+Per `/quenching-align knowledge`'s migration doctrine
 ([knowledge-align/migration.md](.agents/quenching/references/knowledge-align/migration.md) §3 §4):
 `git grep` + `grep -rn --no-ignore` for anything that reads or links the harness files or their
 anchors. As in step 1, a large sweep goes to one read-only `Task` collector (`model: haiku`,

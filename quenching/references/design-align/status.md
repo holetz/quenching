@@ -2,14 +2,14 @@
 allowed-tools: Bash(cq:*), Bash(cq.cmd:*), Read, Grep, Glob, Bash(python3:*)
 ---
 
-# /quenching-design status — read the whole design front
+# /quenching-align status design — read the whole design front
 
 **Input**: `$ARGUMENTS` (optional focus; omission reads the whole front).
 
 The common front contract is in
 [front-align/mold.md](.agents/quenching/references/front-align/mold.md), and the
 design-specific disposition map is in
-[design-align/bands.md](.agents/skills/quenching-design/references/design-align/bands.md). This
+[design-align/bands.md](.agents/quenching/references/design-align/bands.md). This
 read-only view preserves design's source arbitration, projection and optional-detector deltas.
 
 Resolve `cq` per

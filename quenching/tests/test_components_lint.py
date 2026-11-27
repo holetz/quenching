@@ -193,7 +193,7 @@ class StrictFrontmatter(unittest.TestCase):
         errors = [f for f in payload["findings"] if f["severity"] == "error"]
         self.assertEqual(errors, [])  # first: a red gate names the finding, not just the status
         self.assertEqual(status, 0)
-        self.assertEqual(payload["commandCount"], 13)
+        self.assertEqual(payload["commandCount"], 6)
 
 
 class ReferenceRoot(unittest.TestCase):
@@ -903,6 +903,18 @@ class UnresolvedRoutes(unittest.TestCase):
             [f"/{Q}-foo"])
         self.assertEqual(route_hint(f"/{Q}-specs-create", "quenching", routers),
                          "/quenching-specs create")
+
+    def test_a_retired_front_route_names_the_align_that_replaced_it(self):
+        # Spec 676: a front is an argument of `/quenching-align`, not a skill of its own.
+        for old, new in {
+            "/quenching-ops align": "/quenching-align ops",
+            "/quenching-design status": "/quenching-align status design",
+            "/quenching-security status": "/quenching-align status security",
+            "/quenching-knowledge align": "/quenching-align knowledge",
+            "/quenching-components status": "/quenching-align status components",
+        }.items():
+            with self.subTest(old=old):
+                self.assertEqual(route_hint(old, "quenching", {}), new)
 
     def test_the_source_reports_an_error_and_a_router_over_budget_is_an_error(self):
         long = "x" * 300

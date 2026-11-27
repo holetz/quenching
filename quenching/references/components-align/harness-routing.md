@@ -1,6 +1,6 @@
 # Harness routing — from an AGENTS.md unit to its OKF home
 
-How `/quenching-components harness-align` decides, for each unit of a harness file, whether it **stays** (harness-
+How `/quenching-align components` decides, for each unit of a harness file, whether it **stays** (harness-
 operational) or **moves** into an OKF home (durable knowledge). Once a unit is routed to a home it
 is filed exactly as `/quenching-knowledge add` would — see
 [knowledge-add/homes.md](.agents/quenching/references/knowledge-add/homes.md) for the
@@ -112,10 +112,10 @@ The validator won't check harness files, so this skill does:
      folder; the folder's `README` stays the deep map, the `AGENTS.md` just points to it.
 - **Exclude from discovery** generated-output, asset, and vendored dirs — `.build/`, `dist/`,
   `build/`, `target/`, `node_modules/`, `**/__pycache__/`, `fonts/`, `assets/`, `.venv/`, nested
-  `site-packages`/vendored dependency trees, and anything gitignored as a build artifact (verify
+  `site-packages` or vendored dependency trees, and anything gitignored as a build artifact (verify
   with `git check-ignore`). A folder that only holds data or
   output earns no harness.
-- `/quenching-knowledge align`'s skeleton already owns `docs/standards/AGENTS.md`.
+- `/quenching-align knowledge`'s skeleton already owns `docs/standards/AGENTS.md`.
 
 ## 7. AGENTS.md is the root source; CLAUDE.md is legacy
 

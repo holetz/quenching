@@ -43,16 +43,16 @@ ARTIFACT_CODES = {
 LANGUAGE = "en"
 # README and SECURITY keep their owners: this front reports the hand-off, never writes them.
 LANGUAGE_HANDOFFS = (
-    {"artifact": "readme", "owner": "knowledge", "command": "/quenching-knowledge align"},
-    {"artifact": "security", "owner": "security", "command": "/quenching-security status"},
+    {"artifact": "readme", "owner": "knowledge", "command": "/quenching-align knowledge"},
+    {"artifact": "security", "owner": "security", "command": "/quenching-align status security"},
 )
 OWNER_COMMANDS = {
-    "opensource": "/quenching-opensource align",
-    "security": "/quenching-security status",
-    "delivery": "/quenching-delivery align",
-    "toolchain": "/quenching-toolchain align",
-    "knowledge": "/quenching-knowledge align",
-    "proof": "/quenching-proof align",
+    "opensource": "/quenching-align opensource",
+    "security": "/quenching-align status security",
+    "delivery": "/quenching-align delivery",
+    "toolchain": "/quenching-align toolchain",
+    "knowledge": "/quenching-align knowledge",
+    "proof": "/quenching-align proof",
     "git": "/quenching-git branch",
 }
 
@@ -169,7 +169,7 @@ def _readme_media(root: str, paths: list[str]) -> dict[str, Any] | None:
     if any(not _BADGE.search(match.group(0)) for match in _MEDIA.finditer(text)):
         return None
     return {"code": "os-readme-media-missing", "severity": "info", "path": readmes[0],
-            "owner": "knowledge", "command": "/quenching-knowledge align",
+            "owner": "knowledge", "command": "/quenching-align knowledge",
             "action": ("ask the owner for a screenshot or GIF of the interface made with synthetic data, "
                        "store it under .design/assets/ and reference it from the README")}
 

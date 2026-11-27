@@ -5,7 +5,7 @@
 This file owns only the `os-*` codes, their disposition bands and the artifact-specific closure
 shapes. The common axis is defined in [`front-align/mold.md`](.agents/quenching/references/front-align/mold.md)
 §Disposition bands; ownership of each control is the catalog's, in
-[`opensource-controls/catalog.md`](../opensource-controls/catalog.md). Every write closes through
+[`opensource-controls/catalog.md`](opensource-controls/catalog.md). Every write closes through
 `opensource_write(verb="apply")`, which copies the pinned template byte for byte and substitutes only the
 placeholders `sources.json` declares.
 

@@ -35,14 +35,14 @@ class AzureDocumentationPayload(unittest.TestCase):
 
     def test_offer_is_conditional_and_preview_is_loopback(self):
         build = (ROOT / "skills" / "quenching-knowledge" / "references" / "documentation-build.md").read_text(encoding="utf-8")
-        align = (ROOT / "skills" / "quenching-knowledge" / "references" / "align.md").read_text(encoding="utf-8")
+        align = (ROOT / "references" / "knowledge-align" / "align.md").read_text(encoding="utf-8")
         self.assertIn("separate confirmation", build)
         self.assertIn("127.0.0.1", build)
         self.assertIn("Azure DevOps", align)
 
     def test_build_and_align_resolve_project_managed_toolchains(self):
         build = (ROOT / "skills" / "quenching-knowledge" / "references" / "documentation-build.md").read_text(encoding="utf-8")
-        align = (ROOT / "skills" / "quenching-knowledge" / "references" / "align.md").read_text(encoding="utf-8")
+        align = (ROOT / "references" / "knowledge-align" / "align.md").read_text(encoding="utf-8")
         self.assertIn("Toolchain resolution", build)
         self.assertIn("site-uv-lock-stale", build)
         self.assertIn("site-dependency-source-duplicate", build)

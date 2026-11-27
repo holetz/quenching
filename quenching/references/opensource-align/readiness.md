@@ -2,7 +2,7 @@
 allowed-tools: Bash(cq:*), Bash(cq.cmd:*), Read, Grep, Glob, Bash(python3:*)
 ---
 
-# /quenching-opensource readiness — assess a repository before it goes public
+# /quenching-align status opensource — assess a repository before it goes public
 
 **Input**: `$ARGUMENTS` (an optional target repository root, an optional `--evidence <path>` to
 the owner's reviewed license, consent and provenance evidence, and an optional `--denylist <path>`
@@ -10,11 +10,11 @@ to the owner's sensitive terms, kept outside the target; omit the root to use th
 repository).
 
 This command is the read-only pre-publication assessment of the open source front. It runs
-**before** `/quenching-opensource align` when the owner wants to open a private
+**before** `/quenching-align opensource` when the owner wants to open a private
 repository. It reports blockers, warnings and the coverage it could not measure; it never
 publishes, never writes an artifact, never rewrites history and never changes visibility. The
 evidence contract, the finding classes and the disposition of each are in
-[opensource-readiness/report.md](.agents/skills/quenching-opensource/references/opensource-readiness/report.md).
+[opensource-readiness/report.md](.agents/quenching/references/opensource-align/opensource-readiness/report.md).
 
 Resolve `cq` per
 [tool-resolution.md](.agents/quenching/references/align/tool-resolution.md)
@@ -43,7 +43,7 @@ location back is how a secret reaches the transcript.
 ### 2. Report blockers, warnings and coverage separately
 
 Report three tables, in this order, per
-[opensource-readiness/report.md](.agents/skills/quenching-opensource/references/opensource-readiness/report.md)
+[opensource-readiness/report.md](.agents/quenching/references/opensource-align/opensource-readiness/report.md)
 §The report:
 
 | Table | Rows |
@@ -62,7 +62,7 @@ install the owner may choose, never installed here.
 
 State that this command wrote nothing and that remediation and publication are the owner's: the
 `remediation` of each row is a route for the owner, never an action this command takes. After the
-owner clears the blockers, name `/quenching-opensource align` for the community
+owner clears the blockers, name `/quenching-align opensource` for the community
 artifacts and this command again to reassess.
 
 **Done when:** the report states its read-only boundary, the observed exit code and that no

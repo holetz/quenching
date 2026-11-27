@@ -2,7 +2,7 @@
 allowed-tools: Bash(cq:*), Bash(cq.cmd:*), Read, Grep, Glob, Bash(python3:*)
 ---
 
-# /quenching-security status — read the security pillar
+# /quenching-align status security — read the security pillar
 
 **Input**: `$ARGUMENTS` (an optional target repository root; omit to use the current repository).
 

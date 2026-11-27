@@ -309,14 +309,14 @@ class Deploy(unittest.TestCase):
         self.write("quenching/assets/modules.json", "{}\n")
         self.assertEqual(0, self.run_deploy("--harness", "opencode", "--modules", "core,design", "--write")[0])
         self.commit_all()
-        edited = self.target / ".agents/skills/quenching-design/SKILL.md"
+        edited = self.target / ".agents/quenching/references/design-align/align.md"
         self.assertTrue(edited.is_file())
         edited.write_text("mine now\n", encoding="utf-8")
         code, payload = self.run_deploy("--harness", "opencode", "--modules", "core", "--check")
         self.assertEqual(1, code)
         leaving = {c["path"]: c["change"] for c in payload["changes"]
-                   if c["path"].startswith(".agents/skills/quenching-design/")}
-        self.assertEqual("edited", leaving.pop(".agents/skills/quenching-design/SKILL.md"))
+                   if c["path"].startswith(".agents/quenching/references/design-align/")}
+        self.assertEqual("edited", leaving.pop(".agents/quenching/references/design-align/align.md"))
         self.assertTrue(leaving)
         self.assertEqual({"delete"}, set(leaving.values()))
 
@@ -581,7 +581,7 @@ class Deploy(unittest.TestCase):
 
     def test_an_upgrade_keeps_the_selection_the_manifest_recorded(self):
         self.assertEqual(0, self.run_deploy("--modules", "all", "--write")[0])
-        design = self.target / ".claude/skills/quenching-design/SKILL.md"
+        design = self.target / ".agents/quenching/references/design-align/align.md"
         self.assertTrue(design.exists())
         code, payload = self.run_deploy("--write")
         self.assertEqual(0, code)
@@ -594,9 +594,9 @@ class Deploy(unittest.TestCase):
         self.assertEqual(0, self.run_deploy("--modules", "all", "--write")[0])
         code, payload = self.run_deploy("--modules", "core", "--write")
         self.assertEqual(0, code)
-        self.assertIn({"path": ".claude/skills/quenching-design/SKILL.md",
+        self.assertIn({"path": ".agents/quenching/references/design-align/align.md",
                        "change": "delete"}, payload["changes"])
-        self.assertFalse((self.target / ".claude/skills/quenching-design").exists())
+        self.assertFalse((self.target / ".agents/quenching/references/design-align/align.md").exists())
 
     def test_narrowing_the_modules_leaves_no_orphan_bridge_skill_in_one_write(self):
         self.write(".agents/skills/bundle-local/SKILL.md",
@@ -624,8 +624,7 @@ class Deploy(unittest.TestCase):
         # A mirror of a module outside the selection is generated like any skill: its source in
         # `.agents/skills` and, with `claude`, its projection in `.claude/skills`; the
         # projection is checked here.
-        stale = {".claude/skills/quenching-design/SKILL.md": "stale skill\n",
-                 ".agents/quenching/assets/bin/quenching/design/align.py": "# stale\n"}
+        stale = {".agents/quenching/assets/bin/quenching/design/align.py": "# stale\n"}
         for rel, text in stale.items():
             self.write(rel, text)
         code, payload = self.run_deploy("--check")
@@ -646,7 +645,7 @@ class Deploy(unittest.TestCase):
         """The payload carries no skill source: its own check re-asserts the installed mirror."""
         self.assertEqual(0, self.run_deploy("--modules", "core", "--harness", "claude",
                                             "--write")[0])
-        self.write(".claude/skills/quenching-design/SKILL.md", "stale skill\n")
+        self.write(".agents/quenching/assets/bin/quenching/design/align.py", "# stale\n")
         self.assertEqual(0, self.run_deploy("--write")[0])
         self.assertEqual((0, []), (lambda c, p: (c, p["changes"]))(*self.run_deploy("--check")))
         run = self.target_cq("deploy", "--target", ".", "--check", "--json")

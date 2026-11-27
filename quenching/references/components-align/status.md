@@ -2,7 +2,7 @@
 allowed-tools: Bash(cq:*), Bash(cq.cmd:*), Read, Grep, Glob, Bash(python3:*)
 ---
 
-# /quenching-components status — read the automation surface
+# /quenching-align status components — read the automation surface
 
 **Input**: `$ARGUMENTS` (an optional target repository root; omit to use the current repository).
 
@@ -39,17 +39,17 @@ Report one compact table with the target root and applicability state, command c
 front, finding codes with their error/warning totals, and the overall `ok` state; then one
 conformance line: the migrate plan (`conformant: true`, or its operation and conflict counts) and
 the bridge (in step, or its change count). Conformant is both: an empty plan and `bridge --check`
-exit 0; anything else routes to `/quenching-components align`. A family candidate (`families` with
-`candidate: true`) does not change that state: name it on its own line, with `/quenching-components align`
+exit 0; anything else routes to `/quenching-align components`. A family candidate (`families` with
+`candidate: true`) does not change that state: name it on its own line, with `/quenching-align components`
 as the route that asks the human whether to group it under a router. Then the use of each skill, from `usage` in the payload: per skill (and per flow) the count of
 invocations and the last date seen, read from the Claude Code and OpenCode sessions of this project
 over `usage.windowDays` (`shared.components.usageWindowDays`, 60 by default). Each `sk-unused`
 (`info`) names a skill no session invoked in that window and no other body cites: list it as an item
-for the human to decide — `/quenching-components align` is the route — never as a repair, and never
+for the human to decide — `/quenching-align components` is the route — never as a repair, and never
 delete it. No session read (`usage.sessions` zero) is no evidence: say so instead of listing
 anything as unused. Preserve every
 returned code and message; an empty surface is an explicit state, not a reason to invent commands.
-For an actionable finding, name `/quenching-components align` as the bounded repair route; for a
+For an actionable finding, name `/quenching-align components` as the bounded repair route; for a
 single command body or description, name `/quenching-components command-new` as the focused edit
 route. Status itself does not invoke either route.
 

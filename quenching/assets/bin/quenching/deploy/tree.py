@@ -237,7 +237,7 @@ def _agents(source: Path) -> dict[str, Path]:
 def _agents_md(target: Path, dirs: tuple[str, ...]) -> str:
     docs = target / "docs" / "index.md"
     knowledge = ("- Durable knowledge: [`docs/index.md`](docs/index.md).\n" if docs.is_file()
-                 else "- Durable knowledge: run `/quenching-knowledge align` to install the "
+                 else "- Durable knowledge: run `/quenching-align knowledge` to install the "
                       "`/docs/` bundle.\n")
     if CLAUDE_SKILLS in dirs:
         skills = "- Skills: `.agents/skills/` (source) and `.claude/skills/` (generated copy).\n"
@@ -265,7 +265,7 @@ def _seed_config(target: Path, profiles: list[str]) -> str:
     from quenching.config.seed import seed_document
     document = seed_document(str(target))
     # Deploy installs the surface; it does not choose a specs backend. The target's own
-    # `/quenching-knowledge align` (or `cq doctor --setup`) records that decision.
+    # `/quenching-align knowledge` (or `cq doctor --setup`) records that decision.
     document.pop("backend", None)
     shared = document.setdefault("shared", {})
     shared["profiles"] = {"installed": profiles}

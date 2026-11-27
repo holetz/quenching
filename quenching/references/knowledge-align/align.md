@@ -2,7 +2,7 @@
 allowed-tools: Bash(cq:*), Bash(cq.cmd:*), Read, Grep, Glob, Bash, Write, Edit, Task, Skill, AskUserQuestion
 ---
 
-# /quenching-knowledge align — force the knowledge base into OKF shape, and keep filling it
+# /quenching-align knowledge — force the knowledge base into OKF shape, and keep filling it
 
 **Input**: `$ARGUMENTS` (optionally a `/docs/` path or a scope; omit to align the whole bundle).
 
@@ -39,7 +39,7 @@ write stays gated by the workflow below.
   clean — bounded by a pass cap and a no-progress guard
   ([convergence.md](.agents/quenching/references/align/convergence.md) §The convergence contract).
 - **Conduct the content stages, never reimplement them.** Steps 6–7 **invoke**
-  `/quenching-knowledge import-memory`, `/quenching-components harness-align` and `/quenching-knowledge glossary-backfill` through the `Skill` tool
+  `/quenching-knowledge import-memory`, `/quenching-align components` and `/quenching-knowledge glossary-backfill` through the `Skill` tool
   under their registry names (`quenching-knowledge import-memory`, …); each runs under its own
   doctrine and code-coupled confirmations.
 - **The expensive stage is offered, never assumed.** The glossary sweep reads the whole bundle and

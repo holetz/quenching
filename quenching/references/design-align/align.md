@@ -2,7 +2,7 @@
 allowed-tools: Bash(cq:*), Bash(cq.cmd:*), Read, Grep, Glob, Bash(python3:*), Bash(npx:*), AskUserQuestion
 ---
 
-# /quenching-design align — one source, every projection
+# /quenching-align design — one source, every projection
 
 **Input**: `$ARGUMENTS` (optional scope inside `/.design/`; omit for the whole front).
 
@@ -13,7 +13,7 @@ source only through the explicit import choice below.
 The common front contract is in
 [front-align/mold.md](.agents/quenching/references/front-align/mold.md); this command
 keeps the design delta in
-[design-align/bands.md](.agents/skills/quenching-design/references/design-align/bands.md). The mold
+[design-align/bands.md](.agents/quenching/references/design-align/bands.md). The mold
 does not choose a DTCG source winner or turn visual policy into an automatic repair.
 
 Resolve `cq` per
@@ -62,7 +62,7 @@ absence a blocker.
 
 Show every file to add or merge, the product facts moving into OKF, the chosen source winner, and
 the commands that will run. State that the authorization covers at most five build/doctor passes.
-When invoked by root `/align`, inherit its authorization, narrate this plan, and do not ask again.
+When invoked by root `/quenching-align`, inherit its authorization, narrate this plan, and do not ask again.
 
 Wait for one OK unless the inherited authorization applies.
 
