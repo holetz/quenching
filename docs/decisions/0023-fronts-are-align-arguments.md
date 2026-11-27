@@ -42,20 +42,22 @@ maintainer: quenching
 
 ## Grant
 
-The `allowed-tools` of `quenching-align` is the union of the grants the retired routes already held
-for their align and status flows, and nothing else:
+The `allowed-tools` of `quenching-align` is the union of the grants of every router whose align or
+status flow moved into it (the seven retired front routers, `quenching-knowledge` and
+`quenching-components`), kept only where the moved text uses the grant:
 
-| Tool | Held before by |
-| --- | --- |
-| `Bash` (unrestricted) | the knowledge `align` and `harness-align` flows |
-| `Read`, `Grep`, `Glob` | every router and flow |
-| `Write`, `Edit` | the ops, proof, toolchain, delivery, opensource, knowledge and components aligns |
-| `Task` | the knowledge `align`, the components `align` and `harness-align` flows |
-| `Skill` | the previous `quenching-align` and the knowledge `align` flow |
-| `AskUserQuestion` | the design, ops, proof, toolchain, delivery, opensource, knowledge and components aligns |
+| Grant | Router it came from | Moved flow that uses it |
+| --- | --- | --- |
+| `Bash` (bare) | knowledge (`align`, `harness-align`) | `knowledge-align/align.md` and `migration.md` run shell steps; `components-align/align.md` runs `rm`, `mkdir` and `mv`, which the bare grant covers; `design-align/align.md` runs `npx`; `proof-align/layer-new.md` runs `mkdir` |
+| `Task` | knowledge, components | `knowledge-align/align.md` and `cycle.md` dispatch read-only sub-agents; `components-align/harness-align.md` delegates its repo-wide sweep |
+| `Write`, `Edit` | ops, proof, toolchain, delivery, opensource, knowledge, components | every align that writes its plan |
+| `Skill` | the previous align, knowledge | the align conducting another flow |
+| `AskUserQuestion` | design, ops, proof, toolchain, delivery, opensource, knowledge, components | the confirmation of each align |
+| `Read`, `Grep`, `Glob` | every router | every flow |
 
-The security audit that ends `status` needs no tool of its own: `security_read` runs under the
-`Bash(cq:*)` the security router held, which the unrestricted `Bash` includes.
+Dropped, because nothing that moved uses it: `WebFetch` (knowledge `harness-align`). The scoped `Bash`
+patterns of the routers (`cq`, `python3`, `npx`, `mkdir`, `mv`, `rm`) are subsumed by the bare grant
+and are not repeated. The security audit that ends `status` runs under it too.
 
 ## Verification ruler
 
