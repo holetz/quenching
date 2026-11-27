@@ -129,6 +129,21 @@ class Publication(unittest.TestCase):
         self.assertIn("`.agents/skills/` (source) and `.claude/skills/` (generated copy)",
                       built["seeds"]["AGENTS.md"])
 
+    def test_a_front_text_ships_only_with_its_module(self):
+        refs = ".agents/quenching/references/"
+        without = self.build("claude")["tree"]
+        self.assertNotIn(refs + "ops-align/align.md", without)
+        self.assertNotIn(refs + "design-align/align.md", without)
+        self.assertIn(refs + "knowledge-align/align.md", without)
+        self.assertIn(refs + "align/tool-resolution.md", without)
+        with_ops = deploy_tree.build_tree(self.source, self.target,
+                                          ["quenching-specs", "quenching-ops"], ["claude"])["tree"]
+        self.assertIn(refs + "ops-align/align.md", with_ops)
+        self.assertNotIn(refs + "design-align/align.md", with_ops)
+        for tree in (without, with_ops):
+            for front in ("design", "ops", "proof", "toolchain", "delivery", "security", "opensource"):
+                self.assertNotIn(f".agents/skills/quenching-{front}/SKILL.md", tree)
+
     def test_a_generic_target_seed_names_no_bridge_it_does_not_have(self):
         for harnesses in (("opencode",), ("codex",), ()):
             seed = self.build(*harnesses)["seeds"]["AGENTS.md"]
@@ -188,6 +203,27 @@ class Upgrade(unittest.TestCase):
         self.assertTrue((self.target / AGENTS_SKILLS / "quenching-specs/SKILL.md").is_file())
         code, payload = self.deploy("--check")
         self.assertEqual((0, []), (code, payload["changes"]))
+
+    def test_a_target_of_the_retired_front_routers_loses_them(self):
+        # Before spec 676 a front was a skill of its own; now it is an argument of the align.
+        # The previous owner's folder leaves with the write, and the front's text is the module's.
+        import hashlib
+        self.assertEqual(0, self.deploy("--modules", "specs,ops", "--harness", "opencode",
+                                        "--write")[0])
+        self.assertTrue((self.target / ".agents/quenching/references/ops-align/align.md").is_file())
+        retired = ".agents/skills/quenching-ops/SKILL.md"
+        body = b"the retired router\n"
+        (self.target / retired).parent.mkdir(parents=True)
+        (self.target / retired).write_bytes(body)
+        manifest_path = self.target / ".agents/.quenching-deploy.json"
+        manifest = json.loads(manifest_path.read_text())
+        manifest["files"][retired] = hashlib.sha256(body).hexdigest()
+        manifest["skills"] = sorted([*manifest["skills"], "quenching-ops"])
+        manifest_path.write_text(json.dumps(manifest))
+        self.assertEqual(0, self.deploy("--write")[0])
+        self.assertFalse((self.target / ".agents/skills/quenching-ops").exists())
+        self.assertTrue((self.target / ".agents/skills/quenching-align/SKILL.md").is_file())
+        self.assertTrue((self.target / ".agents/quenching/references/ops-align/align.md").is_file())
 
     def test_a_claude_only_target_of_7_18_gains_the_source(self):
         # 7.18.x published a claude-only target's skills only under `.claude/skills`.

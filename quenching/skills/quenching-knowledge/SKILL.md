@@ -1,7 +1,7 @@
 ---
 description: >-
-  Run one knowledge flow: add, learn, define, glossary-backfill, import, import-memory, align, status, documentation-plan, documentation-write, documentation-review, documentation-build, documentation-produce. Not for: specs → /quenching-specs.
-argument-hint: "[add|learn|define|import|import-memory|glossary-backfill|align|status|documentation-build|documentation-plan|documentation-write|documentation-review|documentation-produce] [input]"
+  Run one knowledge flow: add, learn, define, glossary-backfill, import, import-memory, status, documentation-plan, documentation-write, documentation-review, documentation-build, documentation-produce. Not for: specs → /quenching-specs.
+argument-hint: "[add|learn|define|import|import-memory|glossary-backfill|status|documentation-build|documentation-plan|documentation-write|documentation-review|documentation-produce] [input]"
 allowed-tools: Bash, Read, Grep, Glob, Write, Edit, Task, Skill, WebFetch, AskUserQuestion
 ---
 
@@ -15,7 +15,7 @@ flow's text is read only when the flow runs.
 
 **Grant.** The router grants the union of its flows' `allowed-tools`, each declared in the flow's own reference, so a routed flow gets the permission it needs; it widens no single flow beyond that union.
 
-**Why `Bash` is unrestricted here.** `align` and `documentation-build` run the target repository's own site toolchain and checks, and `import-memory` removes the host memory it drained; none of those commands can be enumerated in advance.
+**Why `Bash` is unrestricted here.** `documentation-build` runs the target repository's own site toolchain and checks, and `import-memory` removes the host memory it drained; none of those commands can be enumerated in advance.
 
 ## Resolving the tool
 
@@ -30,7 +30,7 @@ per [align/tool-resolution.md](.agents/quenching/references/align/tool-resolutio
 
 The phrases that route to each flow, the map the description no longer carries:
 
-add: "adicionar um padrão", "add a standard"; learn: "registrar o que aprendemos", "capture this insight"; define: "definir este termo", "define this term"; glossary-backfill: "preencher o glossário", "backfill the glossary"; import: "importar esta fonte", "import this source"; import-memory: "importar a memória", "drain the memory"; align: "alinhar os docs", "align the docs"; status: "como estão os docs", "docs status"; documentation-plan: "planejar a documentação", "plan the docs"; documentation-write: "escrever as páginas", "write the pages"; documentation-review: "revisar a documentação", "review the docs"; documentation-build: "montar o site", "build the docs site"; documentation-produce: "produzir a documentação", "produce the docs".
+add: "adicionar um padrão", "add a standard"; learn: "registrar o que aprendemos", "capture this insight"; define: "definir este termo", "define this term"; glossary-backfill: "preencher o glossário", "backfill the glossary"; import: "importar esta fonte", "import this source"; import-memory: "importar a memória", "drain the memory"; status: "como estão os docs", "docs status"; documentation-plan: "planejar a documentação", "plan the docs"; documentation-write: "escrever as páginas", "write the pages"; documentation-review: "revisar a documentação", "review the docs"; documentation-build: "montar o site", "build the docs site"; documentation-produce: "produzir a documentação", "produce the docs".
 
 ## Workflow
 
@@ -47,7 +47,6 @@ returns `STATE: blocked` with `NOTE: needs-human:` carrying it.
 | `glossary-backfill` | [references/glossary-backfill.md](.agents/skills/quenching-knowledge/references/glossary-backfill.md) | a sweep of the whole bundle for missing glossary terms |
 | `import` | [references/import.md](.agents/skills/quenching-knowledge/references/import.md) | an external source (files, folders, URLs) to ingest as many docs |
 | `import-memory` | [references/import-memory.md](.agents/skills/quenching-knowledge/references/import-memory.md) | the host memory to drain into the bundle and clear |
-| `align` | [references/align.md](.agents/skills/quenching-knowledge/references/align.md) | forcing `/docs/` into the canonical bundle |
 | `status` | [references/status.md](.agents/skills/quenching-knowledge/references/status.md) | a read-only report of where the bundle stands |
 | `documentation-plan` | [references/documentation-plan.md](.agents/skills/quenching-knowledge/references/documentation-plan.md) | a sourced documentation plan with reader journeys |
 | `documentation-write` | [references/documentation-write.md](.agents/skills/quenching-knowledge/references/documentation-write.md) | pages to write from a documentation plan |

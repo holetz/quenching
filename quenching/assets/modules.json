@@ -192,9 +192,7 @@
           "design"
         ],
         "agents": false,
-        "skills": [
-          "quenching-design"
-        ]
+        "skills": []
       },
       "generatedSupport": {
         "packages": [
@@ -224,9 +222,7 @@
           "ops"
         ],
         "agents": false,
-        "skills": [
-          "quenching-ops"
-        ]
+        "skills": []
       },
       "generatedSupport": {
         "packages": [
@@ -256,9 +252,7 @@
           "proof"
         ],
         "agents": false,
-        "skills": [
-          "quenching-proof"
-        ]
+        "skills": []
       },
       "generatedSupport": {
         "packages": [
@@ -290,9 +284,7 @@
           "toolchain"
         ],
         "agents": false,
-        "skills": [
-          "quenching-toolchain"
-        ]
+        "skills": []
       },
       "generatedSupport": {
         "packages": [
@@ -323,9 +315,7 @@
           "delivery"
         ],
         "agents": false,
-        "skills": [
-          "quenching-delivery"
-        ]
+        "skills": []
       },
       "generatedSupport": {
         "packages": [
@@ -356,9 +346,7 @@
           "opensource"
         ],
         "agents": false,
-        "skills": [
-          "quenching-opensource"
-        ]
+        "skills": []
       },
       "generatedSupport": {
         "packages": [
@@ -389,9 +377,7 @@
           "security"
         ],
         "agents": false,
-        "skills": [
-          "quenching-security"
-        ]
+        "skills": []
       },
       "generatedSupport": {
         "packages": [

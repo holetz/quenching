@@ -215,6 +215,21 @@ def _packages(selected: list[dict]) -> list[str]:
     return packages
 
 
+def _reference_folders(source: Path, manifest: dict, selected: list[dict]) -> list[str]:
+    """The `references/` entries this deploy publishes: a file at the top, and a folder that no module
+    lists or that a selected module lists in `generatedSupport.references`. A front's text
+    (`<front>-align/`) is listed by its own module only, so a front not installed carries none."""
+    root = source / "references"
+    if not root.is_dir():
+        return []
+    listed = {ref for module in manifest["modules"]
+              for ref in module.get("generatedSupport", {}).get("references", [])}
+    wanted = {ref for module in selected
+              for ref in module.get("generatedSupport", {}).get("references", [])}
+    return ["references/" + path.name for path in sorted(root.iterdir())
+            if not path.is_dir() or path.name not in listed or path.name in wanted]
+
+
 def _agents(source: Path) -> dict[str, Path]:
     return {path.stem: path for path in sorted((source / "agents").glob("*.md"))}
 
@@ -506,7 +521,10 @@ def build_tree(source: Path, target: Path, modules: list[str], harnesses: list[s
         _add(tree, PAYLOAD + "/bin/cq.cmd", _VENDOR_CMD.encode(), 0o644)
     _add_tree(tree, source, "assets/modules.json")
     _add_tree(tree, source, "VERSION")
-    whole("references", translate.reference_document)
+    for rel in _reference_folders(source, manifest, selected):
+        _add_tree(tree, source, rel, translate.reference_document)
+    if (source / "references").is_dir():
+        sweep.append(PAYLOAD + "/references")
     whole("assets/templates", translate.reference_document)
     whole("assets/translation")
     # The identity hooks: inert until a clone points `core.hooksPath` at them.

@@ -18,8 +18,7 @@ from quenching.components.commands.lint import router_flows
 
 SKILLS = pathlib.Path(__file__).resolve().parents[1] / "skills"
 CAP = 250
-ROUTERS = ("specs", "git", "knowledge", "components", "design", "ops", "proof", "toolchain",
-           "delivery", "security", "opensource")
+ROUTERS = ("specs", "git", "knowledge", "components")
 ALSO = ("align", "handoff")
 PT_WORDS = {"de", "do", "da", "um", "uma", "para", "como", "os", "as", "o", "que", "essa", "esse",
             "este", "esta", "no", "na", "estão", "e"}
@@ -61,7 +60,7 @@ def segment(description: str, flow: str) -> str:
 
 
 class RouterDescriptions(unittest.TestCase):
-    def test_thirteen_skills_are_covered(self):
+    def test_six_skills_are_covered(self):
         on_disk = sorted(p.parent.name.removeprefix("quenching-") for p in SKILLS.glob("*/SKILL.md"))
         self.assertEqual(sorted(ROUTERS + ALSO), on_disk)
 
