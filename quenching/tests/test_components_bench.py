@@ -93,6 +93,45 @@ class Superficie(unittest.TestCase):
         self.assertEqual(budget["prefix"], bench.DEFAULT_BUDGET["prefix"])
 
 
+class Estagios(unittest.TestCase):
+    def split_target(self) -> pathlib.Path:
+        root = target()
+        write(root / ".agents/skills/quenching-specs/references/specs-develop/step-1.md",
+              "### 1. One\n\nSee [r](.agents/quenching/references/x/rules.md) §Rule\n")
+        write(root / ".agents/skills/quenching-specs/references/specs-develop/step-2.md", "### 2. Two\n\n" + "w" * 4000 + "\n")
+        return root
+
+    def test_a_stage_is_router_plus_index_plus_step_plus_its_citations(self):
+        payload, findings = bench.measure(self.split_target(), ("claude",))
+        row = payload["stages"]["develop"]["step-1"]
+        self.assertEqual(row["citedBytes"], len("Binding rule.".encode()))
+        self.assertEqual(row["tokens"], bench.tokens(row["routerBytes"] + row["bodyBytes"] + row["citedBytes"]))
+        self.assertEqual(set(payload["stages"]["develop"]), {"step-1", "step-2"})
+        self.assertEqual(findings, [])
+
+    def test_a_flow_without_step_files_has_no_stage(self):
+        payload, _ = bench.measure(self.split_target(), ("claude",))
+        self.assertNotIn("create", payload["stages"])
+
+    def test_a_stage_over_the_budget_is_a_finding(self):
+        budget = bench.load_budget_dict({"stage": {"develop": 500}})
+        _, findings = bench.measure(self.split_target(), ("claude",), budget)
+        over = [f for f in findings if f["code"] == "ct-bench-stage-over"]
+        self.assertEqual([f["stage"] for f in over], ["step-2"])
+
+    def test_every_develop_stage_of_this_repository_fits_15k_tokens(self):
+        payload, findings = bench.measure(REPO, ("claude",))
+        self.assertEqual(bench.DEFAULT_BUDGET["stage"]["develop"], 15_000)
+        self.assertTrue(payload["stages"]["develop"])
+        self.assertEqual([f for f in findings if f["code"] == "ct-bench-stage-over"], [])
+
+    def test_the_develop_index_lists_every_step_file(self):
+        base = REPO / "quenching/skills/quenching-specs/references"
+        index = (base / "develop.md").read_text(encoding="utf-8")
+        for step in sorted((base / "specs-develop").glob("step-*.md")):
+            self.assertIn(f"`{step.name}`", index)
+
+
 class Ciclo(unittest.TestCase):
     def test_ciclo_closes_on_a_throwaway_fixture_and_removes_it(self):
         payload, findings = bench_cycle.measure(REPO)
