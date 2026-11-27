@@ -1,6 +1,6 @@
 ---
 description: >-
-  Run one security flow: status. status: "auditoria de segurança", "como estão as permissões dos workflows", "cobertura de segredos", "security status", "security audit". Not for: changing policy → /quenching-delivery align.
+  Run one security flow: status. "auditoria de segurança", "security audit". Not for: changing policy → /quenching-delivery align.
 argument-hint: "[status] [input]"
 allowed-tools: Bash(cq:*), Bash(cq.cmd:*), Read, Grep, Glob, Bash(python3:*)
 ---
@@ -23,6 +23,12 @@ per [align/tool-resolution.md](.agents/quenching/references/align/tool-resolutio
 §Resolving the tool; branch on the payload and the exit code it carries (0 ok · 1 findings ·
 2 refusal), never on prose. A `cq …` left in a flow is a verb with no tool or a line marked
 `cli: <reason>`; with no server, every call takes that section's fallback, and the report names it.
+
+## Triggers by flow
+
+The phrases that route to each flow, the map the description no longer carries:
+
+status: "auditoria de segurança", "como estão as permissões dos workflows", "cobertura de segredos", "security status", "security audit".
 
 ## Workflow
 

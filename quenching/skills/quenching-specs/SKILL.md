@@ -1,6 +1,6 @@
 ---
 description: >-
-  Run one specs flow: create, develop, execute, conclude, triage, status, orchestrate, improve, board, autopilot. create: "registrar um problema", "capture this idea"; develop: "refinar essa spec", "refine the spec"; execute: "construir essa spec", "build it"; conclude: "fechar e mergear a spec", "conclude the spec"; triage: "priorizar o backlog", "rank the backlog"; status: "como está a spec", "spec status"; orchestrate: "rodar o épico", "run this epic"; improve (only when named): "melhorar o fluxo de specs", "improve the specs flow"; board (only when named): "mostrar o quadro", "show the board"; autopilot (only when named): "rodar o autopilot até as 7h", "run the autopilot until 7am". Not for: git → /quenching-git branch.
+  Run one specs flow: create, develop, execute, conclude, triage, status, orchestrate, improve, board, autopilot. "construir essa spec", "build it". Not for: git → /quenching-git branch.
 argument-hint: "[create|develop|execute|conclude|triage|status|orchestrate|improve|board|autopilot] [id or description] [flags]"
 allowed-tools: Bash, Read, Grep, Glob, Agent, Task, TaskStop, SendMessage, Write, Edit, AskUserQuestion, Skill
 ---
@@ -26,6 +26,12 @@ per [align/tool-resolution.md](.agents/quenching/references/align/tool-resolutio
 §Resolving the tool; branch on the payload and the exit code it carries (0 ok · 1 findings ·
 2 refusal), never on prose. A `cq …` left in a flow is a verb with no tool or a line marked
 `cli: <reason>`; with no server, every call takes that section's fallback, and the report names it.
+
+## Triggers by flow
+
+The phrases that route to each flow, the map the description no longer carries:
+
+create: "registrar um problema", "capture this idea"; develop: "refinar essa spec", "refine the spec"; execute: "construir essa spec", "build it"; conclude: "fechar e mergear a spec", "conclude the spec"; triage: "priorizar o backlog", "rank the backlog"; status: "como está a spec", "spec status"; orchestrate: "rodar o épico", "run this epic"; improve (only when named): "melhorar o fluxo de specs", "improve the specs flow"; board (only when named): "mostrar o quadro", "show the board"; autopilot (only when named): "rodar o autopilot até as 7h", "run the autopilot until 7am".
 
 ## Workflow
 

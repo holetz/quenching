@@ -97,10 +97,9 @@ these tables and `skills/**` disagree
 §A hand-written inventory of the surface needs a machine holding its lockstep).
 
 **The listing cost.** All thirteen descriptions are resident in every session, so the descriptions are
-the always-on cost of the plugin. Each router's description is a map of intent per flow with pt-BR and
-English triggers, at most 1,024 characters (the Agent Skills limit OpenCode reads; Claude's own
-cap is 1,536). Today the thirteen total about 6.4 thousand characters (about 1.6 thousand tokens); the
-ceiling is 13 × 1,024 = 13.3 thousand characters (about 3.3 thousand tokens). Before the non-core fronts
+the always-on cost of the plugin. Each description names its flows and carries at most 250 characters (the map of triggers per flow lives in the
+router's body, read only when it runs). The thirteen total about 2.3 thousand characters (about 0.6 thousand tokens); the
+ceiling is 13 × 250 = 3.3 thousand characters (about 0.8 thousand tokens). Before the non-core fronts
 had routers, the six resident descriptions were about 1.4 thousand characters.
 
 The split is by front and pillar: `/quenching-knowledge` acts on the OKF `/docs/` bundle,

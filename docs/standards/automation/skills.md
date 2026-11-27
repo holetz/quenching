@@ -144,6 +144,9 @@ The bridge is generated, and verified by code:
   byte for byte, with one generated-from marker line after the `SKILL.md` frontmatter, and writes
   `.claude/skills/.generated-files.json` (one sha256 per file, `verifiedClaudeCode`). Claude Code
   does not read `.agents/skills/`, so without the copy the target's own skill does not exist for it.
+  OpenCode and Copilot do read it, so a target whose deploy declares harnesses **without `claude`**
+  gets no copy: the bridge projects only for the harness that does not read the source, and an
+  existing copy leaves as an orphan on the next `--write`.
 - **The bridge owns the target's skills, never the deploy's.** A name that
   `.agents/.quenching-deploy.json` declares under `skills` is generated: `cq deploy` writes its
   `.claude` copy and hashes both in its own manifest, and the bridge skips the name in its expected
@@ -282,25 +285,22 @@ own skill; the `git` router drops the warn-level hook of `commit`, since it only
 
 ### The description of a router
 
-The description is a **map of intent per flow**, and the rule is that **what routes comes first and
-the limit comes last**, so the description keeps working if the host truncates it:
+The description is resident in every request, in every harness that lists skills, so it is the
+cheapest thing a router carries: **at most 250 characters** of the parsed value, which
+`sk-description-budget` binds on a router like on any skill.
 
 1. **First sentence, in English:** the domain and every flow of the table by name
-   (`Run one design flow: align, status, genre-new.`). It survives any truncation, and
-   `sk-router-description` (error) reports a flow of the table the description does not name.
-2. **Then the map:** one clause per flow, `<flow>: "<pt-BR trigger>", "<English trigger>"`, separated
-   by `;`, with at least one trigger of each language per flow. A trigger is a phrase the user says,
-   never the flow name repeated. A flow reached only by explicit mention carries `(only when named)`.
-   No full stop sits inside a clause, so the sentence splitter of `sk-trigger-position` does not cut
-   the map.
+   (`Run one design flow: align, status, genre-new.`). `sk-router-description` (error) reports a
+   flow of the table the description does not name.
+2. **Then, where it fits,** one pt-BR and one English trigger of the vertical, quoted.
 3. **Last:** `Not for: <the likeliest neighbour> → /quenching-<x> <flow>.`
-4. **At most 1,024 characters** of the parsed value — the Agent Skills limit that OpenCode
-   read. The 1,536 Claude cap is slack, not a target.
 
-The 250-character `sk-description-budget` binds only a skill **without a table of flows**
-(`quenching-align`, `quenching-handoff`): on a router it would contradict the map. The language of
-the triggers is not a lint check; `test_router_descriptions.py` proves a pt-BR and an English
-candidate exist for every flow by a heuristic declared in the test.
+The **map of intent per flow** moves to the body, under `## Triggers by flow`:
+`<flow>: "<pt-BR trigger>", "<English trigger>"`, separated by `;`, with at least one trigger of
+each language per flow, a flow reached only by explicit mention carrying `(only when named)`. The body
+is read once the skill runs, so the map costs nothing on a request that never invokes it.
+The language of the triggers is not a lint check; `test_router_descriptions.py` proves a pt-BR and
+an English candidate exist for every flow of that section by a heuristic declared in the test.
 
 `context: fork` runs the command in a separate context. It is **forbidden** on any command that
 asks the human anything mid-flow — a plan whose OK the run waits on, or a plain question one of its
