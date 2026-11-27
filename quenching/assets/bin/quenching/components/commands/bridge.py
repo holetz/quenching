@@ -8,6 +8,9 @@ frontmatter. The manifest `.claude/skills/.generated-files.json` records one sha
 file and the Claude Code version the bridge was verified against; freshness is a byte comparison
 against it.
 
+A target whose deploy declares harnesses without `claude` gets no copy at all: the other
+harnesses read `.agents/skills` themselves (`claude_declared`).
+
 A `.claude/skills/<name>/` the manifest does not list is the human's, and is never overwritten.
 
 A skill `.agents/.quenching-deploy.json` declares under `skills` is the deploy's: `cq deploy` writes
@@ -78,6 +81,27 @@ def deploy_owned(repo: Path) -> set[str]:
     return {name for name in names if isinstance(name, str)} if isinstance(names, list) else set()
 
 
+def claude_declared(repo: Path) -> bool:
+    """Whether this target publishes for Claude Code, the one harness that does not read the source.
+
+    OpenCode and Copilot read `.agents/skills` themselves, so a `.claude/skills` copy beside it
+    makes each of them list every skill twice in the prefix of every request. The deploy
+    manifest records the declared harnesses; a manifest that lists some and omits `claude`
+    means nobody here needs the copy. No manifest, or none recording harnesses, keeps the copy:
+    a hand-made target has no declaration to read, and Claude Code is the default consumer.
+    """
+    path = repo / DEPLOY_MANIFEST
+    if not path.is_file():
+        return True
+    try:
+        harnesses = json.loads(path.read_text(encoding="utf-8")).get("harnesses")
+    except (ValueError, AttributeError):
+        return True
+    if not isinstance(harnesses, list) or not harnesses:
+        return True
+    return "claude" in harnesses
+
+
 def expected_tree(repo: Path) -> dict[str, bytes]:
     """`<name>/<file>` -> the bytes the bridge writes, for every skill of the source.
 
@@ -85,7 +109,7 @@ def expected_tree(repo: Path) -> dict[str, bytes]:
     """
     out: dict[str, bytes] = {}
     source = repo / SOURCE
-    if not source.is_dir():
+    if not source.is_dir() or not claude_declared(repo):
         return out
     generated = deploy_owned(repo)
     for skill in sorted(source.iterdir()):

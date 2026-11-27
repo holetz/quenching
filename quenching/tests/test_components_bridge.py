@@ -168,6 +168,32 @@ class Bridge(unittest.TestCase):
         self.assertEqual((1, [{"path": "mlops-comum/references/notes.md", "change": "edited"}]),
                          (code, payload["changes"]))
 
+    def declare(self, harnesses):
+        manifest = self.repo / bridge.DEPLOY_MANIFEST
+        manifest.write_text(json.dumps({"skills": [], "harnesses": harnesses}))
+
+    def test_no_copy_when_the_declared_harnesses_omit_claude(self):
+        self.declare(["opencode"])
+        code, payload = self.run_cli("--write")
+        self.assertEqual((0, 0, []), (code, payload["skills"], payload["changes"]))
+        self.assertFalse(self.copy.exists())
+
+    def test_the_copy_stays_when_claude_is_declared_or_nothing_is(self):
+        self.declare(["claude", "opencode"])
+        self.assertEqual(1, self.run_cli("--write")[1]["skills"])
+        self.assertTrue(self.copy.is_dir())
+        self.declare([])
+        self.assertEqual(0, self.run_cli("--check")[0])
+
+    def test_an_existing_copy_leaves_when_claude_is_no_longer_declared(self):
+        self.run_cli("--write")
+        self.declare(["opencode"])
+        code, payload = self.run_cli("--check")
+        self.assertEqual(1, code)
+        self.assertTrue(all(c["change"] == "orphan" for c in payload["changes"]))
+        self.assertEqual(0, self.run_cli("--write")[0])
+        self.assertFalse(self.copy.exists())
+
 
 if __name__ == "__main__":
     unittest.main()
