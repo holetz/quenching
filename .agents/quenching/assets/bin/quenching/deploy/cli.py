@@ -177,6 +177,7 @@ def regression(source: Path, previous: dict | None) -> dict | None:
 
     def git(*args: str) -> subprocess.CompletedProcess:
         return subprocess.run(["git", "-C", str(source), *args], capture_output=True, text=True,
+                              encoding="utf-8",
                               timeout=60, check=False)
     try:
         if git("cat-file", "-e", f"{recorded_commit}^{{commit}}").returncode != 0:
