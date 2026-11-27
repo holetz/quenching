@@ -533,11 +533,11 @@ def cmd_inflow(args, directory: Path | None, since: datetime | None) -> int:
         files, _, why = claude_files(directory)
         if why:
             unavailable["claude"] = why
-        for _, _, path in files:
+        for _, agent, path in files:
             if since is not None and datetime.fromtimestamp(path.stat().st_mtime, timezone.utc) < since:
                 continue
             calls, steps = inflow.claude_file(path, anomalies)
-            tally.add("claude", calls, steps)
+            tally.add("claude", calls, steps, agent)
     if args.harness in ("all", "opencode"):
         path = opencode_db(args.opencode_db)
         if not path.is_file():
@@ -549,8 +549,9 @@ def cmd_inflow(args, directory: Path | None, since: datetime | None) -> int:
                     sessions = _sessions(db, _tables(db))
                     keep = lambda sid: sid in sessions and _inside(sid, sessions, directory)  # noqa: E731
                     since_ms = int(since.timestamp() * 1000) if since else None
-                    for calls, steps in inflow.opencode_calls(db, keep, since_ms, anomalies).values():
-                        tally.add("opencode", calls, steps)
+                    for sid, (calls, steps) in inflow.opencode_calls(db, keep, since_ms, anomalies).items():
+                        parent, agent, _ = sessions[sid]
+                        tally.add("opencode", calls, steps, bare(agent or "unknown") if parent else "main")
                 finally:
                     db.close()
             except sqlite3.Error as exc:
@@ -564,9 +565,10 @@ def cmd_inflow(args, directory: Path | None, since: datetime | None) -> int:
     if args.json:
         print(json.dumps(out, indent=2, ensure_ascii=False))
         return FINDINGS if anomalies else OK
-    print(f"{'harness':<10}{'kind':<20}{'calls':>7}{'tokens':>10}{'reread':>13}  origin")
+    print(f"{'harness':<10}{'agent':<16}{'kind':<20}{'calls':>7}{'tokens':>10}{'reread':>13}  origin")
     for r in top:
-        print(f"{r['harness']:<10}{r['kind']:<20}{r['calls']:>7}{r['tokens']:>10}{r['reread']:>13}  {r['origin']}")
+        print(f"{r['harness']:<10}{r['agent'][:15]:<16}{r['kind']:<20}{r['calls']:>7}{r['tokens']:>10}"
+              f"{r['reread']:>13}  {r['origin']}")
     for name, why in unavailable.items():
         print(f"  ! {name} unavailable: {why}")
     return FINDINGS if anomalies else OK

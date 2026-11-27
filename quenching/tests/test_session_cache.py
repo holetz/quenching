@@ -393,6 +393,30 @@ class InflowTests(Fixture):
         self.claude()
         self.assertNotIn("xxxx", run("--harness", "claude", "--all", "--inflow")[1])
 
+    def test_shell_output_is_split_by_command_family_and_agent(self):
+        from quenching.session.commands.inflow import family
+        self.assertEqual([family(c) for c in (
+            "cd /r && git log --oneline | head", "FOO=1 python3 -m pytest -q", "python3 quenching/assets/bin/cq specs status 1",
+            "/usr/bin/rg x", "ls", "")], ["git", "python3", "cq", "rg", "ls", "shell"])
+        project = self.projects / "-p"
+        sub = project / "s1" / "subagents"
+        sub.mkdir(parents=True)
+
+        def pair(mid, tool_id, command, size):
+            return [{"type": "assistant", "message": {"id": mid, "model": "opus", "usage": {}, "content": [
+                        {"type": "tool_use", "id": tool_id, "name": "Bash", "input": {"command": command}}]}},
+                    {"type": "user", "message": {"content": [
+                        {"type": "tool_result", "tool_use_id": tool_id, "content": "z" * size}]}}]
+        (project / "s1.jsonl").write_text("\n".join(json.dumps(r) for r in pair("m1", "t1", "git status", 400)
+                                                    + pair("m2", "t2", "git diff", 800)) + "\n")
+        (sub / "agent-a.jsonl").write_text("\n".join(json.dumps(r) for r in pair("s1", "u1", "git log", 400)) + "\n")
+        (sub / "agent-a.meta.json").write_text('{"agentType":"quenching-specs:verifier"}')
+        data = json.loads(run("--harness", "claude", "--all", "--inflow", "--json")[1])
+        rows = {(r["agent"], r["origin"]): r for r in data["inflow"]}
+        self.assertEqual(set(rows), {("main", "shell:git"), ("verifier", "shell:git")})
+        self.assertEqual((rows[("main", "shell:git")]["calls"], rows[("main", "shell:git")]["tokens"]), (2, 300))
+        self.assertEqual(rows[("verifier", "shell:git")]["tokens"], 100)
+
     def test_opencode_tool_entries_are_read(self):
         self.opencode_db()
         data = json.loads(run("--harness", "opencode", "--opencode-db", str(self.db), "--all",
