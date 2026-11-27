@@ -1,6 +1,6 @@
 ---
 name: quenching-toolchain
-description: "Run one toolchain flow: align, status. align: \"alinhar o toolchain\", \"corrigir drift de dependências e versões\", \"align the toolchain front\", \"fix toolchain drift\"; status: \"como está o toolchain\", \"conferir locks e versões fixadas\", \"toolchain status\", \"check the toolchain surface\". Not for: CI workflows → /quenching-delivery status."
+description: "Run one toolchain flow: align, status. \"alinhar o toolchain\", \"toolchain status\". Not for: CI workflows → /quenching-delivery status."
 argument-hint: "[align|status] [input]"
 allowed-tools: Bash(.agents/quenching/bin/cq:*), Bash(.agents/quenching/bin/cq.cmd:*), Read, Grep, Glob, Bash(python3:*), AskUserQuestion, Write, Edit, mcp__quenching
 ---
@@ -28,6 +28,12 @@ per [align/tool-resolution.md](.agents/quenching/references/align/tool-resolutio
 §Resolving the tool; branch on the payload and the exit code it carries (0 ok · 1 findings ·
 2 refusal), never on prose. A `cq …` left in a flow is a verb with no tool or a line marked
 `cli: <reason>`; with no server, every call takes that section's fallback, and the report names it.
+
+## Triggers by flow
+
+The phrases that route to each flow, the map the description no longer carries:
+
+align: "alinhar o toolchain", "corrigir drift de dependências e versões", "align the toolchain front", "fix toolchain drift"; status: "como está o toolchain", "conferir locks e versões fixadas", "toolchain status", "check the toolchain surface".
 
 ## Workflow
 
