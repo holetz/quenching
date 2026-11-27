@@ -40,8 +40,8 @@ specs_external(verb="claim_acquire", claim_id=<id>)
 Exit 0 → the lease is this machine's for `shared.autonomy.claimMinutes` (45), a re-acquire by the
 same machine in another session included. Exit 1 `held` → another machine is building it: **stop**
 with `held-by: <heldBy.holder> until <heldBy.expires>`, cut and write nothing. Taking a live lease
-(`.agents/quenching/bin/cq specs claim take "<id>"`) is the human's call only, asked on a decision sheet and recorded
-with `specs_write(verb="discover", spec=<id>, text="claim taken from <holder>")`; a sub-agent returns `STATE: blocked`
+(the `take` verb of `.agents/quenching/bin/cq specs claim`, run on `"<id>"`) is the human's call only, asked on a decision sheet and recorded
+with `specs_write(verb="discover", spec=<id>, text="lease taken from <holder>")`; a sub-agent returns `STATE: blocked`
 with `NOTE: needs-human: held-by: <holder>` and never takes. Exit 2 (git could not answer) → report
 it and build without a reservation: the lease protects, and a remote that cannot answer never
 blocks the build.
