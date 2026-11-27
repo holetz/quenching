@@ -19,7 +19,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from quenching.common.output import finding
-from quenching.components.commands.cost import measure_command
+from quenching.components.commands.cost import STAGE_FILE_RE, measure_command
 from quenching.components.surface import surface_references
 
 HARNESSES = ("claude", "opencode", "copilot")
@@ -205,7 +205,35 @@ def measure_flows(root: Path) -> tuple[dict[str, dict], list[dict]]:
                       "citedBytes": row["totalBytes"] - row["bodyBytes"],
                       "tokens": tokens(router_bytes + row["totalBytes"])}
         findings.extend(row_findings)
+        stage_files = list(dict.fromkeys(STAGE_FILE_RE.findall(command["body"])))
+        if stage_files:
+            _measure_stages(root, flow, rows[flow], row, stage_files, references, surface_root, findings)
     return rows, findings
+
+
+def _measure_stages(root: Path, flow: str, out: dict, index: dict, stage_files: list[str],
+                    references: dict, surface_root: str, findings: list[dict]) -> None:
+    """A split flow's ceiling is its most expensive stage: the router, the flow's index, one step
+    file and the sections that step cites."""
+    stages: dict[str, int] = {}
+    for relpath in stage_files:
+        path = root / relpath
+        name = path.stem
+        if not path.is_file():
+            findings.append(finding(
+                "ct-cost-no-reference", "error",
+                f"/{SPECS_SKILL} {flow} cites missing stage file {relpath}",
+                command=f"/{SPECS_SKILL} {flow}", path=relpath,
+                remedy="repair the link or add the step file before measuring cost"))
+            continue
+        command = {"command": f"/{SPECS_SKILL} {flow} {name}", "path": str(path),
+                   "body": path.read_text(encoding="utf-8")}
+        row, row_findings = measure_command(command, references, surface_root)
+        findings.extend(row_findings)
+        stages[name] = tokens(out["routerBytes"] + index["totalBytes"] + row["totalBytes"])
+    if stages:
+        out["stages"] = stages
+        out["tokens"] = max(stages.values())
 
 
 def measure(root: Path, harnesses: tuple[str, ...], budget: dict | None = None) -> tuple[dict, list[dict]]:

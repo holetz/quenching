@@ -53,6 +53,31 @@ class Superficie(unittest.TestCase):
         self.assertEqual(row["citedBytes"], len("Binding rule.".encode()))
         self.assertEqual(row["tokens"], bench.tokens(row["routerBytes"] + row["flowBytes"] + row["citedBytes"]))
 
+    def test_superficie_split_flow_ceiling_is_its_most_expensive_stage(self):
+        root = target()
+        refs = ".agents/skills/quenching-specs/references"
+        write(root / f"{refs}/create.md",
+              f"# create\n\n### 1. One\n\nLoad [s]({refs}/specs-create/step-1-one.md)\n\n"
+              f"### 2. Two\n\nLoad [s]({refs}/specs-create/step-2-two.md)\n")
+        write(root / f"{refs}/specs-create/step-1-one.md", "small\n")
+        write(root / f"{refs}/specs-create/step-2-two.md",
+              "See [r](.agents/quenching/references/x/rules.md) §Rule\n" + "y" * 4000)
+        payload, findings = bench.measure(root, ("claude",))
+        row = payload["flows"]["create"]
+        self.assertEqual(findings, [])
+        self.assertEqual(set(row["stages"]), {"step-1-one", "step-2-two"})
+        self.assertEqual(row["tokens"], max(row["stages"].values()))
+        self.assertGreater(row["stages"]["step-2-two"], row["stages"]["step-1-one"])
+        # the index is not charged for the step files it links
+        self.assertLess(row["flowBytes"] + row["citedBytes"], 1000)
+
+    def test_superficie_missing_stage_file_is_a_finding(self):
+        root = target()
+        refs = ".agents/skills/quenching-specs/references"
+        write(root / f"{refs}/create.md", f"# create\n\nLoad [s]({refs}/specs-create/step-1-gone.md)\n")
+        _, findings = bench.measure(root, ("claude",))
+        self.assertIn("ct-cost-no-reference", {f["code"] for f in findings})
+
     def test_superficie_budget_over_is_a_finding(self):
         budget = {"prefix": {"claude": 1}, "flow": {"develop": 1}}
         _, findings = bench.measure(target(), ("claude",), bench.load_budget_dict(budget))
