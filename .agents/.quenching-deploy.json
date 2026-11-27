@@ -747,7 +747,15 @@
 
     ".agents/skills/quenching-components/references/components-command-eval/evaluation.md": "source",
 
+    ".agents/skills/quenching-components/references/entrypoint-new.md": "source",
+
+    ".agents/skills/quenching-components/references/genre-new.md": "source",
+
     ".agents/skills/quenching-components/references/hook-new.md": "source",
+
+    ".agents/skills/quenching-components/references/layer-new.md": "source",
+
+    ".agents/skills/quenching-components/references/rules.md": "source",
 
     ".agents/skills/quenching-git/SKILL.md": "source",
 
@@ -951,7 +959,15 @@
 
     ".claude/skills/quenching-components/references/components-command-eval/evaluation.md": "source",
 
+    ".claude/skills/quenching-components/references/entrypoint-new.md": "source",
+
+    ".claude/skills/quenching-components/references/genre-new.md": "source",
+
     ".claude/skills/quenching-components/references/hook-new.md": "source",
+
+    ".claude/skills/quenching-components/references/layer-new.md": "source",
+
+    ".claude/skills/quenching-components/references/rules.md": "source",
 
     ".claude/skills/quenching-git/SKILL.md": "source",
 

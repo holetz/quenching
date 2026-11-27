@@ -291,7 +291,7 @@ cheapest thing a router carries: **at most 250 characters** of the parsed value,
 `sk-description-budget` binds on a router like on any skill; on the plugin's own source it is an **error** for a router, and a warn on a target.
 
 1. **First sentence, in English:** the domain and every flow of the table by name
-   (`Run one design flow: align, status, genre-new.`). `sk-router-description` (error) reports a
+   (`Run one components flow: rules, command-new, agent-new, …`). `sk-router-description` (error) reports a
    flow of the table the description does not name.
 2. **Then, where it fits,** one pt-BR and one English trigger of the vertical, quoted.
 3. **Last:** `Not for: <the likeliest neighbour> → /quenching-<x> <flow>.`
@@ -412,6 +412,13 @@ URL in prose is never read as one). It reports four forms of the same defect:
   plugin of `modules.json` and no leading part of an installed name;
 - on a target, a `/<skill>` (or `/<skill> <flow>` of a router) that is no skill of its `.agents/skills/`
   — except a host command (`/clear`, `/compact`, …) and a name that is a path (`/docs`, `/tmp`).
+
+**The rule book.** `/quenching-components rules <piece>` hands over, read-only and by section, the
+rules for writing one piece — skill, subagent, hook, entry point, test layer or genre — and this
+file's delta for the target; an agent reads it before editing one by hand. The minting flows of the
+pieces other fronts own (`entrypoint-new`, `layer-new`, `genre-new`) live in the components router's
+`references/` and check on their first step that the front's module is installed (`cq modules
+--json`), stopping with the remedy when it is not (spec 677).
 
 `RETIRED_ROUTES` in `components/commands/lint.py` maps an old route to the one that replaced it. It
 is data, filled by the specs that retire a router, never inferred; the message carries the new route

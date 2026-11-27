@@ -91,7 +91,7 @@ Keep the same distinction between bounded repair and owner judgement. The proof 
 stop-first ordering, loose fixture ownership, an unmarked gate, or another explicitly structural
 finding. It must report — never infer — unlayered tests, empty layers, an unmeasured surface, absent
 CI, untested operations entry points, and unresolved order evidence. Use
-`the `layer-new` reference of the proof front` when the owner is ready to choose a layer; do not create placeholder
+`/quenching-components layer-new` when the owner is ready to choose a layer; do not create placeholder
 layers just to make the doctor quiet.
 
 The target suite remains outside this alignment pass. Run it with the repository's own supported

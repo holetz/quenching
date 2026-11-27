@@ -92,7 +92,6 @@ adapter artifacts.
 | --- | --- |
 | `/quenching-align design` | Installs or converges the brand pack, arbitrates external DESIGN.md proposals, and rebuilds every projection. |
 | `/quenching-align status design` | Reports source validity, generated identity, sidecar/assets, genres, adapters, and optional Impeccable detector state without writing. |
-| `the `genre-new` reference of the design front` | Mints ONE editorial genre contract with fields, register, and HTML/Typst/PDF destinations. |
 
 `cq design build` is deterministic and byte-checked; `cq design import` is the explicit route for
 folding an Impeccable proposal back into the source. The portable DESIGN.md boundary is lossy by
@@ -104,7 +103,7 @@ Acts on the target repository's `.claude/` automation surface.
 
 | Command | Does |
 | --- | --- |
-| `/quenching-components` | The single entry point of the components flows: picks `command-new`, `agent-new`, `hook-new`, `align`, `status` or `harness-align` by the flow you name and loads that flow's reference; each typed shortcut stays. |
+| `/quenching-components` | The single entry point of the components flows: picks `rules`, `command-new`, `agent-new`, `hook-new`, `entrypoint-new`, `layer-new`, `genre-new`, `command-eval` or `command-retro` by the flow you name and loads that flow's reference; each typed shortcut stays. |
 | `/quenching-align components` | Converges `.claude/` onto one file per entry point, audits every body against the writing doctrine, rewrites every description. |
 | `/quenching-align status components` | Reports command count, fronts and finding codes for the target automation surface without writing. |
 | `/quenching-components command-new` | Mints or edits ONE command — the structural half, including its `description`. |
@@ -112,6 +111,10 @@ Acts on the target repository's `.claude/` automation surface.
 | `/quenching-components command-retro` | Mines ONE session for what it evidences about ONE command that ran in it — cost, redundancy, bugs. |
 | `/quenching-components agent-new` | Mints or edits ONE subagent definition, scoping tools to the narrowest set and pricing its always-on cost. |
 | `/quenching-components hook-new` | Wires ONE scoped hook — narrowest scope, cheapest handler. Warns by default; blocks only on the human's word. |
+| `/quenching-components rules` | Reads, without writing, the rules for writing ONE piece (skill, subagent, hook, entry point, test layer, genre) plus the target's delta. |
+| `/quenching-components genre-new` | Mints ONE editorial genre contract with fields, register, and HTML/Typst/PDF destinations. |
+| `/quenching-components entrypoint-new` | Mints ONE Python entry point from the contract, registers it in the declared router, and regenerates the operations registry. |
+| `/quenching-components layer-new` | Mints one named layer with its marker, reach, budget, fixture home and collection rule, then proposes test moves for a separate confirmation. |
 | the `harness-align` step of `/quenching-align components` | Refactors `AGENTS.md` into a thin pointer over the bundle, so doctrine lives once; legacy `CLAUDE.md` is removed. |
 
 ## The ops front
@@ -122,7 +125,6 @@ Acts on the target repository's declared operations root and canonical router.
 | --- | --- |
 | `/quenching-align ops` | Probes the operations surface, applies mechanical and structural drift under one plan, and reports judgement findings without driving them. |
 | `/quenching-align status ops` | Reports root, router, packages, lifecycle, findings by band, and registry freshness without writing. |
-| `the `entrypoint-new` reference of the ops front` | Mints ONE Python entry point from the contract, registers it in the declared router, and regenerates the operations registry. |
 
 ## The proof front
 
@@ -132,7 +134,6 @@ Acts on the target repository's declared verification surface.
 | --- | --- |
 | `/quenching-align proof` | Probes the proof gate, applies bounded repairs under one plan, defers an unsafe floor write, and reports judgement findings without driving them. |
 | `/quenching-align status proof` | Reports layers, fixtures, measured roots, floors, CI evidence, and findings by band without writing; it states that the suite was not run. |
-| `the `layer-new` reference of the proof front` | Mints one named layer with its marker, reach, budget, fixture home and collection rule, then proposes test moves for a separate confirmation. |
 
 ## The toolchain front
 

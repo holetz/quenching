@@ -111,7 +111,11 @@ The surface is partitioned by the artifact each front's commands touch:
 - **`/quenching-knowledge`** — the OKF `/docs/` bundle.
 - **`/quenching-specs`** — provider-owned spec documents and their lifecycle.
 - **`/quenching-design-`** — the `/.design/` DTCG source, projections, and editorial genres.
-- **`/quenching-components`** — the target repo's `.claude/` automation surface.
+- **`/quenching-components`** — the rule book for building every piece of the repository, and the
+  minting of each: the target repo's `.claude/` automation surface (`command-new`, `agent-new`,
+  `hook-new`), and the entry point, test layer and genre of the ops, proof and design fronts
+  (`entrypoint-new`, `layer-new`, `genre-new`), with `rules <piece>` as the read-only doctrine.
+  The name stays; the converging half (`align`, `status`) is `/quenching-align components`.
 - **`/quenching-ops-`** — the target repository's canonical operations surface. It is the fifth
   local aligned-front namespace; its contract and command bodies are now published.
 - **`/quenching-proof-`** — the target repository's verification surface: its layers, fixtures,
