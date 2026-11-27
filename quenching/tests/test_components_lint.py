@@ -282,13 +282,13 @@ class RouterChecks(unittest.TestCase):
             cmd["frontmatter"]["description"] = "Run one flow: go, status. Not for: x."
             self.assertEqual(router_description_findings(cmd, router_flows(cmd), where), [])
 
-    def test_the_250_budget_binds_only_a_skill_without_a_table_of_flows(self):
+    def test_the_250_budget_binds_a_router_too(self):
         long = 'Trigger on "x". ' + "y" * 400 + " Not for: z."
         with tempfile.TemporaryDirectory() as tmp:
             cmd = self._router(tmp, "Read", "Read")
             cmd["frontmatter"]["description"] = long
             cmd["anomalies"], cmd["hooks"], cmd["hooksParsed"], cmd["bodyLines"] = [], {}, True, 3
-            self.assertNotIn("sk-description-budget", [f["code"] for f in lint_command(cmd, BASE)])
+            self.assertIn("sk-description-budget", [f["code"] for f in lint_command(cmd, BASE)])
         plain = command("No table.\n")
         plain["frontmatter"]["description"] = long
         self.assertIn("sk-description-budget", [f["code"] for f in lint_command(plain, BASE)])

@@ -1,6 +1,6 @@
 ---
 name: quenching-design
-description: "Run one design flow: align, status, genre-new. align: \"alinhar o design\", \"instalar o pacote de marca\", \"corrigir drift do DESIGN.md\", \"align the design\", \"install the brand pack\"; status: \"como está o design\", \"o DESIGN.md está atualizado\", \"design status\", \"is DESIGN.md current\"; genre-new: \"criar um gênero editorial\", \"definir o contrato de um deck\", \"create a design genre\", \"define a deck contract\". Not for: operations → /quenching-ops status."
+description: "Run one design flow: align, status, genre-new. \"alinhar o design\", \"install the brand pack\". Not for: operations → /quenching-ops status."
 argument-hint: "[align|status|genre-new] [input]"
 allowed-tools: Bash(.agents/quenching/bin/cq:*), Bash(.agents/quenching/bin/cq.cmd:*), Read, Grep, Glob, Bash(python3:*), Bash(npx:*), AskUserQuestion, mcp__quenching
 ---
@@ -28,6 +28,12 @@ per [align/tool-resolution.md](.agents/quenching/references/align/tool-resolutio
 §Resolving the tool; branch on the payload and the exit code it carries (0 ok · 1 findings ·
 2 refusal), never on prose. A `cq …` left in a flow is a verb with no tool or a line marked
 `cli: <reason>`; with no server, every call takes that section's fallback, and the report names it.
+
+## Triggers by flow
+
+The phrases that route to each flow, the map the description no longer carries:
+
+align: "alinhar o design", "instalar o pacote de marca", "corrigir drift do DESIGN.md", "align the design", "install the brand pack"; status: "como está o design", "o DESIGN.md está atualizado", "design status", "is DESIGN.md current"; genre-new: "criar um gênero editorial", "definir o contrato de um deck", "create a design genre", "define a deck contract".
 
 ## Workflow
 

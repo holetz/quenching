@@ -1,6 +1,6 @@
 ---
 name: quenching-components
-description: "Run one components flow: command-new, agent-new, hook-new, align, status, command-eval, command-retro, harness-align. command-new: \"criar um comando\", \"create a command\"; agent-new: \"criar um subagente\", \"create a subagent\"; hook-new: \"ligar um hook\", \"wire a hook\"; align: \"alinhar as skills\", \"align the skills\"; status: \"como está a superfície de skills\", \"components status\"; command-eval: \"medir se o comando ensina\", \"eval this command\"; command-retro: \"retrospectiva desta sessão\", \"retro this session\"; harness-align: \"enxugar o AGENTS.md\", \"slim down AGENTS.md\". Not for: knowledge docs → /quenching-knowledge."
+description: "Run one components flow: command-new, agent-new, hook-new, align, status, command-eval, command-retro, harness-align. \"criar um comando\", \"align the skills\". Not for: knowledge docs → /quenching-knowledge."
 argument-hint: "[command-new|agent-new|hook-new|align|status|harness-align|command-eval|command-retro] [input]"
 allowed-tools: Bash(.agents/quenching/bin/cq:*), Bash(.agents/quenching/bin/cq.cmd:*), Bash(python3:*), Bash(py:*), Bash(git grep:*), Bash(grep:*), Bash(find:*), Bash(git check-ignore:*), Bash(mkdir:*), Bash(mv:*), Bash(rm:*), Read, Grep, Glob, Write, Edit, Task, AskUserQuestion, mcp__quenching
 ---
@@ -28,6 +28,12 @@ per [align/tool-resolution.md](.agents/quenching/references/align/tool-resolutio
 §Resolving the tool; branch on the payload and the exit code it carries (0 ok · 1 findings ·
 2 refusal), never on prose. A `cq …` left in a flow is a verb with no tool or a line marked
 `cli: <reason>`; with no server, every call takes that section's fallback, and the report names it.
+
+## Triggers by flow
+
+The phrases that route to each flow, the map the description no longer carries:
+
+command-new: "criar um comando", "create a command"; agent-new: "criar um subagente", "create a subagent"; hook-new: "ligar um hook", "wire a hook"; align: "alinhar as skills", "align the skills"; status: "como está a superfície de skills", "components status"; command-eval: "medir se o comando ensina", "eval this command"; command-retro: "retrospectiva desta sessão", "retro this session"; harness-align: "enxugar o AGENTS.md", "slim down AGENTS.md".
 
 ## Workflow
 

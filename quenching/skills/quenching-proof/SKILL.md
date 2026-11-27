@@ -1,6 +1,6 @@
 ---
 description: >-
-  Run one proof flow: align, status, layer-new. align: "alinhar os testes", "corrigir drift dos testes", "align the proof front", "fix proof drift"; status: "como está a verificação", "status da prova", "proof status", "check the verification surface"; layer-new: "criar uma camada de teste", "adicionar um layer de prova", "create a proof layer", "add a test layer". Not for: manifests, locks and pins → /quenching-toolchain status.
+  Run one proof flow: align, status, layer-new. "alinhar os testes", "add a test layer". Not for: manifests, locks and pins → /quenching-toolchain status.
 argument-hint: "[align|status|layer-new] [input]"
 allowed-tools: Bash(cq:*), Bash(cq.cmd:*), Read, Grep, Glob, Bash(python3:*), AskUserQuestion, Write, Edit, Bash(mkdir:*), Bash(mv:*)
 ---
@@ -23,6 +23,12 @@ per [align/tool-resolution.md](.agents/quenching/references/align/tool-resolutio
 §Resolving the tool; branch on the payload and the exit code it carries (0 ok · 1 findings ·
 2 refusal), never on prose. A `cq …` left in a flow is a verb with no tool or a line marked
 `cli: <reason>`; with no server, every call takes that section's fallback, and the report names it.
+
+## Triggers by flow
+
+The phrases that route to each flow, the map the description no longer carries:
+
+align: "alinhar os testes", "corrigir drift dos testes", "align the proof front", "fix proof drift"; status: "como está a verificação", "status da prova", "proof status", "check the verification surface"; layer-new: "criar uma camada de teste", "adicionar um layer de prova", "create a proof layer", "add a test layer".
 
 ## Workflow
 

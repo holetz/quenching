@@ -1,6 +1,6 @@
 ---
 description: >-
-  Run one delivery flow: align, status. align: "alinhar o delivery", "corrigir drift dos workflows", "align the delivery front", "fix delivery drift"; status: "como estão os workflows", "status da entrega", "delivery status", "check the delivery surface". Not for: workflow permissions and secrets → /quenching-security status.
+  Run one delivery flow: align, status. "alinhar o delivery", "check the delivery surface". Not for: workflow permissions and secrets → /quenching-security status.
 argument-hint: "[align|status] [input]"
 allowed-tools: Bash(cq:*), Bash(cq.cmd:*), Read, Grep, Glob, Bash(python3:*), AskUserQuestion, Write, Edit
 ---
@@ -23,6 +23,12 @@ per [align/tool-resolution.md](.agents/quenching/references/align/tool-resolutio
 §Resolving the tool; branch on the payload and the exit code it carries (0 ok · 1 findings ·
 2 refusal), never on prose. A `cq …` left in a flow is a verb with no tool or a line marked
 `cli: <reason>`; with no server, every call takes that section's fallback, and the report names it.
+
+## Triggers by flow
+
+The phrases that route to each flow, the map the description no longer carries:
+
+align: "alinhar o delivery", "corrigir drift dos workflows", "align the delivery front", "fix delivery drift"; status: "como estão os workflows", "status da entrega", "delivery status", "check the delivery surface".
 
 ## Workflow
 

@@ -1,6 +1,6 @@
 ---
 name: quenching-opensource
-description: "Run one opensource flow: align, status, readiness. align: \"preparar o repositório para ser open source\", \"gerar licença e CONTRIBUTING\", \"align the opensource front\", \"prepare this repo to be open sourced\"; status: \"qual nível de baseline atingimos\", \"status de open source\", \"opensource status\", \"which baseline level do we reach\"; readiness: \"podemos abrir este repositório\", \"varredura antes de tornar público\", \"can we open this repo\", \"scan before making it public\". Not for: workflow permissions and secrets → /quenching-security status."
+description: "Run one opensource flow: align, status, readiness. \"podemos abrir este repositório\", \"can we open this repo\". Not for: workflow permissions and secrets → /quenching-security status."
 argument-hint: "[align|status|readiness] [input]"
 allowed-tools: Bash(.agents/quenching/bin/cq:*), Bash(.agents/quenching/bin/cq.cmd:*), Read, Grep, Glob, Bash(python3:*), AskUserQuestion, Write, Edit, mcp__quenching
 ---
@@ -28,6 +28,12 @@ per [align/tool-resolution.md](.agents/quenching/references/align/tool-resolutio
 §Resolving the tool; branch on the payload and the exit code it carries (0 ok · 1 findings ·
 2 refusal), never on prose. A `cq …` left in a flow is a verb with no tool or a line marked
 `cli: <reason>`; with no server, every call takes that section's fallback, and the report names it.
+
+## Triggers by flow
+
+The phrases that route to each flow, the map the description no longer carries:
+
+align: "preparar o repositório para ser open source", "gerar licença e CONTRIBUTING", "align the opensource front", "prepare this repo to be open sourced"; status: "qual nível de baseline atingimos", "status de open source", "opensource status", "which baseline level do we reach"; readiness: "podemos abrir este repositório", "varredura antes de tornar público", "can we open this repo", "scan before making it public".
 
 ## Workflow
 

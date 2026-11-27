@@ -645,9 +645,9 @@ def lint_command(cmd: dict, base: str, named_by: set[str] | None = None,
                            "command is not portable outside Claude Code",
                            characters=len(description), cap=CAP_DESCRIPTION_PORTABLE, **where))
 
-    # A router's description is a map of intent per flow, so the 250 budget contradicts it:
-    # the budget binds only a skill with no table of flows (`sk-router-description` binds the rest).
-    if len(description) > CAP_DESCRIPTION_BUDGET and not FLOW_ROW_RE.search(body):
+    # A router's description names its flows and nothing more; the map of triggers per flow lives
+    # in the body, so the 250 budget binds a router too (`sk-router-description` binds its flows).
+    if len(description) > CAP_DESCRIPTION_BUDGET:
         out.append(finding("sk-description-budget", "warn",
                            f"description is {len(description)} characters, over the "
                            f"{CAP_DESCRIPTION_BUDGET} budget — put the key use case first and "
