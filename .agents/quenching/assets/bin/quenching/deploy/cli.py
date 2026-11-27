@@ -477,6 +477,10 @@ def plan(target: Path, built: dict, previous: dict | None,
         if (target / rel).is_file():
             changes.append(_change("edited" if _edited(target, rel, hashes.get(rel), deleting=True)
                                    else "delete", rel))
+    # A file no manifest owns inside a folder this deploy writes whole (a merge that took another
+    # branch's manifest leaves one behind): the commit is the record, as on the owned delete path.
+    for rel in _strays(target, built, owned):
+        changes.append(_change("edited" if _uncommitted(target, rel) else "delete", rel))
     # The generated per-user bootstraps live in `.quenching/`, which git ignores: a clone that lacks
     # them is not drift (the CI checkout never has them), a present copy that differs is stale.
     for rel, (data, _mode_) in sorted((built.get("bootstrap") or {}).items()):
@@ -577,6 +581,23 @@ def _contained(target: Path, path: Path) -> bool:
     return parent == root or parent.startswith(root + os.sep)
 
 
+def _strays(target: Path, built: dict, owned: set[str]) -> list[str]:
+    """The files inside a folder the deploy writes whole that neither the new tree nor the
+    previous manifest carries; bytecode is `_sweep_bytecode_only`'s, never a stray."""
+    tree = built["tree"]
+    found = set()
+    for folder in built.get("sweep", ()):
+        root = target / folder
+        if root.is_symlink() or not root.is_dir() or not _contained(target, root):
+            continue
+        for path in root.rglob("*"):
+            rel = path.relative_to(target).as_posix()
+            if (path.is_file() and not deploy_tree._is_build(path)
+                    and rel not in tree and rel not in owned):
+                found.add(rel)
+    return sorted(found)
+
+
 def _unlink_owned(target: Path, rel: str) -> None:
     path = target / rel
     if not (path.is_file() and _safe_relative(rel) and _contained(target, path)):
@@ -628,6 +649,8 @@ def write(target: Path, built: dict, result: dict, prune_legacy: bool) -> None:
     previous = read_manifest(str(target)) or {}
     owned = _owned(previous)
     for rel in sorted(owned - set(tree)):
+        _unlink_owned(target, rel)
+    for rel in _strays(target, built, owned):
         _unlink_owned(target, rel)
     _sweep_bytecode_only(target)
     for rel, (data, mode) in sorted(tree.items()):

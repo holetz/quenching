@@ -115,6 +115,16 @@ left to compare with, so the commit is the record: a file git reports as differi
 cannot answer — absent, timed out, no repository, an unreadable `HEAD` — proves nothing, so the
 file is `edited` and kept: only a clean answer lets it go.
 
+A folder the deploy **writes whole** — each generated skill's folder in every skill directory it
+publishes, and each payload subtree copied whole from the source (`references/`, `agents/`, `bin/`,
+the templates, translation, git hooks, bootstrap and hook bodies, the selected modules' assets, and
+each vendored or mirrored package) — holds nothing but the new tree. A file in one that neither
+the new tree nor the previous manifest carries — left behind when a merge took another branch's
+manifest while git kept the files — goes the same delete path: equal to `HEAD`, a `delete` that
+`--check` reports and `--write` removes; uncommitted, or with no git to answer, `edited` and kept.
+Bytecode is never a stray, and a folder the deploy writes only in part (the target's own skills, a
+deselected module's assets) is never swept.
+
 A **tracked mirror of a module outside the selection** is kept in step with the source. A skill
 folder carrying its `SKILL.md`, or a package carrying a `.py`, that the target already holds for a
 module the selection left out and that the previous manifest did not own is built from the source

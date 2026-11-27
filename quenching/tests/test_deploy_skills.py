@@ -209,5 +209,66 @@ class Upgrade(unittest.TestCase):
         self.assertEqual((0, []), (lambda r: (r[0], r[1]["changes"]))(self.deploy("--check")))
 
 
+class Strays(unittest.TestCase):
+    """A file no manifest owns inside a folder the deploy writes whole: the case of spec 649,
+    where a merge took the base's manifest and git kept the branch's generated step files."""
+
+    STRAYS = (f"{AGENTS_SKILLS}/quenching-specs/references/specs-develop/step-1.md",
+              f"{CLAUDE_SKILLS}/quenching-specs/references/specs-develop/step-1.md",
+              ".agents/quenching/references/gone.md")
+
+    setUp = Upgrade.setUp
+    deploy = Upgrade.deploy
+
+    def git(self, *argv: str) -> None:
+        subprocess.run(["git", "-C", str(self.target), "-c", "user.name=t", "-c",
+                        "user.email=t@example.invalid", *argv], check=True, capture_output=True)
+
+    def plant(self, commit: bool) -> None:
+        self.assertEqual(0, self.deploy("--modules", "specs", "--harness", "claude",
+                                        "--write")[0])
+        for rel in self.STRAYS:
+            (self.target / rel).parent.mkdir(parents=True, exist_ok=True)
+            (self.target / rel).write_text("a step the manifest lost\n")
+        if commit:
+            self.git("add", "--", *self.STRAYS)
+            self.git("commit", "-q", "-m", "strays")
+
+    def test_a_committed_stray_is_deleted(self):
+        self.plant(commit=True)
+        code, payload = self.deploy("--check")
+        self.assertEqual(1, code)
+        for rel in self.STRAYS:
+            self.assertIn({"path": rel, "change": "delete"}, payload["changes"])
+        self.assertEqual(0, self.deploy("--write")[0])
+        for rel in self.STRAYS:
+            self.assertFalse((self.target / rel).exists(), rel)
+        self.assertEqual((0, []), (lambda r: (r[0], r[1]["changes"]))(self.deploy("--check")))
+
+    def test_an_uncommitted_stray_is_kept_as_edited(self):
+        self.plant(commit=False)
+        code, payload = self.deploy("--check")
+        self.assertEqual(1, code)
+        for rel in self.STRAYS:
+            self.assertIn({"path": rel, "change": "edited"}, payload["changes"])
+        self.assertEqual(2, self.deploy("--write")[0])
+        for rel in self.STRAYS:
+            self.assertTrue((self.target / rel).is_file(), rel)
+
+    def test_a_target_owned_skill_is_untouched(self):
+        self.assertEqual(0, self.deploy("--modules", "specs", "--harness", "claude",
+                                        "--write")[0])
+        own = self.target / AGENTS_SKILLS / "minha-skill"
+        (own / "references").mkdir(parents=True)
+        (own / "SKILL.md").write_text("---\nname: minha-skill\ndescription: x\n---\n\nbody\n")
+        (own / "references/notes.md").write_text("mine\n")
+        code, payload = self.deploy("--check")
+        self.assertFalse([change for change in payload["changes"]
+                          if change["change"] in ("delete", "edited")], payload["changes"])
+        self.assertEqual(0, self.deploy("--write")[0])
+        self.assertTrue((own / "references/notes.md").is_file())
+        self.assertTrue((own / "SKILL.md").is_file())
+
+
 if __name__ == "__main__":
     unittest.main()
