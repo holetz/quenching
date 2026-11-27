@@ -15,8 +15,17 @@ MOLD = ROOT / "quenching/references/specs-develop/report-mold.md"
 CADENCE = ROOT / "quenching/references/specs-execute/execution-cadence.md"
 
 
+def flow_text(path):
+    """The flow's index followed by its step files, when the flow is split by step."""
+    text = path.read_text(encoding="utf-8")
+    steps = path.with_suffix("")
+    if steps.is_dir():
+        text += "\n" + "\n".join(p.read_text(encoding="utf-8") for p in sorted(steps.glob("*.md")))
+    return text
+
+
 def text(path):
-    return re.sub(r"\s+", " ", path.read_text(encoding="utf-8"))
+    return re.sub(r"\s+", " ", flow_text(path))
 
 
 def section(body, heading):

@@ -33,10 +33,19 @@ def git(cwd, *args):
         stderr=subprocess.PIPE,
     ).stdout.strip()
 
+def flow_text(path):
+    """The flow's index followed by its step files, when the flow is split by step."""
+    text = path.read_text(encoding="utf-8")
+    steps = path.with_suffix("")
+    if steps.is_dir():
+        text += "\n" + "\n".join(p.read_text(encoding="utf-8") for p in sorted(steps.glob("*.md")))
+    return text
+
+
 
 class TaskExecutionContractTests(unittest.TestCase):
     def test_execute_commits_through_the_deterministic_verb(self):
-        command = COMMAND.read_text(encoding="utf-8")
+        command = flow_text(COMMAND)
         commit = (ROOT / "quenching/skills/quenching-git/references/commit.md").read_text(encoding="utf-8")
 
         self.assertIn('git_write(verb="commit", subject="<subject>", root="<worktree>")', command)
@@ -118,7 +127,7 @@ class TaskExecutionContractTests(unittest.TestCase):
                         self.assertFalse(red.exists())
 
     def test_external_backend_records_task_after_the_commit(self):
-        command = COMMAND.read_text(encoding="utf-8")
+        command = flow_text(COMMAND)
         reference = REFERENCE.read_text(encoding="utf-8")
 
         self.assertLess(command.index("git add <the task's declared files>"),
@@ -131,7 +140,7 @@ class TaskExecutionContractTests(unittest.TestCase):
         self.assertNotIn("<the spec file>", reference)
 
     def test_execute_runs_enabled_hooks_and_reports_optional_failures(self):
-        command = COMMAND.read_text(encoding="utf-8")
+        command = flow_text(COMMAND)
         config = json.loads(_paths.repository_config(ROOT).read_text(encoding="utf-8"))
 
         self.assertIn('Skill("<declared hook command>",', command)
@@ -151,7 +160,7 @@ class TaskExecutionContractTests(unittest.TestCase):
         self.assertIn("unresolved", command)
 
     def test_execute_skips_the_hook_when_the_build_runs_in_a_worktree(self):
-        command = " ".join(COMMAND.read_text(encoding="utf-8").split())
+        command = " ".join(flow_text(COMMAND).split())
 
         self.assertIn("skipped: worktree", command)
         self.assertIn("git rev-parse --path-format=absolute --git-dir", command)
@@ -159,7 +168,7 @@ class TaskExecutionContractTests(unittest.TestCase):
         self.assertIn("never invoked", command)
 
     def test_resume_reruns_the_last_checked_verify_before_any_code(self):
-        command = " ".join(COMMAND.read_text(encoding="utf-8").split())
+        command = " ".join(flow_text(COMMAND).split())
 
         self.assertIn("On a resume, re-run the last checked task's `verify:`", command)
         self.assertIn("Red → **stop**", command)
@@ -312,7 +321,7 @@ class TaskExecutionContractTests(unittest.TestCase):
             self.assertEqual(git(directory, "status", "--short"), "?? unstaged.txt")
 
     def test_boundary_keeps_each_task_commit_and_has_no_reset_contract(self):
-        command = COMMAND.read_text(encoding="utf-8").lower()
+        command = flow_text(COMMAND).lower()
         reference = REFERENCE.read_text(encoding="utf-8").lower()
 
         for text in (command, reference):
@@ -349,7 +358,7 @@ class TaskExecutionContractTests(unittest.TestCase):
             )
 
     def test_autonomous_execute_blocks_on_missing_approval_and_a_real_block(self):
-        command = " ".join(COMMAND.read_text(encoding="utf-8").split())
+        command = " ".join(flow_text(COMMAND).split())
         runner = " ".join(RUNNER.read_text(encoding="utf-8").split())
 
         self.assertIn("Under `autonomous`, `approved` unset is a real block", command)

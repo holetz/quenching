@@ -21,7 +21,11 @@ ORCHESTRATOR = ROOT / "quenching/agents/spec-orchestrator.md"
 
 
 def read(path):
-    return path.read_text(encoding="utf-8")
+    text = path.read_text(encoding="utf-8")
+    steps = path.with_suffix("")
+    if steps.is_dir():  # a flow split by step: the index followed by its step files
+        text += "\n" + "\n".join(p.read_text(encoding="utf-8") for p in sorted(steps.glob("*.md")))
+    return text
 
 
 class PreexistingErrorsTests(unittest.TestCase):
