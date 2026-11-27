@@ -25,31 +25,17 @@ One call, N sections, no frontmatter; a unique prefix resolves. `rules_only=true
 the `<!-- rules -->` half where a section carries the marker, and returns the whole section, saying
 so, where it does not.
 
-**Load now, and nothing else:**
+**Every step is a file of its own.** This body is the index: it carries the doctrine, the batching
+contract and the invariants every stage obeys. A step runs only after its file is loaded —
+`components_read(verb="read", path=".claude/skills/quenching-specs/references/specs-develop/<file>")` —
+and that file loads the `§` sections its own step uses, never the whole pass up front.
 
-- what runs and in what order, and the mechanics every stage shares —
-  [specs-develop/questions.md](.agents/quenching/references/specs-develop/questions.md)
-  §The pass §The four shared mechanics;
-- the spec-driven facts —
-  [specs-develop/spec-driven.md](.agents/quenching/references/specs-develop/spec-driven.md)
-  §Derived stages §The gates.
+## Where the rest lives
 
-The stages' own sections, the per-section authoring doctrine in
-[specs-develop/artifacts.md](.agents/quenching/references/specs-develop/artifacts.md),
-§Writing a section through stdin §The explicit-none rule §The nine definition sections
-§`## Impact` — the parsed sub-heading §`## Tasks`
-§Execution metadata — optional, indented, additive,
-and the records' shapes are loaded **inside the step that uses them** — steps 3b and 6; step 8
-loads specs-develop/report-mold.md's §The report mold, whose shape that step's report is built from,
-the same way.
-
-## Resolving the tool
-
-Resolve `cq` (`components_read(verb="read")` is the section reader every `§X` citation above resolves through)
-per
-[align/tool-resolution.md](.agents/quenching/references/align/tool-resolution.md)
-§Resolving the tool, §Write the resolved path literally on every invocation; branch on the **exit
-code** (0 ok · 1 findings · 2 refusal) and the `--json`, never on prose.
+Each step's file carries what only that step uses, so a stage run loads no more than its own: step 1
+resolves `cq`, and its read batch (§The batching contract) opens the pass; step 3 carries the
+rule that no turn only announces a call; step 3b reads `/docs/` by section; step 4 carries the rule
+on recommendations inside a question; step 7 carries the explicit-none rule and the apply batch.
 
 ## Doctrine
 
@@ -65,25 +51,11 @@ code** (0 ok · 1 findings · 2 refusal) and the `--json`, never on prose.
   was.
 - **Nothing shortens a stage that runs.** The same axes, lenses and gate symptoms are worked on
   every track, and what changes is who answers them.
-  Everything about *how* a stage runs is owned by
-  [questions.md](.agents/quenching/references/specs-develop/questions.md) §The four
-  shared mechanics §Who answers.
+  Everything about *how* a stage runs is owned by `questions.md` §The four shared mechanics
+  §Who answers, which the steps that need it load.
 - **A pass lands ONE edit.** Compose and refine accumulate and write together, so the spec never
   holds a half-composed state and never holds a draft refine already superseded. An abandoned pass
   leaves the spec exactly as it was.
-- **Apply the explicit-none rule on every write.** A section with nothing in it is
-  `- none — <reason>`, a present-but-empty heading is malformed, and an absent heading before its
-  own gate is legal —
-  [spec-driven.md](.agents/quenching/references/specs-develop/spec-driven.md)
-  §The gates.
-- **Read `/docs/` before writing — in step 3b, by section.** The relevant
-  `/docs/standards/` and `/docs/glossary.md` are binding on wording. Read it per
-[align/evidence-doctrine.md](.agents/quenching/references/align/evidence-doctrine.md)
-§1. Extract the aggregate; never paste the raw dump
-§2. Section-address any markdown — a target's `/docs/` included
-— `components_read(verb="read", path=<path>, sections=["§X"])`, not the whole file, when only a rule or two
-  governs the question at hand; it resolves `/docs/` the same way it resolves this plugin's own
-  references. No OKF bundle in the repo (`/docs/index.md` with `okf_version`) → skip silently.
 - **`complexity` is re-evaluated at the close, never mid-pass.** The close's own recommendation IS
   that re-evaluation where it names a raise; where the pass merely outgrew its size, the evidence
   that moved it is named and the depth proposed. A pass that changed no size proposes nothing.
@@ -91,369 +63,26 @@ code** (0 ok · 1 findings · 2 refusal) and the `--json`, never on prose.
   narrated in step 6's consolidated plan and applied in step 7's single edit, with no screen of its
   own.
 
-## The batching contract
-
-| Where | The bounded read(s) |
-| --- | --- |
-| steps 1+2 | `specs_read(verb="status", spec=<id>)`, which also carries the `path` step 1 announces, the recorded depth, and the `sections`/`ready` map compose drives off. Only an ID that must be *chosen* splits this: `specs_read(verb="list")` runs first, because the question depends on its output |
-| step 3b | every stage's own section and the union of the spec sections the pass reads or writes — `components_read(verb="read")` and `specs_read(verb="section")` together, never one call per source or per stage |
-| step 7 | the entire application — the section write, every `specs_write(verb="discover")` line, every `specs_write(verb="record")`, `specs_write(verb="verification")`, `specs_read(verb="validate")` (plus `specs_read(verb="parallel")` where `## Tasks` moved), and the closing `specs_read(verb="status")` that verifies where the pass landed |
-
-On the git store every write of step 7 lands in the clone's local pending commit: the remote and
-the card see the pass at the next sync point (`git_external(verb="push")`, `git_external(verb="pr_create")`, `specs_external(verb="push")`), and `specs_read(verb="status")` lists the spec as pending until then.
-
-A call splits only where the next command's **input** depends on the previous one's output. The
-`approved` stamp is the one such split: it waits for step 7's verification to prove `ready` rather
-than asserting it off the drafts.
-
-**No turn exists only to announce what the next tool call will do.** "Now I'll load the stage",
-"next I'll write the sections" — a turn whose entire content is the call that follows it. Narration
-that carries content stays: the pass and its stop conditions (step 3), the consolidated plan
-(step 6), the report (step 8).
-
-**A recommendation rides inside the question, never in a turn before it.** Where a choice is
-genuinely the human's, the recommendation and the reasoning behind it go on the **decision sheet**
-([questions.md](.agents/quenching/references/specs-develop/questions.md) §The four shared mechanics §1) — option A, recommended, the reasoning in its own text — so the human answers in one word and no turn was spent setting the question up.
-A sub-agent does not ask: return `STATE: blocked` with `NOTE: needs-human:` carrying the decision sheet.
-**This contract stops at the edge of how questions are grouped.**
-[questions.md](.agents/quenching/references/specs-develop/questions.md) §The four shared
-mechanics §1 is the only authority there: a question travels with the ones whose answers cannot
-change it, and alone otherwise.
-
 ## Workflow
 
-### 1. Resolve the spec, and announce where it lives
-Take the id from the input, infer it from the conversation, or run `specs_read(verb="list")` and ask
-on a decision sheet (most recently modified as option A, recommended). Announce it and how to
-override. Two matches for one id is exit 2 — report both paths and stop, never guess which was
-meant. An archived spec has nothing to develop: say so and stop.
+Run the steps in order; load a step's file when it begins and not before. The file holds the step's
+text and its `Done when:`. The files sit in `specs-develop/` beside this body.
 
-**Announce the spec's URL in the backend along with it** — the `path` field of the
-`specs_read(verb="status", spec=<id>)` payload step 2 takes in this same call (the card's URL when
-one exists, else the spec's file location on the `quenching` branch), stated before anything is
-read and repeated in the report (step 8).
-**Done when:** one spec is resolved and its URL or location has been announced.
-
-### 2. Read the spec's STATE — not its body
-```text
-specs_read(verb="status", spec=<id>)   # stage, section states, ready map, records, tasks, gate, path
-```
-**This is the same call as step 1** — §The batching contract's first row. The id either came in
-the input or was inferred, and the payload answers both steps at once.
-
-**The payload also carries the depth on record and the gap.** `records.priority.complexity` is the depth
-last recorded; absent, or no `priority` record at all, reads as `high`
-([spec-driven.md](.agents/quenching/references/specs-develop/spec-driven.md) §The scale). So does
-`ready: {ok, missing, malformed}`, which is the list compose owes.
-
-That is the whole of this step. **No section body is pulled here.**
-**Done when:** the spec's stage, section states, ready map, records, gate, backend URL and recorded depth
-are in hand.
-
-### 3. Derive the pass, and name it
-Look the derived stage up, and calculate the decisions still open, in
-[questions.md](.agents/quenching/references/specs-develop/questions.md) §The pass —
-already loaded. The pass is up to four stages, always in this order:
-
-| Stage | Runs when |
+| Step | File |
 | --- | --- |
-| discoveries | `## Discoveries` holds a line nobody resolved |
-| compose | the spec is not yet `ready` |
-| refine | a concrete signal fired (scope, critique, irreversibility), or the input asked for it; never on `autonomous` |
-| approval | always |
+| 1. Resolve the spec, and announce where it lives | `step-1.md` |
+| 2. Read the spec's STATE — not its body | `step-2.md` |
+| 3. Derive the pass, and name it | `step-3.md` |
+| 3b. Load what THIS pass needs — and nothing more | `step-3b.md` |
+| 3c. Run the dependency sweep — once, at the pass's open | `step-3c.md` |
+| 3d. Enumerate the surface refinement | `step-3d.md` |
+| 4. Compose | `step-4.md` |
+| 5. Refine — where it runs | `step-5.md` |
+| 6. Consolidate the edit, and narrate it | `step-6.md` |
+| 7. Apply, verify, and record what the pass earned | `step-7.md` |
+| 8. Close on a recommendation, and report | `step-8.md` |
 
-**Surface refinement is not a stage.** Only an explicit ask in the human's words or
-`--with-surface` runs step 3d, which plans the process surface as the first task group; without
-the ask, skip it. Never infer the ask from `## Impact`, a missing section or the pass's judgment.
-The stages, their order and their stop conditions stay unchanged —
-[questions.md](.agents/quenching/references/specs-develop/questions.md) §Surface refinement.
-
-A spec already `ready`/`approved` has nothing to compose, so an invocation over one **is** a refine
-request, run with the lens the risk argues for (alternatives, critique or premortem).
-
-Name, in ONE narration before the first question: **the stages this pass will run, in order**, the
-the track the calculation chose (simple, complex or declared autonomy), whether the human will be
-asked anything and in which rounds, and **each stage's stop condition**. The track is announced
-here and nowhere else.
-**Done when:** the pass's stages are named in order, with the track and each stop condition.
-
-### 3b. Load what THIS pass needs — and nothing more
-Now that the pass is known, and in **one call** — §The batching contract's second row, both
-commands together, every stage at once:
-
-```text
-components_read(verb="read", path=".agents/quenching/references/specs-develop/questions.md", sections=["§Compose", "§Approval"])   # + "§Refine" where refine runs,
-                                                    # + "§Who answers", + "§Gathering the evidence"
-specs_read(verb="section", spec=<id>, headings=<every heading this pass reads or writes>)   # the union, once
-```
-
-| Stage | Spec sections it reads or writes |
-| --- | --- |
-| discoveries | `## Discoveries` |
-| compose | `## Problem` `## Design`, plus every heading `ready.missing`/`ready.malformed` named in step 2, plus `## Impact` `## Tasks` where step 3d runs |
-| refine | `## Problem` `## Proposal` `## Design` `## Alternatives Considered` `## Risks` `## Impact` `## Tasks` |
-| approval | `## Proposal` `## Impact` `## Risks` — and it writes nothing into the body |
-
-Ask for the **union**, in one call. A heading that is absent comes back as `(## X is absent)` with
-exit 1 — a result, not a refusal, and it is the same gap map `ready` already reported.
-
-**Compose and refine also read `/docs/`** (Doctrine): the `/docs/standards/` this spec's
-`## Impact` declares — the declared files, never the folders they sit in — and
-`/docs/glossary.md`. Either **may** delegate that reading to a read-only sub-agent under
-§Gathering the evidence, which returns one compact table. It is an option, not a step: for a
-two-file spec, keep the reading.
-**Done when:** every stage's section and the union of spec sections are in hand, in one call, and
-nothing else was opened.
-
-### 3c. Run the dependency sweep — once, at the pass's open
-Skip whole where `### Mapa de dependências` already sits under `## Design`: a spec is swept at most
-once. **This step opens nothing** — step 3b's two calls already carry both the `## Design` it reads
-and the §Gathering the evidence that governs it.
-
-Otherwise dispatch one read-only `Task` sub-agent under the **wider** profile of §Gathering the
-evidence, briefed with whichever of `## Problem` / `## Proposal` is filled, asked for the one table
-that section names: every file the proposal's own area touches or is touched by, and what breaks or
-goes orphaned if it changes.
-
-**When the executor has no `Task` tool** (a sub-agent profile declaring `task: false`), the sweep is
-neither skipped nor improvised: the executor runs it itself, inline, with the read-only tools it
-holds and under the same **wider** profile, writing nothing but the table. The map's date line then
-reads `(varredura inline: executor sem Task)`, so a later pass can tell it from a sub-agent's map.
-
-**The orchestrator holds the result; the sub-agent never writes it.** The table waits for step 7's
-own consolidated write, landing as `### Mapa de dependências` under `## Design`, dated.
-**Done when:** the spec already carries a map, or this pass holds the sub-agent's table to write at
-step 7.
-
-### 3d. Enumerate the surface refinement
-Runs only on the ask step 3 identified; skip whole otherwise. Follow
-[questions.md](.agents/quenching/references/specs-develop/questions.md) §Surface refinement.
-
-**Plan; do not edit.** Write no workflow, skill, reference, structure or code file during
-definition. This boundary lets the pass obey the doctrine it is changing: the surface becomes a
-task group, never a prose edit to its targets. `/quenching-specs execute` writes it.
-
-Enumerate every opportunity found while forming the objective — a workflow, a skill, a reference,
-the structure that holds them, an automation. Fold each into the group or park it as one
-`## Discoveries` line, per §Surface refinement's enumeration. Drop nothing.
-
-Draft `### 1. Process surface` as the first group of `## Tasks`, ahead of the objective's tasks
-that rely on the new behaviour. Give every item `files:` and `verify:`. Name in `files:` the
-paths in the `Process surface this spec expects to touch` list under `## Impact`, plus the generated
-mirrors each source edit rewrites — the deployed `.agents/**` and `.claude/**` mirrors and
-`.agents/.quenching-deploy.json` — in the same task as that source edit. Name every declared path
-in a task; let no `[P]` cross the group.
-Declare the paths per [specs-develop/artifacts.md](.agents/quenching/references/specs-develop/artifacts.md) §`## Impact` — the parsed sub-heading.
-
-Where the plan needs current practice, delegate to the read-only research sub-agent of
-[specs-develop/questions.md](.agents/quenching/references/specs-develop/questions.md) §Surface
-refinement. Keep one table — source, publication date, retrieval date, claim, what it would
-change — in `## Alternatives Considered` or `## Design`. A web source may support an alternative or a rationale;
-it never grounds a binding rule alone —
-[align/evidence-doctrine.md](.agents/quenching/references/align/evidence-doctrine.md) §3.
-
-This is a subject the pass plans, not an execution question like `[P]`/`files:`/`pattern:`.
-Ask the human only what the surface plan cannot answer from evidence, under the pass's track.
-**Done when:** every declared surface path is named by a task carrying `files:` and `verify:`,
-`specs_read(verb="parallel", spec=<id>)` exits 0 in step 7, and nothing outside the
-spec was written.
-
-### 4. Compose
-Skip where the spec is already `ready`. Otherwise follow §Compose, under the four shared mechanics:
-sequential to shape, grouped to close, every question carrying **an inline recommendation**, every
-answer naming the section it lands in, and the stage's declared stop condition.
-
-**The track decides who answers; §Compose is unchanged either way.** On the **simple track** and on
-declared autonomy the pass answers every item **from evidence**, names the assumption inside any
-answer that rests on one, records it under `### Assumptions` in `## Design` (one line, with the
-section that depends on it), and parks what no evidence answers as an `## Open Decisions` line
-carrying how it will be decided — it asks nothing. On the **complex track** it drafts those same
-answers first and asks the human **about the draft**, in batches: one round at a time, with the
-questions whose answers do not change one another, each carrying a recommendation. A question that
-depends on an answer waits for the next round.
-
-Questions must be **specific to this spec**. One that would read identically against any spec is
-noise — do not ask it, and do not pad the count with it. That holds for a drafted answer too: one
-that would read identically against any spec is a default, not evidence, and it is parked.
-
-Nothing is written. Keep a running list of `(question or drafted answer, its source, target
-section)`.
-
-**The fourth execution question is asked here:** the compose set ends on `[P]`, `files:` and
-`pattern:` ([questions.md](.agents/quenching/references/specs-develop/questions.md)
-§Compose), and this pass asks **which tests does this task touch?** beside them, per task. Every
-test whose diff the task produces belongs in its `files:` —
-[artifacts.md](.agents/quenching/references/specs-develop/artifacts.md) §`## Tasks`
-§Execution metadata owns the rule — and a test left out is the out-of-scope diff the verifier
-charges at the door. Same moment, same evidence: the question is cheap while the task is a draft
-and expensive after its commit.
-**Done when:** the ready set is closed in the draft, or the user called it.
-
-### 5. Refine — where it runs
-Runs when a concrete signal fired and the pass is not `autonomous`, or when the input asked for it.
-Skip whole otherwise, and say so in the report — the close recommends refine where a signal fired
-and refine has not run.
-
-Follow §Refine over what step 4 just drafted: the signals select the lenses (alternatives for an
-open decision of shape, critique for a contradiction or a gap of evidence, premortem only for the
-irreversible or wide blast radius), and a criticism once answered rewrites the next one, so this
-stage is sequential.
-
-**This is the one stage that may overturn.** It rewrites the draft, not the file — both land in
-step 7's single edit, so the spec never holds the superseded version. **A change to `## Proposal`
-is always the human's**, never a decision this stage takes alone; where no human is present the
-pass did not reach this stage at all.
-**Done when:** §Refine's stop condition is met, or the user called it.
-
-### 6. Consolidate the edit, and narrate it
-Load the authoring doctrine now — the union of `artifacts.md` sections this pass needs, in one call:
-
-```text
-components_read(verb="read", path=".agents/quenching/references/specs-develop/artifacts.md", sections=["§Writing a section through stdin", "§The explicit-none rule", "§The nine definition sections", "§`## Impact`", "§`## Tasks`", "§Execution metadata"])
-```
-
-**The consolidation stays; the confirmation goes.** Show every accumulated answer as a single plan —
-per section, what changes and the answer it came from, drafted under the doctrine just loaded, with
-what refine overturned marked as such — and then write it in step 7. The plan is **narrated, never
-submitted**: do not ask for a confirmation of it and do not wait for one. Invoking this command is
-the authorization. When surface refinement ran, its group and the `## Impact` sub-heading that
-declares it belong to this same plan — narrate group by group, never as a second edit.
-
-Anything that turned out to belong outside the spec is narrated here too: a durable rule or a term
-as a **routed offer**, not an edit, and an **out-of-scope follow-up as the one `## Discoveries` line
-this edit will park** — a line, not an offer (§Invariants).
-**Done when:** the plan has been narrated in full, as one plan for the whole pass.
-
-### 7. Apply, verify, and record what the pass earned
-**Every write of this step is ONE call** — §The batching contract's third row: the section write,
-the `## Discoveries` lines, the records, `verification`, `validate`, and the closing `status`.
-
-Write the narrated sections with ONE `specs_write(verb="section_write", spec=<id>, sections=[…])` — it creates
-each heading in canonical position on first write, so creating and revising
-are the same call. An emptied section becomes an explicit `- none — <reason>`, never a deleted
-heading. The surface group and the `## Impact` sub-heading that declares it land in this same
-single write as the rest; there is no surface-specific write, call or record.
-
-**Every body goes in that one call:**
-
-```text
-specs_write(verb="section_write", spec=<id>, sections=[
-  {"heading": "<Heading>", "body": "<the drafted section, verbatim>"},
-  {"heading": "<Other Heading>", "body": "<the other drafted section, verbatim>"}])
-```
-
-A repeat or a heading outside the canonical thirteen refuses (exit 2) **without writing any of
-them**. `heading` and `body` instead of `sections` is the singular form. The N splices land as ONE
-write.
-
-Every follow-up the plan parked is written in this same edit — `specs_write(verb="discover", spec=<id>,
-text="<finding>")`, one call per line — and never mid-stage, which
-[questions.md](.agents/quenching/references/specs-develop/questions.md) §The four shared
-mechanics forbids. The call creates `## Discoveries` when the heading is absent, and a filled
-`## Discoveries` moves no derived stage.
-
-**Ask the epic's authorization before the execute, never at the verify.** When a task's `files:` touches the
-surface of the verifier's checks 9 and 10 (a hook, settings, a workflow, a grant, the gate) and the spec belongs to an
-epic, the human answers once whether the epic's `## Design` authorizes it (a sub-agent returns `needs-human:`), and the
-dated bullet naming the spec id or the path is written to that `## Design` before `execute`.
-
-Then the frontmatter records this command owns — read
-[questions.md](.agents/quenching/references/specs-develop/questions.md) §Recording the
-pass for which stage earns which, and
-[spec-driven.md](.agents/quenching/references/specs-develop/spec-driven.md) §Frontmatter
-for the write-once semantics, in one call. Each is stamped through `specs_write(verb="record")`:
-
-| Record | When | Call |
-| --- | --- | --- |
-| `refined: {mode, date}` | compose or refine ran; `mode` is the deepest reached | `specs_write(verb="record", spec=<id>, name="refined", fields={"mode": "<compose\|refine>", "date": "<today>"})` |
-| `verification` | compose settled the policy | `specs_write(verb="verification", spec=<id>, policy=<per-task\|per-section\|end-of-plan>)` |
-| `tags` | the pass changed the spec's scope, or the capture presumed wrong | `specs_write(verb="tags", spec=<id>, value=<whole list>)` |
-| `complexity` (in `priority`) | the pass outgrew its size and the human approved the new level, or the close's recommendation was taken (step 8) | `specs_write(verb="record", spec=<id>, name="priority", fields={"complexity": "<level>", "date": "<today>"})` |
-
-`approved` is **not** stamped here — it waits for the verification below to prove `ready`, and is
-stamped in step 8.
-
-`specs_write(verb="tags")` **replaces** the whole list, never appends — reissue the subject's own fixed tags
-together with whatever this pass adds, or the fixed ones are lost.
-
-The title is the sole short description every ranked listing prints (`specs_read(verb="next")`); keep it descriptive when the spec's scope changes.
-
-`verification` is a plain frontmatter key with a verb of its own. Omit the value to read what is in
-force; absent means the default, and the default is never stamped to make it explicit.
-
-`complexity` is a field of `priority`, and the record merges — `level` and `criticality` survive
-a re-stamp that touches only the size.
-
-Then, in the same call, **verify where the pass landed**: `specs_read(verb="validate", spec=<id>)` and
-`specs_read(verb="status", spec=<id>)`. **When this pass touched `## Tasks`, run `specs_read(verb="parallel", spec=<id>)`
-here too** — exit 1 names the `[P]` group whose `files:` sets are not disjoint, and
-definition time is the only moment that is cheap to fix. Report what each says; a `[P]` nobody
-proved is a promise execution will refuse.
-**Done when:** the pass's one edit is written, the records it earned are stamped, and validate,
-`status` — plus `parallel`, where `## Tasks` moved — have run in that same call.
-
-### 8. Close on a recommendation, and report
-The re-derived stage came back in step 7's call. Compare it with
-where the pass expected to land: a divergence is named and the pass re-enters at step 3 with a pass
-derived from the real stage. **The re-entry is narrated, never offered.**
-
-**No size check runs before approval.** Do not run `specs_read(verb="estimate")`, and
-never ask, block or recommend decomposition over a token budget: a declared-reading estimate is not
-a build's context, and a worker over its size estimate finishes the spec anyway.
-
-Close according to the track — §Approval owns the screen:
-
-- **Simple track** — no screen. With `ready` now **proved** by step 7's payload and `approved`
-  unset, stamp it here: `specs_write(verb="record", spec=<id>, name="approved", by="session")`, which writes the date. **`by:`
-  is never omitted** — a record with no `by:` reads as `human`, so leaving it off silently claims a
-  human this pass never had. When the invocation says `autonomous`, stamp
-  `by="orchestrator-forced"` instead. That is the only path that writes this value, and only
-  after step 7 proved `ready`.
-- **Complex track** — ONE closing decision sheet that **recommends** rather than defaulting to
-  approve. Judge what the pass produced against §Refine's three signals and lead with the move they
-  argue for, as option A (recommended), carrying the signal in its own text: approve, refine (with
-  the lens the signal names), or stop. Choosing refine IS the OK to restamp `complexity` if the depth
-  grew; apply both and re-enter at step 3. A pass where refine already ran recommends approving and
-  names what the argument settled — never the refine the human already took.
-
-**A refine re-enters the pass; it never restarts it.** What compose already wrote stays written —
-the refine buys the argument the first pass did not have, over the artifact it drafted.
-
-**The screen belongs to whoever holds the human.** Running standalone, present it. Running as a
-sub-agent under a conductor, present nothing: return the screen's content and let the conductor
-present it — a sub-agent never talks to the human, on any track.
-
-Then report:
-
-**When this run's input carried `autonomous`, skip the read below and the mold with it** — a conductor presents the report, not this run; return the content in the fixed shape the caller specified. Otherwise:
-
-```text
-components_read(verb="read", path=".agents/quenching/references/specs-develop/report-mold.md", sections=["§The report mold"], rules_only=true)
-```
-
-Emit §The report mold. The single-spec header line carries the stage **after** the pass; two body
-blocks:
-
-1. **The pass** — fixed. The spec's URL in the backend, repeated from step 1 off the same `path`
-   field and never re-fetched; **the stages that ran, in order, and whether refine ran or was left
-   to the close's recommendation**; the track and what it changed about who answered; how many
-   questions were asked and answered, and how many answers the pass gave from evidence with an
-   assumption named; **what refine overturned**, if anything; **an `approved` stamped
-   `by: session`, `by: human` or `by: orchestrator-forced` on its own line**; the sections edited;
-   whether surface refinement ran and, when it did, its group's task count; the records stamped; the routed offers and
-   whether each was taken; the stage before and after, and whether it landed where the pass expected.
-2. **Parked into `## Discoveries`** — optional, and every line **quoted**.
-
-Print §The session-size line before the block — `components_read(verb="session_context")`, read once; exit 1 turns the `→` line into a recommendation to run the next stage **in a new session**, exit 0 and 2 leave it an offer.
-
-Close on §The next-step block — `/quenching-git branch <id>` once `approved` is stamped, naming it
-the natural moment to isolate before `/quenching-specs execute <id>` writes any code;
-`/quenching-specs develop <id>` again to refine a spec that is already `ready`; or
-`/quenching-specs execute <id>` to carry it to the end task by task.
-
-**Isolation is named, never taken** — `/quenching-git branch <id>` appears once, in the next-step
-block, and is never asked as a question mid-pass.
-**Done when:** the pass closed or re-entered, and the summary is shown.
+Steps 1 and 2 are one call (§The batching contract), so load `step-1.md` and `step-2.md` together.
 
 ## Invariants to never violate
 
