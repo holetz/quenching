@@ -355,7 +355,7 @@ fi
 
 # Did the session act at all? Zero tool_use events of ANY name means the capture carries no
 # evidence — the process died, the stream was unreadable, or nothing ran. Every assertion here
-# must be gated on this, because the NEGATIVE halves ("read nothing under the unpublished .agents/skills") pass
+# must be gated on this, because a NEGATIVE half ("read nothing outside the deployed surface") passes
 # vacuously over an empty stream: an unreadable capture would report a clean surface.
 # No evidence is reported as INCONCLUSIVE. It is never a pass and never a failure.
 # The startup inventory is independent of the calls we grade: a correct call must not hide a
@@ -404,8 +404,8 @@ print(n)
 }
 
 # Every check gets a throwaway git repo that enables NO plugin, and this checkout's source deployed
-# into it with `cq deploy --harness claude` — the `.claude/skills/` bridge and the `.agents/quenching/`
-# payload are the whole surface. `newbox <dir> [modules]` leaves LOADED on that box's payload.
+# into it with `cq deploy --harness claude` — the `.agents/skills/` source, its `.claude/skills/`
+# projection and the `.agents/quenching/` payload are the whole surface. `newbox <dir> [modules]` leaves LOADED on that box's payload.
 #
 # The box must contain whatever the prompts refer to, or a check grades the FIXTURE.
 # Three ways that bit, all observed here:
@@ -431,8 +431,9 @@ newbox () {
     cat "$1.deploy.log" >&2
     exit 2
   fi
-  # `--harness claude` publishes the generated skills once, in `.claude/skills` (7.18.0).
-  LOADED=("$1/.agents/quenching" "$1/.claude/skills")
+  # The generated skills live in `.agents/skills` (the source, which every copy cites) and in
+  # their `.claude/skills` projection (ADR 0022).
+  LOADED=("$1/.agents/quenching" "$1/.agents/skills" "$1/.claude/skills")
 }
 
 echo "functional-checks — $SOURCE deployed into throwaway targets"
@@ -459,11 +460,8 @@ copy it from the body you were given." \
 if evidence "$WORK/1.jsonl"; then
   if anchored "$(reference_reads "$WORK/1.jsonl")"; then r=yes; else r=no; fi
   check "$r" "read a file under the deployed references"
-  if grep -q '/\.agents/skills/' <<<"$(reference_reads "$WORK/1.jsonl")"; then r=no; else r=yes; fi
-  check "$r" "read nothing under the unpublished .agents/skills"
 else
   inconc "read a file under the deployed references" "missing tool activity or verifiable skill inventory"
-  inconc "read nothing under the unpublished .agents/skills" "missing tool activity or verifiable skill inventory"
 fi
 fi
 
@@ -488,11 +486,8 @@ copy it from the body you were given." \
   if evidence "$WORK/front-$id.jsonl"; then
     if anchored "$(reference_reads "$WORK/front-$id.jsonl")"; then r=yes; else r=no; fi
     check "$r" "$command loaded from the deployed payload"
-    if grep -q '/\.agents/skills/' <<<"$(reference_reads "$WORK/front-$id.jsonl")"; then r=no; else r=yes; fi
-    check "$r" "$command read nothing under the unpublished .agents/skills"
   else
     inconc "$command loaded from the deployed payload" "missing tool activity or verifiable skill inventory"
-    inconc "$command read nothing under the unpublished .agents/skills" "missing tool activity or verifiable skill inventory"
   fi
 }
 front_probe ops "/quenching-ops status"
