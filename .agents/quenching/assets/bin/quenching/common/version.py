@@ -3,4 +3,4 @@
 Moved verbatim out of the pre-refactor specs script."""
 from __future__ import annotations
 
-VERSION = "7.19.0"  # kept in lockstep with the source VERSION file, the HUD plugin.json and marketplace.json
+VERSION = "8.0.0"  # kept in lockstep with the source VERSION file, the HUD plugin.json and marketplace.json

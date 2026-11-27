@@ -13,6 +13,47 @@ owner: [`ci-cd/versioning-release.md`](docs/standards/ci-cd/versioning-release.m
 short version for a consumer: the version is published once, deliberately, as a release — never at a
 spec's own conclude — and `cq --version` is what answers which one you are running.
 
+## 8.0.0
+
+**Major: a superfície instalada cai de 13 para 5 skills** (épico #673). Ficam `quenching-align`,
+  `quenching-components`, `quenching-git`, `quenching-knowledge` e `quenching-specs`. Os routers
+  `quenching-{design,ops,proof,toolchain,delivery,security,opensource}` e `quenching-handoff`
+  saem; o próximo `cq deploy --write` os apaga do alvo (salvo pasta com edição local). Os módulos
+  das frentes continuam, sem skill, donos dos pacotes `cq`, hooks, referências e perfis.
+
+**O align conduz todas as frentes, com a frente como argumento** (#676, ADR 0023). Dois fluxos:
+  `/quenching-align [frente]` e `/quenching-align status [frente]`, que inclui a auditoria de
+  segurança. O texto de cada frente mora em `.agents/quenching/references/<frente>-align/`,
+  publicado pelo módulo da frente.
+
+**O components vira a régua de construção** (#677): fluxo novo `rules [peça]`, só leitura, e os
+  fluxos de criação `entrypoint-new`, `layer-new` e `genre-new` vindos das frentes.
+
+**O handoff vira fluxo de specs e o git ganha `conflict-resolve`** (#678).
+
+**O lint acha citação a rota que não resolve e o status mostra o uso de cada skill** (#675). O
+  `sk-dangling-citation` passa a pegar router removido, a forma hifenizada `/quenching-<router>-<fluxo>`
+  e `/skill` do alvo que sumiu, e a mensagem traz a rota nova. O `components status` conta o uso
+  por skill e fluxo nas sessões e marca `sk-unused` (info) o que está sem uso e sem citador.
+
+**Atualização — rotas que mudam** (o lint do alvo aponta cada citação antiga com a nova):
+
+| Antes | Agora |
+| --- | --- |
+| `/quenching-<frente> align` (design, ops, proof, toolchain, delivery, opensource, knowledge, components) | `/quenching-align <frente>` |
+| `/quenching-<frente> status` (as mesmas, mais security) | `/quenching-align status <frente>` |
+| `/quenching-components harness-align` | `/quenching-align components` |
+| `/quenching-ops entrypoint-new`, `/quenching-proof layer-new`, `/quenching-design genre-new` | `/quenching-components <fluxo>` |
+| `/quenching-handoff` | `/quenching-specs handoff` |
+
+**Correções desde a 7.19.0:** o deploy apaga os arquivos gerados que perderam o dono no
+  manifesto (#662); não desfaz commits locais ao implantar de fonte mais antiga que o runtime do
+  alvo (#671); não apaga o texto após `[mcp_servers.quenching]` no `.codex/config.toml` (#672); o
+  `worktree_acquire` aceita base qualificada pelo remoto (#669); o push do store de specs tenta de
+  novo em repositório grande (#670); preflight do login do Azure Boards (#674); `ct-bench-skill-duplicate`
+  revisto após a ADR 0022 (#661); a sonda funcional do align prova a frente pela referência lida
+  (#685).
+
 ## 7.19.0
 
 **O deploy atende todos os harnesses por padrão, com o `codex` de volta.** Sem `--harness` e sem
