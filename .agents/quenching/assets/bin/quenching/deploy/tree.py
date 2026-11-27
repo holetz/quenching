@@ -471,11 +471,19 @@ def build_tree(source: Path, target: Path, modules: list[str], harnesses: list[s
         raise DeployError("source does not carry the selected module packages: "
                           + ", ".join(sorted(missing)))
     tree: dict[str, tuple[bytes, int]] = {}
+    # The folders this deploy writes whole: a file in one of them that the new tree does not carry
+    # is no one's, so the plan deletes it even when no manifest ever listed it.
+    sweep: list[str] = []
+
+    def whole(rel: str, transform=None) -> None:
+        _add_tree(tree, source, rel, transform)
+        if (source / rel).is_dir():
+            sweep.append(PAYLOAD + "/" + rel)
 
     # Payload: the runtime and the shared procedure the conductor reads.
     if runtime == "vendor":
         for package in packages:
-            _add_tree(tree, source, "assets/bin/quenching/" + package)
+            whole("assets/bin/quenching/" + package)
         # quenching_launch.py is the wheel entry point only (the build maps it to launch.py);
         # the vendored target runs the generated bin/cq, so a clone and a uvx deploy write the same tree.
         _add_tree(tree, source, "assets/bin/cq")
@@ -483,22 +491,23 @@ def build_tree(source: Path, target: Path, modules: list[str], harnesses: list[s
         _add(tree, PAYLOAD + "/bin/cq.cmd", _VENDOR_CMD.encode(), 0o644)
     _add_tree(tree, source, "assets/modules.json")
     _add_tree(tree, source, "VERSION")
-    _add_tree(tree, source, "references", translate.reference_document)
-    _add_tree(tree, source, "assets/templates", translate.reference_document)
-    _add_tree(tree, source, "assets/translation")
+    whole("references", translate.reference_document)
+    whole("assets/templates", translate.reference_document)
+    whole("assets/translation")
     # The identity hooks: inert until a clone points `core.hooksPath` at them.
-    _add_tree(tree, source, "assets/githooks")
+    whole("assets/githooks")
     # The bootstrap template travels with the payload so a vendored deploy renders it too.
-    _add_tree(tree, source, "assets/bootstrap")
+    whole("assets/bootstrap")
     for module in selected:
         for rel in ASSETS_BY_MODULE.get(module["name"], ()):
-            _add_tree(tree, source, rel, translate.reference_document)
+            whole(rel, translate.reference_document)
     # The hooks the selected modules declare, installed in `.claude/settings.json` by `cli`; Claude
     # Code and the GitHub Copilot harness both read that file, so the bodies travel with `claude`.
     hooks = _declared_hooks(selected) if "claude" in harnesses else []
     # Every entry runs the dispatcher, which runs the bodies; both travel.
     if hooks:
         _add_tree(tree, source, f"assets/hooks/{claude_settings.DISPATCH}.py")
+        sweep.append(PAYLOAD + "/assets/hooks")
     for hook in hooks:
         _add_tree(tree, source, f"assets/hooks/{hook['name']}.py")
 
@@ -506,6 +515,7 @@ def build_tree(source: Path, target: Path, modules: list[str], harnesses: list[s
     for name, path in _agents(source).items():
         _add(tree, f"{PAYLOAD}/agents/{name}.md",
              translate.agent_document(path.read_text(encoding="utf-8"), name).encode(), _mode(path))
+    sweep += [PAYLOAD + "/agents", PAYLOAD + "/bin"]
 
     if runtime == "uvx":
         sh, cmd = _uvx_shim(VERSION)
@@ -538,7 +548,7 @@ def build_tree(source: Path, target: Path, modules: list[str], harnesses: list[s
         if package not in packages and kept(PAYLOAD + "/" + folder, "*.py") and (source / folder).is_dir():
             before = set(tree)
             folders.append(PAYLOAD + "/" + folder)
-            _add_tree(tree, source, folder)
+            whole(folder)
             mirrored.extend(sorted(set(tree) - before))
 
     skill_names: list[str] = []
@@ -608,6 +618,7 @@ def build_tree(source: Path, target: Path, modules: list[str], harnesses: list[s
             files[rel] = (data, _mode(path))
 
     for name, files in generated.items():
+        sweep.extend(f"{out}/{name}" for out in dirs)
         for rel, (data, mode) in files.items():
             for out in dirs:
                 bridged = (bridge.with_marker(data.decode("utf-8"), name).encode("utf-8")
@@ -703,4 +714,5 @@ def build_tree(source: Path, target: Path, modules: list[str], harnesses: list[s
                                       "command": prefix, "mcpjson": bool(mcp),
                                       "permissions": []}
     return {"tree": tree, "seeds": seeds, "manifest": document, "settings": settings,
-            "mirrored": sorted(set(mirrored)), "bootstrap": bootstrap_files}
+            "mirrored": sorted(set(mirrored)), "bootstrap": bootstrap_files,
+            "sweep": sorted(set(sweep))}
