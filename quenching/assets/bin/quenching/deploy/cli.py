@@ -159,6 +159,37 @@ def _change(change: str, rel: str) -> dict:
     return {"path": rel, "change": change}
 
 
+def _without_commit(document: dict | None) -> dict | None:
+    return {k: v for k, v in document.items() if k != "sourceCommit"} \
+        if isinstance(document, dict) else document
+
+
+def regression(source: Path, previous: dict | None) -> dict | None:
+    """The recorded source commit when this source no longer holds it, with what would be lost.
+
+    `None` when the manifest records none, the source is no git checkout, or the recorded commit
+    is an ancestor of the source's HEAD. A commit the source does not know is reported with no
+    list: the history cannot be compared, so it only warns."""
+    recorded_commit = (previous or {}).get("sourceCommit")
+    head = deploy_tree.source_commit(source)
+    if not isinstance(recorded_commit, str) or not head or recorded_commit == head:
+        return None
+
+    def git(*args: str) -> subprocess.CompletedProcess:
+        return subprocess.run(["git", "-C", str(source), *args], capture_output=True, text=True,
+                              timeout=60, check=False)
+    try:
+        if git("cat-file", "-e", f"{recorded_commit}^{{commit}}").returncode != 0:
+            return {"recorded": recorded_commit, "head": head, "known": False, "lost": []}
+        if git("merge-base", "--is-ancestor", recorded_commit, head).returncode == 0:
+            return None
+        lost = git("log", "--format=%h %s", "--max-count=50", f"{head}..{recorded_commit}")
+    except (OSError, subprocess.SubprocessError):
+        return None
+    return {"recorded": recorded_commit, "head": head, "known": True,
+            "lost": lost.stdout.strip().splitlines()}
+
+
 def _owned(previous: dict | None) -> set[str]:
     return set(_recorded_hashes(previous))
 
@@ -503,7 +534,8 @@ def plan(target: Path, built: dict, previous: dict | None,
             current = json.loads((target / MANIFEST).read_text(encoding="utf-8"))
         except ValueError:
             current = None
-        if current != built["manifest"]:
+        # The source commit moves with every source commit: it is no drift of the target.
+        if _without_commit(current) != _without_commit(built["manifest"]):
             changes.append(_change("manifest", MANIFEST))
     else:
         changes.append(_change("create", MANIFEST))
@@ -762,6 +794,9 @@ def _parser() -> argparse.ArgumentParser:
     mode.add_argument("--check", action="store_true", help="exit 1 on drift")
     p.add_argument("--force", action="store_true",
                    help="with --write or --remove: replace or delete files edited in the target")
+    p.add_argument("--allow-regress", action="store_true",
+                   help="with --write: deploy a source that lacks the commit the target was "
+                        "last deployed from")
     p.add_argument("--remove", action="store_true",
                    help="plan removing the whole deployed surface; with --write, remove it")
     p.add_argument("--prune-legacy", action="store_true",
@@ -858,13 +893,25 @@ def _evaluate(args, target: Path, previous: dict | None) -> tuple[dict | None, d
     result = plan(target, built, previous, workspace=workspace_declared)
     result["warnings"] = [*result.get("warnings", []), *mcp_warnings,
                           *_identity_hooks_warnings(target)]
+    regress = None if deploy_tree.self_hosted(target) else regression(
+        deploy_tree.source_root(), previous)
+    if regress and not regress["known"]:
+        result["warnings"] = [f"the target was deployed from source commit {regress['recorded'][:9]}, "
+                              "unknown to this source: a regression cannot be ruled out",
+                              *result["warnings"]]
+    if regress and regress["known"]:
+        result["warnings"] = [f"this source does not hold {regress['recorded'][:9]}, the commit the "
+                              f"target was deployed from: {len(regress['lost'])} commit(s) would be "
+                              "taken back; `--write` refuses without --allow-regress",
+                              *result["warnings"]]
     installed = (previous or {}).get("version")
     if isinstance(installed, str) and installed != built["manifest"]["version"]:
         result["warnings"] = [f"the target carries quenching {installed}; this source is "
                               f"{built['manifest']['version']}", *result["warnings"]]
     return None, {"built": built, "result": result, "installed": installed, "modules": modules,
                   "profiles": profiles, "harnesses": harnesses, "runtime": runtime,
-                  "hooks_python": hooks_python}
+                  "hooks_python": hooks_python,
+                  "regress": regress if regress and regress["known"] else None}
 
 
 def _payload(target: Path, state: dict, written: bool) -> dict:
@@ -924,6 +971,16 @@ def main(argv: list[str]) -> int:
                        "remedy": "move each edit to a target-owned skill or into the quenching "
                                  "source, or revert it; rerun with --force to discard the edits"},
                       args.json)
+    regress = state["regress"]
+    if args.write and regress and not args.allow_regress:
+        return refuse({"code": "ct-deploy-regress", "recorded": regress["recorded"],
+                       "head": regress["head"], "lost": regress["lost"],
+                       "message": f"this source does not hold {regress['recorded'][:9]}, the commit "
+                                  "the target was last deployed from; a write would take back "
+                                  f"{len(regress['lost'])} commit(s) of the vendored runtime "
+                                  "(listed in `lost`); nothing was written",
+                       "remedy": "rebase or merge the source onto that commit and rerun, or rerun "
+                                 "with --allow-regress to accept the loss"}, args.json)
     if args.write and result["conflicts"]:
         return refuse({"code": "ct-deploy-unowned", "conflicts": result["conflicts"],
                        "message": "the target holds files no deploy manifest owns; nothing was written",
