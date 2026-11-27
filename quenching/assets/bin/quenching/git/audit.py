@@ -388,6 +388,13 @@ def _branch_ok(cwd: str, branch: str) -> bool:
     return _run(cwd, "check-ref-format", "--branch", branch)[0] == 0
 
 
+def _strip_remote(base: str, remote: str) -> str:
+    """`<remote>/<branch>` names the same base as `<branch>`: the fetch is of `refs/heads/<branch>`,
+    so the remote prefix the project's standards use is dropped before it is built."""
+    prefix = f"{remote}/"
+    return base[len(prefix):] if base.startswith(prefix) and len(base) > len(prefix) else base
+
+
 def _inert_env(cwd: str, errors: list[dict] | None = None) -> dict[str, str]:
     """The environment every read of this verb runs under: the lazy fetch off, and every
     `filter.<x>` driver the repository config declares blanked as a `GIT_CONFIG_COUNT` pair, so the

@@ -18,7 +18,7 @@ from quenching.common.git import _git, _git_run
 from quenching.common.config import load_config, namespace
 from quenching.common.output import FINDINGS, emit, refuse
 from quenching.common.paths import native_path
-from quenching.git.audit import SAFE, _branch_ok, _commit, _run
+from quenching.git.audit import SAFE, _branch_ok, _commit, _run, _strip_remote
 from quenching.git.ignored import _is_link, declared_regenerable, ignored_entries, undeclared
 from quenching.git.push import remote_probe
 from quenching.git.pull import _Quiet, _spec_vs_head
@@ -422,6 +422,7 @@ def _add(args) -> int:
         if not value or value.startswith("-") or not _branch_ok(cwd, value):
             return refuse({"code": "git-worktree-ref-invalid",
                            "message": f"{label} is not a usable name: {value}"}, args.json)
+    args.base = _strip_remote(args.base, args.remote)
     if args.spec:
         bad = _spec_vs_head(args.spec, args.branch, by_name=False)
         if bad:
@@ -523,6 +524,7 @@ def _retire(args) -> int:
         if not value or value.startswith("-") or not _branch_ok(cwd, value):
             return refuse({"code": "git-worktree-ref-invalid",
                            "message": f"{label} is not a usable name: {value}"}, args.json)
+    args.base = _strip_remote(args.base, args.remote)
     if args.branch == args.base:
         return refuse({"code": "git-worktree-retire-base",
                        "message": f"the branch is the base: {args.branch}"}, args.json)
