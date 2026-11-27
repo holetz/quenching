@@ -33,7 +33,7 @@ Resolve the repository root and verify `/docs/index.md`, then inventory `tutoria
 paths, heading skeletons, links, existing nav/config and relevant code/specs with read-only tools.
 The inventory is the whole bundle even when the requested editorial slice is small. **Done when:**
 the source inventory names each home, its paths and audience, or records the missing bundle as a
-handoff to `/quenching-knowledge align`.
+handoff to `/quenching-align knowledge`.
 
 ### 2. Diagnose faults and truth risks
 

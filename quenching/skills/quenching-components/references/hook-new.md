@@ -18,7 +18,7 @@ ladder, and the policy defaults live in
 - **The rule governs; the plan proposes.** In a target repo the rule is
   `/docs/standards/automation/hooks.md`; absent + OKF bundle present → the plan offers
   creating it from `automation/hooks-standard.md`, born `authority: background`. No bundle →
-  write the hook only, suggest `/quenching-knowledge align` once.
+  write the hook only, suggest `/quenching-align knowledge` once.
 Resolve `cq` per
 [align/tool-resolution.md](.agents/quenching/references/align/tool-resolution.md)
 §Resolving the tool; branch on the **exit code** (0 ok · 1 findings · 2 refusal), never on prose.
@@ -29,7 +29,7 @@ Resolve `cq` per
 Read `/docs/standards/automation/hooks.md` and confirm the bundle (`/docs/index.md` carries
 `okf_version`). Rule present → it governs (a repo delta there beats the plugin default).
 Absent + bundle → plan its creation from the mold. No bundle → note the tail as skipped and
-plan the `/quenching-knowledge align` suggestion. **Done when:** the governing rule (or its planned
+plan the `/quenching-align knowledge` suggestion. **Done when:** the governing rule (or its planned
 creation, or the no-bundle note) is fixed.
 
 ### 2. Name what the hook catches

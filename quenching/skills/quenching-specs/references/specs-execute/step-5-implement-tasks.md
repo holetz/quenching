@@ -20,7 +20,7 @@ c. **Write only the `/docs/` this task names.** Run it from [step-5c-docs-this-t
 d–e. **On the first pass, load the rules the chain runs under, self-review the diff, then verify, stage, commit and tick the spec task as ONE chained operation.** Run it from [step-5de-verify-commit.md](.agents/skills/quenching-specs/references/specs-execute/step-5de-verify-commit.md) — read that file whole when this sub-step runs, and not before.
 
 f. **Read the chain's tail, and act on which link broke** — per §The commit, already loaded in
-   5d: `verify:`/staging failed → nothing ticked, nothing committed; fix and retry, or block it
+   5d: `verify:` or staging failed → nothing ticked, nothing committed; fix and retry, or block it
    when attempts stop converging. The commit failed → report with the task still unchecked. The
    spec tick failed after a successful commit → preserve the commit and retry only the remote
    write. The recorded subject or sha drifted → report it as a finding and write nothing further.
