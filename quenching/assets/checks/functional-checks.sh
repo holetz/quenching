@@ -425,7 +425,8 @@ newbox () {
   printf -- '---\nokf_version: "0.2"\n---\n\n# Documentation\n\n- [standards/](standards/index.md)\n' \
     > "$1/docs/index.md"
   printf '# Standards\n' > "$1/docs/standards/index.md"
-  ( cd "$1" && git init -q . && printf '# scratch\n' > README.md && git add -A && git commit -qm init )
+  ( cd "$1" && git init -q . && printf '# scratch\n' > README.md && git add -A \
+    && git -c user.name=functional-checks -c user.email=functional-checks@localhost commit -qm init )
   if ! python3 "$CQ" deploy --target "$1" --modules "$modules" --harness claude --write >"$1.deploy.log" 2>&1; then
     printf 'functional-checks: cq deploy failed for %s:\n' "$1" >&2
     cat "$1.deploy.log" >&2
@@ -495,14 +496,15 @@ front_probe proof "/quenching-align status proof"
 fi
 
 # --------------------------------------------------------------------------- #
-# 2. a conductor reaches its stage BY NAME
+# 2. a conductor reaches its stage through the front's reference
 #
-# The highest-risk path: a wrong name produces a conductor that runs and does nothing. It runs
-# against a throwaway repo — /quenching-align is invasive.
+# The highest-risk path: a wrong path produces a conductor that runs and does nothing. It runs
+# against a throwaway repo — /quenching-align is invasive. Since ADR 0023 a front is an argument of
+# the align, which follows `.agents/quenching/references/<front>-align/align.md` inline: the proof
+# is that Front 1's reference was read, from the deployed payload.
 # --------------------------------------------------------------------------- #
-# These assertions grade Skill names, not observed paths, so anchored does not apply here.
 if want 2; then
-echo "2. a conductor invokes its stage by registry name"
+echo "2. a conductor reaches its stage through the front's reference"
 newbox "$WORK/sandbox2"
 # A conformant box makes /quenching-align report "nothing to align" and stop BEFORE Front 1. Seed
 # one real knowledge finding (a concept doc with no frontmatter) so Front 1 has work.
@@ -510,28 +512,24 @@ printf '# Orphan\n' > "$WORK/sandbox2/docs/standards/orphan.md"
 ( cd "$WORK/sandbox2" && claude -p --setting-sources project "/quenching-align
 
 You have my authorization for the whole run — treat the plan gate as granted and proceed. I only
-need you to reach and INVOKE Front 1 via the Skill tool; stop right after that stage is invoked." \
+need you to reach Front 1 and open its reference; stop right after you have read it." \
   --max-turns 12 --output-format stream-json --verbose < /dev/null > "$WORK/2.jsonl" 2>&1 )
 if evidence "$WORK/2.jsonl"; then
-  # The conductor reaches Front 1 through the knowledge router with the `align` flow.
-  if python3 -c '
-import json,sys
-for line in sys.stdin:
-    call=json.loads(line)
-    skill,args=call.get("skill",""),str(call.get("args","")).lstrip()
-    if skill=="quenching-knowledge" and args.startswith("align"): sys.exit(0)
-sys.exit(1)' <<<"$(tools Skill "$WORK/2.jsonl")"; then r=yes
+  # The conductor reaches Front 1 by reading the knowledge front's align reference.
+  front_reads="$(reference_reads "$WORK/2.jsonl" | grep 'knowledge-align/align\.md' || true)"
+  if [ -n "$front_reads" ]; then
+    if anchored "$front_reads"; then r=yes; else r=no; fi
   elif grep -q '"subtype":"error_max_turns"' "$WORK/2.jsonl"; then r=cap
   else r=no; fi
   if [ "$r" = cap ]; then
-    inconc "invoked the knowledge align stage by name" "hit the turn cap before routing"
+    inconc "read the knowledge align reference from the payload" "hit the turn cap before routing"
   else
-    check "$r" "invoked the knowledge align stage by name"
+    check "$r" "read the knowledge align reference from the payload"
   fi
   if grep -qE '"skill": *"quenching-[a-z]+:' <<<"$(tools Skill "$WORK/2.jsonl")"; then r=no; else r=yes; fi
   check "$r" "invoked no retired plugin-namespaced skill name"
 else
-  inconc "invoked the knowledge align stage by name" "missing tool activity or verifiable skill inventory"
+  inconc "read the knowledge align reference from the payload" "missing tool activity or verifiable skill inventory"
   inconc "invoked no retired plugin-namespaced skill name" "missing tool activity or verifiable skill inventory"
 fi
 fi
