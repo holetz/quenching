@@ -63,6 +63,15 @@ class ComponentsCost(unittest.TestCase):
         self.assertEqual(len(row["wholeReferences"]), 1)
         self.assertEqual(row["wholeReferences"][0]["bytes"], len("## Rule\n\nWhole.\n".encode()))
 
+    def test_a_stage_file_the_body_links_is_not_charged_to_the_body(self):
+        from quenching.components.commands.cost import measure_command
+        step = ".agents/skills/quenching-specs/references/specs-create/step-1-x.md"
+        command = {"command": "/create", "path": "create.md", "body": f"Load [s]({step})\n"}
+        row, findings = measure_command(command, {}, "unused")
+        self.assertEqual(findings, [])
+        self.assertEqual(row["wholeReferences"], [])
+        self.assertEqual(row["totalBytes"], row["bodyBytes"])
+
     def test_missing_section_is_an_error_and_ratchet_blocks_only_growth(self):
         root, references = surface()
         (references / "rules.md").write_text("## Rule\n\nWhole.\n", encoding="utf-8")
