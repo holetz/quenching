@@ -60,6 +60,12 @@ PENDING_PREFIX = "refs/quenching/pending/"
 
 # A push the remote turned down because someone else moved the branch first — the one failure
 # that is retried. Anything else (auth, network, a protected branch) refuses at once.
+# A push that fails on a large repository (the remote hangs up or the POST buffer is too small).
+_TRANSPORT_MARKERS = ("http.postBuffer", "RPC failed", "hung up unexpectedly", "curl 55", "curl 56",
+                      "curl 65", "unable to rewind rpc post data")
+_TRANSPORT_CONFIG = ("-c", "http.postBuffer=1048576000", "-c", "http.version=HTTP/1.1")
+_RETRIED_LINE = "quenching: retried once with http.postBuffer=1048576000, http.version=HTTP/1.1"
+
 _REJECTED_MARKERS = ("[rejected]", "non-fast-forward", "fetch first", "stale info",
                      "cannot lock ref", "failed to update ref", "is at ")
 
@@ -1102,7 +1108,9 @@ class GitBackend(SpecBackend):
                 return blobs
             if "[remote rejected]" in said or \
                     not any(marker in said for marker in _REJECTED_MARKERS):
-                raise _refusal("sp-git-push-failed",
+                code_name = "sp-git-push-transport-retried" if _RETRIED_LINE in said \
+                    else "sp-git-push-failed"
+                raise _refusal(code_name,
                                f"pushing branch '{self.branch}' to '{self.remote}' failed: "
                                f"{said.strip() or code}; nothing was written",
                                remote=self.remote)
@@ -1111,10 +1119,18 @@ class GitBackend(SpecBackend):
                        "rejected; nothing was written", attempts=MAX_ATTEMPTS)
 
     def _push(self, lease: str | None, commit: str) -> tuple[int, str]:
-        code, out, err = self._git("push", "--quiet", "--porcelain", "--no-verify",
-                                   *([lease] if lease else []), self.remote,
-                                   f"{commit}:refs/heads/{self.branch}")
-        return code, out.decode("utf-8", "replace") + err
+        argv = ["push", "--quiet", "--porcelain", "--no-verify",
+                *([lease] if lease else []), self.remote, f"{commit}:refs/heads/{self.branch}"]
+        code, out, err = self._git(*argv)
+        said = out.decode("utf-8", "replace") + err
+        if code != 0 and any(marker in said for marker in _TRANSPORT_MARKERS):
+            # A large repository drops the single RPC post: retry once with a bigger buffer over
+            # HTTP/1.1, so no agent has to invent the configuration.
+            code, out, err = self._git(*_TRANSPORT_CONFIG, *argv)
+            said = out.decode("utf-8", "replace") + err
+            if code != 0:
+                said = f"{said.rstrip()}\n{_RETRIED_LINE}"
+        return code, said
 
     def _close(self, sent: str | None, pushed: str | None, observed: str | None) -> None:
         """Move the tracking ref from `observed` (the tip the sync read) to `pushed`, and retire
