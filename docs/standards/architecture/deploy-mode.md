@@ -139,6 +139,15 @@ carries it elsewhere is a conflict in the plan, never a write through the link.
 The manifest records the `version` that wrote it. When it differs from the source's, the plan
 carries `installedVersion` and a warning naming both, so release lag reads apart from content drift.
 
+The manifest of a target (never of the source repository itself) also records `sourceCommit`, the
+HEAD of the source checkout that wrote it; a source that is no git checkout, such as a wheel, records
+none. Before `--write`, the deploy checks that commit is an ancestor of the current source HEAD. When
+it is not, the source would take back what the target already carries (a vendored runtime with local
+commits, deployed from an older tag): `--write` refuses `ct-deploy-regress` (exit 2), listing in
+`lost` the commits the target's source had and this one lacks, and `--allow-regress` accepts the loss.
+`--check` only warns. A recorded commit the source does not know cannot be compared, so it warns and
+never refuses. `sourceCommit` moves with every source commit, so it is not drift: the plan ignores it.
+
 ## Remove
 
 `cq deploy --target <repo> --remove` plans removing the whole surface (exit 1 while there is
