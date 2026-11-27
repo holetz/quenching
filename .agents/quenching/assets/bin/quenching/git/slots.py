@@ -27,7 +27,7 @@ from quenching.common.config import load_config, namespace
 from quenching.common.git import _git_run
 from quenching.common.output import FINDINGS, emit, refuse
 from quenching.common.paths import native_path
-from quenching.git.audit import SAFE, _branch_ok, _commit, _reflog, _run
+from quenching.git.audit import SAFE, _branch_ok, _commit, _reflog, _run, _strip_remote
 from quenching.git.ignored import (_is_link, classify, declared_regenerable, ignored_entries,
                                    undeclared)
 from quenching.git.push import remote_probe
@@ -344,6 +344,7 @@ def acquire(args) -> int:
         if not value or value.startswith("-") or not _branch_ok(cwd, value):
             return refuse({"code": "git-worktree-ref-invalid",
                            "message": f"{label} is not a usable name: {value}"}, args.json)
+    args.base = _strip_remote(args.base, args.remote)
     if args.spec:
         bad = _spec_vs_head(args.spec, args.branch, by_name=False)
         if bad:
@@ -584,7 +585,7 @@ def release(args) -> int:
                       args.json)
     slot = match[0]
     path, branch = slot["path"], slot["branch"]
-    base = args.base or _default_base(cwd, args.remote)
+    base = _strip_remote(args.base, args.remote) if args.base else _default_base(cwd, args.remote)
     if not _branch_ok(cwd, base) or not _branch_ok(cwd, args.remote):
         return refuse({"code": "git-worktree-ref-invalid",
                        "message": f"base or remote is not a usable name: {base}"}, args.json)
