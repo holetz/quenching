@@ -4,7 +4,9 @@ from __future__ import annotations
 import pathlib
 import unittest
 
-CONCLUDE = (pathlib.Path(__file__).resolve().parent.parent / "skills" / "quenching-specs" / "references" / "conclude.md").read_text()
+from _flow import flow_text
+
+CONCLUDE = flow_text(pathlib.Path(__file__).resolve().parent.parent / "skills" / "quenching-specs" / "references" / "conclude.md")
 
 
 def step(number: int) -> str:

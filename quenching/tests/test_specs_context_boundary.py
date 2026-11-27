@@ -8,6 +8,8 @@ from pathlib import Path
 import re
 import unittest
 
+from _flow import flow_text
+
 
 ROOT = Path(__file__).resolve().parents[2]
 SPECS = ROOT / "quenching/skills/quenching-specs/references"
@@ -15,13 +17,6 @@ MOLD = ROOT / "quenching/references/specs-develop/report-mold.md"
 CADENCE = ROOT / "quenching/references/specs-execute/execution-cadence.md"
 
 
-def flow_text(path):
-    """The flow's index followed by its step files, when the flow is split by step."""
-    text = path.read_text(encoding="utf-8")
-    steps = path.parent / f"specs-{path.stem}"
-    if steps.is_dir():
-        text += "\n" + "\n".join(p.read_text(encoding="utf-8") for p in sorted(steps.glob("*.md")))
-    return text
 
 
 def text(path):
@@ -54,7 +49,8 @@ class StageEndContractTests(unittest.TestCase):
     def test_each_stage_end_prints_the_line(self):
         for name in ("develop.md", "execute.md", "conclude.md"):
             with self.subTest(command=name):
-                self.assertIn("Print §The session-size line before the block", text(SPECS / name))
+                body = flow_text(SPECS / name) if name == "conclude.md" else text(SPECS / name)
+                self.assertIn("Print §The session-size line before the block", body)
 
     def test_execute_offer_recommends_a_new_session_over_budget(self):
         body = text(SPECS / "execute.md")

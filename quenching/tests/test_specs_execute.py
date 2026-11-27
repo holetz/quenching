@@ -14,6 +14,7 @@ import tempfile
 import unittest
 
 import _paths  # noqa: F401
+from _flow import flow_text
 
 ROOT = Path(__file__).resolve().parents[2]
 COMMAND = ROOT / "quenching/skills/quenching-specs/references/execute.md"
@@ -32,14 +33,6 @@ def git(cwd, *args):
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
     ).stdout.strip()
-
-def flow_text(path):
-    """The flow's index followed by its step files, when the flow is split by step."""
-    text = path.read_text(encoding="utf-8")
-    steps = path.parent / f"specs-{path.stem}"
-    if steps.is_dir():
-        text += "\n" + "\n".join(p.read_text(encoding="utf-8") for p in sorted(steps.glob("*.md")))
-    return text
 
 
 
@@ -187,20 +180,20 @@ class TaskExecutionContractTests(unittest.TestCase):
         self.assertIn("Other builds retain", scale)
 
     def test_autonomous_conclude_answers_every_question_without_inferring_the_outcome(self):
-        conclude = " ".join(CONCLUDE.read_text(encoding="utf-8").split())
+        conclude = " ".join(flow_text(CONCLUDE).split())
         runner = " ".join(RUNNER.read_text(encoding="utf-8").split())
 
         self.assertIn("## Under `autonomous`", conclude)
         for row in (
-            "| Step 1 — the outcome | taken **only** from the input's `--outcome`",
-            "| Step 3 — the emergent `/docs/` plan |",
-            "| Step 4 — the `## Outcome` draft | written unconfirmed",
-            "| Step 5 — the distillation plan |",
-            "| Step 5 — the release obligations |",
-            "| Step 6 — the flow sweep | `done` and `abandoned`: every evidenced candidate is captured unasked",
-            "| Step 7 — branch behind its base | the base merged in",
-            "| Step 7 — an inconclusive check | `needs-human`",
-            "| Step 7 — the abandoned branch-delete offer | keep",
+            "| the outcome | taken **only** from the input's `--outcome`",
+            "The emergent `/docs/` plan: `done`",
+            "The `## Outcome` draft is written unconfirmed",
+            "The distillation plan: as step 3",
+            "The release obligations: `done`",
+            "`done` and `abandoned`: every evidenced candidate is captured unasked",
+            "Branch behind its base: the base merged in",
+            "An inconclusive check → `needs-human`",
+            "The abandoned branch-delete offer → keep",
         ):
             self.assertIn(row, conclude)
         self.assertIn("`autonomous` never supplies an outcome", conclude)

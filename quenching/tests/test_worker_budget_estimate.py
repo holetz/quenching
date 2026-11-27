@@ -9,6 +9,8 @@ from pathlib import Path
 import re
 import unittest
 
+from _flow import flow_text
+
 
 ROOT = Path(__file__).resolve().parents[2]
 RUNNER = ROOT / "quenching/agents/spec-runner.md"
@@ -16,15 +18,6 @@ ORCHESTRATOR = ROOT / "quenching/agents/spec-orchestrator.md"
 SPECS = ROOT / "quenching/skills/quenching-specs/references"
 AUTOPILOT = SPECS / "autopilot.md"
 STANDARD = ROOT / "docs/standards/automation/context-discipline.md"
-
-
-def flow_text(path):
-    """The flow's index followed by its step files, when the flow is split by step."""
-    text = path.read_text(encoding="utf-8")
-    steps = path.parent / f"specs-{path.stem}"
-    if steps.is_dir():
-        text += "\n" + "\n".join(p.read_text(encoding="utf-8") for p in sorted(steps.glob("*.md")))
-    return text
 
 
 def flat(path):

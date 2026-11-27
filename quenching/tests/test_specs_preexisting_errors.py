@@ -9,6 +9,7 @@ from pathlib import Path
 import unittest
 
 import _paths  # noqa: F401
+from _flow import flow_text
 
 ROOT = Path(__file__).resolve().parents[2]
 STANDARD = ROOT / "docs/standards/workflows/task-execution.md"
@@ -21,11 +22,7 @@ ORCHESTRATOR = ROOT / "quenching/agents/spec-orchestrator.md"
 
 
 def read(path):
-    text = path.read_text(encoding="utf-8")
-    steps = path.parent / f"specs-{path.stem}"
-    if steps.is_dir():  # a flow split by step: the index followed by its step files
-        text += "\n" + "\n".join(p.read_text(encoding="utf-8") for p in sorted(steps.glob("*.md")))
-    return text
+    return flow_text(path)
 
 
 class PreexistingErrorsTests(unittest.TestCase):
@@ -49,14 +46,14 @@ class PreexistingErrorsTests(unittest.TestCase):
 
     def test_flows_route_a_foreign_red(self):
         for path in (EXECUTE, CONCLUDE, RUNNER):
-            text = read(path)
+            text = flow_text(path) if path == CONCLUDE else read(path)
             self.assertIn("fix-preexistente", text, path.name)
             self.assertIn("promoted: <id>", text, path.name)
             self.assertIn(".quenching/red", text, path.name)
 
     def test_no_surface_authorizes_lowering_the_bar(self):
         for path in (EXECUTE, CONCLUDE, RUNNER):
-            text = read(path)
+            text = flow_text(path) if path == CONCLUDE else read(path)
             self.assertIn("xfail", text, path.name)
             self.assertIn("--no-verify", text.replace("`--no-verify`", "--no-verify"), path.name)
 
