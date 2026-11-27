@@ -1281,6 +1281,52 @@ class Deploy(unittest.TestCase):
         self.assertIn("attribution.commit", json.dumps(payload.get("warnings", payload)))
 
 
+
+class DeployRegression(unittest.TestCase):
+    """The recorded source commit refuses a write from a source that lacks it."""
+
+    def setUp(self):
+        tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
+        self.root = pathlib.Path(tmp.name)
+        self.src = self.root / "src"
+        self.src.mkdir()
+        for argv in (["init", "-q"], ["config", "user.email", "t@example.com"],
+                     ["config", "user.name", "t"], ["config", "commit.gpgsign", "false"]):
+            self.git(*argv)
+        self.base = self.commit("base")
+        self.local = self.commit("local")
+        self.git("checkout", "-q", "-b", "other", self.base)
+        self.other = self.commit("other")
+
+    def git(self, *argv):
+        return subprocess.run(["git", "-C", str(self.src), *argv], check=True,
+                              capture_output=True, text=True).stdout.strip()
+
+    def commit(self, name):
+        (self.src / name).write_text(name)
+        self.git("add", name)
+        self.git("commit", "-q", "-m", name)
+        return self.git("rev-parse", "HEAD")
+
+    def test_a_source_lacking_the_recorded_commit_names_what_is_lost(self):
+        found = deploy_cli.regression(self.src, {"sourceCommit": self.local})
+        self.assertTrue(found["known"])
+        self.assertEqual(["local"], [line.split(" ", 1)[1] for line in found["lost"]])
+
+    def test_an_ancestor_or_the_same_commit_is_no_regression(self):
+        self.assertIsNone(deploy_cli.regression(self.src, {"sourceCommit": self.base}))
+        self.assertIsNone(deploy_cli.regression(self.src, {"sourceCommit": self.other}))
+        self.assertIsNone(deploy_cli.regression(self.src, {}))
+
+    def test_an_unknown_commit_only_warns(self):
+        found = deploy_cli.regression(self.src, {"sourceCommit": "f" * 40})
+        self.assertFalse(found["known"])
+
+    def test_the_manifest_records_the_source_commit_outside_the_source_repository(self):
+        self.assertIsNone(deploy_tree.source_commit(self.root))
+        self.assertEqual(self.other, deploy_tree.source_commit(self.src))
+
 class SourceDialect(unittest.TestCase):
     """The source is written in the target dialect; the deploy refuses what is not."""
 
