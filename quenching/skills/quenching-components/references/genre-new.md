@@ -2,7 +2,7 @@
 allowed-tools: Bash(cq:*), Bash(cq.cmd:*), Read, Grep, Glob, Bash(python3:*), AskUserQuestion
 ---
 
-# .agents/quenching/references/design-align/genre-new.md — one genre, N destinations
+# /quenching-components genre-new — one genre, N destinations
 
 **Input**: `$ARGUMENTS` (one genre name or a short description of it).
 
@@ -12,6 +12,11 @@ This command mints one stable editorial contract. It does not produce an instanc
 ## Workflow
 
 ### 1. Prove the front exists
+
+**Module guard, first.** Run `cq modules --json` and look for `quenching-design` with `"enabled": true`. Absent or disabled → stop
+with the remedy: *this flow mints a piece of the design front, and its `cq` package ships with the
+`quenching-design` module — install it (`cq deploy --target . --write` with the module enabled), or run
+`/quenching-align design` once it is.* Nothing is written.
 
 Resolve `cq` per
 [tool-resolution.md](.agents/quenching/references/align/tool-resolution.md)

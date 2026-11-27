@@ -2,7 +2,7 @@
 allowed-tools: Bash(cq:*), Bash(cq.cmd:*), Read, Grep, Glob, Bash(python3:*), AskUserQuestion, Write, Edit
 ---
 
-# .agents/quenching/references/ops-align/entrypoint-new.md — mint one operations entry point
+# /quenching-components entrypoint-new — mint one operations entry point
 
 **Input**: `$ARGUMENTS` (one proposed operation name or a short description of the entry point).
 
@@ -23,6 +23,11 @@ and branch on exit code and JSON: `0` is clean, `1` carries findings, and `2` is
 ## Workflow
 
 ### 1. Prove the target boundary
+
+**Module guard, first.** Run `cq modules --json` and look for `quenching-ops` with `"enabled": true`. Absent or disabled → stop
+with the remedy: *this flow mints a piece of the ops front, and its `cq` package ships with the
+`quenching-ops` module — install it (`cq deploy --target . --write` with the module enabled), or run
+`/quenching-align ops` once it is.* Nothing is written.
 
 Set `TARGET_ROOT` to the target repository root, or `.` when the caller did not provide a separate
 target. Run:

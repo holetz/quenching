@@ -2,7 +2,7 @@
 allowed-tools: Bash(cq:*), Bash(cq.cmd:*), Read, Grep, Glob, Bash(python3:*), Bash(mkdir:*), Bash(mv:*), AskUserQuestion, Write, Edit
 ---
 
-# .agents/quenching/references/proof-align/layer-new.md — mint one proof layer
+# /quenching-components layer-new — mint one proof layer
 
 **Input**: `$ARGUMENTS` — one new layer name and an optional target repository root. A layer name
 must be a single stable directory/marker name; the command never invents a taxonomy or mints more
@@ -22,6 +22,11 @@ and branch on exit code and JSON: `0` is clean, `1` carries findings, and `2` is
 ## Workflow
 
 ### 1. Read the current proof declaration
+
+**Module guard, first.** Run `cq modules --json` and look for `quenching-proof` with `"enabled": true`. Absent or disabled → stop
+with the remedy: *this flow mints a piece of the proof front, and its `cq` package ships with the
+`quenching-proof` module — install it (`cq deploy --target . --write` with the module enabled), or run
+`/quenching-align proof` once it is.* Nothing is written.
 
 Set `TARGET_ROOT` to the supplied root, or `.` when it is omitted. Read the current state first:
 

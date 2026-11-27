@@ -5,7 +5,10 @@ import unittest
 
 REPO = pathlib.Path(__file__).resolve().parents[2]
 ROUTER = REPO / "quenching/skills/quenching-components/SKILL.md"
-FLOWS = ('command-new', 'agent-new', 'hook-new', 'command-eval', 'command-retro')
+FLOWS = ('command-new', 'agent-new', 'hook-new', 'entrypoint-new', 'layer-new', 'genre-new',
+         'command-eval', 'command-retro')
+MODULE_GUARDED = {'entrypoint-new': 'quenching-ops', 'layer-new': 'quenching-proof',
+                  'genre-new': 'quenching-design'}
 EXPLICIT_MENTION = ()
 
 
@@ -37,6 +40,14 @@ class ComponentsRouter(unittest.TestCase):
                 self.assertRegex(self.text, rf"\| `{flow}` \| \[references/{flow}\.md\]\(\.agents/skills/quenching-components/references/{flow}\.md\)")
                 ref = ROUTER.parent / "references" / f"{flow}.md"
                 self.assertTrue(ref.is_file())
+
+    def test_minting_flows_from_other_fronts_check_their_module_first(self):
+        for flow, module in MODULE_GUARDED.items():
+            ref = (ROUTER.parent / "references" / f"{flow}.md").read_text(encoding="utf-8")
+            first = ref.split("### 1.", 1)[1].split("### 2.", 1)[0]
+            with self.subTest(flow=flow):
+                self.assertIn("cq modules --json", first)
+                self.assertIn(module, first)
 
     def test_unscoped_bash_states_its_reason(self):
         front = self.text.split("---")[1]
