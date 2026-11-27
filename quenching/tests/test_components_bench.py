@@ -108,6 +108,13 @@ class Superficie(unittest.TestCase):
         self.assertGreater(payload["harnesses"]["claude"]["tokens"]["mcp"], 0)
         self.assertEqual(payload["harnesses"]["opencode"]["tokens"]["mcp"], 0)
 
+    def test_conclude_is_split_per_step_and_every_stage_fits_the_ceiling(self):
+        payload, _ = bench.measure(REPO, ("claude",))
+        row = payload["flows"]["conclude"]
+        self.assertEqual(len(row["stages"]), 9)
+        self.assertEqual(bench.DEFAULT_BUDGET["flow"]["conclude"], 15_000)
+        self.assertLessEqual(row["tokens"], 15_000)
+
     def test_superficie_budget_file_overrides_key_by_key(self):
         root = pathlib.Path(tempfile.mkdtemp())
         path = root / "b.json"
