@@ -59,6 +59,7 @@ HARNESS_RULES: dict[str, dict[str, tuple[str, ...]]] = {
 DEFAULT_BUDGET: dict[str, dict[str, int]] = {
     "prefix": {"claude": 7_000, "opencode": 7_000, "copilot": 7_000},
     "flow": {"create": 22_000, "develop": 41_000, "execute": 35_000, "conclude": 30_000},
+    "stage": {"default": 15_000},
 }
 
 
@@ -208,6 +209,46 @@ def measure_flows(root: Path) -> tuple[dict[str, dict], list[dict]]:
     return rows, findings
 
 
+def measure_stages(root: Path) -> tuple[dict[str, list[dict]], list[dict]]:
+    """What ONE stage of a split flow loads: the router, the flow's index, one step file and its citations.
+
+    A flow is split when `references/<flow>/` holds step files; the index cites them by path and
+    each is loaded only when its step runs, so the index is charged without those citations.
+    """
+    router = _router_dir(root)
+    if router is None:
+        return {}, []
+    surface_root = str(root / ".agents")
+    references = {item["relpath"].replace(os.sep, "/"): item for item in surface_references(surface_root)}
+    router_bytes = len((router / "SKILL.md").read_bytes())
+    stages: dict[str, list[dict]] = {}
+    findings: list[dict] = []
+    for flow in FLOWS:
+        index = router / "references" / f"{flow}.md"
+        steps = sorted((router / "references" / flow).glob("*.md")) if index.is_file() else []
+        if not steps:
+            continue
+        step_ref = re.compile(rf"\.agents/skills/{SPECS_SKILL}/references/{flow}/[A-Za-z0-9_./-]+\.md")
+        index_text = step_ref.sub("<step>", index.read_text(encoding="utf-8"))
+        rows = []
+        for step in steps:
+            step_text = step.read_text(encoding="utf-8")
+            sub = re.match(r"step-(\d+)[a-z]+-", step.name)
+            if sub:  # a sub-step runs together with its step's own file
+                for main in steps:
+                    if main.name.startswith(f"step-{sub.group(1)}-"):
+                        step_text = main.read_text(encoding="utf-8") + "\n" + step_text
+            command = {"command": f"/{SPECS_SKILL} {flow} {step.stem}", "path": str(step),
+                       "body": index_text + "\n" + step_text}
+            row, row_findings = measure_command(command, references, surface_root)
+            findings.extend(row_findings)
+            rows.append({"step": step.stem, "routerBytes": router_bytes,
+                         "stepBytes": len(step_text.encode("utf-8")),
+                         "tokens": tokens(router_bytes + row["totalBytes"])})
+        stages[flow] = rows
+    return stages, findings
+
+
 def measure(root: Path, harnesses: tuple[str, ...], budget: dict | None = None) -> tuple[dict, list[dict]]:
     """Run the layer: the payload and its findings."""
     budget = budget or DEFAULT_BUDGET
@@ -239,7 +280,21 @@ def measure(root: Path, harnesses: tuple[str, ...], budget: dict | None = None) 
                 f"flow {flow}: instruction ceiling is {row['tokens']} tokens, budget {limit}",
                 flow=flow, tokens=row["tokens"], budget=limit,
                 remedy="load fewer sections or cut the flow, or raise the budget with the reason"))
-    return {"harnesses": per_harness, "flows": flows, "unit": "tokens = chars / 4"}, findings
+    stages, stage_findings = measure_stages(root)
+    findings.extend(stage_findings)
+    stage_budget = budget.get("stage") or {}
+    for flow, rows in stages.items():
+        limit = stage_budget.get(flow, stage_budget.get("default"))
+        for row in rows:
+            row["budget"] = limit
+            if limit is not None and row["tokens"] > limit:
+                findings.append(finding(
+                    "ct-bench-stage-over", "error",
+                    f"flow {flow}, stage {row['step']}: loads {row['tokens']} tokens, budget {limit}",
+                    flow=flow, step=row["step"], tokens=row["tokens"], budget=limit,
+                    remedy="move the citations to the step that uses them, or split the step file"))
+    return {"harnesses": per_harness, "flows": flows, "stages": stages,
+            "unit": "tokens = chars / 4"}, findings
 
 
 def load_budget_dict(declared: dict) -> dict:

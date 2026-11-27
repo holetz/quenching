@@ -233,6 +233,11 @@ def measure_stages(root: Path) -> tuple[dict[str, list[dict]], list[dict]]:
         rows = []
         for step in steps:
             step_text = step.read_text(encoding="utf-8")
+            sub = re.match(r"step-(\d+)[a-z]+-", step.name)
+            if sub:  # a sub-step runs together with its step's own file
+                for main in steps:
+                    if main.name.startswith(f"step-{sub.group(1)}-"):
+                        step_text = main.read_text(encoding="utf-8") + "\n" + step_text
             command = {"command": f"/{SPECS_SKILL} {flow} {step.stem}", "path": str(step),
                        "body": index_text + "\n" + step_text}
             row, row_findings = measure_command(command, references, surface_root)
