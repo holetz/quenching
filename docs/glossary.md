@@ -131,7 +131,7 @@ Fifteen terms to read first; each has its full entry under *Terms*.
 - [**Context (components)**](standards/naming/command-surface.md) — one of the four sibling contexts
   under the `components` front — `command/`, `agent/`, `hook/`, `harness/` — each named for the
   artifact it mints, none a sub-type of another. A front-level verb sits at the front's own root
-  (`/quenching-components align`); an artifact-level verb sits under its context
+  (`/quenching-align components`); an artifact-level verb sits under its context
   (`/quenching-components command-new`).
 - [**Context integral**](standards/automation/context-discipline.md) — a run's true cost, `tokens ×
   turns remaining`, not `tokens`: every turn re-sends the whole conversation, so a block loaded once

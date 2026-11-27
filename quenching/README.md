@@ -36,18 +36,18 @@ and one root command spans the eight aligned fronts. The `security` and `git` ax
 (see [`architecture/align-surface.md`](../docs/standards/architecture/align-surface.md)
 §The security subject is pillar-shaped and §The git pillar has no align):
 
-| Front / pillar | Namespace | **align** — probe-first, structure + content |
+| Front / pillar | Module (a front is an argument of `/quenching-align`, not a skill) | **align** — probe-first, structure + content |
 | --- | --- | --- |
-| `/docs/` — the OKF bundle | `/quenching-knowledge` | `/quenching-knowledge align` |
+| `/docs/` — the OKF bundle | `/quenching-knowledge` | `/quenching-align knowledge` |
 | specs — the `quenching` branch, with GitHub or Azure Boards cards | `/quenching-specs` | lifecycle and status commands |
-| `/.design/` — the DTCG design source | `/quenching-design` | `/quenching-design align` |
-| `.claude/` — the automation surface | `/quenching-components` | `/quenching-components align` |
-| target-declared operations root | `/quenching-ops` | `/quenching-ops align` |
-| target-declared verification root | `/quenching-proof` | `/quenching-proof align` |
-| target-declared toolchain surface | `/quenching-toolchain` | `/quenching-toolchain align` |
-| target-declared delivery surface | `/quenching-delivery` | `/quenching-delivery align` |
-| license, community and governance artifacts | `/quenching-opensource` | `/quenching-opensource align` |
-| *(pillar)* — read-only security questions | `/quenching-security` | **none** |
+| `/.design/` — the DTCG design source | `quenching-design` | `/quenching-align design` |
+| `.claude/` — the automation surface | `/quenching-components` | `/quenching-align components` |
+| target-declared operations root | `quenching-ops` | `/quenching-align ops` |
+| target-declared verification root | `quenching-proof` | `/quenching-align proof` |
+| target-declared toolchain surface | `quenching-toolchain` | `/quenching-align toolchain` |
+| target-declared delivery surface | `quenching-delivery` | `/quenching-align delivery` |
+| license, community and governance artifacts | `quenching-opensource` | `/quenching-align opensource` |
+| *(pillar)* — read-only security questions | `quenching-security` | **none** |
 | *(pillar)* — a repository's own git facts | `/quenching-git` | **none** |
 | **all eight aligned fronts** | *(root)* | **`/quenching-align`** |
 
@@ -83,37 +83,35 @@ confirms on its own, always — and inside a conducted run, so does every **irre
 That contract lives once, in
 [`align/convergence.md`](references/align/convergence.md).
 
-## The 13 skills
+## The 6 skills
 
 **One folder per skill** — each `skills/<name>/SKILL.md` carries both the description that routes to
-it and the body that runs. A front router (`quenching-specs`, `quenching-git`, `quenching-knowledge`,
-`quenching-components`, and the non-core `quenching-design`, `quenching-ops`, `quenching-proof`,
-`quenching-toolchain`, `quenching-delivery`, `quenching-security`, `quenching-opensource`) keeps its flows in its own `references/`, so its rows below are flows, not
-extra skills. The tables below are the manual, and the count is a property of their rows rather than a
-second structural inventory: the `13` in this heading is the manual's canonical displayed total, while
+it and the body that runs. A router (`quenching-specs`, `quenching-git`, `quenching-knowledge` and `quenching-components`) keeps its flows in its own `references/`, so its rows below are flows, not
+extra skills. A front (`design`, `ops`, `proof`, `toolchain`, `delivery`, `opensource`, `security`) is no skill: it is an argument of `/quenching-align`, and its text lives in `references/<front>-align/`, published by the front's own module. The tables below are the manual, and the count is a property of their rows rather than a
+second structural inventory: the `6` in this heading is the manual's canonical displayed total, while
 [`tests/test_readme_surface.py`](tests/test_readme_surface.py) reads it and fails the suite whenever
 these tables and `skills/**` disagree
 ([`quality/surface-verification.md`](../docs/standards/quality/surface-verification.md)
 §A hand-written inventory of the surface needs a machine holding its lockstep).
 
-**The listing cost.** All thirteen descriptions are resident in every session, so the descriptions are
+**The listing cost.** All six descriptions are resident in every session, so the descriptions are
 the always-on cost of the plugin. Each description names its flows and carries at most 250 characters (the map of triggers per flow lives in the
-router's body, read only when it runs). The thirteen total about 2.3 thousand characters (about 0.6 thousand tokens); the
-ceiling is 13 × 250 = 3.3 thousand characters (about 0.8 thousand tokens). Before the non-core fronts
-had routers, the six resident descriptions were about 1.4 thousand characters.
+router's body, read only when it runs). The six total about 1.2 thousand characters (about 0.3 thousand tokens); the
+ceiling is 6 × 250 = 1.5 thousand characters (about 0.4 thousand tokens). The seven front routers the
+plugin carried before spec 676 added about 1.3 thousand characters more to every session.
 
 The split is by front and pillar: `/quenching-knowledge` acts on the OKF `/docs/` bundle,
-`/quenching-specs` on the specs branch and its cards, `/quenching-design` on the DTCG
+`/quenching-specs` on the specs branch and its cards, `/quenching-align design` on the DTCG
 source and its projections, `/quenching-components` on the target's `.claude/` automation surface,
-`/quenching-ops` on the target's operations surface, `/quenching-proof` on the target's verification surface, `/quenching-toolchain` on the target's toolchain surface, `/quenching-delivery` on the target's delivery surface, `/quenching-opensource` on its license, community and governance artifacts, and `/quenching-git-*` on a repository's own git facts. Two commands sit at the root. Claude auto-routes to a command by its `description`; typing the command is
+`/quenching-align ops` on the target's operations surface, `/quenching-align proof` on the target's verification surface, `/quenching-align toolchain` on the target's toolchain surface, `/quenching-align delivery` on the target's delivery surface, `/quenching-align opensource` on its license, community and governance artifacts, and `/quenching-git-*` on a repository's own git facts. Two commands sit at the root. Claude auto-routes to a command by its `description`; typing the command is
 the explicit entry point.
 
 ### The `knowledge` front — the OKF `/docs/` bundle
 
 | Command | Does |
 | --- | --- |
-| `/quenching-knowledge` | The single entry point of the knowledge flows: picks one of the thirteen flows (add, align, define, learn, import, import-memory, glossary-backfill, status, documentation build, plan, produce, review, write) by the flow you name and loads that flow's reference; no alias entry stands for a flow. |
-| `/quenching-knowledge align` | Forces `/docs/` into the canonical OKF bundle and pulls in the content sitting out-of-band — probe first, then ONE confirmed plan, looped to a fixpoint. |
+| `/quenching-knowledge` | The single entry point of the knowledge flows: picks one of the twelve flows (add, define, learn, import, import-memory, glossary-backfill, status, documentation build, plan, produce, review, write) by the flow you name and loads that flow's reference; no alias entry stands for a flow. |
+| `/quenching-align knowledge` | Forces `/docs/` into the canonical OKF bundle and pulls in the content sitting out-of-band — probe first, then ONE confirmed plan, looped to a fixpoint. |
 | `/quenching-knowledge status` | The front's only **read-only** view: where the bundle stands, what is conformant, what drifted. Writes nothing. |
 | `/quenching-knowledge add` | Inserts ONE concept doc — right home, right type, honest stamp. |
 | `/quenching-knowledge learn` | Captures ONE piece of generic understanding into `concepts/`, for what is true beyond this repo. |
@@ -131,10 +129,10 @@ the explicit entry point.
 
 | Command | Does |
 | --- | --- |
-| `/quenching-design` | The single entry point of the design flows: picks `align`, `status`, `genre-new` by the flow you name or by the words of the request. |
-| `/quenching-design align` | Installs or converges the brand pack, preserves source truth, arbitrates external DESIGN.md proposals, and rebuilds every projection. |
-| `/quenching-design status` | Reports DTCG validity, generated identity, sidecar/assets, genres, adapters, and optional Impeccable detector state without writing. |
-| `/quenching-design genre-new` | Mints ONE editorial genre contract with fields, register, and HTML/Typst/PDF destinations. |
+| `quenching-design` | The single entry point of the design flows: picks `align`, `status`, `genre-new` by the flow you name or by the words of the request. |
+| `/quenching-align design` | Installs or converges the brand pack, preserves source truth, arbitrates external DESIGN.md proposals, and rebuilds every projection. |
+| `/quenching-align status design` | Reports DTCG validity, generated identity, sidecar/assets, genres, adapters, and optional Impeccable detector state without writing. |
+| the `genre-new` reference of the design front | Mints ONE editorial genre contract with fields, register, and HTML/Typst/PDF destinations. |
 
 `cq design build` and `cq design import` are the deterministic rails used by these commands. The
 source is DTCG 2025.10; `DESIGN.md` is a deliberately lossy portable projection, while rich
@@ -144,65 +142,65 @@ motion, shadows, breakpoints, and snippets remain in the source and sidecar.
 
 | Command | Does |
 | --- | --- |
-| `/quenching-components` | The single entry point of the components flows: picks `command-new`, `agent-new`, `hook-new`, `align`, `status` or `harness-align` by the flow you name and loads that flow's reference; no alias entry stands for a flow. |
-| `/quenching-components align` | Converges the whole `.claude/` surface onto one file per entry point, then audits every body and rewrites every description against the writing doctrine. |
-| `/quenching-components status` | Reports the command count, fronts and finding codes for the target's automation surface without writing. |
+| `/quenching-components` | The single entry point of the components flows: picks `command-new`, `agent-new`, `hook-new`, `command-eval` or `command-retro` by the flow you name and loads that flow's reference; no alias entry stands for a flow. |
+| `/quenching-align components` | Converges the whole `.claude/` surface onto one file per entry point, then audits every body and rewrites every description against the writing doctrine. |
+| `/quenching-align status components` | Reports the command count, fronts and finding codes for the target's automation surface without writing. |
 | `/quenching-components command-new` | Mints or edits ONE command — the structural half, including its `description`. |
 | `/quenching-components command-eval` | Measures whether a command actually teaches anything: with/without runs, graded on evidence rather than on how the body reads. |
 | `/quenching-components command-retro` | Mines ONE session for what it evidences about ONE command that ran in it — cost, redundancy, bugs, and what the human had to fix by hand. |
 | `/quenching-components agent-new` | Mints or edits ONE subagent definition, scoping its tools to the narrowest set and pricing its always-on cost. |
 | `/quenching-components hook-new` | Wires ONE scoped hook — the narrowest scope and cheapest handler that still catch what they must. Warns by default; blocks only on the human's word. |
-| `/quenching-components harness-align` | Refactors `AGENTS.md` into a thin pointer over the bundle, so doctrine lives once; legacy `CLAUDE.md` is removed. |
+| the `harness-align` step of `/quenching-align components` | Refactors `AGENTS.md` into a thin pointer over the bundle, so doctrine lives once; legacy `CLAUDE.md` is removed. |
 
 ### The ops front — the target's declared operations surface
 
 | Command | Does |
 | --- | --- |
-| `/quenching-ops` | The single entry point of the ops flows: picks `align`, `status`, `entrypoint-new` by the flow you name or by the words of the request. |
-| `/quenching-ops align` | Probes the declared operations root and router, applies mechanical and structural drift under one plan, and reports judgement findings without driving them. |
-| `/quenching-ops status` | Reports the root, router, packages, lifecycle, findings by band, and registry freshness without writing. |
-| `/quenching-ops entrypoint-new` | Mints ONE Python entry point from the contract, registers it in the declared router, and regenerates the operations registry. |
+| `quenching-ops` | The single entry point of the ops flows: picks `align`, `status`, `entrypoint-new` by the flow you name or by the words of the request. |
+| `/quenching-align ops` | Probes the declared operations root and router, applies mechanical and structural drift under one plan, and reports judgement findings without driving them. |
+| `/quenching-align status ops` | Reports the root, router, packages, lifecycle, findings by band, and registry freshness without writing. |
+| the `entrypoint-new` reference of the ops front | Mints ONE Python entry point from the contract, registers it in the declared router, and regenerates the operations registry. |
 
 ### The proof front — the target's declared verification surface
 
 | Command | Does |
 | --- | --- |
-| `/quenching-proof` | The single entry point of the proof flows: picks `align`, `status`, `layer-new` by the flow you name or by the words of the request. |
-| `/quenching-proof align` | Probes the proof gate, applies mechanical and bounded structural repairs under one plan, defers a floor when the measured surface changes, and reports judgement findings without driving them. |
-| `/quenching-proof status` | Reports layers, fixtures, measured roots, floors, CI evidence, findings by band, and the explicit fact that the suite was not run — without writing. |
-| `/quenching-proof layer-new` | Mints one named layer with its marker, reach, budget, fixture home and collection rule, then proposes test moves for a separate confirmation. |
+| `quenching-proof` | The single entry point of the proof flows: picks `align`, `status`, `layer-new` by the flow you name or by the words of the request. |
+| `/quenching-align proof` | Probes the proof gate, applies mechanical and bounded structural repairs under one plan, defers a floor when the measured surface changes, and reports judgement findings without driving them. |
+| `/quenching-align status proof` | Reports layers, fixtures, measured roots, floors, CI evidence, findings by band, and the explicit fact that the suite was not run — without writing. |
+| the `layer-new` reference of the proof front | Mints one named layer with its marker, reach, budget, fixture home and collection rule, then proposes test moves for a separate confirmation. |
 
 ### The toolchain front — manifests, locks, pins and tool configuration
 
 | Command | Does |
 | --- | --- |
-| `/quenching-toolchain` | The single entry point of the toolchain flows: picks `align`, `status` by the flow you name or by the words of the request. |
-| `/quenching-toolchain align` | Probes applicability, inventories the target's toolchain artifacts, applies only mechanical and bounded structural repairs, and reports target-owned build policy. |
-| `/quenching-toolchain status` | Reports applicability, manifests, locks, language pins, tool configuration and `tc-*` findings without writing. |
+| `quenching-toolchain` | The single entry point of the toolchain flows: picks `align`, `status` by the flow you name or by the words of the request. |
+| `/quenching-align toolchain` | Probes applicability, inventories the target's toolchain artifacts, applies only mechanical and bounded structural repairs, and reports target-owned build policy. |
+| `/quenching-align status toolchain` | Reports applicability, manifests, locks, language pins, tool configuration and `tc-*` findings without writing. |
 
 ### The delivery front — workflows, reachability and release shape
 
 | Command | Does |
 | --- | --- |
-| `/quenching-delivery` | The single entry point of the delivery flows: picks `align`, `status` by the flow you name or by the words of the request. |
-| `/quenching-delivery align` | Probes provider-equivalent workflows, applies bounded pipeline-shape repairs under one plan, and reports provider and release policy without choosing it. |
-| `/quenching-delivery status` | Reports applicability, workflow inventory, reachability, provenance and `delivery-*` findings without writing or running a pipeline. |
+| `quenching-delivery` | The single entry point of the delivery flows: picks `align`, `status` by the flow you name or by the words of the request. |
+| `/quenching-align delivery` | Probes provider-equivalent workflows, applies bounded pipeline-shape repairs under one plan, and reports provider and release policy without choosing it. |
+| `/quenching-align status delivery` | Reports applicability, workflow inventory, reachability, provenance and `delivery-*` findings without writing or running a pipeline. |
 
 ### The opensource front — license, community and governance artifacts
 
 | Command | Does |
 | --- | --- |
-| `/quenching-opensource` | The single entry point of the opensource flows: picks `align`, `status`, `readiness` by the flow you name or by the words of the request. |
-| `/quenching-opensource align` | Probes applicability, plans the license, contributing, conduct, support, governance, owners and template artifacts on one OK, and writes each through `cq opensource apply` from a pinned template, never choosing the owner's license, maintainers, contact or funding. |
-| `/quenching-opensource status` | Reports every owner's catalog answers, the OSPS baseline level reached and `os-*` findings without writing. |
-| `/quenching-opensource readiness` | Assesses secrets in tree and history, internal identifiers (SaaS tenants included), the owner's declared terms, attribution and the owner's license, consent and provenance evidence before a repository goes public, read-only; reports blockers, warnings and unmeasured coverage and never approves publication. |
+| `quenching-opensource` | The single entry point of the opensource flows: picks `align`, `status`, `readiness` by the flow you name or by the words of the request. |
+| `/quenching-align opensource` | Probes applicability, plans the license, contributing, conduct, support, governance, owners and template artifacts on one OK, and writes each through `cq opensource apply` from a pinned template, never choosing the owner's license, maintainers, contact or funding. |
+| `/quenching-align status opensource` | Reports every owner's catalog answers, the OSPS baseline level reached and `os-*` findings without writing. |
+| the readiness part of `/quenching-align status opensource` | Assesses secrets in tree and history, internal identifiers (SaaS tenants included), the owner's declared terms, attribution and the owner's license, consent and provenance evidence before a repository goes public, read-only; reports blockers, warnings and unmeasured coverage and never approves publication. |
 
 ### The security pillar — read-only repository security questions
 
 | Command | Does |
 | --- | --- |
-| `/quenching-security` | The single entry point of the security flows: picks `status` by the flow you name or by the words of the request. |
-| `/quenching-security status` | Reports security questions and ownership findings without aligning, repairing or writing repository values. |
+| `quenching-security` | The single entry point of the security flows: picks `status` by the flow you name or by the words of the request. |
+| `/quenching-align status security` | Reports security questions and ownership findings without aligning, repairing or writing repository values. |
 
 ### The `git` pillar — a repository's own git facts
 
@@ -253,7 +251,7 @@ all run it.
 
 | Command | Does |
 | --- | --- |
-| `/quenching-align` | The one align that spans the eight aligned fronts, on ONE confirmation — conducting each front's own align in dependency order, never reimplementing any of them. |
+| `/quenching-align` | The one door of every front: `align [front]` converges the eight aligned fronts on ONE confirmation, or only the named one, in dependency order; `status [front]` reads a front or all of them and ends on the security audit. It never reimplements a front's verifier. |
 | `/quenching-handoff` | Compacts the current conversation into a handoff stored beside its spec on the `quenching` branch, pushes it, and closes with the locator, the read command and the prompt the next session starts from — referencing existing plans, issues, commits and diffs rather than duplicating them. |
 
 The `specs` front has ten commands and a flow worth reading as a whole, so it gets its own section
@@ -526,8 +524,8 @@ model. Develop, triage, conclude, the spec-orchestrator, spec-verifier, spec-rev
 | `/quenching-specs conclude` | **`model: opus`** when a human invokes it directly (under the `spec-runner` it runs on the runner's model, sonnet or opus by `complexity`, because the pin does not switch the runner's session), no sub-agents — the branch review, the merge choice, the outcome, and the distillation are all judgment; there is nothing mechanical here to downgrade, and the review reads a whole branch diff for coherence rather than one task's |
 | `/quenching-knowledge glossary-backfill` | **no pin** on the orchestrator (the former inline `effort: medium` charged the cache trap); slice sub-agents `model: haiku` + `effort: low` (pure extraction, cross-checked by the orchestrator) — a sub-agent's pin is cache-safe, it has its own context. `Bash` scoped to `python3`/`py`: its reading is `Grep`/`Glob`/`Task`, and the checker is the only shell it runs |
 | `/quenching-knowledge import-memory` | classification sub-agents `model: sonnet` + `effort: low`; **executor sub-agents inherit the session model** (their self-check authorizes memory deletion). `Bash` stays unrestricted **and is now priced in the body**: step 1 derives the memory directory as one compound shell expression, which no prefix grant can match |
-| `/quenching-knowledge align` / `/quenching-components harness-align` | repo-wide grep/find sweeps delegable to one read-only `haiku` + `effort: low` collector; every classification stays with the orchestrator when run standalone. `/quenching-components harness-align`'s `Bash` is scoped to `git grep` / `git check-ignore` / `grep` / `python3` / `py` — the two-scan sweep, the build-artifact check, the checker, and nothing else; `/quenching-knowledge align` keeps the unrestricted grant its body prices. **Exception:** under `/quenching-knowledge align`'s parallel content prep, harness's read-only discovery (steps 1–4, incl. MOVE/KEEP classification) runs in a background `Task` agent pinned `model: sonnet` — never haiku, same misclassification-risk rationale as the cycle's assessment agent |
-| `/quenching-knowledge align` (content passes) | per-pass read-only assessment via a `sonnet` + `effort: low` sub-agent (haiku ruled out: a false "nothing to do" ends the loop early) |
+| `/quenching-align knowledge` / `/quenching-align components` | repo-wide grep/find sweeps delegable to one read-only `haiku` + `effort: low` collector; every classification stays with the orchestrator when run standalone. `/quenching-align components`'s `Bash` is scoped to `git grep` / `git check-ignore` / `grep` / `python3` / `py` — the two-scan sweep, the build-artifact check, the checker, and nothing else; `/quenching-align knowledge` keeps the unrestricted grant its body prices. **Exception:** under `/quenching-align knowledge`'s parallel content prep, harness's read-only discovery (steps 1–4, incl. MOVE/KEEP classification) runs in a background `Task` agent pinned `model: sonnet` — never haiku, same misclassification-risk rationale as the cycle's assessment agent |
+| `/quenching-align knowledge` (content passes) | per-pass read-only assessment via a `sonnet` + `effort: low` sub-agent (haiku ruled out: a false "nothing to do" ends the loop early) |
 | `/quenching-align` | no pin, no sub-agents — the front probe is a handful of globs and two CLI calls, and every write belongs to the sweep it invokes (which carries its own policy row) |
 | `/quenching-knowledge import` | extraction/executor sub-agents may run `model: haiku` + `effort: low` — import **deletes nothing**, so a misclassification only misfiles a doc (correctable); the orchestrator keeps each `index.md` honest and resolves cross-slice dedup |
 | `/quenching-knowledge add` / `/quenching-knowledge learn` | no pin — they inherit the session model (they classify, route, and gate operations). **Neither carries a frontmatter hook block** — the rung-1 blocks these two once carried were removed when the plugin's own wiring covered the same case, and that wiring was later discontinued outright, so no hook fires on their writes (`/docs/standards/automation/hooks.md`). Each body's own **Self-check against the conformance core** step is the conformance check at write time: a step the command runs, not a rung anything enforces |
@@ -537,7 +535,7 @@ model. Develop, triage, conclude, the spec-orchestrator, spec-verifier, spec-rev
 | `/quenching-knowledge documentation-write` | no pin on the author; large batches may fan out `Task` slices pinned to the session model, never `haiku`, because each slice writes human-facing prose |
 | `/quenching-knowledge documentation-review` | no pin, read-only; large page sets may fan out `Task` slices without write tools, returning condensed rubric verdicts |
 | `/quenching-components command-new` | no pin, no sub-agents — classification on the axis, doctrine-grade drafting, and the plan gates inherit the session model |
-| `/quenching-components align` | no pin. Its §7 doctrine audit **may delegate collection** to read-only `Task` collectors — one per slice, reporting *what each body contains* (which levers its frontmatter carries, what it cites, where its steps end) on a surface large enough that reading every body would bury the conversation. Every verdict stays with the orchestrator: "this body has no positive prescription" is a claim about behaviour, and the read that makes it must also weigh the fix |
+| `/quenching-align components` | no pin. Its §7 doctrine audit **may delegate collection** to read-only `Task` collectors — one per slice, reporting *what each body contains* (which levers its frontmatter carries, what it cites, where its steps end) on a surface large enough that reading every body would bury the conversation. Every verdict stays with the orchestrator: "this body has no positive prescription" is a claim about behaviour, and the read that makes it must also weigh the fix |
 | `/quenching-specs develop` | **`model: opus`** when a human invokes it directly (under the `spec-runner` it runs on the runner's model, sonnet or opus by `complexity`, because the pin does not switch the runner's session) — the whole command *is* judgment: generating the questions a spec never answered, recommending an answer to each, and deciding when the interrogation is done. There is nothing mechanical here to downgrade, and a cheap model that asks generic questions produces exactly the refinement theatre the command exists to replace. Cost is bounded by each stage's declared stop condition and by one edit per pass, not by a model tier. One **read-only** sub-agent is permitted, and only for compose and refine: it sweeps the code and the `/docs/standards/` the spec declares and returns one table (`references/specs-develop/questions.md` §Gathering the evidence). It reads; it never asks, writes, or decides — every question, every `cq specs` call and every confirmation stays with the orchestrator. **This is not `context: fork`**, which cannot ask a question at all, so the never-fork rule is untouched |
 | `/quenching-specs execute` | **`model: sonnet`** — the loop is write · verify · self-review · tick · commit against a spec that already decided what to build, and the judgment it does keep is gated by a human at every confirmation. A per-task **executor sub-agent is permitted** when the task declares `files:` and touches no `/docs/` — pinned to the **session model** — `sonnet` with this command pinned — or to `haiku` for ONE attempt on a task `cq specs estimate --task` reports `smallTierEligible` (a protected oracle catches the cheap model's mistake; a failed `verify:` returns the task to the session model). The orchestrator keeps spec selection, every confirmation, every `cq specs task --check`/`--block`, every `/docs/standards/` write, the commit, and the pause decision. Two tasks run concurrently only when `cq specs parallel` reports the `[P]` group eligible; serial is the default. **This is not `context: fork`** — the orchestrator stays in the live conversation, so the never-fork rule is untouched (`references/specs-execute/execution.md` §This is not `context: fork`) |
 
@@ -581,7 +579,7 @@ Deploy writes `AGENTS.md` and `.agents/quenching.json` only when absent, plus th
 repository declares `shared.projections: ["github"]` — the Copilot subagents under
 `.github/agents/`, all from the same `quenching/agents/*.md`. It records what it owns in
 `.agents/.quenching-deploy.json`. `CLAUDE.md` is not created. Deploy installs the surface only: the
-target's `/quenching-knowledge align` installs `/docs/` and converges the fronts.
+target's `/quenching-align knowledge` installs `/docs/` and converges the fronts.
 The full contract, including the surface translation, is [deploy-mode.md](../docs/standards/architecture/deploy-mode.md).
 
 **The GitHub Copilot harness reads the `claude` files.** The VS Code Agents window and the Copilot

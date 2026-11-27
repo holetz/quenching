@@ -35,6 +35,11 @@ def _commands_on_disk() -> set[str]:
     for skill in discover_skills(str(SKILLS)):
         found.add(skill["command"])
         found.update(f"{skill['command']} {flow}" for flow in router_flows(skill))
+    # Since spec 676 a front is an argument of the align conductor, not a router of its own.
+    for front in ("knowledge", "components", "design", "ops", "proof", "toolchain",
+                  "delivery", "opensource", "security"):
+        if front != "security":  # the security front has no align, only status
+            found.add(f"/quenching-align {front}")
     return found
 
 

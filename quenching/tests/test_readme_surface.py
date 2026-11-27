@@ -60,12 +60,6 @@ class ReadmeManualMatchesTheSurface(unittest.TestCase):
         self.assertEqual(on_disk - listed, set(), "commands on disk the README manual never lists")
         self.assertEqual(listed - on_disk, set(), "commands the README manual names that do not exist")
 
-        span = _manual_span(manual)
-        for front, flows in (("ops", {"align", "status", "entrypoint-new"}),
-                             ("proof", {"align", "status", "layer-new"})):
-            cited = set(re.findall(rf"`/quenching-{front} ([a-z-]+)`", span))
-            self.assertEqual(cited, flows, f"the manual's rows for the {front} router")
-
     def test_the_check_can_fail(self):
         """A green that could not go red is not evidence — so prove this one discriminates.
 

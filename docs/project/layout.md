@@ -35,7 +35,7 @@ of a behaviour and editing a generated copy of it.
 | `.claude/` | this repository's own local command surface | `/quenching-components-*` |
 | `scripts/` | thin launchers CI calls | the owning spec |
 | `zensical.toml` | the site layer — outside the bundle, on purpose | `/quenching-knowledge documentation-build` |
-| `AGENTS.md` (legacy `CLAUDE.md`) | the harness pointer, kept thin over this bundle | `/quenching-components harness-align` |
+| `AGENTS.md` (legacy `CLAUDE.md`) | the harness pointer, kept thin over this bundle | `/quenching-align components` |
 
 Every generated tree is the trap: it is **regenerated wholesale**, so editing it by hand produces a
 change that survives until the next sync and then vanishes without a diff to explain it. That holds
@@ -70,7 +70,7 @@ quenching/
 ```
 
 **`assets/knowledge/` is not this bundle.** It is the *skeleton* — the empty tree with its
-listings — that `/quenching-knowledge align` writes into someone else's repository. A link this
+listings — that `/quenching-align knowledge` writes into someone else's repository. A link this
 repository's own prose resolves may not exist there, which is exactly what
 `citation-check.sh`'s third half measures.
 

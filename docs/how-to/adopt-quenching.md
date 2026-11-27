@@ -46,7 +46,7 @@ keeps its modules, while `--modules core` narrows a wider install and deletes th
 `codex`, `opencode` or `none` (default: all three); `--runtime uvx` writes a pinned shim instead of vendoring the runtime. The
 target keeps `AGENTS.md` and `.agents/` as its source; `.agents/quenching/`, the generated skills in `.agents/skills/` and their `.claude/skills/`
 projection are generated, and every command is `/quenching-<front>-<verb>`. Deploy is installation, not
-alignment: run `/quenching-knowledge align` or `/quenching-align` after it. To upgrade, run the
+alignment: run `/quenching-align knowledge` or `/quenching-align` after it. To upgrade, run the
 same deploy from a newer checkout or tag; `--check` reports drift. See
 [deploy-mode.md](../standards/architecture/deploy-mode.md).
 
@@ -80,13 +80,13 @@ flowchart LR
 
 | You want | Run | It converges |
 | --- | --- | --- |
-| Just the knowledge base | `/quenching-knowledge align` | `/docs/` into the OKF bundle, pulling in out-of-band content |
-| Just the automation surface | `/quenching-components align` | `.claude/` onto one file per entry point, bodies audited |
-| Just the design source | `/quenching-design align` | `/.design/` source, projections, and genres |
-| Just the operations surface | `/quenching-ops align` | the declared root, router, registry and bounded structural drift |
-| Just the verification surface | `/quenching-proof align` | the declared test gate, fixtures, layers and bounded structural drift |
-| Just the toolchain surface | `/quenching-toolchain align` | manifests, locks, pins and tool configuration |
-| Just the delivery surface | `/quenching-delivery align` | workflows, reachability, provenance and release shape |
+| Just the knowledge base | `/quenching-align knowledge` | `/docs/` into the OKF bundle, pulling in out-of-band content |
+| Just the automation surface | `/quenching-align components` | `.claude/` onto one file per entry point, bodies audited |
+| Just the design source | `/quenching-align design` | `/.design/` source, projections, and genres |
+| Just the operations surface | `/quenching-align ops` | the declared root, router, registry and bounded structural drift |
+| Just the verification surface | `/quenching-align proof` | the declared test gate, fixtures, layers and bounded structural drift |
+| Just the toolchain surface | `/quenching-align toolchain` | manifests, locks, pins and tool configuration |
+| Just the delivery surface | `/quenching-align delivery` | workflows, reachability, provenance and release shape |
 | The whole repository | `/quenching-align` | all seven local aligned fronts, dependency order, one nested OK |
 
 !!! tip "Recommendation"
@@ -119,13 +119,13 @@ flowchart LR
 The operations front reads `ops.opsRoot` and `ops.router` from `.agents/quenching.json` (or the legacy `.claude/quenching.json`), then probes before
 it inventories. It may regenerate a stale registry and make bounded structural repairs; it never
 arms a write-capable entry point, chooses an undeclared router, or drives judgement findings.
-`/quenching-ops status` is the read-only report, and `/quenching-ops entrypoint-new` is the gated
+`/quenching-align status ops` is the read-only report, and `the `entrypoint-new` reference of the ops front` is the gated
 minting path for one new Python entry point.
 
 The proof front follows the same probe-first boundary over `proof.proofRoot`. It can make bounded gate
 and fixture repairs, but it does not invent layers, choose the measured surface, install CI, run
-the target suite, or raise a deferred floor. `/quenching-proof status` reports those facts without
-writing, while `/quenching-proof layer-new` creates one named layer only after its own confirmation
+the target suite, or raise a deferred floor. `/quenching-align status proof` reports those facts without
+writing, while `the `layer-new` reference of the proof front` creates one named layer only after its own confirmation
 and separately confirms any test migration.
 
 When an applicable root exists without a declaration, treat that as adoption work: declare the

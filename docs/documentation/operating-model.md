@@ -54,9 +54,9 @@ flowchart TD
 | components front | `/quenching-components-*` | the `.claude/` automation surface | [command catalog](../project/commands.md#the-components-front) |
 | ops front | `/quenching-ops` | the target repository's operations surface | [command catalog](../project/commands.md#the-ops-front) |
 | proof front | `/quenching-proof` | the target repository's verification surface | [command catalog](../project/commands.md#the-proof-front) |
-| toolchain front | `/quenching-toolchain` | the target repository's manifests, locks, pins and tool configuration | [toolchain align](../../quenching/skills/quenching-toolchain/references/align.md) |
-| delivery front | `/quenching-delivery` | the target repository's workflow and release reachability | [delivery align](../../quenching/skills/quenching-delivery/references/align.md) |
-| security pillar | `/quenching-security` | nothing — read-only security questions | [security status](../../quenching/skills/quenching-security/references/status.md) |
+| toolchain front | `/quenching-toolchain` | the target repository's manifests, locks, pins and tool configuration | [toolchain align](../../quenching/references/toolchain-align/align.md) |
+| delivery front | `/quenching-delivery` | the target repository's workflow and release reachability | [delivery align](../../quenching/references/delivery-align/align.md) |
+| security pillar | `/quenching-security` | nothing — read-only security questions | [security status](../../quenching/references/security-align/status.md) |
 | git pillar | `/quenching-git-*` | nothing — answers, never converges | [command catalog](../project/commands.md#the-git-pillar) |
 
 ## Probe-first: the interface
@@ -68,8 +68,8 @@ inventory, no plan, no confirmation, a couple of tool calls total. Only a drifte
 for the full loop: one read-only inventory → ONE consolidated plan → one OK → apply → verify.
 
 This is why re-running an align is always safe and nearly free, and why the status commands
-(`/quenching-knowledge status`, `/quenching-design status`, `/quenching-specs status`,
-`/quenching-toolchain status`, `/quenching-delivery status`, `/quenching-security status`) are
+(`/quenching-knowledge status`, `/quenching-align status design`, `/quenching-specs status`,
+`/quenching-align status toolchain`, `/quenching-align status delivery`, `/quenching-align status security`) are
 honest dry runs: they report in the same finding vocabulary the align would act on.
 
 ## Conductors conduct; they never reimplement
