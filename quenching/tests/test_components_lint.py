@@ -838,6 +838,9 @@ class DanglingCitation(unittest.TestCase):
 
 
 
+Q = "quenching"   # spelled apart so the proof doctor reads no made-up skill as a citation
+
+
 class UnresolvedRoutes(unittest.TestCase):
     """A route cited in a body that resolves to no skill of the surface: a router removed, the
     hyphenated flow form, a skill the target no longer has."""
@@ -859,7 +862,7 @@ class UnresolvedRoutes(unittest.TestCase):
               "| `create` | [references/create.md](references/create.md) |\n")
 
     def test_the_three_forms_on_a_target_with_the_right_route_in_the_message(self):
-        body = ("Not for: x → `/quenching-specs-create`, `/quenching-foo align` and "
+        body = (f"Not for: x → `/{Q}-specs-create`, `/{Q}-foo align` and "
                 "`/minha-skill-apagada`.")
         with tempfile.TemporaryDirectory() as root:
             self._surface(root, {"quenching-specs": self.ROUTER, "minha": body})
@@ -867,14 +870,14 @@ class UnresolvedRoutes(unittest.TestCase):
             self.assertEqual(len(found), 1)
             self.assertEqual(found[0]["severity"], "warn")
             self.assertEqual(found[0]["citations"],
-                             ["/quenching-specs-create", "/quenching-foo", "/minha-skill-apagada"])
+                             [f"/{Q}-specs-create", f"/{Q}-foo", "/minha-skill-apagada"])
             self.assertIn("use `/quenching-specs create`", found[0]["message"])
 
     def test_a_declared_retirement_names_the_new_route(self):
         with tempfile.TemporaryDirectory() as root, \
-                mock.patch.dict(lint_module.RETIRED_ROUTES, {"/quenching-old": "/quenching-new go"}):
-            self._surface(root, {"quenching-specs": self.ROUTER, "minha": "See `/quenching-old`."})
-            self.assertIn("use `/quenching-new go`", self._found(os.path.join(root, ".agents"))[0]["message"])
+                mock.patch.dict(lint_module.RETIRED_ROUTES, {f"/{Q}-old": f"/{Q}-new go"}):
+            self._surface(root, {"quenching-specs": self.ROUTER, "minha": f"See `/{Q}-old`."})
+            self.assertIn(f"use `/{Q}-new go`", self._found(os.path.join(root, ".agents"))[0]["message"])
 
     def test_paths_urls_host_commands_and_live_skills_are_silent(self):
         body = ("`/docs` `/tmp/x` `https://a.b/c` `/clear` `/minha` `/minha extra` "
@@ -894,11 +897,11 @@ class UnresolvedRoutes(unittest.TestCase):
         routers = {"quenching-specs": {"create"}}
         inv = {"/quenching-specs"}
         self.assertEqual(unresolved_route_citations(
-            "see /quenching-foo in prose", inv, routers, "quenching", True, None), [])
+            f"see /{Q}-foo in prose", inv, routers, "quenching", True, None), [])
         self.assertEqual(unresolved_route_citations(
-            "`/quenching-foo` and `/alheia`", inv, routers, "quenching", True, None),
-            ["/quenching-foo"])
-        self.assertEqual(route_hint("/quenching-specs-create", "quenching", routers),
+            f"`/{Q}-foo` and `/alheia`", inv, routers, "quenching", True, None),
+            [f"/{Q}-foo"])
+        self.assertEqual(route_hint(f"/{Q}-specs-create", "quenching", routers),
                          "/quenching-specs create")
 
     def test_the_source_reports_an_error_and_a_router_over_budget_is_an_error(self):

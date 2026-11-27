@@ -277,7 +277,7 @@ grants their union and repeats no scope that a wider one already covers (`Bash(g
 `Bash(git:*)`, everything under `Bash`). Where the union holds an unscoped `Bash`, the router body
 carries the **Why `Bash` is unrestricted here.** line (§`allowed-tools` is always scoped, below). `cq components lint`
 reports `sk-router-grant` at error when a router does not cover a flow's grant, `sk-router-description` at error when its description omits a flow of the table, and
-`sk-dangling-citation` checks that `/quenching-<vertical> <flow>` names a flow in the router's table.
+`sk-dangling-citation` checks that `/quenching-<vertical> <flow>` names a flow in the router's table (§`sk-dangling-citation`, below).
 A `hooks:` block cannot ride a flow loaded through the router, so a flow that needs one stays its
 own skill; the `git` router drops the warn-level hook of `commit`, since it only warned.
 
@@ -288,7 +288,7 @@ own skill; the `git` router drops the warn-level hook of `commit`, since it only
 
 The description is resident in every request, in every harness that lists skills, so it is the
 cheapest thing a router carries: **at most 250 characters** of the parsed value, which
-`sk-description-budget` binds on a router like on any skill.
+`sk-description-budget` binds on a router like on any skill; on the plugin's own source it is an **error** for a router, and a warn on a target.
 
 1. **First sentence, in English:** the domain and every flow of the table by name
    (`Run one design flow: align, status, genre-new.`). `sk-router-description` (error) reports a
@@ -398,6 +398,33 @@ records that, and forbids claiming the enforcement anywhere until it is
 measured, in either direction. So a command that must guarantee it writes nothing carries that
 guarantee in its own numbered steps and its doctrine, never in its `allowed-tools` line.
 
+
+### `sk-dangling-citation`, `sk-unused` and the budget on the source
+
+**`sk-dangling-citation`: a cited route that resolves to nothing.** The code is one finding per
+file, and it reads a route cited as `` `/route` `` (right after a backtick or a `→`, so a path or a
+URL in prose is never read as one). It reports four forms of the same defect:
+
+- a flow the router's table does not list (`/quenching-<router> <flow>`);
+- the hyphenated flow form `/quenching-<router>-<flow>`: the message gives the right spelling,
+  `/quenching-<router> <flow>`;
+- a router that was removed: `/quenching-<x>` where `<x>` is no router of the surface, no module or
+  plugin of `modules.json` and no leading part of an installed name;
+- on a target, a `/<skill>` (or `/<skill> <flow>` of a router) that is no skill of its `.agents/skills/`
+  — except a host command (`/clear`, `/compact`, …) and a name that is a path (`/docs`, `/tmp`).
+
+`RETIRED_ROUTES` in `components/commands/lint.py` maps an old route to the one that replaced it. It
+is data, filled by the specs that retire a router, never inferred; the message carries the new route
+when the map knows it, and the usage history of the old name counts for the new one. The severity is
+an **error on the plugin's own source** and a warn on a target.
+
+**`sk-unused` (info).** `cq components status` reports a skill of the surface that no session
+invoked in the last `shared.components.usageWindowDays` days (60 by default) **and** no other skill
+or reference cites by name. It is a signal and never a verdict: a skill the agent reads by path is
+cited, so it stays. The report lists it as an item for the human to decide; nothing deletes a skill
+for being unused. With no session read there is no evidence, so none is listed. `doctor` never emits
+it: it reads the machine's transcripts, and the doctor and the gate stay deterministic.
+
 ## The verifier
 
 `cq components` is this front's verifier, the peer of `cq knowledge` for `/docs/` and `cq specs` for
@@ -406,7 +433,7 @@ refusal, errors setting the exit code and warnings never doing so.
 
 | Subcommand | Decides |
 | --- | --- |
-| `lint [path]` | one command against this standard — the description caps, trigger position, the `Not for:` boundary, body length, a `**Done when:**` per numbered step, unscoped `Bash`, invocation coherence, and the profile's decidable slice (`sk-fork-gate`, `sk-profile-value`). On a surface carrying `.claude-plugin/plugin.json` it also grades **citation form** (`sk-bare-citation`); on a target's own surface it reports a **dangling citation** (`sk-dangling-citation`, warn) — a `/front:verb` whose front exists there but whose command does not. A surface root brings `references/**` into scope alongside `skills/**` |
+| `lint [path]` | one command against this standard — the description caps, trigger position, the `Not for:` boundary, body length, a `**Done when:**` per numbered step, unscoped `Bash`, invocation coherence, and the profile's decidable slice (`sk-fork-gate`, `sk-profile-value`). On a surface carrying `.claude-plugin/plugin.json` it also grades **citation form** (`sk-bare-citation`); on a target's own surface it reports a **dangling citation** (`sk-dangling-citation`, warn) — a `/front:verb` whose front exists there but whose command does not, and the route forms of §`sk-dangling-citation`. A surface root brings `references/**` into scope alongside `skills/**` |
 | `doctor` | the surface invariant — a non-empty `description` on every command, no two resolving to the same `/` path, kebab-case segments, and on a target's own surface no dangling citation (`sk-dangling-citation`) — plus the **report-only** wider surface: `agents/*.md` and the hooks wired in `settings*.json` (`sk-agent-no-description`, `sk-hook-unmatched`, `sk-hook-llm-frequent`, `sk-hook-unparseable`), each routed to its mint, never migrated. A file parked under `commands/` which is not an entry point is exactly this shape — `sk-no-description` — the layout rule's evidence |
 | `registry reindex` | regenerates the registry's GENERATED zone; it **owns** that format |
 | `bridge --target <repo> [--write\|--check]` | a target's `.claude/skills/` copy matches `.agents/skills/` (§Where a target's skill is born) |

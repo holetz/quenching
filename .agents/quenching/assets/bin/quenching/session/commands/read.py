@@ -36,6 +36,9 @@ def cmd_list(args) -> int:
               f"  unattributed tool calls={model['unattributedToolCalls']}")
         for a in model["anomalies"]:
             print(f"  ! {a['code']} line {a['line']}: {a['message']}")
+        if model["skills"]:
+            used = ", ".join(f"{k}={v['count']}" for k, v in model["skills"].items())
+            print(f"skills:     {used}")
         # A zero-command parse never reaches here — silence_refusal already exited 2.
         print(f"\n{len(model['commands'])} command(s):")
         for c in model["commands"]:
