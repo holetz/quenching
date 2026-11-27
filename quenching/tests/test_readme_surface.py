@@ -33,7 +33,7 @@ INVOCABLE = re.compile(r"`(/[a-z][a-z:-]*)`")
 
 
 def _commands_on_disk() -> set[str]:
-    """`skills/quenching-design/SKILL.md` is `/quenching-design` — the folder IS the
+    """`skills/quenching-align/SKILL.md` is `/quenching-align` — the folder IS the
     identity. A router's flows live in its `references/` and are rows of the router, not skills."""
     return {"/" + path.parent.name for path in SKILLS.glob("*/SKILL.md")}
 

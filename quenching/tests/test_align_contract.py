@@ -198,9 +198,9 @@ class KnowledgeAlignmentContract(unittest.TestCase):
 
     def test_citation_check_rejects_unknown_section_addresses(self):
         result = self._citation_check({
-            "quenching/skills/quenching-knowledge/references/align.md": (
-                "/quenching-knowledge align\n"
-                "`quenching/skills/quenching-knowledge/references/align.md`\n"
+            "quenching/skills/quenching-knowledge/references/status.md": (
+                "/quenching-knowledge status\n"
+                "`quenching/skills/quenching-knowledge/references/status.md`\n"
                 "[reference.md](../../../references/reference.md) §Inexistente\n"
             ),
             f"{FIXTURE_REFERENCES}/reference.md": "# Reference\n\n## Existing\n",
@@ -213,8 +213,8 @@ class KnowledgeAlignmentContract(unittest.TestCase):
     def test_citation_check_rejects_missing_plugin_root_paths(self):
         missing_path = ".agents/quenching/references/" + "missing.md"
         result = self._citation_check({
-            "quenching/skills/quenching-knowledge/references/align.md": (
-                "/quenching-knowledge align\n"
+            "quenching/skills/quenching-knowledge/references/status.md": (
+                "/quenching-knowledge status\n"
                 f"`{missing_path}`\n"
                 "[reference.md](../../../references/reference.md) §Existing\n"
             ),
@@ -230,11 +230,11 @@ class KnowledgeAlignmentContract(unittest.TestCase):
         # resolving nothing used to skip the marker in silence, so a dead section passed green.
         # The bundle path is assembled so this file does not itself cite a standard that is absent.
         standard = "docs/standards/naming/" + "surface.md"
-        citing = "quenching/skills/quenching-knowledge/references/align.md"
+        citing = "quenching/skills/quenching-knowledge/references/status.md"
         files = {
             citing: (
-                "/quenching-knowledge align\n"
-                "`quenching/skills/quenching-knowledge/references/align.md`\n"
+                "/quenching-knowledge status\n"
+                "`quenching/skills/quenching-knowledge/references/status.md`\n"
                 "(`naming/surface.md` §Three forms) ends here.\n"
             ),
             standard: "# Surface\n\n## Two forms, and the condition\n",
