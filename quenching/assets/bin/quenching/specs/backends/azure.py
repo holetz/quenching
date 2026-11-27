@@ -356,6 +356,50 @@ def resolve_azure_project(cwd: str) -> tuple[tuple[str, str], dict]:
     return (org, name), {}
 
 
+# The remedy every publication gate names. `--allow-no-subscriptions` because an Azure DevOps
+# identity often holds no Azure subscription, and a bare `az login` then ends without a usable
+# account. The person runs it in their own terminal: a device code is never relayed by an agent.
+AZ_LOGIN_REMEDY = ("run `az login --allow-no-subscriptions` yourself, in your own terminal, and "
+                   "try again; no device code is ever started or relayed for you")
+# What `az rest` says when the Entra token is missing, expired or revoked, or when the service
+# answers 401: none of it carries the `az login` fragment `AZ_STDERR_SIGNALS` matches.
+_AZ_TOKEN_SIGNALS = ("aadsts", "401", "unauthorized", "please run", "token", "credential")
+
+
+def azure_boards_preflight(cwd: str) -> dict:
+    """`{}` when this identity holds an Azure DevOps token that READS the resolved project's
+    Boards, else an exit-2 refusal — asked before anything is published.
+
+    The branch push authenticates through git's credential manager and the card through `az`,
+    so a push can land and the card write after it answer 401: a published branch with no spec
+    record and no PR. One `az rest` GET (the area root, a few hundred bytes) proves both halves
+    at once — the token for `AZ_DEVOPS_RESOURCE_ID`, the audience every `az rest` here uses, and
+    read access to the project the cards are written to — for about half a second. Read-only:
+    `_az_run` admits a GET under the read-only transport and repeats it on a transient error."""
+    (org, project), refusal = resolve_azure_project(cwd)
+    if refusal:
+        return refusal
+    from urllib.parse import quote
+    uri = (f"{org.rstrip('/')}/{quote(project)}/_apis/wit/classificationnodes/areas"
+           "?$depth=0&api-version=7.1")
+    code, out, err = _az_run(cwd, "rest", "--method", "get", "--uri", uri,
+                             "--resource", AZ_DEVOPS_RESOURCE_ID)
+    if code == 0:
+        return {}
+    action = f"reading the Azure Boards of {project!r} before publishing"
+    found = az_refusal(action, code, out, err)
+    text = f"{err or ''}\n{out or ''}".lower()
+    if found["code"] in ("sp-az-unauthenticated", "sp-az-api-error") and (
+            found["code"] == "sp-az-unauthenticated" or any(s in text for s in _AZ_TOKEN_SIGNALS)):
+        found.update(code="sp-az-unauthenticated", remedy=AZ_LOGIN_REMEDY,
+                     message=f"Azure Boards of {project!r} is not reachable with this identity, "
+                             f"so nothing was published — {AZ_LOGIN_REMEDY}; az said: "
+                             f"{found.get('az', '')}")
+    else:
+        found["message"] = f"{found['message']}; nothing was published"
+    return found
+
+
 def azure_query_wiql(project: str, area_path: str | None, discovery_tag: str | None) -> str:
     """The WIQL this backend's listing runs.
 

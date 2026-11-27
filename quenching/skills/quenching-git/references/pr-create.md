@@ -108,7 +108,13 @@ on both routes: `base`, which may not be omitted. The source is explicit too: `h
 `refs/heads/<branch>` under its own name with upstream and never forces it (only the spec store branch, synced after it, is rewritten under `--force-with-lease`); `git_external(verb="pr_create")`
 returns the PR's `number` and `url`, and with `spec=<id>` stamps the spec's `pr` record with them
 (step 5), reporting it as `pr` in its payload; exit 1 with `reason: stamp-failed` means the PR exists and the record does not. Read
-the created PR's `id`, `webUrl` and `apiUrl` from the normalized JSON/CLI result. **Done when:**
+the created PR's `id`, `webUrl` and `apiUrl` from the normalized JSON/CLI result.
+Where the specs or their cards live on Azure Boards, both verbs first read those Boards through
+`az` (one GET on the resolved project), because git authenticates apart from `az` and a push that
+lands before a 401 leaves a branch with no record and no PR. Exit 2 `sp-az-unauthenticated` means
+nothing was published: stop and tell the person to run `az login --allow-no-subscriptions` in
+their own terminal (a sub-agent returns `STATE: blocked`, `NOTE: needs-human:` with that line),
+then retry the same call; never start or relay a device code yourself. **Done when:**
 the PR exists, or the
 push/create failed and its error is reported verbatim.
 **Done when:** the provider-specific publication succeeded or its failure is reported.

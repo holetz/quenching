@@ -7,7 +7,9 @@ the route is the `provider` `cq specs config --json` prints. `create` names the 
 explicitly — on GitHub the body goes on stdin; on Azure it opens the PR with no completion
 option at all, so no policy is bypassed and nothing completes on its own, and a body past
 Azure's 4000-character description limit goes in cut at a section boundary and whole as the PR's
-first comment thread (`az devops invoke`, argv built here too). `probe` reads the
+first comment thread (`az devops invoke`, argv built here too). Where the specs or their cards
+live on Azure Boards, `create` first proves the identity reads those Boards (`boards_gate`) and
+opens nothing otherwise. `probe` reads the
 provider's route and `view` one PR's state, base and head; neither writes. `checks` reads a
 GitHub pull URL through `gh` and an Azure web URL through `az` policies, in one vocabulary.
 `merge` dispatches Azure web URLs to `azure_pull` (build validation policies, pinned head, no-fast-forward,
@@ -40,7 +42,7 @@ from quenching.specs.backends import open_backend
 from quenching.specs.commands.epic import AZURE_PR_STATE
 from quenching.specs.commands.output import Emitter, read_one
 from quenching.git.pr import normalize_azure_pull_request
-from quenching.git.push import _specs_note
+from quenching.git.push import _specs_note, boards_gate
 from quenching.specs.commands.push import sync_store
 from quenching.specs.config import find_repo_root, load_config
 
@@ -591,6 +593,9 @@ def _create(args) -> int:
                            "message": f"az reads a {at} value starting with `@` as a local "
                                       "file; rewrite it so it does not begin with `@`"},
                           args.json)
+    gate = boards_gate(cwd)
+    if gate:   # the PR and its `pr` record go together: neither is opened when the card cannot follow
+        return refuse(gate, args.json)
     opened = _open_azure(args) if provider == "azure-boards" else _open_github(args)
     if isinstance(opened, str):
         emit(args.json, {"ok": False, "provider": provider, "reason": "create-refused",

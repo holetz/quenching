@@ -7,7 +7,9 @@ forced: never `--force`, never `--delete`, never a refspec the caller wrote. A p
 sync point of the git spec store: the clone's pending store writes follow, reported under `specs`
 and never undoing the code push. That sync rewrites only the store branch, as one parentless
 commit under `--force-with-lease` against the tip it read (a fast-forward where the remote
-refuses the rewrite).
+refuses the rewrite). Where the specs or their cards live on Azure Boards, `boards_gate` reads
+those Boards through `az` before git is asked to push, and refuses (`sp-az-unauthenticated`,
+remedy `az login --allow-no-subscriptions`) instead of publishing a branch whose card cannot follow.
 
 Exit 0 pushed · 1 git refused the push (non-fast-forward, auth) · 2 refusal."""
 from __future__ import annotations
@@ -32,6 +34,27 @@ def remote_ok(cwd: str, remote: str) -> bool:
     return remote_probe(cwd, remote) is True
 
 
+def boards_gate(cwd: str) -> dict:
+    """`{}`, or the refusal that stops a publication before it happens: when this repository
+    keeps its specs or their cards on Azure Boards, the identity must read those Boards now.
+
+    Git authenticates through its credential manager and `az` through its own login, so the
+    two fail apart: checked after the push, a missing `az login` leaves the branch published
+    with no spec record and no PR. Any other repository pays nothing — not even an `az` call."""
+    from quenching.common.config import find_repo_root
+    from quenching.specs.config import load_config
+    root = find_repo_root(cwd) or cwd
+    try:
+        cfg = load_config(root)
+    except Exception:   # an unreadable config is refused by the store verbs, not here
+        return {}
+    from quenching.specs.cards import card_settings
+    if cfg.get("backend") != "azure-boards" and card_settings(cfg, root)["provider"] != "azure-boards":
+        return {}
+    from quenching.specs.backends.azure import azure_boards_preflight
+    return azure_boards_preflight(root)
+
+
 def cmd_push(args) -> int:
     cwd = os.getcwd()
     if args.branch.startswith("-") or not _branch_ok(cwd, args.branch):
@@ -47,6 +70,9 @@ def cmd_push(args) -> int:
     if not remote_ok(cwd, args.remote):
         return refuse({"code": "git-push-remote-unknown",
                        "message": f"not a configured remote: {args.remote}"}, args.json)
+    gate = boards_gate(cwd)
+    if gate:
+        return refuse(gate, args.json)
     ref = f"refs/heads/{args.branch}"
     code, _out, err = _git_run(cwd, *SAFE, "push", "--set-upstream", "--porcelain", "--",
                                args.remote, f"{ref}:{ref}")

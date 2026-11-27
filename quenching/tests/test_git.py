@@ -3332,6 +3332,108 @@ class PushVerb(RepoCase):
         self.assertEqual(code, 2)
         self.assertIn("git-push-remote-unreadable", out.getvalue())
 
+    def test_a_boards_refusal_stops_the_push_before_git_publishes(self):
+        from quenching.git import push
+        gate = {"code": "sp-az-unauthenticated", "exit": 2, "message": "no Boards"}
+        args = SimpleNamespace(branch="plan/1-x", remote="origin", json=True)
+        with mock.patch.object(push, "boards_gate", return_value=gate), \
+                mock.patch("os.getcwd", return_value=self.repo), \
+                contextlib.redirect_stdout(io.StringIO()) as out:
+            code = push.cmd_push(args)
+        self.assertEqual((code, json.loads(out.getvalue())["code"]), (2, "sp-az-unauthenticated"))
+        heads = subprocess.run(["git", "for-each-ref", "refs/heads"], cwd=self.remote,
+                               capture_output=True, text=True).stdout
+        self.assertNotIn("plan/1-x", heads)
+
+
+class BoardsGate(RepoCase):
+    """The publication gate: a repository whose specs or cards live on Azure Boards proves the
+    identity reads them before `cq git push` or `cq git pr create` writes to the remote."""
+
+    URI_TAIL = "/_apis/wit/classificationnodes/areas?$depth=0&api-version=7.1"
+
+    def test_a_repository_without_boards_never_calls_az(self):
+        from quenching.git import push
+        from quenching.specs.backends import azure
+        with mock.patch.object(azure, "_az_run", side_effect=AssertionError("az called")):
+            self.assertEqual(push.boards_gate(self.repo), {})
+
+    def test_cards_on_boards_ask_azure_for_the_resolved_project(self):
+        from quenching.git import push
+        from quenching.specs.backends import azure
+        for cfg in ({"backend": "git", "card": {"provider": "azure-boards"}},
+                    {"backend": "azure-boards"}):
+            with mock.patch("quenching.specs.config.load_config", return_value=cfg), \
+                    mock.patch.object(azure, "azure_boards_preflight",
+                                      return_value={"code": "x"}) as probe:
+                self.assertEqual(push.boards_gate(self.repo), {"code": "x"}, cfg)
+            probe.assert_called_once()
+
+    def _probe(self, code: int, err: str = "", out: str = "") -> tuple[dict, list]:
+        from quenching.specs.backends import azure
+        calls = []
+
+        def run(cwd, *argv, **kw):
+            calls.append(argv)
+            return code, out, err
+        with mock.patch.object(azure, "resolve_azure_project",
+                               return_value=(("https://dev.azure.com/o/", "Proj X"), {})), \
+                mock.patch.object(azure, "_az_run", side_effect=run):
+            return azure.azure_boards_preflight(self.repo), calls
+
+    def test_a_readable_board_passes_with_one_get_on_the_devops_audience(self):
+        from quenching.specs.backends import azure
+        got, calls = self._probe(0, out="{}")
+        self.assertEqual(got, {})
+        self.assertEqual(calls, [("rest", "--method", "get", "--uri",
+                                  "https://dev.azure.com/o/Proj%20X" + self.URI_TAIL,
+                                  "--resource", azure.AZ_DEVOPS_RESOURCE_ID)])
+        self.assertTrue(azure._az_is_read(calls[0]))
+
+    def test_a_missing_expired_or_rejected_token_names_the_login_the_person_runs(self):
+        for err in ("ERROR: Please run 'az login' to setup account.",
+                    "ERROR: AADSTS50173: The provided grant has expired due to it being revoked",
+                    "ERROR: Operation returned an invalid status 'Unauthorized' (401)",
+                    "ERROR: TF400813: The user is not authorized to access this resource."):
+            got, _calls = self._probe(1, err=err)
+            self.assertEqual(got["code"], "sp-az-unauthenticated", err)
+            self.assertEqual(got["exit"], 2)
+            self.assertIn("az login --allow-no-subscriptions", got["message"])
+            self.assertIn("in your own terminal", got["remedy"])
+            self.assertIn("nothing was published", got["message"])
+            self.assertIn("no device code is ever started or relayed", got["message"])
+
+    def test_other_failures_keep_their_own_code_and_still_publish_nothing(self):
+        got, _calls = self._probe(1, err="ERROR: Not Found(The project does not exist)")
+        self.assertEqual(got["code"], "sp-az-api-error")
+        self.assertIn("nothing was published", got["message"])
+        from quenching.specs.backends import azure
+        got, _calls = self._probe(azure.AZ_MISSING, err="no az")
+        self.assertEqual(got["code"], "sp-az-missing")
+
+    def test_an_unresolved_project_is_refused_before_any_rest_call(self):
+        from quenching.specs.backends import azure
+        refusal = {"code": "sp-az-no-project", "exit": 2, "message": "m"}
+        with mock.patch.object(azure, "resolve_azure_project", return_value=(("", ""), refusal)), \
+                mock.patch.object(azure, "_az_run", side_effect=AssertionError("az called")):
+            self.assertEqual(azure.azure_boards_preflight(self.repo), refusal)
+
+    def test_pr_create_opens_nothing_when_the_gate_refuses(self):
+        from quenching.git import pull
+        gate = {"code": "sp-az-unauthenticated", "exit": 2, "message": "no Boards"}
+        for provider in ("azure-boards", "github"):
+            with mock.patch.object(pull, "_provider", return_value=provider), \
+                    mock.patch.object(pull, "boards_gate", return_value=gate), \
+                    mock.patch.object(pull, "_az", side_effect=AssertionError("az called")), \
+                    mock.patch.object(pull, "_gh", side_effect=AssertionError("gh called")), \
+                    mock.patch.object(pull, "_branch_ok", return_value=True), \
+                    contextlib.redirect_stdout(io.StringIO()) as out:
+                code = pull.cmd_pr(SimpleNamespace(action="create", base="main", head="x",
+                                                   title="t", body="b", spec=None, json=True,
+                                                   **NO_AZURE_FLAGS))
+            self.assertEqual((code, json.loads(out.getvalue())["code"]),
+                             (2, "sp-az-unauthenticated"), provider)
+
 
 class PruneVerb(RepoCase):
     """`cq git prune` — acts only on what a fresh `cq git stale` reports, never by force."""
@@ -3452,6 +3554,15 @@ if sys.argv[1:4] == ["repos", "pr", "list"]:
         sys.stderr.write("Please run 'az login' to setup account.\\n")
         sys.exit(int(os.environ["FAKE_AZ_LIST_RC"]))
     print("[]")
+if sys.argv[1:4] == ["devops", "configure", "--list"]:
+    print("organization=https://dev.azure.com/o\\nproject=p")
+if sys.argv[1:3] == ["devops", "project"]:
+    print(json.dumps({"name": "p"}))
+if sys.argv[1:2] == ["rest"]:
+    if os.environ.get("FAKE_AZ_REST_RC", "0") != "0":
+        sys.stderr.write("ERROR: AADSTS50173: The provided grant has expired\\n")
+        sys.exit(int(os.environ["FAKE_AZ_REST_RC"]))
+    print("{}")
 sys.exit(0)
 """
 
@@ -3524,8 +3635,10 @@ class PullRequestVerbs(RepoCase):
         fake_tool(bindir, "gh", FAKE_GH)
         fake_tool(bindir, "az", FAKE_AZ)
         self.log = pathlib.Path(self.tmp, "gh.log")
+        # The Boards gate resolves the fake project and caches its name: keep it in the tmp.
         self.env = {**os.environ, "PATH": f"{bindir}{os.pathsep}{os.environ['PATH']}",
-                    "FAKE_GH_LOG": str(self.log)}
+                    "FAKE_GH_LOG": str(self.log),
+                    "XDG_CACHE_HOME": str(pathlib.Path(self.tmp, "cache"))}
 
     def _calls(self) -> list[dict]:
         if not self.log.exists():
@@ -3905,7 +4018,13 @@ class PullRequestVerbs(RepoCase):
         payload = json.loads(proc.stdout)
         self.assertEqual((payload["provider"], payload["number"], payload["url"]),
                          ("azure-boards", 7, self.AZURE_WEB))
-        (call,) = self._calls()
+        calls = self._calls()
+        gate = [c["argv"] for c in calls if c["argv"][:1] == ["rest"]]
+        self.assertEqual(len(gate), 1)
+        self.assertEqual(gate[0][:3], ["rest", "--method", "get"])
+        self.assertLess(calls.index(next(c for c in calls if c["argv"][:1] == ["rest"])),
+                        calls.index(next(c for c in calls if c["argv"][:1] == ["repos"])))
+        (call,) = [c for c in calls if c["argv"][:1] == ["repos"]]
         self.assertEqual(call["argv"], ["repos", "pr", "create", "--detect=true",
                                         "--source-branch=plan/1-x", "--target-branch=main",
                                         "--title=t", "--description=corpo", "--work-items=5",
@@ -3913,6 +4032,17 @@ class PullRequestVerbs(RepoCase):
         for forbidden in ("--bypass-policy", "--auto-complete", "--squash",
                           "--merge-commit-message"):
             self.assertFalse(any(a.startswith(forbidden) for a in call["argv"]), forbidden)
+
+    def test_azure_create_with_an_expired_az_login_opens_no_pr(self):
+        self._azure_origin()
+        proc = _cq(self.repo, "pr", "create", "--base", "main", "--head", "plan/1-x",
+                   "--title", "t", "--body", "corpo", "--json",
+                   env={**self.env, "FAKE_AZ_REST_RC": "1"})
+        self.assertEqual(proc.returncode, 2, proc.stdout + proc.stderr)
+        payload = json.loads(proc.stdout)
+        self.assertEqual(payload["code"], "sp-az-unauthenticated")
+        self.assertIn("az login --allow-no-subscriptions", payload["message"])
+        self.assertEqual([c for c in self._calls() if c["argv"][:1] == ["repos"]], [])
 
     def test_azure_create_refuses_an_at_prefixed_title_or_body(self):
         self._azure_origin()
