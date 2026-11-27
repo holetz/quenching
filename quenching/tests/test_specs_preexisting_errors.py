@@ -22,7 +22,7 @@ ORCHESTRATOR = ROOT / "quenching/agents/spec-orchestrator.md"
 
 
 def read(path):
-    return path.read_text(encoding="utf-8")
+    return flow_text(path)
 
 
 class PreexistingErrorsTests(unittest.TestCase):

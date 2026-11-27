@@ -17,8 +17,10 @@ MOLD = ROOT / "quenching/references/specs-develop/report-mold.md"
 CADENCE = ROOT / "quenching/references/specs-execute/execution-cadence.md"
 
 
+
+
 def text(path):
-    return re.sub(r"\s+", " ", path.read_text(encoding="utf-8"))
+    return re.sub(r"\s+", " ", flow_text(path))
 
 
 def section(body, heading):

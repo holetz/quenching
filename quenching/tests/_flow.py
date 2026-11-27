@@ -12,4 +12,8 @@ def flow_text(index: Path) -> str:
         body = (Path(index).parent / match.group(1)).read_text(encoding="utf-8")
         return body.split("\n", 2)[2] if body.startswith("# ") else body
 
-    return STEP_LINK.sub(inline, text)
+    text, inlined = STEP_LINK.subn(inline, text)
+    steps = Path(index).parent / f"specs-{Path(index).stem}"
+    if not inlined and steps.is_dir():  # a flow whose index links its step files in prose: append them in order
+        text += "\n" + "\n".join(p.read_text(encoding="utf-8") for p in sorted(steps.glob("*.md")))
+    return text

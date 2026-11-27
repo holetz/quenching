@@ -955,6 +955,30 @@
 
     ".claude/skills/quenching-specs/references/specs-create/step-6-screen.md": "source",
 
+    ".claude/skills/quenching-specs/references/specs-execute/step-1-select-the-spec.md": "source",
+
+    ".claude/skills/quenching-specs/references/specs-execute/step-2-tree-isolation-state.md": "source",
+
+    ".claude/skills/quenching-specs/references/specs-execute/step-3-settle-the-approval.md": "source",
+
+    ".claude/skills/quenching-specs/references/specs-execute/step-4-read-what-tasks-satisfy.md": "source",
+
+    ".claude/skills/quenching-specs/references/specs-execute/step-5-implement-tasks.md": "source",
+
+    ".claude/skills/quenching-specs/references/specs-execute/step-5b-delegate-an-executor.md": "source",
+
+    ".claude/skills/quenching-specs/references/specs-execute/step-5c-docs-this-task-names.md": "source",
+
+    ".claude/skills/quenching-specs/references/specs-execute/step-5de-verify-commit.md": "source",
+
+    ".claude/skills/quenching-specs/references/specs-execute/step-5g-after-task-hook.md": "source",
+
+    ".claude/skills/quenching-specs/references/specs-execute/step-5i-preexisting-red.md": "source",
+
+    ".claude/skills/quenching-specs/references/specs-execute/step-6-refresh-handoff.md": "source",
+
+    ".claude/skills/quenching-specs/references/specs-execute/step-7-report-and-hand-off.md": "source",
+
     ".claude/skills/quenching-specs/references/status.md": "source",
 
     ".claude/skills/quenching-specs/references/triage.md": "source",

@@ -85,6 +85,19 @@ class Superficie(unittest.TestCase):
         self.assertIn("ct-bench-prefix-over", codes)
         self.assertIn("ct-bench-flow-over", codes)
 
+    def test_superficie_sub_step_is_measured_with_its_step(self):
+        root = target()
+        link = ".agents/skills/quenching-specs/references/specs-execute/"
+        write(root / ".agents/skills/quenching-specs/references/execute.md",
+              f"# execute\n\n[one]({link}step-1-one.md)\n")
+        write(root / ".agents/skills/quenching-specs/references/specs-execute/step-1-one.md",
+              f"one body\n\n[a]({link}step-1a-sub.md)\n")
+        write(root / ".agents/skills/quenching-specs/references/specs-execute/step-1a-sub.md", "sub\n")
+        payload, _ = bench.measure(root, ("claude",))
+        stages = payload["flows"]["execute"]["stages"]
+        self.assertEqual(set(stages), {"step-1-one", "step-1a-sub"})
+        self.assertGreaterEqual(stages["step-1a-sub"], stages["step-1-one"])
+
     def test_superficie_within_budget_is_clean(self):
         _, findings = bench.measure(target(), bench.HARNESSES)
         self.assertEqual([f for f in findings if f["severity"] == "error"], [])

@@ -58,7 +58,7 @@ HARNESS_RULES: dict[str, dict[str, tuple[str, ...]]] = {
 #: margin so a rounding never trips the gate; a target passes its own through `--budget`.
 DEFAULT_BUDGET: dict[str, dict[str, int]] = {
     "prefix": {"claude": 7_000, "opencode": 7_000, "copilot": 7_000},
-    "flow": {"create": 15_000, "develop": 41_000, "execute": 35_000, "conclude": 15_000},
+    "flow": {"create": 15_000, "develop": 41_000, "execute": 15_000, "conclude": 15_000},
 }
 
 
@@ -216,6 +216,13 @@ def _measure_stages(root: Path, flow: str, out: dict, index: dict, stage_files: 
     """A split flow's ceiling is its most expensive stage: the router, the flow's index, one step
     file and the sections that step cites."""
     stages: dict[str, int] = {}
+    # A step file may link sub-steps (`step-<n><letter>-…`); each is its own stage, run together with its step.
+    for relpath in list(stage_files):
+        path = root / relpath
+        if path.is_file():
+            for linked in STAGE_FILE_RE.findall(path.read_text(encoding="utf-8")):
+                if linked not in stage_files:
+                    stage_files.append(linked)
     for relpath in stage_files:
         path = root / relpath
         name = path.stem
@@ -226,8 +233,13 @@ def _measure_stages(root: Path, flow: str, out: dict, index: dict, stage_files: 
                 command=f"/{SPECS_SKILL} {flow}", path=relpath,
                 remedy="repair the link or add the step file before measuring cost"))
             continue
-        command = {"command": f"/{SPECS_SKILL} {flow} {name}", "path": str(path),
-                   "body": path.read_text(encoding="utf-8")}
+        body = path.read_text(encoding="utf-8")
+        sub = re.match(r"step-(\d+)[a-z]+-", name)
+        if sub:
+            parent = next((r for r in stage_files if Path(r).name.startswith(f"step-{sub.group(1)}-")), None)
+            if parent and (root / parent).is_file():
+                body = (root / parent).read_text(encoding="utf-8") + "\n" + body
+        command = {"command": f"/{SPECS_SKILL} {flow} {name}", "path": str(path), "body": body}
         row, row_findings = measure_command(command, references, surface_root)
         findings.extend(row_findings)
         stages[name] = tokens(out["routerBytes"] + index["totalBytes"] + row["totalBytes"])
