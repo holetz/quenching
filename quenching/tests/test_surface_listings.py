@@ -99,7 +99,7 @@ class ManifestSurfaceTests(unittest.TestCase):
         expected = {
             "knowledge": 13,
             "specs": 11,
-            "components": 6,
+            "components": 10,
             "git": 12,
             # The fronts are arguments of `/quenching-align` since spec 676: no skill of their own.
             "design": 0,
