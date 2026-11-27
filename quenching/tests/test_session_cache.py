@@ -8,6 +8,7 @@ import pathlib
 import sqlite3
 import tempfile
 import unittest
+from datetime import datetime, timezone
 from unittest import mock
 
 import _paths  # noqa: F401  — must precede the `quenching` import; see its docstring
@@ -164,6 +165,125 @@ class OpenCodeTests(Fixture):
         self.assertIn("no OpenCode session tables", data["anomalies"][0]["message"])
 
 
+class MirrorTests(Fixture):
+    """OpenCode running through the Claude harness writes each request into both stores."""
+
+    def setUp(self):
+        super().setUp()
+        steps = [(0, 6000, 0, 0), (1, 100, 6000, 0), (2, 7000, 0, 2000), (3, 50, 9000, 0)]
+        db = sqlite3.connect(self.db)
+        db.executescript("""
+            CREATE TABLE session (id TEXT, parent_id TEXT, agent TEXT, directory TEXT);
+            CREATE TABLE session_v2 (id TEXT, parent_id TEXT, agent TEXT, directory TEXT);
+            CREATE TABLE session_message (id TEXT, session_id TEXT, type TEXT, seq INT, data TEXT);""")
+        db.execute("INSERT INTO session_v2 VALUES ('ses_a', NULL, 'build', ?)", (REPO,))
+        records = []
+        for n, (minute, inp, read, write) in enumerate(steps):
+            db.execute("INSERT INTO session_message VALUES (?, 'ses_a', 'assistant', ?, ?)", (
+                f"m{n}", n, json.dumps({"time": {"created": START + minute * MINUTE}, "model": {"id": "opus"},
+                                         "tokens": {"input": inp, "output": 5, "reasoning": 0,
+                                                    "cache": {"read": read, "write": write}}})))
+            # the Claude copy lands two seconds later, with the same token counts
+            at = datetime.fromtimestamp((START + minute * MINUTE) / 1000 + 2, timezone.utc)
+            records.append(assistant(f"c{n}", at.isoformat().replace("+00:00", "Z"), inp=inp, read=read,
+                                     write=write, out=5, ttl1h=0))
+        db.commit()
+        db.close()
+        project = self.projects / "-p"
+        project.mkdir(parents=True)
+        (project / "mirror.jsonl").write_text("\n".join(json.dumps(r) for r in records) + "\n")
+        # a Claude session no OpenCode session produced
+        at = datetime.fromtimestamp(START / 1000 + 5000, timezone.utc).isoformat().replace("+00:00", "Z")
+        (project / "native.jsonl").write_text(json.dumps(assistant("n0", at, inp=8000, out=3)) + "\n")
+        self.argv = ("--opencode-db", str(self.db), "--all", "--json")
+
+    def test_the_claude_mirror_of_an_opencode_session_is_counted_once(self):
+        data = json.loads(run(*self.argv)[1])
+        counts = {r["harness"]: r["requests"] for r in data["rows"]}
+        self.assertEqual(counts, {"claude": 1, "opencode": 4}, "only the native Claude session stays")
+        self.assertEqual(data["dedup"], {"sessions": 1, "requests": 4})
+
+    def test_a_claude_session_with_no_counterpart_is_kept(self):
+        data = json.loads(run("--harness", "claude", *self.argv[:2], *self.argv[2:])[1])
+        self.assertEqual(sum(r["requests"] for r in data["rows"]), 5)
+        self.assertEqual(data["dedup"], {"sessions": 0, "requests": 0})
+
+
+class EquivalentCostTests(Fixture):
+    """`input + 0.1 x read + 1.25 x write`, per origin row and per spec."""
+
+    def setUp(self):
+        super().setUp()
+        project = self.projects / "-p"
+        sub = project / "s1" / "subagents"
+        sub.mkdir(parents=True)
+        prompt = {"type": "user", "timestamp": "2026-10-01T09:59:00Z",
+                  "message": {"content": [{"type": "text", "text": "Spec: 637. Worktree: none."}]}}
+        (project / "s1.jsonl").write_text("\n".join(json.dumps(r) for r in [
+            prompt,
+            assistant("m1", "2026-10-01T10:00:00Z", inp=100, read=1000, write=2000),
+            assistant("m2", "2026-10-01T10:01:00Z", inp=50, read=3000, write=0)]) + "\n")
+        (sub / "agent-a.jsonl").write_text(json.dumps(
+            assistant("s1", "2026-10-01T10:00:30Z", model="sonnet", inp=10, write=400)) + "\n")
+        (sub / "agent-a.meta.json").write_text('{"agentType":"quenching-specs:verifier"}')
+        branch = assistant("b1", "2026-10-01T11:00:00Z", inp=20, read=100, write=0)
+        branch["gitBranch"] = "plan/640-referencias"
+        (project / "s2.jsonl").write_text(json.dumps(branch) + "\n")
+        (project / "s3.jsonl").write_text(json.dumps(assistant("n1", "2026-10-01T12:00:00Z", inp=1)) + "\n")
+        self.data = json.loads(run("--harness", "claude", "--all", "--json")[1])
+
+    def test_each_row_carries_its_equivalent_tokens(self):
+        rows = {(r["role"], r["agent"]): r for r in self.data["rows"]}
+        self.assertEqual(rows[("subagent", "verifier")]["equivalent"], 10 + 500)
+        main = rows[("main", "main")]
+        self.assertEqual(main["equivalent"], round(171 + 0.1 * 4100 + 1.25 * 2000))
+
+    def test_a_spec_collects_its_sessions_and_its_subagents(self):
+        by = {s["spec"]: s for s in self.data["bySpec"]}
+        self.assertEqual(set(by), {"637", "640"}, "a session naming no spec belongs to none")
+        self.assertEqual((by["637"]["sessions"], by["637"]["requests"]), (2, 3))
+        self.assertEqual(by["637"]["equivalent"], round(160 + 0.1 * 4000 + 1.25 * 2400))
+        self.assertEqual(by["640"]["equivalent"], round(20 + 0.1 * 100))
+
+    def test_opencode_takes_the_spec_from_the_first_prompt_and_children_inherit_it(self):
+        self.opencode()
+        db = sqlite3.connect(self.db)
+        db.execute("UPDATE session_message SET data = ? WHERE id = 'u'", (
+            json.dumps({"text": "Spec: 641. Worktree: none."}),))
+        db.commit()
+        db.close()
+        data = json.loads(run("--harness", "opencode", "--opencode-db", str(self.db), "--all", "--json")[1])
+        by = {s["spec"]: s for s in data["bySpec"]}
+        self.assertEqual(set(by), {"641"})
+        self.assertEqual(by["641"]["sessions"], 2, "the root and its subagent")
+
+
+class WriteSplitTests(Fixture):
+    """A cache write is new content or a rewrite, and the prefix is the session's first write."""
+
+    def test_new_content_and_the_two_causes_of_a_rewrite(self):
+        project = self.projects / "-p"
+        project.mkdir(parents=True)
+        (project / "s1.jsonl").write_text("\n".join(json.dumps(r) for r in [
+            assistant("m1", "2026-10-01T10:00:00Z", write=10000),
+            assistant("m2", "2026-10-01T10:01:00Z", read=10000, write=500),
+            assistant("m3", "2026-10-01T10:12:00Z", write=10700),
+            assistant("m4", "2026-10-01T10:13:00Z", read=6000, write=5000)]) + "\n")
+        row = json.loads(run("--harness", "claude", "--all", "--json")[1])["rows"][0]
+        self.assertEqual((row["writeNew"], row["writeRewriteExpired"], row["writeRewritePrefix"]),
+                         (10000 + 500 + 200 + 300, 10500, 4700))
+        self.assertEqual(row["writeNew"] + row["writeRewriteExpired"] + row["writeRewritePrefix"],
+                         row["cacheWrite"], "the split loses no token")
+        self.assertEqual(row["prefixMedian"], 10000)
+
+    def test_a_session_that_never_wrote_has_its_first_input_as_prefix(self):
+        self.opencode()
+        data = json.loads(run("--harness", "opencode", "--opencode-db", str(self.db), "--directory", REPO,
+                              "--json")[1])
+        kid = next(r for r in data["rows"] if r["role"] == "subagent")
+        self.assertEqual((kid["prefixMedian"], kid["writeNew"]), (9000, 0))
+
+
 class SourcesTests(Fixture):
     def test_a_missing_store_does_not_hide_the_other(self):
         self.claude()
@@ -272,6 +392,30 @@ class InflowTests(Fixture):
     def test_content_never_reaches_the_output(self):
         self.claude()
         self.assertNotIn("xxxx", run("--harness", "claude", "--all", "--inflow")[1])
+
+    def test_shell_output_is_split_by_command_family_and_agent(self):
+        from quenching.session.commands.inflow import family
+        self.assertEqual([family(c) for c in (
+            "cd /r && git log --oneline | head", "FOO=1 python3 -m pytest -q", "python3 quenching/assets/bin/cq specs status 1",
+            "/usr/bin/rg x", "ls", "")], ["git", "python3", "cq", "rg", "ls", "shell"])
+        project = self.projects / "-p"
+        sub = project / "s1" / "subagents"
+        sub.mkdir(parents=True)
+
+        def pair(mid, tool_id, command, size):
+            return [{"type": "assistant", "message": {"id": mid, "model": "opus", "usage": {}, "content": [
+                        {"type": "tool_use", "id": tool_id, "name": "Bash", "input": {"command": command}}]}},
+                    {"type": "user", "message": {"content": [
+                        {"type": "tool_result", "tool_use_id": tool_id, "content": "z" * size}]}}]
+        (project / "s1.jsonl").write_text("\n".join(json.dumps(r) for r in pair("m1", "t1", "git status", 400)
+                                                    + pair("m2", "t2", "git diff", 800)) + "\n")
+        (sub / "agent-a.jsonl").write_text("\n".join(json.dumps(r) for r in pair("s1", "u1", "git log", 400)) + "\n")
+        (sub / "agent-a.meta.json").write_text('{"agentType":"quenching-specs:verifier"}')
+        data = json.loads(run("--harness", "claude", "--all", "--inflow", "--json")[1])
+        rows = {(r["agent"], r["origin"]): r for r in data["inflow"]}
+        self.assertEqual(set(rows), {("main", "shell:git"), ("verifier", "shell:git")})
+        self.assertEqual((rows[("main", "shell:git")]["calls"], rows[("main", "shell:git")]["tokens"]), (2, 300))
+        self.assertEqual(rows[("verifier", "shell:git")]["tokens"], 100)
 
     def test_opencode_tool_entries_are_read(self):
         self.opencode_db()
