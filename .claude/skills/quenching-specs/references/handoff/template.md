@@ -1,7 +1,7 @@
 # Handoff template
 
 The sections every quenching handoff carries, in this order, each as a `## ` heading exactly as
-named. Both doors write it: `/quenching-handoff` (the main model, while the prompt cache is warm)
+named. Both doors write it: `/quenching-specs handoff` (the main model, while the prompt cache is warm)
 and `/quenching-cache handoff` (Haiku, once it has expired; the plugin carries a generated copy of
 this file). `specs_write(verb="handoff_write")` refuses a handoff without
 `## Last Request` and `## Next Actions`. Leave out any other section that would be empty. Do not
