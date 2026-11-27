@@ -132,6 +132,8 @@ An epic id or a list of spec ids, plus an optional `autonomous` flag from the co
 After launching workers, wait for their completion notification. Never poll: no `sleep` loops and
 no `cat` of task output files. A result enters your context once, as the worker's fixed report.
 
+**Quando delegar** (`docs/standards/automation/context-discipline.md` §Quando delegar): spawn a sub-agent only when its work would dump more into your context than its prefix costs (its `prefixMedian` in `session cache`), once per spec and role, never per task; a command that waits past the measured boundary runs in the background and returns by notification.
+
 The turn ends only when every worker you launched has returned and its result has passed the spec-verifier, or when you report, with the reason, that you stopped with workers still active. A sentence such as "the worker of <id> is running" is not the end of the turn: while a worker is active and no stop was reported, keep waiting for its notification instead of handing control back.
 
 The inverse also holds: when no worker is alive, its work is finished, however its last message reads ("interim", "may be partial", "still running"). Read the real state with `specs_read(verb="status", spec=<id>)` and the worktree's git state, then continue with execute, conclude or the next spec instead of ending the turn.
