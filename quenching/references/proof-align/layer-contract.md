@@ -66,7 +66,7 @@ records its non-applicability rather than creating a placeholder.
 
 ## Minting one declared layer
 
-`.agents/quenching/references/proof-align/layer-new.md` applies the five coupled edits as one unit for the layer a human names:
+`/quenching-components layer-new` applies the five coupled edits as one unit for the layer a human names:
 
 | Edit | Contract it closes |
 | --- | --- |

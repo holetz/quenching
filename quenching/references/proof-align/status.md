@@ -75,7 +75,7 @@ finding keeps its code and band, and the report distinguishes static evidence fr
 State that this command wrote nothing and that the suite was not run. For a structural finding,
 name `/quenching-align proof` as the command that can converge it. For a judgement finding,
 retain its evidence and name the target owner's closing command from `bands.md`; status never
-runs that command. For a missing layer, name `.agents/quenching/references/proof-align/layer-new.md`; for a missing CI gate,
+runs that command. For a missing layer, name `/quenching-components layer-new`; for a missing CI gate,
 name the target owner's reviewed CI change.
 
 **Done when:** the report ends with the appropriate owner for each finding and no repair or test
@@ -89,5 +89,5 @@ execution has been attempted.
   nothing is called healthy because it is missing.
 - Findings come from `bands.md` and retain their severity and code.
 - The target suite is never run; status reports this explicitly.
-- Status names `/quenching-align proof` for bounded repair and `.agents/quenching/references/proof-align/layer-new.md` for
+- Status names `/quenching-align proof` for bounded repair and `/quenching-components layer-new` for
   layer creation, without invoking either.

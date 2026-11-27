@@ -119,13 +119,13 @@ flowchart LR
 The operations front reads `ops.opsRoot` and `ops.router` from `.agents/quenching.json` (or the legacy `.claude/quenching.json`), then probes before
 it inventories. It may regenerate a stale registry and make bounded structural repairs; it never
 arms a write-capable entry point, chooses an undeclared router, or drives judgement findings.
-`/quenching-align status ops` is the read-only report, and `the `entrypoint-new` reference of the ops front` is the gated
+`/quenching-align status ops` is the read-only report, and `/quenching-components entrypoint-new` is the gated
 minting path for one new Python entry point.
 
 The proof front follows the same probe-first boundary over `proof.proofRoot`. It can make bounded gate
 and fixture repairs, but it does not invent layers, choose the measured surface, install CI, run
 the target suite, or raise a deferred floor. `/quenching-align status proof` reports those facts without
-writing, while `the `layer-new` reference of the proof front` creates one named layer only after its own confirmation
+writing, while `/quenching-components layer-new` creates one named layer only after its own confirmation
 and separately confirms any test migration.
 
 When an applicable root exists without a declaration, treat that as adoption work: declare the

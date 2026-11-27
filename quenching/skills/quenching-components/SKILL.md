@@ -1,7 +1,7 @@
 ---
 description: >-
-  Run one components flow: command-new, agent-new, hook-new, command-eval, command-retro. "criar um comando", "create a command". Not for: knowledge docs → /quenching-knowledge.
-argument-hint: "[command-new|agent-new|hook-new|command-eval|command-retro] [input]"
+  Run one components flow: rules, command-new, agent-new, hook-new, entrypoint-new, layer-new, genre-new, command-eval, command-retro. Rules and creation of each repository piece; read before editing one. Not for: knowledge docs → /quenching-knowledge.
+argument-hint: "[rules|command-new|agent-new|hook-new|entrypoint-new|layer-new|genre-new|command-eval|command-retro] [input]"
 allowed-tools: Bash(cq:*), Bash(cq.cmd:*), Bash(python3:*), Bash(py:*), Bash(git grep:*), Bash(grep:*), Bash(find:*), Bash(git check-ignore:*), Bash(mkdir:*), Bash(mv:*), Bash(rm:*), Read, Grep, Glob, Write, Edit, Task, AskUserQuestion
 ---
 
@@ -28,7 +28,7 @@ per [align/tool-resolution.md](.agents/quenching/references/align/tool-resolutio
 
 The phrases that route to each flow, the map the description no longer carries:
 
-command-new: "criar um comando", "create a command"; agent-new: "criar um subagente", "create a subagent"; hook-new: "ligar um hook", "wire a hook"; command-eval: "medir se o comando ensina", "eval this command"; command-retro: "retrospectiva desta sessão", "retro this session".
+rules: "como escrever uma skill", "rules for writing a hook"; command-new: "criar um comando", "create a command"; agent-new: "criar um subagente", "create a subagent"; hook-new: "ligar um hook", "wire a hook"; entrypoint-new: "criar um ponto de entrada de operação", "mint an operations entry point"; layer-new: "criar uma camada de teste", "mint a proof layer"; genre-new: "criar um gênero editorial", "mint an editorial genre"; command-eval: "medir se o comando ensina", "eval this command"; command-retro: "retrospectiva desta sessão", "retro this session".
 
 ## Workflow
 
@@ -39,9 +39,13 @@ returns `STATE: blocked` with `NOTE: needs-human:` carrying it.
 
 | Flow | Reference | Picked when |
 | --- | --- | --- |
+| `rules` | [references/rules.md](.agents/skills/quenching-components/references/rules.md) | reading, read-only, the rules for writing ONE piece: skill, subagent, hook, entry point, test layer or genre |
 | `command-new` | [references/command-new.md](.agents/skills/quenching-components/references/command-new.md) | minting or editing ONE skill or command |
 | `agent-new` | [references/agent-new.md](.agents/skills/quenching-components/references/agent-new.md) | minting or editing ONE subagent definition |
 | `hook-new` | [references/hook-new.md](.agents/skills/quenching-components/references/hook-new.md) | wiring ONE scoped hook |
+| `entrypoint-new` | [references/entrypoint-new.md](.agents/skills/quenching-components/references/entrypoint-new.md) | minting ONE operations entry point (needs the `quenching-ops` module) |
+| `layer-new` | [references/layer-new.md](.agents/skills/quenching-components/references/layer-new.md) | minting ONE proof layer (needs the `quenching-proof` module) |
+| `genre-new` | [references/genre-new.md](.agents/skills/quenching-components/references/genre-new.md) | minting ONE editorial genre (needs the `quenching-design` module) |
 | `command-eval` | [references/command-eval.md](.agents/skills/quenching-components/references/command-eval.md) | measuring whether a command teaches anything with with/without runs |
 | `command-retro` | [references/command-retro.md](.agents/skills/quenching-components/references/command-retro.md) | mining ONE session for what it shows about the command that ran in it |
 

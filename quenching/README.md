@@ -129,10 +129,8 @@ the explicit entry point.
 
 | Command | Does |
 | --- | --- |
-| `quenching-design` | The single entry point of the design flows: picks `align`, `status`, `genre-new` by the flow you name or by the words of the request. |
 | `/quenching-align design` | Installs or converges the brand pack, preserves source truth, arbitrates external DESIGN.md proposals, and rebuilds every projection. |
 | `/quenching-align status design` | Reports DTCG validity, generated identity, sidecar/assets, genres, adapters, and optional Impeccable detector state without writing. |
-| the `genre-new` reference of the design front | Mints ONE editorial genre contract with fields, register, and HTML/Typst/PDF destinations. |
 
 `cq design build` and `cq design import` are the deterministic rails used by these commands. The
 source is DTCG 2025.10; `DESIGN.md` is a deliberately lossy portable projection, while rich
@@ -142,7 +140,7 @@ motion, shadows, breakpoints, and snippets remain in the source and sidecar.
 
 | Command | Does |
 | --- | --- |
-| `/quenching-components` | The single entry point of the components flows: picks `command-new`, `agent-new`, `hook-new`, `command-eval` or `command-retro` by the flow you name and loads that flow's reference; no alias entry stands for a flow. |
+| `/quenching-components` | The single entry point of the components flows: picks `rules`, `command-new`, `agent-new`, `hook-new`, `entrypoint-new`, `layer-new`, `genre-new`, `command-eval` or `command-retro` by the flow you name and loads that flow's reference; no alias entry stands for a flow. |
 | `/quenching-align components` | Converges the whole `.claude/` surface onto one file per entry point, then audits every body and rewrites every description against the writing doctrine. |
 | `/quenching-align status components` | Reports the command count, fronts and finding codes for the target's automation surface without writing. |
 | `/quenching-components command-new` | Mints or edits ONE command — the structural half, including its `description`. |
@@ -150,25 +148,25 @@ motion, shadows, breakpoints, and snippets remain in the source and sidecar.
 | `/quenching-components command-retro` | Mines ONE session for what it evidences about ONE command that ran in it — cost, redundancy, bugs, and what the human had to fix by hand. |
 | `/quenching-components agent-new` | Mints or edits ONE subagent definition, scoping its tools to the narrowest set and pricing its always-on cost. |
 | `/quenching-components hook-new` | Wires ONE scoped hook — the narrowest scope and cheapest handler that still catch what they must. Warns by default; blocks only on the human's word. |
+| `/quenching-components rules` | Reads, without writing, the rules for writing ONE piece — skill, subagent, hook, entry point, test layer or genre — by section, plus the target's delta. Read it before editing one by hand. |
+| `/quenching-components entrypoint-new` | Mints ONE Python entry point from the contract, registers it in the declared router, and regenerates the operations registry. |
+| `/quenching-components layer-new` | Mints one named layer with its marker, reach, budget, fixture home and collection rule, then proposes test moves for a separate confirmation. |
+| `/quenching-components genre-new` | Mints ONE editorial genre contract with fields, register, and HTML/Typst/PDF destinations. |
 | the `harness-align` step of `/quenching-align components` | Refactors `AGENTS.md` into a thin pointer over the bundle, so doctrine lives once; legacy `CLAUDE.md` is removed. |
 
 ### The ops front — the target's declared operations surface
 
 | Command | Does |
 | --- | --- |
-| `quenching-ops` | The single entry point of the ops flows: picks `align`, `status`, `entrypoint-new` by the flow you name or by the words of the request. |
 | `/quenching-align ops` | Probes the declared operations root and router, applies mechanical and structural drift under one plan, and reports judgement findings without driving them. |
 | `/quenching-align status ops` | Reports the root, router, packages, lifecycle, findings by band, and registry freshness without writing. |
-| the `entrypoint-new` reference of the ops front | Mints ONE Python entry point from the contract, registers it in the declared router, and regenerates the operations registry. |
 
 ### The proof front — the target's declared verification surface
 
 | Command | Does |
 | --- | --- |
-| `quenching-proof` | The single entry point of the proof flows: picks `align`, `status`, `layer-new` by the flow you name or by the words of the request. |
 | `/quenching-align proof` | Probes the proof gate, applies mechanical and bounded structural repairs under one plan, defers a floor when the measured surface changes, and reports judgement findings without driving them. |
 | `/quenching-align status proof` | Reports layers, fixtures, measured roots, floors, CI evidence, findings by band, and the explicit fact that the suite was not run — without writing. |
-| the `layer-new` reference of the proof front | Mints one named layer with its marker, reach, budget, fixture home and collection rule, then proposes test moves for a separate confirmation. |
 
 ### The toolchain front — manifests, locks, pins and tool configuration
 

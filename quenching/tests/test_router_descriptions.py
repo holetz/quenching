@@ -105,6 +105,25 @@ class RouterDescriptions(unittest.TestCase):
                 self.assertTrue(any(not is_pt(p) for p in phrases))
                 self.assertTrue(QUOTED.search(" ".join(sentences(description)[:2])))
 
+    def test_components_describes_itself_as_the_rule_book_and_the_minting(self):
+        description = str(load("components")[0]["description"])
+        flows = load("components")[1]
+        self.assertLessEqual(len(description), CAP)
+        for flow in ("rules", "entrypoint-new", "layer-new", "genre-new"):
+            self.assertIn(flow, flows)
+        head = description.split("Not for:")[0]
+        self.assertRegex(head, r"Rules and creation")
+        self.assertRegex(head, r"[Rr]ead before editing")
+
+    def test_rules_flow_is_read_only_and_its_grant_is_inside_the_router_union(self):
+        base = SKILLS / "quenching-components"
+        ref = (base / "references" / "rules.md").read_text(encoding="utf-8")
+        tools = re.search(r"^allowed-tools: (.*)$", ref, re.M).group(1)
+        self.assertNotRegex(tools, r"\bWrite\b|\bEdit\b")
+        router = re.search(r"^allowed-tools: (.*)$", (base / "SKILL.md").read_text(encoding="utf-8"), re.M).group(1)
+        for tool in re.split(r",\s*(?![^()]*\))", tools):
+            self.assertIn(tool.strip(), router)
+
     def test_the_check_can_fail(self):
         self.assertFalse(is_pt("open a PR"))
         self.assertTrue(is_pt("abrir um PR"))
