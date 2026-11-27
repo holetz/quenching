@@ -19,9 +19,11 @@ an index `test_sections.py` asserts on too.
 import contextlib
 import io
 import json
+import os
 import pathlib
 import tempfile
 import unittest
+from unittest import mock
 
 import _paths  # noqa: F401  — must precede the `quenching` import; see its docstring
 from quenching.components.sections import (
@@ -148,6 +150,69 @@ class ComponentsStatusFamilies(unittest.TestCase):
         self.assertEqual(["a", "b", "c"], bundle["flows"])
         self.assertEqual(payload["state"], "conformant")
         self.assertTrue(payload["ok"])
+
+
+class ComponentsStatusUsage(unittest.TestCase):
+    """`status` shows what each skill was used for and lists the one nobody uses nor cites."""
+
+    @staticmethod
+    def _skill(root: str, name: str, body: str = "Body.") -> None:
+        folder = pathlib.Path(root, "skills", name)
+        folder.mkdir(parents=True)
+        (folder / "SKILL.md").write_text(
+            f"---\nname: {name}\ndescription: use for {name}\n---\n\n{body}\n", encoding="utf-8")
+
+    @staticmethod
+    def _session(transcripts: str, root: str, records: list) -> None:
+        from quenching.session.transcript import encode_cwd
+        folder = pathlib.Path(transcripts, encode_cwd(pathlib.Path(root).resolve()))
+        folder.mkdir(parents=True)
+        (folder / "s1.jsonl").write_text(
+            "\n".join(json.dumps(r) for r in records) + "\n", encoding="utf-8")
+
+    @staticmethod
+    def _call(uuid: str, when, skill: str, args: str | None = None) -> dict:
+        import datetime
+        stamp = (datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(days=when)
+                 ).strftime("%Y-%m-%dT%H:%M:%SZ")
+        inp = {"skill": skill} | ({"args": args} if args else {})
+        return {"type": "assistant", "uuid": uuid, "timestamp": stamp,
+                "message": {"content": [{"type": "tool_use", "name": "Skill", "input": inp}]}}
+
+    def _status(self, root: str, transcripts: str) -> dict:
+        env = {"QUENCHING_TRANSCRIPTS_ROOT": transcripts,
+               "QUENCHING_OPENCODE_DB": os.path.join(transcripts, "none.db")}
+        output = io.StringIO()
+        with mock.patch.dict(os.environ, env), contextlib.redirect_stdout(output):
+            components_cli.main(["--root", root, "status", "--json"])
+        return json.loads(output.getvalue())
+
+    def test_the_usage_counts_and_the_unused_skill_without_a_citer_is_listed(self):
+        with tempfile.TemporaryDirectory() as root, tempfile.TemporaryDirectory() as transcripts:
+            for name, body in (("used", "Body."), ("cited", "Body."), ("unused", "Body."),
+                               ("old", "Body."), ("citer", "Reads `/cited` by name.")):
+                self._skill(root, name, body)
+            self._session(transcripts, root, [
+                self._call("a", 3, "used", "go 1"), self._call("b", 1, "used"),
+                self._call("c", 200, "old")])
+            payload = self._status(root, transcripts)
+        usage = payload["usage"]
+        self.assertEqual(usage["windowDays"], 60)
+        self.assertEqual(usage["sessions"], {"claude": 1, "opencode": 0})
+        self.assertEqual(usage["skills"]["used"]["count"], 2)
+        self.assertEqual(usage["skills"]["used"]["flows"]["go"]["count"], 1)
+        self.assertEqual(sorted(i["command"] for i in usage["unused"]), ["/citer", "/old", "/unused"])
+        self.assertEqual({i["severity"] for i in usage["unused"]}, {"info"})
+        self.assertEqual(payload["findings"], {"sk-unused": 3})
+        self.assertTrue(payload["ok"])
+        self.assertEqual(payload["state"], "conformant")
+
+    def test_no_session_read_means_no_verdict(self):
+        with tempfile.TemporaryDirectory() as root, tempfile.TemporaryDirectory() as transcripts:
+            self._skill(root, "unused")
+            payload = self._status(root, transcripts)
+        self.assertEqual(payload["usage"]["unused"], [])
+        self.assertEqual(payload["findings"], {})
 
 
 class ComponentsStatus(unittest.TestCase):
