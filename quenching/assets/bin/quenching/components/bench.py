@@ -5,7 +5,7 @@ the `quenching` server, in tokens (characters / 4, the unit of `cq components se
 --inflow`). Per specs flow (`create`, `develop`, `execute`, `conclude`): the instruction ceiling —
 the router plus the flow reference plus every cited `§` section, measured by the same code
 `cq components cost` uses. A measure above its budget, a skill name visible twice to one harness
-and a citation that does not resolve are findings; the verb exits 1 on any of them.
+(the bridge projection of its `.agents/skills` source excepted, ADR 0022) and a citation that does not resolve are findings; the verb exits 1 on any of them.
 
 The budget is a non-regression ruler, not a cut target: `DEFAULT_BUDGET` carries the numbers of
 this repository, and `--budget FILE` carries a target's own, in the same shape.
