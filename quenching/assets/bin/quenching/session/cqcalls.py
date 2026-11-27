@@ -81,6 +81,46 @@ def tally(into: dict, key: str, count: int = 1) -> None:
     into[key] = into.get(key, 0) + count
 
 
+FLOW_WORD = re.compile(r"^[a-z][a-z0-9-]*$")
+
+
+def skill_route(name: str, args: str | None) -> tuple[str, str | None]:
+    """`(skill, flow)` one invocation served: the skill's own name and, when its arguments open with
+    a word a flow is written as, that word. A route a spec retired counts for the route that
+    replaced it (`RETIRED_ROUTES`), so the usage history survives a rename."""
+    skill = name.strip().lstrip("/").strip()
+    if skill.count(":") == 1:                       # `plugin:skill`
+        skill = skill.split(":", 1)[1]
+    first = (args or "").split(None, 1)[0] if (args or "").strip() else ""
+    flow = first if FLOW_WORD.match(first) else None
+    try:
+        from quenching.components.commands.lint import RETIRED_ROUTES
+    except Exception:       # the lint module cannot load here: the names count as they were written
+        return skill, flow
+    for old in (f"/{skill} {flow}" if flow else None, f"/{skill}"):
+        new = RETIRED_ROUTES.get(old) if old else None
+        if new:
+            head, _, tail = new.lstrip("/").partition(" ")
+            return head, (tail.split()[0] if tail.split() else None)
+    return skill, flow
+
+
+def record_skill_use(into: dict, name: str, args: str | None, timestamp: str | None) -> None:
+    """Count one invocation of a skill — and of its flow — with the last time it was seen.
+
+    `into` is `{skill: {"count", "last", "flows": {flow: {"count", "last"}}}}`; a typed `/skill`
+    and a `Skill` tool call are the same use, so both land here."""
+    skill, flow = skill_route(name, args)
+    if not skill:
+        return
+    entry = into.setdefault(skill, {"count": 0, "last": None, "flows": {}})
+    scopes = [entry] + ([entry["flows"].setdefault(flow, {"count": 0, "last": None})] if flow else [])
+    for scope in scopes:
+        scope["count"] += 1
+        if timestamp and (scope["last"] is None or timestamp > scope["last"]):
+            scope["last"] = timestamp
+
+
 def _served() -> set:
     """The verb paths an MCP tool serves, the by-decision exceptions left out."""
     try:

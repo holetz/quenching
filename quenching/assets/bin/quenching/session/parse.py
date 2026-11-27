@@ -70,7 +70,7 @@ import json
 import re
 from pathlib import Path
 
-from quenching.session.cqcalls import mcp_tools, shell_verbs, tally
+from quenching.session.cqcalls import mcp_tools, record_skill_use, shell_verbs, tally
 from quenching.session.model import Command, normalize, read_window
 
 COMMAND_NAME_RE = re.compile(r"<command-name>([^<]+)</command-name>")
@@ -166,6 +166,7 @@ def read_lines(source, label: str) -> dict:
     timeline = []                  # (line, command) for every attributed record, in order
     lines = unparsed = unattributed_tools = 0
     cq = {"shell": {}, "mcp": {}}      # the whole session's `cq` calls, attributed or not
+    skills: dict = {}                  # skill -> uses and last seen, typed or through the `Skill` tool
     session = {"sessionId": None, "cwd": None, "gitBranch": None, "version": None}
 
     def command(name: str) -> Command:
@@ -231,6 +232,7 @@ def read_lines(source, label: str) -> dict:
                     args = COMMAND_ARGS_RE.search(text)
                     cmd = command(normalize(name))
                     cmd.touch(index, ts)
+                    record_skill_use(skills, name, (args.group(1) if args else None), ts)
                     cmd.invocations.append({
                         "form": "typed", "line": index, "timestamp": ts,
                         "args": (args.group(1).strip() if args else "") or None,
@@ -287,6 +289,7 @@ def read_lines(source, label: str) -> dict:
                 if target:
                     callee = command(normalize(target))
                     callee.touch(index, ts)
+                    record_skill_use(skills, target, inp_.get("args"), ts)
                     callee.invocations.append({
                         "form": "skill", "line": index, "timestamp": ts,
                         "args": (inp_.get("args") or None),
@@ -303,6 +306,7 @@ def read_lines(source, label: str) -> dict:
         "anomalies": anomalies,
         "unattributedToolCalls": unattributed_tools,
         "cq": cq,
+        "skills": skills,
         "commands": [c.as_dict() for c in ordered],
         "_commands": ordered,          # the objects, for digest; never serialised
         "corrections": corrections,
