@@ -8,7 +8,11 @@ PLUGIN = Path(__file__).resolve().parents[1]
 
 
 def prose(path):
-    return re.sub(r"\s+", " ", (PLUGIN / path).read_text(encoding="utf-8").replace("**", "").replace("`", ""))
+    raw = (PLUGIN / path).read_text(encoding="utf-8")
+    if path == "skills/quenching-specs/references/develop.md":
+        steps = sorted((PLUGIN / "skills/quenching-specs/references/specs-develop").glob("step-*.md"))
+        raw = "\n".join([raw] + [s.read_text(encoding="utf-8") for s in steps])
+    return re.sub(r"\s+", " ", raw.replace("**", "").replace("`", ""))
 
 
 class BuildSizeApproval(unittest.TestCase):

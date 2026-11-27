@@ -26,14 +26,22 @@ AGENTS = "docs/standards/automation/agents.md"
 GROUP = "### 1. Process surface"
 
 
+def read(rel):
+    if rel == DEVELOP:
+        base = ROOT / "quenching/skills/quenching-specs/references"
+        steps = sorted((base / "specs-develop").glob("step-*.md"))
+        return "\n".join([(ROOT / rel).read_text(encoding="utf-8")] + [s.read_text(encoding="utf-8") for s in steps])
+    return (ROOT / rel).read_text(encoding="utf-8")
+
+
 def text(rel):
     """The file, markup collapsed: a phrase wrapped across a line still matches."""
-    return re.sub(r"\s+", " ", (ROOT / rel).read_text(encoding="utf-8"))
+    return re.sub(r"\s+", " ", read(rel))
 
 
 def heading(rel, name):
     """True when the file carries `name` as a heading of its own line."""
-    body = (ROOT / rel).read_text(encoding="utf-8")
+    body = read(rel)
     return re.search(rf"^{re.escape(name)}$", body, re.MULTILINE) is not None
 
 

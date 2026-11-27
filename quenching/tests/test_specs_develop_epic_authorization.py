@@ -10,7 +10,8 @@ DEVELOP = "quenching/skills/quenching-specs/references/develop.md"
 
 
 def text(rel):
-    return re.sub(r"\s+", " ", (ROOT / rel).read_text(encoding="utf-8"))
+    step = ROOT / "quenching/skills/quenching-specs/references/specs-develop/step-7.md"
+    return re.sub(r"\s+", " ", (step if rel == DEVELOP else ROOT / rel).read_text(encoding="utf-8"))
 
 
 class DevelopEpicAuthorizationTests(unittest.TestCase):

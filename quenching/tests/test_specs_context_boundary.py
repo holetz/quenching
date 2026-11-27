@@ -43,7 +43,7 @@ class StageEndContractTests(unittest.TestCase):
         self.assertLess(mold.index("### The session-size line"), mold.index("### The next-step block"))
 
     def test_each_stage_end_prints_the_line(self):
-        for name in ("develop.md", "execute.md", "conclude.md"):
+        for name in ("specs-develop/step-8.md", "execute.md", "conclude.md"):
             with self.subTest(command=name):
                 self.assertIn("Print §The session-size line before the block", text(SPECS / name))
 
