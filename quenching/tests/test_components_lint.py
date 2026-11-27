@@ -193,7 +193,7 @@ class StrictFrontmatter(unittest.TestCase):
         errors = [f for f in payload["findings"] if f["severity"] == "error"]
         self.assertEqual(errors, [])  # first: a red gate names the finding, not just the status
         self.assertEqual(status, 0)
-        self.assertEqual(payload["commandCount"], 6)
+        self.assertEqual(payload["commandCount"], 5)
 
 
 class ReferenceRoot(unittest.TestCase):

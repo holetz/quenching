@@ -98,9 +98,9 @@ class ManifestSurfaceTests(unittest.TestCase):
         commands = _commands_on_disk()
         expected = {
             "knowledge": 13,
-            "specs": 11,
+            "specs": 12,
             "components": 10,
-            "git": 12,
+            "git": 13,
             # The fronts are arguments of `/quenching-align` since spec 676: no skill of their own.
             "design": 0,
             "ops": 0,
