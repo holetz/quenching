@@ -230,6 +230,66 @@ class Layout(GitStoreFixture):
         self.assertEqual(1, len(self.remote_log()))
 
 
+class PushTransportRetry(GitStoreFixture):
+    """A large repository drops the single RPC post: the push retries once with a bigger buffer."""
+
+    def _backend(self):
+        backend = GitBackend(self.clone("a"))
+        backend.create_spec("plans", canonical._case_doc())
+        return backend
+
+    def _calls(self, backend, results):
+        calls, queue = [], list(results)
+        real = backend._git
+
+        def fake(*argv, **kw):
+            if "push" in argv:
+                calls.append(argv)
+                return queue.pop(0)
+            return real(*argv, **kw)
+        return calls, mock.patch.object(backend, "_git", side_effect=fake)
+
+    def test_a_postbuffer_failure_is_retried_once_with_the_bigger_buffer(self):
+        backend = self._backend()
+        failure = (128, b"", "error: unable to rewind rpc post data - try increasing http.postBuffer")
+        calls, patch = self._calls(backend, [failure, (0, b"", "")])
+        with patch:
+            code, said = backend._push(None, "0" * 40)
+        self.assertEqual(0, code)
+        self.assertNotIn("-c", calls[0])
+        self.assertIn("http.postBuffer=1048576000", calls[1])
+        self.assertIn("http.version=HTTP/1.1", calls[1])
+
+    def test_a_second_transport_failure_names_the_retry(self):
+        backend = self._backend()
+        failure = (128, b"", "fatal: the remote end hung up unexpectedly")
+        calls, patch = self._calls(backend, [failure, failure])
+        with patch:
+            code, said = backend._push(None, "0" * 40)
+        self.assertNotEqual(0, code)
+        self.assertEqual(2, len(calls))
+        self.assertIn("retried once with http.postBuffer", said)
+
+    def test_a_failure_that_is_not_transport_is_not_retried(self):
+        backend = self._backend()
+        calls, patch = self._calls(backend, [(128, b"", "fatal: Authentication failed")])
+        with patch:
+            code, said = backend._push(None, "0" * 40)
+        self.assertNotEqual(0, code)
+        self.assertEqual(1, len(calls))
+
+    def test_the_refusal_after_a_retry_has_its_own_code(self):
+        backend = self._backend()
+        failure = (128, b"", "fatal: the remote end hung up unexpectedly")
+        _, patch = self._calls(backend, [failure, failure])
+        info, _ = backend.read_spec(1)
+        with patch, mock.patch.object(GitBackend, "_fetch", return_value=None):
+            with self.assertRaises(BackendRefusal) as caught:
+                backend.write_spec(info, info["text"] + "\nx\n")
+                backend.push()
+        self.assertEqual("sp-git-push-transport-retried", caught.exception.err["code"])
+
+
 class CompareAndSwap(GitStoreFixture):
     def _two_writers(self):
         seed = GitBackend(self.clone("seed"))
