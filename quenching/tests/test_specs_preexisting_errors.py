@@ -22,7 +22,7 @@ ORCHESTRATOR = ROOT / "quenching/agents/spec-orchestrator.md"
 
 def read(path):
     text = path.read_text(encoding="utf-8")
-    steps = path.with_suffix("")
+    steps = path.parent / f"specs-{path.stem}"
     if steps.is_dir():  # a flow split by step: the index followed by its step files
         text += "\n" + "\n".join(p.read_text(encoding="utf-8") for p in sorted(steps.glob("*.md")))
     return text

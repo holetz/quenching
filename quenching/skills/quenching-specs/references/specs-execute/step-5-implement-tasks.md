@@ -13,11 +13,11 @@ Then, for that task:
 
 a. **Show what is being worked on** — the ID, its declared `files:` and its `verify:`.
 
-b. **Write the code**, minimal and scoped to the declared files (a task tagged `[fix-preexistente]` declares its own, see 5i). A task that declares `files:` and writes nothing under `/docs/` **may** go to an executor sub-agent: read [step-5b-delegate-an-executor.md](.agents/skills/quenching-specs/references/execute/step-5b-delegate-an-executor.md) whole before dispatching, and not otherwise.
+b. **Write the code**, minimal and scoped to the declared files (a task tagged `[fix-preexistente]` declares its own, see 5i). A task that declares `files:` and writes nothing under `/docs/` **may** go to an executor sub-agent: read [step-5b-delegate-an-executor.md](.agents/skills/quenching-specs/references/specs-execute/step-5b-delegate-an-executor.md) whole before dispatching, and not otherwise.
 
-c. **Write only the `/docs/` this task names.** Run it from [step-5c-docs-this-task-names.md](.agents/skills/quenching-specs/references/execute/step-5c-docs-this-task-names.md) — read that file whole when this sub-step runs, and not before.
+c. **Write only the `/docs/` this task names.** Run it from [step-5c-docs-this-task-names.md](.agents/skills/quenching-specs/references/specs-execute/step-5c-docs-this-task-names.md) — read that file whole when this sub-step runs, and not before.
 
-d–e. **On the first pass, load the rules the chain runs under, self-review the diff, then verify, stage, commit and tick the spec task as ONE chained operation.** Run it from [step-5de-verify-commit.md](.agents/skills/quenching-specs/references/execute/step-5de-verify-commit.md) — read that file whole when this sub-step runs, and not before.
+d–e. **On the first pass, load the rules the chain runs under, self-review the diff, then verify, stage, commit and tick the spec task as ONE chained operation.** Run it from [step-5de-verify-commit.md](.agents/skills/quenching-specs/references/specs-execute/step-5de-verify-commit.md) — read that file whole when this sub-step runs, and not before.
 
 f. **Read the chain's tail, and act on which link broke** — per §The commit, already loaded in
    5d: `verify:`/staging failed → nothing ticked, nothing committed; fix and retry, or block it
@@ -25,7 +25,7 @@ f. **Read the chain's tail, and act on which link broke** — per §The commit, 
    spec tick failed after a successful commit → preserve the commit and retry only the remote
    write. The recorded subject or sha drifted → report it as a finding and write nothing further.
 
-g. **Run and report the declared hook for this event, and move on.** Run it from [step-5g-after-task-hook.md](.agents/skills/quenching-specs/references/execute/step-5g-after-task-hook.md) — read that file whole when this sub-step runs, and not before.
+g. **Run and report the declared hook for this event, and move on.** Run it from [step-5g-after-task-hook.md](.agents/skills/quenching-specs/references/specs-execute/step-5g-after-task-hook.md) — read that file whole when this sub-step runs, and not before.
 
 h. **At a section boundary, keep the task commits and continue.** The branch is at a clean,
    independently anchored boundary; another section may still be ahead. **No session-size read runs
@@ -35,7 +35,7 @@ h. **At a section boundary, keep the task commits and continue.** The branch is 
    [execution-cadence.md](.agents/quenching/references/specs-execute/execution-cadence.md)
    §The section boundary.
 
-i. **A red that is not this spec's has its own route, never a dismissal.** Run it from [step-5i-preexisting-red.md](.agents/skills/quenching-specs/references/execute/step-5i-preexisting-red.md) — read that file whole when this sub-step runs, and not before.
+i. **A red that is not this spec's has its own route, never a dismissal.** Run it from [step-5i-preexisting-red.md](.agents/skills/quenching-specs/references/specs-execute/step-5i-preexisting-red.md) — read that file whole when this sub-step runs, and not before.
 
 **Pause if:** a task is unclear; implementation reveals a design problem (→ `/quenching-specs develop`); a
 task contradicts a `/docs/standards/` contract (surface it and let the human pick — revise the

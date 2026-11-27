@@ -1,6 +1,6 @@
 # /quenching-specs execute — step 5 i
 
-Loaded only when this sub-step runs, together with the step 5 loop in [step-5-implement-tasks.md](.claude/skills/quenching-specs/references/execute/step-5-implement-tasks.md); the flow index is [execute.md](.claude/skills/quenching-specs/references/execute.md).
+Loaded only when this sub-step runs, together with the step 5 loop in [step-5-implement-tasks.md](.agents/skills/quenching-specs/references/specs-execute/step-5-implement-tasks.md); the flow index is [execute.md](.agents/skills/quenching-specs/references/execute.md).
 
 i. **A red that is not this spec's has its own route, never a dismissal** — a failing gate, a broken
    test or drift found on the way, read per `/docs/standards/workflows/task-execution.md`

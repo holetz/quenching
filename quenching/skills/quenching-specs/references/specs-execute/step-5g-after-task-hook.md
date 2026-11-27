@@ -1,6 +1,6 @@
 # /quenching-specs execute — step 5 g
 
-Loaded only when this sub-step runs, together with the step 5 loop in [step-5-implement-tasks.md](.claude/skills/quenching-specs/references/execute/step-5-implement-tasks.md); the flow index is [execute.md](.claude/skills/quenching-specs/references/execute.md).
+Loaded only when this sub-step runs, together with the step 5 loop in [step-5-implement-tasks.md](.agents/skills/quenching-specs/references/specs-execute/step-5-implement-tasks.md); the flow index is [execute.md](.agents/skills/quenching-specs/references/execute.md).
 
 g. **Run and report the declared hook for this event, and move on.** Once the spec task has
    committed and been confirmed, `after_specs_execute_task` has fired. For every hook the config

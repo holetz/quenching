@@ -36,7 +36,7 @@ def git(cwd, *args):
 def flow_text(path):
     """The flow's index followed by its step files, when the flow is split by step."""
     text = path.read_text(encoding="utf-8")
-    steps = path.with_suffix("")
+    steps = path.parent / f"specs-{path.stem}"
     if steps.is_dir():
         text += "\n" + "\n".join(p.read_text(encoding="utf-8") for p in sorted(steps.glob("*.md")))
     return text

@@ -27,35 +27,35 @@ never on prose.
 ## Workflow
 
 ### 1. Select the spec
-Run it from [step-1-select-the-spec.md](.agents/skills/quenching-specs/references/execute/step-1-select-the-spec.md) — read that file whole when this step starts, and not before.
+Run it from [step-1-select-the-spec.md](.agents/skills/quenching-specs/references/specs-execute/step-1-select-the-spec.md) — read that file whole when this step starts, and not before.
 **Done when:** one spec is resolved.
 
 ### 2. Take the tree, the isolation and the state in one read
-Run it from [step-2-tree-isolation-state.md](.agents/skills/quenching-specs/references/execute/step-2-tree-isolation-state.md) — read that file whole when this step starts, and not before.
+Run it from [step-2-tree-isolation-state.md](.agents/skills/quenching-specs/references/specs-execute/step-2-tree-isolation-state.md) — read that file whole when this step starts, and not before.
 **Done when:** the tree is clean, the build is reserved (or stopped `held-by:`, or reported
 unreserved on exit 2), the worktree (or the requested branch) has been taken or found
 already held, any unresolved hook has been reported, and a resume's last checked task still
 verifies.
 
 ### 3. Settle the approval, off the state step 2 already read
-Run it from [step-3-settle-the-approval.md](.agents/skills/quenching-specs/references/execute/step-3-settle-the-approval.md) — read that file whole when this step starts, and not before.
+Run it from [step-3-settle-the-approval.md](.agents/skills/quenching-specs/references/specs-execute/step-3-settle-the-approval.md) — read that file whole when this step starts, and not before.
 **Done when:** the state is in hand, `approved` is settled, and any warning has been surfaced once.
 
 ### 4. Read what the tasks must satisfy
-Run it from [step-4-read-what-tasks-satisfy.md](.agents/skills/quenching-specs/references/execute/step-4-read-what-tasks-satisfy.md) — read that file whole when this step starts, and not before.
+Run it from [step-4-read-what-tasks-satisfy.md](.agents/skills/quenching-specs/references/specs-execute/step-4-read-what-tasks-satisfy.md) — read that file whole when this step starts, and not before.
 **Done when:** the spec's sections and the declared binding standards are read.
 
 ### 5. Implement tasks — loop until done or blocked
-Run it from [step-5-implement-tasks.md](.agents/skills/quenching-specs/references/execute/step-5-implement-tasks.md) — read that file whole when this step starts, and not before.
+Run it from [step-5-implement-tasks.md](.agents/skills/quenching-specs/references/specs-execute/step-5-implement-tasks.md) — read that file whole when this step starts, and not before.
 **Done when:** every task is `- [x]` or `- [!]`, or the run pauses with the reason stated.
 
 ### 6. Refresh `## Handoff` on four events, never on judgment
-Run it from [step-6-refresh-handoff.md](.agents/skills/quenching-specs/references/execute/step-6-refresh-handoff.md) — read that file whole when this step starts, and not before.
+Run it from [step-6-refresh-handoff.md](.agents/skills/quenching-specs/references/specs-execute/step-6-refresh-handoff.md) — read that file whole when this step starts, and not before.
 **Done when:** the global block and the current section's `## Handoff` block describe the tree as
 it stands after the run's last commit.
 
 ### 7. Report, and hand off
-Run it from [step-7-report-and-hand-off.md](.agents/skills/quenching-specs/references/execute/step-7-report-and-hand-off.md) — read that file whole when this step starts, and not before.
+Run it from [step-7-report-and-hand-off.md](.agents/skills/quenching-specs/references/specs-execute/step-7-report-and-hand-off.md) — read that file whole when this step starts, and not before.
 **Done when:** the summary is shown and the hand-off has been offered or declined.
 
 ## Output during the loop

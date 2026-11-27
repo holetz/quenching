@@ -1,6 +1,6 @@
 # /quenching-specs execute — step 5 b (delegating)
 
-Loaded only when task 5b is dispatched to an executor sub-agent, together with the step 5 loop in [step-5-implement-tasks.md](.claude/skills/quenching-specs/references/execute/step-5-implement-tasks.md); the flow index is [execute.md](.claude/skills/quenching-specs/references/execute.md).
+Loaded only when task 5b is dispatched to an executor sub-agent, together with the step 5 loop in [step-5-implement-tasks.md](.agents/skills/quenching-specs/references/specs-execute/step-5-implement-tasks.md); the flow index is [execute.md](.agents/skills/quenching-specs/references/execute.md).
 
 A task that declares `files:` and writes nothing under `/docs/` **may** go to an executor sub-agent under
 [execution-delegation.md](.agents/quenching/references/specs-execute/execution-delegation.md)
