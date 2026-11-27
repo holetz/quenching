@@ -60,6 +60,22 @@ class Superficie(unittest.TestCase):
         self.assertIn("ct-bench-prefix-over", codes)
         self.assertIn("ct-bench-flow-over", codes)
 
+    def test_superficie_stage_charges_router_index_one_step_and_its_citations(self):
+        root = target()
+        write(root / ".agents/skills/quenching-specs/references/execute.md",
+              "# execute\n\nStep: .agents/skills/quenching-specs/references/execute/step-1.md\n")
+        write(root / ".agents/skills/quenching-specs/references/execute/step-1.md",
+              "one\n\nSee [r](.agents/quenching/references/x/rules.md) §Rule\n")
+        write(root / ".agents/skills/quenching-specs/references/execute/step-2.md", "two\n")
+        payload, findings = bench.measure(root, ("claude",))
+        rows = {row["step"]: row for row in payload["stages"]["execute"]}
+        self.assertEqual(set(rows), {"step-1", "step-2"})
+        self.assertGreater(rows["step-1"]["tokens"], rows["step-2"]["tokens"])
+        self.assertEqual(rows["step-1"]["budget"], 15_000)
+        self.assertEqual([f for f in findings if f["severity"] == "error"], [])
+        _, findings = bench.measure(root, ("claude",), bench.load_budget_dict({"stage": {"default": 1}}))
+        self.assertIn("ct-bench-stage-over", {f["code"] for f in findings})
+
     def test_superficie_within_budget_is_clean(self):
         _, findings = bench.measure(target(), bench.HARNESSES)
         self.assertEqual([f for f in findings if f["severity"] == "error"], [])
